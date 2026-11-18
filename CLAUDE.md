@@ -18,7 +18,7 @@ Several Claude sessions may work on this repo at the same time. These rules keep
 
 1. In `docs/WORK.md`, move your row from "Active jobs" to "Done", on your branch.
 2. Bring your branch up to date with `main` (rebase, or the pull request's "Update branch": `gh api -X PUT repos/pingledingle-tech/Pingmator/pulls/<number>/update-branch`). Build and run the tests (see README, "Tests"). They must pass.
-3. Mark the pull request ready for review.
+3. Mark the pull request ready for review. While it is a draft, only the privacy check runs; marking it ready starts the build, sanitizers and fuzzing (and the Windows zip).
 4. Wait until all checks on the pull request are green (`gh api repos/pingledingle-tech/Pingmator/commits/<sha>/check-runs`). Skipped checks are fine.
 5. Tell the user the pull request number and that it is ready to merge. The user merges it ("Squash and merge"), or tells you in this session that you may merge it. Only then merge it yourself, with squash: `gh api -X PUT repos/pingledingle-tech/Pingmator/pulls/<number>/merge -f merge_method=squash`.
 6. If another pull request is merged first, update your branch again (step 2) and wait for green checks before merging.

@@ -15,6 +15,7 @@ Every job writes itself here before it starts. See `CLAUDE.md` for the rules.
 
 | Branch | What | Pull request |
 |---|---|---|
+| `ci/save-minutes` | Save Actions minutes: draft pull requests skip build, sanitizers and fuzz (privacy still runs); a new push cancels the older run of the same pull request | #157 |
 | `feat/status-bar-88` | #88 step 8: one status bar at the bottom: "Tips on" switch (saved as the user setting `tips_on`, default on; tooltips come later), remote-control indicator (#43) and Aurora link status (off / connecting / live, dot turns the link on or off), rounded items in the theme colours; tests in `tests/statusbar/`; not Windows-tested yet | #155 |
 | `feat/open-with-new-parser-62` | #62 part 2 of 4: opening a BVH/AVM file (`BVH::animRead`, `BVH::checkFile`) uses the new parser `src/animfile.*` and builds the same `BVHNode` tree as before (tested against the old parser for every round-trip file); errors name the line; old parser kept as `BVH::legacyAnimRead` until part 4 | #150 |
 | `fix/head-neck-limits-129` | #129: head and neck bend -45..45 (X) instead of -37..22 (AAOS cervical flexion/extension); `SL.lim` regenerated, tests; all other limits unchanged | #156 |
