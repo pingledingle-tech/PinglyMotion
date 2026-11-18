@@ -5,10 +5,9 @@ name: Release
 # Start it from the Actions tab (Release > Run workflow, type the version),
 # or by pushing a tag like v0.3.0.
 #
-# Before a release: start Build, CodeQL and Fuzz on main from the Actions tab
-# (Run workflow) and release only when all three are green. Pull requests run
-# only the fast checks; these runs include the slow ones (test code in CodeQL,
-# 10 minutes of fuzzing per target).
+# Every release first runs the full checks: the Build workflow (Linux tests,
+# Windows build, sanitizers), CodeQL including the test code, and 10 minutes
+# of fuzzing per target. The release is only published when all of them pass.
 #
 # Versions: 0.3.0 is a normal release. 0.3.0-beta.1 is a beta: it is
 # published as a pre-release, which the update check in the program ignores.
@@ -222,8 +221,23 @@ jobs:
             SHA256SUMS-linux
           retention-days: 7
 
+  # the full checks; publish waits for them
+  checks-build:
+    uses: ./.github/workflows/build.yml
+    permissions:
+      contents: read
+  checks-codeql:
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write   # upload the CodeQL results
+  checks-fuzz:
+    uses: ./.github/workflows/fuzz.yml
+    permissions:
+      contents: read
+
   publish:
-    needs: [version, windows, linux]
+    needs: [version, windows, linux, checks-build, checks-codeql, checks-fuzz]
     if: github.event_name == 'push' || inputs.publish
     runs-on: ubuntu-latest
     permissions:

@@ -48,11 +48,12 @@ The Linux build runs these checks (see GitHub Actions for current results):
 - The live link talks correctly to a stand-in for Aurora's LiveMesh (`tests/tst_auroralink.cpp`)
 - The program starts and opens the example files without crashing (`tests/smoke_gui.sh`)
 
-Automated security checks (every pull request to `main`, and every night on `main`):
+Automated security checks (every pull request to `main`, every night on `main`, and before every release):
 
-- **CodeQL** (`.github/workflows/codeql.yml`) analyses the C++ code, the Python tools and the GitHub Actions workflows with the `security-extended` queries; pull requests analyse the program, the nightly run also the test code
+- **CodeQL** (`.github/workflows/codeql.yml`) analyses the C++ code, the Python tools and the GitHub Actions workflows with the `security-extended` queries; pull requests analyse the program, the nightly run and releases also the test code
 - **Sanitizers** (the `asan-ubsan` job in `.github/workflows/build.yml`) build with AddressSanitizer and UndefinedBehaviorSanitizer and run the tests, the start-up check and the remote-control check; any memory error or undefined behaviour fails the job
-- **Fuzzing** (`.github/workflows/fuzz.yml`) runs every night only, see `fuzz/README.md`
+- **Fuzzing** (`.github/workflows/fuzz.yml`) runs every night and before every release, not on pull requests; see `fuzz/README.md`
+- A release (`.github/workflows/release.yml`) runs all of these first and is only published when they pass
 - **Dependency review** (`.github/workflows/dependency-review.yml`) checks actions that a pull request adds or updates against GitHub's advisory database
 - **Dependabot** (`.github/dependabot.yml`) proposes updates for the GitHub Actions every week
 

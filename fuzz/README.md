@@ -36,7 +36,7 @@ The first folder collects new interesting inputs; `fuzz/corpus/` holds the start
 
 ## In CI
 
-The `Fuzz` workflow runs `fuzz_prop`, `fuzz_control` and `fuzz_animfile` for 10 minutes each every night on `main`. It does not run on pull requests; after changing a parser or the control commands, start it on the branch (Actions > Fuzz > Run workflow). It is not a required check. A crash makes the run red, and the crash file is attached to the run as `fuzz-crashes`.
+The `Fuzz` workflow runs `fuzz_prop`, `fuzz_control` and `fuzz_animfile` for 10 minutes each every night on `main` and before every release. It does not run on pull requests; after changing a parser or the control commands, start it on the branch (Actions > Fuzz > Run workflow). It is not a required check. A crash makes the run red, and the crash file is attached to the run as `fuzz-crashes`.
 
 ## When a crash is found
 

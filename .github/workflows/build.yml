@@ -1,10 +1,12 @@
 name: Build
 
-# Pull requests: Linux build and tests, Windows build (the zip), and the same
-# tests under AddressSanitizer/UndefinedBehaviorSanitizer. Branches are tested
-# through their pull request. main is not built again after a merge: the
-# nightly run checks it and keeps the caches warm for new pull requests.
+# Pull requests, the nightly run and releases: Linux build and tests, Windows
+# build (the zip), and the tests under AddressSanitizer/UndefinedBehaviorSanitizer.
+# Branches are tested through their pull request. After a merge, main gets only
+# the Linux build and tests as a quick check.
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
     # draft pull requests skip this workflow; ready_for_review starts it
@@ -12,10 +14,14 @@ on:
   schedule:
     - cron: '23 2 * * *'
   workflow_dispatch:
+  # release.yml runs this workflow before it publishes
+  workflow_call:
 
-# a new push to a pull request cancels the older run; other runs are never cancelled
+# a new push to a pull request cancels the older run of that pull request;
+# every other run (main, nightly, release) has a group of its own and is never
+# cancelled or held back
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: build-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # the build only reads the code; artifacts are uploaded with the job's own token
@@ -51,7 +57,8 @@ jobs:
 
   windows:
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    # not after a merge to main (the quick check there is the Linux job)
+    if: needs.changes.outputs.code == 'true' && !(github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -155,7 +162,8 @@ jobs:
 
   asan-ubsan:
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    # not after a merge to main (the quick check there is the Linux job)
+    if: needs.changes.outputs.code == 'true' && !(github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -201,7 +209,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
-          cmake --build build-sanitize -j 4
+          cmake --build build-sanitize -j 2
           ccache --show-stats
       - name: Run tests under sanitizers
         run: xvfb-run -a -s "-screen 0 1280x1000x24" ctest --test-dir build-sanitize --output-on-failure

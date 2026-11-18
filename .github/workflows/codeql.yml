@@ -1,7 +1,7 @@
 name: CodeQL
 # Pull requests: the program's C++ code, the Python tools and the workflows.
-# The nightly run on main also analyses the C++ test code (the tests compile
-# the same sources once per test program, which makes the traced build slow).
+# The nightly run and releases also analyse the C++ test code (the test
+# programs compile the same sources again, once per test program).
 on:
   pull_request:
     branches: [main]
@@ -10,10 +10,14 @@ on:
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
+  # release.yml runs this workflow before it publishes
+  workflow_call:
 
-# a new push to a pull request cancels the older run; other runs are never cancelled
+# a new push to a pull request cancels the older run of that pull request;
+# every other run (main, nightly, release) has a group of its own and is never
+# cancelled or held back
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: codeql-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -71,7 +75,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
       - name: Build for C++ analysis
         if: steps.diff.outputs.code == 'true' && matrix.language == 'cpp'
-        # pull requests: the program only; nightly and manual runs: the tests too
+        # pull requests: the program only; nightly, manual and release runs: the tests too
         env:
           TESTS: ${{ github.event_name == 'pull_request' && 'OFF' || 'ON' }}
         run: |
