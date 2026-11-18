@@ -1,6 +1,6 @@
 Branch: ci/codeql-apt-cache
-Status: active
-Pull request: pending
+Status: done
+Pull request: #44
 Files:
 - .github/workflows/codeql.yml
 
