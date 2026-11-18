@@ -50,8 +50,18 @@ static void influencesFromBlend(AvatarSkin::Part& part)
   }
 }
 
+int AvatarSkin::bodyOverride()
+{
+  const QString wanted = qEnvironmentVariable("PINGMATOR_BODY").trimmed().toLower();
+  if (wanted == "ruth2") return RuthBody;
+  return -1;
+}
+
 bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
 {
+  const int forced = bodyOverride();
+  if (forced >= 0) body = static_cast<Body>(forced);
+
   m_skeleton.clear();
   m_skeletonBySlName.clear();
   m_jointNames.clear();
@@ -104,9 +114,10 @@ bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
   }
 
   const QString folder = dataPath + "/character/";
-  if (body == MaxBody)
+  if (body == MaxBody || body == RuthBody)
   {
-    if (!loadMax(folder + "max/maxine.pmm", errorMessage))
+    const QString file = body == MaxBody ? "max/maxine.pmm" : "ruth2/ruth2.pmm";
+    if (!loadPmm(folder + file, errorMessage))
     {
       m_parts.clear();
       return false;
@@ -336,8 +347,8 @@ bool AvatarSkin::loadEyes(const QString& fileName, QString* errorMessage)
   return true;
 }
 
-// the Max Bento avatar: up to four joints per vertex, straight from the file
-bool AvatarSkin::loadMax(const QString& fileName, QString* errorMessage)
+// a Bento mesh body (Max, Ruth2): up to four joints per vertex, straight from the file
+bool AvatarSkin::loadPmm(const QString& fileName, QString* errorMessage)
 {
   PMMesh mesh;
   if (!mesh.load(fileName, errorMessage)) return false;
