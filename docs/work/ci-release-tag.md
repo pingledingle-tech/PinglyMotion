@@ -1,6 +1,6 @@
 Branch: ci/release-tag
 Status: done
-Pull request: pending
+Pull request: #39
 Files:
 - .github/workflows/release.yml
 
