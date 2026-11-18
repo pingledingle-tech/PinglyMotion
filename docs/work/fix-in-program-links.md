@@ -1,6 +1,6 @@
 Branch: fix/in-program-links
 Status: active
-Pull request: pending
+Pull request: #35
 Files:
 - src/aboutdialog.ui
 - src/updatenotificationdialog.ui
