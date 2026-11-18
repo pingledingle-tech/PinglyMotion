@@ -1,6 +1,6 @@
 Branch: feat/ruth2-menu
 Status: done
-Pull request: pending
+Pull request: #41
 Files:
 - src/pingmatorwindow.cpp
 - src/animationview.cpp
