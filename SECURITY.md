@@ -17,7 +17,7 @@ Please report security problems **privately**, not in a public issue:
 
 1. Open the **Security** tab of this repository.
 2. Choose **Report a vulnerability**
-   ([direct link](https://github.com/pingledingle-tech/Pingmator/security/advisories/new)).
+   ([direct link](https://github.com/pingledingle-tech/PinglyMotion/security/advisories/new)).
 
 Please include:
 
@@ -59,7 +59,7 @@ attestation, which shows that the zip was built by this repository's release
 workflow from a given commit.
 
     sha256sum --check SHA256SUMS
-    gh attestation verify Pingmator-vX.Y.Z-windows.zip --repo pingledingle-tech/Pingmator
+    gh attestation verify Pingmator-vX.Y.Z-windows.zip --repo pingledingle-tech/PinglyMotion
 
 On Windows, `Get-FileHash Pingmator-vX.Y.Z-windows.zip` shows the SHA-256
 to compare with the one in `SHA256SUMS`.
@@ -69,8 +69,8 @@ to compare with the one in `SHA256SUMS`.
 The security audit of November 2026 is in
 [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md). Its findings are public
 issues labelled
-[`security`](https://github.com/pingledingle-tech/Pingmator/issues?q=label%3Asecurity)
+[`security`](https://github.com/pingledingle-tech/PinglyMotion/issues?q=label%3Asecurity)
 and
-[`security-hardening`](https://github.com/pingledingle-tech/Pingmator/issues?q=label%3Asecurity-hardening);
+[`security-hardening`](https://github.com/pingledingle-tech/PinglyMotion/issues?q=label%3Asecurity-hardening);
 they do not need to be reported again.
 
