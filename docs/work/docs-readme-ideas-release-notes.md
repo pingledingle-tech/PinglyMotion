@@ -1,5 +1,5 @@
 Branch: docs/readme-ideas-release-notes
-Status: active
+Status: done
 Pull request: #34
 Files:
 - README.md
