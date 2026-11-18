@@ -559,7 +559,7 @@ void PingmatorWindow::setRemoteControl(bool on,bool showInfo)
 // the title says so while other programs can control Pingmator
 void PingmatorWindow::updateWindowTitle()
 {
-  QString title="Pingmator ["+currentFile+"]";
+  QString title="Pingmator "+Constants::buildLabel()+" ["+currentFile+"]";
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink && m_auroraLink->enabled())

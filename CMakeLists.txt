@@ -39,6 +39,27 @@ IF (NOT DEFINED BUILD_NUMBER)
 ENDIF (NOT DEFINED BUILD_NUMBER)
 ADD_DEFINITIONS (-DBUILD_NUMBER="${BUILD_NUMBER}")
 
+# Where a build comes from, shown in the window title and in Help > About:
+# CI passes PINGMATOR_BUILD_SOURCE ("PR #12" or a branch name); a local build says "dev".
+# PINGMATOR_COMMIT is the short commit (CI passes the full one; a local build asks git).
+IF (NOT DEFINED PINGMATOR_BUILD_SOURCE OR "${PINGMATOR_BUILD_SOURCE}" STREQUAL "")
+  SET (PINGMATOR_BUILD_SOURCE "dev")
+ENDIF ()
+IF (NOT DEFINED PINGMATOR_COMMIT OR "${PINGMATOR_COMMIT}" STREQUAL "")
+  EXECUTE_PROCESS (COMMAND git rev-parse HEAD
+                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                   OUTPUT_VARIABLE PINGMATOR_COMMIT
+                   ERROR_QUIET)
+  STRING (STRIP "${PINGMATOR_COMMIT}" PINGMATOR_COMMIT)
+ENDIF ()
+IF ("${PINGMATOR_COMMIT}" STREQUAL "")
+  SET (PINGMATOR_COMMIT "unknown")
+ELSE ()
+  STRING (SUBSTRING "${PINGMATOR_COMMIT}" 0 7 PINGMATOR_COMMIT)
+ENDIF ()
+ADD_DEFINITIONS (-DPINGMATOR_BUILD_SOURCE="${PINGMATOR_BUILD_SOURCE}")
+ADD_DEFINITIONS (-DPINGMATOR_COMMIT="${PINGMATOR_COMMIT}")
+
 # Version number shown in the program and used by the update check
 IF (NOT DEFINED VERSION_NUMBER)
   SET (VERSION_NUMBER "${PROJECT_VERSION}")
@@ -78,6 +99,7 @@ IF (PINGMATOR_TESTS)
   ADD_SUBDIRECTORY (tests/animfile)
   # status bar items and the "Tips on" setting (#88 step 8)
   ADD_SUBDIRECTORY (tests/statusbar)
+  ADD_SUBDIRECTORY (tests/buildinfo)
 ENDIF (PINGMATOR_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGMATOR_FUZZ=ON, see fuzz/README.md

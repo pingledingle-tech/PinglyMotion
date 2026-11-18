@@ -74,9 +74,13 @@ jobs:
           cache: true
       - name: Build
         shell: bash
+        env:
+          # shown in the window title; the branch name goes through the environment, never into the script text
+          BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
+          BUILD_COMMIT: "${{ github.event.pull_request.head.sha || github.sha }}"
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
-          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }}
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGMATOR_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGMATOR_COMMIT=$BUILD_COMMIT"
           cmake --build build -j 4
       - name: Package
         shell: bash
