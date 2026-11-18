@@ -1,0 +1,28 @@
+name: Work board
+
+# Warns when two active jobs claim the same files (docs/work/, tools/work.py).
+# Not a required check: red means "look at the overlap", it does not block.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  work-board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Tests for the work board script
+        run: python3 tests/test_work.py
+      - name: No overlapping jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/work.py check --mine
