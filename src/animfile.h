@@ -1,10 +1,10 @@
 /*
  * Pingmator – BVH and AVM files read into a plain data model (issue #62)
  *
- * This is the new parser that will replace the BVH reading code in bvh.cpp.
- * It reads from memory, never touches the disk or the window, and either
- * returns the whole animation or an error message – never half a result and
- * never a crash. Every number and index that comes from the file is checked
+ * This is the parser and writer for animation files; bvh.cpp builds the joint
+ * tree from it and saves through it. It reads from memory, never touches the
+ * disk or the window, and either returns the whole animation or an error
+ * message – never half a result and never a crash. Every number and index that comes from the file is checked
  * against the limits below (see docs/SECURITY_AUDIT.md, sections 2, 7 and 8).
  *
  * The data model keeps what is in the file, in file order. It does not know
@@ -30,7 +30,7 @@
 
 namespace AnimFile
 {
-  // limits for files that are read (the same as the old parser in bvh.cpp)
+  // limits for files that are read
   constexpr qsizetype MAX_FILE_BYTES=64*1024*1024;
   constexpr int MAX_DEPTH=64;          // nesting of joints; the root is depth 0
   constexpr int MAX_JOINTS=256;        // joints and End Sites together; the SL skeleton has 133 joints
@@ -138,7 +138,7 @@ namespace AnimFile
   QString channelName(Channel channel);
 
   // The text of the file for this animation, in the format it has (BVH or
-  // AVM): the same bytes the old writer in bvh.cpp made. The animation must
+  // AVM). The animation must
   // follow the rules of a parsed one (see Joint and Animation above); for an
   // AVM file every joint has its key frames, frame 0 first, and
   // hasPositionKeys is set.
