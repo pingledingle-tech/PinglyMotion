@@ -8,8 +8,9 @@ Every job writes itself here before it starts. See `CLAUDE.md` for the rules.
 
 | Branch | What | Files it changes | Pull request |
 |---|---|---|---|
+| `ci/build-cache` | Faster checks: compiler cache (ccache) and Qt cache in the workflows | `.github/workflows/build.yml`, `sanitizers.yml`, `fuzz.yml`, `codeql.yml`, `docs/WORK.md` | pending |
 
-**Overlap:** none.
+**Overlap:** none (another job changes `privacy.yml` and adds a new workflow file).
 
 ## Done
 
