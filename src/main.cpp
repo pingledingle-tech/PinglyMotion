@@ -27,6 +27,7 @@
 #endif
 
 #include "pingmatorwindow.h"
+#include "constants.h"
 
 #ifndef Q_OS_WIN
 // Ending the program from outside (kill, system shutdown) should end it properly,
@@ -54,6 +55,7 @@ int main( int argc, char ** argv )
     QSurfaceFormat::setDefaultFormat(format);
 
     QApplication application(argc, argv);
+    qInfo("Pingmator %s", qUtf8Printable(Constants::buildLabel()));
     PingmatorWindow* pingmatorWindow = new PingmatorWindow();
     // Queue an event to show the main window
     pingmatorWindow->show();
