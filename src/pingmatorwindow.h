@@ -46,6 +46,8 @@ struct RotationLimits;
 class ControlApi;
 class ControlServer;
 class ControlIndicator;
+class AuroraIndicator;
+class TipsSwitch;
 class AuroraLink;
 class WindowControlHost;
 class Scene;
@@ -368,6 +370,9 @@ class PingmatorWindow : public QMainWindow
     QAction* m_auroraAction = nullptr;
     QAction* m_controlAction;
     ControlIndicator* m_controlIndicator;
+    // status bar (#88): Aurora link status and the "Tips on" switch
+    AuroraIndicator* m_auroraIndicator = nullptr;
+    TipsSwitch* m_tipsSwitch = nullptr;
 };
 
 #endif

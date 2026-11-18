@@ -76,6 +76,8 @@ IF (PINGMATOR_TESTS)
   ADD_SUBDIRECTORY (tests)
   # the new BVH/AVM parser (#62), not used by the program yet
   ADD_SUBDIRECTORY (tests/animfile)
+  # status bar items and the "Tips on" setting (#88 step 8)
+  ADD_SUBDIRECTORY (tests/statusbar)
 ENDIF (PINGMATOR_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGMATOR_FUZZ=ON, see fuzz/README.md

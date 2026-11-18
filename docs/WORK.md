@@ -15,6 +15,7 @@ Every job writes itself here before it starts. See `CLAUDE.md` for the rules.
 
 | Branch | What | Pull request |
 |---|---|---|
+| `feat/status-bar-88` | #88 step 8: one status bar at the bottom: "Tips on" switch (saved as the user setting `tips_on`, default on; tooltips come later), remote-control indicator (#43) and Aurora link status (off / connecting / live, dot turns the link on or off), rounded items in the theme colours; tests in `tests/statusbar/`; not Windows-tested yet | #155 |
 | `feat/open-with-new-parser-62` | #62 part 2 of 4: opening a BVH/AVM file (`BVH::animRead`, `BVH::checkFile`) uses the new parser `src/animfile.*` and builds the same `BVHNode` tree as before (tested against the old parser for every round-trip file); errors name the line; old parser kept as `BVH::legacyAnimRead` until part 4 | #150 |
 | `fix/head-neck-limits-129` | #129: head and neck bend -45..45 (X) instead of -37..22 (AAOS cervical flexion/extension); `SL.lim` regenerated, tests; all other limits unchanged | #156 |
 | `fix/control-hardening-144-145` | #144: `control.json` written atomically (`QSaveFile`, owner-only from creation, every step checked), stale file removed at start, server does not start when the file cannot be written safely; #145: complete header blocks above 16 KB get 413, receive buffer capped at header + body limit; tests with simulated write failures and 20–120 KB headers | #148 |

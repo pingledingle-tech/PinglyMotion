@@ -51,6 +51,8 @@ int UserSettings::m_hiddenJointGroups = 7;   // JointGroups::DEFAULT_HIDDEN: win
 const QString UserSettings::m_hiddenJointGroupsKey = "hidden_joint_groups";
 bool UserSettings::m_hideJointsInLists = false;
 const QString UserSettings::m_hideJointsInListsKey = "hide_joints_in_lists";
+bool UserSettings::m_tipsOn = true;
+const QString UserSettings::m_tipsOnKey = "tips_on";
 QByteArray UserSettings::m_windowState;
 const QString UserSettings::m_windowStateKey = "window_state";
 
@@ -99,6 +101,8 @@ void UserSettings::setHiddenJointGroups(int groups)  { m_hiddenJointGroups = gro
 int UserSettings::hiddenJointGroups()                { return m_hiddenJointGroups; }
 void UserSettings::setHideJointsInLists(bool on)     { m_hideJointsInLists = on; }
 bool UserSettings::hideJointsInLists()               { return m_hideJointsInLists; }
+void UserSettings::setTipsOn(bool on)                { m_tipsOn = on; }
+bool UserSettings::tipsOn()                          { return m_tipsOn; }
 void UserSettings::setWindowState(const QByteArray& state) { m_windowState = state; }
 QByteArray UserSettings::windowState()               { return m_windowState; }
 
@@ -142,6 +146,7 @@ void UserSettings::readSettings()
     setFloorShadow(settings.value(m_floorShadowKey, true).toBool());
     setHiddenJointGroups(settings.value(m_hiddenJointGroupsKey, 7).toInt());
     setHideJointsInLists(settings.value(m_hideJointsInListsKey, false).toBool());
+    setTipsOn(settings.value(m_tipsOnKey, true).toBool());
     setWindowState(settings.value(m_windowStateKey).toByteArray());
 
     setMainWindowWidth(settings.value(m_mainWindowWidthKey).toInt());
@@ -182,6 +187,7 @@ void UserSettings::writeSettings()
   settings.setValue(m_floorShadowKey, floorShadow());
   settings.setValue(m_hiddenJointGroupsKey, hiddenJointGroups());
   settings.setValue(m_hideJointsInListsKey, hideJointsInLists());
+  settings.setValue(m_tipsOnKey, tipsOn());
   settings.setValue(m_windowStateKey, windowState());
 
   settings.setValue(m_mainWindowWidthKey, mainWindowWidth());

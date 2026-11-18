@@ -1,9 +1,17 @@
 /*
- * Pingmator - remote-control indicator in the status bar (issue #43)
+ * Pingmator - the items of the status bar
  *
- * A coloured dot and a short text: is remote control on, is an assistant
- * connected, which one, and what it did last. Clicking the dot turns remote
- * control on or off.
+ * ControlIndicator (issue #43): a coloured dot and a short text: is remote
+ * control on, is an assistant connected, which one, and what it did last.
+ * Clicking the dot turns remote control on or off.
+ *
+ * AuroraIndicator (#88): the live link to Aurora: off, connecting or live.
+ * Clicking the dot turns the link on or off.
+ *
+ * TipsSwitch (#88): "Tips on" / "Tips off", the short help when the mouse
+ * rests on a control.
+ *
+ * Each item sits on a rounded background in the colours of the theme.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -18,7 +26,21 @@ class QLabel;
 class QTimer;
 class QToolButton;
 
-class ControlIndicator : public QWidget
+// rounded background behind a status bar item, lighter while the mouse is over it
+class StatusPill : public QWidget
+{
+  Q_OBJECT
+
+  public:
+    explicit StatusPill(QWidget* parent = nullptr);
+
+  protected:
+    void paintEvent(QPaintEvent* event) override;
+    void enterEvent(QEnterEvent* event) override;
+    void leaveEvent(QEvent* event) override;
+};
+
+class ControlIndicator : public StatusPill
 {
   Q_OBJECT
 
@@ -61,6 +83,66 @@ class ControlIndicator : public QWidget
     QString m_client;
     QString m_command;
     bool m_commandOk = true;
+};
+
+class AuroraIndicator : public StatusPill
+{
+  Q_OBJECT
+
+  public:
+    enum State { Off, Connecting, Live };
+
+    explicit AuroraIndicator(QWidget* parent = nullptr);
+
+    // pure helpers, used by the widget and the tests
+    static State stateFor(bool enabled, bool connected);
+    static QString textFor(State state);
+
+    State state() const;
+    QString text() const;
+
+  public slots:
+    // enabled: the link is switched on; connected: Aurora accepted the key
+    void setStatus(bool enabled, bool connected);
+
+  signals:
+    void toggleRequested();
+
+  private:
+    void refresh();
+
+    QToolButton* m_led;
+    QLabel* m_label;
+    State m_state = Off;
+};
+
+class TipsSwitch : public StatusPill
+{
+  Q_OBJECT
+
+  public:
+    explicit TipsSwitch(QWidget* parent = nullptr);
+
+    static QString textFor(bool on);
+
+    bool isOn() const;
+    QString text() const;
+
+  public slots:
+    // does not send toggled()
+    void setOn(bool on);
+
+  signals:
+    // only when the user clicks the switch
+    void toggled(bool on);
+
+  protected:
+    void changeEvent(QEvent* event) override;
+
+  private:
+    void refresh();
+
+    QToolButton* m_button;
 };
 
 #endif

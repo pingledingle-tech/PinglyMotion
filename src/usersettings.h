@@ -66,6 +66,9 @@ class UserSettings
     // joints of hidden groups: left out of the timeline and part list (true) or dimmed (false)
     static void setHideJointsInLists(bool on);
     static bool hideJointsInLists();
+    // "Tips on" switch in the status bar: short help when the mouse rests on a control (#88)
+    static void setTipsOn(bool on);
+    static bool tipsOn();
 
     static void setMainWindowWidth(int value);
     static int mainWindowWidth();
@@ -120,6 +123,8 @@ private:
     static const QString m_hiddenJointGroupsKey;
     static bool m_hideJointsInLists;
     static const QString m_hideJointsInListsKey;
+    static bool m_tipsOn;
+    static const QString m_tipsOnKey;
 
     static int m_mainWindowWidth;
     static const QString m_mainWindowWidthKey;

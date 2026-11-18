@@ -444,7 +444,16 @@ PingmatorWindow::PingmatorWindow() :
   ui->menuOptions->addAction(m_controlAction);
   connect(m_controlAction,&QAction::toggled,this,[this](bool on){ setRemoteControl(on,true); });
 
-  // status bar: is remote control on, who is connected, what it did last (issue #43)
+  // status bar (#88): "Tips on" switch, remote control and Aurora link, left to right;
+  // messages still show on the left
+  statusBar()->setStyleSheet(QStringLiteral("QStatusBar::item { border: none; }"));
+  m_tipsSwitch=new TipsSwitch(this);
+  m_tipsSwitch->setOn(UserSettings::tipsOn());
+  statusBar()->addPermanentWidget(m_tipsSwitch);
+  // only stored for now; the help tips themselves come in a later step of #88
+  connect(m_tipsSwitch,&TipsSwitch::toggled,this,[](bool on){ UserSettings::setTipsOn(on); });
+
+  // is remote control on, who is connected, what it did last (issue #43)
   m_controlIndicator=new ControlIndicator(this);
   statusBar()->addPermanentWidget(m_controlIndicator);
   connect(m_controlIndicator,&ControlIndicator::toggleRequested,m_controlAction,&QAction::toggle);
@@ -476,6 +485,10 @@ PingmatorWindow::PingmatorWindow() :
   {
     statusBar()->showMessage(tr("Aurora link: %1").arg(message),10000);
   });
+  // status bar: Aurora link off, connecting or live; the dot turns it on or off
+  m_auroraIndicator=new AuroraIndicator(this);
+  statusBar()->addPermanentWidget(m_auroraIndicator);
+  connect(m_auroraIndicator,&AuroraIndicator::toggleRequested,m_auroraAction,&QAction::toggle);
 
   // command line: pingmator [--control] [animation file]
   QStringList args = QApplication::arguments();
@@ -551,6 +564,7 @@ void PingmatorWindow::updateWindowTitle()
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink && m_auroraLink->enabled())
     title+=m_auroraLink->connected() ? tr(" - live in Aurora") : tr(" - waiting for Aurora");
+  if(m_auroraIndicator && m_auroraLink) m_auroraIndicator->setStatus(m_auroraLink->enabled(),m_auroraLink->connected());
   setWindowTitle(title);
 }
 
