@@ -1,6 +1,6 @@
 Branch: feat/version-in-title
 Status: done
-Pull request: pending
+Pull request: #36
 Files:
 - CMakeLists.txt
 - src/constants.h
