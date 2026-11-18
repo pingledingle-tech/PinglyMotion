@@ -1,6 +1,6 @@
 Branch: ci/dev-setup
 Status: done
-Pull request: pending
+Pull request: #38
 Files:
 - CLAUDE.md
 - docs/DEV.md
