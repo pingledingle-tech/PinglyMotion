@@ -1,6 +1,6 @@
 Branch: docs/status-parser-done
 Status: done
-Pull request: pending
+Pull request: #49
 Files:
 - docs/PRODUCT.md
 - docs/SECURITY_AUDIT.md
