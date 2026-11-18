@@ -8,17 +8,25 @@ name: Fuzz
 on:
   pull_request:
     branches: [main]
+    # draft pull requests skip fuzzing; ready_for_review starts it
+    types: [opened, synchronize, reopened, ready_for_review]
     # text-only changes cannot change what is fuzzed
     paths-ignore: ['**/*.md', 'docs/**', 'LICENSE', 'COPYING', 'INSTALL']
   schedule:
     - cron: '41 2 * * 0'
   workflow_dispatch:
 
+# a new push to a pull request cancels the older run; runs on main are never cancelled
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
 jobs:
   fuzz:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     # pinned, because the clang package names below belong to this Ubuntu release
     runs-on: ubuntu-24.04
     timeout-minutes: 45
