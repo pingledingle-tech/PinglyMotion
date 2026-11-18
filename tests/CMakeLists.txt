@@ -2,6 +2,7 @@
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 
 SET (CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
+              ${CMAKE_SOURCE_DIR}/src/animfile.cpp
               ${CMAKE_SOURCE_DIR}/src/avatarskin.cpp
               ${CMAKE_SOURCE_DIR}/src/bvh.cpp
               ${CMAKE_SOURCE_DIR}/src/bvhnode.cpp

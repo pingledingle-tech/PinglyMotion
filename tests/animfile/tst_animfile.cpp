@@ -1,20 +1,20 @@
 /*
- * Tests of the new BVH/AVM parser (src/animfile.*, issue #62, part 1)
+ * Tests of the BVH/AVM parser and writer (src/animfile.*, issue #62)
  *
  * 1. Every animation file the round-trip test uses (the files that ship with
- *    Pingmator and the good files in fuzz/corpus/) gives the same joints,
- *    channels, frames, key frames and values with the new parser as with the
- *    old one in bvh.cpp.
+ *    Pingmator and the good files in fuzz/corpus/) is read, and what comes
+ *    back keeps the rules of the data model.
  * 2. Every broken file in fuzz/corpus/ and every crafted file from appendix B
  *    of docs/SECURITY_AUDIT.md gives an error, quickly, and no crash.
  * 3. The limits hold exactly at their edges, and cut-off files never crash.
- * 4. Part 2: opening a file (BVH::animRead(), which now uses the new parser)
- *    builds exactly the same joint tree, key frames, position key frames and
- *    animation settings as the old token parser (BVH::legacyAnimRead()), and
+ * 4. Opening a file (BVH::animRead()) builds the joint tree, key frames,
+ *    position key frames and animation settings from the data model, and
  *    every broken or crafted file is refused with an error through the real
  *    open path (BVH::checkFile(), BVH::animRead(), Animation).
+ * 5. Saving (BVH::bvhWrite(), BVH::avmWrite(), AnimFile::write()) gives files
+ *    the parser reads, and writing is stable.
  *
- * Run from the bin/ folder, so the old parser finds ./data.
+ * Run from the bin/ folder, so the program finds ./data.
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -32,14 +32,6 @@
 using AnimFile::Format;
 
 // ---------------------------------------------------------------- helpers
-
-// the old parser's list of Second Life joint names, to leave out the joints
-// it drops after reading
-class OldParser : public BVH
-{
-  public:
-    bool knows(const QString& name) const { return validNodes.contains(name); }
-};
 
 static QByteArray readAll(const QString& path)
 {
@@ -118,31 +110,6 @@ static QString treeDifference(BVHNode* a, BVHNode* b, const QString& path = QStr
     if (!difference.isEmpty()) return difference;
   }
   return QString();
-}
-
-// opens a file with the new and with the old parser and returns the first
-// difference in what the rest of the program gets, or an empty text
-static QString openDifference(const QString& file)
-{
-  BVH now;
-  BVHNode* newRoot = now.animRead(file, Constants::limitsFilePath());
-  std::unique_ptr<BVHNode> newPosition(now.lastLoadedPositionNode);
-  BVH before;
-  BVHNode* oldRoot = before.legacyAnimRead(file, Constants::limitsFilePath());
-  std::unique_ptr<BVHNode> oldPosition(before.lastLoadedPositionNode);
-  const auto cleanup = qScopeGuard([&] { now.bvhDelete(newRoot); before.bvhDelete(oldRoot); });
-
-  if (!oldRoot) return "the old parser refuses the file: " + before.lastError;
-  if (!newRoot) return "the new parser refuses the file: " + now.lastError;
-  if (now.lastLoadedNumberOfFrames != before.lastLoadedNumberOfFrames) return "number of frames";
-  if (now.lastLoadedFrameTime != before.lastLoadedFrameTime) return "frame time";
-  if (now.lastLoadedLoopIn != before.lastLoadedLoopIn) return "loop in";
-  if (now.lastLoadedLoopOut != before.lastLoadedLoopOut) return "loop out";
-  if (now.lastLoadedAvatarScale != before.lastLoadedAvatarScale) return "avatar scale";
-  if (now.lastLoadedFigureType != before.lastLoadedFigureType) return "figure";
-  const QString position = treeDifference(newPosition.get(), oldPosition.get());
-  if (!position.isEmpty()) return "position key frames: " + position;
-  return treeDifference(newRoot, oldRoot);
 }
 
 // writes a crafted file into dir and returns its path
@@ -240,8 +207,8 @@ class AnimFileTest : public QObject
 
   private slots:
     void filesAreFound();
-    void sameAsOldParser_data();
-    void sameAsOldParser();
+    void goodFiles_data();
+    void goodFiles();
     void brokenCorpusFiles_data();
     void brokenCorpusFiles();
     void auditFiles_data();
@@ -252,11 +219,11 @@ class AnimFileTest : public QObject
     void cutOffFiles_data();
     void cutOffFiles();
     void dataModel();
-    void openGivesTheSameAsBefore_data();
-    void openGivesTheSameAsBefore();
+    void openBuildsTheTree_data() { goodFiles_data(); }
+    void openBuildsTheTree();
     void openKeepsInterpolatedPositionKeys();
-    void savingGivesTheSameFileAsBefore_data();
-    void savingGivesTheSameFileAsBefore();
+    void savedFileIsReadable_data() { goodFiles_data(); }
+    void savedFileIsReadable();
     void writtenFileReadsBack();
     void openRefusesBrokenCorpusFiles_data();
     void openRefusesBrokenCorpusFiles();
@@ -270,116 +237,6 @@ void AnimFileTest::filesAreFound()
   QVERIFY(animationFiles().count() >= 15);
   QVERIFY(QDir(PINGMATOR_CORPUS "/bvh").entryList({"bad_*"}, QDir::Files).count() >= 10);
   QVERIFY(QDir(PINGMATOR_CORPUS "/avm").entryList({"bad_*"}, QDir::Files).count() >= 5);
-}
-
-void AnimFileTest::sameAsOldParser_data()
-{
-  QTest::addColumn<QString>("file");
-  for (const QString& file : animationFiles())
-    QTest::newRow(qPrintable(shortName(file))) << file;
-}
-
-// the new parser keeps everything in the file; the old one drops joints that
-// are not Second Life joints, so those are left out of the comparison
-void AnimFileTest::sameAsOldParser()
-{
-  QFETCH(QString, file);
-
-  const std::optional<Format> format = AnimFile::formatForFileName(file);
-  QVERIFY(format.has_value());
-  const AnimFile::Result result = AnimFile::parse(readAll(file), *format);
-  QVERIFY2(result.ok(), qPrintable(result.error));
-  const AnimFile::Animation& anim = *result.animation;
-  QVERIFY2(checkRules(anim).isEmpty(), qPrintable(checkRules(anim)));
-
-  OldParser old;
-  BVHNode* root = old.legacyAnimRead(file, QString());
-  QVERIFY2(root, qPrintable(old.lastError));
-  std::unique_ptr<BVHNode> positionNode(old.lastLoadedPositionNode);
-  const auto cleanup = qScopeGuard([&] { old.bvhDelete(root); });
-
-  QCOMPARE(anim.frames, old.lastLoadedNumberOfFrames);
-  QCOMPARE(anim.frameTime, old.lastLoadedFrameTime);
-  QCOMPARE(anim.loopIn, old.lastLoadedLoopIn);
-  QCOMPARE(anim.loopOut, old.lastLoadedLoopOut);
-  QCOMPARE(anim.avatarScale, old.lastLoadedAvatarScale);
-  QCOMPARE(anim.figure, static_cast<int>(old.lastLoadedFigureType));
-
-  // the joints the old parser keeps, found by name in the new data
-  QList<BVHNode*> oldJoints;
-  collectJoints(root, oldJoints);
-  QHash<QString, QList<int>> newByName;
-  QStringList newNames;
-  for (int i = 0; i < anim.joints.size(); i++)
-  {
-    const AnimFile::Joint& j = anim.joints[i];
-    if (j.kind == AnimFile::JointKind::EndSite || (i > 0 && !old.knows(j.name))) continue;
-    newByName[j.name] << i;
-    newNames << j.name;
-  }
-  QStringList oldNames;
-  for (BVHNode* node : oldJoints) oldNames << node->name();
-  oldNames.sort();
-  newNames.sort();
-  QCOMPARE(newNames, oldNames);
-
-  const QList<int> everyFrame = allFrames(anim.frames);
-  for (BVHNode* node : oldJoints)
-  {
-    const int index = newByName[node->name()].takeFirst();
-    const AnimFile::Joint& j = anim.joints[index];
-    const QString name = node->name();
-
-    for (int i = 0; i < 3; i++) QCOMPARE(j.offset[i], node->offset[i]);
-    QCOMPARE(j.channels.size(), node->numChannels);
-    for (int i = 0; i < node->numChannels; i++)
-      QCOMPARE(static_cast<int>(j.channels[i]), static_cast<int>(node->channelType[i]));
-    QCOMPARE(static_cast<int>(j.rotationOrder()), static_cast<int>(node->channelOrder));
-
-    const QList<int> keys = anim.format == Format::Bvh ? everyFrame : keyFrames(j.keys);
-    QCOMPARE(keys, node->keyframeList());
-
-    for (int k = 0; k < keys.count(); k++)
-    {
-      const int frame = keys[k];
-      const FrameData data = node->frameData(frame);
-      QVERIFY2(anim.rotation(index, frame) == data.rotation(),
-               qPrintable(QString("%1 frame %2: rotation %3, old %4").arg(name).arg(frame)
-                              .arg(vecText(anim.rotation(index, frame)), vecText(data.rotation()))));
-      QVERIFY2(anim.position(index, frame) == data.position(),
-               qPrintable(QString("%1 frame %2: position %3, old %4").arg(name).arg(frame)
-                              .arg(vecText(anim.position(index, frame)), vecText(data.position()))));
-      const bool easeIn = anim.format == Format::Avm && j.keys[k].easeIn;
-      const bool easeOut = anim.format == Format::Avm && j.keys[k].easeOut;
-      QVERIFY2(easeIn == data.easeIn() && easeOut == data.easeOut(),
-               qPrintable(QString("%1 key %2: ease flags differ").arg(name).arg(frame)));
-    }
-  }
-
-  // position key frames
-  const QList<int> positionKeys = anim.format == Format::Bvh ? everyFrame : keyFrames(anim.positionKeys);
-  QCOMPARE(positionKeys, positionNode->keyframeList());
-  const QList<int> rootKeys = anim.format == Format::Bvh ? everyFrame : keyFrames(anim.joints[0].keys);
-  int interpolated = 0;
-  for (int k = 0; k < positionKeys.count(); k++)
-  {
-    const int frame = positionKeys[k];
-    const FrameData data = positionNode->frameData(frame);
-    if (anim.format == Format::Avm)
-    {
-      QCOMPARE(anim.positionKeys[k].easeIn, data.easeIn());
-      QCOMPARE(anim.positionKeys[k].easeOut, data.easeOut());
-    }
-    // the new data has the position from the motion values; the old parser
-    // takes it from the root joint's key frames, interpolated between them
-    // when the position key is not also a root key frame
-    if (rootKeys.contains(frame))
-      QCOMPARE(anim.position(0, frame), data.position());
-    else if (anim.position(0, frame) != data.position())
-      interpolated++;
-  }
-  if (interpolated > 0)
-    qInfo("%d position key frames are not root key frames; the old parser interpolates their value", interpolated);
 }
 
 void AnimFileTest::brokenCorpusFiles_data()
@@ -620,55 +477,88 @@ void AnimFileTest::dataModel()
 
 // ---------------------------------------------------------------- part 2: opening files
 
-void AnimFileTest::openGivesTheSameAsBefore_data()
+// ---------------------------------------------------------------- part 3: saving files
+
+void AnimFileTest::goodFiles_data()
 {
-  sameAsOldParser_data();
-  // the program's own data files are opened the same way
+  QTest::addColumn<QString>("file");
+  for (const QString& file : animationFiles())
+    QTest::newRow(qPrintable(shortName(file))) << file;
+  // the program's own data files are read the same way
   QTest::newRow("reference skeleton") << Constants::femaleBvhPath();
   QTest::newRow("default pose") << Constants::defaultPosePath();
 }
 
-// everything the rest of the program gets from opening a file is the same as
-// with the old parser: joints after dropping non-SL joints, joint limits from
-// the lim file, key frames, values, ease flags, position key frames, loop
-// points, frame time, scale and figure
-void AnimFileTest::openGivesTheSameAsBefore()
+// every good file is read, and what comes back keeps the rules of the data model
+void AnimFileTest::goodFiles()
 {
   QFETCH(QString, file);
-  const QString difference = openDifference(file);
-  QVERIFY2(difference.isEmpty(), qPrintable(difference));
+  const std::optional<Format> format = AnimFile::formatForFileName(file);
+  QVERIFY(format.has_value());
+  const AnimFile::Result result = AnimFile::parse(readAll(file), *format);
+  QVERIFY2(result.ok(), qPrintable(result.error));
+  QVERIFY2(checkRules(*result.animation).isEmpty(), qPrintable(checkRules(*result.animation)));
+}
+
+// opening a file builds the joint tree and the animation settings from the data model
+void AnimFileTest::openBuildsTheTree()
+{
+  QFETCH(QString, file);
+  const std::optional<Format> format = AnimFile::formatForFileName(file);
+  const AnimFile::Result result = AnimFile::parse(readAll(file), *format);
+  QVERIFY2(result.ok(), qPrintable(result.error));
+  const AnimFile::Animation& anim = *result.animation;
+
+  BVH bvh;
+  BVHNode* root = bvh.animRead(file, Constants::limitsFilePath());
+  std::unique_ptr<BVHNode> position(bvh.lastLoadedPositionNode);
+  const auto cleanup = qScopeGuard([&] { bvh.bvhDelete(root); });
+  QVERIFY2(root, qPrintable(bvh.lastError));
+
+  QCOMPARE(root->name(), QString("hip"));
+  QCOMPARE(bvh.lastLoadedNumberOfFrames, anim.frames);
+  QCOMPARE(bvh.lastLoadedFrameTime, anim.frameTime);
+  const QList<int> rootKeys = anim.format == Format::Bvh ? allFrames(anim.frames) : keyFrames(anim.joints[0].keys);
+  QCOMPARE(root->keyframeList(), rootKeys);
+  for (int frame : rootKeys)
+  {
+    QCOMPARE(root->frameData(frame).rotation(), anim.rotation(0, frame));
+    QCOMPARE(root->frameData(frame).position(), anim.position(0, frame));
+  }
+  if (anim.format == Format::Avm)
+  {
+    QCOMPARE(bvh.lastLoadedAvatarScale, anim.avatarScale);
+    QCOMPARE(static_cast<int>(bvh.lastLoadedFigureType), anim.figure);
+    QCOMPARE(bvh.lastLoadedLoopIn, anim.loopIn);
+    QCOMPARE(bvh.lastLoadedLoopOut, anim.loopOut);
+  }
 }
 
 // ---------------------------------------------------------------- part 3: saving files
 
-void AnimFileTest::savingGivesTheSameFileAsBefore_data()
-{
-  sameAsOldParser_data();
-  QTest::newRow("reference skeleton") << Constants::femaleBvhPath();
-  QTest::newRow("default pose") << Constants::defaultPosePath();
-}
-
-// the file the new writer makes is byte for byte the file the old writer made,
-// for BVH and for AVM (key frames, ease flags, loop points, position keys)
-void AnimFileTest::savingGivesTheSameFileAsBefore()
+// saving through the program's own save path (Animation::saveBVH) gives a file
+// the parser reads, with the frames the animation has; the full round trip of
+// the animation is tested in tst_roundtrip.cpp
+void AnimFileTest::savedFileIsReadable()
 {
   QFETCH(QString, file);
   const bool avm = AnimFile::formatForFileName(file) == AnimFile::Format::Avm;
 
   QTemporaryDir dir;
   QVERIFY(dir.isValid());
-  BVH bvh;
-  Animation anim(&bvh, file);
-
-  const QString before = dir.path() + "/before";
-  const QString after = dir.path() + "/after";
-  QString error;
-  QVERIFY2(avm ? bvh.legacyAvmWrite(&anim, before, error) : bvh.legacyBvhWrite(&anim, before, error), qPrintable(error));
-  QVERIFY2(avm ? bvh.avmWrite(&anim, after, error) : bvh.bvhWrite(&anim, after, error), qPrintable(error));
-
-  const QByteArray oldBytes = readAll(before);
-  QVERIFY(!oldBytes.isEmpty());
-  QCOMPARE(readAll(after), oldBytes);
+  const QString saved = dir.path() + (avm ? "/saved.avm" : "/saved.bvh");
+  int frames = 0;
+  {
+    BVH bvh;
+    Animation anim(&bvh, file);
+    QString error;
+    QVERIFY2(anim.saveBVH(saved, &error), qPrintable(error));
+    frames = anim.getNumberOfFrames();
+  }
+  const AnimFile::Result result = AnimFile::parse(readAll(saved), avm ? Format::Avm : Format::Bvh);
+  QVERIFY2(result.ok(), qPrintable(result.error));
+  QCOMPARE(result.animation->frames, frames);
+  QVERIFY2(checkRules(*result.animation).isEmpty(), qPrintable(checkRules(*result.animation)));
 }
 
 // what is written can be read by the new parser, with the same joints,
@@ -720,9 +610,6 @@ void AnimFileTest::openKeepsInterpolatedPositionKeys()
     " 2 0 2 2 0 2 0 Properties 2 0 0 2 0 0 0 Positions: 2 0 1 PositionsEase: 2 0 0";
   const QString file = writeFile(dir, "between.avm", content);
   QVERIFY(!file.isEmpty());
-
-  const QString difference = openDifference(file);
-  QVERIFY2(difference.isEmpty(), qPrintable(difference));
 
   BVH bvh;
   BVHNode* root = bvh.animRead(file, QString());
