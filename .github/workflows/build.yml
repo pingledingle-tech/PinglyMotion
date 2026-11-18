@@ -60,6 +60,8 @@ jobs:
           version: '6.12.0'
           arch: win64_mingw
           tools: 'tools_mingw1310'
+          # keeps the Qt and MinGW installation between runs (the cache is scoped to the branch)
+          cache: true
       - name: Build
         shell: bash
         run: |
@@ -88,20 +90,50 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    env:
+      # compiler cache: an object is reused only when compiler, flags and source text are identical
+      CCACHE_DIR: /home/runner/.ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 300M
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Cache downloaded apt packages
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: /home/runner/apt-archives
+          key: apt-linux-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: apt-linux-
       - name: Install Qt 6
-        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev xvfb
+        run: |
+          mkdir -p /home/runner/apt-archives/partial
+          sudo apt-get update
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev xvfb
+          sudo chown -R "$USER" /home/runner/apt-archives
+      - name: Cache compiler output (ccache)
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: /home/runner/.ccache
+          key: ccache-linux-${{ hashFiles('**/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-linux-${{ hashFiles('**/CMakeLists.txt') }}-
+            ccache-linux-
       - name: Skeleton files match the generator
         run: |
           python3 tools/make_bento_skeleton.py
           git diff --exit-code bin/data
       - name: Build
+        # this build is not shipped, so the build number and the build time are fixed:
+        # they are compiler options, and a changing option would make every ccache lookup miss
+        env:
+          SOURCE_DATE_EPOCH: '0'
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} -DPINGMATOR_TESTS=ON
+          ccache --zero-stats
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGMATOR_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build build -j 4
+          ccache --show-stats
       - name: Automatic tests
         run: ctest --test-dir build --output-on-failure
       - name: MCP server connects safely
