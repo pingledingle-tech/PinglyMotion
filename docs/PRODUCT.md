@@ -88,7 +88,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 | Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests (new file opening is in, saving and removal of the old code remain), a new working format `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)), then native .anim export. | [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9), [#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26) |
 | Import and retargeting | Explore glTF, Blender, an own rigged avatar and an SL Bento bridge. | [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13) |
 | New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. | [IDEAS.md](IDEAS.md) |
-| Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#development-roadmap-proposed) |
+| Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#where-pingmator-is-going) |
 
 ## Proposed roadmap
 
@@ -156,4 +156,4 @@ The work runs in **two tracks side by side**. They mostly change different files
 
 Use the job files in [work/](work/README.md) for active jobs and coordination, issues for detailed requirements and progress, and pull requests for code under review. This document describes the product and user outcomes; update it when a decision or capability changes. Avoid inventing dates or treating exploratory ideas as shipped features.
 
-The [README roadmap](../README.md#development-roadmap-proposed) and [IDEAS.md](IDEAS.md) contain earlier snapshots and should be reconciled when their active work allows it.
+The [README roadmap](../README.md#where-pingmator-is-going) and [IDEAS.md](IDEAS.md) contain earlier snapshots and should be reconciled when their active work allows it.
