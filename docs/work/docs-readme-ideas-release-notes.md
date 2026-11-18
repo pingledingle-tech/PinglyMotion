@@ -1,6 +1,6 @@
 Branch: docs/readme-ideas-release-notes
 Status: active
-Pull request: pending
+Pull request: #34
 Files:
 - README.md
 - docs/IDEAS.md
