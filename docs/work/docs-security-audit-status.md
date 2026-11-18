@@ -1,5 +1,5 @@
 Branch: docs/security-audit-status
-Status: active
+Status: done
 Pull request: #33
 Files:
 - docs/SECURITY_AUDIT.md
