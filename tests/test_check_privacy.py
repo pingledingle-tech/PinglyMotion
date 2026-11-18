@@ -237,6 +237,45 @@ class Commits(Base):
         self.assertIn("author email is not a GitHub noreply address", out)
         self.assert_hidden(out)
 
+    def test_first_commit_is_checked_from_the_empty_tree(self):
+        # all three spellings of "from the start" work
+        head = self.commit("hello")
+        for base in (check_privacy.EMPTY_TREE, "0" * 40, ""):
+            rc, out = self.run_commits(base, head)
+            self.assertEqual(rc, 0, out)
+
+    def test_first_commit_with_problem_is_found(self):
+        head = self.commit(f"hello {TEST_WORD}")
+        rc, out = self.run_commits(check_privacy.EMPTY_TREE, head)
+        self.assertEqual(rc, 1)
+        self.assertIn("added line in f.txt: blocked word", out)
+        self.assert_hidden(out)
+
+    def test_first_commit_with_bad_email_is_found(self):
+        with tempfile.TemporaryDirectory() as other:
+            def g(*a, env=None):
+                return subprocess.run(["git", "-C", other, *a], check=True, capture_output=True,
+                                      text=True, env=env).stdout.strip()
+            g("init", "-q")
+            with open(os.path.join(other, "a.txt"), "w", encoding="utf-8") as f:
+                f.write("x\n")
+            g("add", "a.txt")
+            env = dict(os.environ, GIT_AUTHOR_NAME="bot", GIT_AUTHOR_EMAIL=BAD_EMAIL,
+                       GIT_COMMITTER_NAME="bot", GIT_COMMITTER_EMAIL=NOREPLY)
+            g("commit", "-q", "-m", "first", env=env)
+            head = g("rev-parse", "HEAD")
+            out = io.StringIO()
+            cwd = os.getcwd()
+            os.chdir(other)
+            try:
+                sys.argv = ["check_privacy.py", check_privacy.EMPTY_TREE, head]
+                with contextlib.redirect_stdout(out):
+                    rc = check_privacy.main()
+            finally:
+                os.chdir(cwd)
+            self.assertEqual(rc, 1)
+            self.assertIn("author email is not a GitHub noreply address", out.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)
