@@ -32,8 +32,10 @@ The roadmap explores better posing and timeline tools, native SL animation expor
 
 ## Tips
 
-- Click a body part or a small ball to select it, then turn it with the sliders
-- **F** zooms the camera to the selected part, **Esc** resets the camera
+- Click a body part or a small ball to select it, then turn it with the coloured rings or the sliders. Hold **Shift** while dragging a ring for finer control
+- Camera: drag empty space (or the body) to turn around, **right-drag** to move sideways, **mouse wheel** to zoom. **Double-click** a joint or press **F** to look at the selected joint; the camera then turns around it. **Esc** resets the camera
+- Blender habits work too (middle-drag turns, **Shift** + middle-drag moves, **Ctrl** + middle-drag zooms, number pad **1 / 3 / 7** for front / side / top, number pad **.** to focus), and so do Second Life habits (**Alt** + drag turns and zooms, **Ctrl + Alt** + drag turns, **Ctrl + Alt + Shift** + drag moves, **Alt** + click a joint to turn around it). All controls: [docs/POSING_UX.md](docs/POSING_UX.md#mouse-and-keys)
+- **Ctrl** + double-click a hand or foot switches IK on or off; **Shift** + double-click selects the mirrored joint too
 - The balls for the face only show while the head or a face bone is selected
 - Dark theme is on by default; switch it off under **Options > Dark theme**
 - **Timeline** and **Properties** are panels: drag the line between them and the 3D view to resize, drag a panel's title bar to move it to another side, or double-click the title bar to tear it off into its own window (e.g. on a second screen). The layout is remembered. **Options > Reset panel layout** puts everything back
@@ -49,6 +51,7 @@ The Linux build runs these checks (see GitHub Actions for current results):
 - Inverse kinematics (IK) for hands and feet brings them back towards their goal, solves for the value just set, and moves smoothly and inside the joint limits when a goal is out of reach (`tests/tst_ik.cpp`)
 - The new file reader gives the same result as the old one on every shipped file, refuses broken files with the line number, and the joint data from Firestorm loads (`tests/animfile/`, `tests/tst_jointinfo.cpp`)
 - The status bar indicators and the tips setting work (`tests/statusbar/`)
+- The mouse buttons and keys move the camera as described in `docs/POSING_UX.md`, and the camera turns around the point in the middle of the view (`tests/tst_camera.cpp`)
 - The live link talks correctly to a stand-in for Aurora's LiveMesh (`tests/tst_auroralink.cpp`)
 - The program starts and opens the example files without crashing (`tests/smoke_gui.sh`)
 

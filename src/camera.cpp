@@ -41,6 +41,7 @@ CameraPosition::CameraPosition(float px,float py,float pz,float rx,float ry)
   panZ=pz;
   rotX=rx;
   rotY=ry;
+  pivotDistance=pz;
 }
 
 CameraPosition::~CameraPosition()
@@ -63,27 +64,142 @@ Camera::~Camera()
     delete positions.takeFirst();
 }
 
+QVector3D Camera::toCamera(const QVector3D& world) const
+{
+  // same turns as setModelView(): first around Y, then around X
+  QMatrix4x4 m;
+  m.rotate(rotX, 1, 0, 0);
+  m.rotate(rotY, 0, 1, 0);
+  return m.map(world);
+}
+
+QVector3D Camera::toWorld(const QVector3D& camera) const
+{
+  QMatrix4x4 m;
+  m.rotate(-rotY, 0, 1, 0);
+  m.rotate(-rotX, 1, 0, 0);
+  return m.map(camera);
+}
+
+QVector3D Camera::pivot() const
+{
+  // the camera sits at pan in camera space and looks along -Z
+  return toWorld(QVector3D(panX, panY, panZ - pivotDistance));
+}
+
+CameraDrag Camera::dragFor(Qt::MouseButton button, Qt::KeyboardModifiers keys)
+{
+  const bool shift = keys & Qt::ShiftModifier;
+  const bool ctrl = keys & Qt::ControlModifier;
+  const bool alt = keys & Qt::AltModifier;
+
+  switch (button)
+  {
+    case Qt::LeftButton:
+      if (!alt) return CameraDrag::Orbit;
+      if (ctrl && shift) return CameraDrag::Pan;
+      if (ctrl) return CameraDrag::Orbit;
+      return CameraDrag::OrbitAndZoom;
+    case Qt::RightButton:
+      return CameraDrag::Pan;
+    case Qt::MiddleButton:
+      if (shift) return CameraDrag::Pan;
+      if (ctrl) return CameraDrag::Zoom;
+      return CameraDrag::Orbit;
+    default:
+      return CameraDrag::None;
+  }
+}
+
+bool Camera::viewForKey(int key, Qt::KeyboardModifiers keys, float* height, float* angle)
+{
+  // only the number pad; with Num Lock off it sends the arrow block keys
+  if (!(keys & Qt::KeypadModifier)) return false;
+  const bool opposite = keys & Qt::ControlModifier;
+  float h, a;
+  switch (key)
+  {
+    case Qt::Key_1:
+    case Qt::Key_End:
+      h = 0; a = opposite ? 180 : 0;
+      break;
+    case Qt::Key_3:
+    case Qt::Key_PageDown:
+      h = 0; a = opposite ? 270 : 90;
+      break;
+    case Qt::Key_7:
+    case Qt::Key_Home:
+      if (opposite) return false;
+      h = 90; a = 0;
+      break;
+    default:
+      return false;
+  }
+  if (height) *height = h;
+  if (angle) *angle = a;
+  return true;
+}
+
+bool Camera::isFocusKey(int key, Qt::KeyboardModifiers keys)
+{
+  if (key == Qt::Key_F && !(keys & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)))
+    return true;
+  return (keys & Qt::KeypadModifier) &&
+         (key == Qt::Key_Period || key == Qt::Key_Comma || key == Qt::Key_Delete);
+}
+
 void Camera::rotate(float x, float y)
 {
-  rotX += x;
-  if (rotX < 2) rotX = 2;
-  if (rotX > 80) rotX = 80;
-  rotY += y;
+  const QVector3D centre = pivot();
+
+  // keep between 2 and 80 degrees; a view outside that (e.g. straight
+  // from above) is left smoothly instead of jumping back
+  const float oldX = rotX;
+  rotX = qBound(qMin(2.0f, oldX), rotX + x, qMax(80.0f, oldX));
+  rotY = std::fmod(rotY + y, 360.0f);
   if (rotY < 0) rotY += 360;
-  if (rotY > 360) rotY -= 360;
+
+  // move the camera so the pivot stays in the middle, as far away as before
+  const QVector3D c = toCamera(centre);
+  panX = c.x();
+  panY = c.y();
+  panZ = c.z() + pivotDistance;
 }
 
 void Camera::pan(float x, float y, float z)
 {
-  panX -= x/2;
-  if (panX < -500) panX = -500;
-  if (panX > 500) panX = 500;
-  panY += y/2;
-  if (panY < 5) panY = 5;
-  if (panY > 500) panY = 500;
-  panZ += z;
-  if (panZ < 10) panZ = 10;
-  if (panZ > 1000) panZ = 1000;
+  panBy(-x / 2, y / 2);
+  if (z != 0)
+  {
+    // forward/back: move towards the pivot, never through it
+    const float newDistance = qBound(3.0f, pivotDistance + z, 1000.0f);
+    panZ += newDistance - pivotDistance;
+    pivotDistance = newDistance;
+  }
+}
+
+void Camera::panBy(float x, float y)
+{
+  panX = qBound(-1000.0f, panX + x, 1000.0f);
+  panY = qBound(-1000.0f, panY + y, 1000.0f);
+}
+
+void Camera::zoom(float factor)
+{
+  if (factor <= 0) return;
+  pan(0, 0, pivotDistance * factor - pivotDistance);
+}
+
+void Camera::setView(float height, float angle)
+{
+  const QVector3D centre = pivot();
+  rotX = qBound(0.0f, height, 90.0f);
+  rotY = std::fmod(angle, 360.0f);
+  if (rotY < 0) rotY += 360;
+  const QVector3D c = toCamera(centre);
+  panX = c.x();
+  panY = c.y();
+  panZ = c.z() + pivotDistance;
 }
 
 void Camera::setModelView()
@@ -103,6 +219,7 @@ void Camera::reset()
   panX = 0;
   panY = 40;
   panZ = 100;
+  pivotDistance = panZ;
 }
 
 void Camera::lookAt(float x, float y, float z, float distance)
@@ -119,6 +236,7 @@ void Camera::lookAt(float x, float y, float z, float distance)
   panX = x1;
   panY = y2;
   panZ = z2 + distance;
+  pivotDistance = distance;
 }
 
 void Camera::orbit(float height, float angle, float distance)
@@ -129,11 +247,12 @@ void Camera::orbit(float height, float angle, float distance)
   if (angle < 0) angle += 360.0f;
   rotY = angle;
   panZ = qBound(10.0f, distance, 1000.0f);
+  pivotDistance = panZ;
 }
 
 float Camera::distance() const
 {
-  return panZ;
+  return pivotDistance;
 }
 
 float Camera::xRotation() const
@@ -154,6 +273,7 @@ void Camera::storeCameraPosition(int num)
   pos->panZ=panZ;
   pos->rotX=rotX;
   pos->rotY=rotY;
+  pos->pivotDistance=pivotDistance;
 }
 
 void Camera::restoreCameraPosition(int num)
@@ -164,4 +284,5 @@ void Camera::restoreCameraPosition(int num)
   panZ=pos->panZ;
   rotX=pos->rotX;
   rotY=pos->rotY;
+  pivotDistance=pos->pivotDistance;
 }

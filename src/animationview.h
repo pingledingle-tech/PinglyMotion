@@ -149,8 +149,32 @@ class AnimationView : public QOpenGLWidget
 
     BVH* bvh;
 
-    bool leftMouseButton;
-    char modifier;
+    // keys held down, for the prop handles (Shift: scale, Ctrl: rotate)
+    Qt::KeyboardModifiers modifier;
+
+    // what the mouse is doing between press and release
+    enum class MouseDrag
+    {
+      None,
+      Click,     // left button on a joint, prop or empty space: a click, or orbit once it moves
+      Camera,    // moving the camera (m_cameraDrag says how)
+      Ring,      // turning a joint with a rotation ring
+      Prop       // dragging a prop handle
+    };
+    MouseDrag m_mouseDrag=MouseDrag::None;
+    Qt::MouseButton m_dragButton=Qt::NoButton;
+    CameraDrag m_cameraDrag=CameraDrag::None;
+    QPoint m_pressPos;               // where the button went down (widget pixels)
+    unsigned int m_pressSelected=0;  // what was under the mouse then
+    unsigned int m_lastClicked=0;    // what the last click selected
+    // a left click on this: select a joint or prop, or clear the selection
+    void clickSelect(unsigned int selected);
+    // moves the camera for one mouse step (pixels)
+    void moveCamera(CameraDrag how, int dx, int dy);
+    // where each joint was in the world when it was last drawn
+    QHash<unsigned int,QVector3D> m_jointPositions;
+    // turn the camera around this joint; distance < 0 keeps the distance
+    bool focusOnJoint(unsigned int selected, float distance);
 
     QPoint clickPos;           // holds the mouse click position for dragging
     QPoint returnPos;          // holds the mouse position to return to after dragging
@@ -177,7 +201,6 @@ class AnimationView : public QOpenGLWidget
     int oldDragX, oldDragY;     // holds the mouse position before the last drag
 
     int drawMode;
-    bool xSelect, ySelect, zSelect;
 
     void setProjection();
     void setModelView();
@@ -224,13 +247,6 @@ class AnimationView : public QOpenGLWidget
       RotateRingX = 300000,
       RotateRingY = 300001,
       RotateRingZ = 300002
-    };
-
-    enum class ModifierKeys
-    {
-      Shift = 1,
-      Ctrl = 2,
-      Alt = 4
     };
 
     // TODO Temporary methods while logic is moved around
