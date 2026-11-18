@@ -1,6 +1,6 @@
 Branch: docs/product-overview
 Status: active
-Pull request: pending
+Pull request: #32
 Files:
 - docs/PRODUCT.md
 
