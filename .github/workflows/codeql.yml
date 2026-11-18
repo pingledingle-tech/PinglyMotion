@@ -1,16 +1,23 @@
 name: CodeQL
+# Pull requests: the program's C++ code, the Python tools and the workflows.
+# The nightly run and releases also analyse the C++ test code (the test
+# programs compile the same sources again, once per test program).
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    # draft pull requests pass quickly without analysis; ready_for_review starts it
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
-    - cron: '17 3 * * 1'
+    - cron: '17 3 * * *'
   workflow_dispatch:
+  # release.yml runs this workflow before it publishes
+  workflow_call:
 
-# a new push to a pull request cancels the older run; runs on main are never cancelled
+# a new push to a pull request cancels the older run of that pull request;
+# every other run (main, nightly, release) has a group of its own and is never
+# cancelled or held back
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: codeql-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -40,17 +47,19 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      # text-only pull requests (Markdown, docs/, licence files) have nothing to analyse.
-      # The job still runs and passes quickly, so the required "analyze" checks are reported.
-      # (paths-ignore would skip the whole workflow and leave the required checks waiting.)
+      # text-only and draft pull requests have nothing to analyse yet.
+      # The job still runs and passes quickly, so the required "analyze" check is reported.
+      # (paths-ignore would skip the whole workflow and leave the required check waiting.)
       - name: Does the change touch more than text?
         id: diff
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
+          DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$DRAFT" = "true" ]; then echo "code=false" >> "$GITHUB_OUTPUT"; echo "Draft pull request: analysed when it is marked ready."; exit 0; fi
           other=$(git diff --name-only "$BASE...$HEAD" | grep -vE '(\.md$|^docs/|^LICENSE$|^COPYING$|^INSTALL$)' || true)
           if [ -n "$other" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
           echo "Files other than text:"; echo "${other:-(none)}"
@@ -66,10 +75,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
       - name: Build for C++ analysis
         if: steps.diff.outputs.code == 'true' && matrix.language == 'cpp'
-        # the tests are built too, so their code is analysed as well
+        # pull requests: the program only; nightly, manual and release runs: the tests too
+        env:
+          TESTS: ${{ github.event_name == 'pull_request' && 'OFF' || 'ON' }}
         run: |
-          cmake -S . -B build-codeql -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_TESTS=ON
-          cmake --build build-codeql -j 2
+          cmake -S . -B build-codeql -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_TESTS="$TESTS"
+          cmake --build build-codeql -j 4
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: steps.diff.outputs.code == 'true'
         with:

@@ -4,35 +4,28 @@ name: Fuzz
 # new BVH/AVM parser
 # (libFuzzer with AddressSanitizer and UndefinedBehaviorSanitizer). See fuzz/README.md.
 # Not a required check: a crash shows as a red run with the crash file attached.
+# Runs every night on main and before every release, 10 minutes per target,
+# not on pull requests (one minute per target is too short to find much).
+# After changing a parser or the control commands, start it on the branch:
+# Actions > Fuzz > Run workflow.
 
 on:
-  pull_request:
-    branches: [main]
-    # draft pull requests skip fuzzing; ready_for_review starts it
-    types: [opened, synchronize, reopened, ready_for_review]
-    # text-only changes cannot change what is fuzzed
-    paths-ignore: ['**/*.md', 'docs/**', 'LICENSE', 'COPYING', 'INSTALL']
   schedule:
-    - cron: '41 2 * * 0'
+    - cron: '41 1 * * *'
   workflow_dispatch:
-
-# a new push to a pull request cancels the older run; runs on main are never cancelled
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # release.yml runs this workflow before it publishes
+  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
   fuzz:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     # pinned, because the clang package names below belong to this Ubuntu release
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
-      # short on pull requests, longer in the weekly run
-      SECONDS_PER_TARGET: ${{ github.event_name == 'pull_request' && '60' || '600' }}
+      SECONDS_PER_TARGET: '600'
       ASAN_OPTIONS: detect_leaks=0
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
       QT_QPA_PLATFORM: offscreen
