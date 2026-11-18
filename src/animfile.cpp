@@ -17,6 +17,7 @@
 
 #include <QByteArrayView>
 #include <QObject>
+#include <QTextStream>
 
 #include <climits>
 #include <cmath>
@@ -564,6 +565,113 @@ namespace
     result.animation=std::move(anim);
     return result;
   }
+}
+
+namespace
+{
+  const char* kindName(JointKind kind)
+  {
+    switch(kind)
+    {
+      case JointKind::Root: return "ROOT";
+      case JointKind::Joint: return "JOINT";
+      case JointKind::EndSite: return "End";
+    }
+    return "JOINT";
+  }
+
+  void indent(QTextStream& out,int depth)
+  {
+    for(int i=0;i<depth;i++) out << "\t";
+  }
+
+  // joint, its children and the closing brace; the joints are in file order,
+  // so the children of a joint follow it directly
+  int writeJoint(const Animation& anim,int index,QTextStream& out)
+  {
+    const Joint& joint=anim.joints[index];
+    indent(out,joint.depth);
+    out << kindName(joint.kind) << " " << joint.name << Qt::endl;
+    indent(out,joint.depth);
+    out << "{" << Qt::endl;
+    indent(out,joint.depth+1);
+    out << "OFFSET " << joint.offset[0] << " " << joint.offset[1] << " " << joint.offset[2] << Qt::endl;
+    if(joint.kind!=JointKind::EndSite)
+    {
+      indent(out,joint.depth+1);
+      out << "CHANNELS " << joint.channels.size() << " ";
+      for(Channel channel : joint.channels) out << channelName(channel) << " ";
+      out << Qt::endl;
+    }
+    int next=index+1;
+    while(next<anim.joints.size() && anim.joints[next].parent==index)
+      next=writeJoint(anim,next,out);
+    indent(out,joint.depth);
+    out << "}" << Qt::endl;
+    return next;
+  }
+
+  // "count frame frame ..." without frame 0, which is always a key frame; a joint
+  // with no key frames at all (should not happen) gets just "0"
+  void writeKeyFrames(const QVector<Key>& keys,QTextStream& out)
+  {
+    if(keys.isEmpty())
+    {
+      out << "0" << Qt::endl;
+      return;
+    }
+    out << keys.size()-1 << " ";
+    for(int i=1;i<keys.size();i++) out << keys[i].frame << " ";
+    out << Qt::endl;
+  }
+
+  // "count type type ..." with frame 0 included: 1 is ease in, 2 is ease out
+  void writeKeyProperties(const QVector<Key>& keys,QTextStream& out)
+  {
+    out << keys.size() << " ";
+    for(const Key& key : keys)
+      out << ((key.easeIn ? 1 : 0)|(key.easeOut ? 2 : 0)) << " ";
+    out << Qt::endl;
+  }
+}
+
+QByteArray write(const Animation& anim)
+{
+  QByteArray bytes;
+  QTextStream out(&bytes);
+  out.setNumberFlags(QTextStream::ForcePoint);
+  out.setRealNumberPrecision(7);
+
+  out << "HIERARCHY" << Qt::endl;
+  if(!anim.joints.isEmpty()) writeJoint(anim,0,out);
+
+  out << "MOTION" << Qt::endl;
+  out << "Frames:\t" << anim.frames << Qt::endl;
+  out << "Frame Time:\t" << anim.frameTime << Qt::endl;
+  for(int frame=0;frame<anim.frames;frame++)
+  {
+    for(int i=0;i<anim.valuesPerFrame;i++)
+      out << anim.value(frame,i) << " ";
+    out << Qt::endl;
+  }
+
+  if(anim.format==Format::Avm)
+  {
+    for(const Joint& joint : anim.joints) writeKeyFrames(joint.keys,out);
+    out << "Properties" << Qt::endl;
+    for(const Joint& joint : anim.joints) writeKeyProperties(joint.keys,out);
+    out << "Scale: " << anim.avatarScale << Qt::endl;
+    out << "Figure: " << anim.figure << Qt::endl;
+    out << "LoopIn: " << anim.loopIn << Qt::endl;
+    out << "LoopOut: " << anim.loopOut << Qt::endl;
+    out << "Positions: ";
+    writeKeyFrames(anim.positionKeys,out);
+    out << "PositionsEase: ";
+    writeKeyProperties(anim.positionKeys,out);
+  }
+
+  out.flush();
+  return bytes;
 }
 
 Result parse(const QByteArray& data,Format format)

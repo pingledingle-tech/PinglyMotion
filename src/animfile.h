@@ -136,6 +136,13 @@ namespace AnimFile
   std::optional<Format> formatForFileName(const QString& fileName);
 
   QString channelName(Channel channel);
+
+  // The text of the file for this animation, in the format it has (BVH or
+  // AVM): the same bytes the old writer in bvh.cpp made. The animation must
+  // follow the rules of a parsed one (see Joint and Animation above); for an
+  // AVM file every joint has its key frames, frame 0 first, and
+  // hasPositionKeys is set.
+  QByteArray write(const Animation& anim);
 }
 
 #endif

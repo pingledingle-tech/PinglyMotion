@@ -27,6 +27,7 @@
 
 #include "bvhnode.h"
 #include "animation.h"
+#include "animfile.h"
 
 class BVHNode;
 class Animation;
@@ -55,6 +56,12 @@ class BVH
     // the write functions return false and set error when the file could not be written;
     // an existing file is then left as it was
     bool bvhWrite(Animation* root,const QString& file,QString& error);
+    // the old writers, kept until the old parser code is removed (#62 part 4),
+    // so that a test can compare their files with the ones the new writer makes
+    bool legacyBvhWrite(Animation* root,const QString& file,QString& error);
+    bool legacyAvmWrite(Animation* root,const QString& file,QString& error);
+    // what is written to a file: the animation as the plain data model of animfile.h
+    AnimFile::Animation snapshot(Animation* anim,AnimFile::Format format);
     // one frame as a small BVH for the Aurora link: neutral frame, then the pose twice
     QString bvhPoseText(Animation* anim,int frame);
     // the pose of one frame for Aurora's "pose" message: {"rotations":{joint:[x,y,z,w]},

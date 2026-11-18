@@ -255,6 +255,9 @@ class AnimFileTest : public QObject
     void openGivesTheSameAsBefore_data();
     void openGivesTheSameAsBefore();
     void openKeepsInterpolatedPositionKeys();
+    void savingGivesTheSameFileAsBefore_data();
+    void savingGivesTheSameFileAsBefore();
+    void writtenFileReadsBack();
     void openRefusesBrokenCorpusFiles_data();
     void openRefusesBrokenCorpusFiles();
     void openRefusesAuditFiles_data();
@@ -634,6 +637,70 @@ void AnimFileTest::openGivesTheSameAsBefore()
   QFETCH(QString, file);
   const QString difference = openDifference(file);
   QVERIFY2(difference.isEmpty(), qPrintable(difference));
+}
+
+// ---------------------------------------------------------------- part 3: saving files
+
+void AnimFileTest::savingGivesTheSameFileAsBefore_data()
+{
+  sameAsOldParser_data();
+  QTest::newRow("reference skeleton") << Constants::femaleBvhPath();
+  QTest::newRow("default pose") << Constants::defaultPosePath();
+}
+
+// the file the new writer makes is byte for byte the file the old writer made,
+// for BVH and for AVM (key frames, ease flags, loop points, position keys)
+void AnimFileTest::savingGivesTheSameFileAsBefore()
+{
+  QFETCH(QString, file);
+  const bool avm = AnimFile::formatForFileName(file) == AnimFile::Format::Avm;
+
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  BVH bvh;
+  Animation anim(&bvh, file);
+
+  const QString before = dir.path() + "/before";
+  const QString after = dir.path() + "/after";
+  QString error;
+  QVERIFY2(avm ? bvh.legacyAvmWrite(&anim, before, error) : bvh.legacyBvhWrite(&anim, before, error), qPrintable(error));
+  QVERIFY2(avm ? bvh.avmWrite(&anim, after, error) : bvh.bvhWrite(&anim, after, error), qPrintable(error));
+
+  const QByteArray oldBytes = readAll(before);
+  QVERIFY(!oldBytes.isEmpty());
+  QCOMPARE(readAll(after), oldBytes);
+}
+
+// what is written can be read by the new parser, with the same joints,
+// frames and key frames
+void AnimFileTest::writtenFileReadsBack()
+{
+  for (const QString& file : animationFiles())
+  {
+    const std::optional<Format> format = AnimFile::formatForFileName(file);
+    QVERIFY(format.has_value());
+    const AnimFile::Result first = AnimFile::parse(readAll(file), *format);
+    QVERIFY2(first.ok(), qPrintable(first.error));
+
+    const QByteArray bytes = AnimFile::write(*first.animation);
+    const AnimFile::Result second = AnimFile::parse(bytes, *format);
+    QVERIFY2(second.ok(), qPrintable(shortName(file) + ": " + second.error));
+    const AnimFile::Animation& a = *first.animation;
+    const AnimFile::Animation& b = *second.animation;
+    QCOMPARE(b.joints.size(), a.joints.size());
+    QCOMPARE(b.frames, a.frames);
+    QCOMPARE(b.valuesPerFrame, a.valuesPerFrame);
+    QCOMPARE(b.loopIn, a.loopIn);
+    QCOMPARE(b.loopOut, a.loopOut);
+    for (int i = 0; i < a.joints.size(); i++)
+    {
+      QCOMPARE(b.joints[i].name, a.joints[i].name);
+      QCOMPARE(b.joints[i].parent, a.joints[i].parent);
+      QVERIFY(b.joints[i].keys == a.joints[i].keys);
+    }
+    // writing again gives the same text
+    QCOMPARE(AnimFile::write(b), bytes);
+  }
 }
 
 // An AVM position key frame that is not a root key frame gets its value from
