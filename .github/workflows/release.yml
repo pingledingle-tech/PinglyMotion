@@ -5,6 +5,11 @@ name: Release
 # Start it from the Actions tab (Release > Run workflow, type the version),
 # or by pushing a tag like v0.3.0.
 #
+# Before a release: start Build, CodeQL and Fuzz on main from the Actions tab
+# (Run workflow) and release only when all three are green. Pull requests run
+# only the fast checks; these runs include the slow ones (test code in CodeQL,
+# 10 minutes of fuzzing per target).
+#
 # Versions: 0.3.0 is a normal release. 0.3.0-beta.1 is a beta: it is
 # published as a pre-release, which the update check in the program ignores.
 # CMakeLists.txt, src/pingmator.rc and bin/NEWS hold the version without the
