@@ -1,6 +1,6 @@
 Branch: ci/privacy-root-commit
 Status: done
-Pull request: pending
+Pull request: #37
 Files:
 - tools/check_privacy.py
 - tests/test_check_privacy.py
