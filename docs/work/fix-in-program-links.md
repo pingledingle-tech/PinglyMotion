@@ -1,0 +1,12 @@
+Branch: fix/in-program-links
+Status: active
+Pull request: pending
+Files:
+- src/aboutdialog.ui
+- src/updatenotificationdialog.ui
+- src/releaseinfo.cpp
+- src/pingmatorwindow.cpp
+
+## What
+
+The four links inside the program (About dialog, update dialog, update check address, AI help link) pointed to the old repository. They now point to this one. Only the repository name in the address changes. Until the first release here, the update check finds no release and stays silent.

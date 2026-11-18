@@ -541,7 +541,7 @@ void PingmatorWindow::setRemoteControl(bool on,bool showInfo)
            "<p><a href=\"%3\">How to connect an AI assistant</a></p>")
           .arg(m_controlServer->url().toHtmlEscaped(),
                QDir::toNativeSeparators(ControlServer::connectionFilePath()).toHtmlEscaped(),
-               QStringLiteral("https://github.com/pingledingle-tech/Pingmator/blob/main/docs/CONTROL.md#set-up-an-ai-assistant")),
+               QStringLiteral("https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md#set-up-an-ai-assistant")),
         QMessageBox::Ok,this);
       box.setTextFormat(Qt::RichText);
       box.setTextInteractionFlags(Qt::TextBrowserInteraction);
