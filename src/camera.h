@@ -74,7 +74,8 @@ class Camera : public QObject
     ~Camera();
 
     // turn the camera around the point in the middle of the view (the
-    // pivot): x = degrees up/down, y = degrees around
+    // pivot): x = degrees up/down, y = degrees around; the height angle
+    // stays between -80 and 80 degrees, so the camera can go below the floor
     void rotate(float x, float y);
     // old pan: x/y move the camera sideways/up (half units), z moves it
     // forward/back (zoom)

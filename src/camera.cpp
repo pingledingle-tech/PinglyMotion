@@ -152,10 +152,11 @@ void Camera::rotate(float x, float y)
 {
   const QVector3D centre = pivot();
 
-  // keep between 2 and 80 degrees; a view outside that (e.g. straight
+  // keep between -80 and 80 degrees (below and above the floor, never the
+  // exact poles so the view cannot flip); a view outside that (e.g. straight
   // from above) is left smoothly instead of jumping back
   const float oldX = rotX;
-  rotX = qBound(qMin(2.0f, oldX), rotX + x, qMax(80.0f, oldX));
+  rotX = qBound(qMin(-80.0f, oldX), rotX + x, qMax(80.0f, oldX));
   rotY = std::fmod(rotY + y, 360.0f);
   if (rotY < 0) rotY += 360;
 

@@ -28,6 +28,10 @@ class TestCamera : public QObject
     void zoomKeepsPivot();
     void panMovesPivot();
     void topViewLeftSmoothly();
+    void orbitBelowTheFloor();
+    void heightLimitsHold();
+    void panWorksBelowTheFloor();
+    void numberPadAfterGoingBelow();
     void storedPositionKeepsDistance();
 
   private:
@@ -202,6 +206,67 @@ void TestCamera::topViewLeftSmoothly()
   camera.rotate(-5, 0);
   QCOMPARE(camera.xRotation(), 85.0f);
   compare(seen(camera, QVector3D(0, 40, 0)), QVector3D(0, 0, -80));
+}
+
+void TestCamera::orbitBelowTheFloor()
+{
+  Camera camera;
+  camera.lookAt(0, 40, 0, 80);
+  camera.setView(0, 0);
+  camera.rotate(-20, 0);
+  QCOMPARE(camera.xRotation(), -20.0f);
+  // still looking at the same point from the same distance
+  compare(seen(camera, QVector3D(0, 40, 0)), QVector3D(0, 0, -80));
+  // seen from below: the feet are nearer than the head
+  QVERIFY(seen(camera, QVector3D(0, 0, 0)).z() > seen(camera, QVector3D(0, 60, 0)).z());
+}
+
+void TestCamera::heightLimitsHold()
+{
+  Camera camera;
+  camera.lookAt(0, 40, 0, 80);
+  camera.setView(0, 0);
+  camera.rotate(-500, 0);
+  QCOMPARE(camera.xRotation(), -80.0f);
+  compare(seen(camera, QVector3D(0, 40, 0)), QVector3D(0, 0, -80));
+  camera.rotate(500, 0);
+  QCOMPARE(camera.xRotation(), 80.0f);
+  compare(seen(camera, QVector3D(0, 40, 0)), QVector3D(0, 0, -80));
+}
+
+void TestCamera::panWorksBelowTheFloor()
+{
+  Camera camera;
+  camera.lookAt(0, 40, 0, 50);
+  camera.setView(0, 0);
+  camera.rotate(-30, 0);
+  const float height = camera.xRotation();
+  const QVector3D before = camera.pivot();
+  camera.panBy(10, -5);
+  // the view angle is unchanged and the pivot has moved
+  QCOMPARE(camera.xRotation(), height);
+  QVERIFY((camera.pivot() - before).length() > 5.0f);
+  QCOMPARE(camera.distance(), 50.0f);
+  // panning back goes back to the same place
+  camera.panBy(-10, 5);
+  compare(camera.pivot(), before);
+}
+
+void TestCamera::numberPadAfterGoingBelow()
+{
+  Camera camera;
+  camera.lookAt(0, 40, 0, 80);
+  camera.rotate(-40, 0);
+  QVERIFY(camera.xRotation() < 0);
+  float height = -1, angle = -1;
+  QVERIFY(Camera::viewForKey(Qt::Key_1, Qt::KeypadModifier, &height, &angle));
+  camera.setView(height, angle);
+  QCOMPARE(camera.xRotation(), 0.0f);
+  QCOMPARE(camera.yRotation(), 0.0f);
+  compare(seen(camera, QVector3D(0, 40, 0)), QVector3D(0, 0, -80));
+  // setView still never goes below the floor
+  camera.setView(-10, 0);
+  QCOMPARE(camera.xRotation(), 0.0f);
 }
 
 void TestCamera::storedPositionKeepsDistance()

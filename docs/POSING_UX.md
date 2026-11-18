@@ -64,6 +64,8 @@ One scheme for everyone. The first column is all a new user needs; the other two
 | Play / stop | Space | Space | – |
 | Previous / next frame | ← / → | Same | – |
 
+Orbiting turns the camera between 80 degrees above and 80 degrees below the floor, so the figure can also be seen from below. It stops just before straight up or straight down, so the view never flips.
+
 **Removed:** the old QAvimator keys (Shift, Alt, Ctrl while dragging a joint for X, Y, Z, and Alt-drag to zoom). They clash with the Second Life camera keys, and a new user cannot see them. Joints now turn with the rings or the trackball.
 
 **Done in step 1** (camera and keys, `src/animationview.*`, `src/camera.*`):
