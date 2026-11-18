@@ -1,0 +1,87 @@
+# Decision log
+
+Decisions taken while the project lived in the old repository, and the decisions of the move on 18 November 2026. Each entry says what was decided, why, what was turned down, and where it was written down. `old-repo item N` is an issue or pull request in the old repository (see [MIGRATION.md](MIGRATION.md)); where the issue was moved, its new number is given too.
+
+"Reason: not written down" means the source records the decision but no reason. Newest first within each group.
+
+## The move (18 November 2026)
+
+**New repository, new name.** The project continues in this repository under the name PinglyMotion. The old repository will be deleted. Reason: a fresh start with the privacy and repository settings right from the beginning. Source: the project owner, 18 November 2026.
+
+**One clean commit.** The source code was brought over as one commit; the old commit history was not. Reason: same as above. Source: the project owner, 18 November 2026.
+
+**Rename in two steps.** First the visible name, later the internal names in the code, which still say Pingmator. Reason: not written down. Source: the project owner, 18 November 2026.
+
+**Work board: one file per job.** Each job gets its own file instead of a row in one shared table. Reason: not written down. Source: the project owner, 18 November 2026.
+
+**Closed issues are archived, not recreated.** Only open issues and open pull requests were moved (see [MIGRATION.md](MIGRATION.md)). Closed issues and merged pull requests are kept in a private archive, and their decisions are summarised in this file. Rejected: recreating every closed issue. Source: the project owner, 18 November 2026.
+
+## Files and formats
+
+**18 Nov 2026 – Own working format `.dingle`; no more AVM saving.** Pingmator gets a new working file format, `.dingle`, and never writes AVM again. Old `.avm` files still open and are saved as `.dingle` (the old file goes to the recycle bin only after the save succeeded). Default name for a new file: `pingle.dingle`. Bundled `.avm` files are converted. Built after the new parser (#9) and the easing editor (#11). Reason: AVM is QAvimator's format, not a standard, and only QAvimator and Pingmator read it; a working format is still needed because BVH loses key frames, easing, loop points and figure, and SL `.anim` is quantised and has no room for easing curves. Rejected: a versioned "AVM 2" (the earlier plan in old-repo item 118). Source: old-repo item 151 (now #26).
+
+**18 Nov 2026 – Supported file formats and their order.** The project owner accepted the research recommendation: new parser and fuzzing (#9) → `.anim` export (#10) → `.anim` import (#22) → BVH from any skeleton with retargeting (#16) → glTF/GLB import (#12, with the small cgltf loader) → Blender, docs first (#13). Reasons: `.anim` is SL's own format (per-joint priority, ease, loop points, hand pose, emote) and only paid add-ons produce it today; retargeting is the core that glTF import needs too; glTF is open and Blender and many tools export it. Rejected or not now: **glTF export** (SL has no glTF animation upload); **FBX** (undocumented format; the open ufbx loader would fit the licence but is a large parser to carry and fuzz, and Blender already converts FBX to BVH or glTF for free; reconsider only on real demand); **Collada/DAE** (moved to legacy in Blender, no SL animation use); **Firestorm/Black Dragon pose XML** (importing someone else's animation as XML would get round its copy protection); **VMD, VRMA and other VTuber formats**; reading `.blend` files (not a stable exchange format). Mixamo: a warning in the docs only, no technical block, because its terms do not allow passing the raw files on. Source: old-repo item 118, comment on old-repo item 66 (now #13).
+
+**15 Nov 2026 – New BVH/AVM parser and data model, with fuzzing, after the renderer.** Replace the inherited `BVH` parser and the unused `BvhParser`/`FileManager` with one parser that reads from memory, returns an error instead of crashing and has the safety limits built in, with fuzz targets from the start. Reasons: it removes the inherited code with the most security history (audit findings PM-01 to PM-07), gives a clean error path that can be tested without the GUI, and makes new formats easier. Less urgent than the renderer because old-repo item 25 had already made the old parser safe. Source: old-repo item 62 (now #9).
+
+**15 Nov 2026 – SL `.anim` export, after renderer and parser.** Reasons: SL's own format with no conversion loss on upload, and clear SL-specific value over generic BVH tools. Known cost: the binary format must match the viewer exactly and needs tests against the viewer source and real uploads. Source: old-repo item 63 (now #10).
+
+**15 Nov 2026 – Curve and easing editor later, together with `.anim` export.** Ideas may be taken from EffectCraft, but it is built in Qt. Reason: better motion quality that maps to `.anim` ease settings; not useful before `.anim` exists. Source: old-repo item 64 (now #11).
+
+**15 Nov 2026 – glTF 2.0 import later, with a small single-file loader.** Reason: modern open format that Mixamo, Mesh2Motion and Blender export. Rejected: Assimp (see below). Source: old-repo item 65 (now #12).
+
+**15 Nov 2026 – Blender round trip: relevant, later.** Reason: many SL creators use Blender; mostly a workflow and docs task. Source: old-repo item 66 (now #13).
+
+## Technology
+
+**18 Nov 2026 – Posing interface direction.** New users without animation background are the main target. Design ideas only from Aurora's poser and animation editor (Aurora is GPLv3, no code copied); data and logic may come from Firestorm's poser (LGPL 2.1). One camera and key scheme for everyone (a simple default, plus Blender and Second Life habits); the old QAvimator Shift/Alt/Ctrl joint keys are removed; floating panels that can be docked or popped out; English only for now with all text through `tr()`; no joint scale (BVH and `.anim` cannot store it). Rejected: rebuilding Pingmator on the Firestorm poser, which is tied to the whole viewer (#8 stands). Source: old-repo item 88 (now #14), `docs/POSING_UX.md` (old-repo item 135).
+
+**18 Nov 2026 – Two work tracks side by side.** Posing (#14) and file formats (old-repo item 118) run in parallel, because they mostly change different files; one step at a time within a track, each tested on Windows. Replaces the numbered work order of 16 November. Source: old-repo item 137, `docs/PRODUCT.md`.
+
+**18 Nov 2026 – Head and neck may bend -45..45 degrees forward and back.** Reason: in the Windows test of old-repo item 111 the project owner found the SL wiki values (-37..22) too tight; the new values come from a clinical range of motion source (AAOS). Source: old-repo items 129 and 156.
+
+**17 Nov 2026 – New IK solver.** The inherited QAvimator IK solver was replaced by a damped least squares solver with warm start and a limit per update, and IK now solves for the value just set. Reason: the old solver threw arms and legs around when a goal could not be reached, and lagged one step behind the slider. Other options named in the issue (two-bone analytic IK, FABRIK, CCD) were not chosen. Source: old-repo items 127, 128 and 130.
+
+**17 Nov 2026 – Joint limits follow the SL standard where one exists.** Classic joints use the SL wiki page "Suggested BVH Joint Rotation Limits"; finger bend and spread use the AAOS clinical range of motion; locked axes get ±5 degrees so the bundled poses stay inside the limits; other Bento bones keep their group limits. Reason: Second Life has no official table (`avatar_skeleton.xml` and the viewer have none, nor does the Firestorm poser), and the old QAvimator limits from about 2006 were never checked. Rejected: keeping the old QAvimator limits. Source: old-repo items 59 and 111.
+
+**16 Nov 2026 – Replace libquat with Qt maths.** The IK code uses `QQuaternion`, `QVector3D` and `QMatrix4x4`; the old `libquat/` (Blender's MoTo maths from 2001–2005 and an uncompiled copy of TNT, about 12,000 lines) was removed. Reason: one maths library in the whole program, and IK gets tests. Source: old-repo items 97 and 112.
+
+**16 Nov 2026 – Drop Qt 5.** Qt 6 only; the `linux-qt5` CI job was removed and deprecated Qt 6 calls were fixed. Reasons: Qt 5.15 open-source support has ended, nobody needs it for Pingmator (the Windows zip and AppImage use Qt 6), a clean build without deprecation warnings, and newer Qt APIs for the posing work. Accepted cost: Linux users with only Qt 5 packages can no longer build from source. Rejected: keeping Qt 5.15 as a fallback. Decided by the project owner. Source: old-repo items 98, 106 and 109.
+
+**16 Nov 2026 – Posing before the parser.** Posing work comes before the new parser, on condition that the new parser keeps today's interface to the rest of the program. Reason: not written down. Source: old-repo item 101, `docs/PRODUCT.md`.
+
+**15 Nov 2026 – Modernise in place; no rewrite and no new project.** Keep Qt 6 and C++ and replace the old parts one at a time, in the order renderer, parser and data model, `.anim` export. Reasons: it keeps what is hard and already correct (Bento skeleton generator, SL joint maths matching the viewer, bodies, tests, CI, security setup, remote control), each step can be tested on Windows before the next, and the old code sits in three places. Accepted cost: some legacy structure stays longer. Rejected: a rewrite or a new project. Source: old-repo item 60 (now #8).
+
+**15 Nov 2026 – Renderer: OpenGL 3.3 Core.** Move from OpenGL 1.x fixed function to shaders with vertex buffers, GPU skinning and colour-ID picking, in small steps. Reasons: fixes slow hover picking and the cost of CPU skinning, allows better lighting, is supported wherever Qt runs, adds no dependency and drops the deprecated GLU. Accepted cost: needs a GPU with OpenGL 3.3 (roughly 2010 or newer). Done on 16 November; the old path was removed. Source: old-repo item 61.
+
+**15 Nov 2026 – Rejected: Vulkan, DirectX 12, bgfx, OpenSceneGraph, Open3D.** Reasons: Vulkan is far more code for the same picture; DirectX 12 is Windows only; bgfx is an extra build dependency while OpenGL 3.3 is enough; OpenSceneGraph is old, heavy and built around fixed-function ideas; Open3D is for geometry and point clouds, not animation editing. Source: old-repo item 70.
+
+**15 Nov 2026 – Rejected: Qt Quick 3D.** Reasons: it means rewriting the UI in QML (effectively a new project), gives less control over SL-exact skinning maths, and is harder to debug than an own small renderer. Source: old-repo item 69.
+
+**15 Nov 2026 – Rejected: Assimp.** Reasons: a very large library with many file parsers, each one attack surface, and a long CVE history; only SL-relevant formats are needed, and glTF can be read with a small loader. Source: old-repo item 68.
+
+**15 Nov 2026 – Not now: Eigen.** Reasons: Qt already has the maths types needed; an extra dependency without a current need. Reconsider for a more advanced IK solver. Source: old-repo item 67.
+
+**15 Nov 2026 – ArtCraft (EffectCraft): ideas only, no code.** Its curve editor and timeline may inspire the design. Reasons for not using the code: it is Rust (would need a bridge to C++, more complex than the feature), very young, about 360,000 lines mostly written by AI agents, changes fast and is not reviewed. Source: old-repo item 71.
+
+**15 Nov 2026 – Live link to Aurora over Aurora's LiveMesh.** The link uses LiveMesh (the link Aurora's Blender add-on uses), with a challenge answered by HMAC-SHA256 and a session key from a file only the user can read. Reason: the earlier separate link on its own port had security findings (any program could take the port or send poses). Rejected: the separate port. Source: old-repo items 11, 12, 13 and 78, `docs/LIVE_LINK_RESEARCH.md`.
+
+**15 Nov 2026 – Bento body: Max, with the system avatar as fallback.** The open source Max body (CC BY 4.0) is shown by default, so finger poses and facial expressions can be seen; the Linden system avatar stays as a fallback. Reason: the system avatar has mitten hands and its face is not weighted to the Bento bones. Source: old-repo items 42 and 46.
+
+**15 Nov 2026 – Qt 6.12 LTS for the builds.** Windows and release builds moved from Qt 6.8.3 to 6.12.0 LTS. Reason: 6.8.3 has published CVEs, and newer 6.8 LTS patch releases are commercial only, so 6.12 is the way to get security fixes as open source. Source: old-repo items 18 and 58.
+
+**15 Nov 2026 – Fuzzing scope.** Fuzz the prop files and the control API now, and BVH/AVM only with the new parser. Not fuzzed on purpose: `SL.lim` and `.llm` (read only from Pingmator's own data folder) and the old BVH/AVM parser (it will be replaced). Source: old-repo item 20.
+
+## Bodies
+
+**16 Nov 2026 – Ruth2 v4 planned as the default body; closed bodies not used.** The goal is to replace the Linden system avatar with the open source Ruth2 v4 body, keep Max as an option and add Roth2 v2 later; the work goes with posing. Reason: nobody in Second Life uses the system avatar any more and it looks dated. Closed bodies (Senra, eBody, Altamura, Viva) have no open licence and can only be used with written permission from their creators. Source: old-repo item 110 (now #15).
+
+## Working method and repository
+
+**17 Nov 2026 – Settings for a private repository; no auto-merge.** CodeQL and dependency review are skipped while the repository is private. A job waits for green checks and tells the project owner, who merges or lets the job merge. Reason: a free private repository has no code scanning, no rulesets with required checks and no auto-merge. Replaces the auto-merge rule of 15 November. Source: old-repo items 124 and 49, checklist in #25.
+
+**17 Nov 2026 – No personal data anywhere; privacy check for text.** No personal names, contact or account details or personal paths in files, commits, issues, pull requests or comments. The privacy check also reads pull request titles and descriptions and new or edited issues, comments and reviews. Reason: the repository may become public, and then text and its edit history are visible. Source: old-repo items 123 and 131.
+
+**15 Nov 2026 – Release betas as pre-releases.** Versions like `0.3.0-beta.1` are published as pre-releases, which the update check ignores, so users of the last stable version are not told about a beta. Source: old-repo item 52.
+
+**15 Nov 2026 – Rules for parallel AI sessions.** Each job works on its own branch, never on `main`, registers its branch and files on the work board first, and waits when files overlap. Commits use the GitHub noreply address, and a privacy check guards commits. Source: old-repo items 45 and 48, `CLAUDE.md`.
