@@ -571,7 +571,7 @@ void PingmatorWindow::setRemoteControl(bool on,bool showInfo)
            "<p><a href=\"%3\">How to connect an AI assistant</a></p>")
           .arg(m_controlServer->url().toHtmlEscaped(),
                QDir::toNativeSeparators(ControlServer::connectionFilePath()).toHtmlEscaped(),
-               QStringLiteral("https://github.com/pingledingle-tech/Pingmator/blob/main/docs/CONTROL.md#set-up-an-ai-assistant")),
+               QStringLiteral("https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md#set-up-an-ai-assistant")),
         QMessageBox::Ok,this);
       box.setTextFormat(Qt::RichText);
       box.setTextInteractionFlags(Qt::TextBrowserInteraction);
@@ -589,7 +589,7 @@ void PingmatorWindow::setRemoteControl(bool on,bool showInfo)
 // the title says so while other programs can control Pingmator
 void PingmatorWindow::updateWindowTitle()
 {
-  QString title="Pingmator ["+currentFile+"]";
+  QString title="Pingmator "+Constants::buildLabel()+" ["+currentFile+"]";
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink && m_auroraLink->enabled())

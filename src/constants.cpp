@@ -70,6 +70,18 @@
 #endif
 
 
+const QString Constants::buildLabel()
+{
+  const QString version = m_versionNumber.toString();
+  if (m_updateChannel == UpdateChannel::Release) return version;
+#if defined(PINGMATOR_BUILD_SOURCE) && defined(PINGMATOR_COMMIT)
+  return version + QStringLiteral(" \u00b7 ") + QString(PINGMATOR_BUILD_SOURCE)
+         + QStringLiteral(" \u00b7 ") + QString(PINGMATOR_COMMIT);
+#else
+  return version + QStringLiteral(" \u00b7 dev");
+#endif
+}
+
 const QString Constants::buildDateTime()
 {
   return m_buildDateTime;

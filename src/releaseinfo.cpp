@@ -12,7 +12,7 @@
 
 QString ReleaseInfo::apiUrl()
 {
-  return QString("https://api.github.com/repos/pingledingle-tech/Pingmator/releases/latest");
+  return QString("https://api.github.com/repos/pingledingle-tech/PinglyMotion/releases/latest");
 }
 
 QString ReleaseInfo::latestVersion(const QByteArray& json)
