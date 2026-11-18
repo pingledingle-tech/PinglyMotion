@@ -1,6 +1,6 @@
 Branch: ci/fast-pr-checks
 Status: active
-Pull request: pending
+Pull request: #31
 Files:
 - .github/workflows/build.yml
 - .github/workflows/sanitizers.yml
