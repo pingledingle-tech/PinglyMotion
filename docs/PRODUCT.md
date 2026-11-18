@@ -138,7 +138,7 @@ The work runs in **two tracks side by side**. They mostly change different files
 2. `.anim` export and easing ([#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11)).
 3. `.anim` import ([#22](https://github.com/pingledingle-tech/PinglyMotion/issues/22)).
 4. BVH from any skeleton, retargeted to the SL skeleton ([#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)).
-5. glTF/GLB import ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)), then Blender ([#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13), docs first). No glTF export; FBX only on real demand. The own working format is `.dingle`; AVM is no longer written, old `.avm` files still open ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)).
+5. glTF/GLB import ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)), then Blender ([#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13), docs first). No glTF export; FBX only on real demand. The own working format is `.dingle`; AVM is no longer written, old `.avm` files still open ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)). The layout, limits and version rules are in [DINGLE_FORMAT.md](DINGLE_FORMAT.md).
 
 **Small jobs in between** (when a track waits for a Windows test): version in the window title ([#21](https://github.com/pingledingle-tech/PinglyMotion/issues/21)), and a new default body ([#15](https://github.com/pingledingle-tech/PinglyMotion/issues/15)).
 
