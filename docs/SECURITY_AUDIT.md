@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Date | 14 November 2026 |
-| Repository | `pingledingle-tech/Pingmator` |
+| Repository | `pingledingle-tech/Pingmator` (the old repository; the project continues as PinglyMotion) |
 | Revisions | `main` @ `381bed1`, `aurora-link` @ `cc97e86` (2 commits ahead of / 2 behind `main`) |
 | Also reviewed | Receiving side of the live link: `pingledingle-tech/Aurora-Viewer-Fork`, branch `feat/pingmator-link` @ `58c4351` (`crates/aurora-viewer/src/pingmator_link/`) |
 | Scope | BVH/AVM/LIM/LLM/PRP parsers, HTTP control server, MCP server, Aurora live link, GitHub Actions, dependencies |
@@ -11,11 +11,13 @@
 
 ## Status on `main` (18 November 2026)
 
-Every finding below was checked again against the code and workflows on `main` @ `c3e0449`. The original report further down is unchanged; its line numbers refer to the old revisions.
+**Numbers in this report:** `#25`, `#145` and similar numbers are pull requests and issues of the **old repository**, unless written as a link. The issues that were moved have new numbers ([MIGRATION.md](MIGRATION.md)): old #143 is [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23), old #146 is [#24](https://github.com/pingledingle-tech/PinglyMotion/issues/24), old #147 is [#25](https://github.com/pingledingle-tech/PinglyMotion/issues/25) and old #62 is [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9).
+
+Every finding below was checked again against the code and workflows on `main` @ `c3e0449` (old repository); the rows changed on 18 November in the evening were checked in this repository (PinglyMotion `main` @ `235a597`). The original report further down is unchanged; its line numbers refer to the old revisions.
 
 **How it was checked:** ASan/UBSan Debug build (GCC 13, Qt 6.4 from Ubuntu, as in appendix A). The crafted files from appendix B were regenerated and loaded with `BVH::animRead()` in a small harness built from the same sources as `pingmator_tests`, and some through the program itself under Xvfb. All six test suites pass with **no** ASan or UBSan report. The control server was tested live (`--control`, a separate work folder). Workflows were read on `main`. The Aurora fork (`pingledingle-tech/Aurora-Viewer-Fork`) could **not** be read in this run; its findings are marked as not verified.
 
-**Count:** 19 fixed, 3 partly, 2 open, 5 not applicable (29 findings). New issues for what is left: #143, #144, #145, #146, #147. The parser replacement and BVH/AVM fuzzing stay in #62.
+**Count:** 22 fixed, 2 partly, 5 not applicable, 0 open (29 findings). Still open as issues: [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23) (the live link does not check that the program on the port is Aurora; AL-03), [#24](https://github.com/pingledingle-tech/PinglyMotion/issues/24) (how the Qt downloads are verified; P-06). The two partly fixed findings are AL-03 and P-06 (the two issues above). Of the five not applicable, three are in the Aurora fork and were not checked (AL-01, AL-02, P-08) and two are about code that no longer exists or cannot happen any more (P-01, P-04). The parser replacement stays in [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9).
 
 | ID | Status | Evidence |
 |---|---|---|
@@ -28,34 +30,34 @@ Every finding below was checked again against the code and workflows on `main` @
 | PM-07 | fixed | #25 (issue #7). `Constants::pingmatorDataPath()` uses the program folder, never the current folder. Program started in a folder with a planted `data/SLFemale.bvh` (= `channels.bvh`) and `data/SL.lim`: the planted files were not read. Test `dataFolderIsNotTheCurrentFolder`. |
 | PM-08 | fixed | #27 (issue #8). Live: `save_file`/`open_file` outside the work folder (absolute path, `../`) refused with the same text; an existing other file is not overwritten; `new_animation`/`open_file` refuse while there are unsaved changes. |
 | PM-09 | fixed | #26 (issue #9). `ProxyHandler({})`, only `http://127.0.0.1:` / `localhost:` URLs. `tests/test_mcp_proxy.py` passes. |
-| PM-10 | fixed | #36 (issue #10). Key checked before the body, at most 8 connections, body limit 64 KB. Live: 50 connections with 4 MB bodies and no key, memory did not grow. Appendix C header part: see below (#145). |
+| PM-10 | fixed | #36 (issue #10). Key checked before the body, at most 8 connections, body limit 64 KB. Live: 50 connections with 4 MB bodies and no key, memory did not grow. Appendix C header part: see below (old #145, fixed). |
 | PM-11 | fixed | #31 (issue #14). Saving uses `QSaveFile`, `commit()` and stream status are checked, the error is passed on. Test `saveFailureIsReported`. (Not re-tested live: the audit sandbox runs as root, so a read-only folder does not fail.) |
 | PM-12 | fixed | #32 (issue #15). `control.json` still stays after a crash (checked), but the MCP server now sends the key only after the program on the port answers a nonce with HMAC-SHA256 of the key (`/api/hello`); the file is rewritten at the next start. |
 | PM-13 | fixed | #25, #33, #37 (issue #16). `ikOn[]` and `BVHNode` channel fields initialised, `Figure:` and weights range-checked before casting. No UBSan report in any test suite. |
 | AL-01 | not applicable (not verified) | #78 (issue #12). Pingmator no longer uses the fork's `pingmator_link` (port 17656); it uses Aurora's LiveMesh (port 17655) with a key file and HMAC challenge. Whether `pingmator_link` was removed from the fork, and how LiveMesh treats non-JSON or HTTP lines, could not be checked (no access to the fork in this run). |
 | AL-02 | not applicable (not verified) | #78 (issue #13). Same reason as AL-01: the finding is in the fork's `pingmator_link`. LiveMesh uses length-prefixed messages with size limits according to `docs/LIVE_LINK_RESEARCH.md`, but Aurora's code was not read. |
-| AL-03 | partly | #78 (issue #11). Pingmator now waits for Aurora's `hello` and proves itself with HMAC before sending a pose. It still does not check that the server is Aurora: any program on port 17655 can answer `{"ok":true}` and get the poses → #143. |
+| AL-03 | partly | #78 (issue #11). Pingmator now waits for Aurora's `hello` and proves itself with HMAC before sending a pose. It still does not check that the server is Aurora: any program on port 17655 can answer `{"ok":true}` and get the poses → [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23). |
 | SC-01 | fixed | #38 (issue #17). Every action pinned to a full commit SHA; release split into build jobs (`contents: read`) and a publish job (`contents: write`) that only downloads artifacts. Dependabot updates actions. |
 | SC-02 | fixed | #58 (issue #18). Windows builds and releases use Qt 6.12.0 (`QT_VERSION` in `release.yml`). |
 | SC-03 | fixed | #38 (issue #19). `persist-credentials: false` in every checkout; `SHA256SUMS` published; `actions/attest-build-provenance`. Code signing (only "consider" in the fix) is not done. |
-| SC-04 | partly | #23, #75. CodeQL, sanitizer job, fuzzing of `.prp` and control commands, Dependabot. CodeQL and dependency review are skipped while the repository is private (#124, decision); BVH/AVM fuzzing comes with #62 (draft PR #140). |
+| SC-04 | fixed | Old #23, #75, #140, and in this repository #6, #29, #31. CodeQL (`analyze`) and dependency review are required checks on pull requests; sanitizer build; fuzz targets for `.prp` files, the control API and the new file parser run every night; Dependabot updates the actions. Slow checks (CodeQL on the tests, fuzzing) run nightly, not on every pull request. |
 | P-01 | not applicable | Commit `9d77e81` removed the unused `BvhParser`/`FileManager`. The new parser is #62. |
 | P-02 | fixed | #26. `ProxyHandler({})` turns off every proxy source, also the Windows registry proxy. Not tested on Windows. |
-| P-03 | open | `writeConnectionFile()` is unchanged: `QFile` + truncate, `setPermissions()` and `write()` results ignored, `PINGMATOR_CONTROL_FILE` always honoured. Mode 0600 confirmed on Linux → #144. |
+| P-03 | fixed | Old #144. `writeConnectionFile()` writes a temporary file with `QSaveFile`, sets owner-only permissions before the key is written, checks every result and replaces `control.json` in one step. `PINGMATOR_CONTROL_FILE` is still honoured on purpose (the tests and smoke tests use it). |
 | P-04 | not applicable | PM-01 is fixed, so there is no overflow to exploit. |
 | P-05 | fixed | #58. Qt 6.12.0 instead of 6.8.3, so the listed advisories no longer apply to the shipped DLLs. |
-| P-06 | partly | #38, #58. The Qt action and aqtinstall are pinned to commits; AppImage tools checked by SHA-256. How aqtinstall verifies the Qt archives is not reviewed → #146. |
+| P-06 | partly | #38, #58. The Qt action and aqtinstall are pinned to commits; AppImage tools checked by SHA-256. How aqtinstall verifies the Qt archives is not reviewed → [#24](https://github.com/pingledingle-tech/PinglyMotion/issues/24). |
 | P-07 | fixed | #33, #75 (issue #21). Prop types, field counts and numbers validated (`src/propfile.cpp`); `.prp` fuzz target. |
-| P-08 | not applicable (not verified) | Aurora side, in the fork; error text from Aurora is shown as plain text in Pingmator's status bar. Spoofing by a fake server is part of #143. |
-| P-09 | open | Not visible from a clone, and sessions may not change settings. Private free repository: no branch protection or required checks (#124). Checklist for the owner: #147. |
+| P-08 | not applicable (not verified) | Aurora side, in the fork; error text from Aurora is shown as plain text in Pingmator's status bar. Spoofing by a fake server is part of [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23). |
+| P-09 | fixed | The repository is public. Ruleset "Protect main" (pull request needed, required checks, no deletion or force push) and "Protect release tags" are active; secret scanning and push protection are on (checked with the GitHub API 18 November). Two-factor sign-in on the owner's account cannot be seen from a session. Checklist: [#25](https://github.com/pingledingle-tech/PinglyMotion/issues/25). |
 
 Appendix C (15 November follow-up):
 
 | Item | Status | Evidence |
 |---|---|---|
 | BVH parser continues after a token mismatch (#1) | fixed | #25: every `expect_token()` failure stops the parser with an error (`truncated.bvh`, test rows "no MOTION", "unknown channel"). |
-| Header limit bypass (#10) | partly | Reproduced: a complete header of 20–120 KB with the key gets `200 OK`; without the key 401/413 → #145. |
-| Connection file not atomic, results unchecked (#14) | open | Same as P-03 → #144. |
+| Header limit bypass (#10) | fixed | Old #145. Reproduced before: a complete header of 20–120 KB with the key got `200 OK`. Now `onReadyRead()` refuses a header over 16 KB (`MAX_HEADER_BYTES`) whether or not the terminator has arrived. |
+| Connection file not atomic, results unchecked (#14) | fixed | Same as P-03 (old #144). |
 | `.prp` types and numbers (#21) | fixed | #33, fuzz target from #75. |
 | Mesh morph vertex indices (#22) | fixed | #33: `meshIndexesAreValid()` in `src/avatarskin.cpp` checks triangle and morph indices; test `badMaxMeshIsRefused`. |
 
@@ -476,15 +478,15 @@ This addendum records an independent **static code review** performed after the 
 
 | Finding | Assessment | Tracking | Additional detail / recommended action |
 |---|---|---|---|
-| BVH parser continues after structural token mismatch | Confirmed by code review; not reproduced separately | [#1](https://github.com/pingledingle-tech/Pingmator/issues/1) | `BVH::expect_token()` reports failure, but `bvhReadNode()` does not consistently stop parsing. Propagate parse errors and discard partially constructed nodes. This extends the general parser fix in §8 and overlaps PM-01/PM-02. |
-| HTTP header limit can be bypassed when the header terminator is already present | Confirmed by code review; not load-tested | [#10](https://github.com/pingledingle-tech/Pingmator/issues/10) | `completeRequestLength()` checks `MAX_HEADER_BYTES` only while waiting for the header terminator; `onReadyRead()` appends the complete `readAll()` result before applying limits. Enforce header and total-buffer limits before or during accumulation, including complete oversized headers. This extends PM-10. |
-| Connection-file creation is not atomic and write/permission results are unchecked | Confirmed by code review; no failure-injection test | [#14](https://github.com/pingledingle-tech/Pingmator/issues/14) | `ControlServer::writeConnectionFile()` truncates the destination via `QFile`, without validating the full write count or the result of `setPermissions()`. Prefer `QSaveFile`, check all results, and fail closed if the token file cannot be written securely. Related to PM-11 and potential concern P-03. |
-| Unvalidated `.prp` prop types and numeric fields | Potential robustness/security concern; exploitability unverified | [#21](https://github.com/pingledingle-tech/Pingmator/issues/21) | `PingmatorWindow::fileLoadProps()` converts fields without sufficient validation; unknown prop types may produce a null mesh passed to `scene->addProp()`. Validate supported types, finite numbers, field counts and ranges; test malformed files. This expands potential concern P-07. **No crash or exploitable dereference was established.** |
-| Mesh morph vertex indices lack local bounds checks | Conditional concern; upstream validation not established | [#22](https://github.com/pingledingle-tech/Pingmator/issues/22) | `AvatarSkin` uses morph `vertexIndices` and mesh triangle indices without an obvious local bounds check. Confirm what `LLMMesh` validates, add explicit range checks at the use sites, and fuzz malformed meshes. **No out-of-bounds access or exploit was reproduced for this finding.** |
+| BVH parser continues after structural token mismatch | Confirmed by code review; not reproduced separately | old #1 | `BVH::expect_token()` reports failure, but `bvhReadNode()` does not consistently stop parsing. Propagate parse errors and discard partially constructed nodes. This extends the general parser fix in §8 and overlaps PM-01/PM-02. |
+| HTTP header limit can be bypassed when the header terminator is already present | Confirmed by code review; not load-tested | old #10 | `completeRequestLength()` checks `MAX_HEADER_BYTES` only while waiting for the header terminator; `onReadyRead()` appends the complete `readAll()` result before applying limits. Enforce header and total-buffer limits before or during accumulation, including complete oversized headers. This extends PM-10. |
+| Connection-file creation is not atomic and write/permission results are unchecked | Confirmed by code review; no failure-injection test | old #14 | `ControlServer::writeConnectionFile()` truncates the destination via `QFile`, without validating the full write count or the result of `setPermissions()`. Prefer `QSaveFile`, check all results, and fail closed if the token file cannot be written securely. Related to PM-11 and potential concern P-03. |
+| Unvalidated `.prp` prop types and numeric fields | Potential robustness/security concern; exploitability unverified | old #21 | `PingmatorWindow::fileLoadProps()` converts fields without sufficient validation; unknown prop types may produce a null mesh passed to `scene->addProp()`. Validate supported types, finite numbers, field counts and ranges; test malformed files. This expands potential concern P-07. **No crash or exploitable dereference was established.** |
+| Mesh morph vertex indices lack local bounds checks | Conditional concern; upstream validation not established | old #22 | `AvatarSkin` uses morph `vertexIndices` and mesh triangle indices without an obvious local bounds check. Confirm what `LLMMesh` validates, add explicit range checks at the use sites, and fuzz malformed meshes. **No out-of-bounds access or exploit was reproduced for this finding.** |
 
 ### Tracking and interpretation
 
-- The original audit findings remain tracked in [issues #1–#20](https://github.com/pingledingle-tech/Pingmator/issues); the independent review updated the descriptions of **#1, #10 and #14** and opened **#21 and #22**.
+- The original audit findings remain tracked in old issues #1–#20 (private archive); the independent review updated the descriptions of **#1, #10 and #14** and opened **#21 and #22**.
 - The original severity classifications and evidence remain unchanged. In particular, the two new issues must **not** be presented as confirmed vulnerabilities until the relevant failure modes and input reachability are demonstrated.
 - Recommended regression coverage: complete oversized HTTP headers; malformed BVH structural tokens; simulated token-file write and permission failures; malformed `.prp` types and numeric fields; invalid LLM morph indices.
 - Review scope and date are distinct from the original audit. This addendum is a documentation update, **not** evidence that any vulnerability has been remediated.
