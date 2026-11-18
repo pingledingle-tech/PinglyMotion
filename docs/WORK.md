@@ -8,6 +8,7 @@ Every job writes itself here before it starts. See `CLAUDE.md` for the rules.
 
 | Branch | What | Files it changes | Pull request |
 |---|---|---|---|
+| `fix/codeql-single-check-name` | CodeQL matrix reports per language (`codeql (python, none)` etc.), so the "Protect main" ruleset's required `analyze` check never appears; adds a small job named `analyze` that waits on the matrix and reports one fixed name | `.github/workflows/codeql.yml` | pending |
 
 **Overlap:** none (another job changes `privacy.yml` and adds a new workflow file).
 

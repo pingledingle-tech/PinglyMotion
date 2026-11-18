@@ -16,7 +16,7 @@ concurrency:
 permissions:
   contents: read
 jobs:
-  analyze:
+  codeql:
     # Code scanning and dependency review are not available on a free private repository.
     # The job is skipped while the repository is private and runs again if it is made public.
     if: ${{ !github.event.repository.private }}
@@ -74,3 +74,18 @@ jobs:
         if: steps.diff.outputs.code == 'true'
         with:
           category: /language:${{ matrix.language }}
+
+  # The matrix above reports as "codeql (<language>, <build-mode>)" per combination,
+  # so a branch ruleset cannot require it directly. This job reports under one
+  # fixed name, "analyze", that the ruleset requires instead. It is skipped
+  # automatically when the matrix is skipped (private repository), and fails if
+  # any matrix combination failed.
+  analyze:
+    needs: codeql
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check CodeQL matrix result
+        run: |
+          echo "codeql matrix result: ${{ needs.codeql.result }}"
+          [ "${{ needs.codeql.result }}" = "success" ]
