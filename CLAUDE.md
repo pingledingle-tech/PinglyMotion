@@ -8,7 +8,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 
 1. Pull the newest `main` and read `docs/work/README.md`. Run `python3 tools/work.py list` to see the other jobs (job files in your checkout and on open pull requests; needs `gh`).
 2. If another active job already claims a file you need, do not start. Tell the user which job and which file, and wait.
-3. Create your branch and the job file `docs/work/<branch with "/" replaced by "-">.md` (`Branch:`, `Status: active`, `Pull request:`, `Files:` with the files you expect to change, then a short "What"). Commit it as your first commit, push, and open the pull request right away, so the other sessions can see it. Give it a title that starts with `WIP: `. Do not create it as a draft: marking a draft ready needs GraphQL, which is not available here. Create it with `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls --input <file.json>`, then put the number in `Pull request:`.
+3. Create your branch and the job file `docs/work/<branch with "/" replaced by "-">.md` (`Branch:`, `Status: active`, `Pull request:`, `Files:` with the files you expect to change, then a short "What"). Commit it as your first commit, push, and open the pull request right away as a **draft**, so the other sessions can see it. A draft runs only the quick checks; the builds, tests and CodeQL start when it is marked ready, so they do not run on every push while you work. Create it with `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls --input <file.json>` (with `"draft": true`), then put the number in `Pull request:`.
 
 ## While you work
 
@@ -20,12 +20,14 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 
 1. In your job file set `Status: done`, in your last commit. Do not touch other jobs' files.
 2. Bring your branch up to date with `main` (rebase, or the pull request's "Update branch": `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/update-branch`). Build and run the tests (see README, "Tests"). They must pass. Run `python3 tools/work.py check`.
-3. Remove `WIP: ` from the pull request title (`gh api -X PATCH repos/pingledingle-tech/PinglyMotion/pulls/<number> -f title=...`).
+3. Mark the pull request ready for review: `gh pr ready <number>`, or where GraphQL is blocked `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls/<number>/ccr/ready_for_review`. This starts the builds, the tests and CodeQL.
 4. Wait until all checks on the pull request are green (`gh api repos/pingledingle-tech/PinglyMotion/commits/<sha>/check-runs`). Skipped checks are fine.
 5. Tell the user the pull request number and that it is ready to merge. The user merges it ("Squash and merge"), or tells you in this session that you may merge it. Only then merge it yourself, with squash: `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/merge -f merge_method=squash`.
 6. If another pull request is merged first, update your branch again (step 2) and wait for green checks before merging.
 
 `main` is protected by a ruleset: changes only through a pull request, squash merge only, and the checks `linux`, `windows`, `asan-ubsan`, `privacy`, `analyze` and `dependency-review` must be green. Auto-merge is allowed in the repository settings, but turning it on needs GraphQL, so merging is done as in step 5. The branch is deleted automatically after the merge.
+
+What runs where: a pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. Changes that only touch Markdown, `docs/` or licence files skip the builds. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, and fuzzing. After changing a parser or the control commands, start the fuzzing on your branch: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/fuzz.yml/dispatches -f ref=<branch>`, and tell the user the result.
 
 The `work-board` check (`tools/work.py check`) is not a required check: if it is red, two active jobs claim the same files. Talk to the user; it does not block a merge by itself.
 
