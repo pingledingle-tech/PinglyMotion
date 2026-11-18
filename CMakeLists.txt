@@ -78,6 +78,7 @@ IF (PINGMATOR_TESTS)
   ADD_SUBDIRECTORY (tests/animfile)
   # status bar items and the "Tips on" setting (#88 step 8)
   ADD_SUBDIRECTORY (tests/statusbar)
+  ADD_SUBDIRECTORY (tests/bodysetting)
 ENDIF (PINGMATOR_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGMATOR_FUZZ=ON, see fuzz/README.md

@@ -18,6 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <QActionGroup>
+#include <QMap>
+#include <QMenu>
 #include <QRegularExpression>
 #include <QDockWidget>
 #include <QScrollArea>
@@ -279,13 +282,37 @@ PingmatorWindow::PingmatorWindow() :
   });
   ui->optionsProtectFirstFrameAction->setChecked(UserSettings::protectFirstFrame());
 
-  // Options > Bento body (Max): fingers and face that follow the Bento bones
-  QAction* bentoBodyAction=new QAction(tr("Bento body (Max)"),this);
-  bentoBodyAction->setCheckable(true);
-  bentoBodyAction->setToolTip(tr("Show the Max avatar, with fingers and a face that follow the Bento bones. "
-                                 "Off: the Second Life system avatar. Only changes what you see, not the animation."));
-  bentoBodyAction->setChecked(ui->animationView->setBentoBody(UserSettings::bentoBody()) && UserSettings::bentoBody());
-  ui->menuOptions->addAction(bentoBodyAction);
+  // Options > Body: which avatar the 3D view shows (only what you see, not the animation)
+  QMenu* bodyMenu=new QMenu(tr("Body"),this);
+  bodyMenu->setToolTipsVisible(true);
+  ui->menuOptions->addMenu(bodyMenu);
+  QActionGroup* bodyGroup=new QActionGroup(this);
+  struct BodyChoice { const char* key; AvatarSkin::Body body; QString text; QString tip; };
+  const BodyChoice bodyChoices[]={
+    {"ruth2",AvatarSkin::RuthBody,tr("Ruth2"),
+     tr("The open source Ruth2 avatar, with fingers and a face that follow the Bento bones.")},
+    {"max",AvatarSkin::MaxBody,tr("Max"),
+     tr("The open source Max avatar, with fingers and a face that follow the Bento bones.")},
+    {"system",AvatarSkin::ClassicBody,tr("Second Life system avatar"),
+     tr("The standard Second Life avatar, without Bento fingers and face.")}};
+  QMap<QString,QAction*> bodyActions;
+  for(const BodyChoice& choice : bodyChoices)
+  {
+    QAction* action=bodyMenu->addAction(choice.text);
+    action->setCheckable(true);
+    action->setToolTip(choice.tip);
+    action->setData(QString::fromLatin1(choice.key));
+    bodyGroup->addAction(action);
+    bodyActions.insert(QString::fromLatin1(choice.key),action);
+  }
+  {
+    QString current=UserSettings::body();
+    AvatarSkin::Body wanted=AvatarSkin::RuthBody;
+    for(const BodyChoice& choice : bodyChoices)
+      if(current==QLatin1String(choice.key)) wanted=choice.body;
+    if(!ui->animationView->setBody(wanted)) current=QStringLiteral("system");   // could not load: system avatar
+    bodyActions.value(current,bodyActions.value(QStringLiteral("ruth2")))->setChecked(true);
+  }
 
   // Options > Joints: show or hide groups of Bento joints (display only)
   QMenu* jointsMenu=ui->menuOptions->addMenu(tr("Joints"));
@@ -323,17 +350,20 @@ PingmatorWindow::PingmatorWindow() :
   });
   jointsMenu->setToolTipsVisible(true);
   jointGroupsChanged();
-  connect(bentoBodyAction,&QAction::toggled,this,[this,bentoBodyAction](bool on)
+  connect(bodyGroup,&QActionGroup::triggered,this,[this,bodyActions](QAction* action)
   {
-    const bool ok=ui->animationView->setBentoBody(on);
-    if(on && !ok)
+    const QString key=action->data().toString();
+    AvatarSkin::Body wanted=AvatarSkin::ClassicBody;
+    if(key==QLatin1String("ruth2")) wanted=AvatarSkin::RuthBody;
+    else if(key==QLatin1String("max")) wanted=AvatarSkin::MaxBody;
+    if(!ui->animationView->setBody(wanted))
     {
-      QSignalBlocker block(bentoBodyAction);
-      bentoBodyAction->setChecked(false);
-      QMessageBox::warning(this,tr("Bento body"),tr("The Max avatar could not be loaded. Showing the system avatar."));
+      bodyActions.value(QStringLiteral("system"))->setChecked(true);
+      UserSettings::setBody(QStringLiteral("system"));
+      QMessageBox::warning(this,tr("Body"),tr("The avatar could not be loaded. Showing the system avatar."));
       return;
     }
-    UserSettings::setBentoBody(on);
+    UserSettings::setBody(key);
   });
 
   // Options > Light...: brightness, shine and warmth of the body light
@@ -341,7 +371,7 @@ PingmatorWindow::PingmatorWindow() :
                                   UserSettings::lightWarmth(),UserSettings::floorShadow());
   QAction* lightAction=new QAction(tr("Light..."),this);
   lightAction->setToolTip(tr("Change how the body is lit: brightness, shine, warmth and the shadow on the floor."));
-  ui->menuOptions->insertAction(bentoBodyAction,lightAction);
+  ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
   connect(lightAction,&QAction::triggered,this,&PingmatorWindow::showLightDialog);
 
   if(!UserSettings::showTimelinePanel()) m_timelineDock->hide();

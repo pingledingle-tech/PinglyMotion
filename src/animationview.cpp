@@ -911,18 +911,17 @@ void AnimationView::setBodyLight(int brightness, int shine, int warmth, bool flo
   update();
 }
 
-bool AnimationView::setBentoBody(bool on)
+bool AnimationView::setBody(AvatarSkin::Body wanted)
 {
-  const AvatarSkin::Body wanted=on ? AvatarSkin::MaxBody : AvatarSkin::ClassicBody;
   if(m_avatarSkin.isLoaded() && m_avatarSkin.body()==wanted) return true;
 
   QString error;
   bool ok=m_avatarSkin.load(Constants::pingmatorDataPath(),wanted,&error);
   if(!ok)
   {
-    qWarning("AnimationView::setBentoBody(): %s",error.toLatin1().constData());
+    qWarning("AnimationView::setBody(): %s",error.toLatin1().constData());
     if(wanted!=AvatarSkin::ClassicBody && !m_avatarSkin.load(Constants::pingmatorDataPath(),AvatarSkin::ClassicBody,&error))
-      qWarning("AnimationView::setBentoBody(): no avatar body: %s",error.toLatin1().constData());
+      qWarning("AnimationView::setBody(): no avatar body: %s",error.toLatin1().constData());
   }
   update();
   return ok;
