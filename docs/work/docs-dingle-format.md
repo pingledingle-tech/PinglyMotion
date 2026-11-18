@@ -1,6 +1,6 @@
 Branch: docs/dingle-format
-Status: active
-Pull request: pending
+Status: done
+Pull request: #48
 Files:
 - docs/DINGLE_FORMAT.md
 - docs/DECISIONS.md
