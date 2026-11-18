@@ -6,6 +6,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 
 ## Before you start
 
+0. After cloning, run `tools/setup_clone.sh` (commit author and a pre-push privacy check). Build and test commands and tricks for sessions: `docs/DEV.md`. Do not start long builds when a small test target or the pull request checks are enough.
 1. Pull the newest `main` and read `docs/work/README.md`. Run `python3 tools/work.py list` to see the other jobs (job files in your checkout and on open pull requests; needs `gh`).
 2. If another active job already claims a file you need, do not start. Tell the user which job and which file, and wait.
 3. Create your branch and the job file `docs/work/<branch with "/" replaced by "-">.md` (`Branch:`, `Status: active`, `Pull request:`, `Files:` with the files you expect to change, then a short "What"). Commit it as your first commit, push, and open the pull request right away as a **draft**, so the other sessions can see it. A draft runs only the quick checks; the builds, tests and CodeQL start when it is marked ready, so they do not run on every push while you work. Create it with `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls --input <file.json>` (with `"draft": true`), then put the number in `Pull request:`.
@@ -22,7 +23,11 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 2. Bring your branch up to date with `main` (rebase, or the pull request's "Update branch": `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/update-branch`). Build and run the tests (see README, "Tests"). They must pass. Run `python3 tools/work.py check`.
 3. Mark the pull request ready for review: `gh pr ready <number>`, or where GraphQL is blocked `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls/<number>/ccr/ready_for_review`. This starts the builds, the tests and CodeQL.
 4. Wait until all checks on the pull request are green (`gh api repos/pingledingle-tech/PinglyMotion/commits/<sha>/check-runs`). Skipped checks are fine.
-5. Tell the user the pull request number and that it is ready to merge. The user merges it ("Squash and merge"), or tells you in this session that you may merge it. Only then merge it yourself, with squash: `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/merge -f merge_method=squash`.
+5. Merge, with squash: `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/merge -f merge_method=squash`. Who says yes:
+   - **Technical jobs** (nothing the user sees on screen changes: parsers, file handling, tests, CI, tools, docs, data that no menu shows yet): the project owner has given standing permission (18 November 2026). Merge as soon as all required checks are green. If the job changed a parser or the control commands, the fuzz run on the branch must also be green first.
+   - **Jobs that change what the user sees on screen** (menus, dialogs, texts, the 3D view, camera, keys): the project owner tests the Windows build and says yes in this session. Give the Windows download and one test step at a time.
+   - When unsure which kind it is, treat it as visible.
+   - Report each merged pull request in one line (number, what, checks green).
 6. If another pull request is merged first, update your branch again (step 2) and wait for green checks before merging.
 
 `main` is protected by a ruleset: changes only through a pull request, squash merge only, and the checks `linux`, `windows`, `asan-ubsan`, `privacy`, `analyze` and `dependency-review` must be green. Auto-merge is allowed in the repository settings, but turning it on needs GraphQL, so merging is done as in step 5. The branch is deleted automatically after the merge.
@@ -57,5 +62,5 @@ The repository is public, so everything is visible: files, commits, issues, pull
 ## Never
 
 - Never force-push to `main`, delete someone else's branch or rewrite another job's commits.
-- Never merge a pull request unless the user said so in this session and all checks are green. Never merge another job's pull request unless the user asks you to.
+- Never merge a pull request unless all required checks are green and the rule in "When you are done" step 5 allows it (standing permission for technical jobs, otherwise the user said so in this session). Never merge another job's pull request unless the user asks you to.
 - Never change the repository settings, rules or required checks. Ask the user.
