@@ -1,6 +1,6 @@
 Branch: feat/dingle-reader-writer
-Status: active
-Pull request: pending
+Status: done
+Pull request: #51
 Files:
 - src/dingle.*
 - tests/dingle/**

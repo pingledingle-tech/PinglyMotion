@@ -97,6 +97,8 @@ IF (PINGMATOR_TESTS)
   ADD_SUBDIRECTORY (tests)
   # the new BVH/AVM parser (#62), not used by the program yet
   ADD_SUBDIRECTORY (tests/animfile)
+  # the .dingle reader and writer (#26), not used by the program yet
+  ADD_SUBDIRECTORY (tests/dingle)
   # status bar items and the "Tips on" setting (#88 step 8)
   ADD_SUBDIRECTORY (tests/statusbar)
   ADD_SUBDIRECTORY (tests/bodysetting)
