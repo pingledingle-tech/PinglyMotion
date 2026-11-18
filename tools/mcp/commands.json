@@ -1,0 +1,256 @@
+{
+    "commands": [
+        {
+            "description": "Shows the open animation: file name, number of frames, frames per second, current frame, whether it plays, and whether joint limits and mirroring are on.",
+            "name": "state",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Lists every joint you can pose (the Second Life Bento skeleton) with its rotation limits. The classic joints keep their old names (hip, abdomen, chest, neck, head, lCollar, lShldr = shoulder, lForeArm = elbow, lHand = wrist, lThigh, lShin = knee, lFoot = ankle, and r for right); Bento joints start with m, like mHandIndex1Left.",
+            "name": "joints",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Shows the rotation of the joints at a frame (default: current frame). Only joints that are rotated are listed unless all is true.",
+            "name": "get_pose",
+            "parameters": {
+                "all": {
+                    "type": "boolean"
+                },
+                "frame": {
+                    "description": "Frame number, first frame is 1",
+                    "type": "integer"
+                }
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in Pingmator. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied.",
+            "name": "set_pose",
+            "parameters": {
+                "frame": {
+                    "description": "Frame number, first frame is 1",
+                    "type": "integer"
+                },
+                "joints": {
+                    "additionalProperties": {
+                        "items": {
+                            "type": "number"
+                        },
+                        "maxItems": 3,
+                        "minItems": 3,
+                        "type": "array"
+                    },
+                    "description": "Joint name to [x, y, z] degrees, e.g. {\"lForeArm\":[0,-90,0]} bends the left elbow",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "joints"
+            ]
+        },
+        {
+            "description": "Moves the body (hip position) at a frame, in the position fields' units.",
+            "name": "set_position",
+            "parameters": {
+                "frame": {
+                    "type": "integer"
+                },
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "x",
+                "y",
+                "z"
+            ]
+        },
+        {
+            "description": "Removes the key frame of a joint at a frame. The first frame cannot be removed.",
+            "name": "delete_key",
+            "parameters": {
+                "frame": {
+                    "type": "integer"
+                },
+                "joint": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "joint",
+                "frame"
+            ]
+        },
+        {
+            "description": "Lists the frames that have key frames, for one joint or for all joints.",
+            "name": "keys",
+            "parameters": {
+                "joint": {
+                    "type": "string"
+                }
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Goes to a frame, so the program shows that pose.",
+            "name": "set_frame",
+            "parameters": {
+                "frame": {
+                    "description": "Frame number, first frame is 1",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "frame"
+            ]
+        },
+        {
+            "description": "Sets how many frames the animation has.",
+            "name": "set_frame_count",
+            "parameters": {
+                "frames": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "frames"
+            ]
+        },
+        {
+            "description": "Sets frames per second.",
+            "name": "set_fps",
+            "parameters": {
+                "fps": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "fps"
+            ]
+        },
+        {
+            "description": "Plays the animation.",
+            "name": "play",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Stops playing.",
+            "name": "stop",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Starts a new, empty animation. Fails if there are unsaved changes.",
+            "name": "new_animation",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Opens an animation file (.bvh or .avm) from the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.",
+            "name": "open_file",
+            "parameters": {
+                "path": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "path"
+            ]
+        },
+        {
+            "description": "Saves the animation as a BVH file that can be uploaded to Second Life, in the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.",
+            "name": "save_file",
+            "parameters": {
+                "path": {
+                    "type": "string"
+                }
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Takes a picture of the 3D view of the current frame, so you can see the pose. The picture is 4:3. Returns a PNG as base64 text.",
+            "name": "screenshot",
+            "parameters": {
+                "width": {
+                    "description": "Width in pixels, default 800",
+                    "type": "integer"
+                }
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Shows the female or the male Second Life body. This only changes what you see in Pingmator; the saved BVH is the same.",
+            "name": "set_figure",
+            "parameters": {
+                "figure": {
+                    "enum": [
+                        "female",
+                        "male"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "figure"
+            ]
+        },
+        {
+            "description": "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side.",
+            "name": "set_camera",
+            "parameters": {
+                "angle": {
+                    "description": "Degrees around the figure, 0 = front. Used when there is no view",
+                    "type": "number"
+                },
+                "distance": {
+                    "description": "Distance from the figure, 30 to 500, default 100",
+                    "type": "number"
+                },
+                "height": {
+                    "description": "Degrees above the floor, 2 to 80, default 10",
+                    "type": "number"
+                },
+                "reset": {
+                    "type": "boolean"
+                },
+                "view": {
+                    "enum": [
+                        "front",
+                        "back",
+                        "left",
+                        "right",
+                        "three_quarter"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+            ]
+        }
+    ],
+    "ok": true
+}

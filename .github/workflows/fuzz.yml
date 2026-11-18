@@ -1,0 +1,67 @@
+name: Fuzz
+
+# Feeds random and broken input to the prop file reader, the control commands and the
+# new BVH/AVM parser
+# (libFuzzer with AddressSanitizer and UndefinedBehaviorSanitizer). See fuzz/README.md.
+# Not a required check: a crash shows as a red run with the crash file attached.
+
+on:
+  pull_request:
+    branches: [main]
+    # text-only changes cannot change what is fuzzed
+    paths-ignore: ['**/*.md', 'docs/**', 'LICENSE', 'COPYING', 'INSTALL']
+  schedule:
+    - cron: '41 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    # pinned, because the clang package names below belong to this Ubuntu release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      # short on pull requests, longer in the weekly run
+      SECONDS_PER_TARGET: ${{ github.event_name == 'pull_request' && '60' || '600' }}
+      ASAN_OPTIONS: detect_leaks=0
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang libclang-rt-18-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
+      - name: Build fuzz targets
+        run: |
+          CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_FUZZ=ON
+          cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile -j 2
+      - name: Fuzz prop files
+        run: |
+          mkdir -p work/prop crashes
+          cp fuzz/corpus/prop/* work/prop/
+          build-fuzz/fuzz/fuzz_prop -max_total_time="$SECONDS_PER_TARGET" -max_len=4096 \
+            -artifact_prefix=crashes/prop- work/prop
+      - name: Fuzz control commands
+        if: success() || failure()
+        run: |
+          mkdir -p work/control crashes
+          cp fuzz/corpus/control/* work/control/
+          build-fuzz/fuzz/fuzz_control -max_total_time="$SECONDS_PER_TARGET" -max_len=2048 \
+            -dict=fuzz/control.dict -artifact_prefix=crashes/control- work/control
+      - name: Fuzz BVH/AVM files
+        if: success() || failure()
+        run: |
+          mkdir -p work/animfile crashes
+          cp fuzz/corpus/bvh/* fuzz/corpus/avm/* work/animfile/
+          build-fuzz/fuzz/fuzz_animfile -max_total_time="$SECONDS_PER_TARGET" -max_len=65536 \
+            -dict=fuzz/animfile.dict -artifact_prefix=crashes/animfile- work/animfile
+      - name: Keep crash files
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-crashes
+          path: crashes/
+          if-no-files-found: ignore

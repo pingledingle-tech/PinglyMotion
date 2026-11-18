@@ -1,0 +1,44 @@
+Version 0.3.0
+---------------------
+
+  - Beta: please report problems on GitHub
+  - FEATURE: Bento body (Max avatar) with fingers and a face that follow the Bento bones (Options > Bento body)
+  - FEATURE: Show or hide joint groups: wings, tail, hind limbs, face, fingers and toes (Options > Joints)
+  - FEATURE: The name of the joint under the mouse is shown next to the pointer
+  - FEATURE: Male body shape (Figure: male)
+  - FEATURE: Remote control for AI assistants and other programs (Options > Allow remote control, see docs/CONTROL.md); the MCP server is in the mcp folder
+  - FEATURE: Linux build (AppImage)
+  - Safer file reading: broken or hostile BVH, AVM, prop and mesh files are refused with a message instead of crashing
+  - Data files are read from the program folder, never from the current folder
+  - Saving reports errors and no longer leaves half-written files
+  - Release downloads come with SHA256 checksums and signed build provenance
+
+
+Version 0.2.0
+---------------------
+
+  - First Pingmator release, based on QAvimator
+  - FEATURE: Bento skeleton with all 133 Second Life bones (fingers, face, tail, wings)
+  - FEATURE: Dark theme and dockable panels
+  - FEATURE: Update check now looks for new releases on GitHub
+  - Builds with Qt 6
+
+
+Version 0.1.1.450
+---------------------
+
+  - BUG: Fixed crash when loading props
+
+
+Version 0.1.1
+---------------------
+
+  - BUG: Fixed avatar position interpolation
+  - BUG: Fixed avatar rotation/position ignoring changes if return key was not pressed after typing a new value
+
+
+Version 0.1.0
+---------------------
+
+  - First release
+  - FEATURE: Added program update notifications

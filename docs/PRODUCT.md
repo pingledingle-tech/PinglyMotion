@@ -1,0 +1,148 @@
+# Pingmator: product vision and roadmap
+
+This document brings together the product vision, user value, use cases and proposed direction. It complements [IDEAS.md](IDEAS.md), [WORK.md](WORK.md) and the linked issues. Issues and pull requests are the source for current task status. The sequence below is a proposal, not a commitment, schedule or replacement for existing technical decisions.
+
+## Vision
+
+Make it possible for newcomers to create, adapt and improve Second Life animations for free, without professional tools or paid add-ons. Pingmator should connect approachable posing and animation editing with open motion sources, optional AI assistance and preview on the user's avatar.
+
+People should be able to work manually, with AI, or with both. Pingmator remains useful without AI or a viewer connection.
+
+## People and the value they get
+
+| Person and need | Value |
+| --- | --- |
+| A newcomer making a sit, stand or AO | An approachable way to create or adjust motion without mastering a professional 3D package. |
+| A dancer or animator | Edit and reuse poses and motion sequences, with clearer timing and looping. |
+| A creator with animation from another tool | A potential free route to adapt motion to the SL Bento skeleton and export it for SL. |
+| Someone using AI | Describe and refine motion while retaining manual control, with visual and joint-data feedback where available. |
+| A furniture or object creator | Reuse animations and, eventually, simple LSL controller templates. |
+
+These are intended outcomes, not claims that each workflow is already implemented.
+
+## The intended journey
+
+**Create or import → adapt and edit → preview → export and use → reuse.**
+
+Start with a manual pose or animation; in the future also investigate AI-generated sequences, other tools, open animation libraries and ordinary video. Adjust on the Bento skeleton, preview where possible, export to SL, and reuse the work in AOs, furniture or other objects.
+
+## Use cases
+
+### 1. Adjust a sitting pose for an avatar
+
+- **User and need:** An SL user wants a sit to fit their avatar and furniture.
+- **Journey:** Open or create the pose, select body parts, adjust joints, inspect the result, then save and export.
+- **Value:** Less guesswork and easier correction. Aurora live preview could reduce repeated uploads.
+- **Status:** Core manual editing exists. Live preview in Aurora works ([#78](https://github.com/pingledingle-tech/Pingmator/pull/78), [#95](https://github.com/pingledingle-tech/Pingmator/pull/95); tested on Windows with the Aurora fork). End-to-end export and SL upload still need validation.
+
+### 2. Create an AO stand or sit
+
+- **Journey:** Create a pose, add and adjust keys, refine the loop, export and use it in an AO.
+- **Value:** Create personalised everyday movement without a paid authoring tool.
+- **Needs:** Reliable editing, loop points, SL export and clear instructions. An AO of original work is an idea in [IDEAS.md](IDEAS.md); ownership of imported source material must be checked separately.
+
+### 3. Make and refine a dance
+
+- **Journey:** Create or import movement, adjust keyframes and transitions, preview and export.
+- **Value:** Reuse movement and make timing changes without starting again.
+- **Explore:** Reusable sequences, seamless looping, curves and possible BPM guides ([#64](https://github.com/pingledingle-tech/Pingmator/issues/64)). Video-to-motion and complete AI-generated dances are research ideas, not established capabilities.
+
+### 4. Preview on the user's avatar
+
+- **Journey:** Connect Pingmator to Aurora, adjust a pose or frame and see the avatar locally in the viewer.
+- **Value:** Judge fit on the actual avatar before uploading.
+- **Status and limit:** Works today, see [AURORA_LINK.md](AURORA_LINK.md). The pose is sent as quaternions per joint when Aurora supports it ([#95](https://github.com/pingledingle-tech/Pingmator/pull/95)), otherwise as BVH ([#78](https://github.com/pingledingle-tech/Pingmator/pull/78)). The preview is local only: nothing is uploaded and others do not see it. It needs Aurora built from the fork until the change is proposed upstream. Synchronised playback and avatar shape are future ideas.
+
+### 5. Ask an AI to help with a pose
+
+- **Journey:** Enable local control, describe a pose, let the assistant use joint and frame commands, inspect a screenshot, and adjust.
+- **Value:** A lower barrier for starting and iterating, while the user keeps control.
+- **Status:** Local HTTP and MCP commands exist; setup and available commands are in [CONTROL.md](CONTROL.md). More advanced motion generation, visual assessment and collision or foot-contact analysis need investigation. Connection status is tracked in [#43](https://github.com/pingledingle-tech/Pingmator/issues/43).
+
+### 6. Bring an external animation to SL
+
+- **Journey:** Import or convert an animation, map and retarget its skeleton to Bento, review the result and export.
+- **Value:** A possible free bridge from Blender and other sources to SL.
+- **Status:** glTF import and Blender interoperability are later work ([#65](https://github.com/pingledingle-tech/Pingmator/issues/65), [#66](https://github.com/pingledingle-tech/Pingmator/issues/66)). FBX/Maya conversion paths and retargeting need investigation; direct support is not promised.
+
+### 7. Turn ordinary video into movement
+
+- **Journey:** Use an open tool to estimate motion from video, adapt it to Bento and edit the result.
+- **Value:** Explore making dances and other motion without a mocap suit.
+- **Status:** Idea only. Accuracy, missing depth, cleanup, rights and the integration workflow remain to be evaluated.
+
+### 8. Make an animation usable in an object
+
+- **Journey:** Export an animation and use it in an AO, poseball or furniture object, potentially with a generated LSL template.
+- **Value:** Help users take finished animation into an SL object.
+- **Status:** LSL templates and reusable libraries are ideas. LSL controls animations; it is not the animation authoring format. A full LSL IDE is outside the stated scope.
+
+## Product areas and current direction
+
+| Area | Direction | Tracking |
+| --- | --- | --- |
+| Posing | Grouped body/face/hand joints, hand presets, finer adjustment, visibility, mirroring and whole-pose controls. | [#88](https://github.com/pingledingle-tech/Pingmator/issues/88), [#59 joint limits](https://github.com/pingledingle-tech/Pingmator/issues/59) |
+| Timeline and motion | Keyframes, transport, zoom, interpolation, easing, looping and reusable sequences. | [#64](https://github.com/pingledingle-tech/Pingmator/issues/64) |
+| Aurora | Live preview with quaternion poses is done; playback synchronisation, avatar shape and an upstream proposal to Aurora later. | [AURORA_LINK.md](AURORA_LINK.md), [#78](https://github.com/pingledingle-tech/Pingmator/pull/78), [#95](https://github.com/pingledingle-tech/Pingmator/pull/95) |
+| AI and openness | Improve the existing local API and MCP. Avoid tying the editor to a single assistant. Investigate easier installation and client status. | [CONTROL.md](CONTROL.md), [#35](https://github.com/pingledingle-tech/Pingmator/issues/35), [#43](https://github.com/pingledingle-tech/Pingmator/issues/43) |
+| Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests, then investigate native .anim export. | [#62](https://github.com/pingledingle-tech/Pingmator/issues/62), [#63](https://github.com/pingledingle-tech/Pingmator/issues/63) |
+| Import and retargeting | Explore glTF, Blender, an own rigged avatar and an SL Bento bridge. | [#65](https://github.com/pingledingle-tech/Pingmator/issues/65), [#66](https://github.com/pingledingle-tech/Pingmator/issues/66) |
+| New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. | [IDEAS.md](IDEAS.md) |
+| Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#development-roadmap-proposed) |
+
+## Proposed roadmap
+
+The documented technical decision is to modernise the renderer, then the BVH/AVM parser and data model, then add .anim export ([#60](https://github.com/pingledingle-tech/Pingmator/issues/60)). Product improvements can be worked on in small steps where dependencies and active work permit.
+
+1. **Finish the foundation:** complete renderer work, protect existing animations and strengthen Windows and parser testing.
+2. **Make a useful pose-to-preview journey:** improve practical posing and complete the Aurora connection. A proposed milestone is adjusting a sitting pose, previewing it on an avatar and saving the result.
+3. **Harden the animation model:** replace the parser with tested error handling, round-trip coverage and fuzzing. Validate that frames, motion and loop data survive save/reopen.
+4. **Improve animation and SL export:** develop .anim and timeline/easing improvements. Better interpolation can also benefit BVH; its usefulness does not depend entirely on .anim.
+5. **Import and retarget:** establish a tested route for an external animation to the Bento skeleton; investigate Blender and own-avatar preview.
+6. **Explore broader creation:** test video-to-motion, Mesh2Motion, AI-assisted sequences, reusable libraries and LSL templates in small experiments before committing to large integrations.
+
+These stages are suggested groupings, not deadlines or a claim that every step must wait for every preceding feature. Actual prioritisation belongs to the project owner.
+
+### Combined plan (18 November 2026)
+
+This replaces the numbered work order of 16 November. The order of stages above still holds: posing comes before the parser, and the new parser keeps today's interface to the rest of the program. File formats were decided in [#118](https://github.com/pingledingle-tech/Pingmator/issues/118); the posing interface in [POSING_UX.md](POSING_UX.md) ([#88](https://github.com/pingledingle-tech/Pingmator/issues/88)).
+
+**Done so far:** renderer ([#61](https://github.com/pingledingle-tech/Pingmator/issues/61)), loop points ([#91](https://github.com/pingledingle-tech/Pingmator/issues/91)), renderer leftovers ([#99](https://github.com/pingledingle-tech/Pingmator/issues/99)), Qt 5 dropped ([#98](https://github.com/pingledingle-tech/Pingmator/issues/98)), remote-control indicator ([#43](https://github.com/pingledingle-tech/Pingmator/issues/43)), joint limits ([#59](https://github.com/pingledingle-tech/Pingmator/issues/59)), Qt maths instead of libquat ([#97](https://github.com/pingledingle-tech/Pingmator/issues/97)), new IK solver ([#130](https://github.com/pingledingle-tech/Pingmator/pull/130)), fuzzing of `.prp` files and the control API ([#20](https://github.com/pingledingle-tech/Pingmator/issues/20)), joint tabs and table ([#126](https://github.com/pingledingle-tech/Pingmator/pull/126)), posing UX plan ([#135](https://github.com/pingledingle-tech/Pingmator/pull/135)).
+
+The work runs in **two tracks side by side**. They mostly change different files: the posing track the window, panels and 3D view; the format track the parser, the data model and file import/export. Where a step in one track needs a file another active job has, [WORK.md](WORK.md) decides who waits. Within a track, one step at a time, each tested on Windows before it is merged.
+
+**Track 1 – posing ([#88](https://github.com/pingledingle-tech/Pingmator/issues/88), steps in [POSING_UX.md](POSING_UX.md#order-of-work))**
+
+1. Camera and keys: one scheme for new users, Blender and Second Life habits; old joint modifier keys removed. Beside it: a data file from Firestorm with joint names, groups, left/right pairs and hand presets (LGPL notice), and the status bar (Claude, Aurora, tips switch).
+2. Friendly names, section headings and search in the joint list.
+3. Floating, movable panels; Tab hides them; reset layout.
+4. Selected-joint card: trackball, sliders, joint limit warning.
+5. Left / Right / Mirror and the whole-pose buttons.
+6. **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL.
+7. The remaining posing steps: Hands tab, timeline, help tips and hint bar, command search, pose library and export selection, settings, visual polish and own icon, 3D view follows the tab.
+
+**Track 2 – file formats ([#118](https://github.com/pingledingle-tech/Pingmator/issues/118))**
+
+1. New parser and data model with fuzzing ([#62](https://github.com/pingledingle-tech/Pingmator/issues/62)). The legacy parser already has the limits from the security audit; this step replaces the old code with tested error handling. It is large, so it is split into several pull requests.
+2. `.anim` export and easing ([#63](https://github.com/pingledingle-tech/Pingmator/issues/63), [#64](https://github.com/pingledingle-tech/Pingmator/issues/64)).
+3. `.anim` import ([#134](https://github.com/pingledingle-tech/Pingmator/issues/134)).
+4. BVH from any skeleton, retargeted to the SL skeleton ([#117](https://github.com/pingledingle-tech/Pingmator/issues/117)).
+5. glTF/GLB import ([#65](https://github.com/pingledingle-tech/Pingmator/issues/65)), then Blender ([#66](https://github.com/pingledingle-tech/Pingmator/issues/66), docs first). No glTF export; FBX only on real demand. AVM stays the own format; a versioned AVM 2 is decided after #62 and #64.
+
+**Small jobs in between** (when a track waits for a Windows test): head and neck limits ([#129](https://github.com/pingledingle-tech/Pingmator/issues/129)), version in the window title ([#133](https://github.com/pingledingle-tech/Pingmator/issues/133)), a status table for every finding in [SECURITY_AUDIT.md](SECURITY_AUDIT.md), and a new default body ([#110](https://github.com/pingledingle-tech/Pingmator/issues/110)).
+
+**Later:** easy setup with an AI assistant ([#35](https://github.com/pingledingle-tech/Pingmator/issues/35)) once the posing interface has settled; larger AI features and libraries as small experiments ([#119](https://github.com/pingledingle-tech/Pingmator/issues/119)–[#122](https://github.com/pingledingle-tech/Pingmator/issues/122)). Manual use always works without AI.
+
+## Product principles and decisions
+
+- Keep the focus on Second Life and Bento, with manual use available without AI or Aurora.
+- Continue modernising the existing C++/Qt project in small steps, rather than starting a rewrite ([#60](https://github.com/pingledingle-tech/Pingmator/issues/60)).
+- Blender remains a modelling and rigging tool; Pingmator focuses on animation authoring and SL workflows.
+- Validate real SL export and uploads, actual avatar behaviour, compatibility, and rights when using external models or motion.
+- Distinguish working features, prototypes, planned tasks and ideas. Do not assume that a successful local preview is an SL upload.
+
+## Maintaining this overview
+
+Use [WORK.md](WORK.md) for active jobs and coordination, issues for detailed requirements and progress, and pull requests for code under review. This document describes the product and user outcomes; update it when a decision or capability changes. Avoid inventing dates or treating exploratory ideas as shipped features.
+
+The [README roadmap](../README.md#development-roadmap-proposed) and [IDEAS.md](IDEAS.md) contain earlier snapshots and should be reconciled when their active work allows it.

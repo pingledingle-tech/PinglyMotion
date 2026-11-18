@@ -1,0 +1,92 @@
+# Posing UX plan (#88)
+
+Agreed with the project owner on 18 November 2026. This page is the plan for the new posing interface: what it should look like, how the mouse and keys work, and the order of the work. Issue #88 tracks it.
+
+The pictures are a **mockup**: they show the direction, not a finished design. The 3D view in them is a real Pingmator render; the panels are drawn.
+
+Picture credits: the figure in the 3D view is the "Maxine" variant of the open source Max avatar (https://github.com/RuthAndRoth/Max), CC BY 4.0, rendered by Pingmator (see `bin/data/character/max/`). The panels and icons are drawn for this mockup and belong to Pingmator (GPLv2 or later, like the rest of the repository).
+
+## Who it is for
+
+New users first: people who want to pose their avatar without knowing animation tools. People with Blender or Second Life viewer habits should feel at home too.
+
+## Where the ideas come from
+
+| Source | What we take | Licence rule |
+|---|---|---|
+| Aurora viewer (poser and animation editor) | Look and behaviour: friendly joint names, side selector, trackball, whole-pose buttons, edited-joint count | GPLv3: ideas only, no code |
+| Firestorm poser | Joint table (names, groups, left/right pairs), 9 hand presets, mirror logic, lock, undo per joint, export selection, World/Avatar/Screen frame | LGPL 2.1: data and code may be reused, keep copyright headers |
+| Blender | Mouse and key habits, viewport gizmo, Tab to hide panels | Habits only |
+| Pingmator | Timeline and key frames: the others only make single poses | – |
+
+## Main window
+
+![Main window mockup](images/posing-ux/main-window.png)
+
+- The 3D view fills the window. **Joints** (left), **Selected joint** (right) and **Timeline** (bottom) are panels that float over it.
+- Panels can be dragged, docked, collapsed or popped out as own windows (useful with two screens). The layout is remembered; **View › Reset layout** brings back the default.
+- **Tab** hides and shows all panels. The camera centres the figure in the free area, not behind a panel. On a small screen (1440×900) this matters: with all panels open the free area is about 780×560 pixels.
+- Top bar: menu, file name with unsaved mark, figure and size, **command search (Ctrl + K)**, undo / redo, Export, Save.
+- **Joints panel:** Avatar / Props switch; tabs Body / Face / Hands / Other (done in #126); Left / Right / Mirror; search; friendly names under section headings; violet dot on edited joints; key marker; tick for "include in export".
+- **Selected joint:** friendly name and SL name; IK switch; lock; reset; Rotate / Move (Move only for the pelvis and the avatar position); trackball plus X / Y / Z sliders with value fields; the allowed range is shown on each slider and a warning appears near a joint limit (#59, #129); "Turn around: Joint / Avatar / Screen"; whole pose: Flip, Left → Right, Right → Left, T-pose, Poses…, Reset all.
+- **Timeline:** full width; only edited joints by default; loop range; ease in / out for the selected key; Set key.
+- **Status bar:** the remote-control indicator from #43 (Claude), the Aurora link status and a "Tips on" switch, all in one place.
+- **Help:** short help text when the mouse rests on a control. **On by default**, can be turned off in Settings. A hint bar in the 3D view shows the most used controls for what is under the mouse; `?` opens the full list.
+- No **Scale**: BVH and SL `.anim` cannot store joint scale.
+
+## Hands tab, settings and poses
+
+![Hands tab, settings and pose library mockup](images/posing-ux/hands-settings-poses.png)
+
+- **Hands tab:** Firestorm's 9 hand presets and a finger grid (finger × base / middle / tip). With Mirror the other hand follows.
+- **Settings:** help tips (on by default), hint bar, joint markers, natural rotation alignment, joint limits, trackball sensitivity, theme, reset layout.
+- **Poses:** a pose library with pictures, and the export choice: all edited joints, or only the joints ticked in the list (for example only the arms, so walking still works).
+
+## Mouse and keys
+
+![Mouse and keys](images/posing-ux/mouse-and-keys.png)
+
+One scheme for everyone. The first column is all a new user needs; the other two also work.
+
+| Action | Simple (default) | Blender habit | Second Life habit |
+|---|---|---|---|
+| Orbit the camera | Drag empty space | Middle-drag | Alt + drag, Ctrl + Alt + drag |
+| Pan | Right-drag | Shift + middle-drag | Ctrl + Alt + Shift + drag |
+| Zoom | Mouse wheel | Ctrl + middle-drag | Alt + drag up/down |
+| Focus on a joint | Double-click it, or F | Numpad . | Alt + click |
+| Front / side / top | Click the view gizmo | Numpad 1 / 3 / 7 | – |
+| Select a joint | Click it, or its row | Click | Click |
+| Turn a joint | Drag a ring | R, then X / Y / Z (later) | – |
+| Turn freely | Drag the ball on the joint | R R (later) | Trackball |
+| Finer control | Hold Shift while dragging | Shift | Shift |
+| Undo / redo | Ctrl + Z / Ctrl + Shift + Z | Same | Same |
+| Set a key | Set key button, or K | I | – |
+| Play / stop | Space | Space | – |
+| Previous / next frame | ← / → | Same | – |
+
+**Removed:** the old QAvimator keys (Shift, Alt, Ctrl while dragging a joint for X, Y, Z, and Alt-drag to zoom). They clash with the Second Life camera keys, and a new user cannot see them. Joints now turn with the rings or the trackball.
+
+## Language
+
+English only for now. All interface text goes through `tr()`, so translations can be added later without code changes. Help texts are written in simple English.
+
+## Order of work
+
+One pull request per step, tested on Windows before it is merged. Steps that change the same files run one after another.
+
+1. Camera and keys (new scheme, old joint modifiers removed) – `src/animationview.*`
+2. Friendly names, section headings and search in the joint list
+3. Floating, movable panels; Tab to hide; reset layout
+4. Selected-joint card: trackball, sliders, limit warning, turn-around frame
+5. Left / Right / Mirror and the whole-pose buttons (shared left/right mapping)
+6. Hands tab: presets and finger grid
+7. Timeline: only edited joints, loop range, ease chips
+8. Status bar: Claude and Aurora status, tips switch
+9. Help tips and hint bar, `?` controls list
+10. Command search
+11. Pose library and export selection
+12. Settings page
+13. Visual polish (theme, spacing, icons) and an own Pingmator icon
+14. The 3D view follows the tab (only that group's joints shown and clickable)
+
+Preparation that can run beside step 1: a data file with Firestorm's joint names, groups, left/right pairs and hand presets (with its licence notice), used by steps 2, 5 and 6.

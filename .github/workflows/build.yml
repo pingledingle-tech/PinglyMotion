@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  # branches are tested through their pull request, so push only runs for main
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# the build only reads the code; artifacts are uploaded with the job's own token
+permissions:
+  contents: read
+
+jobs:
+  # pull requests that only change text (Markdown, docs/, licence files) skip the build;
+  # a skipped job counts as passed for the required checks
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Does the change touch more than text?
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          other=$(git diff --name-only "$BASE...$HEAD" | grep -vE '(\.md$|^docs/|^LICENSE$|^COPYING$|^INSTALL$)' || true)
+          if [ -n "$other" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+          echo "Files other than text:"; echo "${other:-(none)}"
+
+  windows:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jurplel/install-qt-action@b344308e4483fc892e0d27b3cd1b173ebdd95f06 # v4.5.0
+        with:
+          aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@076e1659807d0b362a3ed684d54c2e9c775eb9c7'  # Qt 6.12 repo layout; switch back to a PyPI release when one supports it
+          version: '6.12.0'
+          arch: win64_mingw
+          tools: 'tools_mingw1310'
+      - name: Build
+        shell: bash
+        run: |
+          export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }}
+          cmake --build build -j 4
+      - name: Package
+        shell: bash
+        run: |
+          export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
+          mkdir -p dist
+          cp build/src/pingmator.exe dist/
+          cp -r bin/data dist/data
+          cp bin/NEWS dist/
+          # the MCP server goes with the program, so both are updated together
+          mkdir -p dist/mcp
+          cp tools/mcp/pingmator_mcp.py tools/mcp/commands.json tools/mcp/README.txt dist/mcp/
+          "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/pingmator.exe
+          cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll dist/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Pingmator-windows
+          path: dist
+
+  linux:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Qt 6
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev xvfb
+      - name: Skeleton files match the generator
+        run: |
+          python3 tools/make_bento_skeleton.py
+          git diff --exit-code bin/data
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} -DPINGMATOR_TESTS=ON
+          cmake --build build -j 4
+      - name: Automatic tests
+        run: ctest --test-dir build --output-on-failure
+      - name: MCP server connects safely
+        run: python3 tests/test_mcp_proxy.py
+      - name: Exported BVH files pass Second Life's upload rules
+        run: |
+          cd bin
+          PINGMATOR_EXPORT_DIR=$PWD/../exports QT_QPA_PLATFORM=offscreen ../build/tests/pingmator_tests > /dev/null
+          cd ..
+          python3 tools/check_sl_bvh.py exports/*.bvh
+          python3 tools/check_sl_bvh.py exports/posed_bones.bvh --expect-animated mHandIndex2Left mHandThumb1Right mFaceJaw mTail2
+      - name: Program starts and opens files
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build/src/pingmator
+      - name: Remote control works from start to finish (HTTP and MCP)
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/pingmator

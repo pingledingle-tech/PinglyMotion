@@ -1,0 +1,611 @@
+/***************************************************************************
+ *   Copyright (C) 2006 by Zi Ree   *
+ *   Zi Ree @ SecondLife   *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+#include <QPainter>
+#include <QPaintEvent>
+
+#include "animation.h"
+#include "constants.h"
+#include "jointgroups.h"
+
+#include "timeline.h"
+
+Timeline::Timeline(QWidget* parent, Qt::WindowFlags)
+  : QFrame(parent)
+{
+  qDebug("Timeline(0x%p)",(const void*) this);
+
+  // init offscreen pixmap as 0 so the first change of number of frames will not
+  // try to copy old pixmap data
+  offscreen=0;
+
+  resize(50,50);
+
+  fullRepaint=false;
+
+  animation=0;
+  // tracks can be drawn before the first paint event sets these
+  numOfFrames=0;
+  firstVisibleKeyX=0;
+  visibleKeysX=0;
+  frameSelected=0;
+  drawn=false;
+  setCurrentFrame(0);
+  setWindowTitle(tr("Timeline"));
+
+  leftMouseButton=false;
+  shift=false;
+
+  dragging=0;
+  trackSelected=-1;
+
+  setFocusPolicy(Qt::StrongFocus);
+}
+
+Timeline::~Timeline()
+{
+}
+
+// rows shown in the timeline: joints of hidden groups may be left out
+static int timelineRows()
+{
+  const int rows=JointGroups::rowCount();
+  return rows>0 ? rows : Constants::numParts();
+}
+
+// the set of shown rows changed: draw everything again from a clean pixmap
+void Timeline::layoutChanged()
+{
+  if(offscreen) offscreen->fill(palette().color(QPalette::Active,QPalette::Window));
+  fullRepaint=true;
+  update();
+}
+
+void Timeline::paintEvent(QPaintEvent* /* e */)
+{
+  if(!animation) return;
+  if(isHidden()) return;
+
+  qDebug("Timeline::paintEvent(%d)",(int) fullRepaint);
+
+  QSize newSize = QSize(numOfFrames * Constants::keyWidth(), (timelineRows() - 1) * Constants::lineHeight());
+
+  if(newSize!=size())
+  {
+    qDebug("Timeline::paintEvent(): resizing timeline widget to %dx%d",newSize.width(),newSize.height());
+    resize(newSize);
+    emit resized(newSize);
+  }
+/*
+  // clip keyframe drawing to "dirty" area of redraw
+  firstVisibleKeyX = e->rect().x() / Constants::keyWidth();
+  visibleKeysX = e->rect().width() / Constants::keyWidth();
+*/
+  // clip keyframe drawing to "dirty" area of redraw
+  firstVisibleKeyX=0;
+  visibleKeysX=numOfFrames;
+
+  // full repaint only rarely needed
+  if(fullRepaint)
+  {
+    // clip keyframe drawing to "dirty" area of redraw
+    firstVisibleKeyX=0;
+    visibleKeysX=numOfFrames;
+
+    for (int part = 0; part < Constants::numParts(); part++)
+    {
+      drawTrack(part);
+    } // for
+    fullRepaint=false;
+  }
+
+  // reset keyframe clipping to have new or updated transition lines painted properly
+  firstVisibleKeyX=0;
+  visibleKeysX=numOfFrames;
+
+  int xpos = frameSelected * Constants::keyWidth();
+
+  QPainter p(this);
+  p.drawPixmap(0,0,*offscreen);
+
+  // draw current frame marker
+  p.fillRect(xpos + Constants::keyWidth() / 2 - 1, 0, 2, height(), QColor("#ff0000"));
+
+  qDebug("Timeline::paintEvent(): done");
+}
+
+void Timeline::setNumberOfFrames(int frames)
+{
+  qDebug("Timeline::setNumberOfFrames(%d==%d): %p",numOfFrames,frames,(const void*) offscreen);
+
+  numOfFrames=frames;
+
+  QPixmap* newOffscreen = new QPixmap(numOfFrames * Constants::keyWidth(), Constants::lineHeight() * (Constants::numParts() + 1));
+
+  // copy old offscreen pixmap to new pixmap, if there is one
+  if(offscreen)
+  {
+    QPainter p(newOffscreen);
+    p.drawPixmap(0,0,*offscreen);
+    delete offscreen;
+  }
+
+  offscreen=newOffscreen;
+
+  fullRepaint=true;
+  repaint();
+}
+
+void Timeline::setCurrentFrame(int frame)
+{
+  frameSelected=frame;
+  emit positionCenter(frameSelected * Constants::keyWidth());
+}
+
+void Timeline::setAnimation(Animation* anim)
+{
+  // don't do anything if this is the same animation as before
+  if(anim==animation) return;
+
+  if(animation)
+  {
+    disconnect(animation,SIGNAL(numberOfFrames(int)),this,SLOT(setNumberOfFrames(int)));
+    disconnect(animation,SIGNAL(redrawTrack(int)),this,SLOT(redrawTrackImmediately(int)));
+    disconnect(this,SIGNAL(deleteFrame(int,int)),animation,SLOT(deleteFrame(int,int)));
+    disconnect(this,SIGNAL(insertFrame(int,int)),animation,SLOT(insertFrame(int,int)));
+  }
+  animation=anim;
+
+  if(animation)
+  {
+    connect(animation,SIGNAL(numberOfFrames(int)),this,SLOT(setNumberOfFrames(int)));
+    connect(animation,SIGNAL(redrawTrack(int)),this,SLOT(redrawTrackImmediately(int)));
+    connect(this,SIGNAL(deleteFrame(int,int)),animation,SLOT(deleteFrame(int,int)));
+    connect(this,SIGNAL(insertFrame(int,int)),animation,SLOT(insertFrame(int,int)));
+
+    qDebug("Timeline::setAnimation(): signal setup done");
+  }
+
+  emit animationChanged(anim);
+
+  fullRepaint=true;
+  repaint();
+}
+
+void Timeline::redrawTrackImmediately(int track)
+{
+  drawTrack(track);
+  update();
+}
+
+void Timeline::redrawTrack(int track)
+{
+  drawTrack(track);
+}
+
+void Timeline::drawKeyframe(int track,int frame)
+{
+//  qDebug(QString("drawKeyframe(%1,%2)").arg(track).arg(frame));
+
+  if(track==-1) return;
+  const int row=JointGroups::rowOfTrack(track);
+  if(row<0) return;
+
+  int ypos = row * Constants::lineHeight();
+
+  QPainter p(offscreen);
+  // calculate x position
+  int xpos = frame * Constants::keyWidth();
+
+  QPalette::ColorRole keyColor=QPalette::WindowText;
+
+#ifdef Q_OS_WIN32
+  // on windows systems use text highlight color to contrast with track highlight
+  if(trackSelected==track)
+    keyColor=QPalette::HighlightedText;
+#endif
+
+  QColor color(palette().color(QPalette::Active,keyColor));
+  // draw the key frame
+  if(frame==0)
+  {
+    p.fillRect(xpos, ypos, Constants::keyWidth() / 2, Constants::keyHeight(), QBrush(color));
+    p.fillRect(xpos, ypos + Constants::lineHeight() / 2 - 2, Constants::keyWidth(), 4, QBrush(color));
+  }
+  else if(frame==(numOfFrames-1))
+  {
+    p.fillRect(xpos + Constants::keyWidth() / 2, ypos, Constants::keyWidth() / 2, Constants::keyHeight(), QBrush(color));
+    p.fillRect(xpos, ypos + Constants::lineHeight() / 2 - 2, Constants::keyWidth(), 4, QBrush(color));
+  }
+  else
+  {
+    // find out if we should paint in highlight or normal color
+    if(frame && dragging==frame && trackSelected==track) color=Qt::red;
+
+    // get the list of key frames
+    const BVHNode* joint=animation->getNode(track);
+
+    bool ps=animation->compareFrames(joint,joint->getKeyframeBefore(frame).frameNumber(),frame);
+    bool ns=animation->compareFrames(joint,joint->getNextKeyframe(frame).frameNumber(),frame);
+
+    p.setPen(color);
+    p.setBrush(QBrush(color));
+
+    if(ps && ns)
+      p.drawEllipse(xpos, ypos, Constants::keyWidth() - 1, Constants::lineHeight() - 1);
+
+    else if(ns)
+    {
+      QPolygon triangle(3);
+      triangle.putPoints(0, 3, xpos, ypos + (Constants::lineHeight() - 1) / 2, xpos + Constants::keyWidth() - 1, ypos, xpos + Constants::keyWidth() - 1, ypos + Constants::lineHeight() - 1);
+
+      p.drawPolygon(triangle);
+    }
+    else if(ps)
+    {
+      QPolygon triangle(3);
+      triangle.putPoints(0, 3, xpos + Constants::keyWidth() - 1, ypos + (Constants::lineHeight() - 1) / 2, xpos, ypos, xpos, ypos + Constants::lineHeight() - 1);
+
+      p.drawPolygon(triangle);
+    }
+    else
+      p.fillRect(xpos, ypos, Constants::keyWidth() - 1, Constants::keyHeight(), QBrush(color));
+  }
+}
+
+void Timeline::selectTrack(int track)
+{
+  int oldTrack=trackSelected;
+  trackSelected=track;
+  // if the user clicked on a different track
+  if(oldTrack!=trackSelected)
+  {
+    // draw old track with old color
+    drawTrack(oldTrack);
+    // draw new track
+    drawTrack(trackSelected);
+  }
+  repaint();
+}
+
+void Timeline::drawTrack(int track)
+{
+  if(track==-1) return;
+  if(!offscreen) return;
+//  qDebug("first %d vis %d",firstVisibleKeyX,visibleKeysX);
+  qDebug("Timeline::drawTrack(%d, %d)",track,trackSelected);
+
+  // normal tracks get default background color
+  QPalette::ColorRole baseColor=QPalette::Window;
+  // normal tracks get default foreground colors for keyframe transition lines
+  QPalette::ColorRole lineColor=QPalette::WindowText;
+  // selected tracks get other color, unless it's a "Site" track (end of limbs group)
+  QString trackName=animation->getPartName(track);
+  if(track==trackSelected && trackName!="Site")
+  {
+    baseColor=QPalette::Highlight;
+#ifdef Q_OS_WIN32
+    // additionally, set inverse highlight color for transition lines on windows for contrast
+    lineColor=QPalette::HighlightedText;
+#endif
+  }
+
+  const int row=JointGroups::rowOfTrack(track);
+  if(row<0) return;
+
+  int light=0;
+  int y = row * Constants::lineHeight();
+
+  // temporary painter, must be destroyed before entering main keyframe loop,
+  // or we clash with drawKeyframe() painter
+  QPainter* p=new QPainter(offscreen);
+
+  // find widget coordinates of clipped area and decide if we paint light or dark background
+  int firstGreyShade=(firstVisibleKeyX/10);
+  light=firstGreyShade % 2;
+  firstGreyShade *= Constants::keyWidth() * 10;
+
+  // draw alternatingly light / dark background
+  for(int x = firstGreyShade; x < (firstGreyShade + visibleKeysX + 10) * Constants::keyWidth(); x += 10 * Constants::keyWidth())
+  {
+    // draw a filled rectangle in background color, alternatingly darkened by 5 %
+    p->fillRect(x, y, x + 10 * Constants::keyWidth(), Constants::lineHeight(), palette().color(QPalette::Active, baseColor).darker(100 + 5 * light));
+    light=1-light;
+  }
+
+  // if this is a "Site end" marker (end of group of limbs) do nothing more
+  if(trackName=="Site")
+  {
+    delete p;
+    return;
+  }
+
+  // draw straight line as track marker within "dirty" redraw region
+  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2, (visibleKeysX + 1) * Constants::keyWidth(), 1, palette().color(QPalette::Active, baseColor).darker(115));
+  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2 + 1, (visibleKeysX + 1) * Constants::keyWidth(), 1, palette().color(QPalette::Active, baseColor).lighter(115));
+
+  delete p;
+
+  // get the list of key frames
+  const BVHNode* joint=animation->getNode(track);
+  // start drawing rest of key frames
+  if(joint->numKeyframes())
+  {
+    // reset previous frame marker
+    int oldFrame=0;
+    // iterate through list of key frames
+    for(int key=0;key<joint->numKeyframes();key++)
+    {
+      // get frame number of key frame
+      const FrameData& frameData=joint->keyframeDataByIndex(key);
+      int frameNum=frameData.frameNumber();
+
+      // if key frame is not out of animation length
+      if(frameNum<numOfFrames)
+      {
+        // if this key frame is not at the first animation frame
+        if(frameNum>0)
+        {
+          // create new painter here, will be out of scope before drawKeyframe() gets called
+          QPainter p(offscreen);
+          // check if it differs from the previous frame, if it does, draw a line there
+          // but only if this line is inside the "dirty" redraw region
+          if(
+              (frameNum>firstVisibleKeyX && oldFrame<(firstVisibleKeyX+visibleKeysX)) &&
+              !animation->compareFrames(joint,frameNum,oldFrame)
+            )
+          {
+            const FrameData& oldFrameData=joint->keyframeDataByIndex(key-1);
+            int frameDiff = (frameNum - oldFrame + 1) * Constants::keyWidth() / 2;
+
+            QColor pen1(palette().color(QPalette::Active,lineColor));
+            QColor pen2(palette().color(QPalette::Active,baseColor).lighter(115));
+
+            if(oldFrameData.easeOut())
+            {
+              QPoint oldPos(oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1, y + Constants::lineHeight() / 2);
+              for (int x = 0; x < frameDiff - Constants::keyWidth() + 1; x++)
+              {
+                QPoint newPos(x + oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
+                              (int)(y + sin(x * 6.283 / (frameDiff - Constants::keyWidth() + 1)) * (Constants::lineHeight() / 2 - 1) + Constants::lineHeight() / 2)
+                             );
+                p.setPen(pen1);
+                p.drawLine(oldPos,newPos);
+                p.setPen(pen2);
+                p.drawLine(oldPos+QPoint(0,1),newPos+QPoint(0,1));
+                oldPos=newPos;
+              }
+            }
+            else
+            {
+              // we use fillRect instead of drawLine because for some reason the windows
+              // version did not draw properly
+              p.fillRect(oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
+                         y + Constants::keyHeight() / 2,
+                         frameDiff - Constants::keyWidth(),
+                         1, QBrush(pen1));
+              p.fillRect(oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
+                         y + Constants::keyHeight() / 2 + 1,
+                         frameDiff,
+                         1, QBrush(pen2));
+            }
+
+            if(frameData.easeIn())
+            {
+              QPoint oldPos(oldFrame * Constants::keyWidth() + frameDiff, y + Constants::lineHeight() / 2);
+              for (int x = 0; x < frameDiff - Constants::keyWidth() + 1; x++)
+              {
+                QPoint newPos(x + oldFrame * Constants::keyWidth() + frameDiff - 1,
+                              (int)(y + sin(x * 6.283 / (frameDiff - Constants::keyWidth() + 1)) * (Constants::lineHeight() / 2 - 1) + Constants::lineHeight() / 2)
+                             );
+                p.setPen(pen1);
+                p.drawLine(oldPos,newPos);
+                p.setPen(pen2);
+                p.drawLine(oldPos+QPoint(0,1),newPos+QPoint(0,1));
+                oldPos=newPos;
+              }
+            }
+            else
+            {
+              p.fillRect(oldFrame * Constants::keyWidth() + frameDiff - 1,
+                         y + Constants::keyHeight() / 2,
+                         frameDiff,
+                         1, QBrush(pen1));
+              p.fillRect(oldFrame * Constants::keyWidth() + frameDiff - 1,
+                         y + Constants::keyHeight() / 2 + 1,
+                         frameDiff,
+                         1, QBrush(pen2));
+            }
+          }
+        }
+        // only draw keyframes if they are in "dirty" clipping region
+        if(isDirty(frameNum))
+          // draw the key frame
+          drawKeyframe(track,frameNum);
+      }
+      // remember this frame number as previous key frame
+      oldFrame=frameNum;
+    } // for
+
+    // last frame is always a key frame, so draw it if it's inside the clipping region
+    if(isDirty(numOfFrames-1)) drawKeyframe(track,numOfFrames-1);
+  }
+}
+
+// returns true if frame is inside "dirty" redraw region
+bool Timeline::isDirty(int frame)
+{
+  return (frame>=firstVisibleKeyX && frame<=(firstVisibleKeyX+visibleKeysX));
+}
+
+void Timeline::mousePressEvent(QMouseEvent* e)
+{
+  // get track and frame based on mouse coordinates
+  const int track=JointGroups::trackOfRow(e->position().toPoint().y() / Constants::lineHeight());
+  if(track<0) return;
+  selectTrack(track);
+  frameSelected = e->position().toPoint().x() / Constants::keyWidth();
+
+  // set animation frame to where we clicked
+  animation->setFrame(frameSelected);
+  // check if we clicked on a key frame which is not the first or last one in animation
+  if(frameSelected>0 && frameSelected<(numOfFrames-1) && animation->isKeyFrame(trackSelected,frameSelected))
+  {
+    // first switch on dragging state, so drawKeyframe() will work as expected
+    dragging=frameSelected;
+    // highlight keyframe
+    drawKeyframe(trackSelected,frameSelected);
+  }
+  emit trackClicked(trackSelected);
+  repaint();
+  // remember mouse button state
+  leftMouseButton=true;
+}
+
+void Timeline::mouseReleaseEvent(QMouseEvent*)
+{
+  leftMouseButton=false;
+  if(dragging)
+  {
+    // first switch off dragging state, so drawKeyframe() will work as expected
+    dragging=0;
+    // remove highlight from keyframe
+    drawKeyframe(trackSelected,frameSelected);
+    repaint();
+  }
+}
+
+void Timeline::mouseMoveEvent(QMouseEvent* e)
+{
+  // calculate new position (in frames)
+  int frame = e->position().toPoint().x() / Constants::keyWidth();
+
+  // if frame position has not changed, do nothing
+  if(frame==frameSelected) return;
+
+  // special treatment if user is dragging a keyframe
+  if(dragging)
+  {
+    // if user is dragging a keyframe, move it within more restrictive bounds
+    if(frame>0 && frame<(numOfFrames-1))
+    {
+      // update dragging position
+      dragging=frame;
+
+      // make sure we don't overwrite already existing frames
+      if(!animation->isKeyFrame(trackSelected,frame))
+      {
+        // check if the user holds the shift key
+        if(shift)
+        {
+          // reset shift key status so we don't constantly create copies
+          shift=false;
+          // copy selected frame to new place
+          animation->copyKeyFrame(trackSelected,frameSelected,frame);
+        }
+        else
+          // move selected frame to new place
+          animation->moveKeyFrame(trackSelected,frameSelected,frame);
+
+        redrawTrack(trackSelected);
+        // remember new position
+        frameSelected=frame;
+      }
+    }
+  }
+  // no dragging so check if new position would be out of bounds
+  else if(frame>=0 && frame<numOfFrames)
+  {
+    // remember new position
+    frameSelected=frame;
+    // set the new position
+    animation->setFrame(frame);
+  }
+}
+
+void Timeline::wheelEvent(QWheelEvent* e)
+{
+  // get curernt frame position
+  int newFrame=frameSelected;
+
+  // check if we should move forward or backwards
+  if(e->angleDelta().y()>0) newFrame-=5;
+  else newFrame+=5;
+
+  // check if new position would be out of bounds
+  if(newFrame>=numOfFrames) newFrame=numOfFrames-1;
+  else if(newFrame<0) newFrame=0;
+
+  // remember new position
+  frameSelected=newFrame;
+  // set the new position
+  animation->setFrame(newFrame);
+}
+
+void Timeline::keyPressEvent(QKeyEvent* e)
+{
+  switch(e->key())
+  {
+    case Qt::Key_Shift:
+      shift=true;
+      break;
+
+    case Qt::Key_Delete:
+      emit deleteFrame(trackSelected,frameSelected);
+
+      if(trackSelected!=-1)
+        drawTrack(trackSelected);
+      else
+        fullRepaint=true;
+
+      repaint();
+      break;
+
+    case Qt::Key_Insert:
+      emit insertFrame(trackSelected,frameSelected);
+
+      if(trackSelected!=-1)
+        drawTrack(trackSelected);
+      else
+        fullRepaint=true;
+
+      repaint();
+      break;
+
+    default:
+      e->ignore();
+      return;
+  }
+  e->accept();
+}
+
+void Timeline::keyReleaseEvent(QKeyEvent* e)
+{
+  switch(e->key())
+  {
+    case Qt::Key_Shift:
+      shift=false;
+      break;
+    default:
+      e->ignore();
+      return;
+  }
+  e->accept();
+}

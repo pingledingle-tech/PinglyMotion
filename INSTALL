@@ -1,0 +1,27 @@
+Building Pingmator
+==================
+
+Pingmator is built with CMake and Qt 6. Running it needs
+a graphics card and driver with OpenGL 3.3 or newer.
+
+Linux (Debian/Ubuntu):
+
+    sudo apt-get install cmake g++ qt6-base-dev qt6-base-dev-tools \
+        libqt6opengl6-dev libgl-dev
+    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+    cmake --build build
+    cd bin && ../build/src/pingmator
+
+Windows (MinGW from the Qt installer):
+
+    cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+    cmake --build build
+
+    Copy build/src/pingmator.exe next to a copy of bin/data and run
+    windeployqt on it. .github/workflows/build.yml shows the exact steps.
+
+Add -DPINGMATOR_TESTS=ON to build the tests, then run
+"ctest --test-dir build" (see README.md).
+
+The program reads its data folder from next to the executable. A program
+run from the build folder uses bin/data in the source tree.

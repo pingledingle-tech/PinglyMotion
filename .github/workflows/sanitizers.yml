@@ -1,0 +1,61 @@
+name: Sanitizers
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  # pull requests that only change text (Markdown, docs/, licence files) skip the build;
+  # a skipped job counts as passed for the required checks
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Does the change touch more than text?
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          other=$(git diff --name-only "$BASE...$HEAD" | grep -vE '(\.md$|^docs/|^LICENSE$|^COPYING$|^INSTALL$)' || true)
+          if [ -n "$other" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+          echo "Files other than text:"; echo "${other:-(none)}"
+
+  asan-ubsan:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      ASAN_OPTIONS: detect_leaks=0:halt_on_error=1:abort_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev xvfb
+      - name: Configure and build with ASan/UBSan
+        # -fno-sanitize-recover: any undefined behaviour stops the program, so a test cannot pass over it
+        run: |
+          cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_TESTS=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          cmake --build build-sanitize -j 2
+      - name: Run tests under sanitizers
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" ctest --test-dir build-sanitize --output-on-failure
+      - name: Program starts and opens files (under sanitizers)
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build-sanitize/src/pingmator
+      - name: Remote control from start to finish (under sanitizers)
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build-sanitize/src/pingmator

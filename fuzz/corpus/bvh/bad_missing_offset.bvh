@@ -1,0 +1,1 @@
+HIERARCHY ROOT hip { CHANNELS 3 Xrotation Yrotation Zrotation } MOTION Frames: 1 Frame Time: 0.1 0 0 0

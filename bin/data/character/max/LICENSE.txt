@@ -1,0 +1,21 @@
+Max avatar mesh
+
+"Maxine" from the Max Avatar Project, Copyright 2023 by Ada Radius.
+Creators and contributors of the Max project: Ada Radius, Ai Austin,
+Curious Creator, Kayaker Magic, Linden Lab, Serie Sumei, Sundance Haiku,
+Tom Ernst aka Owl Eyes, and members of the RuthAndRoth and OpenSimulator
+communities.
+
+Source:  https://github.com/RuthAndRoth/Max
+         Contrib/Ada Radius/MaxineV1Draft1.1.dae (commit ca27a4b)
+
+Licensed under the Creative Commons Attribution 4.0 International License
+(CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+The full licence text is in CC-BY-4.0.txt in this folder.
+
+Changes made for Pingmator: converted from Collada to Pingmator's own mesh
+format (maxine.pmm) by tools/make_max_mesh.py. Only shape, normals and joint
+weights are kept (no textures or UV maps). Weights on collision volumes were
+moved to their bones, at most four joints per vertex are kept, and 393
+vertices inside the mouth that had no weights got the weights of their
+nearest weighted neighbour.

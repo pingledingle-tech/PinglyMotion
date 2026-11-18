@@ -1,0 +1,1 @@
+HIERARCHY ROOT hip { OFFSET 0 0 0 CHANNELS 3 Xrotation Yrotation Zrotation } MOTION Frames: 2 Frame Time: 0.1 0 0 0 0 0 0 1 1 Properties 2 0 7

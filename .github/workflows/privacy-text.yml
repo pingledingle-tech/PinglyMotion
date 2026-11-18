@@ -1,0 +1,36 @@
+name: Privacy text
+
+# Checks the text of new or edited issues, comments and reviews for personal
+# data, with the same blocked words and email rule as the Privacy check
+# (tools/check_privacy.py). A hit makes this run fail. The log and the run
+# summary say where (issue, comment link), never the matched text.
+# Pull request titles and descriptions are checked by privacy.yml.
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request_review:
+    types: [submitted, edited]
+  pull_request_review_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  privacy-text:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # issue events: the script from main; review events: from the pull
+      # request's merge commit (the same code the Privacy check runs)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/check_privacy.py
+          sparse-checkout-cone-mode: false
+      # the text is read from the event file, never passed through the
+      # command line or env, so it does not appear in the log
+      - name: No personal data in the issue, comment or review text
+        run: python3 tools/check_privacy.py --event "$GITHUB_EVENT_NAME" "$GITHUB_EVENT_PATH"
