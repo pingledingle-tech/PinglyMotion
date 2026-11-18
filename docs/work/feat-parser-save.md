@@ -1,6 +1,6 @@
 Branch: feat/parser-save
 Status: active
-Pull request: pending
+Pull request: #42
 Files:
 - src/animfile.h
 - src/animfile.cpp
