@@ -1161,7 +1161,7 @@ namespace
   }
 }
 
-bool BVH::bvhWrite(Animation* anim, const QString& file, QString& error)
+bool BVH::legacyBvhWrite(Animation* anim, const QString& file, QString& error)
 {
   int i;
   QSaveFile f(file);
@@ -1260,7 +1260,7 @@ void BVH::avmWriteKeyFrameProperties(BVHNode* root, QTextStream& out, int number
     avmWriteKeyFrameProperties(root->child(i), out, numberOfFrames);
 }
 
-bool BVH::avmWrite(Animation* anim,const QString& file,QString& error)
+bool BVH::legacyAvmWrite(Animation* anim,const QString& file,QString& error)
 {
   QSaveFile f(file);
   if(!openForWriting(f,error)) return false;
@@ -1305,6 +1305,126 @@ bool BVH::avmWrite(Animation* anim,const QString& file,QString& error)
   avmWriteKeyFrameProperties(positionNode, out, anim->getNumberOfFrames());
 
   return finishWriting(f,out,error);
+}
+
+namespace
+{
+  // writes the bytes to a temporary file and only replaces the real one when
+  // everything was written
+  bool saveBytes(const QString& file,const QByteArray& bytes,QString& error)
+  {
+    QSaveFile f(file);
+    if(!openForWriting(f,error)) return false;
+    if(f.write(bytes)!=bytes.size() || !f.commit())
+    {
+      error=QObject::tr("Could not write %1: %2").arg(QDir::toNativeSeparators(file),f.errorString());
+      f.cancelWriting();
+      return false;
+    }
+    return true;
+  }
+
+  void collectJoints(BVHNode* node,int parent,int depth,QVector<BVHNode*>& nodes,AnimFile::Animation& anim)
+  {
+    AnimFile::Joint joint;
+    joint.name=node->name();
+    joint.kind=node->type==BVH_ROOT ? AnimFile::JointKind::Root
+             : node->type==BVH_END ? AnimFile::JointKind::EndSite
+             : AnimFile::JointKind::Joint;
+    joint.parent=parent;
+    joint.depth=depth;
+    for(int k=0;k<3;k++) joint.offset[k]=node->offset[k];
+    for(int k=0;k<node->numChannels;k++)
+      joint.channels.append(static_cast<AnimFile::Channel>(node->channelType[k]));
+    joint.firstValue=anim.valuesPerFrame;
+    anim.valuesPerFrame+=int(joint.channels.size());
+
+    const int index=int(anim.joints.size());
+    anim.joints.append(joint);
+    nodes.append(node);
+    for(int i=0;i<node->numChildren();i++)
+      collectJoints(node->child(i),index,depth+1,nodes,anim);
+  }
+
+  // key frames below the number of frames; frame 0 is kept as the first one
+  QVector<AnimFile::Key> keysOf(BVHNode* node,int frames)
+  {
+    QVector<AnimFile::Key> keys;
+    const QList<int> list=node->keyframeList();
+    for(int i=0;i<list.size();i++)
+    {
+      if(i>0 && list[i]>=frames) break;
+      AnimFile::Key key;
+      key.frame=list[i];
+      key.easeIn=node->keyframeDataByIndex(i).easeIn();
+      key.easeOut=node->keyframeDataByIndex(i).easeOut();
+      keys.append(key);
+    }
+    return keys;
+  }
+}
+
+AnimFile::Animation BVH::snapshot(Animation* anim,AnimFile::Format format)
+{
+  AnimFile::Animation model;
+  model.format=format;
+  model.frames=anim->getNumberOfFrames();
+  model.frameTime=anim->frameTime();
+
+  BVHNode* root=anim->getMotion();
+  BVHNode* position=anim->getNode(0);
+  QVector<BVHNode*> nodes;
+  collectJoints(root,-1,0,nodes,model);
+
+  // the hip position is kept in a node of its own: every position channel gets it from there
+  model.values.assign(size_t(model.frames)*size_t(model.valuesPerFrame),0.0f);
+  for(int frame=0;frame<model.frames;frame++)
+  {
+    const QVector3D hip=position->frameData(frame).position();
+    for(int i=0;i<nodes.size();i++)
+    {
+      const AnimFile::Joint& joint=model.joints[i];
+      if(joint.channels.isEmpty()) continue;
+      const QVector3D rotation=nodes[i]->frameData(frame).rotation();
+      for(int k=0;k<joint.channels.size();k++)
+      {
+        float value=0.0f;
+        switch(joint.channels[k])
+        {
+          case AnimFile::Channel::XPosition: value=hip.x(); break;
+          case AnimFile::Channel::YPosition: value=hip.y(); break;
+          case AnimFile::Channel::ZPosition: value=hip.z(); break;
+          case AnimFile::Channel::XRotation: value=rotation.x(); break;
+          case AnimFile::Channel::YRotation: value=rotation.y(); break;
+          case AnimFile::Channel::ZRotation: value=rotation.z(); break;
+        }
+        model.values[size_t(frame)*size_t(model.valuesPerFrame)+size_t(joint.firstValue+k)]=value;
+      }
+    }
+  }
+
+  if(format==AnimFile::Format::Avm)
+  {
+    for(int i=0;i<nodes.size();i++)
+      model.joints[i].keys=keysOf(nodes[i],model.frames);
+    model.avatarScale=anim->getAvatarScale();
+    model.figure=int(anim->getFigureType());
+    model.loopIn=anim->getLoopInPoint();
+    model.loopOut=anim->getLoopOutPoint();
+    model.hasPositionKeys=true;
+    model.positionKeys=keysOf(position,model.frames);
+  }
+  return model;
+}
+
+bool BVH::bvhWrite(Animation* anim,const QString& file,QString& error)
+{
+  return saveBytes(file,AnimFile::write(snapshot(anim,AnimFile::Format::Bvh)),error);
+}
+
+bool BVH::avmWrite(Animation* anim,const QString& file,QString& error)
+{
+  return saveBytes(file,AnimFile::write(snapshot(anim,AnimFile::Format::Avm)),error);
 }
 
 bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
