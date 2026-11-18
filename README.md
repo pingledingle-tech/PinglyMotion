@@ -1,5 +1,7 @@
 # Pingmator
 
+> The project continues in this repository as PinglyMotion (renamed in the program later). Issue and pull request numbers in older texts belong to the old repository; see [docs/MIGRATION.md](docs/MIGRATION.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+
 **Create, pose and refine animations for Second Life.**
 
 Pingmator is a free, open-source animation editor based on QAvimator. The goal is to make it easier to create and adapt stands, sits, dances and other movement without requiring professional tools or paid add-ons.
@@ -16,7 +18,7 @@ Pingmator is under active development. Automated checks validate exported BVH ag
 
 ## Download and get started
 
-See [Releases](https://github.com/pingledingle-tech/Pingmator/releases) for available Windows and Linux packages. Pre-releases are marked as such. For the latest development build on Windows, open [Actions](https://github.com/pingledingle-tech/Pingmator/actions), choose a successful **Build** run and download `Pingmator-windows`. Extract the archive and run `pingmator.exe`, keeping its `data` folder alongside it.
+There are no releases in this repository yet (the project moved on 18 November 2026); see [Releases](https://github.com/pingledingle-tech/PinglyMotion/releases) for packages when they appear. For the latest development build on Windows, open [Actions](https://github.com/pingledingle-tech/PinglyMotion/actions), choose a successful **Build** run and download `Pingmator-windows`. Extract the archive and run `pingmator.exe`, keeping its `data` folder alongside it.
 
 ## Where Pingmator is going
 
@@ -26,7 +28,7 @@ The roadmap explores better posing and timeline tools, native SL animation expor
 
 - [Product vision, user value and use cases](docs/PRODUCT.md)
 - [Ideas for the future](docs/IDEAS.md)
-- [Open issues and development work](https://github.com/pingledingle-tech/Pingmator/issues)
+- [Open issues and development work](https://github.com/pingledingle-tech/PinglyMotion/issues)
 
 ## Tips
 
@@ -45,6 +47,8 @@ The Linux build runs these checks (see GitHub Actions for current results):
 - Exported BVH files follow Second Life's upload rules (`tools/check_sl_bvh.py`, which copies the checks in the viewer's BVH loader): the root is hip, every joint name is known, the numbers line up, the animation is not longer than 60 seconds, and posed fingers, jaw and tail really end up in the animation
 - Every BVH/AVM file that ships with Pingmator opens, saves and opens again unchanged, and broken files are refused with a reason (`tests/tst_roundtrip.cpp`)
 - Inverse kinematics (IK) for hands and feet brings them back towards their goal, solves for the value just set, and moves smoothly and inside the joint limits when a goal is out of reach (`tests/tst_ik.cpp`)
+- The new file reader gives the same result as the old one on every shipped file, refuses broken files with the line number, and the joint data from Firestorm loads (`tests/animfile/`, `tests/tst_jointinfo.cpp`)
+- The status bar indicators and the tips setting work (`tests/statusbar/`)
 - The live link talks correctly to a stand-in for Aurora's LiveMesh (`tests/tst_auroralink.cpp`)
 - The program starts and opens the example files without crashing (`tests/smoke_gui.sh`)
 
