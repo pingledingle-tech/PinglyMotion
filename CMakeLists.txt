@@ -99,6 +99,7 @@ IF (PINGMATOR_TESTS)
   ADD_SUBDIRECTORY (tests/animfile)
   # status bar items and the "Tips on" setting (#88 step 8)
   ADD_SUBDIRECTORY (tests/statusbar)
+  ADD_SUBDIRECTORY (tests/bodysetting)
   ADD_SUBDIRECTORY (tests/buildinfo)
 ENDIF (PINGMATOR_TESTS)
 

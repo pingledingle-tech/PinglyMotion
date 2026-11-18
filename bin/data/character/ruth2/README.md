@@ -5,15 +5,15 @@
 format. Its fingers and face are weighted to the Bento bones, like the Max
 body in `../max/`.
 
-For now Pingmator shows it only for testing (#110, part 1): there is no menu
-entry yet. Part 2 adds the menu choice and makes Ruth2 the default body.
+Choose it under **Options > Body** (Ruth2, Max or the Second Life system
+avatar). Ruth2 is the default for new users; a user who had **Bento body (Max)**
+on keeps Max, and one who had it off keeps the system avatar (#110, part 2).
 
-## Trying it out
+## Trying it out from the command line
 
-Set the environment variable `PINGMATOR_BODY` to `ruth2` before starting
-Pingmator. The program then loads Ruth2 instead of the body it would
-normally show (the Linden avatar, or Max when **Options > Bento body (Max)**
-is on). Any other value, or no value, changes nothing.
+For testing, the environment variable `PINGMATOR_BODY` set to `ruth2` before
+starting Pingmator loads Ruth2 whatever **Options > Body** says. Any other
+value, or no value, changes nothing.
 
 Windows (Command Prompt, in the folder with `pingmator.exe`):
 
