@@ -24,6 +24,7 @@
 - **Skeleton mode:** the small face joint balls only show when the head or a face joint is selected, so the face is no longer cluttered.
 - **Loop points** are kept when you open a file and save it again. A file without loop points no longer picks up the loop points from the file you had open before.
 - **IK** (keeping a hand or foot in place while you move the body) has a new solver. Locked hands and feet follow the 3D view closely, an unreachable goal no longer throws an arm or leg around, and a value you type is solved at once.
+- **Body choice.** **Options > Body** replaces "Bento body (Max)": pick the open source Ruth2 avatar (the default for new users), Max, or the Second Life system avatar. Your earlier choice is kept: Max stays Max, and the system avatar stays the system avatar.
 - **Head and neck** can bend up to 45 degrees forward and back.
 - **Opening files** uses a new reader. A broken file is refused with a reason that names the line, for example "Line 12: …". Files with values that make no sense (for example numbers too large for a decimal) and AVM files with extra property data are now refused; an empty file says "The file is empty."
 - The Windows zip and the Linux AppImage are built with the newer Qt 6.12 (long-term support), which includes security fixes.

@@ -49,8 +49,9 @@ class UserSettings
     static QByteArray windowState();
     static bool darkTheme();
     // the Max Bento avatar (fingers, face) instead of the Linden system avatar
-    static void setBentoBody(bool value);
-    static bool bentoBody();
+    // which avatar body the 3D view shows: "ruth2" (default), "max" or "system" (the Second Life avatar)
+    static void setBody(const QString& value);
+    static QString body();
     // Options > Light...: 0-100, 50 is the standard look
     static void setLightBrightness(int value);
     static int lightBrightness();
@@ -109,8 +110,9 @@ private:
     static QByteArray m_windowState;
     static const QString m_windowStateKey;
     static const QString m_darkThemeKey;
-    static bool m_bentoBody;
-    static const QString m_bentoBodyKey;
+    static QString m_body;
+    static const QString m_bodyKey;
+    static const QString m_bentoBodyKey;   // read from files of older versions
     static int m_lightBrightness;
     static const QString m_lightBrightnessKey;
     static int m_lightShine;

@@ -37,7 +37,8 @@ bool UserSettings::m_showTimelinePanel = true;
 const QString UserSettings::m_showTimelinePanelKey = "show_timeline_panel";
 bool UserSettings::m_darkTheme = true;
 const QString UserSettings::m_darkThemeKey = "dark_theme";
-bool UserSettings::m_bentoBody = true;
+QString UserSettings::m_body = "ruth2";
+const QString UserSettings::m_bodyKey = "body";
 const QString UserSettings::m_bentoBodyKey = "bento_body";
 int UserSettings::m_lightBrightness = 50;
 const QString UserSettings::m_lightBrightnessKey = "light_brightness";
@@ -87,8 +88,11 @@ void UserSettings::setShowTimelinePanel(bool on)  { m_showTimelinePanel = on; }
 bool UserSettings::showTimelinePanel()               { return m_showTimelinePanel; }
 void UserSettings::setDarkTheme(bool on)          { m_darkTheme = on; }
 bool UserSettings::darkTheme()                       { return m_darkTheme; }
-void UserSettings::setBentoBody(bool on)          { m_bentoBody = on; }
-bool UserSettings::bentoBody()                       { return m_bentoBody; }
+void UserSettings::setBody(const QString& value)
+{
+  m_body = (value == "max" || value == "system") ? value : QString("ruth2");
+}
+QString UserSettings::body()                         { return m_body; }
 void UserSettings::setLightBrightness(int value)     { m_lightBrightness = qBound(0, value, 100); }
 int UserSettings::lightBrightness()                  { return m_lightBrightness; }
 void UserSettings::setLightShine(int value)          { m_lightShine = qBound(0, value, 100); }
@@ -139,7 +143,13 @@ void UserSettings::readSettings()
     setProtectFirstFrame(settings.value(m_protectFirstFrameKey).toBool());
     setShowTimelinePanel(settings.value(m_showTimelinePanelKey).toBool());
     setDarkTheme(settings.value(m_darkThemeKey, true).toBool());
-    setBentoBody(settings.value(m_bentoBodyKey, true).toBool());
+    // older versions saved only "Bento body (Max)" on or off
+    if (settings.contains(m_bodyKey))
+      setBody(settings.value(m_bodyKey).toString());
+    else if (settings.contains(m_bentoBodyKey))
+      setBody(settings.value(m_bentoBodyKey).toBool() ? "max" : "system");
+    else
+      setBody("ruth2");
     setLightBrightness(settings.value(m_lightBrightnessKey, 50).toInt());
     setLightShine(settings.value(m_lightShineKey, 50).toInt());
     setLightWarmth(settings.value(m_lightWarmthKey, 50).toInt());
@@ -180,7 +190,8 @@ void UserSettings::writeSettings()
   settings.setValue(m_protectFirstFrameKey, protectFirstFrame());
   settings.setValue(m_showTimelinePanelKey, showTimelinePanel());
   settings.setValue(m_darkThemeKey, darkTheme());
-  settings.setValue(m_bentoBodyKey, bentoBody());
+  settings.setValue(m_bodyKey, body());
+  settings.remove(m_bentoBodyKey);
   settings.setValue(m_lightBrightnessKey, lightBrightness());
   settings.setValue(m_lightShineKey, lightShine());
   settings.setValue(m_lightWarmthKey, lightWarmth());
