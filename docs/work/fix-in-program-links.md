@@ -1,5 +1,5 @@
 Branch: fix/in-program-links
-Status: active
+Status: done
 Pull request: #35
 Files:
 - src/aboutdialog.ui
