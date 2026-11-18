@@ -85,7 +85,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 | Timeline and motion | Keyframes, transport, zoom, interpolation, easing, looping and reusable sequences. | [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11) |
 | Aurora | Live preview with quaternion poses is done; playback synchronisation, avatar shape and an upstream proposal to Aurora later. | [AURORA_LINK.md](AURORA_LINK.md), old #78, old #95 |
 | AI and openness | Improve the existing local API and MCP. Avoid tying the editor to a single assistant. Investigate easier installation and client status. | [CONTROL.md](CONTROL.md), [#7](https://github.com/pingledingle-tech/PinglyMotion/issues/7) |
-| Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests (new file opening is in, saving and removal of the old code remain), a new working format `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)), then native .anim export. | [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9), [#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26) |
+| Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests (done: opening, saving and removal of the old code), a new working format `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)), then native .anim export. | [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9), [#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26) |
 | Import and retargeting | Explore glTF, Blender, an own rigged avatar and an SL Bento bridge. | [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13) |
 | New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. | [IDEAS.md](IDEAS.md) |
 | Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#where-pingmator-is-going) |
@@ -113,12 +113,14 @@ This replaces the numbered work order of 16 November. The order of stages above 
 - Loop points (old #91); Qt 5 dropped (old #98); Qt maths instead of libquat (old #97).
 - Joint limits following the SL standard, head and neck up to 45 degrees (old #59, #111, #129); new IK solver (old #130).
 - Joint tabs and table (old #126); Firestorm joint data with names, groups, left/right pairs and hand presets, loader included (old #139); status bar with remote-control and Aurora indicators and the tips switch (old #43, #155).
-- New file parser: new reader in place for BVH/AVM opening, with fuzzing (old #62, parts 1 and 2 = old #140, #150). Saving and removal of the old code are open ([#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9)).
+- New file parser and data model: reading, saving and removal of the old token parser and writers are all done, with round-trip tests and fuzzing (old #62, parts 1 and 2 = old #140, #150; parts 3 and 4 = [#42](https://github.com/pingledingle-tech/PinglyMotion/pull/42) and [#43](https://github.com/pingledingle-tech/PinglyMotion/pull/43), issue [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9)).
 - Live link to Aurora over LiveMesh with quaternion poses (old #78, #95).
 - Security: the audit findings are fixed except a few small ones, see [SECURITY_AUDIT.md](SECURITY_AUDIT.md); fuzzing of `.prp` files and the control API (old #20).
+- Version, source and commit shown in the window title ([#36](https://github.com/pingledingle-tech/PinglyMotion/pull/36)); the links inside the program point to this repository ([#35](https://github.com/pingledingle-tech/PinglyMotion/pull/35)).
+- Ruth2 v4 body as data with a loader, no menu yet ([#2](https://github.com/pingledingle-tech/PinglyMotion/pull/2)).
 - Posing UX plan ([POSING_UX.md](POSING_UX.md), old #135) and the format decisions (old #118, see [DECISIONS.md](DECISIONS.md)).
 
-**Open pull requests:** camera and keys ([#1](https://github.com/pingledingle-tech/PinglyMotion/pull/1)), Ruth2 body data and loader ([#2](https://github.com/pingledingle-tech/PinglyMotion/pull/2)), test animations ([#3](https://github.com/pingledingle-tech/PinglyMotion/pull/3)).
+**Open pull requests:** camera and keys ([#1](https://github.com/pingledingle-tech/PinglyMotion/pull/1)), test animations ([#3](https://github.com/pingledingle-tech/PinglyMotion/pull/3)), Ruth2 body menu ([#41](https://github.com/pingledingle-tech/PinglyMotion/pull/41), waiting for a Windows test).
 
 The work runs in **two tracks side by side**. They mostly change different files: the posing track the window, panels and 3D view; the format track the parser, the data model and file import/export. Where a step in one track needs a file another active job has, the work board ([work/README.md](work/README.md)) decides who waits. Within a track, one step at a time, each tested on Windows before it is merged.
 
@@ -134,13 +136,13 @@ The work runs in **two tracks side by side**. They mostly change different files
 
 **Track 2 – file formats (old #118)**
 
-1. New parser and data model with fuzzing ([#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9)). The legacy parser already has the limits from the security audit; this step replaces the old code with tested error handling. It is large, so it is split into several pull requests.
+1. New parser and data model with fuzzing ([#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9)): **done**. The old parser code is gone; reading and saving go through `animfile.*`, split into four pull requests.
 2. `.anim` export and easing ([#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11)).
 3. `.anim` import ([#22](https://github.com/pingledingle-tech/PinglyMotion/issues/22)).
 4. BVH from any skeleton, retargeted to the SL skeleton ([#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)).
-5. glTF/GLB import ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)), then Blender ([#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13), docs first). No glTF export; FBX only on real demand. The own working format is `.dingle`; AVM is no longer written, old `.avm` files still open ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)).
+5. glTF/GLB import ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)), then Blender ([#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13), docs first). No glTF export; FBX only on real demand. The own working format is `.dingle`; AVM is no longer written, old `.avm` files still open ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)). The layout, limits and version rules are in [DINGLE_FORMAT.md](DINGLE_FORMAT.md).
 
-**Small jobs in between** (when a track waits for a Windows test): version in the window title ([#21](https://github.com/pingledingle-tech/PinglyMotion/issues/21)), and a new default body ([#15](https://github.com/pingledingle-tech/PinglyMotion/issues/15)).
+**Small jobs in between** (when a track waits for a Windows test): version in the window title ([#21](https://github.com/pingledingle-tech/PinglyMotion/issues/21), done in #36), and a new default body ([#15](https://github.com/pingledingle-tech/PinglyMotion/issues/15)).
 
 **Later:** easy setup with an AI assistant ([#7](https://github.com/pingledingle-tech/PinglyMotion/issues/7)) once the posing interface has settled; larger AI features and libraries as small experiments ([#17](https://github.com/pingledingle-tech/PinglyMotion/issues/17)–[#20](https://github.com/pingledingle-tech/PinglyMotion/issues/20)). Manual use always works without AI.
 

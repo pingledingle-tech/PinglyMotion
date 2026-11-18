@@ -45,6 +45,9 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 WORD = re.compile(r"[A-Za-zÀ-ɏ]+")
 
 
+EMPTY_TREE = "4b825dc642cb6eb9a747eaa8ce5d1f19e7a22ddb"  # git's empty tree, the base of a first commit
+
+
 def git(*args):
     return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout
 
@@ -136,7 +139,11 @@ def main():
     base, head = sys.argv[1], sys.argv[2]
     problems = []
 
-    for sha in git("rev-list", f"{base}..{head}").split():
+    # a first commit has no parent: the base is then empty, all zeros or the empty tree,
+    # and everything up to head is checked
+    from_start = base in ("", "0" * 40, EMPTY_TREE)
+
+    for sha in git("rev-list", head if from_start else f"{base}..{head}").split():
         short = sha[:7]
         an, ae, cn, ce = git("show", "-s", "--format=%an%n%ae%n%cn%n%ce", sha).splitlines()
         if not allowed_email(ae):
@@ -146,7 +153,9 @@ def main():
         problems += problems_in(an + " " + cn, f"commit {short} author/committer name")
         problems += problems_in(git("show", "-s", "--format=%B", sha), f"commit {short} message")
 
-    diff = git("diff", "--unified=0", "--no-color", f"{base}...{head}")
+    # from the start there is no base to diff against: the log shows what each commit added
+    diff = git("log", "--root", "-p", "--format=", "--unified=0", "--no-color", head) if from_start \
+        else git("diff", "--unified=0", "--no-color", f"{base}...{head}")
     path = "?"
     for line in diff.splitlines():
         if line.startswith("+++ "):

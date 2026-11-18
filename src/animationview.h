@@ -104,7 +104,8 @@ class AnimationView : public QOpenGLWidget
     // true: the Max Bento avatar (fingers, face); false: the Linden system
     // avatar. Falls back to the system avatar if Max cannot be loaded;
     // returns whether the wanted body is shown
-    bool setBentoBody(bool on);
+    // loads the body; if that fails the system avatar is loaded instead and false is returned
+    bool setBody(AvatarSkin::Body wanted);
     // Options > Light...: each 0-100, 50 is the standard look
     void setBodyLight(int brightness, int shine, int warmth, bool floorShadow);
     // false on the old OpenGL path, where the light cannot be changed

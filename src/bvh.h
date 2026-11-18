@@ -27,6 +27,7 @@
 
 #include "bvhnode.h"
 #include "animation.h"
+#include "animfile.h"
 
 class BVHNode;
 class Animation;
@@ -39,9 +40,6 @@ class BVH
     BVH();
     ~BVH();
 
-    BVHNode* bvhRead(const QString& file);
-
-    void assignChannels(BVHNode* node, FILE* f, int frame);
     void setChannelLimits(BVHNode* node,BVHChannelType type,double min,double max) const;
     void parseLimFile(BVHNode* root,const QString& limFile) const;
 
@@ -49,12 +47,13 @@ class BVH
     int numFrames() const;
     void bvhIndent(QTextStream& out,int depth);
     void bvhWriteNode(BVHNode* node,QTextStream& out,int depth);
-    void bvhWriteFrame(BVHNode* node,QTextStream& out,int frame);
     void bvhPrintNode(BVHNode* n, int depth);
 
     // the write functions return false and set error when the file could not be written;
     // an existing file is then left as it was
     bool bvhWrite(Animation* root,const QString& file,QString& error);
+    // what is written to a file: the animation as the plain data model of animfile.h
+    AnimFile::Animation snapshot(Animation* anim,AnimFile::Format format);
     // one frame as a small BVH for the Aurora link: neutral frame, then the pose twice
     QString bvhPoseText(Animation* anim,int frame);
     // the pose of one frame for Aurora's "pose" message: {"rotations":{joint:[x,y,z,w]},
@@ -78,12 +77,6 @@ class BVH
     // opens a .bvh or .avm file with the new parser (src/animfile.*); returns
     // NULL with the reason in lastError when the file cannot be opened
     BVHNode* animRead(const QString& file,const QString& limFile);
-    // the same with the old token parser; not used for opening files any more
-    // (issue #62), kept for the comparison tests until the old code is removed
-    BVHNode* legacyAnimRead(const QString& file,const QString& limFile);
-
-    // lex neva's stuff:
-    BVHNode* avmRead(const QString& file);
 
     bool avmWrite(Animation* root,const QString& file,QString& error);
     bool animWrite(Animation* root,const QString& file,QString& error);
@@ -102,12 +95,6 @@ class BVH
     // why the last animRead() returned NULL
     QString lastError;
 
-    // limits for files that are read
-    static const int MAX_FILE_BYTES=64*1024*1024;
-    static const int MAX_DEPTH=64;
-    static const int MAX_JOINTS=256;
-    static const int MAX_FRAMES=10000;
-
     QStringList bvhTypeName;
     QStringList bvhChannelName;
     int lastLoadedNumberOfFrames;
@@ -124,10 +111,6 @@ class BVH
     QVector3D positionCopyBuffer;
 
   protected:
-    QString inputFile;
-    QStringList tokens;
-    int tokenPos;
-
     // remember if the loaded animation is in old or new AVM format
     bool havePositionKeys;
 
@@ -137,7 +120,6 @@ class BVH
 
     void loadBentoJoints();
 
-    // shared by animRead() and legacyAnimRead()
     void startRead();
     BVHNode* finishRead(BVHNode* root,const QString& limFile);
     // the joint tree from the new parser's data model
@@ -146,37 +128,12 @@ class BVH
     BVHNode* findLoadedNode(BVHNode* loaded,const QString& name) const;
     BVHNode* positionNode;
 
-    // joints and channels read so far from the hierarchy of the current file
-    int jointsRead;
-    int channelsRead;
-
-    QString token();
-    bool expect_token(const QString& expect);
     // remembers the first reason the file cannot be read; always returns false
     bool failed(const QString& reason);
-    bool readInt(int& value,int minimum,int maximum,const QString& what);
-    bool readFloat(double& value,const QString& what);
-    // number of tokens not read yet
-    int tokensLeft() const;
-    bool readFile(const QString& file);
-    BVHNode* bvhReadNode(int depth);
-    bool readMotion(BVHNode* root);
-
-    void assignChannels(BVHNode* node,int frame);
-
-    bool avmReadKeyFrame(BVHNode* root);
-    bool avmReadKeyFrameProperties(BVHNode* root);
-
-    void avmWriteKeyFrame(BVHNode* root, QTextStream& out, int numberOfFrames);
-    void avmWriteKeyFrameProperties(BVHNode* root, QTextStream& out, int numberOfFrames);
 
     // removes all unknown nodes from the animation
     void removeNoSLNodes(BVHNode* root);
 
-    // debugging function, dumps the node structure
-    void dumpNodes(BVHNode* node,QString indent);
-
-    void setAllKeyFramesHelper(BVHNode* node,int numberOfFrames) const;
     const QString bvhGetNameHelper(BVHNode* node,int index);
     int bvhGetIndexHelper(BVHNode* node,const QString& name);
 

@@ -42,6 +42,8 @@ class Constants
     static const QString versionNumberString();
     static const QString buildNumber();
     static const QString updateChannel();
+    // "0.4.0" for a release, otherwise "0.4.0 · PR #12 · 5085c90" or "0.4.0 · dev · 5085c90"
+    static const QString buildLabel();
     static const QString applicationName();
     static const QString organizationName();
     static const QString organizationDomain();

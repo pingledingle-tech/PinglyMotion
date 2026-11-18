@@ -39,7 +39,7 @@ AboutDialog::AboutDialog(QWidget* parent) :
   ui->versionLabel->setText(
         QString("%1 Version %2 (%3)"
         ).arg(Constants::updateChannel()
-        ).arg(Constants::versionNumberString()
+        ).arg(Constants::buildLabel()
         ).arg(Constants::buildNumber()));
   ui->dateTimeLabel->setText(Constants::buildDateTime());
   setLastUpdateCheckLabel(UpdaterSettings::lastSuccessfulCheck());
