@@ -14,15 +14,15 @@ Investigate [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app) as a s
 
 ## A free bridge to Second Life
 
-Explore importing or converting animation from Blender, Maya, Mesh2Motion and other tools, fitting it to the SL Bento skeleton and exporting for Second Life. Skeleton mapping, rest poses and SL upload behaviour must be validated; an import format alone does not solve retargeting. glTF import and Blender workflows are tracked in [#65](https://github.com/pingledingle-tech/Pingmator/issues/65) and [#66](https://github.com/pingledingle-tech/Pingmator/issues/66). **Status: planned for later.**
+Explore importing or converting animation from Blender, Maya, Mesh2Motion and other tools, fitting it to the SL Bento skeleton and exporting for Second Life. Skeleton mapping, rest poses and SL upload behaviour must be validated; an import format alone does not solve retargeting. glTF import and Blender workflows are tracked in [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12) and [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13). **Status: planned for later.**
 
 ## Preview on an avatar in Aurora
 
-The live link over Aurora's LiveMesh works ([#78](https://github.com/pingledingle-tech/Pingmator/pull/78), quaternion poses in [#95](https://github.com/pingledingle-tech/Pingmator/pull/95)); see [AURORA_LINK.md](AURORA_LINK.md). It is local to the user and does not upload an animation, and it needs the Aurora fork for now. Further ideas: synchronised playback, bringing avatar shape into Pingmator, and proposing the link to the Aurora developers. **Status: preview done; the rest are ideas.**
+The live link over Aurora's LiveMesh works (old #78, quaternion poses in old #95); see [AURORA_LINK.md](AURORA_LINK.md). It is local to the user and does not upload an animation, and it needs the Aurora fork for now. Further ideas: synchronised playback, bringing avatar shape into Pingmator, and proposing the link to the Aurora developers. **Status: preview done; the rest are ideas.**
 
 ## Pose and animation workflow
 
-Explore easier body/face/hand posing, hand presets, mirroring, a clearer timeline, interpolation and easing, seamless looping and reusable motion sequences. BPM guides could help with dances. See [#88](https://github.com/pingledingle-tech/Pingmator/issues/88) and [#64](https://github.com/pingledingle-tech/Pingmator/issues/64). **Status: proposed work.**
+Explore easier body/face/hand posing, hand presets, mirroring, a clearer timeline, interpolation and easing, seamless looping and reusable motion sequences. BPM guides could help with dances. See [#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14) and [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11). **Status: proposed work.**
 
 ## AI-assisted creation
 

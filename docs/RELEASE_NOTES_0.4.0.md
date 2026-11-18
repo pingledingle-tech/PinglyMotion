@@ -1,6 +1,6 @@
 # Pingmator 0.4.0 beta – release notes (draft)
 
-> Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026).
+> Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026), up to 18 November 2026.
 
 ## Before you update
 
@@ -14,6 +14,7 @@
 - **See your pose on your own avatar in Aurora.** *Options > Live link to Aurora* shows the pose you are working on, on your avatar in the Aurora viewer, while you work. Only you see it, nothing is uploaded. This needs a test build of Aurora for now – see `docs/AURORA_LINK.md`.
 - **Joints sorted in tabs.** The "Edit Part" drop-down is replaced by tabs **Body / Face / Hands / Other** with a list of joints. Click a joint in the 3D view and the list jumps to it. Arrow keys move through the list.
 - **More realistic joint limits.** Joint limits now follow the Second Life wiki's suggested limits instead of the old QAvimator values. Fingers bend, spread and twist within a natural range.
+- **Status bar.** Besides the remote control indicator, the status bar shows whether the Aurora live link is off, connecting or live. Click the dot to turn the link on or off. A "Tips" switch is there too; it only stores your choice for now, the tips come later.
 - **Remote control indicator.** When an AI assistant (for example Claude) controls Pingmator, a coloured dot in the status bar shows it: grey = off, yellow = waiting, green = connected, red = a wrong key was refused. It also shows the assistant's name and its last command. Click the dot to turn remote control on or off.
 
 ## What's changed and fixed
@@ -22,14 +23,14 @@
 - **Save As** lets you choose between *Second Life animation (.bvh)* and *Pingmator animation (.avm)*, and adds the right file ending for you.
 - **Skeleton mode:** the small face joint balls only show when the head or a face joint is selected, so the face is no longer cluttered.
 - **Loop points** are kept when you open a file and save it again. A file without loop points no longer picks up the loop points from the file you had open before.
-- **IK** (keeping a hand or foot in place while you move the body) now follows the 3D view much more closely, so locked hands and feet drift far less.
+- **IK** (keeping a hand or foot in place while you move the body) has a new solver. Locked hands and feet follow the 3D view closely, an unreachable goal no longer throws an arm or leg around, and a value you type is solved at once.
+- **Head and neck** can bend up to 45 degrees forward and back.
+- **Opening files** uses a new reader. A broken file is refused with a reason that names the line, for example "Line 12: …". Files with values that make no sense (for example numbers too large for a decimal) and AVM files with extra property data are now refused; an empty file says "The file is empty."
 - The Windows zip and the Linux AppImage are built with the newer Qt 6.12 (long-term support), which includes security fixes.
 
 ## Known problems
 
-- **IK can throw an arm or leg around** when the hand or foot cannot reach its locked spot, for example when you turn the hip very far. ([#127](https://github.com/pingledingle-tech/Pingmator/issues/127))
-- **IK is one step behind** when you type a value or make a big jump: the pose is solved for the previous value. Small drags hide it. ([#128](https://github.com/pingledingle-tech/Pingmator/issues/128))
-- **Head and neck do not bend far enough** forward and backward with the new joint limits. ([#129](https://github.com/pingledingle-tech/Pingmator/issues/129))
+- **IK can twist the body** when you turn the hip a full turn with a hand and a foot locked. At 359° the pose does not return exactly to the start; typing 0 resets it.
 - **The live link only works with a test build of Aurora**, not with the normal Aurora download, and not while Aurora's Blender add-on is connected (one program at a time).
 - The new joint tabs only filter the list; the 3D view still shows all joints.
 

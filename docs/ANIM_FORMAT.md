@@ -1,6 +1,6 @@
 # Second Life `.anim` format
 
-A precise description of Second Life's internal animation format (`.anim`, asset type `AT_ANIMATION`), written as the basis for `.anim` export ([#63](https://github.com/pingledingle-tech/Pingmator/issues/63)) and import ([#134](https://github.com/pingledingle-tech/Pingmator/issues/134)). File formats were decided in [#118](https://github.com/pingledingle-tech/Pingmator/issues/118); see the combined plan in [PRODUCT.md](PRODUCT.md).
+A precise description of Second Life's internal animation format (`.anim`, asset type `AT_ANIMATION`), written as the basis for `.anim` export ([#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10)) and import ([#22](https://github.com/pingledingle-tech/PinglyMotion/issues/22)). File formats were decided in old #118; see the combined plan in [PRODUCT.md](PRODUCT.md).
 
 **Source.** Second Life viewer, https://github.com/secondlife/viewer, branch `develop` at commit `f221e05` (checked 18 November 2026). The code is © Linden Research, Inc., LGPL 2.1. Every rule below names the file and function it comes from; paths are relative to `indra/` unless they start with `scripts/`. Short excerpts are quoted with that source named. Pingmator is GPLv2; the plan in [REUSE_REFERENCES.md](REUSE_REFERENCES.md) is to write our own reader and writer in Qt with this code as the reference, not to copy it.
 
@@ -145,7 +145,7 @@ Read only, never written (`deserialize()`, branch `old_version`): key times are 
 - `loop_in_point`, `loop_out_point`: seconds from the start. The BVH importer writes `0` and `duration` when not looping (`LLBVHLoader::loadBVHFile()`: `if (!mLoop) mLoopOutPoint = mDuration`). The upload window sets them from its percent fields: `percent × 0.01 × duration` (`LLFloaterBvhPreview::onCommitLoop()`).
 - The reader only checks that they are finite. It does not check `0 ≤ in ≤ out ≤ duration` (§8). Pingmator should write values inside that range (#91 already keeps loop out inside the animation).
 - `ease_in_duration`, `ease_out_duration`: seconds. BVH defaults are `0.3` / `0.3` (`LLBVHLoader::reset()`). `setEaseIn()` / `setEaseOut()` clamp to `≥ 0`. For a non-looping animation the BVH importer scales both down so that `ease_in + ease_out ≤ duration` (`LLBVHLoader::optimize()`). The `.anim` reader checks neither.
-- Ease is one duration for the whole motion, blending in and out against whatever plays underneath. There is no per-key curve: playback between keys is always linear (§5). A curve editor ([#64](https://github.com/pingledingle-tech/Pingmator/issues/64)) therefore has to bake its curves into extra keys.
+- Ease is one duration for the whole motion, blending in and out against whatever plays underneath. There is no per-key curve: playback between keys is always linear (§5). A curve editor ([#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11)) therefore has to bake its curves into extra keys.
 
 ### 3.3 Hand pose
 
