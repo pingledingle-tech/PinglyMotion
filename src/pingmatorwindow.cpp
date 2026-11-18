@@ -485,6 +485,10 @@ PingmatorWindow::PingmatorWindow() :
   {
     statusBar()->showMessage(tr("Aurora link: %1").arg(message),10000);
   });
+  connect(m_auroraLink,&AuroraLink::warningReceived,this,[this](const QString& message)
+  {
+    statusBar()->showMessage(tr("Aurora link: %1").arg(message),10000);
+  });
   // status bar: Aurora link off, connecting or live; the dot turns it on or off
   m_auroraIndicator=new AuroraIndicator(this);
   statusBar()->addPermanentWidget(m_auroraIndicator);

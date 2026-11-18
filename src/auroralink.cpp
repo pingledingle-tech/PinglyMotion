@@ -15,6 +15,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMessageAuthenticationCode>
+#include <QRandomGenerator>
 #include <QStandardPaths>
 #include <QTcpSocket>
 
@@ -34,6 +35,8 @@ AuroraLink::AuroraLink(QObject* parent)
     m_connected(false),
     m_state(State::Off),
     m_quaternions(false),
+    m_mutual(false),
+    m_warnedLegacy(false),
     m_waiting(false),
     m_lastMessage(0)
 {
@@ -113,6 +116,20 @@ QByteArray AuroraLink::readKey(const QString& path)
 QByteArray AuroraLink::authResponse(const QByteArray& key,const QByteArray& challenge)
 {
   return QMessageAuthenticationCode::hash(challenge,key,QCryptographicHash::Sha256).toHex();
+}
+
+QByteArray AuroraLink::serverProof(const QByteArray& key,const QByteArray& nonce)
+{
+  return QMessageAuthenticationCode::hash("aurora-hello:"+nonce,key,QCryptographicHash::Sha256).toHex();
+}
+
+// constant-time compare: the time does not tell how many characters matched
+static bool sameBytes(const QByteArray& a,const QByteArray& b)
+{
+  if(a.size()!=b.size()) return false;
+  unsigned char diff=0;
+  for(int i=0;i<a.size();i++) diff|=(unsigned char)(a[i]^b[i]);
+  return diff==0;
 }
 
 void AuroraLink::setEnabled(bool on,quint16 port)
@@ -247,6 +264,7 @@ void AuroraLink::handleLine(const QByteArray& line)
       return;
     }
     m_quaternions=features.contains(QJsonValue("pose"));
+    m_mutual=features.contains(QJsonValue("auth-mutual"));
     const QByteArray key=readKey(keyFilePath());
     if(key.isEmpty())
     {
@@ -257,6 +275,15 @@ void AuroraLink::handleLine(const QByteArray& line)
     auth["type"]="auth";
     auth["client"]=QString("Pingmator %1").arg(QCoreApplication::applicationVersion()).trimmed();
     auth["response"]=QString::fromLatin1(authResponse(key,challenge));
+    m_expectedProof.clear();
+    if(m_mutual)
+    {
+      // 16 random bytes from the system's secure source
+      QByteArray nonce(16,'\0');
+      QRandomGenerator::system()->generate(reinterpret_cast<quint32*>(nonce.data()),reinterpret_cast<quint32*>(nonce.data()+nonce.size()));
+      auth["nonce"]=QString::fromLatin1(nonce.toHex());
+      m_expectedProof=serverProof(key,nonce);
+    }
     m_state=State::WaitAuth;
     sendMessage(QJsonDocument(auth).toJson(QJsonDocument::Compact));
     return;
@@ -270,6 +297,21 @@ void AuroraLink::handleLine(const QByteArray& line)
     {
       fail(tr("Aurora did not accept the LiveMesh key. Turn LiveMesh off and on in Aurora."));
       return;
+    }
+    if(m_mutual)
+    {
+      // nothing is sent until Aurora has proved that it knows the key
+      const QByteArray proof=message.value("server_proof").toString().toLatin1();
+      if(!sameBytes(proof,m_expectedProof))
+      {
+        fail(tr("The program on the LiveMesh port did not prove that it is Aurora. The link was closed."));
+        return;
+      }
+    }
+    else if(!m_warnedLegacy)
+    {
+      m_warnedLegacy=true;
+      emit warningReceived(tr("This Aurora version cannot prove that it is Aurora. Update Aurora for a safer link."));
     }
     m_state=State::Ready;
     setReady(true);

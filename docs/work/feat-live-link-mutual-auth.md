@@ -1,6 +1,6 @@
 Branch: feat/live-link-mutual-auth
-Status: active
-Pull request: pending
+Status: done
+Pull request: #46
 Files:
 - src/auroralink.*
 - src/pingmatorwindow.cpp

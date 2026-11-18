@@ -12,9 +12,15 @@
  *   then every message from Pingmator is a 4-byte little-endian length and
  *   that many bytes of JSON; Aurora answers each one with one JSON line
  *   ({"ok":true} or {"ok":false,"error":"..."}):
- *   Pingmator -> {"type":"auth","client":"Pingmator x.y","response":"<hex>"}
+ *   Pingmator -> {"type":"auth","client":"Pingmator x.y","response":"<hex>","nonce":"<hex>"}
  *                response = HMAC-SHA256(key, challenge bytes); the key is read
- *                from Aurora's livemesh.json, which only the user can read
+ *                from Aurora's livemesh.json, which only the user can read.
+ *                nonce = 16 random bytes (hex), sent when Aurora lists "auth-mutual"
+ *   Aurora    -> {"ok":true,"server_proof":"<hex>"} with auth-mutual:
+ *                server_proof = HMAC-SHA256(key, "aurora-hello:" + nonce bytes);
+ *                Pingmator sends no pose before it has checked this. An older
+ *                Aurora without auth-mutual answers a plain {"ok":true}: the link
+ *                works and Pingmator warns once.
  *   Pingmator -> {"type":"pose","rotations":{joint:[x,y,z,w]},"positions":{"hip":[x,y,z]}}
  *                when Aurora lists the "pose" feature: quaternions in Second Life's
  *                avatar axes; otherwise
@@ -68,10 +74,15 @@ class AuroraLink : public QObject
     static QByteArray readKey(const QString& path);
     // HMAC-SHA256 of the challenge with the key, as lower-case hex
     static QByteArray authResponse(const QByteArray& key, const QByteArray& challenge);
+    // HMAC-SHA256 of "aurora-hello:" + nonce with the key, as lower-case hex:
+    // what Aurora must answer to prove that it knows the key
+    static QByteArray serverProof(const QByteArray& key, const QByteArray& nonce);
 
   signals:
     void connectedChanged(bool connected);
     void errorReceived(const QString& message);
+    // the link works, but something is not as safe as it should be (sent once per run)
+    void warningReceived(const QString& message);
 
   private slots:
     void tick();
@@ -99,6 +110,12 @@ class AuroraLink : public QObject
     State m_state;
     // Aurora's hello listed "pose": send quaternions
     bool m_quaternions;
+    // Aurora's hello listed "auth-mutual": it must prove that it knows the key
+    bool m_mutual;
+    // the old-Aurora warning has been given
+    bool m_warnedLegacy;
+    // the random nonce of this connection and the proof Aurora must send
+    QByteArray m_expectedProof;
     // a message is on its way and Aurora has not answered yet
     bool m_waiting;
     qint64 m_lastMessage;
