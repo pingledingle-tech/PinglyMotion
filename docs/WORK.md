@@ -8,15 +8,15 @@ Every job writes itself here before it starts. See `CLAUDE.md` for the rules.
 
 | Branch | What | Files it changes | Pull request |
 |---|---|---|---|
-| `fix/codeql-single-check-name` | CodeQL matrix reports per language (`codeql (python, none)` etc.), so the "Protect main" ruleset's required `analyze` check never appears; adds a small job named `analyze` that waits on the matrix and reports one fixed name | `.github/workflows/codeql.yml` | pending |
 
-**Overlap:** none (another job changes `privacy.yml` and adds a new workflow file).
+**Overlap:** none.
 
 ## Done
 
 | Branch | What | Pull request |
 |---|---|---|
 | `ci/build-cache` | Faster checks: ccache for the Linux build and the sanitizer build, Qt cache for the Windows build, downloaded apt packages cached in Linux, sanitizer and fuzz jobs (caches are separate per job and scoped to the branch; Windows compile and CodeQL stay uncached) | #6 |
+| `docs/migration-and-decisions` | `docs/MIGRATION.md` (old issue and pull request numbers to new ones, 21 issues moved) and `docs/DECISIONS.md` (decision log from the old repository) | #28 |
 | `ci/save-minutes` | Save Actions minutes: draft pull requests skip build, sanitizers and fuzz (privacy still runs); a new push cancels the older run of the same pull request | #157 |
 | `feat/status-bar-88` | #88 step 8: one status bar at the bottom: "Tips on" switch (saved as the user setting `tips_on`, default on; tooltips come later), remote-control indicator (#43) and Aurora link status (off / connecting / live, dot turns the link on or off), rounded items in the theme colours; tests in `tests/statusbar/`; not Windows-tested yet | #155 |
 | `feat/open-with-new-parser-62` | #62 part 2 of 4: opening a BVH/AVM file (`BVH::animRead`, `BVH::checkFile`) uses the new parser `src/animfile.*` and builds the same `BVHNode` tree as before (tested against the old parser for every round-trip file); errors name the line; old parser kept as `BVH::legacyAnimRead` until part 4 | #150 |
