@@ -8,6 +8,7 @@ Every job writes itself here before it starts. See `CLAUDE.md` for the rules.
 
 | Branch | What | Files it changes | Pull request |
 |---|---|---|---|
+| `docs/migration-and-decisions` | Migration note (old issue and pull request numbers to new ones) and a decision log from the old repository | `docs/MIGRATION.md` (new), `docs/DECISIONS.md` (new), `docs/WORK.md` | (to come) |
 
 **Overlap:** none.
 
