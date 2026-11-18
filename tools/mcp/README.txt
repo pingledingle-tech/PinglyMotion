@@ -65,4 +65,4 @@ Good to know
   Pingmator.
 
 Step-by-step guide with more details:
-https://github.com/pingledingle-tech/Pingmator/blob/main/docs/CONTROL.md#set-up-an-ai-assistant
+https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md#set-up-an-ai-assistant
