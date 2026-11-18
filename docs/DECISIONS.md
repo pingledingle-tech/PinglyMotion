@@ -6,9 +6,9 @@ Decisions taken while the project lived in the old repository, and the decisions
 
 ## The move (18 November 2026)
 
-**New repository, new name.** The project continues in this repository under the name PinglyMotion. The old repository will be deleted. Reason: a fresh start with the privacy and repository settings right from the beginning. Source: the project owner, 18 November 2026.
+**New repository, new name.** The project continues in this repository under the name PinglyMotion. The old repository will be deleted. Reason: not written down. Source: the project owner, 18 November 2026.
 
-**One clean commit.** The source code was brought over as one commit; the old commit history was not. Reason: same as above. Source: the project owner, 18 November 2026.
+**One clean commit.** The source code was brought over as one commit; the old commit history was not. Reason: not written down. Source: the project owner, 18 November 2026.
 
 **Rename in two steps.** First the visible name, later the internal names in the code, which still say Pingmator. Reason: not written down. Source: the project owner, 18 November 2026.
 
