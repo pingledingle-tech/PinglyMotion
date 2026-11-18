@@ -62,6 +62,10 @@ class AuroraLinkTest : public QObject
     void linkStopsOnWrongKey();
     void linkStopsWithoutPoseFeature();
     void linkReconnects();
+    void mutualAuthRightProofWorks();
+    void mutualAuthStandInWithoutKeyGetsNoPose();
+    void mutualAuthWrongProofIsRefused();
+    void oldAuroraWarnsOnce();
 
   private:
     // the stand-in LiveMesh: takes the client, checks the opening code, sends hello
@@ -418,6 +422,111 @@ void AuroraLinkTest::linkReconnects()
   QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
   reply(QJsonObject{{"ok", true}});
   QTRY_VERIFY(link.connected());
+}
+
+static const QJsonArray MUTUAL_FEATURES = {"auth", "auth-mutual", "pose-bvh"};
+
+void AuroraLinkTest::mutualAuthRightProofWorks()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
+  QSignalSpy warnings(&link, &AuroraLink::warningReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept(3000, MUTUAL_FEATURES));
+  const QJsonObject auth = nextMessage();
+  QCOMPARE(auth["type"].toString(), QString("auth"));
+  QCOMPARE(auth["response"].toString().toLatin1(), AuroraLink::authResponse(m_key, m_challenge));
+  // a random nonce of 16 bytes, as hex, new for every connection
+  const QByteArray nonce = QByteArray::fromHex(auth["nonce"].toString().toLatin1());
+  QCOMPARE(auth["nonce"].toString().size(), 32);
+  QCOMPARE(nonce.size(), 16);
+  QVERIFY(nonce != QByteArray(16, '\0'));
+  // the proof is the one in the protocol description (prefix text + raw nonce bytes)
+  QCOMPARE(AuroraLink::serverProof(m_key, nonce),
+           QMessageAuthenticationCode::hash("aurora-hello:" + nonce, m_key, QCryptographicHash::Sha256).toHex());
+  QVERIFY(!link.connected());
+  reply(QJsonObject{{"ok", true}, {"server_proof", QString::fromLatin1(AuroraLink::serverProof(m_key, nonce))}});
+  QCOMPARE(nextRealMessage()["type"].toString(), QString("pose-bvh"));
+  QVERIFY(link.connected());
+  QCOMPARE(warnings.count(), 0);
+}
+
+void AuroraLinkTest::mutualAuthStandInWithoutKeyGetsNoPose()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept(3000, MUTUAL_FEATURES));
+  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
+  // an impostor does not know the key: it says ok, with no proof
+  reply(QJsonObject{{"ok", true}});
+  QTRY_COMPARE(errors.count(), 1);
+  QVERIFY(errors.first().first().toString().contains("Aurora"));
+  QVERIFY(!link.connected());
+  QVERIFY(nextMessage(300).isEmpty());
+}
+
+void AuroraLinkTest::mutualAuthWrongProofIsRefused()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept(3000, MUTUAL_FEATURES));
+  const QJsonObject auth = nextMessage();
+  const QByteArray nonce = QByteArray::fromHex(auth["nonce"].toString().toLatin1());
+  // a proof made with another key, one for another nonce, and one that is cut short
+  const QByteArray wrongKey = QByteArray(32, '\x06');
+  const QByteArray good = AuroraLink::serverProof(m_key, nonce);
+  const QList<QByteArray> bad = {AuroraLink::serverProof(wrongKey, nonce), AuroraLink::serverProof(m_key, QByteArray(16, '\x01')),
+                                 good.left(good.size() - 2)};
+  QVERIFY(bad[0] != good && bad[1] != good);
+  reply(QJsonObject{{"ok", true}, {"server_proof", QString::fromLatin1(bad[0])}});
+  QTRY_COMPARE(errors.count(), 1);
+  QVERIFY(!link.connected());
+  QVERIFY(nextMessage(300).isEmpty());
+
+  // the link tries again by itself; this time the proof is cut short
+  m_client->deleteLater();
+  m_client = nullptr;
+  m_buffer.clear();
+  QVERIFY(accept(5000, MUTUAL_FEATURES));
+  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
+  reply(QJsonObject{{"ok", true}, {"server_proof", QString::fromLatin1(bad[2])}});
+  QTRY_COMPARE(errors.count(), 2);
+  QVERIFY(!link.connected());
+}
+
+void AuroraLinkTest::oldAuroraWarnsOnce()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
+  QSignalSpy warnings(&link, &AuroraLink::warningReceived);
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  // no auth-mutual in hello: no nonce is sent, a plain ok is accepted
+  QVERIFY(accept());
+  const QJsonObject auth = nextMessage();
+  QCOMPARE(auth["type"].toString(), QString("auth"));
+  QVERIFY(!auth.contains("nonce"));
+  reply(QJsonObject{{"ok", true}});
+  QCOMPARE(nextRealMessage()["type"].toString(), QString("pose-bvh"));
+  QVERIFY(link.connected());
+  QCOMPARE(warnings.count(), 1);
+
+  // Aurora goes away and comes back (still old): the link works, no second warning
+  m_client->abort();
+  m_client->deleteLater();
+  m_client = nullptr;
+  m_buffer.clear();
+  QTRY_VERIFY(!link.connected());
+  QVERIFY(accept(5000));
+  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
+  reply(QJsonObject{{"ok", true}});
+  QTRY_VERIFY(link.connected());
+  QCOMPARE(warnings.count(), 1);
+  QCOMPARE(errors.count(), 0);
 }
 
 QTEST_MAIN(AuroraLinkTest)
