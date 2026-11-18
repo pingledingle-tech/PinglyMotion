@@ -1,6 +1,6 @@
 Branch: docs/security-audit-status
 Status: active
-Pull request: pending
+Pull request: #33
 Files:
 - docs/SECURITY_AUDIT.md
 - SECURITY.md
