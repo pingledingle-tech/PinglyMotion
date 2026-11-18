@@ -1,37 +1,31 @@
-# Rules for AI sessions working on PinglyMotion
+# Rules for AI sessions working on Pingmator
 
-Several Claude sessions may work on this repository (`pingledingle-tech/PinglyMotion`, public; the code still says "Pingmator" in many places) at the same time. These rules keep them from breaking each other's work.
-
-Every job registers itself with ONE small file of its own in `docs/work/`. There is no shared table any more, so pull requests do not conflict over the board. Format and template: `docs/work/README.md`.
+Several Claude sessions may work on this repo at the same time. These rules keep them from breaking each other's work.
 
 ## Before you start
 
-1. Pull the newest `main` and read `docs/work/README.md`. Run `python3 tools/work.py list` to see the other jobs (job files in your checkout and on open pull requests; needs `gh`).
-2. If another active job already claims a file you need, do not start. Tell the user which job and which file, and wait.
-3. Create your branch and the job file `docs/work/<branch with "/" replaced by "-">.md` (`Branch:`, `Status: active`, `Pull request:`, `Files:` with the files you expect to change, then a short "What"). Commit it as your first commit, push, and open the pull request right away, so the other sessions can see it. Give it a title that starts with `WIP: `. Do not create it as a draft: marking a draft ready needs GraphQL, which is not available here. Create it with `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls --input <file.json>`, then put the number in `Pull request:`.
+1. Pull the newest `main` and read `docs/WORK.md`.
+2. If another active job already touches a file you need, do not start. Tell the user which job and which file, and wait.
+3. Add your job to the "Active jobs" table in `docs/WORK.md` (branch, what you are doing, which files you expect to change), commit it on your branch and open a draft pull request right away, so the other sessions can see it.
 
 ## While you work
 
 - Work only on your own branch. Never push to `main`.
-- Stay inside the files you listed. If you need another file, add it to `Files:` in your job file first, and run `python3 tools/work.py check` to see whether another active job claims it.
+- Stay inside the files you listed. If you need another file, update your row in `docs/WORK.md` first and check it against the other jobs again.
 - Keep the job small: one feature or fix per branch.
 
 ## When you are done
 
-1. In your job file set `Status: done`, in your last commit. Do not touch other jobs' files.
-2. Bring your branch up to date with `main` (rebase, or the pull request's "Update branch": `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/update-branch`). Build and run the tests (see README, "Tests"). They must pass. Run `python3 tools/work.py check`.
-3. Remove `WIP: ` from the pull request title (`gh api -X PATCH repos/pingledingle-tech/PinglyMotion/pulls/<number> -f title=...`).
-4. Wait until all checks on the pull request are green (`gh api repos/pingledingle-tech/PinglyMotion/commits/<sha>/check-runs`). Skipped checks are fine.
-5. Tell the user the pull request number and that it is ready to merge. The user merges it ("Squash and merge"), or tells you in this session that you may merge it. Only then merge it yourself, with squash: `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/merge -f merge_method=squash`.
+1. In `docs/WORK.md`, move your row from "Active jobs" to "Done", on your branch.
+2. Bring your branch up to date with `main` (rebase, or the pull request's "Update branch": `gh api -X PUT repos/pingledingle-tech/Pingmator/pulls/<number>/update-branch`). Build and run the tests (see README, "Tests"). They must pass.
+3. Mark the pull request ready for review. While it is a draft, only the privacy check runs; marking it ready starts the build, sanitizers and fuzzing (and the Windows zip).
+4. Wait until all checks on the pull request are green (`gh api repos/pingledingle-tech/Pingmator/commits/<sha>/check-runs`). Skipped checks are fine.
+5. Tell the user the pull request number and that it is ready to merge. The user merges it ("Squash and merge"), or tells you in this session that you may merge it. Only then merge it yourself, with squash: `gh api -X PUT repos/pingledingle-tech/Pingmator/pulls/<number>/merge -f merge_method=squash`.
 6. If another pull request is merged first, update your branch again (step 2) and wait for green checks before merging.
 
-`main` is protected by a ruleset: changes only through a pull request, squash merge only, and the checks `linux`, `windows`, `asan-ubsan`, `privacy`, `analyze` and `dependency-review` must be green. Auto-merge is allowed in the repository settings, but turning it on needs GraphQL, so merging is done as in step 5. The branch is deleted automatically after the merge.
+The repository is private on a free account, so GitHub has no required checks and no auto-merge here. Nothing stops a merge with red checks: that is why step 4 matters.
 
-The `work-board` check (`tools/work.py check`) is not a required check: if it is red, two active jobs claim the same files. Talk to the user; it does not block a merge by itself.
-
-### Pull requests that started before the job files
-
-Pull requests #1 (`feat/camera-keys`), #2 (`feat/ruth2-body-110`), #3 (`feat/test-motions-153`) and other jobs that started on 18 November 2026 still have a row in `docs/WORK.md`. When such a branch is next updated against `main`, it drops its row (`docs/WORK.md` is now only a pointer; take the version from `main`) and adds its own job file in `docs/work/` instead.
+The branch is deleted automatically after the merge.
 
 ## Commits
 
@@ -41,7 +35,7 @@ Pull requests #1 (`feat/camera-keys`), #2 (`feat/ruth2-body-110`), #3 (`feat/tes
 
 ## Privacy: no personal data anywhere
 
-The repository is public, so everything is visible: files, commits, issues, pull requests, comments, reviews, release notes and the website, and their history too: an edited issue still shows the old text in its edit history, and only the repository owner can delete that history, by hand. So personal data must never be written in the first place.
+The repository is private for now, but it may be made public again, and then everything becomes visible: files, commits, issues, pull requests, comments, reviews, release notes and the website, and their history too: an edited issue still shows the old text in its edit history, and only the repository owner can delete that history, by hand. So personal data must never be written in the first place.
 
 - **Never write the name of the repository owner or of any other private person**, not even the first name, a nickname or an initial. Write "the project owner" (or "the user" for any user). This applies everywhere: titles and bodies of issues and pull requests, comments, review comments, commit messages, docs, code comments, test data, file and branch names.
 - **No contact or account details:** no email addresses (only GitHub noreply addresses in commit metadata), phone numbers, home addresses, avatar or account names from Second Life or other services, or personal social media links.
