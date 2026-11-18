@@ -40,8 +40,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Cache downloaded apt packages
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: /home/runner/apt-archives
+          key: apt-fuzz-${{ hashFiles('.github/workflows/fuzz.yml') }}
+          restore-keys: apt-fuzz-
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang libclang-rt-18-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
+        run: |
+          mkdir -p /home/runner/apt-archives/partial
+          sudo apt-get update
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives clang libclang-rt-18-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
+          sudo chown -R "$USER" /home/runner/apt-archives
       - name: Build fuzz targets
         run: |
           CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_FUZZ=ON
