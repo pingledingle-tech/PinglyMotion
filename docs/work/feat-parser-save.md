@@ -1,5 +1,5 @@
 Branch: feat/parser-save
-Status: active
+Status: done
 Pull request: #42
 Files:
 - src/animfile.h
