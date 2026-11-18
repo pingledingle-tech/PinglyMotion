@@ -2,8 +2,12 @@ name: Release
 
 # Builds the Windows zip and the Linux AppImage and publishes them as a
 # GitHub release. The program's update check looks at these releases.
-# Start it from the Actions tab (Release > Run workflow, type the version),
-# or by pushing a tag like v0.3.0.
+# The release tag is made by a person, never by this workflow: the ruleset
+# "Protect release tags" does not let the Actions token create a v* tag.
+# So: push the tag (git tag v0.3.0 && git push origin v0.3.0) and the checks and
+# the release run from the tag. Or start it from the Actions tab (Release > Run
+# workflow, type the version) on a commit that already has that tag: with
+# publish off it only builds and checks and needs no tag.
 #
 # Every release first runs the full checks: the Build workflow (Linux tests,
 # Windows build, sanitizers), CodeQL including the test code, and 10 minutes
@@ -66,6 +70,19 @@ jobs:
           grep -q "^Version $BASE\$" bin/NEWS || { echo "bin/NEWS has no entry for version $BASE"; exit 1; }
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           if [ "$VERSION" != "$BASE" ]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+      # fail now, not after 40 minutes of builds, when the tag cannot be used
+      - name: The tag exists and points at this commit
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        shell: bash
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          refs=$(git ls-remote "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "refs/tags/$TAG" "refs/tags/$TAG^{}")
+          [ -n "$refs" ] || { echo "The tag $TAG does not exist. Push it first (git tag $TAG && git push origin $TAG): the Actions token may not create release tags."; exit 1; }
+          # an annotated tag lists the commit on the ^{} line, a plain tag on its own line
+          commit=$(echo "$refs" | awk '/\^\{\}$/ {print $1} END {}' )
+          [ -n "$commit" ] || commit=$(echo "$refs" | awk 'NR==1 {print $1}')
+          [ "$commit" = "$GITHUB_SHA" ] || { echo "The tag $TAG points at $commit, but this run builds $GITHUB_SHA. Run it on the tagged commit."; exit 1; }
 
   windows:
     needs: version
@@ -259,6 +276,6 @@ jobs:
         run: |
           FLAGS=""
           if [ "$PRERELEASE" = "true" ]; then FLAGS="--prerelease"; fi
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" $FLAGS \
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag $FLAGS \
             "Pingmator-${TAG}-windows.zip" "Pingmator-${TAG}-linux-x86_64.AppImage" SHA256SUMS \
             --title "Pingmator ${TAG#v}" --generate-notes
