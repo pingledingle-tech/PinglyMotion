@@ -1,6 +1,6 @@
 Branch: docs/p-06-aqtinstall-checksums
-Status: active
-Pull request: pending
+Status: done
+Pull request: #45
 Files:
 - docs/SECURITY_AUDIT.md
 
