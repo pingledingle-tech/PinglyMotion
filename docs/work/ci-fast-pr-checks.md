@@ -1,5 +1,5 @@
 Branch: ci/fast-pr-checks
-Status: active
+Status: done
 Pull request: #31
 Files:
 - .github/workflows/build.yml
