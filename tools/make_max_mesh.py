@@ -145,7 +145,8 @@ def load_rest_positions():
 
 
 def load_collision_volumes():
-    """collision volume name (HEAD, L_FOOT ...) -> (parent bone, position in the bone)
+    """collision volume name (HEAD, L_FOOT ...) -> (parent bone, position in the
+    bone, rotation in degrees, scale)
 
     Fitted mesh is weighted to these volumes. They never move on their own:
     each sits at a fixed place on its bone, with a fixed rotation and scale
@@ -158,7 +159,9 @@ def load_collision_volumes():
         for child in bone:
             if child.tag == "collision_volume":
                 pos = np.array([float(x) for x in child.get("pos").split()])
-                volumes[child.get("name")] = (bone.get("name"), pos)
+                rot = np.array([float(x) for x in child.get("rot").split()])
+                scale = np.array([float(x) for x in child.get("scale").split()])
+                volumes[child.get("name")] = (bone.get("name"), pos, rot, scale)
             elif child.tag == "bone":
                 walk(child)
 
@@ -166,33 +169,76 @@ def load_collision_volumes():
     return volumes
 
 
-def main():
-    if len(sys.argv) not in (2, 3):
-        raise SystemExit(__doc__)
-    dae = sys.argv[1]
-    out = sys.argv[2] if len(sys.argv) == 3 else DEFAULT_OUT
+def rest_matrix(joint, rest, volumes):
+    """world matrix of a bone or collision volume in the default SL skeleton,
+    as the viewer builds it: bones have no rotation and scale 1; volumes are
+    moved, turned (degrees, X then Y then Z) and scaled inside their bone"""
+    m = np.identity(4)
+    if joint in volumes:
+        bone, pos, rot, scale = volumes[joint]
+        m[:3, 3] = rest[bone] + pos
+        x, y, z = np.radians(rot)
+        rx = np.array([[1, 0, 0], [0, np.cos(x), -np.sin(x)], [0, np.sin(x), np.cos(x)]])
+        ry = np.array([[np.cos(y), 0, np.sin(y)], [0, 1, 0], [-np.sin(y), 0, np.cos(y)]])
+        rz = np.array([[np.cos(z), -np.sin(z), 0], [np.sin(z), np.cos(z), 0], [0, 0, 1]])
+        m[:3, :3] = rz @ ry @ rx @ np.diag(scale)
+    else:
+        m[:3, 3] = rest[joint]
+    return m
+
+
+def read_collada(dae):
     root = ET.parse(dae).getroot()
     unit = root.find("c:asset/c:unit", NS)
     if unit is not None and abs(float(unit.get("meter", "1")) - 1.0) > 1e-9:
-        raise SystemExit("the file must be in metres")
+        raise SystemExit(f"{dae}: the file must be in metres")
     up = root.find("c:asset/c:up_axis", NS)
     if up is not None and up.text.strip() != "Z_UP":
-        raise SystemExit("the file must be Z_UP")
+        raise SystemExit(f"{dae}: the file must be Z_UP")
+    return root
 
+
+def convert(dae_files, part_names, out, rebind=False):
+    """Write one .pmm from the skinned meshes in dae_files.
+
+    part_names: geometry id in the Collada files -> (part name, flags);
+    other geometries are skipped. Parts are written in file order, then in
+    the order of the controllers in each file. Returns the list of SL
+    joints the mesh is weighted to and the collision volumes whose weights
+    were moved to their bones.
+
+    rebind=False: the file must be bound to the default SL skeleton (joints
+    within 2 mm, bones not turned); the vertices are used as they are (Max).
+
+    rebind=True: the file may be bound to another shape (other joint
+    positions, scaled head ...), as Avastar exports for a custom shape do
+    (Ruth2). Each vertex is moved to where the Second Life viewer draws it on
+    the default skeleton: the weighted sum of rest matrix x inverse bind
+    matrix x vertex over its joints. That is exact in the rest pose; when
+    joints bend, Pingmator's skinning from that one rest position differs from
+    the viewer's by a few millimetres where neighbouring joints were bound
+    far from the SL positions. The biggest differences are printed."""
     rest = load_rest_positions()
     volumes = load_collision_volumes()
-    geometries = {g.get("id"): g for g in root.iter("{%s}geometry" % NS["c"])}
-    placement = node_matrices(root)
 
     joint_list = []
     joint_index = {}
+    moved_volumes = set()
     parts = []
-    for controller in root.iter("{%s}controller" % NS["c"]):
+    controllers = []
+    for dae in dae_files:
+        root = read_collada(dae)
+        geometries = {g.get("id"): g for g in root.iter("{%s}geometry" % NS["c"])}
+        placement = node_matrices(root)
+        for controller in root.iter("{%s}controller" % NS["c"]):
+            controllers.append((controller, geometries, placement))
+
+    for controller, geometries, placement in controllers:
         geo_id = controller.find("c:skin", NS).get("source")[1:]
-        if geo_id not in PARTS:
+        if geo_id not in part_names:
             print(f"skipping {geo_id}")
             continue
-        name, flags = PARTS[geo_id]
+        name, flags = part_names[geo_id]
         positions, normals, corners = read_mesh(geometries[geo_id])
         bind_shape, names, inv_bind, per_vertex = read_skin(controller)
         if len(per_vertex) != len(positions):
@@ -200,20 +246,52 @@ def main():
 
         # Pingmator bends the mesh around the default SL joint positions with no
         # rest rotation; check that the file was bound to exactly that skeleton
+        unknown = [j for j in names if j not in volumes and j not in rest]
+        if unknown:
+            raise SystemExit(f"{geo_id}: joints that are neither a bone of Pingmator's skeleton"
+                             f" (bin/data/skin_joints.txt) nor a collision volume: {' '.join(unknown)}")
+        moved_volumes.update(j for j in names if j in volumes)
+        to_rest = {}
         for joint, m in zip(names, inv_bind):
+            if rebind:
+                to_rest[joint] = rest_matrix(joint, rest, volumes) @ m
+                continue
             bind = np.linalg.inv(m)
             if joint in volumes:
-                bone, pos = volumes[joint]
+                bone, pos = volumes[joint][:2]
                 expected = rest[bone] + pos
             elif joint in rest:
                 if np.abs(bind[:3, :3] - np.identity(3)).max() > 1e-3:
                     raise SystemExit(f"{geo_id}: joint {joint} has a rotated bind pose")
                 expected = rest[joint]
-            else:
-                raise SystemExit(f"{geo_id}: joint {joint} is neither a bone nor a collision volume")
             off = np.linalg.norm(bind[:3, 3] - expected)
             if off > 0.002:
                 raise SystemExit(f"{geo_id}: joint {joint} is {off * 1000:.1f} mm from the SL rest position")
+        # Max Draft 1.1 has a few hundred vertices inside the mouth (teeth, tongue)
+        # without weights; give them the weights of the nearest weighted vertex
+        empty = [i for i, x in enumerate(per_vertex) if sum(w for _, w in x) < MIN_WEIGHT]
+        if empty:
+            weighted = np.array([i for i, x in enumerate(per_vertex) if sum(w for _, w in x) >= MIN_WEIGHT])
+            for i in empty:
+                nearest = weighted[np.linalg.norm(positions[weighted] - positions[i], axis=1).argmin()]
+                per_vertex[i] = per_vertex[nearest]
+            print(f"{geo_id}: {len(empty)} vertices without weights got their nearest neighbour's")
+        world = placement.get(controller.get("id"), np.identity(4)) @ bind_shape
+        # rebind: one matrix per vertex that takes it to the default skeleton
+        vertex_matrix = None
+        if rebind:
+            vertex_matrix = []
+            for influences in per_vertex:
+                total = sum(w for _, w in influences)
+                vertex_matrix.append(sum(w / total * to_rest[j] for j, w in influences) @ world)
+            for joint, m in zip(names, inv_bind):
+                sl = rest_matrix(joint, rest, volumes)
+                off = np.linalg.norm(np.linalg.inv(m)[:3, 3] - sl[:3, 3])
+                turn = np.abs(to_rest[joint][:3, :3] - np.identity(3)).max()
+                if off > 0.002 or turn > 1e-3:
+                    print(f"  {joint}: bound {off * 1000:.1f} mm from the SL rest position,"
+                          f" turned/scaled by up to {turn:.3f}")
+
         # weights on a collision volume go to its bone
         merged = []
         for influences in per_vertex:
@@ -223,17 +301,7 @@ def main():
                 total[bone] = total.get(bone, 0.0) + w
             merged.append(list(total.items()))
         per_vertex = merged
-        # Draft 1.1 has a few hundred vertices inside the mouth (teeth, tongue)
-        # without weights; give them the weights of the nearest weighted vertex
-        empty = [i for i, x in enumerate(per_vertex) if sum(w for _, w in x) < MIN_WEIGHT]
-        if empty:
-            weighted = np.array([i for i, x in enumerate(per_vertex) if sum(w for _, w in x) >= MIN_WEIGHT])
-            for i in empty:
-                nearest = weighted[np.linalg.norm(positions[weighted] - positions[i], axis=1).argmin()]
-                per_vertex[i] = per_vertex[nearest]
-            print(f"{geo_id}: {len(empty)} vertices without weights got their nearest neighbour's")
 
-        world = placement.get(controller.get("id"), np.identity(4)) @ bind_shape
         rot = world[:3, :3]
         normal_matrix = np.linalg.inv(rot).T
 
@@ -243,8 +311,12 @@ def main():
         for pi, ni in corners:
             key = (pi, ni)
             if key not in remap:
-                p = world @ np.append(positions[pi], 1.0)
-                n = normal_matrix @ normals[ni]
+                if vertex_matrix is not None:
+                    p = vertex_matrix[pi] @ np.append(positions[pi], 1.0)
+                    n = np.linalg.inv(vertex_matrix[pi][:3, :3]).T @ normals[ni]
+                else:
+                    p = world @ np.append(positions[pi], 1.0)
+                    n = normal_matrix @ normals[ni]
                 length = np.linalg.norm(n)
                 n = n / length if length > 0 else np.array([0.0, 0.0, 1.0])
                 infl = sorted(per_vertex[pi], key=lambda jw: -jw[1])[:MAX_INFLUENCES]
@@ -286,6 +358,14 @@ def main():
     with open(out, "wb") as f:
         f.write(blob)
     print(f"{out}: {len(blob)} bytes, {len(joint_list)} joints")
+    return joint_list, sorted(moved_volumes)
+
+
+def main():
+    if len(sys.argv) not in (2, 3):
+        raise SystemExit(__doc__)
+    out = sys.argv[2] if len(sys.argv) == 3 else DEFAULT_OUT
+    convert([sys.argv[1]], PARTS, out)
 
 
 if __name__ == "__main__":

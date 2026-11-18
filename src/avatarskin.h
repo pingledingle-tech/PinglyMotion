@@ -5,9 +5,10 @@
  * vertices with the joints, the same way the Second Life viewer does it:
  * each vertex follows one joint and blends towards the next one.
  *
- * Or loads the Max Bento avatar (bin/data/character/max/maxine.pmm), which
- * has fingers and a face weighted to the Bento bones; each of its vertices
- * follows up to four joints.
+ * Or loads a Bento mesh body from a Pingmator mesh file (.pmm): Max
+ * (bin/data/character/max/maxine.pmm) or Ruth2 v4
+ * (bin/data/character/ruth2/ruth2.pmm). Their fingers and faces are weighted
+ * to the Bento bones; each vertex follows up to four joints.
  *
  * No OpenGL in here; the view draws the result.
  *
@@ -62,8 +63,14 @@ class AvatarSkin
     enum Body
     {
       ClassicBody,    // the Linden system avatar, character/*.llm
-      MaxBody         // the Max Bento avatar, character/max/maxine.pmm
+      MaxBody,        // the Max Bento avatar, character/max/maxine.pmm
+      RuthBody        // the Ruth2 v4 Bento avatar, character/ruth2/ruth2.pmm
     };
+
+    // For testing until Ruth2 gets a menu entry (#110): when the environment
+    // variable PINGMATOR_BODY is "ruth2", load() loads RuthBody whatever body
+    // it is asked for. Returns the body to load instead, or -1.
+    static int bodyOverride();
 
     // reads skin_joints.txt and the body's mesh files from the data folder
     bool load(const QString& dataPath, QString* errorMessage = nullptr) { return load(dataPath, ClassicBody, errorMessage); }
@@ -122,7 +129,7 @@ class AvatarSkin
     bool loadJoints(const QString& fileName, QString* errorMessage);
     bool loadSkinnedPart(const QString& fileName, QString* errorMessage);
     bool loadEyes(const QString& fileName, QString* errorMessage);
-    bool loadMax(const QString& fileName, QString* errorMessage);
+    bool loadPmm(const QString& fileName, QString* errorMessage);
     int useJoint(int skeletonJoint);
     int baseAncestor(int skeletonJoint) const;
 
