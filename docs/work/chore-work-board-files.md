@@ -1,13 +1,14 @@
 Branch: chore/work-board-files
-Status: active
-Pull request: pending
+Status: done
+Pull request: #5
 Files:
 - CLAUDE.md
 - docs/WORK.md
-- docs/work/**
+- docs/work/README.md
+- docs/work/HISTORY.md
 - tools/work.py
 - tests/test_work.py
-- .github/workflows/privacy.yml
+- .github/workflows/work-board.yml
 
 ## What
 
