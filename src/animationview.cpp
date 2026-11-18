@@ -73,9 +73,6 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   changeX=0;
   changeY=0;
   changeZ=0;
-  xSelect=false;
-  ySelect=false;
-  zSelect=false;
 
   QString limFile = Constants::limitsFilePath();
   qDebug("AnimationView::AnimationView(): using limits file '%s'",limFile.toLatin1().constData());
@@ -100,8 +97,7 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
 
 // FIXME:    mode(FL_DOUBLE | FL_MULTISAMPLE | FL_ALPHA | FL_DEPTH);
 
-  leftMouseButton=false;
-  modifier=0;
+  modifier=Qt::NoModifier;
   if(anim) m_scene->setAnimation(anim);
   setMouseTracking(true);
   setFocusPolicy(Qt::StrongFocus);
@@ -289,7 +285,12 @@ void AnimationView::initializeGL()
 
 void AnimationView::draw()
 {
-  m_haveSelectedPosition=false;
+  // picking draws too, but finds no positions: keep the last ones
+  if(!isPicking())
+  {
+    m_haveSelectedPosition=false;
+    m_jointPositions.clear();
+  }
   m_ringVisible[0]=m_ringVisible[1]=m_ringVisible[2]=false;
   if(!isValid()) initializeGL();
 
@@ -512,15 +513,20 @@ int AnimationView::pickPartByColor(int x, int y)
   return name;
 }
 
+// Mouse and keys: see docs/POSING_UX.md ("Mouse and keys") and
+// Camera::dragFor(). A left click selects; a left drag on empty space (or on
+// the body) turns the camera; rings turn joints; Alt is the Second Life camera.
 void AnimationView::mouseMoveEvent(QMouseEvent* event)
 {
-  if(leftMouseButton && m_ringDragging>=0)
+  if(m_mouseDrag==MouseDrag::Ring && m_ringDragging>=0)
   {
     // turn the joint as far as the mouse moved along the ring
     const QPoint moved=event->pos()-m_ringLastPos;
     m_ringLastPos=event->pos();
     const double lengthSquared=m_ringTangent.x()*m_ringTangent.x()+m_ringTangent.y()*m_ringTangent.y();
-    const double degrees=(moved.x()*m_ringTangent.x()+moved.y()*m_ringTangent.y())/lengthSquared;
+    double degrees=(moved.x()*m_ringTangent.x()+moved.y()*m_ringTangent.y())/lengthSquared;
+    // Shift: finer control
+    if(event->modifiers() & Qt::ShiftModifier) degrees*=0.2;
     emit partDragged(getSelectedPart(),
                      m_ringDragging==0 ? degrees : 0,
                      m_ringDragging==1 ? degrees : 0,
@@ -528,123 +534,8 @@ void AnimationView::mouseMoveEvent(QMouseEvent* event)
     update();
     return;
   }
-  if(leftMouseButton)
-  {
-    QPoint dragPos=QCursor::pos();
 
-    // since MacOSX doesn't like the old "drag and snap back" solution, we're going for a
-    // more elaborate solution
-
-    // calculate drag distance from last dragging point
-    dragX=dragPos.x()-oldDragX;
-    dragY=dragPos.y()-oldDragY;
-
-    // remember the current position as last dragging point
-    oldDragX=dragPos.x();
-    oldDragY=dragPos.y();
-
-    // if mouse has moved sufficiently far enough from first clicking position ...
-    if(abs(clickPos.x()-dragPos.x())>100 || abs(clickPos.y()-dragPos.y())>100)
-    {
-      // set remembered drag position back to first click position
-      oldDragX=clickPos.x();
-      oldDragY=clickPos.y();
-      // set mouse cursor back to first click position
-      QCursor::setPos(clickPos);
-    }
-
-    if (partSelected)
-    {
-      if (partSelected < static_cast<int>(OpenGlIds::ObjectStart))
-      {
-        changeX=0;
-        changeY=0;
-        changeZ=0;
-
-        if (modifier & static_cast<int>(ModifierKeys::Shift))
-        {
-          changeX = dragY;
-        }
-        if (modifier & static_cast<int>(ModifierKeys::Alt))
-        {
-          changeY = dragX;
-        }
-        else if (modifier & static_cast<int>(ModifierKeys::Ctrl))
-        {
-          changeZ = -dragX;
-        }
-
-        emit partDragged(getSelectedPart(),changeX,changeY,changeZ);
-        update();
-      }
-    }
-    else if(propDragging)
-    {
-      float rot=camera()->yRotation();
-      Prop* prop=m_scene->getPropById(propManager()->getSelectedPropId());
-
-      if (propDragging == static_cast<int>(OpenGlIds::DragHandleX))
-      {
-        if(rot>90 && rot<270) dragX=-dragX;
-        emit propDragged(prop,(double) dragX/10.0,0,0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::DragHandleY))
-      {
-        emit propDragged(prop,0,(double) -dragY/10.0,0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::DragHandleZ))
-      {
-        if(rot>90 && rot<270) dragY=-dragY;
-        emit propDragged(prop,0,0,(double) dragY/10.0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleX))
-      {
-        if(rot>90 && rot<270) dragX=-dragX;
-        emit propScaled(prop,(double) dragX/10.0,0,0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleY))
-      {
-        if(rot>90 && rot<270) dragY=-dragY;
-        emit propScaled(prop,0,(double) -dragY/10.0,0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleZ))
-      {
-        emit propScaled(prop,0,0,(double) dragY/10.0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleX))
-      {
-        emit propRotated(prop,(double) dragX/5.0,0,0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleY))
-      {
-        emit propRotated(prop,0,(double) -dragY/5.0,0);
-      }
-      else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleZ))
-      {
-        emit propRotated(prop,0,0,(double) dragY/5.0);
-      }
-      update();
-    }
-    else
-    {
-      if (modifier & static_cast<int>(ModifierKeys::Shift))
-      {
-        camera()->pan(dragX / 2, dragY / 2, 0);
-      }
-      else if (modifier & static_cast<int>(ModifierKeys::Alt))
-      {
-        camera()->pan(0, 0, dragY);
-        camera()->rotate(0, dragX);
-      }
-      else
-      {
-        camera()->rotate(dragY, dragX);
-      }
-
-      update();
-    }
-  }
-  else
+  if(m_mouseDrag==MouseDrag::None || m_mouseDrag==MouseDrag::Ring)
   {
     unsigned int oldPart=partHighlighted;
     partHighlighted=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
@@ -658,123 +549,285 @@ void AnimationView::mouseMoveEvent(QMouseEvent* event)
       else
         QToolTip::showText(mapToGlobal(event->pos()),name,this);
     }
+    return;
   }
-}
 
-void AnimationView::mousePressEvent(QMouseEvent* event)
-{
-  if(event->button()==Qt::LeftButton)
+  // a click becomes a camera drag once the mouse has moved a little
+  if(m_mouseDrag==MouseDrag::Click)
   {
-    leftMouseButton=true;
-    // hide mouse cursor to avoid confusion
+    if((event->pos()-m_pressPos).manhattanLength()<4) return;
+    m_mouseDrag=MouseDrag::Camera;
+    QToolTip::hideText();
     setCursor(QCursor(Qt::BlankCursor));
+  }
 
-    // MacOSX didn't like our old "move and snap back" solution, so here goes another
+  QPoint dragPos=QCursor::pos();
 
-    // remember mouse position to return to
-    returnPos=QCursor::pos();
-    // place mouse in the center of our view to avoid slamming against the screen border
-    //// Causes problems on leopard
-    ////QCursor::setPos(mapToGlobal(QPoint(width()/2,height()/2)));
-    // remember new mouse position for dragging
-    clickPos=QCursor::pos();
-    // put in position for distance calculation
+  // since MacOSX doesn't like the old "drag and snap back" solution, we're going for a
+  // more elaborate solution
+
+  // calculate drag distance from last dragging point
+  dragX=dragPos.x()-oldDragX;
+  dragY=dragPos.y()-oldDragY;
+
+  // remember the current position as last dragging point
+  oldDragX=dragPos.x();
+  oldDragY=dragPos.y();
+
+  // if mouse has moved sufficiently far enough from first clicking position ...
+  if(abs(clickPos.x()-dragPos.x())>100 || abs(clickPos.y()-dragPos.y())>100)
+  {
+    // set remembered drag position back to first click position
     oldDragX=clickPos.x();
     oldDragY=clickPos.y();
-    // check out which part or prop has been clicked
-    unsigned int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
+    // set mouse cursor back to first click position
+    QCursor::setPos(clickPos);
+  }
 
-    // a rotation ring of the selected part was grabbed: drag it to turn the joint
-    const int ring=static_cast<int>(selected)-static_cast<int>(OpenGlIds::RotateRingX);
-    if(ring>=0 && ring<=2 && partSelected && m_ringVisible[ring])
+  if(m_mouseDrag==MouseDrag::Camera)
+  {
+    moveCamera(m_cameraDrag,dragX,dragY);
+    update();
+  }
+  else if(m_mouseDrag==MouseDrag::Prop && propDragging)
+  {
+    float rot=camera()->yRotation();
+    Prop* prop=m_scene->getPropById(propManager()->getSelectedPropId());
+
+    if (propDragging == static_cast<int>(OpenGlIds::DragHandleX))
     {
-      setCursor(QCursor(Qt::ClosedHandCursor));
-      startRingDrag(ring,event->pos());
-      update();
-      return;
+      if(rot>90 && rot<270) dragX=-dragX;
+      emit propDragged(prop,(double) dragX/10.0,0,0);
     }
-
-    // if another part than the current one has been clicked, switch off mirror mode
-    if(selected!=partSelected) m_scene->getAnimation()->setMirrored(false);
-
-    // background clicked, reset all
-    if(!selected)
+    else if (propDragging == static_cast<int>(OpenGlIds::DragHandleY))
     {
-      partSelected=0;
-      mirrorSelected=0;
-      propManager()->selectProp(0);
-      propDragging=0;
-      emit backgroundClicked();
+      emit propDragged(prop,0,(double) -dragY/10.0,0);
     }
-    // body part clicked
-    else if (selected < static_cast<int>(OpenGlIds::ObjectStart))
+    else if (propDragging == static_cast<int>(OpenGlIds::DragHandleZ))
     {
-      partSelected=selected;
-      m_scene->selectAnimation(selected / static_cast<int>(OpenGlIds::AnimationIncrement));
-      propManager()->selectProp(0);
-      propDragging=0;
-
-      BVHNode* part=getSelectedPart();
-      changeX = changeY = changeZ = 0;
-      dragX = dragY = 0;
-
-      emit partClicked(part,
-                       QVector3D(m_scene->getAnimation()->getRotation(part)),
-                       m_scene->getAnimation()->getRotationLimits(part),
-                       QVector3D(m_scene->getAnimation()->getPosition())
-                      );
-      emit partClicked(partSelected % static_cast<int>(OpenGlIds::AnimationIncrement));
+      if(rot>90 && rot<270) dragY=-dragY;
+      emit propDragged(prop,0,0,(double) dragY/10.0);
     }
-    // drag handle clicked
-    else if (selected == static_cast<int>(OpenGlIds::DragHandleX) ||
-             selected == static_cast<int>(OpenGlIds::DragHandleY) ||
-             selected == static_cast<int>(OpenGlIds::DragHandleZ) ||
-             selected == static_cast<int>(OpenGlIds::ScaleHandleX) ||
-             selected == static_cast<int>(OpenGlIds::ScaleHandleY) ||
-             selected == static_cast<int>(OpenGlIds::ScaleHandleZ) ||
-             selected == static_cast<int>(OpenGlIds::RotateHandleX) ||
-             selected == static_cast<int>(OpenGlIds::RotateHandleY) ||
-             selected == static_cast<int>(OpenGlIds::RotateHandleZ))
+    else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleX))
     {
-      propDragging=selected;
-      changeX = changeY = changeZ = 0;
-      dragX = dragY = 0;
+      if(rot>90 && rot<270) dragX=-dragX;
+      emit propScaled(prop,(double) dragX/10.0,0,0);
     }
-    else
+    else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleY))
     {
-      emit propClicked(m_scene->getPropById(selected));
-      propManager()->selectProp(selected);
+      if(rot>90 && rot<270) dragY=-dragY;
+      emit propScaled(prop,0,(double) -dragY/10.0,0);
+    }
+    else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleZ))
+    {
+      emit propScaled(prop,0,0,(double) dragY/10.0);
+    }
+    else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleX))
+    {
+      emit propRotated(prop,(double) dragX/5.0,0,0);
+    }
+    else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleY))
+    {
+      emit propRotated(prop,0,(double) -dragY/5.0,0);
+    }
+    else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleZ))
+    {
+      emit propRotated(prop,0,0,(double) dragY/5.0);
     }
     update();
   }
 }
 
+void AnimationView::moveCamera(CameraDrag how,int dx,int dy)
+{
+  // degrees per pixel when turning
+  const float turn=0.5f;
+  // zoom: 1% per pixel, down = further away
+  const float zoom=std::pow(1.01f,(float) dy);
+  // pan: the point the camera turns around follows the mouse
+  const float perPixel=2.0f*std::tan(30.0f*M_PI/180.0f)*camera()->distance()/qMax(1,height());
+
+  switch(how)
+  {
+    case CameraDrag::Orbit:
+      camera()->rotate(dy*turn,dx*turn);
+      break;
+    case CameraDrag::OrbitAndZoom:
+      camera()->rotate(0,dx*turn);
+      camera()->zoom(zoom);
+      break;
+    case CameraDrag::Pan:
+      camera()->panBy(-dx*perPixel,dy*perPixel);
+      break;
+    case CameraDrag::Zoom:
+      camera()->zoom(zoom);
+      break;
+    case CameraDrag::None:
+      break;
+  }
+}
+
+void AnimationView::mousePressEvent(QMouseEvent* event)
+{
+  // one drag at a time; other buttons are ignored until it ends
+  if(m_mouseDrag!=MouseDrag::None) return;
+
+  const Qt::KeyboardModifiers keys=event->modifiers();
+  modifier=keys;
+  m_dragButton=event->button();
+  m_pressPos=event->pos();
+  m_pressSelected=0;
+
+  // remember mouse position for dragging (screen pixels, see mouseMoveEvent())
+  returnPos=QCursor::pos();
+  clickPos=QCursor::pos();
+  oldDragX=clickPos.x();
+  oldDragY=clickPos.y();
+  dragX=dragY=0;
+
+  m_cameraDrag=Camera::dragFor(event->button(),keys);
+  if(m_cameraDrag==CameraDrag::None) return;
+
+  // right and middle button, and Alt (Second Life): always the camera
+  if(event->button()!=Qt::LeftButton || (keys & Qt::AltModifier))
+  {
+    // Alt + click on a joint: turn around that joint from here (Second Life)
+    if(event->button()==Qt::LeftButton)
+    {
+      const unsigned int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
+      if(selected && selected<static_cast<unsigned int>(OpenGlIds::ObjectStart))
+        focusOnJoint(selected,-1);
+    }
+    m_mouseDrag=MouseDrag::Camera;
+    QToolTip::hideText();
+    setCursor(QCursor(Qt::BlankCursor));
+    update();
+    return;
+  }
+
+  // left button: check out which part or prop has been clicked
+  const unsigned int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
+
+  // a rotation ring of the selected part was grabbed: drag it to turn the joint
+  const int ring=static_cast<int>(selected)-static_cast<int>(OpenGlIds::RotateRingX);
+  if(ring>=0 && ring<=2 && partSelected && m_ringVisible[ring])
+  {
+    m_mouseDrag=MouseDrag::Ring;
+    setCursor(QCursor(Qt::ClosedHandCursor));
+    startRingDrag(ring,event->pos());
+    update();
+    return;
+  }
+
+  // drag handle of a prop clicked
+  if (selected == static_cast<unsigned int>(OpenGlIds::DragHandleX) ||
+      selected == static_cast<unsigned int>(OpenGlIds::DragHandleY) ||
+      selected == static_cast<unsigned int>(OpenGlIds::DragHandleZ) ||
+      selected == static_cast<unsigned int>(OpenGlIds::ScaleHandleX) ||
+      selected == static_cast<unsigned int>(OpenGlIds::ScaleHandleY) ||
+      selected == static_cast<unsigned int>(OpenGlIds::ScaleHandleZ) ||
+      selected == static_cast<unsigned int>(OpenGlIds::RotateHandleX) ||
+      selected == static_cast<unsigned int>(OpenGlIds::RotateHandleY) ||
+      selected == static_cast<unsigned int>(OpenGlIds::RotateHandleZ))
+  {
+    m_mouseDrag=MouseDrag::Prop;
+    propDragging=selected;
+    changeX = changeY = changeZ = 0;
+    // hide mouse cursor to avoid confusion
+    setCursor(QCursor(Qt::BlankCursor));
+    return;
+  }
+
+  // a joint, a prop or empty space: select on release, unless the mouse
+  // moves first - then it turns the camera
+  m_mouseDrag=MouseDrag::Click;
+  m_pressSelected=selected;
+}
+
+void AnimationView::clickSelect(unsigned int selected)
+{
+  m_lastClicked=selected;
+  // if another part than the current one has been clicked, switch off mirror mode
+  if(selected!=partSelected) m_scene->getAnimation()->setMirrored(false);
+
+  // background clicked, reset all
+  if(!selected)
+  {
+    partSelected=0;
+    mirrorSelected=0;
+    propManager()->selectProp(0);
+    propDragging=0;
+    emit backgroundClicked();
+  }
+  // body part clicked
+  else if (selected < static_cast<unsigned int>(OpenGlIds::ObjectStart))
+  {
+    partSelected=selected;
+    m_scene->selectAnimation(selected / static_cast<int>(OpenGlIds::AnimationIncrement));
+    propManager()->selectProp(0);
+    propDragging=0;
+
+    BVHNode* part=getSelectedPart();
+    changeX = changeY = changeZ = 0;
+    dragX = dragY = 0;
+
+    emit partClicked(part,
+                     QVector3D(m_scene->getAnimation()->getRotation(part)),
+                     m_scene->getAnimation()->getRotationLimits(part),
+                     QVector3D(m_scene->getAnimation()->getPosition())
+                    );
+    emit partClicked(partSelected % static_cast<int>(OpenGlIds::AnimationIncrement));
+  }
+  else if (selected < static_cast<unsigned int>(OpenGlIds::DragHandlStart))
+  {
+    emit propClicked(m_scene->getPropById(selected));
+    propManager()->selectProp(selected);
+  }
+  update();
+}
+
 void AnimationView::mouseReleaseEvent(QMouseEvent* event)
 {
-  if(event->button()==Qt::LeftButton)
+  if(event->button()!=m_dragButton || m_mouseDrag==MouseDrag::None) return;
+
+  const MouseDrag ended=m_mouseDrag;
+  m_mouseDrag=MouseDrag::None;
+  m_dragButton=Qt::NoButton;
+  m_cameraDrag=CameraDrag::None;
+  propDragging=0;
+  // show mouse cursor again
+  setCursor(Qt::ArrowCursor);
+
+  if(ended==MouseDrag::Click)
+    clickSelect(m_pressSelected);
+  else if(ended==MouseDrag::Ring)
   {
-    // move mouse cursor back to the beginning of the dragging process
-    //// causes problems on leopard
-    ////QCursor::setPos(returnPos);
-    // show mouse cursor again
-    setCursor(Qt::ArrowCursor);
-    leftMouseButton=false;
-    propDragging=0;
-    if(m_ringDragging>=0)
-    {
-      m_ringDragging=-1;
-      update();
-    }
+    m_ringDragging=-1;
+    update();
   }
 }
 
 void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
 {
-  int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
-
-  // no double clicks for props or drag handles
-  if (selected >= static_cast<int>(OpenGlIds::ObjectStart))
+  // Alt: Second Life camera, the press already focused
+  if(event->button()!=Qt::LeftButton || (event->modifiers() & Qt::AltModifier))
   {
+    mousePressEvent(event);
+    return;
+  }
+
+  unsigned int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
+
+  // the first click selected a joint, and its rings now lie over it (the
+  // ring seen edge-on is a line through the joint): it is still that joint
+  const int ring=static_cast<int>(selected)-static_cast<int>(OpenGlIds::RotateRingX);
+  if(ring>=0 && ring<=2 && partSelected && m_lastClicked==partSelected)
+    selected=partSelected;
+
+  // no double clicks for props, drag handles or rings
+  if (!selected || selected >= static_cast<unsigned int>(OpenGlIds::ObjectStart))
+  {
+    mousePressEvent(event);
     return;
   }
 
@@ -783,55 +836,73 @@ void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
   //  animation than what getAnimation() returns
   if (m_scene->getAnimation()->getNode(selected) == 0) return;
 
-  if (modifier & static_cast<int>(ModifierKeys::Shift))
+  // the first click of the double click selected the joint already
+  if(partSelected!=selected) clickSelect(selected);
+
+  if (event->modifiers() & Qt::ShiftModifier)
   {
+    // Shift + double-click: the mirrored joint moves along
     mirrorSelected=getSelectedPart()->getMirrorIndex() + (selected / static_cast<int>(OpenGlIds::AnimationIncrement)) * static_cast<int>(OpenGlIds::AnimationIncrement);
     if (mirrorSelected)
     {
       m_scene->getAnimation()->setMirrored(true);
     }
   }
-  else if (selected && selected < static_cast<int>(OpenGlIds::ObjectStart))
+  else if (event->modifiers() & Qt::ControlModifier)
   {
+    // Ctrl + double-click: IK on/off (until the joint card has an IK switch, #88)
     m_scene->getAnimation()->setIK(m_scene->getAnimation()->getNode(selected),
                      !m_scene->getAnimation()->getIK(m_scene->getAnimation()->getNode(selected)));
+  }
+  else
+  {
+    // double-click: look at the joint and turn around it
+    zoomToSelectedPart();
   }
   update();
 }
 
 void AnimationView::wheelEvent(QWheelEvent* event)
 {
-  camera()->pan(0,0,-event->angleDelta().y()/12);
+  // one notch (120) moves 15% closer or further; touchpads send smaller steps
+  camera()->zoom(std::pow(0.85f,event->angleDelta().y()/120.0f));
   update();
 }
 
 void AnimationView::keyPressEvent(QKeyEvent* event)
 {
   int num=-1;
+  float height,angle;
+
+  // Shift / Ctrl show the scale / rotate handles of a selected prop
+  if(modifier!=event->modifiers())
+  {
+    modifier=event->modifiers();
+    update();
+  }
+
+  if(Camera::viewForKey(event->key(),event->modifiers(),&height,&angle))
+  {
+    // number pad 1 / 3 / 7: front / side / top (Blender)
+    camera()->setView(height,angle);
+    update();
+    return;
+  }
+  if(Camera::isFocusKey(event->key(),event->modifiers()))
+  {
+    // F, or number pad . (Blender)
+    zoomToSelectedPart();
+    return;
+  }
 
   switch(event->key())
   {
     case Qt::Key_PageUp:
-      camera()->pan(0, 0, -5);
+      camera()->zoom(0.9f);
       update();
       break;
     case Qt::Key_PageDown:
-      camera()->pan(0, 0, 5);
-      update();
-      break;
-    case Qt::Key_Shift:
-      modifier |= static_cast<int>(ModifierKeys::Shift);
-      xSelect = true;
-      update();
-      break;
-    case Qt::Key_Alt:
-      modifier |= static_cast<int>(ModifierKeys::Alt);
-      ySelect = true;
-      update();
-      break;
-    case Qt::Key_Control:
-      modifier |= static_cast<int>(ModifierKeys::Ctrl);
-      zSelect = true;
+      camera()->zoom(1.0f/0.9f);
       update();
       break;
     case Qt::Key_F9:
@@ -848,9 +919,6 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
       break;
     case Qt::Key_Escape:
       resetCamera();
-      break;
-    case Qt::Key_F:
-      zoomToSelectedPart();
       break;
     default:
       event->ignore();
@@ -873,23 +941,10 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
 
 void AnimationView::keyReleaseEvent(QKeyEvent* event)
 {
-  switch(event->key())
+  if(modifier!=event->modifiers())
   {
-    case Qt::Key_Shift:
-      modifier &= !static_cast<int>(ModifierKeys::Shift);
-      xSelect = false;
-      update();
-      break;
-    case Qt::Key_Alt:
-      modifier &= !static_cast<int>(ModifierKeys::Alt);
-      ySelect = false;
-      update();
-      break;
-    case Qt::Key_Control:
-      modifier &= !static_cast<int>(ModifierKeys::Ctrl);
-      zSelect = false;
-      update();
-      break;
+    modifier=event->modifiers();
+    update();
   }
   event->ignore();
 }
@@ -1058,9 +1113,9 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
         const int hovered=static_cast<int>(partHighlighted)-ringX;
         switch(motion->channelType[i])
         {
-          case BVH_XROT: drawCircle(0,m_ringRadius,xSelect || hovered==0 || m_ringDragging==0); break;
-          case BVH_YROT: drawCircle(1,m_ringRadius,ySelect || hovered==1 || m_ringDragging==1); break;
-          case BVH_ZROT: drawCircle(2,m_ringRadius,zSelect || hovered==2 || m_ringDragging==2); break;
+          case BVH_XROT: drawCircle(0,m_ringRadius,hovered==0 || m_ringDragging==0); break;
+          case BVH_YROT: drawCircle(1,m_ringRadius,hovered==1 || m_ringDragging==1); break;
+          case BVH_ZROT: drawCircle(2,m_ringRadius,hovered==2 || m_ringDragging==2); break;
           default: break;
         }
       }
@@ -1077,10 +1132,15 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       const QMatrix4x4 current=SceneState::modelview();
 
       // remember where the selected part is in the world, for "zoom to part"
-      if(mode==MODE_PARTS && !selecting && partSelected==selectName)
+      if(mode==MODE_PARTS && !selecting)
       {
-        m_selectedPosition=(m_viewMatrix.inverted()*current).map(QVector3D(0,0,0));
-        m_haveSelectedPosition=true;
+        const QVector3D position=(m_viewMatrix.inverted()*current).map(QVector3D(0,0,0));
+        m_jointPositions.insert(selectName,position);
+        if(partSelected==selectName)
+        {
+          m_selectedPosition=position;
+          m_haveSelectedPosition=true;
+        }
       }
       if(selecting) pickName(selectName);
       if(anim->getMirrored() &&
@@ -1248,7 +1308,7 @@ void AnimationView::drawDragHandles(const Prop* prop) const
   // set matrix origin to our object's center
   SceneState::translate(x,y,z);
 
-  if (modifier & static_cast<int>(ModifierKeys::Shift))
+  if (modifier & Qt::ShiftModifier)
   {
     // now draw the scale cubes with proper depth sorting
     glEnable(GL_DEPTH_TEST);
@@ -1278,7 +1338,7 @@ void AnimationView::drawDragHandles(const Prop* prop) const
     SceneState::translate(0,0,zs*2);
     m_cubeMeshModel->draw();
   }
-  else if (modifier & static_cast<int>(ModifierKeys::Ctrl))
+  else if (modifier & Qt::ControlModifier)
   {
     // now draw the rotate spheres with proper depth sorting
     glEnable(GL_DEPTH_TEST);
@@ -1569,16 +1629,27 @@ void AnimationView::selectProp()
   update();
 }
 
-// F key: move the camera close to the selected part (closer for face bones)
+// F key, number pad . or double-click: move the camera close to the selected
+// part (closer for face bones); the camera then turns around it
 void AnimationView::zoomToSelectedPart()
 {
-  if(!m_haveSelectedPosition) return;
+  if(!partSelected) return;
   const QString name=selectionName(partSelected);
   float distance=60.0f;
   if(name=="head" || isFaceBone(name)) distance=18.0f;
   else if(name.startsWith("mHand") || name=="lHand" || name=="rHand") distance=20.0f;
-  camera()->lookAt(m_selectedPosition.x(),m_selectedPosition.y(),m_selectedPosition.z(),distance);
+  focusOnJoint(partSelected,distance);
+}
+
+bool AnimationView::focusOnJoint(unsigned int selected,float distance)
+{
+  // positions from the last time the figure was drawn
+  if(!m_jointPositions.contains(selected)) return false;
+  const QVector3D position=m_jointPositions.value(selected);
+  if(distance<0) distance=camera()->distance();
+  camera()->lookAt(position.x(),position.y(),position.z(),distance);
   update();
+  return true;
 }
 
 void AnimationView::resetCamera()

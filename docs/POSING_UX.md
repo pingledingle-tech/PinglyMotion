@@ -66,6 +66,16 @@ One scheme for everyone. The first column is all a new user needs; the other two
 
 **Removed:** the old QAvimator keys (Shift, Alt, Ctrl while dragging a joint for X, Y, Z, and Alt-drag to zoom). They clash with the Second Life camera keys, and a new user cannot see them. Joints now turn with the rings or the trackball.
 
+**Done in step 1** (camera and keys, `src/animationview.*`, `src/camera.*`):
+
+- The camera turns around the point in the middle of the view. Focus (double-click, F, number pad `.`, Alt + click) puts the joint there, so the camera then turns around that joint.
+- A left click selects; a left drag that starts on the body turns the camera too (the joint is not selected then). Rings and prop handles keep the left drag.
+- Number pad: 1 front, 3 side (from the figure's right), 7 top; Ctrl + 1 back, Ctrl + 3 the other side. With Num Lock off the same keys work. Number pad `,` (decimal comma keyboards) also focuses.
+- Wheel and drag zoom move a share of the distance (closer = smaller steps). Page Up / Page Down still zoom; F9–F12 still restore stored cameras (Shift + F9–F12 store).
+- Until the selected-joint card has an IK switch (step 4), **Ctrl + double-click** a hand or foot switches IK on or off (it used to be a plain double-click). **Shift + double-click** still selects the mirrored joint too.
+- Shift / Ctrl still show the scale / rotate handles of a selected prop.
+- Not yet: the view gizmo, Set key with K / I, R then X / Y / Z, the trackball.
+
 ## Language
 
 English only for now. All interface text goes through `tr()`, so translations can be added later without code changes. Help texts are written in simple English.
