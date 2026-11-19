@@ -29,7 +29,14 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
    - **Jobs that change what the user sees on screen** (menus, dialogs, texts, the 3D view, camera, keys): the project owner tests the Windows build and says yes in this session. Give the Windows download and one test step at a time.
    - When unsure which kind it is, treat it as visible.
    - **Test page:** whenever the project owner is to test something, first make a test page as a Claude artifact (where the session has the Artifact tool): the Windows download link, one plain step at a time (clicks in the program, no command line), a tick box and a note field for each test, and an "Ask Claude" field. Keep it up to date for each test round, and keep the test list in the owner test issue too. Test files the owner needs are inside the Windows zip (folders `examples/` and `test-motions/` next to the exe); a test step says "File > Open, then pick the file in the examples folder next to the program", and a test never asks him to download a separate file.
-   - Report each merged pull request in one line (number, what, checks green).
+   - **With every merge, in the same step:**
+     1. Close the issue behind the pull request when it is fully done (the pull request text says `Closes #N`). If only part is done, write `Part of #N` and add a short status comment on the issue.
+     2. Update the owner test list (issue #47): remove a test as soon as the project owner has said ok, and write "Nothing to test right now" when the list is empty.
+     3. Update the jobs list (issue #74).
+     4. Report the merge in one line (number, what, checks green).
+   - **When the project owner says ok or approved** for something, update #47 at once. Never ask him to test or approve the same thing twice. Before asking him anything about a test, read #47 and the latest comments first.
+   - **Never invent tasks for the project owner.** The owner test list holds only tests he actually has to do. Checklists for him (for example repository settings) are made only when he asks.
+   - A merged pull request whose job file still says `Status: active` is a mistake: the last commit sets `Status: done`.
    - **After the merge, clean up your checkout:** `git switch main && git pull && git branch -D <branch>`. The remote branch is deleted on merge and the squash commit on `main` is a different commit, so the session's stop check otherwise reports your old local commits as "unpushed" (a false alarm, nothing is lost). Do not edit the stop hook itself.
 6. If another pull request is merged first, update your branch again (step 2) and wait for green checks before merging.
 
