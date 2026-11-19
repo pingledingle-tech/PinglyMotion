@@ -4,6 +4,7 @@ Pull request: pending
 Files:
 - docs/ROADMAP.md
 - docs/PRODUCT.md
+- docs/work/docs-aurora-roadmap-research.md
 
 ## What
 
