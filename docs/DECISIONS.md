@@ -88,6 +88,8 @@ Decisions taken while the project lived in the old repository, and the decisions
 
 **17 Nov 2026 – No personal data anywhere; privacy check for text.** No personal names, contact or account details or personal paths in files, commits, issues, pull requests or comments. The privacy check also reads pull request titles and descriptions and new or edited issues, comments and reviews. Reason: the repository may become public, and then text and its edit history are visible. Source: old-repo items 123 and 131.
 
+**19 Nov 2026 – Claude Desktop extension (`.mcpb`) first with the Python server.** The MCP server is packaged as `PinglyMotion.mcpb` (built by a standard-library script, in the Windows zip and on releases, not signed). It keeps the Python server, so Python must be installed; a Node rewrite (no Python needed, but two servers or a full switch) stays open in #7. Reason: one-click install now, no second server to keep in step. The extension holds no settings or secrets.
+
 **15 Nov 2026 – Release betas as pre-releases.** Versions like `0.3.0-beta.1` are published as pre-releases, which the update check ignores, so users of the last stable version are not told about a beta. Source: old-repo item 52.
 
 **15 Nov 2026 – Rules for parallel AI sessions.** Each job works on its own branch, never on `main`, registers its branch and files on the work board first, and waits when files overlap. Commits use the GitHub noreply address, and a privacy check guards commits. Source: old-repo items 45 and 48, `CLAUDE.md`.

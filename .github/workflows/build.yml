@@ -100,6 +100,8 @@ jobs:
           # the MCP server goes with the program, so both are updated together
           mkdir -p dist/mcp
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt dist/mcp/
+          # the Claude Desktop extension: double-click it to install (issue #7)
+          python tools/mcp/build_mcpb.py dist/PinglyMotion.mcpb
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/PinglyMotion.exe
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -159,6 +161,8 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: MCP server connects safely
         run: python3 tests/test_mcp_proxy.py
+      - name: Claude Desktop extension (.mcpb) is correct
+        run: python3 tests/test_mcpb.py
       - name: Exported BVH files pass Second Life's upload rules
         run: |
           cd bin
