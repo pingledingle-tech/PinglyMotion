@@ -11,6 +11,8 @@ Files:
 - tests/dinglesave/**
 - tests/tst_bento.cpp
 - tests/tst_control.cpp
+- tests/tst_roundtrip.cpp
+- tests/animfile/**
 - tests/CMakeLists.txt
 - tools/mcp/commands.json
 - CMakeLists.txt
