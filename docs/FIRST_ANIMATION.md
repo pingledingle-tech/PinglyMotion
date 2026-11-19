@@ -21,7 +21,7 @@ Frame 0 is locked. Do not pose there. To unlock it, turn off **Options > Protect
 ## 3. Pose the figure
 
 1. Click an arm on the figure. Or click a small ball on it.
-2. Drag a coloured ring to turn the arm. Or use the sliders in the Properties panel.
+2. Drag a coloured ring to turn the arm. Or use the sliders in the Selected joint panel on the right.
 3. Hold **Shift** while you drag for finer control.
 
 ## 4. Check the key
@@ -40,7 +40,7 @@ The key button has a key icon. It sits right of the play button. It looks presse
 1. Click the play button, left of the key button.
 2. Click it again to stop. If it still plays, click once more.
 
-The arm now moves between your keys. To change the feel, click a key's joint. Then use the boxes in the Properties panel:
+The arm now moves between your keys. To change the feel, click a key's joint. Then use the boxes under the joint list:
 
 - Tick **Ease Out** for a slow start away from this key.
 - Tick **Ease In** for a slow finish into this key.

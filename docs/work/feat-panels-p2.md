@@ -10,6 +10,9 @@ Files:
 - docs/POSING_UX.md
 - docs/PANELS_PLAN.md
 - docs/PRODUCT.md
+- docs/FIRST_ANIMATION.md
+- docs/RELEASE_NOTES_0.4.0.md
+- README.md
 
 ## What
 
