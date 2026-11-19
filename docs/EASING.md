@@ -34,6 +34,47 @@ The order is the order of the tiles, left to right. A choice belongs to one pose
 - Overshoot is clamped to the joint limits (proposal 4 in #53), so a tile never lets a joint go past what Second Life allows. A bounce choice is left out for now (proposal 6).
 - Per-joint choices and free curve handles are not part of the first version; they would sit under "Advanced" later.
 
+## How the two switches work today (checked 19 Nov 2026, step 1 of #53)
+
+Read from `BVHNode::interpolate` and `BVHNode::frameData` in `src/bvhnode.cpp` (the switches are stored in `FrameData`, one pair per joint and key frame; `AnimFile::Key` in `src/animfile.h` holds the same two flags). Nothing in `src/animation.*`, `src/bvh.cpp` or the timeline changes the maths; `src/animexport.cpp` has no per-key ease (its `easeIn`/`easeOut` are the whole-animation times of the `.anim` header).
+
+**Which key counts.** Between a start key A and the next key B of the same joint, with `steps` = frames from A to B and `pos` = frames since A:
+
+- the first half (`pos <= steps/2`, whole-number division) uses the `easeOut` switch of **A**, the start key;
+- the second half (`pos > steps/2`) uses the `easeIn` switch of **B**, the target key.
+
+**The formula.** If the switch that applies to this frame is off, the value is a straight line: `from + (to - from) * pos / steps`. If it is on, the value is `from + (to - from) * (0.5 - cos(3.1415 * pos / steps) / 2)`, a full sine S-curve fitted to the whole span A to B. So the switch only decides, half by half, whether to use the S-curve or the straight line. If `from == to` the value is returned unchanged.
+
+**The same for every channel.** Each of the three rotation angles and the three position values is computed on its own with this formula, with the same pair of switches. Rotations are blended as Euler angles, not as quaternions. There is no clamping to joint limits in this step.
+
+**Worked example.** A joint turns from 0 to 90 degrees over 10 frames (`steps` = 10):
+
+| Frame after A | Both off (Even) | Both on (Slow both ends) |
+|---|---|---|
+| 2 | 18.00 | 8.59 |
+| 5 | 45.00 | 45.00 |
+| 8 | 72.00 | 81.41 |
+
+With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 6 to 9 equal the "Both off" column (frame 8 gives 72.00). With only B's `easeIn` on it is the other way round (frame 2 gives 18.00, frame 8 gives 81.41).
+
+**Does it match #53's idea?** Partly.
+
+- **Even** (neither switch) and **Slow both ends** (both switches) match exactly, apart from the old code writing pi as 3.1415 (a difference of less than 0.01 degrees on 100).
+- **Slow start** (start key's `easeOut`) and **Slow finish** (target key's `easeIn`) are not classic one-sided curves. Each is the S-curve for one half and a straight line for the other half. The two halves meet at the middle, but the speed jumps there: Slow start leaves the old pose gently and then arrives at full speed, with no slowing at the end; Slow finish is the mirror image.
+- So the four choices are the four switch combinations, as the issue assumed, but "Slow start" and "Slow finish" keep today's half-and-half shape. The new module defines them as exactly that shape (`src/easing.*`, `Easing::s`), so old files play identically; a smoother one-sided curve would be a new choice and would change old files.
+
+## The maths module (step 1)
+
+`src/easing.h` and `src/easing.cpp`, namespace `Easing`, pure functions with no disk access and no Qt types. Built into the tests only (`tests/easing/`); the program does not call it yet.
+
+- `s(preset, t)`: the speed curve for t from 0 to 1. `s(0) = 0` and `s(1) = 1` exactly, always a finite number (t outside 0..1 is clamped, NaN counts as 0).
+- Even is `t`. Slow both ends is the sine S-curve. Slow start and Slow finish are the half-and-half shapes above. Overshoot then settle is `1 + 2.5 (t-1)^3 + 1.5 (t-1)^2`: it goes at most 8 % past the new pose (limit: 10 %) and ends at exactly 1. Hold then snap is 0 until the last moment, then 1.
+- Every choice is steady (never goes backwards) except Overshoot then settle.
+- `blend` mixes two numbers or three angles with `s`; `nlerp` mixes two rotations the way the Second Life viewer does (shortest way, straight blend, normalised, so the result is always a unit quaternion).
+- `clampRotation` cuts a blended rotation at the joint's minimum and maximum, so the overshoot choice never leaves the allowed range.
+- `bake`, `bakeValues`, `bakeRotations`: the in-between values for a pose change of `frames` frames (`frames + 1` values, first exactly the start, last exactly the end), as the `.anim` export needs.
+- `presetFromSwitches` and `switchesFromPreset` map the four switch combinations to the first four choices and back. The last two choices have no switch form; they need the new stored value (step 3).
+
 ## Where each part is built
 
 | What | Job in #53 |

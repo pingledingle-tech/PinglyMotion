@@ -109,6 +109,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/buildinfo)
   # wheel over sliders in the Properties panel (#82)
   ADD_SUBDIRECTORY (tests/wheelguard)
+  # easing maths for the six easing choices (#53 step 1), not used by the program yet
+  ADD_SUBDIRECTORY (tests/easing)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md
