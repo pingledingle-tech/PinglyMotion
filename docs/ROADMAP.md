@@ -4,7 +4,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 
 ## Starting point
 
-- Done: parser and data model (#9), `.dingle` working format (#26: reader, writer and conversion merged; opening in #70; saving and the start poses built, waiting for the owner's Windows test), Ruth2 body and menu (the system avatar is removed, #15; Roth2 v2 for a male body is done, waiting for the owner's Windows test), version in title, `.anim` writer (#63), `.anim` reader (#65), BVH retargeting core (#66), glTF import reader (#69), Blender guide (#68) and Maya note (#67). Fuzzing runs all targets at the same time, about 10 minutes on a branch (#71). None of the format jobs has a menu yet, so nothing changed on screen.
+- Done: parser and data model (#9), `.dingle` working format (#26: reader, writer and conversion merged; opening in #70; saving and the start poses built, waiting for the owner's Windows test), Ruth2 body and menu (the system avatar is removed, #15; Roth2 v2 for a male body is done, waiting for the owner's Windows test), version in title, `.anim` writer (#63), `.anim` reader (#65), BVH retargeting core (#66), glTF import reader (#69), Blender guide (#68), scripted Blender round trip with a BVH comparer (issue #13) and Maya note (#67). Fuzzing runs all targets at the same time, about 10 minutes on a branch (#71). None of the format jobs has a menu yet, so nothing changed on screen.
 - Order already decided in `docs/DECISIONS.md`: `.anim` export (#10), then `.anim` import (#22), then BVH retargeting (#16), then glTF (#12), then Blender docs (#13). Rejected: glTF export, FBX (only on demand), Collada, VMD, VRMA, Firestorm pose XML, Assimp.
 - New since then: Mesh2Motion's MIT-licensed retargeting is a ready reference (#16), and its CC0 animations are a source of test motions (#27).
 
@@ -18,7 +18,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 | 2 | #16 | BVH retargeting core: name mapping, SL/Bento slots, swing-twist (core merged; the menu with the list of matched and left out joints is built, waiting for the owner's Windows test) | New files, so it does not collide with step 1; Mesh2Motion removes most of the design risk | none | Opus |
 | 3 | #12 | glTF 2.0 import using the retargeting core (reader merged; the menu is built, waiting for the owner's Windows test) | Needs step 2 | #16 core | Sonnet |
 | 4 | #27 | Test motions: CMU clips (#3) and CC0 clips from Mesh2Motion | Needs #12 or a conversion script | #3, #12 | Haiku |
-| 5 | #13 | Blender round trip: documentation first | Docs only | #12 | Sonnet |
+| 5 | #13 | Blender round trip: guide (#68) and scripted round trip with a BVH comparer (`tools/blender/`, not tested in Blender yet) merged; glTF part waits for the glTF menu | Docs and tools only | #12 | Sonnet |
 | 6 | #11 | Per-key curve and easing editor, then #53 easing presets | Visible, so the owner tests on Windows | none | Sonnet |
 | 7 | #14 | UX revision of poser and timeline | Visible, larger; discuss before building | #1 | Opus |
 
