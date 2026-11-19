@@ -1,6 +1,6 @@
 Branch: feat/retarget-core
 Status: active
-Pull request: pending
+Pull request: #66
 Files:
 - src/retarget.*
 - tests/retarget/**
