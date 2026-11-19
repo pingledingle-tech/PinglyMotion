@@ -6,21 +6,22 @@
  * avatar shows it at once (only to you; nothing is uploaded).
  *
  * LiveMesh protocol (Aurora docs/BLENDER_LIVE.md, "Live poses"):
- *   Pingmator -> the 8 bytes "AURBLD1\n"
- *   Aurora    -> one JSON line: hello with "features" (must list "auth" and
- *                "pose-bvh") and a hex "challenge"
+ *   Aurora writes a new 64-hex session key to <data folder>/blender-live/<port>.token
+ *   each time the LiveMesh preview starts and removes it when the preview stops.
+ *   Pingmator -> the 8 bytes "AURPOS1\n" (a pose tool; the Blender add-on uses AURBLD2)
+ *   Aurora    -> one JSON line: hello with "features" (must list "auth",
+ *                "auth-mutual" and "pose-bvh" or "pose") and a hex "challenge".
+ *                An Aurora without live poses closes the connection without a hello.
  *   then every message from Pingmator is a 4-byte little-endian length and
  *   that many bytes of JSON; Aurora answers each one with one JSON line
  *   ({"ok":true} or {"ok":false,"error":"..."}):
  *   Pingmator -> {"type":"auth","client":"Pingmator x.y","response":"<hex>","nonce":"<hex>"}
- *                response = HMAC-SHA256(key, challenge bytes); the key is read
- *                from Aurora's livemesh.json, which only the user can read.
- *                nonce = 16 random bytes (hex), sent when Aurora lists "auth-mutual"
- *   Aurora    -> {"ok":true,"server_proof":"<hex>"} with auth-mutual:
+ *                response = HMAC-SHA256(key, challenge bytes); the key (32 bytes)
+ *                never crosses the socket. nonce = 16 random bytes (hex).
+ *   Aurora    -> {"ok":true,"server_proof":"<hex>"}
  *                server_proof = HMAC-SHA256(key, "aurora-hello:" + nonce bytes);
- *                Pingmator sends no pose before it has checked this. An older
- *                Aurora without auth-mutual answers a plain {"ok":true}: the link
- *                works and Pingmator warns once.
+ *                Pingmator sends no pose before it has checked this.
+ *                A wrong key gets {"ok":false,"error":"unauthorized"} and a close.
  *   Pingmator -> {"type":"pose","rotations":{joint:[x,y,z,w]},"positions":{"hip":[x,y,z]}}
  *                when Aurora lists the "pose" feature: quaternions in Second Life's
  *                avatar axes; otherwise
@@ -58,7 +59,8 @@ class AuroraLink : public QObject
     // instead of the BVH when Aurora supports the "pose" message
     void setQuaternionSource(std::function<QJsonObject()> source);
 
-    // on: keeps trying to connect until Aurora answers, and reconnects when it goes away
+    // on: keeps trying to connect until Aurora answers, and reconnects when it goes away;
+    // port is the one to try first (Aurora's preview may use another one, found by its token file)
     void setEnabled(bool on, quint16 port = DEFAULT_PORT);
     bool enabled() const;
     // true once Aurora has accepted the key, so poses are shown
@@ -67,10 +69,15 @@ class AuroraLink : public QObject
     // how often the pose is checked for changes, in milliseconds
     void setInterval(int ms);
 
-    // where Aurora writes its LiveMesh key file on this computer
-    // (PINGMATOR_AURORA_KEY_FILE overrides it, for tests)
-    static QString keyFilePath();
-    // reads the key from Aurora's key file; empty when missing or invalid
+    // the folder where Aurora writes its LiveMesh token files (<port>.token)
+    // on this computer; PINGMATOR_AURORA_TOKEN_DIR overrides it (for tests)
+    static QString tokenFolder();
+    // the token file of a port in that folder
+    static QString tokenFilePath(quint16 port);
+    // the port of the running preview: the given one when its token file is
+    // there, otherwise the port of the newest token file; 0 when there is none
+    static quint16 findPort(quint16 preferred);
+    // reads the key from a token file; empty when missing or invalid
     static QByteArray readKey(const QString& path);
     // HMAC-SHA256 of the challenge with the key, as lower-case hex
     static QByteArray authResponse(const QByteArray& key, const QByteArray& challenge);
@@ -80,9 +87,8 @@ class AuroraLink : public QObject
 
   signals:
     void connectedChanged(bool connected);
+    // something is wrong (shown in the status bar); repeated while it lasts
     void errorReceived(const QString& message);
-    // the link works, but something is not as safe as it should be (sent once per run)
-    void warningReceived(const QString& message);
 
   private slots:
     void tick();
@@ -110,11 +116,11 @@ class AuroraLink : public QObject
     State m_state;
     // Aurora's hello listed "pose": send quaternions
     bool m_quaternions;
-    // Aurora's hello listed "auth-mutual": it must prove that it knows the key
-    bool m_mutual;
-    // the old-Aurora warning has been given
-    bool m_warnedLegacy;
-    // the random nonce of this connection and the proof Aurora must send
+    // the port of this connection (the token file to read)
+    quint16 m_connectPort;
+    // something came from Aurora on this connection
+    bool m_heard;
+    // the proof Aurora must send for the random nonce of this connection
     QByteArray m_expectedProof;
     // a message is on its way and Aurora has not answered yet
     bool m_waiting;

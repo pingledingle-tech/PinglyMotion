@@ -3,7 +3,6 @@ Status: active
 Pull request: #46
 Files:
 - src/auroralink.*
-- src/pingmatorwindow.cpp (live-link lines only)
 - tests/tst_auroralink.cpp
 - docs/AURORA_LINK.md
 

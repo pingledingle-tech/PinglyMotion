@@ -10,6 +10,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QHostAddress>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -24,8 +25,8 @@
 static const int MAX_LINE = 4 * 1024 * 1024;
 // Aurora closes a link that is quiet for 10 s; a heartbeat goes well before
 static const qint64 HEARTBEAT_MS = 3000;
-// the key file is a few hundred bytes
-static const qint64 MAX_KEY_FILE = 64 * 1024;
+// a token file holds 64 hex characters
+static const qint64 MAX_TOKEN_FILE = 4 * 1024;
 
 AuroraLink::AuroraLink(QObject* parent)
   : QObject(parent),
@@ -35,8 +36,8 @@ AuroraLink::AuroraLink(QObject* parent)
     m_connected(false),
     m_state(State::Off),
     m_quaternions(false),
-    m_mutual(false),
-    m_warnedLegacy(false),
+    m_connectPort(DEFAULT_PORT),
+    m_heard(false),
     m_waiting(false),
     m_lastMessage(0)
 {
@@ -86,31 +87,57 @@ bool AuroraLink::connected() const
   return m_connected;
 }
 
-QString AuroraLink::keyFilePath()
+QString AuroraLink::tokenFolder()
 {
-  const QByteArray override=qgetenv("PINGMATOR_AURORA_KEY_FILE");
+  const QByteArray override=qgetenv("PINGMATOR_AURORA_TOKEN_DIR");
   if(!override.isEmpty()) return QString::fromLocal8Bit(override);
-  // Aurora's local data folder (Rust "directories", ProjectDirs org/Aurora/AuroraViewer)
+  // Aurora's local data folder (Rust "directories": ProjectDirs org/Aurora/AuroraViewer,
+  // data_local_dir), then blender-live
   const QString base=QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
 #if defined(Q_OS_WIN)
-  return QDir(base).filePath("Aurora/AuroraViewer/data/livemesh.json");
+  return QDir(base).filePath("Aurora/AuroraViewer/data/blender-live");
 #elif defined(Q_OS_MACOS)
-  return QDir(base).filePath("org.Aurora.AuroraViewer/livemesh.json");
+  return QDir(base).filePath("org.Aurora.AuroraViewer/blender-live");
 #else
-  return QDir(base).filePath("auroraviewer/livemesh.json");
+  return QDir(base).filePath("auroraviewer/blender-live");
 #endif
+}
+
+QString AuroraLink::tokenFilePath(quint16 port)
+{
+  return QDir(tokenFolder()).filePath(QString("%1.token").arg(port));
+}
+
+quint16 AuroraLink::findPort(quint16 preferred)
+{
+  if(QFileInfo(tokenFilePath(preferred)).isFile()) return preferred;
+  // the user may have set another port in Aurora's LiveMesh window
+  quint16 port=0;
+  QDateTime newest;
+  const QFileInfoList files=QDir(tokenFolder()).entryInfoList({"*.token"},QDir::Files);
+  for(const QFileInfo& file : files)
+  {
+    bool ok=false;
+    const uint number=file.completeBaseName().toUInt(&ok);
+    if(!ok || number<1024 || number>65535) continue;
+    if(port==0 || file.lastModified()>newest)
+    {
+      port=quint16(number);
+      newest=file.lastModified();
+    }
+  }
+  return port;
 }
 
 QByteArray AuroraLink::readKey(const QString& path)
 {
   QFile file(path);
-  if(file.size()>MAX_KEY_FILE || !file.open(QIODevice::ReadOnly)) return QByteArray();
-  const QJsonObject info=QJsonDocument::fromJson(file.readAll()).object();
-  const QByteArray hex=info.value("key").toString().toLatin1();
-  const QByteArray key=QByteArray::fromHex(hex);
-  // 32 bytes, and the text really was hex (fromHex skips bad characters)
-  if(key.size()!=32 || hex.size()!=64) return QByteArray();
-  return key;
+  if(file.size()>MAX_TOKEN_FILE || !file.open(QIODevice::ReadOnly)) return QByteArray();
+  // Aurora writes the 64 hex characters alone; a line break after them is accepted
+  const QByteArray hex=file.readAll().trimmed();
+  if(hex.size()!=64) return QByteArray();
+  for(char c : hex) if(!isxdigit((unsigned char)c)) return QByteArray();
+  return QByteArray::fromHex(hex);
 }
 
 QByteArray AuroraLink::authResponse(const QByteArray& key,const QByteArray& challenge)
@@ -154,7 +181,16 @@ void AuroraLink::setEnabled(bool on,quint16 port)
 void AuroraLink::retry()
 {
   if(!m_enabled || m_socket->state()!=QAbstractSocket::UnconnectedState) return;
-  m_socket->connectToHost(QHostAddress::LocalHost,m_port);
+  // no token file: Aurora's LiveMesh preview is not on (or Aurora is not running)
+  const quint16 port=findPort(m_port);
+  if(port==0)
+  {
+    emit errorReceived(tr("Aurora's LiveMesh preview is not on. In Aurora: Build > LiveMesh > Enable preview."));
+    m_retry.start();
+    return;
+  }
+  m_connectPort=port;
+  m_socket->connectToHost(QHostAddress::LocalHost,port);
 }
 
 void AuroraLink::onConnected()
@@ -162,13 +198,18 @@ void AuroraLink::onConnected()
   m_lastSent.clear();
   m_buffer.clear();
   m_waiting=false;
+  m_heard=false;
   m_state=State::WaitHello;
   m_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
-  m_socket->write("AURBLD1\n");
+  m_socket->write("AURPOS1\n");
 }
 
 void AuroraLink::onDisconnected()
 {
+  // closed at once after our greeting, without a hello: an Aurora that does
+  // not know pose tools (no "pose" feature in its LiveMesh)
+  if(m_enabled && m_state==State::WaitHello && !m_heard)
+    emit errorReceived(tr("This Aurora version cannot show live poses. Use an Aurora build with live poses (Aurora-Viewer-Fork)."));
   m_tick.stop();
   m_state=State::Off;
   setReady(false);
@@ -237,6 +278,7 @@ void AuroraLink::sendMessage(const QByteArray& json)
 void AuroraLink::onReadyRead()
 {
   m_buffer+=m_socket->readAll();
+  if(!m_buffer.isEmpty()) m_heard=true;
   int end;
   while((end=m_buffer.indexOf('\n'))>=0 && m_state!=State::Off)
   {
@@ -256,34 +298,43 @@ void AuroraLink::handleLine(const QByteArray& line)
   const QJsonObject message=QJsonDocument::fromJson(line).object();
   if(m_state==State::WaitHello)
   {
+    // a preview that cannot take poses now answers with an error instead of a hello
+    if(message.contains("ok") && !message.value("ok").toBool())
+    {
+      fail(tr("Aurora's LiveMesh is on, but it cannot show live poses right now (%1).").arg(message.value("error").toString()));
+      return;
+    }
     const QJsonArray features=message.value("features").toArray();
     const QByteArray challenge=QByteArray::fromHex(message.value("challenge").toString().toLatin1());
-    if(!features.contains(QJsonValue("pose-bvh")) || !features.contains(QJsonValue("auth")) || challenge.size()!=32)
+    const bool poses=features.contains(QJsonValue("pose-bvh")) || features.contains(QJsonValue("pose"));
+    if(!poses || !features.contains(QJsonValue("auth")) || challenge.size()!=32)
     {
-      fail(tr("This Aurora version cannot show live poses. Update Aurora."));
+      fail(tr("This Aurora version cannot show live poses. Use an Aurora build with live poses (Aurora-Viewer-Fork)."));
+      return;
+    }
+    // Aurora proves that it read the same token file; a program without that
+    // proof gets no pose
+    if(!features.contains(QJsonValue("auth-mutual")))
+    {
+      fail(tr("The program on the LiveMesh port cannot prove that it is Aurora. The link was closed."));
       return;
     }
     m_quaternions=features.contains(QJsonValue("pose"));
-    m_mutual=features.contains(QJsonValue("auth-mutual"));
-    const QByteArray key=readKey(keyFilePath());
+    const QByteArray key=readKey(tokenFilePath(m_connectPort));
     if(key.isEmpty())
     {
-      fail(tr("Could not read Aurora's LiveMesh key file. Turn LiveMesh off and on in Aurora."));
+      fail(tr("Aurora's LiveMesh preview is not on. In Aurora: Build > LiveMesh > Enable preview."));
       return;
     }
     QJsonObject auth;
     auth["type"]="auth";
     auth["client"]=QString("Pingmator %1").arg(QCoreApplication::applicationVersion()).trimmed();
     auth["response"]=QString::fromLatin1(authResponse(key,challenge));
-    m_expectedProof.clear();
-    if(m_mutual)
-    {
-      // 16 random bytes from the system's secure source
-      QByteArray nonce(16,'\0');
-      QRandomGenerator::system()->generate(reinterpret_cast<quint32*>(nonce.data()),reinterpret_cast<quint32*>(nonce.data()+nonce.size()));
-      auth["nonce"]=QString::fromLatin1(nonce.toHex());
-      m_expectedProof=serverProof(key,nonce);
-    }
+    // 16 random bytes from the system's secure source
+    QByteArray nonce(16,'\0');
+    QRandomGenerator::system()->generate(reinterpret_cast<quint32*>(nonce.data()),reinterpret_cast<quint32*>(nonce.data()+nonce.size()));
+    auth["nonce"]=QString::fromLatin1(nonce.toHex());
+    m_expectedProof=serverProof(key,nonce);
     m_state=State::WaitAuth;
     sendMessage(QJsonDocument(auth).toJson(QJsonDocument::Compact));
     return;
@@ -295,23 +346,15 @@ void AuroraLink::handleLine(const QByteArray& line)
   {
     if(!ok)
     {
-      fail(tr("Aurora did not accept the LiveMesh key. Turn LiveMesh off and on in Aurora."));
+      fail(tr("Aurora refused the key. Turn LiveMesh's preview off and on in Aurora, then try again."));
       return;
     }
-    if(m_mutual)
+    // nothing is sent until Aurora has proved that it knows the key
+    const QByteArray proof=message.value("server_proof").toString().toLatin1();
+    if(!sameBytes(proof,m_expectedProof))
     {
-      // nothing is sent until Aurora has proved that it knows the key
-      const QByteArray proof=message.value("server_proof").toString().toLatin1();
-      if(!sameBytes(proof,m_expectedProof))
-      {
-        fail(tr("The program on the LiveMesh port did not prove that it is Aurora. The link was closed."));
-        return;
-      }
-    }
-    else if(!m_warnedLegacy)
-    {
-      m_warnedLegacy=true;
-      emit warningReceived(tr("This Aurora version cannot prove that it is Aurora. Update Aurora for a safer link."));
+      fail(tr("The program on the LiveMesh port did not prove that it is Aurora. The link was closed."));
+      return;
     }
     m_state=State::Ready;
     setReady(true);
