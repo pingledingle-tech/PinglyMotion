@@ -1,6 +1,6 @@
 Branch: feat/dingle-convert
 Status: active
-Pull request: pending
+Pull request: #57
 Files:
 - tools/avm2dingle.cpp
 - tests/legacy-avm/**
