@@ -9,7 +9,7 @@ PinglyMotion is a free, open-source animation editor based on QAvimator. The goa
 ## What you can do
 
 - **Pose a Bento skeleton:** select and rotate joints including fingers, face, wings and tail, with joint limits and mirroring.
-- **Create and edit animations:** work with keyframes and the timeline; open existing BVH and AVM files and export BVH.
+- **Create and edit animations:** work with keyframes and the timeline; open `.dingle`, BVH and AVM files, save as `.dingle`, and import or export Second Life `.anim` files. You can also import a BVH from another skeleton and glTF animations.
 - **Preview on your avatar:** use the optional [Aurora live link](docs/AURORA_LINK.md) to see poses locally without uploading. It currently requires the specified Aurora fork.
 - **Get optional AI assistance:** use the [local control interface and MCP server](docs/CONTROL.md) to pose joints, inspect screenshots and save animations. Manual editing works without AI.
 - **Use Windows or Linux:** builds use Qt 6.
