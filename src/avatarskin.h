@@ -6,6 +6,10 @@
  * (bin/data/character/max/maxine.pmm). Their fingers and faces are weighted
  * to the Bento bones; each vertex follows up to four joints.
  *
+ * A male figure shows Roth2 v2 (bin/data/character/roth2/roth2.pmm) instead,
+ * chosen by setMale(); there is no menu entry for it. If that file cannot be
+ * loaded, the male figure is the chosen body with the male skeleton scaling.
+ *
  * No OpenGL in here; the view draws the result.
  *
  * Licensed under the GNU General Public License version 2 or later.
@@ -93,6 +97,10 @@ class AvatarSkin
     // (the "male" shape parameter in the Second Life viewer, fully on or off)
     void setMale(bool male);
     bool isMale() const { return m_male; }
+    // true when the male figure uses the Roth2 mesh (it is already male in
+    // shape, so the male skeleton scaling is not applied on top of it)
+    bool hasMaleMesh() const { return m_roth.loaded; }
+    bool maleMeshShown() const { return m_male && m_roth.loaded; }
 
     // The male skeleton (Male_Skeleton in the Second Life viewer): some joints
     // are scaled, which makes the body around them bigger and moves their
@@ -115,6 +123,19 @@ class AvatarSkin
       QVector<int> children;
     };
 
+    // everything that belongs to one loaded mesh file
+    struct MeshState
+    {
+      QStringList jointNames;
+      QVector<QVector3D> restPositions;
+      QHash<int,int> usedJoints;
+      QVector<Part> parts;
+      QVector<QVector3D> jointScales;
+      bool loaded = false;
+    };
+    void swapMesh(MeshState& other);       // exchanges the mesh in use with other
+    void loadMaleMesh(const QString& fileName);
+
     bool loadJoints(const QString& fileName, QString* errorMessage);
     bool loadPmm(const QString& fileName, QString* errorMessage);
     int useJoint(int skeletonJoint);
@@ -131,6 +152,8 @@ class AvatarSkin
     QHash<QString,QVector3D> m_maleShifts;   // by BVH name, inches
     QVector<QVector3D> m_jointScales;        // per entry of m_jointNames, for skin()
     int m_restRevision = 0;
+    MeshState m_roth;                        // Roth2 while the female body is in use, else the female body
+    bool m_rothShown = false;                // the mesh in use is the Roth2 one
 };
 
 #endif
