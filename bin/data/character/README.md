@@ -1,16 +1,10 @@
-# Second Life avatar meshes
+# Avatar bodies
 
-The `.llm` files in this folder are the Second Life system avatar: head,
-upper body, lower body, eyes and eyelashes. PinglyMotion draws them as the body
-of the figure.
+The 3D view shows one of two open source bodies, chosen under **Options > Body**:
 
-They are copied unchanged from the Second Life viewer:
-https://github.com/secondlife/viewer/tree/main/indra/newview/character
-(commit c22b5960b32c2f25d41832b7add04d74cb53ed48)
+- `ruth2/`: Ruth2 v4, the default body (AGPL-3.0-or-later mesh, with its credits and licence texts).
+- `max/`: Max ("Maxine"), an optional second body (CC BY 4.0).
 
-Copyright (C) Linden Research, Inc. Licensed under the Creative Commons
-Attribution-Share Alike 3.0 License, see `LICENSE.txt` in this folder
-(a copy of `doc/LICENSE-logos.txt` from the viewer).
+Both are PinglyMotion mesh files (`.pmm`) converted from the upstream Collada files, see the README and the licence files in each folder. Keep each folder together: a mesh file must not be passed on without the licence files next to it.
 
-Changes made by PinglyMotion: none to the files. When the program runs it turns
-the meshes to its own axes and units and bends them with the skeleton.
+The Second Life system avatar (the Linden `.llm` meshes) was removed on 19 November 2026 (issue 15).

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>320</width>
-    <height>316</height>
+    <height>350</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>320</width>
-    <height>316</height>
+    <height>350</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>320</width>
-    <height>316</height>
+    <height>350</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -186,7 +186,7 @@
      <x>10</x>
      <y>246</y>
      <width>301</width>
-     <height>64</height>
+     <height>98</height>
     </rect>
    </property>
    <property name="font">
@@ -195,7 +195,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Avatar body: Second Life viewer artwork, Copyright (C) Linden Research, Inc., licensed under the Creative Commons Attribution-Share Alike 3.0 License. See data/character/LICENSE.txt. Bento body: &quot;Maxine&quot; from the Max Avatar Project by Ada Radius and the RuthAndRoth community, licensed under the Creative Commons Attribution 4.0 License. See data/character/max/LICENSE.txt</string>
+    <string>Avatar body: Ruth2 v4 by Shin Ingen, Ada Radius and the RuthAndRoth contributors (github.com/RuthAndRoth/Ruth2). The mesh is licensed under the GNU Affero General Public License 3 or later; the UV map is CC BY Linden Lab and the rig parts are CC BY 3.0 Machinimatrix.org. Converted to PinglyMotion&apos;s own format. Licences and the full list of contributors: data/character/ruth2/. Optional Bento body: &quot;Maxine&quot; from the Max Avatar Project, Creative Commons Attribution 4.0 License, see data/character/max/LICENSE.txt</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

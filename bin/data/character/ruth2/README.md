@@ -5,29 +5,10 @@
 format. Its fingers and face are weighted to the Bento bones, like the Max
 body in `../max/`.
 
-Choose it under **Options > Body** (Ruth2, Max or the Second Life system
-avatar). Ruth2 is the default for new users; a user who had **Bento body (Max)**
-on keeps Max, and one who had it off keeps the system avatar (#110, part 2).
-
-## Trying it out from the command line
-
-For testing, the environment variable `PINGLYMOTION_BODY` set to `ruth2` before
-starting PinglyMotion loads Ruth2 whatever **Options > Body** says. Any other
-value, or no value, changes nothing.
-
-Windows (Command Prompt, in the folder with `PinglyMotion.exe`):
-
-    set PINGLYMOTION_BODY=ruth2
-    PinglyMotion.exe
-
-Windows (PowerShell):
-
-    $env:PINGLYMOTION_BODY = "ruth2"
-    .\PinglyMotion.exe
-
-Linux:
-
-    PINGLYMOTION_BODY=ruth2 ./PinglyMotion
+Ruth2 is the default and, with Max (`../max/`), one of two bodies under
+**Options > Body**. The Second Life system avatar was removed (issue 15): a
+settings file of an older version that chose it, or had **Bento body (Max)**
+off, now shows Ruth2.
 
 ## Source
 
@@ -99,7 +80,7 @@ script that makes it is `tools/make_ruth2_mesh.py` in this repository.
 
 `ruth2.pmm` is AGPL data shipped beside the GPL program: PinglyMotion's code is
 licensed under the GNU General Public License version 2 or later, and the
-program only reads this file at run time, the same way it reads the Linden
-avatar files (CC BY-SA 3.0) and the Max body (CC BY 4.0). Keep this folder
+program only reads this file at run time, the same way it reads the Max body
+(CC BY 4.0). Keep this folder
 together: the `.pmm` file must not be passed on without `LICENSE.md`,
 `AGPL-3.0-or-later.txt`, `CC-BY-3.0.txt` and this README.

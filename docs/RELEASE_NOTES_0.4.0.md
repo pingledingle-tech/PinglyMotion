@@ -24,7 +24,9 @@
 - **Skeleton mode:** the small face joint balls only show when the head or a face joint is selected, so the face is no longer cluttered.
 - **Loop points** are kept when you open a file and save it again. A file without loop points no longer picks up the loop points from the file you had open before.
 - **IK** (keeping a hand or foot in place while you move the body) has a new solver. Locked hands and feet follow the 3D view closely, an unreachable goal no longer throws an arm or leg around, and a value you type is solved at once.
-- **Body choice.** **Options > Body** replaces "Bento body (Max)": pick the open source Ruth2 avatar (the default for new users), Max, or the Second Life system avatar. Your earlier choice is kept: Max stays Max, and the system avatar stays the system avatar.
+- **Body choice.** **Options > Body** replaces "Bento body (Max)": pick the open source Ruth2 avatar (the default) or Max. Both have fingers and a face that follow the Bento bones. If you had chosen Max, you keep Max.
+- **The Second Life system avatar is gone.** It is replaced by Ruth2. If your settings said "system avatar" (or "Bento body" off), PinglyMotion now shows Ruth2; nothing else changes. The male figure is now the same Ruth2 body with male proportions (wider shoulders, longer legs), until a male body is added.
+- **Credits.** Help > About and the README name the makers of Ruth2 and give its licence (AGPL for the mesh, kept as a separate data file next to the program).
 - **Head and neck** can bend up to 45 degrees forward and back.
 - **Opening files** uses a new reader. A broken file is refused with a reason that names the line, for example "Line 12: …". Files with values that make no sense (for example numbers too large for a decimal) and AVM files with extra property data are now refused; an empty file says "The file is empty."
 - **Window title** shows the version, where the build came from and its commit, so you can tell which build you are testing.
