@@ -1,6 +1,6 @@
 Branch: docs/decision-59
 Status: done
-Pull request: pending
+Pull request: #75
 Files:
 - docs/DECISIONS.md
 
