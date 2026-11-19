@@ -1,6 +1,6 @@
 Branch: feat/easing-maths
 Status: active
-Pull request: pending
+Pull request: #101
 Files:
 - src/easing.*
 - tests/easing/**
