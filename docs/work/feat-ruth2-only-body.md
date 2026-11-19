@@ -1,6 +1,6 @@
 Branch: feat/ruth2-only-body
 Status: active
-Pull request: pending
+Pull request: #97
 Files:
 - docs/work/feat-ruth2-only-body.md
 - src/avatarskin.*
