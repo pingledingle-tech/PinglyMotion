@@ -3,232 +3,96 @@
  <class>AboutDialog</class>
  <widget class="QDialog" name="AboutDialog">
   <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>320</width>
-    <height>350</height>
-   </rect>
-  </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>320</width>
-    <height>350</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>320</width>
-    <height>350</height>
-   </size>
+   <rect><x>0</x><y>0</y><width>420</width><height>520</height></rect>
   </property>
   <property name="windowTitle">
    <string>About PinglyMotion</string>
   </property>
-  <widget class="QLabel" name="titleLabel">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>301</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>16</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>PinglyMotion</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="versionLabel">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>40</y>
-     <width>301</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-     <underline>false</underline>
-    </font>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QGroupBox" name="updatesGroupBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>120</y>
-     <width>301</width>
-     <height>121</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="title">
-    <string>Check for Updates</string>
-   </property>
-   <widget class="QPushButton" name="checkUpdatesButton">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>40</y>
-      <width>151</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-      <weight>50</weight>
-      <bold>false</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Check Now</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="lastUpdateCheckLabel">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>20</y>
-      <width>281</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <weight>50</weight>
-      <bold>false</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="autoUpdatesCheckBox">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>100</y>
-      <width>281</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <weight>50</weight>
-      <bold>false</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Automatically Check for Updates</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QLabel" name="dateTimeLabel">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>60</y>
-     <width>301</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="creditLabel">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>246</y>
-     <width>301</width>
-     <height>98</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>8</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Avatar body: Ruth2 v4 by Shin Ingen, Ada Radius and the RuthAndRoth contributors (github.com/RuthAndRoth/Ruth2). The mesh is licensed under the GNU Affero General Public License 3 or later; the UV map is CC BY Linden Lab and the rig parts are CC BY 3.0 Machinimatrix.org. Converted to PinglyMotion&apos;s own format. Licences and the full list of contributors: data/character/ruth2/. Male body: Roth2 v2 by Shin Ingen, Ada Radius and the RuthAndRoth contributors (github.com/RuthAndRoth/Roth2), AGPL 3 or later; the head is CC BY Linden Lab. Licences: data/character/roth2/. Optional Bento body: &quot;Maxine&quot; from the Max Avatar Project, Creative Commons Attribution 4.0 License, see data/character/max/LICENSE.txt. Test motions: eight CC0 clips from Mesh2Motion (github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. Thank you to the Mesh2Motion project.</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="websiteLabel">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>90</y>
-     <width>301</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Website: &lt;a href=&quot;https://github.com/pingledingle-tech/PinglyMotion&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;PinglyMotion on GitHub&lt;/span&gt;&lt;/a&gt; – based on QAvimator&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="openExternalLinks">
-    <bool>true</bool>
-   </property>
-  </widget>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <item>
+    <widget class="QLabel" name="titleLabel">
+     <property name="font"><font><pointsize>16</pointsize><bold>true</bold></font></property>
+     <property name="text"><string>PinglyMotion</string></property>
+     <property name="alignment"><set>Qt::AlignCenter</set></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="versionLabel">
+     <property name="text"><string/></property>
+     <property name="alignment"><set>Qt::AlignCenter</set></property>
+     <property name="wordWrap"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="dateTimeLabel">
+     <property name="text"><string/></property>
+     <property name="alignment"><set>Qt::AlignCenter</set></property>
+     <property name="wordWrap"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="websiteLabel">
+     <property name="text"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Website: &lt;a href=&quot;https://github.com/pingledingle-tech/PinglyMotion&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;PinglyMotion on GitHub&lt;/span&gt;&lt;/a&gt; – based on QAvimator&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+     <property name="alignment"><set>Qt::AlignCenter</set></property>
+     <property name="wordWrap"><bool>true</bool></property>
+     <property name="openExternalLinks"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="updatesGroupBox">
+     <property name="title"><string>Check for Updates</string></property>
+     <layout class="QVBoxLayout" name="updatesLayout">
+      <item>
+       <widget class="QLabel" name="lastUpdateCheckLabel">
+        <property name="text"><string/></property>
+        <property name="wordWrap"><bool>true</bool></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="checkUpdatesButton">
+        <property name="text"><string>Check Now</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="autoUpdatesCheckBox">
+        <property name="text"><string>Automatically Check for Updates</string></property>
+        <property name="checked"><bool>true</bool></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTextBrowser" name="creditBrowser">
+     <property name="minimumSize"><size><width>0</width><height>120</height></size></property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch><verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="openExternalLinks"><bool>true</bool></property>
+     <property name="verticalScrollBarPolicy"><enum>Qt::ScrollBarAsNeeded</enum></property>
+     <property name="horizontalScrollBarPolicy"><enum>Qt::ScrollBarAlwaysOff</enum></property>
+     <property name="lineWrapMode"><enum>QTextEdit::WidgetWidth</enum></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons"><set>QDialogButtonBox::Ok</set></property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>AboutDialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+ </connections>
 </ui>

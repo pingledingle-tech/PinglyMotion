@@ -113,3 +113,4 @@ ADD_SUBDIRECTORY (animexport)
 
 # the .anim reader (#22), not used by the program yet
 ADD_SUBDIRECTORY (animimport)
+ADD_SUBDIRECTORY (aboutdialog)

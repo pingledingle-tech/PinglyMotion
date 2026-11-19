@@ -1,5 +1,6 @@
 # Sources
-SET (PINGLYMOTION_SRC aboutdialog.cpp
+SET (PINGLYMOTION_SRC aboutcredits.cpp
+              aboutdialog.cpp
               animexport.cpp
               animexportdialog.cpp
               animimport.cpp

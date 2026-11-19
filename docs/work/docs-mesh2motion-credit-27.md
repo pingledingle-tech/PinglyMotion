@@ -3,7 +3,8 @@ Status: done
 Pull request: #125
 Files:
 - docs/work/docs-mesh2motion-credit-27.md
-- src/aboutdialog.ui
+- src/aboutcredits.cpp
+- tests/aboutdialog/tst_aboutdialog.cpp
 - README.md
 - docs/PRODUCT.md
 - docs/ROADMAP.md
