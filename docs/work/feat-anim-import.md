@@ -1,6 +1,6 @@
 Branch: feat/anim-import
-Status: active
-Pull request: pending
+Status: done
+Pull request: #65
 Files:
 - src/animimport.*
 - tests/animimport/**

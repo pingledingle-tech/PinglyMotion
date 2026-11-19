@@ -87,3 +87,6 @@ SET_TESTS_PROPERTIES (ruth2 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the .anim writer (#10), not used by the program yet
 ADD_SUBDIRECTORY (animexport)
+
+# the .anim reader (#22), not used by the program yet
+ADD_SUBDIRECTORY (animimport)

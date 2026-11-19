@@ -403,3 +403,9 @@ Import (#134):
 `src/animexport.*` writes `.anim` files from the parsed animation data (`AnimFile::Animation`) as a function only; there is no menu or dialog yet. It follows sections 2 to 7: axis change, root joint relative to frame 0 in metres (BVH units taken as inches), frame 0 not played, the viewer's quantising (also the double step of section 4.1), priority per joint, loop points, ease, hand pose, emote, no constraints. Joints that never move away from frame 0 are left out (the root is always kept). When the file would be bigger than 250,000 bytes, keys that a straight line explains are removed, a little more each round, and the user gets a warning; if that is not enough, the export fails with a message.
 
 Not done: choosing code values that survive the viewer's decode and encode unchanged (open question 3), and the checks against the real server (open questions 1 and 2). Both need an upload test by the project owner.
+
+### Status of the reader (issue #22, step 1)
+
+`src/animimport.*` reads `.anim` bytes into a plain data model (`AnimImport::Motion`: header, joints, rotation and position keys in seconds, metres and quaternions, constraints) and checks every limit of section 8: names are searched only inside the bytes that are left (64 bytes at most), counts are checked against the bytes that are left, the length must be above 0 and at most 60 seconds, hand pose 0 to 13, priorities above 6 are lowered to 6 with a warning, loop points and negative ease times are moved inside range with a warning, duplicate key times are merged (the later one wins, as in the viewer), a bad constraint count is ignored like the viewer does, trailing bytes are ignored with a warning. Version 0.1 files are refused with a message. It has its own fuzz target (`fuzz/fuzz_anim.cpp`).
+
+Step 2, not done: turning the keys into a Pingmator animation on the Second Life skeleton (resampling, axis change back, Euler angles per joint, the pelvis relative to frame 0).
