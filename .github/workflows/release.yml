@@ -121,19 +121,25 @@ jobs:
           # the MCP server goes with the program, so both are updated together
           mkdir -p "$DIR/mcp"
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt "$DIR/mcp/"
+          # the Claude Desktop extension: in the zip and as its own download (issue #7)
+          python tools/mcp/build_mcpb.py PinglyMotion.mcpb
+          cp PinglyMotion.mcpb "$DIR/"
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations "$DIR/PinglyMotion.exe"
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll "$DIR/"
           7z a "$DIR.zip" "$DIR"
-          sha256sum "$DIR.zip" > SHA256SUMS-windows && cat SHA256SUMS-windows
+          sha256sum "$DIR.zip" PinglyMotion.mcpb > SHA256SUMS-windows && cat SHA256SUMS-windows
       - name: Build provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: PinglyMotion-${{ env.TAG }}-windows.zip
+          subject-path: |
+            PinglyMotion-${{ env.TAG }}-windows.zip
+            PinglyMotion.mcpb
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-windows
           path: |
             PinglyMotion-${{ env.TAG }}-windows.zip
+            PinglyMotion.mcpb
             SHA256SUMS-windows
           retention-days: 7
 
@@ -277,5 +283,5 @@ jobs:
           FLAGS=""
           if [ "$PRERELEASE" = "true" ]; then FLAGS="--prerelease"; fi
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag $FLAGS \
-            "PinglyMotion-${TAG}-windows.zip" "PinglyMotion-${TAG}-linux-x86_64.AppImage" SHA256SUMS \
+            "PinglyMotion-${TAG}-windows.zip" PinglyMotion.mcpb "PinglyMotion-${TAG}-linux-x86_64.AppImage" SHA256SUMS \
             --title "PinglyMotion ${TAG#v}" --generate-notes

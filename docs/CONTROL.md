@@ -101,6 +101,26 @@ tree it is `tools/mcp/pinglymotion_mcp.py`.
 
 The examples below use `C:\PinglyMotion`. Replace it with the folder where you unpacked PinglyMotion.
 
+### Quick way: the Claude Desktop extension
+
+The Windows zip (and each release) has `PinglyMotion.mcpb`, an extension for the Claude app. No file
+editing and no typed paths:
+
+1. Install Python 3.8 or newer if you do not have it (step 1 below).
+2. Double-click `PinglyMotion.mcpb`. The Claude app opens an install window: click **Install**. If
+   double-click does nothing, drag the file into the Claude window, or open the extensions page in
+   the app's settings and add the file there.
+3. Start PinglyMotion and turn on **Options > Allow remote control** (it is off at every start).
+4. Ask Claude, for example: "Raise the avatar's right arm and show me a picture."
+
+Update: install the `PinglyMotion.mcpb` from the new download the same way. The extension holds no
+settings and no key; it is the same MCP server as below, with the same protections (it talks only to
+`127.0.0.1` and checks that it really is PinglyMotion before it sends the key). The extension is
+built from this repository by `tools/mcp/build_mcpb.py` and is not signed. Claude Desktop does not
+ship Python, so Python must be installed (issue #7 keeps the idea of a Node server open).
+
+The steps below are the manual way, also for Claude Code.
+
 ### 1. Install Python
 
 Download it from https://www.python.org. On Windows, tick **Add python.exe to PATH** in the

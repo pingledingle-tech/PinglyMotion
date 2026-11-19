@@ -1,6 +1,6 @@
 Branch: feat/mcpb-extension
-Status: active
-Pull request:
+Status: done
+Pull request: #96
 Files:
 - docs/work/feat-mcpb-extension.md
 - tools/mcp/mcpb/manifest.json

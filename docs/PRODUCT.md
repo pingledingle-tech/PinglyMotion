@@ -57,7 +57,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 
 - **Journey:** Enable local control, describe a pose, let the assistant use joint and frame commands, inspect a screenshot, and adjust.
 - **Value:** A lower barrier for starting and iterating, while the user keeps control.
-- **Status:** Local HTTP and MCP commands exist; setup and available commands are in [CONTROL.md](CONTROL.md). More advanced motion generation, visual assessment and collision or foot-contact analysis need investigation. The status bar shows whether an assistant is connected (old #43, done).
+- **Status:** Local HTTP and MCP commands exist; setup and available commands are in [CONTROL.md](CONTROL.md). More advanced motion generation, visual assessment and collision or foot-contact analysis need investigation. The status bar shows whether an assistant is connected (old #43, done). `PinglyMotion.mcpb` installs the MCP server in the Claude app with a double-click (Python still needed; #7).
 
 ### 6. Bring an external animation to SL
 

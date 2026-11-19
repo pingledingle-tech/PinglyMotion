@@ -272,6 +272,14 @@ def handle(message):
 
 
 def main():
+    if len(sys.argv) > 1:
+        # Started by hand (or by a test), not by an AI tool: say what this is and stop
+        if sys.argv[1] in ("--version", "-V"):
+            print("%s %s" % (SERVER_NAME, SERVER_VERSION))
+        else:
+            print("PinglyMotion MCP server %s. An AI tool starts it and talks MCP over stdin/stdout; "
+                  "see docs/CONTROL.md." % SERVER_VERSION)
+        return
     for line in sys.stdin:
         line = line.strip()
         if not line:

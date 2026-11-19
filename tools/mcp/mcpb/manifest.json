@@ -1,0 +1,36 @@
+{
+  "manifest_version": "0.3",
+  "name": "pinglymotion",
+  "display_name": "PinglyMotion",
+  "version": "0.3.0",
+  "description": "Let Claude pose, play, look at and save animations in PinglyMotion, the Second Life animation editor.",
+  "long_description": "Needs PinglyMotion running on the same computer with Options > Allow remote control switched on, and Python 3.8 or newer installed. Claude can change the pose, frames, speed and camera, take screenshots of the 3D view (they are sent to Claude), and open and save animation files in the PinglyMotion folder in Documents. It talks to PinglyMotion only on this computer (127.0.0.1) and checks that the program on the port really is PinglyMotion before it sends the key. No settings are needed and nothing secret is stored in this extension.",
+  "author": {
+    "name": "pingledingle-tech",
+    "url": "https://github.com/pingledingle-tech"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pingledingle-tech/PinglyMotion.git"
+  },
+  "homepage": "https://github.com/pingledingle-tech/PinglyMotion",
+  "documentation": "https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md#set-up-an-ai-assistant",
+  "support": "https://github.com/pingledingle-tech/PinglyMotion/issues",
+  "license": "GPL-2.0-or-later",
+  "keywords": ["second life", "animation", "bvh", "pose"],
+  "server": {
+    "type": "python",
+    "entry_point": "server/pinglymotion_mcp.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["${__dirname}/server/pinglymotion_mcp.py"]
+    }
+  },
+  "tools_generated": true,
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "runtimes": {
+      "python": ">=3.8,<4.0"
+    }
+  }
+}

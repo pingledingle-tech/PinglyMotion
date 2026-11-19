@@ -78,7 +78,8 @@ ctest --test-dir build --output-on-failure
 
 PinglyMotion has an open local interface (HTTP with JSON, and an MCP server) so an AI tool or script can
 pose the figure, look at it and save the animation. See [docs/CONTROL.md](docs/CONTROL.md).
-The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up.
+The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up, and `PinglyMotion.mcpb`, a one-click extension for the Claude app
+(see [docs/CONTROL.md](docs/CONTROL.md#quick-way-the-claude-desktop-extension)).
 
 ## Live preview in the Aurora viewer
 
