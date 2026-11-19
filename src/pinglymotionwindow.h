@@ -118,6 +118,7 @@ class PinglyMotionWindow : public QMainWindow
     void on_fileExportAnimAction_triggered();
     void on_fileImportAnimAction_triggered();
     void on_fileImportBvhAction_triggered();
+    void on_fileImportGltfAction_triggered();
     void on_fileLoadPropsAction_triggered();
     void on_fileSavePropsAction_triggered();
     void on_fileExitAction_triggered();
@@ -209,6 +210,7 @@ class PinglyMotionWindow : public QMainWindow
     void fileExportAnim();
     void fileImportAnim();
     void fileImportBvh();
+    void fileImportGltf();
     // the Second Life skeleton of the program (frame 0 is the rest pose), for imports
     bool loadSkeleton(AnimFile::Animation& skeleton,const QString& title);
     // opens an animation that was made from another file (an import) as a new, unsaved animation.

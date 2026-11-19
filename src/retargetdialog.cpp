@@ -104,6 +104,12 @@ RetargetDialog::RetargetDialog(const AnimFile::Animation& source,const AnimFile:
   m_problem->setStyleSheet(QStringLiteral("color: #b00020;"));
   layout->addWidget(m_problem);
 
+  m_notes=new QLabel(this);
+  m_notes->setWordWrap(true);
+  m_notes->setTextFormat(Qt::PlainText);
+  m_notes->hide();
+  layout->addWidget(m_notes);
+
   m_table=new QTableWidget(this);
   m_table->setColumnCount(3);
   m_table->setHorizontalHeaderLabels({tr("Joint in your file"),tr("Joint on the avatar"),tr("What happens")});
@@ -126,6 +132,12 @@ RetargetDialog::RetargetDialog(const AnimFile::Animation& source,const AnimFile:
   layout->addWidget(buttons);
 
   run();
+}
+
+void RetargetDialog::setNotes(const QStringList& notes)
+{
+  m_notes->setText(notes.isEmpty() ? QString() : tr("Please note:")+QStringLiteral("\n- ")+notes.join(QStringLiteral("\n- ")));
+  m_notes->setVisible(!notes.isEmpty());
 }
 
 void RetargetDialog::run()

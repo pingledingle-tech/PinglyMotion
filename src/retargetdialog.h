@@ -18,6 +18,7 @@
 
 #include <QDialog>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 #include <functional>
@@ -65,6 +66,9 @@ class RetargetDialog : public QDialog
     // the retargeted animation, valid after the dialog was accepted
     const Retarget::Result& result() const { return m_result; }
 
+    // things the reader left out or changed (for example from a glTF file), shown under the summary
+    void setNotes(const QStringList& notes);
+
   private slots:
     void run();
 
@@ -76,6 +80,7 @@ class RetargetDialog : public QDialog
 
     QLabel* m_summary;
     QLabel* m_problem;
+    QLabel* m_notes;
     QTableWidget* m_table;
     QCheckBox* m_startsInPose;
     QPushButton* m_open;

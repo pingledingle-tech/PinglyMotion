@@ -1,5 +1,5 @@
 Branch: feat/gltf-import-menu
-Status: active
+Status: done
 Pull request: #117
 Files:
 - src/gltfimportdialog.*
@@ -8,6 +8,8 @@ Files:
 - src/CMakeLists.txt
 - tests/gltfimportdialog/**
 - tests/retargetdialog/**
+- tests/motions/**
+- tests/data/mesh2motion/README.md
 - CMakeLists.txt
 - docs/PRODUCT.md
 - docs/ROADMAP.md

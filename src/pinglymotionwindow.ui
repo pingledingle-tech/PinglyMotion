@@ -1360,6 +1360,7 @@
     <addaction name="fileAddAction"/>
     <addaction name="fileImportAnimAction"/>
     <addaction name="fileImportBvhAction"/>
+    <addaction name="fileImportGltfAction"/>
     <addaction name="separator"/>
     <addaction name="fileSaveAction"/>
     <addaction name="fileSaveAsAction"/>
@@ -1659,6 +1660,11 @@
   <action name="fileExportForSecondLifeAction">
    <property name="text">
     <string>Export For Second Life</string>
+   </property>
+  </action>
+  <action name="fileImportGltfAction">
+   <property name="text">
+    <string>Import glTF animation...</string>
    </property>
   </action>
   <action name="fileImportBvhAction">

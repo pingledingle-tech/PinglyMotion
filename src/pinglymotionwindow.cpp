@@ -53,6 +53,8 @@
 #include "animexportdialog.h"
 #include "animimportconvert.h"
 #include "dinglesave.h"
+#include "gltfimport.h"
+#include "gltfimportdialog.h"
 #include "retargetdialog.h"
 #include "animationview.h"
 #include "bvh.h"
@@ -2136,6 +2138,62 @@ void PinglyMotionWindow::fileImportBvh()
   openConvertedAnimation(*dialog.result().animation,QFileInfo(file).completeBaseName(),-1,-1,title);
 }
 
+// Menu Action: File / Import glTF animation...
+void PinglyMotionWindow::fileImportGltf()
+{
+  const QString title=tr("Import glTF animation");
+  const QString file=QFileDialog::getOpenFileName(this,title,UserSettings::lastPath(),tr("glTF files (*.glb *.gltf)"));
+  if(file.isEmpty()) return;
+  UserSettings::setLastPath(QFileInfo(file).path());
+
+  QFile input(file);
+  if(!input.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,title,tr("This file could not be opened.\n%1\nCheck that the file is still there, then try again.").arg(input.errorString()));
+    return;
+  }
+  if(input.size()>GltfImport::MAX_FILE_BYTES)
+  {
+    QMessageBox::warning(this,title,tr("This file is too big for an animation.\nPick a smaller file, then try again."));
+    return;
+  }
+  const GltfImport::ReadResult read=GltfImport::read(input.read(GltfImport::MAX_FILE_BYTES+1));
+  if(!read.ok())
+  {
+    QMessageBox::warning(this,title,GltfUi::readProblem(read.error));
+    return;
+  }
+
+  GltfImport::Options options;
+  if(GltfUi::needsChoice(*read.document))
+  {
+    GltfImportDialog choose(*read.document,this);
+    if(choose.exec()!=QDialog::Accepted) return;
+    options.animation=choose.animation();
+    options.skin=choose.skeleton();
+  }
+
+  const GltfImport::SourceResult source=GltfImport::toSource(*read.document,options);
+  if(!source.ok())
+  {
+    QMessageBox::warning(this,title,GltfUi::animationProblem(source.error));
+    return;
+  }
+
+  AnimFile::Animation skeleton;
+  if(!loadSkeleton(skeleton,title)) return;
+
+  RetargetDialog dialog(*source.animation,skeleton,QFileInfo(file).fileName(),
+                        [this](const QString& name){ return m_jointInfo ? m_jointInfo->friendlyName(name) : QString(); },this);
+  dialog.setNotes(source.notes);
+  if(dialog.exec()!=QDialog::Accepted || !dialog.result().ok()) return;
+
+  QString name=QFileInfo(file).completeBaseName();
+  if(read.document->animations.size()>1 && options.animation<read.document->animations.size() && !read.document->animations[options.animation].name.isEmpty())
+    name+=QStringLiteral(" - ")+read.document->animations[options.animation].name;
+  openConvertedAnimation(*dialog.result().animation,name,-1,-1,title);
+}
+
 // Menu Action: File / Load Props...
 void PinglyMotionWindow::fileLoadProps()
 {
@@ -2847,6 +2905,11 @@ void PinglyMotionWindow::on_fileSaveAction_triggered()
 void PinglyMotionWindow::on_fileSaveAsAction_triggered()
 {
   fileSaveAs();
+}
+
+void PinglyMotionWindow::on_fileImportGltfAction_triggered()
+{
+  fileImportGltf();
 }
 
 void PinglyMotionWindow::on_fileImportBvhAction_triggered()
