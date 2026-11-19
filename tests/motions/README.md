@@ -1,6 +1,6 @@
 # Test animations
 
-Animations with real movement for automatic tests (issue #153).
+Animations with real movement for automatic tests (issue #153). In the Windows zip they are in the folder `examples/motions/` next to the program (the Mesh2Motion clips in `examples/mesh2motion/`).
 
 ## From the CMU motion capture database
 

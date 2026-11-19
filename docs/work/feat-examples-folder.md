@@ -1,6 +1,6 @@
 Branch: feat/examples-folder
-Status: active
-Pull request: pending
+Status: done
+Pull request: #123
 Files:
 - docs/work/feat-examples-folder.md
 - .github/workflows/build.yml

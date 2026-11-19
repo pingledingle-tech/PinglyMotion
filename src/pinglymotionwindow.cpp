@@ -31,6 +31,7 @@
 #include <QCloseEvent>
 #include <QDir>
 #include <QFileDialog>
+#include "startfolder.h"
 #include <QMessageBox>
 #include <QSaveFile>
 #include <QTemporaryDir>
@@ -1698,9 +1699,9 @@ QString PinglyMotionWindow::selectFileToOpen(const QString& caption)
 {
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString file = QFileDialog::getOpenFileName(NULL, caption, UserSettings::lastPath(), m_animFilter);
+   QString file = QFileDialog::getOpenFileName(NULL, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
 #else
-   QString file = QFileDialog::getOpenFileName(this, caption, UserSettings::lastPath(), m_animFilter);
+   QString file = QFileDialog::getOpenFileName(this, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
 #endif
   if(!file.isEmpty())
   {
@@ -2067,7 +2068,7 @@ bool PinglyMotionWindow::openConvertedAnimation(const AnimFile::Animation& anim,
 void PinglyMotionWindow::fileImportAnim()
 {
   const QString title=tr("Import Second Life .anim");
-  const QString file=QFileDialog::getOpenFileName(this,title,UserSettings::lastPath(),tr("Second Life animation (*.anim)"));
+  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("Second Life animation (*.anim)"));
   if(file.isEmpty()) return;
   UserSettings::setLastPath(QFileInfo(file).path());
 
@@ -2105,7 +2106,7 @@ void PinglyMotionWindow::fileImportAnim()
 void PinglyMotionWindow::fileImportBvh()
 {
   const QString title=tr("Import a BVH from another skeleton");
-  const QString file=QFileDialog::getOpenFileName(this,title,UserSettings::lastPath(),tr("BVH files (*.bvh)"));
+  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("BVH files (*.bvh)"));
   if(file.isEmpty()) return;
   UserSettings::setLastPath(QFileInfo(file).path());
 
@@ -2142,7 +2143,7 @@ void PinglyMotionWindow::fileImportBvh()
 void PinglyMotionWindow::fileImportGltf()
 {
   const QString title=tr("Import glTF animation");
-  const QString file=QFileDialog::getOpenFileName(this,title,UserSettings::lastPath(),tr("glTF files (*.glb *.gltf)"));
+  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("glTF files (*.glb *.gltf)"));
   if(file.isEmpty()) return;
   UserSettings::setLastPath(QFileInfo(file).path());
 

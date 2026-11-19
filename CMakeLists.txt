@@ -125,6 +125,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/interpolation)
   # panel layout rules, not used by the program yet (panels job P1)
   ADD_SUBDIRECTORY (tests/panellayout)
+  # start folder of the file dialogs (examples folder next to the program)
+  ADD_SUBDIRECTORY (tests/startfolder)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

@@ -1,6 +1,6 @@
 # Generated edge-case animations
 
-BVH files written by `tools/gen_edge_bvh.py` (Python standard library only; run `python3 tools/gen_edge_bvh.py`). They are **test data only**: not test motions for the project owner, and not copied into the Windows zip (that is `tests/motions/`). The output is byte-for-byte the same on every run; `tests/test_gen_edge_bvh.py` checks that the files here are what the script writes, so change the script and write the files again together.
+BVH files written by `tools/gen_edge_bvh.py` (Python standard library only; run `python3 tools/gen_edge_bvh.py`). They are **test data only**: not test motions for the project owner, and, apart from the Windows zip's folder `examples/edge-cases/`, not meant for hand testing. The output is byte-for-byte the same on every run; `tests/test_gen_edge_bvh.py` checks that the files here are what the script writes, so change the script and write the files again together.
 
 `tests/animfile/tst_generated.cpp` loads every file with the BVH parser (`AnimFile::parseBvh`) and checks the result against the table below. Accepted files are also written again and read back, and written as a Second Life `.anim` file (`AnimExport::write`). The files that the old open and save path can also take are copied to `fuzz/corpus/bvh/` as `good_edge_*` and `bad_edge_*` (the old path is tested with them by `tests/animfile` and `tests/tst_roundtrip.cpp`).
 
