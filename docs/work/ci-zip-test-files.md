@@ -1,6 +1,6 @@
 Branch: ci/zip-test-files
-Status: active
-Pull request: pending
+Status: done
+Pull request: #81
 Files:
 - .github/workflows/build.yml
 - CLAUDE.md
