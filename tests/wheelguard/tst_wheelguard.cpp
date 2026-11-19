@@ -4,6 +4,7 @@
 #include <QScrollBar>
 #include <QSlider>
 #include <QSpinBox>
+#include <QTableWidget>
 #include <QTest>
 #include <QVBoxLayout>
 #include <QWheelEvent>
@@ -91,6 +92,41 @@ class TstWheelGuard : public QObject
       wheel(slider,3);
       QVERIFY(slider->value()!=500);
       QCOMPARE(area->verticalScrollBar()->value(),0);
+    }
+
+    // crash seen in the Windows build of #85: a table (the joint list) inside the
+    // panel has scroll bars of its own; guarding them sent the wheel round in a
+    // circle (scroll bar -> viewport -> scroll bar ...) until the stack was full
+    void nestedTableScrollBarsDoNotLoop()
+    {
+      area=new QScrollArea;
+      QWidget* panel=new QWidget;
+      QVBoxLayout* layout=new QVBoxLayout(panel);
+      QTableWidget* table=new QTableWidget(100,2);
+      table->setMinimumHeight(120);
+      table->setMaximumHeight(120);
+      layout->addWidget(table);
+      QWidget* filler=new QWidget;
+      filler->setMinimumHeight(2000);
+      layout->addWidget(filler);
+      area->setWidget(panel);
+      area->setWidgetResizable(true);
+      area->resize(300,300);
+      (new WheelGuard(area))->guardChildrenOf(panel);
+      area->show();
+      QVERIFY(QTest::qWaitForWindowExposed(area));
+      QScrollBar* bar=table->verticalScrollBar();
+      QVERIFY(bar->isVisible());
+      // no scroll bar of a nested area is guarded
+      QVERIFY(!WheelGuard::isGuardable(bar));
+      for(int i=0;i<20;i++)
+      {
+        wheel(bar,-3);
+        wheel(table->viewport(),-3);
+        wheel(bar,3);
+      }
+      // reaching this line means no endless loop
+      QVERIFY(true);
     }
 
     void wheelDoesNotGiveFocus()

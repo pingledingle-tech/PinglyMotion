@@ -17,6 +17,7 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QObject>
+#include <QScrollBar>
 #include <QWheelEvent>
 #include <QWidget>
 
@@ -32,8 +33,7 @@ class WheelGuard : public QObject
     {
       const QList<QWidget*> all=root->findChildren<QWidget*>();
       for(QWidget* w : all)
-        if(qobject_cast<QAbstractSlider*>(w) || qobject_cast<QAbstractSpinBox*>(w) || qobject_cast<QComboBox*>(w))
-          guard(w);
+        if(isGuardable(w)) guard(w);
     }
 
     void guard(QWidget* w)
@@ -43,10 +43,22 @@ class WheelGuard : public QObject
       w->installEventFilter(this);
     }
 
+    // Scroll bars are not guarded: they belong to a scroll area of their own
+    // (a table, a list) and that area forwards its wheel to them. Guarding them
+    // sends the wheel to the viewport, the viewport back to the scroll bar, and
+    // so on until the stack is full (crash seen in the Windows build of #85).
+    static bool isGuardable(QWidget* w)
+    {
+      if(qobject_cast<QScrollBar*>(w)) return false;
+      return qobject_cast<QAbstractSlider*>(w) || qobject_cast<QAbstractSpinBox*>(w) || qobject_cast<QComboBox*>(w);
+    }
+
   protected:
     bool eventFilter(QObject* watched,QEvent* event) override
     {
       if(event->type()!=QEvent::Wheel) return false;
+      // a wheel that comes back to us while we pass it on is left alone
+      if(m_forwarding) return false;
       QWidget* w=qobject_cast<QWidget*>(watched);
       if(!w || w->hasFocus()) return false;
       // pass the wheel on to the scroll area around the control
@@ -58,10 +70,15 @@ class WheelGuard : public QObject
       if(target)
       {
         std::unique_ptr<QWheelEvent> copy(static_cast<QWheelEvent*>(event)->clone());
+        m_forwarding=true;
         QCoreApplication::sendEvent(target,copy.get());
+        m_forwarding=false;
       }
       return true;
     }
+
+  private:
+    bool m_forwarding=false;
 };
 
 #endif
