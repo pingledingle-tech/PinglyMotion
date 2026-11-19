@@ -32,6 +32,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSaveFile>
 #include <QScopedPointer>
 #include <QSignalBlocker>
 #include <QSharedPointer>
@@ -48,6 +49,7 @@
 #include <QTableWidget>
 
 #include "aboutdialog.h"
+#include "animexportdialog.h"
 #include "animationview.h"
 #include "bvh.h"
 #include "propfile.h"
@@ -1906,6 +1908,62 @@ void PinglyMotionWindow::fileExportForSecondLife()
   }
 }
 
+// Menu Action: File / Export as Second Life .anim...
+// Save stays for .dingle files; this writes the file that Second Life uploads.
+void PinglyMotionWindow::fileExportAnim()
+{
+  const QString title=tr("Export as Second Life .anim");
+  Animation* animation=scene->getAnimation();
+  if(!animation)
+  {
+    QMessageBox::information(this,title,AnimExportUi::problemBeforeExport(AnimFile::Animation()));
+    return;
+  }
+
+  const AnimFile::Animation model=ui->animationView->getBVH()->snapshot(animation,AnimFile::Format::Bvh);
+  const QString problem=AnimExportUi::problemBeforeExport(model);
+  if(!problem.isEmpty())
+  {
+    QMessageBox::warning(this,title,problem);
+    return;
+  }
+
+  AnimExportDialog dialog(AnimExportUi::durationSeconds(model),this);
+  if(dialog.exec()!=QDialog::Accepted) return;
+
+  QString suggested=AnimExportUi::suggestedFileName(currentFile,m_untitledName);
+  if(QFileInfo(suggested).isRelative())
+    suggested=QDir(UserSettings::lastPath()).filePath(suggested);
+  QString file=QFileDialog::getSaveFileName(this,title,suggested,tr("Second Life animation (*.anim)"),nullptr,QFileDialog::DontConfirmOverwrite);
+  if(file.isEmpty()) return;
+  file=AnimExportUi::withAnimEnding(file);
+  const QFileInfo fileInfo(file);
+  if(!checkFileOverwrite(fileInfo)) return;
+
+  const AnimExport::Options options=AnimExportUi::toOptions(dialog.settings(),model.frameTime,
+                                                           animation->getLoopInPoint(),animation->getLoopOutPoint());
+  const AnimExport::Result result=AnimExport::write(model,options);
+  if(!result.ok())
+  {
+    QMessageBox::warning(this,title,AnimExportUi::explainFailure(result.error));
+    return;
+  }
+
+  QSaveFile out(file);
+  if(!out.open(QIODevice::WriteOnly) || out.write(result.bytes)!=result.bytes.size() || !out.commit())
+  {
+    QMessageBox::warning(this,title,AnimExportUi::explainFailure(
+                         tr("The file could not be written: %1").arg(out.errorString())));
+    return;
+  }
+  UserSettings::setLastPath(fileInfo.path());
+
+  QString message=tr("Saved as:\n%1").arg(fileInfo.fileName());
+  if(!result.warnings.isEmpty())
+    message+=QStringLiteral("\n\n")+tr("Please note:")+QStringLiteral("\n")+result.warnings.join(QLatin1Char('\n'));
+  QMessageBox::information(this,title,message);
+}
+
 // Menu Action: File / Load Props...
 void PinglyMotionWindow::fileLoadProps()
 {
@@ -2617,6 +2675,11 @@ void PinglyMotionWindow::on_fileSaveAction_triggered()
 void PinglyMotionWindow::on_fileSaveAsAction_triggered()
 {
   fileSaveAs();
+}
+
+void PinglyMotionWindow::on_fileExportAnimAction_triggered()
+{
+  fileExportAnim();
 }
 
 void PinglyMotionWindow::on_fileExportForSecondLifeAction_triggered()

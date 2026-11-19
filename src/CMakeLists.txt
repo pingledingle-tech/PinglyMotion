@@ -1,5 +1,7 @@
 # Sources
 SET (PINGLYMOTION_SRC aboutdialog.cpp
+              animexport.cpp
+              animexportdialog.cpp
               animation.cpp
               animationmanager.cpp
               animationview.cpp

@@ -1362,6 +1362,7 @@
     <addaction name="fileSaveAction"/>
     <addaction name="fileSaveAsAction"/>
     <addaction name="fileExportForSecondLifeAction"/>
+    <addaction name="fileExportAnimAction"/>
     <addaction name="separator"/>
     <addaction name="fileLoadPropsAction"/>
     <addaction name="fileSavePropsAction"/>
@@ -1656,6 +1657,11 @@
   <action name="fileExportForSecondLifeAction">
    <property name="text">
     <string>Export For Second Life</string>
+   </property>
+  </action>
+  <action name="fileExportAnimAction">
+   <property name="text">
+    <string>Export as Second Life .anim...</string>
    </property>
   </action>
   <action name="toolsMirrorAction">

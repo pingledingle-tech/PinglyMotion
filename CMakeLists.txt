@@ -103,6 +103,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/retarget)
   # the glTF import (#12), not used by the program yet
   ADD_SUBDIRECTORY (tests/gltfimport)
+  # the .anim export dialog helpers (#10 menu step)
+  ADD_SUBDIRECTORY (tests/animexportdialog)
   # status bar items and the "Tips on" setting (#88 step 8)
   ADD_SUBDIRECTORY (tests/statusbar)
   ADD_SUBDIRECTORY (tests/bodysetting)
