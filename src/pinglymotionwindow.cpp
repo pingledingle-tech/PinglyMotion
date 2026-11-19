@@ -601,8 +601,8 @@ void PinglyMotionWindow::updateWindowTitle()
   QString title="PinglyMotion "+Constants::buildLabel()+" ["+currentFile+"]";
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
-  if(m_auroraLink && m_auroraLink->enabled())
-    title+=m_auroraLink->connected() ? tr(" - live in Aurora") : tr(" - waiting for Aurora");
+  if(m_auroraLink)
+    title+=AuroraIndicator::titleSuffixFor(AuroraIndicator::stateFor(m_auroraLink->enabled(),m_auroraLink->connected()));
   if(m_auroraIndicator && m_auroraLink) m_auroraIndicator->setStatus(m_auroraLink->enabled(),m_auroraLink->connected());
   setWindowTitle(title);
 }

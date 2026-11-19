@@ -23,6 +23,7 @@ class TestStatusBar : public QObject
 
     void auroraStates();
     void auroraTexts();
+    void auroraTitleSaysTheSame();
     void auroraWidgetFollowsTheLink();
     void auroraDotAsksToToggle();
 
@@ -72,8 +73,17 @@ void TestStatusBar::auroraTexts()
 {
   typedef AuroraIndicator AI;
   QCOMPARE(AI::textFor(AI::Off), QStringLiteral("Aurora off"));
-  QCOMPARE(AI::textFor(AI::Connecting), QStringLiteral("Aurora · connecting…"));
-  QCOMPARE(AI::textFor(AI::Live), QStringLiteral("Aurora · live"));
+  QCOMPARE(AI::textFor(AI::Connecting), QStringLiteral("Waiting for Aurora"));
+  QCOMPARE(AI::textFor(AI::Live), QStringLiteral("Aurora live"));
+}
+
+void TestStatusBar::auroraTitleSaysTheSame()
+{
+  typedef AuroraIndicator AI;
+  QCOMPARE(AI::titleSuffixFor(AI::stateFor(false, false)), QString());
+  QCOMPARE(AI::titleSuffixFor(AI::stateFor(false, true)), QString());
+  QCOMPARE(AI::titleSuffixFor(AI::stateFor(true, false)), QStringLiteral(" - Waiting for Aurora"));
+  QCOMPARE(AI::titleSuffixFor(AI::stateFor(true, true)), QStringLiteral(" - Aurora live"));
 }
 
 void TestStatusBar::auroraWidgetFollowsTheLink()
