@@ -1,6 +1,6 @@
 Branch: docs/stop-hook-false-alarm
-Status: active
-Pull request: pending
+Status: done
+Pull request: #84
 Files:
 - CLAUDE.md
 
