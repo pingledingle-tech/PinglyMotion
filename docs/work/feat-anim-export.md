@@ -1,5 +1,5 @@
 Branch: feat/anim-export
-Status: active
+Status: done
 Pull request: #63
 Files:
 - src/animexport.*

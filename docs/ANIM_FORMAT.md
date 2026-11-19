@@ -397,3 +397,9 @@ Import (#134):
 - Old version 0.1 optional.
 - Round-trip test: export → import → compare, allowing one quantisation step (§4.1).
 - Only for the user's own files; it must not become a way around viewers' export protection.
+
+## 11. Status of the writer (issue #10)
+
+`src/animexport.*` writes `.anim` files from the parsed animation data (`AnimFile::Animation`) as a function only; there is no menu or dialog yet. It follows sections 2 to 7: axis change, root joint relative to frame 0 in metres (BVH units taken as inches), frame 0 not played, the viewer's quantising (also the double step of section 4.1), priority per joint, loop points, ease, hand pose, emote, no constraints. Joints that never move away from frame 0 are left out (the root is always kept). When the file would be bigger than 250,000 bytes, keys that a straight line explains are removed, a little more each round, and the user gets a warning; if that is not enough, the export fails with a message.
+
+Not done: choosing code values that survive the viewer's decode and encode unchanged (open question 3), and the checks against the real server (open questions 1 and 2). Both need an upload test by the project owner.
