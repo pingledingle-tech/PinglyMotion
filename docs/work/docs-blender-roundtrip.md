@@ -1,6 +1,6 @@
 Branch: docs/blender-roundtrip
 Status: active
-Pull request: pending
+Pull request: #68
 Files:
 - docs/BLENDER.md
 
