@@ -2,7 +2,7 @@
 
 `maxine.pmm` is the female "Maxine" variant of the open source Max avatar
 (https://github.com/RuthAndRoth/Max), shown by PinglyMotion when
-**Options > Bento body (Max)** is on. Its fingers and face are weighted to the
+**Options > Body > Max** is chosen. Its fingers and face are weighted to the
 Bento bones, so hand poses and facial expressions can be seen while animating.
 
 It is made from the Collada file by `tools/make_max_mesh.py`:

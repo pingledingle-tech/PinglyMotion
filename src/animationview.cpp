@@ -975,7 +975,9 @@ bool AnimationView::setBody(AvatarSkin::Body wanted)
   if(!ok)
   {
     qWarning("AnimationView::setBody(): %s",error.toLatin1().constData());
-    if(wanted!=AvatarSkin::ClassicBody && !m_avatarSkin.load(Constants::pinglyMotionDataPath(),AvatarSkin::ClassicBody,&error))
+    // fall back to the other body, so that something is shown if one file is damaged
+    const AvatarSkin::Body other=wanted==AvatarSkin::RuthBody ? AvatarSkin::MaxBody : AvatarSkin::RuthBody;
+    if(!m_avatarSkin.load(Constants::pinglyMotionDataPath(),other,&error))
       qWarning("AnimationView::setBody(): no avatar body: %s",error.toLatin1().constData());
   }
   update();

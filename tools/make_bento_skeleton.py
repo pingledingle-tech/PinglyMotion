@@ -11,8 +11,8 @@ Bento bones; see CLASSIC_LIMITS and BONE_LIMITS).
 
 The 19 classic joints keep their old names (hip, abdomen, lShldr ...). All
 other bones keep their SL names (mSpine1, mHandIndex1Left, mFaceJaw ...).
-All offsets come from the SL skeleton, so the Linden avatar mesh
-(bin/data/character/*.llm) fits.
+All offsets come from the SL skeleton, so the avatar meshes
+(bin/data/character/) fit.
 
 Also writes bin/data/skin_joints.txt: the skeleton in SL order with the rest
 position of every joint, used to bend the avatar mesh with the skeleton.
@@ -295,8 +295,7 @@ def write_file(path, root, motion, frame_time, avm):
 def write_skin_joints(root):
     """Skeleton in the order of avatar_skeleton.xml, for skinning the avatar mesh.
 
-    The order matters: the weights in the .llm files count joints in the order
-    the viewer walks the skeleton. Positions are rest positions relative to
+    The order matters: it is the order the viewer walks the skeleton. Positions are rest positions relative to
     the pelvis, in BVH axes and inches.
     """
     file_names = {n.sl_name: n.name for n in walk(root)}

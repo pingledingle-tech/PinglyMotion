@@ -70,7 +70,7 @@ Decisions taken while the project lived in the old repository, and the decisions
 
 **15 Nov 2026 – Live link to Aurora over Aurora's LiveMesh.** The link uses LiveMesh (the link Aurora's Blender add-on uses), with a challenge answered by HMAC-SHA256 and a session key from a file only the user can read. Reason: the earlier separate link on its own port had security findings (any program could take the port or send poses). Rejected: the separate port. Source: old-repo items 11, 12, 13 and 78, `docs/LIVE_LINK_RESEARCH.md`.
 
-**15 Nov 2026 – Bento body: Max, with the system avatar as fallback.** The open source Max body (CC BY 4.0) is shown by default, so finger poses and facial expressions can be seen; the Linden system avatar stays as a fallback. Reason: the system avatar has mitten hands and its face is not weighted to the Bento bones. Source: old-repo items 42 and 46.
+**15 Nov 2026 – Bento body: Max, with the system avatar as fallback (replaced on 19 Nov 2026, see "Bodies").** The open source Max body (CC BY 4.0) is shown by default, so finger poses and facial expressions can be seen; the Linden system avatar stays as a fallback. Reason: the system avatar has mitten hands and its face is not weighted to the Bento bones. Source: old-repo items 42 and 46.
 
 **15 Nov 2026 – Qt 6.12 LTS for the builds.** Windows and release builds moved from Qt 6.8.3 to 6.12.0 LTS. Reason: 6.8.3 has published CVEs, and newer 6.8 LTS patch releases are commercial only, so 6.12 is the way to get security fixes as open source. Source: old-repo items 18 and 58.
 
@@ -79,6 +79,8 @@ Decisions taken while the project lived in the old repository, and the decisions
 ## Bodies
 
 **16 Nov 2026 – Ruth2 v4 planned as the default body; closed bodies not used.** The goal is to replace the Linden system avatar with the open source Ruth2 v4 body, keep Max as an option and add Roth2 v2 later; the work goes with posing. Reason: nobody in Second Life uses the system avatar any more and it looks dated. Closed bodies (Senra, eBody, Altamura, Viva) have no open licence and can only be used with written permission from their creators. Source: old-repo item 110 (now #15).
+
+**19 Nov 2026 – The system avatar is removed; Ruth2 is the only standard body; its makers are credited.** Decided by the project owner in the discussion of issue #15. The Linden `.llm` meshes, their reader and the "system avatar" choice are gone; Max stays as an optional second body. Ruth2 is the default and the fallback (Max if Ruth2 cannot be read, and the other way round). A settings file that says "system" (or the old "Bento body" off) now gives Ruth2, without a message. The male figure has no male mesh any more: it is the Ruth2 body with the male skeleton scaling (wider shoulders, longer legs) until a male body (Roth2 v2) is added. Credits for Ruth2 (makers, AGPL licence for the mesh as a separate data file, source link) are in Help > About, the README and `bin/data/character/ruth2/`. Rejected: keeping the system avatar until Roth2 is ready. Source: issue #15.
 
 ## Working method and repository
 

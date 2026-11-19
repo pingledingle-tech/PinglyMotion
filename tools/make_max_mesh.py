@@ -3,7 +3,7 @@
 
 Max is an open source mesh avatar by Ada Radius and the RuthAndRoth
 community, licensed CC BY 4.0: https://github.com/RuthAndRoth/Max
-Unlike the Linden system avatar it has fingers and a face that follow the
+It has fingers and a face that follow the
 Bento bones, so hand poses and facial expressions can be seen.
 
 PinglyMotion does not read Collada itself. This script is run once by a
@@ -21,7 +21,7 @@ Output format (little-endian), read by src/pmmesh.cpp:
     u32      vertex count (1..65535)
     u32      index count (multiple of 3)
     per vertex: float[3] position, float[3] normal (SL axes: x forward,
-                y left, z up; metres, feet at z = 0, like the .llm files),
+                y left, z up; metres, feet at z = 0),
                 u8[4] joints (into the joint list), float[4] weights (sum 1)
     per index:  u16
 """

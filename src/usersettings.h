@@ -48,8 +48,8 @@ class UserSettings
     static void setWindowState(const QByteArray& value);
     static QByteArray windowState();
     static bool darkTheme();
-    // the Max Bento avatar (fingers, face) instead of the Linden system avatar
-    // which avatar body the 3D view shows: "ruth2" (default), "max" or "system" (the Second Life avatar)
+    // which avatar body the 3D view shows: "ruth2" (default) or "max".
+    // Anything else, such as "system" from older versions, becomes "ruth2".
     static void setBody(const QString& value);
     static QString body();
     // Options > Light...: 0-100, 50 is the standard look

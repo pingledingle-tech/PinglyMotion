@@ -24,8 +24,9 @@ class TestBodySetting : public QObject
     void unknownValueBecomesRuth2();
     void choiceIsSaved();
     void bodyKeyWinsOverTheOldKey();
+    void systemAvatarSettingBecomesRuth2();
     void oldFileWithBentoBodyOnMeansMax();
-    void oldFileWithBentoBodyOffMeansSystem();
+    void oldFileWithBentoBodyOffMeansRuth2();
     void oldFileWithNeitherMeansRuth2();
     void savingDropsTheOldKey();
 
@@ -91,7 +92,7 @@ void TestBodySetting::unknownValueBecomesRuth2()
 
 void TestBodySetting::choiceIsSaved()
 {
-  for (const QString& choice : {QStringLiteral("ruth2"), QStringLiteral("max"), QStringLiteral("system")})
+  for (const QString& choice : {QStringLiteral("ruth2"), QStringLiteral("max")})
   {
     UserSettings::setBody(choice);
     UserSettings::writeSettings();
@@ -103,10 +104,20 @@ void TestBodySetting::choiceIsSaved()
 
 void TestBodySetting::bodyKeyWinsOverTheOldKey()
 {
-  writeVersionGroup({{QStringLiteral("body"), QStringLiteral("system")},
+  writeVersionGroup({{QStringLiteral("body"), QStringLiteral("ruth2")},
                      {QStringLiteral("bento_body"), true}});
   UserSettings::readSettings();
-  QCOMPARE(UserSettings::body(), QStringLiteral("system"));
+  QCOMPARE(UserSettings::body(), QStringLiteral("ruth2"));
+}
+
+// the system avatar was removed: a file that still says "system" shows Ruth2
+void TestBodySetting::systemAvatarSettingBecomesRuth2()
+{
+  writeVersionGroup({{QStringLiteral("body"), QStringLiteral("system")}});
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::body(), QStringLiteral("ruth2"));
+  UserSettings::setBody(QStringLiteral("system"));
+  QCOMPARE(UserSettings::body(), QStringLiteral("ruth2"));
 }
 
 void TestBodySetting::oldFileWithBentoBodyOnMeansMax()
@@ -117,11 +128,11 @@ void TestBodySetting::oldFileWithBentoBodyOnMeansMax()
   QCOMPARE(UserSettings::body(), QStringLiteral("max"));
 }
 
-void TestBodySetting::oldFileWithBentoBodyOffMeansSystem()
+void TestBodySetting::oldFileWithBentoBodyOffMeansRuth2()
 {
   writeVersionGroup({{QStringLiteral("bento_body"), false}});
   UserSettings::readSettings();
-  QCOMPARE(UserSettings::body(), QStringLiteral("system"));
+  QCOMPARE(UserSettings::body(), QStringLiteral("ruth2"));
 }
 
 void TestBodySetting::oldFileWithNeitherMeansRuth2()

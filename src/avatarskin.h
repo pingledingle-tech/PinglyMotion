@@ -1,13 +1,9 @@
 /*
- * PinglyMotion - the Second Life system avatar, bent with the skeleton
+ * PinglyMotion - the avatar body, bent with the skeleton
  *
- * Loads the Linden avatar meshes (the .llm files in bin/data/character) and moves their
- * vertices with the joints, the same way the Second Life viewer does it:
- * each vertex follows one joint and blends towards the next one.
- *
- * Or loads a Bento mesh body from a PinglyMotion mesh file (.pmm): Max
- * (bin/data/character/max/maxine.pmm) or Ruth2 v4
- * (bin/data/character/ruth2/ruth2.pmm). Their fingers and faces are weighted
+ * Loads a Bento mesh body from a PinglyMotion mesh file (.pmm): Ruth2 v4
+ * (bin/data/character/ruth2/ruth2.pmm, the default) or Max
+ * (bin/data/character/max/maxine.pmm). Their fingers and faces are weighted
  * to the Bento bones; each vertex follows up to four joints.
  *
  * No OpenGL in here; the view draws the result.
@@ -41,9 +37,8 @@ class AvatarSkin
       QVector<int> jointA;
       QVector<int> jointB;
       QVector<float> blend;
-      // what skin() uses: INFLUENCES joints and weights per vertex. For the
-      // Linden meshes these are joint A and B; for Max they come from the file
-      // (joint A/B above then hold the two strongest, for colouring)
+      // what skin() uses: INFLUENCES joints and weights per vertex, from the
+      // mesh file (joint A/B above hold the two strongest, for colouring)
       QVector<int> influenceJoints;
       QVector<float> influenceWeights;
       // the male shape: added to the female rest pose (Male_Head, Male_Torso, Male_Legs)
@@ -62,18 +57,12 @@ class AvatarSkin
 
     enum Body
     {
-      ClassicBody,    // the Linden system avatar, character/*.llm
-      MaxBody,        // the Max Bento avatar, character/max/maxine.pmm
-      RuthBody        // the Ruth2 v4 Bento avatar, character/ruth2/ruth2.pmm
+      RuthBody,       // the Ruth2 v4 Bento avatar, character/ruth2/ruth2.pmm (default)
+      MaxBody         // the Max Bento avatar, character/max/maxine.pmm
     };
 
-    // For testing until Ruth2 gets a menu entry (#110): when the environment
-    // variable PINGLYMOTION_BODY is "ruth2", load() loads RuthBody whatever body
-    // it is asked for. Returns the body to load instead, or -1.
-    static int bodyOverride();
-
     // reads skin_joints.txt and the body's mesh files from the data folder
-    bool load(const QString& dataPath, QString* errorMessage = nullptr) { return load(dataPath, ClassicBody, errorMessage); }
+    bool load(const QString& dataPath, QString* errorMessage = nullptr) { return load(dataPath, RuthBody, errorMessage); }
     bool load(const QString& dataPath, Body body, QString* errorMessage = nullptr);
     Body body() const { return m_body; }
     bool isLoaded() const { return !m_parts.isEmpty(); }
@@ -127,11 +116,8 @@ class AvatarSkin
     };
 
     bool loadJoints(const QString& fileName, QString* errorMessage);
-    bool loadSkinnedPart(const QString& fileName, QString* errorMessage);
-    bool loadEyes(const QString& fileName, QString* errorMessage);
     bool loadPmm(const QString& fileName, QString* errorMessage);
     int useJoint(int skeletonJoint);
-    int baseAncestor(int skeletonJoint) const;
 
     QVector<SkinJoint> m_skeleton;          // whole skeleton, SL order
     QHash<QString,int> m_skeletonBySlName;
@@ -140,7 +126,7 @@ class AvatarSkin
     QHash<int,int> m_usedJoints;            // skeleton joint -> index in m_jointNames
     QVector<Part> m_parts;
     bool m_male = false;
-    Body m_body = ClassicBody;
+    Body m_body = RuthBody;
     QHash<QString,QVector3D> m_maleScales;   // by BVH name, scale (1 = no change)
     QHash<QString,QVector3D> m_maleShifts;   // by BVH name, inches
     QVector<QVector3D> m_jointScales;        // per entry of m_jointNames, for skin()

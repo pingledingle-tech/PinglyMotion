@@ -1,5 +1,5 @@
 /*
- * PinglyMotion - the Second Life system avatar, bent with the skeleton
+ * PinglyMotion - the avatar body (Ruth2 or Max), bent with the skeleton
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -10,7 +10,6 @@
 #include <cmath>
 
 #include "avatarskin.h"
-#include "llmmesh.h"
 #include "pmmesh.h"
 
 static const float INCH = 39.3700787f;      // metres to BVH units
@@ -28,40 +27,8 @@ static QVector3D slToBvh(const QVector3D& v)
   return QVector3D(v.y(), v.z(), v.x());
 }
 
-// the classic joint A/B blend as INFLUENCES joints and weights
-static void influencesFromBlend(AvatarSkin::Part& part)
-{
-  const int count = part.jointA.size();
-  part.influenceJoints.resize(count * AvatarSkin::INFLUENCES);
-  part.influenceWeights.resize(count * AvatarSkin::INFLUENCES);
-  for (int i = 0; i < count; i++)
-  {
-    int* joints = part.influenceJoints.data() + i * AvatarSkin::INFLUENCES;
-    float* weights = part.influenceWeights.data() + i * AvatarSkin::INFLUENCES;
-    joints[0] = part.jointA[i];
-    weights[0] = 1.0f - part.blend[i];
-    joints[1] = part.jointB[i];
-    weights[1] = part.blend[i];
-    for (int k = 2; k < AvatarSkin::INFLUENCES; k++)
-    {
-      joints[k] = part.jointA[i];
-      weights[k] = 0.0f;
-    }
-  }
-}
-
-int AvatarSkin::bodyOverride()
-{
-  const QString wanted = qEnvironmentVariable("PINGLYMOTION_BODY").trimmed().toLower();
-  if (wanted == "ruth2") return RuthBody;
-  return -1;
-}
-
 bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
 {
-  const int forced = bodyOverride();
-  if (forced >= 0) body = static_cast<Body>(forced);
-
   m_skeleton.clear();
   m_skeletonBySlName.clear();
   m_jointNames.clear();
@@ -114,26 +81,8 @@ bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
   }
 
   const QString folder = dataPath + "/character/";
-  if (body == MaxBody || body == RuthBody)
-  {
-    const QString file = body == MaxBody ? "max/maxine.pmm" : "ruth2/ruth2.pmm";
-    if (!loadPmm(folder + file, errorMessage))
-    {
-      m_parts.clear();
-      return false;
-    }
-    m_jointScales.fill(QVector3D(1, 1, 1), m_jointNames.size());
-    return true;
-  }
-  for (const char* file : {"avatar_head.llm", "avatar_upper_body.llm", "avatar_lower_body.llm", "avatar_eyelashes.llm"})
-  {
-    if (!loadSkinnedPart(folder + file, errorMessage))
-    {
-      m_parts.clear();
-      return false;
-    }
-  }
-  if (!loadEyes(folder + "avatar_eye.llm", errorMessage))
+  const QString file = body == MaxBody ? "max/maxine.pmm" : "ruth2/ruth2.pmm";
+  if (!loadPmm(folder + file, errorMessage))
   {
     m_parts.clear();
     return false;
@@ -176,16 +125,6 @@ bool AvatarSkin::loadJoints(const QString& fileName, QString* errorMessage)
   return true;
 }
 
-// nearest parent that belongs to the classic skeleton (skips mSpine1..4 and so on)
-int AvatarSkin::baseAncestor(int skeletonJoint) const
-{
-  int ancestor = m_skeleton[skeletonJoint].parent;
-  if (ancestor < 0) return skeletonJoint;   // the pelvis stands in for the avatar root
-  while (m_skeleton[ancestor].parent >= 0 && !m_skeleton[ancestor].base)
-    ancestor = m_skeleton[ancestor].parent;
-  return ancestor;
-}
-
 int AvatarSkin::useJoint(int skeletonJoint)
 {
   auto found = m_usedJoints.constFind(skeletonJoint);
@@ -195,156 +134,6 @@ int AvatarSkin::useJoint(int skeletonJoint)
   m_restPositions << m_skeleton[skeletonJoint].rest;
   m_usedJoints.insert(skeletonJoint, index);
   return index;
-}
-
-// every triangle corner and morph vertex must be a vertex of the mesh, and
-// each morph must have one offset and one normal per vertex
-static bool meshIndexesAreValid(const LLMMesh& mesh)
-{
-  const int count = mesh.vertices.size();
-  if (mesh.normals.size() != count || (mesh.hasWeights && mesh.weights.size() != count)) return false;
-  for (const int index : mesh.indices)
-    if (index < 0 || index >= count) return false;
-  for (const LLMMesh::Morph& morph : mesh.morphs)
-  {
-    if (morph.coords.size() != morph.vertexIndices.size() || morph.normals.size() != morph.vertexIndices.size()) return false;
-    for (const auto index : morph.vertexIndices)
-      if (static_cast<qint64>(index) >= count) return false;
-  }
-  return true;
-}
-
-bool AvatarSkin::loadSkinnedPart(const QString& fileName, QString* errorMessage)
-{
-  LLMMesh mesh;
-  if (!mesh.load(fileName, errorMessage)) return false;
-  if (!mesh.hasWeights)
-    return fail(errorMessage, QString("%1 has no weights").arg(fileName));
-
-  // The weights count joints in a list the viewer builds by walking the
-  // skeleton: each skin joint is added, with its parent in front of it
-  // unless the parent is already the last entry.
-  // (LLAvatarJointMesh::setupJoint in the Second Life viewer)
-  QVector<int> renderJoints;
-  QVector<int> todo;
-  todo << 0;
-  while (!todo.isEmpty())
-  {
-    const int current = todo.takeLast();
-    if (mesh.skinJoints.contains(m_skeleton[current].slName))
-    {
-      const int ancestor = baseAncestor(current);
-      if (renderJoints.isEmpty() || renderJoints.last() != ancestor) renderJoints << ancestor;
-      renderJoints << current;
-    }
-    // depth first, children in file order
-    for (int i = m_skeleton[current].children.size() - 1; i >= 0; i--)
-      todo << m_skeleton[current].children[i];
-  }
-  if (renderJoints.isEmpty())
-    return fail(errorMessage, QString("%1: none of its joints are in the skeleton").arg(fileName));
-
-  // LLMMesh::load() checks these; check again here, where they are used as indexes
-  if (!meshIndexesAreValid(mesh))
-    return fail(errorMessage, QString("%1: a triangle or morph points outside the mesh").arg(fileName));
-
-  Part part;
-  part.name = fileName.section('/', -1);
-  const int count = mesh.vertices.size();
-  const QVector3D pelvis(0, 0, PELVIS_HEIGHT);
-  for (int i = 0; i < count; i++)
-  {
-    part.restVertices << slToBvh(mesh.vertices[i] - pelvis) * INCH;
-    part.restNormals << slToBvh(mesh.normals[i]);
-
-    // LLMMesh::load() already refuses NaN, negative and huge weights; check again
-    // here so the cast to int below can never be undefined (issue #16)
-    float weight = mesh.weights[i];
-    if (!std::isfinite(weight) || weight < 0.0f) weight = 0.0f;
-    weight = qMin(weight, 65535.0f);
-    const int last = renderJoints.size() - 1;
-    const int a = qBound(0, static_cast<int>(std::floor(weight)), last);
-    const int b = qMin(a + 1, last);
-    part.jointA << useJoint(renderJoints[a]);
-    part.jointB << useJoint(renderJoints[b]);
-    part.blend << weight - std::floor(weight);
-  }
-  // the male shape; the morph deltas are in SL axes and metres like the vertices
-  part.maleOffsets.fill(QVector3D(), count);
-  part.maleNormalOffsets.fill(QVector3D(), count);
-  for (const char* name : {"Male_Head", "Male_Torso", "Male_Legs"})
-  {
-    const LLMMesh::Morph* morph = mesh.morph(name);
-    if (!morph) continue;
-    for (int i = 0; i < morph->vertexIndices.size(); i++)
-    {
-      const int v = morph->vertexIndices[i];
-      part.maleOffsets[v] += slToBvh(morph->coords[i]) * INCH;
-      part.maleNormalOffsets[v] += slToBvh(morph->normals[i]);
-    }
-  }
-  part.femaleVertices = part.restVertices;
-  part.femaleNormals = part.restNormals;
-
-  part.indices = mesh.indices;
-  for (int t = 0; t < mesh.triangleCount(); t++)
-  {
-    // the joint with most pull on the three corners
-    QHash<int,float> pull;
-    for (int corner = 0; corner < 3; corner++)
-    {
-      const int v = part.indices[t * 3 + corner];
-      pull[part.jointA[v]] += 1.0f - part.blend[v];
-      pull[part.jointB[v]] += part.blend[v];
-    }
-    int best = part.jointA[part.indices[t * 3]];
-    for (auto it = pull.constBegin(); it != pull.constEnd(); ++it)
-      if (it.value() > pull.value(best) || (it.value() == pull.value(best) && it.key() < best)) best = it.key();
-    part.triangleJoint << best;
-  }
-  influencesFromBlend(part);
-  part.vertices = part.restVertices;
-  part.normals = part.restNormals;
-  m_parts << part;
-  return true;
-}
-
-// the eye mesh has no weights: one copy sits on each eye joint
-bool AvatarSkin::loadEyes(const QString& fileName, QString* errorMessage)
-{
-  LLMMesh mesh;
-  if (!mesh.load(fileName, errorMessage)) return false;
-
-  for (const char* slName : {"mEyeLeft", "mEyeRight"})
-  {
-    const int skeletonJoint = m_skeletonBySlName.value(slName, -1);
-    if (skeletonJoint < 0)
-      return fail(errorMessage, QString("The skeleton has no joint %1").arg(slName));
-    const int joint = useJoint(skeletonJoint);
-
-    Part part;
-    part.name = QString("%1 (%2)").arg(fileName.section('/', -1), slName);
-    part.eye = true;
-    for (int i = 0; i < mesh.vertices.size(); i++)
-    {
-      part.restVertices << slToBvh(mesh.vertices[i]) * INCH + m_restPositions[joint];
-      part.restNormals << slToBvh(mesh.normals[i]);
-    }
-    part.maleOffsets.fill(QVector3D(), mesh.vertices.size());
-    part.maleNormalOffsets.fill(QVector3D(), mesh.vertices.size());
-    part.femaleVertices = part.restVertices;
-    part.femaleNormals = part.restNormals;
-    part.jointA.fill(joint, mesh.vertices.size());
-    part.jointB = part.jointA;
-    part.blend.fill(0.0f, mesh.vertices.size());
-    part.indices = mesh.indices;
-    part.triangleJoint.fill(joint, mesh.triangleCount());
-    influencesFromBlend(part);
-    part.vertices = part.restVertices;
-    part.normals = part.restNormals;
-    m_parts << part;
-  }
-  return true;
 }
 
 // a Bento mesh body (Max, Ruth2): up to four joints per vertex, straight from the file

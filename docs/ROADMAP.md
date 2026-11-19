@@ -4,7 +4,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 
 ## Starting point
 
-- Done: parser and data model (#9), `.dingle` working format (#26: reader, writer and conversion merged; opening in #70), Ruth2 body and menu, version in title, `.anim` writer (#63), `.anim` reader (#65), BVH retargeting core (#66), glTF import reader (#69), Blender guide (#68) and Maya note (#67). Fuzzing runs all targets at the same time, about 10 minutes on a branch (#71). None of the format jobs has a menu yet, so nothing changed on screen.
+- Done: parser and data model (#9), `.dingle` working format (#26: reader, writer and conversion merged; opening in #70), Ruth2 body and menu (the system avatar is removed, #15; Roth2 v2 for a male body is still to do), version in title, `.anim` writer (#63), `.anim` reader (#65), BVH retargeting core (#66), glTF import reader (#69), Blender guide (#68) and Maya note (#67). Fuzzing runs all targets at the same time, about 10 minutes on a branch (#71). None of the format jobs has a menu yet, so nothing changed on screen.
 - Order already decided in `docs/DECISIONS.md`: `.anim` export (#10), then `.anim` import (#22), then BVH retargeting (#16), then glTF (#12), then Blender docs (#13). Rejected: glTF export, FBX (only on demand), Collada, VMD, VRMA, Firestorm pose XML, Assimp.
 - New since then: Mesh2Motion's MIT-licensed retargeting is a ready reference (#16), and its CC0 animations are a source of test motions (#27).
 

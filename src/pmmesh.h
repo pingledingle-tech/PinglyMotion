@@ -3,7 +3,7 @@
  *
  * A small skinned mesh format written by tools/make_max_mesh.py, used for
  * the Max Bento avatar (bin/data/character/max/). Each vertex follows up to
- * four joints. Positions are in avatar space like the .llm files (metres,
+ * four joints. Positions are in avatar space in metres,
  * X forward, Y left, Z up, feet at Z=0). The file layout is described in
  * tools/make_max_mesh.py.
  *
