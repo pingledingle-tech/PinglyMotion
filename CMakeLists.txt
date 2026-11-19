@@ -107,6 +107,8 @@ IF (PINGMATOR_TESTS)
   ADD_SUBDIRECTORY (tests/statusbar)
   ADD_SUBDIRECTORY (tests/bodysetting)
   ADD_SUBDIRECTORY (tests/buildinfo)
+  # wheel over sliders in the Properties panel (#82)
+  ADD_SUBDIRECTORY (tests/wheelguard)
 ENDIF (PINGMATOR_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGMATOR_FUZZ=ON, see fuzz/README.md
