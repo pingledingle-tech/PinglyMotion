@@ -1,6 +1,6 @@
 Branch: fix/aurora-name-status-92
-Status: active
-Pull request: pending
+Status: done
+Pull request: #122
 Files:
 - src/controlindicator.*
 - src/auroralink.*
