@@ -19,6 +19,8 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 
+#include "animexport.h"
+#include "animfile.h"
 #include "animation.h"
 #include "auroralink.h"
 #include "bvh.h"
@@ -54,6 +56,7 @@ class AuroraLinkTest : public QObject
 
     void poseHasNeutralFrameThenPose();
     void poseQuaternions();
+    void poseQuaternionsMatchAnimExport();
     void tokenFileAndResponse();
     void findsThePortByTokenFile();
     void linkAuthenticatesThenSendsPose();
@@ -284,9 +287,9 @@ void AuroraLinkTest::poseQuaternions()
   const QJsonObject pose = m_animation->poseQuaternions(4);
   const QJsonObject rotations = pose["rotations"].toObject();
   QVERIFY(rotations.size() > 20);
-  // lForeArm has channels Y, Z, X: each next axis multiplied in front, then BVH -> SL axes
-  const QQuaternion q = QQuaternion::fromAxisAndAngle(1, 0, 0, 10) * QQuaternion::fromAxisAndAngle(0, 0, 1, 30)
-                        * QQuaternion::fromAxisAndAngle(0, 1, 0, 20);
+  // lForeArm has channels Y, Z, X: each next axis multiplied on the right (file order), then BVH -> SL axes
+  const QQuaternion q = QQuaternion::fromAxisAndAngle(0, 1, 0, 20) * QQuaternion::fromAxisAndAngle(0, 0, 1, 30)
+                        * QQuaternion::fromAxisAndAngle(1, 0, 0, 10);
   const QJsonArray got = rotations["lForeArm"].toArray();
   QCOMPARE(got.size(), 4);
   const double expected[4] = {q.z(), q.x(), q.y(), q.scalar()};
@@ -299,6 +302,89 @@ void AuroraLinkTest::poseQuaternions()
   const QJsonArray hip = pose["positions"].toObject()["hip"].toArray();
   QCOMPARE(hip.size(), 3);
   for (int i = 0; i < 3; i++) QVERIFY(qAbs(hip[i].toDouble()) < 1e-6);
+}
+
+// The link and the .anim export must compose a joint turned on several axes the same way
+// (issue #64). The export is written to bytes and its first rotation key is read back.
+void AuroraLinkTest::poseQuaternionsMatchAnimExport()
+{
+  BVHNode* elbow = findNode(m_animation, "lForeArm");
+  QVERIFY(elbow);
+  m_animation->setFrame(4);
+  m_animation->setRotation(elbow, 10, 20, 30);
+  const QJsonArray link = m_animation->poseQuaternions(4)["rotations"].toObject()["lForeArm"].toArray();
+  QCOMPARE(link.size(), 4);
+
+  // the same joint as a small animation: lForeArm with channels Y, Z, X; frame 0 is the reference
+  using AnimFile::Channel;
+  AnimFile::Animation a;
+  a.format = AnimFile::Format::Bvh;
+  a.frames = 2;
+  a.frameTime = 1.0;
+  AnimFile::Joint hip;
+  hip.name = "hip";
+  hip.kind = AnimFile::JointKind::Root;
+  hip.parent = -1;
+  hip.channels = {Channel::XPosition, Channel::YPosition, Channel::ZPosition};
+  hip.firstValue = 0;
+  AnimFile::Joint arm;
+  arm.name = "lForeArm";
+  arm.kind = AnimFile::JointKind::Joint;
+  arm.parent = 0;
+  arm.channels = {Channel::YRotation, Channel::ZRotation, Channel::XRotation};
+  arm.firstValue = 3;
+  a.joints.push_back(hip);
+  a.joints.push_back(arm);
+  a.valuesPerFrame = 6;
+  a.values.assign(12, 0.0f);
+  a.values[6 + 3] = 20.0f;  // frame 1: Yrotation
+  a.values[6 + 4] = 30.0f;  // Zrotation
+  a.values[6 + 5] = 10.0f;  // Xrotation
+  const AnimExport::Result result = AnimExport::write(a);
+  QVERIFY2(result.ok(), qPrintable(result.error));
+
+  // read the .anim back: header, then per joint a name, a priority and the rotation keys (x, y, z as u16)
+  const QByteArray& d = result.bytes;
+  qsizetype pos = 0;
+  auto u16 = [&]() { quint16 v = 0; if (pos + 2 <= d.size()) memcpy(&v, d.constData() + pos, 2); pos += 2; return qFromLittleEndian(v); };
+  auto u32 = [&]() { quint32 v = 0; if (pos + 4 <= d.size()) memcpy(&v, d.constData() + pos, 4); pos += 4; return qFromLittleEndian(v); };
+  auto str = [&]() { const qsizetype end = d.indexOf('\0', pos); const QString s = QString::fromLatin1(d.mid(pos, end - pos)); pos = end + 1; return s; };
+  QCOMPARE(u16(), quint16(1));
+  QCOMPARE(u16(), quint16(0));
+  pos += 4 + 4;   // base priority, duration
+  str();          // emote
+  pos += 4 * 5;   // loop in, loop out, loop, ease in, ease out
+  pos += 4;       // hand pose
+  const quint32 joints = u32();
+  const QString wanted = AnimExport::slJointName("lForeArm");
+  bool found = false;
+  for (quint32 i = 0; i < joints && !found; i++)
+  {
+    const QString name = str();
+    pos += 4;  // priority
+    const qint32 rotKeys = qint32(u32());
+    QVERIFY(rotKeys >= 0 && rotKeys < 1000);
+    double first[3] = {0, 0, 0};
+    for (qint32 k = 0; k < rotKeys; k++)
+    {
+      u16();  // time
+      for (int c = 0; c < 3; c++)
+      {
+        const double v = u16() * (1.0 / 65535.0) * 2.0 - 1.0;
+        if (k == 0) first[c] = v;
+      }
+    }
+    const qint32 posKeys = qint32(u32());
+    pos += qsizetype(posKeys) * 8;
+    if (name != wanted) continue;
+    found = true;
+    QVERIFY(rotKeys > 0);
+    // the .anim stores x, y, z with w >= 0; the link's array is x, y, z, w
+    const double sign = link[3].toDouble() < 0 ? -1.0 : 1.0;
+    for (int c = 0; c < 3; c++)
+      QVERIFY2(qAbs(first[c] - sign * link[c].toDouble()) < 1e-3, qPrintable(QString("axis %1").arg(c)));
+  }
+  QVERIFY2(found, "lForeArm is in the .anim file");
 }
 
 void AuroraLinkTest::tokenFileAndResponse()

@@ -39,7 +39,8 @@ SET_TESTS_PROPERTIES (control PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 ADD_TEST (NAME bento WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingmator_tests)
 SET_TESTS_PROPERTIES (bento PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
-ADD_EXECUTABLE (pingmator_auroralink_tests tst_auroralink.cpp ${CORE_SRC} ${CMAKE_SOURCE_DIR}/src/auroralink.cpp)
+ADD_EXECUTABLE (pingmator_auroralink_tests tst_auroralink.cpp ${CORE_SRC} ${CMAKE_SOURCE_DIR}/src/auroralink.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp)
 TARGET_INCLUDE_DIRECTORIES (pingmator_auroralink_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pingmator_auroralink_tests ${PINGMATOR_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME auroralink WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingmator_auroralink_tests)
