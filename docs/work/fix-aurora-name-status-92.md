@@ -8,6 +8,7 @@ Files:
 - tests/tst_auroralink.cpp
 - tests/statusbar/tst_statusbar.cpp
 - docs/AURORA_LINK.md
+- docs/RELEASE_NOTES_0.4.0.md
 
 ## What
 

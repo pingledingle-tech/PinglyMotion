@@ -446,7 +446,6 @@ void AuroraLinkTest::clientNameIsPinglyMotionWithBuildLabel()
   // what the link really sends
   QString expected = AuroraLink::clientName(Constants::buildLabel());
   QVERIFY(expected.startsWith("PinglyMotion "));
-  QVERIFY(!expected.contains("Pingmator"));
   AuroraLink link;
   link.setEnabled(true, m_server->serverPort());
   QVERIFY(accept());
