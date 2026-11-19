@@ -12,13 +12,14 @@ Files:
 - tests/easing/**
 - tests/interpolation/**
 - tests/animexport/**
+- tests/tst_roundtrip.cpp
 - fuzz/corpus/dingle/**
 - fuzz/dingle.dict
 - docs/DINGLE_FORMAT.md
 - docs/EASING.md
 - docs/DECISIONS.md
 - docs/ROADMAP.md
-- docs/RELEASE_NOTES_0.4.0.md
+- docs/PRODUCT.md
 
 ## What
 

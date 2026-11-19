@@ -1,6 +1,7 @@
 // Tests of the easing maths (src/easing.*, issue #53 step 1).
 #include <QtTest>
 #include <cmath>
+#include <cstring>
 #include <limits>
 #include <vector>
 
@@ -75,6 +76,26 @@ void TstEasing::names()
   QCOMPARE(QString(plainName(Preset::OvershootThenSettle)),QString("Overshoot then settle"));
   QCOMPARE(QString(plainName(Preset::HoldThenSnap)),QString("Hold then snap"));
   for(Preset p : AllPresets) QVERIFY(std::strlen(technicalName(p))>0);
+  // the technical name is the "type" of a .dingle curve: unique, and read back exactly
+  for(Preset p : AllPresets)
+  {
+    Preset back=Preset::Even;
+    QVERIFY(presetFromTechnicalName(technicalName(p),back));
+    QVERIFY(back==p);
+    for(Preset q : AllPresets) if(q!=p) QVERIFY(std::strcmp(technicalName(p),technicalName(q))!=0);
+  }
+  QCOMPARE(QString(technicalName(Preset::OvershootThenSettle)),QString("ease-out-overshoot"));
+  QCOMPARE(QString(technicalName(Preset::HoldThenSnap)),QString("constant"));
+  Preset none=Preset::SlowStart;
+  QVERIFY(!presetFromTechnicalName("",none));
+  QVERIFY(!presetFromTechnicalName("Linear",none));
+  QVERIFY(!presetFromTechnicalName("linear ",none));
+  QVERIFY(!presetFromTechnicalName(std::string_view("linear\0x",8),none));
+  QVERIFY(none==Preset::SlowStart);
+  // a stored choice wins over the switches
+  QVERIFY(segmentPreset(Preset::HoldThenSnap,true,true)==Preset::HoldThenSnap);
+  QVERIFY(segmentPreset(Preset::Even,true,true)==Preset::Even);
+  QVERIFY(segmentPreset(std::nullopt,true,false)==Preset::SlowStart);
   QVERIFY(defaultPreset()==Preset::SlowBothEnds);
   Preset p=Preset::Even;
   QVERIFY(presetFromIndex(3,p)); QVERIFY(p==Preset::SlowBothEnds);
