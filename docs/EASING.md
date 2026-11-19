@@ -84,12 +84,22 @@ With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 
 - Since step 3 the two new choices follow `s()` in `segmentValue` too (see below).
 - Proof: `tests/interpolation/` keeps a copy of the old function and compares it with the new path bit for bit (no tolerance), for every segment length from 1 to 200, every frame, all four switch combinations and many values, and compares every frame `BVHNode::frameData` returns for 200 joints with random keys, gaps and switches. Opening and saving BVH, AVM and `.dingle` use what `frameData` returns, so files play and save identically. Since step 3, `.dingle` uses `segmentValue` as well instead of its own copy of the formula (the copy was the same formula, so the values are unchanged).
 
+## Joint limits on the overshoot (proposal 4)
+
+Playback clamps the Overshoot then settle choice to the joint limits since the fix for proposal 4 (after step 5): `BVHNode::frameData` cuts each of the three rotation angles of an overshoot segment at the minimum and maximum the program loaded for that joint and channel (`data/SL.lim`, `channelMin`/`channelMax` on the joint), so the overshoot never takes a joint past what Second Life allows. An AI that sets Overshoot through the control commands therefore never produces a pose Second Life would reject. The `.anim` export samples `frameData` (`BVH::snapshot`), so it writes the same cut frames; BVH and `.dingle` saving write only the keys, which are not touched.
+
+- Only the overshoot choice is cut. The other five choices never leave the span between the two keys, so they are not touched and stay bit for bit what they were (`tests/interpolation/`).
+- Position channels are never cut, and neither is a rotation channel without loaded limits (the `-10000..10000` defaults, as the hip has in `SL.lim`, or a file read without a limits file).
+- The cut is never tighter than the two keys themselves: a key that already sits outside its limits (joint limits switched off in the settings, or an old file) still plays as stored, the overshoot is only kept from passing it.
+- The in-between frames the `.dingle` reader computes on its own (`src/dingle.cpp`, for tools that read `.dingle` without the program) know no limits file and are not cut; in the program the keys are loaded and `frameData` plays them, so the program's playback and export are cut.
+- Tests: `tests/interpolation/` (a segment ending exactly on a limit stays inside on every frame, a segment well inside is unchanged, a channel without limits and the five other choices are untouched, positions are untouched), `tests/tst_roundtrip.cpp` (the program with `SL.lim`: playback and the export input of an overshoot into a limit).
+
 ## Stored choice (step 3)
 
 - A key frame can carry an easing choice for the segment that starts at it (`AnimFile::Key::curve`, `FrameData::curve` in the program). With one, it decides the segment alone (`Easing::segmentPreset`); without one, the two switches decide as before. Old files have none, so they play and save as before.
 - In `.dingle` it is the key's `curve`, `{"type": "<technical name>"}` with the technical names `linear`, `ease-in`, `ease-out`, `ease-in-out`, `ease-out-overshoot`, `constant` ([DINGLE_FORMAT.md](DINGLE_FORMAT.md)). An unknown value gives Even and counts as an ignored key.
 - `segmentValue` now computes the two new choices: Overshoot then settle is `from + (to - from) * s(t)` with `t = pos / steps` (at most 8 % past the target), Hold then snap stays at `from` until the target frame. The four old-style choices are unchanged bit for bit (`tests/interpolation/`).
-- Joint limits are not applied to the overshoot in playback yet (`clampRotation` exists); that comes with the tile row, where a joint's limits are at hand. The in-between frames of a `.dingle` file and playback stay the same values either way.
+- Joint limits: playback cuts the overshoot at the joint's limits, see "Joint limits on the overshoot (proposal 4)" above.
 - Tests: `tests/dingle/` (round trip of all six, old files byte for byte, unknown values, the frames in between, position keys), `tests/interpolation/` (the stored choice wins over the switches in `BVHNode::frameData`), `tests/animexport/` (each stored choice through `.dingle` and the `.anim` writer within 0.01 degrees), `tests/tst_roundtrip.cpp` (open in the program, playback, the export input, save and open again).
 
 ## Where each part is built
