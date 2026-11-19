@@ -1,6 +1,6 @@
 Branch: docs/aurora-roadmap-research
 Status: active
-Pull request: pending
+Pull request: #58
 Files:
 - docs/AURORA_STUDIO.md
 - docs/OPEN_SOURCE_CHECK.md
