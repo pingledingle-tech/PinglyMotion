@@ -1359,6 +1359,7 @@
     <addaction name="fileOpenAction"/>
     <addaction name="fileAddAction"/>
     <addaction name="fileImportAnimAction"/>
+    <addaction name="fileImportBvhAction"/>
     <addaction name="separator"/>
     <addaction name="fileSaveAction"/>
     <addaction name="fileSaveAsAction"/>
@@ -1658,6 +1659,11 @@
   <action name="fileExportForSecondLifeAction">
    <property name="text">
     <string>Export For Second Life</string>
+   </property>
+  </action>
+  <action name="fileImportBvhAction">
+   <property name="text">
+    <string>Import BVH from another skeleton...</string>
    </property>
   </action>
   <action name="fileImportAnimAction">

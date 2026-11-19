@@ -1,6 +1,6 @@
 Branch: feat/bvh-retarget-menu
-Status: active
-Pull request: pending
+Status: done
+Pull request: #116
 Files:
 - src/retargetdialog.*
 - src/pinglymotionwindow.*
