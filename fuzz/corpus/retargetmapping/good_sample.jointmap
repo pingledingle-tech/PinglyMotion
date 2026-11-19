@@ -1,0 +1,14 @@
+{
+  "format": "pinglymotion-jointmap",
+  "version": 1,
+  "generator": "PinglyMotion 0.3.0",
+  "skeleton": {
+    "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+    "joints": 27,
+    "root": "mixamorig:Hips"
+  },
+  "mapping": [
+    { "source": "mixamorig:LeftShoulder", "target": "" },
+    { "source": "mixamorig:RightHandIndex1", "target": "mHandIndex2Right" }
+  ]
+}
