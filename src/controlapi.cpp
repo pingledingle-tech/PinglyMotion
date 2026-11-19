@@ -54,7 +54,7 @@ namespace
     {"play", "Plays the animation.", "{}", "[]"},
     {"stop", "Stops playing.", "{}", "[]"},
     {"new_animation", "Starts a new, empty animation. Fails if there are unsaved changes.", "{}", "[]"},
-    {"open_file", "Opens an animation file (.bvh or .avm) from the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.", "{\"path\":{\"type\":\"string\"}}", "[\"path\"]"},
+    {"open_file", "Opens an animation file (.dingle, .bvh or .avm) from the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.", "{\"path\":{\"type\":\"string\"}}", "[\"path\"]"},
     {"save_file", "Saves the animation as a BVH file that can be uploaded to Second Life, in the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.", "{\"path\":{\"type\":\"string\"}}", "[]"},
     {"screenshot", "Takes a picture of the 3D view of the current frame, so you can see the pose. The picture is 4:3. Returns a PNG as base64 text.", "{\"width\":{\"type\":\"integer\",\"description\":\"Width in pixels, default 800\"}}", "[]"},
     {"set_figure", "Shows the female or the male Second Life body. This only changes what you see in Pingmator; the saved BVH is the same.",
@@ -506,7 +506,7 @@ QJsonObject ControlApi::openFile(const QJsonObject& request)
   const QString path = request.value("path").toString();
   if (path.isEmpty()) return fail("Missing \"path\".");
   const QString suffix = QFileInfo(path).suffix().toLower();
-  if (suffix != "bvh" && suffix != "avm") return fail("Only .bvh and .avm files can be opened.");
+  if (suffix != "dingle" && suffix != "bvh" && suffix != "avm") return fail("Only .dingle, .bvh and .avm files can be opened.");
 
   QString error;
   const QString file = resolveInWorkFolder(path, true, error);

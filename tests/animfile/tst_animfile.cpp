@@ -13,6 +13,9 @@
  *    open path (BVH::checkFile(), BVH::animRead(), Animation).
  * 5. Saving (BVH::bvhWrite(), BVH::avmWrite(), AnimFile::write()) gives files
  *    the parser reads, and writing is stable.
+ * 6. Opening a .dingle file (issue #26, job 4): each of the four converted
+ *    bundled files opens to the same animation as its .avm, and broken
+ *    .dingle files give an error through the real open path, no crash.
  *
  * Run from the bin/ folder, so the program finds ./data.
  * Licensed under the GNU General Public License version 2 or later.
@@ -230,6 +233,11 @@ class AnimFileTest : public QObject
     void openRefusesAuditFiles_data();
     void openRefusesAuditFiles();
     void openErrorTellsTheLine();
+    void openDingleGivesTheSameAnimation_data();
+    void openDingleGivesTheSameAnimation();
+    void openRefusesBrokenDingleFiles_data();
+    void openRefusesBrokenDingleFiles();
+    void openDingleErrorIsOneMessage();
 };
 
 void AnimFileTest::filesAreFound()
@@ -686,6 +694,138 @@ void AnimFileTest::openErrorTellsTheLine()
   QVERIFY(error.startsWith("The file could not be opened"));
   QVERIFY(!BVH::checkFile(writeFile(dir, "pose.txt", "HIERARCHY"), &error));
   QVERIFY(error.contains(".bvh"));
+}
+
+// ---------------------------------------------------------------- part 6: .dingle files (#26)
+
+void AnimFileTest::openDingleGivesTheSameAnimation_data()
+{
+  QTest::addColumn<QString>("avm");
+  QTest::addColumn<QString>("dingle");
+  // the originals in tests/legacy-avm, so this keeps working when job 6
+  // removes the .avm copies from bin/data and examples
+  const QString legacy = PINGMATOR_TOOLS "/../tests/legacy-avm/";
+  QTest::newRow("TPose") << legacy + "TPose.avm" << PINGMATOR_LEGACY_DATA "/TPose.dingle";
+  QTest::newRow("Relaxed") << legacy + "Relaxed.avm" << PINGMATOR_LEGACY_DATA "/Relaxed.dingle";
+  QTest::newRow("jump") << legacy + "jump.avm" << PINGMATOR_EXAMPLES "/jump.dingle";
+  QTest::newRow("throne") << legacy + "throne.avm" << PINGMATOR_EXAMPLES "/throne.dingle";
+}
+
+// a converted bundled file opens to the same animation as its .avm: the same
+// joint tree, key frames with their values and ease flags, position key frames,
+// settings, and the same pose on every frame (frames between the keys are
+// interpolated from the keys, which are exact in both files)
+void AnimFileTest::openDingleGivesTheSameAnimation()
+{
+  QFETCH(QString, avm);
+  QFETCH(QString, dingle);
+
+  QString error;
+  QVERIFY2(BVH::checkFile(dingle, &error), qPrintable(error));
+
+  BVH fromAvm;
+  BVHNode* a = fromAvm.animRead(avm, Constants::limitsFilePath());
+  std::unique_ptr<BVHNode> positionA(fromAvm.lastLoadedPositionNode);
+  const auto cleanupA = qScopeGuard([&] { fromAvm.bvhDelete(a); });
+  QVERIFY2(a, qPrintable(fromAvm.lastError));
+
+  BVH fromDingle;
+  BVHNode* b = fromDingle.animRead(dingle, Constants::limitsFilePath());
+  std::unique_ptr<BVHNode> positionB(fromDingle.lastLoadedPositionNode);
+  const auto cleanupB = qScopeGuard([&] { fromDingle.bvhDelete(b); });
+  QVERIFY2(b, qPrintable(fromDingle.lastError));
+
+  const QString difference = treeDifference(a, b);
+  QVERIFY2(difference.isEmpty(), qPrintable(difference));
+  const QString positions = treeDifference(positionA.get(), positionB.get());
+  QVERIFY2(positions.isEmpty(), qPrintable("position key frames" + positions));
+
+  QCOMPARE(fromDingle.lastLoadedNumberOfFrames, fromAvm.lastLoadedNumberOfFrames);
+  QCOMPARE(fromDingle.lastLoadedFrameTime, fromAvm.lastLoadedFrameTime);
+  QCOMPARE(fromDingle.lastLoadedLoopIn, fromAvm.lastLoadedLoopIn);
+  QCOMPARE(fromDingle.lastLoadedLoopOut, fromAvm.lastLoadedLoopOut);
+  QCOMPARE(fromDingle.lastLoadedAvatarScale, fromAvm.lastLoadedAvatarScale);
+  QCOMPARE(fromDingle.lastLoadedFigureType, fromAvm.lastLoadedFigureType);
+
+  QList<BVHNode*> jointsA, jointsB;
+  collectJoints(a, jointsA);
+  collectJoints(b, jointsB);
+  QCOMPARE(jointsB.size(), jointsA.size());
+  for (int frame = 0; frame < fromAvm.lastLoadedNumberOfFrames; frame++)
+  {
+    for (int i = 0; i < jointsA.size(); i++)
+    {
+      const FrameData da = jointsA[i]->frameData(frame);
+      const FrameData db = jointsB[i]->frameData(frame);
+      QVERIFY2(da.rotation() == db.rotation() && da.position() == db.position(),
+               qPrintable(QString("%1 at frame %2").arg(jointsA[i]->name()).arg(frame)));
+    }
+    QCOMPARE(positionB->frameData(frame).position(), positionA->frameData(frame).position());
+  }
+
+  // the whole open path of the program: the same animation object
+  BVH bvhA, bvhB;
+  Animation animA(&bvhA, avm);
+  Animation animB(&bvhB, dingle);
+  QCOMPARE(animB.getNumberOfFrames(), animA.getNumberOfFrames());
+  QCOMPARE(animB.getLoopInPoint(), animA.getLoopInPoint());
+  QCOMPARE(animB.getLoopOutPoint(), animA.getLoopOutPoint());
+  QCOMPARE(animB.fps(), animA.fps());
+  QCOMPARE(animB.getFigureType(), animA.getFigureType());
+}
+
+void AnimFileTest::openRefusesBrokenDingleFiles_data()
+{
+  QTest::addColumn<QString>("file");
+  const QDir dir(PINGMATOR_CORPUS "/dingle");
+  const QStringList bad = dir.entryList({"bad_*.dingle"}, QDir::Files, QDir::Name);
+  QVERIFY(!bad.isEmpty());
+  for (const QString& name : bad)
+    QTest::newRow(qPrintable(name)) << dir.filePath(name);
+}
+
+// the broken .dingle files in fuzz/corpus/dingle, through the real open path
+void AnimFileTest::openRefusesBrokenDingleFiles()
+{
+  QFETCH(QString, file);
+  QString error;
+  QVERIFY2(!BVH::checkFile(file, &error), "a broken file was accepted");
+  QVERIFY(!error.isEmpty());
+
+  BVH bvh;
+  QVERIFY(!bvh.animRead(file, Constants::limitsFilePath()));
+  delete bvh.lastLoadedPositionNode;
+  QCOMPARE(bvh.lastError, error);
+}
+
+// a broken .dingle gives one plain message: a cut-off copy of jump.dingle,
+// a file that is not JSON, and a file from a newer version
+void AnimFileTest::openDingleErrorIsOneMessage()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QByteArray jump = readAll(PINGMATOR_EXAMPLES "/jump.dingle");
+  QVERIFY(!jump.isEmpty());
+
+  QString error;
+  for (qsizetype cut : {qsizetype(0), qsizetype(1), jump.size() / 2, jump.size() - 2})
+  {
+    QVERIFY(!BVH::checkFile(writeFile(dir, "cut.dingle", jump.left(cut)), &error));
+    QVERIFY2(!error.isEmpty() && !error.contains('\n'), qPrintable(error));
+  }
+
+  QVERIFY(!BVH::checkFile(writeFile(dir, "text.dingle", "HIERARCHY ROOT hip"), &error));
+  QVERIFY2(error.contains(".dingle"), qPrintable(error));
+
+  QVERIFY(!BVH::checkFile(PINGMATOR_CORPUS "/dingle/bad_newer_version.dingle", &error));
+  QVERIFY2(error.contains("newer version"), qPrintable(error));
+
+  // the ending is matched in any case, like .bvh and .avm
+  QVERIFY2(BVH::checkFile(writeFile(dir, "JUMP.DINGLE", jump), &error), qPrintable(error));
+
+  // a name with another ending names .dingle in the error
+  QVERIFY(!BVH::checkFile(writeFile(dir, "pose.txt", jump), &error));
+  QVERIFY2(error.contains(".dingle"), qPrintable(error));
 }
 
 QTEST_MAIN(AnimFileTest)

@@ -219,7 +219,7 @@ PingmatorWindow::PingmatorWindow() :
   sphereMesh(new Mesh(QString(), Mesh::Shape::SPHERE)),  // built in code, no file
   coneMesh(new Mesh(QString(), Mesh::Shape::CONE)),      // built in code, no file
   torusMesh(new Mesh(Constants::torusMeshFilePath(), Mesh::Shape::TORUS)),
-  m_animFilter("Animation Files (*.avm *.bvh)"),
+  m_animFilter("Animation Files (*.dingle *.avm *.bvh)"),
   m_bvhFilter(QObject::tr("Second Life animation (*.bvh)")),
   m_avmFilter(QObject::tr("Pingmator animation (*.avm)")),
   m_propFilter("Props (*.prp)"),

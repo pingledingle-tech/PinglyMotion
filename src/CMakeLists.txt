@@ -11,6 +11,7 @@ SET (PINGMATOR_SRC aboutdialog.cpp
               camera.cpp
               constants.cpp
               controlapi.cpp
+              dingle.cpp
               controlindicator.cpp
               controlserver.cpp
               floor.cpp
