@@ -29,3 +29,15 @@ TARGET_LINK_LIBRARIES (pinglymotion_animfile_tests ${PINGLYMOTION_QT_LIBS} Qt6::
 # run from bin/ so the old parser finds ./data, like the program itself
 ADD_TEST (NAME animfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_animfile_tests)
 SET_TESTS_PROPERTIES (animfile PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The generated edge-case files (tests/data/generated, tools/gen_edge_bvh.py; issue #27).
+ADD_EXECUTABLE (pinglymotion_generated_tests tst_generated.cpp
+                ${CMAKE_SOURCE_DIR}/src/animfile.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp
+                ${CMAKE_SOURCE_DIR}/src/retarget.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_generated_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_generated_tests PRIVATE
+  PINGLYMOTION_GENERATED="${CMAKE_SOURCE_DIR}/tests/data/generated")
+TARGET_LINK_LIBRARIES (pinglymotion_generated_tests Qt6::Core Qt6::Gui Qt6::Test)
+ADD_TEST (NAME generated COMMAND pinglymotion_generated_tests)
+SET_TESTS_PROPERTIES (generated PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
