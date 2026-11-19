@@ -16,6 +16,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 - Work only on your own branch. Never push to `main`.
 - Stay inside the files you listed. If you need another file, add it to `Files:` in your job file first, and run `python3 tools/work.py check` to see whether another active job claims it.
 - Keep the job small: one feature or fix per branch.
+- **Docs in the same pull request:** when your change makes a document wrong (`docs/PRODUCT.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, release notes, the issue it belongs to), fix it in the same pull request and tick the docs box in the template. A job is not done while a document still says the old thing.
 
 ## When you are done
 
@@ -27,6 +28,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
    - **Technical jobs** (nothing the user sees on screen changes: parsers, file handling, tests, CI, tools, docs, data that no menu shows yet): the project owner has given standing permission (18 November 2026). Merge as soon as all required checks are green. If the job changed a parser or the control commands, the fuzz run on the branch must also be green first.
    - **Jobs that change what the user sees on screen** (menus, dialogs, texts, the 3D view, camera, keys): the project owner tests the Windows build and says yes in this session. Give the Windows download and one test step at a time.
    - When unsure which kind it is, treat it as visible.
+   - **Test page:** whenever the project owner is to test something, first make a test page as a Claude artifact (where the session has the Artifact tool): the Windows download link, one plain step at a time (clicks in the program, no command line), a tick box and a note field for each test, and an "Ask Claude" field. Keep it up to date for each test round, and keep the test list in the owner test issue too.
    - Report each merged pull request in one line (number, what, checks green).
 6. If another pull request is merged first, update your branch again (step 2) and wait for green checks before merging.
 
