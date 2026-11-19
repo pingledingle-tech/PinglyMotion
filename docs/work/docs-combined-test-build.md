@@ -1,6 +1,6 @@
 Branch: docs/combined-test-build
-Status: active
-Pull request: pending
+Status: done
+Pull request: #124
 Files:
 - CLAUDE.md
 - docs/DEV.md
