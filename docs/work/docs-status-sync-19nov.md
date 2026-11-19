@@ -1,6 +1,6 @@
 Branch: docs/status-sync-19nov
-Status: active
-Pull request: pending
+Status: done
+Pull request: #79
 Files:
 - docs/PRODUCT.md
 - docs/ROADMAP.md

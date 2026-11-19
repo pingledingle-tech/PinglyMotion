@@ -1,6 +1,6 @@
 # Pingmator 0.4.0 beta – release notes (draft)
 
-> Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026), up to 18 November 2026.
+> Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026), up to 19 November 2026.
 
 ## Before you update
 
@@ -27,6 +27,8 @@
 - **Body choice.** **Options > Body** replaces "Bento body (Max)": pick the open source Ruth2 avatar (the default for new users), Max, or the Second Life system avatar. Your earlier choice is kept: Max stays Max, and the system avatar stays the system avatar.
 - **Head and neck** can bend up to 45 degrees forward and back.
 - **Opening files** uses a new reader. A broken file is refused with a reason that names the line, for example "Line 12: …". Files with values that make no sense (for example numbers too large for a decimal) and AVM files with extra property data are now refused; an empty file says "The file is empty."
+- **Window title** shows the version, where the build came from and its commit, so you can tell which build you are testing.
+- **Links inside the program** (About, update notice, release info) point to the PinglyMotion repository.
 - The Windows zip and the Linux AppImage are built with the newer Qt 6.12 (long-term support), which includes security fixes.
 
 ## Known problems
