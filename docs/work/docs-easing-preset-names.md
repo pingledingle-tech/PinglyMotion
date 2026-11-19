@@ -1,6 +1,6 @@
 Branch: docs/easing-preset-names
-Status: active
-Pull request: pending
+Status: done
+Pull request: #80
 Files:
 - docs/EASING.md
 
