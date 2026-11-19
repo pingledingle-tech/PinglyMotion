@@ -1,5 +1,5 @@
 /*
- * Pingmator - the items of the status bar (issues #43 and #88)
+ * PinglyMotion - the items of the status bar (issues #43 and #88)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

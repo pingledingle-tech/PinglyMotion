@@ -1,5 +1,5 @@
 /*
- * Pingmator control interface - the local HTTP server
+ * PinglyMotion control interface - the local HTTP server
  *
  * Listens on 127.0.0.1 only. Every request needs the secret key from the
  * connection file, and requests that come from a web page are refused.
@@ -7,7 +7,7 @@
  *   POST /api    body: {"command": "...", ...}    header: Authorization: Bearer <key>
  *   POST /api/heartbeat                           (a client says it is still there)
  *
- * Clients may name themselves with the header X-Pingmator-Client (shown in the
+ * Clients may name themselves with the header X-PinglyMotion-Client (shown in the
  * status bar, issue #43).
  *
  * Licensed under the GNU General Public License version 2 or later.

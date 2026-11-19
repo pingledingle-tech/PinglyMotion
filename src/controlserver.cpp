@@ -1,5 +1,5 @@
 /*
- * Pingmator control interface - the local HTTP server
+ * PinglyMotion control interface - the local HTTP server
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -346,8 +346,8 @@ bool ControlServer::admit(QTcpSocket* socket, const QByteArray& head)
     return false;
   }
 
-  // Proof that this really is Pingmator, before a client sends the key: the
-  // client sends a random nonce and checks HMAC-SHA256(key, "pingmator-hello:" + nonce).
+  // Proof that this really is PinglyMotion, before a client sends the key: the
+  // client sends a random nonce and checks HMAC-SHA256(key, "pinglymotion-hello:" + nonce).
   // Another program on this port does not know the key and cannot answer (issue #15).
   static const QByteArray helloPath = "/api/hello?nonce=";
   if (method == "GET" && path.startsWith(helloPath))
@@ -361,13 +361,13 @@ bool ControlServer::admit(QTcpSocket* socket, const QByteArray& head)
       respond(socket, 400, R"({"ok":false,"error":"The nonce must be 32 to 128 lower-case hex digits"})");
       return false;
     }
-    const QByteArray proof = QMessageAuthenticationCode::hash("pingmator-hello:" + nonce, m_token.toLatin1(), QCryptographicHash::Sha256).toHex();
+    const QByteArray proof = QMessageAuthenticationCode::hash("pinglymotion-hello:" + nonce, m_token.toLatin1(), QCryptographicHash::Sha256).toHex();
     respond(socket, 200, QJsonDocument(QJsonObject{{"ok", true}, {"proof", QString::fromLatin1(proof)}}).toJson(QJsonDocument::Compact));
     return false;
   }
 
   // the key is checked before the body is read, so a program without it cannot
-  // make Pingmator hold large requests in memory (issue #10)
+  // make PinglyMotion hold large requests in memory (issue #10)
   const QByteArray authorization = header(head, "Authorization");
   if (!authorization.startsWith("Bearer ") || !sameText(authorization.mid(7).trimmed(), m_token.toLatin1()))
   {
@@ -390,7 +390,7 @@ void ControlServer::handle(QTcpSocket* socket, const QByteArray& request)
   if (method == "GET" && path == "/api/commands")
     return respond(socket, 200, QJsonDocument(QJsonObject{{"ok", true}, {"commands", ControlApi::commandList()}}).toJson(QJsonDocument::Compact));
 
-  const QString client = clientName(header(head, "X-Pingmator-Client"));
+  const QString client = clientName(header(head, "X-PinglyMotion-Client"));
 
   if (method == "POST" && path == "/api/heartbeat")
   {

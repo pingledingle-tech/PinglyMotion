@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Pingmator MCP server
+PinglyMotion MCP server
 
 Lets any AI tool that speaks MCP (Model Context Protocol) pose and play the
-animation open in Pingmator. It talks to Pingmator's local control interface
-(see docs/CONTROL.md), so Pingmator must be running with remote control on:
+animation open in PinglyMotion. It talks to PinglyMotion's local control interface
+(see docs/CONTROL.md), so PinglyMotion must be running with remote control on:
 start it with `pingmator --control`, or tick Options > Allow remote control.
 
 Uses only the Python standard library (3.8 or newer). Speaks MCP over
@@ -25,13 +25,13 @@ import time
 import urllib.error
 import urllib.request
 
-SERVER_NAME = "pingmator"
+SERVER_NAME = "pinglymotion"
 SERVER_VERSION = "0.1.0"
 SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"]
 
 # Text that goes to the AI tool together with the tool list
 INSTRUCTIONS = (
-    "Pingmator is a Second Life animation editor. Poses are rotations of skeleton joints in degrees. "
+    "PinglyMotion is a Second Life animation editor. Poses are rotations of skeleton joints in degrees. "
     "Start with 'state' and 'joints'. Frame numbers start at 1; frame 1 is protected (reference pose), so pose from frame 2. "
     "Each joint bends around its own axes (the elbow lForeArm around Y, the knee lShin around X), within the limits that 'joints' shows. "
     "After posing, use 'screenshot' to look at the result and adjust. Save with 'save_file' to get a .bvh that can be uploaded to Second Life. "
@@ -52,18 +52,18 @@ def connection_file():
     return os.path.join(base, "Pingmator", "control.json")
 
 
-class PingmatorError(Exception):
+class PinglyMotionError(Exception):
     pass
 
 
-# Pingmator only listens on this machine. The token must never go anywhere else,
+# PinglyMotion only listens on this machine. The token must never go anywhere else,
 # so the URL from control.json is checked and proxy settings (HTTP_PROXY etc.)
 # are ignored: urllib would otherwise send the request, token included, to the proxy.
 LOCAL_URL = re.compile(r"^http://(127\.0\.0\.1|localhost):[0-9]{1,5}$")
 OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 # Name of the AI tool that started this server (from MCP "initialize"), shown in
-# Pingmator's status bar. Printable ASCII only, so it fits in an HTTP header.
+# PinglyMotion's status bar. Printable ASCII only, so it fits in an HTTP header.
 CLIENT_NAME = ""
 HEARTBEAT_SECONDS = 10
 
@@ -78,24 +78,24 @@ def set_client_name(client_info):
 
 
 def request(path, body=None, timeout=30):
-    """One request to Pingmator; returns the decoded JSON answer."""
+    """One request to PinglyMotion; returns the decoded JSON answer."""
     try:
         with open(connection_file(), "r", encoding="utf-8") as handle:
             info = json.load(handle)
     except (OSError, ValueError):
-        raise PingmatorError(
-            "Pingmator is not running with remote control on. Start Pingmator with --control, "
+        raise PinglyMotionError(
+            "PinglyMotion is not running with remote control on. Start PinglyMotion with --control, "
             "or tick Options > Allow remote control, then try again."
         )
 
     url = info.get("url") if isinstance(info, dict) else None
     token = info.get("token") if isinstance(info, dict) else None
     if not isinstance(url, str) or not LOCAL_URL.match(url) or not isinstance(token, str):
-        raise PingmatorError(
-            "The Pingmator connection file is not valid. Restart Pingmator with remote control on."
+        raise PinglyMotionError(
+            "The PinglyMotion connection file is not valid. Restart PinglyMotion with remote control on."
         )
 
-    check_it_is_pingmator(url, token)
+    check_it_is_pinglymotion(url, token)
 
     data = None if body is None else json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
@@ -111,10 +111,10 @@ def request(path, body=None, timeout=30):
         try:
             return json.load(error)
         except ValueError:
-            raise PingmatorError("Pingmator answered with HTTP %d." % error.code)
+            raise PinglyMotionError("PinglyMotion answered with HTTP %d." % error.code)
     except (urllib.error.URLError, OSError):
-        raise PingmatorError(
-            "Could not reach Pingmator. It may have been closed, or remote control was turned off. "
+        raise PinglyMotionError(
+            "Could not reach PinglyMotion. It may have been closed, or remote control was turned off. "
             "Start it again and turn remote control on."
         )
 
@@ -122,17 +122,17 @@ def request(path, body=None, timeout=30):
 def headers(token):
     result = {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
     if CLIENT_NAME:
-        result["X-Pingmator-Client"] = CLIENT_NAME
+        result["X-PinglyMotion-Client"] = CLIENT_NAME
     return result
 
 
 def heartbeat_loop():
-    """Tells Pingmator every few seconds that the assistant is still connected (issue #43)."""
+    """Tells PinglyMotion every few seconds that the assistant is still connected (issue #43)."""
     while True:
         try:
             request("/api/heartbeat", {}, timeout=5)
         except Exception:
-            pass  # Pingmator not running or remote control off: try again later
+            pass  # PinglyMotion not running or remote control off: try again later
         time.sleep(HEARTBEAT_SECONDS)
 
 
@@ -146,15 +146,15 @@ def start_heartbeat():
         HEARTBEAT.start()
 
 
-def check_it_is_pingmator(url, token):
+def check_it_is_pinglymotion(url, token):
     """Before the key is sent, the program on the port must show that it knows it.
 
-    Pingmator answers a random nonce with HMAC-SHA256(key, "pingmator-hello:" + nonce).
+    PinglyMotion answers a random nonce with HMAC-SHA256(key, "pinglymotion-hello:" + nonce).
     After a crash control.json stays behind, and another program could take the port
-    and pretend to be Pingmator (issue #15); it cannot give the right answer.
+    and pretend to be PinglyMotion (issue #15); it cannot give the right answer.
     """
     nonce = secrets.token_hex(32)
-    expected = hmac.new(token.encode("utf-8"), ("pingmator-hello:" + nonce).encode("ascii"),
+    expected = hmac.new(token.encode("utf-8"), ("pinglymotion-hello:" + nonce).encode("ascii"),
                         hashlib.sha256).hexdigest()
     req = urllib.request.Request(url + "/api/hello?nonce=" + nonce, method="GET")
     try:
@@ -163,15 +163,15 @@ def check_it_is_pingmator(url, token):
     except urllib.error.HTTPError:
         answer = None
     except (urllib.error.URLError, OSError, ValueError):
-        raise PingmatorError(
-            "Could not reach Pingmator. It may have been closed, or remote control was turned off. "
+        raise PinglyMotionError(
+            "Could not reach PinglyMotion. It may have been closed, or remote control was turned off. "
             "Start it again and turn remote control on."
         )
     proof = answer.get("proof") if isinstance(answer, dict) else None
     if not isinstance(proof, str) or not hmac.compare_digest(proof, expected):
-        raise PingmatorError(
-            "The program on Pingmator's port did not prove it is Pingmator, so nothing was sent. "
-            "Pingmator may have crashed or be an old version. Start Pingmator again with remote control on."
+        raise PinglyMotionError(
+            "The program on PinglyMotion's port did not prove it is PinglyMotion, so nothing was sent. "
+            "PinglyMotion may have crashed or be an old version. Start PinglyMotion again with remote control on."
         )
 
 
@@ -182,12 +182,12 @@ def bundled_commands():
 
 
 def command_list():
-    """The commands of the running Pingmator; the bundled list when it is not running."""
+    """The commands of the running PinglyMotion; the bundled list when it is not running."""
     try:
         answer = request("/api/commands", timeout=5)
         if answer.get("ok"):
             return answer["commands"]
-    except PingmatorError:
+    except PinglyMotionError:
         pass
     return bundled_commands()
 
@@ -210,7 +210,7 @@ def tool_list():
 def call_tool(name, arguments):
     known = {command["name"] for command in bundled_commands()}
     if name not in known:
-        raise PingmatorError("Unknown tool: %s" % name)
+        raise PinglyMotionError("Unknown tool: %s" % name)
 
     body = dict(arguments or {})
     body["command"] = name
@@ -265,7 +265,7 @@ def handle(message):
     elif method == "tools/call":
         try:
             reply(message_id, call_tool(params.get("name", ""), params.get("arguments")))
-        except PingmatorError as error:
+        except PinglyMotionError as error:
             reply(message_id, {"content": [{"type": "text", "text": str(error)}], "isError": True})
     else:
         reply(message_id, error={"code": -32601, "message": "Method not found: %s" % method})

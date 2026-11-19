@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-End-to-end test of the remote control: starts the real Pingmator program with
+End-to-end test of the remote control: starts the real PinglyMotion program with
 --control, talks to it through the MCP server (as an AI tool would) and over
 plain HTTP, and checks the answers. Needs a display: run with xvfb-run.
 
@@ -19,7 +19,7 @@ import urllib.error
 import urllib.request
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-MCP = os.path.join(ROOT, "tools", "mcp", "pingmator_mcp.py")
+MCP = os.path.join(ROOT, "tools", "mcp", "pinglymotion_mcp.py")
 CHECK_BVH = os.path.join(ROOT, "tools", "check_sl_bvh.py")
 
 failed = []
@@ -71,15 +71,15 @@ def main():
     control_file = os.path.join(work, "control.json")
     env = dict(os.environ, PINGLYMOTION_CONTROL_FILE=control_file, PINGLYMOTION_CONTROL_FOLDER=work)
 
-    # the MCP server alone, with Pingmator not running: it still lists its tools
+    # the MCP server alone, with PinglyMotion not running: it still lists its tools
     offline = Mcp(env)
     init = offline.send("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "test", "version": "1"}})
-    check("initialize answers", init["result"]["serverInfo"]["name"] == "pingmator" and "tools" in init["result"]["capabilities"], init)
+    check("initialize answers", init["result"]["serverInfo"]["name"] == "pinglymotion" and "tools" in init["result"]["capabilities"], init)
     offline.send("notifications/initialized", notification=True)
     listed = offline.send("tools/list")["result"]["tools"]
-    check("tools are listed without Pingmator", len(listed) >= 15 and all("inputSchema" in tool for tool in listed), len(listed))
+    check("tools are listed without PinglyMotion", len(listed) >= 15 and all("inputSchema" in tool for tool in listed), len(listed))
     failed_call, message = offline.text("state")
-    check("a call without Pingmator explains what to do", failed_call and "--control" in message, message)
+    check("a call without PinglyMotion explains what to do", failed_call and "--control" in message, message)
     check("unknown method is an error", "error" in offline.send("no/such/method"))
     offline.close()
 
@@ -123,7 +123,7 @@ def main():
         check("HTTP with a web page's Origin is refused", http("/api", {"command": "state"}, dict(key, Origin="https://example.com"))[0] == 403)
         status, answer = http("/api", {"command": "state"}, key)
         check("HTTP with key works", status == 200 and answer["ok"] and answer["frames"] > 0, answer)
-        status, answer = http("/api/heartbeat", {}, dict(key, **{"X-Pingmator-Client": "smoke test"}))
+        status, answer = http("/api/heartbeat", {}, dict(key, **{"X-PinglyMotion-Client": "smoke test"}))
         check("heartbeat with key works", status == 200 and answer["ok"], answer)
         check("heartbeat without key is refused", http("/api/heartbeat", {})[0] == 401)
         # issue #145: the complete header block may be at most 16 KB
@@ -205,10 +205,10 @@ def main():
 
         app.terminate()
         code = app.wait(timeout=15)
-        print("      (Pingmator exit code %s)" % code)
-        check("key file is removed when Pingmator ends", not os.path.exists(control_file))
+        print("      (PinglyMotion exit code %s)" % code)
+        check("key file is removed when PinglyMotion ends", not os.path.exists(control_file))
         is_error, text = mcp.text("state")
-        check("a call after Pingmator ended explains what to do", is_error and "Pingmator" in text, text)
+        check("a call after PinglyMotion ended explains what to do", is_error and "PinglyMotion" in text, text)
         mcp.close()
     finally:
         if app.poll() is None:

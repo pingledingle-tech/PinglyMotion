@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Checks how the MCP server connects to Pingmator.
+"""Checks how the MCP server connects to PinglyMotion.
 
-- It talks to Pingmator directly, never through HTTP_PROXY (issue #9).
+- It talks to PinglyMotion directly, never through HTTP_PROXY (issue #9).
 - It refuses a connection file that points anywhere but this machine.
 - It sends the key only after the program on the port proved it knows the key (issue #15).
-- It names the AI tool (X-Pingmator-Client) and sends heartbeats (issue #43).
+- It names the AI tool (X-PinglyMotion-Client) and sends heartbeats (issue #43).
 """
 
 import hashlib
@@ -26,7 +26,7 @@ TOKEN = "secret-test-token"
 
 class FakeServer(http.server.BaseHTTPRequestHandler):
     """Records the Authorization header of every request. Answers the hello like
-    Pingmator when it knows the key; otherwise with a wrong proof or not at all."""
+    PinglyMotion when it knows the key; otherwise with a wrong proof or not at all."""
 
     def answer(self, data, status=200):
         body = json.dumps(data).encode()
@@ -43,7 +43,7 @@ class FakeServer(http.server.BaseHTTPRequestHandler):
             nonce = urllib.parse.parse_qs(url.query).get("nonce", [""])[0]
             self.server.nonces.append(nonce)
             if self.server.hello == "right":
-                proof = hmac.new(TOKEN.encode(), ("pingmator-hello:" + nonce).encode(), hashlib.sha256).hexdigest()
+                proof = hmac.new(TOKEN.encode(), ("pinglymotion-hello:" + nonce).encode(), hashlib.sha256).hexdigest()
                 return self.answer({"ok": True, "proof": proof})
             if self.server.hello == "wrong":
                 return self.answer({"ok": True, "proof": "0" * 64})
@@ -54,7 +54,7 @@ class FakeServer(http.server.BaseHTTPRequestHandler):
         self.server.seen.append(self.headers.get("Authorization"))
         length = int(self.headers.get("Content-Length") or 0)
         self.rfile.read(length)
-        self.server.posts.append((self.path, self.headers.get("X-Pingmator-Client")))
+        self.server.posts.append((self.path, self.headers.get("X-PinglyMotion-Client")))
         self.answer({"ok": True, "from": self.server.name})
 
     def log_message(self, *args):
@@ -73,7 +73,7 @@ def start(name, hello):
 
 
 def main():
-    pingmator = start("pingmator", "right")
+    pinglymotion = start("pinglymotion", "right")
     impostor = start("impostor", "wrong")
     old_version = start("old", "none")
     proxy = start("proxy", "right")
@@ -87,7 +87,7 @@ def main():
         for name in ("NO_PROXY", "no_proxy"):
             os.environ.pop(name, None)
 
-        import pingmator_mcp
+        import pinglymotion_mcp
 
         def write(url):
             with open(control, "w", encoding="utf-8") as handle:
@@ -96,19 +96,19 @@ def main():
         def refused(url):
             write(url)
             try:
-                pingmator_mcp.request("/api", {"command": "state"})
-            except pingmator_mcp.PingmatorError:
+                pinglymotion_mcp.request("/api", {"command": "state"})
+            except pinglymotion_mcp.PinglyMotionError:
                 return True
             return False
 
         # the real one: hello without key, then the request with key
-        write("http://127.0.0.1:%d" % pingmator.server_port)
-        answer = pingmator_mcp.request("/api", {"command": "state"})
-        assert answer.get("from") == "pingmator", answer
-        assert pingmator.seen == [None, "Bearer " + TOKEN], pingmator.seen
-        assert len(pingmator.nonces[0]) == 64, pingmator.nonces
-        pingmator_mcp.request("/api", {"command": "state"})
-        assert pingmator.nonces[0] != pingmator.nonces[1], "nonce must be new each time"
+        write("http://127.0.0.1:%d" % pinglymotion.server_port)
+        answer = pinglymotion_mcp.request("/api", {"command": "state"})
+        assert answer.get("from") == "pinglymotion", answer
+        assert pinglymotion.seen == [None, "Bearer " + TOKEN], pinglymotion.seen
+        assert len(pinglymotion.nonces[0]) == 64, pinglymotion.nonces
+        pinglymotion_mcp.request("/api", {"command": "state"})
+        assert pinglymotion.nonces[0] != pinglymotion.nonces[1], "nonce must be new each time"
         assert proxy.seen == [], "request went through the proxy: %r" % proxy.seen
 
         # a program that does not know the key never gets it
@@ -117,7 +117,7 @@ def main():
             assert server.seen == [None], (server.name, server.seen)
         # the tool list falls back to the bundled one instead of taking the impostor's
         write("http://127.0.0.1:%d" % impostor.server_port)
-        assert pingmator_mcp.command_list() == pingmator_mcp.bundled_commands()
+        assert pinglymotion_mcp.command_list() == pinglymotion_mcp.bundled_commands()
         assert "Bearer " + TOKEN not in impostor.seen
 
         for bad in ("http://evil.example:80", "https://127.0.0.1:1234", "http://127.0.0.1:1234/x",
@@ -126,25 +126,25 @@ def main():
         assert proxy.seen == []
 
         # the AI tool's name from "initialize" goes along, made safe for a header (issue #43)
-        write("http://127.0.0.1:%d" % pingmator.server_port)
-        assert pingmator.posts[-1][1] is None, "no name before initialize"
-        pingmator_mcp.set_client_name({"name": "claude-code", "title": "Claude Code \u2728\r\nX-Evil: 1"})
-        assert pingmator_mcp.CLIENT_NAME == "Claude Code X-Evil: 1", pingmator_mcp.CLIENT_NAME
-        pingmator_mcp.set_client_name({"name": "claude-ai"})
-        pingmator_mcp.request("/api", {"command": "state"})
-        assert pingmator.posts[-1] == ("/api", "claude-ai"), pingmator.posts[-1]
+        write("http://127.0.0.1:%d" % pinglymotion.server_port)
+        assert pinglymotion.posts[-1][1] is None, "no name before initialize"
+        pinglymotion_mcp.set_client_name({"name": "claude-code", "title": "Claude Code \u2728\r\nX-Evil: 1"})
+        assert pinglymotion_mcp.CLIENT_NAME == "Claude Code X-Evil: 1", pinglymotion_mcp.CLIENT_NAME
+        pinglymotion_mcp.set_client_name({"name": "claude-ai"})
+        pinglymotion_mcp.request("/api", {"command": "state"})
+        assert pinglymotion.posts[-1] == ("/api", "claude-ai"), pinglymotion.posts[-1]
 
         # the heartbeat starts with initialize and goes to /api/heartbeat
-        pingmator_mcp.HEARTBEAT_SECONDS = 0.1
-        pingmator_mcp.start_heartbeat()
-        pingmator_mcp.start_heartbeat()  # only one thread
+        pinglymotion_mcp.HEARTBEAT_SECONDS = 0.1
+        pinglymotion_mcp.start_heartbeat()
+        pinglymotion_mcp.start_heartbeat()  # only one thread
         deadline = time.time() + 5
-        while time.time() < deadline and sum(1 for p in pingmator.posts if p[0] == "/api/heartbeat") < 2:
+        while time.time() < deadline and sum(1 for p in pinglymotion.posts if p[0] == "/api/heartbeat") < 2:
             time.sleep(0.05)
-        assert ("/api/heartbeat", "claude-ai") in pingmator.posts, pingmator.posts
+        assert ("/api/heartbeat", "claude-ai") in pinglymotion.posts, pinglymotion.posts
         assert proxy.seen == []
 
-    print("OK: MCP ignores HTTP_PROXY, only connects locally, checks it is Pingmator before sending the key, "
+    print("OK: MCP ignores HTTP_PROXY, only connects locally, checks it is PinglyMotion before sending the key, "
           "names the AI tool and sends heartbeats")
 
 

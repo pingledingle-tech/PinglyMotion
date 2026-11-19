@@ -32,7 +32,7 @@
             ]
         },
         {
-            "description": "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in Pingmator. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied.",
+            "description": "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in PinglyMotion. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied.",
             "name": "set_pose",
             "parameters": {
                 "frame": {
@@ -203,7 +203,7 @@
             ]
         },
         {
-            "description": "Shows the female or the male Second Life body. This only changes what you see in Pingmator; the saved BVH is the same.",
+            "description": "Shows the female or the male Second Life body. This only changes what you see in PinglyMotion; the saved BVH is the same.",
             "name": "set_figure",
             "parameters": {
                 "figure": {

@@ -1,5 +1,5 @@
 /*
- * Pingmator control interface - the commands
+ * PinglyMotion control interface - the commands
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -38,7 +38,7 @@ namespace
     {"joints", "Lists every joint you can pose (the Second Life Bento skeleton) with its rotation limits. The classic joints keep their old names (hip, abdomen, chest, neck, head, lCollar, lShldr = shoulder, lForeArm = elbow, lHand = wrist, lThigh, lShin = knee, lFoot = ankle, and r for right); Bento joints start with m, like mHandIndex1Left.", "{}", "[]"},
     {"get_pose", "Shows the rotation of the joints at a frame (default: current frame). Only joints that are rotated are listed unless all is true.",
      "{\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"},\"all\":{\"type\":\"boolean\"}}", "[]"},
-    {"set_pose", "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in Pingmator. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied.",
+    {"set_pose", "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in PinglyMotion. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied.",
      "{\"joints\":{\"type\":\"object\",\"description\":\"Joint name to [x, y, z] degrees, e.g. {\\\"lForeArm\\\":[0,-90,0]} bends the left elbow\",\"additionalProperties\":{\"type\":\"array\",\"items\":{\"type\":\"number\"},\"minItems\":3,\"maxItems\":3}},\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[\"joints\"]"},
     {"set_position", "Moves the body (hip position) at a frame, in the position fields' units.",
      "{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"},\"z\":{\"type\":\"number\"},\"frame\":{\"type\":\"integer\"}}", "[\"x\",\"y\",\"z\"]"},
@@ -57,7 +57,7 @@ namespace
     {"open_file", "Opens an animation file (.dingle, .bvh or .avm) from the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.", "{\"path\":{\"type\":\"string\"}}", "[\"path\"]"},
     {"save_file", "Saves the animation as a BVH file that can be uploaded to Second Life, in the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.", "{\"path\":{\"type\":\"string\"}}", "[]"},
     {"screenshot", "Takes a picture of the 3D view of the current frame, so you can see the pose. The picture is 4:3. Returns a PNG as base64 text.", "{\"width\":{\"type\":\"integer\",\"description\":\"Width in pixels, default 800\"}}", "[]"},
-    {"set_figure", "Shows the female or the male Second Life body. This only changes what you see in Pingmator; the saved BVH is the same.",
+    {"set_figure", "Shows the female or the male Second Life body. This only changes what you see in PinglyMotion; the saved BVH is the same.",
      "{\"figure\":{\"type\":\"string\",\"enum\":[\"female\",\"male\"]}}", "[\"figure\"]"},
     {"set_camera", "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side.",
      "{\"view\":{\"type\":\"string\",\"enum\":[\"front\",\"back\",\"left\",\"right\",\"three_quarter\"]},\"angle\":{\"type\":\"number\",\"description\":\"Degrees around the figure, 0 = front. Used when there is no view\"},\"height\":{\"type\":\"number\",\"description\":\"Degrees above the floor, 2 to 80, default 10\"},\"distance\":{\"type\":\"number\",\"description\":\"Distance from the figure, 30 to 500, default 100\"},\"reset\":{\"type\":\"boolean\"}}", "[]"},
@@ -495,7 +495,7 @@ QJsonObject ControlApi::stop(const QJsonObject&)
 
 QJsonObject ControlApi::newAnimation(const QJsonObject&)
 {
-  if (m_host->unsavedChanges()) return fail("There are unsaved changes. Save with save_file first, or ask the user to save or close them in Pingmator.");
+  if (m_host->unsavedChanges()) return fail("There are unsaved changes. Save with save_file first, or ask the user to save or close them in PinglyMotion.");
   QString error;
   if (!m_host->newAnimation(error)) return fail(error);
   return state(QJsonObject());
@@ -511,7 +511,7 @@ QJsonObject ControlApi::openFile(const QJsonObject& request)
   QString error;
   const QString file = resolveInWorkFolder(path, true, error);
   if (file.isEmpty()) return fail(error);
-  if (m_host->unsavedChanges()) return fail("There are unsaved changes. Save with save_file first, or ask the user to save or close them in Pingmator.");
+  if (m_host->unsavedChanges()) return fail("There are unsaved changes. Save with save_file first, or ask the user to save or close them in PinglyMotion.");
   if (!m_host->openFile(file, error)) return fail(error);
   return state(QJsonObject());
 }
