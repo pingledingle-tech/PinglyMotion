@@ -113,6 +113,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/easing)
   # playback through the easing module gives the old results bit for bit (#53 step 2)
   ADD_SUBDIRECTORY (tests/interpolation)
+  # panel layout rules, not used by the program yet (panels job P1)
+  ADD_SUBDIRECTORY (tests/panellayout)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

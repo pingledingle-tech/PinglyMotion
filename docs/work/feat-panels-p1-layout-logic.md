@@ -1,6 +1,6 @@
 Branch: feat/panels-p1-layout-logic
-Status: active
-Pull request: pending
+Status: done
+Pull request: #119
 Files:
 - src/panellayout.h
 - tests/panellayout/**
