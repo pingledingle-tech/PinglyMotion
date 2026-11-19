@@ -1,6 +1,6 @@
 Branch: docs/merge-closes-issues
-Status: active
-Pull request: pending
+Status: done
+Pull request: #87
 Files:
 - CLAUDE.md
 - .github/pull_request_template.md
