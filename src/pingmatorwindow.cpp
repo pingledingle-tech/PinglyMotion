@@ -71,6 +71,7 @@
 #include "theme.h"
 #include "ui_pingmatorwindow.h"
 #include "whatsnewdialog.h"
+#include "wheelguard.h"
 
 // What the remote control commands do in the window: the same steps as clicking.
 class WindowControlHost : public ControlHost
@@ -847,6 +848,9 @@ void PingmatorWindow::buildDocks()
   propertiesScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   m_propertiesScroll=propertiesScroll;
   m_propertiesDock->setWidget(propertiesScroll);
+  // a wheel over a slider or spin box scrolls the panel instead of changing
+  // the value (issue #82: the figure moved while the panel was scrolled)
+  (new WheelGuard(propertiesScroll))->guardChildrenOf(propertiesPanel);
   m_propertiesDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
   m_propertiesDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   m_propertiesDock->setTitleBarWidget(new PanelTitleBar(m_propertiesDock));
