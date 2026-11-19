@@ -86,6 +86,13 @@ TARGET_LINK_LIBRARIES (pingmator_ruth2_tests ${PINGMATOR_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME ruth2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingmator_ruth2_tests)
 SET_TESTS_PROPERTIES (ruth2 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# camera: mouse buttons and keys, turning around the pivot (#88)
+ADD_EXECUTABLE (pingmator_camera_tests tst_camera.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+TARGET_INCLUDE_DIRECTORIES (pingmator_camera_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pingmator_camera_tests ${PINGMATOR_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME camera COMMAND pingmator_camera_tests)
+SET_TESTS_PROPERTIES (camera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # the .anim writer (#10), not used by the program yet
 ADD_SUBDIRECTORY (animexport)
 
