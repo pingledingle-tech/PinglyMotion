@@ -33,6 +33,6 @@ cmake --build build --target glb2sl_bvh
 build/tests/gltfimport/glb2sl_bvh tests/data/mesh2motion/walk.glb walk.bvh
 ```
 
-The tool uses `bin/data/TPose.bvh` as the Second Life skeleton, writes 30 frames per second, and puts the rest pose in front as frame 0 (Second Life does not play frame 0). Converted clips are not part of the repository yet.
+The tool uses `bin/data/TPose.bvh` as the Second Life skeleton, writes 30 frames per second, and puts the rest pose in front as frame 0 (Second Life does not play frame 0). The converted clips are in `tests/motions/mesh2motion/`.
 
 Three of the files (`walk`, `sitting-idle`, `yes`) are also start files of the glTF fuzz target, in `fuzz/corpus/gltf/` as `m2m_*.glb`.

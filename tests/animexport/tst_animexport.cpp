@@ -14,6 +14,7 @@
 
 #include "animexport.h"
 #include "animfile.h"
+#include "easing.h"
 
 using AnimFile::Channel;
 
@@ -170,6 +171,8 @@ private slots:
   void nameMapping();
   void thinningUnderTheSizeLimit();
   void realFile();
+  void curvedEaseSurvivesExport_data();
+  void curvedEaseSurvivesExport();
 };
 
 void TestAnimExport::quantiser()
@@ -479,6 +482,88 @@ void TestAnimExport::realFile()
   for(const ReadJoint& j : ra.joints)
     for(const ReadKey& k : j.rot)
       QVERIFY(k.v[0]*k.v[0]+k.v[1]*k.v[1]+k.v[2]*k.v[2]<=1.0001);
+}
+
+// Easing (issue #53 step 4): the export plays no ease of its own; it writes the
+// frames it is given, so a curved ease has to arrive as the baked values. One
+// joint turns 0 to 60 degrees about BVH z (Second Life x), 24 frames, with the
+// four switch combinations and with Overshoot then settle (Easing::bakeValues).
+// Every key must be the curve within the quantisation of the format
+// (16 bits over -1..1 on a quaternion part: below 0.01 degrees here).
+void TestAnimExport::curvedEaseSurvivesExport_data()
+{
+  QTest::addColumn<bool>("startEaseOut");
+  QTest::addColumn<bool>("targetEaseIn");
+  QTest::addColumn<bool>("overshoot");
+  QTest::newRow("even") << false << false << false;
+  QTest::newRow("slow start") << true << false << false;
+  QTest::newRow("slow finish") << false << true << false;
+  QTest::newRow("slow both ends") << true << true << false;
+  QTest::newRow("overshoot then settle") << false << false << true;
+}
+
+void TestAnimExport::curvedEaseSurvivesExport()
+{
+  QFETCH(bool,startEaseOut);
+  QFETCH(bool,targetEaseIn);
+  QFETCH(bool,overshoot);
+
+  const int steps=24;
+  const double end=60.0;
+  std::vector<double> expected;                              // degrees, steps+1 values
+  if(overshoot)
+    expected=Easing::bakeValues(Easing::Preset::OvershootThenSettle,0.0,end,steps);
+  else
+  {
+    const Easing::Preset preset=Easing::presetFromSwitches(startEaseOut,targetEaseIn);
+    for(int pos=0;pos<=steps;pos++) expected.push_back(Easing::segmentValue(preset,0.0,end,steps,pos));
+  }
+  QCOMPARE(int(expected.size()),steps+1);
+
+  // frame 0 is the reference frame, frame 1 the start key, frame 1+steps the target key
+  JointDef hip; hip.name="hip"; hip.channels=POS_ROT;
+  JointDef arm; arm.name="lShldr"; arm.channels=ROT_ZXY; arm.parent=0;
+  hip.frames.assign(steps+2,{0,0,0,0,0,0});
+  arm.frames.push_back({0,0,0});
+  for(int pos=0;pos<=steps;pos++) arm.frames.push_back({float(expected[size_t(pos)]),0,0});
+  const AnimFile::Animation a=makeAnimation({hip,arm},steps+2,1.0/30.0);
+
+  const AnimExport::Result r=AnimExport::write(a);
+  QVERIFY2(r.ok(),qPrintable(r.error));
+  bool good=false;
+  const ReadAnim ra=readAnim(r.bytes,&good);
+  QVERIFY(good);
+  QCOMPARE(int(ra.joints.size()),2);
+  const std::vector<ReadKey>& keys=ra.joints[1].rot;
+  QCOMPARE(int(keys.size()),steps+1);                        // nothing thinned out of a small file
+
+  // a rotation about SL x by angle t has quaternion part x = sin(t/2)
+  const double tolerance=0.01;                               // degrees
+  double largestDifference=0.0,maxAngle=0.0;
+  for(int pos=0;pos<=steps;pos++)
+  {
+    const ReadKey& k=keys[size_t(pos)];
+    QVERIFY(std::fabs(k.v[1])<1e-4 && std::fabs(k.v[2])<1e-4);   // no other axis
+    const double degrees=2.0*std::asin(k.v[0])*180.0/M_PI;
+    const double difference=std::fabs(degrees-expected[size_t(pos)]);
+    largestDifference=std::max(largestDifference,difference);
+    maxAngle=std::max(maxAngle,degrees);
+    QVERIFY2(difference<tolerance,qPrintable(QString("frame %1: %2 against %3").arg(pos).arg(degrees).arg(expected[size_t(pos)])));
+  }
+  QVERIFY(largestDifference<tolerance);
+
+  // the test must not pass with a straight line: curved eases leave it by a clear margin
+  double fromLine=0.0;
+  for(int pos=0;pos<=steps;pos++)
+  {
+    const double degrees=2.0*std::asin(keys[size_t(pos)].v[0])*180.0/M_PI;
+    fromLine=std::max(fromLine,std::fabs(degrees-end*pos/steps));
+  }
+  if(startEaseOut || targetEaseIn || overshoot) QVERIFY2(fromLine>1.0,qPrintable(QString("%1").arg(fromLine)));
+  else QVERIFY(fromLine<tolerance);
+  if(overshoot) QVERIFY(maxAngle>end+0.5);                   // it really goes past the target
+  else QVERIFY(maxAngle<end+tolerance);
+  QVERIFY(std::fabs(2.0*std::asin(keys.back().v[0])*180.0/M_PI-end)<tolerance);   // ends on the target
 }
 
 QTEST_APPLESS_MAIN(TestAnimExport)
