@@ -1,12 +1,13 @@
 Branch: test/mesh2motion-motions
-Status: active
-Pull request: pending
+Status: done
+Pull request: #114
 Files:
 - docs/work/test-mesh2motion-motions.md
 - tests/motions/mesh2motion/**
 - tests/motions/README.md
 - tests/gltfimport/CMakeLists.txt
 - tests/gltfimport/tst_m2mmotions.cpp
+- tests/data/mesh2motion/README.md
 
 ## What
 

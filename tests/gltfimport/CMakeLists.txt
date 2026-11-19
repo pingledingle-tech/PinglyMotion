@@ -38,3 +38,13 @@ TARGET_LINK_LIBRARIES (pinglymotion_mesh2motion_tests Qt6::Core Qt6::Gui Qt6::Te
 ADD_DEPENDENCIES (pinglymotion_mesh2motion_tests glb2sl_bvh)
 ADD_TEST (NAME mesh2motion COMMAND pinglymotion_mesh2motion_tests)
 SET_TESTS_PROPERTIES (mesh2motion PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Test of the converted Mesh2Motion clips in tests/motions/mesh2motion (issue #27, step 4).
+ADD_EXECUTABLE (pinglymotion_m2mmotions_tests tst_m2mmotions.cpp
+                ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_m2mmotions_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_m2mmotions_tests PRIVATE
+  PINGLYMOTION_M2M_MOTIONS="${CMAKE_SOURCE_DIR}/tests/motions/mesh2motion")
+TARGET_LINK_LIBRARIES (pinglymotion_m2mmotions_tests Qt6::Core Qt6::Gui Qt6::Test)
+ADD_TEST (NAME m2mmotions COMMAND pinglymotion_m2mmotions_tests)
+SET_TESTS_PROPERTIES (m2mmotions PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
