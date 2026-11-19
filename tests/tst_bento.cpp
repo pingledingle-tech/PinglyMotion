@@ -724,18 +724,18 @@ void BentoTest::skinBendsElbow()
   int moved = 0, still = 0;
   for (int i = 0; i < body->vertices.size(); i++)
   {
-    // vertices that follow only one joint
+    // vertices that follow mostly the hand, and vertices that follow only the chest or the right hand
     const float distance = (body->vertices[i] - body->restVertices[i]).length();
     for (int k = 0; k < AvatarSkin::INFLUENCES; k++)
     {
-      if (body->influenceWeights[i * AvatarSkin::INFLUENCES + k] < 0.999f) continue;
+      const float weight = body->influenceWeights[i * AvatarSkin::INFLUENCES + k];
       const int j = body->influenceJoints[i * AvatarSkin::INFLUENCES + k];
-      if (j == hand)
+      if (j == hand && weight > 0.5f)
       {
         QVERIFY(distance > 3.0f);   // the hand is 8 inches from the elbow
         moved++;
       }
-      if (j == chest || j == otherHand)
+      if ((j == chest || j == otherHand) && weight > 0.999f)
       {
         QVERIFY(distance < 0.001f);
         still++;
