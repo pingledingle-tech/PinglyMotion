@@ -48,3 +48,10 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: python3 tools/check_old_name.py "$BASE" "$HEAD"
+      # teaching texts (issue 54): a warning only, it does not fail the check yet
+      - name: Check the teaching texts (warning only)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          python3 tests/test_check_texts.py
+          python3 tools/check_texts.py
