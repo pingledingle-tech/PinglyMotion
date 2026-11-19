@@ -1,5 +1,5 @@
 Branch: feat/mcpb-node
-Status: active
+Status: done
 Pull request: #127
 Files:
 - docs/work/feat-mcpb-node.md
