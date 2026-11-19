@@ -1,6 +1,6 @@
 Branch: docs/test-page-rule
-Status: active
-Pull request: pending
+Status: done
+Pull request: #72
 Files:
 - CLAUDE.md
 
