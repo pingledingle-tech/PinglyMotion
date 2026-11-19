@@ -82,6 +82,8 @@ Decisions taken while the project lived in the old repository, and the decisions
 
 ## Working method and repository
 
+**19 Nov 2026 – Rename to PinglyMotion; every old name goes.** The project, the program, the exe file and the zip are called PinglyMotion (formerly called Pingmator), also in code, build options and texts. Credits and licence texts stay. A check (`tools/check_old_name.py`, in the privacy workflow) fails when the old name comes back in files or in the commit messages of a pull request. The visible names (rename job 4) were approved by the project owner in chat without a separate Windows test. Reason: the change is cosmetic and easy to fix later if something is wrong. Source: `docs/MIGRATION.md`.
+
 **17 Nov 2026 – Settings for a private repository; no auto-merge.** CodeQL and dependency review are skipped while the repository is private. A job waits for green checks and tells the project owner, who merges or lets the job merge. Reason: a free private repository has no code scanning, no rulesets with required checks and no auto-merge. Replaces the auto-merge rule of 15 November. Source: old-repo items 124 and 49, checklist in #25.
 
 **17 Nov 2026 – No personal data anywhere; privacy check for text.** No personal names, contact or account details or personal paths in files, commits, issues, pull requests or comments. The privacy check also reads pull request titles and descriptions and new or edited issues, comments and reviews. Reason: the repository may become public, and then text and its edit history are visible. Source: old-repo items 123 and 131.

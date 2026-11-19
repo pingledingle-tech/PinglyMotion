@@ -1,6 +1,6 @@
 Branch: refactor/rename-guard
-Status: active
-Pull request: pending
+Status: done
+Pull request: #99
 Files:
 - docs/work/refactor-rename-guard.md
 - tools/check_old_name.py

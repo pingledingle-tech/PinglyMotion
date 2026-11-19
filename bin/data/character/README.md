@@ -1,7 +1,7 @@
 # Second Life avatar meshes
 
 The `.llm` files in this folder are the Second Life system avatar: head,
-upper body, lower body, eyes and eyelashes. Pingmator draws them as the body
+upper body, lower body, eyes and eyelashes. PinglyMotion draws them as the body
 of the figure.
 
 They are copied unchanged from the Second Life viewer:
@@ -12,5 +12,5 @@ Copyright (C) Linden Research, Inc. Licensed under the Creative Commons
 Attribution-Share Alike 3.0 License, see `LICENSE.txt` in this folder
 (a copy of `doc/LICENSE-logos.txt` from the viewer).
 
-Changes made by Pingmator: none to the files. When the program runs it turns
+Changes made by PinglyMotion: none to the files. When the program runs it turns
 the meshes to its own axes and units and bends them with the skeleton.

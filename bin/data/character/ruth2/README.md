@@ -1,7 +1,7 @@
 # Ruth2 v4 avatar
 
 `ruth2.pmm` is the open source Ruth2 v4 mesh body
-(https://github.com/RuthAndRoth/Ruth2), converted to Pingmator's own mesh
+(https://github.com/RuthAndRoth/Ruth2), converted to PinglyMotion's own mesh
 format. Its fingers and face are weighted to the Bento bones, like the Max
 body in `../max/`.
 
@@ -12,7 +12,7 @@ on keeps Max, and one who had it off keeps the system avatar (#110, part 2).
 ## Trying it out from the command line
 
 For testing, the environment variable `PINGLYMOTION_BODY` set to `ruth2` before
-starting Pingmator loads Ruth2 whatever **Options > Body** says. Any other
+starting PinglyMotion loads Ruth2 whatever **Options > Body** says. Any other
 value, or no value, changes nothing.
 
 Windows (Command Prompt, in the folder with `PinglyMotion.exe`):
@@ -58,8 +58,8 @@ script uses the same code as `tools/make_max_mesh.py`:
   materials, nails or alpha cuts.
 - Weights on collision volumes (PELVIS, CHEST, L_FOOT ... 23 in all) are
   moved to their bones. Every remaining joint is one of the 133 joints in
-  Pingmator's skeleton (`bin/data/skin_joints.txt`); there are none that
-  Pingmator does not have. 97 bones are used.
+  PinglyMotion's skeleton (`bin/data/skin_joints.txt`); there are none that
+  PinglyMotion does not have. 97 bones are used.
 - At most four joints per vertex are kept (the strongest), weights below
   0.001 are dropped, the rest add up to 1.
 - Ruth2 was exported from Avastar for a custom shape, so its bind pose is not
@@ -97,7 +97,7 @@ above), made on 18 Nov 2026. It is published under the same licence,
 AGPL-3.0-or-later. Its source is the Ruth2 repository named above, and the
 script that makes it is `tools/make_ruth2_mesh.py` in this repository.
 
-`ruth2.pmm` is AGPL data shipped beside the GPL program: Pingmator's code is
+`ruth2.pmm` is AGPL data shipped beside the GPL program: PinglyMotion's code is
 licensed under the GNU General Public License version 2 or later, and the
 program only reads this file at run time, the same way it reads the Linden
 avatar files (CC BY-SA 3.0) and the Max body (CC BY 4.0). Keep this folder

@@ -1,6 +1,6 @@
 # Developing PinglyMotion (for people and AI sessions)
 
-The code and many names still say "Pingmator"; the rename comes later. Read `CLAUDE.md` first: it has the rules for jobs, pull requests and privacy. This page has the commands.
+Read `CLAUDE.md` first: it has the rules for jobs, pull requests and privacy. This page has the commands.
 
 ## Start
 

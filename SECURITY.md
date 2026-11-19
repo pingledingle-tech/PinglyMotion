@@ -2,14 +2,14 @@
 
 ## Supported versions
 
-Pingmator is a small hobby project. Security fixes are made on the `main`
+PinglyMotion is a small hobby project. Security fixes are made on the `main`
 branch and go into the next release. Only the latest release gets fixes.
 
 | Version | Supported |
 |---|---|
 | Latest release (currently 0.2.x) | Yes |
 | Older releases | No |
-| QAvimator (the program Pingmator is based on) | No – it is no longer maintained |
+| QAvimator (the program PinglyMotion is based on) | No – it is no longer maintained |
 
 ## Reporting a vulnerability
 
@@ -21,7 +21,7 @@ Please report security problems **privately**, not in a public issue:
 
 Please include:
 
-- what the problem is and which part of Pingmator it affects (for example
+- what the problem is and which part of PinglyMotion it affects (for example
   opening a BVH/AVM file, remote control, the MCP server, the live link to
   Aurora, or the build and release workflows)
 - the version or commit you tested
@@ -38,7 +38,7 @@ if you want it.
 In scope:
 
 - crashes, memory errors, hangs or excessive memory use caused by files
-  Pingmator opens (`.bvh`, `.avm`, `.prp`, data files)
+  PinglyMotion opens (`.bvh`, `.avm`, `.prp`, data files)
 - the remote control interface (`PinglyMotion --control`, local HTTP on
   127.0.0.1) and the MCP server in `tools/mcp/`
 - the live link to the Aurora viewer
@@ -47,9 +47,9 @@ In scope:
 Out of scope:
 
 - problems that need an attacker to already run code as the same user on the
-  same computer, unless Pingmator makes the attack noticeably easier
+  same computer, unless PinglyMotion makes the attack noticeably easier
 - vulnerabilities in Qt, Second Life viewers or other third-party software –
-  please report those to their own projects (but do tell us if Pingmator ships
+  please report those to their own projects (but do tell us if PinglyMotion ships
   an affected version)
 
 ## Verifying a download

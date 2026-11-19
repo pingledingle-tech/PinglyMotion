@@ -13,7 +13,7 @@ Licensed under the Creative Commons Attribution 4.0 International License
 (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
 The full licence text is in CC-BY-4.0.txt in this folder.
 
-Changes made for Pingmator: converted from Collada to Pingmator's own mesh
+Changes made for PinglyMotion: converted from Collada to PinglyMotion's own mesh
 format (maxine.pmm) by tools/make_max_mesh.py. Only shape, normals and joint
 weights are kept (no textures or UV maps). Weights on collision volumes were
 moved to their bones, at most four joints per vertex are kept, and 393

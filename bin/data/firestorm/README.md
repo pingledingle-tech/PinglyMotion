@@ -2,7 +2,7 @@
 
 Data for the posing interface (#88, see `docs/POSING_UX.md`): a friendly name,
 a section, a left/right mirror partner and the "do not flip on mirror" flag for
-every joint of Pingmator's skeleton, plus Firestorm's 9 hand presets.
+every joint of PinglyMotion's skeleton, plus Firestorm's 9 hand presets.
 `src/jointinfo.h` reads it; `tests/tst_jointinfo.cpp` checks it. Nothing in the
 program uses it yet.
 
@@ -12,7 +12,7 @@ Taken from the Firestorm viewer:
 https://github.com/FirestormViewer/phoenix-firestorm
 (commit 69355fade65cdf39f854da2d187a2a1624ce56aa)
 
-| Pingmator file | Firestorm file |
+| PinglyMotion file | Firestorm file |
 |---|---|
 | `joints.json` | `indra/newview/fsposeranimator.h` (`PoserJoints`: joint order, type, mirror partner, `dontFlipOnMirror`) and `indra/newview/skins/default/xui/en/floater_fs_poser.xml` (`title_*` names, `header_*` section headings, `joint_transform_*`, `joint_frame_*`, `joint_delta_rotate_*`) |
 | `hand_presets/*.xml` | `indra/newview/app_settings/poses/hand_presets/*.xml`, copied unchanged |
@@ -37,7 +37,7 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details
 (`LICENSE.txt` in this folder).
 
-The files in this folder stay under the LGPL 2.1. Pingmator itself is GPL
+The files in this folder stay under the LGPL 2.1. PinglyMotion itself is GPL
 version 2 or later; LGPL 2.1 material may be used in it.
 
 ## What is in `joints.json`
@@ -48,10 +48,10 @@ limbs, wings, spine), then the joints Firestorm does not list:
 | Field | Meaning |
 |---|---|
 | `sl` | Second Life joint name (`mShoulderLeft`) |
-| `bvh` | Name in Pingmator's BVH files (`lShldr`), from `bin/data/bento_joints.txt` |
+| `bvh` | Name in PinglyMotion's BVH files (`lShldr`), from `bin/data/bento_joints.txt` |
 | `name` | Friendly name (`Whole Arm`) |
 | `nameFrom` | `firestorm` or `pinglymotion` (see below) |
-| `tab` | Pingmator's joint table tab: Body, Face, Hands or Other, the same as `JointGroups::tabOf()` (a test checks this) |
+| `tab` | PinglyMotion's joint table tab: Body, Face, Hands or Other, the same as `JointGroups::tabOf()` (a test checks this) |
 | `firestormType` | Firestorm's tab: `BODY`, `FACE`, `HANDS`, `MISC` or `WHOLEAVATAR` (the pelvis); empty when Firestorm does not list the joint |
 | `firestormSection` | Heading the joint stands under in Firestorm's list (`Left Arm`, `Eyes/Eye Lids`) |
 | `mirror` | SL name of the left/right partner, empty if none |
@@ -65,7 +65,7 @@ the 15 finger joints of both hands.
 Firestorm's collision volumes (`HEAD`, `L_UPPER_ARM` …) are left out: they are
 not joints in BVH files.
 
-## Changes and additions by Pingmator
+## Changes and additions by PinglyMotion
 
 - Names that Firestorm does not have, marked `"nameFrom": "pinglymotion"`:
   `mFaceRoot` (Face Root) and `mFaceChin` (Chin) are in Firestorm's list but
@@ -74,7 +74,7 @@ not joints in BVH files.
   pair, a section and `dontFlipOnMirror` on the right side, like Firestorm's
   other pairs. `mFaceJawShaper` is not in Firestorm's list either, but its
   title (Jaw Shaper) is in Firestorm's floater and is used.
-- `bvh` and `tab` are Pingmator's.
+- `bvh` and `tab` are PinglyMotion's.
 - Everything else is as Firestorm has it, including these details:
   - Many names only make sense with their section: "Collar", "Thumb Base",
     "Left 2" (hind limb or wing). `JointInfo::uniqueName()` puts the section in
@@ -93,7 +93,7 @@ joint's base rotation instead of adding to it. When loading a file Firestorm
 builds the rotation with `LLMatrix3(x, y, z)` (roll, pitch, yaw) and no axis
 swap (`FSPoserAnimator::loadJointRotation()` in `fsposeranimator.cpp`).
 
-Pingmator keeps rotations as BVH Euler angles in **degrees**, in BVH axes
+PinglyMotion keeps rotations as BVH Euler angles in **degrees**, in BVH axes
 (Y up), applied channel by channel in the file's order (#116). Converting a
 preset needs: radians to degrees, SL axes to BVH axes, Firestorm's roll/pitch/yaw
 order to the joint's BVH channel order, and a check against the rest pose of
