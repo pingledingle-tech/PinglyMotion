@@ -1,6 +1,6 @@
 Branch: feat/mcpb-node
 Status: active
-Pull request: pending
+Pull request: #127
 Files:
 - docs/work/feat-mcpb-node.md
 - tools/mcp/mcpb/manifest.json
