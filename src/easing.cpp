@@ -178,14 +178,6 @@ std::vector<Quat> bakeRotations(Preset preset,const Quat& a,const Quat& b,int fr
   return out;
 }
 
-Preset presetFromSwitches(bool startEaseOut,bool targetEaseIn)
-{
-  if(startEaseOut && targetEaseIn) return Preset::SlowBothEnds;
-  if(startEaseOut) return Preset::SlowStart;
-  if(targetEaseIn) return Preset::SlowFinish;
-  return Preset::Even;
-}
-
 bool switchesFromPreset(Preset preset,bool& startEaseOut,bool& targetEaseIn)
 {
   switch(preset)
