@@ -1,6 +1,6 @@
 Branch: feat/gltf-import
 Status: active
-Pull request: pending
+Pull request: #69
 Files:
 - src/gltfimport.*
 - tests/gltfimport/**
