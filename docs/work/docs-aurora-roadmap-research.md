@@ -1,5 +1,5 @@
 Branch: docs/aurora-roadmap-research
-Status: active
+Status: done
 Pull request: #58
 Files:
 - docs/AURORA_STUDIO.md
