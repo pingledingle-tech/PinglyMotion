@@ -10,8 +10,11 @@ Four targets, all built with libFuzzer, AddressSanitizer and UndefinedBehaviorSa
 | `fuzz_control` | `ControlApi::execute()` – the remote control commands | An AI client sends them, and it can be steered by text it read somewhere else |
 | `fuzz_animfile` | `AnimFile::parse()` – the new BVH/AVM parser (`src/animfile.*`, issue #62), each input as a BVH and as an AVM file | BVH files are traded freely in Second Life communities, and they reach the parser through File > Open, "Open with" and the remote control |
 | `fuzz_dingle` | `Dingle::parse()` and `Dingle::write()` – the `.dingle` working format (`src/dingle.*`, issue #26, [DINGLE_FORMAT.md](../docs/DINGLE_FORMAT.md)); an accepted file must keep every rule, and `write(parse(x))` must read back equal and stay byte-stable | `.dingle` files will be opened from outside, like BVH files |
+| `fuzz_anim` | `AnimImport::parse()` – Second Life `.anim` files (`src/animimport.*`, issue #22, [ANIM_FORMAT.md](../docs/ANIM_FORMAT.md)); an accepted file must keep every limit of the data model | `.anim` files will be opened from outside |
 
 Not fuzzed here: `SL.lim` and the `.llm` meshes (read only from Pingmator's own data folder), and the old BVH/AVM parser in `src/bvh.cpp`. `fuzz_animfile` fuzzes the new parser that replaces it (issue #62); until the program uses it (part 2 of #62), it does not test the code that opens files today.
+
+`fuzz/corpus/anim/` holds the start files for `fuzz_anim` (`good_*` must be read, `bad_*` must be refused; `tests/animimport` checks that).
 
 `fuzz/corpus/dingle/` holds the start files for `fuzz_dingle` (`good_stable_*` are exactly what the writer produces; a test checks that).
 
@@ -23,7 +26,7 @@ Needs clang and its sanitizer runtime (Ubuntu: `sudo apt-get install clang libcl
 
 ```
 CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_FUZZ=ON
-cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle -j 2
+cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim -j 2
 
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 QT_QPA_PLATFORM=offscreen
 mkdir -p /tmp/prop /tmp/control
