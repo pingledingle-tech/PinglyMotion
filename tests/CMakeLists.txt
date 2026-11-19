@@ -10,7 +10,6 @@ SET (CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
               ${CMAKE_SOURCE_DIR}/src/dingle.cpp
               ${CMAKE_SOURCE_DIR}/src/iktree.cpp
               ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp
-              ${CMAKE_SOURCE_DIR}/src/llmmesh.cpp
               ${CMAKE_SOURCE_DIR}/src/pmmesh.cpp
               ${CMAKE_SOURCE_DIR}/src/jointgroups.cpp
               ${CMAKE_SOURCE_DIR}/src/propfile.cpp

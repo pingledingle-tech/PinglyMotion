@@ -90,7 +90,7 @@ void UserSettings::setDarkTheme(bool on)          { m_darkTheme = on; }
 bool UserSettings::darkTheme()                       { return m_darkTheme; }
 void UserSettings::setBody(const QString& value)
 {
-  m_body = (value == "max" || value == "system") ? value : QString("ruth2");
+  m_body = (value == "max") ? value : QString("ruth2");
 }
 QString UserSettings::body()                         { return m_body; }
 void UserSettings::setLightBrightness(int value)     { m_lightBrightness = qBound(0, value, 100); }
@@ -147,7 +147,7 @@ void UserSettings::readSettings()
     if (settings.contains(m_bodyKey))
       setBody(settings.value(m_bodyKey).toString());
     else if (settings.contains(m_bentoBodyKey))
-      setBody(settings.value(m_bentoBodyKey).toBool() ? "max" : "system");
+      setBody(settings.value(m_bentoBodyKey).toBool() ? "max" : "ruth2");
     else
       setBody("ruth2");
     setLightBrightness(settings.value(m_lightBrightnessKey, 50).toInt());

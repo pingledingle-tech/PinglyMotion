@@ -2,7 +2,7 @@
  * PinglyMotion automatic tests: the Ruth2 v4 body (#110)
  *
  * Checks bin/data/character/ruth2/ruth2.pmm, made by tools/make_ruth2_mesh.py,
- * and that AvatarSkin loads it as RuthBody (also through PINGLYMOTION_BODY=ruth2).
+ * and that AvatarSkin loads it as RuthBody.
  * Run from the bin/ folder, so the program finds ./data like it does normally.
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -81,26 +81,6 @@ float weightOn(const AvatarSkin::Part& part, int vertex, int joint)
   return w;
 }
 
-// to run a test with PINGLYMOTION_BODY set, and leave the environment as it was
-class BodyVariable
-{
-  public:
-    explicit BodyVariable(const QByteArray& value) : m_had(qEnvironmentVariableIsSet("PINGLYMOTION_BODY")),
-                                                     m_old(qgetenv("PINGLYMOTION_BODY"))
-    {
-      if (value.isNull()) qunsetenv("PINGLYMOTION_BODY");
-      else qputenv("PINGLYMOTION_BODY", value);
-    }
-    ~BodyVariable()
-    {
-      if (m_had) qputenv("PINGLYMOTION_BODY", m_old);
-      else qunsetenv("PINGLYMOTION_BODY");
-    }
-  private:
-    bool m_had;
-    QByteArray m_old;
-};
-
 }  // namespace
 
 class Ruth2Test : public QObject
@@ -108,14 +88,12 @@ class Ruth2Test : public QObject
   Q_OBJECT
 
   private slots:
-    void init() { qunsetenv("PINGLYMOTION_BODY"); }
     void meshFile();
     void jointsAreInSkeleton();
     void bodyLoads();
     void eyesInHead();
     void fingerBends();
     void jawOpens();
-    void environmentSelectsRuth();
 };
 
 // parts, vertex and triangle counts of the released Ruth2 v4 mesh
@@ -213,9 +191,10 @@ void Ruth2Test::bodyLoads()
   QVERIFY2(left > 28.0f && left < 36.0f, qPrintable(QString::number(left)));
   QVERIFY2(right < -28.0f && right > -36.0f, qPrintable(QString::number(right)));
 
-  // switching back gives the system avatar again
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::ClassicBody, &error));
-  QCOMPARE(skin.parts().size(), 6);
+  // the program loads Ruth2 when no body is named
+  AvatarSkin plain;
+  QVERIFY2(plain.load(Constants::pinglyMotionDataPath(), &error), qPrintable(error));
+  QCOMPARE(plain.body(), AvatarSkin::RuthBody);
 }
 
 // the eyeballs were moved to the SL skeleton with the head: each is a cap in
@@ -306,38 +285,6 @@ void Ruth2Test::jawOpens()
   }
   QVERIFY2(faceMoved > 100, qPrintable(QString::number(faceMoved)));
   QVERIFY(othersStill > 9000);
-}
-
-// PINGLYMOTION_BODY=ruth2 picks Ruth2 whatever body is asked for (testing only,
-// until part 2 of #110 adds a menu entry); other values change nothing
-void Ruth2Test::environmentSelectsRuth()
-{
-  {
-    BodyVariable var("ruth2");
-    AvatarSkin skin;
-    QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
-    QCOMPARE(skin.body(), AvatarSkin::RuthBody);
-    QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
-    QCOMPARE(skin.body(), AvatarSkin::RuthBody);
-  }
-  {
-    BodyVariable var(" Ruth2 ");
-    QCOMPARE(AvatarSkin::bodyOverride(), int(AvatarSkin::RuthBody));
-  }
-  {
-    BodyVariable var("something else");
-    QCOMPARE(AvatarSkin::bodyOverride(), -1);
-    AvatarSkin skin;
-    QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
-    QCOMPARE(skin.body(), AvatarSkin::MaxBody);
-  }
-  {
-    BodyVariable var{QByteArray()};
-    QCOMPARE(AvatarSkin::bodyOverride(), -1);
-    AvatarSkin skin;
-    QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
-    QCOMPARE(skin.body(), AvatarSkin::ClassicBody);
-  }
 }
 
 QTEST_MAIN(Ruth2Test)

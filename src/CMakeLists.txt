@@ -16,7 +16,6 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
               controlserver.cpp
               floor.cpp
               iktree.cpp
-              llmmesh.cpp
               pmmesh.cpp
               jointgroups.cpp
               propfile.cpp

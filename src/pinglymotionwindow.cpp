@@ -293,9 +293,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
     {"ruth2",AvatarSkin::RuthBody,tr("Ruth2"),
      tr("The open source Ruth2 avatar, with fingers and a face that follow the Bento bones.")},
     {"max",AvatarSkin::MaxBody,tr("Max"),
-     tr("The open source Max avatar, with fingers and a face that follow the Bento bones.")},
-    {"system",AvatarSkin::ClassicBody,tr("Second Life system avatar"),
-     tr("The standard Second Life avatar, without Bento fingers and face.")}};
+     tr("The open source Max avatar, with fingers and a face that follow the Bento bones.")}};
   QMap<QString,QAction*> bodyActions;
   for(const BodyChoice& choice : bodyChoices)
   {
@@ -311,7 +309,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
     AvatarSkin::Body wanted=AvatarSkin::RuthBody;
     for(const BodyChoice& choice : bodyChoices)
       if(current==QLatin1String(choice.key)) wanted=choice.body;
-    if(!ui->animationView->setBody(wanted)) current=QStringLiteral("system");   // could not load: system avatar
+    if(!ui->animationView->setBody(wanted))   // could not load: the other body is shown
+      current=ui->animationView->body()==AvatarSkin::MaxBody ? QStringLiteral("max") : QStringLiteral("ruth2");
     bodyActions.value(current,bodyActions.value(QStringLiteral("ruth2")))->setChecked(true);
   }
 
@@ -354,14 +353,15 @@ PinglyMotionWindow::PinglyMotionWindow() :
   connect(bodyGroup,&QActionGroup::triggered,this,[this,bodyActions](QAction* action)
   {
     const QString key=action->data().toString();
-    AvatarSkin::Body wanted=AvatarSkin::ClassicBody;
-    if(key==QLatin1String("ruth2")) wanted=AvatarSkin::RuthBody;
-    else if(key==QLatin1String("max")) wanted=AvatarSkin::MaxBody;
+    AvatarSkin::Body wanted=AvatarSkin::RuthBody;
+    if(key==QLatin1String("max")) wanted=AvatarSkin::MaxBody;
     if(!ui->animationView->setBody(wanted))
     {
-      bodyActions.value(QStringLiteral("system"))->setChecked(true);
-      UserSettings::setBody(QStringLiteral("system"));
-      QMessageBox::warning(this,tr("Body"),tr("The avatar could not be loaded. Showing the system avatar."));
+      const QString shown=ui->animationView->body()==AvatarSkin::MaxBody ? QStringLiteral("max") : QStringLiteral("ruth2");
+      bodyActions.value(shown)->setChecked(true);
+      UserSettings::setBody(shown);
+      QMessageBox::warning(this,tr("Body"),tr("The avatar could not be loaded. Showing %1 instead.")
+                           .arg(ui->animationView->body()==AvatarSkin::MaxBody ? tr("Max") : tr("Ruth2")));
       return;
     }
     UserSettings::setBody(key);

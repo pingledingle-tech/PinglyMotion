@@ -19,7 +19,6 @@
 #include "constants.h"
 #include "releaseinfo.h"
 #include "versionnumber.h"
-#include "llmmesh.h"
 #include "pmmesh.h"
 #include "jointgroups.h"
 #include "usersettings.h"
@@ -116,8 +115,6 @@ class BentoTest : public QObject
     void updateCheckReadsGitHubRelease_data();
     void updateCheckReadsGitHubRelease();
     void programHasVersionNumber();
-    void avatarMeshes_data();
-    void avatarMeshes();
     void skinRestPose();
     void skinFollowsSkeleton();
     void skinBendsElbow();
@@ -127,7 +124,6 @@ class BentoTest : public QObject
     void dataFolderIsNotTheCurrentFolder();
     void propFiles_data();
     void propFiles();
-    void meshWithBadWeightIsRefused();
     void maxBodyLoads();
     void maxFingerBends();
     void maxJawOpens();
@@ -629,50 +625,6 @@ void BentoTest::posedFingerIsSaved()
 }
 
 
-// ---------------------------------------------------- Linden avatar meshes
-
-void BentoTest::avatarMeshes_data()
-{
-  QTest::addColumn<QString>("file");
-  QTest::addColumn<int>("vertexCount");
-  QTest::addColumn<int>("triangleCount");
-  QTest::addColumn<QStringList>("skinJoints");
-
-  QTest::newRow("head") << "avatar_head.llm" << 1132 << 1844
-    << QStringList{"mHead", "mNeck"};
-  QTest::newRow("upper body") << "avatar_upper_body.llm" << 2211 << 3688
-    << QStringList{"mChest", "mCollarLeft", "mCollarRight", "mElbowLeft", "mElbowRight", "mNeck",
-                   "mPelvis", "mShoulderLeft", "mShoulderRight", "mTorso", "mWristLeft", "mWristRight"};
-  QTest::newRow("lower body") << "avatar_lower_body.llm" << 977 << 1654
-    << QStringList{"mAnkleLeft", "mAnkleRight", "mHipLeft", "mHipRight", "mKneeLeft", "mKneeRight", "mPelvis"};
-  QTest::newRow("eyelashes") << "avatar_eyelashes.llm" << 48 << 46 << QStringList{"mHead"};
-  QTest::newRow("eye") << "avatar_eye.llm" << 145 << 272 << QStringList();
-}
-
-void BentoTest::avatarMeshes()
-{
-  QFETCH(QString, file);
-  QFETCH(int, vertexCount);
-  QFETCH(int, triangleCount);
-  QFETCH(QStringList, skinJoints);
-
-  LLMMesh mesh;
-  QString error;
-  QVERIFY2(mesh.load(Constants::pinglyMotionDataPath() + "/character/" + file, &error), qPrintable(error));
-  QCOMPARE(mesh.vertices.size(), vertexCount);
-  QCOMPARE(mesh.normals.size(), vertexCount);
-  QCOMPARE(mesh.triangleCount(), triangleCount);
-  QCOMPARE(mesh.skinJoints, skinJoints);
-  QCOMPARE(mesh.hasWeights, !skinJoints.isEmpty());
-  if (mesh.hasWeights) QCOMPARE(mesh.weights.size(), vertexCount);
-
-  // the body parts stand on the floor, in metres
-  if (file != "avatar_eye.llm")
-    for (const QVector3D& v : mesh.vertices)
-      QVERIFY(v.z() > -0.05f && v.z() < 2.0f);
-}
-
-
 // ------------------------------------------------ avatar mesh on the skeleton
 
 // rest pose: every joint sits at its rest position, nothing is turned
@@ -693,16 +645,15 @@ void BentoTest::skinRestPose()
   AvatarSkin skin;
   QString error;
   QVERIFY2(skin.load(Constants::pinglyMotionDataPath(), &error), qPrintable(error));
-  QCOMPARE(skin.parts().size(), 6);   // head, upper body, lower body, eyelashes, two eyes
+  QCOMPARE(skin.body(), AvatarSkin::RuthBody);   // the default body
+  QCOMPARE(skin.parts().size(), 5);   // body, feet, eyelashes, two eyes
 
   // the mesh follows the 19 classic joints and the two eyes
-  QStringList expected = QString("hip abdomen chest neck head lCollar lShldr lForeArm lHand "
-                                 "rCollar rShldr rForeArm rHand lThigh lShin lFoot rThigh rShin rFoot "
-                                 "mEyeLeft mEyeRight").split(' ');
-  QStringList names = skin.jointNames();
-  expected.sort();
-  names.sort();
-  QCOMPARE(names, expected);
+  const QStringList names = skin.jointNames();
+  for (const QString& name : QString("hip abdomen chest neck head lCollar lShldr lForeArm lHand "
+                                     "rCollar rShldr rForeArm rHand lThigh lShin lFoot rThigh rShin rFoot "
+                                     "mEyeLeft mEyeRight").split(' '))
+    QVERIFY2(names.contains(name), qPrintable(name));
 
   skin.skin(restMatrices(skin));
   for (const AvatarSkin::Part& part : skin.parts())
@@ -765,34 +716,39 @@ void BentoTest::skinBendsElbow()
   matrices[hand] = handMatrix;
   skin.skin(matrices);
 
-  const AvatarSkin::Part* upperBody = nullptr;
+  const AvatarSkin::Part* body = nullptr;
   for (const AvatarSkin::Part& part : skin.parts())
-    if (part.name == "avatar_upper_body.llm") upperBody = &part;
-  QVERIFY(upperBody);
+    if (part.name == "Ruth2 body") body = &part;
+  QVERIFY(body);
 
   int moved = 0, still = 0;
-  for (int i = 0; i < upperBody->vertices.size(); i++)
+  for (int i = 0; i < body->vertices.size(); i++)
   {
-    const float distance = (upperBody->vertices[i] - upperBody->restVertices[i]).length();
-    const int a = upperBody->jointA[i];
-    const float t = upperBody->blend[i];
-    if (a == hand)
+    // vertices that follow only one joint
+    const float distance = (body->vertices[i] - body->restVertices[i]).length();
+    for (int k = 0; k < AvatarSkin::INFLUENCES; k++)
     {
-      QVERIFY(distance > 3.0f);   // the hand is 8 inches from the elbow
-      moved++;
-    }
-    if ((a == chest || a == otherHand) && t == 0.0f)
-    {
-      QVERIFY(distance < 0.001f);
-      still++;
+      if (body->influenceWeights[i * AvatarSkin::INFLUENCES + k] < 0.999f) continue;
+      const int j = body->influenceJoints[i * AvatarSkin::INFLUENCES + k];
+      if (j == hand)
+      {
+        QVERIFY(distance > 3.0f);   // the hand is 8 inches from the elbow
+        moved++;
+      }
+      if (j == chest || j == otherHand)
+      {
+        QVERIFY(distance < 0.001f);
+        still++;
+      }
     }
   }
-  QVERIFY(moved > 50);
-  QVERIFY(still > 50);
+  QVERIFY2(moved > 20, qPrintable(QString::number(moved)));
+  QVERIFY2(still > 20, qPrintable(QString::number(still)));
 }
 
 
-// the male body comes from the Male_Head, Male_Torso and Male_Legs morphs
+// the male figure: Ruth2 has no male shape, so only the skeleton changes
+// (wider collar and shoulders, longer shins); the mesh itself stays the same
 void BentoTest::skinMaleShape()
 {
   AvatarSkin skin;
@@ -802,20 +758,8 @@ void BentoTest::skinMaleShape()
 
   skin.setMale(true);
   QVERIFY(skin.isMale());
-  int movedParts = 0;
   for (int p = 0; p < skin.parts().size(); p++)
-  {
-    const AvatarSkin::Part& part = skin.parts()[p];
-    int moved = 0;
-    for (int i = 0; i < part.restVertices.size(); i++)
-    {
-      const float distance = (part.restVertices[i] - female[p][i]).length();
-      QVERIFY(distance < 4.0f);   // a few inches at most
-      if (distance > 0.01f) moved++;
-    }
-    if (moved > 100) movedParts++;
-  }
-  QCOMPARE(movedParts, 3);   // head, upper body, lower body
+    QCOMPARE(skin.parts()[p].restVertices, female[p]);
 
   // the male skeleton: wider collar and shoulders, nothing for the female
   QCOMPARE(skin.jointScale("lCollar"), QVector3D(1.4f, 1, 1));
@@ -950,40 +894,6 @@ void BentoTest::propFiles()
   QCOMPARE(props.size(), count);
 }
 
-// a mesh whose vertex weight is NaN must be refused, not cast to a joint number (#16, #22)
-void BentoTest::meshWithBadWeightIsRefused()
-{
-  QFile source(Constants::pinglyMotionDataPath() + "/character/avatar_upper_body.llm");
-  QVERIFY(source.open(QIODevice::ReadOnly));
-  QByteArray data = source.readAll();
-
-  // header 24, two flags, position, rotation, order, scale, vertex count
-  const bool hasWeights = data[24] != 0;
-  const bool hasDetail = data[25] != 0;
-  QVERIFY(hasWeights);
-  const int countAt = 24 + 2 + 12 + 12 + 1 + 12;
-  const int count = quint8(data[countAt]) | (quint8(data[countAt + 1]) << 8);
-  const int weightsAt = countAt + 2 + count * (12 + 12 + 12 + 8 + (hasDetail ? 8 : 0));
-  const float nan = std::numeric_limits<float>::quiet_NaN();
-  data.replace(weightsAt + 4 * 10, 4, reinterpret_cast<const char*>(&nan), 4);
-
-  QTemporaryDir dir;
-  const QString path = dir.filePath("avatar_upper_body.llm");
-  QFile out(path);
-  QVERIFY(out.open(QIODevice::WriteOnly));
-  out.write(data);
-  out.close();
-
-  LLMMesh mesh;
-  QString error;
-  QVERIFY(!mesh.load(path, &error));
-  QVERIFY2(error.contains("weight"), qPrintable(error));
-
-  // the original still loads
-  LLMMesh original;
-  QVERIFY2(original.load(source.fileName(), &error), qPrintable(error));
-}
-
 // ------------------------------------------------ the Max Bento avatar
 
 static int jointIndex(const AvatarSkin& skin, const QString& name)
@@ -1043,9 +953,6 @@ void BentoTest::maxBodyLoads()
   QVERIFY2(lowest > -44.0f && lowest < -40.0f, qPrintable(QString::number(lowest)));
   QVERIFY2(highest > 25.0f && highest < 34.0f, qPrintable(QString::number(highest)));
 
-  // switching back gives the system avatar again
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::ClassicBody, &error));
-  QCOMPARE(skin.parts().size(), 6);
 }
 
 // bending the left index finger moves part of the left hand, not the right hand
