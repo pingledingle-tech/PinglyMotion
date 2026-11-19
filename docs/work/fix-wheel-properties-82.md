@@ -1,6 +1,6 @@
 Branch: fix/wheel-properties-82
-Status: active
-Pull request: pending
+Status: done
+Pull request: #85
 Files:
 - src/wheelguard.h
 - src/pingmatorwindow.cpp
