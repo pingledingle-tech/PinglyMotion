@@ -13,6 +13,7 @@ Files:
 - tests/tst_control.cpp
 - tests/tst_roundtrip.cpp
 - tests/animfile/**
+- tests/smoke_gui.sh
 - tests/CMakeLists.txt
 - tools/mcp/commands.json
 - CMakeLists.txt
