@@ -2,7 +2,7 @@
  * Pingmator automatic tests: the Ruth2 v4 body (#110)
  *
  * Checks bin/data/character/ruth2/ruth2.pmm, made by tools/make_ruth2_mesh.py,
- * and that AvatarSkin loads it as RuthBody (also through PINGMATOR_BODY=ruth2).
+ * and that AvatarSkin loads it as RuthBody (also through PINGLYMOTION_BODY=ruth2).
  * Run from the bin/ folder, so the program finds ./data like it does normally.
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -81,20 +81,20 @@ float weightOn(const AvatarSkin::Part& part, int vertex, int joint)
   return w;
 }
 
-// to run a test with PINGMATOR_BODY set, and leave the environment as it was
+// to run a test with PINGLYMOTION_BODY set, and leave the environment as it was
 class BodyVariable
 {
   public:
-    explicit BodyVariable(const QByteArray& value) : m_had(qEnvironmentVariableIsSet("PINGMATOR_BODY")),
-                                                     m_old(qgetenv("PINGMATOR_BODY"))
+    explicit BodyVariable(const QByteArray& value) : m_had(qEnvironmentVariableIsSet("PINGLYMOTION_BODY")),
+                                                     m_old(qgetenv("PINGLYMOTION_BODY"))
     {
-      if (value.isNull()) qunsetenv("PINGMATOR_BODY");
-      else qputenv("PINGMATOR_BODY", value);
+      if (value.isNull()) qunsetenv("PINGLYMOTION_BODY");
+      else qputenv("PINGLYMOTION_BODY", value);
     }
     ~BodyVariable()
     {
-      if (m_had) qputenv("PINGMATOR_BODY", m_old);
-      else qunsetenv("PINGMATOR_BODY");
+      if (m_had) qputenv("PINGLYMOTION_BODY", m_old);
+      else qunsetenv("PINGLYMOTION_BODY");
     }
   private:
     bool m_had;
@@ -108,7 +108,7 @@ class Ruth2Test : public QObject
   Q_OBJECT
 
   private slots:
-    void init() { qunsetenv("PINGMATOR_BODY"); }
+    void init() { qunsetenv("PINGLYMOTION_BODY"); }
     void meshFile();
     void jointsAreInSkeleton();
     void bodyLoads();
@@ -308,7 +308,7 @@ void Ruth2Test::jawOpens()
   QVERIFY(othersStill > 9000);
 }
 
-// PINGMATOR_BODY=ruth2 picks Ruth2 whatever body is asked for (testing only,
+// PINGLYMOTION_BODY=ruth2 picks Ruth2 whatever body is asked for (testing only,
 // until part 2 of #110 adds a menu entry); other values change nothing
 void Ruth2Test::environmentSelectsRuth()
 {

@@ -4,7 +4,7 @@
  * framing, auth both ways).
  *
  * Run from the bin/ folder, so the program finds ./data like it does normally.
- * Set PINGMATOR_POSE_OUT to a file name to also save a pose BVH there (used to
+ * Set PINGLYMOTION_POSE_OUT to a file name to also save a pose BVH there (used to
  * check that Aurora reads it).
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -123,13 +123,13 @@ void AuroraLinkTest::init()
   QVERIFY(m_dir->isValid());
   m_key = QByteArray::fromHex("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
   m_challenge = QByteArray(32, '\x09');
-  qputenv("PINGMATOR_AURORA_TOKEN_DIR", m_dir->path().toLocal8Bit());
+  qputenv("PINGLYMOTION_AURORA_TOKEN_DIR", m_dir->path().toLocal8Bit());
   writeToken(m_server->serverPort(), m_key.toHex());
 }
 
 void AuroraLinkTest::cleanup()
 {
-  qunsetenv("PINGMATOR_AURORA_TOKEN_DIR");
+  qunsetenv("PINGLYMOTION_AURORA_TOKEN_DIR");
   delete m_server;
   delete m_animation;
   delete m_bvh;
@@ -268,7 +268,7 @@ void AuroraLinkTest::poseHasNeutralFrameThenPose()
   for (int i = 3; i < neutral.size(); i++) QCOMPARE(neutral[i], 0.0);
   QVERIFY(pose.contains(10.0) && pose.contains(20.0) && pose.contains(30.0));
 
-  const QByteArray out = qgetenv("PINGMATOR_POSE_OUT");
+  const QByteArray out = qgetenv("PINGLYMOTION_POSE_OUT");
   if (!out.isEmpty())
   {
     QFile file(QString::fromLocal8Bit(out));

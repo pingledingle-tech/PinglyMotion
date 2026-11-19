@@ -70,11 +70,11 @@ static bool fuzzyEqual(const QVector3D& a, const QVector3D& b, float tolerance =
          qAbs(a.z() - b.z()) <= tolerance;
 }
 
-// keep a copy of a saved file when PINGMATOR_EXPORT_DIR is set, so
+// keep a copy of a saved file when PINGLYMOTION_EXPORT_DIR is set, so
 // tools/check_sl_bvh.py can check it like Second Life would
 static void keepExport(const QString& file, const QString& name)
 {
-  const QString dir = qEnvironmentVariable("PINGMATOR_EXPORT_DIR");
+  const QString dir = qEnvironmentVariable("PINGLYMOTION_EXPORT_DIR");
   if (dir.isEmpty()) return;
   QDir().mkpath(dir);
   QFile::remove(dir + "/" + name);
@@ -228,14 +228,14 @@ void BentoTest::newAnimation()
 void BentoTest::oldFilesKeepKeyFrames_data()
 {
   QTest::addColumn<QString>("file");
-  QTest::newRow("jump.avm") << QString(PINGMATOR_EXAMPLES "/jump.avm");
-  QTest::newRow("throne.avm") << QString(PINGMATOR_EXAMPLES "/throne.avm");
-  QTest::newRow("Relaxed.avm") << QString(PINGMATOR_LEGACY_DATA "/Relaxed.avm");
-  QTest::newRow("Relaxed.bvh") << QString(PINGMATOR_LEGACY_DATA "/Relaxed.bvh");
-  QTest::newRow("Relaxed_2.bvh") << QString(PINGMATOR_LEGACY_DATA "/Relaxed_2.bvh");
-  QTest::newRow("TPose.bvh") << QString(PINGMATOR_LEGACY_DATA "/TPose.bvh");
-  QTest::newRow("old TPose.avm") << QString(PINGMATOR_TOOLS "/legacy/TPose.avm");
-  QTest::newRow("old SLFemale.bvh") << QString(PINGMATOR_TOOLS "/legacy/SLFemale.bvh");
+  QTest::newRow("jump.avm") << QString(PINGLYMOTION_EXAMPLES "/jump.avm");
+  QTest::newRow("throne.avm") << QString(PINGLYMOTION_EXAMPLES "/throne.avm");
+  QTest::newRow("Relaxed.avm") << QString(PINGLYMOTION_LEGACY_DATA "/Relaxed.avm");
+  QTest::newRow("Relaxed.bvh") << QString(PINGLYMOTION_LEGACY_DATA "/Relaxed.bvh");
+  QTest::newRow("Relaxed_2.bvh") << QString(PINGLYMOTION_LEGACY_DATA "/Relaxed_2.bvh");
+  QTest::newRow("TPose.bvh") << QString(PINGLYMOTION_LEGACY_DATA "/TPose.bvh");
+  QTest::newRow("old TPose.avm") << QString(PINGLYMOTION_TOOLS "/legacy/TPose.avm");
+  QTest::newRow("old SLFemale.bvh") << QString(PINGLYMOTION_TOOLS "/legacy/SLFemale.bvh");
 }
 
 // old 19-joint files open on the Bento skeleton without losing anything
@@ -279,10 +279,10 @@ void BentoTest::saveAndLoad_data()
 {
   QTest::addColumn<QString>("file");
   QTest::addColumn<QString>("format");
-  QTest::newRow("jump as avm") << QString(PINGMATOR_EXAMPLES "/jump.avm") << QString("avm");
-  QTest::newRow("jump as bvh") << QString(PINGMATOR_EXAMPLES "/jump.avm") << QString("bvh");
-  QTest::newRow("throne as avm") << QString(PINGMATOR_EXAMPLES "/throne.avm") << QString("avm");
-  QTest::newRow("throne as bvh") << QString(PINGMATOR_EXAMPLES "/throne.avm") << QString("bvh");
+  QTest::newRow("jump as avm") << QString(PINGLYMOTION_EXAMPLES "/jump.avm") << QString("avm");
+  QTest::newRow("jump as bvh") << QString(PINGLYMOTION_EXAMPLES "/jump.avm") << QString("bvh");
+  QTest::newRow("throne as avm") << QString(PINGLYMOTION_EXAMPLES "/throne.avm") << QString("avm");
+  QTest::newRow("throne as bvh") << QString(PINGLYMOTION_EXAMPLES "/throne.avm") << QString("bvh");
   QTest::newRow("new as bvh") << QString() << QString("bvh");
 }
 

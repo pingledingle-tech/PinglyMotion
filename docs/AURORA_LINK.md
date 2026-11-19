@@ -95,7 +95,7 @@ Aurora's side: `crates/aurora-viewer/src/blender_live/transport.rs`,
 
 Code: `src/auroralink.*`, `BVH::bvhPoseText` in `src/bvh.cpp`.
 Tests: `tests/tst_auroralink.cpp`, with a stand-in for Aurora's LiveMesh and
-its token file. The environment variable `PINGMATOR_AURORA_TOKEN_DIR` sets the
+its token file. The environment variable `PINGLYMOTION_AURORA_TOKEN_DIR` sets the
 token folder instead of Aurora's data folder; the tests use it, and it can
 point Pingmator at a test server by hand.
 

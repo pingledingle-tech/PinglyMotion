@@ -104,7 +104,7 @@ ControlApi::ControlApi(ControlHost* host) :
 
 QString ControlApi::defaultWorkFolder()
 {
-  const QString folder = qEnvironmentVariable("PINGMATOR_CONTROL_FOLDER");
+  const QString folder = qEnvironmentVariable("PINGLYMOTION_CONTROL_FOLDER");
   if (!folder.isEmpty()) return QDir::cleanPath(QDir(folder).absolutePath());
   return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Pingmator");
 }

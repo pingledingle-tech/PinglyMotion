@@ -106,7 +106,7 @@ jobs:
           SOURCE_DATE_EPOCH: '0'
         run: |
           ccache --zero-stats
-          CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DBUILD_NUMBER=0 -DPINGMATOR_FUZZ=ON \
+          CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DBUILD_NUMBER=0 -DPINGLYMOTION_FUZZ=ON \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf -j 4
           ccache --show-stats

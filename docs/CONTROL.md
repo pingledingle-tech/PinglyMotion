@@ -31,7 +31,7 @@ The bottom right of the status bar shows a coloured dot and who is connected, fo
   - Windows: `%LOCALAPPDATA%\Pingmator\control.json`
   - macOS: `~/Library/Application Support/Pingmator/control.json`
   - Linux: `~/.local/share/Pingmator/control.json`
-  - Set `PINGMATOR_CONTROL_FILE` to use another place.
+  - Set `PINGLYMOTION_CONTROL_FILE` to use another place.
 - The file is written in one step: the key goes into a temporary file that only you can read from
   the moment it is made, and that file replaces `control.json` only when everything was written.
   A file left behind by a crash is removed first. If the file cannot be written safely (for example
@@ -87,7 +87,7 @@ in that folder. Paths outside it, also through `..` or links, are refused.
   read gives an error that says why.
 - `save_file` never replaces another file. Saving again to the file that is open is fine.
 - `new_animation` and `open_file` refuse while there are unsaved changes; save first.
-- `PINGMATOR_CONTROL_FOLDER` sets another folder (used by the tests).
+- `PINGLYMOTION_CONTROL_FOLDER` sets another folder (used by the tests).
 
 ## Set up an AI assistant
 

@@ -68,7 +68,7 @@ class AvatarSkin
     };
 
     // For testing until Ruth2 gets a menu entry (#110): when the environment
-    // variable PINGMATOR_BODY is "ruth2", load() loads RuthBody whatever body
+    // variable PINGLYMOTION_BODY is "ruth2", load() loads RuthBody whatever body
     // it is asked for. Returns the body to load instead, or -1.
     static int bodyOverride();
 

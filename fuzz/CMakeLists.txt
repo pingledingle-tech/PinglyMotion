@@ -1,5 +1,5 @@
 # Pingmator fuzz targets (libFuzzer). Needs clang:
-#   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGMATOR_FUZZ=ON
+#   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGLYMOTION_FUZZ=ON
 #   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf
 # See fuzz/README.md for how to run them.
 
@@ -35,7 +35,7 @@ ADD_EXECUTABLE (fuzz_control fuzz_control.cpp ${FUZZ_CORE_SRC})
 TARGET_INCLUDE_DIRECTORIES (fuzz_control PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_OPTIONS (fuzz_control PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_control PRIVATE ${FUZZ_LINK})
-TARGET_LINK_LIBRARIES (fuzz_control ${PINGMATOR_QT_LIBS})
+TARGET_LINK_LIBRARIES (fuzz_control ${PINGLYMOTION_QT_LIBS})
 
 # the new BVH/AVM parser (#62); reads from memory; Qt Gui only for QVector3D
 ADD_EXECUTABLE (fuzz_animfile fuzz_animfile.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)

@@ -11,23 +11,23 @@ on keeps Max, and one who had it off keeps the system avatar (#110, part 2).
 
 ## Trying it out from the command line
 
-For testing, the environment variable `PINGMATOR_BODY` set to `ruth2` before
+For testing, the environment variable `PINGLYMOTION_BODY` set to `ruth2` before
 starting Pingmator loads Ruth2 whatever **Options > Body** says. Any other
 value, or no value, changes nothing.
 
 Windows (Command Prompt, in the folder with `pingmator.exe`):
 
-    set PINGMATOR_BODY=ruth2
+    set PINGLYMOTION_BODY=ruth2
     pingmator.exe
 
 Windows (PowerShell):
 
-    $env:PINGMATOR_BODY = "ruth2"
+    $env:PINGLYMOTION_BODY = "ruth2"
     .\pingmator.exe
 
 Linux:
 
-    PINGMATOR_BODY=ruth2 ./pingmator
+    PINGLYMOTION_BODY=ruth2 ./pingmator
 
 ## Source
 

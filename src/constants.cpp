@@ -63,8 +63,8 @@
   const QString Constants::m_applicationName = QString("Pingmator-Development");
 #endif
 
-#ifdef PINGMATOR_DATAPATH
-  const QString Constants::m_pingmatorDataPath = QString(PINGMATOR_DATAPATH);
+#ifdef PINGLYMOTION_DATAPATH
+  const QString Constants::m_pingmatorDataPath = QString(PINGLYMOTION_DATAPATH);
 #else
   const QString Constants::m_pingmatorDataPath = QString();
 #endif
@@ -74,9 +74,9 @@ const QString Constants::buildLabel()
 {
   const QString version = m_versionNumber.toString();
   if (m_updateChannel == UpdateChannel::Release) return version;
-#if defined(PINGMATOR_BUILD_SOURCE) && defined(PINGMATOR_COMMIT)
-  return version + QStringLiteral(" \u00b7 ") + QString(PINGMATOR_BUILD_SOURCE)
-         + QStringLiteral(" \u00b7 ") + QString(PINGMATOR_COMMIT);
+#if defined(PINGLYMOTION_BUILD_SOURCE) && defined(PINGLYMOTION_COMMIT)
+  return version + QStringLiteral(" \u00b7 ") + QString(PINGLYMOTION_BUILD_SOURCE)
+         + QStringLiteral(" \u00b7 ") + QString(PINGLYMOTION_COMMIT);
 #else
   return version + QStringLiteral(" \u00b7 dev");
 #endif
@@ -146,10 +146,10 @@ const QString Constants::pingmatorDataPath()
 #  else
     // next to the program: the Windows zip, or a copied build
     const QString besideProgram = QCoreApplication::applicationDirPath() + "/data";
-#    ifdef PINGMATOR_SOURCE_DATAPATH
+#    ifdef PINGLYMOTION_SOURCE_DATAPATH
     // a program run from its build folder uses the data in the source tree
     if (!QDir(besideProgram).exists())
-      return QString(PINGMATOR_SOURCE_DATAPATH);
+      return QString(PINGLYMOTION_SOURCE_DATAPATH);
 #    endif
     // never the current folder: a data folder planted there would be read
     return besideProgram;

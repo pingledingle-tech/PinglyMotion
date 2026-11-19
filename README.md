@@ -69,7 +69,7 @@ See `docs/SECURITY_AUDIT.md` for the audit these checks come from.
 To run them yourself on Linux (needs Qt 6):
 
 ```
-cmake -S . -B build -DPINGMATOR_TESTS=ON
+cmake -S . -B build -DPINGLYMOTION_TESTS=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```

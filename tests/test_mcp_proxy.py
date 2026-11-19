@@ -80,7 +80,7 @@ def main():
 
     with tempfile.TemporaryDirectory() as tmp:
         control = os.path.join(tmp, "control.json")
-        os.environ["PINGMATOR_CONTROL_FILE"] = control
+        os.environ["PINGLYMOTION_CONTROL_FILE"] = control
         proxy_url = "http://127.0.0.1:%d" % proxy.server_port
         for name in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"):
             os.environ[name] = proxy_url

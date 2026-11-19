@@ -66,9 +66,9 @@ static QStringList animationFiles()
 {
   const QStringList filters = {"*.bvh", "*.avm"};
   QStringList files;
-  for (const QString& folder : {QString(PINGMATOR_EXAMPLES), QString(PINGMATOR_LEGACY_DATA),
-                                QString(PINGMATOR_TOOLS "/legacy"),
-                                QString(PINGMATOR_CORPUS "/bvh"), QString(PINGMATOR_CORPUS "/avm")})
+  for (const QString& folder : {QString(PINGLYMOTION_EXAMPLES), QString(PINGLYMOTION_LEGACY_DATA),
+                                QString(PINGLYMOTION_TOOLS "/legacy"),
+                                QString(PINGLYMOTION_CORPUS "/bvh"), QString(PINGLYMOTION_CORPUS "/avm")})
   {
     const QDir dir(folder);
     for (const QString& name : dir.entryList(filters, QDir::Files, QDir::Name))
@@ -104,8 +104,8 @@ void RoundTripTest::filesAreFound()
 {
   const QStringList files = animationFiles();
   QVERIFY2(files.count() >= 15, qPrintable(QString("only %1 files found").arg(files.count())));
-  QVERIFY(QDir(PINGMATOR_CORPUS "/bvh").entryList({"bad_*"}, QDir::Files).count() >= 10);
-  QVERIFY(QDir(PINGMATOR_CORPUS "/avm").entryList({"bad_*"}, QDir::Files).count() >= 5);
+  QVERIFY(QDir(PINGLYMOTION_CORPUS "/bvh").entryList({"bad_*"}, QDir::Files).count() >= 10);
+  QVERIFY(QDir(PINGLYMOTION_CORPUS "/avm").entryList({"bad_*"}, QDir::Files).count() >= 5);
 }
 
 void RoundTripTest::roundTrip_data()
@@ -254,7 +254,7 @@ void RoundTripTest::corpus_data()
   QTest::addColumn<bool>("good");
   for (const QString& sub : {QString("bvh"), QString("avm")})
   {
-    const QDir dir(QString(PINGMATOR_CORPUS) + "/" + sub);
+    const QDir dir(QString(PINGLYMOTION_CORPUS) + "/" + sub);
     for (const QString& name : dir.entryList(QDir::Files, QDir::Name))
       QTest::newRow(qPrintable(sub + "/" + name)) << dir.filePath(name) << !name.startsWith("bad_");
   }

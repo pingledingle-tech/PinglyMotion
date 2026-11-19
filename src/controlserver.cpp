@@ -147,7 +147,7 @@ QString ControlServer::url() const
 
 QString ControlServer::connectionFilePath()
 {
-  const QString override = qEnvironmentVariable("PINGMATOR_CONTROL_FILE");
+  const QString override = qEnvironmentVariable("PINGLYMOTION_CONTROL_FILE");
   if (!override.isEmpty()) return override;
   return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/Pingmator/control.json";
 }

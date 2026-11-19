@@ -52,7 +52,7 @@ static void influencesFromBlend(AvatarSkin::Part& part)
 
 int AvatarSkin::bodyOverride()
 {
-  const QString wanted = qEnvironmentVariable("PINGMATOR_BODY").trimmed().toLower();
+  const QString wanted = qEnvironmentVariable("PINGLYMOTION_BODY").trimmed().toLower();
   if (wanted == "ruth2") return RuthBody;
   return -1;
 }

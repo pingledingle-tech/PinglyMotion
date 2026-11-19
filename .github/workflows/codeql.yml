@@ -90,7 +90,7 @@ jobs:
         env:
           TESTS: ${{ github.event_name == 'pull_request' && 'OFF' || 'ON' }}
         run: |
-          cmake -S . -B build-codeql -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_TESTS="$TESTS"
+          cmake -S . -B build-codeql -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS="$TESTS"
           cmake --build build-codeql -j 4
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: steps.diff.outputs.code == 'true'

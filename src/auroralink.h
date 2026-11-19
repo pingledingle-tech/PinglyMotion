@@ -70,7 +70,7 @@ class AuroraLink : public QObject
     void setInterval(int ms);
 
     // the folder where Aurora writes its LiveMesh token files (<port>.token)
-    // on this computer; PINGMATOR_AURORA_TOKEN_DIR overrides it (for tests)
+    // on this computer; PINGLYMOTION_AURORA_TOKEN_DIR overrides it (for tests)
     static QString tokenFolder();
     // the token file of a port in that folder
     static QString tokenFilePath(quint16 port);

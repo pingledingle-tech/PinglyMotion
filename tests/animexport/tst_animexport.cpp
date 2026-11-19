@@ -463,7 +463,7 @@ void TestAnimExport::thinningUnderTheSizeLimit()
 // a real animation that ships with the program
 void TestAnimExport::realFile()
 {
-  QFile file(QString(PINGMATOR_EXAMPLES)+"/jump.avm");
+  QFile file(QString(PINGLYMOTION_EXAMPLES)+"/jump.avm");
   QVERIFY(file.open(QIODevice::ReadOnly));
   const AnimFile::Result parsed=AnimFile::parseAvm(file.readAll());
   QVERIFY2(parsed.ok(),qPrintable(parsed.error));
