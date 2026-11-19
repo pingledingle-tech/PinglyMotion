@@ -41,9 +41,13 @@ cmake -S . -B /tmp/asan -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_TESTS=ON \
 ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/asan --output-on-failure
 ```
 
-Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch (see `CLAUDE.md`).
+Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch (see `CLAUDE.md`). On a branch it fuzzes every target for 2 minutes, all targets at the same time; a longer run: `-f inputs[seconds]=600`.
 
 After changing the control commands: `PINGMATOR_UPDATE_COMMANDS=1` and run `pingmator_control_tests` from `bin/` to regenerate `tools/mcp/commands.json`.
+
+## The Windows zip
+
+The Windows build of every pull request is a zip (artifact `Pingmator-windows`, about 30 MB). Next to `pingmator.exe` it holds `data/`, `mcp/`, the folder `examples/` (everything in the repository's `examples/`) and, when the checked-out branch has them, the folder `test-motions/` (everything in `tests/motions/`). The project owner tests from this zip alone and never downloads a separate file. If `tests/motions/` grows past a few MB, the build prints a warning: then change the `Package` step in `.github/workflows/build.yml` to copy only the files marked for owner testing, and say so here.
 
 ## Pictures
 

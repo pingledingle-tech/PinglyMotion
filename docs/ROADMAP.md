@@ -4,11 +4,13 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 
 ## Starting point
 
-- Done: parser and data model (#9), `.dingle` working format (#26, conversion in #57), Ruth2 body, version in title.
+- Done: parser and data model (#9), `.dingle` working format (#26: reader, writer and conversion merged; opening in #70), Ruth2 body and menu, version in title, `.anim` writer (#63), `.anim` reader (#65), BVH retargeting core (#66), glTF import reader (#69), Blender guide (#68) and Maya note (#67). Fuzzing runs all targets at the same time, about 10 minutes on a branch (#71). None of the format jobs has a menu yet, so nothing changed on screen.
 - Order already decided in `docs/DECISIONS.md`: `.anim` export (#10), then `.anim` import (#22), then BVH retargeting (#16), then glTF (#12), then Blender docs (#13). Rejected: glTF export, FBX (only on demand), Collada, VMD, VRMA, Firestorm pose XML, Assimp.
 - New since then: Mesh2Motion's MIT-licensed retargeting is a ready reference (#16), and its CC0 animations are a source of test motions (#27).
 
 ## Proposed order
+
+**State on 19 November 2026:** steps 1, 2, 3 and 5 are done as first parts (writer, reader, retargeting core, glTF reader, Blender guide). What is left in them is the menus (visible, so they need the owner's Windows test). Step 4 (#27) waits for the test motions in #3 (open). Step 6 (#11, #53) and step 7 (#14) are not started. `.dingle` (#26): jobs 1 to 3 are merged (#48, #51, #57); job 4, opening `.dingle` files, is in #70 and waits for the owner's Windows test. The table below is the original proposal.
 
 | Step | Issue | Job | Why now | Depends on | Model |
 |---|---|---|---|---|---|
@@ -36,8 +38,8 @@ Visible changes (steps 6 and 7, and #40) need the project owner's Windows test b
 
 ## Open decisions (owner)
 
-1. Product direction: contribute to Aurora, own-named studio fork, PinglyMotion as the stand-alone AI-drivable editor, or a mix. Tracked in its own issue.
-2. Whether to ask the Aurora developers before building.
+1. ~~Product direction~~ **Decided 19 November 2026:** PinglyMotion continues as its own program (see `docs/DECISIONS.md`, #59).
+2. ~~Whether to ask the Aurora developers before building~~ Not needed now that nothing waits for Aurora.
 3. Whether to keep the Maya idea; today it is out of scope.
 
 ## Not doing
