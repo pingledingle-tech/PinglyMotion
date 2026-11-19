@@ -1,6 +1,6 @@
 Branch: ci/privacy-closed-pr
-Status: active
-Pull request: pending
+Status: done
+Pull request: #73
 Files:
 - .github/workflows/privacy.yml
 
