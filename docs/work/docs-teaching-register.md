@@ -1,6 +1,6 @@
 Branch: docs/teaching-register
-Status: active
-Pull request: pending
+Status: done
+Pull request: #56
 Files:
 - docs/TEACHING.md
 
