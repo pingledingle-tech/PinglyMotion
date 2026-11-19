@@ -11,7 +11,6 @@ Files:
 - README.md
 - docs/OPEN_SOURCE_CHECK.md
 - docs/DEV.md
-- docs/PRODUCT.md
 
 ## What
 

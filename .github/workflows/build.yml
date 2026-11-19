@@ -97,6 +97,7 @@ jobs:
             if [ "$size" -gt 5120 ]; then echo "::warning::tests/motions is over 5 MB; see docs/DEV.md"; fi
             cp -r tests/motions dist/examples/motions
             if [ -d dist/examples/motions/mesh2motion ]; then mv dist/examples/motions/mesh2motion dist/examples/mesh2motion; fi
+            if [ -d dist/examples/motions/cmu ]; then mv dist/examples/motions/cmu dist/examples/cmu; cp tests/motions/cmu_02_01_walk.bvh dist/examples/cmu/; fi
           fi
           if [ -d tests/data/generated ]; then cp -r tests/data/generated dist/examples/edge-cases; fi
           echo "examples folder in the zip:"; (cd dist && find examples -type f | sort)
