@@ -1,5 +1,5 @@
 Branch: feat/easing-dingle-curve
-Status: active
+Status: done
 Pull request: #128
 Files:
 - src/easing.*
