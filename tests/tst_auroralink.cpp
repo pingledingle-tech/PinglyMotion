@@ -1,6 +1,7 @@
 /*
  * Pingmator - tests of the live link to Aurora: the pose BVH it sends, and
- * the conversation with a stand-in for Aurora's LiveMesh (framing, key, auth).
+ * the conversation with a stand-in for Aurora's LiveMesh (token file, greeting,
+ * framing, auth both ways).
  *
  * Run from the bin/ folder, so the program finds ./data like it does normally.
  * Set PINGMATOR_POSE_OUT to a file name to also save a pose BVH there (used to
@@ -53,25 +54,43 @@ class AuroraLinkTest : public QObject
 
     void poseHasNeutralFrameThenPose();
     void poseQuaternions();
-    void keyAndResponse();
-    void linkSendsQuaternionsWhenAuroraCan();
+    void tokenFileAndResponse();
+    void findsThePortByTokenFile();
     void linkAuthenticatesThenSendsPose();
+    void linkSendsQuaternionsWhenAuroraCan();
     void linkSendsOnlyChanges();
     void linkSendsHeartbeats();
     void linkReportsErrors();
-    void linkStopsOnWrongKey();
-    void linkStopsWithoutPoseFeature();
     void linkReconnects();
+    void noTokenFileMeansPreviewOff();
+    void tokenFileOfAnotherPortIsUsed();
+    void wrongKeyIsRefused();
+    void oldAuroraClosesAtGreeting();
+    void helloWithoutPoseFeature();
+    void previewWithoutPoses();
+    void helloWithoutMutualAuthIsRefused();
+    void standInWithoutKeyGetsNoPose();
+    void wrongProofIsRefused();
 
   private:
-    // the stand-in LiveMesh: takes the client, checks the opening code, sends hello
-    bool accept(int timeoutMs = 3000, const QJsonArray& features = {"pbr-materials", "auth", "pose-bvh"});
-    // waits for the next framed message from the client; isNull() when none came
-    // (a heartbeat comes back as an empty object with "heartbeat": true)
+    // the stand-in LiveMesh: takes the client, checks the greeting "AURPOS1\n",
+    // then sends hello (or closes without one when features is null)
+    bool accept(int timeoutMs = 3000, const QJsonArray& features = DEFAULT_FEATURES);
+    // reads the client's auth like Aurora does: right response -> ok with the
+    // server proof; wrong response -> "unauthorized" and close. Returns the auth message.
+    QJsonObject answerAuth();
+    // waits for the next framed message from the client; isEmpty() when none came
+    // (a heartbeat comes back as an object with "heartbeat": true)
     QJsonObject nextMessage(int timeoutMs = 3000);
     void reply(const QJsonObject& message);
     // the first non-heartbeat message
     QJsonObject nextRealMessage(int timeoutMs = 3000);
+    // writes a token file like Aurora does when its preview starts
+    void writeToken(quint16 port, const QByteArray& content);
+    // drops the stand-in's side of the connection
+    void dropClient();
+
+    static const QJsonArray DEFAULT_FEATURES;
 
     BVH* m_bvh = nullptr;
     Animation* m_animation = nullptr;
@@ -83,6 +102,9 @@ class AuroraLinkTest : public QObject
     QByteArray m_challenge;
 };
 
+// what the fork's pose session lists (aurora-viewer blender_live/transport.rs)
+const QJsonArray AuroraLinkTest::DEFAULT_FEATURES = {"auth", "auth-mutual", "pose-bvh"};
+
 void AuroraLinkTest::init()
 {
   UserSettings::setJointLimits(false);
@@ -93,30 +115,37 @@ void AuroraLinkTest::init()
   QVERIFY(m_server->listen(QHostAddress::LocalHost, 0));
   m_client = nullptr;
   m_buffer.clear();
-  // a key file like the one Aurora writes when LiveMesh starts
+  // the token folder Aurora writes to when its LiveMesh preview starts
   m_dir = new QTemporaryDir();
   QVERIFY(m_dir->isValid());
-  m_key = QByteArray(32, '\x05');
+  m_key = QByteArray::fromHex("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
   m_challenge = QByteArray(32, '\x09');
-  const QString path = m_dir->filePath("livemesh.json");
-  QFile file(path);
-  QVERIFY(file.open(QIODevice::WriteOnly));
-  QJsonObject info;
-  info["protocol"] = 1;
-  info["port"] = int(m_server->serverPort());
-  info["key"] = QString::fromLatin1(m_key.toHex());
-  file.write(QJsonDocument(info).toJson());
-  file.close();
-  qputenv("PINGMATOR_AURORA_KEY_FILE", path.toLocal8Bit());
+  qputenv("PINGMATOR_AURORA_TOKEN_DIR", m_dir->path().toLocal8Bit());
+  writeToken(m_server->serverPort(), m_key.toHex());
 }
 
 void AuroraLinkTest::cleanup()
 {
-  qunsetenv("PINGMATOR_AURORA_KEY_FILE");
+  qunsetenv("PINGMATOR_AURORA_TOKEN_DIR");
   delete m_server;
   delete m_animation;
   delete m_bvh;
   delete m_dir;
+}
+
+void AuroraLinkTest::writeToken(quint16 port, const QByteArray& content)
+{
+  QFile file(m_dir->filePath(QString("%1.token").arg(port)));
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  file.write(content);
+}
+
+void AuroraLinkTest::dropClient()
+{
+  m_client->abort();
+  m_client->deleteLater();
+  m_client = nullptr;
+  m_buffer.clear();
 }
 
 bool AuroraLinkTest::accept(int timeoutMs, const QJsonArray& features)
@@ -135,10 +164,10 @@ bool AuroraLinkTest::accept(int timeoutMs, const QJsonArray& features)
       m_buffer += m_client->readAll();
       if (m_buffer.size() >= 8)
       {
-        if (m_buffer.left(8) != "AURBLD1\n") return false;
+        if (m_buffer.left(8) != "AURPOS1\n") return false;
         m_buffer.remove(0, 8);
         QJsonObject hello;
-        hello["protocol"] = 1;
+        hello["protocol"] = 2;
         hello["features"] = features;
         hello["challenge"] = QString::fromLatin1(m_challenge.toHex());
         m_client->write(QJsonDocument(hello).toJson(QJsonDocument::Compact) + "\n");
@@ -148,6 +177,24 @@ bool AuroraLinkTest::accept(int timeoutMs, const QJsonArray& features)
     QTest::qWait(10);
   }
   return false;
+}
+
+QJsonObject AuroraLinkTest::answerAuth()
+{
+  const QJsonObject auth = nextMessage();
+  if (auth["type"].toString() != "auth") return auth;
+  if (auth["response"].toString().toLatin1() != AuroraLink::authResponse(m_key, m_challenge))
+  {
+    reply(QJsonObject{{"ok", false}, {"error", "unauthorized"}});
+    m_client->flush();
+    m_client->disconnectFromHost();
+    return auth;
+  }
+  QJsonObject answer{{"ok", true}};
+  const QByteArray nonce = QByteArray::fromHex(auth["nonce"].toString().toLatin1());
+  if (!nonce.isEmpty()) answer["server_proof"] = QString::fromLatin1(AuroraLink::serverProof(m_key, nonce));
+  reply(answer);
+  return auth;
 }
 
 QJsonObject AuroraLinkTest::nextMessage(int timeoutMs)
@@ -254,35 +301,51 @@ void AuroraLinkTest::poseQuaternions()
   for (int i = 0; i < 3; i++) QVERIFY(qAbs(hip[i].toDouble()) < 1e-6);
 }
 
-void AuroraLinkTest::linkSendsQuaternionsWhenAuroraCan()
+void AuroraLinkTest::tokenFileAndResponse()
 {
-  AuroraLink link;
-  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
-  link.setQuaternionSource([this]() { return m_animation->poseQuaternions(m_animation->getFrame()); });
-  link.setEnabled(true, m_server->serverPort());
-  QVERIFY(accept(3000, QJsonArray{"auth", "pose-bvh", "pose"}));
-  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
-  reply(QJsonObject{{"ok", true}});
-  const QJsonObject pose = nextRealMessage();
-  QCOMPARE(pose["type"].toString(), QString("pose"));
-  QVERIFY(pose["rotations"].toObject().contains("lForeArm"));
-  QVERIFY(pose["positions"].toObject().contains("hip"));
-  QVERIFY(!pose.contains("bvh"));
-}
-
-void AuroraLinkTest::keyAndResponse()
-{
-  QCOMPARE(AuroraLink::readKey(AuroraLink::keyFilePath()), m_key);
-  QVERIFY(AuroraLink::readKey(m_dir->filePath("missing.json")).isEmpty());
+  QCOMPARE(AuroraLink::tokenFolder(), m_dir->path());
+  QCOMPARE(AuroraLink::tokenFilePath(17655), m_dir->filePath("17655.token"));
+  QCOMPARE(AuroraLink::readKey(AuroraLink::tokenFilePath(m_server->serverPort())), m_key);
+  QVERIFY(AuroraLink::readKey(m_dir->filePath("missing.token")).isEmpty());
+  // a line break after the key is accepted
+  writeToken(20001, m_key.toHex() + "\n");
+  QCOMPARE(AuroraLink::readKey(m_dir->filePath("20001.token")), m_key);
+  // too short, too long, or not hex: refused
+  writeToken(20002, m_key.toHex().left(62));
+  QVERIFY(AuroraLink::readKey(m_dir->filePath("20002.token")).isEmpty());
+  writeToken(20003, m_key.toHex() + "00");
+  QVERIFY(AuroraLink::readKey(m_dir->filePath("20003.token")).isEmpty());
+  QByteArray notHex = m_key.toHex();
+  notHex[10] = 'x';
+  writeToken(20004, notHex);
+  QVERIFY(AuroraLink::readKey(m_dir->filePath("20004.token")).isEmpty());
   // RFC 4231, test case 2 (the same check as Aurora's own test)
   QCOMPARE(AuroraLink::authResponse("Jefe", "what do ya want for nothing?"),
            QByteArray("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"));
-  // a key that is not 32 bytes of hex is refused
-  QFile bad(m_dir->filePath("bad.json"));
-  QVERIFY(bad.open(QIODevice::WriteOnly));
-  bad.write("{\"key\":\"05xx\"}");
-  bad.close();
-  QVERIFY(AuroraLink::readKey(bad.fileName()).isEmpty());
+  // the server proof: HMAC of the prefix text and the raw nonce bytes
+  const QByteArray nonce(16, '\x02');
+  QCOMPARE(AuroraLink::serverProof(m_key, nonce),
+           QMessageAuthenticationCode::hash("aurora-hello:" + nonce, m_key, QCryptographicHash::Sha256).toHex());
+}
+
+void AuroraLinkTest::findsThePortByTokenFile()
+{
+  const quint16 port = m_server->serverPort();
+  QCOMPARE(AuroraLink::findPort(port), port);
+  // another port than the preferred one: the preview's token file tells it
+  const quint16 other = port == 65535 ? 65534 : port + 1;
+  QCOMPARE(AuroraLink::findPort(other), port);
+  // files that are not "<port>.token" are ignored
+  QFile stray(m_dir->filePath("notes.token"));
+  QVERIFY(stray.open(QIODevice::WriteOnly));
+  stray.close();
+  QFile partial(m_dir->filePath(QString("%1.token.partial").arg(other)));
+  QVERIFY(partial.open(QIODevice::WriteOnly));
+  partial.close();
+  QCOMPARE(AuroraLink::findPort(other), port);
+  // no token file at all: the preview is off
+  QVERIFY(QFile::remove(AuroraLink::tokenFilePath(port)));
+  QCOMPARE(AuroraLink::findPort(port), quint16(0));
 }
 
 void AuroraLinkTest::linkAuthenticatesThenSendsPose()
@@ -290,6 +353,7 @@ void AuroraLinkTest::linkAuthenticatesThenSendsPose()
   AuroraLink link;
   link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
   QSignalSpy connected(&link, &AuroraLink::connectedChanged);
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
   link.setEnabled(true, m_server->serverPort());
   QVERIFY(accept());
 
@@ -297,18 +361,41 @@ void AuroraLinkTest::linkAuthenticatesThenSendsPose()
   QCOMPARE(auth["type"].toString(), QString("auth"));
   QVERIFY(auth["client"].toString().startsWith("Pingmator"));
   QCOMPARE(auth["response"].toString().toLatin1(), AuroraLink::authResponse(m_key, m_challenge));
+  // a random nonce of 16 bytes, as hex
+  const QByteArray nonce = QByteArray::fromHex(auth["nonce"].toString().toLatin1());
+  QCOMPARE(auth["nonce"].toString().size(), 32);
+  QVERIFY(nonce != QByteArray(16, '\0'));
+  // the key itself never goes over the connection
+  QVERIFY(!QJsonDocument(auth).toJson().contains(m_key.toHex()));
   QVERIFY(!link.connected());
-  reply(QJsonObject{{"ok", true}});
+  reply(QJsonObject{{"ok", true}, {"server_proof", QString::fromLatin1(AuroraLink::serverProof(m_key, nonce))}});
 
   const QJsonObject pose = nextRealMessage();
   QCOMPARE(pose["type"].toString(), QString("pose-bvh"));
   QVERIFY(pose["bvh"].toString().startsWith("HIERARCHY"));
   QVERIFY(link.connected());
   QCOMPARE(connected.count(), 1);
+  QCOMPARE(errors.count(), 0);
 
   link.setEnabled(false);
   QVERIFY(!link.connected());
   QCOMPARE(connected.count(), 2);
+}
+
+void AuroraLinkTest::linkSendsQuaternionsWhenAuroraCan()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
+  link.setQuaternionSource([this]() { return m_animation->poseQuaternions(m_animation->getFrame()); });
+  link.setEnabled(true, m_server->serverPort());
+  // the full feature list of the fork's pose session
+  QVERIFY(accept(3000, QJsonArray{"auth", "auth-mutual", "pose-bvh", "pose"}));
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
+  const QJsonObject pose = nextRealMessage();
+  QCOMPARE(pose["type"].toString(), QString("pose"));
+  QVERIFY(pose["rotations"].toObject().contains("lForeArm"));
+  QVERIFY(pose["positions"].toObject().contains("hip"));
+  QVERIFY(!pose.contains("bvh"));
 }
 
 void AuroraLinkTest::linkSendsOnlyChanges()
@@ -318,8 +405,7 @@ void AuroraLinkTest::linkSendsOnlyChanges()
   link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
   link.setEnabled(true, m_server->serverPort());
   QVERIFY(accept());
-  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
-  reply(QJsonObject{{"ok", true}});
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
   const QString first = nextRealMessage()["bvh"].toString();
   QVERIFY(!first.isEmpty());
 
@@ -348,8 +434,7 @@ void AuroraLinkTest::linkSendsHeartbeats()
   link.setPoseSource([]() { return QString(); });
   link.setEnabled(true, m_server->serverPort());
   QVERIFY(accept());
-  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
-  reply(QJsonObject{{"ok", true}});
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
   // Aurora closes a link that is quiet for 10 s
   QVERIFY(nextMessage(5000).contains("heartbeat"));
 }
@@ -361,41 +446,12 @@ void AuroraLinkTest::linkReportsErrors()
   QSignalSpy errors(&link, &AuroraLink::errorReceived);
   link.setEnabled(true, m_server->serverPort());
   QVERIFY(accept());
-  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
-  reply(QJsonObject{{"ok", true}});
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
   QCOMPARE(nextRealMessage()["type"].toString(), QString("pose-bvh"));
   reply(QJsonObject{{"ok", false}, {"error", "bad joint"}});
   QTRY_COMPARE(errors.count(), 1);
   QCOMPARE(errors.first().first().toString(), QString("bad joint"));
   QVERIFY(link.connected());
-}
-
-void AuroraLinkTest::linkStopsOnWrongKey()
-{
-  AuroraLink link;
-  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
-  QSignalSpy errors(&link, &AuroraLink::errorReceived);
-  link.setEnabled(true, m_server->serverPort());
-  QVERIFY(accept());
-  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
-  reply(QJsonObject{{"ok", false}, {"error", "unauthorized"}});
-  QTRY_COMPARE(errors.count(), 1);
-  QVERIFY(!link.connected());
-  // no pose is sent after a refusal
-  QVERIFY(nextMessage(300).isEmpty());
-}
-
-void AuroraLinkTest::linkStopsWithoutPoseFeature()
-{
-  AuroraLink link;
-  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
-  QSignalSpy errors(&link, &AuroraLink::errorReceived);
-  link.setEnabled(true, m_server->serverPort());
-  // an Aurora without live poses: only mesh features
-  QVERIFY(accept(3000, QJsonArray{"pbr-materials", "static-meshes"}));
-  QTRY_COMPARE(errors.count(), 1);
-  QVERIFY(!link.connected());
-  QVERIFY(nextMessage(300).isEmpty());
 }
 
 void AuroraLinkTest::linkReconnects()
@@ -404,20 +460,175 @@ void AuroraLinkTest::linkReconnects()
   link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
   link.setEnabled(true, m_server->serverPort());
   QVERIFY(accept());
-  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
-  reply(QJsonObject{{"ok", true}});
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
   QTRY_VERIFY(link.connected());
 
-  // Aurora goes away, then comes back: the link connects again by itself
-  m_client->abort();
+  // the preview stops and starts again with a new key: the link connects
+  // again by itself and uses the new key
+  dropClient();
+  QTRY_VERIFY(!link.connected());
+  m_key = QByteArray(32, '\x07');
+  writeToken(m_server->serverPort(), m_key.toHex());
+  QVERIFY(accept(5000));
+  const QJsonObject auth = answerAuth();
+  QCOMPARE(auth["response"].toString().toLatin1(), AuroraLink::authResponse(m_key, m_challenge));
+  QTRY_VERIFY(link.connected());
+}
+
+void AuroraLinkTest::noTokenFileMeansPreviewOff()
+{
+  QVERIFY(QFile::remove(AuroraLink::tokenFilePath(m_server->serverPort())));
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QTRY_VERIFY(errors.count() >= 1);
+  QVERIFY(errors.first().first().toString().contains("preview is not on"));
+  // it does not even connect
+  QTest::qWait(200);
+  QVERIFY(!m_server->hasPendingConnections());
+  QVERIFY(!link.connected());
+
+  // the preview starts: the link finds the token file and connects
+  writeToken(m_server->serverPort(), m_key.toHex());
+  QVERIFY(accept(5000));
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
+  QTRY_VERIFY(link.connected());
+}
+
+void AuroraLinkTest::tokenFileOfAnotherPortIsUsed()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  // the user set another port in Aurora: only its token file is there
+  const quint16 port = m_server->serverPort();
+  link.setEnabled(true, port == 65535 ? 65534 : port + 1);
+  QVERIFY(accept());
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
+  QTRY_VERIFY(link.connected());
+}
+
+void AuroraLinkTest::wrongKeyIsRefused()
+{
+  // a token file with another key than the running preview's (left from another Aurora)
+  writeToken(m_server->serverPort(), QByteArray(32, '\x06').toHex());
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept());
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
+  QTRY_VERIFY(errors.count() >= 1);
+  QVERIFY(errors.first().first().toString().contains("refused the key"));
+  QVERIFY(!link.connected());
+}
+
+void AuroraLinkTest::oldAuroraClosesAtGreeting()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  // Aurora without pose tools knows only AURBLD2: it closes at our greeting, with no answer
+  QTRY_VERIFY(m_server->hasPendingConnections());
+  m_client = m_server->nextPendingConnection();
+  QTRY_VERIFY((m_buffer += m_client->readAll()).size() >= 8);
+  QCOMPARE(m_buffer.left(8), QByteArray("AURPOS1\n"));
+  dropClient();
+  QTRY_VERIFY(errors.count() >= 1);
+  QVERIFY(errors.first().first().toString().contains("cannot show live poses"));
+  QVERIFY(!link.connected());
+}
+
+void AuroraLinkTest::helloWithoutPoseFeature()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept(3000, QJsonArray{"auth", "auth-mutual"}));
+  QTRY_VERIFY(errors.count() >= 1);
+  QVERIFY(errors.first().first().toString().contains("cannot show live poses"));
+  QVERIFY(!link.connected());
+  QVERIFY(nextMessage(300).isEmpty());
+}
+
+void AuroraLinkTest::previewWithoutPoses()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  // a preview started without the avatar skeleton answers the greeting with an error
+  QTRY_VERIFY(m_server->hasPendingConnections());
+  m_client = m_server->nextPendingConnection();
+  QTRY_VERIFY((m_buffer += m_client->readAll()).size() >= 8);
+  QCOMPARE(m_buffer.left(8), QByteArray("AURPOS1\n"));
+  reply(QJsonObject{{"ok", false}, {"error", "live poses are not available"}});
+  QTRY_VERIFY(errors.count() >= 1);
+  QVERIFY(errors.first().first().toString().contains("live poses are not available"));
+  QVERIFY(!link.connected());
+}
+
+void AuroraLinkTest::helloWithoutMutualAuthIsRefused()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept(3000, QJsonArray{"auth", "pose-bvh"}));
+  QTRY_VERIFY(errors.count() >= 1);
+  QVERIFY(errors.first().first().toString().contains("prove that it is Aurora"));
+  QVERIFY(!link.connected());
+  // not even the auth goes to a server that cannot prove itself
+  QVERIFY(nextMessage(300).isEmpty());
+}
+
+void AuroraLinkTest::standInWithoutKeyGetsNoPose()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept());
+  QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
+  // an impostor does not know the key: it says ok, with no proof
+  reply(QJsonObject{{"ok", true}});
+  QTRY_VERIFY(errors.count() >= 1);
+  QVERIFY(errors.first().first().toString().contains("Aurora"));
+  QVERIFY(!link.connected());
+  QVERIFY(nextMessage(300).isEmpty());
+}
+
+void AuroraLinkTest::wrongProofIsRefused()
+{
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(m_animation->getFrame()); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept());
+  const QJsonObject auth = nextMessage();
+  const QByteArray nonce = QByteArray::fromHex(auth["nonce"].toString().toLatin1());
+  // a proof made with another key, one for another nonce, and one that is cut short
+  const QByteArray wrongKey = QByteArray(32, '\x06');
+  const QByteArray good = AuroraLink::serverProof(m_key, nonce);
+  const QList<QByteArray> bad = {AuroraLink::serverProof(wrongKey, nonce), AuroraLink::serverProof(m_key, QByteArray(16, '\x01')),
+                                 good.left(good.size() - 2)};
+  QVERIFY(bad[0] != good && bad[1] != good);
+  reply(QJsonObject{{"ok", true}, {"server_proof", QString::fromLatin1(bad[0])}});
+  QTRY_COMPARE(errors.count(), 1);
+  QVERIFY(!link.connected());
+  QVERIFY(nextMessage(300).isEmpty());
+
+  // the link tries again by itself; this time the proof is cut short
   m_client->deleteLater();
   m_client = nullptr;
   m_buffer.clear();
-  QTRY_VERIFY(!link.connected());
   QVERIFY(accept(5000));
   QCOMPARE(nextMessage()["type"].toString(), QString("auth"));
-  reply(QJsonObject{{"ok", true}});
-  QTRY_VERIFY(link.connected());
+  reply(QJsonObject{{"ok", true}, {"server_proof", QString::fromLatin1(bad[2])}});
+  QTRY_COMPARE(errors.count(), 2);
+  QVERIFY(!link.connected());
 }
 
 QTEST_MAIN(AuroraLinkTest)
