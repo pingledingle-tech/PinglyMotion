@@ -1,5 +1,5 @@
 Branch: feat/retarget-core
-Status: active
+Status: done
 Pull request: #66
 Files:
 - src/retarget.*
