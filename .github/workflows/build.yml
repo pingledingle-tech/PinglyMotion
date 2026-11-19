@@ -155,12 +155,17 @@ jobs:
         # they are compiler options, and a changing option would make every ccache lookup miss
         env:
           SOURCE_DATE_EPOCH: '0'
+          # the same build source as the Windows zip ("PR #12"); it goes into a generated
+          # header, so it does not spoil the ccache, and the buildinfo test checks it arrived
+          BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
         run: |
           ccache --zero-stats
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGLYMOTION_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGLYMOTION_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE"
           cmake --build build -j 4
           ccache --show-stats
       - name: Automatic tests
+        env:
+          PINGLYMOTION_EXPECT_BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
         run: ctest --test-dir build --output-on-failure
       - name: MCP server connects safely
         run: python3 tests/test_mcp_proxy.py
