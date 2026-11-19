@@ -19,6 +19,7 @@ SET (FUZZ_CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
                    ${CMAKE_SOURCE_DIR}/src/bvh.cpp
                    ${CMAKE_SOURCE_DIR}/src/bvhnode.cpp
                    ${CMAKE_SOURCE_DIR}/src/constants.cpp
+                   ${CMAKE_SOURCE_DIR}/src/dingle.cpp
                    ${CMAKE_SOURCE_DIR}/src/iktree.cpp
                    ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp
                    ${CMAKE_SOURCE_DIR}/src/llmmesh.cpp

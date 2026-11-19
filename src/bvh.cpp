@@ -32,6 +32,7 @@
 #include "animfile.h"
 #include "bvh.h"
 #include "constants.h"
+#include "dingle.h"
 
 BVH::BVH()
 {
@@ -413,17 +414,20 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
   return root;
 }
 
-// opens a file with the parser in src/animfile.* (issue #62)
+// opens a file with the parser in src/animfile.* (issue #62), or a .dingle
+// file with the reader in src/dingle.* (issue #26)
 BVHNode* BVH::animRead(const QString& file,const QString& limFile)
 {
   startRead();
 
+  const bool dingle=file.endsWith(QLatin1String(".dingle"),Qt::CaseInsensitive);
   const std::optional<AnimFile::Format> format=AnimFile::formatForFileName(file);
-  if(!format)
+  if(!format && !dingle)
   {
-    failed(QObject::tr("Only .bvh and .avm files can be opened."));
+    failed(QObject::tr("Only .dingle, .bvh and .avm files can be opened."));
     return NULL;
   }
+  const qsizetype maxBytes=dingle ? Dingle::MAX_FILE_BYTES : AnimFile::MAX_FILE_BYTES;
 
   QFile animationFile(file);
   if(!animationFile.open(QIODevice::ReadOnly))
@@ -431,30 +435,50 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
     failed(QObject::tr("The file could not be opened: %1").arg(animationFile.errorString()));
     return NULL;
   }
-  if(animationFile.size()>AnimFile::MAX_FILE_BYTES)
+  if(animationFile.size()>maxBytes)
   {
-    failed(QObject::tr("The file is larger than %1 MB.").arg(AnimFile::MAX_FILE_BYTES/(1024*1024)));
+    failed(QObject::tr("The file is larger than %1 MB.").arg(maxBytes/(1024*1024)));
     return NULL;
   }
-  const QByteArray data=animationFile.read(AnimFile::MAX_FILE_BYTES+1);
+  const QByteArray data=animationFile.read(maxBytes+1);
   if(animationFile.error()!=QFileDevice::NoError)
   {
     failed(QObject::tr("The file could not be read: %1").arg(animationFile.errorString()));
     return NULL;
   }
   animationFile.close();
-
-  const AnimFile::Result result=AnimFile::parse(data,*format);
-  if(!result.ok())
+  if(data.size()>maxBytes)
   {
-    if(result.line>0)
-      failed(QObject::tr("Line %1: %2").arg(result.line).arg(result.error));
-    else
-      failed(result.error);
+    failed(QObject::tr("The file is larger than %1 MB.").arg(maxBytes/(1024*1024)));
     return NULL;
   }
 
-  const AnimFile::Animation& anim=*result.animation;
+  AnimFile::Animation anim;
+  if(dingle)
+  {
+    // a parsed .dingle is an AVM-style animation (keys, position keys, loop)
+    Dingle::Result result=Dingle::parse(data);
+    if(!result.ok())
+    {
+      failed(result.error.isEmpty() ? QObject::tr("The file could not be read.") : result.error);
+      return NULL;
+    }
+    anim=std::move(*result.animation);
+  }
+  else
+  {
+    AnimFile::Result result=AnimFile::parse(data,*format);
+    if(!result.ok())
+    {
+      if(result.line>0)
+        failed(QObject::tr("Line %1: %2").arg(result.line).arg(result.error));
+      else
+        failed(result.error);
+      return NULL;
+    }
+    anim=std::move(*result.animation);
+  }
+
   lastLoadedNumberOfFrames=anim.frames;
   lastLoadedFrameTime=anim.frameTime;
   if(anim.format==AnimFile::Format::Avm)
