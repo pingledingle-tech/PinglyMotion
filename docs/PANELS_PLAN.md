@@ -98,6 +98,7 @@ Before the user-facing jobs: every new text (menu items, tips on the title-bar b
 - **Files:** `src/panellayout.*` (new), `tests/tst_panellayout.cpp` (new), `tests/CMakeLists.txt`, `src/CMakeLists.txt`.
 - **Owner test:** none (technical job, standing permission).
 - **Estimate:** 2 hours.
+- **Done (header-only, `src/panellayout.h`, tests in `tests/panellayout/`):** the module holds the setting names, `isLayoutUsable`, `pullOntoScreen`, `TabState`, `freeArea` / `freeAreaCenter`, `chooseStartup` (migration of the old settings), `chooseWindow` and `PanelVisibility`. It is header-only and registered in the top `CMakeLists.txt`, so no `src/CMakeLists.txt` change was needed. The old setting `show_timeline_panel` is not touched by P1 (a separate fix handles it); `PanelVisibility::timelineVisible()` and `chooseStartup(...).timelineHiddenOnce` are where P2 can take it over.
 
 ### P2 – Three panels: Joints, Selected joint, Timeline; View menu
 
