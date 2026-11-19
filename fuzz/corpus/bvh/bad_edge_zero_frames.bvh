@@ -1,0 +1,14 @@
+HIERARCHY
+ROOT hip
+{
+	OFFSET 0 0 0
+	CHANNELS 6 Xposition Yposition Zposition Xrotation Zrotation Yrotation
+	JOINT abdomen
+	{
+		OFFSET 0 3.42205 0
+		CHANNELS 3 Xrotation Zrotation Yrotation
+	}
+}
+MOTION
+Frames: 0
+Frame Time: 0.0333333
