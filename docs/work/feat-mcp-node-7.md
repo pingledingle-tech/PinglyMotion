@@ -1,5 +1,5 @@
 Branch: feat/mcp-node-7
-Status: active
+Status: done
 Pull request: #126
 Files:
 - docs/work/feat-mcp-node-7.md
