@@ -23,7 +23,7 @@ jobs:
   fuzz:
     # pinned, because the clang package names below belong to this Ubuntu release
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       SECONDS_PER_TARGET: '600'
       ASAN_OPTIONS: detect_leaks=0
