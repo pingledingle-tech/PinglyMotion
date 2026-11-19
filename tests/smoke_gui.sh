@@ -11,9 +11,11 @@ FAILED=0
 for FILE in "" "$ROOT/examples/jump.avm" "$ROOT/examples/throne.avm" \
             "$ROOT/bin/data/Relaxed.bvh" "$ROOT/tools/legacy/SLFemale.bvh"; do
   NAME="${FILE:-new animation}"
-  timeout 8 "$APP" $FILE > /tmp/smoke.log 2>&1
+  # an opened .avm counts as changed, so a plain stop (SIGTERM) can end in the "save changes?"
+  # question; -k makes sure the program is gone after 3 more seconds (exit code 137)
+  timeout -k 3 8 "$APP" $FILE > /tmp/smoke.log 2>&1
   CODE=$?
-  if [ $CODE -eq 124 ]; then
+  if [ $CODE -eq 124 ] || [ $CODE -eq 137 ]; then
     echo "OK    $NAME"
   else
     echo "FAIL  $NAME (exit code $CODE)"
