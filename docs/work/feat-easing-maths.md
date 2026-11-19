@@ -1,11 +1,12 @@
 Branch: feat/easing-maths
-Status: active
+Status: done
 Pull request: #101
 Files:
 - src/easing.*
 - tests/easing/**
 - CMakeLists.txt
 - docs/EASING.md
+- docs/PRODUCT.md
 - docs/work/feat-easing-maths.md
 
 ## What
