@@ -1,6 +1,6 @@
 Branch: docs/teaching-texts-approved
-Status: active
-Pull request: pending
+Status: done
+Pull request: #102
 Files:
 - docs/TEACHING.md
 - docs/work/docs-teaching-texts-approved.md
