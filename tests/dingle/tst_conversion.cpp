@@ -2,7 +2,9 @@
  * PinglyMotion - conversion test of the four bundled QAvimator files (issue #26)
  *
  * For each file in tests/legacy-avm: (a) parse the .avm, write .dingle, parse it
- * again and compare both animations completely, exact float equality;
+ * again and compare both animations completely, exact float equality, with the
+ * two exceptions the project owner decided in #26 (19 November 2026, see
+ * firstDifference());
  * (b) the committed .dingle equals the writer's output for the .avm;
  * (c) a second write of the read-back is byte-identical.
  *
@@ -11,6 +13,8 @@
 
 #include <QFile>
 #include <QtTest>
+
+#include <cmath>
 
 #include "animfile.h"
 #include "dingle.h"
@@ -23,8 +27,41 @@ namespace
     return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
   }
 
-  // first difference between two animations, for a readable failure; empty when equal
-  QString firstDifference(const AnimFile::Animation& a,const AnimFile::Animation& b)
+  // true when the frame is one of the keys
+  bool isKey(const QVector<AnimFile::Key>& keys,int frame)
+  {
+    for(const AnimFile::Key& key : keys)
+      if(key.frame==frame) return true;
+    return false;
+  }
+
+  // true when the value at this frame and channel is a key value of a; false
+  // when the .dingle reader derives it by interpolation (an in-between frame)
+  bool isKeyValue(const AnimFile::Animation& a,int frame,int channel)
+  {
+    for(const AnimFile::Joint& joint : a.joints)
+    {
+      if(channel<joint.firstValue || channel>=joint.firstValue+joint.channels.size()) continue;
+      const AnimFile::Channel kind=joint.channels[channel-joint.firstValue];
+      const bool position=kind==AnimFile::Channel::XPosition || kind==AnimFile::Channel::YPosition ||
+                          kind==AnimFile::Channel::ZPosition;
+      return isKey(position ? a.positionKeys : joint.keys,frame);
+    }
+    return true;
+  }
+
+  // First difference between two animations, for a readable failure; empty when equal.
+  // a is the parsed .avm, b the animation read back from its .dingle.
+  // Decision by the project owner in #26 (19 November 2026):
+  // - hasPositionKeys is not compared: it only records where the position keys
+  //   came from (old AVM files have no "Positions:" list, the .dingle reader
+  //   always sets it). The position keys themselves are compared exactly.
+  // - valueTolerance is 0 (exact) except for jump.avm, where derived in-between
+  //   frame values may differ by up to 1e-5: the AVM text has only 7 digits and
+  //   the reader derives in-between frames by interpolation. Key frame values
+  //   stay exact for every file.
+  QString firstDifference(const AnimFile::Animation& a,const AnimFile::Animation& b,
+                          float valueTolerance)
   {
     if(a.frames!=b.frames) return "frames";
     if(a.frameTime!=b.frameTime) return "frameTime";
@@ -32,7 +69,6 @@ namespace
     if(a.avatarScale!=b.avatarScale) return "avatarScale";
     if(a.figure!=b.figure) return "figure";
     if(a.loopIn!=b.loopIn || a.loopOut!=b.loopOut) return "loop";
-    if(a.hasPositionKeys!=b.hasPositionKeys) return "hasPositionKeys";
     if(a.positionKeys!=b.positionKeys) return "positionKeys";
     if(a.joints.size()!=b.joints.size()) return "joint count";
     for(int i=0;i<a.joints.size();i++)
@@ -51,13 +87,16 @@ namespace
     int count=0;
     QString first;
     for(size_t i=0;i<a.values.size();i++)
-      if(a.values[i]!=b.values[i])
-      {
-        if(count==0)
-          first=QString("frame %1 channel %2: %3 vs %4").arg(i/a.valuesPerFrame)
-                  .arg(i%a.valuesPerFrame).arg(a.values[i],0,'g',9).arg(b.values[i],0,'g',9);
-        count++;
-      }
+    {
+      if(a.values[i]==b.values[i]) continue;
+      const int frame=static_cast<int>(i/a.valuesPerFrame);
+      const int channel=static_cast<int>(i%a.valuesPerFrame);
+      if(!isKeyValue(a,frame,channel) && std::fabs(a.values[i]-b.values[i])<=valueTolerance) continue;
+      if(count==0)
+        first=QString("frame %1 channel %2: %3 vs %4").arg(frame).arg(channel)
+                .arg(a.values[i],0,'g',9).arg(b.values[i],0,'g',9);
+      count++;
+    }
     if(count) return QString("%1 values differ, first at %2").arg(count).arg(first);
     return QString();
   }
@@ -98,9 +137,11 @@ void TstConversion::bundledFiles()
   const Dingle::Result back=Dingle::parse(text);
   QVERIFY2(back.ok(),qPrintable(back.error));
   QCOMPARE(back.ignoredKeys,0);
-  const QString difference=firstDifference(*fromAvm.animation,*back.animation);
+  // (Dingle::equal() is not used here: it also compares hasPositionKeys and
+  // has no tolerance; see firstDifference() for the decision in #26)
+  const float tolerance=name=="jump" ? 1e-5f : 0.0f;
+  const QString difference=firstDifference(*fromAvm.animation,*back.animation,tolerance);
   QVERIFY2(difference.isEmpty(),qPrintable(name+": "+difference));
-  QVERIFY(Dingle::equal(*fromAvm.animation,*back.animation));
 
   // (b) the committed file is the writer's output, so nobody edited it by hand
   const QByteArray file=readFile(committed);

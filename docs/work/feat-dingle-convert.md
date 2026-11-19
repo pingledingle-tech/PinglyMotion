@@ -1,5 +1,5 @@
 Branch: feat/dingle-convert
-Status: active
+Status: done
 Pull request: #57
 Files:
 - tools/avm2dingle.cpp
