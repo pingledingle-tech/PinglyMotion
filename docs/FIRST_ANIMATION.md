@@ -48,7 +48,7 @@ The arm now moves between your keys. To change the feel, click a key's joint. Th
 ## 7. Save
 
 1. Choose **File > Save As**.
-2. Pick a name. Pick the `.avm` type to keep all your work.
+2. Pick a name. The file ends in `.dingle` and keeps all your work.
 3. Choose **File > Export For Second Life**. This makes a `.bvh` file beside it.
 
 Upload to Second Life is still being tested. Do not rely on it yet.

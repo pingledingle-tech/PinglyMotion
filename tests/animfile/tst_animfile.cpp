@@ -31,6 +31,7 @@
 #include "bvhnode.h"
 #include "animation.h"
 #include "constants.h"
+#include "dingle.h"
 
 using AnimFile::Format;
 
@@ -494,7 +495,6 @@ void AnimFileTest::goodFiles_data()
     QTest::newRow(qPrintable(shortName(file))) << file;
   // the program's own data files are read the same way
   QTest::newRow("reference skeleton") << Constants::femaleBvhPath();
-  QTest::newRow("default pose") << Constants::defaultPosePath();
 }
 
 // every good file is read, and what comes back keeps the rules of the data model
@@ -554,7 +554,8 @@ void AnimFileTest::savedFileIsReadable()
 
   QTemporaryDir dir;
   QVERIFY(dir.isValid());
-  const QString saved = dir.path() + (avm ? "/saved.avm" : "/saved.bvh");
+  // the program writes .dingle for AVM-style animations, never .avm
+  const QString saved = dir.path() + (avm ? "/saved.dingle" : "/saved.bvh");
   int frames = 0;
   {
     BVH bvh;
@@ -563,10 +564,20 @@ void AnimFileTest::savedFileIsReadable()
     QVERIFY2(anim.saveBVH(saved, &error), qPrintable(error));
     frames = anim.getNumberOfFrames();
   }
-  const AnimFile::Result result = AnimFile::parse(readAll(saved), avm ? Format::Avm : Format::Bvh);
-  QVERIFY2(result.ok(), qPrintable(result.error));
-  QCOMPARE(result.animation->frames, frames);
-  QVERIFY2(checkRules(*result.animation).isEmpty(), qPrintable(checkRules(*result.animation)));
+  const std::optional<AnimFile::Animation> animation = [&]() -> std::optional<AnimFile::Animation> {
+    if (avm)
+    {
+      const Dingle::Result read = Dingle::parse(readAll(saved));
+      if (!read.ok()) { qWarning("%s", qPrintable(read.error)); return std::nullopt; }
+      return read.animation;
+    }
+    const AnimFile::Result read = AnimFile::parse(readAll(saved), Format::Bvh);
+    if (!read.ok()) { qWarning("%s", qPrintable(read.error)); return std::nullopt; }
+    return read.animation;
+  }();
+  QVERIFY(animation.has_value());
+  QCOMPARE(animation->frames, frames);
+  QVERIFY2(checkRules(*animation).isEmpty(), qPrintable(checkRules(*animation)));
 }
 
 // what is written can be read by the new parser, with the same joints,

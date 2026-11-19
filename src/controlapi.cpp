@@ -55,7 +55,7 @@ namespace
     {"stop", "Stops playing.", "{}", "[]"},
     {"new_animation", "Starts a new, empty animation. Fails if there are unsaved changes.", "{}", "[]"},
     {"open_file", "Opens an animation file (.dingle, .bvh or .avm) from the PinglyMotion folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.", "{\"path\":{\"type\":\"string\"}}", "[\"path\"]"},
-    {"save_file", "Saves the animation as a BVH file that can be uploaded to Second Life, in the PinglyMotion folder (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.", "{\"path\":{\"type\":\"string\"}}", "[]"},
+    {"save_file", "Saves the animation in the PinglyMotion folder: a path ending in .dingle gives the working file (keeps keys, loop points and figure), a path ending in .bvh gives a BVH file that can be uploaded to Second Life (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.", "{\"path\":{\"type\":\"string\"}}", "[]"},
     {"screenshot", "Takes a picture of the 3D view of the current frame, so you can see the pose. The picture is 4:3. Returns a PNG as base64 text.", "{\"width\":{\"type\":\"integer\",\"description\":\"Width in pixels, default 800\"}}", "[]"},
     {"set_figure", "Shows the female or the male Second Life body. This only changes what you see in PinglyMotion; the saved BVH is the same.",
      "{\"figure\":{\"type\":\"string\",\"enum\":[\"female\",\"male\"]}}", "[\"figure\"]"},
@@ -520,9 +520,10 @@ QJsonObject ControlApi::saveFile(const QJsonObject& request)
 {
   QString path = request.value("path").toString();
   if (path.isEmpty()) path = m_host->fileName();
-  if (path.isEmpty()) return fail("The animation has no file yet. Give a \"path\" ending in .bvh.");
+  if (path.isEmpty()) return fail("The animation has no file yet. Give a \"path\" ending in .dingle.");
   const QString suffix = QFileInfo(path).suffix().toLower();
-  if (suffix != "bvh" && suffix != "avm") return fail("The file name must end in .bvh or .avm.");
+  if (suffix == "avm") return fail("Old .avm files are not saved any more. Use a path ending in .dingle.");
+  if (suffix != "bvh" && suffix != "dingle") return fail("The file name must end in .dingle or .bvh.");
 
   QString error;
   const QString file = resolveInWorkFolder(path, false, error);

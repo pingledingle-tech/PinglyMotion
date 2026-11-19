@@ -180,7 +180,7 @@
             ]
         },
         {
-            "description": "Saves the animation as a BVH file that can be uploaded to Second Life, in the PinglyMotion folder (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.",
+            "description": "Saves the animation in the PinglyMotion folder: a path ending in .dingle gives the working file (keeps keys, loop points and figure), a path ending in .bvh gives a BVH file that can be uploaded to Second Life (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.",
             "name": "save_file",
             "parameters": {
                 "path": {

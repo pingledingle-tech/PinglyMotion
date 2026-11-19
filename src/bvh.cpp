@@ -454,6 +454,8 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
   }
 
   AnimFile::Animation anim;
+  int dingleIgnoredKeys=0;
+  bool dingleNewerVersion=false;
   if(dingle)
   {
     // a parsed .dingle is an AVM-style animation (keys, position keys, loop)
@@ -463,6 +465,8 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
       failed(result.error.isEmpty() ? QObject::tr("The file could not be read.") : result.error);
       return NULL;
     }
+    dingleIgnoredKeys=result.ignoredKeys;
+    dingleNewerVersion=result.newerVersion;
     anim=std::move(*result.animation);
   }
   else
@@ -481,6 +485,8 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
 
   lastLoadedNumberOfFrames=anim.frames;
   lastLoadedFrameTime=anim.frameTime;
+  lastLoadedIgnoredKeys=dingleIgnoredKeys;
+  lastLoadedNewerVersion=dingleNewerVersion;
   if(anim.format==AnimFile::Format::Avm)
   {
     havePositionKeys=anim.hasPositionKeys;
@@ -762,9 +768,9 @@ bool BVH::bvhWrite(Animation* anim,const QString& file,QString& error)
   return saveBytes(file,AnimFile::write(snapshot(anim,AnimFile::Format::Bvh)),error);
 }
 
-bool BVH::avmWrite(Animation* anim,const QString& file,QString& error)
+bool BVH::dingleWrite(Animation* anim,const QString& file,QString& error)
 {
-  return saveBytes(file,AnimFile::write(snapshot(anim,AnimFile::Format::Avm)),error);
+  return saveBytes(file,Dingle::write(snapshot(anim,AnimFile::Format::Avm)),error);
 }
 
 bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
@@ -772,9 +778,14 @@ bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
   // rudimentary file type identification from filename
   if(file.endsWith(".bvh",Qt::CaseInsensitive))
     return bvhWrite(anim,file,error);
+  if(file.endsWith(".dingle",Qt::CaseInsensitive))
+    return dingleWrite(anim,file,error);
   if(file.endsWith(".avm",Qt::CaseInsensitive))
-    return avmWrite(anim,file,error);
-  error=QObject::tr("The file name must end in .bvh or .avm.");
+  {
+    error=QObject::tr("Old .avm files are not saved any more. Save as .dingle instead.");
+    return false;
+  }
+  error=QObject::tr("The file name must end in .dingle or .bvh.");
   return false;
 }
 

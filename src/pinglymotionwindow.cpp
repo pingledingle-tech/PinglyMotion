@@ -52,8 +52,10 @@
 #include "aboutdialog.h"
 #include "animexportdialog.h"
 #include "animimportconvert.h"
+#include "dinglesave.h"
 #include "animationview.h"
 #include "bvh.h"
+#include "dingle.h"
 #include "propfile.h"
 #include "constants.h"
 #include "controlapi.h"
@@ -133,7 +135,7 @@ class WindowControlHost : public ControlHost
     {
       discardChanges();
       w->fileOpen(path);
-      if (!animation() || w->currentFile != path)
+      if (!animation() || (w->currentFile != path && w->m_avmOrigin.value(w->currentFile) != path))
       {
         error = "The file could not be opened.";
         if (!w->m_lastOpenError.isEmpty()) error += " " + w->m_lastOpenError;
@@ -228,10 +230,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
   coneMesh(new Mesh(QString(), Mesh::Shape::CONE)),      // built in code, no file
   torusMesh(new Mesh(Constants::torusMeshFilePath(), Mesh::Shape::TORUS)),
   m_animFilter("Animation Files (*.dingle *.avm *.bvh)"),
-  m_bvhFilter(QObject::tr("Second Life animation (*.bvh)")),
-  m_avmFilter(QObject::tr("PinglyMotion animation (*.avm)")),
+  m_dingleFilter(QObject::tr("PinglyMotion animation (*.dingle)")),
   m_propFilter("Props (*.prp)"),
-  m_untitledName("Untitled.avm"),
+  m_untitledName(DingleSave::defaultName()),
   m_precision(100),
   m_controlAction(nullptr),
   m_controlIndicator(nullptr)
@@ -1776,12 +1777,19 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file)
 void PinglyMotionWindow::addAnimationFile(const QString& file)
 {
   {
-    addToOpenFiles(file);
+    // an old .avm file shows up under its new name, <same name>.dingle, and counts as changed
+    const bool oldAvm=QFileInfo(file).suffix().toLower()==QLatin1String("avm");
+    const QString shownName=oldAvm ? DingleSave::suggestedName(file,m_untitledName) : file;
+    if(oldAvm) m_avmOrigin.insert(shownName,file);
+    addToOpenFiles(shownName);
     Animation* anim=new Animation(ui->animationView->getBVH(),file);
     animationIds.append(anim);
+    if(ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion)
+      QMessageBox::information(this,tr("Open Animation File"),
+                               tr("This file comes from a newer version of PinglyMotion.\nSome parts of it are not shown here.\nSaving it will remove those parts. Save under another name to keep the original."));
     calculateLongestRunningTime();
 
-    setCurrentFile(file);
+    setCurrentFile(shownName);
 
     scene->addAnimation(anim);
     timeline->setAnimation(anim);
@@ -1823,7 +1831,7 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     ui->animationView->selectPart(m_selectedTrack);
     updateInputs();
     updateFps();
-    anim->setDirty(false);
+    anim->setDirty(oldAvm);
 
 // makeshift tool for new independant playback testing
 // anim->setPlaystate(PLAYSTATE_LOOPING);
@@ -1832,11 +1840,16 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
 }
 
 // Menu Action: File / Save
-// returns true when the animation was saved
+// Save writes .dingle only. A new animation, an opened .avm and an opened .bvh
+// ask for a .dingle name first. Returns true when the animation was saved.
 bool PinglyMotionWindow::fileSave()
 {
-  if (currentFile == m_untitledName)
+  if(DingleSave::needsName(currentFile,m_untitledName))
     return fileSaveAs();
+
+  // an opened .avm is saved as .dingle with the same name; the old file goes away after that worked
+  const QString avmFile=m_avmOrigin.value(currentFile);
+  if(!avmFile.isEmpty() && !checkFileOverwrite(QFileInfo(currentFile))) return false;
 
   QString error;
   if(!scene->getAnimation()->saveBVH(currentFile,&error))
@@ -1844,6 +1857,7 @@ bool PinglyMotionWindow::fileSave()
     QMessageBox::warning(this,tr("Save Animation File"),error);
     return false;
   }
+  if(!avmFile.isEmpty()) replaceOldAvm(avmFile,currentFile);
   return true;
 }
 
@@ -1851,42 +1865,67 @@ bool PinglyMotionWindow::fileSave()
 // returns true when the animation was saved
 bool PinglyMotionWindow::fileSaveAs()
 {
-  // the user picks the file type: .bvh for Second Life, .avm keeps PinglyMotion's own data
-  const QString filters=m_bvhFilter+";;"+m_avmFilter;
-  QString selectedFilter=QFileInfo(currentFile).suffix().toLower()=="bvh" ? m_bvhFilter : m_avmFilter;
+  QString suggested=DingleSave::suggestedName(currentFile,m_untitledName);
+  if(QFileInfo(suggested).isRelative())
+    suggested=QDir(UserSettings::lastPath()).filePath(suggested);
+  QString selectedFilter=m_dingleFilter;
 
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), currentFile, filters, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
+   QString file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #else
-   QString file = QFileDialog::getSaveFileName(this, tr("Save Animation File"), currentFile, filters, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
+   QString file = QFileDialog::getSaveFileName(this, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #endif
 
   if(file.isEmpty()) return false;
-
-  // make sure file has proper extension (either .bvh or .avm), taken from the chosen file type
-  QString extension=QFileInfo(file).suffix().toLower();
-  if(extension!="avm" && extension!="bvh")
-    file+=(selectedFilter==m_bvhFilter) ? ".bvh" : ".avm";
+  file=DingleSave::withDingleEnding(file);
 
   QFileInfo fileInfo(file);
 
   // if the file didn't exist yet or the user accepted to overwrite it, save it.
   if(!checkFileOverwrite(fileInfo)) return false;
 
+  const QString oldFile=m_avmOrigin.value(currentFile,currentFile);
   QString error;
   if(!scene->getAnimation()->saveBVH(file,&error))
   {
     QMessageBox::warning(this,tr("Save Animation File"),error);
     return false;
   }
+  m_avmOrigin.remove(currentFile);
   setCurrentFile(file);
   UserSettings::setLastPath(fileInfo.path());
   // update animation selector combo box
   ui->selectAnimationCombo->setItemText(ui->selectAnimationCombo->currentIndex(),fileInfo.baseName());
   openFiles[ui->selectAnimationCombo->currentIndex()]=file;
   ui->fileExportForSecondLifeAction->setEnabled(true);
+
+  // an old .avm file is replaced: it goes to the recycle bin, now that the new file is saved
+  if(DingleSave::replacesOldFile(oldFile,file)) replaceOldAvm(oldFile,file);
   return true;
+}
+
+void PinglyMotionWindow::replaceOldAvm(const QString& avmFile,const QString& newFile)
+{
+  const QString title=tr("Save Animation File");
+  m_avmOrigin.remove(newFile);
+  if(!QFileInfo::exists(avmFile)) return;
+
+  // read the new file back and compare it with the animation before the old file is touched
+  QFile saved(newFile);
+  bool same=false;
+  if(saved.open(QIODevice::ReadOnly) && saved.size()<=Dingle::MAX_FILE_BYTES)
+  {
+    const Dingle::Result read=Dingle::parse(saved.readAll());
+    same=read.ok() && DingleSave::sameAnimation(*read.animation,ui->animationView->getBVH()->snapshot(scene->getAnimation(),AnimFile::Format::Avm));
+  }
+  if(!same)
+  {
+    QMessageBox::warning(this,title,tr("Your animation was saved, but the new file did not pass the check.\nThe old file %1 was left where it is.").arg(QFileInfo(avmFile).fileName()));
+    return;
+  }
+  if(!QFile::moveToTrash(avmFile))
+    QMessageBox::information(this,title,tr("Your animation was saved.\nThe old file %1 could not be moved to the recycle bin.\nIt is still there. You can delete it yourself.").arg(QFileInfo(avmFile).fileName()));
 }
 
 // Menu Action: File / Export For Second Life
@@ -2493,7 +2532,7 @@ void PinglyMotionWindow::addToOpenFiles(const QString& fileName)
 
     QString fixedName=fileName;
     fixedName.remove(QRegularExpression(".*/"));
-    fixedName.remove(QRegularExpression("(\\.bvh|\\.avm)"));
+    fixedName.remove(QRegularExpression("(\\.bvh|\\.avm|\\.dingle)"));
 
     ui->selectAnimationCombo->addItem(fixedName);
 }
