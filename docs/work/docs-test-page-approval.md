@@ -1,6 +1,6 @@
 Branch: docs/test-page-approval
 Status: done
-Pull request: pending
+Pull request: #89
 Files:
 - CLAUDE.md
 - docs/work/docs-test-page-approval.md
