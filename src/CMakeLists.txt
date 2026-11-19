@@ -18,6 +18,8 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
               iktree.cpp
               pmmesh.cpp
               jointgroups.cpp
+              jointinfo.cpp
+              jointlist.cpp
               propfile.cpp
               main.cpp
               mesh.cpp

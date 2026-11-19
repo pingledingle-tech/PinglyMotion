@@ -79,6 +79,13 @@ TARGET_LINK_LIBRARIES (pinglymotion_jointinfo_tests ${PINGLYMOTION_QT_LIBS} Qt6:
 ADD_TEST (NAME jointinfo WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_jointinfo_tests)
 SET_TESTS_PROPERTIES (jointinfo PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# rows of the joint list: friendly names, headings, search (#14, step 2)
+ADD_EXECUTABLE (pinglymotion_jointlist_tests tst_jointlist.cpp ${CORE_SRC} ${CMAKE_SOURCE_DIR}/src/jointinfo.cpp ${CMAKE_SOURCE_DIR}/src/jointlist.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_jointlist_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_jointlist_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME jointlist WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_jointlist_tests)
+SET_TESTS_PROPERTIES (jointlist PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # the Ruth2 v4 body: mesh file, joints, loading as RuthBody (#110)
 ADD_EXECUTABLE (pinglymotion_ruth2_tests tst_ruth2.cpp ${CORE_SRC})
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_ruth2_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

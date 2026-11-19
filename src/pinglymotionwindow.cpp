@@ -43,6 +43,7 @@
 #include <QSlider>
 #include <QCheckBox>
 #include <QHeaderView>
+#include <QLineEdit>
 #include <QTabBar>
 #include <QTableWidget>
 
@@ -58,6 +59,8 @@
 #include <QStatusBar>
 #include "prop.h"
 #include "jointgroups.h"
+#include "jointinfo.h"
+#include "jointlist.h"
 #include "paneltitlebar.h"
 #include "pinglymotion.h"
 #include "scene.h"
@@ -261,6 +264,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   UserSettings::readSettings();
   Theme::apply(UserSettings::darkTheme());
   fitPropertiesWidth();
+  // the heading colour in the joint list comes from the theme
+  fillJointTable();
 
   resize(UserSettings::mainWindowWidth(),UserSettings::mainWindowHeight());
 
@@ -279,6 +284,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
     UserSettings::setDarkTheme(dark);
     Theme::apply(dark);
     fitPropertiesWidth();
+    fillJointTable();
     ui->animationView->update();
   });
   ui->optionsProtectFirstFrameAction->setChecked(UserSettings::protectFirstFrame());
@@ -978,11 +984,17 @@ void PinglyMotionWindow::fitPropertiesWidth()
   m_propertiesScroll->setFixedWidth(width+m_propertiesScroll->verticalScrollBar()->sizeHint().width());
 }
 
-// joint picker in the properties panel: tabs Body / Face / Hands / Other
-// above a table with the joints of that tab. Replaces the old "Edit Part"
+// joint picker in the properties panel: tabs Body / Face / Hands / Other and
+// a search box above a table with the joints of that tab, by friendly name
+// under section headings (#14, step 2). Replaces the old "Edit Part"
 // drop-down list. Only the list is filtered; the 3D view shows all joints.
 void PinglyMotionWindow::buildJointPicker()
 {
+  m_jointInfo.reset(new JointInfo);
+  QString error;
+  if(!m_jointInfo->load(Constants::pinglyMotionDataPath()+"/firestorm",&error))
+    qWarning("joint names not loaded, the joint list shows file names: %s",qPrintable(error));
+
   m_jointTabs=new QTabBar(ui->jointPicker);
   m_jointTabs->setObjectName("jointTabs");
   m_jointTabs->setDocumentMode(true);
@@ -993,6 +1005,13 @@ void PinglyMotionWindow::buildJointPicker()
   m_jointTabs->addTab(tr("Face"));
   m_jointTabs->addTab(tr("Hands"));
   m_jointTabs->addTab(tr("Other"));
+
+  m_jointSearch=new QLineEdit(ui->jointPicker);
+  m_jointSearch->setObjectName("jointSearch");
+  m_jointSearch->setPlaceholderText(tr("Search joints"));
+  m_jointSearch->setClearButtonEnabled(true);
+  m_jointSearch->setToolTip(tr("Type part of a joint name, for example \"elbow\" or \"left hand\".\n"
+                               "Finds joints on all tabs. Press Enter to pick the first one."));
 
   m_jointTable=new QTableWidget(ui->jointPicker);
   m_jointTable->setObjectName("jointTable");
@@ -1011,63 +1030,104 @@ void PinglyMotionWindow::buildJointPicker()
 
   QVBoxLayout* layout=new QVBoxLayout(ui->jointPicker);
   layout->setContentsMargins(0,0,0,0);
-  layout->setSpacing(0);
+  layout->setSpacing(2);
   layout->addWidget(m_jointTabs);
+  layout->addWidget(m_jointSearch);
   layout->addWidget(m_jointTable);
 
-  connect(m_jointTabs,&QTabBar::currentChanged,this,[this](int) { fillJointTable(); });
+  // a click on a tab shows that tab again, so the search is cleared
+  connect(m_jointTabs,&QTabBar::currentChanged,this,[this](int)
+  {
+    QSignalBlocker block(m_jointSearch);
+    m_jointSearch->clear();
+    fillJointTable();
+  });
+  connect(m_jointSearch,&QLineEdit::textChanged,this,[this](const QString&) { fillJointTable(); });
+  // Enter picks the first joint found
+  connect(m_jointSearch,&QLineEdit::returnPressed,this,[this]()
+  {
+    for(int row=0;row<nodeMapping.count();row++)
+    {
+      if(nodeMapping[row]<0) continue;
+      m_jointTable->setCurrentCell(row,0);
+      break;
+    }
+  });
   // a new row (mouse or arrow keys), or a click on the marked row while
   // that joint is not selected in the view (at start, after a background click)
   connect(m_jointTable,&QTableWidget::currentCellChanged,this,[this](int row)
   {
-    if(row<0 || row>=nodeMapping.count()) return;
+    if(row<0 || row>=nodeMapping.count() || nodeMapping[row]<0) return;
     m_selectedTrack=nodeMapping[row];
     partChoice();
   });
   connect(m_jointTable,&QTableWidget::cellClicked,this,[this](int row)
   {
-    if(row<0 || row>=nodeMapping.count()) return;
-    const QString name=m_jointTable->item(row,0)->text();
+    if(row<0 || row>=nodeMapping.count() || nodeMapping[row]<0) return;
+    const QString name=ui->animationView->partNames().value(nodeMapping[row]);
     if(currentPart && currentPart->name()==name) return;
     m_selectedTrack=nodeMapping[row];
     partChoice();
   });
 }
 
-// fill the joint table with the joints of the current tab
+// fill the joint table with the joints of the current tab, or with the joints
+// found by the search box (on all tabs)
 // track numbers: 0 = position, then every skeleton node, "Site" = End Site
 void PinglyMotionWindow::fillJointTable()
 {
   const QStringList names=ui->animationView->partNames();
-  const int tab=m_jointTabs->currentIndex();
+  QVector<bool> hidden(names.count());
+  for(int track=0;track<names.count();track++)
+    hidden[track]=JointGroups::trackHidden(track);
+  const QVector<JointList::Row> rows=JointList::rows(*m_jointInfo,names,m_jointTabs->currentIndex(),
+                                                     m_jointSearch->text(),hidden,UserSettings::hideJointsInLists());
 
   QSignalBlocker block(m_jointTable);
   nodeMapping.clear();
   m_jointTable->setRowCount(0);
+  m_jointTable->setRowCount(rows.count());
 
-  for(int track=0;track<names.count();track++)
+  QFont headingFont=m_jointTable->font();
+  headingFont.setBold(true);
+
+  for(int row=0;row<rows.count();row++)
   {
-    const QString& name=names[track];
-    if(name=="Site" || JointGroups::tabOf(name)!=tab) continue;
-    // joints of hidden groups: left out, or listed in a dimmed colour
-    if(JointGroups::trackHidden(track) && UserSettings::hideJointsInLists()) continue;
-
-    QTableWidgetItem* item=new QTableWidgetItem(name);
-    if(JointGroups::trackHidden(track))
-      item->setForeground(palette().color(QPalette::Disabled,QPalette::Text));
-    const int row=m_jointTable->rowCount();
-    m_jointTable->insertRow(row);
+    const JointList::Row& r=rows[row];
+    QTableWidgetItem* item=new QTableWidgetItem(r.text);
+    if(r.heading)
+    {
+      // not selectable; arrow keys skip it
+      item->setFlags(Qt::NoItemFlags);
+      item->setFont(headingFont);
+      item->setForeground(palette().color(QPalette::Active,QPalette::WindowText));
+    }
+    else
+    {
+      // joints under a heading are indented a little
+      item->setText(QStringLiteral("   ")+r.text);
+      QString tip;
+      if(!r.slName.isEmpty())
+        tip=tr("Second Life name: %1").arg(r.slName);
+      if(r.fileName!=r.slName && r.fileName!=JointList::POSITION_TRACK)
+        tip+=(tip.isEmpty() ? QString() : QStringLiteral("\n"))+tr("Name in the animation file: %1").arg(r.fileName);
+      if(r.fileName==JointList::POSITION_TRACK)
+        tip=tr("Moves the whole avatar.");
+      item->setToolTip(tip);
+      if(r.dimmed)
+        item->setForeground(palette().color(QPalette::Disabled,QPalette::Text));
+    }
     m_jointTable->setItem(row,0,item);
-    nodeMapping << track;
+    nodeMapping << r.track;
   }
   showSelectedTrack();
 }
 
-// mark the selected joint in the table, if it is on the current tab
+// mark the selected joint in the table, if it is listed
 void PinglyMotionWindow::showSelectedTrack()
 {
   QSignalBlocker block(m_jointTable);
-  const int row=nodeMapping.indexOf(m_selectedTrack);
+  const int row=(m_selectedTrack<0) ? -1 : nodeMapping.indexOf(m_selectedTrack);
   if(row<0)
   {
     m_jointTable->clearSelection();
@@ -1078,18 +1138,28 @@ void PinglyMotionWindow::showSelectedTrack()
   m_jointTable->scrollToItem(m_jointTable->item(row,0));
 }
 
-// select a joint in the table and switch to its tab (does not select it in the view)
+// select a joint in the table and switch to its tab (does not select it in the view);
+// while searching, the search stays if the joint is among the joints found
 void PinglyMotionWindow::selectTrackInTable(int track)
 {
   m_selectedTrack=track;
   const QStringList names=ui->animationView->partNames();
   if(track>=0 && track<names.count())
   {
+    const bool listed=nodeMapping.contains(track);
     const int tab=JointGroups::tabOf(names[track]);
-    if(tab!=m_jointTabs->currentIndex())
+    if(!listed && !m_jointSearch->text().isEmpty())
+    {
+      QSignalBlocker block(m_jointSearch);
+      m_jointSearch->clear();
+    }
+    if(!listed && tab!=m_jointTabs->currentIndex())
     {
       QSignalBlocker block(m_jointTabs);
       m_jointTabs->setCurrentIndex(tab);
+    }
+    if(!listed)
+    {
       fillJointTable();
       return;
     }
