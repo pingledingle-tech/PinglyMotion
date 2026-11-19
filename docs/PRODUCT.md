@@ -1,12 +1,12 @@
-# Pingmator: product vision and roadmap
+# PinglyMotion: product vision and roadmap
 
 This document brings together the product vision, user value, use cases and proposed direction. It complements [IDEAS.md](IDEAS.md), the work board in [work/README.md](work/README.md) and the linked issues. Issues and pull requests are the source for current task status. The project restarted in this repository on 18 November 2026: a number written "old #N" is an item in the old repository, see [MIGRATION.md](MIGRATION.md) for the moved items and [DECISIONS.md](DECISIONS.md) for the decisions. The sequence below is a proposal, not a commitment, schedule or replacement for existing technical decisions.
 
 ## Vision
 
-Make it possible for newcomers to create, adapt and improve Second Life animations for free, without professional tools or paid add-ons. Pingmator should connect approachable posing and animation editing with open motion sources, optional AI assistance and preview on the user's avatar.
+Make it possible for newcomers to create, adapt and improve Second Life animations for free, without professional tools or paid add-ons. PinglyMotion should connect approachable posing and animation editing with open motion sources, optional AI assistance and preview on the user's avatar.
 
-People should be able to work manually, with AI, or with both. Pingmator remains useful without AI or a viewer connection.
+People should be able to work manually, with AI, or with both. PinglyMotion remains useful without AI or a viewer connection.
 
 ## People and the value they get
 
@@ -49,7 +49,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 
 ### 4. Preview on the user's avatar
 
-- **Journey:** Connect Pingmator to Aurora, adjust a pose or frame and see the avatar locally in the viewer.
+- **Journey:** Connect PinglyMotion to Aurora, adjust a pose or frame and see the avatar locally in the viewer.
 - **Value:** Judge fit on the actual avatar before uploading.
 - **Status and limit:** Works today, see [AURORA_LINK.md](AURORA_LINK.md). The pose is sent as quaternions per joint when Aurora supports it (old #95), otherwise as BVH (old #78). The preview is local only: nothing is uploaded and others do not see it. It needs Aurora built from the fork until the change is proposed upstream. Synchronised playback and avatar shape are future ideas.
 
@@ -88,7 +88,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 | Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests (done: opening, saving and removal of the old code), a new working format `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)), then native .anim export. | [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9), [#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26) |
 | Import and retargeting | Explore glTF, Blender, an own rigged avatar and an SL Bento bridge. | [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13) |
 | New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. | [IDEAS.md](IDEAS.md) |
-| Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#where-pingmator-is-going) |
+| Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#where-pinglymotion-is-going) |
 
 ## Proposed roadmap
 
@@ -151,7 +151,7 @@ The work runs in **two tracks side by side**. They mostly change different files
 
 - Keep the focus on Second Life and Bento, with manual use available without AI or Aurora.
 - Continue modernising the existing C++/Qt project in small steps, rather than starting a rewrite ([#8](https://github.com/pingledingle-tech/PinglyMotion/issues/8)).
-- Blender remains a modelling and rigging tool; Pingmator focuses on animation authoring and SL workflows.
+- Blender remains a modelling and rigging tool; PinglyMotion focuses on animation authoring and SL workflows.
 - Validate real SL export and uploads, actual avatar behaviour, compatibility, and rights when using external models or motion.
 - Distinguish working features, prototypes, planned tasks and ideas. Do not assume that a successful local preview is an SL upload.
 
@@ -159,4 +159,4 @@ The work runs in **two tracks side by side**. They mostly change different files
 
 Use the job files in [work/](work/README.md) for active jobs and coordination, issues for detailed requirements and progress, and pull requests for code under review. This document describes the product and user outcomes; update it when a decision or capability changes. Avoid inventing dates or treating exploratory ideas as shipped features.
 
-The [README roadmap](../README.md#where-pingmator-is-going) and [IDEAS.md](IDEAS.md) contain earlier snapshots and should be reconciled when their active work allows it.
+The [README roadmap](../README.md#where-pinglymotion-is-going) and [IDEAS.md](IDEAS.md) contain earlier snapshots and should be reconciled when their active work allows it.

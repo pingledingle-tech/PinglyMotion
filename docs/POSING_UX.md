@@ -2,9 +2,9 @@
 
 Agreed with the project owner on 18 November 2026. This page is the plan for the new posing interface: what it should look like, how the mouse and keys work, and the order of the work. Issue #88 tracks it.
 
-The pictures are a **mockup**: they show the direction, not a finished design. The 3D view in them is a real Pingmator render; the panels are drawn.
+The pictures are a **mockup**: they show the direction, not a finished design. The 3D view in them is a real PinglyMotion render; the panels are drawn.
 
-Picture credits: the figure in the 3D view is the "Maxine" variant of the open source Max avatar (https://github.com/RuthAndRoth/Max), CC BY 4.0, rendered by Pingmator (see `bin/data/character/max/`). The panels and icons are drawn for this mockup and belong to Pingmator (GPLv2 or later, like the rest of the repository).
+Picture credits: the figure in the 3D view is the "Maxine" variant of the open source Max avatar (https://github.com/RuthAndRoth/Max), CC BY 4.0, rendered by PinglyMotion (see `bin/data/character/max/`). The panels and icons are drawn for this mockup and belong to PinglyMotion (GPLv2 or later, like the rest of the repository).
 
 ## Who it is for
 
@@ -17,7 +17,7 @@ New users first: people who want to pose their avatar without knowing animation 
 | Aurora viewer (poser and animation editor) | Look and behaviour: friendly joint names, side selector, trackball, whole-pose buttons, edited-joint count | GPLv3: ideas only, no code |
 | Firestorm poser | Joint table (names, groups, left/right pairs), 9 hand presets, mirror logic, lock, undo per joint, export selection, World/Avatar/Screen frame | LGPL 2.1: data and code may be reused, keep copyright headers |
 | Blender | Mouse and key habits, viewport gizmo, Tab to hide panels | Habits only |
-| Pingmator | Timeline and key frames: the others only make single poses | – |
+| PinglyMotion | Timeline and key frames: the others only make single poses | – |
 
 ## Main window
 
@@ -98,7 +98,7 @@ One pull request per step, tested on Windows before it is merged. Steps that cha
 10. Command search
 11. Pose library and export selection
 12. Settings page
-13. Visual polish (theme, spacing, icons) and an own Pingmator icon
+13. Visual polish (theme, spacing, icons) and an own PinglyMotion icon
 14. The 3D view follows the tab (only that group's joints shown and clickable)
 
 Preparation that can run beside step 1: a data file with Firestorm's joint names, groups, left/right pairs and hand presets (with its licence notice), used by steps 2, 5 and 6.

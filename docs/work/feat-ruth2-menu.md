@@ -2,7 +2,7 @@ Branch: feat/ruth2-menu
 Status: done
 Pull request: #41
 Files:
-- src/pingmatorwindow.cpp
+- src/pinglymotionwindow.cpp
 - src/animationview.cpp
 - src/animationview.h
 - src/usersettings.cpp

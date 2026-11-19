@@ -2,7 +2,7 @@
 
 A precise description of Second Life's internal animation format (`.anim`, asset type `AT_ANIMATION`), written as the basis for `.anim` export ([#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10)) and import ([#22](https://github.com/pingledingle-tech/PinglyMotion/issues/22)). File formats were decided in old #118; see the combined plan in [PRODUCT.md](PRODUCT.md).
 
-**Source.** Second Life viewer, https://github.com/secondlife/viewer, branch `develop` at commit `f221e05` (checked 18 November 2026). The code is © Linden Research, Inc., LGPL 2.1. Every rule below names the file and function it comes from; paths are relative to `indra/` unless they start with `scripts/`. Short excerpts are quoted with that source named. Pingmator is GPLv2; the plan in [REUSE_REFERENCES.md](REUSE_REFERENCES.md) is to write our own reader and writer in Qt with this code as the reference, not to copy it.
+**Source.** Second Life viewer, https://github.com/secondlife/viewer, branch `develop` at commit `f221e05` (checked 18 November 2026). The code is © Linden Research, Inc., LGPL 2.1. Every rule below names the file and function it comes from; paths are relative to `indra/` unless they start with `scripts/`. Short excerpts are quoted with that source named. PinglyMotion is GPLv2; the plan in [REUSE_REFERENCES.md](REUSE_REFERENCES.md) is to write our own reader and writer in Qt with this code as the reference, not to copy it.
 
 The main files:
 
@@ -113,7 +113,7 @@ After the last joint: `num_constraints` (S32). If it is `< 0` or `> 10` (`MAX_CO
 
 86 bytes each. The reader then walks `chain_length + 1` parents up from the source volume's joint and **fails if any of those joints is not animated in this file** ("No joint index for constraint"). Collision volume names in the default skeleton (`newview/character/avatar_skeleton.xml`): `PELVIS`, `BUTT`, `BELLY`, `LEFT_HANDLE`, `RIGHT_HANDLE`, `LOWER_BACK`, `CHEST`, `LEFT_PEC`, `RIGHT_PEC`, `UPPER_BACK`, `NECK`, `HEAD`, `L_CLAVICLE`, `L_UPPER_ARM`, `L_LOWER_ARM`, `L_HAND`, `R_CLAVICLE`, `R_UPPER_ARM`, `R_LOWER_ARM`, `R_HAND`, `R_UPPER_LEG`, `R_LOWER_LEG`, `R_FOOT`, `L_UPPER_LEG`, `L_LOWER_LEG`, `L_FOOT`.
 
-**Recommendation for #63:** write `num_constraints = 0`. Pingmator has no constraint editor, and constraints only come from the BVH importer's `anim.ini` translation file, which in the current viewer holds only the header line `Translations 1.0` (`newview/app_settings/anim.ini`).
+**Recommendation for #63:** write `num_constraints = 0`. PinglyMotion has no constraint editor, and constraints only come from the BVH importer's `anim.ini` translation file, which in the current viewer holds only the header line `Translations 1.0` (`newview/app_settings/anim.ini`).
 
 ### 2.4 File size
 
@@ -127,7 +127,7 @@ The viewer computes the size by serializing into a dummy buffer (`LLKeyframeMoti
 
 ### 2.5 Old format (version 0.1)
 
-Read only, never written (`deserialize()`, branch `old_version`): key times are `F32` seconds; rotations are three `F32` Euler angles in degrees turned into a quaternion with `mayaQ(x, y, z, ZYX)`; positions are `V3` in metres, clamped to ±5. Pingmator does not need to write this. For import (#134) it is optional; the old assets on the SL grid are not files users have on disk.
+Read only, never written (`deserialize()`, branch `old_version`): key times are `F32` seconds; rotations are three `F32` Euler angles in degrees turned into a quaternion with `mayaQ(x, y, z, ZYX)`; positions are `V3` in metres, clamped to ±5. PinglyMotion does not need to write this. For import (#134) it is optional; the old assets on the SL grid are not files users have on disk.
 
 ## 3. Meaning of the header fields
 
@@ -143,7 +143,7 @@ Read only, never written (`deserialize()`, branch `old_version`): key times are 
 ### 3.2 Loop and ease
 
 - `loop_in_point`, `loop_out_point`: seconds from the start. The BVH importer writes `0` and `duration` when not looping (`LLBVHLoader::loadBVHFile()`: `if (!mLoop) mLoopOutPoint = mDuration`). The upload window sets them from its percent fields: `percent × 0.01 × duration` (`LLFloaterBvhPreview::onCommitLoop()`).
-- The reader only checks that they are finite. It does not check `0 ≤ in ≤ out ≤ duration` (§8). Pingmator should write values inside that range (#91 already keeps loop out inside the animation).
+- The reader only checks that they are finite. It does not check `0 ≤ in ≤ out ≤ duration` (§8). PinglyMotion should write values inside that range (#91 already keeps loop out inside the animation).
 - `ease_in_duration`, `ease_out_duration`: seconds. BVH defaults are `0.3` / `0.3` (`LLBVHLoader::reset()`). `setEaseIn()` / `setEaseOut()` clamp to `≥ 0`. For a non-looping animation the BVH importer scales both down so that `ease_in + ease_out ≤ duration` (`LLBVHLoader::optimize()`). The `.anim` reader checks neither.
 - Ease is one duration for the whole motion, blending in and out against whatever plays underneath. There is no per-key curve: playback between keys is always linear (§5). A curve editor ([#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11)) therefore has to bake its curves into extra keys.
 
@@ -168,7 +168,7 @@ Read only, never written (`deserialize()`, branch `old_version`): key times are 
 | 12 | `HAND_POSE_PEACE_R` | `Hands_Peace_R` |
 | 13 | `HAND_POSE_PALM_R` | `Hands_Spread_R` |
 
-The BVH importer default is `1` (`LLBVHLoader::reset()`: `mHand = 1`). These are the old morph hand shapes; Bento finger bones are animated as ordinary joints and do not need this field. The reader accepts `14` (`word > NUM_HAND_POSES` instead of `>=`, an off-by-one in `deserialize()`); Pingmator must never write it.
+The BVH importer default is `1` (`LLBVHLoader::reset()`: `mHand = 1`). These are the old morph hand shapes; Bento finger bones are animated as ordinary joints and do not need this field. The reader accepts `14` (`word > NUM_HAND_POSES` instead of `>=`, an off-by-one in `deserialize()`); PinglyMotion must never write it.
 
 ### 3.4 Emote
 
@@ -209,7 +209,7 @@ So a rotation is stored as the unit quaternion with `w ≥ 0` (any rotation, 0�
 
 ### 4.3 Quaternion and vector conventions
 
-Needed to turn Pingmator's Euler angles into `.anim` quaternions, from `llmath/llquaternion.h/.cpp`:
+Needed to turn PinglyMotion's Euler angles into `.anim` quaternions, from `llmath/llquaternion.h/.cpp`:
 
 - `LLQuaternion` stores `mQ[4]` as x, y, z, w.
 - **Multiplication is reversed from the textbook (Hamilton) order:** `operator*=` computes `a = b ⊗ a` (see the formula in `llquaternion.h`). So in LL code `a * b` means "rotate by `a`, then by `b`".
@@ -222,7 +222,7 @@ From `llcharacter/llkeyframemotion.cpp`:
 
 - **Interpolation is always linear.** `deserialize()` sets `mInterpolationType = IT_LINEAR` for every curve. Rotations use `nlerp` (normalised linear interpolation, not slerp) in `RotationCurve::interp()`; positions use `lerp` in `PositionCurve::interp()`. Spline interpolation is not used.
 - **Before the first key** the value of the first key is held; **after the last key** the value of the last key is held (`RotationCurve::getValue()`, `PositionCurve::getValue()`). So a joint does not need keys at exactly 0 and `duration`, but the BVH importer always writes them for joints it keeps.
-- `nlerp` between keys far apart (large angles) moves faster in the middle than at the ends. Long holds with big turns should get extra keys if the motion must look like Pingmator's own interpolation. Pingmator's preview should use the same `nlerp` when it shows an `.anim`.
+- `nlerp` between keys far apart (large angles) moves faster in the middle than at the ends. Long holds with big turns should get extra keys if the motion must look like PinglyMotion's own interpolation. PinglyMotion's preview should use the same `nlerp` when it shows an `.anim`.
 - Rotation keys are the joint's **local rotation relative to its rest orientation**, in SL axes (§7). The SL skeleton's rest rotations are all identity, so a key with x = y = z = 0 is the rest pose.
 - Position keys set the joint's local position (`JointMotion::update()` → `joint_state->setPosition()`). See §7.3 for what the importer puts there.
 
@@ -253,7 +253,7 @@ There is **no limit on the number of keys** other than the file size: at 8 bytes
 
 ## 7. How the BVH importer turns BVH into `.anim`
 
-All from `llcharacter/llbvhloader.cpp`, class `LLBVHLoader`. This is the reference for making Pingmator's `.anim` export match what users get today when they upload Pingmator's BVH.
+All from `llcharacter/llbvhloader.cpp`, class `LLBVHLoader`. This is the reference for making PinglyMotion's `.anim` export match what users get today when they upload PinglyMotion's BVH.
 
 ### 7.1 Joint names and translation
 
@@ -278,7 +278,7 @@ BVH Euler angles become a quaternion with `mayaQ(rx, ry, rz, bvhStringToOrder(ch
 
 ### 7.3 Pelvis and positions
 
-- **Pelvis rotation:** relative to frame 0. With `mRelativeRotationKey`, `first_frame_rot` is the pelvis rotation in BVH frame 0 and `outRot = frameRotInv * inRot * ~first_frame_rot * frameRot` (LL order). For a BVH whose frame 0 has zero rotation (Pingmator's BVH, the usual SL convention) this is just the axis change.
+- **Pelvis rotation:** relative to frame 0. With `mRelativeRotationKey`, `first_frame_rot` is the pelvis rotation in BVH frame 0 and `outRot = frameRotInv * inRot * ~first_frame_rot * frameRot` (LL order). For a BVH whose frame 0 has zero rotation (PinglyMotion's BVH, the usual SL convention) this is just the axis change.
 - **Pelvis position:** relative to frame 0: `inPos = (pos − pos_frame0) * ~first_frame_rot`, then `outPos = inPos * frameRot * offsetRot`, then **× 0.02540005** (`INCHES_TO_METERS`: BVH units are taken as inches), then clamped to ±5 m. So the `.anim` pelvis position is an offset in metres from where the pelvis was in frame 0.
 - **Other joints:** position keys are written only for joints with 6 channels (`applyTranslations()`: `mIgnorePositions = (mNumChannels == 3)`; "Allow joint position changes as of SL-318"). They are **not** made relative to frame 0, so the BVH channel values, converted to metres in SL axes, become the joint's local position.
 - A joint with 3 channels gets `num_pos_keys = 0`.
@@ -296,9 +296,9 @@ The importer drops keys that a straight line between neighbours already explains
 
 - Rotation: a key is kept when the deviation of the rotated x and y axes from the interpolated rotation is `≥ 0.01 / max(0.33 × depth_of_child_tree, 1)` (`ROTATION_KEYFRAME_THRESHOLD`; joints with long chains below them keep more keys), and the point of largest deviation since the last kept key is added back.
 - Position: a key is kept when it is more than `0.03` BVH units (inches, before conversion) from the interpolated position (`POSITION_KEYFRAME_THRESHOLD_SQUARED`).
-- A joint whose rotation never moves more than `0.001` and position never more than `0.001` units from frame 0 is left out completely (`ROTATION_MOTION_THRESHOLD`, `POSITION_MOTION_THRESHOLD_SQUARED`). This is why Pingmator's BVH only exports joints that move away from frame 0.
+- A joint whose rotation never moves more than `0.001` and position never more than `0.001` units from frame 0 is left out completely (`ROTATION_MOTION_THRESHOLD`, `POSITION_MOTION_THRESHOLD_SQUARED`). This is why PinglyMotion's BVH only exports joints that move away from frame 0.
 
-This reduction is not part of the format. A Pingmator exporter can write every key it has, or reduce with its own rule, as long as the file stays under 250,000 bytes.
+This reduction is not part of the format. A PinglyMotion exporter can write every key it has, or reduce with its own rule, as long as the file stays under 250,000 bytes.
 
 ### 7.6 Defaults the importer writes
 
@@ -306,14 +306,14 @@ From `LLBVHLoader::reset()` and `serialize()`: `version 1`, `sub_version 0`, `ba
 
 ## 8. Reader weaknesses to avoid in our own parser (#134)
 
-The viewer's reader trusts more than Pingmator's should. A Pingmator parser must check these itself (and gets a fuzz target from the start, #62, #20):
+The viewer's reader trusts more than PinglyMotion's should. A PinglyMotion parser must check these itself (and gets a fuzz target from the start, #62, #20):
 
 - `LLDataPackerBinaryBuffer::unpackString()` calls `strlen()` on the buffer **before** checking the length, so a file without a terminating `0x00` reads past the end of the buffer (`llmessage/lldatapacker.cpp`). Our reader must search for the terminator only inside the remaining bytes, and should cap names (joint names in the SL skeleton are short; a cap of 64 bytes is plenty).
 - `num_rot_keys` and `num_pos_keys` are only checked for `< 0`; a huge count is caught only when the data runs out. Check `count × 8 ≤ remaining bytes` before reserving memory.
 - Negative `duration` passes (`> 60` and non-finite are the only checks). Then every rotation key time fails the `0 … duration` check, unless there are no rotation keys. Require `0 < duration ≤ 60`.
 - `loop_in_point`, `loop_out_point`, ease values: only checked for being finite. Require `0 ≤ loop_in ≤ loop_out ≤ duration` and ease `≥ 0` (or clamp, and tell the user).
 - `hand_pose = 14` passes (off-by-one). Require `≤ 13`.
-- Trailing bytes after the constraints are ignored. Pingmator may refuse them or ignore them with a warning.
+- Trailing bytes after the constraints are ignored. PinglyMotion may refuse them or ignore them with a warning.
 - Per-joint priority has no upper bound. Clamp or refuse above 6.
 
 ## 9. Worked example
@@ -362,20 +362,20 @@ Total 79 bytes (41 + 6 + 4 + 4 + 16 + 4 + 4), matching the size formula in §2.4
 
 Decoding key 2: `U16_to_F32(41248, −1, 1) = 0.258808`, `w = sqrt(1 − 0.258808²) = 0.965930`, angle `2·atan2(z, w) = 29.9987°`: the loss is about 0.001°. `U16_to_F32(32767, −1, 1) = −1.5·10⁻⁵`, which the zero rule turns into exactly `0`.
 
-Pingmator's Euler → SL quaternion path for this key: the head's BVH channels (Y-up, Z-forward) have `Yrotation = 30`, which after the axis change of §7.2 is a rotation about SL z.
+PinglyMotion's Euler → SL quaternion path for this key: the head's BVH channels (Y-up, Z-forward) have `Yrotation = 30`, which after the axis change of §7.2 is a rotation about SL z.
 
 ## 10. Open questions
 
 The source does not settle these; each needs a test (in the viewer's preview, or an upload on the Aditi beta grid) before #63 is called done.
 
 1. **Server checks.** The upload server is closed source. Besides the 250,000-byte limit, does it re-check duration, joint count, priority (5 and 6), joint names or constraints? The wiki says priority 6 is allowed for `.anim`; not verified.
-2. **Non-pelvis positions.** The BVH importer writes them as absolute local positions (§7.3) and the pelvis as an offset from frame 0. How the viewer combines a position key with the joint's default position (and with avatar shape and joint offsets from rigged mesh) is decided by the pose blender (`llcharacter/llmotioncontroller.cpp` / `llpose.cpp`), which this document has not traced. The SL wiki says positions are "relative to the avatar centre, except mPelvis"; unverified. Test: export a pelvis and a hand position from Pingmator as BVH, upload in the viewer's preview, compare with the same values in an `.anim`.
-3. **Round trip after upload.** Because the viewer re-encodes every `.anim` (§6, §4.1), the uploaded asset can differ by one quantisation step from Pingmator's file. To make the stored file identical, the writer can pick codes that are fixed points of decode → encode (`F32_to_U16(quantize16(U16_to_F32(c))) == c`), choosing the nearest such code. This needs a test with the real compiled functions: our numbers come from a float32 simulation, and the compiler may evaluate the C++ with different rounding (x87, FMA).
-4. **Floor vs. round.** The viewer encodes with floor (bias of up to −1 step). Should Pingmator copy this exactly (bit-identical with a viewer re-serialize) or round (half the error)? Answer depends on question 3.
+2. **Non-pelvis positions.** The BVH importer writes them as absolute local positions (§7.3) and the pelvis as an offset from frame 0. How the viewer combines a position key with the joint's default position (and with avatar shape and joint offsets from rigged mesh) is decided by the pose blender (`llcharacter/llmotioncontroller.cpp` / `llpose.cpp`), which this document has not traced. The SL wiki says positions are "relative to the avatar centre, except mPelvis"; unverified. Test: export a pelvis and a hand position from PinglyMotion as BVH, upload in the viewer's preview, compare with the same values in an `.anim`.
+3. **Round trip after upload.** Because the viewer re-encodes every `.anim` (§6, §4.1), the uploaded asset can differ by one quantisation step from PinglyMotion's file. To make the stored file identical, the writer can pick codes that are fixed points of decode → encode (`F32_to_U16(quantize16(U16_to_F32(c))) == c`), choosing the nearest such code. This needs a test with the real compiled functions: our numbers come from a float32 simulation, and the compiler may evaluate the C++ with different rounding (x87, FMA).
+4. **Floor vs. round.** The viewer encodes with floor (bias of up to −1 step). Should PinglyMotion copy this exactly (bit-identical with a viewer re-serialize) or round (half the error)? Answer depends on question 3.
 5. **Ease and loop when looping.** `optimize()` scales ease only for non-looping motions. What the motion controller does with ease when the loop points are inside the animation is not traced here (`LLMotionController`, `LLKeyframeMotion::onUpdate()`).
 6. **Emote timing.** The emote is played along with the motion; its timing against ease in/out and loop is not traced.
 7. **Firestorm.** #63 notes that some viewers handle `.anim` uploads differently. Firestorm's `exportTempFile()` and `LLKeyframeMotion` have not been compared with the Linden viewer here.
-8. **Collision volumes and attachment points as joints.** `LL_CHARACTER_MAX_ANIMATED_JOINTS` counts bones, collision volumes and attachment points ("#bones + #collision_volumes + #attachments + 2", `lljoint.h`). Whether animating collision volumes in an `.anim` is useful or accepted by the server is unknown; Pingmator should write bones only.
+8. **Collision volumes and attachment points as joints.** `LL_CHARACTER_MAX_ANIMATED_JOINTS` counts bones, collision volumes and attachment points ("#bones + #collision_volumes + #attachments + 2", `lljoint.h`). Whether animating collision volumes in an `.anim` is useful or accepted by the server is unknown; PinglyMotion should write bones only.
 9. **Constraint behaviour.** Not needed for #63. Reports elsewhere say long chains break playback and `GROUND` targets are refused by the server; not checked.
 
 ## 11. Checklist for #63 and #134
@@ -384,7 +384,7 @@ Export (#63):
 
 - Write version `1.0`, little endian, zero-terminated strings, no padding.
 - Duration `0 < d ≤ 60`; key times `0 … d`; keys sorted, no two keys of one joint with the same U16 time.
-- Rotations: Pingmator Euler → quaternion in SL axes (§4.3, §7.2), normalise, flip sign if `w < 0`, quantise.
+- Rotations: PinglyMotion Euler → quaternion in SL axes (§4.3, §7.2), normalise, flip sign if `w < 0`, quantise.
 - Positions: metres in SL axes, pelvis as offset from rest (§7.3), clamp to ±5 m, quantise.
 - Only joints that move; canonical SL joint names; never `mScreen` or `mRoot`; at most 216.
 - Priority: base and per joint, `-1…6`; ease `≥ 0`, `ease_in + ease_out ≤ duration` for non-looping; loop points inside `0 … duration`; hand pose `0…13`; emote from the list in §3.4 or empty; `num_constraints = 0`.
@@ -408,4 +408,4 @@ Not done: choosing code values that survive the viewer's decode and encode uncha
 
 `src/animimport.*` reads `.anim` bytes into a plain data model (`AnimImport::Motion`: header, joints, rotation and position keys in seconds, metres and quaternions, constraints) and checks every limit of section 8: names are searched only inside the bytes that are left (64 bytes at most), counts are checked against the bytes that are left, the length must be above 0 and at most 60 seconds, hand pose 0 to 13, priorities above 6 are lowered to 6 with a warning, loop points and negative ease times are moved inside range with a warning, duplicate key times are merged (the later one wins, as in the viewer), a bad constraint count is ignored like the viewer does, trailing bytes are ignored with a warning. Version 0.1 files are refused with a message. It has its own fuzz target (`fuzz/fuzz_anim.cpp`).
 
-Step 2, not done: turning the keys into a Pingmator animation on the Second Life skeleton (resampling, axis change back, Euler angles per joint, the pelvis relative to frame 0).
+Step 2, not done: turning the keys into a PinglyMotion animation on the Second Life skeleton (resampling, axis change back, Euler angles per joint, the pelvis relative to frame 0).

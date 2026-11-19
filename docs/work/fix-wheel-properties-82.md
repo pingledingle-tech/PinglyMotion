@@ -3,7 +3,7 @@ Status: done
 Pull request: #85
 Files:
 - src/wheelguard.h
-- src/pingmatorwindow.cpp
+- src/pinglymotionwindow.cpp
 - tests/wheelguard/**
 - CMakeLists.txt
 - docs/work/fix-wheel-properties-82.md

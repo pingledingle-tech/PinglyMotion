@@ -1,4 +1,4 @@
-# Ideas for Pingmator
+# Ideas for PinglyMotion
 
 This is a place to keep possibilities, not a promise that every idea will be built. For the product vision, user value, use cases and proposed roadmap, see [PRODUCT.md](PRODUCT.md). Existing issues and pull requests track detailed requirements and current work.
 
@@ -18,7 +18,7 @@ Explore importing or converting animation from Blender, Maya, Mesh2Motion and ot
 
 ## Preview on an avatar in Aurora
 
-The live link over Aurora's LiveMesh works (old #78, quaternion poses in old #95); see [AURORA_LINK.md](AURORA_LINK.md). It is local to the user and does not upload an animation, and it needs the Aurora fork for now. Further ideas: synchronised playback, bringing avatar shape into Pingmator, and proposing the link to the Aurora developers. **Status: preview done; the rest are ideas.**
+The live link over Aurora's LiveMesh works (old #78, quaternion poses in old #95); see [AURORA_LINK.md](AURORA_LINK.md). It is local to the user and does not upload an animation, and it needs the Aurora fork for now. Further ideas: synchronised playback, bringing avatar shape into PinglyMotion, and proposing the link to the Aurora developers. **Status: preview done; the rest are ideas.**
 
 ## Pose and animation workflow
 
@@ -30,7 +30,7 @@ Build on the existing [local control interface](CONTROL.md) so an assistant can 
 
 ## Own AO and creator tools
 
-Create an AO using original animations, potentially for sale. Explore reusable pose/motion libraries and simple LSL controller templates for furniture and poseballs. Check rights for any imported assets; creating an animation in Pingmator alone does not grant rights to its source material. **Status: ideas.**
+Create an AO using original animations, potentially for sale. Explore reusable pose/motion libraries and simple LSL controller templates for furniture and poseballs. Check rights for any imported assets; creating an animation in PinglyMotion alone does not grant rights to its source material. **Status: ideas.**
 
 ## Ideas from viewer users' wishes
 

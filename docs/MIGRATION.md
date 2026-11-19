@@ -20,13 +20,13 @@ The issues that were still open were recreated here, with their earlier comments
 | 88 | #14 | UX revision: poser and timeline inspired by Aurora, data from Firestorm |
 | 110 | #15 | Ruth2 v4 as the default body; remove the Linden system avatar |
 | 117 | #16 | Import BVH from any skeleton and retarget it to the SL skeleton |
-| 119 | #17 | Idea: make animations from video inside Pingmator |
+| 119 | #17 | Idea: make animations from video inside PinglyMotion |
 | 120 | #18 | Idea: bridge from text-to-motion AI models to SL |
 | 121 | #19 | Reference library of poses and motions (CMU, Linden, community) |
 | 122 | #20 | Community contributions: "Teach the AI" form and shared pose library |
 | 133 | #21 | Show version and build in the window title |
 | 134 | #22 | Import SL .anim files |
-| 143 | #23 | Live link: Pingmator does not check that the program on the LiveMesh port is Aurora |
+| 143 | #23 | Live link: PinglyMotion does not check that the program on the LiveMesh port is Aurora |
 | 146 | #24 | CI: confirm how the Qt binaries downloaded by aqtinstall are verified |
 | 147 | #25 | Repository settings to check before the repository is made public again |
 | 151 | #26 | New working file format .dingle; stop saving AVM |
