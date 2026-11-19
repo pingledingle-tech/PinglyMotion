@@ -167,4 +167,4 @@ A row that passes gets the status `reviewed by the owner`. A row that does not p
 
 A text that changes later changes in the register first. Then the screen follows. If a text is dropped, its row stays with a note, so the ID is never reused.
 
-Later steps of #54 add a small check script that reads this register and warns about long sentences and avoided words, and a test with a person who has never animated.
+The check script `tools/check_texts.py` (run `python3 tools/check_texts.py`) reads this register and warns about long sentences, avoided words, empty or placeholder texts, duplicate IDs and unknown IDs. It runs in the quick checks as a warning only. A later step of #54 is a test with a person who has never animated.
