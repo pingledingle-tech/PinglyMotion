@@ -1,6 +1,6 @@
 Branch: feat/cmu-clips
-Status: active
-Pull request: pending
+Status: done
+Pull request: #130
 Files:
 - docs/work/feat-cmu-clips.md
 - tests/motions/cmu/**
