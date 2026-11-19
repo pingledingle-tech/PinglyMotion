@@ -113,6 +113,7 @@ class PinglyMotionWindow : public QMainWindow
     void on_fileSaveAction_triggered();
     void on_fileSaveAsAction_triggered();
     void on_fileExportForSecondLifeAction_triggered();
+    void on_fileExportAnimAction_triggered();
     void on_fileLoadPropsAction_triggered();
     void on_fileSavePropsAction_triggered();
     void on_fileExitAction_triggered();
@@ -198,6 +199,7 @@ class PinglyMotionWindow : public QMainWindow
     bool fileSave();
     bool fileSaveAs();
     void fileExportForSecondLife();
+    void fileExportAnim();
     void fileLoadProps();
     void fileSaveProps();
     void fileExit();

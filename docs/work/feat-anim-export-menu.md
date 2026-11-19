@@ -1,6 +1,6 @@
 Branch: feat/anim-export-menu
-Status: active
-Pull request: pending
+Status: done
+Pull request: #110
 Files:
 - src/animexportdialog.*
 - src/pinglymotionwindow.*
@@ -11,7 +11,6 @@ Files:
 - docs/PRODUCT.md
 - docs/ROADMAP.md
 - docs/ANIM_FORMAT.md
-- docs/TEACHING.md
 
 ## What
 
