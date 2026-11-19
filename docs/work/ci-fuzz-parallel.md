@@ -1,6 +1,6 @@
 Branch: ci/fuzz-parallel
-Status: active
-Pull request: pending
+Status: done
+Pull request: #71
 Files:
 - .github/workflows/fuzz.yml
 - fuzz/README.md
