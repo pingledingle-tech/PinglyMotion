@@ -1,6 +1,6 @@
 Branch: docs/combined-force-push
-Status: active
-Pull request: pending
+Status: done
+Pull request: #131
 Files:
 - CLAUDE.md
 - docs/DEV.md
