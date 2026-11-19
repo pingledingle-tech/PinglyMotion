@@ -1,0 +1,750 @@
+{
+  "format": "dingle",
+  "version": 1,
+  "generator": "PinglyMotion",
+  "timing": {"frames": 30, "frameTime": 0.033333},
+  "figure": "female",
+  "scale": 1,
+  "loop": {"in": -1, "out": 30},
+  "skeleton": [
+    {"name": "hip", "kind": "root", "parent": -1, "offset": [0, 0, 0], "channels": ["Xposition", "Yposition", "Zposition", "Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mSpine1", "kind": "joint", "parent": 0, "offset": [0, 3.307087, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mSpine2", "kind": "joint", "parent": 1, "offset": [0, -3.307087, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "abdomen", "kind": "joint", "parent": 2, "offset": [0, 3.307087, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mSpine3", "kind": "joint", "parent": 3, "offset": [0, 8.070866, -0.590551], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mSpine4", "kind": "joint", "parent": 4, "offset": [0, -8.070866, 0.590551], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "chest", "kind": "joint", "parent": 5, "offset": [0, 8.070866, -0.590551], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "neck", "kind": "joint", "parent": 6, "offset": [0, 9.88189, -0.393701], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "head", "kind": "joint", "parent": 7, "offset": [0, 2.992126, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 8, "offset": [0, 3.148289, 0], "channels": []},
+    {"name": "mSkull", "kind": "joint", "parent": 8, "offset": [0, 3.110236, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 10, "offset": [0, 1.299213, 0], "channels": []},
+    {"name": "mEyeRight", "kind": "joint", "parent": 8, "offset": [-1.417323, 3.110236, 3.858268], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 12, "offset": [0, 0, 0.984252], "channels": []},
+    {"name": "mEyeLeft", "kind": "joint", "parent": 8, "offset": [1.417323, 3.110236, 3.858268], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 14, "offset": [0, 0, 0.984252], "channels": []},
+    {"name": "mFaceRoot", "kind": "joint", "parent": 8, "offset": [0, 1.771654, 0.984252], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mFaceEyeAltRight", "kind": "joint", "parent": 16, "offset": [-1.417323, 1.338583, 2.874016], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 17, "offset": [0, 0, 0.984252], "channels": []},
+    {"name": "mFaceEyeAltLeft", "kind": "joint", "parent": 16, "offset": [1.417323, 1.338583, 2.874016], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 19, "offset": [0, 0, 0.984252], "channels": []},
+    {"name": "mFaceForeheadLeft", "kind": "joint", "parent": 16, "offset": [1.377953, 3.267717, 2.401575], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 21, "offset": [0.15748, 0.708661, 0.944882], "channels": []},
+    {"name": "mFaceForeheadRight", "kind": "joint", "parent": 16, "offset": [-1.377953, 3.267717, 2.401575], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 23, "offset": [-0.15748, 0.708661, 0.944882], "channels": []},
+    {"name": "mFaceEyebrowOuterLeft", "kind": "joint", "parent": 16, "offset": [2.007874, 1.889764, 2.519685], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 25, "offset": [0.511811, 0, 0.905512], "channels": []},
+    {"name": "mFaceEyebrowCenterLeft", "kind": "joint", "parent": 16, "offset": [1.692913, 2.204724, 2.755906], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 27, "offset": [0, 0, 1.062992], "channels": []},
+    {"name": "mFaceEyebrowInnerLeft", "kind": "joint", "parent": 16, "offset": [0.866142, 2.007874, 2.952756], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 29, "offset": [0, 0, 1.023622], "channels": []},
+    {"name": "mFaceEyebrowOuterRight", "kind": "joint", "parent": 16, "offset": [-2.007874, 1.889764, 2.519685], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 31, "offset": [-0.511811, 0, 0.905512], "channels": []},
+    {"name": "mFaceEyebrowCenterRight", "kind": "joint", "parent": 16, "offset": [-1.692913, 2.204724, 2.755906], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 33, "offset": [0, 0, 1.062992], "channels": []},
+    {"name": "mFaceEyebrowInnerRight", "kind": "joint", "parent": 16, "offset": [-0.866142, 2.007874, 2.952756], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 35, "offset": [0, 0, 1.023622], "channels": []},
+    {"name": "mFaceEyeLidUpperLeft", "kind": "joint", "parent": 16, "offset": [1.417323, 1.338583, 2.874016], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 37, "offset": [0, 0.19685, 1.062992], "channels": []},
+    {"name": "mFaceEyeLidLowerLeft", "kind": "joint", "parent": 16, "offset": [1.417323, 1.338583, 2.874016], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 39, "offset": [0, -0.275591, 0.944882], "channels": []},
+    {"name": "mFaceEyeLidUpperRight", "kind": "joint", "parent": 16, "offset": [-1.417323, 1.338583, 2.874016], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 41, "offset": [0, 0.19685, 1.062992], "channels": []},
+    {"name": "mFaceEyeLidLowerRight", "kind": "joint", "parent": 16, "offset": [-1.417323, 1.338583, 2.874016], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 43, "offset": [0, -0.275591, 0.944882], "channels": []},
+    {"name": "mFaceEar1Left", "kind": "joint", "parent": 16, "offset": [3.149606, 0.07874, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mFaceEar2Left", "kind": "joint", "parent": 45, "offset": [0.708661, 0.984252, -0.748031], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 46, "offset": [0, 1.299213, 0], "channels": []},
+    {"name": "mFaceEar1Right", "kind": "joint", "parent": 16, "offset": [-3.149606, 0.07874, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mFaceEar2Right", "kind": "joint", "parent": 48, "offset": [-0.708661, 0.984252, -0.748031], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 49, "offset": [0, 1.299213, 0], "channels": []},
+    {"name": "mFaceNoseLeft", "kind": "joint", "parent": 16, "offset": [0.590551, -0.15748, 3.385827], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 51, "offset": [0.15748, 0, 0.590551], "channels": []},
+    {"name": "mFaceNoseCenter", "kind": "joint", "parent": 16, "offset": [0, 0, 4.015748], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 53, "offset": [0, 0, 0.984252], "channels": []},
+    {"name": "mFaceNoseRight", "kind": "joint", "parent": 16, "offset": [-0.590551, -0.15748, 3.385827], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 55, "offset": [-0.15748, 0, 0.590551], "channels": []},
+    {"name": "mFaceCheekLowerLeft", "kind": "joint", "parent": 16, "offset": [1.338583, -1.220472, 1.968504], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 57, "offset": [1.181102, 0, 0.511811], "channels": []},
+    {"name": "mFaceCheekUpperLeft", "kind": "joint", "parent": 16, "offset": [1.338583, -0.19685, 2.755906], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 59, "offset": [0.590551, 0, 0.866142], "channels": []},
+    {"name": "mFaceCheekLowerRight", "kind": "joint", "parent": 16, "offset": [-1.338583, -1.220472, 1.968504], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 61, "offset": [-1.181102, 0, 0.511811], "channels": []},
+    {"name": "mFaceCheekUpperRight", "kind": "joint", "parent": 16, "offset": [-1.338583, -0.19685, 2.755906], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 63, "offset": [-0.590551, 0, 0.866142], "channels": []},
+    {"name": "mFaceJaw", "kind": "joint", "parent": 16, "offset": [0, -0.590551, -0.03937], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mFaceChin", "kind": "joint", "parent": 65, "offset": [0, -2.125984, 2.913386], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 66, "offset": [0, -0.708661, 0.826772], "channels": []},
+    {"name": "mFaceTeethLower", "kind": "joint", "parent": 65, "offset": [0, -1.535433, 0.826772], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mFaceLipLowerLeft", "kind": "joint", "parent": 68, "offset": [0, 0, 1.771654], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 69, "offset": [0.669291, 0.19685, 1.338583], "channels": []},
+    {"name": "mFaceLipLowerRight", "kind": "joint", "parent": 68, "offset": [0, 0, 1.771654], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 71, "offset": [-0.669291, 0.19685, 1.338583], "channels": []},
+    {"name": "mFaceLipLowerCenter", "kind": "joint", "parent": 68, "offset": [0, 0, 1.771654], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 73, "offset": [0, 0.07874, 1.574803], "channels": []},
+    {"name": "mFaceTongueBase", "kind": "joint", "parent": 68, "offset": [0, 0.19685, 1.535433], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mFaceTongueTip", "kind": "joint", "parent": 75, "offset": [0, 0.275591, 0.866142], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 76, "offset": [0, 0, 0.393701], "channels": []},
+    {"name": "mFaceJawShaper", "kind": "joint", "parent": 16, "offset": [0, 0, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 78, "offset": [0, 0, -0.669291], "channels": []},
+    {"name": "mFaceForeheadCenter", "kind": "joint", "parent": 16, "offset": [0, 2.559055, 2.716535], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 80, "offset": [0, 0, 1.417323], "channels": []},
+    {"name": "mFaceNoseBase", "kind": "joint", "parent": 16, "offset": [0, -0.629921, 3.700787], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 82, "offset": [0, 0, 0.551181], "channels": []},
+    {"name": "mFaceTeethUpper", "kind": "joint", "parent": 16, "offset": [0, -1.181102, 0.787402], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mFaceLipUpperLeft", "kind": "joint", "parent": 84, "offset": [0, -0.11811, 1.771654], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 85, "offset": [0.590551, 0, 1.614173], "channels": []},
+    {"name": "mFaceLipUpperRight", "kind": "joint", "parent": 84, "offset": [0, -0.11811, 1.771654], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 87, "offset": [-0.590551, 0, 1.614173], "channels": []},
+    {"name": "mFaceLipCornerLeft", "kind": "joint", "parent": 84, "offset": [-0.748031, -0.393701, 1.102362], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 89, "offset": [2.007874, 0, 1.771654], "channels": []},
+    {"name": "mFaceLipCornerRight", "kind": "joint", "parent": 84, "offset": [0.748031, -0.393701, 1.102362], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 91, "offset": [-2.007874, 0, 1.771654], "channels": []},
+    {"name": "mFaceLipUpperCenter", "kind": "joint", "parent": 84, "offset": [0, -0.11811, 1.771654], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 93, "offset": [0, 0.07874, 1.692913], "channels": []},
+    {"name": "mFaceEyecornerInnerLeft", "kind": "joint", "parent": 16, "offset": [0.669291, 1.259843, 2.952756], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 95, "offset": [0, 0, 0.629921], "channels": []},
+    {"name": "mFaceEyecornerInnerRight", "kind": "joint", "parent": 16, "offset": [-0.669291, 1.259843, 2.952756], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 97, "offset": [0, 0, 0.629921], "channels": []},
+    {"name": "mFaceNoseBridge", "kind": "joint", "parent": 16, "offset": [0, 0.787402, 3.582677], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 99, "offset": [0, 0.314961, 0.590551], "channels": []},
+    {"name": "lCollar", "kind": "joint", "parent": 6, "offset": [3.346457, 6.496063, -0.826772], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "lShldr", "kind": "joint", "parent": 101, "offset": [3.110236, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "lForeArm", "kind": "joint", "parent": 102, "offset": [9.76378, 0, 0], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "lHand", "kind": "joint", "parent": 103, "offset": [8.070866, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 104, "offset": [4.106464, 0, 0], "channels": []},
+    {"name": "mHandMiddle1Left", "kind": "joint", "parent": 104, "offset": [3.976378, 0.590551, 0.511811], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandMiddle2Left", "kind": "joint", "parent": 106, "offset": [1.574803, -0.23622, -0.03937], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandMiddle3Left", "kind": "joint", "parent": 107, "offset": [1.929134, -0.314961, -0.03937], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 108, "offset": [1.299213, -0.23622, -0.07874], "channels": []},
+    {"name": "mHandIndex1Left", "kind": "joint", "parent": 104, "offset": [3.818898, 0.590551, 1.496063], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandIndex2Left", "kind": "joint", "parent": 110, "offset": [1.417323, -0.23622, 0.669291], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandIndex3Left", "kind": "joint", "parent": 111, "offset": [1.259843, -0.23622, 0.551181], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 112, "offset": [0.984252, -0.15748, 0.433071], "channels": []},
+    {"name": "mHandRing1Left", "kind": "joint", "parent": 104, "offset": [3.897638, 0.354331, -0.393701], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandRing2Left", "kind": "joint", "parent": 114, "offset": [1.496063, -0.314961, -0.511811], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandRing3Left", "kind": "joint", "parent": 115, "offset": [1.574803, -0.354331, -0.511811], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 116, "offset": [1.102362, -0.23622, -0.393701], "channels": []},
+    {"name": "mHandPinky1Left", "kind": "joint", "parent": 104, "offset": [3.740157, 0.11811, -1.220472], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandPinky2Left", "kind": "joint", "parent": 118, "offset": [0.984252, -0.23622, -0.944882], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandPinky3Left", "kind": "joint", "parent": 119, "offset": [0.708661, -0.15748, -0.590551], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 120, "offset": [0.629921, -0.15748, -0.511811], "channels": []},
+    {"name": "mHandThumb1Left", "kind": "joint", "parent": 104, "offset": [1.023622, 0.15748, 1.220472], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandThumb2Left", "kind": "joint", "parent": 122, "offset": [1.259843, -0.03937, 1.102362], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandThumb3Left", "kind": "joint", "parent": 123, "offset": [1.220472, -0.03937, 0.905512], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 124, "offset": [0.984252, 0, 0.590551], "channels": []},
+    {"name": "rCollar", "kind": "joint", "parent": 6, "offset": [-3.346457, 6.496063, -0.826772], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "rShldr", "kind": "joint", "parent": 126, "offset": [-3.110236, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "rForeArm", "kind": "joint", "parent": 127, "offset": [-9.76378, 0, 0], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "rHand", "kind": "joint", "parent": 128, "offset": [-8.070866, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 129, "offset": [-4.106464, 0, 0], "channels": []},
+    {"name": "mHandMiddle1Right", "kind": "joint", "parent": 129, "offset": [-3.976378, 0.590551, 0.511811], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandMiddle2Right", "kind": "joint", "parent": 131, "offset": [-1.574803, -0.23622, -0.03937], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandMiddle3Right", "kind": "joint", "parent": 132, "offset": [-1.929134, -0.314961, -0.03937], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 133, "offset": [-1.299213, -0.23622, -0.07874], "channels": []},
+    {"name": "mHandIndex1Right", "kind": "joint", "parent": 129, "offset": [-3.818898, 0.590551, 1.496063], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandIndex2Right", "kind": "joint", "parent": 135, "offset": [-1.417323, -0.23622, 0.669291], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandIndex3Right", "kind": "joint", "parent": 136, "offset": [-1.259843, -0.23622, 0.551181], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 137, "offset": [-0.984252, -0.15748, 0.433071], "channels": []},
+    {"name": "mHandRing1Right", "kind": "joint", "parent": 129, "offset": [-3.897638, 0.354331, -0.393701], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandRing2Right", "kind": "joint", "parent": 139, "offset": [-1.496063, -0.314961, -0.511811], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandRing3Right", "kind": "joint", "parent": 140, "offset": [-1.574803, -0.354331, -0.511811], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 141, "offset": [-1.102362, -0.23622, -0.393701], "channels": []},
+    {"name": "mHandPinky1Right", "kind": "joint", "parent": 129, "offset": [-3.740157, 0.11811, -1.220472], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandPinky2Right", "kind": "joint", "parent": 143, "offset": [-0.984252, -0.23622, -0.944882], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandPinky3Right", "kind": "joint", "parent": 144, "offset": [-0.708661, -0.15748, -0.590551], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 145, "offset": [-0.629921, -0.15748, -0.511811], "channels": []},
+    {"name": "mHandThumb1Right", "kind": "joint", "parent": 129, "offset": [-1.023622, 0.15748, 1.220472], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandThumb2Right", "kind": "joint", "parent": 147, "offset": [-1.259843, -0.03937, 1.102362], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHandThumb3Right", "kind": "joint", "parent": 148, "offset": [-1.220472, -0.03937, 0.905512], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 149, "offset": [-0.984252, 0, 0.590551], "channels": []},
+    {"name": "mWingsRoot", "kind": "joint", "parent": 6, "offset": [0, 0, -0.551181], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mWing1Left", "kind": "joint", "parent": 151, "offset": [4.133858, 7.125984, -3.897638], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mWing2Left", "kind": "joint", "parent": 152, "offset": [6.653543, 2.637795, -6.614173], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mWing3Left", "kind": "joint", "parent": 153, "offset": [7.204724, 0, -7.125984], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mWing4Left", "kind": "joint", "parent": 154, "offset": [6.811024, 0, -6.732283], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 155, "offset": [5.19685, 0, -5.748031], "channels": []},
+    {"name": "mWing4FanLeft", "kind": "joint", "parent": 154, "offset": [6.811024, 0, -6.732283], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 157, "offset": [2.440945, -6.259843, -2.677165], "channels": []},
+    {"name": "mWing1Right", "kind": "joint", "parent": 151, "offset": [-4.133858, 7.125984, -3.897638], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mWing2Right", "kind": "joint", "parent": 159, "offset": [-6.653543, 2.637795, -6.614173], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mWing3Right", "kind": "joint", "parent": 160, "offset": [-7.204724, 0, -7.125984], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mWing4Right", "kind": "joint", "parent": 161, "offset": [-6.811024, 0, -6.732283], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 162, "offset": [-5.19685, 0, -5.748031], "channels": []},
+    {"name": "mWing4FanRight", "kind": "joint", "parent": 161, "offset": [-6.811024, 0, -6.732283], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 164, "offset": [-2.440945, -6.259843, -2.677165], "channels": []},
+    {"name": "lThigh", "kind": "joint", "parent": 0, "offset": [5, -1.614173, 1.338583], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "lShin", "kind": "joint", "parent": 166, "offset": [-1.811024, -19.330709, -0.03937], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "lFoot", "kind": "joint", "parent": 167, "offset": [0.03937, -18.425197, -1.141732], "channels": ["Xrotation", "Yrotation", "Zrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 168, "offset": [0, -2.463878, 4.653993], "channels": []},
+    {"name": "mFootLeft", "kind": "joint", "parent": 168, "offset": [0, -2.401575, 4.409449], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mToeLeft", "kind": "joint", "parent": 170, "offset": [0, 0, 4.291339], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 171, "offset": [0, 0, 0.787402], "channels": []},
+    {"name": "rThigh", "kind": "joint", "parent": 0, "offset": [-5.07874, -1.614173, 1.338583], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "rShin", "kind": "joint", "parent": 173, "offset": [1.929134, -19.330709, -0.03937], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "rFoot", "kind": "joint", "parent": 174, "offset": [0, -18.425197, -1.141732], "channels": ["Xrotation", "Yrotation", "Zrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 175, "offset": [0, -2.463878, 4.653993], "channels": []},
+    {"name": "mFootRight", "kind": "joint", "parent": 175, "offset": [0, -2.401575, 4.409449], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mToeRight", "kind": "joint", "parent": 177, "offset": [0, 0, 4.291339], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 178, "offset": [0, 0, 0.787402], "channels": []},
+    {"name": "mTail1", "kind": "joint", "parent": 0, "offset": [0, 1.850394, -4.566929], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mTail2", "kind": "joint", "parent": 180, "offset": [0, 0, -7.755906], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mTail3", "kind": "joint", "parent": 181, "offset": [0, 0, -6.614173], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mTail4", "kind": "joint", "parent": 182, "offset": [0, 0, -5.590551], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mTail5", "kind": "joint", "parent": 183, "offset": [0, 0, -4.409449], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mTail6", "kind": "joint", "parent": 184, "offset": [0, 0, -3.700787], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 185, "offset": [0, 0, -3.503937], "channels": []},
+    {"name": "mGroin", "kind": "joint", "parent": 0, "offset": [0, -3.818898, 2.519685], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 187, "offset": [0, -2.598425, 0.15748], "channels": []},
+    {"name": "mHindLimbsRoot", "kind": "joint", "parent": 0, "offset": [0, 3.307087, -7.874016], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHindLimb1Left", "kind": "joint", "parent": 189, "offset": [5.07874, -4.92126, -8.031496], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHindLimb2Left", "kind": "joint", "parent": 190, "offset": [-1.811024, -19.330709, 0.07874], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHindLimb3Left", "kind": "joint", "parent": 191, "offset": [-0.11811, -18.425197, -1.181102], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHindLimb4Left", "kind": "joint", "parent": 192, "offset": [0, -2.401575, 4.409449], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 193, "offset": [0.314961, 0, 4.133858], "channels": []},
+    {"name": "mHindLimb1Right", "kind": "joint", "parent": 189, "offset": [-5.07874, -4.92126, -8.031496], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHindLimb2Right", "kind": "joint", "parent": 195, "offset": [1.811024, -19.330709, 0.07874], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHindLimb3Right", "kind": "joint", "parent": 196, "offset": [0.11811, -18.425197, -1.181102], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "mHindLimb4Right", "kind": "joint", "parent": 197, "offset": [0, -2.401575, 4.409449], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 198, "offset": [-0.314961, 0, 4.133858], "channels": []}
+  ],
+  "tracks": [
+    {"joint": 0,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ],
+     "position": [
+       {"frame": 0, "values": [0, 43.5285187, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 1,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 2,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 3,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 4,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 5,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 6,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 7,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 8,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 10,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 12,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 14,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 16,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 17,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 19,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 21,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 23,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 25,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 27,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 29,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 31,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 33,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 35,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 37,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 39,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 41,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 43,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 45,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 46,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 48,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 49,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 51,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 53,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 55,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 57,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 59,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 61,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 63,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 65,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 66,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 68,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 69,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 71,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 73,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 75,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 76,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 78,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 80,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 82,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 84,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 85,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 87,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 89,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 91,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 93,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 95,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 97,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 99,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 101,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 102,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 103,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 104,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 106,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 107,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 108,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 110,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 111,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 112,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 114,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 115,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 116,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 118,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 119,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 120,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 122,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 123,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 124,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 126,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 127,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 128,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 129,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 131,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 132,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 133,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 135,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 136,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 137,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 139,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 140,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 141,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 143,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 144,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 145,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 147,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 148,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 149,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 151,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 152,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 153,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 154,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 155,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 157,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 159,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 160,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 161,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 162,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 164,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 166,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 167,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 168,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 170,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 171,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 173,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 174,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 175,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 177,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 178,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 180,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 181,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 182,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 183,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 184,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 185,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 187,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 189,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 190,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 191,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 192,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 193,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 195,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 196,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 197,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 198,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]}
+  ],
+  "camera": null,
+  "extensions": {}
+}
