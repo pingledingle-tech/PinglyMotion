@@ -1,6 +1,6 @@
 Branch: tools/check-texts
-Status: active
-Pull request: pending
+Status: done
+Pull request: #104
 Files:
 - tools/check_texts.py
 - tests/test_check_texts.py
