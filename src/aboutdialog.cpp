@@ -21,6 +21,7 @@
 #include "constants.h"
 #include "updatersettings.h"
 
+#include "aboutcredits.h"
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"
 
@@ -31,10 +32,13 @@ AboutDialog::AboutDialog(QWidget* parent) :
           | Qt::WindowTitleHint
           | Qt::WindowSystemMenuHint
           | Qt::WindowCloseButtonHint
-          | Qt::MSWindowsFixedSizeDialogHint),
+          | Qt::WindowMaximizeButtonHint),
   ui(new Ui::AboutDialog)
 {
   ui->setupUi(this);
+
+  // the credits are in a scrollable text area, so nothing is cut off (issue 106)
+  ui->creditBrowser->setHtml(AboutCredits::html());
 
   ui->versionLabel->setText(
         QString("%1 Version %2 (%3)"
