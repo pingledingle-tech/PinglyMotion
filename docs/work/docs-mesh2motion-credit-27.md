@@ -1,6 +1,6 @@
 Branch: docs/mesh2motion-credit-27
-Status: active
-Pull request: pending
+Status: done
+Pull request: #125
 Files:
 - docs/work/docs-mesh2motion-credit-27.md
 - src/aboutdialog.ui

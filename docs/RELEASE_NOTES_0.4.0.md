@@ -30,6 +30,7 @@
 - **The Second Life system avatar is gone.** It is replaced by Ruth2. If your settings said "system avatar" (or "Bento body" off), PinglyMotion now shows Ruth2; nothing else changes. The male figure shows the new Roth2 v2 body (see the next item).
 - **A real male body.** A male figure now shows Roth2 v2, the male sibling of Ruth2, with fingers and a face that follow the Bento bones. It is chosen by itself from the figure type: there is no new menu entry, and **Options > Body** only changes the female figure. The nails of Roth2 are not included (their licence is non-commercial).
 - **Credits.** Help > About and the README name the makers of Ruth2 and Roth2 and give their licence (AGPL for the mesh, kept as a separate data file next to the program).
+- **Test motions.** The folder `examples/mesh2motion` holds eight clips (walk, jog, jump, sitting, dance and more) from the Mesh2Motion project, released under CC0. Help > About and the README say thank you to Mesh2Motion.
 - **Head and neck** can bend up to 45 degrees forward and back.
 - **Opening files** uses a new reader. A broken file is refused with a reason that names the line, for example "Line 12: …". Files with values that make no sense (for example numbers too large for a decimal) and AVM files with extra property data are now refused; an empty file says "The file is empty."
 - **Window title** shows the version, where the build came from and its commit, so you can tell which build you are testing.

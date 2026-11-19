@@ -17,7 +17,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 | 1 | #10, then #22 | `.anim` export, then import, one job at a time (same format code); the export and import menus are built, waiting for the owner's Windows test | Decided order; gives priority, ease and loop points that BVH upload cannot; real motion needed to check it | #9 (done) | Sonnet |
 | 2 | #16 | BVH retargeting core: name mapping, SL/Bento slots, swing-twist (core merged; the menu with the list of matched and left out joints is built, waiting for the owner's Windows test) | New files, so it does not collide with step 1; Mesh2Motion removes most of the design risk | none | Opus |
 | 3 | #12 | glTF 2.0 import using the retargeting core (reader merged; the menu is built, waiting for the owner's Windows test) | Needs step 2 | #16 core | Sonnet |
-| 4 | #27 | Test motions: CMU clips (#3) and CC0 clips from Mesh2Motion | Needs #12 or a conversion script | #3, #12 | Haiku |
+| 4 | #27 | Test motions: CMU clips (#3) and CC0 clips from Mesh2Motion (converter, tests and the eight clips in `examples/mesh2motion` are merged; the credit in Help > About and the README is in a pull request waiting for the owner's Windows test) | Needs #12 or a conversion script | #3, #12 | Haiku |
 | 5 | #13 | Blender round trip: documentation first | Docs only | #12 | Sonnet |
 | 6 | #11 | Per-key curve and easing editor, then #53 easing presets | Visible, so the owner tests on Windows | none | Sonnet |
 | 7 | #14 | UX revision of poser and timeline | Visible, larger; discuss before building | #1 | Opus |
