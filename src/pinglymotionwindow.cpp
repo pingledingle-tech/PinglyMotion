@@ -53,6 +53,7 @@
 #include "animexportdialog.h"
 #include "animimportconvert.h"
 #include "dinglesave.h"
+#include "retargetdialog.h"
 #include "animationview.h"
 #include "bvh.h"
 #include "dingle.h"
@@ -2098,6 +2099,43 @@ void PinglyMotionWindow::fileImportAnim()
   QMessageBox::information(this,title,message);
 }
 
+// Menu Action: File / Import BVH from another skeleton...
+void PinglyMotionWindow::fileImportBvh()
+{
+  const QString title=tr("Import a BVH from another skeleton");
+  const QString file=QFileDialog::getOpenFileName(this,title,UserSettings::lastPath(),tr("BVH files (*.bvh)"));
+  if(file.isEmpty()) return;
+  UserSettings::setLastPath(QFileInfo(file).path());
+
+  QFile input(file);
+  if(!input.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,title,tr("This file could not be opened.\n%1\nCheck that the file is still there, then try again.").arg(input.errorString()));
+    return;
+  }
+  if(input.size()>AnimFile::MAX_FILE_BYTES)
+  {
+    QMessageBox::warning(this,title,tr("This file is too big for an animation.\nPick a smaller BVH file, then try again."));
+    return;
+  }
+  const AnimFile::Result parsed=AnimFile::parseBvh(input.read(AnimFile::MAX_FILE_BYTES+1));
+  if(!parsed.ok())
+  {
+    const QString where=parsed.line>0 ? tr("Line %1: %2").arg(parsed.line).arg(parsed.error) : parsed.error;
+    QMessageBox::warning(this,title,tr("This file could not be read.\n%1\nCheck that it is a BVH file, then try again.").arg(where));
+    return;
+  }
+
+  AnimFile::Animation skeleton;
+  if(!loadSkeleton(skeleton,title)) return;
+
+  RetargetDialog dialog(*parsed.animation,skeleton,QFileInfo(file).fileName(),
+                        [this](const QString& name){ return m_jointInfo ? m_jointInfo->friendlyName(name) : QString(); },this);
+  if(dialog.exec()!=QDialog::Accepted || !dialog.result().ok()) return;
+
+  openConvertedAnimation(*dialog.result().animation,QFileInfo(file).completeBaseName(),-1,-1,title);
+}
+
 // Menu Action: File / Load Props...
 void PinglyMotionWindow::fileLoadProps()
 {
@@ -2809,6 +2847,11 @@ void PinglyMotionWindow::on_fileSaveAction_triggered()
 void PinglyMotionWindow::on_fileSaveAsAction_triggered()
 {
   fileSaveAs();
+}
+
+void PinglyMotionWindow::on_fileImportBvhAction_triggered()
+{
+  fileImportBvh();
 }
 
 void PinglyMotionWindow::on_fileImportAnimAction_triggered()

@@ -27,6 +27,7 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
               jointlist.cpp
               propfile.cpp
               retarget.cpp
+              retargetdialog.cpp
               main.cpp
               mesh.cpp
               meshmodel.cpp
