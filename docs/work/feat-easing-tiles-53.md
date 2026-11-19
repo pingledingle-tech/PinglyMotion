@@ -1,6 +1,6 @@
 Branch: feat/easing-tiles-53
-Status: active
-Pull request: pending
+Status: done
+Pull request: #134
 Files:
 - src/easingtiles.*
 - src/timelineview.*
@@ -14,6 +14,7 @@ Files:
 - docs/ROADMAP.md
 - docs/POSING_UX.md
 - docs/RELEASE_NOTES_0.4.0.md
+- docs/TEACHING.md
 
 ## What
 

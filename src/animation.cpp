@@ -276,6 +276,29 @@ void Animation::setEaseOut(BVHNode* node,int frameNum,bool state)
   }
 }
 
+void Animation::setCurve(BVHNode* node,int frameNum,const std::optional<Easing::Preset>& curve)
+{
+  if(!node)
+  {
+    qDebug("Animation::setCurve(): node==0!");
+    return;
+  }
+
+  if(node->isKeyframe(frameNum) && node->curve(frameNum)!=curve)
+  {
+    setDirty(true);
+    node->setCurve(frameNum,curve);
+    // tell main class that the keyframe has changed
+    emit redrawTrack(getPartIndex(node));
+  }
+}
+
+std::optional<Easing::Preset> Animation::curve(BVHNode* node,int frameNum)
+{
+  if(!node) return std::nullopt;
+  return node->curve(frameNum);
+}
+
 bool Animation::easeIn(BVHNode* node,int frameNum)
 {
   if(!node)
