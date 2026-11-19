@@ -747,8 +747,24 @@ void TestGltfImport::badJson()
   // brackets inside a string do not count
   QVERIFY(GltfImport::read("{\"asset\":{\"version\":\"2.0\",\"generator\":\""+QByteArray(500,'[')+"\\\"\"}}").ok());
   // required extensions
+  // EXT_meshopt_compression is decoded (tests/gltfimport/tst_mesh2motion.cpp); a file that names it but has no
+  // compressed view is read like any other; other kinds of meshopt data are refused
   QVERIFY(refusal(withJson(g,[](QJsonObject& r) { r["extensionsRequired"]=QJsonArray{"EXT_meshopt_compression"}; }))
+          .isEmpty());
+  QVERIFY(refusal(withJson(g,[](QJsonObject& r) { r["extensionsRequired"]=QJsonArray{"KHR_meshopt_compression"}; }))
           .contains("compress"));
+  for(const char* mode : {"TRIANGLES","INDICES","UNKNOWN"})
+    QVERIFY(refusal(withJson(g,[mode](QJsonObject& r) {
+      setIn(r,"bufferViews",0,"extensions",QJsonObject{{"EXT_meshopt_compression",QJsonObject{
+        {"buffer",0},{"byteOffset",0},{"byteLength",16},{"byteStride",4},{"count",4},{"mode",mode}}}}); }))
+            .contains("mode"));
+  QVERIFY(refusal(withJson(g,[](QJsonObject& r) {
+    setIn(r,"bufferViews",0,"extensions",QJsonObject{{"EXT_meshopt_compression",QJsonObject{
+      {"buffer",0},{"byteOffset",0},{"byteLength",16},{"byteStride",4},{"count",4},{"mode","ATTRIBUTES"},
+      {"filter","OCTAHEDRAL"}}}}); })).contains("OCTAHEDRAL"));
+  QVERIFY(!refusal(withJson(g,[](QJsonObject& r) {
+    setIn(r,"bufferViews",0,"extensions",QJsonObject{{"EXT_meshopt_compression",QJsonObject{
+      {"buffer",0},{"byteOffset",0},{"byteLength",4},{"byteStride",4},{"count",1000000},{"mode","ATTRIBUTES"}}}}); })).isEmpty());
   QVERIFY(refusal(withJson(g,[](QJsonObject& r) { r["extensionsRequired"]=QJsonArray{"KHR_unknown_thing"}; }))
           .contains("KHR_unknown_thing"));
   QVERIFY(refusal(withJson(g,[](QJsonObject& r) {
