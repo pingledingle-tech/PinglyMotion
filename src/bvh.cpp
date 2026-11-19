@@ -568,8 +568,8 @@ QString BVH::bvhPoseText(Animation* anim,int frame)
   return text;
 }
 
-// One joint's rotation as Aurora reads a BVH: the channels applied in their order
-// (each new axis rotation multiplied in front), then BVH axes (Y up, Z forward,
+// One joint's rotation: the channels in file order, each new axis rotation multiplied
+// on the right (same as the 3D view, the IK and the .anim export), then BVH axes (Y up, Z forward,
 // X sideways) turned into Second Life's avatar axes (X forward, Y left, Z up).
 void BVH::bvhPoseNodeQuaternions(BVHNode* node,int frame,QJsonObject& rotations)
 {
@@ -581,9 +581,9 @@ void BVH::bvhPoseNodeQuaternions(BVHNode* node,int frame,QJsonObject& rotations)
     for(int i=0;i<node->numChannels;i++)
     {
       const BVHChannelType type=node->channelType[i];
-      if(type==BVH_XROT) { q=QQuaternion::fromAxisAndAngle(1,0,0,rotation.x())*q; hasRotation=true; }
-      else if(type==BVH_YROT) { q=QQuaternion::fromAxisAndAngle(0,1,0,rotation.y())*q; hasRotation=true; }
-      else if(type==BVH_ZROT) { q=QQuaternion::fromAxisAndAngle(0,0,1,rotation.z())*q; hasRotation=true; }
+      if(type==BVH_XROT) { q=q*QQuaternion::fromAxisAndAngle(1,0,0,rotation.x()); hasRotation=true; }
+      else if(type==BVH_YROT) { q=q*QQuaternion::fromAxisAndAngle(0,1,0,rotation.y()); hasRotation=true; }
+      else if(type==BVH_ZROT) { q=q*QQuaternion::fromAxisAndAngle(0,0,1,rotation.z()); hasRotation=true; }
     }
     if(hasRotation)
     {

@@ -1,9 +1,10 @@
 Branch: fix/live-link-rotation-order
-Status: active
-Pull request: pending
+Status: done
+Pull request: #77
 Files:
 - src/bvh.cpp
 - tests/tst_auroralink.cpp
+- tests/CMakeLists.txt
 
 ## What
 
