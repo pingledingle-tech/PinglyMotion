@@ -16,6 +16,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 - Work only on your own branch. Never push to `main`.
 - Stay inside the files you listed. If you need another file, add it to `Files:` in your job file first, and run `python3 tools/work.py check` to see whether another active job claims it.
 - Keep the job small: one feature or fix per branch.
+- **Docs in the same pull request:** when your change makes a document wrong (`docs/PRODUCT.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, release notes, the issue it belongs to), fix it in the same pull request and tick the docs box in the template. A job is not done while a document still says the old thing.
 
 ## When you are done
 
