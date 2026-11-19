@@ -1,16 +1,18 @@
 Branch: fix/title-label-timeline
 Status: active
-Pull request: pending
+Pull request: #120
 Files:
 - CMakeLists.txt
 - src/buildinfo.h.in
 - src/constants.*
+- src/aboutdialog.cpp
 - src/panelvisibility.h
 - src/pinglymotionwindow.cpp
 - tests/buildinfo/**
 - tests/panelvisibility/**
 - .github/workflows/build.yml
 - docs/RELEASE_NOTES_0.4.0.md
+- docs/DECISIONS.md
 
 ## What
 

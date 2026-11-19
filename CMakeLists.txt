@@ -57,8 +57,13 @@ IF ("${PINGLYMOTION_COMMIT}" STREQUAL "")
 ELSE ()
   STRING (SUBSTRING "${PINGLYMOTION_COMMIT}" 0 7 PINGLYMOTION_COMMIT)
 ENDIF ()
-ADD_DEFINITIONS (-DPINGLYMOTION_BUILD_SOURCE="${PINGLYMOTION_BUILD_SOURCE}")
-ADD_DEFINITIONS (-DPINGLYMOTION_COMMIT="${PINGLYMOTION_COMMIT}")
+# Written to a generated header, not passed as compiler options: CMake drops a compiler
+# option that contains "#" (so "PR #12" never arrived), and a header that changes with
+# every commit only rebuilds constants.cpp. Quotes and backslashes would break the C string.
+STRING (REPLACE "\\" "/" PINGLYMOTION_BUILD_SOURCE "${PINGLYMOTION_BUILD_SOURCE}")
+STRING (REPLACE "\"" "'" PINGLYMOTION_BUILD_SOURCE "${PINGLYMOTION_BUILD_SOURCE}")
+CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/src/buildinfo.h.in ${CMAKE_BINARY_DIR}/generated/buildinfo.h @ONLY)
+INCLUDE_DIRECTORIES (${CMAKE_BINARY_DIR}/generated)
 
 # Version number shown in the program and used by the update check
 IF (NOT DEFINED VERSION_NUMBER)
@@ -107,6 +112,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/statusbar)
   ADD_SUBDIRECTORY (tests/bodysetting)
   ADD_SUBDIRECTORY (tests/buildinfo)
+  # the Timeline panel at start and when the window closes
+  ADD_SUBDIRECTORY (tests/panelvisibility)
   # wheel over sliders in the Properties panel (#82)
   ADD_SUBDIRECTORY (tests/wheelguard)
   # easing maths for the six easing choices (#53 step 1)

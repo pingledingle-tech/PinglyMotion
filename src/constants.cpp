@@ -70,16 +70,31 @@
 #endif
 
 
+// The build source and commit come from a generated header, not from compiler options:
+// CMake drops a compiler option that contains "#", so "PR #12" never reached the program.
+#include "buildinfo.h"
+
+QString Constants::composeBuildLabel(const QString& version, bool release, const QString& source,
+                                     const QString& commit, const QString& build)
+{
+  if (release) return version;
+  const QString dot = QStringLiteral(" \u00b7 ");
+  QString label = version + dot + (source.isEmpty() ? QStringLiteral("dev") : source);
+  if (!commit.isEmpty()) label += dot + commit;
+  if (!build.isEmpty() && build != QStringLiteral("0")) label += dot + QStringLiteral("build ") + build;
+  return label;
+}
+
 const QString Constants::buildLabel()
 {
-  const QString version = m_versionNumber.toString();
-  if (m_updateChannel == UpdateChannel::Release) return version;
-#if defined(PINGLYMOTION_BUILD_SOURCE) && defined(PINGLYMOTION_COMMIT)
-  return version + QStringLiteral(" \u00b7 ") + QString(PINGLYMOTION_BUILD_SOURCE)
-         + QStringLiteral(" \u00b7 ") + QString(PINGLYMOTION_COMMIT);
-#else
-  return version + QStringLiteral(" \u00b7 dev");
-#endif
+  return composeBuildLabel(m_versionNumber.toString(), m_updateChannel == UpdateChannel::Release,
+                           QString::fromUtf8(PINGLYMOTION_BUILD_SOURCE), QString::fromUtf8(PINGLYMOTION_COMMIT),
+                           m_buildNumber);
+}
+
+QString Constants::windowTitle(const QString& fileName)
+{
+  return QStringLiteral("PinglyMotion ") + buildLabel() + QStringLiteral(" [") + fileName + QStringLiteral("]");
 }
 
 const QString Constants::buildDateTime()

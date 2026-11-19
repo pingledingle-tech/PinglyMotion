@@ -70,6 +70,7 @@
 #include "usersettings.h"
 #include "usersettingsdialog.h"
 
+#include "panelvisibility.h"
 #include "pinglymotionwindow.h"
 #include "theme.h"
 #include "ui_pinglymotionwindow.h"
@@ -241,7 +242,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   buildJointPicker();
   buildDocks();
 
-  setWindowTitle("PinglyMotion");
+  // the build label shows from the first moment, not only after the first file
+  setWindowTitle(Constants::windowTitle(m_untitledName));
   setAttribute(Qt::WA_DeleteOnClose);
   frameDataValid=false;
   currentPart=0;
@@ -272,7 +274,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   ui->optionsLoopAction->setChecked(UserSettings::loop());
   ui->optionsSkeletonAction->setChecked(UserSettings::skeleton());
   ui->optionsJointLimitsAction->setChecked(UserSettings::jointLimits());
-  ui->optionsShowTimelineAction->setChecked(UserSettings::showTimelinePanel());
 
   // Options > Dark theme
   QAction* darkThemeAction=new QAction(tr("Dark theme"),this);
@@ -381,8 +382,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
   connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
 
-  if(!UserSettings::showTimelinePanel()) m_timelineDock->hide();
-
   // panel layout from last time (size, place, floating panels)
   m_defaultWindowState=saveState();
   if(!UserSettings::windowState().isEmpty()) restoreState(UserSettings::windowState());
@@ -391,6 +390,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
     addDockWidget(Qt::RightDockWidgetArea,m_propertiesDock);
   if(!m_timelineDock->isFloating() && !(dockWidgetArea(m_timelineDock) & m_timelineDock->allowedAreas()))
     addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
+  // the timeline stands visible at every start; hiding it lasts for this session only
+  PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
 
 
   connect(m_pinglyMotion.data(), &PinglyMotion::repaint, ui->animationView, static_cast<void (AnimationView::*)()>(&AnimationView::repaint));
@@ -596,7 +597,7 @@ void PinglyMotionWindow::setRemoteControl(bool on,bool showInfo)
 // the title says so while other programs can control PinglyMotion
 void PinglyMotionWindow::updateWindowTitle()
 {
-  QString title="PinglyMotion "+Constants::buildLabel()+" ["+currentFile+"]";
+  QString title=Constants::windowTitle(currentFile);
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink && m_auroraLink->enabled())
@@ -878,9 +879,8 @@ void PinglyMotionWindow::buildDocks()
   QAction* showPropertiesAction=m_propertiesDock->toggleViewAction();
   showPropertiesAction->setText(tr("Show Properties"));
   ui->menuOptions->insertAction(ui->optionsConfigurePinglyMotionAction,showPropertiesAction);
-  // closing the timeline with its own button unticks Show Timeline
-  connect(m_timelineDock->toggleViewAction(),&QAction::toggled,
-          ui->optionsShowTimelineAction,&QAction::setChecked);
+  // closing the timeline with its own button unticks Show Timeline (closing the window does not)
+  PanelVisibility::linkMenuItem(this,m_timelineDock,ui->optionsShowTimelineAction);
 
   // Options > Reset panel layout
   QAction* resetLayoutAction=new QAction(tr("Reset panel layout"),this);
