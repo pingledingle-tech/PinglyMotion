@@ -3,8 +3,9 @@
 Data for the posing interface (#88, see `docs/POSING_UX.md`): a friendly name,
 a section, a left/right mirror partner and the "do not flip on mirror" flag for
 every joint of PinglyMotion's skeleton, plus Firestorm's 9 hand presets.
-`src/jointinfo.h` reads it; `tests/tst_jointinfo.cpp` checks it. Nothing in the
-program uses it yet.
+`src/jointinfo.h` reads it; `tests/tst_jointinfo.cpp` checks it. The joint
+list uses the friendly names and sections (`src/jointlist.h`, posing UX step 2);
+the mirror partners and hand presets are not used yet.
 
 ## Source
 

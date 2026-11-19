@@ -78,6 +78,14 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 - Shift / Ctrl still show the scale / rotate handles of a selected prop.
 - Not yet: the view gizmo, Set key with K / I, R then X / Y / Z, the trackball.
 
+**Done in step 2** (joint list, `src/jointlist.*`, `src/pinglymotionwindow.*`):
+
+- The joint list shows friendly names from the Firestorm data (`bin/data/firestorm/joints.json`): "Forearm", not `lForeArm`. The joints stand under section headings in Firestorm's order: Body, Left Arm, Right Arm, Legs; Head, Forehead/Brows, Eyes/Eye Lids …; Left Hand, Right Hand; Tail, Hind Limbs, Wings. The face root and the skull, which Firestorm lists without a heading, stand under "Head". The position track is called "Avatar Position" and comes first.
+- When the mouse rests on a joint, its Second Life name (and the name in the animation file, if different) is shown. The selected-joint card will show the SL name later (step 4).
+- A search box under the tabs finds joints on all tabs. Every word typed must be found in the friendly name, the heading, the SL name or the file name ("left wrist", "mElbowLeft"). Enter picks the first joint found. Clicking a tab clears the search. Clicking a joint in the 3D view keeps the search if the joint is among the results, otherwise the search is cleared and the list switches to the joint's tab.
+- Joints the data does not know (a file with another skeleton) are listed by their file name under "Other joints". If the data file is missing, the list falls back to file names.
+- Not yet: the violet dot on edited joints, the key marker and the export tick (later steps).
+
 ## Language
 
 English only for now. All interface text goes through `tr()`, so translations can be added later without code changes. Help texts are written in simple English.
@@ -86,14 +94,14 @@ English only for now. All interface text goes through `tr()`, so translations ca
 
 One pull request per step, tested on Windows before it is merged. Steps that change the same files run one after another.
 
-1. Camera and keys (new scheme, old joint modifiers removed) – `src/animationview.*`
-2. Friendly names, section headings and search in the joint list
+1. Camera and keys (new scheme, old joint modifiers removed) – `src/animationview.*` (done)
+2. Friendly names, section headings and search in the joint list (done)
 3. Floating, movable panels; Tab to hide; reset layout
 4. Selected-joint card: trackball, sliders, limit warning, turn-around frame
 5. Left / Right / Mirror and the whole-pose buttons (shared left/right mapping)
 6. Hands tab: presets and finger grid
 7. Timeline: only edited joints, loop range, ease chips
-8. Status bar: Claude and Aurora status, tips switch
+8. Status bar: Claude and Aurora status, tips switch (done)
 9. Help tips and hint bar, `?` controls list
 10. Command search
 11. Pose library and export selection

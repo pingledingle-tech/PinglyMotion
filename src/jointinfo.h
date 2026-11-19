@@ -9,6 +9,9 @@
  * or by the Second Life name (mPelvis, mShoulderLeft). Functions that return a
  * joint name answer in the same kind of name they were asked with.
  *
+ * The joint list in the properties panel uses the friendly names and sections
+ * (JointList, posing UX step 2).
+ *
  * The hand presets are kept as Firestorm stores them: Euler angles in radians in
  * Firestorm's own axes. They are NOT in PinglyMotion's BVH rotation model; the
  * conversion is still open (see the README).

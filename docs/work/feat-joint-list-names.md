@@ -11,7 +11,7 @@ Files:
 - tests/CMakeLists.txt
 - bin/data/firestorm/README.md
 - docs/POSING_UX.md
-- docs/PRODUCT.md
+- docs/RELEASE_NOTES_0.4.0.md
 
 ## What
 
