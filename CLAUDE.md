@@ -1,6 +1,6 @@
 # Rules for AI sessions working on PinglyMotion
 
-Several Claude sessions may work on this repository (`pingledingle-tech/PinglyMotion`, public; the code still says "Pingmator" in many places) at the same time. These rules keep them from breaking each other's work.
+Several Claude sessions may work on this repository (`pingledingle-tech/PinglyMotion`, public; formerly called Pingmator) at the same time. These rules keep them from breaking each other's work.
 
 Every job registers itself with ONE small file of its own in `docs/work/`. There is no shared table any more, so pull requests do not conflict over the board. Format and template: `docs/work/README.md`.
 

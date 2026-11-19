@@ -2,7 +2,7 @@
 
 Status: **parked, not planned work.** Notes from a check on 16 November 2026 of other pose tools and viewer code that may be useful later. Nothing here changes the work order in `docs/PRODUCT.md`. Open an issue before building anything from this list.
 
-Licence rule: Pingmator is GPLv2. Second Life viewer and Firestorm code is LGPL 2.1 and may be used if the copyright headers stay. Closed tools give ideas only, never code.
+Licence rule: PinglyMotion is GPLv2. Second Life viewer and Firestorm code is LGPL 2.1 and may be used if the copyright headers stay. Closed tools give ideas only, never code.
 
 ## 1. `.anim` export and import (issue #63) – most useful
 
@@ -16,11 +16,11 @@ Licence rule: Pingmator is GPLv2. Second Life viewer and Firestorm code is LGPL 
 
 Files in `indra/newview/`: `fsfloaterposer.cpp`, `fsposeranimator.cpp/.h`, `fsjointpose.cpp/.h` (LGPL 2.1).
 
-- **Firestorm already writes BVH.** Check box "Write BVH when saving" (`FSPoserSaveExternalFileAlso`); writer in `FSFloaterPoser::writePoseAsBvh()` (about line 2877): 2 frames, frame 0 all zero, per-joint channel order from `floater_fs_poser.xml`. It only works for poses that start from a T-pose ("BVH requires original work", see the tool tip). So Pingmator can most likely open Firestorm poses through BVH today; no XML import is needed.
+- **Firestorm already writes BVH.** Check box "Write BVH when saving" (`FSPoserSaveExternalFileAlso`); writer in `FSFloaterPoser::writePoseAsBvh()` (about line 2877): 2 frames, frame 0 all zero, per-joint channel order from `floater_fs_poser.xml`. It only works for poses that start from a T-pose ("BVH requires original work", see the tool tip). So PinglyMotion can most likely open Firestorm poses through BVH today; no XML import is needed.
 - **Do not import Firestorm XML diffs.** Poses that adjust someone else's animation are saved only as XML diffs. Importing them would get round Firestorm's protection against copying.
 - XML format, for reference only: `savePoseToXml()` / `loadPoseFromXml()` (about lines 634 and 1267). LLSD XML, `version` 8, `startFromTeePose`, per joint `enabled`, `mirrored`, `rotation`/`position`/`scale` (vectors), `jointBaseRotationIsZero`, `userSetBaseRotationToZero`, `worldLocked`.
 - Already noted for the posing UX (#88): joint table with mirror joints and groups (`PoserJoints` in `fsposeranimator.h`), mirror/flip code, and 9 hand presets in `indra/newview/app_settings/poses/hand_presets/` (Flat, Grip, Horns, Okay, Pointing, Relaxed, Thumbs_Up, Tight_Grip, Two_Finger_Salute).
-- Possible test later: open a BVH written by Firestorm in Pingmator and check that it looks the same.
+- Possible test later: open a BVH written by Firestorm in PinglyMotion and check that it looks the same.
 
 ## 3. Black Dragon viewer
 
@@ -31,8 +31,8 @@ Files in `indra/newview/`: `fsfloaterposer.cpp`, `fsposeranimator.cpp/.h`, `fsjo
 
 Browser pose editor for SL. No source code or licence found (GitHub projects with the same name are unrelated). Ideas worth keeping:
 
-- Choose which joints are exported (for example arms only, so the user can still walk). Pingmator already exports only joints that move away from frame 0, but this is not visible to the user.
-- Pose from a photo. For Pingmator this can be done through the existing MCP control: the AI looks at the image and sets the joints. No image detection inside Pingmator.
+- Choose which joints are exported (for example arms only, so the user can still walk). PinglyMotion already exports only joints that move away from frame 0, but this is not visible to the user.
+- Pose from a photo. For PinglyMotion this can be done through the existing MCP control: the AI looks at the image and sets the joints. No image detection inside PinglyMotion.
 - Import of `.anim` together with export.
 
 ## 5. Not useful for code

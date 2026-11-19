@@ -19,5 +19,5 @@ Step 1 of issue #22: a safe reader for Second Life `.anim` files. It turns
 the bytes into a plain data model (header, joints, rotation and position keys
 in seconds, metres and quaternions) with every number and count checked
 (docs/ANIM_FORMAT.md section 8), and has its own fuzz target. A function
-only; turning the keys into a Pingmator animation on the Second Life skeleton
+only; turning the keys into a PinglyMotion animation on the Second Life skeleton
 is step 2, a later job.
