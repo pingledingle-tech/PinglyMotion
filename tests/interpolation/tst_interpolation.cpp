@@ -12,6 +12,7 @@
 // returns, so identical frameData means files play and save identically.
 #include <QtTest>
 #include <QRandomGenerator>
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <math.h>
@@ -72,6 +73,7 @@ private slots:
   void interpolateBitExact();
   void frameDataBitExact();
   void presetPathMatchesSwitches();
+  void storedChoiceWinsOverSwitches();
   void workedExample();
 };
 
@@ -194,14 +196,75 @@ void TstInterpolation::presetPathMatchesSwitches()
         QVERIFY(sameBits(Easing::segmentValue(preset,-12.5,77.25,steps,pos),
                          oldInterpolate(-12.5,77.25,steps,pos,easeOut,easeIn)));
   }
-  // the two new choices cannot be stored yet; they count as the default
-  for(int pos=0;pos<=10;pos++)
+  // the two new choices (stored as a .dingle "curve" since issue #53 step 3)
+  // follow the speed curve s() of the easing module
+  for(int steps=1;steps<=50;steps++)
+    for(int pos=0;pos<=steps;pos++)
+    {
+      const double t=static_cast<double>(pos)/steps;
+      const double overshoot=Easing::segmentValue(Easing::Preset::OvershootThenSettle,-12.5,77.25,steps,pos);
+      QVERIFY(std::fabs(overshoot-Easing::blend(-12.5,77.25,Easing::s(Easing::Preset::OvershootThenSettle,t)))<1e-9);
+      const double hold=Easing::segmentValue(Easing::Preset::HoldThenSnap,-12.5,77.25,steps,pos);
+      QCOMPARE(hold,pos<steps ? -12.5 : 77.25);
+    }
+  // both end exactly on the target key and start exactly on the start key
+  QCOMPARE(Easing::segmentValue(Easing::Preset::OvershootThenSettle,3,90,7,7),90.0);
+  QCOMPARE(Easing::segmentValue(Easing::Preset::OvershootThenSettle,3,90,7,0),3.0);
+  // overshoot goes past the target, at most 8 % of the change
+  double peak=0;
+  for(int pos=0;pos<=100;pos++) peak=std::max(peak,Easing::segmentValue(Easing::Preset::OvershootThenSettle,0,100,100,pos));
+  QVERIFY(peak>100.0);
+  QVERIFY(peak<=100.0*Easing::overshootPeak()+1e-9);
+}
+
+void TstInterpolation::storedChoiceWinsOverSwitches()
+{
+  // a joint with three keys: 0 -> 90 over frames 0..10, then 90 -> 0 over 10..20
+  Node node;
+  node.addKeyframe(0,QVector3D(0,0,0),QVector3D(0,0,0));
+  node.addKeyframe(10,QVector3D(10,0,0),QVector3D(90,0,0));
+  node.addKeyframe(20,QVector3D(0,0,0),QVector3D(0,0,0));
+  node.setEaseOut(0,true);
+  node.setEaseIn(10,true);
+  node.setEaseOut(10,true);
+  node.setEaseIn(20,true);
+  QVERIFY(!node.curve(0));
+  // no stored choice: the switches give Slow both ends
+  QCOMPARE(node.frameData(2).rotation().x(),static_cast<float>(oldInterpolate(0,90,10,2,true,true)));
+
+  // the choice on the start key wins for its segment only
+  node.setCurve(0,Easing::Preset::HoldThenSnap);
+  QCOMPARE(node.curve(0),std::optional<Easing::Preset>(Easing::Preset::HoldThenSnap));
+  for(int f=0;f<10;f++)
   {
-    QVERIFY(sameBits(Easing::segmentValue(Easing::Preset::OvershootThenSettle,0,90,10,pos),
-                     Easing::segmentValue(Easing::defaultPreset(),0,90,10,pos)));
-    QVERIFY(sameBits(Easing::segmentValue(Easing::Preset::HoldThenSnap,0,90,10,pos),
-                     Easing::segmentValue(Easing::defaultPreset(),0,90,10,pos)));
+    QCOMPARE(node.frameData(f).rotation().x(),0.0f);
+    QCOMPARE(node.frameData(f).position().x(),0.0f);
   }
+  QCOMPARE(node.frameData(10).rotation().x(),90.0f);
+  QCOMPARE(node.frameData(12).rotation().x(),static_cast<float>(oldInterpolate(90,0,10,2,true,true)));
+
+  node.setCurve(10,Easing::Preset::OvershootThenSettle);
+  bool past=false;
+  for(int f=11;f<20;f++)
+  {
+    const float v=node.frameData(f).rotation().x();
+    QCOMPARE(v,static_cast<float>(Easing::blend(90,0,Easing::s(Easing::Preset::OvershootThenSettle,(f-10)/10.0))));
+    if(v<0) past=true;
+  }
+  QVERIFY(past);
+  QCOMPARE(node.frameData(20).rotation().x(),0.0f);
+
+  // Even stored on a key with both switches set gives a straight line
+  node.setCurve(0,Easing::Preset::Even);
+  QCOMPARE(node.frameData(3).rotation().x(),27.0f);
+
+  // the choice moves with the key frame data; a non-key frame has none
+  QVERIFY(!node.curve(5));
+  node.setCurve(5,Easing::Preset::HoldThenSnap);
+  QVERIFY(!node.curve(5));
+  QCOMPARE(node.frameData(10).curve(),std::optional<Easing::Preset>(Easing::Preset::OvershootThenSettle));
+  node.setCurve(10,std::nullopt);
+  QVERIFY(!node.curve(10));
 }
 
 void TstInterpolation::workedExample()

@@ -1,6 +1,6 @@
 # Easing choices for beginners: names and descriptions
 
-Mostly a plan. The only part in the program so far is step 2: playback computes the four old-style choices through the easing module, with exactly the old results (see "Playback (step 2)" below); nothing on screen has changed. This page fixes the **names, the small pictures and the descriptions** of the six easing choices proposed in [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53), so the later jobs (the maths, the file format, the tile row on the timeline) all use the same words. The wording of the hint under each tile lives in [TEACHING.md](TEACHING.md) (IDs `EASE-01` to `EASE-06`); this page does not repeat it, so there is one place to change.
+Mostly a plan. In the program so far: step 2, playback computes the four old-style choices through the easing module with exactly the old results (see "Playback (step 2)"), and step 3, a key can carry any of the six choices, stored as `curve` in `.dingle` and used by playback and export (see "Stored choice (step 3)"). Nothing on screen has changed; there is no menu for the choice yet. This page fixes the **names, the small pictures and the descriptions** of the six easing choices proposed in [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53), so the later jobs (the maths, the file format, the tile row on the timeline) all use the same words. The wording of the hint under each tile lives in [TEACHING.md](TEACHING.md) (IDs `EASE-01` to `EASE-06`); this page does not repeat it, so there is one place to change.
 
 The six choices, their order and "Slow both ends" as the default are proposals in #53. They are not decisions yet; if the project owner changes one, change it here and in `TEACHING.md`.
 
@@ -73,7 +73,7 @@ With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 
 - `blend` mixes two numbers or three angles with `s`; `nlerp` mixes two rotations the way the Second Life viewer does (shortest way, straight blend, normalised, so the result is always a unit quaternion).
 - `clampRotation` cuts a blended rotation at the joint's minimum and maximum, so the overshoot choice never leaves the allowed range.
 - `bake`, `bakeValues`, `bakeRotations`: the in-between values for a pose change of `frames` frames (`frames + 1` values, first exactly the start, last exactly the end), as the `.anim` export needs.
-- `presetFromSwitches` and `switchesFromPreset` map the four switch combinations to the first four choices and back. The last two choices have no switch form; they need the new stored value (step 3).
+- `presetFromSwitches` and `switchesFromPreset` map the four switch combinations to the first four choices and back. The last two choices have no switch form; they are stored as `curve` (step 3).
 
 ## Playback (step 2)
 
@@ -81,8 +81,16 @@ With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 
 
 - `segmentValue` is the old formula with the same operations in the same order, including pi written as 3.1415 and the half split with whole-number division. Using the exact pi (as `Easing::s` does) would move old animations by up to about 0.003 % of each change, and the saved files would change in the last digits, so playback keeps 3.1415.
 - Both functions are in `src/easing.h` (header-only), so the program and every test or fuzz target that builds `src/bvhnode.cpp` needs no extra source file.
-- The two new choices have no stored form yet (step 3); until then `segmentValue` treats them as the default, Slow both ends.
-- Proof: `tests/interpolation/` keeps a copy of the old function and compares it with the new path bit for bit (no tolerance), for every segment length from 1 to 200, every frame, all four switch combinations and many values, and compares every frame `BVHNode::frameData` returns for 200 joints with random keys, gaps and switches. Opening and saving BVH, AVM and `.dingle` use what `frameData` returns, so files play and save identically. `.dingle` keeps its own copy of the formula (`src/dingle.cpp`); it is unchanged.
+- Since step 3 the two new choices follow `s()` in `segmentValue` too (see below).
+- Proof: `tests/interpolation/` keeps a copy of the old function and compares it with the new path bit for bit (no tolerance), for every segment length from 1 to 200, every frame, all four switch combinations and many values, and compares every frame `BVHNode::frameData` returns for 200 joints with random keys, gaps and switches. Opening and saving BVH, AVM and `.dingle` use what `frameData` returns, so files play and save identically. Since step 3, `.dingle` uses `segmentValue` as well instead of its own copy of the formula (the copy was the same formula, so the values are unchanged).
+
+## Stored choice (step 3)
+
+- A key frame can carry an easing choice for the segment that starts at it (`AnimFile::Key::curve`, `FrameData::curve` in the program). With one, it decides the segment alone (`Easing::segmentPreset`); without one, the two switches decide as before. Old files have none, so they play and save as before.
+- In `.dingle` it is the key's `curve`, `{"type": "<technical name>"}` with the technical names `linear`, `ease-in`, `ease-out`, `ease-in-out`, `ease-out-overshoot`, `constant` ([DINGLE_FORMAT.md](DINGLE_FORMAT.md)). An unknown value gives Even and counts as an ignored key.
+- `segmentValue` now computes the two new choices: Overshoot then settle is `from + (to - from) * s(t)` with `t = pos / steps` (at most 8 % past the target), Hold then snap stays at `from` until the target frame. The four old-style choices are unchanged bit for bit (`tests/interpolation/`).
+- Joint limits are not applied to the overshoot in playback yet (`clampRotation` exists); that comes with the tile row, where a joint's limits are at hand. The in-between frames of a `.dingle` file and playback stay the same values either way.
+- Tests: `tests/dingle/` (round trip of all six, old files byte for byte, unknown values, the frames in between, position keys), `tests/interpolation/` (the stored choice wins over the switches in `BVHNode::frameData`), `tests/animexport/` (each stored choice through `.dingle` and the `.anim` writer within 0.01 degrees), `tests/tst_roundtrip.cpp` (open in the program, playback, the export input, save and open again).
 
 ## Where each part is built
 
@@ -90,7 +98,7 @@ With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 
 |---|---|
 | Maths for the six choices, no screen change | Step 1 |
 | Four old-style choices use today's switches | Step 2 |
-| `curve` stored in `.dingle` ([DINGLE_FORMAT.md](DINGLE_FORMAT.md)) | Step 3 |
+| `curve` stored in `.dingle` ([DINGLE_FORMAT.md](DINGLE_FORMAT.md)) (done) | Step 3 |
 | Export test for a curved ease | Step 4 |
 | Tile row and hint on the timeline (visible, the project owner tests) | Step 5 |
 | The example wave with a note on each change ([TEACHING.md](TEACHING.md), `WAVE-02` to `WAVE-05`) | Step 6 |

@@ -28,6 +28,8 @@
 #include <optional>
 #include <vector>
 
+#include "easing.h"
+
 namespace AnimFile
 {
   // limits for files that are read
@@ -54,15 +56,20 @@ namespace AnimFile
   // the order of the rotation channels of a joint; the same values as BVHOrderType in bvhnode.h
   enum class RotationOrder : quint8 { XYZ=1, ZYX, XZY, YZX, YXZ, ZXY };
 
-  // a key frame of an AVM file
+  // a key frame of an AVM or .dingle file
   struct Key
   {
     int frame=0;
     bool easeIn=false;
     bool easeOut=false;
+    // .dingle only: the easing choice of the segment that starts at this key
+    // (the key's "curve", issue #53 step 3). Empty: easeOut of this key and
+    // easeIn of the next key pick the choice, as always (Easing::segmentPreset).
+    std::optional<Easing::Preset> curve;
 
     bool operator==(const Key& other) const
-    { return frame==other.frame && easeIn==other.easeIn && easeOut==other.easeOut; }
+    { return frame==other.frame && easeIn==other.easeIn && easeOut==other.easeOut && curve==other.curve; }
+    bool operator!=(const Key& other) const { return !(*this==other); }
   };
 
   struct Joint

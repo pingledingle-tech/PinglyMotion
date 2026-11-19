@@ -9,7 +9,7 @@ The program never writes AVM. Old `.avm` files still open, and are upgraded to `
 - UTF-8 JSON, one object, file extension `.dingle`.
 - Stored frame based, like the program's data model (`AnimFile::Animation`). Seconds are derived from `frameTime`.
 - **Key frames only.** Only the values at key frames are stored. The frames in between are computed on load by the same interpolation the program uses.
-- **Ease flags only in version 1** (`easeIn`, `easeOut`). Easing curves (`curve`) and camera keys (`camera`) are added later without a version bump.
+- **Ease flags** (`easeIn`, `easeOut`) on every key, and an optional **easing choice** (`curve`) on a key, added without a version bump (issue #53 step 3). Camera keys (`camera`) are added later, also without a version bump.
 - Written by the program's own small emitter: fixed key order, floats printed with 9 significant digits, so a saved file is byte-identical every time. `QJsonDocument` is used only for reading.
 
 ## Layout (version 1)
@@ -60,8 +60,34 @@ Each key has:
 - `frame`: whole number, `0` or higher and below `timing.frames`.
 - `values`: the track's channel values in file order (rotation channels for `rotation`, position channels for `position`), so the rotation order is kept exactly. The count equals the channel count of that track.
 - `easeIn`, `easeOut`: booleans, as today.
+- `curve` (optional): the easing choice of the segment that starts at this key (from this key to the next key of the same track). See "Easing choice (`curve`)".
 
 Per track the keys are sorted by `frame`, unique, and frame 0 is always present. Position keys carry their own values; this replaces AVM's separate `Positions:` list.
+
+### Easing choice (`curve`)
+
+Added in issue #53 step 3, without a version bump (an additive key). Shape:
+
+```json
+{ "frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": true, "curve": {"type": "ease-out-overshoot"} }
+```
+
+| `type` | Choice ([EASING.md](EASING.md)) |
+|---|---|
+| `"linear"` | Even |
+| `"ease-in"` | Slow start |
+| `"ease-out"` | Slow finish |
+| `"ease-in-out"` | Slow both ends |
+| `"ease-out-overshoot"` | Overshoot then settle |
+| `"constant"` | Hold then snap |
+
+- The `curve` belongs to the start key of a segment. With a `curve`, it alone decides the segment from this key to the next key; this key's `easeOut` and the next key's `easeIn` are kept in the file but do not shape that segment. Without a `curve`, the two flags pick one of the first four choices, as always (`easeOut` of the start key: slow start; `easeIn` of the target key: slow finish). A `curve` on the last key of a track has no segment; it is kept.
+- **Old files** (no `curve` anywhere) open exactly as before, and are written back byte for byte the same: the writer writes `curve` only on keys that have one.
+- **Unknown values never refuse the file.** A `curve` that is not an object, has no `type`, or has a `type` this version does not know (another name, another case, not a string) makes that segment **Even** (a straight line). The `curve` counts as an ignored key, so save warns once that it will be lost; saving writes `{"type": "linear"}` there. Extra keys inside a known `curve` (for example a later `strength`) are counted as ignored keys too; the `type` is used.
+- A duplicate key inside `curve` is refused like any duplicate key.
+- Position keys carry a `curve` like rotation keys; all joints with position channels must list the same `curve` on the same keys (as for frames and ease flags).
+- The two new choices: Overshoot then settle goes up to 8 % of the change past the target key and comes back; Hold then snap keeps the start value until the target key. Playback and the in-between frames on load use the same function (`Easing::segmentValue`), so preview, `.dingle`, BVH and `.anim` export get the same values. Joint limits are not applied to the overshoot yet.
+- In the program the choice is kept on the key frame (`FrameData::curve`). There is no menu for it yet (the tile row is #53 step 5); setting a key frame again keeps its choice.
 
 ### Not stored
 
@@ -76,9 +102,9 @@ Joint scale (not supported by BVH or `.anim`), personal data, absolute paths, an
 - **Newer version than the program knows:** refuse with "This file was made by a newer version of PinglyMotion. Please update."
 - **Same version, but keys this program does not know:** the file opens. The reader counts the ignored keys, and on save the program warns once that these data will be lost. It never drops them silently.
 
-### Planned additions (no version bump)
+### Additions (no version bump)
 
-- `curve` on a key: easing curve, for example `{"type": "bezier", "out": [x, y]}`. The exact shape is decided in issue #11. A reader that sees an unknown `curve.type` uses the plain ease flags and counts the key as ignored.
+- `curve` on a key (added, issue #53 step 3): see "Easing choice (`curve`)". Free curve shapes (for example `{"type": "bezier", "out": [x, y]}`, issue #11) can be added as new `type` values later; this version reads them as Even and counts them as ignored.
 - `camera`: a top-level object with its own `keys` in the same key shape (issue #14).
 
 ## Limits
@@ -124,9 +150,9 @@ Rules the reader applies on top of the list above, so the data model stays valid
 - `skeleton` is in depth first order: the first joint is the only root (`"kind": "root"`, parent `-1`), and every other joint's parent is on the path to the joint before it. Kinds are `"root"`, `"joint"` and `"endsite"`; an end site has no channels and no children. A channel name is used at most once per joint.
 - Every joint with rotation channels needs `rotation` keys, and every joint with position channels needs `position` keys. A joint without channels needs no track (it gets a key at frame 0).
 - The model has one list of position keys, so all joints with position channels list the same frames and ease flags (their values may differ).
-- `figure` (default `"female"`), `scale` (default 1), `loop` (default no loop points, `out` = `frames`), `generator`, `camera` and `extensions` are optional. A `camera` that is not `null` and a `curve` on a key are skipped and counted.
+- `figure` (default `"female"`), `scale` (default 1), `loop` (default no loop points, `out` = `frames`), `generator`, `camera` and `extensions` are optional. A `camera` that is not `null` is skipped and counted. A `curve` on a key is read as above.
 - A file starting with a byte order mark is refused. A duplicate key is refused in every object except inside `extensions`.
-- Between two keys, a value is `BVHNode::interpolate` of the two key values: linear, or a sine curve in the half of the segment next to a key that has its ease flag set. After the last key the value stays.
+- Between two keys, a value is `Easing::segmentValue` of the two key values, as playback computes it: the start key's `curve` if it has one, otherwise linear, or a sine curve in the half of the segment next to a key that has its ease flag set. After the last key the value stays.
 
 ## Opening an old `.avm`
 

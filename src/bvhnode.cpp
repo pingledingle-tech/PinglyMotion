@@ -222,6 +222,11 @@ double BVHNode::interpolate(double from,double to,int steps,int pos,bool easeOut
   return Easing::segmentValue(Easing::presetFromSwitches(easeOut,easeIn),from,to,steps,pos);
 }
 
+double BVHNode::interpolate(double from,double to,int steps,int pos,Easing::Preset preset) const
+{
+  return Easing::segmentValue(preset,from,to,steps,pos);
+}
+
 const FrameData BVHNode::frameData(int frame) const
 {
   // return empty frame data on end site nodes
@@ -248,13 +253,16 @@ const FrameData BVHNode::frameData(int frame) const
   QVector3D iRotation;
   QVector3D iPosition;
 
-  iRotation.setX(interpolate(rotationBefore.x(), rotationAfter.x(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iRotation.setY(interpolate(rotationBefore.y(), rotationAfter.y(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iRotation.setZ(interpolate(rotationBefore.z(), rotationAfter.z(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
+  // a choice stored on the start key wins, otherwise the two ease switches (issue #53)
+  const Easing::Preset preset=Easing::segmentPreset(before.curve(),before.easeOut(),after.easeIn());
 
-  iPosition.setX(interpolate(positionBefore.x(), positionAfter.x(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iPosition.setY(interpolate(positionBefore.y(), positionAfter.y(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iPosition.setZ(interpolate(positionBefore.z(), positionAfter.z(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
+  iRotation.setX(interpolate(rotationBefore.x(), rotationAfter.x(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iRotation.setY(interpolate(rotationBefore.y(), rotationAfter.y(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iRotation.setZ(interpolate(rotationBefore.z(), rotationAfter.z(), frameAfter - frameBefore, frame - frameBefore, preset));
+
+  iPosition.setX(interpolate(positionBefore.x(), positionAfter.x(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iPosition.setY(interpolate(positionBefore.y(), positionAfter.y(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iPosition.setZ(interpolate(positionBefore.z(), positionAfter.z(), frameAfter - frameBefore, frame - frameBefore, preset));
 
 // qDebug(QString("iRot.x %1 frame %2: %3").arg(rotBefore.bodyPart).arg(before.frameNumber()).arg(iRot.x));
 
@@ -395,6 +403,19 @@ bool BVHNode::easeOut(int frame)
 
   qDebug("BVHNode::easeOut(): asked on non-keyframe!");
   return false;
+}
+
+void BVHNode::setCurve(int frame,const std::optional<Easing::Preset>& curve)
+{
+  if(keyframes.contains(frame))
+    (*keyframes.find(frame)).setCurve(curve);
+}
+
+std::optional<Easing::Preset> BVHNode::curve(int frame) const
+{
+  if(keyframes.contains(frame))
+    return keyframes[frame].curve();
+  return std::nullopt;
 }
 
 bool BVHNode::compareFrames(int key1,int key2) const
@@ -615,6 +636,16 @@ void FrameData::setEaseIn(bool state)
 void FrameData::setEaseOut(bool state)
 {
   m_easeOut=state;
+}
+
+std::optional<Easing::Preset> FrameData::curve() const
+{
+  return m_curve;
+}
+
+void FrameData::setCurve(const std::optional<Easing::Preset>& curve)
+{
+  m_curve=curve;
 }
 
 bool FrameData::easeIn() const
