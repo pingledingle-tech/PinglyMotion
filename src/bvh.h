@@ -74,8 +74,9 @@ class BVH
     void bvhGetFrameData(BVHNode* node,int frame);
     void bvhSetFrameData(BVHNode* node,int frame);
 
-    // opens a .bvh or .avm file with the new parser (src/animfile.*); returns
-    // NULL with the reason in lastError when the file cannot be opened
+    // opens a .bvh or .avm file with the new parser (src/animfile.*), or a
+    // .dingle file with its reader (src/dingle.*); returns NULL with the
+    // reason in lastError when the file cannot be opened
     BVHNode* animRead(const QString& file,const QString& limFile);
 
     bool avmWrite(Animation* root,const QString& file,QString& error);
