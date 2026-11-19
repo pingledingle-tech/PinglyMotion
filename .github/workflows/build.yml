@@ -87,7 +87,7 @@ jobs:
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
           mkdir -p dist
-          cp build/src/pingmator.exe dist/
+          cp build/src/PinglyMotion.exe dist/
           cp -r bin/data dist/data
           cp bin/NEWS dist/
           # test files for the project owner, next to the program: no separate downloads
@@ -100,11 +100,11 @@ jobs:
           # the MCP server goes with the program, so both are updated together
           mkdir -p dist/mcp
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt dist/mcp/
-          "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/pingmator.exe
+          "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/PinglyMotion.exe
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Pingmator-windows
+          name: PinglyMotion-windows
           path: dist
 
   linux:
@@ -167,9 +167,9 @@ jobs:
           python3 tools/check_sl_bvh.py exports/*.bvh
           python3 tools/check_sl_bvh.py exports/posed_bones.bvh --expect-animated mHandIndex2Left mHandThumb1Right mFaceJaw mTail2
       - name: Program starts and opens files
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build/src/pingmator
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build/src/PinglyMotion
       - name: Remote control works from start to finish (HTTP and MCP)
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/pingmator
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
 
   asan-ubsan:
     needs: changes
@@ -225,6 +225,6 @@ jobs:
       - name: Run tests under sanitizers
         run: xvfb-run -a -s "-screen 0 1280x1000x24" ctest --test-dir build-sanitize --output-on-failure
       - name: Program starts and opens files (under sanitizers)
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build-sanitize/src/pingmator
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build-sanitize/src/PinglyMotion
       - name: Remote control from start to finish (under sanitizers)
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build-sanitize/src/pingmator
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build-sanitize/src/PinglyMotion

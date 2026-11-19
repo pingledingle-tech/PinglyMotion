@@ -6,10 +6,10 @@
 #define VER_PRODUCTVERSION          0,3,0,0
 #define VER_PRODUCTVERSION_STR      "0.3.0.0"
 
-#define VER_FILEDESCRIPTION_STR     "Pingmator"
-#define VER_INTERNALNAME_STR        "pingmator"
-#define VER_ORIGINALFILENAME_STR    "pingmator.exe"
-#define VER_PRODUCTNAME_STR         "Pingmator"
+#define VER_FILEDESCRIPTION_STR     "PinglyMotion"
+#define VER_INTERNALNAME_STR        "PinglyMotion"
+#define VER_ORIGINALFILENAME_STR    "PinglyMotion.exe"
+#define VER_PRODUCTNAME_STR         "PinglyMotion"
 
 #define VER_DEBUG                   0
 

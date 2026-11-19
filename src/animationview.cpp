@@ -246,7 +246,7 @@ void AnimationView::initializeGL()
     qInfo("3D view drawn with %s",qPrintable(m_skinRenderer.status()));
   else
   {
-    // Pingmator draws everything with OpenGL 3.3 shaders (Second Life itself
+    // PinglyMotion draws everything with OpenGL 3.3 shaders (Second Life itself
     // needs OpenGL 3.2 or newer). Say so once, after the window is up.
     qWarning("3D view cannot be drawn: %s",qPrintable(m_skinRenderer.status()));
     if(!m_glMessageShown)
@@ -256,7 +256,7 @@ void AnimationView::initializeGL()
       QTimer::singleShot(0,this,[this,reason]()
       {
         QMessageBox::critical(this,tr("OpenGL 3.3 needed"),
-          tr("Pingmator needs a graphics card and driver with OpenGL 3.3 or newer "
+          tr("PinglyMotion needs a graphics card and driver with OpenGL 3.3 or newer "
              "to show the 3D view.\n\nPlease update the graphics driver.\n\n(%1)").arg(reason));
       });
     }

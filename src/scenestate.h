@@ -1,5 +1,5 @@
 /*
- * Pingmator - drawing state of the 3D view
+ * PinglyMotion - drawing state of the 3D view
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

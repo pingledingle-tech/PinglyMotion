@@ -1633,7 +1633,7 @@
   </action>
   <action name="optionsConfigurePinglyMotionAction">
    <property name="text">
-    <string>Configure Pingmator...</string>
+    <string>Configure PinglyMotion...</string>
    </property>
   </action>
   <action name="helpAboutAction">

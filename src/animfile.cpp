@@ -1,5 +1,5 @@
 /*
- * Pingmator – BVH and AVM files read into a plain data model (issue #62)
+ * PinglyMotion – BVH and AVM files read into a plain data model (issue #62)
  *
  * The parser works on the bytes of the file without copying them into a token
  * list, and it never recurses: the joint hierarchy is read with an explicit

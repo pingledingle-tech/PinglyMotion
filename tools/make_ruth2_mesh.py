@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert the Ruth2 v4 Bento avatar from Collada to Pingmator's mesh file.
+"""Convert the Ruth2 v4 Bento avatar from Collada to PinglyMotion's mesh file.
 
 Ruth2 is an open source mesh body by the RuthAndRoth community:
 https://github.com/RuthAndRoth/Ruth2. The mesh is AGPL-3.0-or-later, its UV
@@ -7,7 +7,7 @@ map CC-BY Linden Lab, parts of the Avastar rig CC-BY-3.0 Machinimatrix (see
 bin/data/character/ruth2/README.md). The output is a modified version of the
 mesh, so it is AGPL too and must stay next to its licence files.
 
-Pingmator does not read Collada itself. This script is run once by a
+PinglyMotion does not read Collada itself. This script is run once by a
 developer; its output is committed to bin/data/character/ruth2/.
 
 Usage:

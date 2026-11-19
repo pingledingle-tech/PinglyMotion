@@ -1,11 +1,11 @@
 /*
- * Pingmator - the Second Life system avatar, bent with the skeleton
+ * PinglyMotion - the Second Life system avatar, bent with the skeleton
  *
  * Loads the Linden avatar meshes (the .llm files in bin/data/character) and moves their
  * vertices with the joints, the same way the Second Life viewer does it:
  * each vertex follows one joint and blends towards the next one.
  *
- * Or loads a Bento mesh body from a Pingmator mesh file (.pmm): Max
+ * Or loads a Bento mesh body from a PinglyMotion mesh file (.pmm): Max
  * (bin/data/character/max/maxine.pmm) or Ruth2 v4
  * (bin/data/character/ruth2/ruth2.pmm). Their fingers and faces are weighted
  * to the Bento bones; each vertex follows up to four joints.

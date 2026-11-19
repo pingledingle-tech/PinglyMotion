@@ -1,8 +1,8 @@
 /*
- * Pingmator round-trip tests
+ * PinglyMotion round-trip tests
  *
  * Safety net for replacing the BVH/AVM parser (issue #62): every animation file
- * that ships with Pingmator, and every good file in fuzz/corpus/, must survive
+ * that ships with PinglyMotion, and every good file in fuzz/corpus/, must survive
  * open -> save -> open without changing, and the files in fuzz/corpus/ that are
  * broken on purpose must be refused with a reason.
  *
@@ -61,7 +61,7 @@ static QByteArray readAll(const QString& path)
   return file.readAll();
 }
 
-// every animation file that ships with Pingmator, plus the good corpus files
+// every animation file that ships with PinglyMotion, plus the good corpus files
 static QStringList animationFiles()
 {
   const QStringList filters = {"*.bvh", "*.avm"};
@@ -193,7 +193,7 @@ void RoundTripTest::savingTwiceGivesTheSameFile_data()
   roundTrip_data();
 }
 
-// once a file has been saved by Pingmator, opening and saving it again must
+// once a file has been saved by PinglyMotion, opening and saving it again must
 // give exactly the same bytes. A new parser must keep this.
 void RoundTripTest::savingTwiceGivesTheSameFile()
 {

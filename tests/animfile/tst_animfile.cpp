@@ -2,7 +2,7 @@
  * Tests of the BVH/AVM parser and writer (src/animfile.*, issue #62)
  *
  * 1. Every animation file the round-trip test uses (the files that ship with
- *    Pingmator and the good files in fuzz/corpus/) is read, and what comes
+ *    PinglyMotion and the good files in fuzz/corpus/) is read, and what comes
  *    back keeps the rules of the data model.
  * 2. Every broken file in fuzz/corpus/ and every crafted file from appendix B
  *    of docs/SECURITY_AUDIT.md gives an error, quickly, and no crash.

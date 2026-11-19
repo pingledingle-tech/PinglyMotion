@@ -1,5 +1,5 @@
 /*
- * Pingmator - groups of Bento joints that can be hidden
+ * PinglyMotion - groups of Bento joints that can be hidden
  *
  * Wings, tail and hind limbs sit outside the body and most animations never
  * use them, so their balls only confuse. Each group can be shown or hidden

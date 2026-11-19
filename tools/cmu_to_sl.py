@@ -6,7 +6,7 @@ Motion Capture Database (mocap.cs.cmu.edu), 2010 release. In that release
 frame 0 is a T-pose.
 
 Output: a BVH file with the classic 19-joint Second Life skeleton taken from a
-template file (default: bin/data/Relaxed.bvh), so Pingmator and the Second
+template file (default: bin/data/Relaxed.bvh), so PinglyMotion and the Second
 Life uploader read it like any other SL BVH file.
 
 How the motion is moved over (retargeting):

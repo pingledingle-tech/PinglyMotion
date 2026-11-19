@@ -1,5 +1,5 @@
 /*
- * Pingmator - reader for Pingmator mesh files (.pmm)
+ * PinglyMotion - reader for PinglyMotion mesh files (.pmm)
  *
  * A small skinned mesh format written by tools/make_max_mesh.py, used for
  * the Max Bento avatar (bin/data/character/max/). Each vertex follows up to

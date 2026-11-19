@@ -1,5 +1,5 @@
 /*
- * Pingmator – write a Second Life .anim file from an animation (issue #10)
+ * PinglyMotion – write a Second Life .anim file from an animation (issue #10)
  *
  * Takes the plain data model of the new parser (animfile.h, a BVH-like
  * animation: frame 0 is the reference frame, joints with Euler channels) and

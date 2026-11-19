@@ -149,7 +149,7 @@ QString ControlServer::connectionFilePath()
 {
   const QString override = qEnvironmentVariable("PINGLYMOTION_CONTROL_FILE");
   if (!override.isEmpty()) return override;
-  return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/Pingmator/control.json";
+  return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/PinglyMotion/control.json";
 }
 
 // Issue #144: the key goes into a temporary file next to control.json that only the

@@ -1,5 +1,5 @@
 /*
- * Pingmator - tests for the tabs of the joint table (#88)
+ * PinglyMotion - tests for the tabs of the joint table (#88)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

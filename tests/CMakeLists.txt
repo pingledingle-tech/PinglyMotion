@@ -1,4 +1,4 @@
-# Pingmator automatic tests (Qt Test)
+# PinglyMotion automatic tests (Qt Test)
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 
 SET (CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp

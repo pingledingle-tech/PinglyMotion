@@ -113,27 +113,27 @@ jobs:
         shell: bash
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
-          DIR="Pingmator-${TAG}-windows"
+          DIR="PinglyMotion-${TAG}-windows"
           mkdir -p "$DIR"
-          cp build/src/pingmator.exe "$DIR/"
+          cp build/src/PinglyMotion.exe "$DIR/"
           cp -r bin/data "$DIR/data"
           cp bin/NEWS LICENSE "$DIR/"
           # the MCP server goes with the program, so both are updated together
           mkdir -p "$DIR/mcp"
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt "$DIR/mcp/"
-          "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations "$DIR/pingmator.exe"
+          "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations "$DIR/PinglyMotion.exe"
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll "$DIR/"
           7z a "$DIR.zip" "$DIR"
           sha256sum "$DIR.zip" > SHA256SUMS-windows && cat SHA256SUMS-windows
       - name: Build provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: Pingmator-${{ env.TAG }}-windows.zip
+          subject-path: PinglyMotion-${{ env.TAG }}-windows.zip
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-windows
           path: |
-            Pingmator-${{ env.TAG }}-windows.zip
+            PinglyMotion-${{ env.TAG }}-windows.zip
             SHA256SUMS-windows
           retention-days: 7
 
@@ -186,42 +186,42 @@ jobs:
           # the program reads data/ and NEWS next to itself
           APPDIR="$RUNNER_TEMP/AppDir"
           mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons/hicolor/256x256/apps"
-          cp build/src/pingmator "$APPDIR/usr/bin/"
+          cp build/src/PinglyMotion "$APPDIR/usr/bin/"
           cp -r bin/data "$APPDIR/usr/bin/data"
           cp bin/NEWS LICENSE "$APPDIR/usr/bin/"
           mkdir -p "$APPDIR/usr/bin/mcp"
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt "$APPDIR/usr/bin/mcp/"
           # the Windows icon is 32x32; scaled up for the desktop
           convert "src/icons/pinglymotion.ico[0]" -filter point -resize 256x256 \
-            "$APPDIR/usr/share/icons/hicolor/256x256/apps/pingmator.png"
-          cat > "$APPDIR/usr/share/applications/pingmator.desktop" <<'EOF'
+            "$APPDIR/usr/share/icons/hicolor/256x256/apps/pinglymotion.png"
+          cat > "$APPDIR/usr/share/applications/pinglymotion.desktop" <<'EOF'
           [Desktop Entry]
           Type=Application
-          Name=Pingmator
+          Name=PinglyMotion
           Comment=Animation editor for Second Life
-          Exec=pingmator %f
-          Icon=pingmator
+          Exec=PinglyMotion %f
+          Icon=pinglymotion
           Categories=Graphics;3DGraphics;
           MimeType=application/x-bvh;
           Terminal=false
           EOF
-          sed -i 's/^ *//' "$APPDIR/usr/share/applications/pingmator.desktop"
+          sed -i 's/^ *//' "$APPDIR/usr/share/applications/pinglymotion.desktop"
           export QMAKE="$QT_ROOT_DIR/bin/qmake"
           export LD_LIBRARY_PATH="$QT_ROOT_DIR/lib:${LD_LIBRARY_PATH:-}"
-          export OUTPUT="Pingmator-${TAG}-linux-x86_64.AppImage"
+          export OUTPUT="PinglyMotion-${TAG}-linux-x86_64.AppImage"
           "$RUNNER_TEMP/tools/linuxdeploy-x86_64.AppImage" --appdir "$APPDIR" \
-            --desktop-file "$APPDIR/usr/share/applications/pingmator.desktop" \
-            --icon-file "$APPDIR/usr/share/icons/hicolor/256x256/apps/pingmator.png" \
+            --desktop-file "$APPDIR/usr/share/applications/pinglymotion.desktop" \
+            --icon-file "$APPDIR/usr/share/icons/hicolor/256x256/apps/pinglymotion.png" \
             --plugin qt --output appimage
           ls -la "$OUTPUT"
           sha256sum "$OUTPUT" > SHA256SUMS-linux && cat SHA256SUMS-linux
       - name: Starts and stays up
         run: |
           sudo apt-get install -y xvfb
-          chmod +x "Pingmator-${TAG}-linux-x86_64.AppImage"
+          chmod +x "PinglyMotion-${TAG}-linux-x86_64.AppImage"
           cd "$RUNNER_TEMP"
           set +e
-          QT_QPA_PLATFORM=xcb timeout 10 xvfb-run -a "$GITHUB_WORKSPACE/Pingmator-${TAG}-linux-x86_64.AppImage" > run.log 2>&1
+          QT_QPA_PLATFORM=xcb timeout 10 xvfb-run -a "$GITHUB_WORKSPACE/PinglyMotion-${TAG}-linux-x86_64.AppImage" > run.log 2>&1
           CODE=$?
           set -e
           tail -20 run.log
@@ -229,12 +229,12 @@ jobs:
       - name: Build provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: Pingmator-${{ env.TAG }}-linux-x86_64.AppImage
+          subject-path: PinglyMotion-${{ env.TAG }}-linux-x86_64.AppImage
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-linux
           path: |
-            Pingmator-${{ env.TAG }}-linux-x86_64.AppImage
+            PinglyMotion-${{ env.TAG }}-linux-x86_64.AppImage
             SHA256SUMS-linux
           retention-days: 7
 
@@ -277,5 +277,5 @@ jobs:
           FLAGS=""
           if [ "$PRERELEASE" = "true" ]; then FLAGS="--prerelease"; fi
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag $FLAGS \
-            "Pingmator-${TAG}-windows.zip" "Pingmator-${TAG}-linux-x86_64.AppImage" SHA256SUMS \
-            --title "Pingmator ${TAG#v}" --generate-notes
+            "PinglyMotion-${TAG}-windows.zip" "PinglyMotion-${TAG}-linux-x86_64.AppImage" SHA256SUMS \
+            --title "PinglyMotion ${TAG#v}" --generate-notes

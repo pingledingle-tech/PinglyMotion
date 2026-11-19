@@ -15,19 +15,19 @@ For testing, the environment variable `PINGLYMOTION_BODY` set to `ruth2` before
 starting Pingmator loads Ruth2 whatever **Options > Body** says. Any other
 value, or no value, changes nothing.
 
-Windows (Command Prompt, in the folder with `pingmator.exe`):
+Windows (Command Prompt, in the folder with `PinglyMotion.exe`):
 
     set PINGLYMOTION_BODY=ruth2
-    pingmator.exe
+    PinglyMotion.exe
 
 Windows (PowerShell):
 
     $env:PINGLYMOTION_BODY = "ruth2"
-    .\pingmator.exe
+    .\PinglyMotion.exe
 
 Linux:
 
-    PINGLYMOTION_BODY=ruth2 ./pingmator
+    PINGLYMOTION_BODY=ruth2 ./PinglyMotion
 
 ## Source
 

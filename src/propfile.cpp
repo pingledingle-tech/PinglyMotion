@@ -1,5 +1,5 @@
 /*
- * Pingmator - reader for prop files (.prp)
+ * PinglyMotion - reader for prop files (.prp)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

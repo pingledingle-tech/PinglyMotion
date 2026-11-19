@@ -1,4 +1,4 @@
-# Pingmator fuzz targets (libFuzzer). Needs clang:
+# PinglyMotion fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGLYMOTION_FUZZ=ON
 #   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf
 # See fuzz/README.md for how to run them.

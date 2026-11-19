@@ -1,5 +1,5 @@
 /*
- * Pingmator - tests for the status bar items and the "Tips on" setting (#88)
+ * PinglyMotion - tests for the status bar items and the "Tips on" setting (#88)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -177,7 +177,7 @@ void TestStatusBar::tipsSettingIsSaved()
 
 void TestStatusBar::tipsSettingMissingInOldFile()
 {
-  // a settings file from an older Pingmator has no tips_on key: tips are on
+  // a settings file from an older PinglyMotion has no tips_on key: tips are on
   removeSettingsFile();
   {
     QSettings settings(QSettings::IniFormat, QSettings::UserScope,

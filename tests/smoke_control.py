@@ -4,7 +4,7 @@ End-to-end test of the remote control: starts the real PinglyMotion program with
 --control, talks to it through the MCP server (as an AI tool would) and over
 plain HTTP, and checks the answers. Needs a display: run with xvfb-run.
 
-Usage: tests/smoke_control.py path/to/pingmator
+Usage: tests/smoke_control.py path/to/pinglymotion
 """
 
 import base64
@@ -67,7 +67,7 @@ class Mcp:
 
 def main():
     app_path = os.path.abspath(sys.argv[1])
-    work = tempfile.mkdtemp(prefix="pingmator-control-")
+    work = tempfile.mkdtemp(prefix="pinglymotion-control-")
     control_file = os.path.join(work, "control.json")
     env = dict(os.environ, PINGLYMOTION_CONTROL_FILE=control_file, PINGLYMOTION_CONTROL_FOLDER=work)
 

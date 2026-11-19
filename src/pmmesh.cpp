@@ -1,5 +1,5 @@
 /*
- * Pingmator - reader for Pingmator mesh files (.pmm)
+ * PinglyMotion - reader for PinglyMotion mesh files (.pmm)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -110,7 +110,7 @@ bool PMMesh::load(const QString& fileName, QString* errorMessage)
   if (file.size() > MAX_FILE_SIZE)
     return fail(errorMessage, QString("%1 is too big").arg(fileName));
   const QByteArray data = file.readAll();
-  const QString bad = QString("%1 is not a valid Pingmator mesh file: %2").arg(fileName);
+  const QString bad = QString("%1 is not a valid PinglyMotion mesh file: %2").arg(fileName);
 
   Reader in(data);
   if (!in.raw(PMM_MAGIC, sizeof(PMM_MAGIC)))

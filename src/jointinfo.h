@@ -1,5 +1,5 @@
 /*
- * Pingmator - joint names, sections, mirror partners and hand presets (#88)
+ * PinglyMotion - joint names, sections, mirror partners and hand presets (#88)
  *
  * Reads data/firestorm/joints.json and the hand presets beside it. The data
  * comes from the Firestorm viewer (LGPL 2.1, see data/firestorm/README.md);
@@ -10,7 +10,7 @@
  * joint name answer in the same kind of name they were asked with.
  *
  * The hand presets are kept as Firestorm stores them: Euler angles in radians in
- * Firestorm's own axes. They are NOT in Pingmator's BVH rotation model; the
+ * Firestorm's own axes. They are NOT in PinglyMotion's BVH rotation model; the
  * conversion is still open (see the README).
  *
  * Licensed under the GNU General Public License version 2 or later.
@@ -31,9 +31,9 @@ class JointInfo
     struct Joint
     {
       QString sl;                 // Second Life name, mShoulderLeft
-      QString bvh;                // name in Pingmator's BVH files, lShldr
+      QString bvh;                // name in PinglyMotion's BVH files, lShldr
       QString name;               // friendly name, "Whole Arm"
-      QString nameFrom;           // "firestorm" or "pingmator"
+      QString nameFrom;           // "firestorm" or "pinglymotion"
       QString tab;                // Body, Face, Hands or Other (JointGroups::tabOf())
       QString firestormType;      // BODY, FACE, HANDS, MISC, WHOLEAVATAR, empty if not in Firestorm
       QString firestormSection;   // heading in Firestorm's poser list, "Left Arm"

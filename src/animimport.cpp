@@ -1,5 +1,5 @@
 /*
- * Pingmator – read a Second Life .anim file (issue #22, step 1)
+ * PinglyMotion – read a Second Life .anim file (issue #22, step 1)
  *
  * See animimport.h and docs/ANIM_FORMAT.md. The reader never searches for a
  * string end outside the bytes that are left, and every count is checked

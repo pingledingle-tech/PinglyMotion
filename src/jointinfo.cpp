@@ -1,5 +1,5 @@
 /*
- * Pingmator - joint names, sections, mirror partners and hand presets (#88)
+ * PinglyMotion - joint names, sections, mirror partners and hand presets (#88)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

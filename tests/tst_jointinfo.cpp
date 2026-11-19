@@ -1,5 +1,5 @@
 /*
- * Pingmator - tests for the joint data from Firestorm (#88)
+ * PinglyMotion - tests for the joint data from Firestorm (#88)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

@@ -1,7 +1,7 @@
 #!/bin/bash
-# Start Pingmator with each test file and check that it is still running
+# Start PinglyMotion with each test file and check that it is still running
 # after a few seconds (no crash). Needs a display: run with xvfb-run.
-# Usage: tests/smoke_gui.sh path/to/pingmator
+# Usage: tests/smoke_gui.sh path/to/pinglymotion
 set -u
 APP="$(realpath "$1")"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

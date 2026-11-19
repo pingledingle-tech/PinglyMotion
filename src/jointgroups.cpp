@@ -1,5 +1,5 @@
 /*
- * Pingmator - groups of Bento joints that can be hidden
+ * PinglyMotion - groups of Bento joints that can be hidden
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

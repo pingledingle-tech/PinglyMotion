@@ -145,7 +145,7 @@ void UpdateChecker::checkUpdates()
   QNetworkRequest request{QUrl(m_url)};
   // GitHub refuses requests without a User-Agent
   request.setHeader(QNetworkRequest::UserAgentHeader,
-                    QString("Pingmator/%1").arg(Constants::versionNumberString()));
+                    QString("PinglyMotion/%1").arg(Constants::versionNumberString()));
   request.setRawHeader("Accept", "application/vnd.github+json");
   m_networkAccessManager->get(request);
 }

@@ -1,5 +1,5 @@
 /*
- * Pingmator - tests for the camera: which mouse button and keys do what
+ * PinglyMotion - tests for the camera: which mouse button and keys do what
  * (docs/POSING_UX.md, "Mouse and keys"), and that the camera turns around
  * the point in the middle of the view (#88)
  *

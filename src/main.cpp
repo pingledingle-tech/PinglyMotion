@@ -55,7 +55,7 @@ int main( int argc, char ** argv )
     QSurfaceFormat::setDefaultFormat(format);
 
     QApplication application(argc, argv);
-    qInfo("Pingmator %s", qUtf8Printable(Constants::buildLabel()));
+    qInfo("PinglyMotion %s", qUtf8Printable(Constants::buildLabel()));
     PinglyMotionWindow* pinglyMotionWindow = new PinglyMotionWindow();
     // Queue an event to show the main window
     pinglyMotionWindow->show();

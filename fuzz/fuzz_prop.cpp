@@ -1,5 +1,5 @@
 /*
- * Pingmator - fuzz target for prop files (.prp)
+ * PinglyMotion - fuzz target for prop files (.prp)
  *
  * Feeds any bytes to PropFile::parse(). It must never crash, and when it
  * accepts a file, every prop must be within the limits in propfile.h.

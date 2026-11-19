@@ -1,5 +1,5 @@
 /*
- * Pingmator - live link to the Aurora viewer
+ * PinglyMotion - live link to the Aurora viewer
  *
  * Connects to Aurora's LiveMesh (the same local link the Blender add-on
  * uses) and sends the pose of the current frame whenever it changes, so the
@@ -8,25 +8,25 @@
  * LiveMesh protocol (Aurora docs/BLENDER_LIVE.md, "Live poses"):
  *   Aurora writes a new 64-hex session key to <data folder>/blender-live/<port>.token
  *   each time the LiveMesh preview starts and removes it when the preview stops.
- *   Pingmator -> the 8 bytes "AURPOS1\n" (a pose tool; the Blender add-on uses AURBLD2)
+ *   PinglyMotion -> the 8 bytes "AURPOS1\n" (a pose tool; the Blender add-on uses AURBLD2)
  *   Aurora    -> one JSON line: hello with "features" (must list "auth",
  *                "auth-mutual" and "pose-bvh" or "pose") and a hex "challenge".
  *                An Aurora without live poses closes the connection without a hello.
- *   then every message from Pingmator is a 4-byte little-endian length and
+ *   then every message from PinglyMotion is a 4-byte little-endian length and
  *   that many bytes of JSON; Aurora answers each one with one JSON line
  *   ({"ok":true} or {"ok":false,"error":"..."}):
- *   Pingmator -> {"type":"auth","client":"Pingmator x.y","response":"<hex>","nonce":"<hex>"}
+ *   PinglyMotion -> {"type":"auth","client":"PinglyMotion x.y","response":"<hex>","nonce":"<hex>"}
  *                response = HMAC-SHA256(key, challenge bytes); the key (32 bytes)
  *                never crosses the socket. nonce = 16 random bytes (hex).
  *   Aurora    -> {"ok":true,"server_proof":"<hex>"}
  *                server_proof = HMAC-SHA256(key, "aurora-hello:" + nonce bytes);
- *                Pingmator sends no pose before it has checked this.
+ *                PinglyMotion sends no pose before it has checked this.
  *                A wrong key gets {"ok":false,"error":"unauthorized"} and a close.
- *   Pingmator -> {"type":"pose","rotations":{joint:[x,y,z,w]},"positions":{"hip":[x,y,z]}}
+ *   PinglyMotion -> {"type":"pose","rotations":{joint:[x,y,z,w]},"positions":{"hip":[x,y,z]}}
  *                when Aurora lists the "pose" feature: quaternions in Second Life's
  *                avatar axes; otherwise
- *   Pingmator -> {"type":"pose-bvh","bvh":"HIERARCHY ..."}
- *   Pingmator -> length 0 = heartbeat (Aurora closes an idle link after 10 s)
+ *   PinglyMotion -> {"type":"pose-bvh","bvh":"HIERARCHY ..."}
+ *   PinglyMotion -> length 0 = heartbeat (Aurora closes an idle link after 10 s)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

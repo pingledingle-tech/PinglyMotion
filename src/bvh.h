@@ -90,7 +90,7 @@ class BVH
     static int countNodes(BVHNode* node);
 
     // reads the whole file and returns false, with the reason in error, if it
-    // is not an animation Pingmator can open; nothing is kept
+    // is not an animation PinglyMotion can open; nothing is kept
     static bool checkFile(const QString& file,QString* error);
 
     // why the last animRead() returned NULL
@@ -116,7 +116,7 @@ class BVH
     bool havePositionKeys;
 
     QStringList validNodes;
-    // maps every known joint name or alias to the name used in Pingmator
+    // maps every known joint name or alias to the name used in PinglyMotion
     QHash<QString,QString> jointAliases;
 
     void loadBentoJoints();

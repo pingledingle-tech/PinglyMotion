@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Convert the Max (Maxine) Bento avatar from Collada to Pingmator's mesh file.
+"""Convert the Max (Maxine) Bento avatar from Collada to PinglyMotion's mesh file.
 
 Max is an open source mesh avatar by Ada Radius and the RuthAndRoth
 community, licensed CC BY 4.0: https://github.com/RuthAndRoth/Max
 Unlike the Linden system avatar it has fingers and a face that follow the
 Bento bones, so hand poses and facial expressions can be seen.
 
-Pingmator does not read Collada itself. This script is run once by a
+PinglyMotion does not read Collada itself. This script is run once by a
 developer; its output is committed to bin/data/character/max/.
 
 Usage:
@@ -215,7 +215,7 @@ def convert(dae_files, part_names, out, rebind=False):
     (Ruth2). Each vertex is moved to where the Second Life viewer draws it on
     the default skeleton: the weighted sum of rest matrix x inverse bind
     matrix x vertex over its joints. That is exact in the rest pose; when
-    joints bend, Pingmator's skinning from that one rest position differs from
+    joints bend, PinglyMotion's skinning from that one rest position differs from
     the viewer's by a few millimetres where neighbouring joints were bound
     far from the SL positions. The biggest differences are printed."""
     rest = load_rest_positions()
@@ -244,11 +244,11 @@ def convert(dae_files, part_names, out, rebind=False):
         if len(per_vertex) != len(positions):
             raise SystemExit(f"{geo_id}: weights for {len(per_vertex)} of {len(positions)} vertices")
 
-        # Pingmator bends the mesh around the default SL joint positions with no
+        # PinglyMotion bends the mesh around the default SL joint positions with no
         # rest rotation; check that the file was bound to exactly that skeleton
         unknown = [j for j in names if j not in volumes and j not in rest]
         if unknown:
-            raise SystemExit(f"{geo_id}: joints that are neither a bone of Pingmator's skeleton"
+            raise SystemExit(f"{geo_id}: joints that are neither a bone of PinglyMotion's skeleton"
                              f" (bin/data/skin_joints.txt) nor a collision volume: {' '.join(unknown)}")
         moved_volumes.update(j for j in names if j in volumes)
         to_rest = {}
