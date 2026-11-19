@@ -1,6 +1,6 @@
 Branch: docs/roth2-plan
-Status: active
-Pull request: pending
+Status: done
+Pull request: #109
 Files:
 - docs/ROTH2.md
 - docs/work/docs-roth2-plan.md
