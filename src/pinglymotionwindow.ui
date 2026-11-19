@@ -1358,6 +1358,7 @@
     <addaction name="fileNewAction"/>
     <addaction name="fileOpenAction"/>
     <addaction name="fileAddAction"/>
+    <addaction name="fileImportAnimAction"/>
     <addaction name="separator"/>
     <addaction name="fileSaveAction"/>
     <addaction name="fileSaveAsAction"/>
@@ -1657,6 +1658,11 @@
   <action name="fileExportForSecondLifeAction">
    <property name="text">
     <string>Export For Second Life</string>
+   </property>
+  </action>
+  <action name="fileImportAnimAction">
+   <property name="text">
+    <string>Import Second Life .anim...</string>
    </property>
   </action>
   <action name="fileExportAnimAction">
