@@ -49,7 +49,16 @@ The first folder collects new interesting inputs; `fuzz/corpus/` holds the start
 
 ## In CI
 
-The `Fuzz` workflow runs `fuzz_prop`, `fuzz_control`, `fuzz_animfile` and `fuzz_dingle` for 10 minutes each every night on `main` and before every release. It does not run on pull requests; after changing a parser or the control commands, start it on the branch (Actions > Fuzz > Run workflow). It is not a required check. A crash makes the run red, and the crash file is attached to the run as `fuzz-crashes`.
+The `Fuzz` workflow builds the targets once and then runs every target as its own job, all at the same time (`fuzz <target>`). The job `fuzz` sums them up: it fails when any target failed, so the check name stays `fuzz`.
+
+Time per target:
+
+- every night on `main` and before every release: 10 minutes (600 seconds)
+- a manual run on a branch: 2 minutes (120 seconds) by default. Give the optional `seconds` input for a longer run: Actions > Fuzz > Run workflow, or `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/fuzz.yml/dispatches -f ref=<branch> -f inputs[seconds]=600`
+
+It does not run on pull requests; after changing a parser or the control commands, start it on the branch. It is not a required check. A crash makes the run red, and the crash file is attached to the run as `fuzz-crashes-<target>`.
+
+A new target needs a line in the matrix of `.github/workflows/fuzz.yml` (and in the build and pack steps there).
 
 ## When a crash is found
 

@@ -41,7 +41,7 @@ cmake -S . -B /tmp/asan -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_TESTS=ON \
 ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/asan --output-on-failure
 ```
 
-Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch (see `CLAUDE.md`).
+Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch (see `CLAUDE.md`). On a branch it fuzzes every target for 2 minutes, all targets at the same time; a longer run: `-f inputs[seconds]=600`.
 
 After changing the control commands: `PINGMATOR_UPDATE_COMMANDS=1` and run `pingmator_control_tests` from `bin/` to regenerate `tools/mcp/commands.json`.
 
