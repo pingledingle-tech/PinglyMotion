@@ -1,6 +1,6 @@
 Branch: docs/maya-live-link
-Status: active
-Pull request: pending
+Status: done
+Pull request: #67
 Files:
 - docs/MAYA_LIVE_LINK.md
 
