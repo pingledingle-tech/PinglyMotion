@@ -1,6 +1,6 @@
 Branch: feat/roth2-male-body
-Status: active
-Pull request: pending
+Status: done
+Pull request: #112
 Files:
 - src/avatarskin.*
 - tools/make_roth2_mesh.py
@@ -14,7 +14,8 @@ Files:
 - docs/DECISIONS.md
 - docs/ROTH2.md
 - docs/RELEASE_NOTES_0.4.0.md
-- docs/OPEN_SOURCE_CHECK.md
+- docs/ROADMAP.md
+- tests/tst_bento.cpp
 
 ## What
 
