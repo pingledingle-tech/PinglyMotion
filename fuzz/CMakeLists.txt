@@ -1,6 +1,6 @@
 # Pingmator fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGMATOR_FUZZ=ON
-#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim
+#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf
 # See fuzz/README.md for how to run them.
 
 SET (FUZZ_FLAGS -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g)
@@ -56,3 +56,11 @@ TARGET_INCLUDE_DIRECTORIES (fuzz_anim PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_anim PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_anim PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_anim Qt6::Core)
+
+# the glTF import (#12): reader, sampling and retargeting; reads from memory
+ADD_EXECUTABLE (fuzz_gltf fuzz_gltf.cpp ${CMAKE_SOURCE_DIR}/src/gltfimport.cpp
+                ${CMAKE_SOURCE_DIR}/src/retarget.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_gltf PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_gltf Qt6::Core Qt6::Gui)
