@@ -1,5 +1,5 @@
 Branch: feat/ruth2-only-body
-Status: active
+Status: done
 Pull request: #97
 Files:
 - docs/work/feat-ruth2-only-body.md
@@ -19,6 +19,13 @@ Files:
 - fuzz/CMakeLists.txt
 - fuzz/README.md
 - bin/data/character/**
+- tools/make_bento_skeleton.py
+- tools/make_max_mesh.py
+- README.md
+- docs/PRODUCT.md
+- docs/ROADMAP.md
+- docs/DECISIONS.md
+- docs/RELEASE_NOTES_0.4.0.md
 
 ## What
 
