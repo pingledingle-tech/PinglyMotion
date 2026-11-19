@@ -1,5 +1,5 @@
 # Sources
-SET (PINGMATOR_SRC aboutdialog.cpp
+SET (PINGLYMOTION_SRC aboutdialog.cpp
               animation.cpp
               animationmanager.cpp
               animationview.cpp
@@ -44,23 +44,23 @@ SET (PINGMATOR_SRC aboutdialog.cpp
               whatsnewdialog.cpp)
 
 # Interfaces
-SET (PINGMATOR_UI  aboutdialog.ui
+SET (PINGLYMOTION_UI  aboutdialog.ui
               pingmatorwindow.ui
               updatenotificationdialog.ui
               usersettingsdialog.ui
               whatsnewdialog.ui)
 
 # Resources
-SET (PINGMATOR_RSC icons.qrc)
+SET (PINGLYMOTION_RSC icons.qrc)
 
 # Add the Windows resource file if applicable
 IF (WIN32)
-  SET (PINGMATOR_SRC ${PINGMATOR_SRC} pingmator.rc)
+  SET (PINGLYMOTION_SRC ${PINGLYMOTION_SRC} pingmator.rc)
 ENDIF (WIN32)
 
 # Compile and link (ui files and resources are handled by AUTOUIC/AUTORCC)
-ADD_EXECUTABLE (pingmator ${PINGMATOR_SRC} ${PINGMATOR_UI} ${PINGMATOR_RSC})
-TARGET_LINK_LIBRARIES (pingmator ${PINGMATOR_QT_LIBS} OpenGL::GL)
+ADD_EXECUTABLE (pingmator ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
+TARGET_LINK_LIBRARIES (pingmator ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
 
 # Install pingmator
 INSTALL (TARGETS pingmator DESTINATION ${INSTALL_BIN})

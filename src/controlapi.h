@@ -67,7 +67,7 @@ class ControlApi
     static QJsonArray commandList();
 
     // open_file and save_file only work inside this folder: Pingmator in the
-    // user's Documents folder, or PINGMATOR_CONTROL_FOLDER if set
+    // user's Documents folder, or PINGLYMOTION_CONTROL_FOLDER if set
     void setWorkFolder(const QString& folder) { m_workFolder = folder; }
     static QString defaultWorkFolder();
 

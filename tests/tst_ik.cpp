@@ -5,7 +5,7 @@
  * from #127 (damped least squares on the rotation channels, see iktree.cpp).
  * Re-record them only when IK is meant to behave differently.
  *
- * Set PINGMATOR_IK_DUMP=1 to print the current results in the form of the
+ * Set PINGLYMOTION_IK_DUMP=1 to print the current results in the form of the
  * table below.
  *
  * Run from the bin/ folder, so the program finds ./data like it does normally.
@@ -123,9 +123,9 @@ static QList<Scenario> scenarios()
      {"lHand", "rHand", "lFoot", "rFoot"}, {{"chest", -10, 30, 10}, {"hip", 5, 0, 10}}},
     {"right hand, big move, no limits", nullptr, false,
      {"rHand"}, {{"chest", 0, 0, 60}, {"rCollar", 0, 40, 0}}},
-    {"throne, hands, limits", PINGMATOR_EXAMPLES "/throne.avm", true,
+    {"throne, hands, limits", PINGLYMOTION_EXAMPLES "/throne.avm", true,
      {"lHand", "rHand"}, {{"abdomen", -15, -20, 0}}},
-    {"jump, feet, no limits", PINGMATOR_EXAMPLES "/jump.avm", false,
+    {"jump, feet, no limits", PINGLYMOTION_EXAMPLES "/jump.avm", false,
      {"lFoot", "rFoot"}, {{"hip", -20, 10, 0}, {"lThigh", 10, 0, 0}}},
   };
 }
@@ -368,7 +368,7 @@ class IKTest : public QObject
 
 void IKTest::initTestCase()
 {
-  if (!qEnvironmentVariableIsSet("PINGMATOR_IK_DUMP")) return;
+  if (!qEnvironmentVariableIsSet("PINGLYMOTION_IK_DUMP")) return;
   for (const Scenario& s : scenarios())
   {
     const Result r = run(s);
@@ -457,8 +457,8 @@ void IKTest::noMoveNoChange()
 void IKTest::noMoveNoChangePosed_data()
 {
   QTest::addColumn<QString>("file");
-  QTest::newRow("throne") << QString(PINGMATOR_EXAMPLES "/throne.avm");
-  QTest::newRow("jump") << QString(PINGMATOR_EXAMPLES "/jump.avm");
+  QTest::newRow("throne") << QString(PINGLYMOTION_EXAMPLES "/throne.avm");
+  QTest::newRow("jump") << QString(PINGLYMOTION_EXAMPLES "/jump.avm");
 }
 
 // also in a posed figure: turning IK on without moving anything changes nothing
@@ -524,9 +524,9 @@ void IKTest::matchesView_data()
 {
   QTest::addColumn<QString>("file");
   QTest::addColumn<int>("frame");
-  QTest::newRow("jump f0") << QString(PINGMATOR_EXAMPLES "/jump.avm") << 0;
-  QTest::newRow("jump f5") << QString(PINGMATOR_EXAMPLES "/jump.avm") << 5;
-  QTest::newRow("throne f5") << QString(PINGMATOR_EXAMPLES "/throne.avm") << 5;
+  QTest::newRow("jump f0") << QString(PINGLYMOTION_EXAMPLES "/jump.avm") << 0;
+  QTest::newRow("jump f5") << QString(PINGLYMOTION_EXAMPLES "/jump.avm") << 5;
+  QTest::newRow("throne f5") << QString(PINGLYMOTION_EXAMPLES "/throne.avm") << 5;
 }
 
 // IK sees the hands and feet where the 3D view draws them (#116)
@@ -607,7 +607,7 @@ void IKTest::hipSweep()
   QFETCH(int, axis);
   QFETCH(double, to);
   const QList<SweepStep> steps = ::hipSweep(axis, to);
-  const bool dump = qEnvironmentVariableIsSet("PINGMATOR_IK_SWEEP");
+  const bool dump = qEnvironmentVariableIsSet("PINGLYMOTION_IK_SWEEP");
 
   double worstJump = 0, worstMove = 0, worstOutside = 0;
   for (const SweepStep& s : steps)

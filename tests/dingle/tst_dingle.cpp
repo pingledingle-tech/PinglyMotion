@@ -393,7 +393,7 @@ void TestDingle::limits()
 
 void TestDingle::corpus()
 {
-  const QDir dir(PINGMATOR_DINGLE_CORPUS);
+  const QDir dir(PINGLYMOTION_DINGLE_CORPUS);
   const QStringList files=dir.entryList(QDir::Files,QDir::Name);
   QVERIFY2(files.size()>=10,"the seed corpus is missing");
   int good=0;
@@ -428,7 +428,7 @@ void TestDingle::corpus()
 // as long as its in-between frames are what the interpolation makes of its keys
 void TestDingle::avmFilesGoThroughTheWriter()
 {
-  const QDir dir(PINGMATOR_AVM_CORPUS);
+  const QDir dir(PINGLYMOTION_AVM_CORPUS);
   int tried=0;
   for(const QString& name : dir.entryList({"good_*.avm"},QDir::Files,QDir::Name))
   {

@@ -15,7 +15,7 @@ The targets, all built with libFuzzer, AddressSanitizer and UndefinedBehaviorSan
 
 Not fuzzed here: `SL.lim` and the `.llm` meshes (read only from Pingmator's own data folder), and the old BVH/AVM parser in `src/bvh.cpp`. `fuzz_animfile` fuzzes the new parser that replaces it (issue #62); until the program uses it (part 2 of #62), it does not test the code that opens files today.
 
-`fuzz/corpus/gltf/` holds the start files for `fuzz_gltf` (`good_*` must be read, `bad_*` must be refused; `tests/gltfimport` checks that and writes them again when `PINGMATOR_WRITE_GLTF_CORPUS` is set to a folder).
+`fuzz/corpus/gltf/` holds the start files for `fuzz_gltf` (`good_*` must be read, `bad_*` must be refused; `tests/gltfimport` checks that and writes them again when `PINGLYMOTION_WRITE_GLTF_CORPUS` is set to a folder).
 
 `fuzz/corpus/anim/` holds the start files for `fuzz_anim` (`good_*` must be read, `bad_*` must be refused; `tests/animimport` checks that).
 
@@ -28,7 +28,7 @@ Not fuzzed here: `SL.lim` and the `.llm` meshes (read only from Pingmator's own 
 Needs clang and its sanitizer runtime (Ubuntu: `sudo apt-get install clang libclang-rt-18-dev`).
 
 ```
-CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_FUZZ=ON
+CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_FUZZ=ON
 cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf -j 2
 
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 QT_QPA_PLATFORM=offscreen

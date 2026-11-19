@@ -14,7 +14,7 @@ else
   echo "No apt-get here: install Qt 6 (Core, Gui, Widgets, OpenGL, OpenGLWidgets, Network, Test), CMake and a C++17 compiler yourself."
 fi
 
-cmake -S . -B /tmp/build -DPINGMATOR_TESTS=ON
+cmake -S . -B /tmp/build -DPINGLYMOTION_TESTS=ON
 if [ "${1:-}" = "build" ]; then
   cmake --build /tmp/build -j"$(nproc)"
   ctest --test-dir /tmp/build --output-on-failure

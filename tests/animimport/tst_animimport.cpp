@@ -334,7 +334,7 @@ void TestAnimImport::roundTripWithWriter()
 
 void TestAnimImport::corpus()
 {
-  QDir dir(PINGMATOR_ANIM_CORPUS);
+  QDir dir(PINGLYMOTION_ANIM_CORPUS);
   const QStringList files=dir.entryList(QDir::Files,QDir::Name);
   QVERIFY2(!files.isEmpty(),"no corpus files");
   for(const QString& name : files)

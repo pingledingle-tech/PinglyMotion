@@ -69,7 +69,7 @@ def main():
     app_path = os.path.abspath(sys.argv[1])
     work = tempfile.mkdtemp(prefix="pingmator-control-")
     control_file = os.path.join(work, "control.json")
-    env = dict(os.environ, PINGMATOR_CONTROL_FILE=control_file, PINGMATOR_CONTROL_FOLDER=work)
+    env = dict(os.environ, PINGLYMOTION_CONTROL_FILE=control_file, PINGLYMOTION_CONTROL_FOLDER=work)
 
     # the MCP server alone, with Pingmator not running: it still lists its tools
     offline = Mcp(env)

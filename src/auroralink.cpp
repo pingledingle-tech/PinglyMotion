@@ -89,7 +89,7 @@ bool AuroraLink::connected() const
 
 QString AuroraLink::tokenFolder()
 {
-  const QByteArray override=qgetenv("PINGMATOR_AURORA_TOKEN_DIR");
+  const QByteArray override=qgetenv("PINGLYMOTION_AURORA_TOKEN_DIR");
   if(!override.isEmpty()) return QString::fromLocal8Bit(override);
   // Aurora's local data folder (Rust "directories": ProjectDirs org/Aurora/AuroraViewer,
   // data_local_dir), then blender-live

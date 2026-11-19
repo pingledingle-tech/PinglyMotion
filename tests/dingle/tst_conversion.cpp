@@ -115,7 +115,7 @@ void TstConversion::bundledFiles_data()
 {
   QTest::addColumn<QString>("name");
   QTest::addColumn<QString>("committed");
-  const QString root=PINGMATOR_SOURCE_DIR;
+  const QString root=PINGLYMOTION_SOURCE_DIR;
   QTest::newRow("TPose") << "TPose" << root+"/bin/data/TPose.dingle";
   QTest::newRow("Relaxed") << "Relaxed" << root+"/bin/data/Relaxed.dingle";
   QTest::newRow("jump") << "jump" << root+"/examples/jump.dingle";
@@ -127,7 +127,7 @@ void TstConversion::bundledFiles()
   QFETCH(QString,name);
   QFETCH(QString,committed);
 
-  const QByteArray avm=readFile(QString(PINGMATOR_SOURCE_DIR)+"/tests/legacy-avm/"+name+".avm");
+  const QByteArray avm=readFile(QString(PINGLYMOTION_SOURCE_DIR)+"/tests/legacy-avm/"+name+".avm");
   QVERIFY2(!avm.isEmpty(),"the .avm test input is missing");
   const AnimFile::Result fromAvm=AnimFile::parseAvm(avm);
   QVERIFY2(fromAvm.animation.has_value(),qPrintable(fromAvm.error));

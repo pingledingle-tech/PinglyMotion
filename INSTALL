@@ -20,7 +20,7 @@ Windows (MinGW from the Qt installer):
     Copy build/src/pingmator.exe next to a copy of bin/data and run
     windeployqt on it. .github/workflows/build.yml shows the exact steps.
 
-Add -DPINGMATOR_TESTS=ON to build the tests, then run
+Add -DPINGLYMOTION_TESTS=ON to build the tests, then run
 "ctest --test-dir build" (see README.md).
 
 The program reads its data folder from next to the executable. A program

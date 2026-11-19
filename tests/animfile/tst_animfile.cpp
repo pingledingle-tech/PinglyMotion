@@ -48,9 +48,9 @@ static QStringList animationFiles()
 {
   const QStringList filters = {"*.bvh", "*.avm"};
   QStringList files;
-  for (const QString& folder : {QString(PINGMATOR_EXAMPLES), QString(PINGMATOR_LEGACY_DATA),
-                                QString(PINGMATOR_TOOLS "/legacy"),
-                                QString(PINGMATOR_CORPUS "/bvh"), QString(PINGMATOR_CORPUS "/avm")})
+  for (const QString& folder : {QString(PINGLYMOTION_EXAMPLES), QString(PINGLYMOTION_LEGACY_DATA),
+                                QString(PINGLYMOTION_TOOLS "/legacy"),
+                                QString(PINGLYMOTION_CORPUS "/bvh"), QString(PINGLYMOTION_CORPUS "/avm")})
   {
     const QDir dir(folder);
     for (const QString& name : dir.entryList(filters, QDir::Files, QDir::Name))
@@ -243,8 +243,8 @@ class AnimFileTest : public QObject
 void AnimFileTest::filesAreFound()
 {
   QVERIFY(animationFiles().count() >= 15);
-  QVERIFY(QDir(PINGMATOR_CORPUS "/bvh").entryList({"bad_*"}, QDir::Files).count() >= 10);
-  QVERIFY(QDir(PINGMATOR_CORPUS "/avm").entryList({"bad_*"}, QDir::Files).count() >= 5);
+  QVERIFY(QDir(PINGLYMOTION_CORPUS "/bvh").entryList({"bad_*"}, QDir::Files).count() >= 10);
+  QVERIFY(QDir(PINGLYMOTION_CORPUS "/avm").entryList({"bad_*"}, QDir::Files).count() >= 5);
 }
 
 void AnimFileTest::brokenCorpusFiles_data()
@@ -252,7 +252,7 @@ void AnimFileTest::brokenCorpusFiles_data()
   QTest::addColumn<QString>("file");
   for (const QString& sub : {QString("bvh"), QString("avm")})
   {
-    const QDir dir(QString(PINGMATOR_CORPUS) + "/" + sub);
+    const QDir dir(QString(PINGLYMOTION_CORPUS) + "/" + sub);
     for (const QString& name : dir.entryList({"bad_*"}, QDir::Files, QDir::Name))
       QTest::newRow(qPrintable(sub + "/" + name)) << dir.filePath(name);
   }
@@ -403,7 +403,7 @@ void AnimFileTest::cutOffFiles_data()
   QTest::addColumn<QString>("file");
   for (const QString& name : {QString("bvh/good_two_joints.bvh"), QString("bvh/good_zxy_order.bvh"),
                               QString("avm/good_full.avm"), QString("avm/good_no_properties.avm")})
-    QTest::newRow(qPrintable(name)) << QString(PINGMATOR_CORPUS "/") + name;
+    QTest::newRow(qPrintable(name)) << QString(PINGLYMOTION_CORPUS "/") + name;
 }
 
 // every beginning of a good file, and every byte replaced by a few others,
@@ -704,11 +704,11 @@ void AnimFileTest::openDingleGivesTheSameAnimation_data()
   QTest::addColumn<QString>("dingle");
   // the originals in tests/legacy-avm, so this keeps working when job 6
   // removes the .avm copies from bin/data and examples
-  const QString legacy = PINGMATOR_TOOLS "/../tests/legacy-avm/";
-  QTest::newRow("TPose") << legacy + "TPose.avm" << PINGMATOR_LEGACY_DATA "/TPose.dingle";
-  QTest::newRow("Relaxed") << legacy + "Relaxed.avm" << PINGMATOR_LEGACY_DATA "/Relaxed.dingle";
-  QTest::newRow("jump") << legacy + "jump.avm" << PINGMATOR_EXAMPLES "/jump.dingle";
-  QTest::newRow("throne") << legacy + "throne.avm" << PINGMATOR_EXAMPLES "/throne.dingle";
+  const QString legacy = PINGLYMOTION_TOOLS "/../tests/legacy-avm/";
+  QTest::newRow("TPose") << legacy + "TPose.avm" << PINGLYMOTION_LEGACY_DATA "/TPose.dingle";
+  QTest::newRow("Relaxed") << legacy + "Relaxed.avm" << PINGLYMOTION_LEGACY_DATA "/Relaxed.dingle";
+  QTest::newRow("jump") << legacy + "jump.avm" << PINGLYMOTION_EXAMPLES "/jump.dingle";
+  QTest::newRow("throne") << legacy + "throne.avm" << PINGLYMOTION_EXAMPLES "/throne.dingle";
 }
 
 // a converted bundled file opens to the same animation as its .avm: the same
@@ -777,7 +777,7 @@ void AnimFileTest::openDingleGivesTheSameAnimation()
 void AnimFileTest::openRefusesBrokenDingleFiles_data()
 {
   QTest::addColumn<QString>("file");
-  const QDir dir(PINGMATOR_CORPUS "/dingle");
+  const QDir dir(PINGLYMOTION_CORPUS "/dingle");
   const QStringList bad = dir.entryList({"bad_*.dingle"}, QDir::Files, QDir::Name);
   QVERIFY(!bad.isEmpty());
   for (const QString& name : bad)
@@ -804,7 +804,7 @@ void AnimFileTest::openDingleErrorIsOneMessage()
 {
   QTemporaryDir dir;
   QVERIFY(dir.isValid());
-  const QByteArray jump = readAll(PINGMATOR_EXAMPLES "/jump.dingle");
+  const QByteArray jump = readAll(PINGLYMOTION_EXAMPLES "/jump.dingle");
   QVERIFY(!jump.isEmpty());
 
   QString error;
@@ -817,7 +817,7 @@ void AnimFileTest::openDingleErrorIsOneMessage()
   QVERIFY(!BVH::checkFile(writeFile(dir, "text.dingle", "HIERARCHY ROOT hip"), &error));
   QVERIFY2(error.contains(".dingle"), qPrintable(error));
 
-  QVERIFY(!BVH::checkFile(PINGMATOR_CORPUS "/dingle/bad_newer_version.dingle", &error));
+  QVERIFY(!BVH::checkFile(PINGLYMOTION_CORPUS "/dingle/bad_newer_version.dingle", &error));
   QVERIFY2(error.contains("newer version"), qPrintable(error));
 
   // the ending is matched in any case, like .bvh and .avm

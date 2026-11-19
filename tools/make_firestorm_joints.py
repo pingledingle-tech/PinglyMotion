@@ -26,19 +26,19 @@ from pathlib import Path
 OUT = Path("bin/data/firestorm")
 
 # Pingmator's own names for joints Firestorm's poser shows without a title
-PINGMATOR_NAMES = {
+PINGLYMOTION_NAMES = {
     "mFaceRoot": "Face Root",
     "mFaceChin": "Chin",
 }
 
 # joints of Pingmator's skeleton that Firestorm's PoserJoints does not list
 # (name, mirror partner); a Firestorm title, when there is one, wins
-PINGMATOR_EXTRA = {
+PINGLYMOTION_EXTRA = {
     "mFaceEyeAltLeft": ("Left Eye (alternative)", "mFaceEyeAltRight"),
     "mFaceEyeAltRight": ("Right Eye (alternative)", "mFaceEyeAltLeft"),
     "mFaceJawShaper": ("Jaw Shaper", ""),
 }
-PINGMATOR_EXTRA_SECTION = {
+PINGLYMOTION_EXTRA_SECTION = {
     "mFaceEyeAltLeft": "Eyes/Eye Lids",
     "mFaceEyeAltRight": "Eyes/Eye Lids",
     "mFaceJawShaper": "Cheeks/Lips",
@@ -143,9 +143,9 @@ def main():
             "dontFlipOnMirror": j["dontFlip"],
         }
         if not entry["name"]:
-            if sl not in PINGMATOR_NAMES:
-                sys.exit(f"Firestorm has no title for {sl}: add it to PINGMATOR_NAMES")
-            entry["name"], entry["nameFrom"] = PINGMATOR_NAMES[sl], "pingmator"
+            if sl not in PINGLYMOTION_NAMES:
+                sys.exit(f"Firestorm has no title for {sl}: add it to PINGLYMOTION_NAMES")
+            entry["name"], entry["nameFrom"] = PINGLYMOTION_NAMES[sl], "pingmator"
         for key, prefix in (("firestormTransform", "joint_transform_"),
                             ("firestormFrame", "joint_frame_"),
                             ("firestormDeltaRotate", "joint_delta_rotate_")):
@@ -158,15 +158,15 @@ def main():
     for sl, bvh in bvh_of.items():
         if sl in known:
             continue
-        if sl not in PINGMATOR_EXTRA:
-            sys.exit(f"no name for {sl}: add it to PINGMATOR_EXTRA")
-        name, mirror = PINGMATOR_EXTRA[sl]
+        if sl not in PINGLYMOTION_EXTRA:
+            sys.exit(f"no name for {sl}: add it to PINGLYMOTION_EXTRA")
+        name, mirror = PINGLYMOTION_EXTRA[sl]
         name_from = "pingmator"
         if "title_" + sl in strings:
             name, name_from = strings["title_" + sl], "firestorm"
         joints.append({
             "sl": sl, "bvh": bvh, "name": name, "nameFrom": name_from,
-            "tab": tab_of(bvh), "firestormType": "", "firestormSection": PINGMATOR_EXTRA_SECTION[sl],
+            "tab": tab_of(bvh), "firestormType": "", "firestormSection": PINGLYMOTION_EXTRA_SECTION[sl],
             "mirror": mirror, "dontFlipOnMirror": sl.endswith("Right"),
         })
 

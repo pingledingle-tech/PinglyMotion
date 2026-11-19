@@ -745,8 +745,8 @@ void TestRetarget::zUpAndScale()
 void TestRetarget::directSlNames()
 {
   // a file that already uses SL names is mapped joint by joint
-  QFile tposeFile(QStringLiteral(PINGMATOR_LEGACY_DATA)+"/TPose.bvh");
-  QFile relaxedFile(QStringLiteral(PINGMATOR_LEGACY_DATA)+"/Relaxed.bvh");
+  QFile tposeFile(QStringLiteral(PINGLYMOTION_LEGACY_DATA)+"/TPose.bvh");
+  QFile relaxedFile(QStringLiteral(PINGLYMOTION_LEGACY_DATA)+"/Relaxed.bvh");
   QVERIFY(tposeFile.open(QIODevice::ReadOnly));
   QVERIFY(relaxedFile.open(QIODevice::ReadOnly));
   const AnimFile::Result tpose=AnimFile::parseBvh(tposeFile.readAll());
@@ -781,7 +781,7 @@ void TestRetarget::directSlNames()
 void TestRetarget::realTPoseTarget()
 {
   // a Mixamo style skeleton onto the SL skeleton the program starts with
-  QFile file(QStringLiteral(PINGMATOR_LEGACY_DATA)+"/TPose.bvh");
+  QFile file(QStringLiteral(PINGLYMOTION_LEGACY_DATA)+"/TPose.bvh");
   QVERIFY(file.open(QIODevice::ReadOnly));
   const AnimFile::Result tpose=AnimFile::parseBvh(file.readAll());
   QVERIFY(tpose.ok());

@@ -40,7 +40,7 @@ INSTRUCTIONS = (
 
 
 def connection_file():
-    override = os.environ.get("PINGMATOR_CONTROL_FILE")
+    override = os.environ.get("PINGLYMOTION_CONTROL_FILE")
     if override:
         return override
     if sys.platform.startswith("win"):

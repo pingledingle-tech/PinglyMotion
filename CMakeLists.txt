@@ -40,25 +40,25 @@ ENDIF (NOT DEFINED BUILD_NUMBER)
 ADD_DEFINITIONS (-DBUILD_NUMBER="${BUILD_NUMBER}")
 
 # Where a build comes from, shown in the window title and in Help > About:
-# CI passes PINGMATOR_BUILD_SOURCE ("PR #12" or a branch name); a local build says "dev".
-# PINGMATOR_COMMIT is the short commit (CI passes the full one; a local build asks git).
-IF (NOT DEFINED PINGMATOR_BUILD_SOURCE OR "${PINGMATOR_BUILD_SOURCE}" STREQUAL "")
-  SET (PINGMATOR_BUILD_SOURCE "dev")
+# CI passes PINGLYMOTION_BUILD_SOURCE ("PR #12" or a branch name); a local build says "dev".
+# PINGLYMOTION_COMMIT is the short commit (CI passes the full one; a local build asks git).
+IF (NOT DEFINED PINGLYMOTION_BUILD_SOURCE OR "${PINGLYMOTION_BUILD_SOURCE}" STREQUAL "")
+  SET (PINGLYMOTION_BUILD_SOURCE "dev")
 ENDIF ()
-IF (NOT DEFINED PINGMATOR_COMMIT OR "${PINGMATOR_COMMIT}" STREQUAL "")
+IF (NOT DEFINED PINGLYMOTION_COMMIT OR "${PINGLYMOTION_COMMIT}" STREQUAL "")
   EXECUTE_PROCESS (COMMAND git rev-parse HEAD
                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                   OUTPUT_VARIABLE PINGMATOR_COMMIT
+                   OUTPUT_VARIABLE PINGLYMOTION_COMMIT
                    ERROR_QUIET)
-  STRING (STRIP "${PINGMATOR_COMMIT}" PINGMATOR_COMMIT)
+  STRING (STRIP "${PINGLYMOTION_COMMIT}" PINGLYMOTION_COMMIT)
 ENDIF ()
-IF ("${PINGMATOR_COMMIT}" STREQUAL "")
-  SET (PINGMATOR_COMMIT "unknown")
+IF ("${PINGLYMOTION_COMMIT}" STREQUAL "")
+  SET (PINGLYMOTION_COMMIT "unknown")
 ELSE ()
-  STRING (SUBSTRING "${PINGMATOR_COMMIT}" 0 7 PINGMATOR_COMMIT)
+  STRING (SUBSTRING "${PINGLYMOTION_COMMIT}" 0 7 PINGLYMOTION_COMMIT)
 ENDIF ()
-ADD_DEFINITIONS (-DPINGMATOR_BUILD_SOURCE="${PINGMATOR_BUILD_SOURCE}")
-ADD_DEFINITIONS (-DPINGMATOR_COMMIT="${PINGMATOR_COMMIT}")
+ADD_DEFINITIONS (-DPINGLYMOTION_BUILD_SOURCE="${PINGLYMOTION_BUILD_SOURCE}")
+ADD_DEFINITIONS (-DPINGLYMOTION_COMMIT="${PINGLYMOTION_COMMIT}")
 
 # Version number shown in the program and used by the update check
 IF (NOT DEFINED VERSION_NUMBER)
@@ -67,7 +67,7 @@ ENDIF (NOT DEFINED VERSION_NUMBER)
 ADD_DEFINITIONS (-DVERSION_NUMBER="${VERSION_NUMBER}")
 
 # Data files of a program that runs from its build folder (see Constants::pingmatorDataPath)
-ADD_DEFINITIONS (-DPINGMATOR_SOURCE_DATAPATH="${CMAKE_SOURCE_DIR}/bin/data")
+ADD_DEFINITIONS (-DPINGLYMOTION_SOURCE_DATAPATH="${CMAKE_SOURCE_DIR}/bin/data")
 
 # Update channel: 2 = release, 1 = beta, anything else = development build
 IF (DEFINED UPDATE_CHANNEL)
@@ -80,7 +80,7 @@ SET (INSTALL_DATA "." CACHE PATH "Data install path")
 
 # Qt 6
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGL OpenGLWidgets Network)
-SET (PINGMATOR_QT_LIBS Qt6::Core Qt6::Gui Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Network)
+SET (PINGLYMOTION_QT_LIBS Qt6::Core Qt6::Gui Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Network)
 MESSAGE (STATUS "Building with Qt ${Qt6_VERSION}")
 
 # Search for OpenGL
@@ -90,9 +90,9 @@ INCLUDE_DIRECTORIES (src ${OPENGL_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY (src)
 
-# Automatic tests: cmake -DPINGMATOR_TESTS=ON, then ctest
-OPTION (PINGMATOR_TESTS "Build the automatic tests" OFF)
-IF (PINGMATOR_TESTS)
+# Automatic tests: cmake -DPINGLYMOTION_TESTS=ON, then ctest
+OPTION (PINGLYMOTION_TESTS "Build the automatic tests" OFF)
+IF (PINGLYMOTION_TESTS)
   ENABLE_TESTING ()
   ADD_SUBDIRECTORY (tests)
   # the new BVH/AVM parser (#62), not used by the program yet
@@ -109,13 +109,13 @@ IF (PINGMATOR_TESTS)
   ADD_SUBDIRECTORY (tests/buildinfo)
   # wheel over sliders in the Properties panel (#82)
   ADD_SUBDIRECTORY (tests/wheelguard)
-ENDIF (PINGMATOR_TESTS)
+ENDIF (PINGLYMOTION_TESTS)
 
-# Fuzz targets (libFuzzer, clang only): cmake -DPINGMATOR_FUZZ=ON, see fuzz/README.md
-OPTION (PINGMATOR_FUZZ "Build the fuzz targets (needs clang)" OFF)
-IF (PINGMATOR_FUZZ)
+# Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md
+OPTION (PINGLYMOTION_FUZZ "Build the fuzz targets (needs clang)" OFF)
+IF (PINGLYMOTION_FUZZ)
   ADD_SUBDIRECTORY (fuzz)
-ENDIF (PINGMATOR_FUZZ)
+ENDIF (PINGLYMOTION_FUZZ)
 
 # Install data
 INSTALL (DIRECTORY bin/data DESTINATION ${INSTALL_DATA})

@@ -80,7 +80,7 @@ jobs:
           BUILD_COMMIT: "${{ github.event.pull_request.head.sha || github.sha }}"
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
-          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGMATOR_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGMATOR_COMMIT=$BUILD_COMMIT"
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGLYMOTION_COMMIT=$BUILD_COMMIT"
           cmake --build build -j 4
       - name: Package
         shell: bash
@@ -152,7 +152,7 @@ jobs:
           SOURCE_DATE_EPOCH: '0'
         run: |
           ccache --zero-stats
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGMATOR_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGLYMOTION_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build build -j 4
           ccache --show-stats
       - name: Automatic tests
@@ -162,7 +162,7 @@ jobs:
       - name: Exported BVH files pass Second Life's upload rules
         run: |
           cd bin
-          PINGMATOR_EXPORT_DIR=$PWD/../exports QT_QPA_PLATFORM=offscreen ../build/tests/pingmator_tests > /dev/null
+          PINGLYMOTION_EXPORT_DIR=$PWD/../exports QT_QPA_PLATFORM=offscreen ../build/tests/pinglymotion_tests > /dev/null
           cd ..
           python3 tools/check_sl_bvh.py exports/*.bvh
           python3 tools/check_sl_bvh.py exports/posed_bones.bvh --expect-animated mHandIndex2Left mHandThumb1Right mFaceJaw mTail2
@@ -216,7 +216,7 @@ jobs:
           SOURCE_DATE_EPOCH: '0'
         run: |
           ccache --zero-stats
-          cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_TESTS=ON -DBUILD_NUMBER=0 \
+          cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS=ON -DBUILD_NUMBER=0 \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"

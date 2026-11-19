@@ -144,12 +144,12 @@ void ControlTest::initTestCase()
 {
   QVERIFY(m_controlDir.isValid());
   m_controlFile = m_controlDir.filePath("control.json");
-  qputenv("PINGMATOR_CONTROL_FILE", m_controlFile.toUtf8());
+  qputenv("PINGLYMOTION_CONTROL_FILE", m_controlFile.toUtf8());
 }
 
 void ControlTest::cleanupTestCase()
 {
-  qunsetenv("PINGMATOR_CONTROL_FILE");
+  qunsetenv("PINGLYMOTION_CONTROL_FILE");
 }
 
 void ControlTest::init()
@@ -168,7 +168,7 @@ void ControlTest::init()
 void ControlTest::cleanup()
 {
   ControlServer::failConnectionFileStepForTests(ControlServer::FileStep::None);
-  qputenv("PINGMATOR_CONTROL_FILE", m_controlFile.toUtf8());
+  qputenv("PINGLYMOTION_CONTROL_FILE", m_controlFile.toUtf8());
   delete m_server;
   delete m_api;
   delete m_host;
@@ -195,13 +195,13 @@ void ControlTest::commandsAreListed()
 }
 
 // tools/mcp/commands.json is the tool list of the MCP server when Pingmator is not running.
-// Update it with: PINGMATOR_UPDATE_COMMANDS=1 pingmator_control_tests
+// Update it with: PINGLYMOTION_UPDATE_COMMANDS=1 pinglymotion_control_tests
 void ControlTest::mcpCommandListIsUpToDate()
 {
-  const QString path = QString(PINGMATOR_TOOLS) + "/mcp/commands.json";
+  const QString path = QString(PINGLYMOTION_TOOLS) + "/mcp/commands.json";
   const QByteArray current = QJsonDocument(QJsonObject{{"ok", true}, {"commands", ControlApi::commandList()}}).toJson(QJsonDocument::Indented);
 
-  if (qEnvironmentVariableIsSet("PINGMATOR_UPDATE_COMMANDS"))
+  if (qEnvironmentVariableIsSet("PINGLYMOTION_UPDATE_COMMANDS"))
   {
     QFile out(path);
     QVERIFY(out.open(QIODevice::WriteOnly | QIODevice::Truncate));
@@ -211,7 +211,7 @@ void ControlTest::mcpCommandListIsUpToDate()
   QFile file(path);
   QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(path));
   QVERIFY2(QJsonDocument::fromJson(file.readAll()) == QJsonDocument::fromJson(current),
-           "tools/mcp/commands.json is out of date. Run: PINGMATOR_UPDATE_COMMANDS=1 pingmator_control_tests");
+           "tools/mcp/commands.json is out of date. Run: PINGLYMOTION_UPDATE_COMMANDS=1 pinglymotion_control_tests");
 }
 
 void ControlTest::unknownAndMissingCommands()
@@ -532,7 +532,7 @@ void ControlTest::openFileAcceptsDingle()
   const QString work = root.filePath("work");
   QVERIFY(QDir().mkpath(work));
   m_api->setWorkFolder(work);
-  QVERIFY(QFile::copy(PINGMATOR_TOOLS "/../examples/jump.dingle", work + "/jump.dingle"));
+  QVERIFY(QFile::copy(PINGLYMOTION_TOOLS "/../examples/jump.dingle", work + "/jump.dingle"));
   m_animation->setDirty(false);   // nothing to lose: opening is allowed
 
   QJsonObject answer = run(R"({"command":"open_file","path":"jump.dingle"})");
@@ -833,7 +833,7 @@ void ControlTest::connectionFileHasAddressAndKey()
   // the folder is made when it is missing
   QTemporaryDir dir;
   const QString path = dir.filePath("sub/control.json");
-  qputenv("PINGMATOR_CONTROL_FILE", path.toUtf8());
+  qputenv("PINGLYMOTION_CONTROL_FILE", path.toUtf8());
   QVERIFY(m_server->writeConnectionFile());
   info = readJson(path);
   QCOMPARE(info["token"].toString(), m_server->token());
@@ -888,14 +888,14 @@ void ControlTest::connectionFileFailureStopsTheServer()
   QFile blocker(dir.filePath("blocked"));
   QVERIFY(blocker.open(QIODevice::WriteOnly));
   blocker.close();
-  qputenv("PINGMATOR_CONTROL_FILE", dir.filePath("blocked/control.json").toUtf8());
+  qputenv("PINGLYMOTION_CONTROL_FILE", dir.filePath("blocked/control.json").toUtf8());
   QString error;
   QVERIFY(!m_server->start(0, &error));
   QVERIFY(!m_server->running());
   QVERIFY2(error.contains("could not be written safely"), qPrintable(error));
 
   // and it starts again when the file can be written
-  qputenv("PINGMATOR_CONTROL_FILE", m_controlFile.toUtf8());
+  qputenv("PINGLYMOTION_CONTROL_FILE", m_controlFile.toUtf8());
   QVERIFY2(m_server->start(0, &error), qPrintable(error));
   QCOMPARE(readJson(m_controlFile)["token"].toString(), m_server->token());
 }

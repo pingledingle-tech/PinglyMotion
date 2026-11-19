@@ -4,7 +4,7 @@
  * Every glTF file here is built by the test itself, from the Second Life
  * skeleton in bin/data/TPose.bvh; no third-party files are copied.
  *
- * Set PINGMATOR_WRITE_GLTF_CORPUS to a folder to write the start files of
+ * Set PINGLYMOTION_WRITE_GLTF_CORPUS to a folder to write the start files of
  * the fuzz target (fuzz/corpus/gltf) there; the test "corpus" checks the
  * files in the repository against the same rules.
  *
@@ -117,7 +117,7 @@ namespace
 
   Animation loadTPose()
   {
-    QFile file(QStringLiteral(PINGMATOR_LEGACY_DATA)+"/TPose.bvh");
+    QFile file(QStringLiteral(PINGLYMOTION_LEGACY_DATA)+"/TPose.bvh");
     if(!file.open(QIODevice::ReadOnly)) qFatal("TPose.bvh is missing");
     const AnimFile::Result r=AnimFile::parseBvh(file.readAll());
     if(!r.ok()) qFatal("TPose.bvh cannot be read");
@@ -441,7 +441,7 @@ static QHash<QString,QByteArray> corpusFiles()
 
 void TestGltfImport::initTestCase()
 {
-  const QByteArray dir=qgetenv("PINGMATOR_WRITE_GLTF_CORPUS");
+  const QByteArray dir=qgetenv("PINGLYMOTION_WRITE_GLTF_CORPUS");
   if(dir.isEmpty()) return;
   QDir().mkpath(QString::fromLocal8Bit(dir));
   const QHash<QString,QByteArray> files=corpusFiles();
@@ -1042,7 +1042,7 @@ void TestGltfImport::tooLong()
 
 void TestGltfImport::corpus()
 {
-  QDir dir(QStringLiteral(PINGMATOR_GLTF_CORPUS));
+  QDir dir(QStringLiteral(PINGLYMOTION_GLTF_CORPUS));
   const QStringList files=dir.entryList(QDir::Files);
   QVERIFY2(files.size()>=8,"the start files of the fuzz target are missing");
   int good=0,bad=0;
