@@ -32,6 +32,8 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSaveFile>
+#include <QTemporaryDir>
 #include <QScopedPointer>
 #include <QSignalBlocker>
 #include <QSharedPointer>
@@ -48,6 +50,8 @@
 #include <QTableWidget>
 
 #include "aboutdialog.h"
+#include "animexportdialog.h"
+#include "animimportconvert.h"
 #include "animationview.h"
 #include "bvh.h"
 #include "propfile.h"
@@ -1906,6 +1910,155 @@ void PinglyMotionWindow::fileExportForSecondLife()
   }
 }
 
+// Menu Action: File / Export as Second Life .anim...
+// Save stays for .dingle files; this writes the file that Second Life uploads.
+void PinglyMotionWindow::fileExportAnim()
+{
+  const QString title=tr("Export as Second Life .anim");
+  Animation* animation=scene->getAnimation();
+  if(!animation)
+  {
+    QMessageBox::information(this,title,AnimExportUi::problemBeforeExport(AnimFile::Animation()));
+    return;
+  }
+
+  const AnimFile::Animation model=ui->animationView->getBVH()->snapshot(animation,AnimFile::Format::Bvh);
+  const QString problem=AnimExportUi::problemBeforeExport(model);
+  if(!problem.isEmpty())
+  {
+    QMessageBox::warning(this,title,problem);
+    return;
+  }
+
+  AnimExportDialog dialog(AnimExportUi::durationSeconds(model),this);
+  if(dialog.exec()!=QDialog::Accepted) return;
+
+  QString suggested=AnimExportUi::suggestedFileName(currentFile,m_untitledName);
+  if(QFileInfo(suggested).isRelative())
+    suggested=QDir(UserSettings::lastPath()).filePath(suggested);
+  QString file=QFileDialog::getSaveFileName(this,title,suggested,tr("Second Life animation (*.anim)"),nullptr,QFileDialog::DontConfirmOverwrite);
+  if(file.isEmpty()) return;
+  file=AnimExportUi::withAnimEnding(file);
+  const QFileInfo fileInfo(file);
+  if(!checkFileOverwrite(fileInfo)) return;
+
+  const AnimExport::Options options=AnimExportUi::toOptions(dialog.settings(),model.frameTime,
+                                                           animation->getLoopInPoint(),animation->getLoopOutPoint());
+  const AnimExport::Result result=AnimExport::write(model,options);
+  if(!result.ok())
+  {
+    QMessageBox::warning(this,title,AnimExportUi::explainFailure(result.error));
+    return;
+  }
+
+  QSaveFile out(file);
+  if(!out.open(QIODevice::WriteOnly) || out.write(result.bytes)!=result.bytes.size() || !out.commit())
+  {
+    QMessageBox::warning(this,title,AnimExportUi::explainFailure(
+                         tr("The file could not be written: %1").arg(out.errorString())));
+    return;
+  }
+  UserSettings::setLastPath(fileInfo.path());
+
+  QString message=tr("Saved as:\n%1").arg(fileInfo.fileName());
+  if(!result.warnings.isEmpty())
+    message+=QStringLiteral("\n\n")+tr("Please note:")+QStringLiteral("\n")+result.warnings.join(QLatin1Char('\n'));
+  QMessageBox::information(this,title,message);
+}
+
+// reads the Second Life skeleton that imports are put on
+bool PinglyMotionWindow::loadSkeleton(AnimFile::Animation& skeleton,const QString& title)
+{
+  QFile file(Constants::femaleBvhPath());
+  AnimFile::Result parsed;
+  if(file.open(QIODevice::ReadOnly) && file.size()<=AnimFile::MAX_FILE_BYTES)
+    parsed=AnimFile::parseBvh(file.readAll());
+  if(!parsed.ok())
+  {
+    QMessageBox::warning(this,title,tr("The skeleton of the program could not be read.\nReinstall the program, then try again."));
+    return false;
+  }
+  skeleton=*parsed.animation;
+  return true;
+}
+
+// opens an animation made from another file as a new animation that has no file yet
+bool PinglyMotionWindow::openConvertedAnimation(const AnimFile::Animation& anim,const QString& name,int loopIn,int loopOut,const QString& title)
+{
+  // the program opens animations from files, so the data goes through a short-lived one
+  QTemporaryDir folder;
+  const QString path=folder.filePath(QStringLiteral("imported.bvh"));
+  QSaveFile out(path);
+  const QByteArray bytes=AnimFile::write(anim);
+  if(!folder.isValid() || !out.open(QIODevice::WriteOnly) || out.write(bytes)!=bytes.size() || !out.commit())
+  {
+    QMessageBox::warning(this,title,tr("The animation could not be opened.\nFree some disk space, then try again."));
+    return false;
+  }
+
+  if(!checkAnimationFile(path)) return false;
+  if(!clearOpenFiles()) return false;
+  emit clearProps();
+  addAnimationFile(path);
+
+  // the animation belongs to no file: Save asks for a name
+  setCurrentFile(m_untitledName);
+  const int index=ui->selectAnimationCombo->currentIndex();
+  if(index>=0 && index<openFiles.size())
+  {
+    openFiles[index]=m_untitledName;
+    ui->selectAnimationCombo->setItemText(index,name);
+  }
+  Animation* animation=scene->getAnimation();
+  if(loopIn>0 && loopOut>0)
+  {
+    setLoopOutPoint(loopOut);
+    setLoopInPoint(loopIn);
+  }
+  animation->setDirty(true);
+  ui->fileExportForSecondLifeAction->setEnabled(false);
+  partChoice();
+  return true;
+}
+
+// Menu Action: File / Import Second Life .anim...
+void PinglyMotionWindow::fileImportAnim()
+{
+  const QString title=tr("Import Second Life .anim");
+  const QString file=QFileDialog::getOpenFileName(this,title,UserSettings::lastPath(),tr("Second Life animation (*.anim)"));
+  if(file.isEmpty()) return;
+  UserSettings::setLastPath(QFileInfo(file).path());
+
+  QFile input(file);
+  if(!input.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,title,tr("This file could not be opened.\n%1\nCheck that the file is still there, then try again.").arg(input.errorString()));
+    return;
+  }
+  if(input.size()>AnimImport::MAX_FILE_BYTES)
+  {
+    QMessageBox::warning(this,title,tr("This file is too big for an animation.\nPick a Second Life .anim file, then try again."));
+    return;
+  }
+  const QByteArray bytes=input.read(AnimImport::MAX_FILE_BYTES+1);
+
+  AnimFile::Animation skeleton;
+  if(!loadSkeleton(skeleton,title)) return;
+
+  const AnimImportConvert::Result result=AnimImportConvert::fromBytes(bytes,skeleton);
+  if(!result.ok())
+  {
+    QMessageBox::warning(this,title,result.error);
+    return;
+  }
+  if(!openConvertedAnimation(*result.animation,QFileInfo(file).completeBaseName(),result.loopIn,result.loopOut,title)) return;
+
+  QString message=tr("Opened %1.").arg(QFileInfo(file).fileName());
+  if(!result.notes.isEmpty())
+    message+=QStringLiteral("\n\n")+tr("What could not be imported:")+QStringLiteral("\n- ")+result.notes.join(QStringLiteral("\n- "));
+  QMessageBox::information(this,title,message);
+}
+
 // Menu Action: File / Load Props...
 void PinglyMotionWindow::fileLoadProps()
 {
@@ -2617,6 +2770,16 @@ void PinglyMotionWindow::on_fileSaveAction_triggered()
 void PinglyMotionWindow::on_fileSaveAsAction_triggered()
 {
   fileSaveAs();
+}
+
+void PinglyMotionWindow::on_fileImportAnimAction_triggered()
+{
+  fileImportAnim();
+}
+
+void PinglyMotionWindow::on_fileExportAnimAction_triggered()
+{
+  fileExportAnim();
 }
 
 void PinglyMotionWindow::on_fileExportForSecondLifeAction_triggered()

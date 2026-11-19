@@ -28,6 +28,7 @@
 #include <QMainWindow>
 #include <QTimer>
 
+#include "animfile.h"
 #include "playstate.h"
 #include "prop.h"
 #include "updatechecker.h"
@@ -113,6 +114,8 @@ class PinglyMotionWindow : public QMainWindow
     void on_fileSaveAction_triggered();
     void on_fileSaveAsAction_triggered();
     void on_fileExportForSecondLifeAction_triggered();
+    void on_fileExportAnimAction_triggered();
+    void on_fileImportAnimAction_triggered();
     void on_fileLoadPropsAction_triggered();
     void on_fileSavePropsAction_triggered();
     void on_fileExitAction_triggered();
@@ -198,6 +201,13 @@ class PinglyMotionWindow : public QMainWindow
     bool fileSave();
     bool fileSaveAs();
     void fileExportForSecondLife();
+    void fileExportAnim();
+    void fileImportAnim();
+    // the Second Life skeleton of the program (frame 0 is the rest pose), for imports
+    bool loadSkeleton(AnimFile::Animation& skeleton,const QString& title);
+    // opens an animation that was made from another file (an import) as a new, unsaved animation.
+    // loopIn and loopOut are in the window's frame numbers; -1 keeps the defaults.
+    bool openConvertedAnimation(const AnimFile::Animation& anim,const QString& name,int loopIn,int loopOut,const QString& title);
     void fileLoadProps();
     void fileSaveProps();
     void fileExit();
