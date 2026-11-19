@@ -84,3 +84,6 @@ TARGET_INCLUDE_DIRECTORIES (pingmator_ruth2_tests PRIVATE ${CMAKE_SOURCE_DIR}/sr
 TARGET_LINK_LIBRARIES (pingmator_ruth2_tests ${PINGMATOR_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME ruth2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingmator_ruth2_tests)
 SET_TESTS_PROPERTIES (ruth2 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# the .anim writer (#10), not used by the program yet
+ADD_SUBDIRECTORY (animexport)
