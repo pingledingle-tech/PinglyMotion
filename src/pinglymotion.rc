@@ -1,4 +1,4 @@
-#define ICON_FILENAME               "icons\\pingmator.ico"
+#define ICON_FILENAME               "icons\\pinglymotion.ico"
 
 #define VER_FILEVERSION             0,3,0,0
 #define VER_FILEVERSION_STR         "0.3.0.0"

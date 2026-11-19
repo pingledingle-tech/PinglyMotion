@@ -27,7 +27,7 @@ Every finding below was checked again against the code and workflows on `main` @
 | PM-04 | fixed | #25 (issue #4). `poskey.avm` refused at once ("A position key frame number … at least 0, found "-7""); `getKeyframeNumberBefore()` returns early for `frame <= 0`. |
 | PM-05 | fixed | #25 (issue #5). `deep.bvh` (20 000 levels) refused in 0.2 s: "more than 256 joints, or they are nested more than 64 deep". |
 | PM-06 | fixed | #25 (issue #6). `frames.bvh` refused ("Frames must be a whole number from 1 to 10000"); peak memory 46 MB. File size capped (`MAX_FILE_BYTES`). |
-| PM-07 | fixed | #25 (issue #7). `Constants::pingmatorDataPath()` uses the program folder, never the current folder. Program started in a folder with a planted `data/SLFemale.bvh` (= `channels.bvh`) and `data/SL.lim`: the planted files were not read. Test `dataFolderIsNotTheCurrentFolder`. |
+| PM-07 | fixed | #25 (issue #7). `Constants::pinglyMotionDataPath()` uses the program folder, never the current folder. Program started in a folder with a planted `data/SLFemale.bvh` (= `channels.bvh`) and `data/SL.lim`: the planted files were not read. Test `dataFolderIsNotTheCurrentFolder`. |
 | PM-08 | fixed | #27 (issue #8). Live: `save_file`/`open_file` outside the work folder (absolute path, `../`) refused with the same text; an existing other file is not overwritten; `new_animation`/`open_file` refuse while there are unsaved changes. |
 | PM-09 | fixed | #26 (issue #9). `ProxyHandler({})`, only `http://127.0.0.1:` / `localhost:` URLs. `tests/test_mcp_proxy.py` passes. |
 | PM-10 | fixed | #36 (issue #10). Key checked before the body, at most 8 connections, body limit 64 KB. Live: 50 connections with 4 MB bodies and no key, memory did not grow. Appendix C header part: see below (old #145, fixed). |
@@ -133,7 +133,7 @@ CodeQL results for `main` (excluding style-only queries: commented-out code, FIX
 |---|---|---|
 | Lossy function result cast | `src/bvh.cpp:214` | **Relevant.** `numChannels=token().toFloat()` – untrusted float into an int, no range check. Part of PM-01/PM-13. |
 | Resource not released in destructor | `src/bvh.cpp:632`, `src/animationview.cpp:50` | Memory leak of `lastLoadedPositionNode` / `bvh`. Not a security issue alone. |
-| Inconsistent nullness check | `src/pingmator.cpp:64` | `selectedProp()` used without NULL check. Possible crash, not reachable from untrusted input as far as reviewed. |
+| Inconsistent nullness check | `src/pinglymotion.cpp:64` | `selectedProp()` used without NULL check. Possible crash, not reachable from untrusted input as far as reviewed. |
 | Futile conditional (×4) | `src/bvhparser.cpp:471-505` | All error branches in the (unused) new parser are empty – see P-01. |
 
 aurora-link CodeQL: the same alerts as `main`, nothing new from `auroralink.cpp` or `bvhPoseText`. scan-build was run on `main` only; `aurora-link` adds ~250 lines that were reviewed by hand.
@@ -147,7 +147,7 @@ Clang Static Analyzer (scan-build 18, default checkers plus `alpha.security.Arra
 All parser findings are reachable in four ways:
 
 1. **File > Open / Add** – the user opens a file someone sent them (BVH files are traded freely in Second Life communities).
-2. **Command line / "Open with"** – `pingmator file.bvh` (`pingmatorwindow.cpp:356-363`).
+2. **Command line / "Open with"** – `pingmator file.bvh` (`pinglymotionwindow.cpp:356-363`).
 3. **Remote control** – the `open_file` command (`controlapi.cpp:463-474`), i.e. an AI client via MCP.
 4. **Planted data folder** – see PM-07.
 
@@ -167,7 +167,7 @@ The parser in use is the legacy `BVH` class in `src/bvh.cpp`. The newer `BvhPars
       #2 BVH::animRead(...) src/bvh.cpp:648
       #3 Animation::loadBVH(...) src/animation.cpp:107
       ...
-      #5 PingmatorWindow::fileAdd(QString const&) src/pingmatorwindow.cpp:1301
+      #5 PinglyMotionWindow::fileAdd(QString const&) src/pinglymotionwindow.cpp:1301
   ```
   Release build: segmentation fault (exit 139).
 - **Impact:** Heap memory corruption from a file the user opens. The written values are mostly fixed (`-10000`, `10000`, enum values chosen by the channel names), which limits attacker control; code execution was not attempted or demonstrated. Rated High, not Critical, because it needs the user to open the file.
@@ -251,7 +251,7 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
 
 ### PM-08 – Remote control can overwrite any `.bvh`/`.avm` file, open any path, and drop unsaved work — **Medium**
 
-- **Files:** `src/controlapi.cpp:463-474` (`open_file`), `:469` (existence oracle), `:476-489` (`save_file`); `src/pingmatorwindow.cpp:111-125` (`saveFile` host), `:97-109` + `:173-176` (`newAnimation`/`openFile` call `discardChanges()`)
+- **Files:** `src/controlapi.cpp:463-474` (`open_file`), `:469` (existence oracle), `:476-489` (`save_file`); `src/pinglymotionwindow.cpp:111-125` (`saveFile` host), `:97-109` + `:173-176` (`newAnimation`/`openFile` call `discardChanges()`)
 - **Explanation:** The only checks are the file extension and, for saving, that the folder exists. `save_file` overwrites existing files without asking. `open_file` accepts any absolute path and answers "No such file: <path>" for paths that do not exist. `new_animation` and `open_file` clear the dirty flag of every open animation, so unsaved work is discarded without the usual question. Every token holder can do this; the intended token holder is an AI agent via MCP, which can be steered by text it reads elsewhere (prompt injection).
 - **Evidence:**
   ```
@@ -289,14 +289,14 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
 
 ### PM-11 – `save_file` reports success when nothing was written — **Low**
 
-- **Files:** `src/bvh.cpp:738-739` and `:836-837` (`f.open(QFile::WriteOnly)` result ignored); `src/pingmatorwindow.cpp:124-125` (always `return true`)
+- **Files:** `src/bvh.cpp:738-739` and `:836-837` (`f.open(QFile::WriteOnly)` result ignored); `src/pinglymotionwindow.cpp:124-125` (always `return true`)
 - **Evidence:** `save_file {"path": "/proc/self/nope.bvh"}` → `{"ok": true}`; no file exists. The GUI save path has the same flaw.
 - **Impact:** The user or AI believes work is saved when it is not.
 - **Fix:** Check `open()`, `QTextStream::status()` and use `QSaveFile` (atomic write + `commit()` result); propagate the error.
 
 ### PM-12 – `control.json` stays behind after a crash — **Low**
 
-- **Files:** `src/pingmatorwindow.cpp:350` (removed only on `aboutToQuit`), `src/controlserver.cpp:123-143`
+- **Files:** `src/pinglymotionwindow.cpp:350` (removed only on `aboutToQuit`), `src/controlserver.cpp:123-143`
 - **Evidence:** After the PM-02 crash via `open_file`, `/tmp/ctl.json` (token, port, PID) was still present.
 - **Impact:** The token is useless once Pingmator is gone. But the MCP server keeps using the file: another local program that binds the same port gets the token and can answer with its own tool descriptions (prompt injection into the AI).
 - **Fix:** In the MCP server, check that the `pid` in `control.json` is a running Pingmator before sending; in Pingmator, overwrite/remove a stale file at start.
@@ -401,7 +401,7 @@ These were not reproduced. They are listed so they are not forgotten.
 | P-04 | PM-01 exploitability | Whether the heap overflow can be turned into code execution. | Written values are mostly constant; not attempted. |
 | P-05 | Qt CVEs (SC-02) | Whether Pingmator reaches the vulnerable Qt code. | Pingmator uses `QNetworkAccessManager` for the update check (HTTPS to api.github.com) and PNG writing; not analysed further. |
 | P-06 | `jurplel/install-qt-action` / aqtinstall | Integrity of the downloaded Qt binaries (checksums from Qt's mirrors). | Not reviewed; reduce exposure via SC-01. |
-| P-07 | `.prp` prop files (`pingmatorwindow.cpp:1436-1500`) | Unbounded number of lines → many props; unknown types give a NULL mesh (not drawn). No crash found by review. | Include in fuzzing. |
+| P-07 | `.prp` prop files (`pinglymotionwindow.cpp:1436-1500`) | Unbounded number of lines → many props; unknown types give a NULL mesh (not drawn). No crash found by review. | Include in fuzzing. |
 | P-08 | Aurora: error messages | `decode()` error text is sent back to any client; text from `hello` (64 chars) is shown in chat. Spoofing only. | Covered by the AL-01 handshake. |
 | P-09 | Repository settings | Branch protection, required reviews, who may push `v*` tags (which publish releases), 2FA. | Not visible from a clone; check in GitHub settings. |
 
@@ -481,7 +481,7 @@ This addendum records an independent **static code review** performed after the 
 | BVH parser continues after structural token mismatch | Confirmed by code review; not reproduced separately | old #1 | `BVH::expect_token()` reports failure, but `bvhReadNode()` does not consistently stop parsing. Propagate parse errors and discard partially constructed nodes. This extends the general parser fix in §8 and overlaps PM-01/PM-02. |
 | HTTP header limit can be bypassed when the header terminator is already present | Confirmed by code review; not load-tested | old #10 | `completeRequestLength()` checks `MAX_HEADER_BYTES` only while waiting for the header terminator; `onReadyRead()` appends the complete `readAll()` result before applying limits. Enforce header and total-buffer limits before or during accumulation, including complete oversized headers. This extends PM-10. |
 | Connection-file creation is not atomic and write/permission results are unchecked | Confirmed by code review; no failure-injection test | old #14 | `ControlServer::writeConnectionFile()` truncates the destination via `QFile`, without validating the full write count or the result of `setPermissions()`. Prefer `QSaveFile`, check all results, and fail closed if the token file cannot be written securely. Related to PM-11 and potential concern P-03. |
-| Unvalidated `.prp` prop types and numeric fields | Potential robustness/security concern; exploitability unverified | old #21 | `PingmatorWindow::fileLoadProps()` converts fields without sufficient validation; unknown prop types may produce a null mesh passed to `scene->addProp()`. Validate supported types, finite numbers, field counts and ranges; test malformed files. This expands potential concern P-07. **No crash or exploitable dereference was established.** |
+| Unvalidated `.prp` prop types and numeric fields | Potential robustness/security concern; exploitability unverified | old #21 | `PinglyMotionWindow::fileLoadProps()` converts fields without sufficient validation; unknown prop types may produce a null mesh passed to `scene->addProp()`. Validate supported types, finite numbers, field counts and ranges; test malformed files. This expands potential concern P-07. **No crash or exploitable dereference was established.** |
 | Mesh morph vertex indices lack local bounds checks | Conditional concern; upstream validation not established | old #22 | `AvatarSkin` uses morph `vertexIndices` and mesh triangle indices without an obvious local bounds check. Confirm what `LLMMesh` validates, add explicit range checks at the use sites, and fuzz malformed meshes. **No out-of-bounds access or exploit was reproduced for this finding.** |
 
 ### Tracking and interpretation

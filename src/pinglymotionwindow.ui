@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <author>Zi Ree</author>
- <class>PingmatorWindow</class>
- <widget class="QMainWindow" name="PingmatorWindow">
+ <class>PinglyMotionWindow</class>
+ <widget class="QMainWindow" name="PinglyMotionWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -1388,7 +1388,7 @@
     <addaction name="optionsLoopAction"/>
     <addaction name="optionsProtectFirstFrameAction"/>
     <addaction name="optionsShowTimelineAction"/>
-    <addaction name="optionsConfigurePingmatorAction"/>
+    <addaction name="optionsConfigurePinglyMotionAction"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1631,7 +1631,7 @@
     <string>Show Timeline</string>
    </property>
   </action>
-  <action name="optionsConfigurePingmatorAction">
+  <action name="optionsConfigurePinglyMotionAction">
    <property name="text">
     <string>Configure Pingmator...</string>
    </property>

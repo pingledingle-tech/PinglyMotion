@@ -59,7 +59,7 @@
 #include "prop.h"
 #include "jointgroups.h"
 #include "paneltitlebar.h"
-#include "pingmator.h"
+#include "pinglymotion.h"
 #include "scene.h"
 #include "timeline.h"
 #include "timelineview.h"
@@ -67,9 +67,9 @@
 #include "usersettings.h"
 #include "usersettingsdialog.h"
 
-#include "pingmatorwindow.h"
+#include "pinglymotionwindow.h"
 #include "theme.h"
-#include "ui_pingmatorwindow.h"
+#include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
 #include "wheelguard.h"
 
@@ -77,7 +77,7 @@
 class WindowControlHost : public ControlHost
 {
   public:
-    explicit WindowControlHost(PingmatorWindow* window) : w(window) {}
+    explicit WindowControlHost(PinglyMotionWindow* window) : w(window) {}
 
     Animation* animation() override { return w->scene->getAnimation(); }
 
@@ -208,13 +208,13 @@ class WindowControlHost : public ControlHost
       for (Animation* anim : w->animationIds) anim->setDirty(false);
     }
 
-    PingmatorWindow* w;
+    PinglyMotionWindow* w;
 };
 
-PingmatorWindow::PingmatorWindow() :
+PinglyMotionWindow::PinglyMotionWindow() :
   QMainWindow(nullptr),
-  ui(new Ui::PingmatorWindow),
-  m_pingmator(new Pingmator(this)),
+  ui(new Ui::PinglyMotionWindow),
+  m_pinglyMotion(new PinglyMotion(this)),
   updateChecker(nullptr, this),
   cubeMesh(new Mesh(Constants::cubeMeshFilePath(), Mesh::Shape::CUBE)),
   sphereMesh(new Mesh(QString(), Mesh::Shape::SPHERE)),  // built in code, no file
@@ -244,7 +244,7 @@ PingmatorWindow::PingmatorWindow() :
   currentPart=0;
   longestRunningTime=0.0;
   scene = ui->animationView->initializeScene(this);
-  m_pingmator->setScene(scene);
+  m_pinglyMotion->setScene(scene);
   ui->animationView->setMeshModels(cubeMesh, sphereMesh, coneMesh);
 
   // fill the joint lists from the Bento skeleton
@@ -373,7 +373,7 @@ PingmatorWindow::PingmatorWindow() :
   QAction* lightAction=new QAction(tr("Light..."),this);
   lightAction->setToolTip(tr("Change how the body is lit: brightness, shine, warmth and the shadow on the floor."));
   ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
-  connect(lightAction,&QAction::triggered,this,&PingmatorWindow::showLightDialog);
+  connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
 
   if(!UserSettings::showTimelinePanel()) m_timelineDock->hide();
 
@@ -387,7 +387,7 @@ PingmatorWindow::PingmatorWindow() :
     addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
 
 
-  connect(m_pingmator.data(), &Pingmator::repaint, ui->animationView, static_cast<void (AnimationView::*)()>(&AnimationView::repaint));
+  connect(m_pinglyMotion.data(), &PinglyMotion::repaint, ui->animationView, static_cast<void (AnimationView::*)()>(&AnimationView::repaint));
   connect(scene, SIGNAL(repaint()), ui->animationView, SLOT(update()));
   connect(scene, SIGNAL(animationSelected(Animation*)), this, SLOT(selectAnimation(Animation*)));
   connect(this, SIGNAL(protectFrame(bool)), scene, SLOT(protectFrame(bool)));
@@ -421,22 +421,22 @@ PingmatorWindow::PingmatorWindow() :
   connect(ui->animationView,SIGNAL(backgroundClicked()),this,SLOT(backgroundClicked()));
   connect(ui->animationView,SIGNAL(animationSelected(Animation*)),this,SLOT(selectAnimation(Animation*)));
 
-  connect(this, &PingmatorWindow::newProp, m_pingmator.data(), &Pingmator::newProp);
-  connect(this, static_cast<void (PingmatorWindow::*)(int)>(&PingmatorWindow::selectProp), m_pingmator.data(), &Pingmator::selectProp);
-  connect(this, &PingmatorWindow::attachProp, m_pingmator.data(), &Pingmator::attachProp);
-  connect(this, &PingmatorWindow::propPositionChanged, m_pingmator.data(), &Pingmator::propPositionChanged);
-  connect(this, &PingmatorWindow::propScaleChanged, m_pingmator.data(), &Pingmator::propScaleChanged);
-  connect(this, &PingmatorWindow::propRotationChanged, m_pingmator.data(), &Pingmator::propRotationChanged);
-  connect(this, &PingmatorWindow::deleteProp, m_pingmator.data(), &Pingmator::deleteProp);
-  connect(this, &PingmatorWindow::clearProps, m_pingmator.data(), &Pingmator::clearProps);
-  connect(m_pingmator.data(), &Pingmator::newPropUi, this, &PingmatorWindow::onNewProp);
-  connect(m_pingmator.data(), &Pingmator::selectPropUi, this, &PingmatorWindow::onSelectProp);
-  connect(m_pingmator.data(), &Pingmator::deletePropUi, this, &PingmatorWindow::onDeleteProp);
-  connect(m_pingmator.data(), &Pingmator::clearPropsUi, this, &PingmatorWindow::onClearProps);
-  connect(m_pingmator.data(), &Pingmator::enablePropsUi, this, &PingmatorWindow::enableProps);
-  connect(m_pingmator.data(), &Pingmator::enableAvatarRotationUi, this, &PingmatorWindow::enableAvatarRotation);
-  connect(m_pingmator.data(), &Pingmator::enableAvatarPositionUi, this, &PingmatorWindow::enableAvatarPosition);
-  connect(m_pingmator.data(), &Pingmator::updatePropSpinsUi, this, &PingmatorWindow::updatePropSpins);
+  connect(this, &PinglyMotionWindow::newProp, m_pinglyMotion.data(), &PinglyMotion::newProp);
+  connect(this, static_cast<void (PinglyMotionWindow::*)(int)>(&PinglyMotionWindow::selectProp), m_pinglyMotion.data(), &PinglyMotion::selectProp);
+  connect(this, &PinglyMotionWindow::attachProp, m_pinglyMotion.data(), &PinglyMotion::attachProp);
+  connect(this, &PinglyMotionWindow::propPositionChanged, m_pinglyMotion.data(), &PinglyMotion::propPositionChanged);
+  connect(this, &PinglyMotionWindow::propScaleChanged, m_pinglyMotion.data(), &PinglyMotion::propScaleChanged);
+  connect(this, &PinglyMotionWindow::propRotationChanged, m_pinglyMotion.data(), &PinglyMotion::propRotationChanged);
+  connect(this, &PinglyMotionWindow::deleteProp, m_pinglyMotion.data(), &PinglyMotion::deleteProp);
+  connect(this, &PinglyMotionWindow::clearProps, m_pinglyMotion.data(), &PinglyMotion::clearProps);
+  connect(m_pinglyMotion.data(), &PinglyMotion::newPropUi, this, &PinglyMotionWindow::onNewProp);
+  connect(m_pinglyMotion.data(), &PinglyMotion::selectPropUi, this, &PinglyMotionWindow::onSelectProp);
+  connect(m_pinglyMotion.data(), &PinglyMotion::deletePropUi, this, &PinglyMotionWindow::onDeleteProp);
+  connect(m_pinglyMotion.data(), &PinglyMotion::clearPropsUi, this, &PinglyMotionWindow::onClearProps);
+  connect(m_pinglyMotion.data(), &PinglyMotion::enablePropsUi, this, &PinglyMotionWindow::enableProps);
+  connect(m_pinglyMotion.data(), &PinglyMotion::enableAvatarRotationUi, this, &PinglyMotionWindow::enableAvatarRotation);
+  connect(m_pinglyMotion.data(), &PinglyMotion::enableAvatarPositionUi, this, &PinglyMotionWindow::enableAvatarPosition);
+  connect(m_pinglyMotion.data(), &PinglyMotion::updatePropSpinsUi, this, &PinglyMotionWindow::updatePropSpins);
 
   connect(this,SIGNAL(enableEaseInOut(bool)),ui->easeInOutGroup,SLOT(setEnabled(bool)));
 
@@ -548,7 +548,7 @@ PingmatorWindow::PingmatorWindow() :
   }
 }
 
-void PingmatorWindow::setRemoteControl(bool on,bool showInfo)
+void PinglyMotionWindow::setRemoteControl(bool on,bool showInfo)
 {
   if(on)
   {
@@ -588,7 +588,7 @@ void PingmatorWindow::setRemoteControl(bool on,bool showInfo)
 }
 
 // the title says so while other programs can control Pingmator
-void PingmatorWindow::updateWindowTitle()
+void PinglyMotionWindow::updateWindowTitle()
 {
   QString title="Pingmator "+Constants::buildLabel()+" ["+currentFile+"]";
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
@@ -599,12 +599,12 @@ void PingmatorWindow::updateWindowTitle()
   setWindowTitle(title);
 }
 
-PingmatorWindow::~PingmatorWindow()
+PinglyMotionWindow::~PinglyMotionWindow()
 {
   fileExit();
 }
 
-void PingmatorWindow::queueAfterShow()
+void PinglyMotionWindow::queueAfterShow()
 {
   // QTimer creates a timerEvent
   // - This is a convenient way to queue "afterShow" to
@@ -612,13 +612,13 @@ void PingmatorWindow::queueAfterShow()
   QTimer::singleShot(0, this, SLOT(afterShow()));
 }
 
-void PingmatorWindow::afterShow()
+void PinglyMotionWindow::afterShow()
 {
   updateChecker.onStartup();
 }
 
 // slot gets called by AnimationView::mousePressEvent()
-void PingmatorWindow::partClicked(BVHNode* node, QVector3D rotation, RotationLimits limits, QVector3D position)
+void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, RotationLimits limits, QVector3D position)
 {
   ui->avatarPropsTab->setCurrentIndex(0);
   enableProps(false);
@@ -682,7 +682,7 @@ void PingmatorWindow::partClicked(BVHNode* node, QVector3D rotation, RotationLim
 }
 
 // slot gets called by AnimationView::mouseMoveEvent()
-void PingmatorWindow::partDragged(BVHNode* node,double x,double y,double z)
+void PinglyMotionWindow::partDragged(BVHNode* node,double x,double y,double z)
 {
   if(node)
   {
@@ -729,7 +729,7 @@ void PingmatorWindow::partDragged(BVHNode* node,double x,double y,double z)
 }
 
 // slot gets called by AnimationView::propClicked()
-void PingmatorWindow::propClicked(Prop* prop)
+void PinglyMotionWindow::propClicked(Prop* prop)
 {
   ui->avatarPropsTab->setCurrentIndex(1);
 
@@ -742,7 +742,7 @@ void PingmatorWindow::propClicked(Prop* prop)
 }
 
 // slot gets called by AnimationView::mouseMoveEvent()
-void PingmatorWindow::propDragged(Prop* prop,double x,double y,double z)
+void PinglyMotionWindow::propDragged(Prop* prop,double x,double y,double z)
 {
   double newX = prop->xPosition() + x;
   double newY = prop->yPosition() + y;
@@ -752,7 +752,7 @@ void PingmatorWindow::propDragged(Prop* prop,double x,double y,double z)
 }
 
 // slot gets called by AnimationView::mouseMoveEvent()
-void PingmatorWindow::propScaled(Prop* prop,double x,double y,double z)
+void PinglyMotionWindow::propScaled(Prop* prop,double x,double y,double z)
 {
   double newX = prop->xScale() + x;
   double newY = prop->yScale() + y;
@@ -762,7 +762,7 @@ void PingmatorWindow::propScaled(Prop* prop,double x,double y,double z)
 }
 
 // slot gets called by AnimationView::mouseMoveEvent()
-void PingmatorWindow::propRotated(Prop* prop,double x,double y,double z)
+void PinglyMotionWindow::propRotated(Prop* prop,double x,double y,double z)
 {
   double newX = prop->xRotation() + x;
   double newY = prop->yRotation() + y;
@@ -772,7 +772,7 @@ void PingmatorWindow::propRotated(Prop* prop,double x,double y,double z)
 }
 
 // slot gets called by AnimationView::mouseButtonClicked()
-void PingmatorWindow::backgroundClicked()
+void PinglyMotionWindow::backgroundClicked()
 {
   currentPart=0;
 
@@ -787,7 +787,7 @@ void PingmatorWindow::backgroundClicked()
 // (dock widgets) that can be resized, moved to another side, or torn off
 // into their own window. Each panel only goes where its shape fits: the
 // timeline is wide (top or bottom), the properties are tall (left or right).
-void PingmatorWindow::buildDocks()
+void PinglyMotionWindow::buildDocks()
 {
   setDockOptions(QMainWindow::AnimatedDocks);
 
@@ -871,7 +871,7 @@ void PingmatorWindow::buildDocks()
   // Options > Show Properties, next to Show Timeline
   QAction* showPropertiesAction=m_propertiesDock->toggleViewAction();
   showPropertiesAction->setText(tr("Show Properties"));
-  ui->menuOptions->insertAction(ui->optionsConfigurePingmatorAction,showPropertiesAction);
+  ui->menuOptions->insertAction(ui->optionsConfigurePinglyMotionAction,showPropertiesAction);
   // closing the timeline with its own button unticks Show Timeline
   connect(m_timelineDock->toggleViewAction(),&QAction::toggled,
           ui->optionsShowTimelineAction,&QAction::setChecked);
@@ -893,7 +893,7 @@ void PingmatorWindow::buildDocks()
 // Options > Light...: three sliders that change the body light at once.
 // The dialog stays open while you work; the values are saved with the
 // other settings.
-void PingmatorWindow::showLightDialog()
+void PinglyMotionWindow::showLightDialog()
 {
   if(QDialog* open=findChild<QDialog*>("lightDialog"))
   {
@@ -970,7 +970,7 @@ void PingmatorWindow::showLightDialog()
 
 // The properties panel is as wide as its contents need - no more, no less.
 // Called again when the theme changes, since that changes the widget sizes.
-void PingmatorWindow::fitPropertiesWidth()
+void PinglyMotionWindow::fitPropertiesWidth()
 {
   QWidget* panel=m_propertiesScroll->widget();
   panel->ensurePolished();
@@ -981,7 +981,7 @@ void PingmatorWindow::fitPropertiesWidth()
 // joint picker in the properties panel: tabs Body / Face / Hands / Other
 // above a table with the joints of that tab. Replaces the old "Edit Part"
 // drop-down list. Only the list is filtered; the 3D view shows all joints.
-void PingmatorWindow::buildJointPicker()
+void PinglyMotionWindow::buildJointPicker()
 {
   m_jointTabs=new QTabBar(ui->jointPicker);
   m_jointTabs->setObjectName("jointTabs");
@@ -1036,7 +1036,7 @@ void PingmatorWindow::buildJointPicker()
 
 // fill the joint table with the joints of the current tab
 // track numbers: 0 = position, then every skeleton node, "Site" = End Site
-void PingmatorWindow::fillJointTable()
+void PinglyMotionWindow::fillJointTable()
 {
   const QStringList names=ui->animationView->partNames();
   const int tab=m_jointTabs->currentIndex();
@@ -1064,7 +1064,7 @@ void PingmatorWindow::fillJointTable()
 }
 
 // mark the selected joint in the table, if it is on the current tab
-void PingmatorWindow::showSelectedTrack()
+void PinglyMotionWindow::showSelectedTrack()
 {
   QSignalBlocker block(m_jointTable);
   const int row=nodeMapping.indexOf(m_selectedTrack);
@@ -1079,7 +1079,7 @@ void PingmatorWindow::showSelectedTrack()
 }
 
 // select a joint in the table and switch to its tab (does not select it in the view)
-void PingmatorWindow::selectTrackInTable(int track)
+void PinglyMotionWindow::selectTrackInTable(int track)
 {
   m_selectedTrack=track;
   const QStringList names=ui->animationView->partNames();
@@ -1099,7 +1099,7 @@ void PingmatorWindow::selectTrackInTable(int track)
 
 // fill the joint table and "Attach To" from the skeleton
 // track numbers: 0 = position, then every skeleton node, "Site" = End Site
-void PingmatorWindow::buildPartLists()
+void PinglyMotionWindow::buildPartLists()
 {
   const QStringList names=ui->animationView->partNames();
 
@@ -1113,7 +1113,7 @@ void PingmatorWindow::buildPartLists()
 }
 
 // joint groups were shown or hidden: redraw the view, timeline and part list
-void PingmatorWindow::jointGroupsChanged()
+void PinglyMotionWindow::jointGroupsChanged()
 {
   ui->animationView->jointGroupsChanged();
   ui->timelineView->layoutChanged();
@@ -1125,7 +1125,7 @@ void PingmatorWindow::jointGroupsChanged()
 }
 
 // a joint was chosen in the joint table (or the file was opened)
-void PingmatorWindow::partChoice()
+void PinglyMotionWindow::partChoice()
 {
   const int nodeNumber=m_selectedTrack;
   // selectPart will fire partClicked signal, so we don't bother
@@ -1138,7 +1138,7 @@ void PingmatorWindow::partChoice()
 }
 
 // gets called whenever a body part rotation slider is moved
-void PingmatorWindow::rotationSlider(const QObject* slider)
+void PinglyMotionWindow::rotationSlider(const QObject* slider)
 {
   Animation* anim=scene->getAnimation();
   QVector3D rotation = anim->getRotation(currentPart);
@@ -1173,7 +1173,7 @@ void PingmatorWindow::rotationSlider(const QObject* slider)
 }
 
 // gets called whenever a body part rotation value field gets changed
-void PingmatorWindow::rotationValue()
+void PinglyMotionWindow::rotationValue()
 {
   double x=ui->xRotationEdit->text().toDouble();
   double y=ui->yRotationEdit->text().toDouble();
@@ -1209,7 +1209,7 @@ void PingmatorWindow::rotationValue()
   updateKeyBtn();
 }
 
-void PingmatorWindow::positionSlider(const QObject* slider)
+void PinglyMotionWindow::positionSlider(const QObject* slider)
 {
   Animation* anim=scene->getAnimation();
   QVector3D position = anim->getPosition();
@@ -1240,7 +1240,7 @@ void PingmatorWindow::positionSlider(const QObject* slider)
   updateKeyBtn();
 }
 
-void PingmatorWindow::positionValue()
+void PinglyMotionWindow::positionValue()
 {
   qDebug("pingmator::positionValue()");
 
@@ -1274,7 +1274,7 @@ void PingmatorWindow::positionValue()
   updateKeyBtn();
 }
 
-void PingmatorWindow::updateInputs()
+void PinglyMotionWindow::updateInputs()
 {
   // deactivate redraw to reduce interface "jitter" during updating
   setUpdatesEnabled(false);
@@ -1362,7 +1362,7 @@ void PingmatorWindow::updateInputs()
   setUpdatesEnabled(true);
 }
 
-void PingmatorWindow::updateKeyBtn()
+void PinglyMotionWindow::updateKeyBtn()
 {
   Animation* anim=scene->getAnimation();
   qDebug("pingmator::updateKeyBtn(): anim=%p",(const void*) anim);
@@ -1390,7 +1390,7 @@ void PingmatorWindow::updateKeyBtn()
 //  timeline->repaint();
 }
 
-void PingmatorWindow::enableInputs(bool state)
+void PinglyMotionWindow::enableInputs(bool state)
 {
   // protection overrides state for keyframe button
   if(protect) state=false;
@@ -1401,7 +1401,7 @@ void PingmatorWindow::enableInputs(bool state)
   enableAvatarRotation(state);
 }
 
-void PingmatorWindow::frameTimeout()
+void PinglyMotionWindow::frameTimeout()
 {
   // only if we are still playing
   if(playstate!=PLAYSTATE_STOPPED)
@@ -1426,7 +1426,7 @@ void PingmatorWindow::frameTimeout()
   }
 }
 
-void PingmatorWindow::nextPlaystate()
+void PinglyMotionWindow::nextPlaystate()
 {
 //  qDebug("pingmator::nextPlaystate(): current playstate %d",(int) playstate);
 
@@ -1475,7 +1475,7 @@ void PingmatorWindow::nextPlaystate()
   updateInputs();
 }
 
-void PingmatorWindow::setFPS(int fps)
+void PinglyMotionWindow::setFPS(int fps)
 {
   qDebug("pingmator::setFPS(%d)",fps);
 
@@ -1490,7 +1490,7 @@ void PingmatorWindow::setFPS(int fps)
   calculateLongestRunningTime();
 }
 
-void PingmatorWindow::frameSlider(int position)
+void PinglyMotionWindow::frameSlider(int position)
 {
   // check if we are at the first frame and if it's protected
   if(position==0 && UserSettings::protectFirstFrame()) protect=true;
@@ -1503,7 +1503,7 @@ void PingmatorWindow::frameSlider(int position)
   updateInputs();
 }
 
-void PingmatorWindow::setAvatarShape(int shape)
+void PinglyMotionWindow::setAvatarShape(int shape)
 {
   Animation* anim=scene->getAnimation();
   if(!anim) return;
@@ -1515,13 +1515,13 @@ void PingmatorWindow::setAvatarShape(int shape)
   ui->animationView->update();
 }
 
-void PingmatorWindow::setAvatarScale(int percent)
+void PinglyMotionWindow::setAvatarScale(int percent)
 {
   scene->getAnimation()->setAvatarScale(percent/100.0);
   ui->animationView->update();
 }
 
-void PingmatorWindow::numFramesChanged(int num)
+void PinglyMotionWindow::numFramesChanged(int num)
 {
   if(num<1) num=1;
   Animation* anim=scene->getAnimation();
@@ -1538,7 +1538,7 @@ void PingmatorWindow::numFramesChanged(int num)
   updateInputs();
 }
 
-void PingmatorWindow::easeInChanged(int change)
+void PinglyMotionWindow::easeInChanged(int change)
 {
   bool ease=false;
   if(change==Qt::Checked) ease=true;
@@ -1547,7 +1547,7 @@ void PingmatorWindow::easeInChanged(int change)
   anim->setEaseIn(currentPart,anim->getFrame(),ease);
 }
 
-void PingmatorWindow::easeOutChanged(int change)
+void PinglyMotionWindow::easeOutChanged(int change)
 {
   bool ease=false;
   if(change==Qt::Checked) ease=true;
@@ -1559,7 +1559,7 @@ void PingmatorWindow::easeOutChanged(int change)
 // ------ Menu Action Slots (Callbacks) -----------
 
 // Menu action: File / New
-void PingmatorWindow::fileNew()
+void PinglyMotionWindow::fileNew()
 {
   if(!clearOpenFiles()) return;
   emit clearProps();
@@ -1616,7 +1616,7 @@ void PingmatorWindow::fileNew()
   anim->setDirty(false);
 }
 
-QString PingmatorWindow::selectFileToOpen(const QString& caption)
+QString PinglyMotionWindow::selectFileToOpen(const QString& caption)
 {
    //// For some unknown reason passing "this" locks up the OSX pingmator window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
@@ -1640,12 +1640,12 @@ QString PingmatorWindow::selectFileToOpen(const QString& caption)
 }
 
 // Menu action: File / Open ...
-void PingmatorWindow::fileOpen()
+void PinglyMotionWindow::fileOpen()
 {
   fileOpen(QString());
 }
 
-void PingmatorWindow::fileOpen(const QString& name)
+void PinglyMotionWindow::fileOpen(const QString& name)
 {
   QString file=name;
 
@@ -1667,12 +1667,12 @@ void PingmatorWindow::fileOpen(const QString& name)
 }
 
 // Menu action: File / Add New Animation ...
-void PingmatorWindow::fileAdd()
+void PinglyMotionWindow::fileAdd()
 {
   fileAdd(QString());
 }
 
-void PingmatorWindow::fileAdd(const QString& name)
+void PinglyMotionWindow::fileAdd(const QString& name)
 {
   QString file=name;
 
@@ -1684,7 +1684,7 @@ void PingmatorWindow::fileAdd(const QString& name)
 }
 
 // shows why when the file cannot be opened; the reason is kept for remote control
-bool PingmatorWindow::checkAnimationFile(const QString& file)
+bool PinglyMotionWindow::checkAnimationFile(const QString& file)
 {
   m_lastOpenError.clear();
   if(!QFile::exists(file))
@@ -1699,7 +1699,7 @@ bool PingmatorWindow::checkAnimationFile(const QString& file)
 }
 
 // adds a file that checkAnimationFile() has accepted
-void PingmatorWindow::addAnimationFile(const QString& file)
+void PinglyMotionWindow::addAnimationFile(const QString& file)
 {
   {
     addToOpenFiles(file);
@@ -1759,7 +1759,7 @@ void PingmatorWindow::addAnimationFile(const QString& file)
 
 // Menu Action: File / Save
 // returns true when the animation was saved
-bool PingmatorWindow::fileSave()
+bool PinglyMotionWindow::fileSave()
 {
   if (currentFile == m_untitledName)
     return fileSaveAs();
@@ -1775,7 +1775,7 @@ bool PingmatorWindow::fileSave()
 
 // Menu Action: File / Save As...
 // returns true when the animation was saved
-bool PingmatorWindow::fileSaveAs()
+bool PinglyMotionWindow::fileSaveAs()
 {
   // the user picks the file type: .bvh for Second Life, .avm keeps Pingmator's own data
   const QString filters=m_bvhFilter+";;"+m_avmFilter;
@@ -1816,7 +1816,7 @@ bool PingmatorWindow::fileSaveAs()
 }
 
 // Menu Action: File / Export For Second Life
-void PingmatorWindow::fileExportForSecondLife()
+void PinglyMotionWindow::fileExportForSecondLife()
 {
   // FIXME: think of a sensible thing to do when the animation has not been saved
   //        as .avm yet
@@ -1837,7 +1837,7 @@ void PingmatorWindow::fileExportForSecondLife()
 }
 
 // Menu Action: File / Load Props...
-void PingmatorWindow::fileLoadProps()
+void PinglyMotionWindow::fileLoadProps()
 {
    //// For some unknown reason passing "this" locks up the OSX pingmator window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
@@ -1893,7 +1893,7 @@ void PingmatorWindow::fileLoadProps()
 }
 
 // Menu Action: File / Save Props...
-void PingmatorWindow::fileSaveProps()
+void PinglyMotionWindow::fileSaveProps()
 {
    //// For some unknown reason passing "this" locks up the OSX pingmator window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
@@ -1939,7 +1939,7 @@ void PingmatorWindow::fileSaveProps()
 }
 
 // Menu Action: File / Exit
-void PingmatorWindow::fileExit()
+void PinglyMotionWindow::fileExit()
 {
   if(!clearOpenFiles())
     return;
@@ -1951,7 +1951,7 @@ void PingmatorWindow::fileExit()
 }
 
 // Menu Action: Edit / Cut
-void PingmatorWindow::editCut()
+void PinglyMotionWindow::editCut()
 {
 //  qDebug("pingmator::editCut()");
   scene->getAnimation()->cutFrame();
@@ -1960,7 +1960,7 @@ void PingmatorWindow::editCut()
 }
 
 // Menu Action: Edit / Copy
-void PingmatorWindow::editCopy()
+void PinglyMotionWindow::editCopy()
 {
   scene->getAnimation()->copyFrame();
   frameDataValid=true;
@@ -1968,7 +1968,7 @@ void PingmatorWindow::editCopy()
 }
 
 // Menu Action: Edit / Paste
-void PingmatorWindow::editPaste()
+void PinglyMotionWindow::editPaste()
 {
   if(frameDataValid)
   {
@@ -1979,20 +1979,20 @@ void PingmatorWindow::editPaste()
 }
 
 // Menu Action: Edit / Paste
-void PingmatorWindow::toolsOptimizeBVH()
+void PinglyMotionWindow::toolsOptimizeBVH()
 {
   scene->getAnimation()->optimize();
   updateInputs();
 }
 
 // Menu Action: Options / Skeleton
-void PingmatorWindow::setSkeleton(bool on)
+void PinglyMotionWindow::setSkeleton(bool on)
 {
   UserSettings::setSkeleton(on);
 }
 
 // Menu Action: Options / Loop
-void PingmatorWindow::setLoop(bool on)
+void PinglyMotionWindow::setLoop(bool on)
 {
   UserSettings::setLoop(on);
 
@@ -2005,7 +2005,7 @@ void PingmatorWindow::setLoop(bool on)
 }
 
 // Menu Action: Options / Joint Limits
-void PingmatorWindow::setJointLimits(bool on)
+void PinglyMotionWindow::setJointLimits(bool on)
 {
   UserSettings::setJointLimits(on);
   Animation* anim=scene->getAnimation();
@@ -2017,7 +2017,7 @@ void PingmatorWindow::setJointLimits(bool on)
 }
 
 // Menu Action: Options / Protect First Frame
-void PingmatorWindow::setProtectFirstFrame(bool on)
+void PinglyMotionWindow::setProtectFirstFrame(bool on)
 {
   UserSettings::setProtectFirstFrame(on);
   if(on && ui->currentFrameSlider->value()==0) protect=true;
@@ -2028,13 +2028,13 @@ void PingmatorWindow::setProtectFirstFrame(bool on)
 }
 
 // Menu Action: Options / Show Timeline
-void PingmatorWindow::showTimeline(bool on)
+void PinglyMotionWindow::showTimeline(bool on)
 {
   m_timelineDock->setVisible(on);
 }
 
 // Menu Action: Options / Configure Pingmator
-void PingmatorWindow::configure()
+void PinglyMotionWindow::configure()
 {
   UserSettingsDialog* dialog=new UserSettingsDialog(this);
   connect(dialog,SIGNAL(configChanged()),this,SLOT(configChanged()));
@@ -2044,13 +2044,13 @@ void PingmatorWindow::configure()
   delete dialog;
 }
 
-void PingmatorWindow::configChanged()
+void PinglyMotionWindow::configChanged()
 {
   ui->animationView->update();
 }
 
 // Menu Action: Help / About ...
-void PingmatorWindow::helpAbout()
+void PinglyMotionWindow::helpAbout()
 {
   QScopedPointer<AboutDialog> dialog(new AboutDialog(this));
   connect(dialog.data(), SIGNAL(checkUpdates()),
@@ -2060,14 +2060,14 @@ void PingmatorWindow::helpAbout()
   dialog->exec();
 }
 
-void PingmatorWindow::helpWhatsNew()
+void PinglyMotionWindow::helpWhatsNew()
 {
   updateChecker.showNews();
 }
 
 // checks if a file already exists at the given path and displays a warning message
 // returns true if it's ok to save/overwrite, else returns false
-bool PingmatorWindow::checkFileOverwrite(const QFileInfo& fileInfo)
+bool PinglyMotionWindow::checkFileOverwrite(const QFileInfo& fileInfo)
 {
   // get file info
   if(fileInfo.exists())
@@ -2078,67 +2078,67 @@ bool PingmatorWindow::checkFileOverwrite(const QFileInfo& fileInfo)
   return true;
 }
 
-void PingmatorWindow::setX(float x)
+void PinglyMotionWindow::setX(float x)
 {
   setSliderValue(ui->xRotationSlider,ui->xRotationEdit,x);
 }
 
-void PingmatorWindow::setY(float y)
+void PinglyMotionWindow::setY(float y)
 {
   setSliderValue(ui->yRotationSlider,ui->yRotationEdit,y);
 }
 
-void PingmatorWindow::setZ(float z)
+void PinglyMotionWindow::setZ(float z)
 {
   setSliderValue(ui->zRotationSlider,ui->zRotationEdit,z);
 }
 
-float PingmatorWindow::getX()
+float PinglyMotionWindow::getX()
 {
   return ui->xRotationSlider->value() / m_precision;
 }
 
-float PingmatorWindow::getY()
+float PinglyMotionWindow::getY()
 {
   return ui->yRotationSlider->value() / m_precision;
 }
 
-float PingmatorWindow::getZ()
+float PinglyMotionWindow::getZ()
 {
   return ui->zRotationSlider->value() / m_precision;
 }
 
-void PingmatorWindow::setXPos(float x)
+void PinglyMotionWindow::setXPos(float x)
 {
   setSliderValue(ui->xPositionSlider,ui->xPositionEdit,x);
 }
 
-void PingmatorWindow::setYPos(float y)
+void PinglyMotionWindow::setYPos(float y)
 {
   setSliderValue(ui->yPositionSlider,ui->yPositionEdit,y);
 }
 
-void PingmatorWindow::setZPos(float z)
+void PinglyMotionWindow::setZPos(float z)
 {
   setSliderValue(ui->zPositionSlider,ui->zPositionEdit,z);
 }
 
-float PingmatorWindow::getXPos()
+float PinglyMotionWindow::getXPos()
 {
   return ui->xPositionSlider->value() / m_precision;
 }
 
-float PingmatorWindow::getYPos()
+float PinglyMotionWindow::getYPos()
 {
   return ui->yPositionSlider->value() / m_precision;
 }
 
-float PingmatorWindow::getZPos()
+float PinglyMotionWindow::getZPos()
 {
   return ui->zPositionSlider->value() / m_precision;
 }
 
-void PingmatorWindow::enableProps(bool state)
+void PinglyMotionWindow::enableProps(bool state)
 {
   ui->propPositionGroup->setEnabled(state);
   ui->propScaleGroup->setEnabled(state);
@@ -2147,17 +2147,17 @@ void PingmatorWindow::enableProps(bool state)
   ui->attachToComboBox->setEnabled(state);
 }
 
-void PingmatorWindow::enableAvatarRotation(bool state)
+void PinglyMotionWindow::enableAvatarRotation(bool state)
 {
   ui->rotationGroupBox->setEnabled(state);
 }
 
-void PingmatorWindow::enableAvatarPosition(bool state)
+void PinglyMotionWindow::enableAvatarPosition(bool state)
 {
   ui->positionGroupBox->setEnabled(state);
 }
 
-void PingmatorWindow::updatePropSpins(const QVector3D& position, const QVector3D& rotation, const QVector3D& scale)
+void PinglyMotionWindow::updatePropSpins(const QVector3D& position, const QVector3D& rotation, const QVector3D& scale)
 {
   ui->propXPosSpin->blockSignals(true);
   ui->propYPosSpin->blockSignals(true);
@@ -2196,7 +2196,7 @@ void PingmatorWindow::updatePropSpins(const QVector3D& position, const QVector3D
   ui->propZScaleSpin->blockSignals(false);
 }
 
-void PingmatorWindow::onNewProp(const QString& propName)
+void PinglyMotionWindow::onNewProp(const QString& propName)
 {
   ui->propNameCombo->addItem(propName);
   ui->propNameCombo->setCurrentIndex(ui->propNameCombo->count() - 1);
@@ -2204,7 +2204,7 @@ void PingmatorWindow::onNewProp(const QString& propName)
   ui->attachToComboBox->setCurrentIndex(0);
 }
 
-void PingmatorWindow::onSelectProp(bool isSelected, int attachmentPoint)
+void PinglyMotionWindow::onSelectProp(bool isSelected, int attachmentPoint)
 {
   ui->propNameCombo->setEnabled(isSelected);
   ui->deletePropButton->setEnabled(isSelected);
@@ -2215,7 +2215,7 @@ void PingmatorWindow::onSelectProp(bool isSelected, int attachmentPoint)
   ui->animationView->selectProp();
 }
 
-void PingmatorWindow::onDeleteProp(const QString propName)
+void PinglyMotionWindow::onDeleteProp(const QString propName)
 {
   for (int index = 0; index < ui->propNameCombo->count(); index++)
   {
@@ -2227,18 +2227,18 @@ void PingmatorWindow::onDeleteProp(const QString propName)
   }
 }
 
-void PingmatorWindow::onClearProps()
+void PinglyMotionWindow::onClearProps()
 {
   ui->propNameCombo->clear();
 }
 
-void PingmatorWindow::selectProp()
+void PinglyMotionWindow::selectProp()
 {
   emit selectProp(ui->propNameCombo->currentIndex());
 }
 
 // helper function to prevent feedback between the two widgets
-void PingmatorWindow::setSliderValue(QSlider* slider,QLineEdit* edit,float value)
+void PinglyMotionWindow::setSliderValue(QSlider* slider,QLineEdit* edit,float value)
 {
   slider->blockSignals(true);
   edit->blockSignals(true);
@@ -2248,7 +2248,7 @@ void PingmatorWindow::setSliderValue(QSlider* slider,QLineEdit* edit,float value
   slider->blockSignals(false);
 }
 
-void PingmatorWindow::updateFps()
+void PinglyMotionWindow::updateFps()
 {
   int fps=scene->getAnimation()->fps();
 
@@ -2264,7 +2264,7 @@ void PingmatorWindow::updateFps()
 }
 
 // Adds a file to the open files list, and adds the entry in the combo box
-void PingmatorWindow::addToOpenFiles(const QString& fileName)
+void PinglyMotionWindow::addToOpenFiles(const QString& fileName)
 {
     openFiles.append(fileName);
 
@@ -2277,7 +2277,7 @@ void PingmatorWindow::addToOpenFiles(const QString& fileName)
 
 // asks what to do with unsaved animations: Save (default), Discard or Cancel.
 // returns true when it is fine to go on (saved or discarded)
-bool PingmatorWindow::askToSaveChanges()
+bool PinglyMotionWindow::askToSaveChanges()
 {
   QList<Animation*> unsaved;
   for(int index=0;index<animationIds.count();index++)
@@ -2315,7 +2315,7 @@ bool PingmatorWindow::askToSaveChanges()
 }
 
 // empty out the open files list
-bool PingmatorWindow::clearOpenFiles()
+bool PinglyMotionWindow::clearOpenFiles()
 {
   if(!askToSaveChanges()) return false;
 
@@ -2332,14 +2332,14 @@ bool PingmatorWindow::clearOpenFiles()
 }
 
 // convenience function to set window title in a defined way
-void PingmatorWindow::setCurrentFile(const QString& fileName)
+void PinglyMotionWindow::setCurrentFile(const QString& fileName)
 {
   currentFile=fileName;
   updateWindowTitle();
 }
 
 // this slot gets called from Animation::setFrame(int)
-void PingmatorWindow::setCurrentFrame(int frame)
+void PinglyMotionWindow::setCurrentFrame(int frame)
 {
   // make sure current frame is only updated when no animation is playing (manual change,
   // program startup) or that only the currently selected animation updates the frame
@@ -2363,7 +2363,7 @@ void PingmatorWindow::setCurrentFrame(int frame)
 }
 
 // gets called by selecting an animation from the animation combo box
-void PingmatorWindow::animationChanged(int which)
+void PinglyMotionWindow::animationChanged(int which)
 {
   qDebug("pingmator::animationChanged(%d)",which);
 
@@ -2379,7 +2379,7 @@ void PingmatorWindow::animationChanged(int which)
 }
 
 // gets called from AnimationView::animationSelected()
-void PingmatorWindow::selectAnimation(Animation* animation)
+void PinglyMotionWindow::selectAnimation(Animation* animation)
 {
   // find animation index in list of open files
   for(unsigned int index=0;index< (unsigned int) animationIds.count();index++)
@@ -2416,7 +2416,7 @@ void PingmatorWindow::selectAnimation(Animation* animation)
 }
 
 // set loop in point (user view, so always +1)
-void PingmatorWindow::setLoopInPoint(int inFrame)
+void PinglyMotionWindow::setLoopInPoint(int inFrame)
 {
   Animation* anim=scene->getAnimation();
 
@@ -2441,7 +2441,7 @@ void PingmatorWindow::setLoopInPoint(int inFrame)
 }
 
 // set loop out point (user view, so always +1)
-void PingmatorWindow::setLoopOutPoint(int outFrame)
+void PinglyMotionWindow::setLoopOutPoint(int outFrame)
 {
   Animation* anim=scene->getAnimation();
   int numOfFrames=anim->getNumberOfFrames();
@@ -2459,7 +2459,7 @@ void PingmatorWindow::setLoopOutPoint(int outFrame)
   ui->loopOutPercentLabel->setText(QString("(%1%)").arg(outFrame*100/numOfFrames));
 }
 
-void PingmatorWindow::setPlaystate(PlayState state)
+void PinglyMotionWindow::setPlaystate(PlayState state)
 {
 //  qDebug("pingmator::setPlaystate(): setting playstate %d",(int) state);
   // set state
@@ -2478,7 +2478,7 @@ void PingmatorWindow::setPlaystate(PlayState state)
 
 // prevent closing of main window if there are unsaved changes
 // options, window size and panel layout, remembered for next time
-void PingmatorWindow::saveUserSettings()
+void PinglyMotionWindow::saveUserSettings()
 {
   UserSettings::setSkeleton(ui->optionsSkeletonAction->isChecked());
   UserSettings::setJointLimits(ui->optionsJointLimitsAction->isChecked());
@@ -2492,7 +2492,7 @@ void PingmatorWindow::saveUserSettings()
   UserSettings::writeSettings();
 }
 
-void PingmatorWindow::closeEvent(QCloseEvent* event)
+void PinglyMotionWindow::closeEvent(QCloseEvent* event)
 {
   if(!clearOpenFiles())
     event->ignore();
@@ -2505,7 +2505,7 @@ void PingmatorWindow::closeEvent(QCloseEvent* event)
 }
 
 // calculates the longest running time of all animations
-double PingmatorWindow::calculateLongestRunningTime()
+double PinglyMotionWindow::calculateLongestRunningTime()
 {
   qDebug("pingmator::calculateLongestRunningTime()");
   longestRunningTime=0.0;
@@ -2524,243 +2524,243 @@ double PingmatorWindow::calculateLongestRunningTime()
 
 // ------- Menu Action Slots --------
 
-void PingmatorWindow::on_fileNewAction_triggered()
+void PinglyMotionWindow::on_fileNewAction_triggered()
 {
   fileNew();
 }
 
-void PingmatorWindow::on_fileOpenAction_triggered()
+void PinglyMotionWindow::on_fileOpenAction_triggered()
 {
   fileOpen();
 }
 
-void PingmatorWindow::on_fileAddAction_triggered()
+void PinglyMotionWindow::on_fileAddAction_triggered()
 {
   fileAdd();
 }
 
-void PingmatorWindow::on_fileSaveAction_triggered()
+void PinglyMotionWindow::on_fileSaveAction_triggered()
 {
   fileSave();
 }
 
-void PingmatorWindow::on_fileSaveAsAction_triggered()
+void PinglyMotionWindow::on_fileSaveAsAction_triggered()
 {
   fileSaveAs();
 }
 
-void PingmatorWindow::on_fileExportForSecondLifeAction_triggered()
+void PinglyMotionWindow::on_fileExportForSecondLifeAction_triggered()
 {
   fileExportForSecondLife();
 }
 
-void PingmatorWindow::on_fileLoadPropsAction_triggered()
+void PinglyMotionWindow::on_fileLoadPropsAction_triggered()
 {
   fileLoadProps();
 }
 
-void PingmatorWindow::on_fileSavePropsAction_triggered()
+void PinglyMotionWindow::on_fileSavePropsAction_triggered()
 {
   fileSaveProps();
 }
 
-void PingmatorWindow::on_fileExitAction_triggered()
+void PinglyMotionWindow::on_fileExitAction_triggered()
 {
   fileExit();
 }
 
-void PingmatorWindow::on_editCutAction_triggered()
+void PinglyMotionWindow::on_editCutAction_triggered()
 {
   editCut();
 }
 
-void PingmatorWindow::on_editCopyAction_triggered()
+void PinglyMotionWindow::on_editCopyAction_triggered()
 {
   editCopy();
 }
 
-void PingmatorWindow::on_editPasteAction_triggered()
+void PinglyMotionWindow::on_editPasteAction_triggered()
 {
   editPaste();
 }
 
-void PingmatorWindow::on_toolsOptimizeBVHAction_triggered()
+void PinglyMotionWindow::on_toolsOptimizeBVHAction_triggered()
 {
   toolsOptimizeBVH();
 }
 
-void PingmatorWindow::on_toolsMirrorAction_triggered()
+void PinglyMotionWindow::on_toolsMirrorAction_triggered()
 {
   Animation* anim=scene->getAnimation();
   anim->mirror(currentPart);
   updateInputs();
 }
 
-void PingmatorWindow::on_optionsSkeletonAction_toggled(bool on)
+void PinglyMotionWindow::on_optionsSkeletonAction_toggled(bool on)
 {
   setSkeleton(on);
 }
 
-void PingmatorWindow::on_optionsJointLimitsAction_toggled(bool on)
+void PinglyMotionWindow::on_optionsJointLimitsAction_toggled(bool on)
 {
   setJointLimits(on);
 }
 
-void PingmatorWindow::on_optionsLoopAction_toggled(bool on)
+void PinglyMotionWindow::on_optionsLoopAction_toggled(bool on)
 {
   setLoop(on);
 }
 
-void PingmatorWindow::on_optionsProtectFirstFrameAction_toggled(bool on)
+void PinglyMotionWindow::on_optionsProtectFirstFrameAction_toggled(bool on)
 {
   setProtectFirstFrame(on);
 }
 
-void PingmatorWindow::on_optionsShowTimelineAction_toggled(bool on)
+void PinglyMotionWindow::on_optionsShowTimelineAction_toggled(bool on)
 {
   showTimeline(on);
 }
 
-void PingmatorWindow::on_optionsConfigurePingmatorAction_triggered()
+void PinglyMotionWindow::on_optionsConfigurePinglyMotionAction_triggered()
 {
   configure();
 }
 
-void PingmatorWindow::on_helpAboutAction_triggered()
+void PinglyMotionWindow::on_helpAboutAction_triggered()
 {
   helpAbout();
 }
 
-void PingmatorWindow::on_helpWhatsNewAction_triggered()
+void PinglyMotionWindow::on_helpWhatsNewAction_triggered()
 {
   helpWhatsNew();
 }
 
 // ------- Additional Toolbar Element Slots --------
 
-void PingmatorWindow::on_resetCameraAction_triggered()
+void PinglyMotionWindow::on_resetCameraAction_triggered()
 {
   emit resetCamera();
 }
 
 // ------- UI Element Slots --------
 
-void PingmatorWindow::on_selectAnimationCombo_activated(int which)
+void PinglyMotionWindow::on_selectAnimationCombo_activated(int which)
 {
   animationChanged(which);
 }
 
-void PingmatorWindow::on_figureCombo_activated(int newShape)
+void PinglyMotionWindow::on_figureCombo_activated(int newShape)
 {
   setAvatarShape(newShape);
 }
 
-void PingmatorWindow::on_scaleSpin_valueChanged(int newValue)
+void PinglyMotionWindow::on_scaleSpin_valueChanged(int newValue)
 {
   setAvatarScale(newValue);
 }
 
-void PingmatorWindow::on_xRotationEdit_editingFinished()
+void PinglyMotionWindow::on_xRotationEdit_editingFinished()
 {
   rotationValue();
 }
 
-void PingmatorWindow::on_xRotationSlider_valueChanged(int)
+void PinglyMotionWindow::on_xRotationSlider_valueChanged(int)
 {
   rotationSlider(sender());
 }
 
-void PingmatorWindow::on_yRotationEdit_editingFinished()
+void PinglyMotionWindow::on_yRotationEdit_editingFinished()
 {
   rotationValue();
 }
 
-void PingmatorWindow::on_yRotationSlider_valueChanged(int)
+void PinglyMotionWindow::on_yRotationSlider_valueChanged(int)
 {
   rotationSlider(sender());
 }
 
-void PingmatorWindow::on_zRotationEdit_editingFinished()
+void PinglyMotionWindow::on_zRotationEdit_editingFinished()
 {
   rotationValue();
 }
 
-void PingmatorWindow::on_zRotationSlider_valueChanged(int)
+void PinglyMotionWindow::on_zRotationSlider_valueChanged(int)
 {
   rotationSlider(sender());
 }
 
-void PingmatorWindow::on_xPositionEdit_editingFinished()
+void PinglyMotionWindow::on_xPositionEdit_editingFinished()
 {
   positionValue();
 }
 
-void PingmatorWindow::on_xPositionSlider_valueChanged(int)
+void PinglyMotionWindow::on_xPositionSlider_valueChanged(int)
 {
   positionSlider(sender());
 }
 
-void PingmatorWindow::on_yPositionEdit_editingFinished()
+void PinglyMotionWindow::on_yPositionEdit_editingFinished()
 {
   positionValue();
 }
 
-void PingmatorWindow::on_yPositionSlider_valueChanged(int)
+void PinglyMotionWindow::on_yPositionSlider_valueChanged(int)
 {
   positionSlider(sender());
 }
 
-void PingmatorWindow::on_zPositionEdit_editingFinished()
+void PinglyMotionWindow::on_zPositionEdit_editingFinished()
 {
   positionValue();
 }
 
-void PingmatorWindow::on_zPositionSlider_valueChanged(int)
+void PinglyMotionWindow::on_zPositionSlider_valueChanged(int)
 {
   positionSlider(sender());
 }
 
-void PingmatorWindow::on_easeInCheck_stateChanged(int newState)
+void PinglyMotionWindow::on_easeInCheck_stateChanged(int newState)
 {
   easeInChanged(newState);
 }
 
-void PingmatorWindow::on_easeOutCheck_stateChanged(int newState)
+void PinglyMotionWindow::on_easeOutCheck_stateChanged(int newState)
 {
   easeOutChanged(newState);
 }
 
-void PingmatorWindow::on_newBoxPropButton_clicked()
+void PinglyMotionWindow::on_newBoxPropButton_clicked()
 {
   emit newProp(Prop::Box, cubeMesh);
 }
 
-void PingmatorWindow::on_newSpherePropButton_clicked()
+void PinglyMotionWindow::on_newSpherePropButton_clicked()
 {
   emit newProp(Prop::Sphere, sphereMesh);
 }
 
-void PingmatorWindow::on_newConePropButton_clicked()
+void PinglyMotionWindow::on_newConePropButton_clicked()
 {
   emit newProp(Prop::Cone, coneMesh);
 }
 
-void PingmatorWindow::on_newTorusPropButton_clicked()
+void PinglyMotionWindow::on_newTorusPropButton_clicked()
 {
   emit newProp(Prop::Torus, torusMesh);
 }
 
-void PingmatorWindow::on_propNameCombo_activated(int index)
+void PinglyMotionWindow::on_propNameCombo_activated(int index)
 {
   selectProp();
 }
 
-void PingmatorWindow::on_deletePropButton_clicked()
+void PinglyMotionWindow::on_deletePropButton_clicked()
 {
   emit deleteProp();
 }
 
-void PingmatorWindow::on_attachToComboBox_activated(int attachmentPoint)
+void PinglyMotionWindow::on_attachToComboBox_activated(int attachmentPoint)
 {
   // FIXME: find better solution for filtering endpoint for joints
   if (ui->attachToComboBox->currentText() == "-")
@@ -2770,84 +2770,84 @@ void PingmatorWindow::on_attachToComboBox_activated(int attachmentPoint)
   emit attachProp(attachmentPoint);
 }
 
-void PingmatorWindow::on_propXPosSpin_valueChanged(int)
+void PinglyMotionWindow::on_propXPosSpin_valueChanged(int)
 {
   emit propPositionChanged(ui->propXPosSpin->value(), ui->propYPosSpin->value(), ui->propZPosSpin->value());
 }
 
-void PingmatorWindow::on_propYPosSpin_valueChanged(int)
+void PinglyMotionWindow::on_propYPosSpin_valueChanged(int)
 {
   emit propPositionChanged(ui->propXPosSpin->value(), ui->propYPosSpin->value(), ui->propZPosSpin->value());
 }
 
-void PingmatorWindow::on_propZPosSpin_valueChanged(int)
+void PinglyMotionWindow::on_propZPosSpin_valueChanged(int)
 {
   emit propPositionChanged(ui->propXPosSpin->value(), ui->propYPosSpin->value(), ui->propZPosSpin->value());
 }
 
-void PingmatorWindow::on_propXScaleSpin_valueChanged(int)
+void PinglyMotionWindow::on_propXScaleSpin_valueChanged(int)
 {
   emit propScaleChanged(ui->propXScaleSpin->value(), ui->propYScaleSpin->value(), ui->propZScaleSpin->value());
 }
 
-void PingmatorWindow::on_propYScaleSpin_valueChanged(int)
+void PinglyMotionWindow::on_propYScaleSpin_valueChanged(int)
 {
   emit propScaleChanged(ui->propXScaleSpin->value(), ui->propYScaleSpin->value(), ui->propZScaleSpin->value());
 }
 
-void PingmatorWindow::on_propZScaleSpin_valueChanged(int)
+void PinglyMotionWindow::on_propZScaleSpin_valueChanged(int)
 {
   emit propScaleChanged(ui->propXScaleSpin->value(), ui->propYScaleSpin->value(), ui->propZScaleSpin->value());
 }
 
-void PingmatorWindow::on_propXRotSpin_valueChanged(int)
+void PinglyMotionWindow::on_propXRotSpin_valueChanged(int)
 {
   emit propRotationChanged(ui->propXRotSpin->value(), ui->propYRotSpin->value(), ui->propZRotSpin->value());
 }
 
-void PingmatorWindow::on_propYRotSpin_valueChanged(int)
+void PinglyMotionWindow::on_propYRotSpin_valueChanged(int)
 {
   emit propRotationChanged(ui->propXRotSpin->value(), ui->propYRotSpin->value(), ui->propZRotSpin->value());
 }
 
-void PingmatorWindow::on_propZRotSpin_valueChanged(int)
+void PinglyMotionWindow::on_propZRotSpin_valueChanged(int)
 {
   emit propRotationChanged(ui->propXRotSpin->value(), ui->propYRotSpin->value(), ui->propZRotSpin->value());
 }
 
-void PingmatorWindow::on_currentFrameSlider_valueChanged(int newValue)
+void PinglyMotionWindow::on_currentFrameSlider_valueChanged(int newValue)
 {
   frameSlider(newValue);
 }
 
-void PingmatorWindow::on_playButton_clicked()
+void PinglyMotionWindow::on_playButton_clicked()
 {
   nextPlaystate();
 }
 
-void PingmatorWindow::on_keyframeButton_toggled(bool on)
+void PinglyMotionWindow::on_keyframeButton_toggled(bool on)
 {
   qDebug("on_keyframeButton_toggled(%d)",(int) on);
   scene->getAnimation()->toggleKeyFrame(currentPart); // (animationView->getSelectedPart());
   ui->animationView->update();
 }
 
-void PingmatorWindow::on_loopInSpinBox_editingFinished()
+void PinglyMotionWindow::on_loopInSpinBox_editingFinished()
 {
   setLoopInPoint(ui->loopInSpinBox->value());
 }
 
-void PingmatorWindow::on_loopOutSpinBox_editingFinished()
+void PinglyMotionWindow::on_loopOutSpinBox_editingFinished()
 {
   setLoopOutPoint(ui->loopOutSpinBox->value());
 }
 
-void PingmatorWindow::on_framesSpin_valueChanged(int newValue)
+void PinglyMotionWindow::on_framesSpin_valueChanged(int newValue)
 {
   numFramesChanged(newValue);
 }
 
-void PingmatorWindow::on_fpsSpin_valueChanged(int newValue)
+void PinglyMotionWindow::on_fpsSpin_valueChanged(int newValue)
 {
   setFPS(newValue);
 }

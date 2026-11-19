@@ -539,7 +539,7 @@ void ControlTest::openFileAcceptsDingle()
   QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
   QCOMPARE(QFileInfo(m_host->opened).fileName(), QString("jump.dingle"));
 
-  // what the window does with it (PingmatorWindow::checkAnimationFile, then Animation)
+  // what the window does with it (PinglyMotionWindow::checkAnimationFile, then Animation)
   QString error;
   QVERIFY2(BVH::checkFile(m_host->opened, &error), qPrintable(error));
   BVH bvh;

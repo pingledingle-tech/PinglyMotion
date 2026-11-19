@@ -81,10 +81,10 @@ ADD_TEST (NAME jointinfo WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingl
 SET_TESTS_PROPERTIES (jointinfo PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the Ruth2 v4 body: mesh file, joints, loading as RuthBody (#110)
-ADD_EXECUTABLE (pingmator_ruth2_tests tst_ruth2.cpp ${CORE_SRC})
-TARGET_INCLUDE_DIRECTORIES (pingmator_ruth2_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pingmator_ruth2_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
-ADD_TEST (NAME ruth2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingmator_ruth2_tests)
+ADD_EXECUTABLE (pinglymotion_ruth2_tests tst_ruth2.cpp ${CORE_SRC})
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_ruth2_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_ruth2_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME ruth2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_ruth2_tests)
 SET_TESTS_PROPERTIES (ruth2 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # camera: mouse buttons and keys, turning around the pivot (#88)

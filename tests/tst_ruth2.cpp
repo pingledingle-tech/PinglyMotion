@@ -21,14 +21,14 @@ namespace
 
 QString ruthFile()
 {
-  return Constants::pingmatorDataPath() + "/character/ruth2/ruth2.pmm";
+  return Constants::pinglyMotionDataPath() + "/character/ruth2/ruth2.pmm";
 }
 
 // SL names of every joint in Pingmator's skeleton (bin/data/skin_joints.txt)
 QSet<QString> skeletonSlNames()
 {
   QSet<QString> names;
-  QFile file(Constants::pingmatorDataPath() + "/skin_joints.txt");
+  QFile file(Constants::pinglyMotionDataPath() + "/skin_joints.txt");
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return names;
   QTextStream in(&file);
   while (!in.atEnd())
@@ -183,7 +183,7 @@ void Ruth2Test::bodyLoads()
 {
   AvatarSkin skin;
   QString error;
-  QVERIFY2(skin.load(Constants::pingmatorDataPath(), AvatarSkin::RuthBody, &error), qPrintable(error));
+  QVERIFY2(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody, &error), qPrintable(error));
   QCOMPARE(skin.body(), AvatarSkin::RuthBody);
   QCOMPARE(skin.parts().size(), 5);
   QCOMPARE(skin.jointNames().size(), 97);
@@ -214,7 +214,7 @@ void Ruth2Test::bodyLoads()
   QVERIFY2(right < -28.0f && right > -36.0f, qPrintable(QString::number(right)));
 
   // switching back gives the system avatar again
-  QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::ClassicBody, &error));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::ClassicBody, &error));
   QCOMPARE(skin.parts().size(), 6);
 }
 
@@ -224,7 +224,7 @@ void Ruth2Test::bodyLoads()
 void Ruth2Test::eyesInHead()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::RuthBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody));
   const struct { const char* part; const char* joint; } eyes[] = {
     {"Ruth2 eye left", "mEyeLeft"}, {"Ruth2 eye right", "mEyeRight"}};
   for (const auto& eye : eyes)
@@ -247,7 +247,7 @@ void Ruth2Test::eyesInHead()
 void Ruth2Test::fingerBends()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::RuthBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody));
   skin.skin(turnJoint(skin, "mHandIndex1Left", 60, QVector3D(0, 0, 1)));
   const AvatarSkin::Part* body = partNamed(skin, "Ruth2 body");
   QVERIFY(body);
@@ -268,7 +268,7 @@ void Ruth2Test::fingerBends()
 void Ruth2Test::jawOpens()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::RuthBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody));
   const int jaw = skin.jointNames().indexOf("mFaceJaw");
   QVERIFY(jaw >= 0);
   QMatrix4x4 turn;   // 20 degrees around the jaw joint
@@ -315,9 +315,9 @@ void Ruth2Test::environmentSelectsRuth()
   {
     BodyVariable var("ruth2");
     AvatarSkin skin;
-    QVERIFY(skin.load(Constants::pingmatorDataPath()));
+    QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
     QCOMPARE(skin.body(), AvatarSkin::RuthBody);
-    QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::MaxBody));
+    QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
     QCOMPARE(skin.body(), AvatarSkin::RuthBody);
   }
   {
@@ -328,14 +328,14 @@ void Ruth2Test::environmentSelectsRuth()
     BodyVariable var("something else");
     QCOMPARE(AvatarSkin::bodyOverride(), -1);
     AvatarSkin skin;
-    QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::MaxBody));
+    QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
     QCOMPARE(skin.body(), AvatarSkin::MaxBody);
   }
   {
     BodyVariable var{QByteArray()};
     QCOMPARE(AvatarSkin::bodyOverride(), -1);
     AvatarSkin skin;
-    QVERIFY(skin.load(Constants::pingmatorDataPath()));
+    QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
     QCOMPARE(skin.body(), AvatarSkin::ClassicBody);
   }
 }

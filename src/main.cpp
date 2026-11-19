@@ -26,7 +26,7 @@
 #include <csignal>
 #endif
 
-#include "pingmatorwindow.h"
+#include "pinglymotionwindow.h"
 #include "constants.h"
 
 #ifndef Q_OS_WIN
@@ -56,11 +56,11 @@ int main( int argc, char ** argv )
 
     QApplication application(argc, argv);
     qInfo("Pingmator %s", qUtf8Printable(Constants::buildLabel()));
-    PingmatorWindow* pingmatorWindow = new PingmatorWindow();
+    PinglyMotionWindow* pinglyMotionWindow = new PinglyMotionWindow();
     // Queue an event to show the main window
-    pingmatorWindow->show();
+    pinglyMotionWindow->show();
     // Queue an event to execute a method after the main window shows
-    pingmatorWindow->queueAfterShow();
+    pinglyMotionWindow->queueAfterShow();
 #ifndef Q_OS_WIN
     QTimer endTimer;
     QObject::connect(&endTimer, &QTimer::timeout, [&application]() { if (endRequested) application.quit(); });

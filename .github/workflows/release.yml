@@ -15,7 +15,7 @@ name: Release
 #
 # Versions: 0.3.0 is a normal release. 0.3.0-beta.1 is a beta: it is
 # published as a pre-release, which the update check in the program ignores.
-# CMakeLists.txt, src/pingmator.rc and bin/NEWS hold the version without the
+# CMakeLists.txt, src/pinglymotion.rc and bin/NEWS hold the version without the
 # -beta part (0.3.0).
 #
 # The build jobs only read the repository. Each writes a SHA256 checksum and
@@ -65,8 +65,8 @@ jobs:
           if [ -n "$INPUT_VERSION" ]; then VERSION="${INPUT_VERSION#v}"; else VERSION="${GITHUB_REF_NAME#v}"; fi
           echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$' || { echo "Not a version number: $VERSION (like 0.3.0 or 0.3.0-beta.1)"; exit 1; }
           BASE="${VERSION%%-*}"
-          grep -q "PROJECT (pingmator VERSION $BASE)" CMakeLists.txt || { echo "CMakeLists.txt does not say version $BASE"; exit 1; }
-          grep -q "\"$BASE.0\"" src/pingmator.rc || { echo "src/pingmator.rc does not say version $BASE.0"; exit 1; }
+          grep -q "PROJECT (pinglymotion VERSION $BASE)" CMakeLists.txt || { echo "CMakeLists.txt does not say version $BASE"; exit 1; }
+          grep -q "\"$BASE.0\"" src/pinglymotion.rc || { echo "src/pinglymotion.rc does not say version $BASE.0"; exit 1; }
           grep -q "^Version $BASE\$" bin/NEWS || { echo "bin/NEWS has no entry for version $BASE"; exit 1; }
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           if [ "$VERSION" != "$BASE" ]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
@@ -192,7 +192,7 @@ jobs:
           mkdir -p "$APPDIR/usr/bin/mcp"
           cp tools/mcp/pingmator_mcp.py tools/mcp/commands.json tools/mcp/README.txt "$APPDIR/usr/bin/mcp/"
           # the Windows icon is 32x32; scaled up for the desktop
-          convert "src/icons/pingmator.ico[0]" -filter point -resize 256x256 \
+          convert "src/icons/pinglymotion.ico[0]" -filter point -resize 256x256 \
             "$APPDIR/usr/share/icons/hicolor/256x256/apps/pingmator.png"
           cat > "$APPDIR/usr/share/applications/pingmator.desktop" <<'EOF'
           [Desktop Entry]

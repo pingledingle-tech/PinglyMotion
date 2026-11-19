@@ -18,8 +18,8 @@ IF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
   SET (CMAKE_WIN32_EXECUTABLE TRUE)
 ENDIF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
 
-# The version number. Also change it in src/pingmator.rc and bin/NEWS.
-PROJECT (pingmator VERSION 0.3.0)
+# The version number. Also change it in src/pinglymotion.rc and bin/NEWS.
+PROJECT (pinglymotion VERSION 0.3.0)
 
 # Timestamp when program was built; pass the current timestamp to the compiler
 STRING (TIMESTAMP BUILD_TIMESTAMP_Z "%Y-%m-%d %H:%M:%S UTC" UTC)
@@ -66,7 +66,7 @@ IF (NOT DEFINED VERSION_NUMBER)
 ENDIF (NOT DEFINED VERSION_NUMBER)
 ADD_DEFINITIONS (-DVERSION_NUMBER="${VERSION_NUMBER}")
 
-# Data files of a program that runs from its build folder (see Constants::pingmatorDataPath)
+# Data files of a program that runs from its build folder (see Constants::pinglyMotionDataPath)
 ADD_DEFINITIONS (-DPINGLYMOTION_SOURCE_DATAPATH="${CMAKE_SOURCE_DIR}/bin/data")
 
 # Update channel: 2 = release, 1 = beta, anything else = development build

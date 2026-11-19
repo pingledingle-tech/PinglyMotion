@@ -87,7 +87,7 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   }
 
   QString skinError;
-  if(!m_avatarSkin.load(Constants::pingmatorDataPath(),&skinError))
+  if(!m_avatarSkin.load(Constants::pinglyMotionDataPath(),&skinError))
     qWarning("AnimationView::AnimationView(): no avatar body: %s",skinError.toLatin1().constData());
 
   // the reference skeleton decides how many tracks the timeline has
@@ -971,11 +971,11 @@ bool AnimationView::setBody(AvatarSkin::Body wanted)
   if(m_avatarSkin.isLoaded() && m_avatarSkin.body()==wanted) return true;
 
   QString error;
-  bool ok=m_avatarSkin.load(Constants::pingmatorDataPath(),wanted,&error);
+  bool ok=m_avatarSkin.load(Constants::pinglyMotionDataPath(),wanted,&error);
   if(!ok)
   {
     qWarning("AnimationView::setBody(): %s",error.toLatin1().constData());
-    if(wanted!=AvatarSkin::ClassicBody && !m_avatarSkin.load(Constants::pingmatorDataPath(),AvatarSkin::ClassicBody,&error))
+    if(wanted!=AvatarSkin::ClassicBody && !m_avatarSkin.load(Constants::pinglyMotionDataPath(),AvatarSkin::ClassicBody,&error))
       qWarning("AnimationView::setBody(): no avatar body: %s",error.toLatin1().constData());
   }
   update();

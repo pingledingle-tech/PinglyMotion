@@ -26,12 +26,12 @@
 class Prop;
 class Scene;
 
-class Pingmator : public QObject
+class PinglyMotion : public QObject
 {
     Q_OBJECT
 
   public:
-    explicit Pingmator(QObject* parent = nullptr);
+    explicit PinglyMotion(QObject* parent = nullptr);
 
     // TODO Temporary method while logic is moved around
     void setScene(Scene* scene);

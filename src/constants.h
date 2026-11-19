@@ -48,7 +48,7 @@ class Constants
     static const QString organizationName();
     static const QString organizationDomain();
 
-    static const QString pingmatorDataPath();
+    static const QString pinglyMotionDataPath();
     static const QString defaultPosePath();
     static const QString limitsFilePath();
     static const QString maleBvhPath();
@@ -78,7 +78,7 @@ class Constants
     static const QString m_buildNumber;
     static const UpdateChannel m_updateChannel;
     static const QString m_applicationName;
-    static const QString m_pingmatorDataPath;
+    static const QString m_pinglyMotionDataPath;
     static int m_numParts;
 };
 

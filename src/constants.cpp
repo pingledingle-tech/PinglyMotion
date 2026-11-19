@@ -64,9 +64,9 @@
 #endif
 
 #ifdef PINGLYMOTION_DATAPATH
-  const QString Constants::m_pingmatorDataPath = QString(PINGLYMOTION_DATAPATH);
+  const QString Constants::m_pinglyMotionDataPath = QString(PINGLYMOTION_DATAPATH);
 #else
-  const QString Constants::m_pingmatorDataPath = QString();
+  const QString Constants::m_pinglyMotionDataPath = QString();
 #endif
 
 
@@ -133,11 +133,11 @@ const QString Constants::organizationDomain()
   return QString("pingledingle-tech.github.io");
 }
 
-const QString Constants::pingmatorDataPath()
+const QString Constants::pinglyMotionDataPath()
 {
-  if (!m_pingmatorDataPath.isNull())
+  if (!m_pinglyMotionDataPath.isNull())
   {
-    return m_pingmatorDataPath;
+    return m_pinglyMotionDataPath;
   }
   else
   {
@@ -159,32 +159,32 @@ const QString Constants::pingmatorDataPath()
 
 const QString Constants::defaultPosePath()
 {
-  return pingmatorDataPath() + "/TPose.avm";
+  return pinglyMotionDataPath() + "/TPose.avm";
 }
 
 const QString Constants::limitsFilePath()
 {
-  return pingmatorDataPath() + "/SL.lim";
+  return pinglyMotionDataPath() + "/SL.lim";
 }
 
 const QString Constants::maleBvhPath()
 {
-  return pingmatorDataPath() + "/SLMale.bvh";
+  return pinglyMotionDataPath() + "/SLMale.bvh";
 }
 
 const QString Constants::femaleBvhPath()
 {
-  return pingmatorDataPath() + "/SLFemale.bvh";
+  return pinglyMotionDataPath() + "/SLFemale.bvh";
 }
 
 const QString Constants::cubeMeshFilePath()
 {
-  return pingmatorDataPath() + "/cube.obj";
+  return pinglyMotionDataPath() + "/cube.obj";
 }
 
 const QString Constants::torusMeshFilePath()
 {
-  return pingmatorDataPath() + "/torus.obj";
+  return pinglyMotionDataPath() + "/torus.obj";
 }
 
 const int Constants::keyWidth()
