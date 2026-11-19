@@ -20,6 +20,8 @@ PinglyMotion is under active development. Automated checks validate exported BVH
 
 There are no releases in this repository yet (the project moved on 18 November 2026); see [Releases](https://github.com/pingledingle-tech/PinglyMotion/releases) for packages when they appear. For the latest development build on Windows, open [Actions](https://github.com/pingledingle-tech/PinglyMotion/actions), choose a successful **Build** run and download `PinglyMotion-windows`. Extract the archive and run `PinglyMotion.exe`, keeping its `data` folder alongside it.
 
+New to animating? Read [Your first animation](docs/FIRST_ANIMATION.md).
+
 ## Where PinglyMotion is going
 
 The vision is an approachable path from an idea or existing movement to an animation for Second Life: create or import, adjust, preview, export and reuse.
