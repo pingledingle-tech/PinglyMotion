@@ -194,7 +194,7 @@ void BentoTest::maleAndFemaleMatch()
 // bento_joints.txt lists every joint once, and every skeleton joint is in it
 void BentoTest::jointList()
 {
-  QFile file(Constants::pingmatorDataPath() + "/bento_joints.txt");
+  QFile file(Constants::pinglyMotionDataPath() + "/bento_joints.txt");
   QVERIFY(file.open(QIODevice::ReadOnly));
 
   QStringList listed;
@@ -520,7 +520,7 @@ void BentoTest::fingersBendTowardsPalm()
 void BentoTest::bundledPosesInsideLimits_data()
 {
   QTest::addColumn<QString>("file");
-  const QString data = Constants::pingmatorDataPath();
+  const QString data = Constants::pinglyMotionDataPath();
   for (const char* name : {"TPose.avm", "TPose.bvh", "Relaxed.avm", "Relaxed.bvh", "Relaxed_2.bvh"})
     QTest::newRow(name) << data + "/" + name;
 }
@@ -658,7 +658,7 @@ void BentoTest::avatarMeshes()
 
   LLMMesh mesh;
   QString error;
-  QVERIFY2(mesh.load(Constants::pingmatorDataPath() + "/character/" + file, &error), qPrintable(error));
+  QVERIFY2(mesh.load(Constants::pinglyMotionDataPath() + "/character/" + file, &error), qPrintable(error));
   QCOMPARE(mesh.vertices.size(), vertexCount);
   QCOMPARE(mesh.normals.size(), vertexCount);
   QCOMPARE(mesh.triangleCount(), triangleCount);
@@ -692,7 +692,7 @@ void BentoTest::skinRestPose()
 {
   AvatarSkin skin;
   QString error;
-  QVERIFY2(skin.load(Constants::pingmatorDataPath(), &error), qPrintable(error));
+  QVERIFY2(skin.load(Constants::pinglyMotionDataPath(), &error), qPrintable(error));
   QCOMPARE(skin.parts().size(), 6);   // head, upper body, lower body, eyelashes, two eyes
 
   // the mesh follows the 19 classic joints and the two eyes
@@ -717,7 +717,7 @@ void BentoTest::skinRestPose()
 void BentoTest::skinFollowsSkeleton()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath()));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
 
   BVH bvh;
   BVHNode* root = bvh.animRead(Constants::femaleBvhPath(), Constants::limitsFilePath());
@@ -746,7 +746,7 @@ void BentoTest::skinFollowsSkeleton()
 void BentoTest::skinBendsElbow()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath()));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
   const QStringList names = skin.jointNames();
   const int elbow = names.indexOf("lForeArm");
   const int hand = names.indexOf("lHand");
@@ -796,7 +796,7 @@ void BentoTest::skinBendsElbow()
 void BentoTest::skinMaleShape()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath()));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
   QVector<QVector<QVector3D>> female;
   for (const AvatarSkin::Part& part : skin.parts()) female << part.restVertices;
 
@@ -897,7 +897,7 @@ void BentoTest::badFilesAreRefused()
 // a data folder in the folder the program is started from must not be read (#7)
 void BentoTest::dataFolderIsNotTheCurrentFolder()
 {
-  const QString path = Constants::pingmatorDataPath();
+  const QString path = Constants::pinglyMotionDataPath();
   QVERIFY2(QDir::isAbsolutePath(path), qPrintable(path));
   QVERIFY2(QFile::exists(Constants::femaleBvhPath()), qPrintable(Constants::femaleBvhPath()));
 
@@ -905,7 +905,7 @@ void BentoTest::dataFolderIsNotTheCurrentFolder()
   QVERIFY(QDir(planted.path()).mkpath("data"));
   const QString before = QDir::currentPath();
   QVERIFY(QDir::setCurrent(planted.path()));
-  const QString inPlantedFolder = Constants::pingmatorDataPath();
+  const QString inPlantedFolder = Constants::pinglyMotionDataPath();
   QDir::setCurrent(before);
   QCOMPARE(inPlantedFolder, path);
 }
@@ -953,7 +953,7 @@ void BentoTest::propFiles()
 // a mesh whose vertex weight is NaN must be refused, not cast to a joint number (#16, #22)
 void BentoTest::meshWithBadWeightIsRefused()
 {
-  QFile source(Constants::pingmatorDataPath() + "/character/avatar_upper_body.llm");
+  QFile source(Constants::pinglyMotionDataPath() + "/character/avatar_upper_body.llm");
   QVERIFY(source.open(QIODevice::ReadOnly));
   QByteArray data = source.readAll();
 
@@ -1017,7 +1017,7 @@ void BentoTest::maxBodyLoads()
 {
   AvatarSkin skin;
   QString error;
-  QVERIFY2(skin.load(Constants::pingmatorDataPath(), AvatarSkin::MaxBody, &error), qPrintable(error));
+  QVERIFY2(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody, &error), qPrintable(error));
   QCOMPARE(skin.body(), AvatarSkin::MaxBody);
   QCOMPARE(skin.parts().size(), 4);   // body, eyelashes, two eyes
 
@@ -1044,7 +1044,7 @@ void BentoTest::maxBodyLoads()
   QVERIFY2(highest > 25.0f && highest < 34.0f, qPrintable(QString::number(highest)));
 
   // switching back gives the system avatar again
-  QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::ClassicBody, &error));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::ClassicBody, &error));
   QCOMPARE(skin.parts().size(), 6);
 }
 
@@ -1052,7 +1052,7 @@ void BentoTest::maxBodyLoads()
 void BentoTest::maxFingerBends()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::MaxBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
   const QStringList finger = {"mHandIndex1Left", "mHandIndex2Left", "mHandIndex3Left"};
   for (const QString& name : finger) QVERIFY(jointIndex(skin, name) >= 0);
   skin.skin(turnJoint(skin, QStringList{"mHandIndex1Left"}, 60, QVector3D(0, 0, 1)));
@@ -1075,7 +1075,7 @@ void BentoTest::maxFingerBends()
 void BentoTest::maxJawOpens()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pingmatorDataPath(), AvatarSkin::MaxBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
   skin.skin(turnJoint(skin, QStringList{"mFaceJaw"}, 20, QVector3D(1, 0, 0)));
 
   const int jaw = jointIndex(skin, "mFaceJaw");
@@ -1104,7 +1104,7 @@ void BentoTest::maxJawOpens()
 // a broken or hostile mesh file is refused whole, with a reason
 void BentoTest::badMaxMeshIsRefused_data()
 {
-  QFile source(Constants::pingmatorDataPath() + "/character/max/maxine.pmm");
+  QFile source(Constants::pinglyMotionDataPath() + "/character/max/maxine.pmm");
   QVERIFY(source.open(QIODevice::ReadOnly));
   const QByteArray good = source.readAll();
   QVERIFY(good.size() > 1000);
@@ -1144,7 +1144,7 @@ void BentoTest::badMaxMeshIsRefused()
   QDir(dir.path()).mkpath("character/max");
   // the rest of the data folder is the real one, so only the mesh is bad
   for (const char* name : {"skin_joints.txt"})
-    QVERIFY(QFile::copy(Constants::pingmatorDataPath() + "/" + name, dir.filePath(name)));
+    QVERIFY(QFile::copy(Constants::pinglyMotionDataPath() + "/" + name, dir.filePath(name)));
   QFile out(dir.filePath("character/max/maxine.pmm"));
   QVERIFY(out.open(QIODevice::WriteOnly));
   out.write(data);

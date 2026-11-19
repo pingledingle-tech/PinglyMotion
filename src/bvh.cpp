@@ -61,7 +61,7 @@ BVH::BVH()
 // read the list of Bento joints and their aliases (bin/data/bento_joints.txt)
 void BVH::loadBentoJoints()
 {
-  QFile file(Constants::pingmatorDataPath()+"/bento_joints.txt");
+  QFile file(Constants::pinglyMotionDataPath()+"/bento_joints.txt");
   if(!file.open(QIODevice::ReadOnly))
   {
     qDebug("BVH::loadBentoJoints(): bento_joints.txt not found, Bento joints disabled");

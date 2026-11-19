@@ -21,19 +21,19 @@
 #include "propmanager.h"
 #include "scene.h"
 
-#include "pingmator.h"
+#include "pinglymotion.h"
 
-Pingmator::Pingmator(QObject* parent) :
+PinglyMotion::PinglyMotion(QObject* parent) :
   QObject(parent)
 {
 }
 
-void Pingmator::setScene(Scene* scene)
+void PinglyMotion::setScene(Scene* scene)
 {
   m_scene = scene;
 }
 
-void Pingmator::newProp(Prop::PropType propType, QSharedPointer<Mesh> mesh)
+void PinglyMotion::newProp(Prop::PropType propType, QSharedPointer<Mesh> mesh)
 {
   const Prop* prop = m_scene->addProp(propType, mesh);
   if (prop != nullptr)
@@ -42,7 +42,7 @@ void Pingmator::newProp(Prop::PropType propType, QSharedPointer<Mesh> mesh)
   }
 }
 
-void Pingmator::selectProp(int index)
+void PinglyMotion::selectProp(int index)
 {
   const Prop* prop = static_cast<Prop*>(m_scene->propManager()->at(index));
   bool isSelected = (prop != nullptr);
@@ -59,7 +59,7 @@ void Pingmator::selectProp(int index)
   emit selectPropUi(isSelected, attachmentPoint);
 }
 
-void Pingmator::attachProp(int attachmentPoint)
+void PinglyMotion::attachProp(int attachmentPoint)
 {
   auto prop = selectedProp();
   prop->attach(attachmentPoint);
@@ -67,7 +67,7 @@ void Pingmator::attachProp(int attachmentPoint)
   emit repaint();
 }
 
-void Pingmator::propPositionChanged(double xPosition, double yPosition, double zPosition)
+void PinglyMotion::propPositionChanged(double xPosition, double yPosition, double zPosition)
 {
   auto prop = selectedProp();
   if (prop != nullptr)
@@ -77,7 +77,7 @@ void Pingmator::propPositionChanged(double xPosition, double yPosition, double z
   }
 }
 
-void Pingmator::propScaleChanged(double xScale, double yScale, double zScale)
+void PinglyMotion::propScaleChanged(double xScale, double yScale, double zScale)
 {
   auto prop = selectedProp();
   if (prop != nullptr)
@@ -87,7 +87,7 @@ void Pingmator::propScaleChanged(double xScale, double yScale, double zScale)
   }
 }
 
-void Pingmator::propRotationChanged(double xRotation, double yRotation, double zRotation)
+void PinglyMotion::propRotationChanged(double xRotation, double yRotation, double zRotation)
 {
   auto prop = selectedProp();
   if (prop != nullptr)
@@ -97,7 +97,7 @@ void Pingmator::propRotationChanged(double xRotation, double yRotation, double z
   }
 }
 
-void Pingmator::deleteProp()
+void PinglyMotion::deleteProp()
 {
   auto prop = selectedProp();
   if (prop != nullptr)
@@ -108,14 +108,14 @@ void Pingmator::deleteProp()
   }
 }
 
-void Pingmator::clearProps()
+void PinglyMotion::clearProps()
 {
   m_scene->clearProps();
   emit clearPropsUi();
   selectProp(-1);
 }
 
-Prop* Pingmator::selectedProp()
+Prop* PinglyMotion::selectedProp()
 {
   auto selectedPropId = m_scene->propManager()->getSelectedPropId();
   return m_scene->getPropById(selectedPropId);

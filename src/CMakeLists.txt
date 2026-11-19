@@ -27,8 +27,8 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
               prop.cpp
               propmanager.cpp
               releaseinfo.cpp
-              pingmator.cpp
-              pingmatorwindow.cpp
+              pinglymotion.cpp
+              pinglymotionwindow.cpp
               scene.cpp
               settings.cpp
               skinrenderer.cpp
@@ -45,7 +45,7 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
 
 # Interfaces
 SET (PINGLYMOTION_UI  aboutdialog.ui
-              pingmatorwindow.ui
+              pinglymotionwindow.ui
               updatenotificationdialog.ui
               usersettingsdialog.ui
               whatsnewdialog.ui)
@@ -55,12 +55,14 @@ SET (PINGLYMOTION_RSC icons.qrc)
 
 # Add the Windows resource file if applicable
 IF (WIN32)
-  SET (PINGLYMOTION_SRC ${PINGLYMOTION_SRC} pingmator.rc)
+  SET (PINGLYMOTION_SRC ${PINGLYMOTION_SRC} pinglymotion.rc)
 ENDIF (WIN32)
 
 # Compile and link (ui files and resources are handled by AUTOUIC/AUTORCC)
-ADD_EXECUTABLE (pingmator ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
-TARGET_LINK_LIBRARIES (pingmator ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
+TARGET_LINK_LIBRARIES (pinglymotion ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+# The program file keeps its old name for now (a later rename job changes it)
+SET_TARGET_PROPERTIES (pinglymotion PROPERTIES OUTPUT_NAME pingmator)
 
-# Install pingmator
-INSTALL (TARGETS pingmator DESTINATION ${INSTALL_BIN})
+# Install pinglymotion
+INSTALL (TARGETS pinglymotion DESTINATION ${INSTALL_BIN})

@@ -22,8 +22,8 @@
  * features added by Darkside Eldrich
  */
 
-#ifndef PINGMATORWINDOW_H
-#define PINGMATORWINDOW_H
+#ifndef PINGLYMOTIONWINDOW_H
+#define PINGLYMOTIONWINDOW_H
 
 #include <QMainWindow>
 #include <QTimer>
@@ -41,7 +41,7 @@ class QTableWidget;
 
 class Animation;
 class BVHNode;
-class Pingmator;
+class PinglyMotion;
 struct RotationLimits;
 class ControlApi;
 class ControlServer;
@@ -58,16 +58,16 @@ class QScrollArea;
 namespace Ui {
   class QDockWidget;
 
-class PingmatorWindow;
+class PinglyMotionWindow;
 }
 
-class PingmatorWindow : public QMainWindow
+class PinglyMotionWindow : public QMainWindow
 {
   Q_OBJECT
 
   public:
-    PingmatorWindow();
-    ~PingmatorWindow();
+    PinglyMotionWindow();
+    ~PinglyMotionWindow();
 
     void queueAfterShow();
 
@@ -128,7 +128,7 @@ class PingmatorWindow : public QMainWindow
     void on_optionsLoopAction_toggled(bool on);
     void on_optionsProtectFirstFrameAction_toggled(bool on);
     void on_optionsShowTimelineAction_toggled(bool on);
-    void on_optionsConfigurePingmatorAction_triggered();
+    void on_optionsConfigurePinglyMotionAction_triggered();
 
     void on_helpAboutAction_triggered();
     void on_helpWhatsNewAction_triggered();
@@ -339,11 +339,11 @@ class PingmatorWindow : public QMainWindow
 
     void selectProp();
 
-    QScopedPointer<Ui::PingmatorWindow> ui;
+    QScopedPointer<Ui::PinglyMotionWindow> ui;
 
     // TODO Temporary pointer while logic is moved around.
-    //  Eventually, Pingmator should own PingmatorWindow
-    QScopedPointer<Pingmator> m_pingmator;
+    //  Eventually, PinglyMotion should own PinglyMotionWindow
+    QScopedPointer<PinglyMotion> m_pinglyMotion;
 
     Scene* scene;
 
