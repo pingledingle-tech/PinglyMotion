@@ -1,6 +1,6 @@
 Branch: docs/goal-picture-name
-Status: active
-Pull request: pending
+Status: done
+Pull request: #118
 Files:
 - docs/images/posing-ux/main-window.png
 - docs/work/docs-goal-picture-name.md
