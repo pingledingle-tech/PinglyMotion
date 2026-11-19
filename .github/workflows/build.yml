@@ -90,6 +90,13 @@ jobs:
           cp build/src/pingmator.exe dist/
           cp -r bin/data dist/data
           cp bin/NEWS dist/
+          # test files for the project owner, next to the program: no separate downloads
+          cp -r examples dist/examples
+          if [ -d tests/motions ]; then
+            size=$(du -sk tests/motions | cut -f1)
+            if [ "$size" -gt 5120 ]; then echo "::warning::tests/motions is over 5 MB; see docs/DEV.md"; fi
+            cp -r tests/motions dist/test-motions
+          fi
           # the MCP server goes with the program, so both are updated together
           mkdir -p dist/mcp
           cp tools/mcp/pingmator_mcp.py tools/mcp/commands.json tools/mcp/README.txt dist/mcp/
