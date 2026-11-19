@@ -1,10 +1,8 @@
 Branch: feat/teaching-texts-step2
-Status: active
-Pull request: pending
+Status: done
+Pull request: #78
 Files:
 - docs/TEACHING.md
-- docs/PRODUCT.md
-- docs/ROADMAP.md
 
 ## What
 
