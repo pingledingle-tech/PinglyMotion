@@ -1,9 +1,9 @@
-# Pingmator – Security Audit
+# PinglyMotion – Security Audit
 
 | | |
 |---|---|
 | Date | 14 November 2026 |
-| Repository | `pingledingle-tech/Pingmator` (the old repository; the project continues as PinglyMotion) |
+| Repository | the old repository of the project (now PinglyMotion, formerly called Pingmator) |
 | Revisions | `main` @ `381bed1`, `aurora-link` @ `cc97e86` (2 commits ahead of / 2 behind `main`) |
 | Also reviewed | Receiving side of the live link: `pingledingle-tech/Aurora-Viewer-Fork`, branch `feat/pingmator-link` @ `58c4351` (`crates/aurora-viewer/src/pingmator_link/`) |
 | Scope | BVH/AVM/LIM/LLM/PRP parsers, HTTP control server, MCP server, Aurora live link, GitHub Actions, dependencies |
@@ -34,9 +34,9 @@ Every finding below was checked again against the code and workflows on `main` @
 | PM-11 | fixed | #31 (issue #14). Saving uses `QSaveFile`, `commit()` and stream status are checked, the error is passed on. Test `saveFailureIsReported`. (Not re-tested live: the audit sandbox runs as root, so a read-only folder does not fail.) |
 | PM-12 | fixed | #32 (issue #15). `control.json` still stays after a crash (checked), but the MCP server now sends the key only after the program on the port answers a nonce with HMAC-SHA256 of the key (`/api/hello`); the file is rewritten at the next start. |
 | PM-13 | fixed | #25, #33, #37 (issue #16). `ikOn[]` and `BVHNode` channel fields initialised, `Figure:` and weights range-checked before casting. No UBSan report in any test suite. |
-| AL-01 | not applicable (not verified) | #78 (issue #12). Pingmator no longer uses the fork's `pingmator_link` (port 17656); it uses Aurora's LiveMesh (port 17655) with a key file and HMAC challenge. Whether `pingmator_link` was removed from the fork, and how LiveMesh treats non-JSON or HTTP lines, could not be checked (no access to the fork in this run). |
+| AL-01 | not applicable (not verified) | #78 (issue #12). PinglyMotion no longer uses the fork's `pingmator_link` (port 17656); it uses Aurora's LiveMesh (port 17655) with a key file and HMAC challenge. Whether `pingmator_link` was removed from the fork, and how LiveMesh treats non-JSON or HTTP lines, could not be checked (no access to the fork in this run). |
 | AL-02 | not applicable (not verified) | #78 (issue #13). Same reason as AL-01: the finding is in the fork's `pingmator_link`. LiveMesh uses length-prefixed messages with size limits according to `docs/LIVE_LINK_RESEARCH.md`, but Aurora's code was not read. |
-| AL-03 | partly | #78 (issue #11). Pingmator now waits for Aurora's `hello` and proves itself with HMAC before sending a pose. It still does not check that the server is Aurora: any program on port 17655 can answer `{"ok":true}` and get the poses → [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23). |
+| AL-03 | partly | #78 (issue #11). PinglyMotion now waits for Aurora's `hello` and proves itself with HMAC before sending a pose. It still does not check that the server is Aurora: any program on port 17655 can answer `{"ok":true}` and get the poses → [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23). |
 | SC-01 | fixed | #38 (issue #17). Every action pinned to a full commit SHA; release split into build jobs (`contents: read`) and a publish job (`contents: write`) that only downloads artifacts. Dependabot updates actions. |
 | SC-02 | fixed | #58 (issue #18). Windows builds and releases use Qt 6.12.0 (`QT_VERSION` in `release.yml`). |
 | SC-03 | fixed | #38 (issue #19). `persist-credentials: false` in every checkout; `SHA256SUMS` published; `actions/attest-build-provenance`. Code signing (only "consider" in the fix) is not done. |
@@ -48,7 +48,7 @@ Every finding below was checked again against the code and workflows on `main` @
 | P-05 | fixed | #58. Qt 6.12.0 instead of 6.8.3, so the listed advisories no longer apply to the shipped DLLs. |
 | P-06 | fixed (reviewed) | #38, #58, [#24](https://github.com/pingledingle-tech/PinglyMotion/issues/24). aqtinstall read at the pinned commit `076e165`. Checksums for the Qt archives (`<archive>.sha256`) and for `Updates.xml` come from `mirrors.trusted_mirrors` (`get_hash()` in `aqt/helper.py`), which is `https://download.qt.io` in the shipped `settings.ini`; the archives come from `--base` / `baseurl` (also `download.qt.io` by default, and a random fallback mirror only after a connection error). So the checksums are never taken from a fallback mirror. A failed checksum fetch for an archive raises `ChecksumDownloadFailure` and a mismatch `ArchiveChecksumError` (retried, then raised); both are `AqtException`, so the install stops with exit code 1. Skipping needs `--UNSAFE-ignore-hash` or `INSECURE_NOT_FOR_PRODUCTION_ignore_hash`; neither is used in `build.yml` or `release.yml`. Trusted source can be set with `AQT_MIRRORS_TRUSTED_MIRRORS`; the default is already the Qt main server, so no workflow change was made. Remaining limits: the checksum file itself comes over HTTPS from `download.qt.io` (trust in Qt's server and TLS); for `Updates.xml` only, a failed checksum fetch gives a warning and the file is used unchecked; `aqt/helper.py` redirect handling follows up to 10 redirects without checking the target against `trusted_mirrors`. Pinning the SHA-256 of the archives in the workflow was not done: it must be redone at every Qt update, and the project owner has not decided on it. |
 | P-07 | fixed | #33, #75 (issue #21). Prop types, field counts and numbers validated (`src/propfile.cpp`); `.prp` fuzz target. |
-| P-08 | not applicable (not verified) | Aurora side, in the fork; error text from Aurora is shown as plain text in Pingmator's status bar. Spoofing by a fake server is part of [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23). |
+| P-08 | not applicable (not verified) | Aurora side, in the fork; error text from Aurora is shown as plain text in PinglyMotion's status bar. Spoofing by a fake server is part of [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23). |
 | P-09 | fixed | The repository is public. Ruleset "Protect main" (pull request needed, required checks, no deletion or force push) and "Protect release tags" are active; secret scanning and push protection are on (checked with the GitHub API 18 November). Two-factor sign-in on the owner's account cannot be seen from a session. Checklist: [#25](https://github.com/pingledingle-tech/PinglyMotion/issues/25). |
 
 Appendix C (15 November follow-up):
@@ -61,7 +61,7 @@ Appendix C (15 November follow-up):
 | `.prp` types and numbers (#21) | fixed | #33, fuzz target from #75. |
 | Mesh morph vertex indices (#22) | fixed | #33: `meshIndexesAreValid()` in `src/avatarskin.cpp` checks triangle and morph indices; test `badMaxMeshIsRefused`. |
 
-Side observation (not an audit finding): `open_file` through remote control on a file that fails the check shows a modal warning in Pingmator. The answer only comes after someone closes the dialog, so the AI client's request times out instead of getting the error text. No crash and no data loss.
+Side observation (not an audit finding): `open_file` through remote control on a file that fails the check shows a modal warning in PinglyMotion. The answer only comes after someone closes the dialog, so the AI client's request times out instead of getting the error text. No crash and no data loss.
 
 ---
 
@@ -81,7 +81,7 @@ Severity scale used:
 | Medium | Crash/hang/resource exhaustion from untrusted input, file writes or token leakage that need one extra condition |
 | Low | Needs local access or an unusual setup; limited impact; robustness defects with a security angle |
 
-No Critical findings were found. Pingmator has no listening network service by default; the control server is opt-in and bound to 127.0.0.1.
+No Critical findings were found. PinglyMotion has no listening network service by default; the control server is opt-in and bound to 127.0.0.1.
 
 ## Summary
 
@@ -102,7 +102,7 @@ No Critical findings were found. Pingmator has no listening network service by d
 | PM-13 | Low | Confirmed (UBSan) | Uninitialised members and undefined float→int conversions |
 | AL-01 | Medium | Confirmed (isolated copy) | Aurora accepts poses from any web page (cross-protocol POST) and any local process |
 | AL-02 | Medium | Confirmed (isolated copy) | Aurora `MAX_LINE` is not enforced while data keeps arriving → unbounded memory |
-| AL-03 | Low | Confirmed by code review | Pingmator's live link trusts whatever listens on 127.0.0.1:17656 |
+| AL-03 | Low | Confirmed by code review | PinglyMotion's live link trusts whatever listens on 127.0.0.1:17656 |
 | SC-01 | Medium | Confirmed (CodeQL) | Third-party action pinned by tag runs in the release job with `contents: write` |
 | SC-02 | Medium | Confirmed | Windows builds ship Qt 6.8.3, which has published security advisories |
 | SC-03 | Low | Confirmed | Checkout token persisted during builds; no release checksums, signing or attestation |
@@ -138,7 +138,7 @@ CodeQL results for `main` (excluding style-only queries: commented-out code, FIX
 
 aurora-link CodeQL: the same alerts as `main`, nothing new from `auroralink.cpp` or `bvhPoseText`. scan-build was run on `main` only; `aurora-link` adds ~250 lines that were reviewed by hand.
 
-Clang Static Analyzer (scan-build 18, default checkers plus `alpha.security.ArrayBoundV2` and `optin.cplusplus.UninitializedObject`, 58 translation units of `pingmator`): **no bugs reported**. Like CodeQL, it cannot follow a loop bound that comes from file contents into the fixed-size arrays of PM-01, and it does not report the uninitialised members that UBSan found at run time (PM-13). This shows the limits of static analysis for this code base; the dynamic tests and fuzzing (§7) are what find these bugs.
+Clang Static Analyzer (scan-build 18, default checkers plus `alpha.security.ArrayBoundV2` and `optin.cplusplus.UninitializedObject`, 58 translation units of `pinglymotion`): **no bugs reported**. Like CodeQL, it cannot follow a loop bound that comes from file contents into the fixed-size arrays of PM-01, and it does not report the uninitialised members that UBSan found at run time (PM-13). This shows the limits of static analysis for this code base; the dynamic tests and fuzzing (§7) are what find these bugs.
 
 ---
 
@@ -147,7 +147,7 @@ Clang Static Analyzer (scan-build 18, default checkers plus `alpha.security.Arra
 All parser findings are reachable in four ways:
 
 1. **File > Open / Add** – the user opens a file someone sent them (BVH files are traded freely in Second Life communities).
-2. **Command line / "Open with"** – `pingmator file.bvh` (`pinglymotionwindow.cpp:356-363`).
+2. **Command line / "Open with"** – `PinglyMotion file.bvh` (`pinglymotionwindow.cpp:356-363`).
 3. **Remote control** – the `open_file` command (`controlapi.cpp:463-474`), i.e. an AI client via MCP.
 4. **Planted data folder** – see PM-07.
 
@@ -192,7 +192,7 @@ The parser in use is the legacy `BVH` class in `src/bvh.cpp`. The newer `BvhPars
       #3 BVH::setAllKeyFramesHelper(BVHNode*, int) const src/bvh.cpp:402
       #4 BVH::bvhRead(QString const&) src/bvh.cpp:448
   ```
-  Release: exit 139. Via remote control, `open_file` on `empty.bvh` killed the running Pingmator (HTTP client got "Remote end closed connection without response").
+  Release: exit 139. Via remote control, `open_file` on `empty.bvh` killed the running PinglyMotion (HTTP client got "Remote end closed connection without response").
 - **Impact:** Crash; all unsaved animations in the session are lost. Any garbage file with a `.bvh` name triggers it.
 - **Fix:** Return `nullptr` from `bvhRead`/`avmRead`/`animRead` when `root` is `NULL` or any `expect_token` fails; in `Animation::loadBVH` and `fileAdd` show an error and do not create the animation.
 
@@ -236,9 +236,9 @@ The parser in use is the legacy `BVH` class in `src/bvh.cpp`. The newer `BvhPars
 ### PM-07 – Data files are loaded from the current working directory — **Medium**
 
 - **Files:** `src/constants.cpp:122-136` (returns `"./data"` on Windows/Linux when `PINGLYMOTION_DATAPATH` is not set – the case for the CI/release builds), used by `bvh.cpp:56`, `animation.cpp:103-107`, the `.llm` loader, and `parseLimFile` (`bvh.cpp:339-384`)
-- **Explanation:** At start-up Pingmator reads `SLFemale.bvh`, `SLMale.bvh`, `TPose.avm`, `SL.lim`, `bento_joints.txt` and `character/*.llm` from `./data` relative to the **current directory**, not the program folder. Whoever controls the current directory controls these files, and every parser bug above applies to them. `parseLimFile` has its own unchecked indices (`parameters[1]` … `parameters[10]`, `bvh.cpp:360-373`).
+- **Explanation:** At start-up PinglyMotion reads `SLFemale.bvh`, `SLMale.bvh`, `TPose.avm`, `SL.lim`, `bento_joints.txt` and `character/*.llm` from `./data` relative to the **current directory**, not the program folder. Whoever controls the current directory controls these files, and every parser bug above applies to them. `parseLimFile` has its own unchecked indices (`parameters[1]` … `parameters[10]`, `bvh.cpp:360-373`).
 - **Evidence:**
-  - Folder with `data/SLFemale.bvh` = `channels.bvh`, Pingmator started there with no arguments → `heap-buffer-overflow WRITE … bvh.cpp:221` (same as PM-01).
+  - Folder with `data/SLFemale.bvh` = `channels.bvh`, PinglyMotion started there with no arguments → `heap-buffer-overflow WRITE … bvh.cpp:221` (same as PM-01).
   - Folder with `data/SL.lim` containing the single line `hip` → `ASSERT failure in QList::operator[]: "index out of range"` (Release: OOB read).
 - **Impact:** A ZIP with a `.bvh` and a `data/` folder, extracted and opened from that folder (e.g. a shortcut or "Open with" whose working directory is the extracted folder), runs attacker-controlled data through the parsers. Also replaces the reference skeleton and joint limits silently. This is the same root cause as the known functional bug "BVH File not found: ./data/SLMale.bvh".
 - **Fix:** Resolve data relative to `QCoreApplication::applicationDirPath()` (as already done on macOS), never the current directory. Optionally verify bundled data files against SHA-256 hashes generated at build time.
@@ -259,11 +259,11 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
   file before: "USER DATA THAT SHOULD NOT BE LOST"
   file after:  "HIERARCHY ROOT hip { OFFSET 0.000000 0. …"
   open_file {"path": "/etc/passwd.bvh"}                 -> "No such file: /etc/passwd.bvh"
-  open_file {"path": ".../empty.bvh"}                   -> Pingmator process crashed (PM-02)
+  open_file {"path": ".../empty.bvh"}                   -> PinglyMotion process crashed (PM-02)
   ```
 - **Impact:** Data loss (any `.bvh`/`.avm` the user owns, plus unsaved work); the control API becomes a way to feed malicious files into the vulnerable parsers. Content written is always a valid animation, so this is not arbitrary-content write.
 - **Fix:**
-  - Restrict `open_file`/`save_file` to one working folder (e.g. `Documents/Pingmator`, configurable), resolve with `QFileInfo::canonicalFilePath()` and reject anything outside it.
+  - Restrict `open_file`/`save_file` to one working folder (e.g. `Documents/PinglyMotion`, configurable), resolve with `QFileInfo::canonicalFilePath()` and reject anything outside it.
   - Refuse to overwrite an existing file unless it is the currently open file, or require `"overwrite": true` and show a confirmation in the GUI.
   - `new_animation`/`open_file`: fail with "unsaved changes" when `dirty()` is true, unless the user allowed it.
   - Return the same error text for "missing" and "not allowed".
@@ -284,7 +284,7 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
 
 - **Files:** `src/controlserver.cpp:24-26`, `:150-163`, `:211-219` (body is buffered until complete; authorization is checked only in `handle()`, `:239-241`)
 - **Evidence:** 100 local connections, each sending headers with `Content-Length: 4194304` and 4 MB − 1 byte of body, no token: RSS 179 MB → 598 MB; back to 202 MB after the 15 s timeout.
-- **Impact:** Any local process – including processes of other users on a shared machine, since 127.0.0.1 is shared – can make Pingmator use several GB while remote control is on. Temporary.
+- **Impact:** Any local process – including processes of other users on a shared machine, since 127.0.0.1 is shared – can make PinglyMotion use several GB while remote control is on. Temporary.
 - **Fix:** Check `Host`, `Origin` and `Authorization` as soon as the header block is complete, before reading the body; cap simultaneous connections (e.g. 8); lower `MAX_BODY_BYTES` to what commands need (64 KB).
 
 ### PM-11 – `save_file` reports success when nothing was written — **Low**
@@ -298,8 +298,8 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
 
 - **Files:** `src/pinglymotionwindow.cpp:350` (removed only on `aboutToQuit`), `src/controlserver.cpp:123-143`
 - **Evidence:** After the PM-02 crash via `open_file`, `/tmp/ctl.json` (token, port, PID) was still present.
-- **Impact:** The token is useless once Pingmator is gone. But the MCP server keeps using the file: another local program that binds the same port gets the token and can answer with its own tool descriptions (prompt injection into the AI).
-- **Fix:** In the MCP server, check that the `pid` in `control.json` is a running Pingmator before sending; in Pingmator, overwrite/remove a stale file at start.
+- **Impact:** The token is useless once PinglyMotion is gone. But the MCP server keeps using the file: another local program that binds the same port gets the token and can answer with its own tool descriptions (prompt injection into the AI).
+- **Fix:** In the MCP server, check that the `pid` in `control.json` is a running PinglyMotion before sending; in PinglyMotion, overwrite/remove a stale file at start.
 
 ### PM-13 – Uninitialised members and undefined float→int conversions — **Low**
 
@@ -313,9 +313,9 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
 
 ## 4. Confirmed vulnerabilities – Aurora live link
 
-Trust boundary: Pingmator (client) ⇄ TCP 127.0.0.1:17656 ⇄ Aurora (server, own fork). Nothing in the protocol authenticates either side. Both programs treat "loopback" as "trusted", but loopback is reachable by every local process, every local user, and – for the Aurora side – by web pages through cross-protocol requests.
+Trust boundary: PinglyMotion (client) ⇄ TCP 127.0.0.1:17656 ⇄ Aurora (server, own fork). Nothing in the protocol authenticates either side. Both programs treat "loopback" as "trusted", but loopback is reachable by every local process, every local user, and – for the Aurora side – by web pages through cross-protocol requests.
 
-Positive: Aurora's link is opt-in and off at every start, binds only to `127.0.0.1`, decodes on its own thread, and its BVH importer has strict limits (64 MB, depth ≤ 64, ≤ 256 joints, `MAX_MOTION_VALUES`, ≤ 60 s). Pingmator's client caps an unterminated incoming line at 1 MB (`auroralink.cpp:150-154`) and shows Aurora's error text as plain status-bar text, not rich text.
+Positive: Aurora's link is opt-in and off at every start, binds only to `127.0.0.1`, decodes on its own thread, and its BVH importer has strict limits (64 MB, depth ≤ 64, ≤ 256 joints, `MAX_MOTION_VALUES`, ≤ 60 s). PinglyMotion's client caps an unterminated incoming line at 1 MB (`auroralink.cpp:150-154`) and shows Aurora's error text as plain status-bar text, not rich text.
 
 ### AL-01 – Aurora accepts poses from any web page and any local process — **Medium**
 
@@ -328,7 +328,7 @@ Positive: Aurora's link is opt-in and off at every start, binds only to `127.0.0
   ```
   Not tested in a real browser. Chromium's Local Network Access permission may block or prompt for public sites → 127.0.0.1; other browsers may not.
 - **Impact:** While the link is on, any website or local process can put poses on the user's avatar (local only, nothing reaches the region) and can feed arbitrary BVH text into the importer. Low direct harm, but an unauthenticated path from the web into a parser.
-- **Fix:** (1) Require `hello` as the first line, with a per-session secret: Aurora writes a random token to a 0600 file (like Pingmator's `control.json`), Pingmator reads it and sends it in `hello`; close the connection on a missing/wrong token. (2) Close the connection on the first line that is not valid JSON. (3) Reject lines starting with an HTTP method (`GET `, `POST `, `OPTIONS `…).
+- **Fix:** (1) Require `hello` as the first line, with a per-session secret: Aurora writes a random token to a 0600 file (like PinglyMotion's `control.json`), PinglyMotion reads it and sends it in `hello`; close the connection on a missing/wrong token. (2) Close the connection on the first line that is not valid JSON. (3) Reject lines starting with an HTTP method (`GET `, `POST `, `OPTIONS `…).
 
 ### AL-02 – Aurora `MAX_LINE` is not enforced while data keeps arriving — **Medium**
 
@@ -344,11 +344,11 @@ Positive: Aurora's link is opt-in and off at every start, binds only to `127.0.0
 - **Impact:** Aurora (the viewer, logged into SL) can be driven out of memory by any local process, or by a web page sending a large request body (subject to AL-01's browser caveat).
 - **Fix:** `reader.by_ref().take((MAX_LINE + 1 - line.len()) as u64).read_until(b'\n', &mut line)`, then check the length. Also reduce `MAX_LINE`: a Bento pose is ~20 KB, 1 MB is plenty.
 
-### AL-03 – Pingmator trusts whatever listens on 127.0.0.1:17656 — **Low**
+### AL-03 – PinglyMotion trusts whatever listens on 127.0.0.1:17656 — **Low**
 
-- **Repository:** Pingmator `aurora-link`
+- **Repository:** PinglyMotion `aurora-link`
 - **Files:** `src/auroralink.cpp:88-92` (connects, no identity check), `:94-109` (sends `hello` and the pose immediately, without waiting for Aurora's `hello`), `:157-162` (Aurora's `hello` is never checked)
-- **Explanation:** Confirmed by code review (not run end-to-end). Whoever binds port 17656 first – another local user, or any program while Aurora's link is off – receives the pose stream and can put messages in Pingmator's status bar. On Aurora's side only one client is served at a time and an idle client is never dropped (`mod.rs:104-121`, `:185`), so a squatting client also blocks the real Pingmator.
+- **Explanation:** Confirmed by code review (not run end-to-end). Whoever binds port 17656 first – another local user, or any program while Aurora's link is off – receives the pose stream and can put messages in PinglyMotion's status bar. On Aurora's side only one client is served at a time and an idle client is never dropped (`mod.rs:104-121`, `:185`), so a squatting client also blocks the real PinglyMotion.
 - **Impact:** Pose data leak (low value), spoofed status messages, denial of the link.
 - **Fix:** Same token handshake as AL-01, verified in both directions; wait for Aurora's `hello` (protocol 1, feature `pose`) before sending any pose; in Aurora, drop clients that have not sent a valid `hello` within ~2 s.
 
@@ -370,7 +370,7 @@ Positive: workflow-level `permissions: contents: read`; `contents: write` only o
 ### SC-02 – Windows builds ship Qt 6.8.3 — **Medium**
 
 - **Files:** `.github/workflows/build.yml:18`, `release.yml:40` (`version: '6.8.3'`)
-- **Explanation:** Qt 6.8.3 is affected by several published advisories, e.g. CVE-2025-5455 (`qDecodeDataUrl`, used by `QNetworkReply`, fixed in 6.8.4), CVE-2025-3512 (heap overflow in `QTextMarkdownImporter`, fixed in 6.8.4), CVE-2025-5992 (DoS in `QColorTransferGenericFunction`). Whether Pingmator's code paths reach these was not verified; the DLLs are shipped regardless.
+- **Explanation:** Qt 6.8.3 is affected by several published advisories, e.g. CVE-2025-5455 (`qDecodeDataUrl`, used by `QNetworkReply`, fixed in 6.8.4), CVE-2025-3512 (heap overflow in `QTextMarkdownImporter`, fixed in 6.8.4), CVE-2025-5992 (DoS in `QColorTransferGenericFunction`). Whether PinglyMotion's code paths reach these was not verified; the DLLs are shipped regardless.
 - **Fix:** Move to the newest Qt 6 patch release available through aqtinstall and re-check advisories per release. On Linux CI the distro Qt is used (patched by Ubuntu).
 
 ### SC-03 – Persisted checkout token; no checksums, signing or provenance — **Low**
@@ -399,7 +399,7 @@ These were not reproduced. They are listed so they are not forgotten.
 | P-02 | `pinglymotion_mcp.py` on Windows | Whether urllib on Windows sends 127.0.0.1 through the system (registry) proxy depends on `ProxyOverride`/`<local>` settings. | Test on the maintainer's Windows PC with a system proxy set. The PM-09 fix covers it either way. |
 | P-03 | `controlserver.cpp:133-141` | `control.json` is opened (created with umask permissions), then `chmod 0600`, then written. The token is written after the chmod, so no exposure was seen. On Windows `setPermissions` does not set ACLs; protection relies on `%LOCALAPPDATA%` being private. `PINGLYMOTION_CONTROL_FILE` can redirect the file anywhere. | Low risk; use `QSaveFile` and create with restrictive permissions from the start; consider ignoring the env override in release builds. |
 | P-04 | PM-01 exploitability | Whether the heap overflow can be turned into code execution. | Written values are mostly constant; not attempted. |
-| P-05 | Qt CVEs (SC-02) | Whether Pingmator reaches the vulnerable Qt code. | Pingmator uses `QNetworkAccessManager` for the update check (HTTPS to api.github.com) and PNG writing; not analysed further. |
+| P-05 | Qt CVEs (SC-02) | Whether PinglyMotion reaches the vulnerable Qt code. | PinglyMotion uses `QNetworkAccessManager` for the update check (HTTPS to api.github.com) and PNG writing; not analysed further. |
 | P-06 | `jurplel/install-qt-action` / aqtinstall | Integrity of the downloaded Qt binaries (checksums from Qt's mirrors). | Not reviewed; reduce exposure via SC-01. |
 | P-07 | `.prp` prop files (`pinglymotionwindow.cpp:1436-1500`) | Unbounded number of lines → many props; unknown types give a NULL mesh (not drawn). No crash found by review. | Include in fuzzing. |
 | P-08 | Aurora: error messages | `decode()` error text is sent back to any client; text from `hello` (64 chars) is shown in chat. Spoofing only. | Covered by the AL-01 handshake. |
@@ -421,8 +421,8 @@ All external file parsers and both network protocols should be fuzzed. Suggested
 | Bento joint list | `BVH::loadBentoJoints()` | text | `bin/data/bento_joints.txt` |
 | Control API | `ControlApi::execute()` with a fake `ControlHost` | JSON; check that no input crashes or writes outside the allowed folder | requests from `tests/smoke_control.py` |
 | HTTP framing | `ControlServer::completeRequestLength()` + `handle()` (factor out of the socket) | header splitting, Content-Length edge cases | captured requests |
-| Aurora link (Pingmator side) | `AuroraLink::handleLine()` / `onReadyRead()` buffer logic | | |
-| Aurora link (Aurora side) | `parse()` and `parse_bvh_pose()` with `cargo fuzz` | | Pingmator `bvhPoseText` output |
+| Aurora link (PinglyMotion side) | `AuroraLink::handleLine()` / `onReadyRead()` buffer logic | | |
+| Aurora link (Aurora side) | `parse()` and `parse_bvh_pose()` with `cargo fuzz` | | PinglyMotion `bvhPoseText` output |
 
 Process:
 
@@ -450,7 +450,7 @@ The root cause is that the legacy parser has no error path: `token()` returns an
 - Ubuntu 24.04 container, 2 CPUs, 7 GB RAM; Qt 6.4.2 from Ubuntu packages; GCC 13.3; CodeQL 2.27.4; Rust stable.
 - ASan/UBSan build: `cmake -S . -B /tmp/asan -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS=ON -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"`; run from `bin/` with `ASAN_OPTIONS=detect_leaks=0`.
 - Release build: `-DCMAKE_BUILD_TYPE=Release`, run under `xvfb-run` with `QT_QPA_PLATFORM=xcb`. (With `QT_QPA_PLATFORM=offscreen` and Mesa in this container, both builds crash inside `QPlatformBackingStore::rhiFlush` on the first paint for every file, including valid ones. That is an environment issue and was excluded; all crash results above were re-checked under Xvfb.)
-- CodeQL: `codeql database create --language=cpp` with a CMake build of `pingmator`; suites `cpp-security-and-quality`, `python-security-and-quality`, `actions-security-and-quality`.
+- CodeQL: `codeql database create --language=cpp` with a CMake build of `pinglymotion`; suites `cpp-security-and-quality`, `python-security-and-quality`, `actions-security-and-quality`.
 - Aurora: `serve()`/`parse()` copied from `mod.rs` @ `58c4351` into a standalone crate (only `decode()` stubbed), driven by a Python client.
 
 ## Appendix B – Proof-of-concept inputs

@@ -1,10 +1,10 @@
 # Why the Aurora link uses LiveMesh
 
-Background for the [live link to Aurora](AURORA_LINK.md) (#78, research 15 November 2026). Before choosing how Pingmator sends poses to Aurora, we looked at how other 3D tools stream poses, and at what the protocol has to fix about 3D conventions.
+Background for the [live link to Aurora](AURORA_LINK.md) (#78, research 15 November 2026). Before choosing how PinglyMotion sends poses to Aurora, we looked at how other 3D tools stream poses, and at what the protocol has to fix about 3D conventions.
 
 ## Existing live links
 
-| | Transport | Data | Open | Security | For Pingmator |
+| | Transport | Data | Open | Security | For PinglyMotion |
 | --- | --- | --- | --- | --- | --- |
 | **Aurora LiveMesh** (Blender link) | TCP 127.0.0.1:17655, magic `AURBLD1`, length-prefixed JSON, size limits | Mesh snapshots; Aurora sends the SL joints and rest axes in `hello`; features are negotiated | Documented in Aurora (`docs/BLENDER_LIVE.md`) | Loopback, opt-in, magic and limits; no key | Already exists – reuse it |
 | **Unreal Live Link** | Unreal Message Bus over UDP, LAN | A "subject" (skeleton) described once, then light frames (transforms, curves, time) | Needs Unreal's own libraries | Trusted studio network | Not reusable, but a good model |
@@ -41,9 +41,9 @@ So the link uses **one** frame, the SL avatar frame (X forward, Y left, Z up, ri
 
 ## Decision
 
-- Reuse Aurora's LiveMesh protocol instead of a separate Pingmator link. The Blender add-on is not changed.
+- Reuse Aurora's LiveMesh protocol instead of a separate PinglyMotion link. The Blender add-on is not changed.
 - New features in LiveMesh: `auth` (key file and HMAC challenge, required for poses), `pose-bvh` (BVH text, the first step) and `pose` (quaternions). How they work is described in [AURORA_LINK.md](AURORA_LINK.md).
-- Pingmator's client is written from Aurora's documentation, not copied (Aurora is GPLv3, Pingmator GPLv2).
+- PinglyMotion's client is written from Aurora's documentation, not copied (Aurora is GPLv3, PinglyMotion GPLv2).
 - A local pose on the user's own avatar fits Second Life's Third-Party Viewer Policy; reading poses back must stay limited to the user's own avatar.
 
 ## Sources

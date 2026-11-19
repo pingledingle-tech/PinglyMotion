@@ -5,7 +5,7 @@ Files:
 - CMakeLists.txt
 - src/constants.h
 - src/constants.cpp
-- src/pingmatorwindow.cpp
+- src/pinglymotionwindow.cpp
 - src/aboutdialog.cpp
 - src/main.cpp
 - .github/workflows/build.yml

@@ -13,7 +13,7 @@ The targets, all built with libFuzzer, AddressSanitizer and UndefinedBehaviorSan
 | `fuzz_anim` | `AnimImport::parse()` – Second Life `.anim` files (`src/animimport.*`, issue #22, [ANIM_FORMAT.md](../docs/ANIM_FORMAT.md)); an accepted file must keep every limit of the data model | `.anim` files will be opened from outside |
 | `fuzz_gltf` | The glTF import (`src/gltfimport.*`, issue #12): `GltfImport::read()`, sampling to frames with both rest poses, and retargeting onto a small Second Life skeleton; every accepted result must keep the rules of a parsed animation | `.glb` and `.gltf` files come from the internet (Blender, Mixamo and other tools export them) |
 
-Not fuzzed here: `SL.lim` and the `.llm` meshes (read only from Pingmator's own data folder), and the old BVH/AVM parser in `src/bvh.cpp`. `fuzz_animfile` fuzzes the new parser that replaces it (issue #62); until the program uses it (part 2 of #62), it does not test the code that opens files today.
+Not fuzzed here: `SL.lim` and the `.llm` meshes (read only from PinglyMotion's own data folder), and the old BVH/AVM parser in `src/bvh.cpp`. `fuzz_animfile` fuzzes the new parser that replaces it (issue #62); until the program uses it (part 2 of #62), it does not test the code that opens files today.
 
 `fuzz/corpus/gltf/` holds the start files for `fuzz_gltf` (`good_*` must be read, `bad_*` must be refused; `tests/gltfimport` checks that and writes them again when `PINGLYMOTION_WRITE_GLTF_CORPUS` is set to a folder).
 
@@ -21,7 +21,7 @@ Not fuzzed here: `SL.lim` and the `.llm` meshes (read only from Pingmator's own 
 
 `fuzz/corpus/dingle/` holds the start files for `fuzz_dingle` (`good_stable_*` are exactly what the writer produces; a test checks that).
 
-`fuzz/corpus/bvh/` and `fuzz/corpus/avm/` hold the start files for `fuzz_animfile`. Files named `bad_*` are broken on purpose (most of them are the files from the security audit); the others are valid. The `roundtrip` test (`tests/tst_roundtrip.cpp`) checks every one of them today: good files must open, bad files must be refused with a reason. It also opens, saves and opens again every animation file that ships with Pingmator, as a safety net for the new parser.
+`fuzz/corpus/bvh/` and `fuzz/corpus/avm/` hold the start files for `fuzz_animfile`. Files named `bad_*` are broken on purpose (most of them are the files from the security audit); the others are valid. The `roundtrip` test (`tests/tst_roundtrip.cpp`) checks every one of them today: good files must open, bad files must be refused with a reason. It also opens, saves and opens again every animation file that ships with PinglyMotion, as a safety net for the new parser.
 
 ## Run
 

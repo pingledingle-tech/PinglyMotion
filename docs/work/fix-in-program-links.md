@@ -5,7 +5,7 @@ Files:
 - src/aboutdialog.ui
 - src/updatenotificationdialog.ui
 - src/releaseinfo.cpp
-- src/pingmatorwindow.cpp
+- src/pinglymotionwindow.cpp
 
 ## What
 

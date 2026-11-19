@@ -38,7 +38,7 @@ pull requests are the history.
 | `fuzz/prp-control` | Fuzzing of `.prp` prop files and the control commands (#20) | #75 |
 | `feat/color-picking` | Renderer step 3 (#61): picking by colour ID on the GPU, `GL_SELECT` only as fallback | #76 |
 | `fix/codeql-pick-size` | CodeQL: pick area size computed as qsizetype (alerts from #76) | #79 |
-| `feat/nicer-shading` | Renderer step 4 (#61): nicer body shading; `PINGMATOR_CLASSIC_SHADING` keeps the old look | #80 |
+| `feat/nicer-shading` | Renderer step 4 (#61): nicer body shading; `PINGLYMOTION_CLASSIC_SHADING` keeps the old look | #80 |
 | `feat/light-sliders` | Options > Light…: brightness, shine and warmth sliders for the body light | #81 |
 | `feat/drop-glu` | Renderer step 5a (#61): no GLU calls any more (link to GLU removed later with `src/CMakeLists.txt`) | #82 |
 | `feat/mesh-shader` | Renderer step 5b (#61): Bento balls, props and handles drawn with the shader and the new light | #83 |

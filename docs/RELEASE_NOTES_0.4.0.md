@@ -1,11 +1,11 @@
-# Pingmator 0.4.0 beta – release notes (draft)
+# PinglyMotion 0.4.0 beta – release notes (draft)
 
 > Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026), up to 19 November 2026.
 
 ## Before you update
 
-- **Your graphics card must support OpenGL 3.3.** Almost every computer from the last ten years does, and Second Life itself needs OpenGL 3.2 or newer. If yours does not, the 3D view stays empty and Pingmator tells you once that OpenGL 3.3 is needed.
-- **Qt 5 is no longer supported.** This only matters if you build Pingmator yourself: you now need Qt 6. The Windows zip and the Linux AppImage already include everything.
+- **Your graphics card must support OpenGL 3.3.** Almost every computer from the last ten years does, and Second Life itself needs OpenGL 3.2 or newer. If yours does not, the 3D view stays empty and PinglyMotion tells you once that OpenGL 3.3 is needed.
+- **Qt 5 is no longer supported.** This only matters if you build PinglyMotion yourself: you now need Qt 6. The Windows zip and the Linux AppImage already include everything.
 
 ## What's new
 
@@ -15,12 +15,12 @@
 - **Joints sorted in tabs.** The "Edit Part" drop-down is replaced by tabs **Body / Face / Hands / Other** with a list of joints. Click a joint in the 3D view and the list jumps to it. Arrow keys move through the list.
 - **More realistic joint limits.** Joint limits now follow the Second Life wiki's suggested limits instead of the old QAvimator values. Fingers bend, spread and twist within a natural range.
 - **Status bar.** Besides the remote control indicator, the status bar shows whether the Aurora live link is off, connecting or live. Click the dot to turn the link on or off. A "Tips" switch is there too; it only stores your choice for now, the tips come later.
-- **Remote control indicator.** When an AI assistant (for example Claude) controls Pingmator, a coloured dot in the status bar shows it: grey = off, yellow = waiting, green = connected, red = a wrong key was refused. It also shows the assistant's name and its last command. Click the dot to turn remote control on or off.
+- **Remote control indicator.** When an AI assistant (for example Claude) controls PinglyMotion, a coloured dot in the status bar shows it: grey = off, yellow = waiting, green = connected, red = a wrong key was refused. It also shows the assistant's name and its last command. Click the dot to turn remote control on or off.
 
 ## What's changed and fixed
 
 - **Unsaved changes:** the question now offers **Save / Don't Save / Cancel**, and Save is the default. Pressing Enter no longer throws your work away.
-- **Save As** lets you choose between *Second Life animation (.bvh)* and *Pingmator animation (.avm)*, and adds the right file ending for you.
+- **Save As** lets you choose between *Second Life animation (.bvh)* and *PinglyMotion animation (.avm)*, and adds the right file ending for you.
 - **Skeleton mode:** the small face joint balls only show when the head or a face joint is selected, so the face is no longer cluttered.
 - **Loop points** are kept when you open a file and save it again. A file without loop points no longer picks up the loop points from the file you had open before.
 - **IK** (keeping a hand or foot in place while you move the body) has a new solver. Locked hands and feet follow the 3D view closely, an unreachable goal no longer throws an arm or leg around, and a value you type is solved at once.
@@ -39,4 +39,4 @@
 
 ## Upload to Second Life
 
-Pingmator saves Second Life `.bvh` files that are checked against the rules of the Second Life uploader, but please test your animation in Second Life (for example on the Beta Grid) before you rely on it.
+PinglyMotion saves Second Life `.bvh` files that are checked against the rules of the Second Life uploader, but please test your animation in Second Life (for example on the Beta Grid) before you rely on it.

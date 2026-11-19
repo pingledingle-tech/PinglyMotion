@@ -1,6 +1,6 @@
 Branch: refactor/rename-docs
-Status: active
-Pull request: 
+Status: done
+Pull request: #95
 Files:
 - README.md
 - CLAUDE.md

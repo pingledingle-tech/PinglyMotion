@@ -4,7 +4,7 @@ The 3D view (`AnimationView`) draws everything with **OpenGL 3.3 core shaders**.
 
 ## Requirement
 
-- Pingmator asks for an OpenGL 3.3 core context with depth and stencil (`src/main.cpp`). Second Life itself needs OpenGL 3.2 or newer.
+- PinglyMotion asks for an OpenGL 3.3 core context with depth and stencil (`src/main.cpp`). Second Life itself needs OpenGL 3.2 or newer.
 - Without OpenGL 3.3 the 3D view stays empty and a message says once that OpenGL 3.3 is needed. There is no old fallback path any more (#89).
 - The log says what the view got, for example `3D view drawn with OpenGL 4.5 core shaders`.
 
@@ -29,7 +29,7 @@ The 3D view (`AnimationView`) draws everything with **OpenGL 3.3 core shaders**.
 - Studio lights that move with the camera: a warm key light, a soft fill, light from above and a darker bounce from below; soft "wrap" shadow edge for skin, a wide soft highlight and a thin rim light. Lighting is done per pixel in linear colour, gamma 2.2 at the end.
 - Options > Light… changes brightness, shine and warmth (`SkinRenderer::Look`, settings `light_brightness`, `light_shine`, `light_warmth`; 50 = standard).
 - Meshes (Bento balls, props, handles), lines, rings and the floor share the body's fragment shader, so they get the same light. With `SceneState::setLighting(false)` the plain colour is drawn.
-- Fog: exponential, density 0.005, towards the background colour ("Use Fog" in Options > Configure Pingmator…).
+- Fog: exponential, density 0.005, towards the background colour ("Use Fog" in Options > Configure PinglyMotion…).
 
 ## Lines
 

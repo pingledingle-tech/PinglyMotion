@@ -1,10 +1,10 @@
-# Pingmator
+# PinglyMotion
 
-> The project continues in this repository as PinglyMotion (renamed in the program later). Issue and pull request numbers in older texts belong to the old repository; see [docs/MIGRATION.md](docs/MIGRATION.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+> PinglyMotion, formerly called Pingmator. Issue and pull request numbers in older texts belong to the old repository; see [docs/MIGRATION.md](docs/MIGRATION.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
 **Create, pose and refine animations for Second Life.**
 
-Pingmator is a free, open-source animation editor based on QAvimator. The goal is to make it easier to create and adapt stands, sits, dances and other movement without requiring professional tools or paid add-ons.
+PinglyMotion is a free, open-source animation editor based on QAvimator. The goal is to make it easier to create and adapt stands, sits, dances and other movement without requiring professional tools or paid add-ons.
 
 ## What you can do
 
@@ -14,13 +14,13 @@ Pingmator is a free, open-source animation editor based on QAvimator. The goal i
 - **Get optional AI assistance:** use the [local control interface and MCP server](docs/CONTROL.md) to pose joints, inspect screenshots and save animations. Manual editing works without AI.
 - **Use Windows or Linux:** builds use Qt 6.
 
-Pingmator is under active development. Automated checks validate exported BVH against rules based on the Second Life loader; actual upload and compatibility testing is still needed. Current builds require OpenGL 3.3.
+PinglyMotion is under active development. Automated checks validate exported BVH against rules based on the Second Life loader; actual upload and compatibility testing is still needed. Current builds require OpenGL 3.3.
 
 ## Download and get started
 
-There are no releases in this repository yet (the project moved on 18 November 2026); see [Releases](https://github.com/pingledingle-tech/PinglyMotion/releases) for packages when they appear. For the latest development build on Windows, open [Actions](https://github.com/pingledingle-tech/PinglyMotion/actions), choose a successful **Build** run and download `Pingmator-windows`. Extract the archive and run `pingmator.exe`, keeping its `data` folder alongside it.
+There are no releases in this repository yet (the project moved on 18 November 2026); see [Releases](https://github.com/pingledingle-tech/PinglyMotion/releases) for packages when they appear. For the latest development build on Windows, open [Actions](https://github.com/pingledingle-tech/PinglyMotion/actions), choose a successful **Build** run and download `PinglyMotion-windows`. Extract the archive and run `PinglyMotion.exe`, keeping its `data` folder alongside it.
 
-## Where Pingmator is going
+## Where PinglyMotion is going
 
 The vision is an approachable path from an idea or existing movement to an animation for Second Life: create or import, adjust, preview, export and reuse.
 
@@ -47,7 +47,7 @@ The Linux build runs these checks (see GitHub Actions for current results):
 - The skeleton files in `bin/data/` match what `tools/make_bento_skeleton.py` makes
 - Automatic tests (`tests/tst_bento.cpp`): the skeleton has all 133 bones, old animations keep every key frame, every joint has limits, left and right bones mirror each other, and posed bones and saving then opening again gives the same animation
 - Exported BVH files follow Second Life's upload rules (`tools/check_sl_bvh.py`, which copies the checks in the viewer's BVH loader): the root is hip, every joint name is known, the numbers line up, the animation is not longer than 60 seconds, and posed fingers, jaw and tail really end up in the animation
-- Every BVH/AVM file that ships with Pingmator opens, saves and opens again unchanged, and broken files are refused with a reason (`tests/tst_roundtrip.cpp`)
+- Every BVH/AVM file that ships with PinglyMotion opens, saves and opens again unchanged, and broken files are refused with a reason (`tests/tst_roundtrip.cpp`)
 - Inverse kinematics (IK) for hands and feet brings them back towards their goal, solves for the value just set, and moves smoothly and inside the joint limits when a goal is out of reach (`tests/tst_ik.cpp`)
 - The new file reader gives the same result as the old one on every shipped file, refuses broken files with the line number, and the joint data from Firestorm loads (`tests/animfile/`, `tests/tst_jointinfo.cpp`)
 - The status bar indicators and the tips setting work (`tests/statusbar/`)
@@ -76,14 +76,14 @@ ctest --test-dir build --output-on-failure
 
 ## Control with AI or other programs
 
-Pingmator has an open local interface (HTTP with JSON, and an MCP server) so an AI tool or script can
+PinglyMotion has an open local interface (HTTP with JSON, and an MCP server) so an AI tool or script can
 pose the figure, look at it and save the animation. See [docs/CONTROL.md](docs/CONTROL.md).
 The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up.
 
 ## Live preview in the Aurora viewer
 
 In the Aurora viewer, open **Build > LiveMesh** and click **Enable preview**; then turn on **Options > Live link
-to Aurora** in Pingmator. The pose you make shows on your own avatar at once, visible only to you, with no
+to Aurora** in PinglyMotion. The pose you make shows on your own avatar at once, visible only to you, with no
 upload. Playing the animation plays it on your avatar too. The link uses Aurora's LiveMesh (the same local link
 as its Blender add-on) with a session key. For now it needs Aurora from the
 [fork](https://github.com/pingledingle-tech/Aurora-Viewer-Fork) (branch `feat/livemesh-pose`). See
@@ -98,4 +98,4 @@ The Bento skeleton comes from `avatar_skeleton.xml` in the [Firestorm viewer](ht
 
 The avatar body comes from the `.llm` mesh files in the [Second Life viewer](https://github.com/secondlife/viewer) (Copyright Linden Research, Inc.), licensed under the Creative Commons Attribution-Share Alike 3.0 License. Unchanged copies and the licence notice are in `bin/data/character/`.
 
-The Bento body (Options > Bento body) is "Maxine" from the [Max Avatar Project](https://github.com/RuthAndRoth/Max) by Ada Radius and the RuthAndRoth community, licensed under the Creative Commons Attribution 4.0 License. It is converted to Pingmator's own format by `tools/make_max_mesh.py`; notice and details are in `bin/data/character/max/`.
+The Bento body (Options > Bento body) is "Maxine" from the [Max Avatar Project](https://github.com/RuthAndRoth/Max) by Ada Radius and the RuthAndRoth community, licensed under the Creative Commons Attribution 4.0 License. It is converted to PinglyMotion's own format by `tools/make_max_mesh.py`; notice and details are in `bin/data/character/max/`.
