@@ -16,6 +16,7 @@
 - **Joints with plain names, and a search box.** The joint list says "Forearm" and "Wrist" instead of `lForeArm` and `lHand`, under headings such as *Left Arm* and *Legs*. Rest the mouse on a joint to see its Second Life name. Type in the search box above the list, for example "left knee", to find a joint on any tab.
 - **More realistic joint limits.** Joint limits now follow the Second Life wiki's suggested limits instead of the old QAvimator values. Fingers bend, spread and twist within a natural range.
 - **Status bar.** Besides the remote control indicator, the status bar shows whether the Aurora live link is off, connecting or live. Click the dot to turn the link on or off. A "Tips" switch is there too; it only stores your choice for now, the tips come later.
+- **One examples folder.** The Windows zip has one folder `examples` next to the program with all example and test animations. **File > Open** (and the other open dialogs) start there until you have opened something; after that they remember your last folder.
 - **Remote control indicator.** When an AI assistant (for example Claude) controls PinglyMotion, a coloured dot in the status bar shows it: grey = off, yellow = waiting, green = connected, red = a wrong key was refused. It also shows the assistant's name and its last command. Click the dot to turn remote control on or off.
 
 ## What's changed and fixed

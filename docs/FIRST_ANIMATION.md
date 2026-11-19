@@ -7,7 +7,7 @@ A **key** is a saved pose at one moment. The program fills in the movement betwe
 ## 1. Start
 
 1. Choose **File > New**. A figure appears.
-2. Or choose **File > Open**. Pick a file in the `examples` folder.
+2. Or choose **File > Open**. The dialog starts in the `examples` folder next to the program; pick a file there.
 
 The figure holds one pose, a T-pose. It has 30 frames. A frame is one step in time.
 

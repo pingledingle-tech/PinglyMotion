@@ -1,6 +1,6 @@
 # Mesh2Motion test motions
 
-Eight humanoid clips, converted to Second Life BVH. In the Windows zip they are in `test-motions/mesh2motion/` next to the program: File > Open, pick a file, press play.
+Eight humanoid clips, converted to Second Life BVH. In the Windows zip they are in `examples/mesh2motion/` next to the program: File > Open, pick a file, press play.
 
 Test motions from Mesh2Motion (https://github.com/Mesh2Motion/mesh2motion-app), CC0 1.0 – thank you to the Mesh2Motion project.
 
