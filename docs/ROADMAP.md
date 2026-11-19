@@ -14,7 +14,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 
 | Step | Issue | Job | Why now | Depends on | Model |
 |---|---|---|---|---|---|
-| 1 | #10, then #22 | `.anim` export, then import, one job at a time (same format code); the export menu is built, waiting for the owner's Windows test | Decided order; gives priority, ease and loop points that BVH upload cannot; real motion needed to check it | #9 (done) | Sonnet |
+| 1 | #10, then #22 | `.anim` export, then import, one job at a time (same format code); the export and import menus are built, waiting for the owner's Windows test | Decided order; gives priority, ease and loop points that BVH upload cannot; real motion needed to check it | #9 (done) | Sonnet |
 | 2 | #16 | BVH retargeting core: name mapping, SL/Bento slots, swing-twist, tests only (no menu yet) | New files, so it does not collide with step 1; Mesh2Motion removes most of the design risk | none | Opus |
 | 3 | #12 | glTF 2.0 import using the retargeting core | Needs step 2 | #16 core | Sonnet |
 | 4 | #27 | Test motions: CMU clips (#3) and CC0 clips from Mesh2Motion | Needs #12 or a conversion script | #3, #12 | Haiku |

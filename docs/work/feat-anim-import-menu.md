@@ -1,6 +1,6 @@
 Branch: feat/anim-import-menu
-Status: active
-Pull request: pending
+Status: done
+Pull request: #111
 Files:
 - src/animimportconvert.*
 - src/pinglymotionwindow.*
