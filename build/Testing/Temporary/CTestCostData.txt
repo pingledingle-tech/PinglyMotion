@@ -1,0 +1,3 @@
+gltfimport 1 0.61689
+mesh2motion 2 0.992009
+---
