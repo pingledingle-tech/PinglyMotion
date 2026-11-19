@@ -2,9 +2,20 @@ Branch: refactor/rename-docs
 Status: done
 Pull request: #95
 Files:
-- README.md
 - CLAUDE.md
-- docs/*.md (not docs/CONTROL.md, docs/DEV.md)
+- README.md
+- docs/ANIM_FORMAT.md
+- docs/AURORA_LINK.md
+- docs/DECISIONS.md
+- docs/IDEAS.md
+- docs/LIVE_LINK_RESEARCH.md
+- docs/MIGRATION.md
+- docs/POSING_UX.md
+- docs/PRODUCT.md
+- docs/RELEASE_NOTES_0.4.0.md
+- docs/RENDERING.md
+- docs/REUSE_REFERENCES.md
+- docs/SECURITY_AUDIT.md
 - docs/index.html
 - docs/work/HISTORY.md
 - docs/work/feat-anim-import.md
