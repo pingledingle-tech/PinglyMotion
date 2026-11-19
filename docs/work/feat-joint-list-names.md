@@ -1,6 +1,6 @@
 Branch: feat/joint-list-names
 Status: active
-Pull request: pending
+Pull request: #98
 Files:
 - src/jointlist.*
 - src/jointinfo.h
