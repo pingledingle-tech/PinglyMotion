@@ -32,6 +32,18 @@ Build on the existing [local control interface](CONTROL.md) so an assistant can 
 
 Create an AO using original animations, potentially for sale. Explore reusable pose/motion libraries and simple LSL controller templates for furniture and poseballs. Check rights for any imported assets; creating an animation in Pingmator alone does not grant rights to its source material. **Status: ideas.**
 
+## Ideas from viewer users' wishes
+
+Users of Second Life viewers ask for several things in public feature wishes that an animation editor can help with. Noted in November 2026, in our own words:
+
+- **Layered animations.** People want a small motion (for example only the hips) to play on top of a dance. Second Life blends animations per joint by priority, so this works when the small animation only has keys on the joints it moves. Idea: make such partial animations easy to create, set their priority, and preview two layers together.
+- **Freeze a pose from a playing animation.** Take the pose the avatar has right now in the viewer and continue working on it in the editor. This is the "pose back from Aurora" step of the live link, limited to the user's own avatar.
+- **Joints on and off.** Choose per joint whether the pose controls it or the running animation does. The live link already sends only the joints that are set; a switch per joint in the joint table would be enough on our side.
+- **Posing Animesh.** Animesh objects use the same skeleton as avatars, so the live link could drive a selected Animesh object instead of the avatar. Needs a way to choose the target on the viewer side.
+- **Two figures with anchoring.** Couple poses clip when body shapes differ. Idea: show a second figure in the scene and lock a hand or another joint to a joint on the other figure with the IK solver, so the pair fits. A large job.
+
+These wishes also support proposing the live link to the Aurora developers as a general tool link: a key-frame editor with a timeline is asked for there, and the editor already exists here. **Status: ideas.**
+
 ## Keeping ideas useful
 
 Add the user problem, expected value, dependencies and an issue link when an idea becomes concrete. The project owner decides priorities; no ordering here is a delivery commitment.

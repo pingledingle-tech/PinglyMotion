@@ -7,6 +7,7 @@ SET (CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
               ${CMAKE_SOURCE_DIR}/src/bvh.cpp
               ${CMAKE_SOURCE_DIR}/src/bvhnode.cpp
               ${CMAKE_SOURCE_DIR}/src/constants.cpp
+              ${CMAKE_SOURCE_DIR}/src/dingle.cpp
               ${CMAKE_SOURCE_DIR}/src/iktree.cpp
               ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp
               ${CMAKE_SOURCE_DIR}/src/llmmesh.cpp
@@ -91,3 +92,9 @@ TARGET_INCLUDE_DIRECTORIES (pingmator_camera_tests PRIVATE ${CMAKE_SOURCE_DIR}/s
 TARGET_LINK_LIBRARIES (pingmator_camera_tests ${PINGMATOR_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME camera COMMAND pingmator_camera_tests)
 SET_TESTS_PROPERTIES (camera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# the .anim writer (#10), not used by the program yet
+ADD_SUBDIRECTORY (animexport)
+
+# the .anim reader (#22), not used by the program yet
+ADD_SUBDIRECTORY (animimport)

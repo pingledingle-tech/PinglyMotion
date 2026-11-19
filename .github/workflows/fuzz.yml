@@ -1,35 +1,82 @@
 name: Fuzz
 
 # Feeds random and broken input to the prop file reader, the control commands and the
-# new BVH/AVM parser
-# (libFuzzer with AddressSanitizer and UndefinedBehaviorSanitizer). See fuzz/README.md.
+# file parsers (libFuzzer with AddressSanitizer and UndefinedBehaviorSanitizer).
+# See fuzz/README.md.
 # Not a required check: a crash shows as a red run with the crash file attached.
-# Runs every night on main and before every release, 10 minutes per target,
-# not on pull requests (one minute per target is too short to find much).
-# After changing a parser or the control commands, start it on the branch:
-# Actions > Fuzz > Run workflow.
+#
+# The targets are built once (with ccache), then every target runs as its own job,
+# all at the same time. Time per target:
+#   - nightly run on main and before every release: 600 seconds
+#   - manual run (Actions > Fuzz > Run workflow, or the dispatch API): 120 seconds,
+#     or the number given in the optional "seconds" input
+# Not on pull requests. After changing a parser or the control commands, start it on
+# the branch.
+# The summary job "fuzz" fails when any target failed; the check name stays "fuzz".
+#
+# A new fuzz target in fuzz/CMakeLists.txt needs a line in the matrix below.
 
 on:
   schedule:
     - cron: '41 1 * * *'
   workflow_dispatch:
+    inputs:
+      seconds:
+        description: 'Seconds per target (empty: 120)'
+        required: false
+        default: ''
+        type: string
   # release.yml runs this workflow before it publishes
   workflow_call:
+    inputs:
+      seconds:
+        description: 'Seconds per target'
+        required: false
+        default: '600'
+        type: string
 
 permissions:
   contents: read
 
 jobs:
-  fuzz:
+  build:
+    name: build fuzz targets
     # pinned, because the clang package names below belong to this Ubuntu release
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 30
+    outputs:
+      seconds: ${{ steps.time.outputs.seconds }}
+      timeout: ${{ steps.time.outputs.timeout }}
     env:
-      SECONDS_PER_TARGET: '600'
-      ASAN_OPTIONS: detect_leaks=0
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
-      QT_QPA_PLATFORM: offscreen
+      # compiler cache: an object is reused only when compiler, flags and source text are identical
+      CCACHE_DIR: /home/runner/.ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 300M
     steps:
+      - name: Time per target
+        id: time
+        env:
+          GIVEN: ${{ inputs.seconds }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ -n "$GIVEN" ]; then
+            seconds="$GIVEN"
+          elif [ "$EVENT" = "schedule" ]; then
+            seconds=600
+          else
+            seconds=120
+          fi
+          case "$seconds" in
+            ''|*[!0-9]*) echo "::error::seconds must be a whole number, got '$seconds'"; exit 1 ;;
+          esac
+          if [ "$seconds" -lt 10 ] || [ "$seconds" -gt 18000 ]; then
+            echo "::error::seconds must be between 10 and 18000, got $seconds"; exit 1
+          fi
+          # fuzzing time plus setup and the run over the start files
+          echo "seconds=$seconds" >> "$GITHUB_OUTPUT"
+          echo "timeout=$(( seconds / 60 + 20 ))" >> "$GITHUB_OUTPUT"
+          echo "Fuzzing $seconds seconds per target"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -43,36 +90,134 @@ jobs:
         run: |
           mkdir -p /home/runner/apt-archives/partial
           sudo apt-get update
-          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives clang libclang-rt-18-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache clang libclang-rt-18-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
           sudo chown -R "$USER" /home/runner/apt-archives
+      - name: Cache compiler output (ccache)
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: /home/runner/.ccache
+          key: ccache-fuzz-${{ hashFiles('**/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-fuzz-${{ hashFiles('**/CMakeLists.txt') }}-
+            ccache-fuzz-
       - name: Build fuzz targets
+        # build number and build time are fixed so that ccache can reuse objects (nothing is shipped from here)
+        env:
+          SOURCE_DATE_EPOCH: '0'
         run: |
-          CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_FUZZ=ON
-          cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile -j 2
-      - name: Fuzz prop files
+          ccache --zero-stats
+          CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DBUILD_NUMBER=0 -DPINGMATOR_FUZZ=ON \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf -j 4
+          ccache --show-stats
+      - name: Pack fuzz targets
+        # tar keeps the executable bit
+        run: tar -cf fuzz-targets.tar -C build-fuzz/fuzz fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-targets
+          path: fuzz-targets.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  run:
+    name: fuzz ${{ matrix.target }}
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ fromJSON(needs.build.outputs.timeout) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: prop
+            corpus: fuzz/corpus/prop
+            max_len: 4096
+            dict: ''
+          - target: control
+            corpus: fuzz/corpus/control
+            max_len: 2048
+            dict: fuzz/control.dict
+          - target: animfile
+            corpus: fuzz/corpus/bvh fuzz/corpus/avm
+            max_len: 65536
+            dict: fuzz/animfile.dict
+          - target: dingle
+            corpus: fuzz/corpus/dingle
+            max_len: 65536
+            dict: fuzz/dingle.dict
+          - target: anim
+            corpus: fuzz/corpus/anim
+            max_len: 65536
+            dict: fuzz/anim.dict
+          - target: gltf
+            corpus: fuzz/corpus/gltf
+            max_len: 65536
+            dict: fuzz/gltf.dict
+    env:
+      ASAN_OPTIONS: detect_leaks=0
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Cache downloaded apt packages
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: /home/runner/apt-archives
+          key: apt-fuzz-run-${{ hashFiles('.github/workflows/fuzz.yml') }}
+          restore-keys: apt-fuzz-run-
+      - name: Install Qt libraries
+        # the sanitizer runtime is linked into the targets; only Qt (same packages as the build) is needed
         run: |
-          mkdir -p work/prop crashes
-          cp fuzz/corpus/prop/* work/prop/
-          build-fuzz/fuzz/fuzz_prop -max_total_time="$SECONDS_PER_TARGET" -max_len=4096 \
-            -artifact_prefix=crashes/prop- work/prop
-      - name: Fuzz control commands
-        if: success() || failure()
+          mkdir -p /home/runner/apt-archives/partial
+          sudo apt-get update
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives qt6-base-dev libqt6opengl6-dev libgl-dev
+          sudo chown -R "$USER" /home/runner/apt-archives
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: fuzz-targets
+      - name: Unpack fuzz targets
         run: |
-          mkdir -p work/control crashes
-          cp fuzz/corpus/control/* work/control/
-          build-fuzz/fuzz/fuzz_control -max_total_time="$SECONDS_PER_TARGET" -max_len=2048 \
-            -dict=fuzz/control.dict -artifact_prefix=crashes/control- work/control
-      - name: Fuzz BVH/AVM files
-        if: success() || failure()
+          mkdir -p targets
+          tar -xf fuzz-targets.tar -C targets
+      - name: Fuzz ${{ matrix.target }}
+        env:
+          TARGET: ${{ matrix.target }}
+          CORPUS: ${{ matrix.corpus }}
+          MAX_LEN: ${{ matrix.max_len }}
+          DICT: ${{ matrix.dict }}
+          SECONDS_PER_TARGET: ${{ needs.build.outputs.seconds }}
         run: |
-          mkdir -p work/animfile crashes
-          cp fuzz/corpus/bvh/* fuzz/corpus/avm/* work/animfile/
-          build-fuzz/fuzz/fuzz_animfile -max_total_time="$SECONDS_PER_TARGET" -max_len=65536 \
-            -dict=fuzz/animfile.dict -artifact_prefix=crashes/animfile- work/animfile
+          mkdir -p "work/$TARGET" crashes
+          for dir in $CORPUS; do cp "$dir"/* "work/$TARGET/"; done
+          dict_arg=()
+          if [ -n "$DICT" ]; then dict_arg=("-dict=$DICT"); fi
+          "targets/fuzz_$TARGET" -max_total_time="$SECONDS_PER_TARGET" -max_len="$MAX_LEN" \
+            "${dict_arg[@]}" -artifact_prefix="crashes/$TARGET-" "work/$TARGET"
       - name: Keep crash files
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: fuzz-crashes
+          name: fuzz-crashes-${{ matrix.target }}
           path: crashes/
           if-no-files-found: ignore
+
+  fuzz:
+    # the overall result, under the old check name
+    name: fuzz
+    needs: [build, run]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All fuzz targets passed
+        env:
+          BUILD: ${{ needs.build.result }}
+          RUN: ${{ needs.run.result }}
+        run: |
+          echo "build: $BUILD, targets: $RUN"
+          if [ "$BUILD" != "success" ] || [ "$RUN" != "success" ]; then
+            echo "::error::A fuzz target failed or did not run. See the 'fuzz <target>' jobs; crash files are attached as fuzz-crashes-<target>."
+            exit 1
+          fi

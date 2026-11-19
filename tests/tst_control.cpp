@@ -101,6 +101,7 @@ class ControlTest : public QObject
     void saveWritesBvh();
     void saveFailureIsReported();
     void filesStayInWorkFolder();
+    void openFileAcceptsDingle();
     void unsavedChangesAreKept();
     void screenshotIsPng();
     void playAndStop();
@@ -518,6 +519,42 @@ void ControlTest::filesStayInWorkFolder()
   QCOMPARE(QFileInfo(m_host->opened).fileName(), QString("other.bvh"));
   QVERIFY(m_api->execute(QJsonObject{{"command", "open_file"}, {"path", work + "/pose.bvh"}})["ok"].toBool());
   answer = run(R"({"command":"open_file","path":"missing.bvh"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY(answer["error"].toString().startsWith("No such file"));
+}
+
+// issue #26 (job 4): open_file accepts a .dingle file, and the file it hands
+// to the window opens with the program's open path
+void ControlTest::openFileAcceptsDingle()
+{
+  QTemporaryDir root;
+  QVERIFY(root.isValid());
+  const QString work = root.filePath("work");
+  QVERIFY(QDir().mkpath(work));
+  m_api->setWorkFolder(work);
+  QVERIFY(QFile::copy(PINGMATOR_TOOLS "/../examples/jump.dingle", work + "/jump.dingle"));
+  m_animation->setDirty(false);   // nothing to lose: opening is allowed
+
+  QJsonObject answer = run(R"({"command":"open_file","path":"jump.dingle"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(QFileInfo(m_host->opened).fileName(), QString("jump.dingle"));
+
+  // what the window does with it (PingmatorWindow::checkAnimationFile, then Animation)
+  QString error;
+  QVERIFY2(BVH::checkFile(m_host->opened, &error), qPrintable(error));
+  BVH bvh;
+  Animation jump(&bvh, m_host->opened);
+  QCOMPARE(jump.getNumberOfFrames(), 30);
+  QCOMPARE(jump.getLoopInPoint(), 9);
+  QCOMPARE(jump.getLoopOutPoint(), 19);
+
+  // any case of the ending; other endings are refused and the error names .dingle
+  QVERIFY(QFile::copy(work + "/jump.dingle", work + "/JUMP.DINGLE"));
+  QVERIFY(run(R"({"command":"open_file","path":"JUMP.DINGLE"})")["ok"].toBool());
+  answer = run(R"({"command":"open_file","path":"jump.txt"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY2(answer["error"].toString().contains(".dingle"), qPrintable(answer["error"].toString()));
+  answer = run(R"({"command":"open_file","path":"missing.dingle"})");
   QVERIFY(!answer["ok"].toBool());
   QVERIFY(answer["error"].toString().startsWith("No such file"));
 }

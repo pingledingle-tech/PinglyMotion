@@ -1,6 +1,6 @@
 # Pingmator fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGMATOR_FUZZ=ON
-#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile
+#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf
 # See fuzz/README.md for how to run them.
 
 SET (FUZZ_FLAGS -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g)
@@ -19,6 +19,7 @@ SET (FUZZ_CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
                    ${CMAKE_SOURCE_DIR}/src/bvh.cpp
                    ${CMAKE_SOURCE_DIR}/src/bvhnode.cpp
                    ${CMAKE_SOURCE_DIR}/src/constants.cpp
+                   ${CMAKE_SOURCE_DIR}/src/dingle.cpp
                    ${CMAKE_SOURCE_DIR}/src/iktree.cpp
                    ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp
                    ${CMAKE_SOURCE_DIR}/src/llmmesh.cpp
@@ -42,3 +43,25 @@ TARGET_INCLUDE_DIRECTORIES (fuzz_animfile PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_animfile PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_animfile PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_animfile Qt6::Core Qt6::Gui)
+
+# the .dingle reader and writer (#26); reads from memory
+ADD_EXECUTABLE (fuzz_dingle fuzz_dingle.cpp ${CMAKE_SOURCE_DIR}/src/dingle.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_dingle PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_dingle PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_dingle PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_dingle Qt6::Core Qt6::Gui)
+
+# the .anim reader (#22); reads from memory
+ADD_EXECUTABLE (fuzz_anim fuzz_anim.cpp ${CMAKE_SOURCE_DIR}/src/animimport.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_anim PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_anim PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_anim PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_anim Qt6::Core)
+
+# the glTF import (#12): reader, sampling and retargeting; reads from memory
+ADD_EXECUTABLE (fuzz_gltf fuzz_gltf.cpp ${CMAKE_SOURCE_DIR}/src/gltfimport.cpp
+                ${CMAKE_SOURCE_DIR}/src/retarget.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_gltf PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_gltf Qt6::Core Qt6::Gui)

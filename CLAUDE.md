@@ -16,6 +16,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 - Work only on your own branch. Never push to `main`.
 - Stay inside the files you listed. If you need another file, add it to `Files:` in your job file first, and run `python3 tools/work.py check` to see whether another active job claims it.
 - Keep the job small: one feature or fix per branch.
+- **Docs in the same pull request:** when your change makes a document wrong (`docs/PRODUCT.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, release notes, the issue it belongs to), fix it in the same pull request and tick the docs box in the template. A job is not done while a document still says the old thing.
 
 ## When you are done
 
@@ -27,12 +28,13 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
    - **Technical jobs** (nothing the user sees on screen changes: parsers, file handling, tests, CI, tools, docs, data that no menu shows yet): the project owner has given standing permission (18 November 2026). Merge as soon as all required checks are green. If the job changed a parser or the control commands, the fuzz run on the branch must also be green first.
    - **Jobs that change what the user sees on screen** (menus, dialogs, texts, the 3D view, camera, keys): the project owner tests the Windows build and says yes in this session. Give the Windows download and one test step at a time.
    - When unsure which kind it is, treat it as visible.
+   - **Test page:** whenever the project owner is to test something, first make a test page as a Claude artifact (where the session has the Artifact tool): the Windows download link, one plain step at a time (clicks in the program, no command line), a tick box and a note field for each test, and an "Ask Claude" field. Keep it up to date for each test round, and keep the test list in the owner test issue too. Test files the owner needs are inside the Windows zip (folders `examples/` and `test-motions/` next to the exe); a test step says "File > Open, then pick the file in the examples folder next to the program", and a test never asks him to download a separate file.
    - Report each merged pull request in one line (number, what, checks green).
 6. If another pull request is merged first, update your branch again (step 2) and wait for green checks before merging.
 
 `main` is protected by a ruleset: changes only through a pull request, squash merge only, and the checks `linux`, `windows`, `asan-ubsan`, `privacy`, `analyze` and `dependency-review` must be green. Auto-merge is allowed in the repository settings, but turning it on needs GraphQL, so merging is done as in step 5. The branch is deleted automatically after the merge.
 
-What runs where: a pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. Changes that only touch Markdown, `docs/` or licence files skip the builds. After a merge, `main` gets a quick Linux build with the tests. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, and fuzzing. A release runs all of it first and is only published when everything passes. After changing a parser or the control commands, start the fuzzing on your branch: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/fuzz.yml/dispatches -f ref=<branch>`, and tell the user the result.
+What runs where: a pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. Changes that only touch Markdown, `docs/` or licence files skip the builds. After a merge, `main` gets a quick Linux build with the tests. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, and fuzzing. A release runs all of it first and is only published when everything passes. After changing a parser or the control commands, start the fuzzing on your branch: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/fuzz.yml/dispatches -f ref=<branch>`, and tell the user the result. All fuzz targets run at the same time, 2 minutes each on a branch (about 10 minutes in all), 10 minutes each at night and before a release; add `-f inputs[seconds]=600` for a longer run on a branch.
 
 The `work-board` check (`tools/work.py check`) is not a required check: if it is red, two active jobs claim the same files. Talk to the user; it does not block a merge by itself.
 

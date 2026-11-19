@@ -168,7 +168,7 @@
             ]
         },
         {
-            "description": "Opens an animation file (.bvh or .avm) from the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.",
+            "description": "Opens an animation file (.dingle, .bvh or .avm) from the Pingmator folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.",
             "name": "open_file",
             "parameters": {
                 "path": {

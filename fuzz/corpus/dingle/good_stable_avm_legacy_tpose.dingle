@@ -1,0 +1,118 @@
+{
+  "format": "dingle",
+  "version": 1,
+  "generator": "PinglyMotion",
+  "timing": {"frames": 30, "frameTime": 0.033333},
+  "figure": "female",
+  "scale": 1,
+  "loop": {"in": -1, "out": 30},
+  "skeleton": [
+    {"name": "hip", "kind": "root", "parent": -1, "offset": [0, 0, 0], "channels": ["Xposition", "Yposition", "Zposition", "Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "abdomen", "kind": "joint", "parent": 0, "offset": [0, 3.42205, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "chest", "kind": "joint", "parent": 1, "offset": [0, 8.486693, -0.684411], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "neck", "kind": "joint", "parent": 2, "offset": [0, 10.266162, -0.273764], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "head", "kind": "joint", "parent": 3, "offset": [0, 3.148285, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 4, "offset": [0, 3.148289, 0], "channels": []},
+    {"name": "lCollar", "kind": "joint", "parent": 2, "offset": [3.422053, 6.707223, -0.821293], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "lShldr", "kind": "joint", "parent": 6, "offset": [3.285171, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "lForeArm", "kind": "joint", "parent": 7, "offset": [10.129278, 0, 0], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "lHand", "kind": "joint", "parent": 8, "offset": [8.486692, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 9, "offset": [4.106464, 0, 0], "channels": []},
+    {"name": "rCollar", "kind": "joint", "parent": 2, "offset": [-3.558935, 6.707223, -0.821293], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "rShldr", "kind": "joint", "parent": 11, "offset": [-3.148289, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "rForeArm", "kind": "joint", "parent": 12, "offset": [-10.266159, 0, 0], "channels": ["Yrotation", "Zrotation", "Xrotation"]},
+    {"name": "rHand", "kind": "joint", "parent": 13, "offset": [-8.34981, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 14, "offset": [-4.106464, 0, 0], "channels": []},
+    {"name": "lThigh", "kind": "joint", "parent": 0, "offset": [5.338403, -1.642589, 1.368821], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "lShin", "kind": "joint", "parent": 16, "offset": [-2.053232, -20.12167, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "lFoot", "kind": "joint", "parent": 17, "offset": [0, -19.30038, -1.231939], "channels": ["Xrotation", "Yrotation", "Zrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 18, "offset": [0, -2.463878, 4.653993], "channels": []},
+    {"name": "rThigh", "kind": "joint", "parent": 0, "offset": [-5.338403, -1.642589, 1.368821], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "rShin", "kind": "joint", "parent": 20, "offset": [2.053232, -20.12167, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "rFoot", "kind": "joint", "parent": 21, "offset": [0, -19.30038, -1.231939], "channels": ["Xrotation", "Yrotation", "Zrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 22, "offset": [0, -2.463878, 4.653993], "channels": []}
+  ],
+  "tracks": [
+    {"joint": 0,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ],
+     "position": [
+       {"frame": 0, "values": [0, 43.5285187, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 1,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 2,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 3,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 4,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 6,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 7,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 8,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 9,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 11,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 12,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 13,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 14,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 16,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 17,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 18,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 20,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 21,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 22,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]}
+  ],
+  "camera": null,
+  "extensions": {}
+}

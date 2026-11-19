@@ -83,6 +83,8 @@ who runs Pingmator (for example `C:\Users\<name>\Documents\Pingmator` on Windows
 it is first needed, and `state` shows it as `folder`. A plain file name such as `pose.bvh` means a file
 in that folder. Paths outside it, also through `..` or links, are refused.
 
+- `open_file` opens `.dingle`, `.bvh` and `.avm` files (the ending in any case). A file that cannot be
+  read gives an error that says why.
 - `save_file` never replaces another file. Saving again to the file that is open is fine.
 - `new_animation` and `open_file` refuse while there are unsaved changes; save first.
 - `PINGMATOR_CONTROL_FOLDER` sets another folder (used by the tests).
