@@ -6,7 +6,13 @@ Files:
 - CLAUDE.md
 - docs/*.md (not docs/CONTROL.md, docs/DEV.md)
 - docs/index.html
-- docs/work/*.md of finished jobs (not refactor-rename-*)
+- docs/work/HISTORY.md
+- docs/work/feat-anim-import.md
+- docs/work/feat-dingle-open.md
+- docs/work/feat-ruth2-menu.md
+- docs/work/feat-version-in-title.md
+- docs/work/fix-in-program-links.md
+- docs/work/fix-wheel-properties-82.md
 - fuzz/README.md
 
 ## What
