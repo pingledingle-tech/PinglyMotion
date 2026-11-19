@@ -1,6 +1,6 @@
 Branch: test/easing-export
-Status: active
-Pull request: pending
+Status: done
+Pull request: #108
 Files:
 - tests/animexport/**
 - docs/work/test-easing-export.md
