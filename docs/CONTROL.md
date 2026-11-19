@@ -1,6 +1,6 @@
 # Remote control (for AI tools and other programs)
 
-Pingmator can be controlled by other programs on the same computer: pose joints, change
+PinglyMotion can be controlled by other programs on the same computer: pose joints, change
 frames, take a picture of the 3D view, save a BVH. It is an open interface: plain HTTP with
 JSON, and an MCP server on top for AI tools that speak MCP (Model Context Protocol).
 Nothing here is tied to one AI.
@@ -8,9 +8,9 @@ Nothing here is tied to one AI.
 ## Turn it on
 
 - Menu **Options > Allow remote control (AI and other programs)**, or
-- start Pingmator with `pingmator --control`.
+- start PinglyMotion with `pingmator --control`.
 
-It is off every time Pingmator starts, unless you use `--control`. While it is on, the window
+It is off every time PinglyMotion starts, unless you use `--control`. While it is on, the window
 title says "remote control on".
 
 The bottom right of the status bar shows a coloured dot and who is connected, for example
@@ -26,7 +26,7 @@ The bottom right of the status bar shows a coloured dot and who is connected, fo
 ## Who can use it
 
 - Only programs on your own computer: it listens on `127.0.0.1` and nowhere else.
-- Every request needs a secret key. Pingmator makes a new key each time it starts and writes it,
+- Every request needs a secret key. PinglyMotion makes a new key each time it starts and writes it,
   with the address, to `control.json` (only you can read it):
   - Windows: `%LOCALAPPDATA%\Pingmator\control.json`
   - macOS: `~/Library/Application Support/Pingmator/control.json`
@@ -35,7 +35,7 @@ The bottom right of the status bar shows a coloured dot and who is connected, fo
 - The file is written in one step: the key goes into a temporary file that only you can read from
   the moment it is made, and that file replaces `control.json` only when everything was written.
   A file left behind by a crash is removed first. If the file cannot be written safely (for example
-  a full disk or permissions that cannot be set), remote control does not start and Pingmator says why.
+  a full disk or permissions that cannot be set), remote control does not start and PinglyMotion says why.
 - Requests from web pages are refused, so a website you visit cannot use it.
 - A program that runs as you can read the key file. Turn remote control off when you do not need it.
 
@@ -59,17 +59,17 @@ curl -s -H "Authorization: Bearer $TOKEN" -d '{"command":"state"}' http://127.0.
 
 ### Name and heartbeat
 
-A client can name itself with the header `X-Pingmator-Client: <name>` (printable text, up to 40
-characters); the status bar shows it. `POST /api/heartbeat` (with the key, empty body) tells Pingmator
+A client can name itself with the header `X-PinglyMotion-Client: <name>` (printable text, up to 40
+characters); the status bar shows it. `POST /api/heartbeat` (with the key, empty body) tells PinglyMotion
 the client is still there without doing anything. The MCP server sends the AI tool's name from MCP
 `initialize` and a heartbeat every 10 seconds.
 
-### Checking that it is Pingmator
+### Checking that it is PinglyMotion
 
-`control.json` stays behind if Pingmator crashes, and another program could then take the port.
+`control.json` stays behind if PinglyMotion crashes, and another program could then take the port.
 So a client should check the program before it sends the key: `GET /api/hello?nonce=<64 random hex digits>`
 (no key needed) answers `{"ok": true, "proof": "<hex>"}`, where proof is
-HMAC-SHA256(key, `"pingmator-hello:" + nonce`). Compare it with your own result and send nothing if it
+HMAC-SHA256(key, `"pinglymotion-hello:" + nonce`). Compare it with your own result and send nothing if it
 differs. The MCP server does this before every request.
 
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
@@ -79,7 +79,7 @@ Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key
 ### Files
 
 `open_file` and `save_file` only work in one folder: `Pingmator` in the Documents folder of the user
-who runs Pingmator (for example `C:\Users\<name>\Documents\Pingmator` on Windows). It is made when
+who runs PinglyMotion (for example `C:\Users\<name>\Documents\Pingmator` on Windows). It is made when
 it is first needed, and `state` shows it as `folder`. A plain file name such as `pose.bvh` means a file
 in that folder. Paths outside it, also through `..` or links, are refused.
 
@@ -91,15 +91,15 @@ in that folder. Paths outside it, also through `..` or links, are refused.
 
 ## Set up an AI assistant
 
-`pingmator_mcp.py` is an MCP server: it lets an AI assistant such as the Claude app (Claude Desktop)
+`pinglymotion_mcp.py` is an MCP server: it lets an AI assistant such as the Claude app (Claude Desktop)
 or Claude Code use remote control. It needs Python 3.8 or newer and nothing else; the assistant
 starts it by itself.
 
 The Windows zip has it in the `mcp` folder next to `pingmator.exe`. Register that copy: unpacking a
 new zip over the old folder then updates the program and the MCP server together. In the source
-tree it is `tools/mcp/pingmator_mcp.py`.
+tree it is `tools/mcp/pinglymotion_mcp.py`.
 
-The examples below use `C:\Pingmator`. Replace it with the folder where you unpacked Pingmator.
+The examples below use `C:\PinglyMotion`. Replace it with the folder where you unpacked PinglyMotion.
 
 ### 1. Install Python
 
@@ -109,20 +109,20 @@ installer. Check in a command window: `python --version`.
 ### 2a. Claude app (Claude Desktop)
 
 1. Open **Settings > Developer > Edit Config**. This opens `claude_desktop_config.json`.
-2. Add `pingmator` under `mcpServers`. If the file is empty or has only `{}`, use all of this:
+2. Add `pinglymotion` under `mcpServers`. If the file is empty or has only `{}`, use all of this:
 
    ```json
    {
      "mcpServers": {
-       "pingmator": {
+       "pinglymotion": {
          "command": "python",
-         "args": ["C:\\Pingmator\\mcp\\pingmator_mcp.py"]
+         "args": ["C:\\PinglyMotion\\mcp\\pinglymotion_mcp.py"]
        }
      }
    }
    ```
 
-   If `mcpServers` already has other servers, add only the `"pingmator": { ... }` part, with a
+   If `mcpServers` already has other servers, add only the `"pinglymotion": { ... }` part, with a
    comma between the entries. Backslashes in the path must be written twice.
 3. Save the file and quit the app completely (also from the system tray), then start it again.
 
@@ -134,20 +134,20 @@ command window shows it (again with double backslashes in the file).
 In a command window:
 
 ```
-claude mcp add pingmator -- python "C:\Pingmator\mcp\pingmator_mcp.py"
+claude mcp add pinglymotion -- python "C:\PinglyMotion\mcp\pinglymotion_mcp.py"
 ```
 
 ### 2c. Other assistants
 
 Any tool that takes an `mcpServers` list works the same way. On Linux and macOS use `python3` and
-the path to `pingmator_mcp.py`.
+the path to `pinglymotion_mcp.py`.
 
 ### 3. Use it
 
-Start Pingmator and turn on **Options > Allow remote control** (or start it with `--control`).
-Then ask the assistant to pose the figure. The tools are listed even when Pingmator is not running,
-and say what to do if one is called then. Restart the assistant after updating Pingmator: a new MCP
-server refuses to talk to an old Pingmator.
+Start PinglyMotion and turn on **Options > Allow remote control** (or start it with `--control`).
+Then ask the assistant to pose the figure. The tools are listed even when PinglyMotion is not running,
+and say what to do if one is called then. Restart the assistant after updating PinglyMotion: a new MCP
+server refuses to talk to an old PinglyMotion.
 
 ### 4. Updating
 
@@ -155,16 +155,16 @@ Unpack each new zip **over the old folder**. Then the program and the MCP server
 are updated together.
 
 If you unpack a new zip into another folder, the assistant still starts the old MCP server from the
-folder you registered. Pingmator then works, but newer tools are missing or answer "Unknown tool".
+folder you registered. PinglyMotion then works, but newer tools are missing or answer "Unknown tool".
 Fix it in one of these ways:
 
 - copy the new `mcp` folder over the old one, or
 - register the new folder instead. Claude Code:
-  `claude mcp remove pingmator`, then `claude mcp add` with the new path (see 2b).
+  `claude mcp remove pinglymotion`, then `claude mcp add` with the new path (see 2b).
   Claude app: change the path in `claude_desktop_config.json` and restart the app.
 
 Claude Code registers the server for the folder you were in when you ran `claude mcp add`. Start
-`claude` from that same folder (for example `cd C:\Pingmator`, then `claude`), or add `--scope user`
+`claude` from that same folder (for example `cd C:\PinglyMotion`, then `claude`), or add `--scope user`
 to `claude mcp add` so it works from every folder.
 
 ## Good to know when posing

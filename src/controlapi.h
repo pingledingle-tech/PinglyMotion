@@ -1,8 +1,8 @@
 /*
- * Pingmator control interface - the commands
+ * PinglyMotion control interface - the commands
  *
  * An open, local interface so that any program (and any AI tool) can pose and
- * play the animation that is open in Pingmator. This file holds the commands
+ * play the animation that is open in PinglyMotion. This file holds the commands
  * only; controlserver.cpp carries them over a local HTTP connection.
  *
  * Frame numbers in this interface start at 1, like the frame counter shown in
@@ -66,7 +66,7 @@ class ControlApi
     // name and description of every command, for help texts and MCP
     static QJsonArray commandList();
 
-    // open_file and save_file only work inside this folder: Pingmator in the
+    // open_file and save_file only work inside this folder: PinglyMotion in the
     // user's Documents folder, or PINGLYMOTION_CONTROL_FOLDER if set
     void setWorkFolder(const QString& folder) { m_workFolder = folder; }
     static QString defaultWorkFolder();
@@ -97,7 +97,7 @@ class ControlApi
     QStringList jointNames();
     // goes to "frame" when the request has one; false and an error if it is out of range
     bool applyFrame(const QJsonObject& request, QString& error);
-    // the first frame is the reference pose; Pingmator refuses edits there unless the option is off
+    // the first frame is the reference pose; PinglyMotion refuses edits there unless the option is off
     bool checkNotProtected(QString& error);
     QJsonObject fail(const QString& message);
     QJsonObject ok();

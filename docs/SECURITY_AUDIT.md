@@ -270,9 +270,9 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
 
 ### PM-09 – MCP server sends the bearer token through `HTTP_PROXY` — **Medium**
 
-- **File:** `tools/mcp/pingmator_mcp.py:52-71`
+- **File:** `tools/mcp/pinglymotion_mcp.py:52-71`
 - **Explanation:** `urllib.request.urlopen()` honours `HTTP_PROXY`/`http_proxy`. `proxy_bypass("127.0.0.1")` is false unless `NO_PROXY` lists it. The request to `http://127.0.0.1:<port>/api` – including `Authorization: Bearer <token>` – is then sent to the proxy. The project notes already record the symptom ("urllib needs `ProxyHandler({})` in the cloud sandbox (proxy otherwise gives 404)").
-- **Evidence:** A fake proxy on port 3999 and `HTTP_PROXY=http://127.0.0.1:3999`, then `pingmator_mcp.request('/api', {'command':'state'})`:
+- **Evidence:** A fake proxy on port 3999 and `HTTP_PROXY=http://127.0.0.1:3999`, then `pinglymotion_mcp.request('/api', {'command':'state'})`:
   ```
   PROXY SAW: POST http://127.0.0.1:17700/api HTTP/1.1
   PROXY SAW: Authorization: Bearer 4ec3e6a457dee6269731e9ed05937bcf31bb92ebfbec02b5d3ee407ba4030311
@@ -396,7 +396,7 @@ These were not reproduced. They are listed so they are not forgotten.
 | ID | Area | Concern | Why unverified / next step |
 |---|---|---|---|
 | P-01 | `src/bvhparser.cpp:153-510`, `src/filemanager.cpp` | The newer `BvhParser` dereferences the end iterator in `nextToken()`/`token()` (`:458-467`) on truncated files, skips the first token, has unbounded recursion and channel counts, and all error branches are empty. | Dead code today (no callers of `FileManager::loadAnimationFromFile`). Fix or delete before it is wired in. |
-| P-02 | `pingmator_mcp.py` on Windows | Whether urllib on Windows sends 127.0.0.1 through the system (registry) proxy depends on `ProxyOverride`/`<local>` settings. | Test on the maintainer's Windows PC with a system proxy set. The PM-09 fix covers it either way. |
+| P-02 | `pinglymotion_mcp.py` on Windows | Whether urllib on Windows sends 127.0.0.1 through the system (registry) proxy depends on `ProxyOverride`/`<local>` settings. | Test on the maintainer's Windows PC with a system proxy set. The PM-09 fix covers it either way. |
 | P-03 | `controlserver.cpp:133-141` | `control.json` is opened (created with umask permissions), then `chmod 0600`, then written. The token is written after the chmod, so no exposure was seen. On Windows `setPermissions` does not set ACLs; protection relies on `%LOCALAPPDATA%` being private. `PINGLYMOTION_CONTROL_FILE` can redirect the file anywhere. | Low risk; use `QSaveFile` and create with restrictive permissions from the start; consider ignoring the env override in release builds. |
 | P-04 | PM-01 exploitability | Whether the heap overflow can be turned into code execution. | Written values are mostly constant; not attempted. |
 | P-05 | Qt CVEs (SC-02) | Whether Pingmator reaches the vulnerable Qt code. | Pingmator uses `QNetworkAccessManager` for the update check (HTTPS to api.github.com) and PNG writing; not analysed further. |

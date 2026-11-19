@@ -1,5 +1,5 @@
 /*
- * Pingmator - the items of the status bar
+ * PinglyMotion - the items of the status bar
  *
  * ControlIndicator (issue #43): a coloured dot and a short text: is remote
  * control on, is an assistant connected, which one, and what it did last.

@@ -1,6 +1,6 @@
 Branch: refactor/rename-mcp-control
-Status: active
-Pull request: pending
+Status: done
+Pull request: #93
 Files:
 - tools/mcp/**
 - src/control*.*

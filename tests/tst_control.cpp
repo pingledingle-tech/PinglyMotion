@@ -1,5 +1,5 @@
 /*
- * Pingmator control interface tests: the commands, and the local server.
+ * PinglyMotion control interface tests: the commands, and the local server.
  *
  * Run from the bin/ folder, so the program finds ./data like it does normally.
  * Licensed under the GNU General Public License version 2 or later.
@@ -194,7 +194,7 @@ void ControlTest::commandsAreListed()
   }
 }
 
-// tools/mcp/commands.json is the tool list of the MCP server when Pingmator is not running.
+// tools/mcp/commands.json is the tool list of the MCP server when PinglyMotion is not running.
 // Update it with: PINGLYMOTION_UPDATE_COMMANDS=1 pinglymotion_control_tests
 void ControlTest::mcpCommandListIsUpToDate()
 {
@@ -660,14 +660,14 @@ void ControlTest::serverAnswersWithKey()
   QVERIFY(shin->isKeyframe(2));
 }
 
-// issue #15: the client can check that it talks to Pingmator before it sends the key
+// issue #15: the client can check that it talks to PinglyMotion before it sends the key
 void ControlTest::serverProvesItKnowsTheKey()
 {
   const QByteArray nonce = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
   const QByteArray hostLine = "Host: 127.0.0.1:" + QByteArray::number(m_server->port()) + "\r\n";
   QByteArray response = exchange("GET /api/hello?nonce=" + nonce + " HTTP/1.1\r\n" + hostLine + "\r\n");
   QCOMPARE(statusOf(response), 200);
-  const QByteArray expected = QMessageAuthenticationCode::hash("pingmator-hello:" + nonce, m_server->token().toLatin1(), QCryptographicHash::Sha256).toHex();
+  const QByteArray expected = QMessageAuthenticationCode::hash("pinglymotion-hello:" + nonce, m_server->token().toLatin1(), QCryptographicHash::Sha256).toHex();
   QCOMPARE(bodyOf(response)["proof"].toString().toLatin1(), expected);
   QVERIFY(!bodyOf(response).contains("token"));
   QVERIFY(!response.contains(m_server->token().toLatin1()));
@@ -970,7 +970,7 @@ void ControlTest::serverReportsClientAndCommand()
   QSignalSpy contact(m_server, &ControlServer::contact);
   QSignalSpy refused(m_server, &ControlServer::refused);
 
-  QCOMPARE(statusOf(post(R"({"command":"state"})", "X-Pingmator-Client: Claude Code\r\n")), 200);
+  QCOMPARE(statusOf(post(R"({"command":"state"})", "X-PinglyMotion-Client: Claude Code\r\n")), 200);
   QCOMPARE(contact.count(), 1);
   QCOMPARE(contact.at(0).at(0).toString(), QString("Claude Code"));
   QCOMPARE(contact.at(0).at(1).toString(), QString("state"));
@@ -984,7 +984,7 @@ void ControlTest::serverReportsClientAndCommand()
 
   // heartbeat: right key needed, no command
   const QByteArray beat = "POST /api/heartbeat HTTP/1.1\r\nHost: 127.0.0.1:" + QByteArray::number(m_server->port()) + "\r\n"
-                          "X-Pingmator-Client: test\r\nContent-Length: 0\r\n";
+                          "X-PinglyMotion-Client: test\r\nContent-Length: 0\r\n";
   QCOMPARE(statusOf(exchange(beat + "Authorization: Bearer " + m_server->token().toLatin1() + "\r\n\r\n")), 200);
   QCOMPARE(contact.count(), 3);
   QCOMPARE(contact.at(2).at(0).toString(), QString("test"));
