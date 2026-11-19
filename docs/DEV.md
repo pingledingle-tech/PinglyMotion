@@ -57,7 +57,7 @@ The Windows build of every pull request is a zip (artifact `PinglyMotion-windows
 
 The project owner tests ONE combined build, branch `test/combined` (all open visible pull requests merged into it, never merged into `main`). After a visible job is ready, its session adds the pull request to the combined branch (merge it in, push, wait for the build) and puts the test on the test page and in the owner test list with the combined build's Windows link. When a test is approved, the pull request is merged on its own as today.
 
-`tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file.
+`tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file. `test/combined` is rebuilt after every change to the set of open visible pull requests, and it is pushed with --force-with-lease; this is the only branch that may be force-pushed, and the project owner approved it for every session.
 
 ## Pictures
 
