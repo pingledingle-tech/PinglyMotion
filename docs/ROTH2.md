@@ -1,6 +1,6 @@
 # Roth2 v2 (male body): plan
 
-Status: plan only (19 Nov 2026), for issue 15. No code and no assets are in the repository yet. The code job starts only after the project owner says "start".
+Status: done in code (19 Nov 2026), for issue 15, waiting for the project owner's Windows test. The project owner decided the open question below: the male body is chosen automatically from the figure type, with no new menu entry (see `docs/DECISIONS.md`). The rest of this page is the plan the job followed.
 
 Checked against the upstream repository https://github.com/RuthAndRoth/Roth2, branch `master`, commit `8dfb8b200dd6fdeb40358ac4753b01cc2de15bee`. The README there says "Roth2 v2 prepared on 2020-05-24 is the current release". The Collada files are in the repository, so no Blender export is needed (the older note in issue 15 said otherwise; that is outdated).
 

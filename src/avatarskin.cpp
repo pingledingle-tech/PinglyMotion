@@ -8,6 +8,7 @@
 #include <QTextStream>
 
 #include <cmath>
+#include <utility>
 
 #include "avatarskin.h"
 #include "pmmesh.h"
@@ -36,6 +37,8 @@ bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
   m_usedJoints.clear();
   m_parts.clear();
   m_male = false;
+  m_rothShown = false;
+  m_roth = MeshState();
   m_body = body;
   m_maleScales.clear();
   m_maleShifts.clear();
@@ -88,7 +91,36 @@ bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
     return false;
   }
   m_jointScales.fill(QVector3D(1, 1, 1), m_jointNames.size());
+  // the male figure's body; a missing or damaged file only means the male
+  // figure falls back to the body above
+  loadMaleMesh(folder + "roth2/roth2.pmm");
   return true;
+}
+
+void AvatarSkin::swapMesh(MeshState& other)
+{
+  std::swap(m_jointNames, other.jointNames);
+  std::swap(m_restPositions, other.restPositions);
+  std::swap(m_usedJoints, other.usedJoints);
+  std::swap(m_parts, other.parts);
+  std::swap(m_jointScales, other.jointScales);
+}
+
+void AvatarSkin::loadMaleMesh(const QString& fileName)
+{
+  // load into the members, then move the result out of the way
+  MeshState chosen;
+  swapMesh(chosen);   // chosen body away, members empty
+  QString error;
+  const bool ok = loadPmm(fileName, &error);
+  if (ok)
+    m_jointScales.fill(QVector3D(1, 1, 1), m_jointNames.size());
+  else
+    qWarning("AvatarSkin: male body not loaded: %s", error.toLatin1().constData());
+  swapMesh(m_roth);   // Roth2 (or nothing) into m_roth, members empty again
+  swapMesh(chosen);   // chosen body back
+  m_roth.loaded = ok;
+  if (!ok) m_roth = MeshState();
 }
 
 bool AvatarSkin::loadJoints(const QString& fileName, QString* errorMessage)
@@ -211,17 +243,17 @@ bool AvatarSkin::loadPmm(const QString& fileName, QString* errorMessage)
 
 QVector3D AvatarSkin::jointScale(const QString& name) const
 {
-  return m_male ? m_maleScales.value(name, QVector3D(1, 1, 1)) : QVector3D(1, 1, 1);
+  return m_male && !m_rothShown ? m_maleScales.value(name, QVector3D(1, 1, 1)) : QVector3D(1, 1, 1);
 }
 
 QVector3D AvatarSkin::jointShift(const QString& name) const
 {
-  return m_male ? m_maleShifts.value(name) : QVector3D();
+  return m_male && !m_rothShown ? m_maleShifts.value(name) : QVector3D();
 }
 
 float AvatarSkin::footDrop() const
 {
-  if (!m_male) return 0.0f;
+  if (!m_male || m_rothShown) return 0.0f;
   float drop = 0.0f;
   int joint = m_skeletonBySlName.value("mAnkleLeft", -1);
   while (joint >= 0 && m_skeleton[joint].parent >= 0)
@@ -240,6 +272,12 @@ void AvatarSkin::setMale(bool male)
   if (male == m_male) return;
   m_male = male;
   m_restRevision++;
+  if (m_roth.loaded && male != m_rothShown)
+  {
+    // the male figure uses the Roth2 mesh, the female one the chosen body
+    swapMesh(m_roth);
+    m_rothShown = male;
+  }
   m_jointScales.resize(m_jointNames.size());
   for (int j = 0; j < m_jointNames.size(); j++)
     m_jointScales[j] = jointScale(m_jointNames[j]);

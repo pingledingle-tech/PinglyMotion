@@ -747,12 +747,20 @@ void BentoTest::skinBendsElbow()
 }
 
 
-// the male figure: Ruth2 has no male shape, so only the skeleton changes
-// (wider collar and shoulders, longer shins); the mesh itself stays the same
+// the male figure when there is no male body file (roth2.pmm missing; with
+// it a male figure shows Roth2, see tst_roth2.cpp): Ruth2 has no male shape,
+// so only the skeleton changes (wider collar and shoulders, longer shins);
+// the mesh itself stays the same
 void BentoTest::skinMaleShape()
 {
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  QVERIFY(QDir().mkpath(dir.path() + "/character/ruth2"));
+  const QString data = Constants::pinglyMotionDataPath();
+  QVERIFY(QFile::copy(data + "/skin_joints.txt", dir.path() + "/skin_joints.txt"));
+  QVERIFY(QFile::copy(data + "/character/ruth2/ruth2.pmm", dir.path() + "/character/ruth2/ruth2.pmm"));
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
+  QVERIFY(skin.load(dir.path()));
   QVector<QVector<QVector3D>> female;
   for (const AvatarSkin::Part& part : skin.parts()) female << part.restVertices;
 
