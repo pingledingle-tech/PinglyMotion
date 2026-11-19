@@ -11,6 +11,8 @@ Files:
 - .github/workflows/build.yml
 - .github/workflows/release.yml
 - docs/CONTROL.md
+- docs/DEV.md
+- tools/mcp/mcpb/README.txt
 - README.md
 - docs/PRODUCT.md
 - docs/ROADMAP.md
