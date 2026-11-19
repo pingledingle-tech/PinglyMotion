@@ -1,12 +1,10 @@
 Branch: feat/anim-export
 Status: active
-Pull request: pending
+Pull request: #63
 Files:
 - src/animexport.*
-- src/CMakeLists.txt
 - tests/animexport/**
 - tests/CMakeLists.txt
-- CMakeLists.txt
 - docs/ANIM_FORMAT.md
 
 ## What
