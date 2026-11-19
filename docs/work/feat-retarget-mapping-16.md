@@ -1,6 +1,6 @@
 Branch: feat/retarget-mapping-16
-Status: active
-Pull request: pending
+Status: done
+Pull request: #137
 Files:
 - src/retargetmapping.*
 - src/retarget.*
