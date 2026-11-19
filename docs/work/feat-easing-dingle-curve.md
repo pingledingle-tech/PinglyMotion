@@ -1,6 +1,6 @@
 Branch: feat/easing-dingle-curve
 Status: active
-Pull request: pending
+Pull request: #128
 Files:
 - src/easing.*
 - src/animfile.h
