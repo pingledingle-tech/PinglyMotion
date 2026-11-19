@@ -2,7 +2,9 @@
 
 This page is the home of every text that teaches a beginner inside the program. It holds the goal, the places where the program teaches, the writing rules, and a register (a list) of all texts. It is step 1 of issue #54.
 
-**Nothing in this register is reviewed yet.** Every row is a draft. A draft is a proposal. It is not final wording, and it is not in the program.
+**All 45 texts in this register were reviewed by the project owner on 19 November 2026 and approved unchanged.** They are final wording, but none is in the program yet.
+
+**Review note:** the owner, a beginner, asked what the welcome button "Standing" means; the label alone did not say it is a ready-made starting pose. The texts were approved as they are, but the welcome card should make clear that the three buttons are ready-made starting points.
 
 Words used on this page:
 
@@ -76,71 +78,71 @@ Each row is one text. Columns:
 - **Status**: `draft`, `reviewed by the owner`, or `in the program`.
 - **Used by**: the issue or pull request that builds the screen.
 
-### Place 5: easing hints (first drafts)
+### Place 5: easing hints
 
 The six choices come from #53. The hint shows under the tiles when the mouse rests on one. Each hint says when the choice fits.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| EASE-01 | 5 Easing hint | Mouse rests on "Even" | Same speed all the way. Use it for machines or a steady spin. | draft | #53 step 5 |
-| EASE-02 | 5 Easing hint | Mouse rests on "Slow start" | Starts gently, then speeds up. Pick it for lifting an arm. | draft | #53 step 5 |
-| EASE-03 | 5 Easing hint | Mouse rests on "Slow finish" | Moves at speed, then settles into the new pose. Good for putting a hand down. | draft | #53 step 5 |
-| EASE-04 | 5 Easing hint | Mouse rests on "Slow both ends" | Starts and stops softly. Good for most arm and head moves. | draft | #53 step 5 |
-| EASE-05 | 5 Easing hint | Mouse rests on "Overshoot, then settle" | Goes a little past the pose, then comes back. Good for a lively wave. | draft | #53 step 5 |
-| EASE-06 | 5 Easing hint | Mouse rests on "Hold, then snap" | Stays in the old pose, then jumps to the new one. Good for a blink. | draft | #53 step 5 |
+| EASE-01 | 5 Easing hint | Mouse rests on "Even" | Same speed all the way. Use it for machines or a steady spin. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
+| EASE-02 | 5 Easing hint | Mouse rests on "Slow start" | Starts gently, then speeds up. Pick it for lifting an arm. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
+| EASE-03 | 5 Easing hint | Mouse rests on "Slow finish" | Moves at speed, then settles into the new pose. Good for putting a hand down. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
+| EASE-04 | 5 Easing hint | Mouse rests on "Slow both ends" | Starts and stops softly. Good for most arm and head moves. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
+| EASE-05 | 5 Easing hint | Mouse rests on "Overshoot, then settle" | Goes a little past the pose, then comes back. Good for a lively wave. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
+| EASE-06 | 5 Easing hint | Mouse rests on "Hold, then snap" | Stays in the old pose, then jumps to the new one. Good for a blink. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
 
-### Place 6: notes in the example wave (first drafts)
+### Place 6: notes in the example wave
 
 The wave is a short loop with five keys, one saved pose each. Each pose change uses a different choice from place 5, and the note says which. The last pose matches the first, so the loop has no jump. The example is our own and is built in #53 step 6.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| WAVE-01 | 6 Wave note | Key 1: arm hangs down | A key is a saved pose. This one has the arm down.<br>The wave starts and ends here, so it loops. | draft | #53 step 6 |
-| WAVE-02 | 6 Wave note | Key 2: arm lifted, change uses "Slow both ends" | The arm lifts here.<br>Slow both ends makes it start and stop softly. | draft | #53 step 6 |
-| WAVE-03 | 6 Wave note | Key 3: hand out, change uses "Overshoot, then settle" | The hand swings out, goes a little past, then settles.<br>That is Overshoot, then settle. | draft | #53 step 6 |
-| WAVE-04 | 6 Wave note | Key 4: hand back, change uses "Even" | The hand swings back at one steady speed.<br>That is Even. It looks stiff, so try Slow both ends. | draft | #53 step 6 |
-| WAVE-05 | 6 Wave note | Key 5: arm down again, change uses "Slow finish" | The arm slows down as it lands.<br>It matches the first key, so the loop has no jump. | draft | #53 step 6 |
-| WAVE-06 | 6 Wave note | After the last key: a small task | Your turn: make the arm stop more softly. | draft | #53 step 6 |
+| WAVE-01 | 6 Wave note | Key 1: arm hangs down | A key is a saved pose. This one has the arm down.<br>The wave starts and ends here, so it loops. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
+| WAVE-02 | 6 Wave note | Key 2: arm lifted, change uses "Slow both ends" | The arm lifts here.<br>Slow both ends makes it start and stop softly. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
+| WAVE-03 | 6 Wave note | Key 3: hand out, change uses "Overshoot, then settle" | The hand swings out, goes a little past, then settles.<br>That is Overshoot, then settle. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
+| WAVE-04 | 6 Wave note | Key 4: hand back, change uses "Even" | The hand swings back at one steady speed.<br>That is Even. It looks stiff, so try Slow both ends. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
+| WAVE-05 | 6 Wave note | Key 5: arm down again, change uses "Slow finish" | The arm slows down as it lands.<br>It matches the first key, so the loop has no jump. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
+| WAVE-06 | 6 Wave note | After the last key: a small task | Your turn: make the arm stop more softly. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
 
-### Places 1 to 4, 7 to 9: first drafts
+### Places 1 to 4, 7 to 9
 
-These are first drafts for the places that had no text. The owner reviews them one place at a time (see "Review order" below). Control names such as "Set key" and "Play" are placeholders: the job that builds the screen checks them against the real labels before the status changes. Tips and hints get more rows when the tips and hint jobs start.
+These texts were first drafts for the places that had no text. The owner reviewed them on 19 November 2026 (see "Review order" below). Control names such as "Set key" and "Play" are placeholders: the job that builds the screen checks them against the real labels before the status changes. Tips and hints get more rows when the tips and hint jobs start.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| WELCOME-01 | 1 Welcome card | First start: title | Make your first animation | draft | #14 job 9 |
-| WELCOME-02 | 1 Welcome card | Button label: Standing | Standing | draft | #14 job 9 |
-| WELCOME-03 | 1 Welcome card | Button label: Sitting | Sitting | draft | #14 job 9 |
-| WELCOME-04 | 1 Welcome card | Button label: Dance example | Dance example | draft | #14 job 9 |
-| WELCOME-05 | 1 Welcome card | The one line under the title | Pick a pose to start. You can change it later. | draft | #14 job 9 |
-| WELCOME-06 | 1 Welcome card | Link that closes the card (Skip) | Skip | draft | #14 job 9 |
-| TIP-01 | 2 Tip on hover | Mouse rests on the button that sets a key | Saves the pose you see now as a key.<br>A key is a saved pose. | draft | #14 job 8 |
-| TIP-02 | 2 Tip on hover | Mouse rests on the play button | Plays your animation from the start.<br>Press it again to stop. | draft | #14 job 8 |
-| TIP-03 | 2 Tip on hover | Mouse rests on the time marker | Drag it to pick a moment.<br>Pose the figure there, then set a key. | draft | #14 job 8 |
-| TIP-04 | 2 Tip on hover | Mouse rests on the save button | Saves your animation to a file.<br>You can open it again later. | draft | #14 job 8 |
-| HINT-01 | 3 Hint bar | Mouse is over the figure, no joint under it | Click a joint to pick it. | draft | #14 job 8 |
-| HINT-02 | 3 Hint bar | Mouse is over a joint | Click to pick this joint. | draft | #14 job 8 |
-| HINT-03 | 3 Hint bar | Mouse is over the turning ring of a picked joint | Drag the ring to turn the joint. | draft | #14 job 8 |
-| HINT-04 | 3 Hint bar | Mouse is over empty space | Drag to look around the figure. | draft | #14 job 8 |
-| NEXT-01 | 4 What to do next | Nothing selected | Click a joint on the figure to pick it. | draft | #14 job 10 |
-| NEXT-02 | 4 What to do next | A joint is selected | Drag the ring to turn the joint. | draft | #14 job 10 |
-| NEXT-03 | 4 What to do next | A joint was changed | Like the pose? Set a key to save it. | draft | #14 job 10 |
-| NEXT-04 | 4 What to do next | No key set yet | Set a key to save your first pose. | draft | #14 job 10 |
-| NEXT-05 | 4 What to do next | A key was just set | Move the time marker, pose again, and set a second key. | draft | #14 job 10 |
-| NEXT-06 | 4 What to do next | The animation is longer than one frame | Press Play to watch your animation. | draft | #14 job 10 |
-| POSE-01 | 7 Starter pose | Starter list: Standing (name and one line) | Standing<br>Arms down, feet together. A calm start for most moves. | draft | #14 jobs 4 and 5 |
-| POSE-02 | 7 Starter pose | Starter list: Sitting (name and one line) | Sitting<br>Knees bent, back straight. Good for a quiet scene. | draft | #14 jobs 4 and 5 |
-| POSE-03 | 7 Starter pose | Starter list: Dance example (name and one line) | Dance example<br>A short loop with a note on each key. Change it to learn. | draft | #14 jobs 4 and 5 |
-| WARN-01 | 8 Warning | A joint is near the furthest it can turn | This joint is almost at the furthest it can turn.<br>Turn it back a little, or pick another joint. | draft | #14 job 6 |
-| WARN-02 | 8 Warning | The export is too long | This animation is too long to export.<br>Shorten it, or delete keys at the end. | draft | #10 |
-| WARN-03 | 8 Warning | Nothing was moved | Nothing moved between your keys.<br>Change a pose at one of them, then try again. | draft | #10 |
-| PAGE-01 | 9 First animation page | Page title | Your first animation | draft | step 6 of #54 |
-| PAGE-02 | 9 First animation page | Step 1 | Pick a pose on the welcome card. | draft | step 6 of #54 |
-| PAGE-03 | 9 First animation page | Step 2 | Click a joint, then drag its ring to turn it. | draft | step 6 of #54 |
-| PAGE-04 | 9 First animation page | Step 3 | Set a key to save the pose. | draft | step 6 of #54 |
-| PAGE-05 | 9 First animation page | Step 4 | Move the time marker, pose again, and set another key. | draft | step 6 of #54 |
-| PAGE-06 | 9 First animation page | Step 5 | Press Play. Pick an easing choice to change how the move feels. | draft | step 6 of #54 |
-| PAGE-07 | 9 First animation page | Step 6 | Save your animation. | draft | step 6 of #54 |
+| WELCOME-01 | 1 Welcome card | First start: title | Make your first animation | reviewed by the owner (19 Nov 2026) | #14 job 9 |
+| WELCOME-02 | 1 Welcome card | Button label: Standing | Standing | reviewed by the owner (19 Nov 2026) | #14 job 9 |
+| WELCOME-03 | 1 Welcome card | Button label: Sitting | Sitting | reviewed by the owner (19 Nov 2026) | #14 job 9 |
+| WELCOME-04 | 1 Welcome card | Button label: Dance example | Dance example | reviewed by the owner (19 Nov 2026) | #14 job 9 |
+| WELCOME-05 | 1 Welcome card | The one line under the title | Pick a pose to start. You can change it later. | reviewed by the owner (19 Nov 2026) | #14 job 9 |
+| WELCOME-06 | 1 Welcome card | Link that closes the card (Skip) | Skip | reviewed by the owner (19 Nov 2026) | #14 job 9 |
+| TIP-01 | 2 Tip on hover | Mouse rests on the button that sets a key | Saves the pose you see now as a key.<br>A key is a saved pose. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| TIP-02 | 2 Tip on hover | Mouse rests on the play button | Plays your animation from the start.<br>Press it again to stop. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| TIP-03 | 2 Tip on hover | Mouse rests on the time marker | Drag it to pick a moment.<br>Pose the figure there, then set a key. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| TIP-04 | 2 Tip on hover | Mouse rests on the save button | Saves your animation to a file.<br>You can open it again later. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| HINT-01 | 3 Hint bar | Mouse is over the figure, no joint under it | Click a joint to pick it. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| HINT-02 | 3 Hint bar | Mouse is over a joint | Click to pick this joint. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| HINT-03 | 3 Hint bar | Mouse is over the turning ring of a picked joint | Drag the ring to turn the joint. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| HINT-04 | 3 Hint bar | Mouse is over empty space | Drag to look around the figure. | reviewed by the owner (19 Nov 2026) | #14 job 8 |
+| NEXT-01 | 4 What to do next | Nothing selected | Click a joint on the figure to pick it. | reviewed by the owner (19 Nov 2026) | #14 job 10 |
+| NEXT-02 | 4 What to do next | A joint is selected | Drag the ring to turn the joint. | reviewed by the owner (19 Nov 2026) | #14 job 10 |
+| NEXT-03 | 4 What to do next | A joint was changed | Like the pose? Set a key to save it. | reviewed by the owner (19 Nov 2026) | #14 job 10 |
+| NEXT-04 | 4 What to do next | No key set yet | Set a key to save your first pose. | reviewed by the owner (19 Nov 2026) | #14 job 10 |
+| NEXT-05 | 4 What to do next | A key was just set | Move the time marker, pose again, and set a second key. | reviewed by the owner (19 Nov 2026) | #14 job 10 |
+| NEXT-06 | 4 What to do next | The animation is longer than one frame | Press Play to watch your animation. | reviewed by the owner (19 Nov 2026) | #14 job 10 |
+| POSE-01 | 7 Starter pose | Starter list: Standing (name and one line) | Standing<br>Arms down, feet together. A calm start for most moves. | reviewed by the owner (19 Nov 2026) | #14 jobs 4 and 5 |
+| POSE-02 | 7 Starter pose | Starter list: Sitting (name and one line) | Sitting<br>Knees bent, back straight. Good for a quiet scene. | reviewed by the owner (19 Nov 2026) | #14 jobs 4 and 5 |
+| POSE-03 | 7 Starter pose | Starter list: Dance example (name and one line) | Dance example<br>A short loop with a note on each key. Change it to learn. | reviewed by the owner (19 Nov 2026) | #14 jobs 4 and 5 |
+| WARN-01 | 8 Warning | A joint is near the furthest it can turn | This joint is almost at the furthest it can turn.<br>Turn it back a little, or pick another joint. | reviewed by the owner (19 Nov 2026) | #14 job 6 |
+| WARN-02 | 8 Warning | The export is too long | This animation is too long to export.<br>Shorten it, or delete keys at the end. | reviewed by the owner (19 Nov 2026) | #10 |
+| WARN-03 | 8 Warning | Nothing was moved | Nothing moved between your keys.<br>Change a pose at one of them, then try again. | reviewed by the owner (19 Nov 2026) | #10 |
+| PAGE-01 | 9 First animation page | Page title | Your first animation | reviewed by the owner (19 Nov 2026) | step 6 of #54 |
+| PAGE-02 | 9 First animation page | Step 1 | Pick a pose on the welcome card. | reviewed by the owner (19 Nov 2026) | step 6 of #54 |
+| PAGE-03 | 9 First animation page | Step 2 | Click a joint, then drag its ring to turn it. | reviewed by the owner (19 Nov 2026) | step 6 of #54 |
+| PAGE-04 | 9 First animation page | Step 3 | Set a key to save the pose. | reviewed by the owner (19 Nov 2026) | step 6 of #54 |
+| PAGE-05 | 9 First animation page | Step 4 | Move the time marker, pose again, and set another key. | reviewed by the owner (19 Nov 2026) | step 6 of #54 |
+| PAGE-06 | 9 First animation page | Step 5 | Press Play. Pick an easing choice to change how the move feels. | reviewed by the owner (19 Nov 2026) | step 6 of #54 |
+| PAGE-07 | 9 First animation page | Step 6 | Save your animation. | reviewed by the owner (19 Nov 2026) | step 6 of #54 |
 
 ### Review order
 
