@@ -1,6 +1,6 @@
 Branch: docs/ideas-viewer-requests
-Status: active
-Pull request: pending
+Status: done
+Pull request: #55
 Files:
 - docs/IDEAS.md
 
