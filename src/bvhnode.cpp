@@ -21,6 +21,7 @@
 #include <math.h>
 
 #include "bvhnode.h"
+#include "easing.h"
 
 BVHNode::BVHNode(const QString& name)
 {
@@ -215,29 +216,10 @@ bool BVHNode::isKeyframe(int frame) const
 
 double BVHNode::interpolate(double from,double to,int steps,int pos,bool easeOut,bool easeIn) const
 {
-  bool ease=false;
-
-  // do not start any calculation if there's nothing to do
-  if(from==to) return from;
-
-  if(pos<=(steps/2) && easeOut) ease=true;
-  if(pos>(steps/2) && easeIn) ease=true;
-
-  // sine interpolation for ease in / out
-  if(ease)
-  {
-    double distance=to-from;
-    double step=3.1415/(steps);
-
-    return from+(0.5-cos(step*(double) pos)/2)*distance;
-  }
-  // classic linear interpolation
-  else
-  {
-    double distance=to-from;
-    double increment=distance/(double) steps;
-    return from+increment*(double) pos;
-  }
+  // the start key's easeOut and the target key's easeIn pick one of the four
+  // old-style easing choices; the easing module computes the value exactly as
+  // this function always did (issue #53 step 2, docs/EASING.md)
+  return Easing::segmentValue(Easing::presetFromSwitches(easeOut,easeIn),from,to,steps,pos);
 }
 
 const FrameData BVHNode::frameData(int frame) const

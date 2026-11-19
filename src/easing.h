@@ -1,13 +1,15 @@
 // Easing maths for the six easing choices (issue #53, step 1).
 //
 // Pure functions: no disk access, no Qt types, nothing that changes the screen.
-// It is built into the tests only; the program does not call it yet.
-// The maths of the two ease switches as they work today is written down in
-// docs/EASING.md; the first four choices are defined to give exactly those
-// numbers, so old files can later play identically.
+// Playback (BVHNode::interpolate, issue #53 step 2) uses segmentValue below,
+// which is header-only so the program and every test that builds bvhnode.cpp
+// need no extra source file. The rest is built into the tests only for now.
+// The maths of the two ease switches is written down in docs/EASING.md; the
+// first four choices give exactly those numbers, so old files play identically.
 #ifndef EASING_H
 #define EASING_H
 
+#include <cmath>
 #include <vector>
 
 namespace Easing
@@ -71,7 +73,54 @@ namespace Easing
 
   // The four old-style choices are the four combinations of the two switches
   // today: easeOut on the start key and easeIn on the target key.
-  Preset presetFromSwitches(bool startEaseOut,bool targetEaseIn);
+  inline Preset presetFromSwitches(bool startEaseOut,bool targetEaseIn)
+  {
+    if(startEaseOut && targetEaseIn) return Preset::SlowBothEnds;
+    if(startEaseOut) return Preset::SlowStart;
+    if(targetEaseIn) return Preset::SlowFinish;
+    return Preset::Even;
+  }
+
+  // The value of one channel at frame `pos` of a pose change from `from` to `to`
+  // that lasts `steps` frames, as playback computes it (BVHNode::interpolate).
+  // For the four old-style choices this is the program's formula unchanged, with
+  // the same operations in the same order, so the result is bit for bit what the
+  // program has always given (docs/EASING.md): the first half (pos <= steps/2,
+  // whole-number division) is eased when the choice slows the start, the second
+  // half when it slows the finish; eased means the sine S-curve with pi written
+  // as 3.1415 (kept on purpose: the exact pi would move old animations by up to
+  // about 0.003 % of each change), otherwise a straight line. from == to gives
+  // from unchanged. The two new choices have no stored form yet (step 3), so
+  // nothing in the program can pass them; until then they count as the default,
+  // Slow both ends. steps must be at least 1 (the caller only calls this between
+  // two different key frames).
+  inline double segmentValue(Preset preset,double from,double to,int steps,int pos)
+  {
+    if(preset==Preset::OvershootThenSettle || preset==Preset::HoldThenSnap)
+      preset=defaultPreset();
+
+    const bool slowStart=(preset==Preset::SlowStart || preset==Preset::SlowBothEnds);
+    const bool slowFinish=(preset==Preset::SlowFinish || preset==Preset::SlowBothEnds);
+
+    // do not start any calculation if there's nothing to do
+    if(from==to) return from;
+
+    bool ease=false;
+    if(pos<=(steps/2) && slowStart) ease=true;
+    if(pos>(steps/2) && slowFinish) ease=true;
+
+    if(ease)
+    {
+      // sine interpolation for ease in / out
+      double distance=to-from;
+      double step=3.1415/(steps);
+      return from+(0.5-std::cos(step*(double) pos)/2)*distance;
+    }
+    // classic linear interpolation
+    double distance=to-from;
+    double increment=distance/(double) steps;
+    return from+increment*(double) pos;
+  }
 
   // Switches for a preset; false for the two choices that need a new stored value.
   bool switchesFromPreset(Preset preset,bool& startEaseOut,bool& targetEaseIn);

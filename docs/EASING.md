@@ -1,6 +1,6 @@
 # Easing choices for beginners: names and descriptions
 
-Plan only. Nothing in this document is in the program yet. It fixes the **names, the small pictures and the descriptions** of the six easing choices proposed in [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53), so the later jobs (the maths, the file format, the tile row on the timeline) all use the same words. The wording of the hint under each tile lives in [TEACHING.md](TEACHING.md) (IDs `EASE-01` to `EASE-06`); this page does not repeat it, so there is one place to change.
+Mostly a plan. The only part in the program so far is step 2: playback computes the four old-style choices through the easing module, with exactly the old results (see "Playback (step 2)" below); nothing on screen has changed. This page fixes the **names, the small pictures and the descriptions** of the six easing choices proposed in [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53), so the later jobs (the maths, the file format, the tile row on the timeline) all use the same words. The wording of the hint under each tile lives in [TEACHING.md](TEACHING.md) (IDs `EASE-01` to `EASE-06`); this page does not repeat it, so there is one place to change.
 
 The six choices, their order and "Slow both ends" as the default are proposals in #53. They are not decisions yet; if the project owner changes one, change it here and in `TEACHING.md`.
 
@@ -47,25 +47,25 @@ Read from `BVHNode::interpolate` and `BVHNode::frameData` in `src/bvhnode.cpp` (
 
 **The same for every channel.** Each of the three rotation angles and the three position values is computed on its own with this formula, with the same pair of switches. Rotations are blended as Euler angles, not as quaternions. There is no clamping to joint limits in this step.
 
-**Worked example.** A joint turns from 0 to 90 degrees over 10 frames (`steps` = 10):
+**Worked example.** A joint turns from 0 to 90 degrees over 10 frames (`steps` = 10). The numbers are what the program gives (pi written as 3.1415):
 
 | Frame after A | Both off (Even) | Both on (Slow both ends) |
 |---|---|---|
 | 2 | 18.00 | 8.59 |
 | 5 | 45.00 | 45.00 |
-| 8 | 72.00 | 81.41 |
+| 8 | 72.00 | 81.40 |
 
-With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 6 to 9 equal the "Both off" column (frame 8 gives 72.00). With only B's `easeIn` on it is the other way round (frame 2 gives 18.00, frame 8 gives 81.41).
+With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 6 to 9 equal the "Both off" column (frame 8 gives 72.00). With only B's `easeIn` on it is the other way round (frame 2 gives 18.00, frame 8 gives 81.40).
 
 **Does it match #53's idea?** Partly.
 
-- **Even** (neither switch) and **Slow both ends** (both switches) match exactly, apart from the old code writing pi as 3.1415 (a difference of less than 0.01 degrees on 100).
+- **Even** (neither switch) and **Slow both ends** (both switches) match exactly, apart from the old code writing pi as 3.1415 (a difference of less than 0.01 degrees on 100; `Easing::s` uses the exact pi, playback keeps 3.1415, see step 2).
 - **Slow start** (start key's `easeOut`) and **Slow finish** (target key's `easeIn`) are not classic one-sided curves. Each is the S-curve for one half and a straight line for the other half. The two halves meet at the middle, but the speed jumps there: Slow start leaves the old pose gently and then arrives at full speed, with no slowing at the end; Slow finish is the mirror image.
 - So the four choices are the four switch combinations, as the issue assumed, but "Slow start" and "Slow finish" keep today's half-and-half shape. The new module defines them as exactly that shape (`src/easing.*`, `Easing::s`), so old files play identically; a smoother one-sided curve would be a new choice and would change old files.
 
 ## The maths module (step 1)
 
-`src/easing.h` and `src/easing.cpp`, namespace `Easing`, pure functions with no disk access and no Qt types. Built into the tests only (`tests/easing/`); the program does not call it yet.
+`src/easing.h` and `src/easing.cpp`, namespace `Easing`, pure functions with no disk access and no Qt types. Tested in `tests/easing/`. The program calls only `segmentValue` and `presetFromSwitches` (step 2, header-only); the rest is built into the tests only for now.
 
 - `s(preset, t)`: the speed curve for t from 0 to 1. `s(0) = 0` and `s(1) = 1` exactly, always a finite number (t outside 0..1 is clamped, NaN counts as 0).
 - Even is `t`. Slow both ends is the sine S-curve. Slow start and Slow finish are the half-and-half shapes above. Overshoot then settle is `1 + 2.5 (t-1)^3 + 1.5 (t-1)^2`: it goes at most 8 % past the new pose (limit: 10 %) and ends at exactly 1. Hold then snap is 0 until the last moment, then 1.
@@ -74,6 +74,15 @@ With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 
 - `clampRotation` cuts a blended rotation at the joint's minimum and maximum, so the overshoot choice never leaves the allowed range.
 - `bake`, `bakeValues`, `bakeRotations`: the in-between values for a pose change of `frames` frames (`frames + 1` values, first exactly the start, last exactly the end), as the `.anim` export needs.
 - `presetFromSwitches` and `switchesFromPreset` map the four switch combinations to the first four choices and back. The last two choices have no switch form; they need the new stored value (step 3).
+
+## Playback (step 2)
+
+`BVHNode::interpolate` (`src/bvhnode.cpp`) no longer has its own formula. It turns the start key's `easeOut` and the target key's `easeIn` into one of the four old-style choices (`Easing::presetFromSwitches`) and asks `Easing::segmentValue` for the value of the frame.
+
+- `segmentValue` is the old formula with the same operations in the same order, including pi written as 3.1415 and the half split with whole-number division. Using the exact pi (as `Easing::s` does) would move old animations by up to about 0.003 % of each change, and the saved files would change in the last digits, so playback keeps 3.1415.
+- Both functions are in `src/easing.h` (header-only), so the program and every test or fuzz target that builds `src/bvhnode.cpp` needs no extra source file.
+- The two new choices have no stored form yet (step 3); until then `segmentValue` treats them as the default, Slow both ends.
+- Proof: `tests/interpolation/` keeps a copy of the old function and compares it with the new path bit for bit (no tolerance), for every segment length from 1 to 200, every frame, all four switch combinations and many values, and compares every frame `BVHNode::frameData` returns for 200 joints with random keys, gaps and switches. Opening and saving BVH, AVM and `.dingle` use what `frameData` returns, so files play and save identically. `.dingle` keeps its own copy of the formula (`src/dingle.cpp`); it is unchanged.
 
 ## Where each part is built
 
