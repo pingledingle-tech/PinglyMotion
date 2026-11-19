@@ -1,6 +1,6 @@
 Branch: docs/first-animation-page
-Status: active
-Pull request: pending
+Status: done
+Pull request: #107
 Files:
 - docs/FIRST_ANIMATION.md
 - README.md
