@@ -1,6 +1,6 @@
 Branch: feat/panels-p2
 Status: active
-Pull request: pending
+Pull request: #138
 Files:
 - src/pinglymotionwindow.*
 - src/usersettings.*
