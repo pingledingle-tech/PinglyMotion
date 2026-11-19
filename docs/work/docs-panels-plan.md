@@ -1,6 +1,6 @@
 Branch: docs/panels-plan
-Status: active
-Pull request: pending
+Status: done
+Pull request: #115
 Files:
 - docs/PANELS_PLAN.md
 - docs/POSING_UX.md
