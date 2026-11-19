@@ -1,5 +1,5 @@
 /*
- * Pingmator - reader for prop files (.prp)
+ * PinglyMotion - reader for prop files (.prp)
  *
  * One prop per line, separated by spaces:
  *   type x y z xScale yScale zScale xRotation yRotation zRotation attachment

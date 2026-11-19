@@ -1,5 +1,5 @@
 /*
- * Pingmator - the Second Life system avatar, bent with the skeleton
+ * PinglyMotion - the Second Life system avatar, bent with the skeleton
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

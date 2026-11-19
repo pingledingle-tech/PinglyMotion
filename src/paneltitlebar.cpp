@@ -1,5 +1,5 @@
 /*
- * Pingmator - title bar for the timeline and properties panels
+ * PinglyMotion - title bar for the timeline and properties panels
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

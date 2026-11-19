@@ -45,7 +45,7 @@ class ControlServer : public QObject
     QString token() const;
     QString url() const;
 
-    // Where programs find the address and key: <data folder>/Pingmator/control.json
+    // Where programs find the address and key: <data folder>/PinglyMotion/control.json
     static QString connectionFilePath();
     // Writes the file atomically and readable by the owner only (issue #144).
     // false (and error) if any step fails; the old file is then left as it was.

@@ -1,5 +1,5 @@
 /*
- * Pingmator - reader for Second Life avatar meshes (.llm)
+ * PinglyMotion - reader for Second Life avatar meshes (.llm)
  *
  * The .llm files ("Linden Binary Mesh 1.0") hold the classic system avatar
  * body: head, upper body, lower body, eyes and so on. Vertex positions are in

@@ -5,7 +5,7 @@ PinglyMotion MCP server
 Lets any AI tool that speaks MCP (Model Context Protocol) pose and play the
 animation open in PinglyMotion. It talks to PinglyMotion's local control interface
 (see docs/CONTROL.md), so PinglyMotion must be running with remote control on:
-start it with `pingmator --control`, or tick Options > Allow remote control.
+start it with `pinglymotion --control`, or tick Options > Allow remote control.
 
 Uses only the Python standard library (3.8 or newer). Speaks MCP over
 stdin/stdout, so it is started by the AI tool, not by hand.
@@ -35,7 +35,7 @@ INSTRUCTIONS = (
     "Start with 'state' and 'joints'. Frame numbers start at 1; frame 1 is protected (reference pose), so pose from frame 2. "
     "Each joint bends around its own axes (the elbow lForeArm around Y, the knee lShin around X), within the limits that 'joints' shows. "
     "After posing, use 'screenshot' to look at the result and adjust. Save with 'save_file' to get a .bvh that can be uploaded to Second Life. "
-    "Files are opened and saved only in the Pingmator folder shown as 'folder' in 'state'; a plain file name like pose.bvh goes there."
+    "Files are opened and saved only in the PinglyMotion folder shown as 'folder' in 'state'; a plain file name like pose.bvh goes there."
 )
 
 
@@ -49,7 +49,7 @@ def connection_file():
         base = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
     else:
         base = os.environ.get("XDG_DATA_HOME") or os.path.join(os.path.expanduser("~"), ".local", "share")
-    return os.path.join(base, "Pingmator", "control.json")
+    return os.path.join(base, "PinglyMotion", "control.json")
 
 
 class PinglyMotionError(Exception):

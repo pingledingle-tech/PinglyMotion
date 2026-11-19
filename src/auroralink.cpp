@@ -1,5 +1,5 @@
 /*
- * Pingmator - live link to the Aurora viewer (over Aurora's LiveMesh)
+ * PinglyMotion - live link to the Aurora viewer (over Aurora's LiveMesh)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -328,7 +328,7 @@ void AuroraLink::handleLine(const QByteArray& line)
     }
     QJsonObject auth;
     auth["type"]="auth";
-    auth["client"]=QString("Pingmator %1").arg(QCoreApplication::applicationVersion()).trimmed();
+    auth["client"]=QString("PinglyMotion %1").arg(QCoreApplication::applicationVersion()).trimmed();
     auth["response"]=QString::fromLatin1(authResponse(key,challenge));
     // 16 random bytes from the system's secure source
     QByteArray nonce(16,'\0');

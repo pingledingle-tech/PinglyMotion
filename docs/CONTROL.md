@@ -8,7 +8,7 @@ Nothing here is tied to one AI.
 ## Turn it on
 
 - Menu **Options > Allow remote control (AI and other programs)**, or
-- start PinglyMotion with `pingmator --control`.
+- start PinglyMotion with `PinglyMotion --control`.
 
 It is off every time PinglyMotion starts, unless you use `--control`. While it is on, the window
 title says "remote control on".
@@ -28,9 +28,9 @@ The bottom right of the status bar shows a coloured dot and who is connected, fo
 - Only programs on your own computer: it listens on `127.0.0.1` and nowhere else.
 - Every request needs a secret key. PinglyMotion makes a new key each time it starts and writes it,
   with the address, to `control.json` (only you can read it):
-  - Windows: `%LOCALAPPDATA%\Pingmator\control.json`
-  - macOS: `~/Library/Application Support/Pingmator/control.json`
-  - Linux: `~/.local/share/Pingmator/control.json`
+  - Windows: `%LOCALAPPDATA%\PinglyMotion\control.json`
+  - macOS: `~/Library/Application Support/PinglyMotion/control.json`
+  - Linux: `~/.local/share/PinglyMotion/control.json`
   - Set `PINGLYMOTION_CONTROL_FILE` to use another place.
 - The file is written in one step: the key goes into a temporary file that only you can read from
   the moment it is made, and that file replaces `control.json` only when everything was written.
@@ -78,8 +78,8 @@ Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key
 
 ### Files
 
-`open_file` and `save_file` only work in one folder: `Pingmator` in the Documents folder of the user
-who runs PinglyMotion (for example `C:\Users\<name>\Documents\Pingmator` on Windows). It is made when
+`open_file` and `save_file` only work in one folder: `PinglyMotion` in the Documents folder of the user
+who runs PinglyMotion (for example `C:\Users\<name>\Documents\PinglyMotion` on Windows). It is made when
 it is first needed, and `state` shows it as `folder`. A plain file name such as `pose.bvh` means a file
 in that folder. Paths outside it, also through `..` or links, are refused.
 
@@ -95,7 +95,7 @@ in that folder. Paths outside it, also through `..` or links, are refused.
 or Claude Code use remote control. It needs Python 3.8 or newer and nothing else; the assistant
 starts it by itself.
 
-The Windows zip has it in the `mcp` folder next to `pingmator.exe`. Register that copy: unpacking a
+The Windows zip has it in the `mcp` folder next to `PinglyMotion.exe`. Register that copy: unpacking a
 new zip over the old folder then updates the program and the MCP server together. In the source
 tree it is `tools/mcp/pinglymotion_mcp.py`.
 

@@ -1,5 +1,5 @@
 /*
- * Pingmator - tests for the avatar body setting (Options > Body)
+ * PinglyMotion - tests for the avatar body setting (Options > Body)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -59,7 +59,7 @@ void TestBodySetting::writeVersionGroup(const QVariantMap& values)
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope,
                      Constants::organizationName(), Constants::applicationName());
-  // the group exists as soon as it holds one value (an older Pingmator saved "loop" too)
+  // the group exists as soon as it holds one value (an older PinglyMotion saved "loop" too)
   settings.setValue(group + QStringLiteral("loop"), true);
   for (auto it = values.begin(); it != values.end(); ++it)
     settings.setValue(group + it.key(), it.value());

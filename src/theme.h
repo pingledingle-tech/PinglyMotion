@@ -1,5 +1,5 @@
 /*
- * Pingmator - light and dark look for the whole program
+ * PinglyMotion - light and dark look for the whole program
  * Licensed under the GNU General Public License version 2 or later.
  */
 #ifndef THEME_H

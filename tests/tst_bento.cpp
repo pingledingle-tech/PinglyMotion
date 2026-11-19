@@ -1,5 +1,5 @@
 /*
- * Pingmator automatic tests
+ * PinglyMotion automatic tests
  *
  * Run from the bin/ folder, so the program finds ./data like it does normally.
  * Licensed under the GNU General Public License version 2 or later.
@@ -450,7 +450,7 @@ static QVector3D turned(BVHNode* child, float angle, const QVector3D& axis)
   return m.map(QVector3D(child->offset[0], child->offset[1], child->offset[2]));
 }
 
-// the wiki's axes are Pingmator's axes: at the end of their range the
+// the wiki's axes are PinglyMotion's axes: at the end of their range the
 // elbow bends the hand forward and the knee bends the foot backward
 void BentoTest::elbowAndKneeBendTheRightWay()
 {
@@ -525,7 +525,7 @@ void BentoTest::bundledPosesInsideLimits_data()
     QTest::newRow(name) << data + "/" + name;
 }
 
-// the poses that come with Pingmator stay inside the joint limits
+// the poses that come with PinglyMotion stay inside the joint limits
 void BentoTest::bundledPosesInsideLimits()
 {
   QFETCH(QString, file);
@@ -917,7 +917,7 @@ void BentoTest::propFiles_data()
   QTest::addColumn<bool>("valid");
   QTest::addColumn<int>("count");
 
-  QTest::newRow("saved by Pingmator") << QByteArray("0 1 2 3 10 10 10 0 45 90 0\n3 -1.5 0 7 5 5 5 0 0 0 12\n") << true << 2;
+  QTest::newRow("saved by PinglyMotion") << QByteArray("0 1 2 3 10 10 10 0 45 90 0\n3 -1.5 0 7 5 5 5 0 0 0 12\n") << true << 2;
   QTest::newRow("old file without attachment") << QByteArray("1 0 0 0 1 1 1 0 0 0\n") << true << 1;
   QTest::newRow("empty lines are skipped") << QByteArray("\n2 0 0 0 1 1 1 0 0 0 0\n\n") << true << 1;
   QTest::newRow("empty file") << QByteArray() << true << 0;

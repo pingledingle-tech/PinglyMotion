@@ -1,5 +1,5 @@
 /*
- * Pingmator – retargeting core (issue #16, step 1); see retarget.h
+ * PinglyMotion – retargeting core (issue #16, step 1); see retarget.h
  *
  * The design follows Mesh2Motion's retargeting pipeline
  * (https://github.com/Mesh2Motion/mesh2motion-app, MIT licence). No code was

@@ -6,7 +6,7 @@ Reads, from the Firestorm source (LGPL 2.1):
   indra/newview/skins/default/xui/en/floater_fs_poser.xml joint titles, headings,
                                                           axis transform strings
   indra/newview/app_settings/poses/hand_presets/*.xml     the 9 hand presets
-and Pingmator's bin/data/bento_joints.txt (BVH name <-> SL name).
+and PinglyMotion's bin/data/bento_joints.txt (BVH name <-> SL name).
 
 Writes bin/data/firestorm/joints.json and copies the hand presets unchanged
 into bin/data/firestorm/hand_presets/.
@@ -25,13 +25,13 @@ from pathlib import Path
 
 OUT = Path("bin/data/firestorm")
 
-# Pingmator's own names for joints Firestorm's poser shows without a title
+# PinglyMotion's own names for joints Firestorm's poser shows without a title
 PINGLYMOTION_NAMES = {
     "mFaceRoot": "Face Root",
     "mFaceChin": "Chin",
 }
 
-# joints of Pingmator's skeleton that Firestorm's PoserJoints does not list
+# joints of PinglyMotion's skeleton that Firestorm's PoserJoints does not list
 # (name, mirror partner); a Firestorm title, when there is one, wins
 PINGLYMOTION_EXTRA = {
     "mFaceEyeAltLeft": ("Left Eye (alternative)", "mFaceEyeAltRight"),
@@ -145,7 +145,7 @@ def main():
         if not entry["name"]:
             if sl not in PINGLYMOTION_NAMES:
                 sys.exit(f"Firestorm has no title for {sl}: add it to PINGLYMOTION_NAMES")
-            entry["name"], entry["nameFrom"] = PINGLYMOTION_NAMES[sl], "pingmator"
+            entry["name"], entry["nameFrom"] = PINGLYMOTION_NAMES[sl], "pinglymotion"
         for key, prefix in (("firestormTransform", "joint_transform_"),
                             ("firestormFrame", "joint_frame_"),
                             ("firestormDeltaRotate", "joint_delta_rotate_")):
@@ -161,7 +161,7 @@ def main():
         if sl not in PINGLYMOTION_EXTRA:
             sys.exit(f"no name for {sl}: add it to PINGLYMOTION_EXTRA")
         name, mirror = PINGLYMOTION_EXTRA[sl]
-        name_from = "pingmator"
+        name_from = "pinglymotion"
         if "title_" + sl in strings:
             name, name_from = strings["title_" + sl], "firestorm"
         joints.append({

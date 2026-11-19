@@ -52,15 +52,15 @@
 #if UPDATE_CHANNEL == 2
   const Constants::UpdateChannel Constants::m_updateChannel =
       UpdateChannel::Release;
-  const QString Constants::m_applicationName = QString("Pingmator");
+  const QString Constants::m_applicationName = QString("PinglyMotion");
 #elif UPDATE_CHANNEL == 1
   const Constants::UpdateChannel Constants::m_updateChannel =
       UpdateChannel::Beta;
-  const QString Constants::m_applicationName = QString("Pingmator-Beta");
+  const QString Constants::m_applicationName = QString("PinglyMotion-Beta");
 #else
   const Constants::UpdateChannel Constants::m_updateChannel =
       UpdateChannel::Development;
-  const QString Constants::m_applicationName = QString("Pingmator-Development");
+  const QString Constants::m_applicationName = QString("PinglyMotion-Development");
 #endif
 
 #ifdef PINGLYMOTION_DATAPATH
@@ -125,7 +125,7 @@ const QString Constants::applicationName()
 
 const QString Constants::organizationName()
 {
-  return QString("Pingmator");
+  return QString("PinglyMotion");
 }
 
 const QString Constants::organizationDomain()

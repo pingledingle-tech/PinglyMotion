@@ -1,5 +1,5 @@
 /*
- * Pingmator – tests of the retargeting core (src/retarget.*, issue #16 step 1)
+ * PinglyMotion – tests of the retargeting core (src/retarget.*, issue #16 step 1)
  *
  * All skeletons here are written as test data in this file (names in the
  * style of Mixamo, Blender/Rigify and the CMU library); no third-party files

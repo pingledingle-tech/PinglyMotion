@@ -10,7 +10,7 @@ You need Python 3 (https://www.python.org). Nothing else has to be installed.
 1. Turn on remote control in PinglyMotion
 --------------------------------------
 
-Options > Allow remote control (or start pingmator with --control).
+Options > Allow remote control (or start PinglyMotion with --control).
 It is off by default and has to be on while the AI works.
 
 
@@ -58,8 +58,8 @@ ran "claude mcp add". Add --scope user to "claude mcp add" to use it everywhere.
 Good to know
 ------------
 
-- The AI can only open and save animations in the Pingmator folder in your
-  Documents folder (for example C:\Users\<name>\Documents\Pingmator).
+- The AI can only open and save animations in the PinglyMotion folder in your
+  Documents folder (for example C:\Users\<name>\Documents\PinglyMotion).
 - It will not replace other files, and it will not throw away unsaved changes.
 - Before it sends the key, the MCP server checks that it really talks to
   PinglyMotion.

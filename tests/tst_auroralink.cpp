@@ -1,5 +1,5 @@
 /*
- * Pingmator - tests of the live link to Aurora: the pose BVH it sends, and
+ * PinglyMotion - tests of the live link to Aurora: the pose BVH it sends, and
  * the conversation with a stand-in for Aurora's LiveMesh (token file, greeting,
  * framing, auth both ways).
  *
@@ -445,7 +445,7 @@ void AuroraLinkTest::linkAuthenticatesThenSendsPose()
 
   const QJsonObject auth = nextMessage();
   QCOMPARE(auth["type"].toString(), QString("auth"));
-  QVERIFY(auth["client"].toString().startsWith("Pingmator"));
+  QVERIFY(auth["client"].toString().startsWith("PinglyMotion"));
   QCOMPARE(auth["response"].toString().toLatin1(), AuroraLink::authResponse(m_key, m_challenge));
   // a random nonce of 16 bytes, as hex
   const QByteArray nonce = QByteArray::fromHex(auth["nonce"].toString().toLatin1());

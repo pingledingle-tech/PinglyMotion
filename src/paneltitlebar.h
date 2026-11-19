@@ -1,5 +1,5 @@
 /*
- * Pingmator - title bar for the timeline and properties panels
+ * PinglyMotion - title bar for the timeline and properties panels
  *
  * Shows the panel name with two buttons that are easy to see and hit:
  * one to float the panel as its own window (or put it back), one to close it.

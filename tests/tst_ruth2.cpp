@@ -1,5 +1,5 @@
 /*
- * Pingmator automatic tests: the Ruth2 v4 body (#110)
+ * PinglyMotion automatic tests: the Ruth2 v4 body (#110)
  *
  * Checks bin/data/character/ruth2/ruth2.pmm, made by tools/make_ruth2_mesh.py,
  * and that AvatarSkin loads it as RuthBody (also through PINGLYMOTION_BODY=ruth2).
@@ -24,7 +24,7 @@ QString ruthFile()
   return Constants::pinglyMotionDataPath() + "/character/ruth2/ruth2.pmm";
 }
 
-// SL names of every joint in Pingmator's skeleton (bin/data/skin_joints.txt)
+// SL names of every joint in PinglyMotion's skeleton (bin/data/skin_joints.txt)
 QSet<QString> skeletonSlNames()
 {
   QSet<QString> names;
@@ -154,7 +154,7 @@ void Ruth2Test::meshFile()
   QCOMPARE(mesh.joints.size(), 97);
 }
 
-// every joint a vertex is weighted to is a joint of Pingmator's skeleton
+// every joint a vertex is weighted to is a joint of PinglyMotion's skeleton
 void Ruth2Test::jointsAreInSkeleton()
 {
   PMMesh mesh;

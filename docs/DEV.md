@@ -28,8 +28,8 @@ ctest --test-dir /tmp/build --output-on-failure
 Smoke tests (need `xvfb`, `xdotool`):
 
 ```
-xvfb-run -a -s "-screen 0 1280x1024x24" python3 tests/smoke_control.py /tmp/build/src/pingmator
-QT_QPA_PLATFORM=xcb xvfb-run -a bash tests/smoke_gui.sh /tmp/build/src/pingmator
+xvfb-run -a -s "-screen 0 1280x1024x24" python3 tests/smoke_control.py /tmp/build/src/PinglyMotion
+QT_QPA_PLATFORM=xcb xvfb-run -a bash tests/smoke_gui.sh /tmp/build/src/PinglyMotion
 ```
 
 Sanitizers (as the `asan-ubsan` check):
@@ -47,7 +47,7 @@ After changing the control commands: `PINGLYMOTION_UPDATE_COMMANDS=1` and run `p
 
 ## The Windows zip
 
-The Windows build of every pull request is a zip (artifact `Pingmator-windows`, about 30 MB). Next to `pingmator.exe` it holds `data/`, `mcp/`, the folder `examples/` (everything in the repository's `examples/`) and, when the checked-out branch has them, the folder `test-motions/` (everything in `tests/motions/`). The project owner tests from this zip alone and never downloads a separate file. If `tests/motions/` grows past a few MB, the build prints a warning: then change the `Package` step in `.github/workflows/build.yml` to copy only the files marked for owner testing, and say so here.
+The Windows build of every pull request is a zip (artifact `PinglyMotion-windows`, about 30 MB). Next to `PinglyMotion.exe` it holds `data/`, `mcp/`, the folder `examples/` (everything in the repository's `examples/`) and, when the checked-out branch has them, the folder `test-motions/` (everything in `tests/motions/`). The project owner tests from this zip alone and never downloads a separate file. If `tests/motions/` grows past a few MB, the build prints a warning: then change the `Package` step in `.github/workflows/build.yml` to copy only the files marked for owner testing, and say so here.
 
 ## Pictures
 

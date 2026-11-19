@@ -1,5 +1,5 @@
 /*
- * Pingmator - reads the answer from GitHub's "latest release" API
+ * PinglyMotion - reads the answer from GitHub's "latest release" API
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

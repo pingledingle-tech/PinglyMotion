@@ -1,5 +1,5 @@
 /*
- * Pingmator - animation editor for Second Life avatars
+ * PinglyMotion - animation editor for Second Life avatars
  *
  * Wheel guard: a mouse wheel over a slider, spin box or drop-down list inside
  * a scrolling panel must scroll the panel, not change the control (issue #82:

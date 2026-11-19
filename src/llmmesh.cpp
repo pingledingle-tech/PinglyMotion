@@ -1,5 +1,5 @@
 /*
- * Pingmator - reader for Second Life avatar meshes (.llm)
+ * PinglyMotion - reader for Second Life avatar meshes (.llm)
  *
  * File layout, all little endian, floats are 32 bit:
  *   char[24]  "Linden Binary Mesh 1.0", padded with zeros

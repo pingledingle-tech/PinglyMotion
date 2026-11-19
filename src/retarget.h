@@ -1,5 +1,5 @@
 /*
- * Pingmator – retargeting core: move a BVH animation made for any humanoid
+ * PinglyMotion – retargeting core: move a BVH animation made for any humanoid
  * skeleton onto the Second Life skeleton (issue #16, step 1)
  *
  * This is pure maths on the data model of the parser (src/animfile.h). It

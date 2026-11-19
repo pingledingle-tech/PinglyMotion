@@ -222,7 +222,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   torusMesh(new Mesh(Constants::torusMeshFilePath(), Mesh::Shape::TORUS)),
   m_animFilter("Animation Files (*.dingle *.avm *.bvh)"),
   m_bvhFilter(QObject::tr("Second Life animation (*.bvh)")),
-  m_avmFilter(QObject::tr("Pingmator animation (*.avm)")),
+  m_avmFilter(QObject::tr("PinglyMotion animation (*.avm)")),
   m_propFilter("Props (*.prp)"),
   m_untitledName("Untitled.avm"),
   m_precision(100),
@@ -238,7 +238,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   buildJointPicker();
   buildDocks();
 
-  setWindowTitle("Pingmator");
+  setWindowTitle("PinglyMotion");
   setAttribute(Qt::WA_DeleteOnClose);
   frameDataValid=false;
   currentPart=0;
@@ -471,7 +471,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
-  m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. Off every time Pingmator starts, unless started with --control."));
+  m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. Off every time PinglyMotion starts, unless started with --control."));
   ui->menuOptions->addAction(m_controlAction);
   connect(m_controlAction,&QAction::toggled,this,[this](bool on){ setRemoteControl(on,true); });
 
@@ -521,7 +521,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   statusBar()->addPermanentWidget(m_auroraIndicator);
   connect(m_auroraIndicator,&AuroraIndicator::toggleRequested,m_auroraAction,&QAction::toggle);
 
-  // command line: pingmator [--control] [animation file]
+  // command line: pinglymotion [--control] [animation file]
   QStringList args = QApplication::arguments();
   args.removeFirst();
   const bool startWithControl=args.removeAll("--control")>0;
@@ -587,10 +587,10 @@ void PinglyMotionWindow::setRemoteControl(bool on,bool showInfo)
   }
 }
 
-// the title says so while other programs can control Pingmator
+// the title says so while other programs can control PinglyMotion
 void PinglyMotionWindow::updateWindowTitle()
 {
-  QString title="Pingmator "+Constants::buildLabel()+" ["+currentFile+"]";
+  QString title="PinglyMotion "+Constants::buildLabel()+" ["+currentFile+"]";
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink && m_auroraLink->enabled())
@@ -625,13 +625,13 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
 
   if(!node)
   {
-    qDebug("pingmator::partClicked(node,...): node==0!");
+    qDebug("pinglymotion::partClicked(node,...): node==0!");
     return;
   }
 
   if(node)
   {
-    qDebug("pingmator::partClicked(node): %s",node->name().toLatin1().constData());
+    qDebug("pinglymotion::partClicked(node): %s",node->name().toLatin1().constData());
     currentPart=node;
 
     // show the joint in the joint table, on its tab
@@ -725,7 +725,7 @@ void PinglyMotionWindow::partDragged(BVHNode* node,double x,double y,double z)
       updateKeyBtn();
     }
   }
-  else qDebug("pingmator::partDragged(): node==0!");
+  else qDebug("pinglymotion::partDragged(): node==0!");
 }
 
 // slot gets called by AnimationView::propClicked()
@@ -1242,7 +1242,7 @@ void PinglyMotionWindow::positionSlider(const QObject* slider)
 
 void PinglyMotionWindow::positionValue()
 {
-  qDebug("pingmator::positionValue()");
+  qDebug("pinglymotion::positionValue()");
 
   double x=ui->xPositionEdit->text().toDouble();
   double y=ui->yPositionEdit->text().toDouble();
@@ -1365,7 +1365,7 @@ void PinglyMotionWindow::updateInputs()
 void PinglyMotionWindow::updateKeyBtn()
 {
   Animation* anim=scene->getAnimation();
-  qDebug("pingmator::updateKeyBtn(): anim=%p",(const void*) anim);
+  qDebug("pinglymotion::updateKeyBtn(): anim=%p",(const void*) anim);
 
   // make sure we don't send a toggle signal on display update
   ui->keyframeButton->blockSignals(true);
@@ -1428,7 +1428,7 @@ void PinglyMotionWindow::frameTimeout()
 
 void PinglyMotionWindow::nextPlaystate()
 {
-//  qDebug("pingmator::nextPlaystate(): current playstate %d",(int) playstate);
+//  qDebug("pinglymotion::nextPlaystate(): current playstate %d",(int) playstate);
 
   Animation* anim=scene->getAnimation();
 
@@ -1469,7 +1469,7 @@ void PinglyMotionWindow::nextPlaystate()
       break;
     }
     default:
-      qDebug("pingmator::nextPlaystate(): unknown playstate %d",(int) playstate);
+      qDebug("pinglymotion::nextPlaystate(): unknown playstate %d",(int) playstate);
   }
 
   updateInputs();
@@ -1477,7 +1477,7 @@ void PinglyMotionWindow::nextPlaystate()
 
 void PinglyMotionWindow::setFPS(int fps)
 {
-  qDebug("pingmator::setFPS(%d)",fps);
+  qDebug("pinglymotion::setFPS(%d)",fps);
 
   Animation* anim=scene->getAnimation();
   if(!anim) return;
@@ -1580,7 +1580,7 @@ void PinglyMotionWindow::fileNew()
 
   if(UserSettings::protectFirstFrame())
   {
-//    qDebug("pingmator::fileNew(): adding loop points for protected frame 1 animation");
+//    qDebug("pinglymotion::fileNew(): adding loop points for protected frame 1 animation");
     // skip first frame, since it's protected anyway
     anim->setFrame(1);
     setCurrentFrame(1);
@@ -1588,7 +1588,7 @@ void PinglyMotionWindow::fileNew()
   }
   else
   {
-//    qDebug("pingmator::fileNew(): adding loop points for unprotected frame 1 animation");
+//    qDebug("pinglymotion::fileNew(): adding loop points for unprotected frame 1 animation");
     anim->setFrame(0);
     setCurrentFrame(0);
     setLoopInPoint(1);
@@ -1618,7 +1618,7 @@ void PinglyMotionWindow::fileNew()
 
 QString PinglyMotionWindow::selectFileToOpen(const QString& caption)
 {
-   //// For some unknown reason passing "this" locks up the OSX pingmator window. Possibly a QT4 bug, needs investigation
+   //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
    QString file = QFileDialog::getOpenFileName(NULL, caption, UserSettings::lastPath(), m_animFilter);
 #else
@@ -1713,24 +1713,24 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     timeline->setAnimation(anim);
     selectAnimation(anim);
 
-//    qDebug("pingmator::fileAdd(): checking for loop points");
+//    qDebug("pinglymotion::fileAdd(): checking for loop points");
     // no loop in point? must be a BVH or an older avm. set a sane default
     if(anim->getLoopInPoint()==-1)
     {
-//      qDebug("pingmator::fileAdd(): no loop points, adding new");
+//      qDebug("pinglymotion::fileAdd(): no loop points, adding new");
       // first set loop out point to avoid clamping of loop in point
       setLoopOutPoint(anim->getNumberOfFrames());
 
       if(UserSettings::protectFirstFrame())
       {
-//        qDebug("pingmator::fileAdd(): adding loop points for protected frame 1 animation");
+//        qDebug("pinglymotion::fileAdd(): adding loop points for protected frame 1 animation");
         anim->setFrame(1);
         setCurrentFrame(1);
         setLoopInPoint(2);
       }
       else
       {
-//        qDebug("pingmator::fileAdd(): adding loop points for unprotected frame 1 animation");
+//        qDebug("pinglymotion::fileAdd(): adding loop points for unprotected frame 1 animation");
         anim->setFrame(0);
         setCurrentFrame(0);
         setLoopInPoint(1);
@@ -1738,7 +1738,7 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     }
     else
     {
-//      qDebug("pingmator::fileAdd(): reading saved loop points");
+//      qDebug("pinglymotion::fileAdd(): reading saved loop points");
       setLoopInPoint(anim->getLoopInPoint()+1);
       setLoopOutPoint(anim->getLoopOutPoint()+1);
     }
@@ -1777,11 +1777,11 @@ bool PinglyMotionWindow::fileSave()
 // returns true when the animation was saved
 bool PinglyMotionWindow::fileSaveAs()
 {
-  // the user picks the file type: .bvh for Second Life, .avm keeps Pingmator's own data
+  // the user picks the file type: .bvh for Second Life, .avm keeps PinglyMotion's own data
   const QString filters=m_bvhFilter+";;"+m_avmFilter;
   QString selectedFilter=QFileInfo(currentFile).suffix().toLower()=="bvh" ? m_bvhFilter : m_avmFilter;
 
-   //// For some unknown reason passing "this" locks up the OSX pingmator window. Possibly a QT4 bug, needs investigation
+   //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
    QString file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), currentFile, filters, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #else
@@ -1825,7 +1825,7 @@ void PinglyMotionWindow::fileExportForSecondLife()
     QFileInfo fileInfo(currentFile);
     QString exportName=fileInfo.path()+"/"+fileInfo.completeBaseName()+".bvh";
 
-    qDebug("pingmator::fileExportForSecondLife(): exporting animation as '%s'.",exportName.toLatin1().constData());
+    qDebug("pinglymotion::fileExportForSecondLife(): exporting animation as '%s'.",exportName.toLatin1().constData());
     QString error;
     if(!scene->getAnimation()->saveBVH(exportName,&error))
     {
@@ -1839,7 +1839,7 @@ void PinglyMotionWindow::fileExportForSecondLife()
 // Menu Action: File / Load Props...
 void PinglyMotionWindow::fileLoadProps()
 {
-   //// For some unknown reason passing "this" locks up the OSX pingmator window. Possibly a QT4 bug, needs investigation
+   //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
    QString fileName = QFileDialog::getOpenFileName(nullptr, QString(), UserSettings::lastPath(), m_propFilter);
 #else
@@ -1895,7 +1895,7 @@ void PinglyMotionWindow::fileLoadProps()
 // Menu Action: File / Save Props...
 void PinglyMotionWindow::fileSaveProps()
 {
-   //// For some unknown reason passing "this" locks up the OSX pingmator window. Possibly a QT4 bug, needs investigation
+   //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
    QString fileName = QFileDialog::getSaveFileName(NULL, tr("Save Props"), currentFile, m_propFilter);
 #else
@@ -1953,7 +1953,7 @@ void PinglyMotionWindow::fileExit()
 // Menu Action: Edit / Cut
 void PinglyMotionWindow::editCut()
 {
-//  qDebug("pingmator::editCut()");
+//  qDebug("pinglymotion::editCut()");
   scene->getAnimation()->cutFrame();
   frameDataValid=true;
   updateInputs();
@@ -2033,7 +2033,7 @@ void PinglyMotionWindow::showTimeline(bool on)
   m_timelineDock->setVisible(on);
 }
 
-// Menu Action: Options / Configure Pingmator
+// Menu Action: Options / Configure PinglyMotion
 void PinglyMotionWindow::configure()
 {
   UserSettingsDialog* dialog=new UserSettingsDialog(this);
@@ -2365,7 +2365,7 @@ void PinglyMotionWindow::setCurrentFrame(int frame)
 // gets called by selecting an animation from the animation combo box
 void PinglyMotionWindow::animationChanged(int which)
 {
-  qDebug("pingmator::animationChanged(%d)",which);
+  qDebug("pinglymotion::animationChanged(%d)",which);
 
   // safety to check if "which" is out of bounds of loaded animations
   if(which>=openFiles.count()) return;
@@ -2422,12 +2422,12 @@ void PinglyMotionWindow::setLoopInPoint(int inFrame)
 
   // FIXME: Temporary fix for a seg fault caused
   //  by adding then deleting a prop immediately
-  //  before closing the Pingmator window
+  //  before closing the PinglyMotion window
   if (!anim) return;
 
   int numOfFrames=anim->getNumberOfFrames();
   int outFrame=anim->getLoopOutPoint();
-  qDebug("pingmator::setLoopInPoint(%d) (%d frames)",inFrame,numOfFrames);
+  qDebug("pinglymotion::setLoopInPoint(%d) (%d frames)",inFrame,numOfFrames);
 
   if(inFrame>numOfFrames) inFrame=numOfFrames;
   if(inFrame>outFrame) inFrame=outFrame+1;
@@ -2446,7 +2446,7 @@ void PinglyMotionWindow::setLoopOutPoint(int outFrame)
   Animation* anim=scene->getAnimation();
   int numOfFrames=anim->getNumberOfFrames();
   int inFrame=anim->getLoopInPoint();
-  qDebug("pingmator::setLoopOutPoint(%d) (%d frames)",outFrame,numOfFrames);
+  qDebug("pinglymotion::setLoopOutPoint(%d) (%d frames)",outFrame,numOfFrames);
 
   if(outFrame>numOfFrames) outFrame=numOfFrames;
   if((outFrame-1)<inFrame) outFrame=inFrame+1;
@@ -2461,7 +2461,7 @@ void PinglyMotionWindow::setLoopOutPoint(int outFrame)
 
 void PinglyMotionWindow::setPlaystate(PlayState state)
 {
-//  qDebug("pingmator::setPlaystate(): setting playstate %d",(int) state);
+//  qDebug("pinglymotion::setPlaystate(): setting playstate %d",(int) state);
   // set state
   playstate=state;
 
@@ -2473,7 +2473,7 @@ void PinglyMotionWindow::setPlaystate(PlayState state)
   else if(state==PLAYSTATE_PLAYING)
     ui->playButton->setIcon(stopIcon);
   else
-    qDebug("pingmator::setPlaystate(): unknown playstate %d",(int) state);
+    qDebug("pinglymotion::setPlaystate(): unknown playstate %d",(int) state);
 }
 
 // prevent closing of main window if there are unsaved changes
@@ -2507,7 +2507,7 @@ void PinglyMotionWindow::closeEvent(QCloseEvent* event)
 // calculates the longest running time of all animations
 double PinglyMotionWindow::calculateLongestRunningTime()
 {
-  qDebug("pingmator::calculateLongestRunningTime()");
+  qDebug("pinglymotion::calculateLongestRunningTime()");
   longestRunningTime=0.0;
   for(unsigned int index=0;index< (unsigned int) animationIds.count();index++)
   {
@@ -2515,7 +2515,7 @@ double PinglyMotionWindow::calculateLongestRunningTime()
     double time=anim->getNumberOfFrames()/((double) anim->fps());
     if(time>longestRunningTime) longestRunningTime=time;
   }
-  qDebug("pingmator::calculateLongestRunningTime(): longestRunningTime now: %f seconds",longestRunningTime);
+  qDebug("pinglymotion::calculateLongestRunningTime(): longestRunningTime now: %f seconds",longestRunningTime);
   return longestRunningTime;
 }
 

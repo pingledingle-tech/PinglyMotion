@@ -1,5 +1,5 @@
 /*
- * Pingmator - fuzz target for the new BVH/AVM parser (src/animfile.*, issue #62)
+ * PinglyMotion - fuzz target for the new BVH/AVM parser (src/animfile.*, issue #62)
  *
  * Feeds any bytes to AnimFile::parse(), as a BVH file and as an AVM file. It
  * must never crash or hang, a refused file must give a reason, and an accepted

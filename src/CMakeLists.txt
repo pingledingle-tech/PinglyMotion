@@ -62,7 +62,7 @@ ENDIF (WIN32)
 ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
 TARGET_LINK_LIBRARIES (pinglymotion ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
 # The program file keeps its old name for now (a later rename job changes it)
-SET_TARGET_PROPERTIES (pinglymotion PROPERTIES OUTPUT_NAME pingmator)
+SET_TARGET_PROPERTIES (pinglymotion PROPERTIES OUTPUT_NAME PinglyMotion)
 
 # Install pinglymotion
 INSTALL (TARGETS pinglymotion DESTINATION ${INSTALL_BIN})

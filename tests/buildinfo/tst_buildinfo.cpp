@@ -1,5 +1,5 @@
 /*
- * Pingmator - test of the build label in the window title (#21)
+ * PinglyMotion - test of the build label in the window title (#21)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

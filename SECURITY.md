@@ -39,7 +39,7 @@ In scope:
 
 - crashes, memory errors, hangs or excessive memory use caused by files
   Pingmator opens (`.bvh`, `.avm`, `.prp`, data files)
-- the remote control interface (`pingmator --control`, local HTTP on
+- the remote control interface (`PinglyMotion --control`, local HTTP on
   127.0.0.1) and the MCP server in `tools/mcp/`
 - the live link to the Aurora viewer
 - the GitHub Actions workflows and the release packages
@@ -59,9 +59,9 @@ attestation, which shows that the zip was built by this repository's release
 workflow from a given commit.
 
     sha256sum --check SHA256SUMS
-    gh attestation verify Pingmator-vX.Y.Z-windows.zip --repo pingledingle-tech/PinglyMotion
+    gh attestation verify PinglyMotion-vX.Y.Z-windows.zip --repo pingledingle-tech/PinglyMotion
 
-On Windows, `Get-FileHash Pingmator-vX.Y.Z-windows.zip` shows the SHA-256
+On Windows, `Get-FileHash PinglyMotion-vX.Y.Z-windows.zip` shows the SHA-256
 to compare with the one in `SHA256SUMS`.
 
 ## Known issues

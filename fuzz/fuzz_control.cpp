@@ -1,5 +1,5 @@
 /*
- * Pingmator - fuzz target for the control commands
+ * PinglyMotion - fuzz target for the control commands
  *
  * Feeds any bytes as a JSON request to ControlApi::execute(), the code that
  * runs the commands an AI client sends. It must never crash, and every answer

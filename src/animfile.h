@@ -1,5 +1,5 @@
 /*
- * Pingmator – BVH and AVM files read into a plain data model (issue #62)
+ * PinglyMotion – BVH and AVM files read into a plain data model (issue #62)
  *
  * This is the parser and writer for animation files; bvh.cpp builds the joint
  * tree from it and saves through it. It reads from memory, never touches the

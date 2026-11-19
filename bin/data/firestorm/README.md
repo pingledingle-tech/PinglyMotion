@@ -50,7 +50,7 @@ limbs, wings, spine), then the joints Firestorm does not list:
 | `sl` | Second Life joint name (`mShoulderLeft`) |
 | `bvh` | Name in Pingmator's BVH files (`lShldr`), from `bin/data/bento_joints.txt` |
 | `name` | Friendly name (`Whole Arm`) |
-| `nameFrom` | `firestorm` or `pingmator` (see below) |
+| `nameFrom` | `firestorm` or `pinglymotion` (see below) |
 | `tab` | Pingmator's joint table tab: Body, Face, Hands or Other, the same as `JointGroups::tabOf()` (a test checks this) |
 | `firestormType` | Firestorm's tab: `BODY`, `FACE`, `HANDS`, `MISC` or `WHOLEAVATAR` (the pelvis); empty when Firestorm does not list the joint |
 | `firestormSection` | Heading the joint stands under in Firestorm's list (`Left Arm`, `Eyes/Eye Lids`) |
@@ -67,7 +67,7 @@ not joints in BVH files.
 
 ## Changes and additions by Pingmator
 
-- Names that Firestorm does not have, marked `"nameFrom": "pingmator"`:
+- Names that Firestorm does not have, marked `"nameFrom": "pinglymotion"`:
   `mFaceRoot` (Face Root) and `mFaceChin` (Chin) are in Firestorm's list but
   have no title there; `mFaceEyeAltLeft` / `mFaceEyeAltRight` (Left/Right Eye
   (alternative)) are not in Firestorm's list at all. These two got a mirror

@@ -1,5 +1,5 @@
 /*
- * Pingmator – read a Second Life .anim file (issue #22, step 1)
+ * PinglyMotion – read a Second Life .anim file (issue #22, step 1)
  *
  * Turns the bytes of a .anim file into a plain data model: header, joints,
  * rotation and position keys in seconds, metres and quaternions. It reads from
@@ -9,7 +9,7 @@
  * docs/ANIM_FORMAT.md, section 8, and docs/SECURITY_AUDIT.md).
  *
  * The data model keeps what is in the file. It does not know the Second Life
- * skeleton: turning the keys into a Pingmator animation is a later step.
+ * skeleton: turning the keys into a PinglyMotion animation is a later step.
  * The reference for the format is the Second Life viewer,
  * llcharacter/llkeyframemotion.cpp (LGPL 2.1, Linden Research).
  *

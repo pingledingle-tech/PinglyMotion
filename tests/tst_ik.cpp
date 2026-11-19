@@ -1,5 +1,5 @@
 /*
- * Pingmator automatic tests: inverse kinematics (IKTree)
+ * PinglyMotion automatic tests: inverse kinematics (IKTree)
  *
  * The expected numbers (tst_ik_expected.inc) were recorded with the solver
  * from #127 (damped least squares on the rotation channels, see iktree.cpp).

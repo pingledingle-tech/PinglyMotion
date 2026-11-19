@@ -501,7 +501,7 @@ void ControlTest::filesStayInWorkFolder()
     const QJsonObject open = m_api->execute(QJsonObject{{"command", "open_file"}, {"path", path}});
     QVERIFY2(!open["ok"].toBool(), qPrintable(path));
     // the answer does not tell whether a file outside exists
-    QVERIFY2(open["error"].toString().startsWith("Files can only be opened and saved in the Pingmator folder"), qPrintable(open["error"].toString()));
+    QVERIFY2(open["error"].toString().startsWith("Files can only be opened and saved in the PinglyMotion folder"), qPrintable(open["error"].toString()));
   }
   QVERIFY(!QFileInfo::exists(root.filePath("new.bvh")));
 #ifndef Q_OS_WIN

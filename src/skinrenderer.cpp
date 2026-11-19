@@ -1,5 +1,5 @@
 /*
- * Pingmator - draws the skinned avatar body with OpenGL 3.3 shaders
+ * PinglyMotion - draws the skinned avatar body with OpenGL 3.3 shaders
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
