@@ -57,3 +57,13 @@ void Settings::setValue(const QString& key, const QVariant& value)
 {
   m_settings.setValue(key, value);
 }
+
+bool Settings::contains(const QString& key) const
+{
+  return m_settings.contains(key);
+}
+
+void Settings::remove(const QString& key)
+{
+  m_settings.remove(key);
+}

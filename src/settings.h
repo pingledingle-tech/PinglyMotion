@@ -37,6 +37,8 @@ class Settings : public QObject
 
     QVariant value(const QString& key, const QVariant& defaultValue = QVariant());
     void setValue(const QString& key, const QVariant& value);
+    bool contains(const QString& key) const;
+    void remove(const QString& key);
 
   private:
     QSettings m_settings;
