@@ -6,4 +6,4 @@ https://github.com/FirestormViewer/phoenix-firestorm/blob/master/indra/newview/c
 
 Copyright Linden Research, Inc. and the Firestorm project. Licensed under the
 GNU Lesser General Public License version 2.1. Section 3 of that licence allows
-it to be used under the GNU GPL, which Pingmator uses.
+it to be used under the GNU GPL, which PinglyMotion uses.

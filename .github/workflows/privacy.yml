@@ -35,3 +35,16 @@ jobs:
       - name: No personal data in the pull request title or description
         if: ${{ !cancelled() }}
         run: python3 tools/check_privacy.py --event "$GITHUB_EVENT_NAME" "$GITHUB_EVENT_PATH"
+      # the old project name must not come back (tools/check_old_name.py)
+      - name: Tests for the old name check
+        if: ${{ !cancelled() }}
+        run: python3 tests/test_check_old_name.py
+      - name: No old project name in files
+        if: ${{ !cancelled() && github.event.pull_request.state != 'open' }}
+        run: python3 tools/check_old_name.py
+      - name: No old project name in files or commit messages
+        if: ${{ !cancelled() && github.event.pull_request.state == 'open' }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 tools/check_old_name.py "$BASE" "$HEAD"
