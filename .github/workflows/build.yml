@@ -164,6 +164,8 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: MCP server connects safely
         run: python3 tests/test_mcp_proxy.py
+      - name: MCP server in Node connects safely (issue 7)
+        run: node --version && python3 tests/test_mcp_node.py node
       - name: Claude Desktop extension (.mcpb) is correct
         run: python3 tests/test_mcpb.py
       - name: Generated edge-case animations are up to date
@@ -178,6 +180,10 @@ jobs:
       - name: Program starts and opens files
         run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build/src/PinglyMotion
       - name: Remote control works from start to finish (HTTP and MCP)
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
+      - name: Remote control works from start to finish with the Node MCP server
+        env:
+          PINGLYMOTION_MCP: node
         run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
 
   asan-ubsan:

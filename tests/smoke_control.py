@@ -5,6 +5,7 @@ End-to-end test of the remote control: starts the real PinglyMotion program with
 plain HTTP, and checks the answers. Needs a display: run with xvfb-run.
 
 Usage: tests/smoke_control.py path/to/pinglymotion
+       PINGLYMOTION_MCP=node tests/smoke_control.py path/to/pinglymotion   (the Node MCP server)
 """
 
 import base64
@@ -20,6 +21,16 @@ import urllib.request
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MCP = os.path.join(ROOT, "tools", "mcp", "pinglymotion_mcp.py")
+MCP_NODE = os.path.join(ROOT, "tools", "mcp", "pinglymotion_mcp.js")
+
+
+def mcp_command():
+    """The Python MCP server, or the Node one with PINGLYMOTION_MCP=node (issue #7)."""
+    if os.environ.get("PINGLYMOTION_MCP") == "node":
+        return ["node", MCP_NODE]
+    return [sys.executable, "-I", MCP]
+
+
 CHECK_BVH = os.path.join(ROOT, "tools", "check_sl_bvh.py")
 
 failed = []
@@ -35,7 +46,7 @@ class Mcp:
     """The MCP server, spoken to over stdin/stdout like an AI tool does."""
 
     def __init__(self, env):
-        self.process = subprocess.Popen([sys.executable, "-I", MCP], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        self.process = subprocess.Popen(mcp_command(), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE, text=True, env=env)
         self.next_id = 1
 

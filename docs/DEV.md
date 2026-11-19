@@ -45,6 +45,8 @@ Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, star
 
 The Claude Desktop extension: `python3 tools/mcp/build_mcpb.py` writes `PinglyMotion.mcpb` (standard library only; the Windows zip and releases get it). The manifest is `tools/mcp/mcpb/manifest.json`; its `version` must equal the version in `CMakeLists.txt` (`tests/test_mcpb.py` checks this, so change both at a release). To check it with Anthropic's own tool: `npx @anthropic-ai/mcpb validate tools/mcp/mcpb/manifest.json`.
 
+The MCP server exists twice for now (issue #7): `tools/mcp/pinglymotion_mcp.py` and the Node version `tools/mcp/pinglymotion_mcp.js` (built-in modules only, because Claude Desktop ships Node). Change both the same way. `python3 tests/test_mcp_node.py` checks the Node one like `tests/test_mcp_proxy.py` checks the Python one; `PINGLYMOTION_MCP=node` makes `tests/smoke_control.py` use it.
+
 After changing the control commands: `PINGLYMOTION_UPDATE_COMMANDS=1` and run `pinglymotion_control_tests` from `bin/` to regenerate `tools/mcp/commands.json`.
 
 ## The Windows zip
