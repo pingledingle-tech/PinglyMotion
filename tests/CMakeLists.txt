@@ -94,6 +94,13 @@ TARGET_LINK_LIBRARIES (pinglymotion_ruth2_tests ${PINGLYMOTION_QT_LIBS} Qt6::Tes
 ADD_TEST (NAME ruth2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_ruth2_tests)
 SET_TESTS_PROPERTIES (ruth2 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# the Roth2 v2 male body: mesh file, joints, chosen by figure type
+ADD_EXECUTABLE (pinglymotion_roth2_tests tst_roth2.cpp ${CORE_SRC})
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_roth2_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_roth2_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME roth2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_roth2_tests)
+SET_TESTS_PROPERTIES (roth2 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # camera: mouse buttons and keys, turning around the pivot (#88)
 ADD_EXECUTABLE (pinglymotion_camera_tests tst_camera.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_camera_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

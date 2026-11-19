@@ -96,7 +96,7 @@ One pull request per step, tested on Windows before it is merged. Steps that cha
 
 1. Camera and keys (new scheme, old joint modifiers removed) – `src/animationview.*` (done)
 2. Friendly names, section headings and search in the joint list (done)
-3. Floating, movable panels; Tab to hide; reset layout
+3. Floating, movable panels; Tab to hide; reset layout (plan: [PANELS_PLAN.md](PANELS_PLAN.md))
 4. Selected-joint card: trackball, sliders, limit warning, turn-around frame
 5. Left / Right / Mirror and the whole-pose buttons (shared left/right mapping)
 6. Hands tab: presets and finger grid
