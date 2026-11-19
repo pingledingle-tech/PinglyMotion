@@ -6,6 +6,7 @@ Files:
 - src/pinglymotionwindow.*
 - src/CMakeLists.txt
 - tests/retargetdialog/**
+- tests/motions/**
 - CMakeLists.txt
 - docs/PRODUCT.md
 - docs/ROADMAP.md

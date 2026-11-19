@@ -22,3 +22,11 @@ Usage rights, from the conversion's READMEFIRST: CMU places no restrictions on t
 
 > The data used in this project was obtained from mocap.cs.cmu.edu.
 > The database was created with funding from NSF EIA-0196217.
+
+## A skeleton that is not the avatar's
+
+| File | What | Length |
+|---|---|---|
+| `mixamo_style_wave.bvh` | The right arm goes up and waves, the head nods. A person skeleton with Mixamo style joint names (23 joints, one extra twist bone). | 2 s |
+
+Made by hand for the menu "Import BVH from another skeleton" (issue 16): the program has to match the joint names to the avatar, and it leaves the twist bone out. No outside data, no licence terms. The test `tests/retargetdialog` opens it.

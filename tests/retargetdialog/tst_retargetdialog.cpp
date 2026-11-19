@@ -111,6 +111,29 @@ class TestRetargetDialog : public QObject
       QVERIFY(RetargetUi::summary(list).contains("were left out"));
     }
 
+    void theFileForTheOwnerTestWorks()
+    {
+      // tests/motions/mixamo_style_wave.bvh is in the Windows zip for the hand test of the menu
+      const AnimFile::Animation source=readBvh(PINGLYMOTION_MOTIONS "/mixamo_style_wave.bvh");
+      const AnimFile::Animation target=readBvh(PINGLYMOTION_DATA "/SLFemale.bvh");
+      QVERIFY(source.frames==61);
+      const Retarget::Result result=Retarget::retarget(source,target);
+      QVERIFY2(result.ok(),qPrintable(result.error));
+      const QVector<RetargetUi::Row> list=RetargetUi::rows(result.mapping,source,target);
+      QCOMPARE(list.size(),23);
+      int matched=0;
+      bool twistLeftOut=false;
+      for(const RetargetUi::Row& row : list)
+      {
+        if(row.matched) matched++;
+        if(row.source.endsWith("Twist")) twistLeftOut=!row.matched;
+      }
+      QVERIFY(twistLeftOut);
+      QStringList leftOut;
+      for(const RetargetUi::Row& row : list) if(!row.matched) leftOut << row.source+": "+row.what;
+      QVERIFY2(matched==21,qPrintable(leftOut.join("; ")));      // the second spine bone and the twist bone are left out
+    }
+
     void friendlyNamesAreUsedWhenGiven()
     {
       const AnimFile::Animation source=readBvh(PINGLYMOTION_MOTIONS "/cmu_02_01_walk.bvh");

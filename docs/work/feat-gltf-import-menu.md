@@ -1,6 +1,6 @@
 Branch: feat/gltf-import-menu
 Status: active
-Pull request: pending
+Pull request: #117
 Files:
 - src/gltfimportdialog.*
 - src/retargetdialog.*
