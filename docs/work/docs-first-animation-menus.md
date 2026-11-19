@@ -1,6 +1,6 @@
 Branch: docs/first-animation-menus
-Status: active
-Pull request: pending
+Status: done
+Pull request: #133
 Files:
 - docs/FIRST_ANIMATION.md
 - README.md
