@@ -41,6 +41,7 @@ class QTableWidget;
 
 class Animation;
 class BVHNode;
+class JointInfo;
 class PinglyMotion;
 struct RotationLimits;
 class ControlApi;
@@ -280,10 +281,14 @@ class PinglyMotionWindow : public QMainWindow
     // list of animation ids mapped to combo box indexes
     QList<Animation*> animationIds;
 
-    // joint picker: tabs Body / Face / Hands / Other above a table of joints
+    // joint picker: tabs Body / Face / Hands / Other and a search box above a
+    // table of joints with friendly names under section headings (#14, step 2)
     QTabBar* m_jointTabs=nullptr;
+    QLineEdit* m_jointSearch=nullptr;
     QTableWidget* m_jointTable=nullptr;
-    // track number of each row in the joint table
+    // friendly names and sections from data/firestorm (empty when not found)
+    QSharedPointer<JointInfo> m_jointInfo;
+    // track number of each row in the joint table, -1 for heading rows
     QList<int> nodeMapping;
     // track selected in the joint table (0 = position, 1 = hip)
     int m_selectedTrack=1;
