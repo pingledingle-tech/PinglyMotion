@@ -22,7 +22,10 @@ jobs:
           fetch-depth: 0
       - name: Tests for the privacy check
         run: python3 tests/test_check_privacy.py
+      # only while the pull request is open: after a merge the branch is deleted and
+      # its commits cannot be fetched, but editing the description still starts this
       - name: No personal data in commits or added lines
+        if: github.event.pull_request.state == 'open'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
