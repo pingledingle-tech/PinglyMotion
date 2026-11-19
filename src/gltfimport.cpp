@@ -22,7 +22,220 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <vector>
+
+namespace
+{
+namespace Meshopt
+{
+  // Decoder for the glTF extension EXT_meshopt_compression, for animation data
+  // (the Mesh2Motion clips are such files, issue #27). Supported: mode
+  // ATTRIBUTES, format version 0, filters NONE, QUATERNION and EXPONENTIAL;
+  // everything else is refused with a reason. It never reads outside its
+  // input; the caller checks the size of the output against the limits first.
+  // Written from the published format description, no code was copied.
+  enum class Filter { None, Octahedral, Quaternion, Exponential };
+
+  constexpr int GROUP=16;            // values per byte group
+  constexpr int MAX_BLOCK=256;       // elements per block
+  constexpr int BLOCK_BYTES=8192;    // largest size of the data of one block
+  constexpr int TAIL_MIN=32;         // version 0: the tail has at least this many bytes
+
+
+  struct Cursor
+  {
+    const uint8_t* p;
+    const uint8_t* end;
+    bool take(size_t n,const uint8_t*& out)
+    {
+      if(size_t(end-p)<n) return false;
+      out=p;
+      p+=n;
+      return true;
+    }
+  };
+
+  // one group of 16 bytes, coded with 0, 2, 4 or 8 bits per value
+  bool decodeGroup(Cursor& c,uint8_t* out,int bitsLog2)
+  {
+    const uint8_t* in=nullptr;
+    switch(bitsLog2)
+    {
+      case 0:
+        std::memset(out,0,GROUP);
+        return true;
+      case 1:   // 2 bits: 4 bytes of codes, then the bytes for the value 3
+      case 2:   // 4 bits: 8 bytes of codes, then the bytes for the value 15
+      {
+        const int codeBytes=bitsLog2==1 ? 4 : 8;
+        const int perByte=bitsLog2==1 ? 4 : 2;
+        const int bits=bitsLog2==1 ? 2 : 4;
+        const int sentinel=(1<<bits)-1;
+        if(!c.take(size_t(codeBytes),in)) return false;
+        for(int i=0;i<codeBytes;i++)
+          for(int j=0;j<perByte;j++)
+          {
+            const int v=(in[i]>>(8-bits*(j+1)))&sentinel;
+            if(v==sentinel)
+            {
+              const uint8_t* extra=nullptr;
+              if(!c.take(1,extra)) return false;
+              out[i*perByte+j]=*extra;
+            }
+            else out[i*perByte+j]=uint8_t(v);
+          }
+        return true;
+      }
+      default:  // 8 bits: 16 plain bytes
+        if(!c.take(GROUP,in)) return false;
+        std::memcpy(out,in,GROUP);
+        return true;
+    }
+  }
+
+  // `size` bytes (a multiple of 16) for one byte lane of a block
+  bool decodeBytes(Cursor& c,uint8_t* out,int size)
+  {
+    const int groups=size/GROUP;
+    const uint8_t* header=nullptr;
+    if(!c.take(size_t((groups+3)/4),header)) return false;
+    for(int g=0;g<groups;g++)
+      if(!decodeGroup(c,out+g*GROUP,(header[g/4]>>((g%4)*2))&3)) return false;
+    return true;
+  }
+
+  inline uint8_t unzigzag8(uint8_t v) { return uint8_t((0-(v&1))^(v>>1)); }
+
+  inline int16_t roundToShort(float v)
+  {
+    return int16_t(int(v*32767.0f+(v>=0.0f ? 0.5f : -0.5f)));
+  }
+
+  void filterQuaternion(uint8_t* data,int count)
+  {
+    const float scale=1.0f/std::sqrt(2.0f);
+    for(int i=0;i<count;i++)
+    {
+      int16_t in[4];
+      for(int k=0;k<4;k++) in[k]=qFromLittleEndian<int16_t>(data+i*8+k*2);
+      const int maxc=in[3]&3;
+      const float range=scale/float(in[3]|3);
+      const float x=float(in[0])*range,y=float(in[1])*range,z=float(in[2])*range;
+      const float ww=1.0f-x*x-y*y-z*z;
+      const float w=std::sqrt(ww>=0.0f ? ww : 0.0f);
+      int16_t out[4];
+      out[(maxc+1)&3]=roundToShort(x);
+      out[(maxc+2)&3]=roundToShort(y);
+      out[(maxc+3)&3]=roundToShort(z);
+      out[maxc]=roundToShort(w);
+      for(int k=0;k<4;k++) qToLittleEndian(out[k],data+i*8+k*2);
+    }
+  }
+
+  void filterExponential(uint8_t* data,int count,int stride)
+  {
+    const int words=count*stride/4;
+    for(int i=0;i<words;i++)
+    {
+      const int32_t v=qFromLittleEndian<int32_t>(data+i*4);
+      const int exponent=v>>24;                                  // signed, top 8 bits
+      const int mantissa=int32_t(uint32_t(v)<<8)>>8;             // signed, low 24 bits
+      const float f=std::ldexp(float(mantissa),exponent);
+      uint32_t bits;
+      std::memcpy(&bits,&f,4);
+      qToLittleEndian(bits,data+i*4);
+    }
+  }
+
+QByteArray decodeAttributes(const char* data,qint64 size,int count,int stride,Filter filter,QString& error)
+{
+  error.clear();
+  if(count<1 || stride<4 || stride>256 || stride%4)
+  {
+    error=QObject::tr("The compressed data has a size that is not allowed.");
+    return QByteArray();
+  }
+  if(filter==Filter::Octahedral)
+  {
+    error=QObject::tr("The compressed data uses a filter that is not supported (OCTAHEDRAL).");
+    return QByteArray();
+  }
+  if(filter==Filter::Quaternion && stride!=8)
+  {
+    error=QObject::tr("The compressed data has a size that is not allowed.");
+    return QByteArray();
+  }
+  if(size<1 || size>INT32_MAX)
+  {
+    error=QObject::tr("The compressed data is broken.");
+    return QByteArray();
+  }
+
+  Cursor c{reinterpret_cast<const uint8_t*>(data),reinterpret_cast<const uint8_t*>(data)+size};
+  const uint8_t header=*c.p++;
+  if((header&0xf0)!=0xa0)
+  {
+    error=QObject::tr("The compressed data is broken (wrong start).");
+    return QByteArray();
+  }
+  if((header&0x0f)!=0)
+  {
+    error=QObject::tr("The compressed data uses a newer format version, which is not supported.");
+    return QByteArray();
+  }
+  // the tail: the first vertex values for the delta coding, in its last stride bytes
+  const size_t tail=std::max(size_t(stride),size_t(TAIL_MIN));
+  if(size_t(c.end-c.p)<tail)
+  {
+    error=QObject::tr("The compressed data is too short.");
+    return QByteArray();
+  }
+  uint8_t last[256];
+  std::memcpy(last,c.end-stride,size_t(stride));
+  const uint8_t* blocksEnd=c.end-tail;
+  c.end=blocksEnd;
+
+  QByteArray result(qsizetype(count)*stride,'\0');
+  uint8_t* out=reinterpret_cast<uint8_t*>(result.data());
+  const int blockMax=std::min((BLOCK_BYTES/stride)&~(GROUP-1),MAX_BLOCK);
+  std::vector<uint8_t> lane(size_t(blockMax)+GROUP);
+
+  for(int first=0;first<count;)
+  {
+    const int n=std::min(blockMax,count-first);
+    const int padded=(n+GROUP-1)&~(GROUP-1);
+    for(int k=0;k<stride;k++)
+    {
+      if(!decodeBytes(c,lane.data(),padded))
+      {
+        error=QObject::tr("The compressed data is broken (it ends too early).");
+        return QByteArray();
+      }
+      uint8_t p=last[k];
+      for(int i=0;i<n;i++)
+      {
+        p=uint8_t(p+unzigzag8(lane[size_t(i)]));
+        out[size_t(first+i)*size_t(stride)+size_t(k)]=p;
+      }
+      last[k]=p;
+    }
+    first+=n;
+  }
+  if(c.p!=blocksEnd)
+  {
+    error=QObject::tr("The compressed data is broken (wrong length).");
+    return QByteArray();
+  }
+
+  if(filter==Filter::Quaternion) filterQuaternion(out,count);
+  else if(filter==Filter::Exponential) filterExponential(out,count,stride);
+  return result;
+}
+
+}
+}
 
 namespace GltfImport
 {
@@ -68,6 +281,7 @@ namespace
   {
     const char* data=nullptr;
     qint64 size=0;     // the declared byteLength (never more than the real bytes)
+    bool fallback=false;   // an empty stand-in for uncompressed data (EXT_meshopt_compression)
   };
 
   struct View
@@ -76,6 +290,7 @@ namespace
     qint64 offset=0;
     qint64 length=0;
     int stride=0;      // 0 when not given
+    const char* data=nullptr;   // the first byte of the view (inside a buffer, or in decoded data)
   };
 
   class Reader
@@ -97,6 +312,7 @@ namespace
     bool readAsset(const QJsonObject& root);
     bool readBuffers(const QJsonObject& root);
     bool view(int index,View& v);
+    bool meshoptView(int index,const QJsonObject& ext,View& v);
     bool readAccessor(int index,const QStringList& types,bool allowNormalized,
                       int minCount,int maxCount,std::vector<float>& out,int& count,int& components);
     bool readNodes(const QJsonObject& root,Document& doc);
@@ -116,6 +332,9 @@ namespace
     qint64 m_binOffset=-1;
     qint64 m_binLength=0;
     std::vector<QByteArray> m_decoded;   // buffers from data: URIs
+    std::vector<QByteArray> m_meshopt;   // decoded compressed views (EXT_meshopt_compression)
+    QHash<int,int> m_meshoptIndex;       // buffer view -> index in m_meshopt
+    qint64 m_meshoptBytes=0;
     QVector<Buffer> m_buffers;
     QJsonArray m_views;
     QJsonArray m_accessors;
@@ -247,6 +466,7 @@ namespace
     {
       const QString name=v.toString();
       if(harmless.contains(name) || name.startsWith(QLatin1String("KHR_materials_"))) continue;
+      if(name==QLatin1String("EXT_meshopt_compression")) continue;   // decoded in view()
       if(name.contains(QLatin1String("meshopt"),Qt::CaseInsensitive))
         return fail(QObject::tr("The file uses compressed data (%1), which is not supported. "
                                 "Export it again without compression.").arg(shown(name)));
@@ -269,7 +489,16 @@ namespace
         return false;
       const QJsonValue uri=b.value(QLatin1String("uri"));
       Buffer buf;
-      if(uri.isUndefined())
+      const bool fallback=b.value(QLatin1String("extensions")).toObject()
+                            .value(QLatin1String("EXT_meshopt_compression")).toObject()
+                            .value(QLatin1String("fallback")).toBool(false);
+      if(uri.isUndefined() && fallback)
+      {
+        // no data: it stands in for the uncompressed form of the compressed views
+        buf.size=length;
+        buf.fallback=true;
+      }
+      else if(uri.isUndefined())
       {
         if(!m_glb || i!=0 || m_binOffset<0)
           return fail(QObject::tr("Buffer %1 has no data.").arg(i));
@@ -328,14 +557,68 @@ namespace
       if(!integer(o.value(QLatin1String("byteStride")),252,what+QObject::tr(": the stride"),stride)) return false;
       if(stride<4 || stride%4) return fail(what+QObject::tr(" has a stride that is not allowed."));
     }
-    if(o.value(QLatin1String("extensions")).toObject().keys().join(' ').contains(QLatin1String("meshopt"),Qt::CaseInsensitive))
-      return fail(QObject::tr("The file uses compressed data (meshopt), which is not supported."));
+    const QJsonObject extensions=o.value(QLatin1String("extensions")).toObject();
+    if(extensions.keys().join(' ').contains(QLatin1String("meshopt"),Qt::CaseInsensitive))
+    {
+      const QJsonValue ext=extensions.value(QLatin1String("EXT_meshopt_compression"));
+      if(!ext.isObject()) return fail(QObject::tr("The file uses compressed data (meshopt) in a form that is not supported."));
+      return meshoptView(i,ext.toObject(),v);
+    }
     // both numbers are at most 64 MB, so the sum cannot overflow
+    if(m_buffers[int(b)].fallback) return fail(what+QObject::tr(" has no data."));
     if(offset+length>m_buffers[int(b)].size) return fail(what+QObject::tr(" ends outside its buffer."));
     v.buffer=int(b);
     v.offset=offset;
     v.length=length;
     v.stride=int(stride);
+    v.data=m_buffers[int(b)].data+offset;
+    return true;
+  }
+
+  // a buffer view of EXT_meshopt_compression: decode it (once) and point the view at the result
+  bool Reader::meshoptView(int i,const QJsonObject& ext,View& v)
+  {
+    const QString what=QObject::tr("Buffer view %1").arg(i);
+    const auto found=m_meshoptIndex.constFind(i);
+    qint64 b=0,offset=0,length=0,stride=0,count=0;
+    if(!integer(ext.value(QLatin1String("buffer")),qint64(m_buffers.size())-1,what+QObject::tr(": the compressed buffer"),b)) return false;
+    if(ext.contains(QLatin1String("byteOffset")) &&
+       !integer(ext.value(QLatin1String("byteOffset")),MAX_FILE_BYTES,what+QObject::tr(": the compressed offset"),offset)) return false;
+    if(!integer(ext.value(QLatin1String("byteLength")),MAX_FILE_BYTES,what+QObject::tr(": the compressed length"),length)) return false;
+    if(!integer(ext.value(QLatin1String("byteStride")),256,what+QObject::tr(": the stride"),stride)) return false;
+    if(!integer(ext.value(QLatin1String("count")),MAX_KEYS,what+QObject::tr(": the count"),count)) return false;
+    if(stride<4 || stride%4) return fail(what+QObject::tr(" has a stride that is not allowed."));
+    if(count<1) return fail(what+QObject::tr(" is empty."));
+    const QString mode=ext.value(QLatin1String("mode")).toString();
+    if(mode!=QLatin1String("ATTRIBUTES"))
+      return fail(QObject::tr("The file uses compressed data in a mode that is not supported (%1).").arg(shown(mode)));
+    Meshopt::Filter filter=Meshopt::Filter::None;
+    const QString filterName=ext.value(QLatin1String("filter")).toString(QStringLiteral("NONE"));
+    if(filterName==QLatin1String("QUATERNION")) filter=Meshopt::Filter::Quaternion;
+    else if(filterName==QLatin1String("EXPONENTIAL")) filter=Meshopt::Filter::Exponential;
+    else if(filterName==QLatin1String("OCTAHEDRAL")) filter=Meshopt::Filter::Octahedral;
+    else if(filterName!=QLatin1String("NONE"))
+      return fail(QObject::tr("The file uses a compressed data filter that is not supported (%1).").arg(shown(filterName)));
+    if(m_buffers[int(b)].fallback || offset+length>m_buffers[int(b)].size)
+      return fail(what+QObject::tr(": the compressed data ends outside its buffer."));
+    if(found==m_meshoptIndex.constEnd())
+    {
+      const qint64 decodedBytes=count*stride;   // at most 1e6*256, no overflow
+      if(m_meshoptBytes+decodedBytes>MAX_FILE_BYTES)
+        return fail(QObject::tr("The compressed data is too big."));
+      QString error;
+      QByteArray bytes=Meshopt::decodeAttributes(m_buffers[int(b)].data+offset,length,int(count),int(stride),filter,error);
+      if(bytes.isEmpty()) return fail(error.isEmpty() ? QObject::tr("The compressed data is broken.") : error);
+      m_meshoptBytes+=decodedBytes;
+      m_meshopt.push_back(std::move(bytes));
+      m_meshoptIndex.insert(i,int(m_meshopt.size())-1);
+    }
+    const QByteArray& decoded=m_meshopt[size_t(m_meshoptIndex.value(i))];
+    v.buffer=int(b);
+    v.offset=0;
+    v.length=decoded.size();
+    v.stride=int(stride);
+    v.data=decoded.constData();
     return true;
   }
 
@@ -392,7 +675,7 @@ namespace
       return fail(QObject::tr("The animation data is too big (more than %1 numbers).").arg(MAX_DECODED_FLOATS));
     m_floats+=floats;
 
-    const char* base=m_buffers[v.buffer].data+v.offset+offset;
+    const char* base=v.data+offset;
     out.resize(static_cast<size_t>(floats));
     for(qint64 e=0;e<n;e++)
     {

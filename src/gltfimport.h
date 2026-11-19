@@ -22,8 +22,11 @@
  *    the view inside its buffer (64-bit sums, no overflow).
  *  - all numbers must be finite; key times must rise; a turn of length zero
  *    is refused; the node tree must be a tree.
- *  - sparse accessors and compressed data (meshopt) are refused with a
- *    clear message.
+ *  - sparse accessors, Draco and other compressed data are refused with a
+ *    clear message. Meshopt data (EXT_meshopt_compression, used by the
+ *    Mesh2Motion clips) is decoded for animation data only: mode ATTRIBUTES,
+ *    version 0, filters NONE, QUATERNION and EXPONENTIAL; the size of the
+ *    decoded data is checked against the limits before it is decoded.
  *
  * The JSON part is read with Qt's JSON reader (the choice of the plan in
  * issue #12: our own small reader on top of Qt, no new library).
