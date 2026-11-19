@@ -1,5 +1,5 @@
 Branch: feat/gltf-import
-Status: active
+Status: done
 Pull request: #69
 Files:
 - src/gltfimport.*
@@ -7,6 +7,7 @@ Files:
 - CMakeLists.txt
 - fuzz/fuzz_gltf.cpp
 - fuzz/corpus/gltf/**
+- fuzz/gltf.dict
 - fuzz/CMakeLists.txt
 - fuzz/README.md
 
