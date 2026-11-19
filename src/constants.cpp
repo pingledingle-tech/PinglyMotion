@@ -159,7 +159,7 @@ const QString Constants::pinglyMotionDataPath()
 
 const QString Constants::defaultPosePath()
 {
-  return pinglyMotionDataPath() + "/TPose.avm";
+  return pinglyMotionDataPath() + "/TPose.dingle";
 }
 
 const QString Constants::limitsFilePath()

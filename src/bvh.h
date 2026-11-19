@@ -79,7 +79,7 @@ class BVH
     // reason in lastError when the file cannot be opened
     BVHNode* animRead(const QString& file,const QString& limFile);
 
-    bool avmWrite(Animation* root,const QString& file,QString& error);
+    bool dingleWrite(Animation* root,const QString& file,QString& error);
     bool animWrite(Animation* root,const QString& file,QString& error);
     void bvhDelete(BVHNode* node);
 
@@ -99,6 +99,10 @@ class BVH
     QStringList bvhTypeName;
     QStringList bvhChannelName;
     int lastLoadedNumberOfFrames;
+    // a .dingle file from a newer version, or with keys this program does not know:
+    // they are lost when it is saved again (set by animRead, 0 and false for other files)
+    int lastLoadedIgnoredKeys=0;
+    bool lastLoadedNewerVersion=false;
     int lastLoadedLoopIn;
     int lastLoadedLoopOut;
     float lastLoadedAvatarScale;

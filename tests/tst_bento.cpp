@@ -17,6 +17,8 @@
 #include "bvhnode.h"
 #include "avatarskin.h"
 #include "constants.h"
+#include "dingle.h"
+#include "dinglesave.h"
 #include "releaseinfo.h"
 #include "versionnumber.h"
 #include "pmmesh.h"
@@ -101,6 +103,9 @@ class BentoTest : public QObject
     void oldFilesKeepKeyFrames();
     void saveAndLoad_data();
     void saveAndLoad();
+    void avmIsNotWrittenAnyMore();
+    void savedDingleMatchesTheAnimation_data();
+    void savedDingleMatchesTheAnimation();
     void everyJointHasLimits();
     void limitsAreMirrored();
     void classicLimitsFollowSlWiki();
@@ -275,11 +280,12 @@ void BentoTest::saveAndLoad_data()
 {
   QTest::addColumn<QString>("file");
   QTest::addColumn<QString>("format");
-  QTest::newRow("jump as avm") << QString(PINGLYMOTION_EXAMPLES "/jump.avm") << QString("avm");
+  QTest::newRow("jump as dingle") << QString(PINGLYMOTION_EXAMPLES "/jump.avm") << QString("dingle");
   QTest::newRow("jump as bvh") << QString(PINGLYMOTION_EXAMPLES "/jump.avm") << QString("bvh");
-  QTest::newRow("throne as avm") << QString(PINGLYMOTION_EXAMPLES "/throne.avm") << QString("avm");
+  QTest::newRow("throne as dingle") << QString(PINGLYMOTION_EXAMPLES "/throne.avm") << QString("dingle");
   QTest::newRow("throne as bvh") << QString(PINGLYMOTION_EXAMPLES "/throne.avm") << QString("bvh");
   QTest::newRow("new as bvh") << QString() << QString("bvh");
+  QTest::newRow("new as dingle") << QString() << QString("dingle");
 }
 
 // saving and opening again gives the same animation, frame by frame
@@ -581,11 +587,54 @@ void BentoTest::leftAndRightAreMirrors()
   QVERIFY(findJoint(motion, "mTail3")->getMirror() == nullptr);
 }
 
+// the program never writes .avm again; the error says what to do
+void BentoTest::avmIsNotWrittenAnyMore()
+{
+  QTemporaryDir dir;
+  BVH bvh;
+  Animation anim(&bvh);
+  QString error;
+  const QString path = dir.path() + "/old.avm";
+  QVERIFY(!anim.saveBVH(path, &error));
+  QVERIFY(error.contains(".dingle"));
+  QVERIFY(!QFileInfo::exists(path));
+}
+
+// the check the program makes before an old .avm goes to the recycle bin:
+// the saved .dingle, read back, is the animation in memory
+void BentoTest::savedDingleMatchesTheAnimation_data()
+{
+  QTest::addColumn<QString>("file");
+  QTest::newRow("jump") << QString(PINGLYMOTION_EXAMPLES "/jump.avm");
+  QTest::newRow("throne") << QString(PINGLYMOTION_EXAMPLES "/throne.avm");
+  QTest::newRow("Relaxed") << QString(PINGLYMOTION_LEGACY_DATA "/Relaxed.avm");
+  QTest::newRow("new") << QString();
+}
+
+void BentoTest::savedDingleMatchesTheAnimation()
+{
+  QFETCH(QString, file);
+  QTemporaryDir dir;
+  const QString saved = dir.path() + "/saved.dingle";
+
+  BVH bvh;
+  Animation anim(&bvh, file);
+  QString error;
+  QVERIFY2(anim.saveBVH(saved, &error), qPrintable(error));
+
+  QFile in(saved);
+  QVERIFY(in.open(QIODevice::ReadOnly));
+  const Dingle::Result read = Dingle::parse(in.readAll());
+  QVERIFY2(read.ok(), qPrintable(read.error));
+  const QString difference = DingleSave::firstDifference(*read.animation, bvh.snapshot(&anim, AnimFile::Format::Avm));
+  QVERIFY2(difference.isEmpty(), qPrintable(difference));
+}
+
 void BentoTest::posedFingerIsSaved_data()
 {
   QTest::addColumn<QString>("format");
   QTest::newRow("bvh") << QString("bvh");
-  QTest::newRow("avm") << QString("avm");
+  QTest::newRow("dingle") << QString("dingle");
 }
 
 // a bent finger, jaw and tail keep their pose when saved and opened again

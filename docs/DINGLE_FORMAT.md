@@ -141,7 +141,8 @@ Other rules:
 
 - A new animation is named `pingle.dingle` by default.
 - An opened `.bvh` is never trashed. Save asks for a `.dingle` name (suggesting the BVH's name) and leaves the `.bvh` alone. "Export for Second Life" stays BVH until `.anim` export (#10).
-- The control API `open_file` accepts `.dingle`, `.avm` and `.bvh`. Its save writes only `.dingle` and refuses `.avm`.
+- The control API `open_file` accepts `.dingle`, `.avm` and `.bvh`. Its save writes `.dingle` (the working file) and `.bvh` (the file for the Second Life upload, which the remote-control checks rely on) and refuses `.avm`.
+- Built in the program (issue #26, jobs 5 and 6): the name rules are in `src/dinglesave.*`; the read-back check of step 4 compares joints, timing, key frames, loop, figure, scale and every value within 0.001 degrees (the file text holds a few digits); the start poses `bin/data/TPose.dingle` and `Relaxed.dingle` are the ones the program loads.
 
 ## Bundled files
 

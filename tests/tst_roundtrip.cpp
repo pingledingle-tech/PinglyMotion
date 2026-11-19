@@ -114,13 +114,13 @@ void RoundTripTest::roundTrip_data()
   QTest::addColumn<QString>("format");
   for (const QString& file : animationFiles())
   {
-    QTest::newRow(qPrintable(shortName(file) + " as avm")) << file << QString("avm");
+    QTest::newRow(qPrintable(shortName(file) + " as dingle")) << file << QString("dingle");
     QTest::newRow(qPrintable(shortName(file) + " as bvh")) << file << QString("bvh");
   }
 }
 
 // open, save, open again: the animation must be the same, frame by frame.
-// AVM keeps key frames, ease flags, loop points, scale and figure, so those
+// .dingle keeps key frames, ease flags, loop points, scale and figure, so those
 // are compared too; BVH only keeps the frames themselves.
 void RoundTripTest::roundTrip()
 {
@@ -166,7 +166,7 @@ void RoundTripTest::roundTrip()
     }
   }
 
-  if (format != "avm") return;
+  if (format != "dingle") return;
 
   // loop points survive (#91): -1 ("no loop points") stays -1, and loop out
   // is never past the last frame

@@ -16,6 +16,7 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
               constants.cpp
               controlapi.cpp
               dingle.cpp
+              dinglesave.cpp
               controlindicator.cpp
               controlserver.cpp
               floor.cpp
