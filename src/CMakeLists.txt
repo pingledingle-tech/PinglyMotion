@@ -20,6 +20,8 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
               controlindicator.cpp
               controlserver.cpp
               floor.cpp
+              gltfimport.cpp
+              gltfimportdialog.cpp
               iktree.cpp
               pmmesh.cpp
               jointgroups.cpp

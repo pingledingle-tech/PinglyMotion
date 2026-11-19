@@ -30,3 +30,12 @@ Usage rights, from the conversion's READMEFIRST: CMU places no restrictions on t
 | `mixamo_style_wave.bvh` | The right arm goes up and waves, the head nods. A person skeleton with Mixamo style joint names (23 joints, one extra twist bone). | 2 s |
 
 Made by hand for the menu "Import BVH from another skeleton" (issue 16): the program has to match the joint names to the avatar, and it leaves the twist bone out. No outside data, no licence terms. The test `tests/retargetdialog` opens it.
+
+## glTF clips
+
+| File | What | Length |
+|---|---|---|
+| `walk.glb` | A normal walk, on the spot. | 1.7 s |
+| `greeting.glb` | A greeting with a wave. | 4.9 s |
+
+Unchanged copies of two of the eight test clips in `tests/data/mesh2motion`, from Mesh2Motion (https://github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. They are here so the Windows zip holds them for the hand test of the menu "Import glTF animation" (issue 12). Thank you to the Mesh2Motion project.

@@ -1,6 +1,6 @@
 # Mesh2Motion test clips
 
-Eight humanoid animation clips used by the automatic tests (`tests/gltfimport/tst_mesh2motion.cpp`) and by the converter `tools/glb2sl_bvh.cpp` (issue 27). They are **test data only** and are not copied into the Windows zip (that is `tests/motions/`).
+Eight humanoid animation clips used by the automatic tests (`tests/gltfimport/tst_mesh2motion.cpp`) and by the converter `tools/glb2sl_bvh.cpp` (issue 27). They are **test data only**. Two of them (`walk.glb`, `greeting.glb`) are also copied into `tests/motions/`, so the Windows zip holds them for the hand test of the glTF menu; the rest are not in the zip.
 
 Test motions from Mesh2Motion (https://github.com/Mesh2Motion/mesh2motion-app), CC0 1.0 – thank you to the Mesh2Motion project.
 
