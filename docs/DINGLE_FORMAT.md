@@ -117,6 +117,17 @@ Unknown keys are skipped but counted. Nothing from the file is used as a path or
 
 Writing goes only to the path the user chose, atomically (`QSaveFile`: temporary file, then rename).
 
+## Reader details (`src/dingle.*`)
+
+Rules the reader applies on top of the list above, so the data model stays valid:
+
+- `skeleton` is in depth first order: the first joint is the only root (`"kind": "root"`, parent `-1`), and every other joint's parent is on the path to the joint before it. Kinds are `"root"`, `"joint"` and `"endsite"`; an end site has no channels and no children. A channel name is used at most once per joint.
+- Every joint with rotation channels needs `rotation` keys, and every joint with position channels needs `position` keys. A joint without channels needs no track (it gets a key at frame 0).
+- The model has one list of position keys, so all joints with position channels list the same frames and ease flags (their values may differ).
+- `figure` (default `"female"`), `scale` (default 1), `loop` (default no loop points, `out` = `frames`), `generator`, `camera` and `extensions` are optional. A `camera` that is not `null` and a `curve` on a key are skipped and counted.
+- A file starting with a byte order mark is refused. A duplicate key is refused in every object except inside `extensions`.
+- Between two keys, a value is `BVHNode::interpolate` of the two key values: linear, or a sine curve in the half of the segment next to a key that has its ease flag set. After the last key the value stays.
+
 ## Opening an old `.avm`
 
 1. The AVM reader stays for opening old files. The animation remembers the path of the `.avm` it came from. The title shows the new name `<same name>.dingle` and the file counts as changed, so Save is always offered.

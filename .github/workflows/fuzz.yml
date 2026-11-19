@@ -23,7 +23,7 @@ jobs:
   fuzz:
     # pinned, because the clang package names below belong to this Ubuntu release
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       SECONDS_PER_TARGET: '600'
       ASAN_OPTIONS: detect_leaks=0
@@ -48,7 +48,7 @@ jobs:
       - name: Build fuzz targets
         run: |
           CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGMATOR_FUZZ=ON
-          cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile -j 2
+          cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle -j 2
       - name: Fuzz prop files
         run: |
           mkdir -p work/prop crashes
@@ -69,6 +69,13 @@ jobs:
           cp fuzz/corpus/bvh/* fuzz/corpus/avm/* work/animfile/
           build-fuzz/fuzz/fuzz_animfile -max_total_time="$SECONDS_PER_TARGET" -max_len=65536 \
             -dict=fuzz/animfile.dict -artifact_prefix=crashes/animfile- work/animfile
+      - name: Fuzz .dingle files
+        if: success() || failure()
+        run: |
+          mkdir -p work/dingle crashes
+          cp fuzz/corpus/dingle/* work/dingle/
+          build-fuzz/fuzz/fuzz_dingle -max_total_time="$SECONDS_PER_TARGET" -max_len=65536 \
+            -dict=fuzz/dingle.dict -artifact_prefix=crashes/dingle- work/dingle
       - name: Keep crash files
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

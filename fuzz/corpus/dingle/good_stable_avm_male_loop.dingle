@@ -1,0 +1,32 @@
+{
+  "format": "dingle",
+  "version": 1,
+  "generator": "PinglyMotion",
+  "timing": {"frames": 3, "frameTime": 0.041667},
+  "figure": "male",
+  "scale": 1.20000005,
+  "loop": {"in": 1, "out": 2},
+  "skeleton": [
+    {"name": "hip", "kind": "root", "parent": -1, "offset": [0, 0, 0], "channels": ["Xposition", "Yposition", "Zposition", "Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "abdomen", "kind": "joint", "parent": 0, "offset": [0, 3.42205, 0], "channels": ["Xrotation", "Zrotation", "Yrotation"]},
+    {"name": "Site", "kind": "endsite", "parent": 1, "offset": [0, 3.148289, 0], "channels": []}
+  ],
+  "tracks": [
+    {"joint": 0,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false},
+       {"frame": 2, "values": [-10, 5, -3], "easeIn": true, "easeOut": false}
+     ],
+     "position": [
+       {"frame": 0, "values": [0, 40, 0], "easeIn": false, "easeOut": false},
+       {"frame": 2, "values": [0, 40.5, 4], "easeIn": true, "easeOut": false}
+     ]},
+    {"joint": 1,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false},
+       {"frame": 1, "values": [20, 0, -15], "easeIn": false, "easeOut": true}
+     ]}
+  ],
+  "camera": null,
+  "extensions": {}
+}
