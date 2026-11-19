@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Builds PinglyMotion.mcpb, the Claude Desktop extension (MCP Bundle).
 
-A .mcpb file is a zip file with manifest.json at the top. This script needs only the Python
-standard library. The result is the same every time (fixed file dates), so the checksum only
+A .mcpb file is a zip file with manifest.json at the top. This script is built with only the Python
+standard library (the bundle itself runs on Node, which Claude Desktop ships). The result is the same every time (fixed file dates), so the checksum only
 changes when the content does. The check with Anthropic's own tool is `npx @anthropic-ai/mcpb`
 (see docs/DEV.md); the tests check the manifest without it.
 
@@ -21,7 +21,7 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 # (file in the repository, path inside the bundle)
 FILES = [
     ("tools/mcp/mcpb/manifest.json", "manifest.json"),
-    ("tools/mcp/pinglymotion_mcp.py", "server/pinglymotion_mcp.py"),
+    ("tools/mcp/pinglymotion_mcp.js", "server/pinglymotion_mcp.js"),
     ("tools/mcp/commands.json", "server/commands.json"),
     ("tools/mcp/mcpb/README.txt", "README.txt"),
     ("LICENSE", "LICENSE"),
@@ -43,8 +43,14 @@ def check_manifest(manifest):
         if key not in manifest:
             problems.append("missing field: " + key)
     server = manifest.get("server", {})
-    if server.get("type") != "python":
-        problems.append("server.type must be python")
+    if server.get("type") != "node":
+        problems.append("server.type must be node")
+    if manifest.get("compatibility", {}).get("runtimes", {}).get("node") is None:
+        problems.append("compatibility.runtimes.node is missing")
+    if "python" in manifest.get("compatibility", {}).get("runtimes", {}):
+        problems.append("no python runtime: the extension must not need Python")
+    if server.get("mcp_config", {}).get("command") != "node":
+        problems.append("mcp_config.command must be node")
     entry = server.get("entry_point", "")
     if entry not in [target for _, target in FILES]:
         problems.append("entry_point is not in the bundle: %s" % entry)

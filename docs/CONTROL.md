@@ -106,7 +106,9 @@ The examples below use `C:\PinglyMotion`. Replace it with the folder where you u
 The Windows zip (and each release) has `PinglyMotion.mcpb`, an extension for the Claude app. No file
 editing and no typed paths:
 
-1. Install Python 3.8 or newer if you do not have it (step 1 below).
+1. Nothing has to be installed: the extension runs on the Node that the Claude app brings, so
+   Python is not needed for it. It is not yet tried in Claude Desktop (the project owner has not
+   tested it there); if it does not start, say so in issue #7.
 2. Double-click `PinglyMotion.mcpb`. The Claude app opens an install window: click **Install**. If
    double-click does nothing, drag the file into the Claude window, or open the extensions page in
    the app's settings and add the file there.
@@ -117,7 +119,8 @@ Update: install the `PinglyMotion.mcpb` from the new download the same way. The 
 settings and no key; it is the same MCP server as below, with the same protections (it talks only to
 `127.0.0.1` and checks that it really is PinglyMotion before it sends the key). The extension is
 built from this repository by `tools/mcp/build_mcpb.py` and is not signed. Claude Desktop does not
-ship Python, so Python must be installed (issue #7 keeps the idea of a Node server open).
+ship Python, so the extension uses the Node version of the server (`tools/mcp/pinglymotion_mcp.js`).
+The manual way below still uses the Python server for now (issue #7).
 
 The steps below are the manual way, also for Claude Code.
 
