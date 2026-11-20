@@ -1,6 +1,6 @@
 Branch: feat/easing-example-wave
 Status: active
-Pull request: pending
+Pull request: #162
 Files:
 - tools/wave_example.py
 - tests/test_wave_example.py
