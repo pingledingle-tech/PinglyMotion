@@ -1,6 +1,6 @@
 Branch: tools/list-drift-check
-Status: active
-Pull request: pending
+Status: done
+Pull request: #220
 Files:
 - tools/work.py
 - tests/test_work.py

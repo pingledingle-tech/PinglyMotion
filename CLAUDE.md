@@ -46,6 +46,8 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
      2. Update the owner test list (issue #47): remove a test as soon as the project owner has said ok, and write "Nothing to test right now" when the list is empty.
      3. Update the jobs list (issue #74).
      4. Report the merge in one line (number, what, checks green).
+     5. Last step of every job that merges or opens a visible pull request: run `python3 tools/work.py check-lists` (needs `gh`; `jobs-draft` prints a draft of the list) and fix what it reports in #74 and #47. The same check runs in CI as a warning only.
+     6. When a job builds `test/combined`, update the Windows link in BOTH issue #47 and the test page in that same step.
    - **When the project owner says ok or approved** for something, update #47 at once. Never ask him to test or approve the same thing twice. Before asking him anything about a test, read #47 and the latest comments first.
    - **Never invent tasks for the project owner.** The owner test list holds only tests he actually has to do. Checklists for him (for example repository settings) are made only when he asks.
    - A merged pull request whose job file still says `Status: active` is a mistake: the last commit sets `Status: done`.
