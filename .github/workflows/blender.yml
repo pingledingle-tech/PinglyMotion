@@ -1,0 +1,35 @@
+name: Blender round trip
+
+# Real run of tools/blender/pinglymotion_roundtrip.py in Blender (the bpy module,
+# headless). Not a required check. Starts on changes to the script or the comparer,
+# and by hand. Issue 13, docs/BLENDER.md section 1.6.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/blender/**'
+      - '.github/workflows/blender.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv and Python 3.13 (the bpy wheel needs it)
+        run: pip install uv
+      - name: Round trip of the bundled skeleton and test motions
+        run: |
+          mkdir -p "$RUNNER_TEMP/rt"
+          uv run --python 3.13 --with bpy python tools/blender/pinglymotion_roundtrip.py -- \
+            bin/data/TPose.bvh "$RUNNER_TEMP/rt/tpose.bvh" --gltf "$RUNNER_TEMP/rt/tpose.glb" --check
+          for f in tests/motions/cmu_02_01_walk.bvh tests/motions/mixamo_style_wave.bvh tests/motions/cmu/cmu_09_01_run.bvh; do
+            uv run --python 3.13 --with bpy python tools/blender/pinglymotion_roundtrip.py -- \
+              "$f" "$RUNNER_TEMP/rt/$(basename "$f")" --check
+          done

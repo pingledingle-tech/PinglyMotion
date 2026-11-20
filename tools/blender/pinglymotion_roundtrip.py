@@ -1,16 +1,16 @@
 """Round trip a PinglyMotion BVH through Blender, then compare.
 
-NOT RUN IN CI. Blender is not installed on the build machines, so this file is
-only checked by hand. It was written from the Blender Python API
-documentation and the settings in docs/BLENDER.md, and has not been tested in
-Blender yet. The comparer it uses (bvh_compare.py, next to this file) needs no
-Blender and is tested in CI (tests/test_bvh_compare.py).
+Run for real in Blender 5.3 (the bpy module, headless) on 20 November 2026, and in CI
+(.github/workflows/blender.yml, not a required check). The comparer it uses
+(bvh_compare.py, next to this file) needs no Blender and is tested in CI
+(tests/test_bvh_compare.py).
 
 What it does, inside Blender, with the settings docs/BLENDER.md prescribes:
 1. starts an empty scene and sets the frame rate to the rate of the BVH file
 2. imports the BVH (Forward -Z, Up Y, Scale 1.0, each joint keeps its own
    rotation order, scene frame rate and length follow the file)
-3. exports it again as BVH (Scale 1.0, own rotation order per joint, only the
+3. turns the armature -90 degrees around X and applies it (the BVH exporter has
+   no axis setting), sets the frame range to the file's, then exports it again as BVH (Scale 1.0, own rotation order per joint, only the
    hip gets position channels, whole frame range)
 4. with --gltf also exports a glTF binary (.glb) with animation, if this
    Blender has the glTF exporter (it is part of Blender)
@@ -23,6 +23,7 @@ Usage (the second "--" ends Blender's own options):
 Joint names are not changed by this script, so SL joint names stay as they are.
 Blender adds nothing to bone names on a plain import and export.
 """
+import math
 import os
 import sys
 
@@ -97,6 +98,13 @@ def main():
     arm.select_set(True)
     bpy.context.view_layer.objects.active = arm
 
+    # The BVH exporter has no axis settings and writes Blender's own Z-up axes.
+    # Turning the armature -90 degrees around X and applying it gives Y-up out
+    # (real run, Blender 5.3: without this every offset comes out with Y and Z swapped).
+    arm.rotation_euler[0] = math.radians(-90)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+    scene.frame_start = 1
+    scene.frame_end = original.frames  # the importer only ever extends the range
     bpy.ops.export_anim.bvh(
         filepath=dst,
         global_scale=1.0,
