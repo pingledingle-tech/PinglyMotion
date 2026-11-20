@@ -53,6 +53,18 @@ After changing the control commands: `PINGLYMOTION_UPDATE_COMMANDS=1` and run `p
 
 The Windows build of every pull request is a zip (artifact `PinglyMotion-windows`, about 30 MB). Next to `PinglyMotion.exe` it holds `data/`, `mcp/`, ONE folder `examples/` with everything the project owner may open: the repository's `examples/`, plus the subfolders `motions` (from `tests/motions/`), `mesh2motion` (from `tests/motions/mesh2motion/`, with its credit file) and `edge-cases` (from `tests/data/generated/`). There is no separate `test-motions/` folder. The file dialogs start in this folder (`src/startfolder.h`) until a last folder is remembered. The project owner tests from this zip alone and never downloads a separate file. If `tests/motions/` grows past a few MB, the build prints a warning: then change the `Package` step in `.github/workflows/build.yml` to copy only the files marked for owner testing, and say so here.
 
+## Windows smoke screenshots
+
+The Windows job of every pull request also runs the packed program once (step "Smoke run with screenshots", `tools/ci/smoke_screenshots.py`, standard-library Python): it starts `PinglyMotion.exe` from the unpacked build folder with `--control` (the control file in a temp folder, `QT_OPENGL=software` because the runner has no graphics card), sends `state`, opens `examples/jump.dingle` and `examples/mesh2motion/m2m_walk.bvh` with `open_file`, takes a `screenshot` of the start state and after each file, and ends the program (the control API has no quit command). The Linux job does the same under Xvfb.
+
+- Artifact `PinglyMotion-windows-smoke` (and `PinglyMotion-linux-smoke`): `start.png`, `jump_dingle.png`, `m2m_walk_bvh.png`, `report.txt`, `answers.json` (every command and its answer) and `program.log` (the program's own output, with the line that says how the 3D view was drawn).
+- `report.txt` says per step whether the program answered, how many frames the file has, and what the picture holds: "shows something (N% of the pixels differ from the background, M colours)" or "looks empty". The last line is `RESULT: OK` or `RESULT: FAIL: <why>`.
+- The step fails only when the program crashes, never answers, or the run hits the 4-minute limit. An empty picture is reported, not failed; then the renderer line in the report (`program says: 3D view ...`) usually tells why.
+- The step's log also prints each picture a second time, 320 pixels wide, as base64 between `--- preview ... begins ---` and `--- preview ... ends ---` lines, so a session that cannot download artifacts can still decode and look at them (`gh api .../actions/jobs/<id>/logs`, cut the lines out, `base64 -d`).
+- Reading the pictures: an AI session can view the PNGs of a pull request and describe what it sees (the figure, the floor, the pose) before the project owner tests the build (issue #129). The pictures are 800x600 renders of the 3D view through the control API, the same as `screenshot` gives an AI tool; they do not show the menus or panels.
+
+Locally (Linux): `xvfb-run -a python3 tools/ci/smoke_screenshots.py --app /tmp/build/src/PinglyMotion --cwd bin --folder . --open examples/jump.dingle --out /tmp/smoke`.
+
 ## The combined test build
 
 The project owner tests ONE combined build, branch `test/combined` (all open visible pull requests merged into it, never merged into `main`). After a visible job is ready, its session adds the pull request to the combined branch (merge it in, push, wait for the build) and puts the test on the test page and in the owner test list with the combined build's Windows link. When a test is approved, the pull request is merged on its own as today.

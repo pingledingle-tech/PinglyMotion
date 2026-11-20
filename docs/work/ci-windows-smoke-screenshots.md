@@ -1,6 +1,6 @@
 Branch: ci/windows-smoke-screenshots
 Status: active
-Pull request: pending
+Pull request: #142
 Files:
 - .github/workflows/build.yml
 - tools/ci/smoke_screenshots.py
