@@ -1,6 +1,6 @@
 Branch: job/smpl22-map
 Status: active
-Pull request: pending
+Pull request: #216
 Files:
 - src/retarget.*
 - tools/gen_smpl22_bvh.py
