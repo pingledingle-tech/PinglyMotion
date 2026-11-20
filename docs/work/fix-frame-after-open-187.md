@@ -1,6 +1,6 @@
 Branch: fix/frame-after-open-187
 Status: active
-Pull request: pending
+Pull request: #209
 Files:
 - src/controlapi.cpp
 - src/controlapi.h
