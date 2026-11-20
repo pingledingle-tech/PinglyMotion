@@ -1,5 +1,5 @@
 Branch: job/kimodo-helper
-Status: active
+Status: done
 Pull request: #175
 Files:
 - tools/kimodo/**
@@ -8,7 +8,6 @@ Files:
 - docs/TEXT_TO_MOTION_GUIDE.md
 - README.md
 - docs/research/TEXT_TO_MOTION.md
-- docs/ROADMAP.md
 
 ## What
 
