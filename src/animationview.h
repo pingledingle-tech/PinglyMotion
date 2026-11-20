@@ -37,6 +37,8 @@
 #include <QVector3D>
 
 #include <QHash>
+#include <QList>
+#include <QRect>
 #include <memory>
 #include <QMatrix4x4>
 #include "avatarskin.h"
@@ -144,6 +146,10 @@ class AnimationView : public QOpenGLWidget
     virtual void keyReleaseEvent(QKeyEvent* event);
 
     QSize m_renderSize;   // set while renderImage() draws
+    // the view's height (widget pixels) the last time setProjection() ran
+    // with the live widget size; -1 before the first time (P5, see
+    // keepFigureSizeOnHeightChange())
+    int m_lastViewHeight=-1;
 
     void drawAnimations();
     void drawFigure(Animation* anim, unsigned int index);
@@ -210,6 +216,15 @@ class AnimationView : public QOpenGLWidget
     int drawMode;
 
     void setProjection();
+    // the free (uncovered) area of the view, in widget-local pixels: the
+    // view itself cut by any floating panel that lies over it (P1's
+    // PanelLayout::freeArea(), docs/PANELS_PLAN.md, job P5)
+    QList<QRect> coveringPanelRects() const;
+    // moves the camera's pivot nearer or further so the figure keeps about
+    // the same size on screen when the view's height changes (a panel is
+    // docked or undocked); skipped the first time and while renderImage()
+    // draws at a size of its own
+    void keepFigureSizeOnHeightChange(int newHeight);
     void setModelView();
     void clearSelected();
     int pickPart(int x, int y);
