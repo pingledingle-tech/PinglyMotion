@@ -1,6 +1,6 @@
 Branch: feature/foot-lock
 Status: active
-Pull request: pending
+Pull request: #182
 Files:
 - src/footlock.*
 - tests/footlock/**
