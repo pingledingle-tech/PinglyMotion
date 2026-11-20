@@ -72,7 +72,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 
 - **Journey:** Import or convert an animation, map and retarget its skeleton to Bento, review the result and export.
 - **Value:** A possible free bridge from Blender and other sources to SL.
-- **Status:** BVH import from another skeleton and glTF import exist ([#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)); Blender interoperability is later work ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13)). FBX/Maya conversion paths and retargeting need investigation; direct support is not promised.
+- **Status:** BVH import from another skeleton and glTF import exist ([#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16), [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)); Blender interoperability is later work ([#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13)). FBX/Maya conversion paths and retargeting need investigation; direct support is not promised.
 - **Pass when:** a BVH from another skeleton or a glTF clip imports with a clear list of matched and left-out joints, plays on the SL skeleton, and exports and uploads like a native animation.
 - **Issues:** [#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16), [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13), [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)
 
