@@ -1,5 +1,5 @@
 Branch: docs/teaching-texts-inventory
-Status: active
+Status: done
 Pull request: #165
 Files:
 - docs/TEACHING_TEXTS.md
