@@ -29,7 +29,10 @@ TARGET_LINK_LIBRARIES (pinglymotion_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_EXECUTABLE (pinglymotion_control_tests tst_control.cpp ${CORE_SRC}
                 ${CMAKE_SOURCE_DIR}/src/controlapi.cpp ${CMAKE_SOURCE_DIR}/src/controlserver.cpp
                 ${CMAKE_SOURCE_DIR}/src/controlindicator.cpp ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
-                ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp)
+                ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
+                ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
+                ${CMAKE_SOURCE_DIR}/src/animimport.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_control_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_DEFINITIONS (pinglymotion_control_tests PRIVATE PINGLYMOTION_TOOLS="${CMAKE_SOURCE_DIR}/tools")
 TARGET_LINK_LIBRARIES (pinglymotion_control_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
@@ -121,6 +124,7 @@ ADD_SUBDIRECTORY (retargetxra)
 
 # clean-up of imported motion: resample, start pose, in place, loop seam, smoothing (#17, #18)
 ADD_SUBDIRECTORY (motioncleanup)
+ADD_SUBDIRECTORY (footlock)
 
 # play button logic (src/playback.h): play to the end several times in a row
 ADD_EXECUTABLE (pinglymotion_playback_tests tst_playback.cpp ${CORE_SRC})
