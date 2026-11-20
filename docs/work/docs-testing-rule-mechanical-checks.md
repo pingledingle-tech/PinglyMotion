@@ -1,5 +1,5 @@
 Branch: docs/testing-rule-mechanical-checks
-Status: active
+Status: done
 Pull request: #154
 Files:
 - CLAUDE.md
