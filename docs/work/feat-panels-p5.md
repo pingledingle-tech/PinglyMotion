@@ -1,6 +1,6 @@
 Branch: feat/panels-p5
 Status: active
-Pull request: pending
+Pull request: #157
 Files:
 - src/animationview.*
 - src/camera.*

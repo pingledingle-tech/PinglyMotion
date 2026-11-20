@@ -25,6 +25,7 @@
 #include <GL/gl.h>
 #endif
 
+#include <QDockWidget>
 #include <QMatrix4x4>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
@@ -41,6 +42,7 @@
 #include "bvh.h"
 #include "constants.h"
 #include "jointgroups.h"
+#include "panellayout.h"
 #include "propmanager.h"
 #include "scene.h"
 #include "floor.h"
@@ -189,11 +191,52 @@ void AnimationView::drawProps()
   }
 }
 
+// a floating panel that lies over the view, in widget-local pixels, found by
+// looking at the dock widgets of the top-level window (not by a method on
+// it, so this view needs no change there, and other panel jobs can run
+// beside this one without touching the same file; docs/PANELS_PLAN.md, P5)
+QList<QRect> AnimationView::coveringPanelRects() const
+{
+  QList<QRect> panels;
+  const QWidget* top=window();
+  if(!top) return panels;
+  const QRect viewRect(QPoint(0,0),size());
+  const QList<QDockWidget*> docks=top->findChildren<QDockWidget*>();
+  for(const QDockWidget* dock : docks)
+  {
+    if(!dock->isFloating() || dock->isHidden()) continue;
+    const QRect local(mapFromGlobal(dock->mapToGlobal(QPoint(0,0))),dock->frameGeometry().size());
+    if(local.intersects(viewRect)) panels << local;
+  }
+  return panels;
+}
+
+// keeps the figure about the same size on screen when the view's height
+// changes: the vertical field of view is fixed, so a shorter (or taller)
+// view would otherwise shrink (or grow) the figure (docs/PANELS_PLAN.md, P5,
+// section 5 "Camera centring")
+void AnimationView::keepFigureSizeOnHeightChange(int newHeight)
+{
+  if(newHeight>0 && m_lastViewHeight>0 && newHeight!=m_lastViewHeight)
+    camera()->zoom(float(newHeight)/float(m_lastViewHeight));
+  if(newHeight>0) m_lastViewHeight=newHeight;
+}
+
 void AnimationView::setProjection()
 {
   const QSize size=m_renderSize.isValid() ? m_renderSize : QSize(width(),height());
-  QMatrix4x4 perspective;
-  perspective.perspective(60.0f,float(size.width())/qMax(1,size.height()),1.0f,2000.0f);
+  const QRect viewRect(QPoint(0,0),size);
+  QPointF center=viewRect.center();
+  // renderImage() draws at a size of its own (exporting a picture): neither
+  // the panels nor the live widget's height apply to that image
+  if(!m_renderSize.isValid())
+  {
+    keepFigureSizeOnHeightChange(size.height());
+    const QList<QRect> panels=coveringPanelRects();
+    if(!panels.isEmpty())
+      center=PanelLayout::freeArea(viewRect,panels).center();
+  }
+  const QMatrix4x4 perspective=shiftedPerspective(60.0f,QRectF(viewRect),center,1.0f,2000.0f);
   SceneState::setProjection(perspective);
 }
 
