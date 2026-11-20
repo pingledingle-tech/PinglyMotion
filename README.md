@@ -29,6 +29,7 @@ The vision is an approachable path from an idea or existing movement to an anima
 The roadmap explores better posing and timeline tools, native SL animation export, AI-assisted workflows, import and retargeting from other tools, and eventually ideas such as video-based motion and reusable animation libraries. These are proposals, not promises of finished features.
 
 - [Product vision, user value and use cases](docs/PRODUCT.md)
+- [Working with Blender: export BVH and glTF, axes, SL skeleton, Mixamo warning](docs/BLENDER.md)
 - [Ideas for the future](docs/IDEAS.md)
 - [Open issues and development work](https://github.com/pingledingle-tech/PinglyMotion/issues)
 

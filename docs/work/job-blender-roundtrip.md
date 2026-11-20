@@ -1,6 +1,6 @@
 Branch: job/blender-roundtrip
-Status: active
-Pull request: pending
+Status: done
+Pull request: #164
 Files:
 - docs/work/job-blender-roundtrip.md
 - tools/blender/**
