@@ -1,6 +1,6 @@
 Branch: feature/curve-editor
 Status: active
-Pull request: pending
+Pull request: #167
 Files:
 - src/easing.*
 - src/animfile.h
@@ -22,7 +22,6 @@ Files:
 - docs/DINGLE_FORMAT.md
 - docs/PRODUCT.md
 - docs/DECISIONS.md
-- docs/TEACHING.md
 
 ## What
 
