@@ -89,6 +89,8 @@ def main():
     offline.send("notifications/initialized", notification=True)
     listed = offline.send("tools/list")["result"]["tools"]
     check("tools are listed without PinglyMotion", len(listed) >= 15 and all("inputSchema" in tool for tool in listed), len(listed))
+    failed_guide, guide = offline.text("read_guide")
+    check("read_guide works without PinglyMotion", not failed_guide and "Calibration table" in guide, guide[:80])
     failed_call, message = offline.text("state")
     check("a call without PinglyMotion explains what to do", failed_call and "--control" in message, message)
     check("unknown method is an error", "error" in offline.send("no/such/method"))

@@ -102,7 +102,7 @@ jobs:
           echo "examples folder in the zip:"; (cd dist && find examples -type f | sort)
           # the MCP server goes with the program, so both are updated together
           mkdir -p dist/mcp
-          cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt dist/mcp/
+          cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt docs/ASSISTANT_GUIDE.md dist/mcp/
           # the Claude Desktop extension: double-click it to install (issue #7)
           python tools/mcp/build_mcpb.py dist/PinglyMotion.mcpb
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/PinglyMotion.exe
