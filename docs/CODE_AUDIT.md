@@ -200,7 +200,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 
 ## Tracking
 
-One issue per task, label `cleanup`. None is started; a job starts only when the project owner says so.
+One issue per task, label `cleanup`. A job starts only when the project owner says so; finished tasks are marked done below.
 
 | Task | Issue | Size | Wait for active job |
 |---|---|---|---|
@@ -216,7 +216,7 @@ One issue per task, label `cleanup`. None is started; a job starts only when the
 | C10 Shared skeleton walk helpers instead of local copies | #201 | S | yes |
 | C11 Tests for props, the scene and the timeline | #202 | M | yes |
 | C12 Function-pointer connects instead of SIGNAL()/SLOT() strings | #203 | S | yes |
-| C13 Error handling in the .obj mesh reader | #204 | S | no |
+| C13 Error handling in the .obj mesh reader (done, pull request #210) | #204 | S | no |
 | C14 Logging categories instead of 110 qDebug calls | #205 | M | yes |
 | C15 Run the two Python tests that CI never runs | #206 | S | no |
 | C16 One error-reporting convention for new and old code | #207 | M | no |

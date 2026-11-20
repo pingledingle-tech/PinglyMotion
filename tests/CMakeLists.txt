@@ -133,3 +133,11 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_playback_tests PRIVATE ${CMAKE_SOURCE_D
 TARGET_LINK_LIBRARIES (pinglymotion_playback_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME playback WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_playback_tests)
 SET_TESTS_PROPERTIES (playback PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# the .obj reader for the prop meshes (#204)
+ADD_EXECUTABLE (pinglymotion_mesh_tests tst_mesh.cpp ${CMAKE_SOURCE_DIR}/src/mesh.cpp ${CMAKE_SOURCE_DIR}/src/constants.cpp
+                ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_mesh_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_mesh_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME mesh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_mesh_tests)
+SET_TESTS_PROPERTIES (mesh PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
