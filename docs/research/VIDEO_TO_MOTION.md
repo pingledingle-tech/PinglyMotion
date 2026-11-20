@@ -227,6 +227,14 @@ Two ways that are commonly treated as acceptable (not legal advice):
 
 ### Job 2: Mocap clean-up core (technical first, menu later)
 
+**State (20 November 2026):** the core is built in `src/motioncleanup.*` with tests in
+`tests/motioncleanup/`: resample to 30 fps, start pose at frame 1, in place, loop seam blend and
+light quaternion-safe zero-phase smoothing (binomial, the first and last frame kept). The smoothing
+test uses the CMU walk with generated noise of up to 2 degrees: the shake drops below a third and
+to within 1.2 times the clean clip's own, and the worst joint stays within 2 degrees of the clean
+clip as root mean square over the frames. Not built yet: foot lock, control commands and the menu.
+The 250,000 byte limit is the `.anim` exporter's job (key reduction, already built).
+
 - **What:** functions for zero-phase smoothing of rotations (quaternion-safe), foot lock (detect
   contact from low foot speed and height, pin the foot, correct the leg) and root clean-up, with
   control commands so an assistant can call them. The menu entries come in a separate visible job.

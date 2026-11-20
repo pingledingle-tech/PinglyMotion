@@ -1,5 +1,5 @@
 Branch: feat/import-cleanup-core
-Status: active
+Status: done
 Pull request: #179
 Files:
 - src/motioncleanup.*
