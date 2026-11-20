@@ -107,6 +107,9 @@ class ControlTest : public QObject
     void playAndStop();
     void figureCanBeMale();
     void cameraTurnsWithoutChangingTheAnimation();
+    void describePoseOnTPose();
+    void describePoseOnSittingExample();
+    void describePoseOnRaisedHand();
 
     void serverAnswersWithKey();
     void serverRefusesWithoutKey();
@@ -962,6 +965,86 @@ void ControlTest::cameraTurnsWithoutChangingTheAnimation()
   QCOMPARE(answer.value("camera").toObject().value("angle").toInt(), 0);
 
   QCOMPARE(m_animation->dirty(), dirtyBefore);
+}
+
+// issue #129: describe_pose on the T-pose (a new animation's frame 1).
+// The legs are straight, so the ankles sit well above the assumed floor
+// (y = 0, the height a standing, straight-legged start pose puts them at);
+// nothing else is notable, and frame 1 cannot differ from itself.
+void ControlTest::describePoseOnTPose()
+{
+  const QJsonObject answer = run(R"({"command":"describe_pose"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["frame"].toInt(), 1);
+  QCOMPARE(answer["sentences"].toArray(), QJsonArray{"both feet lifted off the floor"});
+  QCOMPARE(answer["summary"].toString(), QString("Both feet lifted off the floor."));
+  QCOMPARE(answer["changed_joints"].toArray(), QJsonArray());
+  QCOMPARE(answer["symmetry"].toArray(), (QJsonArray{"arms are symmetric", "legs are symmetric"}));
+
+  const QJsonObject head = answer["positions"].toObject()["head"].toObject();
+  QCOMPARE(head["x"].toDouble(), 0.0);
+  QCOMPARE(head["y"].toDouble(), 67.78);
+  const QJsonObject lFoot = answer["positions"].toObject()["lFoot"].toObject();
+  QCOMPARE(lFoot["above_floor"].toDouble(), 4.16);
+}
+
+// the seated key (frame 2) of examples/throne.dingle: thighs forward and
+// knees bent, as docs/ASSISTANT_GUIDE.md section 3 describes it.
+void ControlTest::describePoseOnSittingExample()
+{
+  BVH bvh;
+  Animation throne(&bvh, PINGLYMOTION_TOOLS "/../examples/throne.dingle");
+  FakeHost host(&throne);
+  ControlApi api(&host);
+
+  const QJsonObject answer = api.execute(json(R"({"command":"describe_pose","frame":2})"));
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["frame"].toInt(), 2);
+  QCOMPARE(answer["sentences"].toArray(),
+           (QJsonArray{"knees bent", "left elbow bent", "right elbow bent", "both feet lifted off the floor"}));
+  QCOMPARE(answer["summary"].toString(),
+           QString("Knees bent; left elbow bent; right elbow bent; both feet lifted off the floor."));
+  QCOMPARE(answer["symmetry"].toArray(), (QJsonArray{"arms are symmetric", "legs are symmetric"}));
+
+  QStringList changed;
+  for (const QJsonValue& value : answer["changed_joints"].toArray()) changed << value.toObject()["joint"].toString();
+  changed.sort();
+  QCOMPARE(changed, (QStringList{"lForeArm", "lHand", "lShin", "lThigh", "rForeArm", "rHand", "rShin", "rThigh"}));
+  for (const QJsonValue& value : answer["changed_joints"].toArray())
+  {
+    QCOMPARE(value.toObject()["direction"].toString(), QString("more"));
+    if (value.toObject()["joint"].toString() == "lForeArm")
+    {
+      QCOMPARE(value.toObject()["friendly"].toString(), QString("left elbow"));
+      QCOMPARE(value.toObject()["verb"].toString(), QString("bends"));
+    }
+  }
+}
+
+// raising the left hand above the head (lShldr turned up to its own limit,
+// see docs/ASSISTANT_GUIDE.md's calibration table: lShldr Z+ = left hand up)
+void ControlTest::describePoseOnRaisedHand()
+{
+  QJsonObject answer = run(R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,90]}})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+
+  answer = run(R"({"command":"describe_pose","frame":2})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["sentences"].toArray(), (QJsonArray{"left hand above head", "both feet lifted off the floor"}));
+  QCOMPARE(answer["summary"].toString(), QString("Left hand above head; both feet lifted off the floor."));
+  QCOMPARE(answer["symmetry"].toArray(),
+           (QJsonArray{"arms are not symmetric: the left shoulder moved more", "legs are symmetric"}));
+
+  const QJsonArray changed = answer["changed_joints"].toArray();
+  QCOMPARE(changed.size(), 1);
+  QCOMPARE(changed.first().toObject()["joint"].toString(), QString("lShldr"));
+  QCOMPARE(changed.first().toObject()["friendly"].toString(), QString("left shoulder"));
+  QCOMPARE(changed.first().toObject()["verb"].toString(), QString("turns"));
+  QCOMPARE(changed.first().toObject()["direction"].toString(), QString("more"));
+
+  const QJsonObject lHand = answer["positions"].toObject()["lHand"].toObject();
+  const QJsonObject head = answer["positions"].toObject()["head"].toObject();
+  QVERIFY(lHand["y"].toDouble() > head["y"].toDouble());
 }
 
 // issue #43: the status bar learns who is connected and what it did

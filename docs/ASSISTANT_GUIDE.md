@@ -212,7 +212,7 @@ Thighs forward about 80, knees bent about 80, hips lower and back, forearms bent
 9. **At most five tries per part.** If the part is still wrong after five tries, stop and ask the user what they see.
 10. **Save.** `save_file` with a `.dingle` name first (it keeps everything), then `.bvh` if the user wants a file for Second Life. Say the file name.
 
-Planned, not built yet: `describe_pose` (where hands and feet are, in words), `describe_motion` and `check_animation` (the movement in words and checks against Second Life's rules). Until they exist, use `get_pose` and the picture, and trust numbers over looks.
+`describe_pose` gives the current frame in words (world positions of the head, hands, feet and hip, plain sentences, the joints that moved from frame 1, left/right symmetry, a one-line summary): use it alongside `get_pose` and the picture, trusting it and the numbers over looks. Planned, not built yet: `describe_motion` and `check_animation` (the movement in words and checks against Second Life's rules).
 
 ## 5. Known mistakes and the fix
 

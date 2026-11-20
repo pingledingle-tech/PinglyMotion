@@ -74,7 +74,7 @@ differs. The MCP server does this before every request.
 
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
-`save_file`, `screenshot`, `set_figure`, `set_camera`.
+`save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`.
 
 ### Files
 
@@ -88,6 +88,20 @@ in that folder. Paths outside it, also through `..` or links, are refused.
 - `save_file` never replaces another file. Saving again to the file that is open is fine.
 - `new_animation` and `open_file` refuse while there are unsaved changes; save first.
 - `PINGLYMOTION_CONTROL_FOLDER` sets another folder (used by the tests).
+
+### describe_pose
+
+`describe_pose` turns one frame into text, so an AI assistant can check a pose without reading
+angles from a picture (a picture is wrong by 15 to 20 degrees and mixes up sides, see
+`docs/ASSISTANT_GUIDE.md`): world positions of the head, hands, feet and hip, in the program's
+own units and in metres, with each foot's height above the floor; plain sentences for anything
+notable (bent knees or elbows, a hand above the head or behind the body, feet flat or lifted,
+weight on one foot, a lean, the head turned or tipped); the classic joints that moved from frame 1,
+in everyday names, with "more" or "less"; whether the left and right arms and legs are symmetric;
+and a one-line summary. It covers the classic joints only, not the Bento fingers, face, wings or
+tail. The thresholds it uses to choose a word (for example "bent" or "lifted") each have a dead
+zone around them, so a change of a degree or an inch right at the old boundary cannot flip the
+wording back and forth.
 
 ## Set up an AI assistant
 
@@ -192,6 +206,9 @@ to `claude mcp add` so it works from every folder.
 
 ## Good to know when posing
 
+- Read `docs/ASSISTANT_GUIDE.md` first: the MCP tool `read_guide`, or the resource
+  `pinglymotion://guide`, gives an AI assistant the same text (Second Life's rules, the skeleton,
+  typical poses, the work rhythm and known mistakes) before it starts posing.
 - Frame numbers start at 1, like the counter in the program. Frame 1 holds the reference pose
   that Second Life compares the others with, so it is protected: pose from frame 2.
 - Angles are degrees, as in the rotation fields. Each joint bends around its own axes, for

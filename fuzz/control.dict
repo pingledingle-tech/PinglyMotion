@@ -18,6 +18,7 @@
 "\"screenshot\""
 "\"set_figure\""
 "\"set_camera\""
+"\"describe_pose\""
 "\"frame\""
 "\"frames\""
 "\"fps\""
