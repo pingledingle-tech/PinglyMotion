@@ -50,6 +50,7 @@
 
 #include "usersettings.h"
 #include "scenestate.h"
+#include "screenshotsheet.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation* anim)
  : QOpenGLWidget(parent),
@@ -262,11 +263,37 @@ QImage AnimationView::renderImage(int imageWidth,int imageHeight)
   format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
   QOpenGLFramebufferObject buffer(imageWidth,imageHeight,format);
 
+  // a control command may ask for this one picture from another side, without
+  // the Bento markers, and for where the joints are (src/screenshotsheet.h);
+  // the camera is put back exactly afterwards, so the window does not change
+  ScreenshotSheet::Request* request=ScreenshotSheet::current();
+  const CameraPosition savedCamera=camera()->state();
+  if(request && request->overrideCamera)
+    camera()->orbit(request->height,request->angle,request->distance);
+  m_hideMarkers=request && request->hideMarkers;
+
   m_renderSize=QSize(imageWidth,imageHeight);
   buffer.bind();
   paintGL();
   buffer.release();
+
+  if(request && request->wantMarks)
+  {
+    // the joints of the first animation, where they were drawn
+    QList<QPair<QString,QVector3D>> world;
+    for(auto it=m_jointPositions.constBegin();it!=m_jointPositions.constEnd();++it)
+    {
+      if(it.key()>=static_cast<unsigned int>(OpenGlIds::AnimationIncrement)) continue;
+      const QString name=selectionName(it.key());
+      if(!name.isEmpty()) world.append(qMakePair(name,it.value()));
+    }
+    request->marks=ScreenshotSheet::project(world,SceneState::projection()*m_viewMatrix,m_renderSize);
+  }
+  if(request) request->drawn=true;
+
   m_renderSize=QSize();
+  m_hideMarkers=false;
+  camera()->setState(savedCamera);
 
   const QImage image=buffer.toImage();
   doneCurrent();
@@ -1130,7 +1157,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
         else
           SceneState::setColor(0,1,0,1);
 
-        if(isBentoBone(motion->name()))
+        if(isBentoBone(motion->name()) && !m_hideMarkers)
         {
           SceneState::pushMatrix();
           const float size=isFaceBone(motion->name()) ? 0.2f : 0.4f;
@@ -1247,7 +1274,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       // wings) can be seen and clicked. Face balls only show while the head
       // or a face bone is selected, otherwise they would cover the face.
       const QString& boneName=motion->name();
-      if(isBentoBone(boneName) && jointShown && (!isFaceBone(boneName) || faceFocus()))
+      if(isBentoBone(boneName) && !m_hideMarkers && jointShown && (!isFaceBone(boneName) || faceFocus()))
       {
         SceneState::pushMatrix();
         const float size=isFaceBone(boneName) ? 0.2f : 0.4f;
