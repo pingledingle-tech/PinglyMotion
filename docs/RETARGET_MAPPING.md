@@ -17,6 +17,25 @@ File > Import BVH from another skeleton (and File > Import glTF animation, which
 
 The state behind the window is `RetargetMapping::Editor` (no window, tested in `tests/retargetdialog/`): the automatic mapping, the changes on top, `setTarget()`, `reset()`, `toFile()`, `load()` and `save()`.
 
+## Ready mappings for known skeletons
+
+Some tools always write the same skeleton. For those the automatic matching does not guess from the names but uses a fixed table (`Retarget::detectKnownSkeleton`, `Mapping::known`); a hand-made mapping still goes on top, as for any other file.
+
+**SOMA 77 (NVIDIA Kimodo, text-to-motion, issue [#18](https://github.com/pingledingle-tech/PinglyMotion/issues/18)).** Recognised by its joint names and tree: `Hips` with `Spine1`, `Spine2`, `Chest`, `Neck1`, `Neck2`, `Head` in a row, and per side `Shoulder`, `Arm`, `ForeArm`, `Hand` below `Chest` and `Leg`, `Shin`, `Foot`, `ToeBase` below `Hips`. The names guessed alone would go wrong here: in SOMA `LeftLeg` is the thigh (in Mixamo it is the lower leg), and the first joint of each finger but the thumb sits in the palm.
+
+| SOMA 77 | Second Life |
+|---|---|
+| `Hips` | `mPelvis` (`hip`) |
+| `Spine1`, `Chest` | `mTorso` (`abdomen`), `mChest` (`chest`); `Spine2` is left out, its turn is passed on |
+| `Neck1`, `Head` | `mNeck` (`neck`), `mHead` (`head`); `Neck2` is left out, its turn is passed on |
+| `LeftShoulder`, `LeftArm`, `LeftForeArm`, `LeftHand` | `mCollarLeft`, `mShoulderLeft`, `mElbowLeft`, `mWristLeft` (`lCollar`, `lShldr`, `lForeArm`, `lHand`) |
+| `LeftLeg`, `LeftShin`, `LeftFoot`, `LeftToeBase` | `mHipLeft`, `mKneeLeft`, `mAnkleLeft`, `mFootLeft` (`lThigh`, `lShin`, `lFoot`) |
+| `LeftHandThumb1` to `3` | `mHandThumb1Left` to `3` |
+| `LeftHandIndex2` to `4` (and Middle, Ring, Pinky) | `mHandIndex1Left` to `3` |
+| the same for `Right…` | the right side |
+
+Left out and listed with a reason, never refused: the wrapper joint `Root` at the origin (Kimodo writes it above `Hips`), the face joints `Jaw`, `LeftEye`, `RightEye`, the palm joints (`…Index1`, `…Middle1`, `…Ring1`, `…Pinky1`) and the end joints (`HeadEnd`, `…End`, `…ToeEnd`). Kimodo's motion has no finger movement, so the fingers keep their rest pose. The test file `tests/retargetsoma/soma77_kimodo.bvh` is written by `tools/gen_soma77_bvh.py` (names, tree and layout as facts; our own offsets and motion) and checked by `tests/retargetsoma/` and `tests/test_gen_soma77_bvh.py`.
+
 ## What it is for
 
 - A mapping file lists only the corrections: which joint of the user's file drives which Second Life joint, or that a joint is to be left out. Everything not listed stays as the automatic matching decides.

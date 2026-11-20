@@ -120,6 +120,9 @@ ADD_SUBDIRECTORY (aboutdialog)
 # ready joint matching for the BVH files of XR Animator (#17)
 ADD_SUBDIRECTORY (retargetxra)
 
+# clean-up of imported motion: resample, start pose, in place, loop seam, smoothing (#17, #18)
+ADD_SUBDIRECTORY (motioncleanup)
+
 # play button logic (src/playback.h): play to the end several times in a row
 ADD_EXECUTABLE (pinglymotion_playback_tests tst_playback.cpp ${CORE_SRC})
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_playback_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

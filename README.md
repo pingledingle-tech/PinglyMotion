@@ -30,6 +30,7 @@ The roadmap explores better posing and timeline tools, native SL animation expor
 
 - [Product vision, user value and use cases](docs/PRODUCT.md)
 - [Working with Blender: export BVH and glTF, axes, SL skeleton, Mixamo warning](docs/BLENDER.md)
+- [From video to Second Life with XR Animator: record yourself, import the BVH, limits, privacy](docs/VIDEO_GUIDE.md)
 - [Ideas for the future](docs/IDEAS.md)
 - [Open issues and development work](https://github.com/pingledingle-tech/PinglyMotion/issues)
 

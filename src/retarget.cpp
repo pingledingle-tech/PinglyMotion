@@ -445,6 +445,115 @@ namespace
   }
 }
 
+// -------------------------------------------------------------------------
+// known skeletons
+// -------------------------------------------------------------------------
+
+namespace
+{
+  // the joint names that tell NVIDIA Kimodo's SOMA 77-joint skeleton from
+  // others (Mixamo also has "LeftLeg", but there it is the lower leg and it
+  // has no "LeftShin"); names and tree as written by Kimodo's BVH export
+  bool looksLikeSoma77(const Animation& source)
+  {
+    auto parentName=[&](const QString& name) -> QString
+    {
+      const int i=source.findJoint(name);
+      if(i<0) return QStringLiteral("?");
+      const int p=source.joints[i].parent;
+      return p<0 ? QString() : source.joints[p].name;
+    };
+    for(const char* n : {"Hips","Spine1","Spine2","Chest","Neck1","Neck2","Head"})
+      if(source.findJoint(QString::fromLatin1(n))<0) return false;
+    if(parentName("Spine1")!="Hips" || parentName("Spine2")!="Spine1" || parentName("Chest")!="Spine2" ||
+       parentName("Neck1")!="Chest" || parentName("Neck2")!="Neck1" || parentName("Head")!="Neck2") return false;
+    for(const char* sideText : {"Left","Right"})
+    {
+      const QString S=QString::fromLatin1(sideText);
+      if(parentName(S+"Shoulder")!="Chest" || parentName(S+"Arm")!=S+"Shoulder" ||
+         parentName(S+"ForeArm")!=S+"Arm" || parentName(S+"Hand")!=S+"ForeArm" ||
+         parentName(S+"Leg")!="Hips" || parentName(S+"Shin")!=S+"Leg" ||
+         parentName(S+"Foot")!=S+"Shin" || parentName(S+"ToeBase")!=S+"Foot") return false;
+    }
+    return true;
+  }
+
+  // the chain key of a SOMA 77 joint ("thigh.L"), or empty with the reason
+  // why it is left out
+  QString soma77Key(const QString& name,QString& reason)
+  {
+    static const QHash<QString,QString> middle{
+      {"Hips","pelvis"},{"Spine1","spine"},{"Spine2","spine"},{"Chest","spine"},
+      {"Neck1","neck"},{"Neck2","neck"},{"Head","head"}};
+    if(middle.contains(name)) return middle.value(name);
+    if(name==QLatin1String("Root"))
+    {
+      reason=QObject::tr("wrapper joint at the origin, not a bone of the body");
+      return QString();
+    }
+    if(name.endsWith(QLatin1String("End")))
+    {
+      reason=QObject::tr("end joint, no bone follows it");
+      return QString();
+    }
+    if(name==QLatin1String("Jaw") || name==QLatin1String("LeftEye") || name==QLatin1String("RightEye"))
+    {
+      reason=QObject::tr("face joint, not part of the body");
+      return QString();
+    }
+
+    QString X;
+    QString rest;
+    if(name.startsWith(QLatin1String("Left"))) { X=QStringLiteral(".L"); rest=name.mid(4); }
+    else if(name.startsWith(QLatin1String("Right"))) { X=QStringLiteral(".R"); rest=name.mid(5); }
+    else
+    {
+      reason=QObject::tr("unknown bone");
+      return QString();
+    }
+    static const QHash<QString,QString> limbs{
+      {"Shoulder","clavicle"},{"Arm","upperarm"},{"ForeArm","lowerarm"},{"Hand","hand"},
+      {"Leg","thigh"},{"Shin","calf"},{"Foot","foot"},{"ToeBase","toe"}};
+    if(limbs.contains(rest)) return limbs.value(rest)+X;
+    if(rest.startsWith(QLatin1String("Hand")) && rest.size()>5)
+    {
+      const QString finger=rest.mid(4,rest.size()-5);
+      const int segment=rest.right(1).toInt();
+      static const QStringList fingers{"Thumb","Index","Middle","Ring","Pinky"};
+      if(fingers.contains(finger) && segment>=1)
+      {
+        // the thumb has three joints like Second Life's; the other fingers have
+        // four, and the first of them sits in the palm
+        if(finger!=QLatin1String("Thumb") && segment==1)
+        {
+          reason=QObject::tr("palm bone");
+          return QString();
+        }
+        return QStringLiteral("finger.")+finger.toLower()+X;
+      }
+    }
+    reason=QObject::tr("unknown bone");
+    return QString();
+  }
+}
+
+KnownSkeleton detectKnownSkeleton(const Animation& source)
+{
+  if(source.joints.isEmpty() || source.joints.size()>AnimFile::MAX_JOINTS) return KnownSkeleton::None;
+  if(looksLikeSoma77(source)) return KnownSkeleton::Soma77;
+  return KnownSkeleton::None;
+}
+
+QString knownSkeletonName(KnownSkeleton skeleton)
+{
+  switch(skeleton)
+  {
+    case KnownSkeleton::Soma77: return QObject::tr("SOMA 77 (NVIDIA Kimodo)");
+    case KnownSkeleton::None: break;
+  }
+  return QString();
+}
+
 Mapping mapSkeletons(const Animation& source,const Animation& target)
 {
   Mapping m;
@@ -524,13 +633,19 @@ Mapping mapSkeletons(const Animation& source,const Animation& target)
   }
   else
   {
-    // layer 1: names
+    // layer 1: names (a known skeleton by its fixed table)
+    m.known=detectKnownSkeleton(source);
     QVector<QString> key(ns);
     for(int s=0;s<ns;s++)
     {
       BoneMatch& b=m.bones[s];
       const Joint& js=source.joints[s];
       if(js.kind==JointKind::EndSite) { b.reason=QObject::tr("end site"); continue; }
+      if(m.known==KnownSkeleton::Soma77)
+      {
+        key[s]=soma77Key(js.name,b.reason);
+        continue;
+      }
       const NameInfo info=analyseName(js.name);
       if(info.refused) { b.status=MatchStatus::Refused; b.reason=info.reason; continue; }
       if(info.slot.isEmpty()) { b.reason=info.reason; continue; }
