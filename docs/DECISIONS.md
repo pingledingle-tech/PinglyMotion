@@ -90,6 +90,8 @@ Decisions taken while the project lived in the old repository, and the decisions
 
 ## Working method and repository
 
+**20 Nov 2026 – UX decisions for timeline and poser agreed.** Transport buttons, text easing tiles, a separate curve window, a changed-joints-only timeline with Paste mirrored, a reordered selected-joint panel with limits as warnings, Beginner/Expert mode and a 13-step build order. Source: the project owner, 20 November 2026, [UX_DECISIONS.md](UX_DECISIONS.md) (#14).
+
 **19 Nov 2026 – One `examples` folder in the Windows zip; file dialogs start there.** The zip has one folder `examples/` next to the program (the examples, plus subfolders `motions`, `mesh2motion` and `edge-cases`); the separate `test-motions/` folder is gone. The open dialogs start in `examples/` when no last folder is remembered or it is gone; a remembered folder wins. Test data stays where the tests need it in the repository; only the zip is arranged differently. Reason: the project owner wanted everything in one folder. Source: the project owner, 19 November 2026.
 
 **19 Nov 2026 – Mesh2Motion is credited although its CC0 licence does not require it.** Decided by the project owner (issue #27). The credit (project, link, "CC0 1.0") is in Help > About and the README. The eight clips are in `tests/motions/mesh2motion/`, in the Windows zip in `examples/mesh2motion`. The source files and their commit are noted in `tests/data/mesh2motion/`.
