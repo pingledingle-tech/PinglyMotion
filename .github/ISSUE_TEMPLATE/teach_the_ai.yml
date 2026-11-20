@@ -1,0 +1,48 @@
+name: Teach the AI
+description: An assistant got something wrong while helping with an animation? Tell us what is right.
+title: "Teach the AI: "
+labels: ["teach-the-ai"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. The project owner reads every report. An accepted report becomes one line in the assistant guide, so assistants stop repeating the mistake.
+
+        **Privacy:** do not write names, Second Life account names, email addresses or other personal details, in the text or in pictures. Crop or blur them first.
+  - type: textarea
+    id: asked
+    attributes:
+      label: What did you ask the assistant?
+      description: In your own words, as short as you can.
+    validations:
+      required: true
+  - type: textarea
+    id: did
+    attributes:
+      label: What did it do?
+      description: What went wrong or looked wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: right
+    attributes:
+      label: What is right?
+      description: What should it have done? Numbers or Second Life rules help, if you know them.
+    validations:
+      required: true
+  - type: textarea
+    id: attachment
+    attributes:
+      label: Screenshot or animation file (optional)
+      description: Drag a screenshot into this box. For a .dingle file, put it in a .zip first, then drag the zip here.
+    validations:
+      required: false
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Licence
+      options:
+        - label: The text and files here are mine, and the project may use them under the licence of this repository.
+          required: true
+        - label: There are no names, account names or personal details in them.
+          required: true
