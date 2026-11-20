@@ -219,4 +219,4 @@ One issue per task, label `cleanup`. A job starts only when the project owner sa
 | C13 Error handling in the .obj mesh reader (done, pull request #210) | #204 | S | no |
 | C14 Logging categories instead of 110 qDebug calls | #205 | M | yes |
 | C15 Run the two Python tests that CI never runs | #206 | S | no |
-| C16 One error-reporting convention for new and old code | #207 | M | no |
+| C16 One error-reporting convention for new and old code (started: convention in docs/DEV.md and `PMMesh` converted, pull request #214) | #207 | M | no |
