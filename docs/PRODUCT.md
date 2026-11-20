@@ -87,7 +87,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 | AI and openness | Improve the existing local API and MCP. Avoid tying the editor to a single assistant. Investigate easier installation and client status. | [CONTROL.md](CONTROL.md), [#7](https://github.com/pingledingle-tech/PinglyMotion/issues/7) |
 | Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests (done: opening, saving and removal of the old code), a new working format `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)), then native .anim export. | [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9), [#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26) |
 | Import and retargeting | Explore glTF, Blender, an own rigged avatar and an SL Bento bridge. | [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13) |
-| New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. | [IDEAS.md](IDEAS.md) |
+| New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. Eight CC0 Mesh2Motion clips are already test motions (in the Windows zip: `examples/mesh2motion`), credited in Help > About and the README. | [IDEAS.md](IDEAS.md) |
 | Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#where-pinglymotion-is-going) |
 
 ## Proposed roadmap
