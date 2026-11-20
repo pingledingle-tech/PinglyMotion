@@ -7,8 +7,8 @@ play, take screenshots of and save animations in PinglyMotion.
 You need Python 3 (https://www.python.org). Nothing else has to be installed.
 
 
-Easiest for the Claude app: double-click PinglyMotion.mcpb (next to the program) and click Install.
-No Python is needed for that (not yet tried in Claude Desktop). Then do step 1 below. The rest of
+Easiest for the Claude app: see "START HERE - Claude.txt" next to the program (unzip first, then
+double-click PinglyMotion.mcpb and click Install). No Python is needed for that. Then do step 1 below. The rest of
 this file is the manual way, which still needs Python.
 
 

@@ -1,0 +1,76 @@
+{
+ "format": "dingle",
+ "version": 1,
+ "generator": "gen_edge_motion",
+ "timing": {
+  "frames": 3,
+  "frameTime": 0.0333333
+ },
+ "figure": "female",
+ "scale": 1,
+ "loop": {
+  "in": -1,
+  "out": 3
+ },
+ "skeleton": [
+  {
+   "name": "hip",
+   "kind": "root",
+   "parent": -1,
+   "offset": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "channels": [
+    "Xposition",
+    "Yposition",
+    "Zposition",
+    "Xrotation",
+    "Zrotation",
+    "Yrotation"
+   ]
+  }
+ ],
+ "tracks": [
+  {
+   "joint": 0,
+   "rotation": [
+    {
+     "frame": 0,
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "easeIn": false,
+     "easeOut": false
+    },
+    {
+     "frame": 2,
+     "values": [
+      10.0,
+      20.0,
+      30.0
+     ],
+     "easeIn": false,
+     "easeOut": false
+    }
+   ],
+   "position": [
+    {
+     "frame": 0,
+     "values": [
+      0.0,
+      43.5285,
+      0.0
+     ],
+     "easeIn": false,
+     "easeOut": false
+    }
+   ]
+  }
+ ],
+ "camera": null,
+ "extensions": {}
+}

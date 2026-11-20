@@ -26,3 +26,37 @@ Skeleton: the classic 19-joint Second Life skeleton (as in `bin/data/TPose.bvh`)
 ## Found while making these files
 
 The old open and save path (`Animation::setFrameTime`) keeps the frame rate as a whole number of frames per second, `(int)(1.0/frameTime+0.5)`. A frame time above 2 s gives 0 frames per second, and saving the file then writes `Frame Time: inf`, which the parser refuses. `edge_max_frame_time.bvh` shows it (open it in the program and save it). That is why this file is not in `fuzz/corpus/bvh/` (the round-trip tests would fail on it). Nothing was changed in the program; this is for a later job.
+
+
+# Generated .dingle and .anim edge cases
+
+Written by `tools/gen_edge_motion.py` (Python standard library only; run `python3 tools/gen_edge_motion.py`), same rules as above: test data, byte-for-byte the same on every run, `tests/test_gen_edge_motion.py` checks that the files here are what the script writes. `tests/animfile/tst_generated_motion.cpp` has a table with the exact result of every file: the `.dingle` reader (`Dingle::parse`) or the `.anim` reader (`AnimImport::parse`) opens it, or refuses it with the named reason. An opened `.dingle` is also written and read again (equal animation, same bytes the second time) and exported as a Second Life `.anim` (or refused with the named reason). Small files are copied to `fuzz/corpus/dingle/` and `fuzz/corpus/anim/` as `good_edge_*` and `bad_edge_*`. The `.dingle` files also go through the smoke run (they open in the program); `.anim` files cannot be opened in the program yet (the control command `open_file` takes `.dingle`, `.bvh` and `.avm`), so only the reader tests use them.
+
+Skeleton of the `.dingle` files: the classic 19-joint Second Life skeleton with its 5 End Sites (24 entries), unless the table says otherwise.
+
+| File | What it tests | Result |
+|---|---|---|
+| `edge_easings_all_six.dingle` | all six easing choices, one per segment, 7 keys on the left shoulder | accepted; every frame in between equals `Easing::segmentValue` for its segment |
+| `edge_many_keys.dingle` | a key on every one of 1000 frames (0.06 s, 60 s) on three tracks | accepted; the export is thinned to fit 250,000 bytes |
+| `edge_loop_full.dingle` | loop points at both ends (0 and the frame count) | accepted |
+| `edge_loop_last_frame.dingle` | loop starts at the last frame | accepted |
+| `edge_loop_empty.dingle` | loop start equals loop end | accepted |
+| `edge_loop_start_after_end.dingle` | loop start 20, loop end 5 | accepted: the reader only checks each number against `0..frames` |
+| `edge_loop_out_past_end.dingle` | loop end one past the frame count | refused: "The loop end" |
+| `edge_loop_in_below_minus_one.dingle` | loop start -2 | refused: "The loop start" |
+| `edge_fps_24.dingle`, `edge_fps_60.dingle`, `edge_fps_7.dingle` | frame times 1/24, 1/60 and 1/7 s | accepted |
+| `edge_duration_60s.dingle` | 122 frames at 0.5 s: the export plays frames 1 to 121 = exactly 60 s | accepted, export works |
+| `edge_duration_over_60s.dingle` | 123 frames at 0.5 s = 60.5 s | accepted, the export is refused (60 second limit) |
+| `edge_one_frame.dingle` | one frame | accepted |
+| `edge_root_only.dingle` | a skeleton with only the root joint | accepted |
+| `edge_gimbal.dingle` | the middle rotation channel of every joint at +-90 and +-89.9999 degrees | accepted, numbers kept as written |
+| `edge_joint_limits.dingle` | every joint at the lowest and highest value of `bin/data/SL.lim`, axis by axis | accepted, values exact |
+| `edge_anim_216_joints.anim` | the most joints (216), two keys each | accepted |
+| `edge_anim_217_joints.anim` | 217 joints | refused (header) |
+| `edge_anim_250000_bytes.anim` | 216 joints, 60 s, exactly 250,000 bytes (the upload limit) | accepted |
+| `edge_anim_250001_bytes.anim` | the same, one byte more | accepted by the reader (it only refuses above 4 MB); the exporter never writes more than 250,000 bytes |
+| `edge_anim_60s_loop_ends.anim` | 60 s, loop points exactly at 0 and 60 s | accepted, no warning |
+| `edge_anim_loop_swapped.anim` | loop start 8 s after loop end 2 s | accepted with one warning (points moved inside) |
+| `edge_anim_one_key.anim` | one key only | accepted |
+| `edge_anim_quaternion_corners.anim` | x, y, z each 0 or 65535 (quantiser corners, not unit length) | accepted, every number finite |
+| `edge_anim_position_limits.anim` | position keys at the 5 m limits | accepted |
