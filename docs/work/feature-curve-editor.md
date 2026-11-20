@@ -1,5 +1,5 @@
 Branch: feature/curve-editor
-Status: active
+Status: done
 Pull request: #167
 Files:
 - src/easing.*
