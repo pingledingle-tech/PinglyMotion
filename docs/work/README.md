@@ -4,6 +4,8 @@ Several AI sessions work on this repository at the same time. Every job
 registers itself with one small file in this folder, so two jobs never edit
 the same line and pull requests do not conflict over the board.
 
+Only the job chat starts jobs, and the job file plus a draft pull request come first, within minutes. Rules: `CLAUDE.md`, "Before you start".
+
 ## The job file
 
 - Name: `docs/work/<job>.md`, where `<job>` is the branch name with `/`
