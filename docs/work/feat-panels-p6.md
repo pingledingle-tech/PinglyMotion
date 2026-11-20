@@ -1,6 +1,6 @@
 Branch: feat/panels-p6
 Status: active
-Pull request: pending
+Pull request: #156
 Files:
 - src/pinglymotionwindow.*
 - src/paneltitlebar.*
