@@ -1,6 +1,6 @@
 Branch: docs/merged-status-fix
-Status: active
-Pull request: pending
+Status: done
+Pull request: #151
 Files:
 - docs/PRODUCT.md
 - docs/ROADMAP.md
