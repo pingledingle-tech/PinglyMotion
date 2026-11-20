@@ -40,7 +40,7 @@ The roadmap explores better posing and timeline tools, native SL animation expor
 - **Ctrl** + double-click a hand or foot switches IK on or off; **Shift** + double-click selects the mirrored joint too
 - The balls for the face only show while the head or a face bone is selected
 - Dark theme is on by default; switch it off under **Options > Dark theme**
-- **Timeline** and **Properties** are panels: drag the line between them and the 3D view to resize, drag a panel's title bar to move it to another side, or double-click the title bar to tear it off into its own window (e.g. on a second screen). The layout is remembered. **Options > Reset panel layout** puts everything back
+- **Joints** (left), **Selected joint** (right) and **Timeline** (bottom) are panels: drag the line between a panel and the 3D view to resize, drag a panel's title bar to move it to another side or onto another panel as a tab, or double-click the title bar to tear it off into its own window (e.g. on a second screen). The **View** menu shows or hides each panel. The layout is remembered. **View > Reset layout** puts everything back
 
 ## Tests
 

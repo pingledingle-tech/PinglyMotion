@@ -45,8 +45,12 @@ class UserSettings
     static void setShowTimelinePanel(bool value);
     static bool showTimelinePanel();
     static void setDarkTheme(bool value);
-    static void setWindowState(const QByteArray& value);
-    static QByteArray windowState();
+    // the panel layout (QMainWindow::saveState) and the version it was saved
+    // with; a layout of another version is not loaded (docs/PANELS_PLAN.md, 7)
+    static void setPanelLayout(const QByteArray& value);
+    static QByteArray panelLayout();
+    static void setPanelLayoutVersion(int value);
+    static int panelLayoutVersion();
     static bool darkTheme();
     // which avatar body the 3D view shows: "ruth2" (default) or "max".
     // Anything else, such as "system" from older versions, becomes "ruth2".
@@ -107,8 +111,10 @@ private:
     static bool m_showTimelinePanel;
     static const QString m_showTimelinePanelKey;
     static bool m_darkTheme;
-    static QByteArray m_windowState;
-    static const QString m_windowStateKey;
+    static QByteArray m_panelLayout;
+    static const QString m_panelLayoutKey;
+    static int m_panelLayoutVersion;
+    static const QString m_panelLayoutVersionKey;
     static const QString m_darkThemeKey;
     static QString m_body;
     static const QString m_bodyKey;

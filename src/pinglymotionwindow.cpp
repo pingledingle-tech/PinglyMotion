@@ -24,6 +24,7 @@
 #include <QRegularExpression>
 #include <QDockWidget>
 #include <QScrollArea>
+#include <QStackedWidget>
 #include <QScrollBar>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -71,6 +72,7 @@
 #include "jointgroups.h"
 #include "jointinfo.h"
 #include "jointlist.h"
+#include "panellayout.h"
 #include "paneltitlebar.h"
 #include "pinglymotion.h"
 #include "scene.h"
@@ -274,7 +276,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
 
   UserSettings::readSettings();
   Theme::apply(UserSettings::darkTheme());
-  fitPropertiesWidth();
+  fitPanelWidths();
   // the heading colour in the joint list comes from the theme
   fillJointTable();
 
@@ -293,7 +295,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   {
     UserSettings::setDarkTheme(dark);
     Theme::apply(dark);
-    fitPropertiesWidth();
+    fitPanelWidths();
     fillJointTable();
     ui->animationView->update();
   });
@@ -391,12 +393,19 @@ PinglyMotionWindow::PinglyMotionWindow() :
   ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
   connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
 
-  // panel layout from last time (size, place, floating panels)
-  m_defaultWindowState=saveState();
-  if(!UserSettings::windowState().isEmpty()) restoreState(UserSettings::windowState());
-  // a layout saved by an older version may have a panel on a side it no longer goes
-  if(!m_propertiesDock->isFloating() && !(dockWidgetArea(m_propertiesDock) & m_propertiesDock->allowedAreas()))
-    addDockWidget(Qt::RightDockWidgetArea,m_propertiesDock);
+  // panel layout from last time (size, place, floating panels). Only a layout
+  // saved by this version of the panels is loaded (docs/PANELS_PLAN.md, 7);
+  // the old window_state with the Properties panel is left alone, so the
+  // default layout is used once after the move to three panels.
+  m_defaultWindowState=saveState(PanelLayout::CurrentVersion);
+  const PanelLayout::StartupChoice startup=PanelLayout::chooseStartup(
+    UserSettings::panelLayout(),UserSettings::panelLayoutVersion(),size(),true);
+  if(startup.useSavedLayout) restoreState(UserSettings::panelLayout(),PanelLayout::CurrentVersion);
+  // a saved layout may still have a panel on a side it no longer goes
+  if(!m_jointsDock->isFloating() && !(dockWidgetArea(m_jointsDock) & m_jointsDock->allowedAreas()))
+    addDockWidget(Qt::LeftDockWidgetArea,m_jointsDock);
+  if(!m_jointCardDock->isFloating() && !(dockWidgetArea(m_jointCardDock) & m_jointCardDock->allowedAreas()))
+    addDockWidget(Qt::RightDockWidgetArea,m_jointCardDock);
   if(!m_timelineDock->isFloating() && !(dockWidgetArea(m_timelineDock) & m_timelineDock->allowedAreas()))
     addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
   // the timeline stands visible at every start; hiding it lasts for this session only
@@ -799,15 +808,18 @@ void PinglyMotionWindow::backgroundClicked()
   updateKeyBtn();
 }
 
-// The 3D view fills the window. The timeline and the properties are panels
-// (dock widgets) that can be resized, moved to another side, or torn off
-// into their own window. Each panel only goes where its shape fits: the
-// timeline is wide (top or bottom), the properties are tall (left or right).
+// The 3D view fills the window. Three panels (dock widgets) stand around it
+// (docs/PANELS_PLAN.md, job P2): Joints on the left, Selected joint on the
+// right, Timeline at the bottom. Each can be resized, moved to another side,
+// put as a tab on another panel, or torn off into its own window. A panel
+// only goes where its shape fits: the timeline is wide (top or bottom), the
+// other two are tall (left or right).
 void PinglyMotionWindow::buildDocks()
 {
-  setDockOptions(QMainWindow::AnimatedDocks);
+  setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks);
 
-  // --- timeline panel: tracks, frame slider, play and key frame buttons
+  // --- timeline panel: tracks, frame slider, play and key frame buttons,
+  // loop in / out, frame count and FPS
   QWidget* timelinePanel=new QWidget;
   QVBoxLayout* timelineLayout=new QVBoxLayout(timelinePanel);
   timelineLayout->setContentsMargins(4,4,4,4);
@@ -821,55 +833,88 @@ void PinglyMotionWindow::buildDocks()
   playLayout->addWidget(ui->keyframeButton);
   timelineLayout->addLayout(playLayout);
 
+  QHBoxLayout* rangeLayout=new QHBoxLayout;
+  rangeLayout->addWidget(ui->loopInLabel);
+  rangeLayout->addWidget(ui->loopInSpinBox);
+  rangeLayout->addWidget(ui->loopInPercentLabel);
+  rangeLayout->addSpacing(12);
+  rangeLayout->addWidget(ui->loopOutLabel);
+  rangeLayout->addWidget(ui->loopOutSpinBox);
+  rangeLayout->addWidget(ui->loopOutPercentLabel);
+  rangeLayout->addStretch(1);
+  rangeLayout->addWidget(ui->frameLabel);
+  rangeLayout->addWidget(ui->currentFrameLabel);
+  rangeLayout->addWidget(ui->ofLabel);
+  rangeLayout->addWidget(ui->framesSpin);
+  rangeLayout->addSpacing(12);
+  rangeLayout->addWidget(ui->fpsLabel);
+  rangeLayout->addWidget(ui->fpsSpin);
+  timelineLayout->addLayout(rangeLayout);
+
   m_timelineDock=new QDockWidget(tr("Timeline"),this);
-  m_timelineDock->setObjectName("timelineDock");
+  m_timelineDock->setObjectName(PanelLayout::TimelineDock);
   m_timelineDock->setWidget(timelinePanel);
   m_timelineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
   m_timelineDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
   m_timelineDock->setTitleBarWidget(new PanelTitleBar(m_timelineDock));
 
-  // --- properties panel: avatar / props tabs, loop points, frames and FPS
-  QWidget* propertiesPanel=new QWidget;
-  QVBoxLayout* propertiesLayout=new QVBoxLayout(propertiesPanel);
-  propertiesLayout->setContentsMargins(4,4,4,4);
-  propertiesLayout->addWidget(ui->avatarPropsTab,1);
+  // A tall panel keeps its width, whatever the window around it does. If the
+  // window is too low for all of it, it scrolls. A wheel over a slider or spin
+  // box scrolls the panel instead of changing the value (issue #82: the figure
+  // moved while the panel was scrolled).
+  auto makeTallPanel=[this](const QString& title,const char* objectName,QWidget* panel,QScrollArea*& scroll)
+  {
+    QDockWidget* dock=new QDockWidget(title,this);
+    dock->setObjectName(QString::fromLatin1(objectName));
+    scroll=new QScrollArea;
+    scroll->setWidget(panel);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    dock->setWidget(scroll);
+    (new WheelGuard(scroll))->guardChildrenOf(panel);
+    dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    dock->setTitleBarWidget(new PanelTitleBar(dock));
+    return dock;
+  };
 
-  QGridLayout* loopLayout=new QGridLayout;
-  loopLayout->addWidget(ui->loopInLabel,0,0);
-  loopLayout->addWidget(ui->loopInSpinBox,0,1);
-  loopLayout->addWidget(ui->loopInPercentLabel,0,2);
-  loopLayout->addWidget(ui->loopOutLabel,1,0);
-  loopLayout->addWidget(ui->loopOutSpinBox,1,1);
-  loopLayout->addWidget(ui->loopOutPercentLabel,1,2);
-  propertiesLayout->addLayout(loopLayout);
+  // --- Joints panel: the Avatar / Props switch (the tabs), with the joint
+  // tabs, search and list on Avatar, the prop list on Props
+  QWidget* jointsPanel=new QWidget;
+  QVBoxLayout* jointsLayout=new QVBoxLayout(jointsPanel);
+  jointsLayout->setContentsMargins(4,4,4,4);
+  jointsLayout->addWidget(ui->avatarPropsTab,1);
+  m_jointsDock=makeTallPanel(tr("Joints"),PanelLayout::JointsDock,jointsPanel,m_jointsScroll);
 
-  QHBoxLayout* frameLayout=new QHBoxLayout;
-  frameLayout->addWidget(ui->frameLabel);
-  frameLayout->addWidget(ui->currentFrameLabel);
-  frameLayout->addWidget(ui->ofLabel);
-  frameLayout->addWidget(ui->framesSpin);
-  frameLayout->addStretch(1);
-  frameLayout->addWidget(ui->fpsLabel);
-  frameLayout->addWidget(ui->fpsSpin);
-  propertiesLayout->addLayout(frameLayout);
-
-  m_propertiesDock=new QDockWidget(tr("Properties"),this);
-  m_propertiesDock->setObjectName("propertiesDock");
-  // The panel keeps its width, whatever the window around it does. If the
-  // window is too low for all of it, it scrolls.
-  QScrollArea* propertiesScroll=new QScrollArea;
-  propertiesScroll->setWidget(propertiesPanel);
-  propertiesScroll->setWidgetResizable(true);
-  propertiesScroll->setFrameShape(QFrame::NoFrame);
-  propertiesScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_propertiesScroll=propertiesScroll;
-  m_propertiesDock->setWidget(propertiesScroll);
-  // a wheel over a slider or spin box scrolls the panel instead of changing
-  // the value (issue #82: the figure moved while the panel was scrolled)
-  (new WheelGuard(propertiesScroll))->guardChildrenOf(propertiesPanel);
-  m_propertiesDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
-  m_propertiesDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  m_propertiesDock->setTitleBarWidget(new PanelTitleBar(m_propertiesDock));
+  // --- Selected joint panel: the rotation and position boxes of the joint,
+  // or the position, scale and rotation boxes of the prop. The boxes come
+  // from the designer file and are moved here from the tabs; the page
+  // follows the Avatar / Props switch.
+  QWidget* jointCard=new QWidget;
+  QVBoxLayout* jointCardLayout=new QVBoxLayout(jointCard);
+  jointCardLayout->setContentsMargins(0,0,0,0);
+  jointCardLayout->addWidget(ui->rotationGroupBox);
+  jointCardLayout->addWidget(ui->positionGroupBox);
+  jointCardLayout->addStretch(1);
+  QWidget* propCard=new QWidget;
+  QVBoxLayout* propCardLayout=new QVBoxLayout(propCard);
+  propCardLayout->setContentsMargins(0,0,0,0);
+  propCardLayout->addWidget(ui->propPositionGroup);
+  propCardLayout->addWidget(ui->propScaleGroup);
+  propCardLayout->addWidget(ui->propRotationGroup);
+  propCardLayout->addStretch(1);
+  QStackedWidget* cardStack=new QStackedWidget;
+  cardStack->setObjectName("jointCardStack");
+  cardStack->addWidget(jointCard);
+  cardStack->addWidget(propCard);
+  cardStack->setCurrentIndex(ui->avatarPropsTab->currentIndex());
+  connect(ui->avatarPropsTab,&QTabWidget::currentChanged,cardStack,&QStackedWidget::setCurrentIndex);
+  QWidget* cardPanel=new QWidget;
+  QVBoxLayout* cardPanelLayout=new QVBoxLayout(cardPanel);
+  cardPanelLayout->setContentsMargins(4,4,4,4);
+  cardPanelLayout->addWidget(cardStack,1);
+  m_jointCardDock=makeTallPanel(tr("Selected joint"),PanelLayout::JointCardDock,cardPanel,m_jointCardScroll);
 
   // --- 3D view in the middle (replaces the old fixed layout)
   QWidget* central=new QWidget;
@@ -878,31 +923,47 @@ void PinglyMotionWindow::buildDocks()
   centralLayout->addWidget(ui->animationView);
   setCentralWidget(central);
 
-  addDockWidget(Qt::RightDockWidgetArea,m_propertiesDock);
+  addDockWidget(Qt::LeftDockWidgetArea,m_jointsDock);
+  addDockWidget(Qt::RightDockWidgetArea,m_jointCardDock);
   addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
-  // the properties panel uses the full height, the timeline sits under the 3D view
+  // the tall panels use the full height, the timeline sits between them under the 3D view
+  setCorner(Qt::TopLeftCorner,Qt::LeftDockWidgetArea);
+  setCorner(Qt::BottomLeftCorner,Qt::LeftDockWidgetArea);
+  setCorner(Qt::TopRightCorner,Qt::RightDockWidgetArea);
   setCorner(Qt::BottomRightCorner,Qt::RightDockWidgetArea);
-  resizeDocks({m_timelineDock},{280},Qt::Vertical);
+  resizeDocks({m_timelineDock},{250},Qt::Vertical);
 
-  // Options > Show Properties, next to Show Timeline
-  QAction* showPropertiesAction=m_propertiesDock->toggleViewAction();
-  showPropertiesAction->setText(tr("Show Properties"));
-  ui->menuOptions->insertAction(ui->optionsConfigurePinglyMotionAction,showPropertiesAction);
-  // closing the timeline with its own button unticks Show Timeline (closing the window does not)
+  // View menu: a tick for each panel, then Reset layout. The Timeline item
+  // comes from the designer file; the other two are the panels' own.
+  QAction* showJointsAction=m_jointsDock->toggleViewAction();
+  showJointsAction->setObjectName("viewJointsAction");
+  showJointsAction->setText(tr("Joints"));
+  QAction* showJointCardAction=m_jointCardDock->toggleViewAction();
+  showJointCardAction->setObjectName("viewJointCardAction");
+  showJointCardAction->setText(tr("Selected joint"));
+  ui->menuView->insertAction(ui->optionsShowTimelineAction,showJointsAction);
+  ui->menuView->insertAction(ui->optionsShowTimelineAction,showJointCardAction);
+  // closing the timeline with its own button unticks Timeline (closing the window does not)
   PanelVisibility::linkMenuItem(this,m_timelineDock,ui->optionsShowTimelineAction);
 
-  // Options > Reset panel layout
-  QAction* resetLayoutAction=new QAction(tr("Reset panel layout"),this);
-  ui->menuOptions->addAction(resetLayoutAction);
-  connect(resetLayoutAction,&QAction::triggered,this,[this]()
+  ui->menuView->addSeparator();
+  QAction* resetLayoutAction=new QAction(tr("Reset layout"),this);
+  resetLayoutAction->setObjectName("viewResetLayoutAction");
+  resetLayoutAction->setToolTip(tr("Put the panels back where they were at the first start."));
+  ui->menuView->addAction(resetLayoutAction);
+  connect(resetLayoutAction,&QAction::triggered,this,&PinglyMotionWindow::resetPanelLayout);
+}
+
+// View > Reset layout: the default layout, all three panels docked and shown
+void PinglyMotionWindow::resetPanelLayout()
+{
+  restoreState(m_defaultWindowState,PanelLayout::CurrentVersion);
+  for(QDockWidget* dock : {m_jointsDock,m_jointCardDock,m_timelineDock})
   {
-    restoreState(m_defaultWindowState);
-    m_timelineDock->setFloating(false);
-    m_propertiesDock->setFloating(false);
-    m_timelineDock->show();
-    m_propertiesDock->show();
-    ui->optionsShowTimelineAction->setChecked(true);
-  });
+    dock->setFloating(false);
+    dock->show();
+  }
+  ui->optionsShowTimelineAction->setChecked(true);
 }
 
 // Options > Light...: three sliders that change the body light at once.
@@ -983,14 +1044,18 @@ void PinglyMotionWindow::showLightDialog()
   dialog->show();
 }
 
-// The properties panel is as wide as its contents need - no more, no less.
-// Called again when the theme changes, since that changes the widget sizes.
-void PinglyMotionWindow::fitPropertiesWidth()
+// The Joints and Selected joint panels are as wide as their contents need -
+// no more, no less. Called again when the theme changes, since that changes
+// the widget sizes.
+void PinglyMotionWindow::fitPanelWidths()
 {
-  QWidget* panel=m_propertiesScroll->widget();
-  panel->ensurePolished();
-  const int width=qMax(panel->sizeHint().width(),panel->minimumSizeHint().width());
-  m_propertiesScroll->setFixedWidth(width+m_propertiesScroll->verticalScrollBar()->sizeHint().width());
+  for(QScrollArea* scroll : {m_jointsScroll,m_jointCardScroll})
+  {
+    QWidget* panel=scroll->widget();
+    panel->ensurePolished();
+    const int width=qMax(panel->sizeHint().width(),panel->minimumSizeHint().width());
+    scroll->setFixedWidth(width+scroll->verticalScrollBar()->sizeHint().width());
+  }
 }
 
 // joint picker in the properties panel: tabs Body / Face / Hands / Other and
@@ -2386,7 +2451,7 @@ void PinglyMotionWindow::setProtectFirstFrame(bool on)
   updateInputs();
 }
 
-// Menu Action: Options / Show Timeline
+// Menu Action: View / Timeline
 void PinglyMotionWindow::showTimeline(bool on)
 {
   m_timelineDock->setVisible(on);
@@ -2846,7 +2911,8 @@ void PinglyMotionWindow::saveUserSettings()
 
   UserSettings::setMainWindowWidth(size().width());
   UserSettings::setMainWindowHeight(size().height());
-  UserSettings::setWindowState(saveState());
+  UserSettings::setPanelLayout(saveState(PanelLayout::CurrentVersion));
+  UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
 
   UserSettings::writeSettings();
 }

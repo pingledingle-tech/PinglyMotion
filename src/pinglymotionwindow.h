@@ -317,12 +317,16 @@ class PinglyMotionWindow : public QMainWindow
     void buildPartLists();
     void jointGroupsChanged();
     void buildDocks();
-    void fitPropertiesWidth();
+    void resetPanelLayout();
+    void fitPanelWidths();
     void showLightDialog();
     void saveUserSettings();
+    // the three panels (docs/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
     QDockWidget* m_timelineDock=nullptr;
-    QDockWidget* m_propertiesDock=nullptr;
-    QScrollArea* m_propertiesScroll=nullptr;
+    QDockWidget* m_jointsDock=nullptr;
+    QDockWidget* m_jointCardDock=nullptr;
+    QScrollArea* m_jointsScroll=nullptr;
+    QScrollArea* m_jointCardScroll=nullptr;
     QByteArray m_defaultWindowState;
 
     BVHNode* currentPart;

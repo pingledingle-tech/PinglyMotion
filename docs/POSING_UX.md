@@ -86,6 +86,13 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 - Joints the data does not know (a file with another skeleton) are listed by their file name under "Other joints". If the data file is missing, the list falls back to file names.
 - Not yet: the violet dot on edited joints, the key marker and the export tick (later steps).
 
+**Done in step 3, jobs P1 and P2** (`src/panellayout.h`, `src/pinglymotionwindow.*`):
+
+- Three panels around the 3D view: **Joints** (left: Avatar / Props switch, joint tabs, search and list, or the prop list), **Selected joint** (right: the rotation and position boxes of the joint, or the prop position, scale and rotation boxes) and **Timeline** (bottom: tracks, play, key, loop in / out, frame count and FPS). They are Qt dock widgets, not overlays (the choice is explained in [PANELS_PLAN.md](PANELS_PLAN.md)); each goes only where its shape fits, panels on one side can be tabbed together, and each can float as its own window.
+- The **View** menu: Joints, Selected joint, Timeline (ticks), Reset layout. The old Options items for the panels are gone.
+- The layout is saved as `panel_layout` with `panel_layout_version`; a layout of another version (for example the old `window_state` with the Properties panel) is not loaded.
+- Not yet: Tab (P4), the window place and a code-built default (P3), the figure in the middle of the free area under a floating panel (P5), two-screen checks (P6).
+
 ## Language
 
 English only for now. All interface text goes through `tr()`, so translations can be added later without code changes. Help texts are written in simple English.
@@ -96,7 +103,7 @@ One pull request per step, tested on Windows before it is merged. Steps that cha
 
 1. Camera and keys (new scheme, old joint modifiers removed) – `src/animationview.*` (done)
 2. Friendly names, section headings and search in the joint list (done)
-3. Floating, movable panels; Tab to hide; reset layout (plan: [PANELS_PLAN.md](PANELS_PLAN.md))
+3. Floating, movable panels; Tab to hide; reset layout (plan: [PANELS_PLAN.md](PANELS_PLAN.md); P1 and P2 done: three panels, View menu, versioned layout; P3 to P6 to do)
 4. Selected-joint card: trackball, sliders, limit warning, turn-around frame
 5. Left / Right / Mirror and the whole-pose buttons (shared left/right mapping)
 6. Hands tab: presets and finger grid

@@ -117,6 +117,7 @@ Before the user-facing jobs: every new text (menu items, tips on the title-bar b
   4. Click the float button on the timeline title bar. It becomes its own window. Click it again. It goes back.
   5. Click View › Reset layout. Everything is back where it was at step 1.
 - **Estimate:** 4 hours.
+- **Done:** built as planned. The ease in / out box was not moved to Selected joint: the easing tile row on the timeline (issue #53, step 5) replaces it, so it stays where the designer file puts it until that job is merged. The rotation and position boxes come from the designer file and are moved into the Selected joint panel by `buildDocks()`, with a stacked page for the prop boxes that follows the Avatar / Props switch; the View menu items have the object names `viewJointsAction`, `viewJointCardAction`, `optionsShowTimelineAction` and `viewResetLayoutAction`. The timeline still stands visible at every start (decision of 19 November). Round-trip test with real docks: `tests/paneldocks/`.
 
 ### P3 – The layout is remembered, also the window
 
