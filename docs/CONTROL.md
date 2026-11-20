@@ -74,7 +74,7 @@ differs. The MCP server does this before every request.
 
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
-`save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`.
+`save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`.
 
 ### Files
 
@@ -103,6 +103,80 @@ and a one-line summary. It covers the classic joints only, not the Bento fingers
 tail. The thresholds it uses to choose a word (for example "bent" or "lifted") each have a dead
 zone around them, so a change of a degree or an inch right at the old boundary cannot flip the
 wording back and forth.
+
+### describe_motion
+
+`describe_motion` turns the movement over a range of frames into text, because movement over time
+is where a picture fails most. `from` and `to` are frame numbers; by default it covers frame 2 to the
+last frame (Second Life does not play frame 1), or frames 1 to 2 in a two-frame animation. It never
+changes the animation or the current frame. The answer holds:
+
+- `joints`: every classic joint that moves, in the order they start moving (`order` lists the
+  names, `still` the joints that do not move). For each: its main axis (the `set_pose` axis that
+  changes most) with `start` and `end` angles; `reach`, the largest turn away from where it starts,
+  measured as one rotation so that Euler angles swinging near gimbal lock do not count; `travel`,
+  the total turn; the top speed in degrees per second with a speed class; the frame it first moves;
+  and `segments`: the main axis `increases`, `decreases` or `holds`, from which frame to which, by
+  how many degrees and how fast.
+- `paths` of the hands and feet, measured relative to the hip so that walking forward does not hide
+  a swing: each move from frame to frame with its shape (`straight`, `arc` or `out and back`), path
+  length, distance between start and end, whether it rises or lowers, and its top speed; plus the
+  lowest and highest world height. A new move starts where the hand or foot turns back.
+- `contact`: the floor (the lowest ankle height in the range), for each foot the frames it is down,
+  how often it lands and how fast it slides while down, the frames with both feet off the floor, and
+  where the weight is (`both feet`, `left foot`, `right foot`, `in the air`).
+- `hip`: start, end, lowest and highest height, the bob (highest minus lowest), and how far it ends
+  forward, to the left and up, in the figure's own directions at the start of the range.
+- `rhythm`: whether the motion repeats, with the period in frames and seconds, the beats per minute
+  and the number of cycles; whether the legs and the arms move in opposition or together (the right
+  side mirrored); whether the feet land in turn.
+- `loop`: the loop points (`loop_in` at least frame 2) and the seam between them: `smooth`,
+  `small jump` or `jump`, with the joints that jump most and how far the hip jumps.
+- `keys`: what changes between consecutive keys, or only the count when there are more than 40 keys
+  (motion capture).
+- `summary`: one line.
+
+Lengths are in the program's units (inches), angles in degrees, speeds per second. Lists are cut
+after 8 entries with a `..._more` count. The words come from fixed thresholds: a joint moves when it
+turns more than 5 degrees; it holds while slower than 10 degrees per second, and a turn under 2 degrees
+counts as a hold; speed classes are slow (under 60 degrees per second), medium (from 60), fast
+(from 180) and very fast (from 360); a hand or foot moves while faster than 2 inches per second, and
+a move shorter than 1 inch is left out; a pause of fewer than 3 frames between two moves belongs to
+the move before; a path is `out and back` when start and end are closer than 30% of its length,
+otherwise `straight` when it never leaves the line between them by more than 10% of that line; a
+foot is down at most 2 inches above the floor and up again above 3 inches (it can slide and still be
+down); with both feet down the weight is on one foot when the hip is 3 inches towards it and back in
+the middle within 1.5 inches; the motion repeats when the autocorrelation of all joint angles reaches
+0.7 at some period of at least a quarter of a second (the first peak at least 90% as high as the best
+one); legs or arms move in opposition below a correlation of -0.5 and together above 0.5; the loop
+seam is smooth up to 2 degrees and half an inch, a small jump up to 10 degrees and 2 inches.
+
+### check_animation
+
+`check_animation` checks the whole animation against Second Life's rules and common mistakes, so an
+AI assistant can fix a problem before the user uploads the file. It takes no parameters and never
+changes the animation or the current frame. The answer has `errors`, `warnings` and `notes` (counts),
+`findings` (errors first, then warnings, then notes; each with `check`, `severity`, `message` and the
+frames, joints or numbers it is about), `passed` (the checks that found nothing) and a one-line
+`summary`.
+
+| Check | Severity | Finds |
+|---|---|---|
+| `length` | error | longer than 60 s, counted as the `.anim` export does: (frames - 2) times the frame time |
+| `nothing_moves` | error | no joint and not the hip moves away from frame 1, so Second Life gets an empty animation |
+| `hip_offset` | error | the hip more than 5 m (about 197 inches) from frame 1 on an axis; the `.anim` format cuts it |
+| `frame1_posed` | warning | classic joints turned more than 5 degrees in frame 1 that keep that angle all the time: Second Life drops them, so their pose is lost |
+| `joint_limits` | warning | a key more than 0.5 degrees past the joint's natural limit (`joints`), even with the limits turned off |
+| `foot_under_floor` | warning | an ankle more than 2 inches below the floor Second Life stands the figure on (frame 1's hip at standing height, legs straight down) |
+| `floating` | warning | both ankles more than 3 inches above that floor for 1 s or more (a jump is shorter; sitting on something is expected) |
+| `foot_sliding` | warning | a foot that is down (within 2 inches of the lowest ankle, up again above 3, as `describe_motion`) moves along the floor faster than 20 inches per second for at least 3 frames |
+| `jerk` | warning | one frame in which a joint turns at least 15 degrees, or the hip moves at least 6 inches, and that is at least 3 times both neighbouring frames |
+| `dead_start` | warning | nothing moves (no joint faster than 10 degrees per second, the hip not faster than 2 inches per second) for at least 0.5 s from frame 2 |
+| `loop_seam` | warning, or note | the loop seam as `describe_motion` judges it: a `jump` is a warning, a `small jump` a note |
+| `dropped_joints` | note | classic joints that never move from frame 1 (within 0.001 radians, as the export compares): the export leaves them out |
+| `identical_keys` | note | keys equal (within 0.01) to the key before and the key after them, or a last key equal to the one before: they change nothing |
+
+Lists in a finding are cut after 8 entries; `count` gives the total where it matters.
 
 ## Set up an AI assistant
 
