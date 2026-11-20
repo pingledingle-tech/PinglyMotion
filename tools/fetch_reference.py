@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Download the reference motion sets for the reference library (issue 19).
 
-Fetches the full CMU BVH set and the Mesh2Motion clips (the CC0 sets of
+Fetches the full CMU BVH set, the Mesh2Motion clips and the Quaternius
+Universal Animation Library (standard) (the CC0 sets of
 docs/REFERENCE_LIBRARY_PLAN.md) into a folder on your machine. Nothing is
 stored in the repository. Never fetched: Mixamo, LAFAN1, AMASS, Linden
 animations, Marketplace content (licences do not allow it).
@@ -23,6 +24,10 @@ Rules the script keeps:
 - Per-file and total size limits (declared in the manifest, enforced while
   streaming). Zip members: entry count, uncompressed size and ratio limits,
   no symbolic links.
+- A file marked "companion" (the .bin next to a .gltf) is downloaded and
+  checked like any other but not listed in the index.
+- Convert the downloads to the Second Life skeleton with
+  tools/convert_reference.py.
 - Idempotent: a file that is already there with the right hash is left alone;
   a second run changes nothing. Interrupted downloads resume from
   DEST/.partial/ when the server supports ranges.
@@ -236,6 +241,8 @@ def check_manifest(m):
                 raise FetchError("manifest: bad hash for %s/%s" % (sid, f["path"]))
             if not isinstance(f.get("size"), int) or f["size"] < 0:
                 raise FetchError("manifest: bad size for %s/%s" % (sid, f["path"]))
+            if "companion" in f and not isinstance(f["companion"], bool):
+                raise FetchError("manifest: companion must be true or false for %s/%s" % (sid, f["path"]))
         if s.get("type") == "zip":
             h = s.get("sha256", "")
             if len(h) != 64 or not s.get("url") or not isinstance(s.get("size"), int):
@@ -389,7 +396,8 @@ def run(manifest, dest, only=None, policy=None, progress=None):
                 wrote = download(url, final, f["sha256"], f["size"], dest, policy, budget)
                 new += wrote
                 kept += (not wrote)
-                entries.append(index_entry(sid, s, safe_relpath(rel), f["sha256"], f["size"], url))
+                if not f.get("companion"):  # e.g. the .bin of a .gltf: stored, not listed
+                    entries.append(index_entry(sid, s, safe_relpath(rel), f["sha256"], f["size"], url))
                 if n % 100 == 0:
                     say("%s: %d / %d" % (sid, n, len(files)))
             for f in s.get("docs", []):
@@ -465,6 +473,7 @@ def compute_hashes(manifest, out, policy=None, token=None):
         print("%s: %d files selected, %d skipped" % (sid, len(files), len(skipped)))
         print("  skipped, first 20: " + ", ".join(skipped[:20]))
         out_files = []
+        companions = tuple(inc.get("companion_suffixes", []))
         for n, p in enumerate(sorted(files), 1):
             safe_relpath(p)
             h = hashlib.sha256()
@@ -478,7 +487,10 @@ def compute_hashes(manifest, out, policy=None, token=None):
                     if size > policy.max_file:
                         raise FetchError("%s is over the file limit" % p)
                     h.update(chunk)
-            out_files.append({"path": p, "size": size, "sha256": h.hexdigest()})
+            pin = {"path": p, "size": size, "sha256": h.hexdigest()}
+            if companions and p.endswith(companions):
+                pin["companion"] = True
+            out_files.append(pin)
             if n % 100 == 0:
                 print("  %d / %d" % (n, len(files)), flush=True)
         s["files"] = out_files
@@ -505,7 +517,7 @@ def compute_hashes(manifest, out, policy=None, token=None):
 # ---------------------------------------------------------------- main
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Download the reference motion sets (CMU BVH, Mesh2Motion).")
+    ap = argparse.ArgumentParser(description="Download the reference motion sets (CMU BVH, Mesh2Motion, Quaternius).")
     ap.add_argument("--dest", default=DEFAULT_DEST, help="target folder (default: %(default)s)")
     ap.add_argument("--manifest", default=DEFAULT_MANIFEST)
     ap.add_argument("--source", action="append", help="only this source id (repeatable)")

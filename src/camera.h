@@ -113,6 +113,10 @@ class Camera : public QObject
     QVector3D pivot() const;
     float xRotation() const;
     float yRotation() const;
+    // the whole camera (turn, pan and pivot), to put it back exactly after a
+    // picture taken from another side (screenshot views, issue #129)
+    CameraPosition state() const;
+    void setState(const CameraPosition& position);
 
   public slots:
     void storeCameraPosition(int num);

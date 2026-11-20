@@ -99,6 +99,15 @@ static bool finiteVector(const QVector3D& v, float limit)
          std::fabs(v.x()) <= limit && std::fabs(v.y()) <= limit && std::fabs(v.z()) <= limit;
 }
 
+PMMesh::Result PMMesh::read(const QString& fileName)
+{
+  Result result;
+  PMMesh mesh;
+  if (mesh.load(fileName, &result.error))
+    result.mesh = std::move(mesh);
+  return result;
+}
+
 bool PMMesh::load(const QString& fileName, QString* errorMessage)
 {
   joints.clear();

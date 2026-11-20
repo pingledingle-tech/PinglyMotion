@@ -65,6 +65,14 @@ private slots:
   void sameAsToday_data();
   void sameAsToday();
   void workedExample();
+  void customEndpoints();
+  void customEvenIsStraight();
+  void customKnownValue();
+  void customMonotoneInsideTheSquare();
+  void customLimits();
+  void customSegmentValue();
+  void customBaked();
+  void customStartsFromPresets();
 };
 
 void TstEasing::names()
@@ -342,6 +350,138 @@ void TstEasing::workedExample()
   // Slow finish: first half straight, second half eased
   QVERIFY(std::fabs(blend(0,90,s(Preset::SlowFinish,0.2))-18.0)<1e-9);
   QVERIFY(std::fabs(blend(0,90,s(Preset::SlowFinish,0.8))-blend(0,90,s(Preset::SlowBothEnds,0.8)))<1e-9);
+}
+
+// ------------------------------------------------------------ custom curve (issue #11)
+
+void TstEasing::customEndpoints()
+{
+  const Easing::Bezier curves[]={{0.37,0,0.63,1},{0,1.5,1,-0.5},{1,0,1,0},{0,0,0,0},{0.3,1.3,0.6,1}};
+  for(const Easing::Bezier& b : curves)
+  {
+    QCOMPARE(Easing::bezierSpeed(b,0.0),0.0);
+    QCOMPARE(Easing::bezierSpeed(b,1.0),1.0);
+    QCOMPARE(Easing::bezierSpeed(b,-3.0),0.0);
+    QCOMPARE(Easing::bezierSpeed(b,7.0),1.0);
+    QCOMPARE(Easing::bezierSpeed(b,std::numeric_limits<double>::quiet_NaN()),0.0);
+    for(int i=0;i<=100;i++) QVERIFY(std::isfinite(Easing::bezierSpeed(b,i/100.0)));
+  }
+}
+
+// handles on the straight line give a straight line
+void TstEasing::customEvenIsStraight()
+{
+  const Easing::Bezier even=Easing::bezierFromPreset(Easing::Preset::Even);
+  for(int i=0;i<=1000;i++)
+  {
+    const double t=i/1000.0;
+    QVERIFY(std::fabs(Easing::bezierSpeed(even,t)-t)<1e-12);
+  }
+}
+
+// CSS "ease" is cubic-bezier(0.25, 0.1, 0.25, 1): about 0.8024 at half time
+void TstEasing::customKnownValue()
+{
+  const Easing::Bezier ease{0.25,0.1,0.25,1};
+  QVERIFY(std::fabs(Easing::bezierSpeed(ease,0.5)-0.8024)<0.001);
+  // a symmetric curve passes the middle at half time
+  const Easing::Bezier symmetric{0.37,0,0.63,1};
+  QVERIFY(std::fabs(Easing::bezierSpeed(symmetric,0.5)-0.5)<1e-12);
+}
+
+void TstEasing::customMonotoneInsideTheSquare()
+{
+  for(double y1 : {0.0,0.3,1.0})
+    for(double y2 : {0.0,0.6,1.0})
+      for(double x1 : {0.0,0.5,1.0})
+        for(double x2 : {0.0,0.5,1.0})
+        {
+          const Easing::Bezier b{x1,y1,x2,y2};
+          double last=0;
+          for(int i=0;i<=200;i++)
+          {
+            const double v=Easing::bezierSpeed(b,i/200.0);
+            QVERIFY(v>=last-1e-12);
+            QVERIFY(v>=-1e-12 && v<=1+1e-12);
+            last=v;
+          }
+        }
+}
+
+void TstEasing::customLimits()
+{
+  const Easing::Bezier wild{-2,5,3,-9};
+  const Easing::Bezier clean=Easing::sanitized(wild);
+  QCOMPARE(clean.x1,0.0);
+  QCOMPARE(clean.y1,Easing::BezierMaxY);
+  QCOMPARE(clean.x2,1.0);
+  QCOMPARE(clean.y2,Easing::BezierMinY);
+  QVERIFY(!Easing::isValid(wild));
+  QVERIFY(Easing::isValid(clean));
+
+  const double nan=std::numeric_limits<double>::quiet_NaN();
+  const double inf=std::numeric_limits<double>::infinity();
+  const Easing::Bezier broken{nan,inf,-inf,nan};
+  QVERIFY(!Easing::isValid(broken));
+  QCOMPARE(Easing::sanitized(broken),Easing::Bezier());
+  QVERIFY(Easing::isValid(Easing::Bezier()));
+  // a wild curve is used as its sanitized copy, so it never goes further than the limits
+  for(int i=0;i<=100;i++)
+  {
+    const double v=Easing::bezierSpeed(wild,i/100.0);
+    QCOMPARE(v,Easing::bezierSpeed(clean,i/100.0));
+    QVERIFY(v>=Easing::BezierMinY && v<=Easing::BezierMaxY);
+  }
+}
+
+void TstEasing::customSegmentValue()
+{
+  const Easing::Bezier b{0.3,1.3,0.6,1};
+  QCOMPARE(Easing::customSegmentValue(b,5,5,10,3),5.0);
+  QCOMPARE(Easing::customSegmentValue(b,20,0,5,0),20.0);
+  QCOMPARE(Easing::customSegmentValue(b,20,0,5,5),0.0);
+  QCOMPARE(Easing::customSegmentValue(b,20,0,5,9),0.0);
+  QCOMPARE(Easing::customSegmentValue(b,20,0,5,-1),20.0);
+  QCOMPARE(Easing::customSegmentValue(b,20,0,0,1),0.0);
+  for(int pos=1;pos<5;pos++)
+    QCOMPARE(Easing::customSegmentValue(b,20,0,5,pos),20+(0-20)*Easing::bezierSpeed(b,pos/5.0));
+  // this curve passes the new pose and comes back
+  bool past=false;
+  for(int pos=0;pos<=50;pos++) if(Easing::customSegmentValue(b,0,10,50,pos)>10) past=true;
+  QVERIFY(past);
+}
+
+void TstEasing::customBaked()
+{
+  const Easing::Bezier b{0.42,0,1,1};
+  for(int frames : {-4,0,1,2,7,60})
+  {
+    const std::vector<double> v=Easing::bakeCustom(b,frames);
+    const int n=frames<1 ? 1 : frames;
+    QCOMPARE(static_cast<int>(v.size()),n+1);
+    QCOMPARE(v.front(),0.0);
+    QCOMPARE(v.back(),1.0);
+    for(int i=0;i<=n;i++) QCOMPARE(v[static_cast<size_t>(i)],i==n ? 1.0 : Easing::bezierSpeed(b,static_cast<double>(i)/n));
+  }
+}
+
+// the editor opens on a valid curve for every choice, close to the choice's own shape
+void TstEasing::customStartsFromPresets()
+{
+  for(int i=0;i<Easing::PresetCount;i++)
+  {
+    const Easing::Preset p=static_cast<Easing::Preset>(i);
+    QVERIFY2(Easing::isValid(Easing::bezierFromPreset(p)),Easing::plainName(p));
+  }
+  // Slow both ends: within 2 % of the sine S-curve everywhere
+  const Easing::Bezier both=Easing::bezierFromPreset(Easing::Preset::SlowBothEnds);
+  for(int k=0;k<=100;k++)
+    QVERIFY(std::fabs(Easing::bezierSpeed(both,k/100.0)-Easing::s(Easing::Preset::SlowBothEnds,k/100.0))<0.02);
+  // Overshoot then settle goes past the end like the choice does
+  const Easing::Bezier over=Easing::bezierFromPreset(Easing::Preset::OvershootThenSettle);
+  double peak=0;
+  for(int k=0;k<=100;k++) peak=std::max(peak,Easing::bezierSpeed(over,k/100.0));
+  QVERIFY(peak>1.02 && peak<1.2);
 }
 
 QTEST_APPLESS_MAIN(TstEasing)

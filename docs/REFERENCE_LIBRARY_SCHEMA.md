@@ -1,6 +1,11 @@
 # Reference library index: format (issue 19)
 
-`library/index.json` lists the clips of the reference library (plan: `docs/REFERENCE_LIBRARY_PLAN.md`). In the Windows zip the folder is `library/` next to the program (not inside `examples/`, so the smoke run does not open every clip). `tools/fetch_reference.py` (download of the full sets) writes entries of the same format into a local index. `tools/build_reference_index.py` made the bundled files and the index; `tests/test_reference_library.py` checks them.
+The reference library has two parts, read together by the control commands `find_reference` and `load_reference` (and later by a browser panel):
+
+1. **Bundled:** `library/index.json` and its clips, in the repository. In the Windows zip the folder is `library/` next to the program (not inside `examples/`, so the smoke run does not open every clip).
+2. **Downloaded:** a folder on the user's machine, filled by `tools/fetch_reference.py` (the full sets, unchanged) and `tools/convert_reference.py` (the same clips on the Second Life skeleton), with its own `downloaded_index.json`. See "The download folder" below.
+
+Plan: `docs/REFERENCE_LIBRARY_PLAN.md`. `tools/build_reference_index.py` made the bundled files and the index; `tests/test_reference_library.py` checks them.
 
 ## Top level
 
@@ -39,7 +44,7 @@ A clip that is not bundled has `download` instead of `file`: `{"url": ..., "sha2
 
 55 clips, about 3.8 MB, 11.3 s at most, in `library/cmu/` (28 clips from the CMU Graphics Lab Motion Capture Database, converted with `tools/cmu_to_sl.py`) and `library/mesh2motion/` (27 CC0 clips from Mesh2Motion, converted with `glb2sl_bvh`). Not bundled: the clips already in `tests/motions/` (they stay there), Quaternius (see below).
 
-Quaternius Universal Animation Library: not bundled in this job. Its download is behind the author's page or itch.io with no stable address that can be pinned and hashed from here, and the plan asks for a re-check of the download page and file headers first. The index format already allows it (`sources`, `download`).
+Quaternius Universal Animation Library: not bundled, a download source instead (see below). Bundling clips of it would also need the name Quaternius in the Help > About credits text, which the bundled-index test requires; that is a visible change and a separate job.
 
 ## Make the files again
 
@@ -49,3 +54,58 @@ python3 tools/build_reference_index.py --cmu <cmu-mocap>/data --m2m <mesh2motion
 ```
 
 Source commits are in `tools/build_reference_index.py` and in each source's `origin` field.
+
+## The download folder
+
+Default `PinglyMotion-reference` in the user's home folder (`%USERPROFILE%\PinglyMotion-reference` on Windows); the program reads it from there, or from the folder in the environment setting `PINGLYMOTION_REFERENCE_FOLDER`. Both tools take `--dest` for another folder.
+
+```
+PinglyMotion-reference/
+  downloaded_index.json            the index of everything below (both tools write it)
+  cmu/<subject>/<trial>.bvh        originals, unchanged (fetch_reference.py)
+  cmu/ATTRIBUTION.txt              licence and credit of the source
+  cmu/source-docs/...              the source's own readme and licence files
+  mesh2motion/<clip>.glb
+  quaternius/AnimationLibrary_Godot_Standard.gltf  (+ .bin next to it)
+  sl/cmu/<subject>/<trial>.bvh     converted to the Second Life skeleton (convert_reference.py)
+  sl/mesh2motion/<clip>.bvh
+  sl/quaternius/AnimationLibrary_Godot_Standard/<animation>.bvh   one file per animation
+  sl/<source>/ATTRIBUTION.txt      copied from the source folder
+```
+
+### downloaded_index.json
+
+`{"version": 1, "entries": [...]}`, entries sorted by `id`. Every entry has:
+
+| Field | Meaning |
+|---|---|
+| `id` | `<source>/<path without extension>` for an original, `sl/<source>/<path without extension>` for a converted clip. Unique. |
+| `name`, `description` | Short title; description may be empty. |
+| `tags`, `tags_reviewed` | Tag words (from the bundled `tag_vocabulary`) and `false` until the project owner has reviewed them. Downloaded clips mostly have no tags; the converter tags the Quaternius animations from a fixed table in the tool. |
+| `source`, `licence`, `credit` | Source name, licence text and credit line, copied from `tools/reference_manifest.json`. Never empty. |
+| `format` | `bvh`, `glb` or `gltf`. |
+| `skeleton` | `sl-classic` for clips PinglyMotion can open; otherwise the original skeleton (`cmu-bvh`, `mesh2motion-humanoid`, `quaternius-rigify`), which `find_reference` lists as not loadable. |
+| `path` | The file, relative to the folder; never absolute, never `..`. |
+| `sha256`, `size` | Of that file. `load_reference` refuses a file that does not match. |
+| `length_s`, `fps` | Length in seconds (`(frames - 1) / fps`) and frame rate; `null` for originals. |
+| `downloaded` | `true`. |
+| `url` | Originals only: where the file came from. |
+
+A converted entry has also `joints` (19), `frames` and `converted_from`: `{"id", "sha256", "skeleton"}` of the original, and `animation` and `animation_index` when the original file holds more than one animation.
+
+The two tools keep out of each other's entries: `fetch_reference.py` replaces only entries below the folders of the sources it fetches, `convert_reference.py` only entries it converted (`converted_from`). Running either twice changes nothing.
+
+### Converting
+
+```
+python3 tools/fetch_reference.py --source quaternius          # or cmu, mesh2motion; no --source = all
+cmake --build build --target glb2sl_bvh                        # needed for glTF/GLB sources
+python3 tools/convert_reference.py --glb2sl build/tests/gltfimport/glb2sl_bvh
+```
+
+- CMU BVH: `tools/cmu_to_sl.py` (in the same process), 30 fps, cut at 60 seconds (`--max-seconds`), the Second Life limit.
+- Mesh2Motion GLB and Quaternius glTF: `glb2sl_bvh` (the program's own glTF reader and retargeting). A `.gltf` is first packed into a GLB with its `.bin` (only a `.bin` in the same folder is read; web addresses, other paths and image files are refused). A file with several animations gives one BVH each; a T-pose animation is left out.
+- Every result is checked (the 19 classic joints in order, frame 0, frame values, length) before it is listed. A clip that fails is reported and left out; the run goes on and ends with exit code 2.
+- `--source` limits the run to one source, `--limit N` to the first N downloaded files (a quick try).
+
+The full CMU set (2548 trials) takes a while in pure Python; the Quaternius file (45 animations) and the Mesh2Motion clips take seconds. The converted clips are reference material: proportions and rest poses differ from Second Life's, so feet may slide; check a clip in PinglyMotion before building on it.

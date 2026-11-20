@@ -535,12 +535,127 @@ namespace
     reason=QObject::tr("unknown bone");
     return QString();
   }
+
+  // ---- the HumanML3D / SMPL 22-joint skeleton (MoMask and similar) ----
+
+  // the two ways the 22 joints are named in BVH files: as MoMask's BVH export
+  // writes them (Mixamo style words without a prefix), and with SMPL's own
+  // joint names ("pelvis", "left_hip"; also "Left_hip", "L_Hip", "m_avg_L_Hip")
+  enum class SmplNames { None, Bvh, Smpl };
+
+  // the SMPL joint names in SMPL order with their parent, and the chain key
+  struct SmplJoint { const char* name; const char* parent; const char* key; };
+  const SmplJoint SMPL22[]={
+    {"pelvis",nullptr,"pelvis"},
+    {"left_hip","pelvis","thigh.L"},{"right_hip","pelvis","thigh.R"},
+    {"spine1","pelvis","spine"},
+    {"left_knee","left_hip","calf.L"},{"right_knee","right_hip","calf.R"},
+    {"spine2","spine1","spine"},
+    {"left_ankle","left_knee","foot.L"},{"right_ankle","right_knee","foot.R"},
+    {"spine3","spine2","spine"},
+    {"left_foot","left_ankle","toe.L"},{"right_foot","right_ankle","toe.R"},
+    {"neck","spine3","neck"},
+    {"left_collar","spine3","clavicle.L"},{"right_collar","spine3","clavicle.R"},
+    {"head","neck","head"},
+    {"left_shoulder","left_collar","upperarm.L"},{"right_shoulder","right_collar","upperarm.R"},
+    {"left_elbow","left_shoulder","lowerarm.L"},{"right_elbow","right_shoulder","lowerarm.R"},
+    {"left_wrist","left_elbow","hand.L"},{"right_wrist","right_elbow","hand.R"}};
+
+  // a joint name as one of the SMPL names above, or empty
+  QString smplCanonical(const QString& name,SmplNames names)
+  {
+    if(names==SmplNames::Bvh)
+    {
+      // MoMask's names (visualization/data/template.bvh of momask-codes), exact case
+      static const QHash<QString,QString> bvh{
+        {"Hips","pelvis"},{"Spine","spine1"},{"Spine1","spine2"},{"Spine2","spine3"},
+        {"Neck","neck"},{"Head","head"},
+        {"LeftUpLeg","left_hip"},{"LeftLeg","left_knee"},{"LeftFoot","left_ankle"},{"LeftToe","left_foot"},
+        {"RightUpLeg","right_hip"},{"RightLeg","right_knee"},{"RightFoot","right_ankle"},{"RightToe","right_foot"},
+        {"LeftShoulder","left_collar"},{"LeftArm","left_shoulder"},{"LeftForeArm","left_elbow"},{"LeftHand","left_wrist"},
+        {"RightShoulder","right_collar"},{"RightArm","right_shoulder"},{"RightForeArm","right_elbow"},{"RightHand","right_wrist"}};
+      return bvh.value(name);
+    }
+    if(names==SmplNames::Smpl)
+    {
+      QString n=name.toLower();
+      if(n.startsWith(QLatin1String("m_avg_"))) n=n.mid(6);
+      if(n.startsWith(QLatin1String("l_"))) n=QStringLiteral("left_")+n.mid(2);
+      else if(n.startsWith(QLatin1String("r_"))) n=QStringLiteral("right_")+n.mid(2);
+      for(const SmplJoint& j : SMPL22)
+        if(n==QLatin1String(j.name)) return n;
+    }
+    return QString();
+  }
+
+  // the joint for each SMPL name, when the source has all 22 with SMPL's tree;
+  // every other joint must be a wrapper root above the pelvis or a leaf (a
+  // hand end such as SMPL 24's "left_hand"), so a rig with real finger chains
+  // is not taken for SMPL and keeps its fingers
+  bool smplJoints(const Animation& source,SmplNames names,QHash<QString,int>& joints)
+  {
+    joints.clear();
+    const int n=source.joints.size();
+    for(int i=0;i<n;i++)
+    {
+      if(source.joints[i].kind==JointKind::EndSite) continue;
+      const QString c=smplCanonical(source.joints[i].name,names);
+      if(c.isEmpty()) continue;
+      if(joints.contains(c)) return false;
+      joints.insert(c,i);
+    }
+    if(joints.size()!=22) return false;
+    for(const SmplJoint& j : SMPL22)
+    {
+      const int i=joints.value(QLatin1String(j.name));
+      const int p=source.joints[i].parent;
+      if(j.parent)
+      {
+        if(p!=joints.value(QLatin1String(j.parent))) return false;
+      }
+      // the pelvis is the root, or the only child of a wrapper root
+      else if(p>=0 && (p!=0 || source.joints[0].parent!=-1)) return false;
+    }
+    const int pelvis=joints.value(QStringLiteral("pelvis"));
+    for(int i=0;i<n;i++)
+    {
+      const Joint& j=source.joints[i];
+      if(j.kind==JointKind::EndSite || !smplCanonical(j.name,names).isEmpty()) continue;
+      if(i==0 && source.joints[pelvis].parent==0) continue;
+      for(int k=i+1;k<n;k++)
+        if(source.joints[k].parent==i && source.joints[k].kind!=JointKind::EndSite) return false;
+    }
+    return true;
+  }
+
+  SmplNames smplNamesOf(const Animation& source)
+  {
+    QHash<QString,int> joints;
+    if(smplJoints(source,SmplNames::Bvh,joints)) return SmplNames::Bvh;
+    if(smplJoints(source,SmplNames::Smpl,joints)) return SmplNames::Smpl;
+    return SmplNames::None;
+  }
+
+  // the chain key of a joint of an SMPL 22 source ("thigh.L"), or empty with
+  // the reason why it is left out
+  QString smpl22Key(const Animation& source,int joint,SmplNames names,QString& reason)
+  {
+    const QString c=smplCanonical(source.joints[joint].name,names);
+    for(const SmplJoint& j : SMPL22)
+      if(c==QLatin1String(j.name)) return QString::fromLatin1(j.key);
+    if(joint==0 && source.joints[0].parent==-1)
+      reason=QObject::tr("wrapper joint above the pelvis, not a bone of the body");
+    else
+      reason=QObject::tr("not one of the 22 SMPL body joints (SMPL has no fingers)");
+    return QString();
+  }
 }
 
 KnownSkeleton detectKnownSkeleton(const Animation& source)
 {
   if(source.joints.isEmpty() || source.joints.size()>AnimFile::MAX_JOINTS) return KnownSkeleton::None;
   if(looksLikeSoma77(source)) return KnownSkeleton::Soma77;
+  if(smplNamesOf(source)!=SmplNames::None) return KnownSkeleton::Smpl22;
   return KnownSkeleton::None;
 }
 
@@ -549,6 +664,7 @@ QString knownSkeletonName(KnownSkeleton skeleton)
   switch(skeleton)
   {
     case KnownSkeleton::Soma77: return QObject::tr("SOMA 77 (NVIDIA Kimodo)");
+    case KnownSkeleton::Smpl22: return QObject::tr("SMPL 22 (HumanML3D, MoMask)");
     case KnownSkeleton::None: break;
   }
   return QString();
@@ -635,6 +751,7 @@ Mapping mapSkeletons(const Animation& source,const Animation& target)
   {
     // layer 1: names (a known skeleton by its fixed table)
     m.known=detectKnownSkeleton(source);
+    const SmplNames smplNames=(m.known==KnownSkeleton::Smpl22) ? smplNamesOf(source) : SmplNames::None;
     QVector<QString> key(ns);
     for(int s=0;s<ns;s++)
     {
@@ -644,6 +761,11 @@ Mapping mapSkeletons(const Animation& source,const Animation& target)
       if(m.known==KnownSkeleton::Soma77)
       {
         key[s]=soma77Key(js.name,b.reason);
+        continue;
+      }
+      if(m.known==KnownSkeleton::Smpl22)
+      {
+        key[s]=smpl22Key(source,s,smplNames,b.reason);
         continue;
       }
       const NameInfo info=analyseName(js.name);

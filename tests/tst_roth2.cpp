@@ -73,6 +73,7 @@ class Roth2Test : public QObject
 
   private slots:
     void meshFile();
+  void meshFileRefused();
     void noNails();
     void jointsAreInSkeleton();
     void maleFigureShowsRoth2();
@@ -83,11 +84,31 @@ class Roth2Test : public QObject
 
 // parts, vertex and triangle counts of the released Roth2 v2 mesh
 // (Mesh/DAE in the Roth2 repository, see the README next to the file)
+// a refused file gives no mesh and the reason (PMMesh::Result, issue 207)
+void Roth2Test::meshFileRefused()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString missing = dir.filePath("missing.pmm");
+  const PMMesh::Result none = PMMesh::read(missing);
+  QVERIFY(!none.ok());
+  QVERIFY2(none.error.startsWith("Could not open " + missing + ": "), qPrintable(none.error));
+
+  const QString bad = dir.filePath("bad.pmm");
+  QFile file(bad);
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  file.write("not a mesh");
+  file.close();
+  const PMMesh::Result wrong = PMMesh::read(bad);
+  QVERIFY(!wrong.ok());
+  QCOMPARE(wrong.error, bad + " is not a valid PinglyMotion mesh file: wrong header");
+}
+
 void Roth2Test::meshFile()
 {
-  PMMesh mesh;
-  QString error;
-  QVERIFY2(mesh.load(rothFile(), &error), qPrintable(error));
+  const PMMesh::Result read = PMMesh::read(rothFile());
+  QVERIFY2(read.ok(), qPrintable(read.error));
+  const PMMesh& mesh = *read.mesh;
   QCOMPARE(mesh.parts.size(), 3);
 
   struct Expected { const char* name; bool eye; int vertices; int triangles; };
@@ -118,16 +139,18 @@ void Roth2Test::meshFile()
 // the only parts are the body (no nail part) and the two eyes
 void Roth2Test::noNails()
 {
-  PMMesh mesh;
-  QVERIFY(mesh.load(rothFile()));
+  const PMMesh::Result read = PMMesh::read(rothFile());
+  QVERIFY(read.ok());
+  const PMMesh& mesh = *read.mesh;
   for (const PMMesh::Part& part : mesh.parts)
     QVERIFY2(!part.name.contains("nail", Qt::CaseInsensitive), qPrintable(part.name));
 }
 
 void Roth2Test::jointsAreInSkeleton()
 {
-  PMMesh mesh;
-  QVERIFY(mesh.load(rothFile()));
+  const PMMesh::Result read = PMMesh::read(rothFile());
+  QVERIFY(read.ok());
+  const PMMesh& mesh = *read.mesh;
   const QSet<QString> skeleton = skeletonSlNames();
   QCOMPARE(skeleton.size(), 133);
   for (const QString& joint : mesh.joints)

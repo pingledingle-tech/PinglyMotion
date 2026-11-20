@@ -183,6 +183,115 @@ namespace Easing
 
   // Switches for a preset; false for the two choices that need a new stored value.
   bool switchesFromPreset(Preset preset,bool& startEaseOut,bool& targetEaseIn);
+
+  // ------------------------------------------------------------ custom curve (issue #11)
+
+  // A free speed curve for one pose change, drawn in the curve editor: a cubic
+  // Bezier from (0,0) to (1,1) with the two handles (x1,y1) and (x2,y2), as in
+  // CSS cubic-bezier(). x is time, y is how far the movement has come. Stored
+  // on the start key as a .dingle "curve" of type "bezier" (docs/DINGLE_FORMAT.md).
+  struct Bezier
+  {
+    double x1=0.37,y1=0,x2=0.63,y2=1;
+    bool operator==(const Bezier& other) const
+    { return x1==other.x1 && y1==other.y1 && x2==other.x2 && y2==other.y2; }
+    bool operator!=(const Bezier& other) const { return !(*this==other); }
+  };
+
+  // How far the handles may go up and down: at most half a movement past
+  // either pose. Time (x) stays inside [0,1], so the curve never goes back.
+  const double BezierMinY=-0.5;
+  const double BezierMaxY=1.5;
+
+  // The handles inside their limits: x clamped to [0,1], y to
+  // [BezierMinY,BezierMaxY]; a non-finite number gives the default handle value.
+  inline Bezier sanitized(const Bezier& b)
+  {
+    const Bezier d;
+    auto fix=[](double v,double fallback,double low,double high)
+    {
+      if(!std::isfinite(v)) v=fallback;
+      return v<low ? low : (v>high ? high : v);
+    };
+    Bezier r;
+    r.x1=fix(b.x1,d.x1,0,1);
+    r.y1=fix(b.y1,d.y1,BezierMinY,BezierMaxY);
+    r.x2=fix(b.x2,d.x2,0,1);
+    r.y2=fix(b.y2,d.y2,BezierMinY,BezierMaxY);
+    return r;
+  }
+
+  // True when every number is finite and inside the limits above.
+  inline bool isValid(const Bezier& b)
+  {
+    return std::isfinite(b.x1) && std::isfinite(b.y1) && std::isfinite(b.x2) && std::isfinite(b.y2) &&
+           sanitized(b)==b;
+  }
+
+  // One coordinate of the cubic at parameter u, for handles a and b.
+  inline double bezierCoordinate(double a,double b,double u)
+  {
+    const double v=1-u;
+    return 3*v*v*u*a+3*v*u*u*b+u*u*u;
+  }
+
+  // Speed curve of a custom curve: s(t) for t in [0,1] (clamped, NaN counts
+  // as 0). s(0)==0 and s(1)==1 exactly. The handles are sanitized first. The
+  // time coordinate rises with u because x1 and x2 lie in [0,1], so u is found
+  // by bisection (fixed 64 steps: the same result on every machine).
+  inline double bezierSpeed(const Bezier& curve,double t)
+  {
+    if(!(t>0)) return 0;
+    if(t>=1) return 1;
+    const Bezier b=sanitized(curve);
+    double low=0,high=1;
+    for(int i=0;i<64;i++)
+    {
+      const double mid=(low+high)/2;
+      if(bezierCoordinate(b.x1,b.x2,mid)<t) low=mid; else high=mid;
+    }
+    return bezierCoordinate(b.y1,b.y2,(low+high)/2);
+  }
+
+  // The value of one channel at frame `pos` of a pose change from `from` to
+  // `to` that lasts `steps` frames, with a custom curve: exactly `from` at the
+  // start and exactly `to` at the target frame. No joint limits are applied
+  // here (BVHNode::frameData does that). steps below 1 count as 1.
+  inline double customSegmentValue(const Bezier& curve,double from,double to,int steps,int pos)
+  {
+    if(from==to) return from;
+    if(steps<1) steps=1;
+    if(pos<=0) return from;
+    if(pos>=steps) return to;
+    return from+(to-from)*bezierSpeed(curve,static_cast<double>(pos)/steps);
+  }
+
+  // The handles the curve editor opens with for a named choice: the same shape
+  // for Even, close matches for the others (the named choices are not all
+  // cubic curves, docs/DINGLE_FORMAT.md).
+  inline Bezier bezierFromPreset(Preset preset)
+  {
+    switch(preset)
+    {
+      case Preset::Even: return {1.0/3,1.0/3,2.0/3,2.0/3};
+      case Preset::SlowStart: return {0.42,0,1,1};
+      case Preset::SlowFinish: return {0,0,0.58,1};
+      case Preset::SlowBothEnds: return {0.37,0,0.63,1};
+      case Preset::OvershootThenSettle: return {0.3,1.3,0.6,1};
+      case Preset::HoldThenSnap: return {1,0,1,0};
+    }
+    return {};
+  }
+
+  // Baked custom curve: frames+1 speeds s(i/frames), first 0, last 1; frames
+  // below 1 count as 1.
+  inline std::vector<double> bakeCustom(const Bezier& curve,int frames)
+  {
+    if(frames<1) frames=1;
+    std::vector<double> out(static_cast<size_t>(frames)+1);
+    for(int i=0;i<=frames;i++) out[static_cast<size_t>(i)]=(i==frames) ? 1.0 : bezierSpeed(curve,static_cast<double>(i)/frames);
+    return out;
+  }
 }
 
 #endif
