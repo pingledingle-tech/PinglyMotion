@@ -139,6 +139,7 @@ BVHNode* BVH::copySkeletonNode(BVHNode* reference,BVHNode* loaded)
         node->setEaseIn(keys[k],data.easeIn());
         node->setEaseOut(keys[k],data.easeOut());
         node->setCurve(keys[k],data.curve());
+        node->setCustomCurve(keys[k],data.customCurve());
       }
     }
     // joints the file does not have get a neutral key frame at the start
@@ -327,6 +328,7 @@ BVHNode* BVH::finishRead(BVHNode* root,const QString& limFile)
       lastLoadedPositionNode->setEaseIn(frameNum,frameData.easeIn());
       lastLoadedPositionNode->setEaseOut(frameNum,frameData.easeOut());
       lastLoadedPositionNode->setCurve(frameNum,frameData.curve());
+      lastLoadedPositionNode->setCustomCurve(frameNum,frameData.customCurve());
     }
   }
 
@@ -392,6 +394,7 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim,bool storedPositions)
       if(key.easeIn) node->setEaseIn(key.frame,true);
       if(key.easeOut) node->setEaseOut(key.frame,true);
       if(key.curve) node->setCurve(key.frame,key.curve);
+      if(key.customCurve) node->setCustomCurve(key.frame,key.customCurve);
     }
   }
 
@@ -416,6 +419,7 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim,bool storedPositions)
       if(key.easeIn) lastLoadedPositionNode->setEaseIn(key.frame,true);
       if(key.easeOut) lastLoadedPositionNode->setEaseOut(key.frame,true);
       if(key.curve) lastLoadedPositionNode->setCurve(key.frame,key.curve);
+      if(key.customCurve) lastLoadedPositionNode->setCustomCurve(key.frame,key.customCurve);
     }
   }
 
@@ -713,6 +717,7 @@ namespace
       key.easeIn=node->keyframeDataByIndex(i).easeIn();
       key.easeOut=node->keyframeDataByIndex(i).easeOut();
       key.curve=node->keyframeDataByIndex(i).curve();
+      key.customCurve=node->keyframeDataByIndex(i).customCurve();
       keys.append(key);
     }
     return keys;

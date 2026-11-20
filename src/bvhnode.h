@@ -60,6 +60,12 @@ class FrameData
     std::optional<Easing::Preset> curve() const;
     void setCurve(const std::optional<Easing::Preset>& curve);
 
+    // a custom curve for the segment that starts at this key (issue #11, a
+    // .dingle "curve" of type "bezier"); when set it wins over curve() and the
+    // ease switches
+    std::optional<Easing::Bezier> customCurve() const;
+    void setCustomCurve(const std::optional<Easing::Bezier>& curve);
+
     // for debugging purposes, dumps all frame data to debug console
 
   protected:
@@ -71,6 +77,7 @@ class FrameData
     bool m_easeIn;
     bool m_easeOut;
     std::optional<Easing::Preset> m_curve;
+    std::optional<Easing::Bezier> m_customCurve;
 };
 
 class BVHNode
@@ -110,6 +117,9 @@ class BVHNode
     // happens on a frame that is not a key frame
     void setCurve(int frame,const std::optional<Easing::Preset>& curve);
     std::optional<Easing::Preset> curve(int frame) const;
+    // the custom curve of a key frame (see FrameData::customCurve), same rules
+    void setCustomCurve(int frame,const std::optional<Easing::Bezier>& curve);
+    std::optional<Easing::Bezier> customCurve(int frame) const;
 
     const QVector3D* getCachedRotation(int frame);
     const QVector3D* getCachedPosition(int frame);

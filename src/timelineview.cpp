@@ -25,6 +25,7 @@
 #include <QPainter>
 
 #include "animation.h"
+#include "bvhnode.h"
 #include "constants.h"
 #include "easingtiles.h"
 #include "jointgroups.h"
@@ -94,6 +95,15 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   easingTiles_=new EasingTiles(this);
   easingTiles_->setObjectName(QStringLiteral("easingTiles"));
   layout->addWidget(easingTiles_,0);
+  // the custom curve (issue #11) is handled here, where the selected joint and
+  // the animation are known
+  easingTiles_->setCustomCheck([this]()
+  {
+    BVHNode* joint=nullptr;
+    int startFrame=0,endFrame=0;
+    return currentSegment(joint,startFrame,endFrame) && EasingChoice::customCurveOf(joint,startFrame).has_value();
+  });
+  connect(easingTiles_,&EasingTiles::customCurveRequested,this,&TimelineView::editCustomCurve);
 
   connect(timeline,SIGNAL(animationChanged(Animation*)),this,SLOT(setAnimation(Animation*)));
   connect(timeline,SIGNAL(trackClicked(int)),this,SLOT(selectTrack(int)));
@@ -115,6 +125,29 @@ void TimelineView::setAnimation(Animation* anim)
   // the number of tracks is known once the skeleton is loaded
   view->setMinimumHeight((timelineRows() + 1) * Constants::lineHeight());
   timelineTracks->setAnimation(anim);
+  animation_=anim;
+}
+
+bool TimelineView::currentSegment(BVHNode*& joint,int& startFrame,int& endFrame) const
+{
+  if(!animation_ || selectedTrack_<0) return false;
+  joint=animation_->getNode(selectedTrack_);
+  endFrame=animation_->getFrame();
+  return joint && EasingChoice::segmentEndingAt(joint,endFrame,startFrame);
+}
+
+void TimelineView::editCustomCurve()
+{
+  BVHNode* joint=nullptr;
+  int startFrame=0,endFrame=0;
+  if(!currentSegment(joint,startFrame,endFrame)) return;
+
+  CurveEditorDialog dialog(EasingChoice::editorStart(joint,startFrame,endFrame),this);
+  if(dialog.exec()!=QDialog::Accepted) return;
+
+  EasingChoice::setCustomCurve(animation_,joint,startFrame,endFrame,dialog.curve());
+  // show the new state on the row (the check above marks it as custom)
+  easingTiles_->setChoice(EasingChoice::choiceOf(joint,startFrame,endFrame));
 }
 
 Timeline* TimelineView::getTimeline() const
@@ -129,6 +162,7 @@ EasingTiles* TimelineView::easingTiles() const
 
 void TimelineView::selectTrack(int track)
 {
+  selectedTrack_=track;
   timeline->selectTrack(track);
   timelineTracks->selectTrack(track);
 }
@@ -143,6 +177,7 @@ void TimelineView::layoutChanged()
 
 void TimelineView::backgroundClicked()
 {
+  selectedTrack_=-1;
   timeline->selectTrack(-1);
   timelineTracks->selectTrack(-1);
 }

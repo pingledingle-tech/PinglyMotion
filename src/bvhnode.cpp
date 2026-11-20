@@ -282,6 +282,24 @@ const FrameData BVHNode::frameData(int frame) const
   QVector3D iRotation;
   QVector3D iPosition;
 
+  const int steps=frameAfter-frameBefore;
+  const int pos=frame-frameBefore;
+
+  // a custom curve on the start key wins over everything (issue #11); it may
+  // pass either pose, so the joint's limits stop the rotation as for the
+  // overshoot choice. Positions are never clamped.
+  if(const std::optional<Easing::Bezier> custom=before.customCurve())
+  {
+    iRotation.setX(Easing::customSegmentValue(*custom,rotationBefore.x(),rotationAfter.x(),steps,pos));
+    iRotation.setY(Easing::customSegmentValue(*custom,rotationBefore.y(),rotationAfter.y(),steps,pos));
+    iRotation.setZ(Easing::customSegmentValue(*custom,rotationBefore.z(),rotationAfter.z(),steps,pos));
+    iRotation=clampOvershoot(iRotation,rotationBefore,rotationAfter);
+    iPosition.setX(Easing::customSegmentValue(*custom,positionBefore.x(),positionAfter.x(),steps,pos));
+    iPosition.setY(Easing::customSegmentValue(*custom,positionBefore.y(),positionAfter.y(),steps,pos));
+    iPosition.setZ(Easing::customSegmentValue(*custom,positionBefore.z(),positionAfter.z(),steps,pos));
+    return FrameData(frame, iPosition, iRotation);
+  }
+
   // a choice stored on the start key wins, otherwise the two ease switches (issue #53)
   const Easing::Preset preset=Easing::segmentPreset(before.curve(),before.easeOut(),after.easeIn());
 
@@ -450,6 +468,19 @@ std::optional<Easing::Preset> BVHNode::curve(int frame) const
 {
   if(keyframes.contains(frame))
     return keyframes[frame].curve();
+  return std::nullopt;
+}
+
+void BVHNode::setCustomCurve(int frame,const std::optional<Easing::Bezier>& curve)
+{
+  if(keyframes.contains(frame))
+    (*keyframes.find(frame)).setCustomCurve(curve);
+}
+
+std::optional<Easing::Bezier> BVHNode::customCurve(int frame) const
+{
+  if(keyframes.contains(frame))
+    return keyframes[frame].customCurve();
   return std::nullopt;
 }
 
@@ -681,6 +712,18 @@ std::optional<Easing::Preset> FrameData::curve() const
 void FrameData::setCurve(const std::optional<Easing::Preset>& curve)
 {
   m_curve=curve;
+}
+
+std::optional<Easing::Bezier> FrameData::customCurve() const
+{
+  return m_customCurve;
+}
+
+void FrameData::setCustomCurve(const std::optional<Easing::Bezier>& curve)
+{
+  // stored inside the editor's limits, so playback, save and export agree
+  if(curve) m_customCurve=Easing::sanitized(*curve);
+  else m_customCurve.reset();
 }
 
 bool FrameData::easeIn() const

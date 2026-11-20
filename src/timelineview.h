@@ -32,6 +32,7 @@ class QScrollArea;
 class Timeline;
 class Animation;
 class EasingTiles;
+class BVHNode;
 
 class TimelineTracks : public QWidget
 {
@@ -76,12 +77,23 @@ class TimelineView : public QFrame
   protected slots:
     void scrollTo(int x);
     void setAnimation(Animation* anim);
+    // "Custom curve" was clicked on the tile row: edit the pose change that
+    // ends at the current frame of the selected joint (issue #11)
+    void editCustomCurve();
 
   protected:
     QScrollArea* view;
     Timeline* timeline;
     TimelineTracks* timelineTracks;
     EasingTiles* easingTiles_;
+
+  private:
+    // the selected joint, the pose change ending at the current frame:
+    // false when there is none
+    bool currentSegment(BVHNode*& joint,int& startFrame,int& endFrame) const;
+
+    Animation* animation_=nullptr;
+    int selectedTrack_=-1;
 };
 
 #endif

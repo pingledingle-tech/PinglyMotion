@@ -98,6 +98,10 @@ private slots:
   void unknownEasingFallsBackToEven();
   void storedEasingShapesTheFramesInBetween();
   void storedEasingOnPositionKeys();
+  void customCurveRoundTrip();
+  void customCurveShapesTheFramesInBetween();
+  void badCustomCurveFallsBackToEven();
+  void customCurveWinsOverNamedChoice();
 };
 
 void TestDingle::readsTheSample()
@@ -608,6 +612,94 @@ void TestDingle::storedEasingOnPositionKeys()
   const Dingle::Result again=Dingle::parse(Dingle::write(*r.animation));
   QVERIFY(again.ok());
   QVERIFY(Dingle::equal(*r.animation,*again.animation));
+}
+
+// ---------------------------------------------------------------- custom curve (issue #11)
+
+// a custom curve is written and read back unchanged, byte for byte on the second save
+void TestDingle::customCurveRoundTrip()
+{
+  const Dingle::Result first=Dingle::parse(withCurve("{\"type\":\"bezier\",\"points\":[0.25,1.2,0.5,-0.25]}"));
+  QVERIFY2(first.ok(),qPrintable(first.error));
+  QCOMPARE(first.ignoredKeys,0);
+  const AnimFile::Key& key=first.animation->joints[0].keys[1];
+  QVERIFY(key.customCurve.has_value());
+  QVERIFY(!key.curve);
+  QCOMPARE(*key.customCurve,(Easing::Bezier{0.25,1.2,0.5,-0.25}));
+  QVERIFY(!first.animation->joints[0].keys[0].customCurve);
+  QVERIFY(!first.animation->joints[0].keys[2].customCurve);
+
+  const QByteArray written=Dingle::write(*first.animation,first.extensions,"PinglyMotion test");
+  QCOMPARE(written.count("\"curve\""),1);
+  QVERIFY2(written.contains("\"curve\": {\"type\": \"bezier\", \"points\": [0.25, 1.2, 0.5, -0.25]}"),written.constData());
+  const Dingle::Result second=Dingle::parse(written);
+  QVERIFY2(second.ok(),qPrintable(second.error));
+  QCOMPARE(second.ignoredKeys,0);
+  QVERIFY(Dingle::equal(*first.animation,*second.animation));
+  QCOMPARE(Dingle::write(*second.animation,second.extensions,"PinglyMotion test"),written);
+
+  // numbers that need all their digits come back exactly
+  AnimFile::Animation model=*first.animation;
+  model.joints[0].keys[1].customCurve=Easing::Bezier{1.0/3,0.1+0.2,2.0/3,0.7};
+  const Dingle::Result third=Dingle::parse(Dingle::write(model));
+  QVERIFY(third.ok());
+  QCOMPARE(*third.animation->joints[0].keys[1].customCurve,*model.joints[0].keys[1].customCurve);
+
+  // a different curve is a different animation
+  const Dingle::Result other=Dingle::parse(withCurve("{\"type\":\"bezier\",\"points\":[0.25,1.2,0.5,-0.2]}"));
+  QVERIFY(other.ok());
+  QVERIFY(!Dingle::equal(*first.animation,*other.animation));
+}
+
+// the frames in between follow the custom curve, as playback computes them
+void TestDingle::customCurveShapesTheFramesInBetween()
+{
+  const Easing::Bezier b{0.3,1.3,0.6,1};
+  const Dingle::Result r=Dingle::parse(withCurve("{\"type\":\"bezier\",\"points\":[0.3,1.3,0.6,1]}"));
+  QVERIFY2(r.ok(),qPrintable(r.error));
+  // Xrotation of the root: 20 at frame 5 to 0 at frame 10 (column 4)
+  for(int frame=5;frame<=10;frame++)
+    QCOMPARE(r.animation->value(frame,4),static_cast<float>(Easing::customSegmentValue(b,20,0,5,frame-5)));
+  // the segment before is not changed: linear 0 to 20 over frames 0..5
+  QCOMPARE(r.animation->value(2,4),8.0f);
+}
+
+// a bezier this version cannot use never refuses the file: Even, counted as ignored
+void TestDingle::badCustomCurveFallsBackToEven()
+{
+  const QList<QByteArray> bad={
+    "{\"type\":\"bezier\"}", "{\"type\":\"bezier\",\"points\":[]}", "{\"type\":\"bezier\",\"points\":[0.2,0.1,0.3]}",
+    "{\"type\":\"bezier\",\"points\":[0.2,0.1,0.3,1,5]}", "{\"type\":\"bezier\",\"points\":[1.5,0,0.5,1]}",
+    "{\"type\":\"bezier\",\"points\":[0.5,0,-0.1,1]}", "{\"type\":\"bezier\",\"points\":[0.5,2,0.5,1]}",
+    "{\"type\":\"bezier\",\"points\":[0.5,0,0.5,-0.6]}", "{\"type\":\"bezier\",\"points\":[\"0.5\",0,0.5,1]}",
+    "{\"type\":\"bezier\",\"points\":[null,0,0.5,1]}", "{\"type\":\"bezier\",\"points\":{\"x1\":0}}"};
+  for(const QByteArray& curve : bad)
+  {
+    const Dingle::Result r=Dingle::parse(withCurve(curve));
+    QVERIFY2(r.ok(),qPrintable(curve+": "+r.error));
+    QVERIFY2(r.ignoredKeys==1,qPrintable(curve));
+    QVERIFY(!r.animation->joints[0].keys[1].customCurve);
+    QCOMPARE(r.animation->joints[0].keys[1].curve,std::optional<Easing::Preset>(Easing::Preset::Even));
+    QCOMPARE(r.animation->value(6,4),16.0f);
+  }
+  // a valid bezier with extra keys of a later version: used, the extra keys counted
+  const Dingle::Result extra=Dingle::parse(withCurve("{\"type\":\"bezier\",\"points\":[0,0,1,1],\"tension\":2}"));
+  QVERIFY2(extra.ok(),qPrintable(extra.error));
+  QCOMPARE(extra.ignoredKeys,1);
+  QVERIFY(extra.animation->joints[0].keys[1].customCurve.has_value());
+}
+
+// a key holding both (only possible in memory) is written with the custom curve, as playback uses it
+void TestDingle::customCurveWinsOverNamedChoice()
+{
+  const Dingle::Result r=Dingle::parse(withCurve("{\"type\":\"constant\"}"));
+  QVERIFY(r.ok());
+  AnimFile::Animation model=*r.animation;
+  model.joints[0].keys[1].customCurve=Easing::Bezier{0,0,1,1};
+  const QByteArray written=Dingle::write(model);
+  QCOMPARE(written.count("\"curve\""),1);
+  QVERIFY(written.contains("\"type\": \"bezier\""));
+  QVERIFY(!written.contains("\"constant\""));
 }
 
 QTEST_APPLESS_MAIN(TestDingle)

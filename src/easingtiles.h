@@ -13,15 +13,19 @@
 #define EASINGTILES_H
 
 #include <QAbstractButton>
+#include <QDialog>
 #include <QWidget>
 
+#include <functional>
 #include <optional>
 
 #include "easing.h"
 
 class Animation;
 class BVHNode;
+class QButtonGroup;
 class QLabel;
+class QPushButton;
 class QTimer;
 
 // Reading and storing the choice of one pose change (segment) on the animation.
@@ -42,6 +46,18 @@ namespace EasingChoice
   // so the file stays as before. The last two store the curve on the start key
   // and set both switches, so a reader without `curve` plays the default.
   void setChoice(Animation* anim,BVHNode* joint,int startFrame,int endFrame,Easing::Preset preset);
+
+  // The custom curve of the segment (issue #11), if it has one.
+  std::optional<Easing::Bezier> customCurveOf(const BVHNode* joint,int startFrame);
+
+  // Store a custom curve on the segment: on the start key, with the named
+  // choice cleared and both switches on (the default for a reader that does
+  // not know custom curves). setChoice() removes it again.
+  void setCustomCurve(Animation* anim,BVHNode* joint,int startFrame,int endFrame,const Easing::Bezier& curve);
+
+  // The handles the curve editor opens with: the segment's custom curve, or a
+  // close match of its named choice (Easing::bezierFromPreset).
+  Easing::Bezier editorStart(const BVHNode* joint,int startFrame,int endFrame);
 
   // Name on the tile and the one-line hint (docs/TEACHING.md EASE-01 to 06),
   // translated.
@@ -97,6 +113,16 @@ class EasingTiles : public QWidget
     // setting). The "select a key frame" line shows either way.
     void setTipsOn(bool on);
 
+    // The pose change has a custom curve (issue #11): no tile is marked, the
+    // "Custom curve" button is. Call after setChoice().
+    void setCustom(bool custom);
+    bool isCustom() const { return m_custom; }
+    // Asked at the end of every setChoice(): does the selected pose change have
+    // a custom curve? The timeline sets it (it knows the joint and the frame),
+    // so the window needs no change.
+    void setCustomCheck(std::function<bool()> check) { m_customCheck=std::move(check); }
+    QPushButton* customButton() const { return m_customButton; }
+
     bool hasChoice() const { return m_hasChoice; }
     Easing::Preset choice() const { return m_choice; }
     EasingTile* tile(Easing::Preset preset) const;
@@ -109,6 +135,8 @@ class EasingTiles : public QWidget
   signals:
     // The user clicked a tile (not emitted when the window sets the choice).
     void choiceClicked(Easing::Preset preset);
+    // The user clicked "Custom curve" (issue #11).
+    void customCurveRequested();
 
   protected:
     void showEvent(QShowEvent* event) override;
@@ -126,13 +154,73 @@ class EasingTiles : public QWidget
     void updateAnimation();
 
     EasingTile* m_tiles[Easing::PresetCount];
+    QButtonGroup* m_group;
+    QPushButton* m_customButton;
     QLabel* m_hint;
     QTimer* m_timer;
     bool m_hasChoice=false;
+    bool m_custom=false;
+    std::function<bool()> m_customCheck;
     Easing::Preset m_choice=Easing::defaultPreset();
     bool m_tipsOn=true;
     std::optional<Easing::Preset> m_hovered;
     int m_elapsedMs=0;
+};
+
+// The curve editor (issue #11): the speed of one pose change as a curve from
+// the bottom left (start, old pose) to the top right (end, new pose), with two
+// round handles to drag. Time runs left to right, the way to the new pose
+// bottom to top. Under it, the same dot trail as on the tiles.
+class CurveEditor : public QWidget
+{
+  Q_OBJECT
+
+  public:
+    explicit CurveEditor(QWidget* parent=nullptr);
+
+    Easing::Bezier curve() const { return m_curve; }
+    void setCurve(const Easing::Bezier& curve);
+
+    // Where a handle (0 or 1) is drawn, and the curve point for a widget
+    // position; used by the mouse and by the tests.
+    QPointF handlePosition(int handle) const;
+    QPointF toCurve(const QPointF& position) const;
+
+    QSize sizeHint() const override { return QSize(360,300); }
+    QSize minimumSizeHint() const override { return QSize(240,200); }
+
+  signals:
+    void curveChanged(const Easing::Bezier& curve);
+
+  protected:
+    void paintEvent(QPaintEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+
+  private:
+    QRectF graphRect() const;
+    QPointF toWidget(double x,double y) const;
+    void moveHandle(int handle,const QPointF& position);
+
+    Easing::Bezier m_curve;
+    int m_dragging=-1;
+};
+
+// The dialog around the curve editor: hint, "Start again", OK and Cancel.
+class CurveEditorDialog : public QDialog
+{
+  Q_OBJECT
+
+  public:
+    CurveEditorDialog(const Easing::Bezier& start,QWidget* parent=nullptr);
+
+    Easing::Bezier curve() const;
+    CurveEditor* editor() const { return m_editor; }
+
+  private:
+    CurveEditor* m_editor;
+    Easing::Bezier m_start;
 };
 
 #endif
