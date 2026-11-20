@@ -71,7 +71,15 @@ If a joint is matched wrongly, change it in the list in step 4. More about the l
 - **Fix the feet.** Video capture often lets the feet slide. Fix the worst frames by hand.
 - **Make the file.** Choose **File > Export as Second Life .anim...**, set the options, then click **Choose file...**. The steps are in [FIRST_ANIMATION.md](FIRST_ANIMATION.md), section 7.
 
-Clean-up tools for imported movement (30 frames per second, standing in place, a smooth loop, less shake) are being built. They are not in the menu yet.
+**Clean up the movement.** The window where you check the joint list (step 4) has a box called **Clean up the movement**. Each choice is a tick box, and PinglyMotion remembers your choices for the next import. Move the mouse over a choice to read what it does.
+
+- **Make it 30 frames a second** (on at first). Second Life plays 30 frames a second. The movement looks the same.
+- **Add a start pose at frame 1** (on at first). This is the fix for the frame 1 problem above.
+- **Keep it in one place** (off at first). Takes away the walk forward. The sway of the hips stays.
+- **Make the end match the start** (off at first). Helps a loop run without a jump. The last frames change a little.
+- **Smooth out the shake** (off at first). Light smoothing for video capture. Fast small movements get softer.
+
+The first two are on because they never change how the movement looks. The other three change the movement, so you choose them yourself. Keeping the feet from sliding is not a choice yet.
 
 ## Limits
 

@@ -33,6 +33,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               jointlist.cpp
               propfile.cpp
               retarget.cpp
+              importoptions.cpp
+              motioncleanup.cpp
               retargetdialog.cpp
               retargetmapping.cpp
               main.cpp

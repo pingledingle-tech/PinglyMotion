@@ -183,6 +183,7 @@ namespace
   // exactly what the program shows
   double interpolate(double from,double to,int steps,int pos,const Key& start,const Key& target)
   {
+    if(start.customCurve) return Easing::customSegmentValue(*start.customCurve,from,to,steps,pos);
     return Easing::segmentValue(Easing::segmentPreset(start.curve,start.easeOut,target.easeIn),from,to,steps,pos);
   }
 
@@ -461,7 +462,9 @@ namespace
   }
 
   // the easing choice of the segment that starts at this key (issue #53 step 3):
-  // {"type": "<technical name>"}. Anything this version does not know (another
+  // {"type": "<technical name>"}, or a custom curve (issue #11):
+  // {"type": "bezier", "points": [x1, y1, x2, y2]} with x in [0,1] and y in
+  // [-0.5,1.5] (Easing::isValid). Anything this version does not know (another
   // type, another shape, null) never refuses the file: the segment falls back to
   // Even and the curve counts as ignored, so save warns before it is lost.
   void Reader::readCurve(const QJsonValue& value,Key& key)
@@ -472,7 +475,27 @@ namespace
       const QJsonObject curve=value.toObject();
       const QJsonValue type=curve.value("type");
       const QByteArray name=type.toString().toUtf8();
-      if(type.isString() && Easing::presetFromTechnicalName(std::string_view(name.constData(),static_cast<size_t>(name.size())),preset))
+      if(type.isString() && type.toString()==QLatin1String("bezier"))
+      {
+        const QJsonValue points=curve.value("points");
+        if(points.isArray() && points.toArray().size()==4)
+        {
+          const QJsonArray p=points.toArray();
+          bool numbers=true;
+          for(int i=0;i<4;i++) if(!p[i].isDouble()) numbers=false;
+          if(numbers)
+          {
+            const Easing::Bezier bezier{p[0].toDouble(),p[1].toDouble(),p[2].toDouble(),p[3].toDouble()};
+            if(Easing::isValid(bezier))
+            {
+              known(curve,{"type","points"});
+              key.customCurve=bezier;
+              return;
+            }
+          }
+        }
+      }
+      else if(type.isString() && Easing::presetFromTechnicalName(std::string_view(name.constData(),static_cast<size_t>(name.size())),preset))
       {
         known(curve,{"type"});
         key.curve=preset;
@@ -749,7 +772,20 @@ namespace
       out+=QByteArray("], \"easeIn\": ")+(keys[k].easeIn ? "true" : "false")+", \"easeOut\": "+(keys[k].easeOut ? "true" : "false");
       // the easing choice stored on the key (issue #53 step 3); only when there is one,
       // so files without choices are written exactly as before
-      if(keys[k].curve) out+=QByteArray(", \"curve\": {\"type\": \"")+Easing::technicalName(*keys[k].curve)+"\"}";
+      // a custom curve (issue #11) wins over the named choice, as in playback
+      if(keys[k].customCurve)
+      {
+        const Easing::Bezier b=Easing::sanitized(*keys[k].customCurve);
+        out+=", \"curve\": {\"type\": \"bezier\", \"points\": [";
+        const double points[4]={b.x1,b.y1,b.x2,b.y2};
+        for(int i=0;i<4;i++)
+        {
+          if(i) out+=", ";
+          number(out,points[i]);
+        }
+        out+="]}";
+      }
+      else if(keys[k].curve) out+=QByteArray(", \"curve\": {\"type\": \"")+Easing::technicalName(*keys[k].curve)+"\"}";
       out+="}";
       out+=(k+1<keys.size()) ? ",\n" : "\n";
     }
@@ -804,7 +840,7 @@ QByteArray write(const Animation& anim,const QJsonObject& extensions,const QStri
     bool hasPosition=false;
     for(Channel channel : joint.channels) (isPosition(channel) ? hasPosition : hasRotation)=true;
     const QVector<Key> keys=keysOf(joint.keys,anim.frames);
-    const bool plain=(keys.size()==1 && !keys[0].easeIn && !keys[0].easeOut && !keys[0].curve);
+    const bool plain=(keys.size()==1 && !keys[0].easeIn && !keys[0].easeOut && !keys[0].curve && !keys[0].customCurve);
     // a joint with no channels is only written when its keys are not the plain frame 0
     if(!hasRotation && !hasPosition && plain) continue;
 
