@@ -106,4 +106,6 @@ The male figure shows **Roth2 v2**, the male body from the [Roth2 project](https
 
 The optional second body (Options > Body > Max) is "Maxine" from the [Max Avatar Project](https://github.com/RuthAndRoth/Max) by Ada Radius and the RuthAndRoth community, licensed under the Creative Commons Attribution 4.0 License. It is converted to PinglyMotion's own format by `tools/make_max_mesh.py`; notice and details are in `bin/data/character/max/`.
 
+The test motions in `tests/motions/cmu/` (in the Windows zip: `examples/cmu/`) and the walk clip in `tests/motions/` come from the CMU Graphics Lab Motion Capture Database, converted to BVH by cgspeed.com. The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. Source and licence notes: `tests/motions/cmu/README.md`.
+
 The test motions in `tests/motions/mesh2motion/` (in the Windows zip: `examples/mesh2motion/`) are eight clips from the [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app) project, released under CC0 1.0 (public domain). CC0 does not require a credit; PinglyMotion gives one anyway: thank you to the Mesh2Motion project. The source files and the commit they come from are in `tests/data/mesh2motion/`.

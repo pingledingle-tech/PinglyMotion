@@ -69,6 +69,10 @@ class AuroraLink : public QObject
     // how often the pose is checked for changes, in milliseconds
     void setInterval(int ms);
 
+    // the name Aurora shows in its chat: "PinglyMotion " and the build label.
+    // For information only: printable ASCII, at most 64 characters
+    static QString clientName(const QString& buildLabel);
+
     // the folder where Aurora writes its LiveMesh token files (<port>.token)
     // on this computer; PINGLYMOTION_AURORA_TOKEN_DIR overrides it (for tests)
     static QString tokenFolder();

@@ -202,7 +202,7 @@ AuroraIndicator::AuroraIndicator(QWidget* parent) :
 
   m_led->setToolTip(tr("Live link to Aurora. Click to turn it on or off.\n"
                        "Grey: off\n"
-                       "Yellow: waiting for Aurora (in Aurora, open LiveMesh and click Enable preview)\n"
+                       "Yellow: waiting for Aurora. Turn the preview on in Aurora.\n"
                        "Green: live, the pose shows on your avatar"));
   connect(m_led, &QToolButton::clicked, this, &AuroraIndicator::toggleRequested);
 
@@ -220,10 +220,16 @@ QString AuroraIndicator::textFor(State state)
   switch (state)
   {
     case Off: return tr("Aurora off");
-    case Connecting: return tr("Aurora · connecting…");
+    case Connecting: return tr("Waiting for Aurora");
     case Live: break;
   }
-  return tr("Aurora · live");
+  return tr("Aurora live");
+}
+
+QString AuroraIndicator::titleSuffixFor(State state)
+{
+  // the window title says the same words as the status bar
+  return state == Off ? QString() : QStringLiteral(" - ") + textFor(state);
 }
 
 AuroraIndicator::State AuroraIndicator::state() const

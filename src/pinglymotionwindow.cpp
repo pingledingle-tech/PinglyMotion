@@ -61,6 +61,7 @@
 #include "animationview.h"
 #include "bvh.h"
 #include "dingle.h"
+#include "easingtiles.h"
 #include "propfile.h"
 #include "constants.h"
 #include "controlapi.h"
@@ -477,7 +478,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   connect(m_pinglyMotion.data(), &PinglyMotion::enableAvatarPositionUi, this, &PinglyMotionWindow::enableAvatarPosition);
   connect(m_pinglyMotion.data(), &PinglyMotion::updatePropSpinsUi, this, &PinglyMotionWindow::updatePropSpins);
 
-  connect(this,SIGNAL(enableEaseInOut(bool)),ui->easeInOutGroup,SLOT(setEnabled(bool)));
+  // the easing tile row on the timeline (issue #53 step 5)
+  connect(ui->timelineView->easingTiles(),&EasingTiles::choiceClicked,this,&PinglyMotionWindow::easingChoiceClicked);
 
   connect(&timer,SIGNAL(timeout()),this,SLOT(frameTimeout()));
 
@@ -520,8 +522,13 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_tipsSwitch=new TipsSwitch(this);
   m_tipsSwitch->setOn(UserSettings::tipsOn());
   statusBar()->addPermanentWidget(m_tipsSwitch);
-  // only stored for now; the help tips themselves come in a later step of #88
-  connect(m_tipsSwitch,&TipsSwitch::toggled,this,[](bool on){ UserSettings::setTipsOn(on); });
+  // the hint under the easing tiles follows the setting; more tips come with #88
+  ui->timelineView->easingTiles()->setTipsOn(UserSettings::tipsOn());
+  connect(m_tipsSwitch,&TipsSwitch::toggled,this,[this](bool on)
+  {
+    UserSettings::setTipsOn(on);
+    ui->timelineView->easingTiles()->setTipsOn(on);
+  });
 
   // is remote control on, who is connected, what it did last (issue #43)
   m_controlIndicator=new ControlIndicator(this);
@@ -632,8 +639,8 @@ void PinglyMotionWindow::updateWindowTitle()
   QString title=Constants::windowTitle(currentFile);
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
-  if(m_auroraLink && m_auroraLink->enabled())
-    title+=m_auroraLink->connected() ? tr(" - live in Aurora") : tr(" - waiting for Aurora");
+  if(m_auroraLink)
+    title+=AuroraIndicator::titleSuffixFor(AuroraIndicator::stateFor(m_auroraLink->enabled(),m_auroraLink->connected()));
   if(m_auroraIndicator && m_auroraLink) m_auroraIndicator->setStatus(m_auroraLink->enabled(),m_auroraLink->connected());
   setWindowTitle(title);
 }
@@ -817,7 +824,7 @@ void PinglyMotionWindow::backgroundClicked()
 
   enableAvatarRotation(false);
   enableProps(false);
-  emit enableEaseInOut(false);
+  ui->timelineView->easingTiles()->setNoKey();
   selectTrackInTable(0);
   updateKeyBtn();
 }
@@ -1577,14 +1584,13 @@ void PinglyMotionWindow::updateKeyBtn()
   // re-enable toggle signal
   ui->keyframeButton->blockSignals(false);
 
-  if(hasKeyframe && currentPart != NULL)
-  {
-    emit enableEaseInOut(true);
-    ui->easeInCheck->setChecked(anim->easeIn(currentPart,anim->getFrame()));
-    ui->easeOutCheck->setChecked(anim->easeOut(currentPart,anim->getFrame()));
-  }
+  // the easing tiles show the choice of the pose change that ends at this key
+  EasingTiles* tiles=ui->timelineView->easingTiles();
+  int startFrame=0;
+  if(hasKeyframe && currentPart != NULL && EasingChoice::segmentEndingAt(currentPart,frame,startFrame))
+    tiles->setChoice(EasingChoice::choiceOf(currentPart,startFrame,frame));
   else
-    emit enableEaseInOut(false);
+    tiles->setNoKey();
 
 //  timeline->repaint();
 }
@@ -1741,22 +1747,15 @@ void PinglyMotionWindow::numFramesChanged(int num)
   updateInputs();
 }
 
-void PinglyMotionWindow::easeInChanged(int change)
+void PinglyMotionWindow::easingChoiceClicked(Easing::Preset preset)
 {
-  bool ease=false;
-  if(change==Qt::Checked) ease=true;
-
   Animation* anim=scene->getAnimation();
-  anim->setEaseIn(currentPart,anim->getFrame(),ease);
-}
-
-void PinglyMotionWindow::easeOutChanged(int change)
-{
-  bool ease=false;
-  if(change==Qt::Checked) ease=true;
-
-  Animation* anim=scene->getAnimation();
-  anim->setEaseOut(currentPart,anim->getFrame(),ease);
+  if(!anim || !currentPart) return;
+  const int frame=anim->getFrame();
+  int startFrame=0;
+  if(!EasingChoice::segmentEndingAt(currentPart,frame,startFrame)) return;
+  EasingChoice::setChoice(anim,currentPart,startFrame,frame,preset);
+  updateKeyBtn();
 }
 
 // ------ Menu Action Slots (Callbacks) -----------
@@ -3221,16 +3220,6 @@ void PinglyMotionWindow::on_zPositionEdit_editingFinished()
 void PinglyMotionWindow::on_zPositionSlider_valueChanged(int)
 {
   positionSlider(sender());
-}
-
-void PinglyMotionWindow::on_easeInCheck_stateChanged(int newState)
-{
-  easeInChanged(newState);
-}
-
-void PinglyMotionWindow::on_easeOutCheck_stateChanged(int newState)
-{
-  easeOutChanged(newState);
 }
 
 void PinglyMotionWindow::on_newBoxPropButton_clicked()

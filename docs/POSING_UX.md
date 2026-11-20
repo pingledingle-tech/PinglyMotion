@@ -29,7 +29,7 @@ New users first: people who want to pose their avatar without knowing animation 
 - Top bar: menu, file name with unsaved mark, figure and size, **command search (Ctrl + K)**, undo / redo, Export, Save.
 - **Joints panel:** Avatar / Props switch; tabs Body / Face / Hands / Other (done in #126); Left / Right / Mirror; search; friendly names under section headings; violet dot on edited joints; key marker; tick for "include in export".
 - **Selected joint:** friendly name and SL name; IK switch; lock; reset; Rotate / Move (Move only for the pelvis and the avatar position); trackball plus X / Y / Z sliders with value fields; the allowed range is shown on each slider and a warning appears near a joint limit (#59, #129); "Turn around: Joint / Avatar / Screen"; whole pose: Flip, Left → Right, Right → Left, T-pose, Poses…, Reset all.
-- **Timeline:** full width; only edited joints by default; loop range; ease in / out for the selected key; Set key.
+- **Timeline:** full width; only edited joints by default; loop range; the easing of the selected key's pose change as a row of six tiles (done in #53 step 5, replaces the ease in / out check boxes); Set key.
 - **Status bar:** the remote-control indicator from #43 (Claude), the Aurora link status and a "Tips on" switch, all in one place.
 - **Help:** short help text when the mouse rests on a control. **On by default**, can be turned off in Settings. A hint bar in the 3D view shows the most used controls for what is under the mouse; `?` opens the full list.
 - No **Scale**: BVH and SL `.anim` cannot store joint scale.
@@ -108,7 +108,7 @@ One pull request per step, tested on Windows before it is merged. Steps that cha
 4. Selected-joint card: trackball, sliders, limit warning, turn-around frame
 5. Left / Right / Mirror and the whole-pose buttons (shared left/right mapping)
 6. Hands tab: presets and finger grid
-7. Timeline: only edited joints, loop range, ease chips
+7. Timeline: only edited joints, loop range; the ease chips are the easing tile row (done in #53 step 5, [EASING.md](EASING.md))
 8. Status bar: Claude and Aurora status, tips switch (done)
 9. Help tips and hint bar, `?` controls list
 10. Command search
