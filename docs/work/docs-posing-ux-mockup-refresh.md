@@ -1,5 +1,5 @@
 Branch: docs/posing-ux-mockup-refresh
-Status: active
+Status: done
 Pull request: pending
 Files:
 - docs/images/posing-ux/main-window.png
