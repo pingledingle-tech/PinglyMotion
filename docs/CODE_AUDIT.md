@@ -119,7 +119,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Medium: big diff in the busiest file; do it when no other job claims the file.
 - **Visible change:** No (pure move).
 - **Model:** strong. **Size:** L.
-- **Done:** pull request #217 (`src/sliderscale.h`, test `tests/sliderscale`); started by the project owner while #156 and #183 were still open, with a few-line overlap.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
 
 ### C9. Finish the QAvimator scene refactor: remove the 'temporary' scaffolding (#200)
 
@@ -129,7 +129,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Medium: ownership and lifetime changes.
 - **Visible change:** No.
 - **Model:** strong. **Size:** L.
-- **Done:** pull request #217 (`src/sliderscale.h`, test `tests/sliderscale`); started by the project owner while #156 and #183 were still open, with a few-line overlap.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
 
 ### C10. Shared skeleton walk helpers instead of local copies (#201)
 
@@ -159,7 +159,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low (overloaded signals need `qOverload`).
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
-- **Done:** pull request #217 (`src/sliderscale.h`, test `tests/sliderscale`); started by the project owner while #156 and #183 were still open, with a few-line overlap.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
 
 ### C13. Error handling in the .obj mesh reader (#204)
 
