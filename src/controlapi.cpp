@@ -7,6 +7,7 @@
 #include <QBuffer>
 #include <QCoreApplication>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonValue>
@@ -15,6 +16,10 @@
 
 #include "animation.h"
 #include "animcheck.h"
+#include "animexport.h"
+#include "animexportdialog.h"
+#include "animimport.h"
+#include "bvh.h"
 #include "bvhnode.h"
 #include "motiondescribe.h"
 #include "posedescribe.h"
@@ -70,6 +75,8 @@ namespace
      "{\"from\":{\"type\":\"integer\",\"description\":\"First frame, first frame of the animation is 1. Default 2 (1 when the animation has only 2 frames)\"},\"to\":{\"type\":\"integer\",\"description\":\"Last frame. Default the last frame\"}}", "[]"},
     {"check_animation", "Checks the whole animation against Second Life's rules and common mistakes, with fixed thresholds, and lists what is wrong with the frames and joints it is about. Errors (Second Life refuses the file or loses part of it): longer than 60 s, nothing moves away from frame 1, the hip more than 5 m from frame 1. Warnings (it plays but likely looks wrong): posed joints that keep the frame-1 angle and are dropped, a key past a joint limit, a foot under the floor, floating, foot sliding, a sudden jump in one frame, nothing moving at the start, a loop seam that jumps. Notes: joints left out on export, keys that change nothing. Never changes the animation or the current frame.",
      "{}", "[]"},
+    {"export_anim", "Exports the animation as a Second Life .anim file in the PinglyMotion folder (see 'folder' in state), the file the user uploads in Second Life. Runs check_animation first and refuses when it finds an error (Second Life would refuse the file or lose part of it); its warnings come back in the answer. Options as in File > Export as Second Life .anim: priority, loop (between the loop points), slow start and finish in seconds, and the hand pose by name. Will not replace an existing file. The answer gives the file, its size, the joints written and left out, and the warnings. Never changes the animation.",
+     "{\"path\":{\"type\":\"string\",\"description\":\"File name ending in .anim\"},\"priority\":{\"type\":\"integer\",\"description\":\"0 to 6, default 2\"},\"loop\":{\"type\":\"boolean\",\"description\":\"Repeat between the loop points, default false\"},\"ease_in\":{\"type\":\"number\",\"description\":\"Slow start in seconds, default 0.3\"},\"ease_out\":{\"type\":\"number\",\"description\":\"Slow finish in seconds, default 0.3\"},\"hand_pose\":{\"type\":\"string\",\"description\":\"One of the 14 hand pose names, default Relaxed\"}}", "[\"path\"]"},
   };
 
   QJsonArray vector(const QVector3D& v)
@@ -191,11 +198,11 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
     {"save_file", &ControlApi::saveFile}, {"screenshot", &ControlApi::screenshot},
     {"set_figure", &ControlApi::setFigure}, {"set_camera", &ControlApi::setCamera},
     {"describe_pose", &ControlApi::describePose}, {"describe_motion", &ControlApi::describeMotion},
-    {"check_animation", &ControlApi::checkAnimation},
+    {"check_animation", &ControlApi::checkAnimation}, {"export_anim", &ControlApi::exportAnim},
   };
 
   const QString command = request.value("command").toString();
-  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation.");
+  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim.");
   if (!m_host->animation()) return fail("No animation is open.");
 
   for (const auto& entry : table)
@@ -614,6 +621,127 @@ QJsonObject ControlApi::describeMotion(const QJsonObject& request)
 QJsonObject ControlApi::checkAnimation(const QJsonObject&)
 {
   return AnimCheck::check(m_host->animation());
+}
+
+QJsonObject ControlApi::exportAnim(const QJsonObject& request)
+{
+  const QString path = request.value("path").toString();
+  if (path.isEmpty()) return fail("Missing \"path\". Give a file name ending in .anim.");
+  if (QFileInfo(path).suffix().toLower() != "anim") return fail("The file name must end in .anim.");
+
+  // the same settings as the export dialog, with its defaults
+  AnimExportUi::Settings settings;
+  if (request.contains("priority"))
+  {
+    const QJsonValue value = request.value("priority");
+    const int priority = value.toInt(-1);
+    if (!value.isDouble() || value.toDouble() != priority || priority < 0 || priority > AnimExport::MAX_PRIORITY)
+      return fail(QString("\"priority\" must be a whole number from 0 to %1.").arg(AnimExport::MAX_PRIORITY));
+    settings.priority = priority;
+  }
+  for (const char* key : {"ease_in", "ease_out"})
+  {
+    if (!request.contains(key)) continue;
+    const QJsonValue value = request.value(key);
+    if (!value.isDouble() || !qIsFinite(value.toDouble()) || value.toDouble() < 0.0 || value.toDouble() > AnimExport::MAX_DURATION)
+      return fail(QString("\"%1\" must be a number of seconds from 0 to %2.").arg(key).arg(AnimExport::MAX_DURATION, 0, 'f', 0));
+    (QString(key) == "ease_in" ? settings.slowStart : settings.slowFinish) = value.toDouble();
+  }
+  if (request.contains("loop"))
+  {
+    if (!request.value("loop").isBool()) return fail("\"loop\" must be true or false.");
+    settings.loop = request.value("loop").toBool();
+  }
+  const QStringList handPoses = AnimExportUi::handPoseNames();
+  if (request.contains("hand_pose"))
+  {
+    const QString name = request.value("hand_pose").toString().trimmed();
+    int found = -1;
+    for (int i = 0; i < handPoses.size(); i++)
+      if (handPoses.at(i).compare(name, Qt::CaseInsensitive) == 0) found = i;
+    if (found < 0) return fail("\"hand_pose\" must be one of: " + handPoses.join(", ") + ".");
+    settings.handPose = found;
+  }
+
+  QString error;
+  const QString file = resolveInWorkFolder(path, false, error);
+  if (file.isEmpty()) return fail(error);
+  if (QFileInfo::exists(file)) return fail("A file with this name already exists: " + QFileInfo(file).fileName() + ". Choose another name.");
+
+  // check_animation first: an error means Second Life refuses the file or loses part of it
+  Animation* animation = m_host->animation();
+  const QJsonObject check = AnimCheck::check(animation);
+  if (!check.value("ok").toBool()) return check;
+  QStringList errors, warnings;
+  for (const QJsonValue& value : check.value("findings").toArray())
+  {
+    const QJsonObject finding = value.toObject();
+    if (finding.value("severity").toString() == "error") errors << finding.value("message").toString();
+    else if (finding.value("severity").toString() == "warning") warnings << finding.value("message").toString();
+  }
+  if (!errors.isEmpty())
+  {
+    QJsonObject answer = fail("Not exported: check_animation found " + QString(errors.size() == 1 ? "an error" : "errors") +
+                              " that Second Life would refuse. " + errors.join(" "));
+    answer["check"] = check;
+    return answer;
+  }
+
+  // the same data and options as File > Export as Second Life .anim
+  BVH bvh;
+  const AnimFile::Animation model = bvh.snapshot(animation, AnimFile::Format::Bvh);
+  const QString problem = AnimExportUi::problemBeforeExport(model);
+  if (!problem.isEmpty()) return fail(QString(problem).replace('\n', ' '));
+  const AnimExport::Options options = AnimExportUi::toOptions(settings, model.frameTime,
+                                                             animation->getLoopInPoint(), animation->getLoopOutPoint());
+  const AnimExport::Result result = AnimExport::write(model, options);
+  if (!result.ok()) return fail("The file was not saved. " + result.error);
+
+  // never replaces a file, even one that appeared since the check above
+  QFile out(file);
+  if (!out.open(QIODevice::WriteOnly | QIODevice::NewOnly))
+    return fail("Could not write " + QFileInfo(file).fileName() + ": " + out.errorString());
+  if (out.write(result.bytes) != result.bytes.size() || !out.flush())
+  {
+    const QString reason = out.errorString();
+    out.close();
+    out.remove();
+    return fail("Could not write " + QFileInfo(file).fileName() + ": " + reason);
+  }
+  out.close();
+
+  // which joints the file holds: the writer leaves out joints that never move
+  QStringList written, leftOut;
+  const AnimImport::Result readBack = AnimImport::parse(result.bytes);
+  if (readBack.ok())
+    for (const AnimImport::Joint& joint : readBack.motion->joints) written << joint.name;
+  for (const AnimFile::Joint& joint : model.joints)
+  {
+    if (joint.kind == AnimFile::JointKind::EndSite) continue;
+    const QString name = AnimExport::slJointName(joint.name);
+    if (!written.contains(name)) leftOut << joint.name;
+  }
+
+  QJsonObject answer = ok();
+  answer["file"] = file;
+  answer["bytes"] = int(result.bytes.size());
+  answer["seconds"] = qRound(AnimExportUi::durationSeconds(model) * 100.0) / 100.0;
+  answer["priority"] = options.basePriority;
+  answer["loop"] = options.loop;
+  if (options.loop)
+  {
+    answer["loop_in"] = animation->getLoopInPoint() + 1;
+    answer["loop_out"] = animation->getLoopOutPoint() + 1;
+  }
+  answer["ease_in"] = options.easeIn;
+  answer["ease_out"] = options.easeOut;
+  answer["hand_pose"] = handPoses.value(options.handPose);
+  answer["joints_written"] = int(written.size());
+  answer["joints_left_out"] = QJsonArray::fromStringList(leftOut);
+  warnings += result.warnings;
+  answer["warnings"] = QJsonArray::fromStringList(warnings);
+  answer["note"] = "Upload this file in Second Life: Build > Upload > Animation (.anim). The animation itself is not changed.";
+  return answer;
 }
 
 QJsonObject ControlApi::setCamera(const QJsonObject& request)
