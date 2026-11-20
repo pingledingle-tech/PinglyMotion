@@ -1,9 +1,8 @@
 Branch: job/assistant-eval
 Status: active
-Pull request: pending
+Pull request: #178
 Files:
 - tests/assistant/**
-- tests/CMakeLists.txt
 - .github/workflows/build.yml
 - docs/DEV.md
 - docs/AI_HELP_PLAN.md
