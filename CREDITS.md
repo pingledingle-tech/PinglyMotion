@@ -34,6 +34,7 @@ Where a licence does not require a credit (CC0, ideas only), we give one anyway.
 |---|---|---|---|
 | CMU Graphics Lab Motion Capture Database, BVH conversion by cgspeed.com (copy in `una-dinosauria/cmu-mocap`) | Test motions in `examples/cmu/` and 28 clips of the reference library in `library/` | CMU places no restrictions on use; no formal licence text. The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. | http://mocap.cs.cmu.edu |
 | Mesh2Motion animations | Eight test motions in `examples/mesh2motion/` and 27 clips of the reference library. Thank you to the Mesh2Motion project | CC0 1.0 (no credit required, given anyway) | https://github.com/Mesh2Motion/mesh2motion-app |
+| Quaternius, Universal Animation Library (standard, free tier), glTF copy in `J-Ponzo/gltf-universal-animation-library` | An optional download source of the reference library: `tools/fetch_reference.py` fetches it on the user's machine and `tools/convert_reference.py` converts its 45 animations to the Second Life skeleton. Nothing of it is stored in the repository. Thank you to Quaternius | CC0 1.0 (no credit required, given anyway) | https://quaternius.com/packs/universalanimationlibrary.html |
 
 Each clip of the reference library carries its own licence and credit line in `library/index.json`.
 

@@ -1,6 +1,6 @@
 name: reference-fetch
 
-# Tests for tools/fetch_reference.py, and a manual job that pins the hashes
+# Tests for tools/fetch_reference.py and tools/convert_reference.py, and a manual job that pins the hashes
 # (the sandboxes of AI sessions cannot download, GitHub runners can).
 on:
   pull_request:
@@ -8,6 +8,9 @@ on:
       - tools/fetch_reference.py
       - tools/reference_manifest.json
       - tests/test_fetch_reference.py
+      - tools/convert_reference.py
+      - tools/cmu_to_sl.py
+      - tests/test_convert_reference.py
       - .github/workflows/reference-fetch.yml
   workflow_dispatch:
   push:
@@ -27,6 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python tests/test_fetch_reference.py
+      - run: python tests/test_convert_reference.py
   compute-hashes:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest

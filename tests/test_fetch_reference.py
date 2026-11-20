@@ -268,15 +268,49 @@ class TestSafety(Base):
             fr.run(m, self.dest, policy=self.policy)
 
 
+class TestCompanion(unittest.TestCase):
+    """A companion file (the .bin of a .gltf) is downloaded and checked, not indexed."""
+
+    def test_companion_downloaded_not_indexed(self):
+        files = {"m/a.gltf": b'{"buffers":[{"uri":"a.bin"}]}', "m/a.bin": b"\1\2\3\4"}
+        Handler.docs = {"/" + k: v for k, v in files.items()}
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            src = {"type": "base_url", "base_url": "http://127.0.0.1:%d/" % srv.server_port,
+                   "name": "Q", "licence": "CC0 1.0", "credit": "c", "dest": "q", "skeleton": "s",
+                   "format": "gltf", "strip": "m/",
+                   "files": [{"path": k, "size": len(v), "sha256": hashlib.sha256(v).hexdigest(),
+                              "companion": k.endswith(".bin")} for k, v in sorted(files.items())]}
+            m = {"version": 1, "sources": {"q": src}}
+            fr.check_manifest(m)
+            with tempfile.TemporaryDirectory() as dest:
+                fr.run(m, dest, policy=fr.Policy(schemes=("http",), hosts={"127.0.0.1"}))
+                self.assertTrue(os.path.isfile(os.path.join(dest, "q", "a.bin")))
+                with open(os.path.join(dest, fr.INDEX_NAME)) as f:
+                    ids = [e["id"] for e in json.load(f)["entries"]]
+                self.assertEqual(ids, ["q/a"])
+            src["files"][0]["companion"] = "yes"
+            with self.assertRaises(fr.FetchError):
+                fr.check_manifest(m)
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+
 class TestRealManifest(unittest.TestCase):
     def test_shipped_manifest_is_valid(self):
         m = fr.load_manifest(fr.DEFAULT_MANIFEST)
         for sid, s in m["sources"].items():
             self.assertEqual(s["type"], "github", sid)
             fr.check_url(fr.source_base_url(s) + "x", fr.Policy())
-        self.assertEqual(sorted(m["sources"]), ["cmu", "mesh2motion"])
+        self.assertEqual(sorted(m["sources"]), ["cmu", "mesh2motion", "quaternius"])
         self.assertGreater(len(m["sources"]["cmu"]["files"]), 2000)
         self.assertGreater(len(m["sources"]["mesh2motion"]["files"]), 200)
+        q = m["sources"]["quaternius"]
+        self.assertEqual(q["licence"], "CC0 1.0 Universal")
+        self.assertEqual([f["path"].rsplit(".", 1)[1] for f in q["files"] if not f.get("companion")], ["gltf"])
+        self.assertEqual([f["path"].rsplit(".", 1)[1] for f in q["files"] if f.get("companion")], ["bin"])
         total = sum(f["size"] for s in m["sources"].values() for f in s["files"] + s["docs"])
         self.assertLess(total, fr.Policy().max_total)
         self.assertTrue(all(f["size"] <= fr.Policy().max_file for s in m["sources"].values() for f in s["files"]))
