@@ -8,7 +8,10 @@
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMouseEvent>
 #include <QPainter>
+#include <QPointer>
+#include <QTimer>
 #include <QToolButton>
 
 #include "paneltitlebar.h"
@@ -109,4 +112,26 @@ void PanelTitleBar::paintEvent(QPaintEvent*)
   QPainter painter(this);
   const QColor window = palette().color(QPalette::Window);
   painter.fillRect(rect(), window.lightness() < 128 ? window.lighter(160) : window.darker(112));
+}
+
+// double click anywhere on the bar itself (not the buttons, which take the
+// event first): the same as clicking the float button (docs/PANELS_PLAN.md,
+// job P6). This is how Qt's own dock title bars work, so it matches what a
+// user who has used other docking windows expects.
+void PanelTitleBar::mouseDoubleClickEvent(QMouseEvent* event)
+{
+  // QDockWidget itself watches mouse presses and releases on its title bar
+  // (even a custom one) to drag it loose; a double click without any actual
+  // drag makes it decide, on the release right after this event, that the
+  // panel was just dropped back where it was and redock it. Doing the float
+  // toggle on the spot would then be undone a moment later. Deferring it to
+  // the next pass through the event loop lets that settle first, so the
+  // toggle sticks: float when it was docked, dock again on the second
+  // double click, whichever side Qt's own redock left it on.
+  if (event->button() == Qt::LeftButton)
+  {
+    QPointer<QDockWidget> dock=m_dock;
+    QTimer::singleShot(0,this,[dock]() { if (dock) dock->setFloating(!dock->isFloating()); });
+  }
+  QWidget::mouseDoubleClickEvent(event);
 }
