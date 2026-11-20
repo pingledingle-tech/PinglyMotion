@@ -1,0 +1,4 @@
+{ "format": "pinglymotion-jointmap", "version": 1,
+  "mapping": [ { "source": "LeftOddBone", "target": "lForeArm" },
+               { "source": "Pelvis", "target": "avatar_mPelvis" },
+               { "source": "Spine3", "target": null } ] }

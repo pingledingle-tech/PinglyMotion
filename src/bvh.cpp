@@ -138,6 +138,7 @@ BVHNode* BVH::copySkeletonNode(BVHNode* reference,BVHNode* loaded)
         node->addKeyframe(keys[k],data.position(),data.rotation());
         node->setEaseIn(keys[k],data.easeIn());
         node->setEaseOut(keys[k],data.easeOut());
+        node->setCurve(keys[k],data.curve());
       }
     }
     // joints the file does not have get a neutral key frame at the start
@@ -325,6 +326,7 @@ BVHNode* BVH::finishRead(BVHNode* root,const QString& limFile)
       lastLoadedPositionNode->addKeyframe(frameNum, frameData.position(), QVector3D());
       lastLoadedPositionNode->setEaseIn(frameNum,frameData.easeIn());
       lastLoadedPositionNode->setEaseOut(frameNum,frameData.easeOut());
+      lastLoadedPositionNode->setCurve(frameNum,frameData.curve());
     }
   }
 
@@ -389,6 +391,7 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
     {
       if(key.easeIn) node->setEaseIn(key.frame,true);
       if(key.easeOut) node->setEaseOut(key.frame,true);
+      if(key.curve) node->setCurve(key.frame,key.curve);
     }
   }
 
@@ -408,6 +411,7 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
       if(!lastLoadedPositionNode->isKeyframe(key.frame)) continue;
       if(key.easeIn) lastLoadedPositionNode->setEaseIn(key.frame,true);
       if(key.easeOut) lastLoadedPositionNode->setEaseOut(key.frame,true);
+      if(key.curve) lastLoadedPositionNode->setCurve(key.frame,key.curve);
     }
   }
 
@@ -454,6 +458,8 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
   }
 
   AnimFile::Animation anim;
+  int dingleIgnoredKeys=0;
+  bool dingleNewerVersion=false;
   if(dingle)
   {
     // a parsed .dingle is an AVM-style animation (keys, position keys, loop)
@@ -463,6 +469,8 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
       failed(result.error.isEmpty() ? QObject::tr("The file could not be read.") : result.error);
       return NULL;
     }
+    dingleIgnoredKeys=result.ignoredKeys;
+    dingleNewerVersion=result.newerVersion;
     anim=std::move(*result.animation);
   }
   else
@@ -481,6 +489,8 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
 
   lastLoadedNumberOfFrames=anim.frames;
   lastLoadedFrameTime=anim.frameTime;
+  lastLoadedIgnoredKeys=dingleIgnoredKeys;
+  lastLoadedNewerVersion=dingleNewerVersion;
   if(anim.format==AnimFile::Format::Avm)
   {
     havePositionKeys=anim.hasPositionKeys;
@@ -698,6 +708,7 @@ namespace
       key.frame=list[i];
       key.easeIn=node->keyframeDataByIndex(i).easeIn();
       key.easeOut=node->keyframeDataByIndex(i).easeOut();
+      key.curve=node->keyframeDataByIndex(i).curve();
       keys.append(key);
     }
     return keys;
@@ -762,9 +773,9 @@ bool BVH::bvhWrite(Animation* anim,const QString& file,QString& error)
   return saveBytes(file,AnimFile::write(snapshot(anim,AnimFile::Format::Bvh)),error);
 }
 
-bool BVH::avmWrite(Animation* anim,const QString& file,QString& error)
+bool BVH::dingleWrite(Animation* anim,const QString& file,QString& error)
 {
-  return saveBytes(file,AnimFile::write(snapshot(anim,AnimFile::Format::Avm)),error);
+  return saveBytes(file,Dingle::write(snapshot(anim,AnimFile::Format::Avm)),error);
 }
 
 bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
@@ -772,9 +783,14 @@ bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
   // rudimentary file type identification from filename
   if(file.endsWith(".bvh",Qt::CaseInsensitive))
     return bvhWrite(anim,file,error);
+  if(file.endsWith(".dingle",Qt::CaseInsensitive))
+    return dingleWrite(anim,file,error);
   if(file.endsWith(".avm",Qt::CaseInsensitive))
-    return avmWrite(anim,file,error);
-  error=QObject::tr("The file name must end in .bvh or .avm.");
+  {
+    error=QObject::tr("Old .avm files are not saved any more. Save as .dingle instead.");
+    return false;
+  }
+  error=QObject::tr("The file name must end in .dingle or .bvh.");
   return false;
 }
 

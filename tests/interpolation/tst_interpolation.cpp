@@ -1,6 +1,9 @@
 // Playback through the easing module gives exactly the old results (issue #53 step 2).
 //
 // BVHNode::interpolate now hands the two ease switches to Easing::segmentValue.
+// Since issue #53 proposal 4 the "Overshoot, then settle" choice is cut at the
+// joint's loaded limits in BVHNode::frameData; the tests at the end check that,
+// and that nothing else is touched by the limits.
 // This test keeps a verbatim copy of the function as it was before that change
 // and compares the old and the new path BIT FOR BIT (no tolerance): every
 // segment length 1..200, every frame of each segment, all four switch
@@ -12,6 +15,7 @@
 // returns, so identical frameData means files play and save identically.
 #include <QtTest>
 #include <QRandomGenerator>
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <math.h>
@@ -72,7 +76,10 @@ private slots:
   void interpolateBitExact();
   void frameDataBitExact();
   void presetPathMatchesSwitches();
+  void storedChoiceWinsOverSwitches();
   void workedExample();
+  void overshootStaysInsideLimits();
+  void limitsLeaveOtherChoicesAlone();
 };
 
 void TstInterpolation::interpolateBitExact()
@@ -194,14 +201,75 @@ void TstInterpolation::presetPathMatchesSwitches()
         QVERIFY(sameBits(Easing::segmentValue(preset,-12.5,77.25,steps,pos),
                          oldInterpolate(-12.5,77.25,steps,pos,easeOut,easeIn)));
   }
-  // the two new choices cannot be stored yet; they count as the default
-  for(int pos=0;pos<=10;pos++)
+  // the two new choices (stored as a .dingle "curve" since issue #53 step 3)
+  // follow the speed curve s() of the easing module
+  for(int steps=1;steps<=50;steps++)
+    for(int pos=0;pos<=steps;pos++)
+    {
+      const double t=static_cast<double>(pos)/steps;
+      const double overshoot=Easing::segmentValue(Easing::Preset::OvershootThenSettle,-12.5,77.25,steps,pos);
+      QVERIFY(std::fabs(overshoot-Easing::blend(-12.5,77.25,Easing::s(Easing::Preset::OvershootThenSettle,t)))<1e-9);
+      const double hold=Easing::segmentValue(Easing::Preset::HoldThenSnap,-12.5,77.25,steps,pos);
+      QCOMPARE(hold,pos<steps ? -12.5 : 77.25);
+    }
+  // both end exactly on the target key and start exactly on the start key
+  QCOMPARE(Easing::segmentValue(Easing::Preset::OvershootThenSettle,3,90,7,7),90.0);
+  QCOMPARE(Easing::segmentValue(Easing::Preset::OvershootThenSettle,3,90,7,0),3.0);
+  // overshoot goes past the target, at most 8 % of the change
+  double peak=0;
+  for(int pos=0;pos<=100;pos++) peak=std::max(peak,Easing::segmentValue(Easing::Preset::OvershootThenSettle,0,100,100,pos));
+  QVERIFY(peak>100.0);
+  QVERIFY(peak<=100.0*Easing::overshootPeak()+1e-9);
+}
+
+void TstInterpolation::storedChoiceWinsOverSwitches()
+{
+  // a joint with three keys: 0 -> 90 over frames 0..10, then 90 -> 0 over 10..20
+  Node node;
+  node.addKeyframe(0,QVector3D(0,0,0),QVector3D(0,0,0));
+  node.addKeyframe(10,QVector3D(10,0,0),QVector3D(90,0,0));
+  node.addKeyframe(20,QVector3D(0,0,0),QVector3D(0,0,0));
+  node.setEaseOut(0,true);
+  node.setEaseIn(10,true);
+  node.setEaseOut(10,true);
+  node.setEaseIn(20,true);
+  QVERIFY(!node.curve(0));
+  // no stored choice: the switches give Slow both ends
+  QCOMPARE(node.frameData(2).rotation().x(),static_cast<float>(oldInterpolate(0,90,10,2,true,true)));
+
+  // the choice on the start key wins for its segment only
+  node.setCurve(0,Easing::Preset::HoldThenSnap);
+  QCOMPARE(node.curve(0),std::optional<Easing::Preset>(Easing::Preset::HoldThenSnap));
+  for(int f=0;f<10;f++)
   {
-    QVERIFY(sameBits(Easing::segmentValue(Easing::Preset::OvershootThenSettle,0,90,10,pos),
-                     Easing::segmentValue(Easing::defaultPreset(),0,90,10,pos)));
-    QVERIFY(sameBits(Easing::segmentValue(Easing::Preset::HoldThenSnap,0,90,10,pos),
-                     Easing::segmentValue(Easing::defaultPreset(),0,90,10,pos)));
+    QCOMPARE(node.frameData(f).rotation().x(),0.0f);
+    QCOMPARE(node.frameData(f).position().x(),0.0f);
   }
+  QCOMPARE(node.frameData(10).rotation().x(),90.0f);
+  QCOMPARE(node.frameData(12).rotation().x(),static_cast<float>(oldInterpolate(90,0,10,2,true,true)));
+
+  node.setCurve(10,Easing::Preset::OvershootThenSettle);
+  bool past=false;
+  for(int f=11;f<20;f++)
+  {
+    const float v=node.frameData(f).rotation().x();
+    QCOMPARE(v,static_cast<float>(Easing::blend(90,0,Easing::s(Easing::Preset::OvershootThenSettle,(f-10)/10.0))));
+    if(v<0) past=true;
+  }
+  QVERIFY(past);
+  QCOMPARE(node.frameData(20).rotation().x(),0.0f);
+
+  // Even stored on a key with both switches set gives a straight line
+  node.setCurve(0,Easing::Preset::Even);
+  QCOMPARE(node.frameData(3).rotation().x(),27.0f);
+
+  // the choice moves with the key frame data; a non-key frame has none
+  QVERIFY(!node.curve(5));
+  node.setCurve(5,Easing::Preset::HoldThenSnap);
+  QVERIFY(!node.curve(5));
+  QCOMPARE(node.frameData(10).curve(),std::optional<Easing::Preset>(Easing::Preset::OvershootThenSettle));
+  node.setCurve(10,std::nullopt);
+  QVERIFY(!node.curve(10));
 }
 
 void TstInterpolation::workedExample()
@@ -214,6 +282,154 @@ void TstInterpolation::workedExample()
   QCOMPARE(QString::number(node.callInterpolate(0,90,10,8,true,true),'f',2),QString("81.40"));
   QCOMPARE(QString::number(node.callInterpolate(0,90,10,8,true,false),'f',2),QString("72.00"));
   QCOMPARE(QString::number(node.callInterpolate(0,90,10,2,false,true),'f',2),QString("18.00"));
+}
+
+namespace
+{
+  // a joint with three rotation channels and limits like SL.lim: X -135..90,
+  // Y -180..98, Z free (the -10000..10000 of a channel without limits)
+  void limitedJoint(BVHNode& node)
+  {
+    node.numChannels=3;
+    node.channelType[0]=BVH_ZROT; node.channelMin[0]=-10000; node.channelMax[0]=10000;
+    node.channelType[1]=BVH_XROT; node.channelMin[1]=-135;   node.channelMax[1]=90;
+    node.channelType[2]=BVH_YROT; node.channelMin[2]=-180;   node.channelMax[2]=98;
+  }
+
+  float unclamped(Easing::Preset preset,float from,float to,int steps,int pos)
+  {
+    return static_cast<float>(Easing::segmentValue(preset,from,to,steps,pos));
+  }
+}
+
+void TstInterpolation::overshootStaysInsideLimits()
+{
+  // 0 -> (90, 50, 90) over frames 0..10 with Overshoot then settle: X ends
+  // exactly on its limit, Y stays well inside, Z has no limits
+  Node node;
+  limitedJoint(node);
+  node.addKeyframe(0,QVector3D(0,0,0),QVector3D(0,0,0));
+  node.addKeyframe(10,QVector3D(10,20,30),QVector3D(90,50,90));
+  node.setCurve(0,Easing::Preset::OvershootThenSettle);
+  bool cut=false,zPast=false;
+  for(int f=0;f<=10;f++)
+  {
+    const FrameData got=node.frameData(f);
+    const QVector3D r=got.rotation();
+    QVERIFY2(r.x()<=90.0f && r.x()>=0.0f,qPrintable(QString("frame %1 x %2").arg(f).arg(r.x())));
+    const float rawX=unclamped(Easing::Preset::OvershootThenSettle,0,90,10,f);
+    if(rawX>90.0f) { QCOMPARE(r.x(),90.0f); cut=true; }
+    else QVERIFY(sameBits(r.x(),rawX));
+    // well inside the range: the plain overshoot (peak 54, limit 98)
+    QVERIFY(sameBits(r.y(),unclamped(Easing::Preset::OvershootThenSettle,0,50,10,f)));
+    // no limits loaded on Z: the overshoot passes 90
+    QVERIFY(sameBits(r.z(),unclamped(Easing::Preset::OvershootThenSettle,0,90,10,f)));
+    if(r.z()>90.0f) zPast=true;
+    // positions are never clamped
+    QVERIFY(sameBits(got.position().x(),unclamped(Easing::Preset::OvershootThenSettle,0,10,10,f)));
+    QVERIFY(sameBits(got.position().y(),unclamped(Easing::Preset::OvershootThenSettle,0,20,10,f)));
+    QVERIFY(sameBits(got.position().z(),unclamped(Easing::Preset::OvershootThenSettle,0,30,10,f)));
+  }
+  QVERIFY(cut);
+  QVERIFY(zPast);
+  QCOMPARE(node.frameData(10).rotation(),QVector3D(90,50,90));
+
+  // the way back, 90 -> 0, dips 7.2 degrees below 0: inside -135, so unchanged
+  node.addKeyframe(20,QVector3D(0,0,0),QVector3D(0,0,0));
+  node.setCurve(10,Easing::Preset::OvershootThenSettle);
+  bool below=false;
+  for(int f=10;f<=20;f++)
+  {
+    const float x=node.frameData(f).rotation().x();
+    QVERIFY(sameBits(x,unclamped(Easing::Preset::OvershootThenSettle,90,0,10,f-10)));
+    if(x<0.0f) below=true;
+  }
+  QVERIFY(below);
+
+  // a segment ending exactly on the minimum is cut there
+  node.addKeyframe(30,QVector3D(0,0,0),QVector3D(-135,0,0));
+  node.setCurve(20,Easing::Preset::OvershootThenSettle);
+  cut=false;
+  for(int f=20;f<=30;f++)
+  {
+    const float x=node.frameData(f).rotation().x();
+    QVERIFY2(x>=-135.0f && x<=0.0f,qPrintable(QString("frame %1 x %2").arg(f).arg(x)));
+    if(unclamped(Easing::Preset::OvershootThenSettle,0,-135,10,f-20)<-135.0f) { QCOMPARE(x,-135.0f); cut=true; }
+  }
+  QVERIFY(cut);
+
+  // a key already past its limit (limits off in the settings, or an old file):
+  // the cut is never tighter than the keys, so the segment ends on the key
+  node.addKeyframe(40,QVector3D(0,0,0),QVector3D(100,0,0));
+  node.setCurve(30,Easing::Preset::OvershootThenSettle);
+  cut=false;
+  for(int f=30;f<=40;f++)
+  {
+    const float x=node.frameData(f).rotation().x();
+    QVERIFY2(x>=-135.0f && x<=100.0f,qPrintable(QString("frame %1 x %2").arg(f).arg(x)));
+    if(unclamped(Easing::Preset::OvershootThenSettle,-135,100,10,f-30)>100.0f) { QCOMPARE(x,100.0f); cut=true; }
+  }
+  QVERIFY(cut);
+  QCOMPARE(node.frameData(40).rotation().x(),100.0f);
+
+  // a joint without loaded limits (the defaults) is never cut, however big the values
+  Node free;
+  free.numChannels=3;
+  free.channelType[0]=BVH_XROT; free.channelType[1]=BVH_YROT; free.channelType[2]=BVH_ZROT;
+  free.addKeyframe(0,QVector3D(),QVector3D(0,0,0));
+  free.addKeyframe(10,QVector3D(),QVector3D(12345.678f,-12345.678f,0));
+  free.setCurve(0,Easing::Preset::OvershootThenSettle);
+  bool huge=false;
+  for(int f=0;f<=10;f++)
+  {
+    const QVector3D r=free.frameData(f).rotation();
+    QVERIFY(sameBits(r.x(),unclamped(Easing::Preset::OvershootThenSettle,0,12345.678f,10,f)));
+    QVERIFY(sameBits(r.y(),unclamped(Easing::Preset::OvershootThenSettle,0,-12345.678f,10,f)));
+    if(r.x()>10000.0f) huge=true;
+  }
+  QVERIFY(huge);
+
+  // a joint with the limits but without a rotation channel for that axis (a
+  // position-only node, numChannels 0) is left alone too
+  Node none;
+  none.channelMin[0]=-1; none.channelMax[0]=1;
+  none.addKeyframe(0,QVector3D(),QVector3D(0,0,0));
+  none.addKeyframe(10,QVector3D(),QVector3D(90,90,90));
+  none.setCurve(0,Easing::Preset::OvershootThenSettle);
+  for(int f=0;f<=10;f++)
+    QVERIFY(sameBits(none.frameData(f).rotation().x(),unclamped(Easing::Preset::OvershootThenSettle,0,90,10,f)));
+}
+
+void TstInterpolation::limitsLeaveOtherChoicesAlone()
+{
+  // the five other choices, with limits loaded and keys far outside them,
+  // give bit for bit what the easing module gives
+  const Easing::Preset others[5]={Easing::Preset::Even,Easing::Preset::SlowStart,Easing::Preset::SlowFinish,
+                                  Easing::Preset::SlowBothEnds,Easing::Preset::HoldThenSnap};
+  for(const Easing::Preset preset : others)
+  {
+    Node node;
+    limitedJoint(node);
+    node.addKeyframe(0,QVector3D(0,0,0),QVector3D(-500,-500,-500));
+    node.addKeyframe(10,QVector3D(10,20,30),QVector3D(500,500,500));
+    node.setCurve(0,preset);
+    for(int f=0;f<=10;f++)
+    {
+      const QVector3D r=node.frameData(f).rotation();
+      for(int c=0;c<3;c++)
+        QVERIFY2(sameBits(r[c],unclamped(preset,-500,500,10,f)),
+                 qPrintable(QString("choice %1 frame %2 channel %3").arg(int(preset)).arg(f).arg(c)));
+    }
+  }
+  // and the switches alone (no stored choice) with limits loaded: the old formula, unchanged
+  Node node;
+  limitedJoint(node);
+  node.addKeyframe(0,QVector3D(0,0,0),QVector3D(-500,0,0));
+  node.addKeyframe(10,QVector3D(0,0,0),QVector3D(500,0,0));
+  node.setEaseOut(0,true);
+  node.setEaseIn(10,true);
+  for(int f=0;f<=10;f++)
+    QVERIFY(sameBits(node.frameData(f).rotation().x(),static_cast<float>(oldInterpolate(-500,500,10,f,true,true))));
 }
 
 QTEST_GUILESS_MAIN(TstInterpolation)

@@ -670,10 +670,14 @@ void Animation::addKeyFrameAllJoints()
 
 void Animation::addKeyFrame(BVHNode* joint)
 {
+  // a key frame that is set again keeps its stored easing choice (issue #53):
+  // opening a file sets frame 0 of every joint again
+  const std::optional<Easing::Preset> curve=joint->curve(frame);
   joint->addKeyframe(frame,getPosition(),getRotation(joint));
 
   setEaseIn(joint,frame,UserSettings::easeIn());
   setEaseOut(joint,frame,UserSettings::easeOut());
+  joint->setCurve(frame,curve);
 
   setDirty(true);
 
@@ -903,6 +907,7 @@ void Animation::moveKeyFrame(int jointNumber,int from,int to,bool copy)
   // target position has no keyframe yet
   joint->setEaseIn(to,frameData.easeIn());
   joint->setEaseOut(to,frameData.easeOut());
+  joint->setCurve(to,frameData.curve());
   // now re-enable signals so we get updates on screen
   blockSignals(false);
 

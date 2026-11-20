@@ -7,7 +7,7 @@ A **key** is a saved pose at one moment. The program fills in the movement betwe
 ## 1. Start
 
 1. Choose **File > New**. A figure appears.
-2. Or choose **File > Open**. Pick a file in the `examples` folder.
+2. Or choose **File > Open**. The dialog starts in the `examples` folder next to the program. Pick a `.dingle` or `.bvh` file there.
 
 The figure holds one pose, a T-pose. It has 30 frames. A frame is one step in time.
 
@@ -47,11 +47,32 @@ The arm now moves between your keys. To change the feel, click a key's joint. Th
 
 ## 7. Save
 
-1. Choose **File > Save As**.
-2. Pick a name. Pick the `.avm` type to keep all your work.
-3. Choose **File > Export For Second Life**. This makes a `.bvh` file beside it.
+1. Choose **File > Save As...**.
+2. Pick a name. The file ends in `.dingle`. This is the working format. It keeps all your work.
+3. Choose **File > Export as Second Life .anim...** to make a file for Second Life.
+4. A small box opens. Set what you want, then click **Choose file...**:
+   - **Priority (0 to 6):** when two animations move the same joint, the higher number wins.
+   - **Slow start:** how long the animation takes to fade in.
+   - **Slow finish:** how long it takes to fade out.
+   - **Play again and again:** tick it to use the loop points of the animation.
+   - **Hands:** how the fingers look while it plays.
+5. Pick a name. The file ends in `.anim`.
+
+**File > Export For Second Life** still makes a `.bvh` file instead.
 
 Upload to Second Life is still being tested. Do not rely on it yet.
+
+## 8. Bring in other files
+
+All of these are in the **File** menu. Each one opens the result as an untitled animation. Save it with **File > Save As...** to keep it. Your original file is not changed.
+
+- **Import Second Life .anim...** opens an `.anim` file. If something could not be brought in, a list under **What could not be imported:** tells you what.
+- **Import a BVH from another skeleton...** is for a `.bvh` file made for a different skeleton. A box shows a list. The program matched each joint in your file to a joint on the avatar. **Matched** means it will move. **Left out** means it has no partner on the avatar. Tick **My file starts in a T-pose or A-pose** if the first frame is a standing pose with the arms out. Then click **Open the animation**.
+- **Import glTF animation...** opens a `.glb` or `.gltf` file. If the file holds more than one animation or skeleton, pick the ones you want in the box.
+
+## About and credits
+
+Choose **Help > About...** to see who made the avatar bodies and under which licence.
 
 ## If something goes wrong
 
@@ -61,3 +82,8 @@ Upload to Second Life is still being tested. Do not rely on it yet.
 - **The view is lost.** Press **Esc** to reset the camera.
 - **You cannot see the face balls.** Click the head. They only show then.
 - **Nothing moves when you play.** Set a second key at another frame.
+- **An imported file does not move right.** Open the list in the import box. Joints marked **Left out** were not brought in.
+
+## The same by remote control
+
+An AI client can do the steps above for you, with the commands `new_animation`, `open_file` and `save_file`. They only work in the `PinglyMotion` folder in your Documents folder. See [CONTROL.md](CONTROL.md).

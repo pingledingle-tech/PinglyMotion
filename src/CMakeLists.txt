@@ -1,7 +1,10 @@
 # Sources
-SET (PINGLYMOTION_SRC aboutdialog.cpp
+SET (PINGLYMOTION_SRC aboutcredits.cpp
+              aboutdialog.cpp
               animexport.cpp
               animexportdialog.cpp
+              animimport.cpp
+              animimportconvert.cpp
               animation.cpp
               animationmanager.cpp
               animationview.cpp
@@ -14,15 +17,20 @@ SET (PINGLYMOTION_SRC aboutdialog.cpp
               constants.cpp
               controlapi.cpp
               dingle.cpp
+              dinglesave.cpp
               controlindicator.cpp
               controlserver.cpp
               floor.cpp
+              gltfimport.cpp
+              gltfimportdialog.cpp
               iktree.cpp
               pmmesh.cpp
               jointgroups.cpp
               jointinfo.cpp
               jointlist.cpp
               propfile.cpp
+              retarget.cpp
+              retargetdialog.cpp
               main.cpp
               mesh.cpp
               meshmodel.cpp

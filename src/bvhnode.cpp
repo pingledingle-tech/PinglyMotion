@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <algorithm>
 #include <math.h>
 
 #include "bvhnode.h"
@@ -222,6 +223,39 @@ double BVHNode::interpolate(double from,double to,int steps,int pos,bool easeOut
   return Easing::segmentValue(Easing::presetFromSwitches(easeOut,easeIn),from,to,steps,pos);
 }
 
+double BVHNode::interpolate(double from,double to,int steps,int pos,Easing::Preset preset) const
+{
+  return Easing::segmentValue(preset,from,to,steps,pos);
+}
+
+QVector3D BVHNode::clampOvershoot(const QVector3D& rotation,const QVector3D& from,const QVector3D& to) const
+{
+  // the three rotation angles in the order of QVector3D: x, y, z
+  const BVHChannelType axes[3]={BVH_XROT,BVH_YROT,BVH_ZROT};
+  QVector3D result=rotation;
+  for(int axis=0;axis<3;axis++)
+  {
+    for(int i=0;i<numChannels && i<6;i++)
+    {
+      if(channelType[i]!=axes[axis]) continue;
+      double low=channelMin[i];
+      double high=channelMax[i];
+      // no limits loaded for this channel (BVHNode() and the readers set
+      // -10000..10000, and SL.lim writes the same for a free joint)
+      if(low<=-10000.0 && high>=10000.0) break;
+      if(low>high) std::swap(low,high);
+      // never tighter than the keys themselves
+      low=std::min(low,std::min(static_cast<double>(from[axis]),static_cast<double>(to[axis])));
+      high=std::max(high,std::max(static_cast<double>(from[axis]),static_cast<double>(to[axis])));
+      const double value=result[axis];
+      if(value<low) result[axis]=static_cast<float>(low);
+      else if(value>high) result[axis]=static_cast<float>(high);
+      break;
+    }
+  }
+  return result;
+}
+
 const FrameData BVHNode::frameData(int frame) const
 {
   // return empty frame data on end site nodes
@@ -248,13 +282,22 @@ const FrameData BVHNode::frameData(int frame) const
   QVector3D iRotation;
   QVector3D iPosition;
 
-  iRotation.setX(interpolate(rotationBefore.x(), rotationAfter.x(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iRotation.setY(interpolate(rotationBefore.y(), rotationAfter.y(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iRotation.setZ(interpolate(rotationBefore.z(), rotationAfter.z(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
+  // a choice stored on the start key wins, otherwise the two ease switches (issue #53)
+  const Easing::Preset preset=Easing::segmentPreset(before.curve(),before.easeOut(),after.easeIn());
 
-  iPosition.setX(interpolate(positionBefore.x(), positionAfter.x(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iPosition.setY(interpolate(positionBefore.y(), positionAfter.y(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
-  iPosition.setZ(interpolate(positionBefore.z(), positionAfter.z(), frameAfter - frameBefore, frame - frameBefore, before.easeOut(), after.easeIn()));
+  iRotation.setX(interpolate(rotationBefore.x(), rotationAfter.x(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iRotation.setY(interpolate(rotationBefore.y(), rotationAfter.y(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iRotation.setZ(interpolate(rotationBefore.z(), rotationAfter.z(), frameAfter - frameBefore, frame - frameBefore, preset));
+
+  // the overshoot may pass the target key; the joint's limits stop it there
+  // (issue #53 proposal 4). The other choices never leave the span between
+  // the keys, so they are not touched. Positions are never clamped.
+  if(preset==Easing::Preset::OvershootThenSettle)
+    iRotation=clampOvershoot(iRotation,rotationBefore,rotationAfter);
+
+  iPosition.setX(interpolate(positionBefore.x(), positionAfter.x(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iPosition.setY(interpolate(positionBefore.y(), positionAfter.y(), frameAfter - frameBefore, frame - frameBefore, preset));
+  iPosition.setZ(interpolate(positionBefore.z(), positionAfter.z(), frameAfter - frameBefore, frame - frameBefore, preset));
 
 // qDebug(QString("iRot.x %1 frame %2: %3").arg(rotBefore.bodyPart).arg(before.frameNumber()).arg(iRot.x));
 
@@ -395,6 +438,19 @@ bool BVHNode::easeOut(int frame)
 
   qDebug("BVHNode::easeOut(): asked on non-keyframe!");
   return false;
+}
+
+void BVHNode::setCurve(int frame,const std::optional<Easing::Preset>& curve)
+{
+  if(keyframes.contains(frame))
+    (*keyframes.find(frame)).setCurve(curve);
+}
+
+std::optional<Easing::Preset> BVHNode::curve(int frame) const
+{
+  if(keyframes.contains(frame))
+    return keyframes[frame].curve();
+  return std::nullopt;
 }
 
 bool BVHNode::compareFrames(int key1,int key2) const
@@ -615,6 +671,16 @@ void FrameData::setEaseIn(bool state)
 void FrameData::setEaseOut(bool state)
 {
   m_easeOut=state;
+}
+
+std::optional<Easing::Preset> FrameData::curve() const
+{
+  return m_curve;
+}
+
+void FrameData::setCurve(const std::optional<Easing::Preset>& curve)
+{
+  m_curve=curve;
 }
 
 bool FrameData::easeIn() const

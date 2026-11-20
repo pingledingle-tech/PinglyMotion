@@ -8,6 +8,7 @@ SET (CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
               ${CMAKE_SOURCE_DIR}/src/bvhnode.cpp
               ${CMAKE_SOURCE_DIR}/src/constants.cpp
               ${CMAKE_SOURCE_DIR}/src/dingle.cpp
+              ${CMAKE_SOURCE_DIR}/src/dinglesave.cpp
               ${CMAKE_SOURCE_DIR}/src/iktree.cpp
               ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp
               ${CMAKE_SOURCE_DIR}/src/pmmesh.cpp
@@ -112,3 +113,4 @@ ADD_SUBDIRECTORY (animexport)
 
 # the .anim reader (#22), not used by the program yet
 ADD_SUBDIRECTORY (animimport)
+ADD_SUBDIRECTORY (aboutdialog)

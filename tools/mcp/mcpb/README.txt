@@ -2,8 +2,8 @@ PinglyMotion for Claude (extension)
 
 This lets Claude pose, play, look at and save animations in PinglyMotion.
 
-1. Python 3.8 or newer must be installed (https://www.python.org; on Windows tick
-   "Add python.exe to PATH" in the installer).
+1. Nothing else has to be installed: the Claude app brings the Node it needs.
+   (Not yet tried in Claude Desktop by the project owner.)
 2. Start PinglyMotion and turn on Options > Allow remote control. It is off at every start.
 3. Ask Claude, for example: "Raise the avatar's right arm and show me a picture."
 

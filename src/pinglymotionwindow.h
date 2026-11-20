@@ -26,8 +26,10 @@
 #define PINGLYMOTIONWINDOW_H
 
 #include <QMainWindow>
+#include <QMap>
 #include <QTimer>
 
+#include "animfile.h"
 #include "playstate.h"
 #include "prop.h"
 #include "updatechecker.h"
@@ -114,6 +116,9 @@ class PinglyMotionWindow : public QMainWindow
     void on_fileSaveAsAction_triggered();
     void on_fileExportForSecondLifeAction_triggered();
     void on_fileExportAnimAction_triggered();
+    void on_fileImportAnimAction_triggered();
+    void on_fileImportBvhAction_triggered();
+    void on_fileImportGltfAction_triggered();
     void on_fileLoadPropsAction_triggered();
     void on_fileSavePropsAction_triggered();
     void on_fileExitAction_triggered();
@@ -198,8 +203,19 @@ class PinglyMotionWindow : public QMainWindow
     void addAnimationFile(const QString& fileName);
     bool fileSave();
     bool fileSaveAs();
+    // after a save to newFile: when the animation came from an old .avm file with the same name,
+    // checks the new file and moves the old one to the recycle bin
+    void replaceOldAvm(const QString& avmFile,const QString& newFile);
     void fileExportForSecondLife();
     void fileExportAnim();
+    void fileImportAnim();
+    void fileImportBvh();
+    void fileImportGltf();
+    // the Second Life skeleton of the program (frame 0 is the rest pose), for imports
+    bool loadSkeleton(AnimFile::Animation& skeleton,const QString& title);
+    // opens an animation that was made from another file (an import) as a new, unsaved animation.
+    // loopIn and loopOut are in the window's frame numbers; -1 keeps the defaults.
+    bool openConvertedAnimation(const AnimFile::Animation& anim,const QString& name,int loopIn,int loopOut,const QString& title);
     void fileLoadProps();
     void fileSaveProps();
     void fileExit();
@@ -362,8 +378,9 @@ class PinglyMotionWindow : public QMainWindow
     QSharedPointer<Mesh> torusMesh;
 
     const QString m_animFilter;
-    const QString m_bvhFilter;
-    const QString m_avmFilter;
+    const QString m_dingleFilter;
+    // opened .avm files: the .dingle name the animation will be saved under -> the old .avm file
+    QMap<QString,QString> m_avmOrigin;
     const QString m_propFilter;
     const QString m_untitledName;
     // why the last file could not be opened

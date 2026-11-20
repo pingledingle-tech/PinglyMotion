@@ -31,8 +31,10 @@
 #include <QCloseEvent>
 #include <QDir>
 #include <QFileDialog>
+#include "startfolder.h"
 #include <QMessageBox>
 #include <QSaveFile>
+#include <QTemporaryDir>
 #include <QScopedPointer>
 #include <QSignalBlocker>
 #include <QSharedPointer>
@@ -50,8 +52,14 @@
 
 #include "aboutdialog.h"
 #include "animexportdialog.h"
+#include "animimportconvert.h"
+#include "dinglesave.h"
+#include "gltfimport.h"
+#include "gltfimportdialog.h"
+#include "retargetdialog.h"
 #include "animationview.h"
 #include "bvh.h"
+#include "dingle.h"
 #include "propfile.h"
 #include "constants.h"
 #include "controlapi.h"
@@ -72,6 +80,7 @@
 #include "usersettings.h"
 #include "usersettingsdialog.h"
 
+#include "panelvisibility.h"
 #include "pinglymotionwindow.h"
 #include "theme.h"
 #include "ui_pinglymotionwindow.h"
@@ -131,7 +140,7 @@ class WindowControlHost : public ControlHost
     {
       discardChanges();
       w->fileOpen(path);
-      if (!animation() || w->currentFile != path)
+      if (!animation() || (w->currentFile != path && w->m_avmOrigin.value(w->currentFile) != path))
       {
         error = "The file could not be opened.";
         if (!w->m_lastOpenError.isEmpty()) error += " " + w->m_lastOpenError;
@@ -226,10 +235,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
   coneMesh(new Mesh(QString(), Mesh::Shape::CONE)),      // built in code, no file
   torusMesh(new Mesh(Constants::torusMeshFilePath(), Mesh::Shape::TORUS)),
   m_animFilter("Animation Files (*.dingle *.avm *.bvh)"),
-  m_bvhFilter(QObject::tr("Second Life animation (*.bvh)")),
-  m_avmFilter(QObject::tr("PinglyMotion animation (*.avm)")),
+  m_dingleFilter(QObject::tr("PinglyMotion animation (*.dingle)")),
   m_propFilter("Props (*.prp)"),
-  m_untitledName("Untitled.avm"),
+  m_untitledName(DingleSave::defaultName()),
   m_precision(100),
   m_controlAction(nullptr),
   m_controlIndicator(nullptr)
@@ -243,7 +251,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   buildJointPicker();
   buildDocks();
 
-  setWindowTitle("PinglyMotion");
+  // the build label shows from the first moment, not only after the first file
+  setWindowTitle(Constants::windowTitle(m_untitledName));
   setAttribute(Qt::WA_DeleteOnClose);
   frameDataValid=false;
   currentPart=0;
@@ -274,7 +283,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   ui->optionsLoopAction->setChecked(UserSettings::loop());
   ui->optionsSkeletonAction->setChecked(UserSettings::skeleton());
   ui->optionsJointLimitsAction->setChecked(UserSettings::jointLimits());
-  ui->optionsShowTimelineAction->setChecked(UserSettings::showTimelinePanel());
 
   // Options > Dark theme
   QAction* darkThemeAction=new QAction(tr("Dark theme"),this);
@@ -383,8 +391,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
   connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
 
-  if(!UserSettings::showTimelinePanel()) m_timelineDock->hide();
-
   // panel layout from last time (size, place, floating panels)
   m_defaultWindowState=saveState();
   if(!UserSettings::windowState().isEmpty()) restoreState(UserSettings::windowState());
@@ -393,6 +399,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
     addDockWidget(Qt::RightDockWidgetArea,m_propertiesDock);
   if(!m_timelineDock->isFloating() && !(dockWidgetArea(m_timelineDock) & m_timelineDock->allowedAreas()))
     addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
+  // the timeline stands visible at every start; hiding it lasts for this session only
+  PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
 
 
   connect(m_pinglyMotion.data(), &PinglyMotion::repaint, ui->animationView, static_cast<void (AnimationView::*)()>(&AnimationView::repaint));
@@ -598,7 +606,7 @@ void PinglyMotionWindow::setRemoteControl(bool on,bool showInfo)
 // the title says so while other programs can control PinglyMotion
 void PinglyMotionWindow::updateWindowTitle()
 {
-  QString title="PinglyMotion "+Constants::buildLabel()+" ["+currentFile+"]";
+  QString title=Constants::windowTitle(currentFile);
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink)
@@ -880,9 +888,8 @@ void PinglyMotionWindow::buildDocks()
   QAction* showPropertiesAction=m_propertiesDock->toggleViewAction();
   showPropertiesAction->setText(tr("Show Properties"));
   ui->menuOptions->insertAction(ui->optionsConfigurePinglyMotionAction,showPropertiesAction);
-  // closing the timeline with its own button unticks Show Timeline
-  connect(m_timelineDock->toggleViewAction(),&QAction::toggled,
-          ui->optionsShowTimelineAction,&QAction::setChecked);
+  // closing the timeline with its own button unticks Show Timeline (closing the window does not)
+  PanelVisibility::linkMenuItem(this,m_timelineDock,ui->optionsShowTimelineAction);
 
   // Options > Reset panel layout
   QAction* resetLayoutAction=new QAction(tr("Reset panel layout"),this);
@@ -1692,9 +1699,9 @@ QString PinglyMotionWindow::selectFileToOpen(const QString& caption)
 {
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString file = QFileDialog::getOpenFileName(NULL, caption, UserSettings::lastPath(), m_animFilter);
+   QString file = QFileDialog::getOpenFileName(NULL, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
 #else
-   QString file = QFileDialog::getOpenFileName(this, caption, UserSettings::lastPath(), m_animFilter);
+   QString file = QFileDialog::getOpenFileName(this, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
 #endif
   if(!file.isEmpty())
   {
@@ -1774,12 +1781,19 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file)
 void PinglyMotionWindow::addAnimationFile(const QString& file)
 {
   {
-    addToOpenFiles(file);
+    // an old .avm file shows up under its new name, <same name>.dingle, and counts as changed
+    const bool oldAvm=QFileInfo(file).suffix().toLower()==QLatin1String("avm");
+    const QString shownName=oldAvm ? DingleSave::suggestedName(file,m_untitledName) : file;
+    if(oldAvm) m_avmOrigin.insert(shownName,file);
+    addToOpenFiles(shownName);
     Animation* anim=new Animation(ui->animationView->getBVH(),file);
     animationIds.append(anim);
+    if(ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion)
+      QMessageBox::information(this,tr("Open Animation File"),
+                               tr("This file comes from a newer version of PinglyMotion.\nSome parts of it are not shown here.\nSaving it will remove those parts. Save under another name to keep the original."));
     calculateLongestRunningTime();
 
-    setCurrentFile(file);
+    setCurrentFile(shownName);
 
     scene->addAnimation(anim);
     timeline->setAnimation(anim);
@@ -1821,7 +1835,7 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     ui->animationView->selectPart(m_selectedTrack);
     updateInputs();
     updateFps();
-    anim->setDirty(false);
+    anim->setDirty(oldAvm);
 
 // makeshift tool for new independant playback testing
 // anim->setPlaystate(PLAYSTATE_LOOPING);
@@ -1830,11 +1844,16 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
 }
 
 // Menu Action: File / Save
-// returns true when the animation was saved
+// Save writes .dingle only. A new animation, an opened .avm and an opened .bvh
+// ask for a .dingle name first. Returns true when the animation was saved.
 bool PinglyMotionWindow::fileSave()
 {
-  if (currentFile == m_untitledName)
+  if(DingleSave::needsName(currentFile,m_untitledName))
     return fileSaveAs();
+
+  // an opened .avm is saved as .dingle with the same name; the old file goes away after that worked
+  const QString avmFile=m_avmOrigin.value(currentFile);
+  if(!avmFile.isEmpty() && !checkFileOverwrite(QFileInfo(currentFile))) return false;
 
   QString error;
   if(!scene->getAnimation()->saveBVH(currentFile,&error))
@@ -1842,6 +1861,7 @@ bool PinglyMotionWindow::fileSave()
     QMessageBox::warning(this,tr("Save Animation File"),error);
     return false;
   }
+  if(!avmFile.isEmpty()) replaceOldAvm(avmFile,currentFile);
   return true;
 }
 
@@ -1849,42 +1869,67 @@ bool PinglyMotionWindow::fileSave()
 // returns true when the animation was saved
 bool PinglyMotionWindow::fileSaveAs()
 {
-  // the user picks the file type: .bvh for Second Life, .avm keeps PinglyMotion's own data
-  const QString filters=m_bvhFilter+";;"+m_avmFilter;
-  QString selectedFilter=QFileInfo(currentFile).suffix().toLower()=="bvh" ? m_bvhFilter : m_avmFilter;
+  QString suggested=DingleSave::suggestedName(currentFile,m_untitledName);
+  if(QFileInfo(suggested).isRelative())
+    suggested=QDir(UserSettings::lastPath()).filePath(suggested);
+  QString selectedFilter=m_dingleFilter;
 
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), currentFile, filters, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
+   QString file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #else
-   QString file = QFileDialog::getSaveFileName(this, tr("Save Animation File"), currentFile, filters, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
+   QString file = QFileDialog::getSaveFileName(this, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #endif
 
   if(file.isEmpty()) return false;
-
-  // make sure file has proper extension (either .bvh or .avm), taken from the chosen file type
-  QString extension=QFileInfo(file).suffix().toLower();
-  if(extension!="avm" && extension!="bvh")
-    file+=(selectedFilter==m_bvhFilter) ? ".bvh" : ".avm";
+  file=DingleSave::withDingleEnding(file);
 
   QFileInfo fileInfo(file);
 
   // if the file didn't exist yet or the user accepted to overwrite it, save it.
   if(!checkFileOverwrite(fileInfo)) return false;
 
+  const QString oldFile=m_avmOrigin.value(currentFile,currentFile);
   QString error;
   if(!scene->getAnimation()->saveBVH(file,&error))
   {
     QMessageBox::warning(this,tr("Save Animation File"),error);
     return false;
   }
+  m_avmOrigin.remove(currentFile);
   setCurrentFile(file);
   UserSettings::setLastPath(fileInfo.path());
   // update animation selector combo box
   ui->selectAnimationCombo->setItemText(ui->selectAnimationCombo->currentIndex(),fileInfo.baseName());
   openFiles[ui->selectAnimationCombo->currentIndex()]=file;
   ui->fileExportForSecondLifeAction->setEnabled(true);
+
+  // an old .avm file is replaced: it goes to the recycle bin, now that the new file is saved
+  if(DingleSave::replacesOldFile(oldFile,file)) replaceOldAvm(oldFile,file);
   return true;
+}
+
+void PinglyMotionWindow::replaceOldAvm(const QString& avmFile,const QString& newFile)
+{
+  const QString title=tr("Save Animation File");
+  m_avmOrigin.remove(newFile);
+  if(!QFileInfo::exists(avmFile)) return;
+
+  // read the new file back and compare it with the animation before the old file is touched
+  QFile saved(newFile);
+  bool same=false;
+  if(saved.open(QIODevice::ReadOnly) && saved.size()<=Dingle::MAX_FILE_BYTES)
+  {
+    const Dingle::Result read=Dingle::parse(saved.readAll());
+    same=read.ok() && DingleSave::sameAnimation(*read.animation,ui->animationView->getBVH()->snapshot(scene->getAnimation(),AnimFile::Format::Avm));
+  }
+  if(!same)
+  {
+    QMessageBox::warning(this,title,tr("Your animation was saved, but the new file did not pass the check.\nThe old file %1 was left where it is.").arg(QFileInfo(avmFile).fileName()));
+    return;
+  }
+  if(!QFile::moveToTrash(avmFile))
+    QMessageBox::information(this,title,tr("Your animation was saved.\nThe old file %1 could not be moved to the recycle bin.\nIt is still there. You can delete it yourself.").arg(QFileInfo(avmFile).fileName()));
 }
 
 // Menu Action: File / Export For Second Life
@@ -1962,6 +2007,192 @@ void PinglyMotionWindow::fileExportAnim()
   if(!result.warnings.isEmpty())
     message+=QStringLiteral("\n\n")+tr("Please note:")+QStringLiteral("\n")+result.warnings.join(QLatin1Char('\n'));
   QMessageBox::information(this,title,message);
+}
+
+// reads the Second Life skeleton that imports are put on
+bool PinglyMotionWindow::loadSkeleton(AnimFile::Animation& skeleton,const QString& title)
+{
+  QFile file(Constants::femaleBvhPath());
+  AnimFile::Result parsed;
+  if(file.open(QIODevice::ReadOnly) && file.size()<=AnimFile::MAX_FILE_BYTES)
+    parsed=AnimFile::parseBvh(file.readAll());
+  if(!parsed.ok())
+  {
+    QMessageBox::warning(this,title,tr("The skeleton of the program could not be read.\nReinstall the program, then try again."));
+    return false;
+  }
+  skeleton=*parsed.animation;
+  return true;
+}
+
+// opens an animation made from another file as a new animation that has no file yet
+bool PinglyMotionWindow::openConvertedAnimation(const AnimFile::Animation& anim,const QString& name,int loopIn,int loopOut,const QString& title)
+{
+  // the program opens animations from files, so the data goes through a short-lived one
+  QTemporaryDir folder;
+  const QString path=folder.filePath(QStringLiteral("imported.bvh"));
+  QSaveFile out(path);
+  const QByteArray bytes=AnimFile::write(anim);
+  if(!folder.isValid() || !out.open(QIODevice::WriteOnly) || out.write(bytes)!=bytes.size() || !out.commit())
+  {
+    QMessageBox::warning(this,title,tr("The animation could not be opened.\nFree some disk space, then try again."));
+    return false;
+  }
+
+  if(!checkAnimationFile(path)) return false;
+  if(!clearOpenFiles()) return false;
+  emit clearProps();
+  addAnimationFile(path);
+
+  // the animation belongs to no file: Save asks for a name
+  setCurrentFile(m_untitledName);
+  const int index=ui->selectAnimationCombo->currentIndex();
+  if(index>=0 && index<openFiles.size())
+  {
+    openFiles[index]=m_untitledName;
+    ui->selectAnimationCombo->setItemText(index,name);
+  }
+  Animation* animation=scene->getAnimation();
+  if(loopIn>0 && loopOut>0)
+  {
+    setLoopOutPoint(loopOut);
+    setLoopInPoint(loopIn);
+  }
+  animation->setDirty(true);
+  ui->fileExportForSecondLifeAction->setEnabled(false);
+  partChoice();
+  return true;
+}
+
+// Menu Action: File / Import Second Life .anim...
+void PinglyMotionWindow::fileImportAnim()
+{
+  const QString title=tr("Import Second Life .anim");
+  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("Second Life animation (*.anim)"));
+  if(file.isEmpty()) return;
+  UserSettings::setLastPath(QFileInfo(file).path());
+
+  QFile input(file);
+  if(!input.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,title,tr("This file could not be opened.\n%1\nCheck that the file is still there, then try again.").arg(input.errorString()));
+    return;
+  }
+  if(input.size()>AnimImport::MAX_FILE_BYTES)
+  {
+    QMessageBox::warning(this,title,tr("This file is too big for an animation.\nPick a Second Life .anim file, then try again."));
+    return;
+  }
+  const QByteArray bytes=input.read(AnimImport::MAX_FILE_BYTES+1);
+
+  AnimFile::Animation skeleton;
+  if(!loadSkeleton(skeleton,title)) return;
+
+  const AnimImportConvert::Result result=AnimImportConvert::fromBytes(bytes,skeleton);
+  if(!result.ok())
+  {
+    QMessageBox::warning(this,title,result.error);
+    return;
+  }
+  if(!openConvertedAnimation(*result.animation,QFileInfo(file).completeBaseName(),result.loopIn,result.loopOut,title)) return;
+
+  QString message=tr("Opened %1.").arg(QFileInfo(file).fileName());
+  if(!result.notes.isEmpty())
+    message+=QStringLiteral("\n\n")+tr("What could not be imported:")+QStringLiteral("\n- ")+result.notes.join(QStringLiteral("\n- "));
+  QMessageBox::information(this,title,message);
+}
+
+// Menu Action: File / Import BVH from another skeleton...
+void PinglyMotionWindow::fileImportBvh()
+{
+  const QString title=tr("Import a BVH from another skeleton");
+  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("BVH files (*.bvh)"));
+  if(file.isEmpty()) return;
+  UserSettings::setLastPath(QFileInfo(file).path());
+
+  QFile input(file);
+  if(!input.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,title,tr("This file could not be opened.\n%1\nCheck that the file is still there, then try again.").arg(input.errorString()));
+    return;
+  }
+  if(input.size()>AnimFile::MAX_FILE_BYTES)
+  {
+    QMessageBox::warning(this,title,tr("This file is too big for an animation.\nPick a smaller BVH file, then try again."));
+    return;
+  }
+  const AnimFile::Result parsed=AnimFile::parseBvh(input.read(AnimFile::MAX_FILE_BYTES+1));
+  if(!parsed.ok())
+  {
+    const QString where=parsed.line>0 ? tr("Line %1: %2").arg(parsed.line).arg(parsed.error) : parsed.error;
+    QMessageBox::warning(this,title,tr("This file could not be read.\n%1\nCheck that it is a BVH file, then try again.").arg(where));
+    return;
+  }
+
+  AnimFile::Animation skeleton;
+  if(!loadSkeleton(skeleton,title)) return;
+
+  RetargetDialog dialog(*parsed.animation,skeleton,QFileInfo(file).fileName(),
+                        [this](const QString& name){ return m_jointInfo ? m_jointInfo->friendlyName(name) : QString(); },this);
+  if(dialog.exec()!=QDialog::Accepted || !dialog.result().ok()) return;
+
+  openConvertedAnimation(*dialog.result().animation,QFileInfo(file).completeBaseName(),-1,-1,title);
+}
+
+// Menu Action: File / Import glTF animation...
+void PinglyMotionWindow::fileImportGltf()
+{
+  const QString title=tr("Import glTF animation");
+  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("glTF files (*.glb *.gltf)"));
+  if(file.isEmpty()) return;
+  UserSettings::setLastPath(QFileInfo(file).path());
+
+  QFile input(file);
+  if(!input.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,title,tr("This file could not be opened.\n%1\nCheck that the file is still there, then try again.").arg(input.errorString()));
+    return;
+  }
+  if(input.size()>GltfImport::MAX_FILE_BYTES)
+  {
+    QMessageBox::warning(this,title,tr("This file is too big for an animation.\nPick a smaller file, then try again."));
+    return;
+  }
+  const GltfImport::ReadResult read=GltfImport::read(input.read(GltfImport::MAX_FILE_BYTES+1));
+  if(!read.ok())
+  {
+    QMessageBox::warning(this,title,GltfUi::readProblem(read.error));
+    return;
+  }
+
+  GltfImport::Options options;
+  if(GltfUi::needsChoice(*read.document))
+  {
+    GltfImportDialog choose(*read.document,this);
+    if(choose.exec()!=QDialog::Accepted) return;
+    options.animation=choose.animation();
+    options.skin=choose.skeleton();
+  }
+
+  const GltfImport::SourceResult source=GltfImport::toSource(*read.document,options);
+  if(!source.ok())
+  {
+    QMessageBox::warning(this,title,GltfUi::animationProblem(source.error));
+    return;
+  }
+
+  AnimFile::Animation skeleton;
+  if(!loadSkeleton(skeleton,title)) return;
+
+  RetargetDialog dialog(*source.animation,skeleton,QFileInfo(file).fileName(),
+                        [this](const QString& name){ return m_jointInfo ? m_jointInfo->friendlyName(name) : QString(); },this);
+  dialog.setNotes(source.notes);
+  if(dialog.exec()!=QDialog::Accepted || !dialog.result().ok()) return;
+
+  QString name=QFileInfo(file).completeBaseName();
+  if(read.document->animations.size()>1 && options.animation<read.document->animations.size() && !read.document->animations[options.animation].name.isEmpty())
+    name+=QStringLiteral(" - ")+read.document->animations[options.animation].name;
+  openConvertedAnimation(*dialog.result().animation,name,-1,-1,title);
 }
 
 // Menu Action: File / Load Props...
@@ -2398,7 +2629,7 @@ void PinglyMotionWindow::addToOpenFiles(const QString& fileName)
 
     QString fixedName=fileName;
     fixedName.remove(QRegularExpression(".*/"));
-    fixedName.remove(QRegularExpression("(\\.bvh|\\.avm)"));
+    fixedName.remove(QRegularExpression("(\\.bvh|\\.avm|\\.dingle)"));
 
     ui->selectAnimationCombo->addItem(fixedName);
 }
@@ -2675,6 +2906,21 @@ void PinglyMotionWindow::on_fileSaveAction_triggered()
 void PinglyMotionWindow::on_fileSaveAsAction_triggered()
 {
   fileSaveAs();
+}
+
+void PinglyMotionWindow::on_fileImportGltfAction_triggered()
+{
+  fileImportGltf();
+}
+
+void PinglyMotionWindow::on_fileImportBvhAction_triggered()
+{
+  fileImportBvh();
+}
+
+void PinglyMotionWindow::on_fileImportAnimAction_triggered()
+{
+  fileImportAnim();
 }
 
 void PinglyMotionWindow::on_fileExportAnimAction_triggered()

@@ -21,6 +21,7 @@
 #include "constants.h"
 #include "updatersettings.h"
 
+#include "aboutcredits.h"
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"
 
@@ -31,16 +32,21 @@ AboutDialog::AboutDialog(QWidget* parent) :
           | Qt::WindowTitleHint
           | Qt::WindowSystemMenuHint
           | Qt::WindowCloseButtonHint
-          | Qt::MSWindowsFixedSizeDialogHint),
+          | Qt::WindowMaximizeButtonHint),
   ui(new Ui::AboutDialog)
 {
   ui->setupUi(this);
 
+  // the credits are in a scrollable text area, so nothing is cut off (issue 106)
+  ui->creditBrowser->setHtml(AboutCredits::html());
+
   ui->versionLabel->setText(
-        QString("%1 Version %2 (%3)"
+        QString("%1 Version %2%3"
         ).arg(Constants::updateChannel()
         ).arg(Constants::buildLabel()
-        ).arg(Constants::buildNumber()));
+        // other builds have the build number in the label already
+        ).arg(Constants::updateChannel() == QLatin1String("Release")
+              ? QString(" (%1)").arg(Constants::buildNumber()) : QString()));
   ui->dateTimeLabel->setText(Constants::buildDateTime());
   setLastUpdateCheckLabel(UpdaterSettings::lastSuccessfulCheck());
   ui->autoUpdatesCheckBox->setChecked(UpdaterSettings::hasAutomaticUpdates());
