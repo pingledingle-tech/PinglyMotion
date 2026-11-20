@@ -102,6 +102,7 @@ class RoundTripTest : public QObject
     void storedEasingSurvivesOpenSaveAndExport();
     void overshootExportStaysInsideLimits();
     void slowJumpLoadsAndKeepsTheKeys();
+    void exampleWaveUsesFourChoices();
     void hipPositionKeyWithoutRotationKeySurvivesReopen();
 };
 
@@ -455,6 +456,53 @@ void RoundTripTest::slowJumpLoadsAndKeepsTheKeys()
       const QVector3D before=base.animation->rotation(j,a[k].frame);
       const QVector3D after=slow.animation->rotation(j,b[k].frame);
       QVERIFY2((before-after).length()<1e-4f, "a key value changed");
+    }
+  }
+}
+
+// the example wave (tools/wave_example.py, issue #53 step 6): the program's own
+// reader opens it without ignored keys, each of the four pose changes of the
+// right arm plays a different choice (read the way the tile row reads it), the
+// overshoot of the hand stays inside the joint limits, and the loop has no jump
+void RoundTripTest::exampleWaveUsesFourChoices()
+{
+  const Dingle::Result read = Dingle::parse(readAll(PINGLYMOTION_EXAMPLES "/wave.dingle"));
+  QVERIFY2(read.ok(), qPrintable(read.error));
+  QCOMPARE(read.ignoredKeys, 0);
+  QCOMPARE(read.animation->frames, 61);
+  QCOMPARE(read.animation->loopIn, 1);
+  QCOMPARE(read.animation->loopOut, 60);
+
+  BVH bvh;
+  Animation anim(&bvh, PINGLYMOTION_EXAMPLES "/wave.dingle");
+  QCOMPARE(anim.getNumberOfFrames(), 61);
+  const QList<Easing::Preset> expected = {Easing::Preset::SlowBothEnds, Easing::Preset::OvershootThenSettle,
+                                          Easing::Preset::Even, Easing::Preset::SlowFinish};
+  for (const char* name : {"rCollar", "rShldr", "rForeArm", "rHand"})
+  {
+    BVHNode* node = nullptr;
+    for (BVHNode* n : joints(anim.getMotion()))
+      if (n->name() == name) node = n;
+    QVERIFY2(node, name);
+    const QList<int> keys = node->keyframeList();
+    QCOMPARE(keys, QList<int>({0, 20, 30, 40, 60}));
+    for (int i = 0; i < expected.size(); i++)
+      QVERIFY2(Easing::segmentPreset(node->curve(keys[i]), node->easeOut(keys[i]), node->easeIn(keys[i + 1])) == expected[i],
+               qPrintable(QString("%1 pose change %2").arg(name).arg(i + 1)));
+    // the last pose is the first one, so the loop has no jump
+    QVERIFY(near(node->frameData(60).rotation(), node->frameData(0).rotation(), 1e-4f));
+    // every played frame stays inside the joint's limits
+    for (int frame = 0; frame < anim.getNumberOfFrames(); frame++)
+    {
+      const QVector3D r = node->frameData(frame).rotation();
+      for (int c = 0; c < node->numChannels; c++)
+      {
+        const double v = node->channelType[c] == BVH_XROT ? r.x() : node->channelType[c] == BVH_YROT ? r.y()
+                       : node->channelType[c] == BVH_ZROT ? r.z() : 0.0;
+        if (node->channelType[c] != BVH_XROT && node->channelType[c] != BVH_YROT && node->channelType[c] != BVH_ZROT) continue;
+        QVERIFY2(v >= node->channelMin[c] - 1e-3 && v <= node->channelMax[c] + 1e-3,
+                 qPrintable(QString("%1 frame %2 value %3").arg(name).arg(frame).arg(v)));
+      }
     }
   }
 }

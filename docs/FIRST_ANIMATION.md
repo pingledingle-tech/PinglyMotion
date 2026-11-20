@@ -46,6 +46,20 @@ The arm now moves between your keys. To change the feel, click your second key o
 - Click a tile, for example **Slow both ends**. Play again. The arm now starts and stops softly.
 - The line under the tiles tells you what each one is good for.
 
+To see all of this in a finished animation, pick **File > Open** and then `wave.dingle` in the `examples` folder. It is a short wave with five keys on the right arm, and each pose change uses a different tile. Click each key of the arm on the timeline: the tiles show the choice of the change that ends there. Notes on the keys:
+
+| Key | Frame | Tile of the change that ends here | Note |
+|---|---|---|---|
+| 1 | 0 | (none, the start) | A key is a saved pose. This one has the arm down. The wave starts and ends here, so it loops. |
+| 2 | 20 | Slow both ends | The arm lifts here. Slow both ends makes it start and stop softly. |
+| 3 | 30 | Overshoot, then settle | The hand swings out, goes a little past, then settles. That is Overshoot, then settle. |
+| 4 | 40 | Even | The hand swings back at one steady speed. That is Even. It looks stiff, so try Slow both ends. |
+| 5 | 60 | Slow finish | The arm slows down as it lands. It matches the first key, so the loop has no jump. |
+
+Your turn: make the arm stop more softly.
+
+The program does not show these notes yet. The file is made by `tools/wave_example.py`.
+
 To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle` in the `examples` folder. It is the bundled `jump.dingle` with every key 2.5 times later, so the same jump runs at 40 % of the speed. The file is made by `tools/slow_example.py`, and the original is unchanged.
 
 ## 7. Save
