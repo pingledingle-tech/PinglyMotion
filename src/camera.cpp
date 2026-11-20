@@ -281,6 +281,23 @@ float Camera::distance() const
   return pivotDistance;
 }
 
+CameraPosition Camera::state() const
+{
+  CameraPosition position(panX, panY, panZ, rotX, rotY);
+  position.pivotDistance = pivotDistance;
+  return position;
+}
+
+void Camera::setState(const CameraPosition& position)
+{
+  panX = position.panX;
+  panY = position.panY;
+  panZ = position.panZ;
+  rotX = position.rotX;
+  rotY = position.rotY;
+  pivotDistance = position.pivotDistance;
+}
+
 float Camera::xRotation() const
 {
   return rotX;

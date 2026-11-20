@@ -146,6 +146,9 @@ class AnimationView : public QOpenGLWidget
     virtual void keyReleaseEvent(QKeyEvent* event);
 
     QSize m_renderSize;   // set while renderImage() draws
+    // true while renderImage() draws a picture without the Bento markers
+    // (screenshot option "markers": false, src/screenshotsheet.h)
+    bool m_hideMarkers=false;
     // the view's height (widget pixels) the last time setProjection() ran
     // with the live widget size; -1 before the first time (P5, see
     // keepFigureSizeOnHeightChange())

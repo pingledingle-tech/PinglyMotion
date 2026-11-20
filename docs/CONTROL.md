@@ -75,7 +75,7 @@ differs. The MCP server does this before every request.
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
-`export_anim`.
+`export_anim`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
 
@@ -203,6 +203,27 @@ Otherwise the answer has `file`, `bytes`, `seconds`, the options used (`priority
 Life's own importer does) and `warnings` (the check's warnings, then the writer's, for example keys
 thinned out to stay under Second Life's 250 000 bytes).
 
+### screenshot with views, frames and labels
+
+Without options `screenshot` gives one picture of the current frame as the program's camera sees it,
+exactly as before. These options make one image an assistant can check its own work with (issue 129:
+a model misreads angles and mixes up left and right in a single picture):
+
+| Option | Meaning |
+|---|---|
+| `views` | a list of 1 to 6 of `front`, `back`, `left`, `right`, `three_quarter`: one picture per view, from that side at the camera's current height and distance, in a near-square grid (4 views: 2 by 2; 3: 2 by 2 with one empty place; 5 or 6: 3 by 2) |
+| `frames` | a list of 1 to 12 frame numbers: one picture per frame, in rows of 4, with the program's camera; together with `views` one row per frame and one column per view |
+| `labels` | `true`: a dot and the name of each classic joint; the figure's own left side in blue, its right side in orange, the middle in white; a legend in the first picture |
+| `trail` | `true`: small dots where the hands and feet are at frames 2 to the last (at most 30 frames, evenly spread), blue for the left, orange for the right |
+| `markers` | `false`: leaves out the small balls of the Bento joints (face, fingers) |
+| `width` | width of one picture, 100 to 2000; default 800, or 400 with `views` or `frames`. The whole image may be at most 4000 pixels on each side |
+
+Each picture is captioned (the view, and for frames the frame number and its time in seconds,
+(frame - 1) / frames per second). The answer has `columns`, `rows`, `cell_width`, `cell_height`, `cells`
+(in order, each with `cell`, `row`, `column` and its `view`, `frame` and `seconds`) and, with labels or a
+trail, `legend`. The program window, its camera (also a panned camera) and the current frame stay as
+they were: the 3D view turns its camera for each picture only and puts it back.
+
 ## Set up an AI assistant
 
 `pinglymotion_mcp.py` is an MCP server: it lets an AI assistant such as the Claude app (Claude Desktop)
@@ -317,7 +338,8 @@ to `claude mcp add` so it works from every folder.
   allowed range per axis; angles outside it are reduced and the answer says so.
 - The classic joints keep their old names (`hip`, `abdomen`, `chest`, `neck`, `head`, `lShldr`,
   `lForeArm`, `lHand`, `lThigh`, `lShin`, `lFoot` and the `r` ones). Bento joints start with `m`.
-- `screenshot` draws the current frame, 4:3, whatever the size of the window.
+- `screenshot` draws the current frame, 4:3, whatever the size of the window. With `views`, `frames`,
+  `labels`, `trail` and `markers` it draws several pictures in one image (see above).
 - `set_camera` turns the camera around the figure (`view`: front, back, left, right, three_quarter, or an
   `angle`; also `height` and `distance`; `reset: true` for the start view). Left and right are the figure's
   own sides. It never changes the animation, so use it instead of turning the hip to see the side.

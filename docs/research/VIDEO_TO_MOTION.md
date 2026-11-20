@@ -232,7 +232,16 @@ Two ways that are commonly treated as acceptable (not legal advice):
 light quaternion-safe zero-phase smoothing (binomial, the first and last frame kept). The smoothing
 test uses the CMU walk with generated noise of up to 2 degrees: the shake drops below a third and
 to within 1.2 times the clean clip's own, and the worst joint stays within 2 degrees of the clean
-clip as root mean square over the frames. Not built yet: foot lock, control commands and the menu.
+clip as root mean square over the frames. Foot lock is built in `src/footlock.*` with tests in
+`tests/footlock/`: a foot is planted while its ankle is less than 2 inches (5 cm, as in
+`describe_motion` and `check_animation`) above the floor (the lowest ankle of the clip) and slower than 0.2 m/s for at least 3 frames; the ankle is pinned at the mean
+of where it was, the thigh and shin are solved with an exact two-bone IK in the knee's own plane,
+the foot keeps its turn in the world, and the pin is blended in and out over 4 frames. A pin the
+leg cannot reach (the hip has moved on at the end of a step) is followed only as far as the leg is
+long. With the joint limits of `bin/data/SL.lim` the planted feet of the CMU walk drift at most
+0.62 cm (2.48 cm before); a clip with no contact, every joint but the legs, and all frames away
+from a contact are unchanged. One call for the import dialog: `FootLock::lockFeet()`. Not built
+yet: control commands and the menu.
 The 250,000 byte limit is the `.anim` exporter's job (key reduction, already built).
 
 - **What:** functions for zero-phase smoothing of rotations (quaternion-safe), foot lock (detect

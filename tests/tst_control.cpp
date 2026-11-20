@@ -5,6 +5,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QBuffer>
 #include <QElapsedTimer>
 #include <QMessageAuthenticationCode>
 #include <QtTest>
@@ -14,15 +15,21 @@
 #include <QTcpSocket>
 #include <QTemporaryDir>
 
+#include <cmath>
+
 #include "animation.h"
 #include "animexport.h"
 #include "animexportdialog.h"
 #include "animimport.h"
 #include "bvh.h"
 #include "bvhnode.h"
+#include "camera.h"
 #include "controlapi.h"
 #include "controlindicator.h"
 #include "controlserver.h"
+#include "posedescribe.h"
+#include "scenestate.h"
+#include "screenshotsheet.h"
 #include "usersettings.h"
 
 // stand-in for the window
@@ -35,7 +42,35 @@ class FakeHost : public ControlHost
     void goToFrame(int frame) override { m_animation->setFrame(frame); }
     void refresh() override { refreshed++; }
     void selectJoint(const QString& name) override { selected = name; }
-    QImage screenshot(int width, int height) override { return QImage(width, height, QImage::Format_RGB32); }
+    // a grey picture; for a screenshot request it also finds the joints on the
+    // picture the way the 3D view does: the real camera and projection, the
+    // joints' world positions at the current frame
+    QImage screenshot(int width, int height) override
+    {
+      QImage image(width, height, QImage::Format_RGB32);
+      image.fill(QColor(128, 128, 128));
+      shots++;
+      ScreenshotSheet::Request* request = ScreenshotSheet::current();
+      if (!request) return image;
+      requests << *request;
+      if (request->wantMarks)
+      {
+        Camera camera;
+        if (request->overrideCamera) camera.orbit(request->height, request->angle, request->distance);
+        else camera.orbit(m_camera.x(), m_camera.y(), m_camera.z());
+        camera.setModelView();
+        const QMatrix4x4 view = SceneState::modelview();
+        const QRectF rect(0, 0, width, height);
+        const QMatrix4x4 projection = shiftedPerspective(60.0f, rect, rect.center(), 1.0f, 2000.0f);
+        QList<QPair<QString, QVector3D>> world;
+        const QHash<BVHNode*, QMatrix4x4> transforms = PoseDescribe::worldTransforms(m_animation, m_animation->getFrame());
+        for (auto it = transforms.constBegin(); it != transforms.constEnd(); ++it)
+          world.append(qMakePair(it.key()->name(), it.value().map(QVector3D())));
+        request->marks = ScreenshotSheet::project(world, projection * view, QSize(width, height));
+      }
+      request->drawn = true;
+      return image;
+    }
     bool newAnimation(QString&) override { return true; }
     bool openFile(const QString& path, QString&) override { opened = path; m_file = path; return true; }
     bool saveFile(const QString& path, QString& error) override { if (!m_animation->saveBVH(path, &error)) return false; m_file = path; return true; }
@@ -50,6 +85,8 @@ class FakeHost : public ControlHost
     QVector3D camera() override { return m_camera; }
 
     int refreshed = 0;
+    int shots = 0;
+    QList<ScreenshotSheet::Request> requests;
     QString opened;
     QString m_file;
     QString selected;
@@ -107,6 +144,13 @@ class ControlTest : public QObject
     void openFileAcceptsDingle();
     void unsavedChangesAreKept();
     void screenshotIsPng();
+    void screenshotWithoutOptionsIsUnchanged();
+    void screenshotViewsMakeAGrid();
+    void screenshotFramesMakeAStrip();
+    void screenshotLeavesCameraAndFrame();
+    void screenshotLabelsShowTheFiguresSides();
+    void screenshotTrailAndMarkers();
+    void screenshotRefusesBadOptions();
     void playAndStop();
     void figureCanBeMale();
     void cameraTurnsWithoutChangingTheAnimation();
@@ -621,6 +665,194 @@ void ControlTest::screenshotIsPng()
   QCOMPARE(image.height(), 240);
   QVERIFY(!run(R"({"command":"screenshot","width":50})")["ok"].toBool());
   QVERIFY(!run(R"({"command":"screenshot","width":99999})")["ok"].toBool());
+}
+
+// readable screenshots (job C of docs/AI_HELP_PLAN.md)
+static QImage decodePng(const QJsonObject& answer)
+{
+  return QImage::fromData(QByteArray::fromBase64(answer["png_base64"].toString().toLatin1()), "PNG");
+}
+
+void ControlTest::screenshotWithoutOptionsIsUnchanged()
+{
+  const QJsonObject answer = run(R"({"command":"screenshot","width":320})");
+  QVERIFY(answer["ok"].toBool());
+  // exactly the host's picture as PNG, as before the options existed
+  QImage expected(320, 240, QImage::Format_RGB32);
+  expected.fill(QColor(128, 128, 128));
+  QByteArray png;
+  QBuffer buffer(&png);
+  buffer.open(QIODevice::WriteOnly);
+  expected.save(&buffer, "PNG");
+  QCOMPARE(answer["png_base64"].toString(), QString::fromLatin1(png.toBase64()));
+  QCOMPARE(answer.keys(), (QStringList{"height", "mime_type", "ok", "png_base64", "width"}));
+  QCOMPARE(answer["width"].toInt(), 320);
+  // and the 3D view got no request
+  QVERIFY(m_host->requests.isEmpty());
+}
+
+void ControlTest::screenshotViewsMakeAGrid()
+{
+  const QJsonObject answer = run(R"({"command":"screenshot","width":200,"views":["front","left","back","right"]})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["width"].toInt(), 400);
+  QCOMPARE(answer["height"].toInt(), 300);
+  const QImage image = decodePng(answer);
+  QCOMPARE(image.size(), QSize(400, 300));
+  QCOMPARE(answer["columns"].toInt(), 2);
+  QCOMPARE(answer["rows"].toInt(), 2);
+  const QJsonArray cells = answer["cells"].toArray();
+  QCOMPARE(cells.size(), 4);
+  const QStringList order = {"front", "left", "back", "right"};
+  for (int i = 0; i < 4; i++)
+  {
+    QCOMPARE(cells[i].toObject()["view"].toString(), order[i]);
+    QCOMPARE(cells[i].toObject()["row"].toInt(), i / 2 + 1);
+    QCOMPARE(cells[i].toObject()["column"].toInt(), i % 2 + 1);
+  }
+  // each picture was taken from its own side
+  QCOMPARE(m_host->requests.size(), 4);
+  const QList<float> angles = {0.0f, 270.0f, 180.0f, 90.0f};
+  for (int i = 0; i < 4; i++)
+  {
+    QVERIFY(m_host->requests[i].overrideCamera);
+    QCOMPARE(m_host->requests[i].angle, angles[i]);
+  }
+
+  // the default cell width with views is 400; 3 views give 2 columns, 2 rows
+  const QJsonObject three = run(R"({"command":"screenshot","views":["front","left","three_quarter"]})");
+  QVERIFY(three["ok"].toBool());
+  QCOMPARE(decodePng(three).size(), QSize(800, 600));
+  QCOMPARE(three["cells"].toArray().size(), 3);
+}
+
+void ControlTest::screenshotFramesMakeAStrip()
+{
+  m_animation->setFrameTime(1.0 / 30.0);
+  const QJsonObject answer = run(R"({"command":"screenshot","width":100,"frames":[2,5,10,20,30]})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["columns"].toInt(), 4);
+  QCOMPARE(answer["rows"].toInt(), 2);
+  QCOMPARE(decodePng(answer).size(), QSize(400, 150));
+  const QJsonArray cells = answer["cells"].toArray();
+  QCOMPARE(cells.size(), 5);
+  const QList<int> frames = {2, 5, 10, 20, 30};
+  for (int i = 0; i < 5; i++)
+  {
+    QCOMPARE(cells[i].toObject()["frame"].toInt(), frames[i]);
+    QCOMPARE(cells[i].toObject()["seconds"].toDouble(), std::round((frames[i] - 1) / 30.0 * 100.0) / 100.0);
+  }
+
+  // frames and views together: one row per frame, one column per view
+  const QJsonObject both = run(R"({"command":"screenshot","width":100,"frames":[2,9],"views":["front","back","left"]})");
+  QVERIFY(both["ok"].toBool());
+  QCOMPARE(decodePng(both).size(), QSize(300, 150));
+  QCOMPARE(both["cells"].toArray()[4].toObject()["view"].toString(), QString("back"));
+  QCOMPARE(both["cells"].toArray()[4].toObject()["frame"].toInt(), 9);
+}
+
+void ControlTest::screenshotLeavesCameraAndFrame()
+{
+  QVERIFY(run(R"({"command":"set_camera","angle":33,"height":20,"distance":150})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_frame","frame":7})")["ok"].toBool());
+  const QJsonObject before = run(R"({"command":"state"})");
+  for (const char* request : {R"({"command":"screenshot","width":100,"views":["back","left"],"labels":true})",
+                              R"({"command":"screenshot","width":100,"frames":[2,12,30],"trail":true})",
+                              R"({"command":"screenshot","width":100,"markers":false})",
+                              R"({"command":"screenshot","width":100,"frames":[99]})"})
+  {
+    run(request);
+    QCOMPARE(run(R"({"command":"state"})"), before);
+    QCOMPARE(m_animation->getFrame(), 6);
+  }
+}
+
+// the figure's left joints in the left colour: on the right of a front picture
+// (the figure faces the camera) and on the left of a back picture
+static double meanX(const QImage& image, const QColor& color)
+{
+  double sum = 0.0;
+  int count = 0;
+  for (int y = 0; y < image.height(); y++)
+    for (int x = 0; x < image.width(); x++)
+      if (image.pixelColor(x, y) == color) { sum += x; count++; }
+  return count ? sum / count : -1.0;
+}
+
+void ControlTest::screenshotLabelsShowTheFiguresSides()
+{
+  // a T-pose: the arms straight out to the sides
+  QVERIFY(run(R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,-80],"rShldr":[0,0,80]}})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_frame","frame":2})")["ok"].toBool());
+  const QColor left = ScreenshotSheet::colorOf(ScreenshotSheet::Side::Left);
+  const QColor right = ScreenshotSheet::colorOf(ScreenshotSheet::Side::Right);
+  QVERIFY(left != right);
+  QCOMPARE(ScreenshotSheet::sideOf("lHand"), ScreenshotSheet::Side::Left);
+  QCOMPARE(ScreenshotSheet::sideOf("rFoot"), ScreenshotSheet::Side::Right);
+  QCOMPARE(ScreenshotSheet::sideOf("hip"), ScreenshotSheet::Side::Middle);
+
+  const QJsonObject answer = run(R"({"command":"screenshot","width":400,"views":["front","back"],"labels":true})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QVERIFY(answer["legend"].toString().contains("left"));
+  QVERIFY(!answer.contains("note"));
+  const QImage sheet = decodePng(answer).convertToFormat(QImage::Format_RGB32);
+  const QImage front = sheet.copy(0, 0, 400, 300), back = sheet.copy(400, 0, 400, 300);
+
+  const double frontLeft = meanX(front, left), frontRight = meanX(front, right);
+  const double backLeft = meanX(back, left), backRight = meanX(back, right);
+  QVERIFY(frontLeft >= 0 && frontRight >= 0 && backLeft >= 0 && backRight >= 0);
+  QVERIFY2(frontLeft > 200 && frontRight < 200, qPrintable(QString("front: left %1, right %2").arg(frontLeft).arg(frontRight)));
+  QVERIFY2(backLeft < 200 && backRight > 200, qPrintable(QString("back: left %1, right %2").arg(backLeft).arg(backRight)));
+
+  // labels on the plain single picture keep its size
+  const QJsonObject single = run(R"({"command":"screenshot","width":320,"labels":true})");
+  QVERIFY(single["ok"].toBool());
+  QCOMPARE(decodePng(single).size(), QSize(320, 240));
+  QCOMPARE(m_host->requests.last().overrideCamera, false);
+}
+
+void ControlTest::screenshotTrailAndMarkers()
+{
+  QVERIFY(run(R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,-80]}})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_pose","frame":30,"joints":{"lShldr":[0,0,60]}})")["ok"].toBool());
+  m_host->requests.clear();
+  const QJsonObject answer = run(R"({"command":"screenshot","width":200,"trail":true,"markers":false})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  // 29 sampled frames (2 to 30) and the picture itself, all without markers
+  QCOMPARE(m_host->requests.size(), 30);
+  for (const ScreenshotSheet::Request& request : m_host->requests) QVERIFY(request.hideMarkers);
+  const QImage image = decodePng(answer).convertToFormat(QImage::Format_RGB32);
+  QVERIFY(meanX(image, ScreenshotSheet::colorOf(ScreenshotSheet::Side::Left)) >= 0);
+  QVERIFY(meanX(image, ScreenshotSheet::colorOf(ScreenshotSheet::Side::Right)) >= 0);
+
+  m_host->requests.clear();
+  QVERIFY(run(R"({"command":"screenshot","width":200,"markers":true})")["ok"].toBool());
+  QCOMPARE(m_host->requests.size(), 1);
+  QVERIFY(!m_host->requests.first().hideMarkers);
+}
+
+void ControlTest::screenshotRefusesBadOptions()
+{
+  const int before = m_host->shots;
+  for (const char* request : {
+         R"({"command":"screenshot","views":["front","back","left","right","front","back","left"]})",
+         R"({"command":"screenshot","views":["top"]})",
+         R"({"command":"screenshot","views":[]})",
+         R"({"command":"screenshot","views":"front"})",
+         R"({"command":"screenshot","frames":[1,2,3,4,5,6,7,8,9,10,11,12,13]})",
+         R"({"command":"screenshot","frames":[0]})",
+         R"({"command":"screenshot","frames":[31]})",
+         R"({"command":"screenshot","frames":[2.5]})",
+         R"({"command":"screenshot","labels":"yes"})",
+         R"({"command":"screenshot","markers":0})",
+         R"({"command":"screenshot","width":2000,"views":["front","back","left","right","front"]})",
+       })
+  {
+    const QJsonObject answer = run(request);
+    QVERIFY2(!answer["ok"].toBool(), request);
+    QVERIFY2(!answer["error"].toString().isEmpty(), request);
+  }
+  QCOMPARE(m_host->shots, before);
 }
 
 void ControlTest::playAndStop()
