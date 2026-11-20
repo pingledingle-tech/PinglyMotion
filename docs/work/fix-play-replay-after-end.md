@@ -1,6 +1,6 @@
 Branch: fix/play-replay-after-end
-Status: active
-Pull request: pending
+Status: done
+Pull request: #143
 Files:
 - src/playback.h
 - src/pinglymotionwindow.cpp

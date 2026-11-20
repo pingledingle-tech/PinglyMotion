@@ -82,6 +82,7 @@
 
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
+#include "playback.h"
 #include "theme.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
@@ -1497,6 +1498,7 @@ void PinglyMotionWindow::frameTimeout()
       {
         timer.stop();
         setPlaystate(PLAYSTATE_STOPPED);
+        anim->setPlaystate(PLAYSTATE_STOPPED);
       }
 
       updateInputs();
@@ -1515,6 +1517,9 @@ void PinglyMotionWindow::nextPlaystate()
   {
     case PLAYSTATE_STOPPED:
     {
+      // the playhead stays on the last frame after a one-shot play: start again
+      anim->setFrame(Playback::startFrame(anim->getFrame(),anim->getNumberOfFrames(),anim->getLoopInPoint()));
+
       // if we're suposed to loop and the current frame is not past loop out point
       if(UserSettings::loop() && anim->getFrame()<anim->getLoopOutPoint())
       {
