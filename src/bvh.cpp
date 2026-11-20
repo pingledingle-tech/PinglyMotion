@@ -334,7 +334,7 @@ BVHNode* BVH::finishRead(BVHNode* root,const QString& limFile)
 }
 
 // builds the joint tree from what the parser read (src/animfile.*)
-BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
+BVHNode* BVH::buildTree(const AnimFile::Animation& anim,bool storedPositions)
 {
   const bool avm=(anim.format==AnimFile::Format::Avm);
   QVector<BVHNode*> nodes(anim.joints.size(),nullptr);
@@ -400,12 +400,16 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
 
   if(avm && anim.hasPositionKeys)
   {
-    // The position of a position key frame is the stored position of that
-    // frame. It used to be the root joint's rotation key frames, interpolated
-    // between them, which lost a position key that had no root rotation key at
-    // the same frame (issue #188; open question in #62).
+    // In a .dingle the position of a position key frame is the stored position
+    // of that frame: the file has its own position track, so a position key
+    // without a root rotation key at the same frame keeps its value (#188).
+    // In an .avm it is taken from the root joint's key frames, interpolated
+    // between them when the position key is not also a root key frame -
+    // exactly like the old parser (open question in #62).
     for(const AnimFile::Key& key : anim.positionKeys)
-      lastLoadedPositionNode->addKeyframe(key.frame,anim.position(0,key.frame),QVector3D());
+      lastLoadedPositionNode->addKeyframe(key.frame,
+                                          storedPositions ? anim.position(0,key.frame) : root->frameData(key.frame).position(),
+                                          QVector3D());
     for(const AnimFile::Key& key : anim.positionKeys)
     {
       if(!lastLoadedPositionNode->isKeyframe(key.frame)) continue;
@@ -500,7 +504,7 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
     lastLoadedLoopOut=anim.loopOut;
   }
 
-  return finishRead(buildTree(anim),limFile);
+  return finishRead(buildTree(anim,dingle),limFile);
 }
 
 bool BVH::checkFile(const QString& file,QString* error)

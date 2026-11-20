@@ -3,6 +3,7 @@ Status: done
 Pull request: #190
 Files:
 - src/bvh.cpp
+- src/bvh.h
 - tests/tst_roundtrip.cpp
 - tests/assistant/cases.py
 - docs/DEV.md
