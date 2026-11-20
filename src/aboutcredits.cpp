@@ -23,8 +23,12 @@ QString AboutCredits::plainText()
     "AGPL 3 or later; the head is CC BY Linden Lab. Licences: data/character/roth2/. "
     "Optional Bento body: \"Maxine\" from the Max Avatar Project, Creative Commons "
     "Attribution 4.0 License, see data/character/max/LICENSE.txt. "
-    "Test motions: eight CC0 clips from Mesh2Motion "
-    "(github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. Thank you to the Mesh2Motion project.");
+    "Test motions and reference library: CC0 clips from Mesh2Motion "
+    "(github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. Thank you to the Mesh2Motion project. "
+    "Motion capture clips in the reference library and the test motions: "
+    "The data used in this project was obtained from mocap.cs.cmu.edu. "
+    "The database was created with funding from NSF EIA-0196217. "
+    "CMU Graphics Lab Motion Capture Database.");
 }
 
 QString AboutCredits::html()
@@ -47,5 +51,6 @@ QStringList AboutCredits::requiredEntries()
     "Maxine", "Max Avatar Project", "Creative Commons Attribution 4.0 License",
     "data/character/max/LICENSE.txt",
     "Mesh2Motion", "github.com/Mesh2Motion/mesh2motion-app", "CC0 1.0",
+    "CMU Graphics Lab Motion Capture Database", "mocap.cs.cmu.edu", "NSF EIA-0196217",
   };
 }
