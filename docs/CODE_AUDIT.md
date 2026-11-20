@@ -40,7 +40,7 @@ A review of `src/` (137 files, about 32,000 lines) and a short look at `tools/` 
 
 ## Cleanup tasks
 
-Ordered by value. "Wait" means an active job claims some of the files (`python3 tools/work.py list`, 20 November 2026); start the task only after that job is merged.
+Ordered by value. "Wait" means an open pull request or active job claims some of the files (`python3 tools/work.py list` and the open pull requests, 20 November 2026); start the task only after it is merged, and check the work board again before starting.
 
 ### C1. Rotation and position sliders lose their decimals (integer division) (#192)
 
@@ -50,7 +50,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Low; small arithmetic change, but it changes values that are stored in animations.
 - **Visible change:** Yes, slightly: slider values keep their decimals. Mechanically checkable (exact expected number), so it merges with a test under the standing permission.
 - **Model:** light. **Size:** S.
-- **Wait:** src/pinglymotionwindow.* is claimed by the active jobs `feat/import-cleanup-options` and `feat/panels-p6`; wait until both are merged.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
 
 ### C2. One static core library for the program, the tests and the fuzzers (#193)
 
@@ -60,7 +60,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Medium: link order, Qt AUTOMOC for QObject classes in the library, the Windows build and the sanitizer build must all stay green.
 - **Visible change:** No.
 - **Model:** strong. **Size:** M.
-- **Wait:** src/CMakeLists.txt and tests/CMakeLists.txt are claimed by the active jobs `feat/import-cleanup-options` and `feature/foot-lock`; wait until both are merged.
+- **Wait:** src/CMakeLists.txt and tests/CMakeLists.txt are claimed by the open pull request for the import clean-up options (#183). Start after these are merged.
 
 ### C3. Remove dead code left from QAvimator and earlier refactors (#194)
 
@@ -70,6 +70,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Low; the build and tests show at once if something was still used.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
+- **Wait:** src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
 
 ### C4. Zero compiler warnings with -Wall -Wextra -Wshadow (#195)
 
@@ -79,6 +80,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Low.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
+- **Wait:** src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
 
 ### C5. Model code shows message boxes: return errors to the window instead (#196)
 
@@ -88,7 +90,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Medium: error paths at start-up (missing data folder).
 - **Visible change:** Only on an error; the same text must still be shown. Mechanically checkable with a test that asserts the error text.
 - **Model:** strong. **Size:** M.
-- **Wait:** src/pinglymotionwindow.* is claimed by the active jobs `feat/import-cleanup-options` and `feat/panels-p6`; wait until both are merged.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
 
 ### C6. Use AnimFile::write for the BVH pose text instead of a second BVH writer (#197)
 
@@ -98,6 +100,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Low to medium: the live link fallback for older Aurora versions.
 - **Visible change:** No.
 - **Model:** strong. **Size:** M.
+- **Wait:** src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
 
 ### C7. One Euler/quaternion conversion and one rotation order type (#198)
 
@@ -116,7 +119,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Medium: big diff in the busiest file; do it when no other job claims the file.
 - **Visible change:** No (pure move).
 - **Model:** strong. **Size:** L.
-- **Wait:** src/pinglymotionwindow.* is claimed by the active jobs `feat/import-cleanup-options` and `feat/panels-p6`; wait until both are merged.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
 
 ### C9. Finish the QAvimator scene refactor: remove the 'temporary' scaffolding (#200)
 
@@ -126,7 +129,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Medium: ownership and lifetime changes.
 - **Visible change:** No.
 - **Model:** strong. **Size:** L.
-- **Wait:** src/pinglymotionwindow.* is claimed by the active jobs `feat/import-cleanup-options` and `feat/panels-p6`; wait until both are merged.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
 
 ### C10. Shared skeleton walk helpers instead of local copies (#201)
 
@@ -136,6 +139,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Low; the calibration test and the control tests cover the describe output.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
+- **Wait:** src/bvh.cpp is claimed by the active job for the hip position key (#190). Start after these are merged.
 
 ### C11. Tests for props, the scene and the timeline (#202)
 
@@ -145,7 +149,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** None (tests only).
 - **Visible change:** No.
 - **Model:** strong. **Size:** M.
-- **Wait:** tests/CMakeLists.txt is claimed by the active jobs `feat/import-cleanup-options` and `feature/foot-lock`; wait until both are merged.
+- **Wait:** tests/CMakeLists.txt is claimed by the open pull request for the import clean-up options (#183). Start after these are merged.
 
 ### C12. Function-pointer connects instead of SIGNAL()/SLOT() strings (#203)
 
@@ -155,7 +159,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Low (overloaded signals need `qOverload`).
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
-- **Wait:** src/pinglymotionwindow.* is claimed by the active jobs `feat/import-cleanup-options` and `feat/panels-p6`; wait until both are merged.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
 
 ### C13. Error handling in the .obj mesh reader (#204)
 
@@ -174,7 +178,7 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** Low.
 - **Visible change:** No.
 - **Model:** light. **Size:** M.
-- **Wait:** src/pinglymotionwindow.* is claimed by the active jobs `feat/import-cleanup-options` and `feat/panels-p6`; wait until both are merged.
+- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
 
 ### C15. Run the two Python tests that CI never runs (#206)
 
@@ -184,7 +188,6 @@ Ordered by value. "Wait" means an active job claims some of the files (`python3 
 - **Risk:** None.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
-- **Wait:** .github/workflows/build.yml is claimed by the active job `job/assistant-eval`; wait until it is merged.
 
 ### C16. One error-reporting convention for new and old code (#207)
 
@@ -203,17 +206,17 @@ One issue per task, label `cleanup`. None is started; a job starts only when the
 |---|---|---|---|
 | C1 Rotation and position sliders lose their decimals (integer division) | #192 | S | yes |
 | C2 One static core library for the program, the tests and the fuzzers | #193 | M | yes |
-| C3 Remove dead code left from QAvimator and earlier refactors | #194 | S | no |
-| C4 Zero compiler warnings with -Wall -Wextra -Wshadow | #195 | S | no |
+| C3 Remove dead code left from QAvimator and earlier refactors | #194 | S | yes |
+| C4 Zero compiler warnings with -Wall -Wextra -Wshadow | #195 | S | yes |
 | C5 Model code shows message boxes: return errors to the window instead | #196 | M | yes |
-| C6 Use AnimFile::write for the BVH pose text instead of a second BVH writer | #197 | M | no |
+| C6 Use AnimFile::write for the BVH pose text instead of a second BVH writer | #197 | M | yes |
 | C7 One Euler/quaternion conversion and one rotation order type | #198 | M | no |
 | C8 Split pinglymotionwindow.cpp and merge the duplicated open/add code | #199 | L | yes |
 | C9 Finish the QAvimator scene refactor: remove the 'temporary' scaffolding | #200 | L | yes |
-| C10 Shared skeleton walk helpers instead of local copies | #201 | S | no |
+| C10 Shared skeleton walk helpers instead of local copies | #201 | S | yes |
 | C11 Tests for props, the scene and the timeline | #202 | M | yes |
 | C12 Function-pointer connects instead of SIGNAL()/SLOT() strings | #203 | S | yes |
 | C13 Error handling in the .obj mesh reader | #204 | S | no |
 | C14 Logging categories instead of 110 qDebug calls | #205 | M | yes |
-| C15 Run the two Python tests that CI never runs | #206 | S | yes |
+| C15 Run the two Python tests that CI never runs | #206 | S | no |
 | C16 One error-reporting convention for new and old code | #207 | M | no |
