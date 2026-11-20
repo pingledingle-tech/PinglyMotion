@@ -17,6 +17,7 @@ private slots:
   void startFrame();
   void playToEndThreeTimes();
   void playToEndFromLoopIn();
+  void loopEndFollowsTheFrameCount();
 };
 
 void PlaybackTest::startFrame()
@@ -67,6 +68,42 @@ void PlaybackTest::playToEndFromLoopIn()
     QCOMPARE(playOnce(anim),run==0 ? 9 : 7);
     QCOMPARE(anim.getFrame(),9);
   }
+}
+
+// issue #189: a loop that ends on the last frame keeps ending on the last
+// frame when the frame count changes; a loop end in the middle stays where it
+// is, and loop points past a new, shorter end move back onto the last frame
+void PlaybackTest::loopEndFollowsTheFrameCount()
+{
+  BVH bvh;
+  Animation anim(&bvh);
+  anim.setNumberOfFrames(30);
+  anim.setLoopInPoint(1);                   // frame 2 as the program shows it
+  anim.setLoopOutPoint(29);                 // frame 30, the last
+  anim.setNumberOfFrames(31);
+  QCOMPARE(anim.getLoopOutPoint(),30);
+  QCOMPARE(anim.getLoopInPoint(),1);
+  anim.setNumberOfFrames(60);
+  QCOMPARE(anim.getLoopOutPoint(),59);
+  anim.setNumberOfFrames(20);
+  QCOMPARE(anim.getLoopOutPoint(),19);
+
+  anim.setLoopOutPoint(14);                 // in the middle: stays
+  anim.setNumberOfFrames(40);
+  QCOMPARE(anim.getLoopOutPoint(),14);
+  anim.setNumberOfFrames(10);               // past the new end: the last frame
+  QCOMPARE(anim.getLoopOutPoint(),9);
+  QCOMPARE(anim.getLoopInPoint(),1);
+
+  anim.setLoopInPoint(8);
+  anim.setNumberOfFrames(5);
+  QCOMPARE(anim.getLoopOutPoint(),4);
+  QCOMPARE(anim.getLoopInPoint(),4);
+
+  // playing the loop reaches the last frame
+  anim.setNumberOfFrames(31);
+  anim.setLoopInPoint(1);
+  QCOMPARE(anim.getLoopOutPoint(),30);
 }
 
 QTEST_MAIN(PlaybackTest)
