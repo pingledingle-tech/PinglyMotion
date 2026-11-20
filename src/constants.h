@@ -42,8 +42,13 @@ class Constants
     static const QString versionNumberString();
     static const QString buildNumber();
     static const QString updateChannel();
-    // "0.4.0" for a release, otherwise "0.4.0 · PR #12 · 5085c90" or "0.4.0 · dev · 5085c90"
+    // "0.4.0" for a release, otherwise "0.4.0 · PR #12 · 5085c90 · build 345" or "0.4.0 · dev · 5085c90"
     static const QString buildLabel();
+    // the same from given parts (a build number of "0" or "" is left out)
+    static QString composeBuildLabel(const QString& version, bool release, const QString& source,
+                                     const QString& commit, const QString& build);
+    // "PinglyMotion <build label> [<file>]", the start of the main window's title
+    static QString windowTitle(const QString& fileName);
     static const QString applicationName();
     static const QString organizationName();
     static const QString organizationDomain();

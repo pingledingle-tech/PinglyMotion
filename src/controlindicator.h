@@ -97,6 +97,8 @@ class AuroraIndicator : public StatusPill
     // pure helpers, used by the widget and the tests
     static State stateFor(bool enabled, bool connected);
     static QString textFor(State state);
+    // the end of the window title: empty when off, else " - " and the status words
+    static QString titleSuffixFor(State state);
 
     State state() const;
     QString text() const;

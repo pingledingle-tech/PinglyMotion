@@ -77,6 +77,29 @@ The add-on "BioVision Motion Capture (BVH) format" comes with Blender and is nor
 
 Before real work, do one round trip with something simple: in PinglyMotion, make a 2-second animation where the head turns to the left and the hip moves 10 units forward. Export, import into Blender, export again without changing anything, open in PinglyMotion. The head must still turn left (not right, not nod), and the hip must move forward by the same distance. If one of these is wrong, see section 2 before you put more work in.
 
+### 1.6 Scripted round trip
+
+Status: written 19 November 2026, **not yet tested in Blender**. The Blender script is not run in CI because Blender is not installed on the build machines. The comparer is tested in CI.
+
+Two small scripts in `tools/blender/` do the check from 1.5 without clicking:
+
+- `pinglymotion_roundtrip.py` runs inside Blender. It sets the scene frame rate to the file's, imports the BVH with the settings from 1.3 (Forward -Z, Up Y, Scale 1.0, own rotation order per joint), exports it again with the settings from 1.4 (Scale 1.0, own rotation order, Root Translation Only), and can also write a glTF binary (`.glb`) with the animation.
+- `bvh_compare.py` needs only Python, no Blender. It compares two BVH files: joint names and order, parents, channels, frame count, frame time, bone offsets and every frame value within a tolerance (default 0.001; angles are compared as angles, so 180 and -180 are equal).
+
+Run it:
+
+```
+blender -b --python tools/blender/pinglymotion_roundtrip.py -- in.bvh out.bvh --check
+blender -b --python tools/blender/pinglymotion_roundtrip.py -- in.bvh out.bvh --gltf out.glb
+python3 tools/blender/bvh_compare.py in.bvh out.bvh --tol 0.01
+```
+
+`--check` makes the Blender run fail (exit code 1) when the result differs. Joint names are never changed, so a difference in names means the rig, not the script. A small difference in rotation values after Blender is normal if Blender wrote fewer decimals; raise `--tol` a little before you decide something is wrong.
+
+If the check finds differences in axes, scale or rotation order, section 2 lists the usual causes, and the result goes into the open questions in section 4 (question 2 is answered by running this once on a current Blender).
+
+Mixamo warning (also in 2.9): Mixamo's terms allow its animations in your own projects but not passing the raw files on. The scripts do not check where a motion comes from.
+
 ## 2. What goes wrong and how to avoid it
 
 ### 2.1 The avatar lies on its back or faces sideways
@@ -158,7 +181,7 @@ These are not part of PinglyMotion; they are listed so you know the landscape.
 3. **Rotation order on import.** PinglyMotion applies its own per-joint rotation order to the three angles it reads and does not convert from the file's order (`BVH::copySkeletonNode` in `src/bvh.cpp`). Should it convert? That would make files from Blender with "Rotation: XYZ" safe. A code change, so a separate issue if wanted.
 4. **A warning for dropped joints.** PinglyMotion drops unknown joints silently. A message like "12 joints were not recognised: …" would save users a lot of searching. Belongs with the retargeting menu (#16) or as its own small issue.
 5. **Free SL rig for Blender.** Is there a free rig with a clear open licence that we can point users to (or ship as a test file)? The Machinimatrix file and the `Second-Life-Skeleton` project need their terms checked first.
-6. **Blender MCP for tests.** Issue #13 mentions scripting Blender for automatic round-trip tests. Worth it only after #12, and only if Blender can run in CI without a large download on every run.
+6. **Blender in CI.** The scripted round trip (1.6) is run by hand. Running it in CI needs Blender on the build machine, which is a large download on every run; worth it only after #12, if at all. The comparer already runs in CI.
 
 ## Sources
 

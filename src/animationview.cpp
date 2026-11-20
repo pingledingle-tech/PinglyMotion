@@ -31,6 +31,7 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <climits>
+#include <QKeyEvent>
 #include <QMouseEvent>
 #include <QScopedPointer>
 #include <QToolTip>
@@ -867,6 +868,26 @@ void AnimationView::wheelEvent(QWheelEvent* event)
   // one notch (120) moves 15% closer or further; touchpads send smaller steps
   camera()->zoom(std::pow(0.85f,event->angleDelta().y()/120.0f));
   update();
+}
+
+// Tab hides and shows the panels (docs/PANELS_PLAN.md, job P4). Qt's own
+// handling in QWidget::event would move the keyboard focus to the next
+// field instead, so Tab is taken here first. Only a plain Tab: Shift+Tab
+// and the others go on as before. Tab in a panel's field or in the search
+// box never comes here, because the 3D view does not have the keys then.
+bool AnimationView::event(QEvent* event)
+{
+  if(event->type()==QEvent::KeyPress)
+  {
+    QKeyEvent* key=static_cast<QKeyEvent*>(event);
+    if(key->key()==Qt::Key_Tab && key->modifiers()==Qt::NoModifier)
+    {
+      key->accept();
+      emit tabPressed();
+      return true;
+    }
+  }
+  return QOpenGLWidget::event(event);
 }
 
 void AnimationView::keyPressEvent(QKeyEvent* event)

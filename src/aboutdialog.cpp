@@ -41,10 +41,12 @@ AboutDialog::AboutDialog(QWidget* parent) :
   ui->creditBrowser->setHtml(AboutCredits::html());
 
   ui->versionLabel->setText(
-        QString("%1 Version %2 (%3)"
+        QString("%1 Version %2%3"
         ).arg(Constants::updateChannel()
         ).arg(Constants::buildLabel()
-        ).arg(Constants::buildNumber()));
+        // other builds have the build number in the label already
+        ).arg(Constants::updateChannel() == QLatin1String("Release")
+              ? QString(" (%1)").arg(Constants::buildNumber()) : QString()));
   ui->dateTimeLabel->setText(Constants::buildDateTime());
   setLastUpdateCheckLabel(UpdaterSettings::lastSuccessfulCheck());
   ui->autoUpdatesCheckBox->setChecked(UpdaterSettings::hasAutomaticUpdates());

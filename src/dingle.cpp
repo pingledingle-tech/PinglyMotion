@@ -14,6 +14,7 @@
  */
 
 #include "dingle.h"
+#include "easing.h"
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -26,6 +27,7 @@
 #include <cmath>
 #include <cstring>
 #include <initializer_list>
+#include <string_view>
 #include <vector>
 
 using AnimFile::Animation;
@@ -177,20 +179,11 @@ namespace
 
   // ---------------------------------------------------------------- the interpolation of BVHNode::interpolate
 
-  double interpolate(double from,double to,int steps,int pos,bool easeOut,bool easeIn)
+  // the same function playback uses (src/easing.h), so the frames in between are
+  // exactly what the program shows
+  double interpolate(double from,double to,int steps,int pos,const Key& start,const Key& target)
   {
-    if(from==to) return from;
-    bool ease=false;
-    if(pos<=(steps/2) && easeOut) ease=true;
-    if(pos>(steps/2) && easeIn) ease=true;
-    const double distance=to-from;
-    if(ease)
-    {
-      const double step=3.1415/(steps);
-      return from+(0.5-cos(step*(double) pos)/2)*distance;
-    }
-    const double increment=distance/(double) steps;
-    return from+increment*(double) pos;
+    return Easing::segmentValue(Easing::segmentPreset(start.curve,start.easeOut,target.easeIn),from,to,steps,pos);
   }
 
   // ---------------------------------------------------------------- reader
@@ -218,6 +211,7 @@ namespace
     bool readSkeleton(const QJsonObject& top);
     bool readTracks(const QJsonObject& top);
     bool readKeys(const QJsonValue& list,int channelCount,const QString& what,Track& track);
+    void readCurve(const QJsonValue& value,Key& key);
     void derive();
 
     Animation anim;
@@ -439,7 +433,6 @@ namespace
       if(!array[k].isObject()) return fail(QObject::tr("%1: a key must be an object.").arg(what));
       const QJsonObject object=array[k].toObject();
       known(object,{"frame","values","easeIn","easeOut","curve"});
-      if(object.contains("curve")) ignored++;   // easing curves come later (issue #11)
 
       Key key;
       if(!wholeNumber(object.value("frame"),0,anim.frames-1,what+QObject::tr(": a key frame"),key.frame)) return false;
@@ -452,6 +445,7 @@ namespace
         if(!flag.isBool()) return fail(QObject::tr("%1: \"%2\" must be true or false.").arg(what,QLatin1String(name)));
         (name[4]=='I' ? key.easeIn : key.easeOut)=flag.toBool();
       }
+      if(object.contains("curve")) readCurve(object.value("curve"),key);
       const QJsonValue values=object.value("values");
       if(!values.isArray() || values.toArray().size()!=channelCount)
         return fail(QObject::tr("%1: a key must have %2 values.").arg(what).arg(channelCount));
@@ -464,6 +458,29 @@ namespace
       track.keys << key;
     }
     return true;
+  }
+
+  // the easing choice of the segment that starts at this key (issue #53 step 3):
+  // {"type": "<technical name>"}. Anything this version does not know (another
+  // type, another shape, null) never refuses the file: the segment falls back to
+  // Even and the curve counts as ignored, so save warns before it is lost.
+  void Reader::readCurve(const QJsonValue& value,Key& key)
+  {
+    Easing::Preset preset=Easing::Preset::Even;
+    if(value.isObject())
+    {
+      const QJsonObject curve=value.toObject();
+      const QJsonValue type=curve.value("type");
+      const QByteArray name=type.toString().toUtf8();
+      if(type.isString() && Easing::presetFromTechnicalName(std::string_view(name.constData(),static_cast<size_t>(name.size())),preset))
+      {
+        known(curve,{"type"});
+        key.curve=preset;
+        return;
+      }
+    }
+    ignored++;
+    key.curve=Easing::Preset::Even;
   }
 
   bool Reader::readTracks(const QJsonObject& top)
@@ -574,7 +591,7 @@ namespace
             const float toValue=track.values[static_cast<size_t>(k+1)*channelCount+offset];
             for(int frame=from.frame+1;frame<end;frame++)
               anim.values[static_cast<size_t>(frame)*anim.valuesPerFrame+column]=static_cast<float>(
-                interpolate(fromValue,toValue,to.frame-from.frame,frame-from.frame,from.easeOut,to.easeIn));
+                interpolate(fromValue,toValue,to.frame-from.frame,frame-from.frame,from,to));
           }
           else
             for(int frame=from.frame+1;frame<end;frame++)
@@ -729,7 +746,11 @@ namespace
         first=false;
         number(out,anim.value(keys[k].frame,joint.firstValue+c));
       }
-      out+=QByteArray("], \"easeIn\": ")+(keys[k].easeIn ? "true" : "false")+", \"easeOut\": "+(keys[k].easeOut ? "true" : "false")+"}";
+      out+=QByteArray("], \"easeIn\": ")+(keys[k].easeIn ? "true" : "false")+", \"easeOut\": "+(keys[k].easeOut ? "true" : "false");
+      // the easing choice stored on the key (issue #53 step 3); only when there is one,
+      // so files without choices are written exactly as before
+      if(keys[k].curve) out+=QByteArray(", \"curve\": {\"type\": \"")+Easing::technicalName(*keys[k].curve)+"\"}";
+      out+="}";
       out+=(k+1<keys.size()) ? ",\n" : "\n";
     }
     out+=QByteArray(indent).left(static_cast<qsizetype>(strlen(indent))-2)+"]";
@@ -783,7 +804,7 @@ QByteArray write(const Animation& anim,const QJsonObject& extensions,const QStri
     bool hasPosition=false;
     for(Channel channel : joint.channels) (isPosition(channel) ? hasPosition : hasRotation)=true;
     const QVector<Key> keys=keysOf(joint.keys,anim.frames);
-    const bool plain=(keys.size()==1 && !keys[0].easeIn && !keys[0].easeOut);
+    const bool plain=(keys.size()==1 && !keys[0].easeIn && !keys[0].easeOut && !keys[0].curve);
     // a joint with no channels is only written when its keys are not the plain frame 0
     if(!hasRotation && !hasPosition && plain) continue;
 

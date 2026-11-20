@@ -664,15 +664,31 @@ Mapping mapSkeletons(const Animation& source,const Animation& target)
     std::sort(m.pairs.begin(),m.pairs.end());
   }
 
+  updateMissing(m,target);
+  return m;
+}
+
+void updateMissing(Mapping& m,const Animation& target)
+{
+  m.missingRequired.clear();
+  m.missingTarget.clear();
+  if(!structureUsable(target))
+  {
+    m.missingRequired=QStringList{QObject::tr("a usable skeleton")};
+    return;
+  }
+  const int nt=target.joints.size();
   for(const QString& chain : requiredChains())
   {
+    bool inTarget=false;
+    for(int t=0;t<nt;t++)
+      if(target.joints[t].kind!=JointKind::EndSite && slChain(target.joints[t].name)==chain) inTarget=true;
     bool inSource=false;
     for(const auto& p : m.pairs)
-      if(slChain(target.joints[p.second].name)==chain) inSource=true;
-    if(!targetChains.contains(chain)) m.missingTarget << readableChain(chain);
+      if(p.second>=0 && p.second<nt && slChain(target.joints[p.second].name)==chain) inSource=true;
+    if(!inTarget) m.missingTarget << readableChain(chain);
     else if(!inSource) m.missingRequired << readableChain(chain);
   }
-  return m;
 }
 
 // -------------------------------------------------------------------------

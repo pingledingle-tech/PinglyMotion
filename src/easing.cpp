@@ -8,8 +8,8 @@ namespace Easing
 namespace
 {
   const double Pi=3.14159265358979323846;
-  // c1 of the "back" curve: s = 1 + (c1+1)(t-1)^3 + c1 (t-1)^2, peak 1 + 4 c1^3 / (27 (c1+1)^2)
-  const double BackC1=1.5;
+  // c1 of the "back" curve (easing.h)
+  const double BackC1=OvershootC1;
 
   // the sine ease that BVHNode::interpolate uses today, as a function of t=pos/steps
   double sine(double t) { return 0.5-std::cos(Pi*t)/2; }
@@ -38,20 +38,6 @@ const char* plainName(Preset preset)
   return "";
 }
 
-const char* technicalName(Preset preset)
-{
-  switch(preset)
-  {
-    case Preset::Even: return "linear";
-    case Preset::SlowStart: return "ease-in";
-    case Preset::SlowFinish: return "ease-out";
-    case Preset::SlowBothEnds: return "ease-in-out";
-    case Preset::OvershootThenSettle: return "ease-out-overshoot";
-    case Preset::HoldThenSnap: return "constant";
-  }
-  return "";
-}
-
 bool presetFromIndex(int index,Preset& preset)
 {
   if(index<0 || index>=PresetCount) return false;
@@ -73,11 +59,7 @@ double s(Preset preset,double t)
     // today: the first half is a straight line, only the second half is eased
     case Preset::SlowFinish: return t<=0.5 ? t : sine(t);
     case Preset::SlowBothEnds: return sine(t);
-    case Preset::OvershootThenSettle:
-    {
-      const double u=t-1;
-      return 1+(BackC1+1)*u*u*u+BackC1*u*u;
-    }
+    case Preset::OvershootThenSettle: return overshootSpeed(t);
     case Preset::HoldThenSnap: return 0;
   }
   return t;

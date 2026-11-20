@@ -42,11 +42,20 @@ class UserSettings
     static bool jointLimits();
     static void setProtectFirstFrame(bool value);
     static bool protectFirstFrame();
-    static void setShowTimelinePanel(bool value);
+    // retired: the timeline's visibility is part of panel_layout since the
+    // three panels; read for old files only, never written again
     static bool showTimelinePanel();
     static void setDarkTheme(bool value);
-    static void setWindowState(const QByteArray& value);
-    static QByteArray windowState();
+    // the panel layout (QMainWindow::saveState) and the version it was saved
+    // with; a layout of another version is not loaded (docs/PANELS_PLAN.md, 7)
+    static void setPanelLayout(const QByteArray& value);
+    static QByteArray panelLayout();
+    static void setPanelLayoutVersion(int value);
+    static int panelLayoutVersion();
+    // the window's place, size, maximised state and screen
+    // (QMainWindow::saveGeometry), docs/PANELS_PLAN.md job P3
+    static void setMainWindowGeometry(const QByteArray& value);
+    static QByteArray mainWindowGeometry();
     static bool darkTheme();
     // which avatar body the 3D view shows: "ruth2" (default) or "max".
     // Anything else, such as "system" from older versions, becomes "ruth2".
@@ -71,9 +80,9 @@ class UserSettings
     static void setTipsOn(bool on);
     static bool tipsOn();
 
-    static void setMainWindowWidth(int value);
+    // retired: read once for the move to main_window_geometry, never written
+    // again (docs/PANELS_PLAN.md, section 7); 0 when the setting is missing
     static int mainWindowWidth();
-    static void setMainWindowHeight(int value);
     static int mainWindowHeight();
 
     static void setLastPath(QString value);
@@ -107,8 +116,12 @@ private:
     static bool m_showTimelinePanel;
     static const QString m_showTimelinePanelKey;
     static bool m_darkTheme;
-    static QByteArray m_windowState;
-    static const QString m_windowStateKey;
+    static QByteArray m_panelLayout;
+    static const QString m_panelLayoutKey;
+    static int m_panelLayoutVersion;
+    static const QString m_panelLayoutVersionKey;
+    static QByteArray m_mainWindowGeometry;
+    static const QString m_mainWindowGeometryKey;
     static const QString m_darkThemeKey;
     static QString m_body;
     static const QString m_bodyKey;

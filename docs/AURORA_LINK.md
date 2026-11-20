@@ -14,7 +14,7 @@ built from
 
 1. In Aurora (logged in, or in demo mode): **Build > LiveMesh > Enable preview**.
 2. In PinglyMotion: **Options > Live link to Aurora**, or click the dot in the
-   status bar. The title bar says "waiting for Aurora", then "live in Aurora"
+   status bar. The title bar and the status bar say "Waiting for Aurora", then "Aurora live"
    once connected. Aurora's chat says PinglyMotion is connected.
 3. Turn a joint or move the frame slider: your avatar takes the pose.
    Playing the animation plays it on your avatar.

@@ -9,7 +9,7 @@ PinglyMotion is a free, open-source animation editor based on QAvimator. The goa
 ## What you can do
 
 - **Pose a Bento skeleton:** select and rotate joints including fingers, face, wings and tail, with joint limits and mirroring.
-- **Create and edit animations:** work with keyframes and the timeline; open existing BVH and AVM files and export BVH.
+- **Create and edit animations:** work with keyframes and the timeline; open `.dingle`, BVH and AVM files, save as `.dingle`, and import or export Second Life `.anim` files. You can also import a BVH from another skeleton and glTF animations.
 - **Preview on your avatar:** use the optional [Aurora live link](docs/AURORA_LINK.md) to see poses locally without uploading. It currently requires the specified Aurora fork.
 - **Get optional AI assistance:** use the [local control interface and MCP server](docs/CONTROL.md) to pose joints, inspect screenshots and save animations. Manual editing works without AI.
 - **Use Windows or Linux:** builds use Qt 6.
@@ -40,7 +40,7 @@ The roadmap explores better posing and timeline tools, native SL animation expor
 - **Ctrl** + double-click a hand or foot switches IK on or off; **Shift** + double-click selects the mirrored joint too
 - The balls for the face only show while the head or a face bone is selected
 - Dark theme is on by default; switch it off under **Options > Dark theme**
-- **Timeline** and **Properties** are panels: drag the line between them and the 3D view to resize, drag a panel's title bar to move it to another side, or double-click the title bar to tear it off into its own window (e.g. on a second screen). The layout is remembered. **Options > Reset panel layout** puts everything back
+- **Joints** (left), **Selected joint** (right) and **Timeline** (bottom) are panels: drag the line between a panel and the 3D view to resize, drag a panel's title bar to move it to another side or onto another panel as a tab, or double-click the title bar to tear it off into its own window (e.g. on a second screen). The **View** menu shows or hides each panel. The layout is remembered. **View > Reset layout** puts everything back
 
 ## Tests
 
@@ -82,6 +82,7 @@ PinglyMotion has an open local interface (HTTP with JSON, and an MCP server) so 
 pose the figure, look at it and save the animation. See [docs/CONTROL.md](docs/CONTROL.md).
 The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up, and `PinglyMotion.mcpb`, a one-click extension for the Claude app
 (see [docs/CONTROL.md](docs/CONTROL.md#quick-way-the-claude-desktop-extension)).
+Every assistant that connects can read [docs/ASSISTANT_GUIDE.md](docs/ASSISTANT_GUIDE.md) with the `read_guide` tool: Second Life's rules for animations, joint names, which way each turn goes, typical poses and a work rhythm.
 
 ## Live preview in the Aurora viewer
 
@@ -106,3 +107,5 @@ The male figure shows **Roth2 v2**, the male body from the [Roth2 project](https
 The optional second body (Options > Body > Max) is "Maxine" from the [Max Avatar Project](https://github.com/RuthAndRoth/Max) by Ada Radius and the RuthAndRoth community, licensed under the Creative Commons Attribution 4.0 License. It is converted to PinglyMotion's own format by `tools/make_max_mesh.py`; notice and details are in `bin/data/character/max/`.
 
 The test motions in `tests/motions/cmu/` (in the Windows zip: `examples/cmu/`) and the walk clip in `tests/motions/` come from the CMU Graphics Lab Motion Capture Database, converted to BVH by cgspeed.com. The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. Source and licence notes: `tests/motions/cmu/README.md`.
+
+The test motions in `tests/motions/mesh2motion/` (in the Windows zip: `examples/mesh2motion/`) are eight clips from the [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app) project, released under CC0 1.0 (public domain). CC0 does not require a credit; PinglyMotion gives one anyway: thank you to the Mesh2Motion project. The source files and the commit they come from are in `tests/data/mesh2motion/`.
