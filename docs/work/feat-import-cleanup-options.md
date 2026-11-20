@@ -1,14 +1,14 @@
 Branch: feat/import-cleanup-options
-Status: active
-Pull request: pending
+Status: done
+Pull request: #183
 Files:
 - src/importoptions.*
 - src/retargetdialog.*
-- src/pinglymotionwindow.cpp
 - src/CMakeLists.txt
 - tests/importoptions/**
 - tests/retargetdialog/**
-- tests/CMakeLists.txt
+- CMakeLists.txt
+- tests/gltfimportdialog/**
 - docs/VIDEO_GUIDE.md
 - docs/PRODUCT.md
 - docs/ROADMAP.md

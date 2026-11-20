@@ -7,6 +7,8 @@ ADD_EXECUTABLE (pinglymotion_gltfimportdialog_tests tst_gltfimportdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/retargetdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/gltfimport.cpp
                 ${CMAKE_SOURCE_DIR}/src/retarget.cpp
+                ${CMAKE_SOURCE_DIR}/src/importoptions.cpp
+                ${CMAKE_SOURCE_DIR}/src/motioncleanup.cpp
                 ${CMAKE_SOURCE_DIR}/src/retargetmapping.cpp
                 ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_gltfimportdialog_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
