@@ -177,7 +177,6 @@ double Animation::frameTime() const
 
 int Animation::getNumberOfFrames()
 {
-// qDebug("Animation::getNumberOfFrames()=%d",totalFrames);
   return totalFrames;
 }
 
@@ -207,9 +206,6 @@ void Animation::setFrame(int frameNumber)
 {
   if(frameNumber>=0 && frameNumber<totalFrames && frame!=frameNumber)
   {
-//    for (int i=0; i<NUM_IK; i++) {
-//      setIK((IKPartType)i, false);
-//    }
     frame=frameNumber;
     solveIKIfOn();
 
@@ -366,7 +362,6 @@ bool Animation::easeOut(BVHNode* node,int frameNum)
 
 void Animation::setLoopInPoint(int inFrame)
 {
-//  qDebug("Animation::setLoopInPoint(%d)",inFrame);
   loopInPoint=inFrame;
   setDirty(true);
 }
@@ -378,7 +373,6 @@ int Animation::getLoopInPoint()
 
 void Animation::setLoopOutPoint(int outFrame)
 {
-//  qDebug("Animation::setLoopOutPoint(%d)",outFrame);
   loopOutPoint=outFrame;
   setDirty(true);
 }
@@ -396,18 +390,12 @@ void Animation::applyIK(const QString& name)
 
   if(node)
   {
-//    for (int i=0; i<3; i++) {
     rotation += node->ikRotation;
 
 
     node->ikRotation.setX(0);
     node->ikRotation.setY(0);
     node->ikRotation.setZ(0);
-/*
-      node->frame[frame][i] += node->ikRot[i];
-      node->ikRot[i] = 0;
-*/
-//      node->ikOn = false;
 
     setDirty(true);
     addKeyFrame(node);
@@ -574,7 +562,6 @@ void Animation::setRotation(BVHNode* node,double x,double y,double z)
 {
   if (node)
   {
-    //qDebug(QString("Animation::setRotation(")+jointName+")");
 
     if(node->isKeyframe(frame))
       node->setKeyframeRotation(frame, QVector3D(x, y, z));
@@ -728,12 +715,17 @@ void Animation::addKeyFrame(BVHNode* joint)
 {
   // a key frame that is set again keeps its stored easing choice (issue #53):
   // opening a file sets frame 0 of every joint again
+  // (its ease switches too: they hold the choice of the four old-style tiles, so
+  // a file opened and saved again must not lose them at frame 0)
+  const bool existing=joint->isKeyframe(frame);
+  const bool easeIn=existing ? joint->easeIn(frame) : UserSettings::easeIn();
+  const bool easeOut=existing ? joint->easeOut(frame) : UserSettings::easeOut();
   const std::optional<Easing::Preset> curve=joint->curve(frame);
   const std::optional<Easing::Bezier> customCurve=joint->customCurve(frame);
   joint->addKeyframe(frame,getPosition(),getRotation(joint));
 
-  setEaseIn(joint,frame,UserSettings::easeIn());
-  setEaseOut(joint,frame,UserSettings::easeOut());
+  setEaseIn(joint,frame,easeIn);
+  setEaseOut(joint,frame,easeOut);
   joint->setCurve(frame,curve);
   joint->setCustomCurve(frame,customCurve);
 
@@ -830,7 +822,6 @@ void Animation::deleteKeyFrameAllJoints()
 
 bool Animation::toggleKeyFrame(BVHNode* node)
 {
-//  qDebug("Animation::toggleKeyFrame(node): node %ld",(unsigned long) node);
   if(!node)
     return toggleKeyFrameAllJoints();
   else
@@ -1025,7 +1016,6 @@ void Animation::insertFrame(int track,int pos)
 // recursively remove frames from joint and all its children
 void Animation::deleteFrameHelper(BVHNode* joint,int frame)
 {
-//  qDebug("Animation::deleteFrameHelper(joint %s,frame %d)",joint->name().toLatin1().constData(),frame);
   joint->deleteFrame(frame);
   for(int i=0;i<joint->numChildren();i++)
     deleteFrameHelper(joint->child(i),frame);
@@ -1035,7 +1025,6 @@ void Animation::deleteFrameHelper(BVHNode* joint,int frame)
 // delete frame from a joint, if track==0 recursively delete from all joints
 void Animation::deleteFrame(int track,int pos)
 {
-//  qDebug("Animation::deleteFrame(joint %d,frame %d)",track,frame);
 
   if(track==-1)
   {

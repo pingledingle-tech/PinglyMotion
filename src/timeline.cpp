@@ -93,11 +93,6 @@ void Timeline::paintEvent(QPaintEvent* /* e */)
     resize(newSize);
     emit resized(newSize);
   }
-/*
-  // clip keyframe drawing to "dirty" area of redraw
-  firstVisibleKeyX = e->rect().x() / Constants::keyWidth();
-  visibleKeysX = e->rect().width() / Constants::keyWidth();
-*/
   // clip keyframe drawing to "dirty" area of redraw
   firstVisibleKeyX=0;
   visibleKeysX=numOfFrames;
@@ -202,7 +197,6 @@ void Timeline::redrawTrack(int track)
 
 void Timeline::drawKeyframe(int track,int frame)
 {
-//  qDebug(QString("drawKeyframe(%1,%2)").arg(track).arg(frame));
 
   if(track==-1) return;
   const int row=JointGroups::rowOfTrack(track);
@@ -289,7 +283,6 @@ void Timeline::drawTrack(int track)
 {
   if(track==-1) return;
   if(!offscreen) return;
-//  qDebug("first %d vis %d",firstVisibleKeyX,visibleKeysX);
   qDebug("Timeline::drawTrack(%d, %d)",track,trackSelected);
 
   // normal tracks get default background color

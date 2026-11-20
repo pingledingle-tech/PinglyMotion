@@ -26,15 +26,11 @@
 
 BVHNode::BVHNode(const QString& name)
 {
-//  qDebug(QString("BVHNode::BVHNode(%1)").arg(name));
   setName(name);
 
   // clean out lists
   keyframes.clear();
   children.clear();
-
-  // have clean one-time cache
-  flushFrameCache();
 
   setMirror(NULL,0);
 
@@ -67,7 +63,6 @@ BVHNode::BVHNode(const QString& name)
 
 BVHNode::~BVHNode()
 {
-//  qDebug(QString("BVHNode::~BVHNode(%1)").arg(name()));
 }
 
 const QString& BVHNode::name() const
@@ -92,32 +87,26 @@ BVHNode* BVHNode::child(int num)
 
 void BVHNode::addChild(BVHNode* newChild)
 {
-// qDebug(QString("BVHNode(%1): addChild(%2)").arg(name()).arg(newChild->name()));
   children.append(newChild);
 }
 
 void BVHNode::insertChild(BVHNode* newChild,int index)
 {
-// qDebug(QString("BVHNode(%1): insertChild(%2,%3)").arg(name()).arg(newChild->name()).arg(index));
   children.insert(index,newChild);
 }
 
 void BVHNode::removeChild(BVHNode* child)
 {
-// qDebug(QString("BVHNode(%1): removeChild(%2)").arg(name()).arg(child->name()));
   children.removeAll(child);
 }
 
 void BVHNode::addKeyframe(int frame, QVector3D position, QVector3D rotation)
 {
-//  qDebug(QString("addKeyframe(%1)").arg(frame));
   keyframes[frame] = FrameData(frame, position, rotation);
-//  if(frame==0 && name()=="hip") qDebug(QString("BVHNode::addKeyframe(%1,<%2,%3,%4>,<%5,%6,%7>) %8").arg(frame).arg(pos.x).arg(pos.y).arg(pos.z).arg(rot.x).arg(rot.y).arg(rot.z).arg(pos.bodyPart));
 }
 
 void BVHNode::setKeyframePosition(int frame, const QVector3D& position)
 {
-//  qDebug(QString("setKeyframePosition(%1)").arg(frame));
   if(!isKeyframe(frame)) qDebug("setKeyframePosition(%d): not a keyframe!",frame);
   else
   {
@@ -128,7 +117,6 @@ void BVHNode::setKeyframePosition(int frame, const QVector3D& position)
 
 void BVHNode::setKeyframeRotation(int frame, const QVector3D& rotation)
 {
-//  qDebug(QString("setKeyframeRotation(%1)").arg(frame));
   if(!isKeyframe(frame)) qDebug("setKeyframeRotation(%d): not a keyframe!",frame);
   else
   {
@@ -183,7 +171,6 @@ void BVHNode::insertFrame(int frame)
 // delete a frame and move all keys back one frame
 void BVHNode::deleteFrame(int frame)
 {
-//  qDebug("BVHNode::deleteFrame(%d)",frame);
   // if this is a keyframe, remove it
   if(isKeyframe(frame)) deleteKeyframe(frame);
 
@@ -317,7 +304,6 @@ const FrameData BVHNode::frameData(int frame) const
   iPosition.setY(interpolate(positionBefore.y(), positionAfter.y(), frameAfter - frameBefore, frame - frameBefore, preset));
   iPosition.setZ(interpolate(positionBefore.z(), positionAfter.z(), frameAfter - frameBefore, frame - frameBefore, preset));
 
-// qDebug(QString("iRot.x %1 frame %2: %3").arg(rotBefore.bodyPart).arg(before.frameNumber()).arg(iRot.x));
 
   // return interpolated frame data here
   return FrameData(frame, iPosition, iRotation);
@@ -398,36 +384,6 @@ const QList<int> BVHNode::keyframeList() const
 int BVHNode::numKeyframes() const
 {
   return keyframes.count();
-}
-
-const QVector3D* BVHNode::getCachedRotation(int frame)
-{
-  return rotations.at(frame);
-}
-
-const QVector3D* BVHNode::getCachedPosition(int frame)
-{
-  return positions.at(frame);
-}
-
-void BVHNode::cacheRotation(QVector3D* rot)
-{
-  rotations.append(rot);
-}
-
-void BVHNode::cachePosition(QVector3D* pos)
-{
-  positions.append(pos);
-}
-
-void BVHNode::flushFrameCache()
-{
-  // cal delete on all rotations and positions in the list
-  qDeleteAll(rotations);
-  qDeleteAll(positions);
-  // remove all references to the now deleted list items
-  rotations.clear();
-  positions.clear();
 }
 
 void BVHNode::setEaseIn(int frame,bool state)
@@ -658,7 +614,6 @@ void BVHNode::mirror()
 
 FrameData::FrameData()
 {
-//  qDebug(QString("FrameData(%1)").arg((unsigned long)this));
   m_frameNumber=0;
   m_easeIn=false;
   m_easeOut=false;
@@ -666,7 +621,6 @@ FrameData::FrameData()
 
 FrameData::FrameData(int num, QVector3D position, QVector3D rotation)
 {
-//  qDebug(QString("FrameData(%1): frame %2  pos %3,%4,%5 rot %6,%7,%8").arg((unsigned long) this).arg(frame).arg(pos.x).arg(pos.y).arg(pos.z).arg(rot.x).arg(rot.y).arg(rot.z));
   m_frameNumber=num;
   m_rotation = rotation;
   m_position = position;
@@ -743,14 +697,9 @@ void FrameData::setPosition(const QVector3D& position)
 
 void FrameData::setRotation(const QVector3D& rotation)
 {
-//  qDebug(QString("FrameData::setRotation(<%1,%2,%3>)").arg(m_rotation.x).arg(m_rotation.y).arg(m_rotation.z));
-//  qDebug(QString("FrameData::setRotation(<%1,%2,%3>)").arg(rot.x).arg(rot.y).arg(rot.z));
   m_rotation = rotation;
-//  qDebug(QString("FrameData::setRotation(<%1,%2,%3>)").arg(m_rotation.x).arg(m_rotation.y).arg(m_rotation.z));
-//  m_rotation=rot;
 }
 
 FrameData::~FrameData()
 {
-//  qDebug(QString("~FrameData(%1)").arg((unsigned long) this));
 }

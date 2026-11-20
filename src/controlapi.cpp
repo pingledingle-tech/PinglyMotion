@@ -49,18 +49,20 @@ namespace
 
   const CommandInfo COMMANDS[] =
   {
-    {"state", "Shows the open animation: file name, number of frames, frames per second, current frame, whether it plays, and whether joint limits and mirroring are on.", "{}", "[]"},
+    {"state", "Shows the open animation: file name, number of frames, frames per second, current frame, the loop points (loop_in and loop_out), whether it plays, and whether joint limits and mirroring are on.", "{}", "[]"},
     {"joints", "Lists every joint you can pose (the Second Life Bento skeleton) with its rotation limits. The classic joints keep their old names (hip, abdomen, chest, neck, head, lCollar, lShldr = shoulder, lForeArm = elbow, lHand = wrist, lThigh, lShin = knee, lFoot = ankle, and r for right); Bento joints start with m, like mHandIndex1Left.", "{}", "[]"},
     {"get_pose", "Shows the rotation of the joints at a frame (default: current frame). Only joints that are rotated are listed unless all is true.",
      "{\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"},\"all\":{\"type\":\"boolean\"}}", "[]"},
-    {"set_pose", "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in PinglyMotion. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied.",
-     "{\"joints\":{\"type\":\"object\",\"description\":\"Joint name to [x, y, z] degrees, e.g. {\\\"lForeArm\\\":[0,-90,0]} bends the left elbow\",\"additionalProperties\":{\"type\":\"array\",\"items\":{\"type\":\"number\"},\"minItems\":3,\"maxItems\":3}},\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[\"joints\"]"},
+    {"set_pose", "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in PinglyMotion. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied. 'easing' sets how the movement into each key it makes, from the key before it, goes (one of the six names in the schema, the same as the easing tiles; a key made without it gets ease-in-out, an existing key keeps the easing it has). The first key has no movement into it, so easing there changes nothing.",
+     "{\"easing\":{\"type\":\"string\",\"enum\":[\"linear\",\"ease-in\",\"ease-out\",\"ease-in-out\",\"ease-out-overshoot\",\"constant\"],\"description\":\"linear = Even, ease-in = Slow start, ease-out = Slow finish, ease-in-out = Slow both ends (default), ease-out-overshoot = Overshoot then settle, constant = Hold then snap\"},\"joints\":{\"type\":\"object\",\"description\":\"Joint name to [x, y, z] degrees, e.g. {\\\"lForeArm\\\":[0,-90,0]} bends the left elbow\",\"additionalProperties\":{\"type\":\"array\",\"items\":{\"type\":\"number\"},\"minItems\":3,\"maxItems\":3}},\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[\"joints\"]"},
     {"set_position", "Moves the body (hip position) at a frame, in the position fields' units.",
      "{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"},\"z\":{\"type\":\"number\"},\"frame\":{\"type\":\"integer\"}}", "[\"x\",\"y\",\"z\"]"},
     {"delete_key", "Removes the key frame of a joint at a frame. The first frame cannot be removed.",
      "{\"joint\":{\"type\":\"string\"},\"frame\":{\"type\":\"integer\"}}", "[\"joint\",\"frame\"]"},
-    {"keys", "Lists the frames that have key frames, for one joint or for all joints.",
+    {"keys", "Lists the frames that have key frames, for one joint or for all joints, and the easing of each key: how the movement into that key from the key before it goes (linear, ease-in, ease-out, ease-in-out, ease-out-overshoot, constant, or custom for a curve drawn in the curve editor).",
      "{\"joint\":{\"type\":\"string\"}}", "[]"},
+    {"set_loop", "Sets the loop points: the two frames between which the animation repeats (frame numbers, first frame is 1; 'in' must be before 'out'). 'off' puts them back to the default (the whole animation, from frame 2 when the first frame is protected). 'state' shows the loop points as loop_in and loop_out.",
+     "{\"in\":{\"type\":\"integer\",\"description\":\"First frame of the loop\"},\"out\":{\"type\":\"integer\",\"description\":\"Last frame of the loop\"},\"off\":{\"type\":\"boolean\",\"description\":\"true: default loop points\"}}", "[]"},
     {"set_frame", "Goes to a frame, so the program shows that pose.",
      "{\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[\"frame\"]"},
     {"set_frame_count", "Sets how many frames the animation has.",
@@ -202,7 +204,7 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
     {"state", &ControlApi::state}, {"joints", &ControlApi::joints},
     {"get_pose", &ControlApi::getPose}, {"set_pose", &ControlApi::setPose},
     {"set_position", &ControlApi::setPosition}, {"delete_key", &ControlApi::deleteKey},
-    {"keys", &ControlApi::keys}, {"set_frame", &ControlApi::setFrame},
+    {"keys", &ControlApi::keys}, {"set_loop", &ControlApi::setLoop}, {"set_frame", &ControlApi::setFrame},
     {"set_frame_count", &ControlApi::setFrameCount}, {"set_fps", &ControlApi::setFps},
     {"play", &ControlApi::play}, {"stop", &ControlApi::stop},
     {"new_animation", &ControlApi::newAnimation}, {"open_file", &ControlApi::openFile},
@@ -214,7 +216,7 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
   };
 
   const QString command = request.value("command").toString();
-  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference.");
+  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference.");
   if (!m_host->animation()) return fail("No animation is open.");
 
   for (const auto& entry : table)
@@ -294,6 +296,92 @@ bool ControlApi::checkNotProtected(QString& error)
   return true;
 }
 
+// The loop points as frame numbers (first frame is 1). A new animation has none
+// stored yet; then the default shows: the whole animation, from frame 2 when the
+// first frame is protected (the same as the program sets when it opens a file).
+static void loopPoints(Animation* animation, int& loopIn, int& loopOut)
+{
+  const int frames = animation->getNumberOfFrames();
+  if (animation->getLoopInPoint() < 0)
+  {
+    loopIn = UserSettings::protectFirstFrame() ? 2 : 1;
+    loopOut = frames;
+  }
+  else
+  {
+    loopIn = animation->getLoopInPoint() + 1;
+    loopOut = animation->getLoopOutPoint() + 1;
+  }
+  if (loopOut > frames) loopOut = frames;
+  if (loopIn > loopOut) loopIn = loopOut;
+  if (loopIn < 1) loopIn = 1;
+}
+
+// The easing of the movement into a key (the choice the easing tiles show when
+// that key is selected), as the program plays it: a custom curve, else the stored
+// choice, else the one the ease switches of the key before and this key give.
+// The first key has no movement into it; it shows the default.
+static QString easingOf(Animation* animation, BVHNode* node, int frame)
+{
+  int start = frame - 1;
+  while (start >= 0 && !node->isKeyframe(start)) start--;
+  if (start < 0) return QString::fromLatin1(Easing::technicalName(Easing::defaultPreset()));
+  if (animation->customCurve(node, start)) return QStringLiteral("custom");
+  return QString::fromLatin1(Easing::technicalName(
+    Easing::segmentPreset(animation->curve(node, start), animation->easeOut(node, start), animation->easeIn(node, frame))));
+}
+
+// The two ease switches of the four old-style choices (the same table as
+// Easing::switchesFromPreset, which lives in src/easing.cpp that the tests and
+// the fuzz program do not build); false for the two choices that need a stored curve.
+static bool switchesOf(Easing::Preset preset, bool& startEaseOut, bool& endEaseIn)
+{
+  switch (preset)
+  {
+    case Easing::Preset::Even: startEaseOut = false; endEaseIn = false; return true;
+    case Easing::Preset::SlowStart: startEaseOut = true; endEaseIn = false; return true;
+    case Easing::Preset::SlowFinish: startEaseOut = false; endEaseIn = true; return true;
+    case Easing::Preset::SlowBothEnds: startEaseOut = true; endEaseIn = true; return true;
+    default: return false;
+  }
+}
+
+// Sets the movement into a key the way the easing tiles do (src/easingtiles.cpp):
+// the choice lives on the key before; the four old-style choices are the ease
+// switches, the other two a stored curve. A named choice replaces a custom curve.
+static void setEasingInto(Animation* animation, BVHNode* node, int frame, Easing::Preset preset)
+{
+  int start = frame - 1;
+  while (start >= 0 && !node->isKeyframe(start)) start--;
+  if (start < 0) return;
+  bool startEaseOut = true;
+  bool endEaseIn = true;
+  std::optional<Easing::Preset> curve;
+  if (!switchesOf(preset, startEaseOut, endEaseIn))
+  {
+    curve = preset;
+    switchesOf(Easing::defaultPreset(), startEaseOut, endEaseIn);
+  }
+  animation->setCustomCurve(node, start, std::nullopt);
+  animation->setCurve(node, start, curve);
+  animation->setEaseOut(node, start, startEaseOut);
+  animation->setEaseIn(node, frame, endEaseIn);
+}
+
+void ControlHost::setLoopPoints(int loopIn, int loopOut)
+{
+  animation()->setLoopOutPoint(loopOut - 1);
+  animation()->setLoopInPoint(loopIn - 1);
+  refresh();
+}
+
+static QString easingNames()
+{
+  QStringList names;
+  for (int i = 0; i < Easing::PresetCount; i++) names << QString::fromLatin1(Easing::technicalName(static_cast<Easing::Preset>(i)));
+  return names.join(", ");
+}
+
 QJsonObject ControlApi::state(const QJsonObject&)
 {
   Animation* animation = m_host->animation();
@@ -302,6 +390,10 @@ QJsonObject ControlApi::state(const QJsonObject&)
   answer["frames"] = animation->getNumberOfFrames();
   answer["fps"] = animation->fps();
   answer["frame"] = animation->getFrame() + 1;
+  int loopIn = 0, loopOut = 0;
+  loopPoints(animation, loopIn, loopOut);
+  answer["loop_in"] = loopIn;
+  answer["loop_out"] = loopOut;
   answer["playing"] = m_host->playing();
   answer["joint_limits"] = UserSettings::jointLimits();
   answer["mirror"] = animation->getMirrored();
@@ -362,6 +454,15 @@ QJsonObject ControlApi::setPose(const QJsonObject& request)
   Animation* animation = m_host->animation();
   const QJsonObject wanted = request.value("joints").toObject();
 
+  Easing::Preset easing = Easing::defaultPreset();
+  const bool setEasing = request.contains("easing");
+  if (setEasing)
+  {
+    const QByteArray name = request.value("easing").toString().toUtf8();
+    if (!request.value("easing").isString() || !Easing::presetFromTechnicalName(std::string_view(name.constData(), name.size()), easing))
+      return fail(QString("Unknown easing. Use one of: %1.").arg(easingNames()));
+  }
+
   // check everything first, so a mistake changes nothing
   struct Change { BVHNode* node; double rotation[3]; };
   QList<Change> changes;
@@ -392,7 +493,12 @@ QJsonObject ControlApi::setPose(const QJsonObject& request)
       if (value[i] < low[i]) { value[i] = low[i]; wasClamped = true; }
       if (value[i] > high[i]) { value[i] = high[i]; wasClamped = true; }
     }
+    const bool wasKey = change.node->isKeyframe(animation->getFrame());
     animation->setRotation(change.node, value[0], value[1], value[2]);
+    // a new key gets the default (Slow both ends) unless a name was given; the
+    // ease options of the settings dialog do not decide it, so the answer is the same on every computer
+    if ((setEasing || !wasKey) && change.node->isKeyframe(animation->getFrame()))
+      setEasingInto(animation, change.node, animation->getFrame(), easing);
     applied[change.node->name()] = QJsonArray{value[0], value[1], value[2]};
     if (wasClamped) clamped << change.node->name();
   }
@@ -402,6 +508,7 @@ QJsonObject ControlApi::setPose(const QJsonObject& request)
   QJsonObject answer = ok();
   answer["frame"] = animation->getFrame() + 1;
   answer["applied"] = applied;
+  if (setEasing) answer["easing"] = QString::fromLatin1(Easing::technicalName(easing));
   if (!clamped.isEmpty())
   {
     answer["clamped"] = clamped;
@@ -461,6 +568,15 @@ QJsonObject ControlApi::keys(const QJsonObject& request)
     return list;
   };
 
+  // frame number (as text) to easing name, for every key
+  auto easingsOf = [animation, frames](BVHNode* node)
+  {
+    QJsonObject list;
+    for (int frame = 0; frame < frames; frame++)
+      if (node->isKeyframe(frame)) list[QString::number(frame + 1)] = easingOf(animation, node, frame);
+    return list;
+  };
+
   QJsonObject answer = ok();
   if (request.contains("joint"))
   {
@@ -468,18 +584,67 @@ QJsonObject ControlApi::keys(const QJsonObject& request)
     BVHNode* node = findJoint(request.value("joint").toString(), error);
     if (!node) return fail(error);
     answer["frames"] = keyFramesOf(node);
+    answer["easing"] = easingsOf(node);
     return answer;
   }
 
   QJsonObject all;
+  QJsonObject allEasing;
   for (BVHNode* node : allJoints(animation))
   {
     const QJsonArray list = keyFramesOf(node);
     // every joint has a key at frame 1; leave out joints that only have that
-    if (list.size() > 1) all[node->name()] = list;
+    if (list.size() > 1)
+    {
+      all[node->name()] = list;
+      allEasing[node->name()] = easingsOf(node);
+    }
   }
   answer["joints"] = all;
+  answer["easing"] = allEasing;
   answer["note"] = "Every joint has a key frame at frame 1. Joints with only that are not listed.";
+  return answer;
+}
+
+QJsonObject ControlApi::setLoop(const QJsonObject& request)
+{
+  Animation* animation = m_host->animation();
+  const int frames = animation->getNumberOfFrames();
+  int loopIn = 0, loopOut = 0;
+
+  if (request.contains("off"))
+  {
+    if (!request.value("off").isBool()) return fail("\"off\" must be true or false.");
+    if (request.value("off").toBool())
+    {
+      if (request.contains("in") || request.contains("out")) return fail("Use either \"off\": true or \"in\" and \"out\", not both.");
+      loopIn = UserSettings::protectFirstFrame() ? 2 : 1;
+      loopOut = frames;
+      if (loopIn > loopOut) loopIn = loopOut;
+    }
+  }
+  if (loopIn == 0)
+  {
+    for (const char* name : {"in", "out"})
+    {
+      const QJsonValue value = request.value(name);
+      if (!value.isDouble() || value.toDouble() != std::floor(value.toDouble()))
+        return fail("\"in\" and \"out\" must be whole frame numbers, or use \"off\": true.");
+    }
+    const double in = request.value("in").toDouble();
+    const double out = request.value("out").toDouble();
+    if (in < 1 || out > frames || in > frames || out < 1)
+      return fail(QString("The loop points must be frames from 1 to %1.").arg(frames));
+    if (in >= out) return fail("\"in\" must be before \"out\".");
+    loopIn = static_cast<int>(in);
+    loopOut = static_cast<int>(out);
+  }
+
+  m_host->setLoopPoints(loopIn, loopOut);
+  loopPoints(animation, loopIn, loopOut);
+  QJsonObject answer = ok();
+  answer["loop_in"] = loopIn;
+  answer["loop_out"] = loopOut;
   return answer;
 }
 

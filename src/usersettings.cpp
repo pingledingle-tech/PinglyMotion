@@ -34,8 +34,6 @@ bool UserSettings::m_jointLimits = true;
 const QString UserSettings::m_jointLimitsKey = "joint_limits";
 bool UserSettings::m_protectFirstFrame = true;
 const QString UserSettings::m_protectFirstFrameKey = "protect_first_frame";
-bool UserSettings::m_showTimelinePanel = true;
-const QString UserSettings::m_showTimelinePanelKey = "show_timeline_panel";
 bool UserSettings::m_darkTheme = true;
 const QString UserSettings::m_darkThemeKey = "dark_theme";
 QString UserSettings::m_body = "ruth2";
@@ -89,7 +87,6 @@ void UserSettings::setJointLimits(bool on)        { m_jointLimits = on; }
 bool UserSettings::jointLimits()                     { return m_jointLimits; }
 void UserSettings::setProtectFirstFrame(bool on)  { m_protectFirstFrame = on; }
 bool UserSettings::protectFirstFrame()               { return m_protectFirstFrame; }
-bool UserSettings::showTimelinePanel()               { return m_showTimelinePanel; }
 void UserSettings::setDarkTheme(bool on)          { m_darkTheme = on; }
 bool UserSettings::darkTheme()                       { return m_darkTheme; }
 void UserSettings::setBody(const QString& value)
@@ -147,7 +144,6 @@ void UserSettings::readSettings()
     setSkeleton(settings.value(m_skeletonKey).toBool());
     setJointLimits(settings.value(m_jointLimitsKey).toBool());
     setProtectFirstFrame(settings.value(m_protectFirstFrameKey).toBool());
-    m_showTimelinePanel = settings.value(m_showTimelinePanelKey, true).toBool();
     setDarkTheme(settings.value(m_darkThemeKey, true).toBool());
     // older versions saved only "Bento body (Max)" on or off
     if (settings.contains(m_bodyKey))

@@ -29,6 +29,8 @@ Teach-the-AI form (issue 20).
 
 ## Job A: easing and loop points through the control commands
 
+**Status:** built (pull request "Control commands: easing on set_pose and keys, new set_loop, loop points in state"); `keys` returns an `easing` object next to the unchanged `frames`, and `off` is `"off": true`.
+
 - **Goal:** the assistant sets and reads the easing of a key and the loop points, so it can do
   steps 5 and 6 of the guide's work rhythm itself.
 - **Commands:** `set_pose` gets an optional `easing` (`linear`, `ease-in`, `ease-out`,

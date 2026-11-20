@@ -73,7 +73,7 @@ HMAC-SHA256(key, `"pinglymotion-hello:" + nonce`). Compare it with your own resu
 differs. The MCP server does this before every request.
 
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
-`set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
+`set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
 `export_anim`, `find_reference`, `load_reference`. `screenshot` has options for several views, frames and labels (below).
 
@@ -91,6 +91,26 @@ in that folder. Paths outside it, also through `..` or links, are refused.
 - `export_anim` writes only a new file ending in `.anim`; it never replaces any file.
 - `new_animation` and `open_file` refuse while there are unsaved changes; save first.
 - `PINGLYMOTION_CONTROL_FOLDER` sets another folder (used by the tests).
+
+### Easing and loop points
+
+- `set_pose` takes an optional `easing`: `linear` (Even), `ease-in` (Slow start), `ease-out` (Slow finish),
+  `ease-in-out` (Slow both ends, the default of a new key), `ease-out-overshoot` (Overshoot then settle) or
+  `constant` (Hold then snap). These are the technical names of `src/easing.*` and of a key's `curve` in
+  `.dingle`. It is the easing of the movement into each key the call makes, from the joint's key before it, the same choice the easing tiles show for that key (the program stores it on the key before). The first key of a joint has no movement into it: easing there changes nothing and `keys` shows the default. Without `easing`
+  a key that already exists keeps the one it has, and a new key gets `ease-in-out` (the ease options of the
+  settings dialog do not decide it). A name that is not one of the six (the match is exact, also in case) fails with
+  an error that lists all six, and no key is made. A custom curve drawn in the curve editor on that key is
+  replaced by the named choice. The answer repeats the name as `easing`.
+- `keys` also returns `easing`: for one `joint` an object from frame number (as text) to name, for all joints
+  an object from joint to such an object (as `joints` does). A key with a custom curve says `custom`. The
+  `frames` lists are unchanged.
+- `set_loop` takes `in` and `out`, two whole frame numbers (first frame is 1), `in` before `out`, both
+  from 1 to the number of frames; or `off: true`, which puts the loop points back to the default (the whole
+  animation, from frame 2 while the first frame is protected). Anything else fails and changes nothing. The
+  answer has `loop_in` and `loop_out`.
+- `state` returns `loop_in` and `loop_out` (the same default when none are stored yet). `.dingle` keeps both
+  the easing and the loop points.
 
 ### Reference library: find_reference and load_reference
 
