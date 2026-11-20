@@ -1,6 +1,6 @@
 Branch: fix/slider-decimals-192
 Status: active
-Pull request: pending
+Pull request: #217
 Files:
 - src/sliderscale.h
 - src/pinglymotionwindow.cpp
