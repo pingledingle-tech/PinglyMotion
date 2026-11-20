@@ -68,6 +68,10 @@ Good to know
 - It will not replace other files, and it will not throw away unsaved changes.
 - Before it sends the key, the MCP server checks that it really talks to
   PinglyMotion.
+- The AI gets a short guide when it connects: how Second Life treats an
+  animation, the joint names, which way each turn goes and how to work. It reads
+  it with the tool "read_guide" (also an MCP resource, pinglymotion://guide).
+  The guide is the file ASSISTANT_GUIDE.md in this folder.
 
 Step-by-step guide with more details:
 https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md#set-up-an-ai-assistant

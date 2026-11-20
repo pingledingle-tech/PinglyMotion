@@ -47,6 +47,8 @@ The Claude Desktop extension: `python3 tools/mcp/build_mcpb.py` writes `PinglyMo
 
 The MCP server exists twice for now (issue #7; the `.mcpb` already uses the Node one, the Python one goes after the project owner has tried the extension in Claude Desktop): `tools/mcp/pinglymotion_mcp.py` and the Node version `tools/mcp/pinglymotion_mcp.js` (built-in modules only, because Claude Desktop ships Node). Change both the same way. `python3 tests/test_mcp_node.py` checks the Node one like `tests/test_mcp_proxy.py` checks the Python one; `PINGLYMOTION_MCP=node` makes `tests/smoke_control.py` use it.
 
+The assistant guide `docs/ASSISTANT_GUIDE.md` (issue #129) holds a calibration table that the test `pinglymotion_calibration_tests` (folder `tests/calibration`) makes from `bin/data/SLFemale.bvh` and `SL.lim`; the test fails when the table in the guide is out of date. After changing the skeleton or the limits: `PINGLYMOTION_UPDATE_GUIDE=1 /tmp/build/tests/calibration/pinglymotion_calibration_tests`, and commit the guide. The MCP servers read the guide from a file next to them (`read_guide` tool, resource `pinglymotion://guide`); the Windows zip, the release and the `.mcpb` carry a copy.
+
 After changing the control commands: `PINGLYMOTION_UPDATE_COMMANDS=1` and run `pinglymotion_control_tests` from `bin/` to regenerate `tools/mcp/commands.json`.
 
 ## The Windows zip

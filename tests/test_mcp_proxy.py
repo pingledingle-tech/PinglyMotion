@@ -5,11 +5,14 @@
 - It refuses a connection file that points anywhere but this machine.
 - It sends the key only after the program on the port proved it knows the key (issue #15).
 - It names the AI tool (X-PinglyMotion-Client) and sends heartbeats (issue #43).
+- The assistant guide (issue #129): short instructions, the read_guide tool and the guide resource.
 """
 
+import contextlib
 import hashlib
 import hmac
 import http.server
+import io
 import json
 import os
 import sys
@@ -144,8 +147,31 @@ def main():
         assert ("/api/heartbeat", "claude-ai") in pinglymotion.posts, pinglymotion.posts
         assert proxy.seen == []
 
+        # the assistant guide: short instructions, the read_guide tool and the resource; no PinglyMotion needed
+        os.environ["PINGLYMOTION_CONTROL_FILE"] = os.path.join(tmp, "missing.json")
+        with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
+            guide = handle.read()
+        assert len(pinglymotion_mcp.INSTRUCTIONS) < 1000 and "read_guide" in pinglymotion_mcp.INSTRUCTIONS
+        names = [tool["name"] for tool in pinglymotion_mcp.tool_list()]
+        assert names == [c["name"] for c in pinglymotion_mcp.bundled_commands()] + ["read_guide"], names
+        result = pinglymotion_mcp.call_tool("read_guide", {})
+        assert result == {"content": [{"type": "text", "text": guide}]}, result
+        assert "Calibration table" in guide and "Frame 1 is the reference" in guide
+
+        def ask(method, params=None):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                pinglymotion_mcp.handle({"jsonrpc": "2.0", "id": 7, "method": method, "params": params or {}})
+            return json.loads(out.getvalue())
+
+        assert "resources" in ask("initialize", {"protocolVersion": "2025-06-18"})["result"]["capabilities"]
+        assert [r["uri"] for r in ask("resources/list")["result"]["resources"]] == ["pinglymotion://guide"]
+        contents = ask("resources/read", {"uri": "pinglymotion://guide"})["result"]["contents"]
+        assert contents == [{"uri": "pinglymotion://guide", "mimeType": "text/markdown", "text": guide}]
+        assert ask("resources/read", {"uri": "file:///etc/passwd"})["error"]["code"] == -32002
+
     print("OK: MCP ignores HTTP_PROXY, only connects locally, checks it is PinglyMotion before sending the key, "
-          "names the AI tool and sends heartbeats")
+          "names the AI tool, sends heartbeats and serves the assistant guide")
 
 
 if __name__ == "__main__":

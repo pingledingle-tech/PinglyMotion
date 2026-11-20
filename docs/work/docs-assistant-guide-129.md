@@ -1,6 +1,6 @@
 Branch: docs/assistant-guide-129
 Status: active
-Pull request: pending
+Pull request: #144
 Files:
 - docs/ASSISTANT_GUIDE.md
 - tests/calibration/**
