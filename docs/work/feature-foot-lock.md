@@ -1,8 +1,9 @@
 Branch: feature/foot-lock
-Status: active
+Status: done
 Pull request: #182
 Files:
 - src/footlock.*
+- src/motioncleanup.h
 - tests/footlock/**
 - tests/CMakeLists.txt
 - docs/research/VIDEO_TO_MOTION.md

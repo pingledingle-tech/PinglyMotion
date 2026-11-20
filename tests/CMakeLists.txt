@@ -121,6 +121,7 @@ ADD_SUBDIRECTORY (retargetxra)
 
 # clean-up of imported motion: resample, start pose, in place, loop seam, smoothing (#17, #18)
 ADD_SUBDIRECTORY (motioncleanup)
+ADD_SUBDIRECTORY (footlock)
 
 # play button logic (src/playback.h): play to the end several times in a row
 ADD_EXECUTABLE (pinglymotion_playback_tests tst_playback.cpp ${CORE_SRC})
