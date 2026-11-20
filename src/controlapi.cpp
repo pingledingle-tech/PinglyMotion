@@ -14,6 +14,7 @@
 #include <QtMath>
 
 #include "animation.h"
+#include "animcheck.h"
 #include "bvhnode.h"
 #include "motiondescribe.h"
 #include "posedescribe.h"
@@ -67,6 +68,8 @@ namespace
      "{\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[]"},
     {"describe_motion", "Describes the movement over a frame range (default: frame 2 to the last, because Second Life does not play frame 1) in words instead of pictures: for each classic joint that moves, its main axis increasing, holding or decreasing, by how many degrees, how fast (slow, medium, fast, very fast) and from which frame; the joints in the order they start; the paths of the hands and feet (straight, arc or out and back, length, top speed); foot contact, both feet off the floor, and where the weight is; the hip's height, bob and travel; the rhythm (repeat period, beats per minute, legs and arms in opposition or together, feet alternating); the loop seam between the loop points; what changes between consecutive keys; and a one-line summary. Never changes the animation or the current frame.",
      "{\"from\":{\"type\":\"integer\",\"description\":\"First frame, first frame of the animation is 1. Default 2 (1 when the animation has only 2 frames)\"},\"to\":{\"type\":\"integer\",\"description\":\"Last frame. Default the last frame\"}}", "[]"},
+    {"check_animation", "Checks the whole animation against Second Life's rules and common mistakes, with fixed thresholds, and lists what is wrong with the frames and joints it is about. Errors (Second Life refuses the file or loses part of it): longer than 60 s, nothing moves away from frame 1, the hip more than 5 m from frame 1. Warnings (it plays but likely looks wrong): posed joints that keep the frame-1 angle and are dropped, a key past a joint limit, a foot under the floor, floating, foot sliding, a sudden jump in one frame, nothing moving at the start, a loop seam that jumps. Notes: joints left out on export, keys that change nothing. Never changes the animation or the current frame.",
+     "{}", "[]"},
   };
 
   QJsonArray vector(const QVector3D& v)
@@ -188,10 +191,11 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
     {"save_file", &ControlApi::saveFile}, {"screenshot", &ControlApi::screenshot},
     {"set_figure", &ControlApi::setFigure}, {"set_camera", &ControlApi::setCamera},
     {"describe_pose", &ControlApi::describePose}, {"describe_motion", &ControlApi::describeMotion},
+    {"check_animation", &ControlApi::checkAnimation},
   };
 
   const QString command = request.value("command").toString();
-  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion.");
+  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation.");
   if (!m_host->animation()) return fail("No animation is open.");
 
   for (const auto& entry : table)
@@ -605,6 +609,11 @@ QJsonObject ControlApi::describeMotion(const QJsonObject& request)
   }
   if (from >= to) return fail(QString("\"from\" (%1) must be before \"to\" (%2): a motion needs at least two frames.").arg(from).arg(to));
   return MotionDescribe::describe(animation, from - 1, to - 1);
+}
+
+QJsonObject ControlApi::checkAnimation(const QJsonObject&)
+{
+  return AnimCheck::check(m_host->animation());
 }
 
 QJsonObject ControlApi::setCamera(const QJsonObject& request)

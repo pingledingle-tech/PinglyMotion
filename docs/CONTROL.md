@@ -74,7 +74,7 @@ differs. The MCP server does this before every request.
 
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
-`save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`.
+`save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`.
 
 ### Files
 
@@ -150,6 +150,33 @@ the middle within 1.5 inches; the motion repeats when the autocorrelation of all
 0.7 at some period of at least a quarter of a second (the first peak at least 90% as high as the best
 one); legs or arms move in opposition below a correlation of -0.5 and together above 0.5; the loop
 seam is smooth up to 2 degrees and half an inch, a small jump up to 10 degrees and 2 inches.
+
+### check_animation
+
+`check_animation` checks the whole animation against Second Life's rules and common mistakes, so an
+AI assistant can fix a problem before the user uploads the file. It takes no parameters and never
+changes the animation or the current frame. The answer has `errors`, `warnings` and `notes` (counts),
+`findings` (errors first, then warnings, then notes; each with `check`, `severity`, `message` and the
+frames, joints or numbers it is about), `passed` (the checks that found nothing) and a one-line
+`summary`.
+
+| Check | Severity | Finds |
+|---|---|---|
+| `length` | error | longer than 60 s, counted as the `.anim` export does: (frames - 2) times the frame time |
+| `nothing_moves` | error | no joint and not the hip moves away from frame 1, so Second Life gets an empty animation |
+| `hip_offset` | error | the hip more than 5 m (about 197 inches) from frame 1 on an axis; the `.anim` format cuts it |
+| `frame1_posed` | warning | classic joints turned more than 5 degrees in frame 1 that keep that angle all the time: Second Life drops them, so their pose is lost |
+| `joint_limits` | warning | a key more than 0.5 degrees past the joint's natural limit (`joints`), even with the limits turned off |
+| `foot_under_floor` | warning | an ankle more than 2 inches below the floor Second Life stands the figure on (frame 1's hip at standing height, legs straight down) |
+| `floating` | warning | both ankles more than 3 inches above that floor for 1 s or more (a jump is shorter; sitting on something is expected) |
+| `foot_sliding` | warning | a foot that is down (within 2 inches of the lowest ankle, up again above 3, as `describe_motion`) moves along the floor faster than 20 inches per second for at least 3 frames |
+| `jerk` | warning | one frame in which a joint turns at least 15 degrees, or the hip moves at least 6 inches, and that is at least 3 times both neighbouring frames |
+| `dead_start` | warning | nothing moves (no joint faster than 10 degrees per second, the hip not faster than 2 inches per second) for at least 0.5 s from frame 2 |
+| `loop_seam` | warning, or note | the loop seam as `describe_motion` judges it: a `jump` is a warning, a `small jump` a note |
+| `dropped_joints` | note | classic joints that never move from frame 1 (within 0.001 radians, as the export compares): the export leaves them out |
+| `identical_keys` | note | keys equal (within 0.01) to the key before and the key after them, or a last key equal to the one before: they change nothing |
+
+Lists in a finding are cut after 8 entries; `count` gives the total where it matters.
 
 ## Set up an AI assistant
 
