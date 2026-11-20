@@ -87,6 +87,9 @@ CASES = [
         "reference": frames(31) + [
             key(2, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
             key(16, rShldr=(0, 0, -70), rForeArm=(0, 90, 0)),
+            # the default loop ends one frame before the last (frame 30 of 31): the key that closes
+            # the loop goes there, and the last frame keeps it
+            key(30, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
             key(31, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
         ],
         "checks": [
