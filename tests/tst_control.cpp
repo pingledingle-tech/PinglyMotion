@@ -15,6 +15,9 @@
 #include <QTemporaryDir>
 
 #include "animation.h"
+#include "animexport.h"
+#include "animexportdialog.h"
+#include "animimport.h"
 #include "bvh.h"
 #include "bvhnode.h"
 #include "controlapi.h"
@@ -127,6 +130,10 @@ class ControlTest : public QObject
     void checkAnimationFindsDeadStart();
     void checkAnimationFindsIdenticalKeys();
     void checkAnimationOfFiles();
+    void exportAnimWritesTheJump();
+    void exportAnimMatchesTheExporter();
+    void exportAnimRefusesBadPathsAndOptions();
+    void exportAnimRefusesCheckErrors();
 
     void serverAnswersWithKey();
     void serverRefusesWithoutKey();
@@ -1516,6 +1523,175 @@ void ControlTest::checkAnimationOfFiles()
     if (file.endsWith("edge_one_frame.bvh")) QCOMPARE(checksOf(answer).first(), QString("nothing_moves"));
     if (file.endsWith("edge_large_translation.bvh")) QVERIFY(checksOf(answer).contains("hip_offset"));
   }
+}
+
+// export_anim: the jump example through the command, read back with the .anim reader
+static QByteArray readAll(const QString& path)
+{
+  QFile file(path);
+  return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+
+void ControlTest::exportAnimWritesTheJump()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  BVH bvh;
+  Animation animation(&bvh, PINGLYMOTION_TOOLS "/../examples/jump.dingle");
+  const int frames = animation.getNumberOfFrames();
+  QVERIFY(frames > 10);
+  animation.setLoopInPoint(2);              // frame 3 as the program shows it
+  animation.setLoopOutPoint(frames - 2);    // the frame before the last
+  FakeHost host(&animation);
+  ControlApi api(&host);
+  api.setWorkFolder(dir.path());
+
+  const QJsonObject answer = api.execute(QJsonObject{{"command", "export_anim"}, {"path", "jump.anim"}, {"priority", 4},
+                                                     {"loop", true}, {"ease_in", 0.5}, {"ease_out", 0.25}, {"hand_pose", "fist"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  const QString file = dir.filePath("jump.anim");
+  QCOMPARE(QFileInfo(answer["file"].toString()).canonicalFilePath(), QFileInfo(file).canonicalFilePath());
+  const QByteArray bytes = readAll(file);
+  QCOMPARE(answer["bytes"].toInt(), int(bytes.size()));
+  QCOMPARE(answer["priority"].toInt(), 4);
+  QCOMPARE(answer["hand_pose"].toString(), QString("Fist"));
+  QCOMPARE(answer["loop_in"].toInt(), 3);
+  QCOMPARE(answer["loop_out"].toInt(), frames - 1);
+  QVERIFY(answer["joints_written"].toInt() > 0);
+  QVERIFY(answer["warnings"].isArray());
+
+  const AnimImport::Result read = AnimImport::parse(bytes);
+  QVERIFY2(read.ok(), qPrintable(read.error));
+  const AnimImport::Motion& motion = *read.motion;
+  const double frameTime = animation.frameTime();
+  // frame 1 is the reference pose and is not played
+  const double seconds = (frames - 2) * frameTime;
+  QVERIFY2(qAbs(motion.duration - seconds) <= frameTime + 1e-4, qPrintable(QString("%1 vs %2").arg(motion.duration).arg(seconds)));
+  QCOMPARE(qRound(answer["seconds"].toDouble() * 100), qRound(seconds * 100));
+  QCOMPARE(motion.basePriority, 4);
+  QVERIFY(motion.loop);
+  QVERIFY(qAbs(motion.loopIn - 1 * frameTime) < 1e-3);
+  QVERIFY(qAbs(motion.loopOut - (frames - 3) * frameTime) < 1e-3);
+  QVERIFY(qAbs(motion.easeIn - 0.5) < 1e-4);
+  QVERIFY(qAbs(motion.easeOut - 0.25) < 1e-4);
+  QCOMPARE(motion.handPose, AnimExportUi::handPoseNames().indexOf("Fist"));
+  QCOMPARE(motion.handPose, 3);
+  QCOMPARE(int(motion.joints.size()), answer["joints_written"].toInt());
+}
+
+// the same options through the command and through the exporter (as the menu calls it) give the same bytes
+void ControlTest::exportAnimMatchesTheExporter()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  BVH bvh;
+  Animation animation(&bvh, PINGLYMOTION_TOOLS "/../examples/jump.dingle");
+  FakeHost host(&animation);
+  ControlApi api(&host);
+  api.setWorkFolder(dir.path());
+
+  const QJsonObject answer = api.execute(QJsonObject{{"command", "export_anim"}, {"path", "same.anim"}, {"priority", 3},
+                                                     {"loop", true}, {"hand_pose", "Pointing, right hand only"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+
+  AnimExportUi::Settings settings;
+  settings.priority = 3;
+  settings.loop = true;
+  settings.handPose = 8;
+  BVH other;
+  const AnimFile::Animation model = other.snapshot(&animation, AnimFile::Format::Bvh);
+  const AnimExport::Result direct = AnimExport::write(model, AnimExportUi::toOptions(settings, model.frameTime,
+                                                                                   animation.getLoopInPoint(), animation.getLoopOutPoint()));
+  QVERIFY(direct.ok());
+  QCOMPARE(readAll(dir.filePath("same.anim")), direct.bytes);
+
+  // the defaults are the dialog's defaults
+  QVERIFY(api.execute(QJsonObject{{"command", "export_anim"}, {"path", "plain.anim"}})["ok"].toBool());
+  const AnimExport::Result plain = AnimExport::write(model, AnimExportUi::toOptions(AnimExportUi::Settings(), model.frameTime,
+                                                                                  animation.getLoopInPoint(), animation.getLoopOutPoint()));
+  QCOMPARE(readAll(dir.filePath("plain.anim")), plain.bytes);
+}
+
+// wrong paths and options fail, and nothing is written
+void ControlTest::exportAnimRefusesBadPathsAndOptions()
+{
+  QTemporaryDir root;
+  QVERIFY(root.isValid());
+  QVERIFY(QDir(root.path()).mkdir("work"));
+  const QString work = root.filePath("work");
+  BVH bvh;
+  Animation animation(&bvh, PINGLYMOTION_TOOLS "/../examples/jump.dingle");
+  FakeHost host(&animation);
+  ControlApi api(&host);
+  api.setWorkFolder(work);
+  auto exportTo = [&](const QJsonObject& extra) {
+    QJsonObject request = extra;
+    request["command"] = "export_anim";
+    return api.execute(request);
+  };
+
+  QVERIFY(!exportTo(QJsonObject{})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "jump.bvh"}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "jump"}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "../outside.anim"}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", root.filePath("outside.anim")}})["ok"].toBool());
+  QVERIFY(!QFileInfo::exists(root.filePath("outside.anim")));
+
+  // an existing file is never replaced
+  {
+    QFile existing(QDir(work).filePath("taken.anim"));
+    QVERIFY(existing.open(QIODevice::WriteOnly));
+    existing.write("keep");
+  }
+  const QJsonObject taken = exportTo(QJsonObject{{"path", "taken.anim"}});
+  QVERIFY(!taken["ok"].toBool());
+  QVERIFY(taken["error"].toString().contains("already exists"));
+  QCOMPARE(readAll(QDir(work).filePath("taken.anim")), QByteArray("keep"));
+
+  // an unknown hand pose lists the 14 names
+  const QJsonObject hand = exportTo(QJsonObject{{"path", "hand.anim"}, {"hand_pose", "Wave"}});
+  QVERIFY(!hand["ok"].toBool());
+  QCOMPARE(AnimExportUi::handPoseNames().size(), 14);
+  for (const QString& name : AnimExportUi::handPoseNames())
+    QVERIFY2(hand["error"].toString().contains(name), qPrintable(name));
+
+  QVERIFY(!exportTo(QJsonObject{{"path", "p.anim"}, {"priority", 7}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "p.anim"}, {"priority", -1}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "p.anim"}, {"priority", 2.5}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "p.anim"}, {"priority", "2"}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "p.anim"}, {"ease_in", -1}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "p.anim"}, {"ease_out", 61}})["ok"].toBool());
+  QVERIFY(!exportTo(QJsonObject{{"path", "p.anim"}, {"loop", "yes"}})["ok"].toBool());
+
+  QCOMPARE(QDir(work).entryList(QDir::Files), QStringList{"taken.anim"});
+}
+
+// check_animation runs first: an animation longer than 60 s is refused with its reason
+void ControlTest::exportAnimRefusesCheckErrors()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  m_api->setWorkFolder(dir.path());
+
+  // nothing moves yet
+  QJsonObject answer = run(R"({"command":"export_anim","path":"still.anim"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY(answer["check"].toObject()["errors"].toInt() > 0);
+
+  QVERIFY(run(R"({"command":"set_pose","frame":5,"joints":{"lShldr":[0,0,40]}})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_fps","fps":10})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_frame_count","frames":700})")["ok"].toBool());
+  answer = run(R"({"command":"export_anim","path":"long.anim"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY2(answer["error"].toString().contains("60"), qPrintable(answer["error"].toString()));
+  QVERIFY(checksOf(answer["check"].toObject()).contains("length"));
+  QVERIFY(QDir(dir.path()).entryList(QDir::Files).isEmpty());
+
+  // short enough again: it is written
+  QVERIFY(run(R"({"command":"set_frame_count","frames":30})")["ok"].toBool());
+  answer = run(R"({"command":"export_anim","path":"short.anim"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QVERIFY(QFileInfo::exists(dir.filePath("short.anim")));
 }
 
 // issue #43: the status bar learns who is connected and what it did

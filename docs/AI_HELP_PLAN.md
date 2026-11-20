@@ -51,6 +51,9 @@ Teach-the-AI form (issue 20).
 
 ## Job B: `export_anim` command
 
+**Status:** built (pull request "Control command export_anim"); the `loop` option uses the loop points as
+the program stores them, so it works before job A's `set_loop` exists.
+
 - **Goal:** the assistant writes the Second Life `.anim` file itself, with the right priority,
   loop and hand pose, and tells the user the file name to upload.
 - **Commands:** new `export_anim`: `path` (must end in `.anim`, same folder rules as
