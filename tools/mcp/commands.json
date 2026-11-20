@@ -250,6 +250,18 @@
             },
             "required": [
             ]
+        },
+        {
+            "description": "Describes a frame (default: current frame) in words instead of a picture: world positions of the head, hands, feet and hip (inches and metres, each foot's height above the floor); plain sentences for notable things (bent knees or elbows, a hand above the head or behind the body, feet flat or lifted, weight on one foot, a lean, the head turned or tipped); the classic joints that moved from frame 1, in everyday names, with \"more\" or \"less\"; left/right symmetry of the arms and legs; and a one-line summary. Covers the classic joints only, not the Bento fingers, face, wings or tail.",
+            "name": "describe_pose",
+            "parameters": {
+                "frame": {
+                    "description": "Frame number, first frame is 1",
+                    "type": "integer"
+                }
+            },
+            "required": [
+            ]
         }
     ],
     "ok": true

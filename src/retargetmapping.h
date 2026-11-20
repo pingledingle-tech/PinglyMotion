@@ -9,7 +9,8 @@
  * layout, a fingerprint that tells one source skeleton from another, a
  * function that puts the hand-made entries on top of the automatic mapping of
  * src/retarget.*, and a store that keeps one file per fingerprint in the
- * user's data folder. The dialog that edits the mapping is a later job.
+ * user's data folder. Editor holds the state of the dialog that edits the
+ * mapping (src/retargetdialog.*), with no window, so it can be tested.
  *
  * Like the other readers, parse() takes any bytes and either returns a whole
  * mapping or an error message, never half a result and never a crash.
@@ -137,7 +138,7 @@ namespace RetargetMapping
 
   // the entries that describe a mapping the user changed: every pair whose
   // target differs from the automatic mapping, and every automatic pair that
-  // was taken out (empty target). For the later dialog, and for tests.
+  // was taken out (empty target). Used by Editor::toFile, and by tests.
   QVector<Entry> differences(const Retarget::Mapping& automatic,const Retarget::Mapping& edited,
                              const AnimFile::Animation& source,const AnimFile::Animation& target);
 
@@ -179,6 +180,76 @@ namespace RetargetMapping
 
     private:
       QString m_folder;
+  };
+
+  // ---- editing (the state behind the mapping dialog) ----------------------
+
+  // the automatic mapping of one source skeleton, the hand-made changes on
+  // top of it, and saving and loading them per skeleton. No window: the
+  // dialog in src/retargetdialog.* shows it, and the tests drive it directly.
+  class Editor
+  {
+    public:
+      Editor(const AnimFile::Animation& source,const AnimFile::Animation& target);
+
+      // the fingerprint of the source skeleton; empty when the skeleton is not
+      // usable (then nothing can be saved)
+      QString fingerprint() const { return m_fingerprint; }
+
+      const Retarget::Mapping& automatic() const { return m_automatic; }
+      // the mapping with the hand-made changes; this is what the import uses
+      const Retarget::Mapping& current() const { return m_current; }
+
+      // the target joints a source joint can be given, in skeleton order:
+      // joints of the Second Life skeleton with three rotation channels
+      const QVector<int>& choices() const { return m_choices; }
+      // a choice that the retargeting knows as part of the body (pelvis, spine,
+      // arms, hands, fingers, legs, feet); the others are face, wings, tail...
+      bool isBodyJoint(int targetJoint) const;
+
+      // the target joint a source joint drives now, -1 when it is left out
+      int targetOf(int sourceJoint) const;
+      // the source joint that drives a target joint now, -1 when none
+      int sourceOf(int targetJoint) const;
+
+      // give a source joint another target joint (-1: leave it out). A target
+      // joint that another source joint had is taken from it. False (and no
+      // change) when a joint is not valid or not one of choices().
+      bool setTarget(int sourceJoint,int targetJoint);
+      // back to the automatic mapping
+      void reset();
+
+      // the source joint has another target than the automatic mapping gave it
+      bool changedByHand(int sourceJoint) const;
+      bool hasChanges() const;
+
+      // the hand-made changes as a file, with the fingerprint and the hints
+      Mapping toFile(const QString& generator=QString()) const;
+      // put a saved mapping on top of the automatic one (replacing any change
+      // made so far); the notes of apply() for entries that could not be used
+      QStringList use(const Mapping& saved);
+
+      struct Loaded
+      {
+        bool found=false;     // a saved mapping for this skeleton is there
+        QString error;        // it is there but could not be used
+        QStringList notes;    // entries of it that were skipped
+      };
+      // load the saved mapping for this skeleton from a store and use it
+      Loaded load(const Store& store);
+      // save the changes for this skeleton; with no changes, any saved file is
+      // deleted, so the next import uses the automatic mapping again.
+      // Empty when it worked, else the error.
+      QString save(const Store& store,const QString& generator=QString()) const;
+
+    private:
+      AnimFile::Animation m_source;
+      AnimFile::Animation m_target;
+      QString m_fingerprint;
+      Retarget::Mapping m_automatic;
+      Retarget::Mapping m_current;
+      QVector<int> m_choices;
+      QVector<int> m_automaticTarget;   // per source joint
   };
 }
 

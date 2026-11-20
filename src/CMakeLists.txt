@@ -33,10 +33,12 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               propfile.cpp
               retarget.cpp
               retargetdialog.cpp
+              retargetmapping.cpp
               main.cpp
               mesh.cpp
               meshmodel.cpp
               paneltitlebar.cpp
+              posedescribe.cpp
               prop.cpp
               propmanager.cpp
               releaseinfo.cpp
