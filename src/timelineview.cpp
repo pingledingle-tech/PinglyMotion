@@ -19,12 +19,14 @@
  ***************************************************************************/
 
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QPainter>
 
 #include "animation.h"
 #include "constants.h"
+#include "easingtiles.h"
 #include "jointgroups.h"
 #include "timeline.h"
 
@@ -51,8 +53,10 @@ class TrackScrollArea : public QScrollArea
 
 TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
 {
-  QHBoxLayout* layout=new QHBoxLayout(this);
+  // the tracks above, the easing tile row below (issue #53 step 5)
+  QVBoxLayout* layout=new QVBoxLayout(this);
   layout->setContentsMargins(0,0,0,0);
+  layout->setSpacing(0);
 
   // Bento has far more tracks than fit on screen, so track names and key
   // frames scroll up and down together in an outer scroll area
@@ -85,7 +89,11 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   contentLayout->addWidget(view);
   outer->setWidget(content);
 
-  layout->addWidget(outer);
+  layout->addWidget(outer,1);
+
+  easingTiles_=new EasingTiles(this);
+  easingTiles_->setObjectName(QStringLiteral("easingTiles"));
+  layout->addWidget(easingTiles_,0);
 
   connect(timeline,SIGNAL(animationChanged(Animation*)),this,SLOT(setAnimation(Animation*)));
   connect(timeline,SIGNAL(trackClicked(int)),this,SLOT(selectTrack(int)));
@@ -112,6 +120,11 @@ void TimelineView::setAnimation(Animation* anim)
 Timeline* TimelineView::getTimeline() const
 {
   return timeline;
+}
+
+EasingTiles* TimelineView::easingTiles() const
+{
+  return easingTiles_;
 }
 
 void TimelineView::selectTrack(int track)

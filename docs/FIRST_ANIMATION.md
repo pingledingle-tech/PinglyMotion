@@ -40,10 +40,11 @@ The key button has a key icon. It sits right of the play button. It looks presse
 1. Click the play button, left of the key button.
 2. Click it again to stop. If it still plays, click once more.
 
-The arm now moves between your keys. To change the feel, click a key's joint. Then use the boxes under the joint list:
+The arm now moves between your keys. To change the feel, click your second key on the timeline. Then look at the row of six tiles under the timeline:
 
-- Tick **Ease Out** for a slow start away from this key.
-- Tick **Ease In** for a slow finish into this key.
+- Each tile shows a small figure walking at its own speed. The dots behind it show where it is fast and where it is slow.
+- Click a tile, for example **Slow both ends**. Play again. The arm now starts and stops softly.
+- The line under the tiles tells you what each one is good for.
 
 To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle` in the `examples` folder. It is the bundled `jump.dingle` with every key 2.5 times later, so the same jump runs at 40 % of the speed. The file is made by `tools/slow_example.py`, and the original is unchanged.
 

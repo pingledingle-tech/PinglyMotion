@@ -26,6 +26,9 @@
 #include <QTimer>
 #include <QVector3D>
 
+#include <optional>
+
+#include "easing.h"
 #include "iktree.h"
 #include "playstate.h"
 
@@ -133,6 +136,10 @@ class Animation : public QObject
     void setEaseOut(BVHNode* node,int frameNum,bool state);
     bool easeIn(BVHNode* node,int frameNum);
     bool easeOut(BVHNode* node,int frameNum);
+    // the stored easing choice of a key frame (issue #53): the segment that
+    // starts at the key plays with it; empty means the two switches decide
+    void setCurve(BVHNode* node,int frameNum,const std::optional<Easing::Preset>& curve);
+    std::optional<Easing::Preset> curve(BVHNode* node,int frameNum);
 
     void copyKeyFrame(int jointNumber,int from,int to);
     void moveKeyFrame(int jointNumber,int from,int to,bool copy=false);

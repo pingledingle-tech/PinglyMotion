@@ -29,6 +29,7 @@
 #include <QMap>
 #include <QTimer>
 
+#include "easing.h"
 #include "animfile.h"
 #include "panellayout.h"
 #include "playstate.h"
@@ -76,7 +77,6 @@ class PinglyMotionWindow : public QMainWindow
     void queueAfterShow();
 
   signals:
-    void enableEaseInOut(bool state);
     void resetCamera();
     void protectFrame(bool state);
     void newProp(Prop::PropType, QSharedPointer<Mesh> mesh);
@@ -161,8 +161,6 @@ class PinglyMotionWindow : public QMainWindow
     void on_yPositionSlider_valueChanged(int);
     void on_zPositionEdit_editingFinished();
     void on_zPositionSlider_valueChanged(int);
-    void on_easeInCheck_stateChanged(int newState);
-    void on_easeOutCheck_stateChanged(int newState);
 
     void on_newBoxPropButton_clicked();
     void on_newSpherePropButton_clicked();
@@ -247,8 +245,9 @@ class PinglyMotionWindow : public QMainWindow
     void positionValue();
     void positionSlider(const QObject* slider);
 
-    void easeInChanged(int change);
-    void easeOutChanged(int change);
+    // a tile of the easing row was clicked (issue #53 step 5): store the choice
+    // on the pose change that ends at the selected key frame
+    void easingChoiceClicked(Easing::Preset preset);
 
     void frameSlider(int position);
     void nextPlaystate();

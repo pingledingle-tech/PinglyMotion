@@ -10,7 +10,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 
 ## Proposed order
 
-**State on 19 November 2026:** steps 1, 2, 3 and 5 are done as first parts (writer, reader, retargeting core, glTF reader, Blender guide). What is left in them is the menus (visible, so they need the owner's Windows test). Step 4 (#27): the CMU clips (#3) are merged on 20 November 2026, next to the eight Mesh2Motion clips. Step 6 (#11, #53): #53 steps 1 to 4 are merged (easing maths, playback through it, the choice stored as `curve` in `.dingle`, export test); the tile row (step 5, visible) is next. Step 7 (#14) is not started. `.dingle` (#26): jobs 1 to 3 are merged (#48, #51, #57); job 4, opening `.dingle` files, is in #70 and waits for the owner's Windows test. The table below is the original proposal.
+**State on 19 November 2026:** steps 1, 2, 3 and 5 are done as first parts (writer, reader, retargeting core, glTF reader, Blender guide). What is left in them is the menus (visible, so they need the owner's Windows test). Step 4 (#27): the CMU clips (#3) are merged on 20 November 2026, next to the eight Mesh2Motion clips. Step 6 (#11, #53): #53 steps 1 to 4 are merged (easing maths, playback through it, the choice stored as `curve` in `.dingle`, export test); the tile row (step 5, visible) is built and waits for the owner's Windows test; the wave (step 6) is next. Step 7 (#14) is not started. `.dingle` (#26): jobs 1 to 3 are merged (#48, #51, #57); job 4, opening `.dingle` files, is in #70 and waits for the owner's Windows test. The table below is the original proposal.
 
 | Step | Issue | Job | Why now | Depends on | Model |
 |---|---|---|---|---|---|

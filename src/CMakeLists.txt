@@ -18,6 +18,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               controlapi.cpp
               dingle.cpp
               dinglesave.cpp
+              easing.cpp
+              easingtiles.cpp
               controlindicator.cpp
               controlserver.cpp
               floor.cpp
