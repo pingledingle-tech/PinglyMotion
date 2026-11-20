@@ -400,12 +400,12 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
 
   if(avm && anim.hasPositionKeys)
   {
-    // The position of a position key frame is taken from the root joint's key
-    // frames, interpolated between them when the position key is not also a
-    // root key frame - exactly like the old parser (open question in #62:
-    // the motion values of that frame could be used instead).
+    // The position of a position key frame is the stored position of that
+    // frame. It used to be the root joint's rotation key frames, interpolated
+    // between them, which lost a position key that had no root rotation key at
+    // the same frame (issue #188; open question in #62).
     for(const AnimFile::Key& key : anim.positionKeys)
-      lastLoadedPositionNode->addKeyframe(key.frame,root->frameData(key.frame).position(),QVector3D());
+      lastLoadedPositionNode->addKeyframe(key.frame,anim.position(0,key.frame),QVector3D());
     for(const AnimFile::Key& key : anim.positionKeys)
     {
       if(!lastLoadedPositionNode->isKeyframe(key.frame)) continue;
