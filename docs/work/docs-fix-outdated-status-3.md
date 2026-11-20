@@ -1,6 +1,6 @@
 Branch: docs/fix-outdated-status-3
-Status: active
-Pull request: pending
+Status: done
+Pull request: #227
 Files:
 - docs/POSING_UX.md
 - docs/AI_HELP_PLAN.md

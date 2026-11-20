@@ -1,12 +1,11 @@
 # AI help plan: the next three jobs (issue 129)
 
-Status 20 Nov 2026. Done: the assistant guide, the calibration test, `read_guide` and `describe_pose`.
-In progress (another job, not covered here): `describe_motion` and `check_animation`.
-This page plans the three jobs after those. Nothing here is started; each job waits for the project owner's go.
+Status 21 Nov 2026. Done and merged: the assistant guide, the calibration test, `read_guide`, `describe_pose`, `describe_motion`, `check_animation`, and jobs A, B and C below.
+This page planned the three jobs after those; all three are built.
 
 ## Gaps an assistant still hits with a beginner
 
-Assume `describe_motion` and `check_animation` are merged. An assistant helping a beginner make a
+`describe_motion` and `check_animation` are merged. Before jobs A to C, an assistant helping a beginner make a
 Second Life animation can then read the pose and the motion and find rule breaks, but:
 
 1. **It cannot set the timing it plans.** The guide tells it to choose one of six easing names per
@@ -30,6 +29,7 @@ Teach-the-AI form (issue 20).
 ## Job A: easing and loop points through the control commands
 
 **Status:** built (pull request "Control commands: easing on set_pose and keys, new set_loop, loop points in state"); `keys` returns an `easing` object next to the unchanged `frames`, and `off` is `"off": true`.
+**Follow-up (not done):** the loop spin boxes in the window do not follow `set_loop` commands; playback and saved files are right.
 
 - **Goal:** the assistant sets and reads the easing of a key and the loop points, so it can do
   steps 5 and 6 of the guide's work rhythm itself.
