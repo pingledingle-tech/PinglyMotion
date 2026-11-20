@@ -1,6 +1,6 @@
 Branch: docs/credits
 Status: active
-Pull request: pending
+Pull request: #208
 Files:
 - docs/work/docs-credits.md
 - CREDITS.md
