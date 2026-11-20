@@ -1,6 +1,6 @@
 Branch: job/ai-easing-loop
 Status: active
-Pull request: pending
+Pull request: #222
 Files:
 - src/controlapi.*
 - tests/tst_control.cpp
