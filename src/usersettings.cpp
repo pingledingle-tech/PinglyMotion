@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include "panellayout.h"
 #include "settings.h"
 
 #include "usersettings.h"
@@ -54,13 +55,17 @@ bool UserSettings::m_hideJointsInLists = false;
 const QString UserSettings::m_hideJointsInListsKey = "hide_joints_in_lists";
 bool UserSettings::m_tipsOn = true;
 const QString UserSettings::m_tipsOnKey = "tips_on";
-QByteArray UserSettings::m_windowState;
-const QString UserSettings::m_windowStateKey = "window_state";
+QByteArray UserSettings::m_panelLayout;
+const QString UserSettings::m_panelLayoutKey = PanelLayout::SettingLayout;
+int UserSettings::m_panelLayoutVersion = 0;
+const QString UserSettings::m_panelLayoutVersionKey = PanelLayout::SettingLayoutVersion;
+QByteArray UserSettings::m_mainWindowGeometry;
+const QString UserSettings::m_mainWindowGeometryKey = PanelLayout::SettingWindowGeometry;
 
-int UserSettings::m_mainWindowWidth = 850;
-const QString UserSettings::m_mainWindowWidthKey = "main_window_width";
-int UserSettings::m_mainWindowHeight = 600;
-const QString UserSettings::m_mainWindowHeightKey = "main_window_height";
+int UserSettings::m_mainWindowWidth = 0;
+const QString UserSettings::m_mainWindowWidthKey = PanelLayout::LegacyWidth;
+int UserSettings::m_mainWindowHeight = 0;
+const QString UserSettings::m_mainWindowHeightKey = PanelLayout::LegacyHeight;
 
 QString UserSettings::m_lastPath = QString();
 const QString UserSettings::m_lastPathKey = "last_path";
@@ -84,7 +89,6 @@ void UserSettings::setJointLimits(bool on)        { m_jointLimits = on; }
 bool UserSettings::jointLimits()                     { return m_jointLimits; }
 void UserSettings::setProtectFirstFrame(bool on)  { m_protectFirstFrame = on; }
 bool UserSettings::protectFirstFrame()               { return m_protectFirstFrame; }
-void UserSettings::setShowTimelinePanel(bool on)  { m_showTimelinePanel = on; }
 bool UserSettings::showTimelinePanel()               { return m_showTimelinePanel; }
 void UserSettings::setDarkTheme(bool on)          { m_darkTheme = on; }
 bool UserSettings::darkTheme()                       { return m_darkTheme; }
@@ -107,12 +111,14 @@ void UserSettings::setHideJointsInLists(bool on)     { m_hideJointsInLists = on;
 bool UserSettings::hideJointsInLists()               { return m_hideJointsInLists; }
 void UserSettings::setTipsOn(bool on)                { m_tipsOn = on; }
 bool UserSettings::tipsOn()                          { return m_tipsOn; }
-void UserSettings::setWindowState(const QByteArray& state) { m_windowState = state; }
-QByteArray UserSettings::windowState()               { return m_windowState; }
+void UserSettings::setPanelLayout(const QByteArray& state) { m_panelLayout = state; }
+QByteArray UserSettings::panelLayout()               { return m_panelLayout; }
+void UserSettings::setPanelLayoutVersion(int value)  { m_panelLayoutVersion = value; }
+int UserSettings::panelLayoutVersion()               { return m_panelLayoutVersion; }
+void UserSettings::setMainWindowGeometry(const QByteArray& value) { m_mainWindowGeometry = value; }
+QByteArray UserSettings::mainWindowGeometry()        { return m_mainWindowGeometry; }
 
-void UserSettings::setMainWindowWidth(int value)     { m_mainWindowWidth = value; }
 int UserSettings::mainWindowWidth()                  { return m_mainWindowWidth; }
-void UserSettings::setMainWindowHeight(int value)    { m_mainWindowHeight = value; }
 int UserSettings::mainWindowHeight()                 { return m_mainWindowHeight; }
 
 void UserSettings::setLastPath(QString value)        { m_lastPath = value; }
@@ -141,7 +147,7 @@ void UserSettings::readSettings()
     setSkeleton(settings.value(m_skeletonKey).toBool());
     setJointLimits(settings.value(m_jointLimitsKey).toBool());
     setProtectFirstFrame(settings.value(m_protectFirstFrameKey).toBool());
-    setShowTimelinePanel(settings.value(m_showTimelinePanelKey).toBool());
+    m_showTimelinePanel = settings.value(m_showTimelinePanelKey, true).toBool();
     setDarkTheme(settings.value(m_darkThemeKey, true).toBool());
     // older versions saved only "Bento body (Max)" on or off
     if (settings.contains(m_bodyKey))
@@ -157,10 +163,14 @@ void UserSettings::readSettings()
     setHiddenJointGroups(settings.value(m_hiddenJointGroupsKey, 7).toInt());
     setHideJointsInLists(settings.value(m_hideJointsInListsKey, false).toBool());
     setTipsOn(settings.value(m_tipsOnKey, true).toBool());
-    setWindowState(settings.value(m_windowStateKey).toByteArray());
+    // the old window_state (with the Properties panel) is not read any more
+    setPanelLayout(settings.value(m_panelLayoutKey).toByteArray());
+    setPanelLayoutVersion(settings.value(m_panelLayoutVersionKey, 0).toInt());
+    setMainWindowGeometry(settings.value(m_mainWindowGeometryKey).toByteArray());
 
-    setMainWindowWidth(settings.value(m_mainWindowWidthKey).toInt());
-    setMainWindowHeight(settings.value(m_mainWindowHeightKey).toInt());
+    // the old width and height: read once, used only while main_window_geometry is empty
+    m_mainWindowWidth = settings.value(m_mainWindowWidthKey, 0).toInt();
+    m_mainWindowHeight = settings.value(m_mainWindowHeightKey, 0).toInt();
 
     setLastPath(settings.value(m_lastPathKey).toString());
 
@@ -188,7 +198,6 @@ void UserSettings::writeSettings()
   settings.setValue(m_skeletonKey, skeleton());
   settings.setValue(m_jointLimitsKey, jointLimits());
   settings.setValue(m_protectFirstFrameKey, protectFirstFrame());
-  settings.setValue(m_showTimelinePanelKey, showTimelinePanel());
   settings.setValue(m_darkThemeKey, darkTheme());
   settings.setValue(m_bodyKey, body());
   settings.remove(m_bentoBodyKey);
@@ -199,10 +208,11 @@ void UserSettings::writeSettings()
   settings.setValue(m_hiddenJointGroupsKey, hiddenJointGroups());
   settings.setValue(m_hideJointsInListsKey, hideJointsInLists());
   settings.setValue(m_tipsOnKey, tipsOn());
-  settings.setValue(m_windowStateKey, windowState());
-
-  settings.setValue(m_mainWindowWidthKey, mainWindowWidth());
-  settings.setValue(m_mainWindowHeightKey, mainWindowHeight());
+  settings.setValue(m_panelLayoutKey, panelLayout());
+  settings.setValue(m_panelLayoutVersionKey, panelLayoutVersion());
+  settings.setValue(m_mainWindowGeometryKey, mainWindowGeometry());
+  // show_timeline_panel, main_window_width and main_window_height are retired:
+  // read once above, never written again (docs/PANELS_PLAN.md, section 7)
 
   settings.setValue(m_lastPathKey, lastPath());
 

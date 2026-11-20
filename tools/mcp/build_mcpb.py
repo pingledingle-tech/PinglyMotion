@@ -23,6 +23,7 @@ FILES = [
     ("tools/mcp/mcpb/manifest.json", "manifest.json"),
     ("tools/mcp/pinglymotion_mcp.js", "server/pinglymotion_mcp.js"),
     ("tools/mcp/commands.json", "server/commands.json"),
+    ("docs/ASSISTANT_GUIDE.md", "server/ASSISTANT_GUIDE.md"),
     ("tools/mcp/mcpb/README.txt", "README.txt"),
     ("LICENSE", "LICENSE"),
 ]

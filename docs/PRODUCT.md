@@ -57,7 +57,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 
 - **Journey:** Enable local control, describe a pose, let the assistant use joint and frame commands, inspect a screenshot, and adjust.
 - **Value:** A lower barrier for starting and iterating, while the user keeps control.
-- **Status:** Local HTTP and MCP commands exist; setup and available commands are in [CONTROL.md](CONTROL.md). More advanced motion generation, visual assessment and collision or foot-contact analysis need investigation. The status bar shows whether an assistant is connected (old #43, done). `PinglyMotion.mcpb` installs the MCP server in the Claude app with a double-click, with the Node server, so no Python (not yet tried in Claude Desktop; #7).
+- **Status:** Local HTTP and MCP commands exist; setup and available commands are in [CONTROL.md](CONTROL.md). Every assistant can read the [assistant guide](ASSISTANT_GUIDE.md) with the `read_guide` tool (Second Life rules, joint names, which way each turn goes, typical poses, a work rhythm). More advanced motion generation, visual assessment and collision or foot-contact analysis need investigation. The status bar shows whether an assistant is connected (old #43, done). `PinglyMotion.mcpb` installs the MCP server in the Claude app with a double-click, with the Node server, so no Python (not yet tried in Claude Desktop; #7).
 
 ### 6. Bring an external animation to SL
 
@@ -87,7 +87,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 | AI and openness | Improve the existing local API and MCP. Avoid tying the editor to a single assistant. Investigate easier installation and client status. | [CONTROL.md](CONTROL.md), [#7](https://github.com/pingledingle-tech/PinglyMotion/issues/7) |
 | Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests (done: opening, saving and removal of the old code), a new working format `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)), then native .anim export. | [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9), [#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26) |
 | Import and retargeting | Explore glTF, Blender, an own rigged avatar and an SL Bento bridge. | [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13) |
-| New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. | [IDEAS.md](IDEAS.md) |
+| New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. Eight CC0 Mesh2Motion clips are already test motions (in the Windows zip: `examples/mesh2motion`), credited in Help > About and the README. | [IDEAS.md](IDEAS.md) |
 | Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#where-pinglymotion-is-going) |
 
 ## Proposed roadmap
@@ -129,7 +129,7 @@ The work runs in **two tracks side by side**. They mostly change different files
 
 1. Camera and keys: one scheme for new users, Blender and Second Life habits; old joint modifier keys removed. Beside it: a data file from Firestorm with joint names, groups, left/right pairs and hand presets (LGPL notice), and the status bar (Claude, Aurora, tips switch). The data file and the status bar are done; camera and keys are in [#1](https://github.com/pingledingle-tech/PinglyMotion/pull/1), waiting for a Windows test.
 2. Friendly names, section headings and search in the joint list.
-3. Floating, movable panels; Tab hides them; reset layout.
+3. Floating, movable panels; Tab hides them; reset layout. Plan: [PANELS_PLAN.md](PANELS_PLAN.md). Job P2 (three panels **Joints**, **Selected joint** and **Timeline**, the **View** menu, the layout saved with a version number) and jobs P3 and P4 (window and layout remembered with Qt's own calls, a code-built default for Reset layout, Tab hides and shows the panels) are built and wait for the project owner's Windows test; P5 and P6 follow.
 4. Selected-joint card: trackball, sliders, joint limit warning.
 5. Left / Right / Mirror and the whole-pose buttons.
 6. **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL.

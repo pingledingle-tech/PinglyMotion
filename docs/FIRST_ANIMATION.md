@@ -21,7 +21,7 @@ Frame 0 is locked. Do not pose there. To unlock it, turn off **Options > Protect
 ## 3. Pose the figure
 
 1. Click an arm on the figure. Or click a small ball on it.
-2. Drag a coloured ring to turn the arm. Or use the sliders in the Properties panel.
+2. Drag a coloured ring to turn the arm. Or use the sliders in the Selected joint panel on the right.
 3. Hold **Shift** while you drag for finer control.
 
 ## 4. Check the key
@@ -45,6 +45,8 @@ The arm now moves between your keys. To change the feel, click your second key o
 - Each tile shows a small figure walking at its own speed. The dots behind it show where it is fast and where it is slow.
 - Click a tile, for example **Slow both ends**. Play again. The arm now starts and stops softly.
 - The line under the tiles tells you what each one is good for.
+
+To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle` in the `examples` folder. It is the bundled `jump.dingle` with every key 2.5 times later, so the same jump runs at 40 % of the speed. The file is made by `tools/slow_example.py`, and the original is unchanged.
 
 ## 7. Save
 

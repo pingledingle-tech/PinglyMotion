@@ -1,0 +1,14 @@
+Branch: docs/slow-jump-example
+Status: done
+Pull request: #145
+Files:
+- tools/slow_example.py
+- tests/test_slow_example.py
+- tests/tst_roundtrip.cpp
+- examples/jump_slow.dingle
+- docs/FIRST_ANIMATION.md
+- docs/work/docs-slow-jump-example.md
+
+## What
+
+Adds `examples/jump_slow.dingle`, the bundled jump with all key frames stretched by 2.5, so the owner can watch and learn from it. Made by a small reproducible script in `tools/`, with a test. Part of #27.

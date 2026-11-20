@@ -6,6 +6,8 @@
 
 #include "auroralink.h"
 
+#include "constants.h"
+
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
@@ -157,6 +159,15 @@ static bool sameBytes(const QByteArray& a,const QByteArray& b)
   unsigned char diff=0;
   for(int i=0;i<a.size();i++) diff|=(unsigned char)(a[i]^b[i]);
   return diff==0;
+}
+
+QString AuroraLink::clientName(const QString& buildLabel)
+{
+  QString label;
+  for(const QChar c:buildLabel)
+    label+=(c.unicode()>=0x20 && c.unicode()<0x7f) ? c : QChar('-');
+  const QString name=QString("PinglyMotion %1").arg(label.simplified()).trimmed();
+  return name.left(64).trimmed();
 }
 
 void AuroraLink::setEnabled(bool on,quint16 port)
@@ -328,7 +339,7 @@ void AuroraLink::handleLine(const QByteArray& line)
     }
     QJsonObject auth;
     auth["type"]="auth";
-    auth["client"]=QString("PinglyMotion %1").arg(QCoreApplication::applicationVersion()).trimmed();
+    auth["client"]=clientName(Constants::buildLabel());
     auth["response"]=QString::fromLatin1(authResponse(key,challenge));
     // 16 random bytes from the system's secure source
     QByteArray nonce(16,'\0');

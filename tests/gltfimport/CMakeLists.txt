@@ -48,3 +48,15 @@ TARGET_COMPILE_DEFINITIONS (pinglymotion_m2mmotions_tests PRIVATE
 TARGET_LINK_LIBRARIES (pinglymotion_m2mmotions_tests Qt6::Core Qt6::Gui Qt6::Test)
 ADD_TEST (NAME m2mmotions COMMAND pinglymotion_m2mmotions_tests)
 SET_TESTS_PROPERTIES (m2mmotions PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Test of the converted CMU motion capture clips in tests/motions/cmu (issues #27 and #3).
+ADD_EXECUTABLE (pinglymotion_cmumotions_tests tst_cmumotions.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp
+                ${CMAKE_SOURCE_DIR}/src/animfile.cpp
+                ${CMAKE_SOURCE_DIR}/src/easing.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_cmumotions_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_cmumotions_tests PRIVATE
+  PINGLYMOTION_CMU_MOTIONS="${CMAKE_SOURCE_DIR}/tests/motions/cmu")
+TARGET_LINK_LIBRARIES (pinglymotion_cmumotions_tests Qt6::Core Qt6::Gui Qt6::Test)
+ADD_TEST (NAME cmumotions COMMAND pinglymotion_cmumotions_tests)
+SET_TESTS_PROPERTIES (cmumotions PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
