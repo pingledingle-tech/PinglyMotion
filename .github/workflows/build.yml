@@ -106,6 +106,7 @@ jobs:
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt docs/ASSISTANT_GUIDE.md dist/mcp/
           # the Claude Desktop extension: double-click it to install (issue #7)
           python tools/mcp/build_mcpb.py dist/PinglyMotion.mcpb
+          cp "tools/mcp/START_HERE_CLAUDE.txt" "dist/START HERE - Claude.txt"
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/PinglyMotion.exe
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -192,6 +193,8 @@ jobs:
         run: python3 tests/test_mcpb.py
       - name: Generated edge-case animations are up to date
         run: python3 tests/test_gen_edge_bvh.py
+      - name: Generated .dingle and .anim edge cases are up to date
+        run: python3 tests/test_gen_edge_motion.py
       - name: BVH comparer for the Blender round trip (issue 13)
         run: python3 tests/test_bvh_compare.py
       - name: Exported BVH files pass Second Life's upload rules

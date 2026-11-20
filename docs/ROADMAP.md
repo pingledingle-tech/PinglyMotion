@@ -5,7 +5,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 ## Current state (20 November 2026)
 
 - Foundation done: modern renderer (OpenGL 3.3 core, GPU skinning), joint limits on the SL standard and a new IK solver, joint tabs with the Firestorm joint data, status bar, new parser and data model with round-trip tests and fuzzing (#9), security audit fixes (`docs/SECURITY_AUDIT.md`), version in the window title, Ruth2 and Roth2 bodies (#15), live link to Aurora with quaternion poses (old #78, #95).
-- File formats (steps 1 to 5 below): `.dingle` (#26), `.anim` export and import (#10, #22), BVH retargeting with the hand-made `.jointmap` core and its mapping dialog (#16, done), glTF import (#12), all with their menus; Blender guide and scripted round trip, not yet run in Blender (#13).
+- File formats (steps 1 to 5 below): `.dingle` (#26), `.anim` export and import (#10, #22), BVH retargeting with the hand-made `.jointmap` core and its mapping dialog (#16, done), glTF import (#12), all with their menus; Blender guide and scripted round trip, run in Blender 5.3 and in CI (#13).
 - Test motions (step 4, #27): the Mesh2Motion and CMU clips are in `examples/`.
 - Easing (step 6, #11, #53): #53 steps 1 to 5 are done (maths, playback, `curve` in `.dingle`, export, tile row); the wave (step 6) is next.
 - Posing (step 7, #14): camera and keys, joint list names and panels P1, P2, P3, P4 and P5 are done; P6 is in the owner's test; the selected-joint card, mirror and whole-pose buttons and the rest are open.
