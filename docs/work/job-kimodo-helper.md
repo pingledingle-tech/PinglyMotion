@@ -1,6 +1,6 @@
 Branch: job/kimodo-helper
 Status: active
-Pull request: pending
+Pull request: #175
 Files:
 - tools/kimodo/**
 - tests/test_kimodo_helper.py
