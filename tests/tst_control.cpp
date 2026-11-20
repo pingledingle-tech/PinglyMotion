@@ -822,8 +822,9 @@ void ControlTest::openFileAcceptsDingle()
   QCOMPARE(jump.getLoopOutPoint(), 19);
 
   // any case of the ending; other endings are refused and the error names .dingle
-  QVERIFY(QFile::copy(work + "/jump.dingle", work + "/JUMP.DINGLE"));
-  QVERIFY(run(R"({"command":"open_file","path":"JUMP.DINGLE"})")["ok"].toBool());
+  // (another base name: on Windows and macOS file names ignore case, so JUMP.DINGLE would be jump.dingle itself)
+  QVERIFY(QFile::copy(work + "/jump.dingle", work + "/UPPER.DINGLE"));
+  QVERIFY(run(R"({"command":"open_file","path":"UPPER.DINGLE"})")["ok"].toBool());
   answer = run(R"({"command":"open_file","path":"jump.txt"})");
   QVERIFY(!answer["ok"].toBool());
   QVERIFY2(answer["error"].toString().contains(".dingle"), qPrintable(answer["error"].toString()));
@@ -2409,8 +2410,12 @@ void ControlTest::loadReferenceRefusesChangedAndOutsideFiles()
   QCOMPARE(answer["error"].toString(), QString("The clip's file does not match the library index (changed or damaged), so it was not opened."));
   answer = run(R"({"command":"load_reference","id":"t-parent"})");
   QCOMPARE(answer["error"].toString(), QString("The index entry has no usable file path."));
+#ifndef Q_OS_WIN
+  // On Windows QFile::link makes a .lnk shortcut, not a symbolic link, so link.bvh is a small file of
+  // its own there and is refused as changed instead (the loop above checks that it is refused at all).
   answer = run(R"({"command":"load_reference","id":"t-link"})");
   QCOMPARE(answer["error"].toString(), QString("The clip's file is outside the library folder."));
+#endif
   answer = run(R"({"command":"load_reference","id":"t-gone"})");
   QCOMPARE(answer["error"].toString(), QString("The clip's file is missing from the library folder."));
 }
