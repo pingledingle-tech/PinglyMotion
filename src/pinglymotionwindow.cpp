@@ -842,7 +842,10 @@ void PinglyMotionWindow::backgroundClicked()
 // other two are tall (left or right).
 void PinglyMotionWindow::buildDocks()
 {
-  setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks);
+  // GroupedDragging (job P6): panels docked together on the same side, or
+  // tabbed together, move together while one of them is dragged, instead of
+  // leaving the others behind.
+  setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks | QMainWindow::GroupedDragging);
 
   // --- timeline panel: tracks, frame slider, play and key frame buttons,
   // loop in / out, frame count and FPS

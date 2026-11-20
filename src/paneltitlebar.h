@@ -27,6 +27,7 @@ class PanelTitleBar : public QWidget
   protected:
     void changeEvent(QEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
 
   private:
     enum class Symbol { Float, Dock, Close };
