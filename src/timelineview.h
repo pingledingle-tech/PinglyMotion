@@ -31,6 +31,7 @@
 class QScrollArea;
 class Timeline;
 class Animation;
+class EasingTiles;
 
 class TimelineTracks : public QWidget
 {
@@ -63,6 +64,8 @@ class TimelineView : public QFrame
     ~TimelineView();
 
     Timeline* getTimeline() const;
+    // the easing tile row under the tracks (issue #53 step 5)
+    EasingTiles* easingTiles() const;
 
   public slots:
     void selectTrack(int track);
@@ -78,6 +81,7 @@ class TimelineView : public QFrame
     QScrollArea* view;
     Timeline* timeline;
     TimelineTracks* timelineTracks;
+    EasingTiles* easingTiles_;
 };
 
 #endif

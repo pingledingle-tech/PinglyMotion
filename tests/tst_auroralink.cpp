@@ -25,6 +25,7 @@
 #include "auroralink.h"
 #include "bvh.h"
 #include "bvhnode.h"
+#include "constants.h"
 #include "usersettings.h"
 
 static BVHNode* findNode(Animation* animation, const QString& name)
@@ -59,6 +60,7 @@ class AuroraLinkTest : public QObject
     void poseQuaternionsMatchAnimExport();
     void tokenFileAndResponse();
     void findsThePortByTokenFile();
+    void clientNameIsPinglyMotionWithBuildLabel();
     void linkAuthenticatesThenSendsPose();
     void linkSendsQuaternionsWhenAuroraCan();
     void linkSendsOnlyChanges();
@@ -432,6 +434,23 @@ void AuroraLinkTest::findsThePortByTokenFile()
   // no token file at all: the preview is off
   QVERIFY(QFile::remove(AuroraLink::tokenFilePath(port)));
   QCOMPARE(AuroraLink::findPort(port), quint16(0));
+}
+
+void AuroraLinkTest::clientNameIsPinglyMotionWithBuildLabel()
+{
+  QCOMPARE(AuroraLink::clientName("0.4.0"), QString("PinglyMotion 0.4.0"));
+  // the label of a development build has a dot-in-the-middle sign: plain text only
+  QCOMPARE(AuroraLink::clientName(QString("0.4.0 \u00b7 pr \u00b7 abc123")), QString("PinglyMotion 0.4.0 - pr - abc123"));
+  QCOMPARE(AuroraLink::clientName(QString(200, 'x')).size(), 64);
+  QCOMPARE(AuroraLink::clientName(QString()), QString("PinglyMotion"));
+  // what the link really sends
+  QString expected = AuroraLink::clientName(Constants::buildLabel());
+  QVERIFY(expected.startsWith("PinglyMotion "));
+  AuroraLink link;
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept());
+  QCOMPARE(nextMessage()["client"].toString(), expected);
+  link.setEnabled(false);
 }
 
 void AuroraLinkTest::linkAuthenticatesThenSendsPose()

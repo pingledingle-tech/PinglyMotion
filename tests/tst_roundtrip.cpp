@@ -100,6 +100,8 @@ class RoundTripTest : public QObject
     void corpus_data();
     void corpus();
     void storedEasingSurvivesOpenSaveAndExport();
+    void overshootExportStaysInsideLimits();
+    void slowJumpLoadsAndKeepsTheKeys();
 };
 
 // guards against a wrong folder making all data-driven tests silently empty
@@ -366,6 +368,94 @@ void RoundTripTest::storedEasingSurvivesOpenSaveAndExport()
     for (int key : n->keyframeList())
       if (n->curve(key)) stored++;
   QCOMPARE(stored, 1);
+}
+
+// issue #53 proposal 4: with the program's limits file loaded, "Overshoot,
+// then settle" into a key that sits exactly on a joint limit never passes
+// that limit in playback, and the export (BVH::snapshot) gets the same frames
+void RoundTripTest::overshootExportStaysInsideLimits()
+{
+  BVH bvh;
+  Animation anim(&bvh, PINGLYMOTION_EXAMPLES "/jump.dingle");
+  BVHNode* node = nullptr;
+  for (BVHNode* n : joints(anim.getMotion()))
+    if (n->name() == "lShldr") node = n;
+  QVERIFY(node);
+
+  // the X rotation channel and its limit from data/SL.lim (lShldr X -135..90)
+  int channel = -1;
+  for (int i = 0; i < node->numChannels; i++)
+    if (node->channelType[i] == BVH_XROT) channel = i;
+  QVERIFY(channel >= 0);
+  const float high = float(node->channelMax[channel]);
+  QVERIFY2(high < 10000.0f, "the limits file was not loaded (run from bin/)");
+
+  // two keys of our own: 0 -> the limit over ten frames, with the overshoot choice
+  const QList<int> keys = node->keyframeList();
+  const int from = keys[0];
+  QVERIFY(keys.size() >= 2);
+  const int to = keys[1];
+  QVERIFY(to - from >= 2);
+  QVector3D start = node->frameData(from).rotation();
+  start.setX(0.0f);
+  QVector3D end = node->frameData(to).rotation();
+  end.setX(high);
+  node->setKeyframeRotation(from, start);
+  node->setKeyframeRotation(to, end);
+  node->setCurve(from, Easing::Preset::OvershootThenSettle);
+
+  bool cut = false;
+  for (int frame = from; frame <= to; frame++)
+  {
+    const float x = node->frameData(frame).rotation().x();
+    QVERIFY2(x <= high && x >= 0.0f, qPrintable(QString("frame %1 x %2").arg(frame).arg(x)));
+    if (Easing::segmentValue(Easing::Preset::OvershootThenSettle, 0.0, high, to - from, frame - from) > high)
+    {
+      QCOMPARE(x, high);
+      cut = true;
+    }
+  }
+  QVERIFY(cut);
+
+  // the export samples the same clamped values
+  const AnimFile::Animation exported = bvh.snapshot(&anim, AnimFile::Format::Bvh);
+  const int column = exported.findJoint("lShldr");
+  QVERIFY(column >= 0);
+  for (int frame = from; frame <= to; frame++)
+  {
+    const float x = exported.rotation(column, frame).x();
+    QVERIFY2(x <= high && x >= 0.0f, qPrintable(QString("export frame %1 x %2").arg(frame).arg(x)));
+    QCOMPARE(x, node->frameData(frame).rotation().x());
+  }
+}
+
+// the slower jump example (tools/slow_example.py): the program's own reader opens it,
+// the loop and the frame count are the stretched ones, and each key of the bundled
+// jump sits at 2.5 times its frame with the same value
+void RoundTripTest::slowJumpLoadsAndKeepsTheKeys()
+{
+  const Dingle::Result slow = Dingle::parse(readAll(PINGLYMOTION_EXAMPLES "/jump_slow.dingle"));
+  QVERIFY2(slow.ok(), qPrintable(slow.error));
+  const Dingle::Result base = Dingle::parse(readAll(PINGLYMOTION_EXAMPLES "/jump.dingle"));
+  QVERIFY2(base.ok(), qPrintable(base.error));
+  QCOMPARE(slow.animation->frames, 75);
+  QCOMPARE(slow.animation->loopIn, 23);
+  QCOMPARE(slow.animation->loopOut, 48);
+  QCOMPARE(slow.animation->frameTime, base.animation->frameTime);
+  QCOMPARE(slow.animation->joints.size(), base.animation->joints.size());
+  for (int j = 0; j < base.animation->joints.size(); j++)
+  {
+    const auto& a = base.animation->joints[j].keys;
+    const auto& b = slow.animation->joints[j].keys;
+    QCOMPARE(b.size(), a.size());
+    for (int k = 0; k < a.size(); k++)
+    {
+      QCOMPARE(b[k].frame, (a[k].frame * 5 + 1) / 2);
+      const QVector3D before=base.animation->rotation(j,a[k].frame);
+      const QVector3D after=slow.animation->rotation(j,b[k].frame);
+      QVERIFY2((before-after).length()<1e-4f, "a key value changed");
+    }
+  }
 }
 
 QTEST_MAIN(RoundTripTest)

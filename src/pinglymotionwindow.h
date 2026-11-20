@@ -29,7 +29,9 @@
 #include <QMap>
 #include <QTimer>
 
+#include "easing.h"
 #include "animfile.h"
+#include "panellayout.h"
 #include "playstate.h"
 #include "prop.h"
 #include "updatechecker.h"
@@ -75,7 +77,6 @@ class PinglyMotionWindow : public QMainWindow
     void queueAfterShow();
 
   signals:
-    void enableEaseInOut(bool state);
     void resetCamera();
     void protectFrame(bool state);
     void newProp(Prop::PropType, QSharedPointer<Mesh> mesh);
@@ -160,8 +161,6 @@ class PinglyMotionWindow : public QMainWindow
     void on_yPositionSlider_valueChanged(int);
     void on_zPositionEdit_editingFinished();
     void on_zPositionSlider_valueChanged(int);
-    void on_easeInCheck_stateChanged(int newState);
-    void on_easeOutCheck_stateChanged(int newState);
 
     void on_newBoxPropButton_clicked();
     void on_newSpherePropButton_clicked();
@@ -246,8 +245,9 @@ class PinglyMotionWindow : public QMainWindow
     void positionValue();
     void positionSlider(const QObject* slider);
 
-    void easeInChanged(int change);
-    void easeOutChanged(int change);
+    // a tile of the easing row was clicked (issue #53 step 5): store the choice
+    // on the pose change that ends at the selected key frame
+    void easingChoiceClicked(Easing::Preset preset);
 
     void frameSlider(int position);
     void nextPlaystate();
@@ -317,13 +317,26 @@ class PinglyMotionWindow : public QMainWindow
     void buildPartLists();
     void jointGroupsChanged();
     void buildDocks();
-    void fitPropertiesWidth();
+    void resetPanelLayout();
+    // Tab, or View > Hide panels: hides every open panel, or shows again the
+    // ones Tab hid (docs/PANELS_PLAN.md, job P4)
+    void togglePanelsHidden();
+    QList<QDockWidget*> panelDocks() const;
+    void fitPanelWidths();
     void showLightDialog();
     void saveUserSettings();
+    // the three panels (docs/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
     QDockWidget* m_timelineDock=nullptr;
-    QDockWidget* m_propertiesDock=nullptr;
-    QScrollArea* m_propertiesScroll=nullptr;
-    QByteArray m_defaultWindowState;
+    QDockWidget* m_jointsDock=nullptr;
+    QDockWidget* m_jointCardDock=nullptr;
+    QScrollArea* m_jointsScroll=nullptr;
+    QScrollArea* m_jointCardScroll=nullptr;
+    // Tab (job P4): which panels Tab hid, so the next Tab shows the same ones;
+    // never saved. The flag keeps the panels' own toggle signals from changing
+    // the state while Tab is applied.
+    PanelLayout::TabState m_tabState;
+    bool m_applyingTab=false;
+    QAction* m_hidePanelsAction=nullptr;
 
     BVHNode* currentPart;
 

@@ -114,3 +114,10 @@ ADD_SUBDIRECTORY (animexport)
 # the .anim reader (#22), not used by the program yet
 ADD_SUBDIRECTORY (animimport)
 ADD_SUBDIRECTORY (aboutdialog)
+
+# play button logic (src/playback.h): play to the end several times in a row
+ADD_EXECUTABLE (pinglymotion_playback_tests tst_playback.cpp ${CORE_SRC})
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_playback_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_playback_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME playback WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_playback_tests)
+SET_TESTS_PROPERTIES (playback PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

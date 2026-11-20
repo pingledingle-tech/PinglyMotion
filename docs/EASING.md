@@ -1,6 +1,6 @@
 # Easing choices for beginners: names and descriptions
 
-Mostly a plan. In the program so far: step 2, playback computes the four old-style choices through the easing module with exactly the old results (see "Playback (step 2)"), and step 3, a key can carry any of the six choices, stored as `curve` in `.dingle` and used by playback and export (see "Stored choice (step 3)"). Nothing on screen has changed; there is no menu for the choice yet. This page fixes the **names, the small pictures and the descriptions** of the six easing choices proposed in [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53), so the later jobs (the maths, the file format, the tile row on the timeline) all use the same words. The wording of the hint under each tile lives in [TEACHING.md](TEACHING.md) (IDs `EASE-01` to `EASE-06`); this page does not repeat it, so there is one place to change.
+Step 5 is built: the easing choice is picked on a row of six tiles under the timeline (see "Tile row (step 5)"); it waits for the project owner's Windows test. In the program before it: step 2, playback computes the four old-style choices through the easing module with exactly the old results (see "Playback (step 2)"), and step 3, a key can carry any of the six choices, stored as `curve` in `.dingle` and used by playback and export (see "Stored choice (step 3)"). This page fixes the **names, the small pictures and the descriptions** of the six easing choices proposed in [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53), so all the jobs (the maths, the file format, the tile row on the timeline) use the same words. The wording of the hint under each tile lives in [TEACHING.md](TEACHING.md) (IDs `EASE-01` to `EASE-06`); this page does not repeat it, so there is one place to change.
 
 The six choices, their order and "Slow both ends" as the default are proposals in #53. They are not decisions yet; if the project owner changes one, change it here and in `TEACHING.md`.
 
@@ -12,7 +12,7 @@ The six choices, their order and "Slow both ends" as the default are proposals i
 
 ## The six choices
 
-The order is the order of the tiles, left to right. A choice belongs to one pose change (from one key to the next) and is stored on the target key.
+The order is the order of the tiles, left to right. A choice belongs to one pose change (from one key to the next). On screen the user picks it for the pose change that ends at the selected key frame; in the data it lives on the two keys of that change: the start key's `easeOut` and the target key's `easeIn` for the four old-style choices, and the start key's `curve` for the two new ones (see "Stored choice (step 3)").
 
 | # | Name on the tile | Tile picture (our own, simple line drawing) | What happens | Built from | Hint |
 |---|---|---|---|---|---|
@@ -29,7 +29,7 @@ The order is the order of the tiles, left to right. A choice belongs to one pose
 
 - Names are short (at most three words), plain English, no animation jargon, and each starts with what the user sees, not how it is made.
 - The default for a new key is "Slow both ends" (proposal 1 in #53). The tile row shows which choice the selected pose change uses.
-- Each tile has its name under a small picture. The picture shows the movement from the left (old pose) to the right (new pose) as a line; it never shows numbers or handles.
+- Each tile has its name under a small picture. The picture shows the movement from the left (old pose) to the right (new pose); it never shows curves, numbers or handles. Decided by the project owner (19 Nov 2026): the picture is a small moving figure with a trail of still dots, not a graph (the "tile picture" column above was the first idea).
 - The pictures are drawn for this program. We do not copy icons, preset pictures or help text from other programs (copyright note in #53, and `DECISIONS.md` for EffectCraft and Aurora: ideas only).
 - Overshoot is clamped to the joint limits (proposal 4 in #53), so a tile never lets a joint go past what Second Life allows. A bounce choice is left out for now (proposal 6).
 - Per-joint choices and free curve handles are not part of the first version; they would sit under "Advanced" later.
@@ -84,13 +84,34 @@ With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 
 - Since step 3 the two new choices follow `s()` in `segmentValue` too (see below).
 - Proof: `tests/interpolation/` keeps a copy of the old function and compares it with the new path bit for bit (no tolerance), for every segment length from 1 to 200, every frame, all four switch combinations and many values, and compares every frame `BVHNode::frameData` returns for 200 joints with random keys, gaps and switches. Opening and saving BVH, AVM and `.dingle` use what `frameData` returns, so files play and save identically. Since step 3, `.dingle` uses `segmentValue` as well instead of its own copy of the formula (the copy was the same formula, so the values are unchanged).
 
+## Joint limits on the overshoot (proposal 4)
+
+Playback clamps the Overshoot then settle choice to the joint limits since the fix for proposal 4 (after step 5): `BVHNode::frameData` cuts each of the three rotation angles of an overshoot segment at the minimum and maximum the program loaded for that joint and channel (`data/SL.lim`, `channelMin`/`channelMax` on the joint), so the overshoot never takes a joint past what Second Life allows. An AI that sets Overshoot through the control commands therefore never produces a pose Second Life would reject. The `.anim` export samples `frameData` (`BVH::snapshot`), so it writes the same cut frames; BVH and `.dingle` saving write only the keys, which are not touched.
+
+- Only the overshoot choice is cut. The other five choices never leave the span between the two keys, so they are not touched and stay bit for bit what they were (`tests/interpolation/`).
+- Position channels are never cut, and neither is a rotation channel without loaded limits (the `-10000..10000` defaults, as the hip has in `SL.lim`, or a file read without a limits file).
+- The cut is never tighter than the two keys themselves: a key that already sits outside its limits (joint limits switched off in the settings, or an old file) still plays as stored, the overshoot is only kept from passing it.
+- The in-between frames the `.dingle` reader computes on its own (`src/dingle.cpp`, for tools that read `.dingle` without the program) know no limits file and are not cut; in the program the keys are loaded and `frameData` plays them, so the program's playback and export are cut.
+- Tests: `tests/interpolation/` (a segment ending exactly on a limit stays inside on every frame, a segment well inside is unchanged, a channel without limits and the five other choices are untouched, positions are untouched), `tests/tst_roundtrip.cpp` (the program with `SL.lim`: playback and the export input of an overshoot into a limit).
+
 ## Stored choice (step 3)
 
 - A key frame can carry an easing choice for the segment that starts at it (`AnimFile::Key::curve`, `FrameData::curve` in the program). With one, it decides the segment alone (`Easing::segmentPreset`); without one, the two switches decide as before. Old files have none, so they play and save as before.
 - In `.dingle` it is the key's `curve`, `{"type": "<technical name>"}` with the technical names `linear`, `ease-in`, `ease-out`, `ease-in-out`, `ease-out-overshoot`, `constant` ([DINGLE_FORMAT.md](DINGLE_FORMAT.md)). An unknown value gives Even and counts as an ignored key.
 - `segmentValue` now computes the two new choices: Overshoot then settle is `from + (to - from) * s(t)` with `t = pos / steps` (at most 8 % past the target), Hold then snap stays at `from` until the target frame. The four old-style choices are unchanged bit for bit (`tests/interpolation/`).
-- Joint limits are not applied to the overshoot in playback yet (`clampRotation` exists); that comes with the tile row, where a joint's limits are at hand. The in-between frames of a `.dingle` file and playback stay the same values either way.
+- Joint limits: playback cuts the overshoot at the joint's limits, see "Joint limits on the overshoot (proposal 4)" above.
 - Tests: `tests/dingle/` (round trip of all six, old files byte for byte, unknown values, the frames in between, position keys), `tests/interpolation/` (the stored choice wins over the switches in `BVHNode::frameData`), `tests/animexport/` (each stored choice through `.dingle` and the `.anim` writer within 0.01 degrees), `tests/tst_roundtrip.cpp` (open in the program, playback, the export input, save and open again).
+
+## Tile row (step 5)
+
+`src/easingtiles.*`: the row, one tile per choice, and the helpers that read and store a choice (`EasingChoice`). The row sits under the tracks in the Timeline panel (`src/timelineview.*`); the window (`src/pinglymotionwindow.*`) tells it which choice is current and stores a click (`EasingChoice::setChoice`, through `Animation::setEaseIn`, `setEaseOut` and the new `Animation::setCurve`). Tested in `tests/easingtiles/`.
+
+- **Which pose change.** The tiles belong to the pose change that **ends at the selected key frame** of the selected joint: the user poses a key and then says how the figure gets there. Frame 0 and frames that are not a key frame of the selected joint have no pose change before them: the row is greyed out and the line under it says "Select a key frame on the timeline".
+- **What a click stores.** The four old-style choices become the two switches (the start key's `easeOut`, the target key's `easeIn`) and clear any stored `curve`, so the file stays as before. Overshoot then settle and Hold then snap are stored as the start key's `curve`; the two switches are set to the default (both on), so a reader that does not know `curve` plays Slow both ends. Reading goes the other way with `Easing::segmentPreset`: a stored `curve` wins, otherwise the switches say which of the first four it is.
+- **The picture.** A tiny stick figure walks from the left edge (old pose) to the right edge (new pose) with the speed of the choice (`Easing::s`), over about two seconds, then rests and starts again; all six move at the same time, so the eye compares them. Behind it is a trail of nine still dots at equal time steps (`s(k/8)`), so close dots mean slow and wide gaps mean fast: Even is evenly spaced, Slow both ends is tight at both ends, Overshoot goes past the right end and the dots crowd there, Hold then snap has all dots on the left and one on the right. The row keeps the right tenth of the way free for the overshoot. Drawn by the program (`QPainter`), no image files, no axes, no numbers, no handles. One timer for the row (25 frames a second), running only while the row is on screen and a key is selected.
+- **The hint.** Under the row, one line: the approved hint of the tile under the mouse, else of the current choice (`EASE-01` to `EASE-06` in [TEACHING.md](TEACHING.md), through `tr()`). It follows the "Tips on" switch in the status bar (`tips_on`); the same texts are the tiles' tooltips. With the tips off the line is empty and the tooltips are gone; the "Select a key frame" line shows either way, because it is the state, not a tip.
+- **Gone:** the "Ease In / Ease Out" check boxes in the Properties panel. The tiles cover both switches (the selected key's `easeIn` through Slow finish and Slow both ends; its `easeOut` belongs to the next pose change and is set when the next key is selected). The settings dialog still has the defaults for new keys, and files are unchanged.
+- **Not yet:** per-joint choices, custom curves. The example wave with a note on each change is step 6. (Joint limits on the overshoot are done, see "Joint limits on the overshoot" above.)
 
 ## Where each part is built
 
@@ -100,5 +121,5 @@ With only A's `easeOut` on, frames 1 to 5 equal the "Both on" column and frames 
 | Four old-style choices use today's switches | Step 2 |
 | `curve` stored in `.dingle` ([DINGLE_FORMAT.md](DINGLE_FORMAT.md)) (done) | Step 3 |
 | Export test for a curved ease | Step 4 |
-| Tile row and hint on the timeline (visible, the project owner tests) | Step 5 |
+| Tile row and hint on the timeline (visible, the project owner tests) (built, waiting for the Windows test) | Step 5 |
 | The example wave with a note on each change ([TEACHING.md](TEACHING.md), `WAVE-02` to `WAVE-05`) | Step 6 |

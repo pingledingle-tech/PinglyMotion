@@ -12,8 +12,11 @@ The targets, all built with libFuzzer, AddressSanitizer and UndefinedBehaviorSan
 | `fuzz_dingle` | `Dingle::parse()` and `Dingle::write()` – the `.dingle` working format (`src/dingle.*`, issue #26, [DINGLE_FORMAT.md](../docs/DINGLE_FORMAT.md)); an accepted file must keep every rule, and `write(parse(x))` must read back equal and stay byte-stable | `.dingle` files will be opened from outside, like BVH files |
 | `fuzz_anim` | `AnimImport::parse()` – Second Life `.anim` files (`src/animimport.*`, issue #22, [ANIM_FORMAT.md](../docs/ANIM_FORMAT.md)); an accepted file must keep every limit of the data model | `.anim` files will be opened from outside |
 | `fuzz_gltf` | The glTF import (`src/gltfimport.*`, issue #12): `GltfImport::read()`, sampling to frames with both rest poses, and retargeting onto a small Second Life skeleton; every accepted result must keep the rules of a parsed animation | `.glb` and `.gltf` files come from the internet (Blender, Mixamo and other tools export them) |
+| `fuzz_retargetmapping` | The hand-made joint mapping files for retargeting (`src/retargetmapping.*`, issue #16 step 4, [RETARGET_MAPPING.md](../docs/RETARGET_MAPPING.md)): `RetargetMapping::parse()`, the writer round trip, the entries on top of the automatic mapping of a small skeleton, and the retarget with it | A mapping file can come from another person or be written by an AI client |
 
 Not fuzzed here: `SL.lim` and the `.pmm` body meshes (read only from PinglyMotion's own data folder), and the old BVH/AVM parser in `src/bvh.cpp`. `fuzz_animfile` fuzzes the new parser that replaces it (issue #62); until the program uses it (part 2 of #62), it does not test the code that opens files today.
+
+`fuzz/corpus/retargetmapping/` holds the start files for `fuzz_retargetmapping` (`good_*` must be read, `bad_*` must be refused; `tests/retargetmapping` checks that).
 
 `fuzz/corpus/gltf/` holds the start files for `fuzz_gltf` (`good_*` must be read, `bad_*` must be refused; `tests/gltfimport` checks that and writes them again when `PINGLYMOTION_WRITE_GLTF_CORPUS` is set to a folder).
 
@@ -29,7 +32,7 @@ Needs clang and its sanitizer runtime (Ubuntu: `sudo apt-get install clang libcl
 
 ```
 CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_FUZZ=ON
-cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf -j 2
+cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping -j 2
 
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 QT_QPA_PLATFORM=offscreen
 mkdir -p /tmp/prop /tmp/control
@@ -41,6 +44,8 @@ mkdir -p /tmp/dingle
 build-fuzz/fuzz/fuzz_dingle -max_total_time=300 -max_len=65536 -dict=fuzz/dingle.dict /tmp/dingle fuzz/corpus/dingle
 mkdir -p /tmp/gltf
 build-fuzz/fuzz/fuzz_gltf -max_total_time=300 -max_len=65536 -dict=fuzz/gltf.dict /tmp/gltf fuzz/corpus/gltf
+mkdir -p /tmp/retargetmapping
+build-fuzz/fuzz/fuzz_retargetmapping -max_total_time=300 -max_len=16384 -dict=fuzz/retargetmapping.dict /tmp/retargetmapping fuzz/corpus/retargetmapping
 ```
 
 The first folder collects new interesting inputs; `fuzz/corpus/` holds the starting inputs and is only read.

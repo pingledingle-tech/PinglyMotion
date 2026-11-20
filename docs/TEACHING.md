@@ -2,7 +2,7 @@
 
 This page is the home of every text that teaches a beginner inside the program. It holds the goal, the places where the program teaches, the writing rules, and a register (a list) of all texts. It is step 1 of issue #54.
 
-**All 45 texts in this register were reviewed by the project owner on 19 November 2026 and approved unchanged.** They are final wording, but none is in the program yet.
+**All 45 texts in this register were reviewed by the project owner on 19 November 2026 and approved unchanged.** They are final wording. The six easing hints (`EASE-01` to `EASE-06`) are in the program (the tile row, #53 step 5); the rest is not yet.
 
 **Review note:** the owner, a beginner, asked what the welcome button "Standing" means; the label alone did not say it is a ready-made starting pose. The texts were approved as they are, but the welcome card should make clear that the three buttons are ready-made starting points.
 
@@ -84,12 +84,12 @@ The six choices come from #53. The hint shows under the tiles when the mouse res
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| EASE-01 | 5 Easing hint | Mouse rests on "Even" | Same speed all the way. Use it for machines or a steady spin. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
-| EASE-02 | 5 Easing hint | Mouse rests on "Slow start" | Starts gently, then speeds up. Pick it for lifting an arm. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
-| EASE-03 | 5 Easing hint | Mouse rests on "Slow finish" | Moves at speed, then settles into the new pose. Good for putting a hand down. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
-| EASE-04 | 5 Easing hint | Mouse rests on "Slow both ends" | Starts and stops softly. Good for most arm and head moves. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
-| EASE-05 | 5 Easing hint | Mouse rests on "Overshoot, then settle" | Goes a little past the pose, then comes back. Good for a lively wave. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
-| EASE-06 | 5 Easing hint | Mouse rests on "Hold, then snap" | Stays in the old pose, then jumps to the new one. Good for a blink. | reviewed by the owner (19 Nov 2026) | #53 step 5 |
+| EASE-01 | 5 Easing hint | Mouse rests on "Even" | Same speed all the way. Use it for machines or a steady spin. | in the program (pull request 134, 19 Nov 2026) | #53 step 5 |
+| EASE-02 | 5 Easing hint | Mouse rests on "Slow start" | Starts gently, then speeds up. Pick it for lifting an arm. | in the program (pull request 134, 19 Nov 2026) | #53 step 5 |
+| EASE-03 | 5 Easing hint | Mouse rests on "Slow finish" | Moves at speed, then settles into the new pose. Good for putting a hand down. | in the program (pull request 134, 19 Nov 2026) | #53 step 5 |
+| EASE-04 | 5 Easing hint | Mouse rests on "Slow both ends" | Starts and stops softly. Good for most arm and head moves. | in the program (pull request 134, 19 Nov 2026) | #53 step 5 |
+| EASE-05 | 5 Easing hint | Mouse rests on "Overshoot, then settle" | Goes a little past the pose, then comes back. Good for a lively wave. | in the program (pull request 134, 19 Nov 2026) | #53 step 5 |
+| EASE-06 | 5 Easing hint | Mouse rests on "Hold, then snap" | Stays in the old pose, then jumps to the new one. Good for a blink. | in the program (pull request 134, 19 Nov 2026) | #53 step 5 |
 
 ### Place 6: notes in the example wave
 

@@ -112,6 +112,10 @@ namespace Retarget
   // skeleton, for example bin/data/TPose.bvh) by name and tree shape
   Mapping mapSkeletons(const AnimFile::Animation& source,const AnimFile::Animation& target);
 
+  // fill missingRequired and missingTarget again from the pairs (after the
+  // pairs were changed by hand, see src/retargetmapping.*)
+  void updateMissing(Mapping& mapping,const AnimFile::Animation& target);
+
   // the canonical chain of a Second Life joint name ("mShoulderLeft" or the
   // old name "lShldr" give "upperarm.L"), empty if the joint takes no part in retargeting
   QString slChain(const QString& jointName);

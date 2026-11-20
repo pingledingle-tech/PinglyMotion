@@ -8,6 +8,7 @@ server (tests/test_mcp_proxy.py):
 - It refuses a connection file that points anywhere but this machine.
 - It sends the key only after the program on the port proved it knows the key (issue #15).
 - It names the AI tool (X-PinglyMotion-Client) and sends heartbeats (issue #43).
+- The assistant guide (issue #129): short instructions, the read_guide tool and the guide resource.
 - MCP basics: initialize, tools/list (falls back to the bundled list), tools/call, screenshot
   as an image, errors, and it stops when the AI tool closes stdin.
 
@@ -139,7 +140,9 @@ def main():
     proxy = start("proxy", "right")
 
     with open(os.path.join(MCP_DIR, "commands.json"), encoding="utf-8") as handle:
-        bundled = [command["name"] for command in json.load(handle)["commands"]]
+        bundled = [command["name"] for command in json.load(handle)["commands"]] + ["read_guide"]
+    with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
+        guide = handle.read()
 
     with tempfile.TemporaryDirectory() as tmp:
         control = os.path.join(tmp, "control.json")
@@ -166,6 +169,16 @@ def main():
         assert [tool["name"] for tool in tools] == bundled, tools
         assert all(tool["inputSchema"]["type"] == "object" for tool in tools)
 
+        # the guide comes from a file next to the server, also when PinglyMotion is not running
+        result = mcp.tool("read_guide")
+        assert not result.get("isError") and result["content"][0]["text"] == guide, result
+        assert "Calibration table" in guide and "Frame 1 is the reference" in guide
+        listed = mcp.send("resources/list")["result"]["resources"]
+        assert [r["uri"] for r in listed] == ["pinglymotion://guide"], listed
+        read = mcp.send("resources/read", {"uri": "pinglymotion://guide"})["result"]["contents"]
+        assert read == [{"uri": "pinglymotion://guide", "mimeType": "text/markdown", "text": guide}], read[0]["uri"]
+        assert mcp.send("resources/read", {"uri": "file:///etc/passwd"})["error"]["code"] == -32002
+
         # the real one: hello without key, then the request with key; no name before initialize
         write(local(pinglymotion))
         result = mcp.tool("set_frame", frame=3)
@@ -181,7 +194,7 @@ def main():
 
         # the live tool list comes from the running program
         tools = mcp.send("tools/list")["result"]["tools"]
-        assert [tool["name"] for tool in tools] == ["live_only"], tools
+        assert [tool["name"] for tool in tools] == ["live_only", "read_guide"], tools
 
         # screenshot becomes an image; a refused command becomes an error with PinglyMotion's text
         result = mcp.tool("screenshot", width=640)
@@ -227,6 +240,9 @@ def main():
         assert answer["result"]["protocolVersion"] == "2025-06-18", answer
         assert answer["result"]["serverInfo"]["name"] == "pinglymotion"
         assert "PinglyMotion" in answer["result"]["instructions"]
+        assert len(answer["result"]["instructions"]) < 1000, len(answer["result"]["instructions"])
+        assert "read_guide" in answer["result"]["instructions"]
+        assert "resources" in answer["result"]["capabilities"], answer["result"]["capabilities"]
         mcp.process.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
         mcp.tool("state")
         assert pinglymotion.posts[-1] == ("/api", "Claude Code X-Evil: 1"), pinglymotion.posts[-1]

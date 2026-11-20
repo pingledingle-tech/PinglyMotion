@@ -1,6 +1,6 @@
 # PinglyMotion fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGLYMOTION_FUZZ=ON
-#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf
+#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping
 # See fuzz/README.md for how to run them.
 
 SET (FUZZ_FLAGS -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g)
@@ -65,3 +65,11 @@ TARGET_INCLUDE_DIRECTORIES (fuzz_gltf PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_gltf Qt6::Core Qt6::Gui)
+
+# the hand-made joint mapping files (#16 step 4): reader, writer, on top of the automatic mapping; reads from memory
+ADD_EXECUTABLE (fuzz_retargetmapping fuzz_retargetmapping.cpp ${CMAKE_SOURCE_DIR}/src/retargetmapping.cpp
+                ${CMAKE_SOURCE_DIR}/src/retarget.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_retargetmapping PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_retargetmapping PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_retargetmapping PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_retargetmapping Qt6::Core Qt6::Gui)

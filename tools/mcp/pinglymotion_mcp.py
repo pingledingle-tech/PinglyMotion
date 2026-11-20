@@ -29,14 +29,28 @@ SERVER_NAME = "pinglymotion"
 SERVER_VERSION = "0.1.0"
 SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"]
 
-# Text that goes to the AI tool together with the tool list
+# Text that goes to the AI tool together with the tool list (the same as in the Node server).
+# Short on purpose: the long teaching text is the assistant guide, read with the read_guide tool.
 INSTRUCTIONS = (
-    "PinglyMotion is a Second Life animation editor. Poses are rotations of skeleton joints in degrees. "
-    "Start with 'state' and 'joints'. Frame numbers start at 1; frame 1 is protected (reference pose), so pose from frame 2. "
-    "Each joint bends around its own axes (the elbow lForeArm around Y, the knee lShin around X), within the limits that 'joints' shows. "
-    "After posing, use 'screenshot' to look at the result and adjust. Save with 'save_file' to get a .bvh that can be uploaded to Second Life. "
-    "Files are opened and saved only in the PinglyMotion folder shown as 'folder' in 'state'; a plain file name like pose.bvh goes there."
+    "PinglyMotion is a Second Life animation editor that you control with these tools. "
+    "First call read_guide: it has the Second Life rules, the joint names, which way each turn goes and the work rhythm. "
+    "Then call state and joints. Frame 1 is the reference pose and is protected: pose from frame 2. "
+    "Use screenshot to look at the result, and set_camera to see another side (never turn the hip). "
+    "Save with save_file as .dingle (working file) or .bvh. Files are only in the PinglyMotion folder shown in state."
 )
+
+# The assistant guide (docs/ASSISTANT_GUIDE.md). The Windows zip and the extension carry a copy next
+# to this file; in the source tree it is in docs/. It is a tool (read_guide) and an MCP resource.
+GUIDE_NAME = "ASSISTANT_GUIDE.md"
+GUIDE_URI = "pinglymotion://guide"
+GUIDE_TOOL = {
+    "name": "read_guide",
+    "description": "Returns the assistant guide for PinglyMotion: what Second Life does with an animation, the skeleton "
+                   "and joint names, which way each turn goes (calibration table), typical poses as numbers, the work "
+                   "rhythm, known mistakes and how to talk to a beginner. Read it first. Works even when PinglyMotion "
+                   "is not running.",
+    "inputSchema": {"type": "object", "properties": {}, "required": []},
+}
 
 
 def connection_file():
@@ -192,6 +206,18 @@ def command_list():
     return bundled_commands()
 
 
+def guide_text():
+    here = os.path.dirname(os.path.abspath(__file__))
+    for path in (os.path.join(here, GUIDE_NAME), os.path.join(here, "..", "..", "docs", GUIDE_NAME)):
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                return handle.read()
+        except OSError:
+            continue
+    raise PinglyMotionError("The assistant guide (%s) was not found next to the MCP server. Update PinglyMotion: "
+                            "unpack the new zip over the old folder." % GUIDE_NAME)
+
+
 def tool_list():
     tools = []
     for command in command_list():
@@ -204,10 +230,13 @@ def tool_list():
                 "required": command.get("required", []),
             },
         })
+    tools.append(GUIDE_TOOL)
     return tools
 
 
 def call_tool(name, arguments):
+    if name == GUIDE_TOOL["name"]:
+        return {"content": [{"type": "text", "text": guide_text()}]}
     known = {command["name"] for command in bundled_commands()}
     if name not in known:
         raise PinglyMotionError("Unknown tool: %s" % name)
@@ -254,7 +283,7 @@ def handle(message):
         wanted = params.get("protocolVersion")
         reply(message_id, {
             "protocolVersion": wanted if wanted in SUPPORTED_PROTOCOLS else SUPPORTED_PROTOCOLS[0],
-            "capabilities": {"tools": {"listChanged": False}},
+            "capabilities": {"tools": {"listChanged": False}, "resources": {"listChanged": False}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": INSTRUCTIONS,
         })
@@ -262,6 +291,18 @@ def handle(message):
         reply(message_id, {})
     elif method == "tools/list":
         reply(message_id, {"tools": tool_list()})
+    elif method == "resources/list":
+        reply(message_id, {"resources": [{
+            "uri": GUIDE_URI, "name": "PinglyMotion assistant guide", "mimeType": "text/markdown",
+            "description": "How to animate in PinglyMotion: Second Life rules, joints, calibration table, work rhythm."}]})
+    elif method == "resources/read":
+        if params.get("uri") != GUIDE_URI:
+            reply(message_id, error={"code": -32002, "message": "Unknown resource: %s" % params.get("uri")})
+        else:
+            try:
+                reply(message_id, {"contents": [{"uri": GUIDE_URI, "mimeType": "text/markdown", "text": guide_text()}]})
+            except PinglyMotionError as error:
+                reply(message_id, error={"code": -32002, "message": str(error)})
     elif method == "tools/call":
         try:
             reply(message_id, call_tool(params.get("name", ""), params.get("arguments")))

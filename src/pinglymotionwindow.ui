@@ -39,7 +39,7 @@
         <property name="minimumSize">
          <size>
           <width>360</width>
-          <height>258</height>
+          <height>350</height>
          </size>
         </property>
        </widget>
@@ -519,41 +519,6 @@
              </property>
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="5" column="0" colspan="4">
-         <widget class="QGroupBox" name="easeInOutGroup">
-          <property name="title">
-           <string>Ease In / Out</string>
-          </property>
-          <layout class="QGridLayout">
-           <item row="0" column="0">
-            <widget class="QCheckBox" name="easeInCheck">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Ease In</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QCheckBox" name="easeOutCheck">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Ease Out</string>
              </property>
             </widget>
            </item>
@@ -1391,8 +1356,13 @@
     <addaction name="optionsJointLimitsAction"/>
     <addaction name="optionsLoopAction"/>
     <addaction name="optionsProtectFirstFrameAction"/>
-    <addaction name="optionsShowTimelineAction"/>
     <addaction name="optionsConfigurePinglyMotionAction"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="optionsShowTimelineAction"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1410,6 +1380,7 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
    <addaction name="menuTools"/>
    <addaction name="menuOptions"/>
    <addaction name="menuHelp"/>
@@ -1632,7 +1603,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Timeline</string>
+    <string>Timeline</string>
    </property>
   </action>
   <action name="optionsConfigurePinglyMotionAction">
