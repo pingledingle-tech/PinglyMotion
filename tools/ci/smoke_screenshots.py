@@ -6,15 +6,24 @@ one, then ends the program. The pictures (PNG), the JSON answers and a short rep
 go to the output folder, which the build uploads as an artifact. An AI session can
 look at the pictures of a pull request before the project owner tests it.
 
+--open-dir opens every file the control command 'open_file' can open (.dingle, .bvh,
+.avm), found recursively under that folder, in the same running program (no restart
+per file); this is "does it open without crashing, does the state look sane" for every
+example and test-motion file, not a judgement of whether an animation looks natural
+(that stays for the project owner). A file with another extension (.prp, .glb, ...) is
+left out and counted in the report; the control protocol has no command to open those
+and this job does not add one.
+
 Only the Python standard library is used (the Python on the GitHub runner is enough).
 
 Usage:
   smoke_screenshots.py --app dist/PinglyMotion.exe --folder dist/examples
-                       --open jump.dingle --open mesh2motion/m2m_walk.bvh --out smoke
+                       --open-dir . --out smoke
 
   --folder is the folder remote control may open files from (PINGLYMOTION_CONTROL_FOLDER);
-  --open paths are relative to it. --cwd is where the program starts (it looks for ./data
-  there; default: the program's own folder, which is right for the Windows zip).
+  --open and --open-dir paths are relative to it. --cwd is where the program starts (it
+  looks for ./data there; default: the program's own folder, which is right for the
+  Windows zip).
 
 Exit code 0 when the program answered, even when a picture is empty (the report says so).
 Exit code 1 when the program crashes, never answers, or the run hits --timeout.
@@ -38,6 +47,31 @@ import zlib
 
 class SmokeFailure(Exception):
     """The program crashed, did not answer, or the run timed out: the step fails."""
+
+
+# file types the control command 'open_file' can open (src/controlapi.cpp); a file with
+# another extension (.prp, .glb, .gltf, .md, ...) is left out and counted as skipped
+OPENABLE_EXTENSIONS = {".dingle", ".bvh", ".avm"}
+
+
+def discover(folder, relative_dir):
+    """Every openable file under <folder>/<relative_dir>, found recursively (all
+    subfolders), as paths relative to <folder> with forward slashes, sorted. Also
+    returns how many files of each other extension were found but left out, so the
+    report can say what was skipped and why."""
+    base = os.path.join(folder, relative_dir)
+    found = []
+    skipped = collections.Counter()
+    for root, dirs, files in os.walk(base):
+        dirs.sort()
+        for name in sorted(files):
+            ext = os.path.splitext(name)[1].lower()
+            relative = os.path.relpath(os.path.join(root, name), folder).replace(os.sep, "/")
+            if ext in OPENABLE_EXTENSIONS:
+                found.append(relative)
+            else:
+                skipped[ext or "(no extension)"] += 1
+    return sorted(found), skipped
 
 
 def decode_png(data):
@@ -162,6 +196,8 @@ class Run:
         app_path = os.path.abspath(options.app)
         cwd = os.path.abspath(options.cwd) if options.cwd else os.path.dirname(app_path)
         folder = os.path.abspath(options.folder)
+        self.folder = folder
+        self.scratch = []
         work = tempfile.mkdtemp(prefix="pinglymotion-smoke-")
         self.control_file = os.path.join(work, "control.json")
         env = dict(os.environ,
@@ -255,6 +291,25 @@ class Run:
             os.path.basename(str(answer.get("file", ""))) or "(new animation)", answer.get("frames"), answer.get("fps"),
             answer.get("frame"), answer.get("figure"))
 
+    def files_to_open(self):
+        """The explicit --open files, in order, then every openable file found under each
+        --open-dir (recursively), skipping a path already in the list. Files skipped for
+        having an unsupported extension (.prp, .glb, ...) are logged, not opened: the
+        control command 'open_file' cannot open them (src/controlapi.cpp), and this job
+        does not grow the control protocol to make that possible."""
+        opens = list(self.options.open)
+        seen = set(opens)
+        for directory in self.options.open_dir:
+            found, skipped = discover(self.folder, directory)
+            added = [relative for relative in found if relative not in seen]
+            seen.update(added)
+            opens.extend(added)
+            total_skipped = sum(skipped.values())
+            detail = ", ".join("%s: %d" % item for item in sorted(skipped.items())) if skipped else "none"
+            self.say("open-dir %s: %d openable file(s) added, %d file(s) skipped (not .dingle/.bvh/.avm: %s)" %
+                     (directory, len(added), total_skipped, detail))
+        return opens
+
     def run(self):
         self.start()
         self.say("1. start")
@@ -264,14 +319,19 @@ class Run:
         self.say("  " + self.state_line(answer))
         self.picture("start", "start state")
 
-        for number, relative in enumerate(self.options.open, start=2):
+        opens = self.files_to_open()
+        opened_ok = []
+        opened_failed = []
+        for number, relative in enumerate(opens, start=2):
             self.say("%d. open %s" % (number, relative))
             # the start animation is not changed, so no "unsaved changes" refusal; after an opened
             # file nothing was changed either
             answer = self.command({"command": "open_file", "path": relative})
             if not answer.get("ok"):
                 self.say("  open_file failed: %s" % answer.get("error", "?"))
+                opened_failed.append(relative)
                 continue
+            opened_ok.append(relative)
             state = self.command({"command": "state"})
             # a file opens on its reference frame; the middle frame shows the motion itself
             # (set_frame changes no animation data, so the next open_file is not refused)
@@ -280,8 +340,30 @@ class Run:
                 self.command({"command": "set_frame", "frame": frames // 2 + 1})
                 state = self.command({"command": "state"})
             self.say("  " + self.state_line(state))
-            name = os.path.splitext(os.path.basename(relative))[0] + "_" + os.path.splitext(relative)[1].lstrip(".")
+            # the relative path, not just the file name, keeps names unique (two files
+            # under different subfolders can share a file name, e.g. the CMU walk clip)
+            safe = relative.replace("/", "_")
+            name = os.path.splitext(safe)[0] + "_" + os.path.splitext(safe)[1].lstrip(".")
             self.picture(name, relative)
+            # an old .avm file opens under its new .dingle name and counts as changed, so the
+            # next open_file would be refused: save it once to a scratch file (removed at the end)
+            if state.get("unsaved_changes"):
+                scratch = "smoke-scratch-%d.dingle" % number
+                self.scratch.append(os.path.join(self.folder, scratch))
+                answer = self.command({"command": "save_file", "path": scratch})
+                if not answer.get("ok"):
+                    self.say("  save to a scratch file failed: %s" % answer.get("error", "?"))
+
+        for path in self.scratch:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+        if opens:
+            self.say("opened %d of %d file(s); %d failed to open%s" % (
+                len(opened_ok), len(opens), len(opened_failed),
+                ": " + ", ".join(opened_failed) if opened_failed else ""))
 
         self.end()
 
@@ -335,6 +417,7 @@ def main():
     parser.add_argument("--app", required=True, help="the program (PinglyMotion.exe or PinglyMotion)")
     parser.add_argument("--folder", required=True, help="folder remote control may open files from")
     parser.add_argument("--open", action="append", default=[], help="file to open, relative to --folder (repeat)")
+    parser.add_argument("--open-dir", action="append", default=[], help="folder, relative to --folder, to open every .dingle/.bvh/.avm file from, recursively (repeat)")
     parser.add_argument("--out", default="smoke", help="output folder for PNGs, answers and the report")
     parser.add_argument("--cwd", default=None, help="where the program starts (default: its own folder)")
     parser.add_argument("--timeout", type=int, default=240, help="seconds for the whole run")

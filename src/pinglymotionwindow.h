@@ -398,6 +398,8 @@ class PinglyMotionWindow : public QMainWindow
     const QString m_untitledName;
     // why the last file could not be opened
     QString m_lastOpenError;
+    // true while remote control opens a file: problems are reported back, not shown in a message box
+    bool m_quietDialogs = false;
     const int m_precision;
 
     QScopedPointer<WindowControlHost> m_controlHost;
