@@ -113,12 +113,14 @@ jobs:
           name: PinglyMotion-windows
           path: dist
       - name: Smoke run with screenshots (issue 129)
-        # starts the packed program with remote control, opens two example files from the zip and
-        # takes a picture after each; fails only when the program crashes or does not answer
-        # (an empty picture is reported, not failed); the script ends a hung program after 4 minutes
+        # starts the packed program with remote control and opens every file in the zip's
+        # examples/ folder that 'open_file' can open (.dingle, .bvh, .avm), recursively,
+        # taking a picture after each; fails only when the program crashes or does not
+        # answer (an empty picture, or a single file that fails to open, is reported, not
+        # failed); the script ends a hung program after 8 minutes
         shell: bash
-        timeout-minutes: 6
-        run: python tools/ci/smoke_screenshots.py --app dist/PinglyMotion.exe --folder dist/examples --open jump.dingle --open mesh2motion/m2m_walk.bvh --out smoke --timeout 240
+        timeout-minutes: 10
+        run: python tools/ci/smoke_screenshots.py --app dist/PinglyMotion.exe --folder dist/examples --open-dir . --out smoke --timeout 480 --preview-width 0
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         # the pictures and the report, also when the smoke run failed (then the report says why)
         if: always()
@@ -208,9 +210,10 @@ jobs:
           PINGLYMOTION_MCP: node
         run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
       - name: Smoke run with screenshots (issue 129)
-        # the same run as in the Windows job, under Xvfb; fails only when the program crashes or does not answer
-        timeout-minutes: 6
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tools/ci/smoke_screenshots.py --app build/src/PinglyMotion --cwd bin --folder . --open examples/jump.dingle --open tests/motions/mesh2motion/m2m_walk.bvh --out smoke --timeout 240
+        # the same run as in the Windows job, under Xvfb, but over every example and test-motion
+        # file (recursively); fails only when the program crashes or does not answer
+        timeout-minutes: 10
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tools/ci/smoke_screenshots.py --app build/src/PinglyMotion --cwd bin --folder . --open-dir examples --open-dir tests/motions --open-dir tests/data/generated --out smoke --timeout 480 --preview-width 0
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

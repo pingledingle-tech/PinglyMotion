@@ -1,6 +1,6 @@
 Branch: ci/smoke-all-examples
 Status: active
-Pull request: pending
+Pull request: #152
 Files:
 - .github/workflows/build.yml
 - tools/ci/smoke_screenshots.py
