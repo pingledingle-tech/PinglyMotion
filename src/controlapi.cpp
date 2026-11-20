@@ -6,6 +6,7 @@
 
 #include <QBuffer>
 #include <QCoreApplication>
+#include <QGuiApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -13,6 +14,8 @@
 #include <QJsonValue>
 #include <QStandardPaths>
 #include <QtMath>
+
+#include <cmath>
 
 #include "animation.h"
 #include "animcheck.h"
@@ -23,6 +26,7 @@
 #include "bvhnode.h"
 #include "motiondescribe.h"
 #include "posedescribe.h"
+#include "screenshotsheet.h"
 #include "usersettings.h"
 
 #include "controlapi.h"
@@ -64,7 +68,7 @@ namespace
     {"new_animation", "Starts a new, empty animation. Fails if there are unsaved changes.", "{}", "[]"},
     {"open_file", "Opens an animation file (.dingle, .bvh or .avm) from the PinglyMotion folder (see 'folder' in state). A plain file name means a file in that folder. Fails if there are unsaved changes.", "{\"path\":{\"type\":\"string\"}}", "[\"path\"]"},
     {"save_file", "Saves the animation in the PinglyMotion folder: a path ending in .dingle gives the working file (keeps keys, loop points and figure), a path ending in .bvh gives a BVH file that can be uploaded to Second Life (see 'folder' in state). A plain file name means a file in that folder. Without a path it saves to the file that is open. Will not replace another existing file.", "{\"path\":{\"type\":\"string\"}}", "[]"},
-    {"screenshot", "Takes a picture of the 3D view of the current frame, so you can see the pose. The picture is 4:3. Returns a PNG as base64 text.", "{\"width\":{\"type\":\"integer\",\"description\":\"Width in pixels, default 800\"}}", "[]"},
+    {"screenshot", "Takes a picture of the 3D view, so you can see the pose. Each picture is 4:3. Returns a PNG as base64 text. Optional, for checking your own work: views (up to 6 of front, back, left, right, three_quarter) gives one picture per view in a grid; frames (up to 12 frame numbers) gives one picture per frame (a strip, in rows of 4; with views, one row per frame and one column per view); each picture is captioned, and the answer lists what is in each cell. labels: true writes the classic joint names, the figure's own left side in blue and its right side in orange. trail: true adds dots where the hands and feet are at every frame (blue left, orange right). markers: false leaves out the small Bento joint balls. The program window, its camera and the current frame do not change.", "{\"width\":{\"type\":\"integer\",\"description\":\"Width of one picture in pixels, default 800 (400 with views or frames)\"},\"views\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"enum\":[\"front\",\"back\",\"left\",\"right\",\"three_quarter\"]}},\"frames\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"},\"description\":\"Frame numbers, first frame is 1\"},\"labels\":{\"type\":\"boolean\"},\"trail\":{\"type\":\"boolean\"},\"markers\":{\"type\":\"boolean\",\"description\":\"Default true\"}}", "[]"},
     {"set_figure", "Shows the female or the male Second Life body. This only changes what you see in PinglyMotion; the saved BVH is the same.",
      "{\"figure\":{\"type\":\"string\",\"enum\":[\"female\",\"male\"]}}", "[\"figure\"]"},
     {"set_camera", "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side.",
@@ -558,12 +562,20 @@ QJsonObject ControlApi::saveFile(const QJsonObject& request)
 
 QJsonObject ControlApi::screenshot(const QJsonObject& request)
 {
+  const bool sheet = request.contains("views") || request.contains("frames") || request.contains("labels") ||
+                     request.contains("trail") || request.contains("markers");
+  if (sheet) return screenshotSheet(request);
+
   int width = request.contains("width") ? request.value("width").toInt(0) : 800;
   if (width < 100 || width > MAX_SCREENSHOT_WIDTH) return fail(QString("\"width\" must be from 100 to %1.").arg(MAX_SCREENSHOT_WIDTH));
 
   QImage image = m_host->screenshot(width, width * 3 / 4);
   if (image.isNull()) return fail("The 3D view could not be captured.");
+  return pngAnswer(image);
+}
 
+QJsonObject ControlApi::pngAnswer(const QImage& image)
+{
   QByteArray png;
   QBuffer buffer(&png);
   buffer.open(QIODevice::WriteOnly);
@@ -574,6 +586,173 @@ QJsonObject ControlApi::screenshot(const QJsonObject& request)
   answer["width"] = image.width();
   answer["height"] = image.height();
   answer["png_base64"] = QString::fromLatin1(png.toBase64());
+  return answer;
+}
+
+// screenshot with views, frames, labels, trail or markers (src/screenshotsheet.h)
+QJsonObject ControlApi::screenshotSheet(const QJsonObject& request)
+{
+  // captions and labels are text drawn with QPainter, which needs a GUI application
+  if (!qobject_cast<QGuiApplication*>(QCoreApplication::instance()))
+    return fail("Pictures with views, frames, labels, trail or markers need the program's window.");
+  static const struct { const char* name; float angle; } VIEWS[] =
+  {
+    {"front", 0.0f}, {"right", 90.0f}, {"back", 180.0f}, {"left", 270.0f}, {"three_quarter", 45.0f},
+  };
+  const int MAX_VIEWS = 6, MAX_FRAMES_IN_STRIP = 12, MAX_SHEET_SIDE = 4000, TRAIL_SAMPLES = 30;
+
+  for (const char* key : {"labels", "trail", "markers"})
+    if (request.contains(key) && !request.value(key).isBool()) return fail(QString("\"%1\" must be true or false.").arg(key));
+  const bool labels = request.value("labels").toBool(false);
+  const bool trail = request.value("trail").toBool(false);
+  const bool markers = request.value("markers").toBool(true);
+
+  QStringList views;
+  QList<float> angles;
+  if (request.contains("views"))
+  {
+    const QJsonValue value = request.value("views");
+    const QJsonArray list = value.toArray();
+    if (!value.isArray() || list.isEmpty() || list.size() > MAX_VIEWS)
+      return fail(QString("\"views\" must be a list of 1 to %1 of: front, back, left, right, three_quarter.").arg(MAX_VIEWS));
+    for (const QJsonValue& entry : list)
+    {
+      const QString view = entry.toString().toLower();
+      bool found = false;
+      for (const auto& known : VIEWS)
+        if (view == QLatin1String(known.name)) { views << view; angles << known.angle; found = true; }
+      if (!found) return fail("Unknown view in \"views\". Use front, back, left, right or three_quarter.");
+    }
+  }
+
+  Animation* animation = m_host->animation();
+  const int frameCount = animation->getNumberOfFrames();
+  QList<int> frames;   // 1-based
+  if (request.contains("frames"))
+  {
+    const QJsonValue value = request.value("frames");
+    const QJsonArray list = value.toArray();
+    if (!value.isArray() || list.isEmpty() || list.size() > MAX_FRAMES_IN_STRIP)
+      return fail(QString("\"frames\" must be a list of 1 to %1 frame numbers.").arg(MAX_FRAMES_IN_STRIP));
+    for (const QJsonValue& entry : list)
+    {
+      const int frame = entry.toInt(0);
+      if (!entry.isDouble() || entry.toDouble() != frame || frame < 1 || frame > frameCount)
+        return fail(QString("Every frame in \"frames\" must be a whole number from 1 to %1.").arg(frameCount));
+      frames << frame;
+    }
+  }
+
+  const bool grid = !views.isEmpty() || !frames.isEmpty();
+  int width = request.contains("width") ? request.value("width").toInt(0) : (grid ? 400 : 800);
+  if (width < 100 || width > MAX_SCREENSHOT_WIDTH) return fail(QString("\"width\" must be from 100 to %1.").arg(MAX_SCREENSHOT_WIDTH));
+  const int height = width * 3 / 4;
+
+  // the layout: views alone in a near-square grid, frames alone in rows of 4,
+  // both together one row per frame and one column per view
+  int columns = 1, cells = 1;
+  if (!views.isEmpty() && !frames.isEmpty()) { columns = views.size(); cells = views.size() * frames.size(); }
+  else if (!views.isEmpty()) { columns = int(std::ceil(std::sqrt(double(views.size())))); cells = views.size(); }
+  else if (!frames.isEmpty()) { columns = qMin(int(frames.size()), 4); cells = frames.size(); }
+  const int rows = (cells + columns - 1) / columns;
+  if (columns * width > MAX_SHEET_SIDE || rows * height > MAX_SHEET_SIDE)
+    return fail(QString("The picture would be %1 by %2 pixels; the most is %3 on each side. Give a smaller \"width\".")
+                  .arg(columns * width).arg(rows * height).arg(MAX_SHEET_SIDE));
+
+  const int startFrame = animation->getFrame();
+  const QVector3D camera = m_host->camera();
+  const double frameTime = animation->frameTime();
+
+  // the frames the trail is sampled at: frame 2 (Second Life does not play frame 1) to the last
+  QList<int> trailFrames;
+  if (trail)
+  {
+    const int first = frameCount > 1 ? 1 : 0, last = frameCount - 1;
+    const int count = qMin(TRAIL_SAMPLES, last - first + 1);
+    for (int i = 0; i < count; i++)
+    {
+      const int frame = count == 1 ? first : first + int(std::lround(double(i) * (last - first) / (count - 1)));
+      if (trailFrames.isEmpty() || trailFrames.last() != frame) trailFrames << frame;
+    }
+  }
+
+  QVector<QImage> images;
+  QJsonArray cellList;
+  bool marksMissing = false;
+  for (int i = 0; i < cells; i++)
+  {
+    const int row = i / columns, column = i % columns;
+    QString view;
+    float angle = 0.0f;
+    int frame = startFrame + 1;
+    if (!views.isEmpty() && !frames.isEmpty()) { view = views.at(column); angle = angles.at(column); frame = frames.at(row); }
+    else if (!views.isEmpty()) { view = views.at(i); angle = angles.at(i); }
+    else if (!frames.isEmpty()) frame = frames.at(i);
+
+    ScreenshotSheet::Request shot;
+    shot.overrideCamera = !view.isEmpty();
+    shot.height = camera.x();
+    shot.angle = angle;
+    shot.distance = camera.z();
+    shot.hideMarkers = !markers;
+    shot.wantMarks = labels;
+
+    // the trail first: small pictures of the same view at the sampled frames, only for the joint positions
+    QVector<QVector<ScreenshotSheet::Mark>> dots;
+    const int trailWidth = 160;
+    for (int sample : trailFrames)
+    {
+      m_host->goToFrame(sample);
+      ScreenshotSheet::Request dot = shot;
+      dot.hideMarkers = true;
+      dot.wantMarks = true;
+      ScreenshotSheet::Scope scope(&dot);
+      m_host->screenshot(trailWidth, trailWidth * 3 / 4);
+      dots << dot.marks;
+    }
+
+    if (animation->getFrame() != frame - 1) m_host->goToFrame(frame - 1);
+    QImage image;
+    {
+      ScreenshotSheet::Scope scope(&shot);
+      image = m_host->screenshot(width, height);
+    }
+    if (image.isNull()) { if (animation->getFrame() != startFrame) m_host->goToFrame(startFrame); return fail("The 3D view could not be captured."); }
+    image = image.convertToFormat(QImage::Format_RGB32);
+    if (image.size() != QSize(width, height)) image = image.scaled(width, height);
+
+    if (trail) ScreenshotSheet::drawTrail(image, dots, double(width) / trailWidth);
+    if (labels)
+    {
+      if (shot.marks.isEmpty()) marksMissing = true;
+      ScreenshotSheet::drawLabels(image, shot.marks);
+    }
+
+    QStringList caption;
+    QJsonObject cell{{"cell", i + 1}, {"row", row + 1}, {"column", column + 1}};
+    if (!view.isEmpty()) { caption << view; cell["view"] = view; }
+    if (!frames.isEmpty())
+    {
+      const double seconds = std::round((frame - 1) * frameTime * 100.0) / 100.0;
+      caption << QString("frame %1, %2 s").arg(frame).arg(seconds, 0, 'f', 2);
+      cell["frame"] = frame;
+      cell["seconds"] = seconds;
+    }
+    ScreenshotSheet::drawCaption(image, caption.join(", "));
+    if ((labels || trail) && i == 0) ScreenshotSheet::drawLegend(image);
+    images << image;
+    cellList << cell;
+  }
+  if (animation->getFrame() != startFrame) m_host->goToFrame(startFrame);
+
+  QJsonObject answer = pngAnswer(grid ? ScreenshotSheet::grid(images, columns) : images.first());
+  answer["columns"] = columns;
+  answer["rows"] = rows;
+  answer["cell_width"] = width;
+  answer["cell_height"] = height;
+  answer["cells"] = cellList;
+  if (labels || trail) answer["legend"] = ScreenshotSheet::legend();
+  if (marksMissing) answer["note"] = "The joint positions could not be found in this picture, so the labels are missing.";
   return answer;
 }
 

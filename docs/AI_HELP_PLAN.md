@@ -80,6 +80,9 @@ the program stores them, so it works before job A's `set_loop` exists.
 
 ## Job C: readable screenshots
 
+**Status:** built (pull request "Readable screenshots for assistants"), with a `trail` option (dots where the
+hands and feet go) in addition; frames are laid out in rows of 4.
+
 - **Goal:** one picture the assistant can check reliably: several views at once, the figure's
   left and right marked, and a movement as a strip of frames.
 - **Commands:** `screenshot` gets optional `views` (list of `front`, `back`, `left`, `right`,
