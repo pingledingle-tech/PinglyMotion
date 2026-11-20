@@ -1,5 +1,5 @@
 Branch: docs/research-text-to-motion
-Status: active
+Status: done
 Pull request: #171
 Files:
 - docs/research/TEXT_TO_MOTION.md
