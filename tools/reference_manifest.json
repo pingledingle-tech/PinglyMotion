@@ -1,0 +1,38 @@
+{
+ "version": 1,
+ "sources": {
+  "cmu": {
+   "type": "github",
+   "repo": "una-dinosauria/cmu-mocap",
+   "commit": "09a07f54f3bbb58797325f009282d0b2048a2871",
+   "include": {"prefix": "data/", "suffixes": [".bvh"]},
+   "strip": "data/",
+   "dest": "cmu",
+   "name": "CMU Graphics Lab Motion Capture Database (cgspeed BVH conversion, 2010 release)",
+   "homepage": "http://mocap.cs.cmu.edu",
+   "licence": "No restrictions stated by CMU (FAQ: may be copied, modified or redistributed); conversion adds none. Not a formal licence.",
+   "credit": "The data used in this project was obtained from mocap.cs.cmu.edu.\nThe database was created with funding from NSF EIA-0196217.",
+   "note": "Files are the unchanged BVH conversion (CMU skeleton, not the Second Life skeleton). Convert with tools/cmu_to_sl.py.",
+   "skeleton": "cmu-bvh",
+   "format": "bvh",
+   "files": []
+  },
+  "mesh2motion": {
+   "type": "github",
+   "repo": "Mesh2Motion/mesh2motion-app",
+   "commit": "bcb014ea25e44f76b3add78463f72d1faec16418",
+   "include": {"prefix": "static/assets/human/animations/", "suffixes": [".glb"]},
+   "strip": "static/assets/human/animations/",
+   "dest": "mesh2motion",
+   "name": "Mesh2Motion humanoid animations",
+   "homepage": "https://github.com/Mesh2Motion/mesh2motion-app",
+   "licence": "CC0 1.0 Universal",
+   "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "credit": "Animations from the Mesh2Motion project (CC0 1.0). No credit required; given as thanks.",
+   "note": "Only static/assets/human/animations/ is used. Never static/test-files/ (other origin, not CC0).",
+   "skeleton": "mesh2motion-humanoid",
+   "format": "glb",
+   "files": []
+  }
+ }
+}

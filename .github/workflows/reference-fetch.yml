@@ -1,0 +1,42 @@
+name: reference-fetch
+
+# Tests for tools/fetch_reference.py, and a manual job that pins the hashes
+# (the sandboxes of AI sessions cannot download, GitHub runners can).
+on:
+  pull_request:
+    paths:
+      - tools/fetch_reference.py
+      - tools/reference_manifest.json
+      - tests/test_fetch_reference.py
+      - .github/workflows/reference-fetch.yml
+  workflow_dispatch:
+  push:
+    branches: [job/fetch-reference]
+    paths:
+      - .github/workflows/reference-fetch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python tests/test_fetch_reference.py
+  compute-hashes:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pin hashes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/fetch_reference.py --compute-hashes --out reference_manifest.new.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reference-manifest
+          path: reference_manifest.new.json
