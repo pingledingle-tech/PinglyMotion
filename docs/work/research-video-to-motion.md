@@ -1,5 +1,5 @@
 Branch: research/video-to-motion
-Status: active
+Status: done
 Pull request: #170
 Files:
 - docs/research/VIDEO_TO_MOTION.md
