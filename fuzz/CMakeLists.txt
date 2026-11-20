@@ -31,7 +31,10 @@ SET (FUZZ_CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
                    ${CMAKE_SOURCE_DIR}/src/controlapi.cpp
                    ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
                    ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
-                   ${CMAKE_SOURCE_DIR}/src/animcheck.cpp)
+                   ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
+                   ${CMAKE_SOURCE_DIR}/src/animexport.cpp
+                   ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
+                   ${CMAKE_SOURCE_DIR}/src/animimport.cpp)
 
 ADD_EXECUTABLE (fuzz_control fuzz_control.cpp ${FUZZ_CORE_SRC})
 TARGET_INCLUDE_DIRECTORIES (fuzz_control PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

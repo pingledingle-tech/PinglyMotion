@@ -1,6 +1,6 @@
 Branch: feature/export-anim
-Status: active
-Pull request: pending
+Status: done
+Pull request: #185
 Files:
 - src/controlapi.*
 - tests/tst_control.cpp
