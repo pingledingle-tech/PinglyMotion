@@ -173,7 +173,7 @@ class Base(unittest.TestCase):
             self.glb2sl = os.path.join(self.dir, "fake_glb2sl")
             with open(self.glb2sl, "w") as f:
                 f.write('#!/bin/sh\nexec "%s" "%s" "$@"\n' % (sys.executable, self.fake))
-            os.chmod(self.glb2sl, 0o755)
+            os.chmod(self.glb2sl, 0o700)
         self.log = []
 
     def tearDown(self):
