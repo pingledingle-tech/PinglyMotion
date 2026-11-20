@@ -79,7 +79,6 @@ class AnimationView : public QOpenGLWidget
     // The picture the view shows, drawn at its own size whatever the window size is.
     QImage renderImage(int imageWidth, int imageHeight);
     Camera* camera() const;
-    // const QString getPartName(int index);
 
     // TODO Temporary method to set mesh models for removing GLUT
     void setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<Mesh> sphereMesh, QSharedPointer<Mesh> coneMesh);

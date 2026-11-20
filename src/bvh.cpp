@@ -315,7 +315,6 @@ BVHNode* BVH::finishRead(BVHNode* root,const QString& limFile)
     parseLimFile(root,limFile);
 
   removeNoSLNodes(root);
-//  dumpNodes(root,QString());
 
   // old style animation or BVH format means we need to add position keyframes ourselves
   if(!havePositionKeys)
@@ -803,17 +802,6 @@ bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
   return false;
 }
 
-void BVH::bvhPrintNode(BVHNode* n,int depth)
-{
-  int i;
-  QString indent;
-  for(i=0;i<depth;i++)
-    indent+="    ";
-  qDebug() << indent << n->name() << " (" << n->offset[0] << n->offset[1] << n->offset[2] << ")";
-  for(i=0;i<n->numChildren();i++)
-    bvhPrintNode(n->child(i), depth+1);
-}
-
 BVHNode* BVH::bvhFindNode(BVHNode* root,const QString& name) const
 {
   BVHNode *node;
@@ -899,19 +887,6 @@ int BVH::bvhGetIndex(BVHNode* node,const QString& name)
   return bvhGetIndexHelper(node,name);
 }
 
-void BVH::bvhCopyOffsets(BVHNode* dst,BVHNode* src)
-{
-  int i;
-  if(!dst || !src) return;
-  dst->offset[0]=src->offset[0];
-  dst->offset[1]=src->offset[1];
-  dst->offset[2]=src->offset[2];
-  for(i=0;i<src->numChildren();i++)
-  {
-    bvhCopyOffsets(dst->child(i),src->child(i));
-  }
-}
-
 void BVH::bvhGetFrameDataHelper(BVHNode* node,int frame)
 {
   if(node->type!=BVH_END)
@@ -919,8 +894,6 @@ void BVH::bvhGetFrameDataHelper(BVHNode* node,int frame)
     rotationCopyBuffer.append(node->frameData(frame).rotation());
 
 //    rotationCopyBuffer[rotationCopyBuffer.count()-1].bodyPart=node->name(); // not necessary but nice for debugging
-//    qDebug(QString("copying frame data for %1 frame number %2 (%3)")
-//          .arg(node->name()).arg(frame).arg(positionCopyBuffer[rotationCopyBuffer.count()-1].bodyPart));
   }
 
 
@@ -944,7 +917,6 @@ void BVH::bvhSetFrameDataHelper(BVHNode* node,int frame)
   {
     // add the node as key frame
     node->addKeyframe(frame, QVector3D(), rotationCopyBuffer[pasteIndex]);
-//    qDebug(QString("pasting frame data for %1 frame number %2 (%3)").arg(node->name()).arg(frame).arg(rotationCopyBuffer[pasteIndex].bodyPart));
     // increment paste buffer counter
     pasteIndex++;
   }

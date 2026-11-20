@@ -121,12 +121,6 @@ class BVHNode
     void setCustomCurve(int frame,const std::optional<Easing::Bezier>& curve);
     std::optional<Easing::Bezier> customCurve(int frame) const;
 
-    const QVector3D* getCachedRotation(int frame);
-    const QVector3D* getCachedPosition(int frame);
-    void cacheRotation(QVector3D* rotation);
-    void cachePosition(QVector3D* position);
-    void flushFrameCache();
-
     bool compareFrames(int key1,int key2) const;
     void optimize();
 
@@ -179,10 +173,6 @@ class BVHNode
 
     QList<BVHNode*> children;
     QMap<int,FrameData> keyframes;
-
-    // rotation/position cache on load, will be cleared once the animation is loaded
-    QList<QVector3D*> rotations;
-    QList<QVector3D*> positions;
 };
 
 #endif

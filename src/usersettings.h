@@ -44,7 +44,6 @@ class UserSettings
     static bool protectFirstFrame();
     // retired: the timeline's visibility is part of panel_layout since the
     // three panels; read for old files only, never written again
-    static bool showTimelinePanel();
     static void setDarkTheme(bool value);
     // the panel layout (QMainWindow::saveState) and the version it was saved
     // with; a layout of another version is not loaded (docs/PANELS_PLAN.md, 7)
@@ -113,8 +112,6 @@ private:
     static const QString m_jointLimitsKey;
     static bool m_protectFirstFrame;
     static const QString m_protectFirstFrameKey;
-    static bool m_showTimelinePanel;
-    static const QString m_showTimelinePanelKey;
     static bool m_darkTheme;
     static QByteArray m_panelLayout;
     static const QString m_panelLayoutKey;

@@ -99,8 +99,6 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   m_partNames=partNames();
   JointGroups::setTracks(m_partNames);
 
-// FIXME:    mode(FL_DOUBLE | FL_MULTISAMPLE | FL_ALPHA | FL_DEPTH);
-
   modifier=Qt::NoModifier;
   if(anim) m_scene->setAnimation(anim);
   setMouseTracking(true);
@@ -1655,14 +1653,6 @@ void AnimationView::setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<
   // Scale cone to a height of 3 instead of 2
   m_coneMeshModel->scale(1.0f, 1.0f, 1.5f);
 }
-/*
-const QString AnimationView::getPartName(int index)
-{
-  // get part name from animation, with respect to multiple animations in view
-  return getAnimation()->getPartName(index % static_cast<int>(OpenGlIds::AnimationIncrement));
-}
-*/
-
 void AnimationView::selectPart(int partNum)
 {
   BVHNode* node=m_scene->getAnimation()->getNode(partNum);
