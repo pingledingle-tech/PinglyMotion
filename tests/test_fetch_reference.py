@@ -116,6 +116,14 @@ class TestDownload(Base):
                          ("CC0", "Thanks", "set/a/one.bvh", sha(FILES["a/one.bvh"])))
         self.assertEqual(fr.verify_only(self.manifest(), self.dest), [])
 
+    def test_docs_are_stored_but_not_indexed(self):
+        Handler.docs["/mirror/LICENSE.txt"] = b"licence text"
+        m = self.manifest(docs=[{"path": "LICENSE.txt", "size": 12, "sha256": sha(b"licence text")}])
+        fr.run(m, self.dest, policy=self.policy)
+        self.assertEqual(rb(os.path.join(self.dest, "set", "source-docs", "LICENSE.txt")), b"licence text")
+        idx = json.load(open(os.path.join(self.dest, fr.INDEX_NAME)))
+        self.assertEqual(len(idx["entries"]), 2)
+
     def test_second_run_changes_nothing(self):
         fr.run(self.manifest(), self.dest, policy=self.policy)
         before = {p: rb(os.path.join(self.dest, p)) for p in self.tree()}

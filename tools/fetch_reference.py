@@ -229,7 +229,7 @@ def check_manifest(m):
                 raise FetchError("manifest: source %s needs a full commit hash" % sid)
         elif s.get("type") not in ("base_url", "zip"):
             raise FetchError("manifest: source %s has an unknown type" % sid)
-        for f in s.get("files", []):
+        for f in s.get("files", []) + s.get("docs", []):
             safe_relpath(f["path"])
             h = f.get("sha256", "")
             if len(h) != 64 or any(c not in "0123456789abcdef" for c in h):
@@ -356,7 +356,7 @@ def run(manifest, dest, only=None, policy=None, progress=None):
         if i not in sources:
             raise FetchError("unknown source: %s (known: %s)" % (i, ", ".join(sorted(sources))))
     os.makedirs(dest, exist_ok=True)
-    need = sum(f["size"] for i in ids for f in sources[i].get("files", []))
+    need = sum(f["size"] for i in ids for f in sources[i].get("files", []) + sources[i].get("docs", []))
     if sources and any(sources[i].get("type") == "zip" for i in ids):
         need += sum(sources[i]["size"] for i in ids if sources[i].get("type") == "zip")
     if need > policy.max_total:
@@ -392,6 +392,9 @@ def run(manifest, dest, only=None, policy=None, progress=None):
                 entries.append(index_entry(sid, s, safe_relpath(rel), f["sha256"], f["size"], url))
                 if n % 100 == 0:
                     say("%s: %d / %d" % (sid, n, len(files)))
+            for f in s.get("docs", []):
+                download(base + urllib.parse.quote(f["path"]), target_path(sdir, "source-docs/" + f["path"]),
+                         f["sha256"], f["size"], dest, policy, budget)
             say("%s: %d files" % (sid, len(files)))
         os.makedirs(sdir, exist_ok=True)
         write_text_atomic(os.path.join(sdir, "ATTRIBUTION.txt"), attribution_text(sid, s))
@@ -479,8 +482,24 @@ def compute_hashes(manifest, out, policy=None, token=None):
             if n % 100 == 0:
                 print("  %d / %d" % (n, len(files)), flush=True)
         s["files"] = out_files
+        docs = []
+        for p in inc.get("docs", []):
+            safe_relpath(p)
+            h = hashlib.sha256()
+            size = 0
+            with open_url("https://raw.githubusercontent.com/%s/%s/%s" % (s["repo"], s["commit"], urllib.parse.quote(p)), policy) as r:
+                data = r.read(policy.max_file + 1)
+            if len(data) > policy.max_file:
+                raise FetchError("%s is over the file limit" % p)
+            docs.append({"path": p, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+        s["docs"] = docs
     write_json_atomic(out, manifest)
     print("wrote " + out)
+    if os.environ.get("PIN_PRINT"):  # CI: the log is the way out of the runner
+        for sid, s in sorted(manifest["sources"].items()):
+            for kind in ("files", "docs"):
+                for f in s.get(kind, []):
+                    print("PIN %s %s %s %d %s" % (sid, kind, f["sha256"], f["size"], f["path"]))
 
 
 # ---------------------------------------------------------------- main

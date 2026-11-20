@@ -35,6 +35,7 @@ jobs:
       - name: Pin hashes
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PIN_PRINT: '1'
         run: python3 tools/fetch_reference.py --compute-hashes --out reference_manifest.new.json
       - uses: actions/upload-artifact@v4
         with:
