@@ -4,10 +4,9 @@ Pull request: #141
 Files:
 - src/pinglymotionwindow.*
 - src/usersettings.*
-- src/panellayout.h
+- src/panelwindow.h
 - src/animationview.*
 - tests/paneldocks/**
-- tests/panellayout/**
 - docs/POSING_UX.md
 - docs/PANELS_PLAN.md
 - docs/PRODUCT.md

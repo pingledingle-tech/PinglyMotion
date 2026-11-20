@@ -129,7 +129,7 @@ The work runs in **two tracks side by side**. They mostly change different files
 
 1. Camera and keys: one scheme for new users, Blender and Second Life habits; old joint modifier keys removed. Beside it: a data file from Firestorm with joint names, groups, left/right pairs and hand presets (LGPL notice), and the status bar (Claude, Aurora, tips switch). The data file and the status bar are done; camera and keys are in [#1](https://github.com/pingledingle-tech/PinglyMotion/pull/1), waiting for a Windows test.
 2. Friendly names, section headings and search in the joint list.
-3. Floating, movable panels; Tab hides them; reset layout. Plan: [PANELS_PLAN.md](PANELS_PLAN.md). Job P2 (three panels **Joints**, **Selected joint** and **Timeline**, the **View** menu, the layout saved with a version number) is built and waits for the project owner's Windows test; P3 to P6 follow.
+3. Floating, movable panels; Tab hides them; reset layout. Plan: [PANELS_PLAN.md](PANELS_PLAN.md). Job P2 (three panels **Joints**, **Selected joint** and **Timeline**, the **View** menu, the layout saved with a version number) and jobs P3 and P4 (window and layout remembered with Qt's own calls, a code-built default for Reset layout, Tab hides and shows the panels) are built and wait for the project owner's Windows test; P5 and P6 follow.
 4. Selected-joint card: trackball, sliders, joint limit warning.
 5. Left / Right / Mirror and the whole-pose buttons.
 6. **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL.

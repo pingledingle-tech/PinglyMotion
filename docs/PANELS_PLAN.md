@@ -124,11 +124,12 @@ Before the user-facing jobs: every new text (menu items, tips on the title-bar b
 - **What:** save and load the panel layout and the window place with Qt's own calls (`saveState(version)`, `saveGeometry()`), so a maximised window and the screen it was on are remembered. A floating panel whose place is no longer on a screen is pulled back (P1 logic). Reset layout uses a default built in code, not the state taken at start-up. Old settings are read once and then not written again (see section 7).
 - **Files:** `src/pinglymotionwindow.cpp`, `src/pinglymotionwindow.h`, `src/usersettings.*`, `src/panellayout.*`.
 - **Owner test on Windows:**
-  1. Move the timeline to the top and make the left panel wider. Close the program.
-  2. Start it again. The timeline is at the top and the left panel is wide.
+  1. Move the timeline to the top and drag its lower edge so it is taller. Close the program.
+  2. Start it again. The timeline is at the top and as tall as you left it.
   3. Maximise the window, close, start again. It opens maximised.
   4. Click View › Reset layout. The default layout is back.
 - **Estimate:** 2 hours.
+- **Done** (with P4 in one pull request; `src/panelwindow.h` is the glue between `panellayout.h` and the real docks): the window is saved as `main_window_geometry` with `saveGeometry()` (place, size, maximised, screen) and loaded with `restoreGeometry()`, which also pulls a window off every screen back; the old `main_window_width` / `main_window_height` are read once, used only while no geometry is saved, and never written again; `show_timeline_panel` is not written any more either. After `restoreState()` every floating panel goes through `pullOntoScreen` with the usable rectangles of all screens. Reset layout applies `PanelWindow::applyDefaultLayout` (all three docked on their sides, shown, untabbed, timeline 250 high), the same code `buildDocks()` uses at start; the state taken at start-up is gone. The owner test says "taller timeline" instead of "wider left panel" because P2 fixes the tall panels' width to their contents.
 
 ### P4 – Tab hides and shows all panels
 
@@ -140,6 +141,7 @@ Before the user-facing jobs: every new text (menu items, tips on the title-bar b
   3. Float the timeline as its own window. Click the 3D view, press Tab. The floating timeline disappears too. Press Tab. It comes back.
   4. Click in the joint search box and press Tab. The panels stay; the cursor moves on.
 - **Estimate:** 2 hours.
+- **Done** (with P3 in one pull request): `PanelWindow::toggleHidden` applies `PanelLayout::TabState` to the real docks (`openPanels` is every dock that is not hidden, docked or floating). The View menu item **Hide panels** is a checkable action with the shortcut Tab in `Qt::WidgetShortcut` context, added to the 3D view, so the shortcut fires only while the 3D view has the keyboard focus; `AnimationView::event()` also takes a plain Tab key press before `QWidget` would move the focus. A panel ticked in the View menu while hidden ends the hidden state (`panelOpened`); one unticked stays closed (`panelClosed`). Reset layout clears the state. Before the layout is saved at exit, hidden panels are shown again, so the program always starts with them shown.
 
 ### P5 – The figure in the middle of the free area
 
@@ -165,7 +167,7 @@ Before the user-facing jobs: every new text (menu items, tips on the title-bar b
   4. Click its button to put it back. It docks at the bottom.
 - **Estimate:** 2 hours.
 
-**Total:** about 15 hours of session time, plus the project owner's Windows tests (five rounds, P2 to P6). P3 and P4 are small enough to be tested in one round if the project owner prefers.
+**Total:** about 15 hours of session time, plus the project owner's Windows tests (five rounds, P2 to P6). P3 and P4 are small enough to be tested in one round if the project owner prefers (done so: one pull request, test AH).
 
 ## 5. What can break
 
