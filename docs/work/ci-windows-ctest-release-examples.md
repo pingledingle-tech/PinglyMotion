@@ -7,6 +7,7 @@ Files:
 - tools/ci/package_examples.sh
 - docs/DEV.md
 - .gitattributes
+- CMakeLists.txt
 
 ## What
 

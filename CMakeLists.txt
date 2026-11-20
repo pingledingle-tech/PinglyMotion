@@ -99,6 +99,9 @@ ADD_SUBDIRECTORY (src)
 OPTION (PINGLYMOTION_TESTS "Build the automatic tests" OFF)
 IF (PINGLYMOTION_TESTS)
   ENABLE_TESTING ()
+  # tests are console programs, so their output reaches ctest on Windows too (the program
+  # above stays a window program in Release; this only affects the test folders added below)
+  SET (CMAKE_WIN32_EXECUTABLE FALSE)
   ADD_SUBDIRECTORY (tests)
   # the new BVH/AVM parser (#62), not used by the program yet
   ADD_SUBDIRECTORY (tests/animfile)

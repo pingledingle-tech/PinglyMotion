@@ -61,6 +61,11 @@ jobs:
     if: needs.changes.outputs.code == 'true' && !(github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: windows-latest
     steps:
+      # the files exactly as in the repository (LF line ends, as on Linux): the tests compare
+      # generated files byte for byte with the checked-in ones
+      - name: No line-end conversion on checkout
+        shell: bash
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
