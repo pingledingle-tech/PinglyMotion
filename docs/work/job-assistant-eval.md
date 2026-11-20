@@ -1,5 +1,5 @@
 Branch: job/assistant-eval
-Status: active
+Status: done
 Pull request: #178
 Files:
 - tests/assistant/**
