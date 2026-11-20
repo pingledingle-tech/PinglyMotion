@@ -30,7 +30,6 @@ def main():
             if not opened.get("ok"):
                 problems, skips = ["does not open: %s" % opened.get("error")], []
             else:
-                lib.refresh(app)
                 problems, skips = lib.run_checks(app, clip["checks"])
             print(("OK    " if not problems else "FAIL  ") + name)
             for text in problems:
