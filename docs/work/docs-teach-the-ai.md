@@ -1,6 +1,6 @@
 Branch: docs/teach-the-ai
-Status: active
-Pull request: pending
+Status: done
+Pull request: #177
 Files:
 - docs/work/docs-teach-the-ai.md
 - .github/ISSUE_TEMPLATE/teach_the_ai.yml
