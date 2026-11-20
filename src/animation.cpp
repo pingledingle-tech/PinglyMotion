@@ -299,6 +299,30 @@ std::optional<Easing::Preset> Animation::curve(BVHNode* node,int frameNum)
   return node->curve(frameNum);
 }
 
+void Animation::setCustomCurve(BVHNode* node,int frameNum,const std::optional<Easing::Bezier>& curve)
+{
+  if(!node)
+  {
+    qDebug("Animation::setCustomCurve(): node==0!");
+    return;
+  }
+
+  const std::optional<Easing::Bezier> stored=curve ? std::optional<Easing::Bezier>(Easing::sanitized(*curve)) : std::nullopt;
+  if(node->isKeyframe(frameNum) && node->customCurve(frameNum)!=stored)
+  {
+    setDirty(true);
+    node->setCustomCurve(frameNum,stored);
+    // tell main class that the keyframe has changed
+    emit redrawTrack(getPartIndex(node));
+  }
+}
+
+std::optional<Easing::Bezier> Animation::customCurve(BVHNode* node,int frameNum)
+{
+  if(!node) return std::nullopt;
+  return node->customCurve(frameNum);
+}
+
 bool Animation::easeIn(BVHNode* node,int frameNum)
 {
   if(!node)
@@ -696,11 +720,13 @@ void Animation::addKeyFrame(BVHNode* joint)
   // a key frame that is set again keeps its stored easing choice (issue #53):
   // opening a file sets frame 0 of every joint again
   const std::optional<Easing::Preset> curve=joint->curve(frame);
+  const std::optional<Easing::Bezier> customCurve=joint->customCurve(frame);
   joint->addKeyframe(frame,getPosition(),getRotation(joint));
 
   setEaseIn(joint,frame,UserSettings::easeIn());
   setEaseOut(joint,frame,UserSettings::easeOut());
   joint->setCurve(frame,curve);
+  joint->setCustomCurve(frame,customCurve);
 
   setDirty(true);
 
@@ -931,6 +957,7 @@ void Animation::moveKeyFrame(int jointNumber,int from,int to,bool copy)
   joint->setEaseIn(to,frameData.easeIn());
   joint->setEaseOut(to,frameData.easeOut());
   joint->setCurve(to,frameData.curve());
+  joint->setCustomCurve(to,frameData.customCurve());
   // now re-enable signals so we get updates on screen
   blockSignals(false);
 

@@ -17,6 +17,7 @@ Files:
 - docs/DINGLE_FORMAT.md
 - docs/PRODUCT.md
 - docs/DECISIONS.md
+- docs/RELEASE_NOTES_0.4.0.md
 
 ## What
 
