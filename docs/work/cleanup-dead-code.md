@@ -1,6 +1,6 @@
 Branch: cleanup/dead-code
 Status: active
-Pull request: pending
+Pull request: #224
 Files:
 - src/bvhnode.*
 - src/bvh.*
