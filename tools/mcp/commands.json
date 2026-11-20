@@ -262,6 +262,22 @@
             },
             "required": [
             ]
+        },
+        {
+            "description": "Describes the movement over a frame range (default: frame 2 to the last, because Second Life does not play frame 1) in words instead of pictures: for each classic joint that moves, its main axis increasing, holding or decreasing, by how many degrees, how fast (slow, medium, fast, very fast) and from which frame; the joints in the order they start; the paths of the hands and feet (straight, arc or out and back, length, top speed); foot contact, both feet off the floor, and where the weight is; the hip's height, bob and travel; the rhythm (repeat period, beats per minute, legs and arms in opposition or together, feet alternating); the loop seam between the loop points; what changes between consecutive keys; and a one-line summary. Never changes the animation or the current frame.",
+            "name": "describe_motion",
+            "parameters": {
+                "from": {
+                    "description": "First frame, first frame of the animation is 1. Default 2 (1 when the animation has only 2 frames)",
+                    "type": "integer"
+                },
+                "to": {
+                    "description": "Last frame. Default the last frame",
+                    "type": "integer"
+                }
+            },
+            "required": [
+            ]
         }
     ],
     "ok": true

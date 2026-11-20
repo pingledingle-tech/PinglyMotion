@@ -372,3 +372,23 @@ QJsonObject PoseDescribe::describe(Animation* animation, int frame)
                          : capitalize(rules.sentences.join("; ")) + ".";
   return answer;
 }
+
+const QStringList& PoseDescribe::classicJoints()
+{
+  return CLASSIC_JOINTS;
+}
+
+QString PoseDescribe::friendlyName(const QString& joint)
+{
+  return ::friendlyName(joint);
+}
+
+BVHNode* PoseDescribe::findJoint(Animation* animation, const QString& name)
+{
+  return findNode(animation->getMotion(), name);
+}
+
+QHash<BVHNode*, QMatrix4x4> PoseDescribe::worldTransforms(Animation* animation, int frame)
+{
+  return ::worldTransforms(animation, frame);
+}
