@@ -1,7 +1,7 @@
 {
     "commands": [
         {
-            "description": "Shows the open animation: file name, number of frames, frames per second, current frame, whether it plays, and whether joint limits and mirroring are on.",
+            "description": "Shows the open animation: file name, number of frames, frames per second, current frame, the loop points (loop_in and loop_out), whether it plays, and whether joint limits and mirroring are on.",
             "name": "state",
             "parameters": {
             },
@@ -32,9 +32,21 @@
             ]
         },
         {
-            "description": "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in PinglyMotion. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied.",
+            "description": "Rotates joints at a frame (default: current frame) and makes a key frame for each. Frame 1 is protected by default (it is the reference pose); start at frame 2. 'joints' maps joint names to [x, y, z] degrees, as in the rotation fields in PinglyMotion. Each joint bends around its own axis, for example the elbow (lForeArm) around Y and the knee (lShin) around X; the \"joints\" command shows the allowed range per axis. Angles outside the joint's limits are clamped when joint limits are on; the answer says what was applied. 'easing' sets how the movement into each key it makes, from the key before it, goes (one of the six names in the schema, the same as the easing tiles; a key made without it gets ease-in-out, an existing key keeps the easing it has). The first key has no movement into it, so easing there changes nothing.",
             "name": "set_pose",
             "parameters": {
+                "easing": {
+                    "description": "linear = Even, ease-in = Slow start, ease-out = Slow finish, ease-in-out = Slow both ends (default), ease-out-overshoot = Overshoot then settle, constant = Hold then snap",
+                    "enum": [
+                        "linear",
+                        "ease-in",
+                        "ease-out",
+                        "ease-in-out",
+                        "ease-out-overshoot",
+                        "constant"
+                    ],
+                    "type": "string"
+                },
                 "frame": {
                     "description": "Frame number, first frame is 1",
                     "type": "integer"
@@ -96,11 +108,31 @@
             ]
         },
         {
-            "description": "Lists the frames that have key frames, for one joint or for all joints.",
+            "description": "Lists the frames that have key frames, for one joint or for all joints, and the easing of each key: how the movement into that key from the key before it goes (linear, ease-in, ease-out, ease-in-out, ease-out-overshoot, constant, or custom for a curve drawn in the curve editor).",
             "name": "keys",
             "parameters": {
                 "joint": {
                     "type": "string"
+                }
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Sets the loop points: the two frames between which the animation repeats (frame numbers, first frame is 1; 'in' must be before 'out'). 'off' puts them back to the default (the whole animation, from frame 2 when the first frame is protected). 'state' shows the loop points as loop_in and loop_out.",
+            "name": "set_loop",
+            "parameters": {
+                "in": {
+                    "description": "First frame of the loop",
+                    "type": "integer"
+                },
+                "off": {
+                    "description": "true: default loop points",
+                    "type": "boolean"
+                },
+                "out": {
+                    "description": "Last frame of the loop",
+                    "type": "integer"
                 }
             },
             "required": [
