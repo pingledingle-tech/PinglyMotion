@@ -1,5 +1,5 @@
 Branch: docs/credits
-Status: active
+Status: done
 Pull request: #208
 Files:
 - docs/work/docs-credits.md
