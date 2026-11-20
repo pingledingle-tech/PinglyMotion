@@ -59,7 +59,10 @@ class Mesh : public QObject
     // hook nothing is drawn. The return value is not used.
     static void setDrawHook(std::function<bool(const Mesh&)> hook);
 
+    // false on a missing or broken file; the mesh is then empty
     bool readFromFile(const QString& fileName);
+    // why the last readFromFile() failed, empty after a good read
+    const QString& errorString() const { return m_errorString; }
 
   private:
     // the same shapes gluSphere(1, 16, 16) and gluCylinder(1, 0, 2, 16, 16)
@@ -82,6 +85,8 @@ class Mesh : public QObject
 
     QList<int> m_triangleVertexIndices;
     QList<int> m_triangleNormalIndices;
+
+    QString m_errorString;
 
 };
 
