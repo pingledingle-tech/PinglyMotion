@@ -1,5 +1,5 @@
 Branch: docs/ux-decisions
-Status: active
+Status: done
 Pull request: #215
 Files:
 - docs/UX_DECISIONS.md
