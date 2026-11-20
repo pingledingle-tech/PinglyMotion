@@ -99,6 +99,10 @@ class AnimationView : public QOpenGLWidget
     void storeCameraPosition(int num);
     void restoreCameraPosition(int num);
 
+    // Tab was pressed while the 3D view had the keys: the window hides or
+    // shows the panels (docs/PANELS_PLAN.md, job P4)
+    void tabPressed();
+
   public slots:
     void resetCamera();
     // loads the body (Ruth2 or Max); if that fails the other one is loaded
@@ -129,6 +133,8 @@ class AnimationView : public QOpenGLWidget
     void paintGL() override;
     void initializeGL() override;
     void resizeGL(int w, int h) override;
+    // takes Tab before QWidget uses it to move the keyboard focus
+    bool event(QEvent* event) override;
     virtual void mouseMoveEvent(QMouseEvent* event);
     virtual void mousePressEvent(QMouseEvent* event);
     virtual void mouseReleaseEvent(QMouseEvent* event);

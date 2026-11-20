@@ -30,6 +30,7 @@
 #include <QTimer>
 
 #include "animfile.h"
+#include "panellayout.h"
 #include "playstate.h"
 #include "prop.h"
 #include "updatechecker.h"
@@ -318,6 +319,10 @@ class PinglyMotionWindow : public QMainWindow
     void jointGroupsChanged();
     void buildDocks();
     void resetPanelLayout();
+    // Tab, or View > Hide panels: hides every open panel, or shows again the
+    // ones Tab hid (docs/PANELS_PLAN.md, job P4)
+    void togglePanelsHidden();
+    QList<QDockWidget*> panelDocks() const;
     void fitPanelWidths();
     void showLightDialog();
     void saveUserSettings();
@@ -327,7 +332,12 @@ class PinglyMotionWindow : public QMainWindow
     QDockWidget* m_jointCardDock=nullptr;
     QScrollArea* m_jointsScroll=nullptr;
     QScrollArea* m_jointCardScroll=nullptr;
-    QByteArray m_defaultWindowState;
+    // Tab (job P4): which panels Tab hid, so the next Tab shows the same ones;
+    // never saved. The flag keeps the panels' own toggle signals from changing
+    // the state while Tab is applied.
+    PanelLayout::TabState m_tabState;
+    bool m_applyingTab=false;
+    QAction* m_hidePanelsAction=nullptr;
 
     BVHNode* currentPart;
 

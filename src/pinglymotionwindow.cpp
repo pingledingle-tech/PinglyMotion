@@ -73,6 +73,7 @@
 #include "jointinfo.h"
 #include "jointlist.h"
 #include "panellayout.h"
+#include "panelwindow.h"
 #include "paneltitlebar.h"
 #include "pinglymotion.h"
 #include "scene.h"
@@ -280,7 +281,17 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // the heading colour in the joint list comes from the theme
   fillJointTable();
 
-  resize(UserSettings::mainWindowWidth(),UserSettings::mainWindowHeight());
+  // the window's place, size, maximised state and screen from last time
+  // (docs/PANELS_PLAN.md, job P3). Qt puts a window back onto a screen when
+  // its saved place is gone. The old width and height are used only while
+  // no geometry has been saved yet.
+  {
+    const PanelLayout::StartupWindow startWindow=PanelLayout::chooseWindow(
+      UserSettings::mainWindowGeometry(),UserSettings::mainWindowWidth(),UserSettings::mainWindowHeight(),
+      QSize(850,600));
+    if(!startWindow.useGeometry || !restoreGeometry(UserSettings::mainWindowGeometry()))
+      resize(startWindow.size);
+  }
 
   ui->optionsLoopAction->setChecked(UserSettings::loop());
   ui->optionsSkeletonAction->setChecked(UserSettings::skeleton());
@@ -397,10 +408,12 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // saved by this version of the panels is loaded (docs/PANELS_PLAN.md, 7);
   // the old window_state with the Properties panel is left alone, so the
   // default layout is used once after the move to three panels.
-  m_defaultWindowState=saveState(PanelLayout::CurrentVersion);
   const PanelLayout::StartupChoice startup=PanelLayout::chooseStartup(
     UserSettings::panelLayout(),UserSettings::panelLayoutVersion(),size(),true);
   if(startup.useSavedLayout) restoreState(UserSettings::panelLayout(),PanelLayout::CurrentVersion);
+  // a floating panel whose place is on no screen any more (second screen
+  // unplugged) is pulled back onto one (job P3)
+  PanelWindow::pullFloatingPanelsOntoScreen(panelDocks(),PanelWindow::screenRects());
   // a saved layout may still have a panel on a side it no longer goes
   if(!m_jointsDock->isFloating() && !(dockWidgetArea(m_jointsDock) & m_jointsDock->allowedAreas()))
     addDockWidget(Qt::LeftDockWidgetArea,m_jointsDock);
@@ -923,18 +936,13 @@ void PinglyMotionWindow::buildDocks()
   centralLayout->addWidget(ui->animationView);
   setCentralWidget(central);
 
-  addDockWidget(Qt::LeftDockWidgetArea,m_jointsDock);
-  addDockWidget(Qt::RightDockWidgetArea,m_jointCardDock);
-  addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
-  // the tall panels use the full height, the timeline sits between them under the 3D view
-  setCorner(Qt::TopLeftCorner,Qt::LeftDockWidgetArea);
-  setCorner(Qt::BottomLeftCorner,Qt::LeftDockWidgetArea);
-  setCorner(Qt::TopRightCorner,Qt::RightDockWidgetArea);
-  setCorner(Qt::BottomRightCorner,Qt::RightDockWidgetArea);
-  resizeDocks({m_timelineDock},{250},Qt::Vertical);
+  // the default layout is built in code (src/panelwindow.h), the same one
+  // View > Reset layout brings back
+  PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
 
-  // View menu: a tick for each panel, then Reset layout. The Timeline item
-  // comes from the designer file; the other two are the panels' own.
+  // View menu: a tick for each panel, then Hide panels (Tab) and Reset
+  // layout. The Timeline item comes from the designer file; the other two
+  // are the panels' own.
   QAction* showJointsAction=m_jointsDock->toggleViewAction();
   showJointsAction->setObjectName("viewJointsAction");
   showJointsAction->setText(tr("Joints"));
@@ -947,6 +955,35 @@ void PinglyMotionWindow::buildDocks()
   PanelVisibility::linkMenuItem(this,m_timelineDock,ui->optionsShowTimelineAction);
 
   ui->menuView->addSeparator();
+  // Hide panels (job P4): Tab while the 3D view has the keys. The shortcut
+  // is tied to the 3D view only (Qt::WidgetShortcut), so Tab still moves
+  // between the fields of the panels and works in the search box. The item
+  // is ticked while the panels are hidden.
+  m_hidePanelsAction=new QAction(tr("Hide panels"),this);
+  m_hidePanelsAction->setObjectName("viewHidePanelsAction");
+  m_hidePanelsAction->setCheckable(true);
+  m_hidePanelsAction->setToolTip(tr("Hide all panels to see only the figure. Tab again brings them back."));
+  m_hidePanelsAction->setShortcut(QKeySequence(Qt::Key_Tab));
+  m_hidePanelsAction->setShortcutContext(Qt::WidgetShortcut);
+  ui->animationView->addAction(m_hidePanelsAction);
+  ui->menuView->addAction(m_hidePanelsAction);
+  connect(m_hidePanelsAction,&QAction::triggered,this,&PinglyMotionWindow::togglePanelsHidden);
+  // Tab that reaches the 3D view as a key (the shortcut did not take it)
+  connect(ui->animationView,&AnimationView::tabPressed,this,&PinglyMotionWindow::togglePanelsHidden);
+  // a panel opened from the View menu while hidden ends the hidden state;
+  // a panel closed while hidden stays closed on the next Tab
+  for(QDockWidget* dock : panelDocks())
+  {
+    const QString name=dock->objectName();
+    connect(dock->toggleViewAction(),&QAction::toggled,this,[this,name](bool on)
+    {
+      if(m_applyingTab || !m_tabState.isHidden()) return;
+      if(on) m_tabState.panelOpened(name);
+      else m_tabState.panelClosed(name);
+      m_hidePanelsAction->setChecked(m_tabState.isHidden());
+    });
+  }
+
   QAction* resetLayoutAction=new QAction(tr("Reset layout"),this);
   resetLayoutAction->setObjectName("viewResetLayoutAction");
   resetLayoutAction->setToolTip(tr("Put the panels back where they were at the first start."));
@@ -954,16 +991,33 @@ void PinglyMotionWindow::buildDocks()
   connect(resetLayoutAction,&QAction::triggered,this,&PinglyMotionWindow::resetPanelLayout);
 }
 
-// View > Reset layout: the default layout, all three panels docked and shown
+QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
+{
+  return {m_jointsDock,m_jointCardDock,m_timelineDock};
+}
+
+// View > Reset layout: the default layout built in code, all three panels
+// docked and shown. Panels hidden by Tab count as shown again.
 void PinglyMotionWindow::resetPanelLayout()
 {
-  restoreState(m_defaultWindowState,PanelLayout::CurrentVersion);
-  for(QDockWidget* dock : {m_jointsDock,m_jointCardDock,m_timelineDock})
-  {
-    dock->setFloating(false);
-    dock->show();
-  }
+  m_applyingTab=true;
+  m_tabState.reset();
+  PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
+  m_applyingTab=false;
+  m_hidePanelsAction->setChecked(false);
   ui->optionsShowTimelineAction->setChecked(true);
+}
+
+// Tab, or View > Hide panels: every open panel goes away (docked and
+// floating); the next Tab brings back exactly those. With no panel open
+// there is nothing to hide and nothing changes.
+void PinglyMotionWindow::togglePanelsHidden()
+{
+  m_applyingTab=true;
+  const bool hidden=PanelWindow::toggleHidden(m_tabState,panelDocks());
+  m_applyingTab=false;
+  m_hidePanelsAction->setChecked(hidden);
+  if(!hidden) ui->optionsShowTimelineAction->setChecked(!m_timelineDock->isHidden());
 }
 
 // Options > Light...: three sliders that change the body light at once.
@@ -2900,17 +2954,16 @@ void PinglyMotionWindow::setPlaystate(PlayState state)
     qDebug("pinglymotion::setPlaystate(): unknown playstate %d",(int) state);
 }
 
-// prevent closing of main window if there are unsaved changes
-// options, window size and panel layout, remembered for next time
+// options, window place and panel layout, remembered for next time
 void PinglyMotionWindow::saveUserSettings()
 {
   UserSettings::setSkeleton(ui->optionsSkeletonAction->isChecked());
   UserSettings::setJointLimits(ui->optionsJointLimitsAction->isChecked());
   UserSettings::setProtectFirstFrame(ui->optionsProtectFirstFrameAction->isChecked());
-  UserSettings::setShowTimelinePanel(ui->optionsShowTimelineAction->isChecked());
 
-  UserSettings::setMainWindowWidth(size().width());
-  UserSettings::setMainWindowHeight(size().height());
+  // panels hidden by Tab are not remembered: the program starts with them shown
+  if(m_tabState.isHidden()) togglePanelsHidden();
+  UserSettings::setMainWindowGeometry(saveGeometry());
   UserSettings::setPanelLayout(saveState(PanelLayout::CurrentVersion));
   UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
 
