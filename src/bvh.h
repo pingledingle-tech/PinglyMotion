@@ -47,7 +47,6 @@ class BVH
     int numFrames() const;
     void bvhIndent(QTextStream& out,int depth);
     void bvhWriteNode(BVHNode* node,QTextStream& out,int depth);
-    void bvhPrintNode(BVHNode* n, int depth);
 
     // the write functions return false and set error when the file could not be written;
     // an existing file is then left as it was
@@ -69,7 +68,6 @@ class BVH
 
     const QString bvhGetName(BVHNode* node,int index);
     int bvhGetIndex(BVHNode* node,const QString& name);
-    void bvhCopyOffsets(BVHNode* dst,BVHNode* src);
 
     void bvhGetFrameData(BVHNode* node,int frame);
     void bvhSetFrameData(BVHNode* node,int frame);

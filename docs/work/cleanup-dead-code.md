@@ -1,5 +1,5 @@
 Branch: cleanup/dead-code
-Status: active
+Status: done
 Pull request: #224
 Files:
 - src/bvhnode.*
