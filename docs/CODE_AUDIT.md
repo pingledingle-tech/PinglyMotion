@@ -6,7 +6,7 @@ A review of `src/` (137 files, about 32,000 lines) and a short look at `tools/` 
 
 - **One real bug:** the rotation and position sliders lose their decimals through integer division (C1).
 - **Build cost:** 16 core source files are compiled again for every test program and fuzz target (C2).
-- **Inherited code is mostly cleaned up:** no legacy OpenGL calls are left (the renderer is OpenGL 3.3), the old `BvhParser`/`FileManager` and libquat are gone, and old names (QAvimator, Pingmator) remain only in credits, licence notes and the legacy test files where they belong. What is left from QAvimator is a half-finished scene refactor ("temporary" members), some dead functions, string-based connects, printf-style debug output and message boxes in model code.
+- **Inherited code is mostly cleaned up:** no legacy OpenGL calls are left (the renderer is OpenGL 3.3), the old `BvhParser`/`FileManager` and libquat are gone, and old names (QAvimator and the former project name) remain only in credits, licence notes and the legacy test files where they belong. What is left from QAvimator is a half-finished scene refactor ("temporary" members), some dead functions, string-based connects, printf-style debug output and message boxes in model code.
 - **Duplicated logic:** a second BVH writer next to `AnimFile::write`, two Euler/quaternion conversions and two rotation-order enums, and small skeleton-walk helpers copied per file.
 - **Size:** `pinglymotionwindow.cpp` (3353 lines) is the largest file and the main cause of job overlaps.
 - **Tests:** strong for parsers, converters, IK, export, the control API and panels; nothing for props, the scene, the timeline or the `.obj` mesh reader. Two Python tests are never run in CI.
