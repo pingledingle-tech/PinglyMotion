@@ -13980,6 +13980,60 @@
    "skeleton": "mesh2motion-humanoid",
    "strip": "static/assets/human/animations/",
    "type": "github"
+  },
+  "quaternius": {
+   "commit": "e24c23cf2a1323488a3faa226ea7ea21f644b73e",
+   "credit": "Animations from the Universal Animation Library by Quaternius (quaternius.com), CC0 1.0. No credit required; given as thanks.",
+   "dest": "quaternius",
+   "docs": [
+    {
+     "path": "LICENSE",
+     "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+     "size": 7048
+    },
+    {
+     "path": "README.md",
+     "sha256": "370e6ff244ef43b269f936be7d630a77a3eb7ed8bbc3315ffcae5b327b814fcb",
+     "size": 1051
+    }
+   ],
+   "files": [
+    {
+     "companion": true,
+     "path": "glTF/AnimationLibrary_Godot_Standard.bin",
+     "sha256": "6e65377d81558333c4093dbb144a48fd19019343d82b1a3a7992a98ec0e0543c",
+     "size": 1587224
+    },
+    {
+     "path": "glTF/AnimationLibrary_Godot_Standard.gltf",
+     "sha256": "0ff075c7ad6855c5c2c37a171592ee8f0d6ab2f58259e2be77a9b63dd8027765",
+     "size": 2459987
+    }
+   ],
+   "format": "gltf",
+   "homepage": "https://quaternius.com/packs/universalanimationlibrary.html",
+   "include": {
+    "companion_suffixes": [
+     ".bin"
+    ],
+    "docs": [
+     "LICENSE",
+     "README.md"
+    ],
+    "prefix": "glTF/",
+    "suffixes": [
+     ".gltf",
+     ".bin"
+    ]
+   },
+   "licence": "CC0 1.0 Universal",
+   "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "name": "Quaternius Universal Animation Library (standard, glTF copy)",
+   "note": "The free standard tier only, as copied unchanged from the author's itch.io download (2025-06-10) into a GitHub repository with glTF files only. One .gltf with 46 animations and its .bin. The paid Pro and Source tiers are never fetched. Convert with tools/convert_reference.py.",
+   "repo": "J-Ponzo/gltf-universal-animation-library",
+   "skeleton": "quaternius-rigify",
+   "strip": "glTF/",
+   "type": "github"
   }
  },
  "version": 1

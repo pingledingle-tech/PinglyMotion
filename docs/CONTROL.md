@@ -113,8 +113,9 @@ starting poses and motions on the Second Life skeleton. Start from one instead o
   and SHA-256 against the index. The answer is the `state` plus `reference` with the clip's `licence` and
   `credit`. The library is read-only; `save_file` with a new name keeps the edited animation.
 - Clips downloaded with `tools/fetch_reference.py` (its `downloaded_index.json`) are listed too, with
-  `downloaded: true`. They open only when their `skeleton` is `sl-classic`; the raw CMU and Mesh2Motion downloads
-  are not converted yet, so they are listed with `loadable: false` and the reason.
+  `downloaded: true`. They open only when their `skeleton` is `sl-classic`: the raw CMU, Mesh2Motion and Quaternius
+  downloads are listed with `loadable: false` and the reason, and `tools/convert_reference.py` adds converted copies
+  (ids starting with `sl/`) that open (layout in `docs/REFERENCE_LIBRARY_SCHEMA.md`).
 - Folders: `library/` next to the program, or `PINGLYMOTION_LIBRARY_FOLDER`; the download folder is
   `PinglyMotion-reference` in the user's home folder (the script's default), or `PINGLYMOTION_REFERENCE_FOLDER`.
 

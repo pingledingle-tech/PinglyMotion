@@ -8,6 +8,10 @@
 #include <QtTest>
 #include <QTemporaryDir>
 #include <QLabel>
+#include <QPushButton>
+#include <QMouseEvent>
+#include <QApplication>
+#include <cmath>
 
 #include "animation.h"
 #include "bvh.h"
@@ -48,6 +52,13 @@ class EasingTilesTest : public QObject
     void segmentEndingAtKey();
     void hintFollowsTips();
     void animatesOnlyWhileShown();
+    void customButtonFollowsTheKey();
+    void customStateMarksButtonNotTiles();
+    void customCheckRunsOnSetChoice();
+    void customCurveStoredPlayedAndSaved();
+    void customCurveStaysInsideLimits();
+    void editorDragsHandles();
+    void dialogStartAgainAndLimits();
 
   private:
     // the jump example, with the joint and two neighbouring keys used below
@@ -324,6 +335,248 @@ void EasingTilesTest::animatesOnlyWhileShown()
   QVERIFY(row.isAnimating());
   row.hide();
   QVERIFY(!row.isAnimating());
+}
+
+// ---------------------------------------------------------------- custom curve (issue #11)
+
+void EasingTilesTest::customButtonFollowsTheKey()
+{
+  EasingTiles row;
+  QPushButton* button = row.customButton();
+  QVERIFY(button);
+  QCOMPARE(button->objectName(), QStringLiteral("customCurveButton"));
+  QCOMPARE(button->text(), QStringLiteral("Custom curve..."));
+  QVERIFY(!button->isEnabled());
+
+  QSignalSpy spy(&row, &EasingTiles::customCurveRequested);
+  row.setChoice(Easing::Preset::SlowBothEnds);
+  QVERIFY(button->isEnabled());
+  button->click();
+  QCOMPARE(spy.count(), 1);
+  // only the dialog changes the state, not the click
+  QVERIFY(!button->isChecked());
+  QVERIFY(!row.isCustom());
+
+  row.setNoKey();
+  QVERIFY(!button->isEnabled());
+  QVERIFY(!row.isCustom());
+}
+
+void EasingTilesTest::customStateMarksButtonNotTiles()
+{
+  EasingTiles row;
+  row.setChoice(Easing::Preset::SlowStart);
+  row.setCustom(true);
+  QVERIFY(row.isCustom());
+  QVERIFY(row.customButton()->isChecked());
+  for (int i = 0; i < Easing::PresetCount; i++)
+    QVERIFY(!row.tile(static_cast<Easing::Preset>(i))->isChecked());
+  QCOMPARE(row.hintText(), QStringLiteral("This pose change uses your own curve. Click a tile to go back."));
+
+  // a tile click leaves the custom state and is reported like any click
+  QSignalSpy spy(&row, &EasingTiles::choiceClicked);
+  row.tile(Easing::Preset::Even)->click();
+  QCOMPARE(spy.count(), 1);
+  QVERIFY(!row.isCustom());
+  QVERIFY(!row.customButton()->isChecked());
+  QVERIFY(row.tile(Easing::Preset::Even)->isChecked());
+
+  // without a key the custom state cannot be set
+  row.setNoKey();
+  row.setCustom(true);
+  QVERIFY(!row.isCustom());
+}
+
+void EasingTilesTest::customCheckRunsOnSetChoice()
+{
+  EasingTiles row;
+  bool custom = true;
+  row.setCustomCheck([&custom]() { return custom; });
+  row.setChoice(Easing::Preset::SlowBothEnds);
+  QVERIFY(row.isCustom());
+  QVERIFY(!row.tile(Easing::Preset::SlowBothEnds)->isChecked());
+  custom = false;
+  row.setChoice(Easing::Preset::SlowBothEnds);
+  QVERIFY(!row.isCustom());
+  QVERIFY(row.tile(Easing::Preset::SlowBothEnds)->isChecked());
+}
+
+void EasingTilesTest::customCurveStoredPlayedAndSaved()
+{
+  BVH bvh;
+  QScopedPointer<Animation> anim;
+  BVHNode* joint = nullptr;
+  int from = 0, to = 0;
+  QVERIFY(openJump(bvh, anim, joint, from, to));
+  anim->setDirty(false);
+
+  // the editor opens on the segment's named choice first
+  const Easing::Preset before = EasingChoice::choiceOf(joint, from, to);
+  QCOMPARE(EasingChoice::editorStart(joint, from, to), Easing::bezierFromPreset(before));
+
+  // a curve inside the square, so no joint limit can cut it
+  const Easing::Bezier curve{0.7, 0.05, 0.9, 0.5};
+  EasingChoice::setCustomCurve(anim.data(), joint, from, to, curve);
+  QVERIFY(anim->dirty());
+  QCOMPARE(EasingChoice::customCurveOf(joint, from), std::optional<Easing::Bezier>(curve));
+  QVERIFY(!joint->curve(from));
+  QVERIFY(joint->easeOut(from));
+  QVERIFY(joint->easeIn(to));
+  QVERIFY(!joint->customCurve(to));
+  QCOMPARE(EasingChoice::editorStart(joint, from, to), curve);
+
+  // playback follows the curve on every channel
+  const QVector3D a = joint->frameData(from).rotation();
+  const QVector3D b = joint->frameData(to).rotation();
+  for (int frame = from; frame <= to; frame++)
+  {
+    const QVector3D r = joint->frameData(frame).rotation();
+    for (int axis = 0; axis < 3; axis++)
+      QCOMPARE(r[axis], float(Easing::customSegmentValue(curve, a[axis], b[axis], to - from, frame - from)));
+  }
+
+  // saved and opened again, the curve is still there
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString path = dir.path() + "/custom.dingle";
+  QString error;
+  QVERIFY2(anim->saveBVH(path, &error), qPrintable(error));
+  QVERIFY(readAll(path).contains("\"curve\": {\"type\": \"bezier\", \"points\": [0.7, 0.05, 0.9, 0.5]}"));
+  BVH bvh2;
+  Animation again(&bvh2, path);
+  BVHNode* joint2 = findJoint(again.getMotion(), "lShldr");
+  QVERIFY(joint2);
+  QCOMPARE(EasingChoice::customCurveOf(joint2, from), std::optional<Easing::Bezier>(curve));
+  for (int frame = from; frame <= to; frame++)
+    QCOMPARE(joint2->frameData(frame).rotation(), joint->frameData(frame).rotation());
+
+  // the tile row shows it as custom when the check says so
+  EasingTiles row;
+  row.setCustomCheck([&]() { return EasingChoice::customCurveOf(joint2, from).has_value(); });
+  row.setChoice(EasingChoice::choiceOf(joint2, from, to));
+  QVERIFY(row.isCustom());
+
+  // a tile click removes it again, and the file is as without it
+  EasingChoice::setChoice(&again, joint2, from, to, Easing::Preset::Even);
+  QVERIFY(!EasingChoice::customCurveOf(joint2, from));
+  QCOMPARE(EasingChoice::choiceOf(joint2, from, to), Easing::Preset::Even);
+  row.setChoice(EasingChoice::choiceOf(joint2, from, to));
+  QVERIFY(!row.isCustom());
+  const QString path2 = dir.path() + "/even.dingle";
+  QVERIFY2(again.saveBVH(path2, &error), qPrintable(error));
+  QVERIFY(!readAll(path2).contains("bezier"));
+}
+
+// a custom curve that goes past the new pose stops at the joint's limits,
+// like "Overshoot, then settle" (data/SL.lim: lShldr X -135..90)
+void EasingTilesTest::customCurveStaysInsideLimits()
+{
+  BVH bvh;
+  QScopedPointer<Animation> anim;
+  BVHNode* joint = nullptr;
+  int from = 0, to = 0;
+  QVERIFY(openJump(bvh, anim, joint, from, to));
+  int channel = -1;
+  for (int i = 0; i < joint->numChannels; i++)
+    if (joint->channelType[i] == BVH_XROT) channel = i;
+  QVERIFY(channel >= 0);
+  const float high = float(joint->channelMax[channel]);
+  QVERIFY2(high < 10000.0f, "the limits file was not loaded (run from bin/)");
+
+  QVector3D start = joint->frameData(from).rotation();
+  start.setX(0.0f);
+  QVector3D end = joint->frameData(to).rotation();
+  end.setX(high);
+  joint->setKeyframeRotation(from, start);
+  joint->setKeyframeRotation(to, end);
+  const Easing::Bezier past{0.2, 1.5, 0.5, 1.5};
+  EasingChoice::setCustomCurve(anim.data(), joint, from, to, past);
+
+  bool cut = false;
+  for (int frame = from; frame <= to; frame++)
+  {
+    const float x = joint->frameData(frame).rotation().x();
+    QVERIFY2(x <= high, qPrintable(QString("frame %1 x %2").arg(frame).arg(x)));
+    if (Easing::customSegmentValue(past, 0.0, high, to - from, frame - from) > high)
+    {
+      QCOMPARE(x, high);
+      cut = true;
+    }
+  }
+  QVERIFY(cut);
+}
+
+void EasingTilesTest::editorDragsHandles()
+{
+  CurveEditor editor;
+  editor.resize(360, 300);
+  editor.setCurve(Easing::Bezier{0.25, 0.25, 0.75, 0.75});
+  QSignalSpy spy(&editor, &CurveEditor::curveChanged);
+
+  // the first handle to a point inside the square
+  const QPoint grab = editor.handlePosition(0).toPoint();
+  const QPointF wanted = QPointF(0.5, 1.2);
+  QPointF target;
+  {
+    // the widget point of (0.5, 1.2): search the round trip of toCurve
+    const QPointF a = editor.handlePosition(0);
+    const QPointF ca = editor.toCurve(a);
+    QVERIFY(std::fabs(ca.x() - 0.25) < 1e-9 && std::fabs(ca.y() - 0.25) < 1e-9);
+    const QPointF b = editor.handlePosition(1);
+    const QPointF cb = editor.toCurve(b);
+    // the mapping is linear, so two points give it
+    const double sx = (b.x() - a.x()) / (cb.x() - ca.x());
+    const double sy = (b.y() - a.y()) / (cb.y() - ca.y());
+    target = QPointF(a.x() + (wanted.x() - ca.x()) * sx, a.y() + (wanted.y() - ca.y()) * sy);
+  }
+  QTest::mousePress(&editor, Qt::LeftButton, Qt::NoModifier, grab);
+  QMouseEvent move(QEvent::MouseMove, target, editor.mapToGlobal(target), Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(&editor, &move);
+  QTest::mouseRelease(&editor, Qt::LeftButton, Qt::NoModifier, target.toPoint());
+  const Easing::Bezier c = editor.curve();
+  const QPointF expected = editor.toCurve(QPointF(target.toPoint()));
+  QVERIFY2(std::fabs(c.x1 - expected.x()) < 1e-9 && std::fabs(c.y1 - expected.y()) < 1e-9,
+           qPrintable(QString("%1 %2").arg(c.x1).arg(c.y1)));
+  QVERIFY(std::fabs(c.x1 - 0.5) < 0.01 && std::fabs(c.y1 - 1.2) < 0.02);
+  // the other handle did not move
+  QCOMPARE(c.x2, 0.75);
+  QCOMPARE(c.y2, 0.75);
+  QVERIFY(spy.count() >= 1);
+
+  // dragged far outside, the handle stops at the limits
+  const QPoint grab2 = editor.handlePosition(1).toPoint();
+  QTest::mousePress(&editor, Qt::LeftButton, Qt::NoModifier, grab2);
+  QTest::mouseRelease(&editor, Qt::LeftButton, Qt::NoModifier, QPoint(5000, -5000));
+  QCOMPARE(editor.curve().x2, 1.0);
+  QCOMPARE(editor.curve().y2, Easing::BezierMaxY);
+
+  // a click away from both handles moves nothing
+  const Easing::Bezier still = editor.curve();
+  QTest::mouseClick(&editor, Qt::LeftButton, Qt::NoModifier, QPoint(editor.width() / 2, editor.height() - 2));
+  QCOMPARE(editor.curve(), still);
+}
+
+void EasingTilesTest::dialogStartAgainAndLimits()
+{
+  const Easing::Bezier start = Easing::bezierFromPreset(Easing::Preset::SlowFinish);
+  CurveEditorDialog dialog(start);
+  QCOMPARE(dialog.windowTitle(), QStringLiteral("Custom curve"));
+  QCOMPARE(dialog.curve(), start);
+  QLabel* hint = dialog.findChild<QLabel*>("curveEditorHint");
+  QVERIFY(hint);
+  QCOMPARE(hint->text(), QStringLiteral("Drag the two round handles. Steep parts move fast, flat parts slowly."));
+
+  dialog.editor()->setCurve(Easing::Bezier{0.1, 0.9, 0.2, 0.3});
+  QVERIFY(dialog.curve() != start);
+  QPushButton* again = dialog.findChild<QPushButton*>("curveEditorStartAgain");
+  QVERIFY(again);
+  QCOMPARE(again->text(), QStringLiteral("Start again"));
+  again->click();
+  QCOMPARE(dialog.curve(), start);
+
+  // values outside the limits are kept inside them
+  dialog.editor()->setCurve(Easing::Bezier{-1, 9, 2, -9});
+  QCOMPARE(dialog.curve(), (Easing::Bezier{0, Easing::BezierMaxY, 1, Easing::BezierMinY}));
 }
 
 QTEST_MAIN(EasingTilesTest)

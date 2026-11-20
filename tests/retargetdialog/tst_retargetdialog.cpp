@@ -5,14 +5,17 @@
  */
 
 #include <QtTest>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QSettings>
 #include <QTemporaryDir>
 
 #include <functional>
 
 #include "animfile.h"
+#include "importoptions.h"
 #include "retarget.h"
 #include "retargetdialog.h"
 #include "retargetmapping.h"
@@ -51,7 +54,35 @@ class TestRetargetDialog : public QObject
 {
   Q_OBJECT
 
+  QTemporaryDir m_settingsFolder;
+
+  static QList<QCheckBox*> cleanupBoxes(RetargetDialog& dialog)
+  {
+    // the boxes of the clean-up group, in the order of ImportOptions::rows()
+    QList<QCheckBox*> boxes;
+    for(const ImportOptions::Row& row : ImportOptions::rows())
+      for(QCheckBox* box : dialog.findChildren<QCheckBox*>())
+        if(box->text()==row.label) boxes.append(box);
+    return boxes;
+  }
+
   private slots:
+    void initTestCase()
+    {
+      // the choices of the dialog are remembered in the settings: never in the real ones
+      QCoreApplication::setOrganizationName("PinglyMotionTest");
+      QCoreApplication::setApplicationName("retargetdialog");
+      QSettings::setDefaultFormat(QSettings::IniFormat);
+      QSettings::setPath(QSettings::IniFormat,QSettings::UserScope,m_settingsFolder.path());
+    }
+
+    void cleanup()
+    {
+      QSettings settings(QSettings::IniFormat,QSettings::UserScope,"PinglyMotionTest","retargetdialog");
+      settings.clear();
+      settings.sync();
+    }
+
     void walkFromAnotherSkeletonIsMatched()
     {
       const AnimFile::Animation source=readBvh(PINGLYMOTION_MOTIONS "/cmu_02_01_walk.bvh");
@@ -485,7 +516,110 @@ class TestRetargetDialog : public QObject
       const AnimFile::Animation target=readBvh(PINGLYMOTION_DATA "/SLFemale.bvh");
       RetargetDialog dialog(source,target,"walk.bvh",nullptr);
       QVERIFY(dialog.result().ok());
-      QCOMPARE(dialog.result().animation->frames,source.frames);
+      QCOMPARE(dialog.retargeted().animation->frames,source.frames);
+      QCOMPARE(dialog.result().animation->frames,source.frames+1);   // the default start pose
+    }
+
+    void cleanupBoxesShowTheDefaultsWithTheirTips()
+    {
+      Wave w;
+      RetargetDialog dialog(w.source,w.target,"wave.bvh",nullptr);
+      const QList<QCheckBox*> boxes=cleanupBoxes(dialog);
+      const QList<ImportOptions::Row>& rows=ImportOptions::rows();
+      QCOMPARE(boxes.size(),rows.size());
+      const ImportOptions::CleanupOptions defaults;
+      for(int i=0;i<rows.size();i++)
+      {
+        QCOMPARE(boxes[i]->isChecked(),defaults.*rows[i].field);
+        QCOMPARE(boxes[i]->toolTip(),rows[i].tip);
+      }
+      QVERIFY(dialog.cleanupOptions()==defaults);
+    }
+
+    void eachBoxChangesTheAnimationExactlyAsItsStep()
+    {
+      Wave w;
+      RetargetDialog dialog(w.source,w.target,"wave.bvh",nullptr);
+      QVERIFY(dialog.result().ok());
+      const AnimFile::Animation& retargeted=*dialog.retargeted().animation;
+      const QList<QCheckBox*> boxes=cleanupBoxes(dialog);
+
+      // all off: the animation is the retargeted one, unchanged
+      ImportOptions::CleanupOptions off;
+      off.resample=off.startPose=off.inPlace=off.loopSeam=off.smooth=false;
+      dialog.setCleanupOptions(off);
+      QCOMPARE(dialog.result().animation->frames,retargeted.frames);
+      QVERIFY(dialog.result().animation->values==retargeted.values);
+
+      // one box at a time, clicked as the user does: the animation is what apply() gives for it
+      for(int i=0;i<boxes.size();i++)
+      {
+        dialog.setCleanupOptions(off);
+        boxes[i]->click();
+        QVERIFY(boxes[i]->isChecked());
+        const MotionCleanup::Result expected=ImportOptions::apply(retargeted,dialog.cleanupOptions());
+        QVERIFY(expected.ok());
+        QCOMPARE(dialog.result().animation->frames,expected.animation->frames);
+        QCOMPARE(dialog.result().animation->frameTime,expected.animation->frameTime);
+        QVERIFY(dialog.result().animation->values==expected.animation->values);
+        boxes[i]->click();   // and off again gives the retargeted animation back
+        QVERIFY(dialog.result().animation->values==retargeted.values);
+      }
+    }
+
+    void startPoseBoxAddsTheFrame()
+    {
+      Wave w;
+      RetargetDialog dialog(w.source,w.target,"wave.bvh",nullptr);
+      ImportOptions::CleanupOptions o;
+      o.resample=o.inPlace=o.loopSeam=o.smooth=false;
+      o.startPose=true;
+      dialog.setCleanupOptions(o);
+      QCOMPARE(dialog.result().animation->frames,dialog.retargeted().animation->frames+1);
+    }
+
+    void choicesAreRememberedBetweenImports()
+    {
+      Wave w;
+      ImportOptions::CleanupOptions chosen;
+      chosen.resample=false;
+      chosen.startPose=false;
+      chosen.inPlace=true;
+      chosen.loopSeam=true;
+      chosen.smooth=true;
+      QTemporaryDir folder;
+      {
+        RetargetDialog dialog(w.source,w.target,"wave.bvh",nullptr);
+        dialog.setMappingFolder(folder.path());
+        const QList<QCheckBox*> boxes=cleanupBoxes(dialog);
+        const QList<ImportOptions::Row>& rows=ImportOptions::rows();
+        for(int i=0;i<rows.size();i++)
+          if(boxes[i]->isChecked()!=(chosen.*rows[i].field)) boxes[i]->click();
+        QVERIFY(dialog.cleanupOptions()==chosen);
+        dialog.accept();
+      }
+      {
+        RetargetDialog dialog(w.source,w.target,"wave.bvh",nullptr);
+        QVERIFY(dialog.cleanupOptions()==chosen);
+        const QList<QCheckBox*> boxes=cleanupBoxes(dialog);
+        const QList<ImportOptions::Row>& rows=ImportOptions::rows();
+        for(int i=0;i<rows.size();i++)
+          QCOMPARE(boxes[i]->isChecked(),chosen.*rows[i].field);
+      }
+    }
+
+    void cancelDoesNotRememberTheChoices()
+    {
+      Wave w;
+      {
+        RetargetDialog dialog(w.source,w.target,"wave.bvh",nullptr);
+        ImportOptions::CleanupOptions o;
+        o.inPlace=true;
+        dialog.setCleanupOptions(o);
+        dialog.reject();
+      }
+      RetargetDialog again(w.source,w.target,"wave.bvh",nullptr);
+      QVERIFY(again.cleanupOptions()==ImportOptions::CleanupOptions());
     }
 };
 

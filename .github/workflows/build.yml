@@ -205,6 +205,8 @@ jobs:
         run: python3 tests/test_gen_edge_bvh.py
       - name: Generated SOMA 77 test skeleton is up to date (issue 18)
         run: python3 tests/test_gen_soma77_bvh.py
+      - name: Kimodo text-to-motion helper (issue 18)
+        run: python3 tests/test_kimodo_helper.py
       - name: Generated SMPL 22 test skeletons are up to date (issue 18)
         run: python3 tests/test_gen_smpl22_bvh.py
       - name: Reference library index is valid

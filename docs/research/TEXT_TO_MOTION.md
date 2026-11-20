@@ -139,6 +139,8 @@ Second Life users run Windows and often laptops without a large NVIDIA card. Any
 
 ### Job 3: Kimodo trial as an external helper (research spike, needs an NVIDIA GPU)
 
+Status 20 November 2026: the helper is written ([tools/kimodo/](../../tools/kimodo/README.md), guide [TEXT_TO_MOTION_GUIDE.md](../TEXT_TO_MOTION_GUIDE.md), pull request 175): a Windows one-click setup with a private Python (not Docker), Meta's licence and the user's own token, low-VRAM mode, BVH into the work folder. The real run waits for the project owner's test on an RTX card. Key poses from a `.dingle` as constraints need Second Life to SOMA retargeting and are left for later.
+
 - **What:** run Kimodo-SOMA from its own repo in low-VRAM mode on a rented or local GPU, generate three clips (wave, walk in place, sit down from standing) and one keyframe-constrained clip made from a PinglyMotion `.dingle` key set, import them, export `.anim`, and write a short dated guide with the licence notice.
 - **Acceptance tests:** the four BVH files import with Job 1's mapping and no unmatched body joint; `check_animation` reports no Second Life error after Job 2's clean-up; the `.anim` export passes the existing export tests; the guide names the exact model version and quotes its licence name; no weights or generated motion are committed unless their licence allows it.
 - **Blocker:** a background session has no GPU; this job needs a machine with one, or it stops and reports.
