@@ -1,5 +1,5 @@
 Branch: docs/assistant-guide-129
-Status: active
+Status: done
 Pull request: #144
 Files:
 - docs/ASSISTANT_GUIDE.md

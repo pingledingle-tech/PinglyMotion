@@ -21,6 +21,7 @@
 #include <QMatrix4x4>
 #include <QRegularExpression>
 #include <QtTest>
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <vector>
