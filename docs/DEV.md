@@ -51,6 +51,10 @@ The assistant guide `docs/ASSISTANT_GUIDE.md` (issue #129) holds a calibration t
 
 After changing the control commands: `PINGLYMOTION_UPDATE_COMMANDS=1` and run `pinglymotion_control_tests` from `bin/` to regenerate `tools/mcp/commands.json`.
 
+## Reporting errors in code
+
+Parsers, readers and converters return a result struct, not `bool` with an error out-parameter: the value as `std::optional`, a plain `QString error` for the user (empty when it worked), and `bool ok() const`. Examples: `AnimFile::Result`, `Dingle::Result`, `Retarget::Result`, `MotionCleanup::Result`, `PMMesh::Result`. Model code never shows a message box; the window shows `error`. Older functions with a `QString*` or `QString&` error parameter are converted one file at a time (issue 207); do not add new ones.
+
 ## The Windows zip
 
 The Windows build of every pull request is a zip (artifact `PinglyMotion-windows`, about 30 MB). Next to `PinglyMotion.exe` it holds `data/`, `mcp/`, ONE folder `examples/` with everything the project owner may open: the repository's `examples/`, plus the subfolders `motions` (from `tests/motions/`), `mesh2motion` (from `tests/motions/mesh2motion/`, with its credit file), `cmu` (from `tests/motions/cmu/` plus the CMU walk clip, with its credit file) and `edge-cases` (from `tests/data/generated/`). There is no separate `test-motions/` folder. The reference library (`library/`, issue 19, format in `docs/REFERENCE_LIBRARY_SCHEMA.md`) goes into the zip as `library/` next to the program, not into `examples/`, so the smoke run does not open every clip; `python3 tests/test_reference_library.py` checks it. The file dialogs start in this folder (`src/startfolder.h`) until a last folder is remembered. The project owner tests from this zip alone and never downloads a separate file. If `tests/motions/` grows past a few MB, the build prints a warning: then change the `Package` step in `.github/workflows/build.yml` to copy only the files marked for owner testing, and say so here.
