@@ -524,89 +524,36 @@ bool BVH::checkFile(const QString& file,QString* error)
   return true;
 }
 
-void BVH::bvhIndent(QTextStream& out,int depth)
-{
-  for(int i=0;i<depth;i++)
-    out << "\t";
-}
-
-void BVH::bvhWriteNode(BVHNode* node,QTextStream& out,int depth)
-{
-  bvhIndent(out,depth);
-  out << bvhTypeName[node->type] << " " << node->name() << Qt::endl;
-
-  bvhIndent(out, depth);
-  out << "{" << Qt::endl;
-
-  bvhIndent(out,depth+1);
-  out << "OFFSET " << node->offset[0] << " " << node->offset[1] << " " << node->offset[2] << Qt::endl;
-
-  if(node->type!=BVH_END)
-  {
-    bvhIndent(out,depth+1);
-    out << "CHANNELS " << node->numChannels << " ";
-    for (int i=0;i<node->numChannels;i++)
-      out << bvhChannelName[node->channelType[i]] << " ";
-
-    out << Qt::endl;
-  }
-  for(int i=0;i<node->numChildren();i++)
-    bvhWriteNode(node->child(i),out,depth+1);
-
-  bvhIndent(out,depth);
-  out << "}" << Qt::endl;
-}
-
-// Write one frame of the pose for the live link: the first frame is neutral
+// The pose of one frame for the live link, as a small BVH: the first frame is neutral
 // (no rotation, the hip where frame 0 has it) so that the receiver sees every
-// joint of the pose as a change, as Second Life does with a BVH upload.
-void BVH::bvhWritePoseFrame(BVHNode* node,QTextStream& out,int frame,bool neutral)
-{
-  const QVector3D rotation = neutral ? QVector3D() : node->frameData(frame).rotation();
-  const QVector3D position = positionNode->frameData(neutral ? 0 : frame).position();
-
-  for (int i=0; i<node->numChannels; i++)
-  {
-    float value=0.0;
-    BVHChannelType type=node->channelType[i];
-
-    if     (type==BVH_XPOS) value = position.x();
-    else if(type==BVH_YPOS) value = position.y();
-    else if(type==BVH_ZPOS) value = position.z();
-
-    else if(type==BVH_XROT) value = rotation.x();
-    else if(type==BVH_YROT) value = rotation.y();
-    else if(type==BVH_ZROT) value = rotation.z();
-
-    out << value << " ";
-  }
-
-  for(int i=0;i<node->numChildren();i++)
-    bvhWritePoseFrame(node->child(i),out,frame,neutral);
-}
-
+// joint of the pose as a change, as Second Life does with a BVH upload; then the pose twice.
 QString BVH::bvhPoseText(Animation* anim,int frame)
 {
-  QString text;
-  QTextStream out(&text);
-  out.setNumberFlags(QTextStream::ForcePoint);
-  out.setRealNumberPrecision(7);
+  AnimFile::Animation model=snapshot(anim,AnimFile::Format::Bvh);
+  if(frame<0 || frame>=model.frames) return QString();
 
-  BVHNode* root=anim->getMotion();
-  positionNode=anim->getNode(0);
-
-  out << "HIERARCHY\n";
-  bvhWriteNode(root,out,0);
-  out << "MOTION\n";
-  out << "Frames:\t3\n";
-  out << "Frame Time:\t1.0\n";
-  for(int i=0;i<3;i++)
+  const size_t perFrame=size_t(model.valuesPerFrame);
+  std::vector<float> values;
+  values.reserve(3*perFrame);
+  // frame 0 without rotations
+  for(const AnimFile::Joint& joint : model.joints)
   {
-    bvhWritePoseFrame(root,out,frame,i==0);
-    out << "\n";
+    for(int k=0;k<joint.channels.size();k++)
+    {
+      const AnimFile::Channel channel=joint.channels[k];
+      const bool position=channel==AnimFile::Channel::XPosition || channel==AnimFile::Channel::YPosition ||
+                          channel==AnimFile::Channel::ZPosition;
+      values.push_back(position ? model.values[size_t(joint.firstValue+k)] : 0.0f);
+    }
   }
-  out.flush();
-  return text;
+  for(int i=0;i<2;i++)
+    values.insert(values.end(),model.values.begin()+std::ptrdiff_t(size_t(frame)*perFrame),
+                  model.values.begin()+std::ptrdiff_t((size_t(frame)+1)*perFrame));
+
+  model.values=values;
+  model.frames=3;
+  model.frameTime=1.0;
+  return QString::fromUtf8(AnimFile::write(model));
 }
 
 // One joint's rotation: the channels in file order, each new axis rotation multiplied

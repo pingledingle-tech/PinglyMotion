@@ -1,5 +1,5 @@
 Branch: cleanup/one-bvh-writer
-Status: active
+Status: done
 Pull request: #226
 Files:
 - src/bvh.*
