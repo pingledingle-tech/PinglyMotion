@@ -26,10 +26,8 @@ def key(frame, **joints):
 
 
 def hip(frame, y, x=0, z=0):
-    """A hip position key. The hip also gets a rotation key at that frame: a position key alone is
-    lost when the saved file is opened again (found while writing this set, see docs/DEV.md)."""
-    return [("set_pose", {"frame": frame, "joints": {"hip": [0, 0, 0]}}),
-            ("set_position", {"frame": frame, "x": x, "y": y, "z": z})]
+    """A hip position key alone, without a hip rotation key at that frame (issue 188)."""
+    return [("set_position", {"frame": frame, "x": x, "y": y, "z": z})]
 
 
 def opening(case):
@@ -85,9 +83,8 @@ CASES = [
         "reference": frames(31) + [
             key(2, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
             key(16, rShldr=(0, 0, -70), rForeArm=(0, 90, 0)),
-            # the default loop ends one frame before the last (frame 30 of 31): the key that closes
-            # the loop goes there, and the last frame keeps it
-            key(30, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
+            # the default loop ends on the last frame (issue 189): the last key equal to the first
+            # closes the loop
             key(31, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
         ],
         "checks": [

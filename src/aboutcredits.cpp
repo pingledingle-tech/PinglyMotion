@@ -8,12 +8,17 @@ namespace
     "github.com/RuthAndRoth/Ruth2",
     "github.com/RuthAndRoth/Roth2",
     "github.com/Mesh2Motion/mesh2motion-app",
+    "github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md",
   };
 }
 
 QString AboutCredits::plainText()
 {
   return QCoreApplication::translate("AboutCredits",
+    "Thank you to everyone whose work PinglyMotion uses or learned from: QAvimator and "
+    "Avimator, the Second Life and Firestorm viewers, the RuthAndRoth bodies, the CMU "
+    "motion capture database, Mesh2Motion and Aurora. The full list is in CREDITS.md: "
+    "github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md. "
     "Avatar body: Ruth2 v4 by Shin Ingen, Ada Radius and the RuthAndRoth contributors "
     "(github.com/RuthAndRoth/Ruth2). The mesh is licensed under the GNU Affero General "
     "Public License 3 or later; the UV map is CC BY Linden Lab and the rig parts are "
@@ -50,6 +55,9 @@ QStringList AboutCredits::requiredEntries()
     "data/character/roth2/",
     "Maxine", "Max Avatar Project", "Creative Commons Attribution 4.0 License",
     "data/character/max/LICENSE.txt",
+    "Thank you to everyone whose work PinglyMotion uses or learned from",
+    "QAvimator and Avimator", "CREDITS.md",
+    "github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md",
     "Mesh2Motion", "github.com/Mesh2Motion/mesh2motion-app", "CC0 1.0",
     "CMU Graphics Lab Motion Capture Database", "mocap.cs.cmu.edu", "NSF EIA-0196217",
   };
