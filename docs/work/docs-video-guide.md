@@ -1,5 +1,5 @@
 Branch: docs/video-guide
-Status: active
+Status: done
 Pull request: #180
 Files:
 - docs/VIDEO_GUIDE.md
