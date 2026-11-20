@@ -115,6 +115,18 @@ class ControlTest : public QObject
     void describeMotionOfTheCmuWalk();
     void describeMotionOfTheCmuWave();
     void describeMotionOfTheGeneratedEdgeCases();
+    void checkAnimationFindsNothingMoving();
+    void checkAnimationPassesAnArmLift();
+    void checkAnimationFindsTooLong();
+    void checkAnimationFindsFrameOnePosed();
+    void checkAnimationFindsJointLimits();
+    void checkAnimationFindsFeetUnderAndOverTheFloor();
+    void checkAnimationFindsFootSliding();
+    void checkAnimationFindsHipOffset();
+    void checkAnimationFindsJerkAndLoopSeam();
+    void checkAnimationFindsDeadStart();
+    void checkAnimationFindsIdenticalKeys();
+    void checkAnimationOfFiles();
 
     void serverAnswersWithKey();
     void serverRefusesWithoutKey();
@@ -135,6 +147,7 @@ class ControlTest : public QObject
 
   private:
     QJsonObject run(const char* text) { return m_api->execute(json(text)); }
+    void runAll(const QStringList& requests);
     QByteArray exchange(const QByteArray& raw);
     QByteArray post(const QByteArray& body, const QByteArray& extraHeaders = QByteArray(), bool withKey = true);
 
@@ -1274,6 +1287,234 @@ void ControlTest::describeMotionOfTheGeneratedEdgeCases()
       QCOMPARE(hip["joint"].toString(), QString("hip"));
       QVERIFY2(hip["reach"].toDouble() < 20.0, qPrintable(QString::number(hip["reach"].toDouble())));
     }
+  }
+}
+
+// issue #129: check_animation. Helpers: run requests that must succeed, and
+// find one check's finding in the answer
+void ControlTest::runAll(const QStringList& requests)
+{
+  for (const QString& request : requests)
+  {
+    const QJsonObject answer = m_api->execute(QJsonDocument::fromJson(request.toUtf8()).object());
+    QVERIFY2(answer["ok"].toBool(), qPrintable(request + ": " + answer["error"].toString()));
+  }
+}
+
+static QJsonObject finding(const QJsonObject& answer, const QString& check)
+{
+  for (const QJsonValue& value : answer["findings"].toArray())
+    if (value.toObject()["check"].toString() == check) return value.toObject();
+  return QJsonObject();
+}
+
+static QStringList checksOf(const QJsonObject& answer)
+{
+  QStringList out;
+  for (const QJsonValue& value : answer["findings"].toArray()) out << value.toObject()["check"].toString();
+  return out;
+}
+
+void ControlTest::checkAnimationFindsNothingMoving()
+{
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["errors"].toInt(), 1);
+  QCOMPARE(checksOf(answer), QStringList{"nothing_moves"});
+  QCOMPARE(finding(answer, "nothing_moves")["severity"].toString(), QString("error"));
+  QCOMPARE(answer["summary"].toString(), QString("1 error, 0 warnings: nothing moves."));
+  QCOMPARE(answer["frames"].toInt(), 30);
+  QCOMPARE(answer["seconds"].toDouble(), 0.93);
+}
+
+// the same arm lift as describeMotionOfAHandMadeArmLift: nothing wrong, the
+// joints that never move are noted
+void ControlTest::checkAnimationPassesAnArmLift()
+{
+  runAll({R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,0]}})",
+          R"({"command":"set_pose","frame":10,"joints":{"lShldr":[0,0,90]}})",
+          R"({"command":"set_pose","frame":20,"joints":{"lShldr":[0,0,0]}})",
+          R"({"command":"set_frame","frame":5})"});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(m_animation->getFrame(), 4);   // never moves the current frame
+  QCOMPARE(answer["errors"].toInt(), 0);
+  QCOMPARE(answer["warnings"].toInt(), 0);
+  QCOMPARE(checksOf(answer), QStringList{"dropped_joints"});
+  QCOMPARE(finding(answer, "dropped_joints")["joints"].toArray().size(), 18);
+  QVERIFY(!finding(answer, "dropped_joints")["joints"].toArray().contains("lShldr"));
+  QCOMPARE(answer["summary"].toString(), QString("No errors or warnings; notes: 18 joints left out."));
+  QCOMPARE(answer["passed"].toArray(),
+           (QJsonArray{"length", "nothing_moves", "frame1_posed", "joint_limits", "hip_offset", "foot_under_floor", "floating",
+                       "foot_sliding", "jerk", "dead_start", "loop_seam", "identical_keys"}));
+}
+
+void ControlTest::checkAnimationFindsTooLong()
+{
+  // 1900 frames at 30 per second: (1900 - 2) / 30 = 63.3 s, as the .anim export counts
+  runAll({R"({"command":"set_frame_count","frames":1900})",
+          R"({"command":"set_pose","frame":10,"joints":{"lShldr":[0,0,40]}})"});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  const QJsonObject length = finding(answer, "length");
+  QCOMPARE(length["severity"].toString(), QString("error"));
+  QCOMPARE(length["seconds"].toDouble(), 63.27);
+  QVERIFY(answer["summary"].toString().startsWith("1 error, "));
+  QVERIFY(answer["summary"].toString().contains("too long (63.3 s)"));
+}
+
+void ControlTest::checkAnimationFindsFrameOnePosed()
+{
+  UserSettings::setProtectFirstFrame(false);
+  runAll({R"({"command":"set_pose","frame":1,"joints":{"lShin":[60,0,0]}})",
+          R"({"command":"set_pose","frame":10,"joints":{"lShldr":[0,0,40]}})"});
+  UserSettings::setProtectFirstFrame(true);
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  const QJsonObject posed = finding(answer, "frame1_posed");
+  QCOMPARE(posed["severity"].toString(), QString("warning"));
+  QCOMPARE(posed["joints"].toArray(), QJsonArray{"lShin"});
+  QVERIFY(posed["message"].toString().contains("left knee keeps the frame-1 angle"));
+}
+
+void ControlTest::checkAnimationFindsJointLimits()
+{
+  // with the limits off, set_pose does not cut the angle; the check still knows the limit
+  UserSettings::setJointLimits(false);
+  runAll({R"({"command":"set_pose","frame":10,"joints":{"lShin":[-40,0,0]}})"});
+  UserSettings::setJointLimits(true);
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  const QJsonObject limits = finding(answer, "joint_limits");
+  QCOMPARE(limits["severity"].toString(), QString("warning"));
+  QCOMPARE(limits["count"].toInt(), 1);
+  const QJsonObject key = limits["keys"].toArray().first().toObject();
+  QCOMPARE(key["joint"].toString(), QString("lShin"));
+  QCOMPARE(key["frame"].toInt(), 10);
+  QCOMPARE(key["axis"].toString(), QString("X"));
+  QCOMPARE(key["degrees"].toDouble(), -40.0);
+  QVERIFY(key["limit"].toDouble() > -40.0);
+}
+
+// the hip lowered 10 inches with straight legs puts the feet under the floor;
+// raised 10 inches for 2 seconds, the figure floats
+void ControlTest::checkAnimationFindsFeetUnderAndOverTheFloor()
+{
+  const QVector3D start = m_animation->getNode(0)->frameData(0).position();
+  runAll({R"({"command":"set_frame_count","frames":90})",
+          QString(R"({"command":"set_position","frame":10,"x":%1,"y":%2,"z":%3})").arg(start.x()).arg(start.y() - 10).arg(start.z()),
+          QString(R"({"command":"set_position","frame":20,"x":%1,"y":%2,"z":%3})").arg(start.x()).arg(start.y() + 10).arg(start.z()),
+          QString(R"({"command":"set_position","frame":90,"x":%1,"y":%2,"z":%3})").arg(start.x()).arg(start.y() + 10).arg(start.z())});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+
+  const QJsonObject under = finding(answer, "foot_under_floor");
+  QCOMPARE(under["severity"].toString(), QString("warning"));
+  QCOMPARE(under["inches"].toDouble(), 10.0);
+  const QJsonObject first = under["frames"].toArray().first().toObject();
+  QVERIFY(first["from"].toInt() <= 10 && first["to"].toInt() >= 10);
+
+  const QJsonObject floating = finding(answer, "floating");
+  QCOMPARE(floating["severity"].toString(), QString("warning"));
+  QCOMPARE(floating["frames"].toArray().last().toObject()["to"].toInt(), 90);
+}
+
+// the hip moved 30 inches sideways in 8 frames with straight legs: the planted feet slide
+void ControlTest::checkAnimationFindsFootSliding()
+{
+  const QVector3D start = m_animation->getNode(0)->frameData(0).position();
+  runAll({QString(R"({"command":"set_position","frame":2,"x":%1,"y":%2,"z":%3})").arg(start.x()).arg(start.y()).arg(start.z()),
+          QString(R"({"command":"set_position","frame":10,"x":%1,"y":%2,"z":%3})").arg(start.x() + 30).arg(start.y()).arg(start.z())});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  const QJsonObject sliding = finding(answer, "foot_sliding");
+  QCOMPARE(sliding["severity"].toString(), QString("warning"));
+  QCOMPARE(sliding["frames"].toArray(),
+           (QJsonArray{QJsonObject{{"from", 2}, {"to", 10}, {"foot", "left"}}, QJsonObject{{"from", 2}, {"to", 10}, {"foot", "right"}}}));
+}
+
+void ControlTest::checkAnimationFindsHipOffset()
+{
+  const QVector3D start = m_animation->getNode(0)->frameData(0).position();
+  runAll({QString(R"({"command":"set_position","frame":10,"x":%1,"y":%2,"z":%3})").arg(start.x()).arg(start.y()).arg(start.z() + 250)});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  const QJsonObject hip = finding(answer, "hip_offset");
+  QCOMPARE(hip["severity"].toString(), QString("error"));
+  QCOMPARE(hip["inches"].toDouble(), 250.0);
+  QVERIFY(hip["frame"].toInt() >= 10);
+}
+
+// the left arm jumps 60 degrees from frame 10 to 11 and stays up, so the
+// loop also jumps back from frame 30 to frame 2
+void ControlTest::checkAnimationFindsJerkAndLoopSeam()
+{
+  runAll({R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,0]}})",
+          R"({"command":"set_pose","frame":10,"joints":{"lShldr":[0,0,0]}})",
+          R"({"command":"set_pose","frame":11,"joints":{"lShldr":[0,0,60]}})"});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  const QJsonObject jerk = finding(answer, "jerk");
+  QCOMPARE(jerk["severity"].toString(), QString("warning"));
+  QCOMPARE(jerk["count"].toInt(), 1);
+  QCOMPARE(jerk["jumps"].toArray().first().toObject(),
+           (QJsonObject{{"joint", "lShldr"}, {"from", 10}, {"to", 11}, {"degrees", 60.0}}));
+
+  const QJsonObject seam = finding(answer, "loop_seam");
+  QCOMPARE(seam["severity"].toString(), QString("warning"));
+  QCOMPARE(seam["seam"].toString(), QString("jump"));
+  QCOMPARE(seam["loop_in"].toInt(), 2);
+  QCOMPARE(seam["loop_out"].toInt(), 30);
+  QVERIFY(seam["message"].toString().contains("left shoulder 60 degrees"));
+}
+
+void ControlTest::checkAnimationFindsDeadStart()
+{
+  runAll({R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,0]}})",
+          R"({"command":"set_pose","frame":20,"joints":{"lShldr":[0,0,0]}})",
+          R"({"command":"set_pose","frame":30,"joints":{"lShldr":[0,0,40]}})"});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  const QJsonObject dead = finding(answer, "dead_start");
+  QCOMPARE(dead["severity"].toString(), QString("warning"));
+  QCOMPARE(dead["frames"].toObject(), (QJsonObject{{"from", 2}, {"to", 20}}));
+  QCOMPARE(dead["seconds"].toDouble(), 0.6);
+}
+
+void ControlTest::checkAnimationFindsIdenticalKeys()
+{
+  runAll({R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,30]}})",
+          R"({"command":"set_pose","frame":5,"joints":{"lShldr":[0,0,30]}})",
+          R"({"command":"set_pose","frame":8,"joints":{"lShldr":[0,0,30]}})",
+          R"({"command":"set_pose","frame":20,"joints":{"lShldr":[0,0,0]}})"});
+  const QJsonObject answer = run(R"({"command":"check_animation"})");
+  const QJsonObject same = finding(answer, "identical_keys");
+  QCOMPARE(same["severity"].toString(), QString("note"));
+  QCOMPARE(same["count"].toInt(), 1);
+  QCOMPARE(same["joints"].toArray(), (QJsonArray{QJsonObject{{"joint", "lShldr"}, {"keys", 1}}}));
+}
+
+// the bundled and test files: no crash, finite numbers; the CMU walk has no error
+void ControlTest::checkAnimationOfFiles()
+{
+  const QStringList files = {
+    PINGLYMOTION_TOOLS "/../examples/jump.dingle", PINGLYMOTION_TOOLS "/../examples/throne.dingle",
+    PINGLYMOTION_TOOLS "/../tests/motions/cmu_02_01_walk.bvh",
+    PINGLYMOTION_TOOLS "/../tests/data/generated/edge_one_frame.bvh", PINGLYMOTION_TOOLS "/../tests/data/generated/edge_all_identity.bvh",
+    PINGLYMOTION_TOOLS "/../tests/data/generated/edge_extreme_rotations.bvh", PINGLYMOTION_TOOLS "/../tests/data/generated/edge_wrap_180.bvh",
+    PINGLYMOTION_TOOLS "/../tests/data/generated/edge_large_translation.bvh", PINGLYMOTION_TOOLS "/../tests/data/generated/edge_max_frame_time.bvh",
+    PINGLYMOTION_TOOLS "/../tests/data/generated/edge_loop_one_frame.bvh",
+  };
+  for (const QString& file : files)
+  {
+    BVH bvh;
+    Animation animation(&bvh, file);
+    FakeHost host(&animation);
+    ControlApi api(&host);
+    const QJsonObject answer = api.execute(QJsonObject{{"command", "check_animation"}});
+    QVERIFY2(answer["ok"].toBool(), qPrintable(file + ": " + answer["error"].toString()));
+    QVERIFY2(!answer["summary"].toString().isEmpty(), qPrintable(file));
+    const QByteArray text = QJsonDocument(answer).toJson(QJsonDocument::Compact);
+    QVERIFY2(!text.contains("null") && !text.contains("nan") && !text.contains(":inf"), qPrintable(file));
+    QCOMPARE(answer["findings"].toArray().size() + answer["passed"].toArray().size() >= 12, true);
+
+    if (file.endsWith("cmu_02_01_walk.bvh")) QCOMPARE(answer["errors"].toInt(), 0);
+    if (file.endsWith("edge_one_frame.bvh")) QCOMPARE(checksOf(answer).first(), QString("nothing_moves"));
+    if (file.endsWith("edge_large_translation.bvh")) QVERIFY(checksOf(answer).contains("hip_offset"));
   }
 }
 
