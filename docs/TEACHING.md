@@ -93,16 +93,16 @@ The six choices come from #53. The hint shows under the tiles when the mouse res
 
 ### Place 6: notes in the example wave
 
-The wave is a short loop with five keys, one saved pose each. Each pose change uses a different choice from place 5, and the note says which. The last pose matches the first, so the loop has no jump. The example is our own and is built in #53 step 6.
+The wave is a short loop with five keys, one saved pose each. Each pose change uses a different choice from place 5, and the note says which. The last pose matches the first, so the loop has no jump. The example is our own: `examples/wave.dingle`, made by `tools/wave_example.py` (#53 step 6). The notes are stored in the file under `extensions` and listed in [FIRST_ANIMATION.md](FIRST_ANIMATION.md); the program does not show them yet (where they show is part of the timeline redesign, #14).
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| WAVE-01 | 6 Wave note | Key 1: arm hangs down | A key is a saved pose. This one has the arm down.<br>The wave starts and ends here, so it loops. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
-| WAVE-02 | 6 Wave note | Key 2: arm lifted, change uses "Slow both ends" | The arm lifts here.<br>Slow both ends makes it start and stop softly. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
-| WAVE-03 | 6 Wave note | Key 3: hand out, change uses "Overshoot, then settle" | The hand swings out, goes a little past, then settles.<br>That is Overshoot, then settle. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
-| WAVE-04 | 6 Wave note | Key 4: hand back, change uses "Even" | The hand swings back at one steady speed.<br>That is Even. It looks stiff, so try Slow both ends. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
-| WAVE-05 | 6 Wave note | Key 5: arm down again, change uses "Slow finish" | The arm slows down as it lands.<br>It matches the first key, so the loop has no jump. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
-| WAVE-06 | 6 Wave note | After the last key: a small task | Your turn: make the arm stop more softly. | reviewed by the owner (19 Nov 2026) | #53 step 6 |
+| WAVE-01 | 6 Wave note | Key 1: arm hangs down | A key is a saved pose. This one has the arm down.<br>The wave starts and ends here, so it loops. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
+| WAVE-02 | 6 Wave note | Key 2: arm lifted, change uses "Slow both ends" | The arm lifts here.<br>Slow both ends makes it start and stop softly. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
+| WAVE-03 | 6 Wave note | Key 3: hand out, change uses "Overshoot, then settle" | The hand swings out, goes a little past, then settles.<br>That is Overshoot, then settle. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
+| WAVE-04 | 6 Wave note | Key 4: hand back, change uses "Even" | The hand swings back at one steady speed.<br>That is Even. It looks stiff, so try Slow both ends. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
+| WAVE-05 | 6 Wave note | Key 5: arm down again, change uses "Slow finish" | The arm slows down as it lands.<br>It matches the first key, so the loop has no jump. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
+| WAVE-06 | 6 Wave note | After the last key: a small task | Your turn: make the arm stop more softly. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
 
 ### Places 1 to 4, 7 to 9
 

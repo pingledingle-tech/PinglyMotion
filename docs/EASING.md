@@ -111,7 +111,23 @@ Playback clamps the Overshoot then settle choice to the joint limits since the f
 - **The picture.** A tiny stick figure walks from the left edge (old pose) to the right edge (new pose) with the speed of the choice (`Easing::s`), over about two seconds, then rests and starts again; all six move at the same time, so the eye compares them. Behind it is a trail of nine still dots at equal time steps (`s(k/8)`), so close dots mean slow and wide gaps mean fast: Even is evenly spaced, Slow both ends is tight at both ends, Overshoot goes past the right end and the dots crowd there, Hold then snap has all dots on the left and one on the right. The row keeps the right tenth of the way free for the overshoot. Drawn by the program (`QPainter`), no image files, no axes, no numbers, no handles. One timer for the row (25 frames a second), running only while the row is on screen and a key is selected.
 - **The hint.** Under the row, one line: the approved hint of the tile under the mouse, else of the current choice (`EASE-01` to `EASE-06` in [TEACHING.md](TEACHING.md), through `tr()`). It follows the "Tips on" switch in the status bar (`tips_on`); the same texts are the tiles' tooltips. With the tips off the line is empty and the tooltips are gone; the "Select a key frame" line shows either way, because it is the state, not a tip.
 - **Gone:** the "Ease In / Ease Out" check boxes in the Properties panel. The tiles cover both switches (the selected key's `easeIn` through Slow finish and Slow both ends; its `easeOut` belongs to the next pose change and is set when the next key is selected). The settings dialog still has the defaults for new keys, and files are unchanged.
-- **Not yet:** per-joint choices, custom curves. The example wave with a note on each change is step 6. (Joint limits on the overshoot are done, see "Joint limits on the overshoot" above.)
+- **Not yet:** per-joint choices, custom curves. (Joint limits on the overshoot are done, see "Joint limits on the overshoot" above. The example wave is step 6, below.)
+
+## The example wave (step 6)
+
+`examples/wave.dingle`, made by `tools/wave_example.py` from the relaxed start pose (`bin/data/Relaxed.dingle`); running the script again gives the same file. Five keys on the right arm (`rCollar`, `rShldr`, `rForeArm`, `rHand`) at frames 0, 20, 30, 40 and 60, 61 frames at 30 per second, loop from frame 1 to 60. Every other joint keeps the relaxed pose.
+
+| Pose change | What moves | Choice | Stored as |
+|---|---|---|---|
+| key 1 to 2 | the arm lifts | Slow both ends | key 1 `easeOut`, key 2 `easeIn`, and key 1 `curve` `ease-in-out` |
+| key 2 to 3 | the hand swings out | Overshoot, then settle | key 2 `curve` `ease-out-overshoot` (switches on, as the tile row stores it) |
+| key 3 to 4 | the hand swings back | Even | no switch |
+| key 4 to 5 | the arm comes down | Slow finish | key 5 `easeIn` |
+
+- Key 1 is at frame 0. Opening a file sets the ease switches of every frame 0 key to the user's default (off unless changed; old behaviour, see step 3), but keeps a `curve`, so the first change also names its choice as `curve`. The tile row reads it the same way (`Easing::segmentPreset`).
+- The last key equals the first, so the loop has no jump. The overshoot (forearm 70 to 25 degrees, 8 % past is 21.4) stays inside the forearm's limits (0 to 146).
+- The notes `WAVE-01` to `WAVE-06` ([TEACHING.md](TEACHING.md)) are stored under `extensions`, `"pinglymotion.exampleNotes"`: one entry per key (`frame`, `choice`, `note`) and the small `task`. The program does not show them yet and does not write `extensions` back when the file is saved; they are also listed in [FIRST_ANIMATION.md](FIRST_ANIMATION.md). Where notes show in the program belongs to the timeline redesign (#14).
+- Tests: `tests/test_wave_example.py` (the file is the script's output, keys, choices, notes equal the reviewed texts, run in the Linux build), `tests/tst_roundtrip.cpp` (`exampleWaveUsesFourChoices`: the program opens it without ignored keys, each change plays its choice, every frame inside the limits, the loop closes).
 
 ## Where each part is built
 
@@ -121,5 +137,5 @@ Playback clamps the Overshoot then settle choice to the joint limits since the f
 | Four old-style choices use today's switches | Step 2 |
 | `curve` stored in `.dingle` ([DINGLE_FORMAT.md](DINGLE_FORMAT.md)) (done) | Step 3 |
 | Export test for a curved ease | Step 4 |
-| Tile row and hint on the timeline (visible, the project owner tests) (built, waiting for the Windows test) | Step 5 |
-| The example wave with a note on each change ([TEACHING.md](TEACHING.md), `WAVE-02` to `WAVE-05`) | Step 6 |
+| Tile row and hint on the timeline (visible, the project owner tests) (done) | Step 5 |
+| The example wave with a note on each change ([TEACHING.md](TEACHING.md), `WAVE-01` to `WAVE-06`) (built, waiting for the Windows test) | Step 6 |
