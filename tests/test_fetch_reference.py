@@ -275,6 +275,11 @@ class TestRealManifest(unittest.TestCase):
             self.assertEqual(s["type"], "github", sid)
             fr.check_url(fr.source_base_url(s) + "x", fr.Policy())
         self.assertEqual(sorted(m["sources"]), ["cmu", "mesh2motion"])
+        self.assertGreater(len(m["sources"]["cmu"]["files"]), 2000)
+        self.assertGreater(len(m["sources"]["mesh2motion"]["files"]), 200)
+        total = sum(f["size"] for s in m["sources"].values() for f in s["files"] + s["docs"])
+        self.assertLess(total, fr.Policy().max_total)
+        self.assertTrue(all(f["size"] <= fr.Policy().max_file for s in m["sources"].values() for f in s["files"]))
 
 
 if __name__ == "__main__":

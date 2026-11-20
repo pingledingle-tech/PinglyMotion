@@ -1,5 +1,5 @@
 Branch: job/fetch-reference
-Status: active
+Status: done
 Pull request: #173
 Files:
 - tools/fetch_reference.py

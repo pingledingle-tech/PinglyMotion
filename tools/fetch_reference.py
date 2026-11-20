@@ -50,7 +50,7 @@ ALLOWED_HOSTS = frozenset({
     "api.github.com",
 })
 MAX_FILE_MB = 100
-MAX_TOTAL_MB = 3000
+MAX_TOTAL_MB = 5000
 MAX_ZIP_ENTRIES = 20000
 MAX_ZIP_RATIO = 200
 INDEX_NAME = "downloaded_index.json"
