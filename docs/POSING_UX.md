@@ -74,25 +74,36 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 - A left click selects; a left drag that starts on the body turns the camera too (the joint is not selected then). Rings and prop handles keep the left drag.
 - Number pad: 1 front, 3 side (from the figure's right), 7 top; Ctrl + 1 back, Ctrl + 3 the other side. With Num Lock off the same keys work. Number pad `,` (decimal comma keyboards) also focuses.
 - Wheel and drag zoom move a share of the distance (closer = smaller steps). Page Up / Page Down still zoom; F9–F12 still restore stored cameras (Shift + F9–F12 store).
-- Until the selected-joint card has an IK switch (step 4), **Ctrl + double-click** a hand or foot switches IK on or off (it used to be a plain double-click). **Shift + double-click** still selects the mirrored joint too.
+- **Ctrl + double-click** a hand or foot switches IK on or off (it used to be a plain double-click); since step 4 the IK switch on the selected-joint card does the same, and both stay. **Shift + double-click** still selects the mirrored joint too.
 - Shift / Ctrl still show the scale / rotate handles of a selected prop.
-- Not yet: the view gizmo, Set key with K / I, R then X / Y / Z, the trackball.
+- Not yet: the view gizmo, Set key with K / I, R then X / Y / Z. (The trackball is on the selected-joint card since step 4; a ball on the joint in the 3D view is not built.)
 
 **Done in step 2** (joint list, `src/jointlist.*`, `src/pinglymotionwindow.*`):
 
 - The joint list shows friendly names from the Firestorm data (`bin/data/firestorm/joints.json`): "Forearm", not `lForeArm`. The joints stand under section headings in Firestorm's order: Body, Left Arm, Right Arm, Legs; Head, Forehead/Brows, Eyes/Eye Lids …; Left Hand, Right Hand; Tail, Hind Limbs, Wings. The face root and the skull, which Firestorm lists without a heading, stand under "Head". The position track is called "Avatar Position" and comes first.
-- When the mouse rests on a joint, its Second Life name (and the name in the animation file, if different) is shown. The selected-joint card will show the SL name later (step 4).
+- When the mouse rests on a joint, its Second Life name (and the name in the animation file, if different) is shown. The selected-joint card shows it too (step 4).
 - A search box under the tabs finds joints on all tabs. Every word typed must be found in the friendly name, the heading, the SL name or the file name ("left wrist", "mElbowLeft"). Enter picks the first joint found. Clicking a tab clears the search. Clicking a joint in the 3D view keeps the search if the joint is among the results, otherwise the search is cleared and the list switches to the joint's tab.
 - Joints the data does not know (a file with another skeleton) are listed by their file name under "Other joints". If the data file is missing, the list falls back to file names.
 - Not yet: the violet dot on edited joints, the key marker and the export tick (later steps).
 
 **Done in step 3, jobs P1 to P4** (`src/panellayout.h`, `src/panelwindow.h`, `src/pinglymotionwindow.*`):
 
-- Three panels around the 3D view: **Joints** (left: Avatar / Props switch, joint tabs, search and list, or the prop list), **Selected joint** (right: the rotation and position boxes of the joint, or the prop position, scale and rotation boxes) and **Timeline** (bottom: tracks, play, key, loop in / out, frame count and FPS). They are Qt dock widgets, not overlays (the choice is explained in [PANELS_PLAN.md](PANELS_PLAN.md)); each goes only where its shape fits, panels on one side can be tabbed together, and each can float as its own window.
+- Three panels around the 3D view: **Joints** (left: Avatar / Props switch, joint tabs, search and list, or the prop list), **Selected joint** (right: the joint card of step 4, or the prop position, scale and rotation boxes) and **Timeline** (bottom: tracks, play, key, loop in / out, frame count and FPS). They are Qt dock widgets, not overlays (the choice is explained in [PANELS_PLAN.md](PANELS_PLAN.md)); each goes only where its shape fits, panels on one side can be tabbed together, and each can float as its own window.
 - The **View** menu: Joints, Selected joint, Timeline (ticks), Reset layout. The old Options items for the panels are gone.
 - The layout is saved as `panel_layout` with `panel_layout_version`; a layout of another version (for example the old `window_state` with the Properties panel) is not loaded. The window's place, size, maximised state and screen are saved as `main_window_geometry` (Qt's `saveGeometry`); the old width and height are read once and never written again. A floating panel whose saved place is on no screen is pulled back. **View > Reset layout** applies a default built in code (`src/panelwindow.h`).
 - **Tab** hides all open panels (docked and floating) and Tab again shows the same ones; also **View > Hide panels** (Tab shown as its shortcut). Tab is taken only while the 3D view has the keys, so it still moves between fields in the panels and in the search box. The hidden state is not saved: the program starts with the panels shown.
 - Not yet: the figure in the middle of the free area under a floating panel (P5), two-screen checks (P6).
+
+**Done in step 4** (selected-joint card, `src/jointcard.*`, `src/jointturn.*`, `src/pinglymotionwindow.*`):
+
+- The **Selected joint** panel on the Avatar side is a joint card. At the top: the friendly name with the side ("Whole Arm · Left") and the Second Life name below it (`mShoulderLeft`), from the Firestorm data of step 2. With nothing selected the card says so and everything is greyed out.
+- **IK** switch: the same IK as Ctrl + double-click (the hand or foot stays where it is when the body turns, the arm or leg follows). It can be used on the joints of an arm (collar to wrist) and a leg (hip to ankle), the joints the IK solver works on; on other joints it is greyed out with a tip that says why. There is no IK for other joints yet.
+- **Lock**: a locked joint is left alone by the sliders, the trackball, Reset and the rings in the 3D view. The lock lasts for the session; it is not saved in the file. The IK solver can still move a locked arm or leg joint while IK is on.
+- **Reset**: turns the joint back to 0, 0, 0 in this frame (a key frame, like moving a slider); for the avatar position, back to where it stands in the first frame.
+- **Rotate / Move**: Move is only shown for the pelvis and the avatar position (it moves the whole avatar, as the old position boxes did); the avatar position has only Move.
+- A **trackball** beside the **X / Y / Z sliders** with their value fields. The ball shows the joint's axes as seen on the screen; dragging it turns the joint (Shift: finer). Under each slider its allowed range is shown (and in its tip). When a value is close to a joint limit (a tenth of the range, 2 to 10 degrees) a warning appears under the sliders ("Y is close to the joint limit (40°)", or "at the joint limit") and the value field turns orange. No warning for the pelvis (it turns all the way round), with Options > Joint Limits off, or for a value of 0 at a limit of 0 (the rest pose: a straight elbow or knee).
+- **Turn around: Joint / Avatar / Screen** chooses the axes the trackball turns around: the joint's own axes, the avatar's (up, sideways, forward) or the screen's (the way the mouse moves). It is not saved. The rings in the 3D view still turn around the joint's own axes.
+- Not yet: the whole-pose buttons (step 5), Left / Right / Mirror (step 5), the frame choice for the rings in the 3D view, IK beyond arms and legs, a lock that is saved, the "IK" help bubble of the mockup (help tips, step 9).
 
 ## Language
 
@@ -105,7 +116,7 @@ One pull request per step, tested on Windows before it is merged. Steps that cha
 1. Camera and keys (new scheme, old joint modifiers removed) – `src/animationview.*` (done)
 2. Friendly names, section headings and search in the joint list (done)
 3. Floating, movable panels; Tab to hide; reset layout (plan: [PANELS_PLAN.md](PANELS_PLAN.md); P1 to P4 done: three panels, View menu, versioned layout, window and layout remembered, Tab; P5 and P6 to do)
-4. Selected-joint card: trackball, sliders, limit warning, turn-around frame
+4. Selected-joint card: trackball, sliders, limit warning, turn-around frame (done; IK switch for arms and legs, lock, reset, Rotate / Move)
 5. Left / Right / Mirror and the whole-pose buttons (shared left/right mapping)
 6. Hands tab: presets and finger grid
 7. Timeline: only edited joints, loop range, ease chips

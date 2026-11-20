@@ -420,69 +420,35 @@ void Animation::setIK(IKPartType part,bool flag)
   }
 }
 
+// the arm or leg whose IK a joint belongs to, -1 for joints without IK
+int Animation::ikPartOf(const QString& jointName)
+{
+  if(jointName=="lHand" || jointName=="lForeArm" || jointName=="lShldr" || jointName=="lCollar")
+    return IK_LHAND;
+  if(jointName=="rHand" || jointName=="rForeArm" || jointName=="rShldr" || jointName=="rCollar")
+    return IK_RHAND;
+  if(jointName=="lThigh" || jointName=="lShin" || jointName=="lFoot")
+    return IK_LFOOT;
+  if(jointName=="rThigh" || jointName=="rShin" || jointName=="rFoot")
+    return IK_RFOOT;
+  return -1;
+}
+
+bool Animation::hasIK(const QString& jointName)
+{
+  return ikPartOf(jointName)>=0;
+}
+
 void Animation::setIK(BVHNode* node,bool flag)
 {
-  QString jointName=node->name();
-
-  if(jointName=="lHand" ||
-     jointName=="lForeArm" ||
-     jointName=="lShldr" ||
-     jointName=="lCollar")
-  {
-    setIK(IK_LHAND, flag);
-  }
-  else if(jointName=="rHand" ||
-          jointName=="rForeArm" ||
-          jointName=="rShldr" ||
-          jointName=="rCollar")
-  {
-    setIK(IK_RHAND, flag);
-  }
-  else if(jointName=="lThigh" ||
-          jointName=="lShin" ||
-          jointName=="lFoot")
-  {
-    setIK(IK_LFOOT, flag);
-  }
-  else if(jointName=="rThigh" ||
-          jointName=="rShin" ||
-          jointName=="rFoot")
-  {
-    setIK(IK_RFOOT, flag);
-  }
+  const int part=ikPartOf(node->name());
+  if(part>=0) setIK(static_cast<IKPartType>(part),flag);
 }
 
 bool Animation::getIK(BVHNode* node)
 {
-  QString jointName=node->name();
-
-  if(jointName=="lHand" ||
-     jointName=="lForeArm" ||
-     jointName=="lShldr" ||
-     jointName=="lCollar")
-  {
-    return getIK(IK_LHAND);
-  }
-  else if(jointName=="rHand" ||
-          jointName=="rForeArm" ||
-          jointName=="rShldr" ||
-          jointName=="rCollar")
-  {
-    return getIK(IK_RHAND);
-  }
-  else if(jointName=="lThigh" ||
-          jointName=="lShin" ||
-          jointName=="lFoot")
-  {
-    return getIK(IK_LFOOT);
-  }
-  else if(jointName=="rThigh" ||
-          jointName=="rShin" ||
-          jointName=="rFoot")
-  {
-    return getIK(IK_RFOOT);
-  }
-  return false;
+  const int part=ikPartOf(node->name());
+  return part>=0 && getIK(static_cast<IKPartType>(part));
 }
 
 bool Animation::getIK(IKPartType part)

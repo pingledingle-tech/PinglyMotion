@@ -79,6 +79,8 @@ class Animation : public QObject
     int getLoopOutPoint();
     void setIK(BVHNode* node, bool flag);
     bool getIK(BVHNode* node);
+    // true for the joints of an arm (collar to wrist) or leg (hip to ankle), which have IK
+    static bool hasIK(const QString& jointName);
     const QString getPartName(int index) const;
     int getPartIndex(BVHNode* node);
     void setMirrored(bool mirror);
@@ -195,6 +197,7 @@ class Animation : public QObject
     void calcPartMirrors();
     void setIK(IKPartType part, bool flag);
     bool getIK(IKPartType part);
+    static int ikPartOf(const QString& jointName);
     void applyIK(const QString& name);
     void solveIK();
     void solveIKIfOn();

@@ -25,9 +25,11 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               gltfimportdialog.cpp
               iktree.cpp
               pmmesh.cpp
+              jointcard.cpp
               jointgroups.cpp
               jointinfo.cpp
               jointlist.cpp
+              jointturn.cpp
               propfile.cpp
               retarget.cpp
               retargetdialog.cpp

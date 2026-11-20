@@ -4,12 +4,12 @@ Pull request: #148
 Files:
 - src/jointcard.*
 - src/jointturn.*
+- src/animation.*
 - src/CMakeLists.txt
 - src/pinglymotionwindow.*
 - CMakeLists.txt
 - tests/jointcard/**
 - docs/POSING_UX.md
-- docs/ROADMAP.md
 - docs/DECISIONS.md
 - docs/PRODUCT.md
 

@@ -70,7 +70,9 @@
 #include <QStatusBar>
 #include "prop.h"
 #include "jointgroups.h"
+#include "jointcard.h"
 #include "jointinfo.h"
+#include "jointturn.h"
 #include "jointlist.h"
 #include "panellayout.h"
 #include "panelwindow.h"
@@ -714,6 +716,8 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
     setYPos(position.y());
     setZPos(position.z());
 
+    updateJointCard();
+
     // show the user if this part has a key frame here
     updateKeyBtn();
   }
@@ -724,8 +728,8 @@ void PinglyMotionWindow::partDragged(BVHNode* node,double x,double y,double z)
 {
   if(node)
   {
-    // check if this frame is protected
-    if(!protect)
+    // check if this frame is protected, or the joint locked on the card
+    if(!protect && !isLocked(node))
     {
       // get animation object
       Animation* anim=scene->getAnimation();
@@ -759,6 +763,7 @@ void PinglyMotionWindow::partDragged(BVHNode* node,double x,double y,double z)
 
       scene->getAnimation()->setRotation(node,newX,newY,newZ);
       ui->animationView->update();
+      updateJointCardTrackball();
 
       updateKeyBtn();
     }
@@ -816,6 +821,7 @@ void PinglyMotionWindow::backgroundClicked()
 
   enableAvatarRotation(false);
   enableProps(false);
+  updateJointCard();
   emit enableEaseInOut(false);
   selectTrackInTable(0);
   updateKeyBtn();
@@ -900,16 +906,27 @@ void PinglyMotionWindow::buildDocks()
   jointsLayout->addWidget(ui->avatarPropsTab,1);
   m_jointsDock=makeTallPanel(tr("Joints"),PanelLayout::JointsDock,jointsPanel,m_jointsScroll);
 
-  // --- Selected joint panel: the rotation and position boxes of the joint,
-  // or the position, scale and rotation boxes of the prop. The boxes come
-  // from the designer file and are moved here from the tabs; the page
-  // follows the Avatar / Props switch.
-  QWidget* jointCard=new QWidget;
-  QVBoxLayout* jointCardLayout=new QVBoxLayout(jointCard);
-  jointCardLayout->setContentsMargins(0,0,0,0);
-  jointCardLayout->addWidget(ui->rotationGroupBox);
-  jointCardLayout->addWidget(ui->positionGroupBox);
-  jointCardLayout->addStretch(1);
+  // --- Selected joint panel: the joint card on the Avatar side (#88,
+  // step 4), the position, scale and rotation boxes of the prop on the Props
+  // side. The card takes the old slider and value field widgets from the
+  // designer file, so their connections stay; the empty boxes are hidden.
+  // The page follows the Avatar / Props switch.
+  m_jointCard=new JointCard(m_precision,
+    {JointCard::AxisRow{ui->xRotationSlider,ui->xRotationEdit},
+     JointCard::AxisRow{ui->yRotationSlider,ui->yRotationEdit},
+     JointCard::AxisRow{ui->zRotationSlider,ui->zRotationEdit}},
+    {JointCard::AxisRow{ui->xPositionSlider,ui->xPositionEdit},
+     JointCard::AxisRow{ui->yPositionSlider,ui->yPositionEdit},
+     JointCard::AxisRow{ui->zPositionSlider,ui->zPositionEdit}});
+  ui->rotationGroupBox->hide();
+  ui->positionGroupBox->hide();
+  connect(m_jointCard,&JointCard::ikToggled,this,&PinglyMotionWindow::setSelectedJointIk);
+  connect(m_jointCard,&JointCard::lockToggled,this,&PinglyMotionWindow::setSelectedJointLocked);
+  connect(m_jointCard,&JointCard::resetClicked,this,&PinglyMotionWindow::resetSelectedJoint);
+  connect(m_jointCard,&JointCard::trackballTurned,this,
+          [this](double yaw,double pitch,JointTurn::Frame frame){ turnSelectedJoint(yaw,pitch,frame); });
+  ui->animationView->installEventFilter(this);
+  QWidget* jointCard=m_jointCard;
   QWidget* propCard=new QWidget;
   QVBoxLayout* propCardLayout=new QVBoxLayout(propCard);
   propCardLayout->setContentsMargins(0,0,0,0);
@@ -1366,6 +1383,7 @@ void PinglyMotionWindow::rotationSlider(const QObject* slider)
     anim->setRotation(ui->animationView->getSelectedPart(),x,y,z);
     ui->animationView->update();
   }
+  updateJointCardTrackball();
 
   updateKeyBtn();
 }
@@ -1403,6 +1421,7 @@ void PinglyMotionWindow::rotationValue()
     anim->setRotation(ui->animationView->getSelectedPart(), x, y, z);
     ui->animationView->update();
   }
+  updateJointCardTrackball();
 
   updateKeyBtn();
 }
@@ -1528,6 +1547,8 @@ void PinglyMotionWindow::updateInputs()
 
     // we do that in nextPlaystate() now
     //  playButton->setIcon(playing ? stopIcon : playIcon);
+
+    updateJointCard();
 
     ui->framesSpin->setValue(anim->getNumberOfFrames());
     ui->currentFrameSlider->setMaximum(anim->getNumberOfFrames()-1);
@@ -2628,11 +2649,186 @@ void PinglyMotionWindow::enableProps(bool state)
 void PinglyMotionWindow::enableAvatarRotation(bool state)
 {
   ui->rotationGroupBox->setEnabled(state);
+  if(m_jointCard) m_jointCard->setEditable(state);
 }
 
 void PinglyMotionWindow::enableAvatarPosition(bool state)
 {
   ui->positionGroupBox->setEnabled(state);
+  if(m_jointCard) m_jointCard->setMoveEditable(state);
+}
+
+// --- the selected-joint card (#88, step 4)
+
+// name, IK, lock and limits of the selected joint on the card
+void PinglyMotionWindow::updateJointCard()
+{
+  if(!m_jointCard) return;
+  Animation* anim=scene ? scene->getAnimation() : nullptr;
+  if(!anim || !currentPart)
+  {
+    m_jointCard->setIk(false,false);
+    m_jointCard->setLocked(false);
+    m_jointCard->setLimited(false);
+    m_jointCard->setJoint(JointCard::NoJoint,JointCard::Header());
+    updateJointCardTrackball();
+    return;
+  }
+
+  JointCard::Kind kind=JointCard::Joint;
+  if(currentPart->type==BVH_POS) kind=JointCard::PositionTrack;
+  else if(currentPart->type==BVH_ROOT) kind=JointCard::Root;
+
+  m_jointCard->setIk(Animation::hasIK(currentPart->name()),anim->getIK(currentPart));
+  m_jointCard->setLocked(isLocked(currentPart));
+  // the pelvis turns all the way round, and with Options > Joint Limits off
+  // the sliders go from -180 to 180: no Second Life limit to warn about
+  m_jointCard->setLimited(kind==JointCard::Joint && UserSettings::jointLimits());
+  m_jointCard->setJoint(kind,JointCard::headerFor(m_jointInfo.data(),currentPart->name()));
+  m_jointCard->refresh();
+  updateJointCardTrackball();
+}
+
+// the ball shows the joint as it is turned on the screen
+void PinglyMotionWindow::updateJointCardTrackball()
+{
+  if(!m_jointCard) return;
+  Animation* anim=scene ? scene->getAnimation() : nullptr;
+  if(!anim || !currentPart || currentPart->type==BVH_POS)
+  {
+    m_jointCard->setTrackballOrientation(viewRotation());
+    return;
+  }
+  const QQuaternion local=JointTurn::fromEuler(anim->getRotation(currentPart),rotationOrder(currentPart));
+  m_jointCard->setTrackballOrientation(viewRotation()*parentRotation(currentPart)*local);
+}
+
+bool PinglyMotionWindow::isLocked(const BVHNode* node) const
+{
+  return node && m_lockedJoints.contains(node->name());
+}
+
+QString PinglyMotionWindow::rotationOrder(const BVHNode* node)
+{
+  QString order;
+  for(int i=0;i<node->numChannels;i++)
+  {
+    switch(node->channelType[i])
+    {
+      case BVH_XROT: order+=QLatin1Char('X'); break;
+      case BVH_YROT: order+=QLatin1Char('Y'); break;
+      case BVH_ZROT: order+=QLatin1Char('Z'); break;
+      default: break;
+    }
+  }
+  return order;
+}
+
+namespace
+{
+  // the joints from "from" down to "target", without "target"; false when
+  // target is not below from
+  bool jointsAbove(BVHNode* from,const BVHNode* target,QList<BVHNode*>& path)
+  {
+    if(from==target) return true;
+    path.append(from);
+    for(int i=0;i<from->numChildren();i++)
+      if(jointsAbove(from->child(i),target,path)) return true;
+    path.removeLast();
+    return false;
+  }
+}
+
+QQuaternion PinglyMotionWindow::parentRotation(BVHNode* node)
+{
+  Animation* anim=scene->getAnimation();
+  QList<BVHNode*> path;
+  QQuaternion parent;
+  if(!jointsAbove(anim->getMotion(),node,path)) return parent;
+  for(BVHNode* joint : path)
+    parent=parent*JointTurn::fromEuler(anim->getRotation(joint),rotationOrder(joint));
+  return parent;
+}
+
+// the camera turns the scene around X (up and down) after turning it around Y
+// (round the figure), see Camera
+QQuaternion PinglyMotionWindow::viewRotation() const
+{
+  const Camera* camera=ui->animationView->camera();
+  if(!camera) return QQuaternion();
+  return QQuaternion::fromAxisAndAngle(1,0,0,camera->xRotation())*
+         QQuaternion::fromAxisAndAngle(0,1,0,camera->yRotation());
+}
+
+// the IK switch on the card: the same as Ctrl + double-click on a hand or foot
+void PinglyMotionWindow::setSelectedJointIk(bool on)
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim || !currentPart || !Animation::hasIK(currentPart->name())) return;
+  anim->setIK(currentPart,on);
+  ui->animationView->update();
+  updateJointCard();
+}
+
+// the lock on the card: a locked joint is left alone by the sliders, the
+// trackball and the rings in the 3D view
+void PinglyMotionWindow::setSelectedJointLocked(bool locked)
+{
+  if(!currentPart) return;
+  if(locked) m_lockedJoints.insert(currentPart->name());
+  else m_lockedJoints.remove(currentPart->name());
+}
+
+// Reset on the card: the joint back to its rest pose (0, 0, 0) in this frame;
+// the avatar position back to where it stands in the first frame
+void PinglyMotionWindow::resetSelectedJoint()
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim || !currentPart || protect || isLocked(currentPart)) return;
+  if(currentPart->type==BVH_POS)
+  {
+    const QVector3D start=anim->getNode(0)->frameData(0).position();
+    anim->setPosition(start.x(),start.y(),start.z());
+    setXPos(start.x());
+    setYPos(start.y());
+    setZPos(start.z());
+  }
+  else
+  {
+    anim->setRotation(currentPart,0,0,0);
+    setX(0);
+    setY(0);
+    setZ(0);
+  }
+  ui->animationView->update();
+  updateJointCardTrackball();
+  updateKeyBtn();
+}
+
+// the trackball was dragged: turn the joint around the up and the sideways
+// axis of the chosen frame; the limits are applied as for the rings
+void PinglyMotionWindow::turnSelectedJoint(double yawDegrees,double pitchDegrees,int frame)
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim || !currentPart || currentPart->type==BVH_POS || protect || isLocked(currentPart)) return;
+  const QVector3D before=anim->getRotation(currentPart);
+  const QString order=rotationOrder(currentPart);
+  const QQuaternion parent=parentRotation(currentPart);
+  const QQuaternion view=viewRotation();
+  const JointTurn::Frame turnFrame=static_cast<JointTurn::Frame>(frame);
+  QVector3D after=JointTurn::turn(before,order,parent,view,turnFrame,QVector3D(0,1,0),yawDegrees);
+  after=JointTurn::turn(after,order,parent,view,turnFrame,QVector3D(1,0,0),pitchDegrees);
+  const QVector3D delta=after-before;
+  partDragged(currentPart,delta.x(),delta.y(),delta.z());
+}
+
+bool PinglyMotionWindow::eventFilter(QObject* watched,QEvent* event)
+{
+  // Ctrl + double-click switches IK in the 3D view after this event is
+  // handled; the card shows the new state afterwards
+  if(watched==ui->animationView && event->type()==QEvent::MouseButtonDblClick)
+    QTimer::singleShot(0,this,[this]{ updateJointCard(); });
+  return QMainWindow::eventFilter(watched,event);
 }
 
 void PinglyMotionWindow::updatePropSpins(const QVector3D& position, const QVector3D& rotation, const QVector3D& scale)
@@ -2724,6 +2920,9 @@ void PinglyMotionWindow::setSliderValue(QSlider* slider,QLineEdit* edit,float va
   edit->setText(QString::number(value));
   edit->blockSignals(false);
   slider->blockSignals(false);
+  // the card's range texts and limit warning follow (the slider's own
+  // signals were blocked)
+  if(m_jointCard) m_jointCard->refresh();
 }
 
 void PinglyMotionWindow::updateFps()

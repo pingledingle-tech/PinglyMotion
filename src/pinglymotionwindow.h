@@ -27,6 +27,8 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <QQuaternion>
+#include <QSet>
 #include <QTimer>
 
 #include "animfile.h"
@@ -45,6 +47,7 @@ class QTableWidget;
 class Animation;
 class BVHNode;
 class JointInfo;
+class JointCard;
 class PinglyMotion;
 struct RotationLimits;
 class ControlApi;
@@ -338,6 +341,27 @@ class PinglyMotionWindow : public QMainWindow
     PanelLayout::TabState m_tabState;
     bool m_applyingTab=false;
     QAction* m_hidePanelsAction=nullptr;
+
+    // the selected-joint card (#88, step 4): the content of the Selected
+    // joint panel on the Avatar side
+    JointCard* m_jointCard=nullptr;
+    // joints locked on the card (by name in the animation file); not saved
+    QSet<QString> m_lockedJoints;
+    void updateJointCard();
+    // a double-click in the 3D view may switch IK (Ctrl + double-click): the card follows
+    bool eventFilter(QObject* watched,QEvent* event) override;
+    void updateJointCardTrackball();
+    bool isLocked(const BVHNode* node) const;
+    // the rotation channels of a joint in file order, for example "ZXY"
+    static QString rotationOrder(const BVHNode* node);
+    // how the joints above this one turn it in the figure, top joint first
+    QQuaternion parentRotation(BVHNode* node);
+    // how the camera turns the figure on the screen
+    QQuaternion viewRotation() const;
+    void setSelectedJointIk(bool on);
+    void setSelectedJointLocked(bool locked);
+    void resetSelectedJoint();
+    void turnSelectedJoint(double yawDegrees,double pitchDegrees,int frame);
 
     BVHNode* currentPart;
 
