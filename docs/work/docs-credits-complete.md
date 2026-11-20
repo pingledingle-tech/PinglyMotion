@@ -1,6 +1,6 @@
 Branch: docs/credits-complete
-Status: active
-Pull request: pending
+Status: done
+Pull request: #211
 Files:
 - docs/work/docs-credits-complete.md
 - CREDITS.md
