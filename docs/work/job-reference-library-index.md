@@ -1,17 +1,13 @@
 Branch: job/reference-library-index
-Status: active
-Pull request: pending
+Status: done
+Pull request: #172
 Files:
 - docs/REFERENCE_LIBRARY_SCHEMA.md
 - docs/REFERENCE_LIBRARY_PLAN.md
-- docs/PRODUCT.md
-- examples/library/**
+- library/**
+- tests/test_reference_library.py
 - tools/build_reference_index.py
-- tests/library/**
-- tests/CMakeLists.txt
-- tests/motions/README.md
 - src/aboutcredits.cpp
-- tests/aboutdialog/**
 - README.md
 - docs/DEV.md
 - .github/workflows/build.yml
