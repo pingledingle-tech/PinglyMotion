@@ -27,13 +27,27 @@ const SERVER_NAME = "pinglymotion";
 const SERVER_VERSION = "0.1.0";
 const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
-// Text that goes to the AI tool together with the tool list (the same as in the Python server)
+// Text that goes to the AI tool together with the tool list (the same as in the Python server).
+// Short on purpose: the long teaching text is the assistant guide, read with the read_guide tool.
 const INSTRUCTIONS =
-  "PinglyMotion is a Second Life animation editor. Poses are rotations of skeleton joints in degrees. " +
-  "Start with 'state' and 'joints'. Frame numbers start at 1; frame 1 is protected (reference pose), so pose from frame 2. " +
-  "Each joint bends around its own axes (the elbow lForeArm around Y, the knee lShin around X), within the limits that 'joints' shows. " +
-  "After posing, use 'screenshot' to look at the result and adjust. Save with 'save_file' to get a .bvh that can be uploaded to Second Life. " +
-  "Files are opened and saved only in the PinglyMotion folder shown as 'folder' in 'state'; a plain file name like pose.bvh goes there.";
+  "PinglyMotion is a Second Life animation editor that you control with these tools. " +
+  "First call read_guide: it has the Second Life rules, the joint names, which way each turn goes and the work rhythm. " +
+  "Then call state and joints. Frame 1 is the reference pose and is protected: pose from frame 2. " +
+  "Use screenshot to look at the result, and set_camera to see another side (never turn the hip). " +
+  "Save with save_file as .dingle (working file) or .bvh. Files are only in the PinglyMotion folder shown in state.";
+
+// The assistant guide (docs/ASSISTANT_GUIDE.md). The Windows zip and the extension carry a copy next
+// to this file; in the source tree it is in docs/. It is a tool (read_guide) and an MCP resource.
+const GUIDE_NAME = "ASSISTANT_GUIDE.md";
+const GUIDE_URI = "pinglymotion://guide";
+const GUIDE_TOOL = {
+  name: "read_guide",
+  description: "Returns the assistant guide for PinglyMotion: what Second Life does with an animation, the skeleton " +
+    "and joint names, which way each turn goes (calibration table), typical poses as numbers, the work " +
+    "rhythm, known mistakes and how to talk to a beginner. Read it first. Works even when PinglyMotion " +
+    "is not running.",
+  inputSchema: { type: "object", properties: {}, required: [] },
+};
 
 const NOT_RUNNING =
   "PinglyMotion is not running with remote control on. Start PinglyMotion with --control, " +
@@ -189,8 +203,20 @@ async function commandList() {
   return bundledCommands();
 }
 
+function guideText() {
+  for (const file of [path.join(__dirname, GUIDE_NAME), path.join(__dirname, "..", "..", "docs", GUIDE_NAME)]) {
+    try {
+      return fs.readFileSync(file, "utf8");
+    } catch (error) {
+      continue;
+    }
+  }
+  throw new PinglyMotionError("The assistant guide (" + GUIDE_NAME + ") was not found next to the MCP server. " +
+    "Update PinglyMotion: unpack the new zip over the old folder.");
+}
+
 async function toolList() {
-  return (await commandList()).map((command) => ({
+  const tools = (await commandList()).map((command) => ({
     name: command.name,
     description: command.description,
     inputSchema: {
@@ -199,9 +225,12 @@ async function toolList() {
       required: command.required || [],
     },
   }));
+  tools.push(GUIDE_TOOL);
+  return tools;
 }
 
 async function callTool(name, args) {
+  if (name === GUIDE_TOOL.name) return { content: [{ type: "text", text: guideText() }] };
   const known = new Set(bundledCommands().map((command) => command.name));
   if (!known.has(name)) throw new PinglyMotionError("Unknown tool: " + name);
 
@@ -245,7 +274,7 @@ async function handle(message) {
     const wanted = params.protocolVersion;
     reply(id, {
       protocolVersion: SUPPORTED_PROTOCOLS.includes(wanted) ? wanted : SUPPORTED_PROTOCOLS[0],
-      capabilities: { tools: { listChanged: false } },
+      capabilities: { tools: { listChanged: false }, resources: { listChanged: false } },
       serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
       instructions: INSTRUCTIONS,
     });
@@ -253,6 +282,21 @@ async function handle(message) {
     reply(id, {});
   } else if (method === "tools/list") {
     reply(id, { tools: await toolList() });
+  } else if (method === "resources/list") {
+    reply(id, { resources: [{
+      uri: GUIDE_URI, name: "PinglyMotion assistant guide", mimeType: "text/markdown",
+      description: "How to animate in PinglyMotion: Second Life rules, joints, calibration table, work rhythm." }] });
+  } else if (method === "resources/read") {
+    if (params.uri !== GUIDE_URI) {
+      reply(id, undefined, { code: -32002, message: "Unknown resource: " + params.uri });
+    } else {
+      try {
+        reply(id, { contents: [{ uri: GUIDE_URI, mimeType: "text/markdown", text: guideText() }] });
+      } catch (error) {
+        if (!(error instanceof PinglyMotionError)) throw error;
+        reply(id, undefined, { code: -32002, message: error.message });
+      }
+    }
   } else if (method === "tools/call") {
     try {
       reply(id, await callTool(typeof params.name === "string" ? params.name : "", params.arguments));

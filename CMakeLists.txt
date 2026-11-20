@@ -138,6 +138,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/paneldocks)
   # start folder of the file dialogs (examples folder next to the program)
   ADD_SUBDIRECTORY (tests/startfolder)
+  # the calibration table of the assistant guide (#129)
+  ADD_SUBDIRECTORY (tests/calibration)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md
