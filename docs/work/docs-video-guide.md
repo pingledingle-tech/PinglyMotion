@@ -1,6 +1,6 @@
 Branch: docs/video-guide
 Status: active
-Pull request: pending
+Pull request: #180
 Files:
 - docs/VIDEO_GUIDE.md
 - README.md
