@@ -7,6 +7,7 @@ namespace
   const char* const addresses[] = {
     "github.com/RuthAndRoth/Ruth2",
     "github.com/RuthAndRoth/Roth2",
+    "github.com/Mesh2Motion/mesh2motion-app",
   };
 }
 
@@ -21,7 +22,9 @@ QString AboutCredits::plainText()
     "Ingen, Ada Radius and the RuthAndRoth contributors (github.com/RuthAndRoth/Roth2), "
     "AGPL 3 or later; the head is CC BY Linden Lab. Licences: data/character/roth2/. "
     "Optional Bento body: \"Maxine\" from the Max Avatar Project, Creative Commons "
-    "Attribution 4.0 License, see data/character/max/LICENSE.txt");
+    "Attribution 4.0 License, see data/character/max/LICENSE.txt. "
+    "Test motions: eight CC0 clips from Mesh2Motion "
+    "(github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. Thank you to the Mesh2Motion project.");
 }
 
 QString AboutCredits::html()
@@ -43,5 +46,6 @@ QStringList AboutCredits::requiredEntries()
     "data/character/roth2/",
     "Maxine", "Max Avatar Project", "Creative Commons Attribution 4.0 License",
     "data/character/max/LICENSE.txt",
+    "Mesh2Motion", "github.com/Mesh2Motion/mesh2motion-app", "CC0 1.0",
   };
 }

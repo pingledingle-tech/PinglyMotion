@@ -35,6 +35,7 @@ void TstAboutDialog::htmlHasEveryEntryAndLinks()
   QCOMPARE(doc.toPlainText().simplified(),AboutCredits::plainText().simplified());
   QVERIFY(AboutCredits::html().contains("href=\"https://github.com/RuthAndRoth/Ruth2\""));
   QVERIFY(AboutCredits::html().contains("href=\"https://github.com/RuthAndRoth/Roth2\""));
+  QVERIFY(AboutCredits::html().contains("href=\"https://github.com/Mesh2Motion/mesh2motion-app\""));
 }
 
 void TstAboutDialog::browserShowsAllText_data()

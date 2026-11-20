@@ -147,6 +147,13 @@ class BVHNode
     void setName(const QString& newName);
     double interpolate(double from,double to,int steps,int pos,bool easeOut,bool easeIn) const;
     double interpolate(double from,double to,int steps,int pos,Easing::Preset preset) const;
+    // the in-between rotation of an "Overshoot, then settle" segment, cut at
+    // the joint's loaded limits (channelMin/channelMax of the rotation
+    // channels, issue #53 proposal 4). A channel with no limits loaded (the
+    // -10000..10000 defaults) and a joint without that rotation channel are
+    // left alone. The cut is never tighter than the two keys themselves, so a
+    // key that already sits outside its limits still plays as stored.
+    QVector3D clampOvershoot(const QVector3D& rotation,const QVector3D& from,const QVector3D& to) const;
 
     int getKeyframeNumberBefore(int frame) const;
     int getKeyframeNumberAfter(int frame) const;
