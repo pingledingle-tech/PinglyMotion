@@ -1,5 +1,5 @@
 Branch: feat/joint-mapping-dialog-16
-Status: active
+Status: done
 Pull request: #155
 Files:
 - src/retargetdialog.*
