@@ -80,8 +80,17 @@ jobs:
           BUILD_COMMIT: "${{ github.event.pull_request.head.sha || github.sha }}"
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
-          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGLYMOTION_COMMIT=$BUILD_COMMIT"
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGLYMOTION_COMMIT=$BUILD_COMMIT" -DPINGLYMOTION_TESTS=ON
           cmake --build build -j 4
+      - name: Automatic tests
+        # the same ctest run as in the Linux job: each test sets QT_QPA_PLATFORM=offscreen itself
+        # (tests/CMakeLists.txt), so no display is needed; Qt's DLLs are on PATH from install-qt-action
+        shell: bash
+        env:
+          PINGLYMOTION_EXPECT_BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
+        run: |
+          export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
+          ctest --test-dir build --output-on-failure
       - name: Package
         shell: bash
         run: |
@@ -90,19 +99,9 @@ jobs:
           cp build/src/PinglyMotion.exe dist/
           cp -r bin/data dist/data
           cp bin/NEWS dist/
-          # ONE folder examples/ next to the program holds every file the project owner may open: no separate downloads
-          cp -r examples dist/examples
-          if [ -d tests/motions ]; then
-            size=$(du -sk tests/motions | cut -f1)
-            if [ "$size" -gt 5120 ]; then echo "::warning::tests/motions is over 5 MB; see docs/DEV.md"; fi
-            cp -r tests/motions dist/examples/motions
-            if [ -d dist/examples/motions/mesh2motion ]; then mv dist/examples/motions/mesh2motion dist/examples/mesh2motion; fi
-            if [ -d dist/examples/motions/cmu ]; then mv dist/examples/motions/cmu dist/examples/cmu; cp tests/motions/cmu_02_01_walk.bvh dist/examples/cmu/; fi
-          fi
-          if [ -d tests/data/generated ]; then cp -r tests/data/generated dist/examples/edge-cases; fi
-          # the reference library (issue 19) is next to the program, not in examples/ (the smoke run opens every file there)
-          cp -r library dist/library
-          echo "examples folder in the zip:"; (cd dist && find examples -type f | sort)
+          # ONE folder examples/ next to the program holds every file the project owner may open: no
+          # separate downloads; library/ goes next to the program. The release packages use the same script.
+          bash tools/ci/package_examples.sh dist
           # the MCP server goes with the program, so both are updated together
           mkdir -p dist/mcp
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt docs/ASSISTANT_GUIDE.md dist/mcp/

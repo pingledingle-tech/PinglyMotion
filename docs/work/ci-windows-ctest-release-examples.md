@@ -6,7 +6,7 @@ Files:
 - .github/workflows/release.yml
 - tools/ci/package_examples.sh
 - docs/DEV.md
-- CLAUDE.md
+- .gitattributes
 
 ## What
 
