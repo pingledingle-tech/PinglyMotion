@@ -1,6 +1,6 @@
 Branch: feature/check-animation
 Status: active
-Pull request: pending
+Pull request: #181
 Files:
 - src/controlapi.*
 - src/animcheck.*
