@@ -1,9 +1,10 @@
 Branch: docs/slow-jump-example
-Status: active
+Status: done
 Pull request: #145
 Files:
 - tools/slow_example.py
 - tests/test_slow_example.py
+- tests/tst_roundtrip.cpp
 - examples/jump_slow.dingle
 - docs/FIRST_ANIMATION.md
 - docs/work/docs-slow-jump-example.md
