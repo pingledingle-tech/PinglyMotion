@@ -67,6 +67,7 @@ Only ideas were taken from these papers and projects (no code copied); they were
 | Kimodo benchmark metric definitions (NVIDIA) | Ideas for the AI-help design: metric definitions such as foot skate and contact consistency | https://research.nvidia.com/labs/sil/projects/kimodo/docs/benchmark/metrics.html |
 | Blender MCP (ahujasid) | The idea of showing the assistant a strip of frames (`views`, frame strip screenshots). No code used | https://github.com/ahujasid/blender-mcp |
 | Kimodo (NVIDIA): kinematic motion diffusion model | The joint map for its SOMA 77 skeleton (`src/retarget.*`) and the optional helper | https://github.com/nv-tlabs/kimodo, https://arxiv.org/abs/2603.15546 |
+| MoMask (text-to-motion) and the SMPL body model's joint list | The ready joint map for the SMPL 22-joint skeleton (`src/retarget.*`): the joint names and tree of MoMask's BVH export and SMPL's joint names, as facts. No code, weights or motion used | https://github.com/EricGuo5513/momask-codes, https://smpl.is.tue.mpg.de |
 | Research reports (text to motion, video to motion) | The studies in `docs/research/` read and compared many more models and papers (MDM, MoMask, HY-Motion, WHAM, GVHMR, MediaPipe and others); each is credited and linked there | `docs/research/` |
 
 ## Tools
