@@ -1,5 +1,5 @@
 Branch: fix/frame-after-open-187
-Status: active
+Status: done
 Pull request: #209
 Files:
 - src/controlapi.cpp
