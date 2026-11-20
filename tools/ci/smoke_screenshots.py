@@ -131,6 +131,7 @@ class Run:
         self.out = os.path.abspath(options.out)
         os.makedirs(self.out, exist_ok=True)
         self.lines = []          # the report, line by line
+        self.pictures = []       # (name, looks_empty) per screenshot taken
         self.answers = []        # every command and its answer
         self.app = None
         self.info = None
@@ -198,6 +199,9 @@ class Run:
             time.sleep(0.5)
             waited += 0.5
         self.say("remote control ready after %.1f s" % waited)
+        # the window may still be drawing its first frame: give it a moment
+        if self.options.settle > 0:
+            time.sleep(min(self.options.settle, self.remaining()))
 
     def command(self, body):
         """One command over HTTP with the key; raises SmokeFailure if the program does not answer."""
@@ -233,6 +237,7 @@ class Run:
         with open(path, "wb") as file:
             file.write(data)
         found = describe_picture(data)
+        self.pictures.append((name, found.get("looks_empty", False)))
         self.say("  screenshot %s.png (%dx%d, %d bytes): %s" % (name, answer.get("width", 0), answer.get("height", 0), len(data), found["note"]))
         if self.options.preview_width > 0:
             preview = self.command({"command": "screenshot", "width": self.options.preview_width})
@@ -290,7 +295,7 @@ class Run:
             except subprocess.TimeoutExpired:
                 self.app.kill()
                 self.app.wait(timeout=15)
-            self.say("program ended by the script after the run (exit code %s)" % self.app.returncode)
+            self.say("program ended by the script after the run")
         else:
             raise SmokeFailure("the program ended on its own with exit code %s" % self.app.returncode)
 
@@ -309,6 +314,10 @@ class Run:
         for line in program_lines:
             if "3D view" in line or "OpenGL" in line:
                 self.say("program says: " + line.strip())
+        drawn = [name for name, empty in self.pictures if not empty]
+        if self.pictures:
+            self.say("pictures: %d of %d show something%s" % (len(drawn), len(self.pictures),
+                     "" if len(drawn) == len(self.pictures) else " (an empty picture means the 3D view could not be drawn on this machine, see 'program says' above; the run itself is not failed by it)"))
         self.say("RESULT: " + ("FAIL: " + failure if failure else "OK (the program started, answered and ended)"))
         with open(os.path.join(self.out, "report.txt"), "w") as file:
             file.write("PinglyMotion smoke run with screenshots (issue 129)\n")
@@ -329,6 +338,7 @@ def main():
     parser.add_argument("--out", default="smoke", help="output folder for PNGs, answers and the report")
     parser.add_argument("--cwd", default=None, help="where the program starts (default: its own folder)")
     parser.add_argument("--timeout", type=int, default=240, help="seconds for the whole run")
+    parser.add_argument("--settle", type=float, default=2.0, help="seconds to wait after remote control is ready, before the first picture")
     parser.add_argument("--width", type=int, default=800, help="screenshot width in pixels")
     parser.add_argument("--preview-width", type=int, default=320, help="width of the base64 preview in the log; 0 for none")
     options = parser.parse_args()
