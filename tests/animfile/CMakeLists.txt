@@ -41,3 +41,16 @@ TARGET_COMPILE_DEFINITIONS (pinglymotion_generated_tests PRIVATE
 TARGET_LINK_LIBRARIES (pinglymotion_generated_tests Qt6::Core Qt6::Gui Qt6::Test)
 ADD_TEST (NAME generated COMMAND pinglymotion_generated_tests)
 SET_TESTS_PROPERTIES (generated PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The generated .dingle and .anim edge-case files (tools/gen_edge_motion.py; issue #27).
+ADD_EXECUTABLE (pinglymotion_generated_motion_tests tst_generated_motion.cpp
+                ${CMAKE_SOURCE_DIR}/src/animfile.cpp
+                ${CMAKE_SOURCE_DIR}/src/dingle.cpp
+                ${CMAKE_SOURCE_DIR}/src/animimport.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_generated_motion_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_generated_motion_tests PRIVATE
+  PINGLYMOTION_GENERATED="${CMAKE_SOURCE_DIR}/tests/data/generated")
+TARGET_LINK_LIBRARIES (pinglymotion_generated_motion_tests Qt6::Core Qt6::Gui Qt6::Test)
+ADD_TEST (NAME generated_motion COMMAND pinglymotion_generated_motion_tests)
+SET_TESTS_PROPERTIES (generated_motion PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
