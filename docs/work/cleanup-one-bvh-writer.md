@@ -1,6 +1,6 @@
 Branch: cleanup/one-bvh-writer
 Status: active
-Pull request: pending
+Pull request: #226
 Files:
 - src/bvh.*
 - tests/tst_auroralink.cpp
