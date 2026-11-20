@@ -216,6 +216,19 @@ def main():
         poses = json.loads(mcp.text("get_pose", frame=2)[1])
         check("opened file has the pose back", "lForeArm" in poses["joints"], poses)
 
+        # a file the program refuses: the reason comes back as an error at once, and no
+        # message box blocks the program (that once hung the smoke run in CI)
+        broken = os.path.join(work, "broken.bvh")
+        with open(broken, "w") as file:
+            file.write("HIERARCHY\nROOT hip\n{\nthis is not a motion file\n")
+        started = time.monotonic()
+        is_error, text = mcp.text("open_file", path=broken)
+        seconds = time.monotonic() - started
+        check("an invalid file gives an error", is_error and "could not be opened" in text, text)
+        check("an invalid file answers at once, no message box blocks it", seconds < 5, "%.1f s" % seconds)
+        is_error, text = mcp.text("state")
+        check("the program still answers after an invalid file", not is_error and json.loads(text)["file"].endswith("pose.bvh"), text)
+
         app.terminate()
         code = app.wait(timeout=15)
         print("      (PinglyMotion exit code %s)" % code)

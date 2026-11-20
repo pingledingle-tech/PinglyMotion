@@ -197,6 +197,7 @@ class Run:
         cwd = os.path.abspath(options.cwd) if options.cwd else os.path.dirname(app_path)
         folder = os.path.abspath(options.folder)
         self.folder = folder
+        self.scratch = []
         work = tempfile.mkdtemp(prefix="pinglymotion-smoke-")
         self.control_file = os.path.join(work, "control.json")
         env = dict(os.environ,
@@ -344,6 +345,20 @@ class Run:
             safe = relative.replace("/", "_")
             name = os.path.splitext(safe)[0] + "_" + os.path.splitext(safe)[1].lstrip(".")
             self.picture(name, relative)
+            # an old .avm file opens under its new .dingle name and counts as changed, so the
+            # next open_file would be refused: save it once to a scratch file (removed at the end)
+            if state.get("unsaved_changes"):
+                scratch = "smoke-scratch-%d.dingle" % number
+                self.scratch.append(os.path.join(self.folder, scratch))
+                answer = self.command({"command": "save_file", "path": scratch})
+                if not answer.get("ok"):
+                    self.say("  save to a scratch file failed: %s" % answer.get("error", "?"))
+
+        for path in self.scratch:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
 
         if opens:
             self.say("opened %d of %d file(s); %d failed to open%s" % (

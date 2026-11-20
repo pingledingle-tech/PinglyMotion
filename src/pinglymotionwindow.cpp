@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <QScopedValueRollback>
 #include <QActionGroup>
 #include <QMap>
 #include <QMenu>
@@ -144,6 +145,9 @@ class WindowControlHost : public ControlHost
     bool openFile(const QString& path, QString& error) override
     {
       discardChanges();
+      // no modal message box while remote control opens a file: it would block the
+      // answer (and a headless run) until someone clicks it; the reason goes back in 'error'
+      const QScopedValueRollback<bool> quiet(w->m_quietDialogs, true);
       w->fileOpen(path);
       if (!animation() || (w->currentFile != path && w->m_avmOrigin.value(w->currentFile) != path))
       {
@@ -1895,6 +1899,7 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file)
     BVH::checkFile(file,&m_lastOpenError);
 
   if(m_lastOpenError.isEmpty()) return true;
+  if(m_quietDialogs) return false;
   QMessageBox::warning(this,tr("Load Animation File"),
                        tr("<qt>%1<br><br>%2</qt>").arg(file.toHtmlEscaped(),m_lastOpenError.toHtmlEscaped()));
   return false;
@@ -1911,7 +1916,7 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     addToOpenFiles(shownName);
     Animation* anim=new Animation(ui->animationView->getBVH(),file);
     animationIds.append(anim);
-    if(ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion)
+    if(!m_quietDialogs && (ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion))
       QMessageBox::information(this,tr("Open Animation File"),
                                tr("This file comes from a newer version of PinglyMotion.\nSome parts of it are not shown here.\nSaving it will remove those parts. Save under another name to keep the original."));
     calculateLongestRunningTime();
