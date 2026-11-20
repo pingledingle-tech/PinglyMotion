@@ -14,6 +14,7 @@ class TstAboutDialog : public QObject
   Q_OBJECT
   private slots:
     void textHasEveryEntry();
+    void thankYouIntroIsExact();
     void htmlHasEveryEntryAndLinks();
     void browserShowsAllText_data();
     void browserShowsAllText();
@@ -26,6 +27,18 @@ void TstAboutDialog::textHasEveryEntry()
   QVERIFY(!AboutCredits::requiredEntries().isEmpty());
   for (const QString& entry : AboutCredits::requiredEntries())
     QVERIFY2(text.contains(entry), qPrintable("missing: "+entry));
+}
+
+void TstAboutDialog::thankYouIntroIsExact()
+{
+  const QString expected=
+    "Thank you to everyone whose work PinglyMotion uses or learned from: QAvimator and "
+    "Avimator, the Second Life and Firestorm viewers, the RuthAndRoth bodies, the CMU "
+    "motion capture database, Mesh2Motion and Aurora. The full list is in CREDITS.md: "
+    "github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md. ";
+  QVERIFY(AboutCredits::plainText().startsWith(expected));
+  QVERIFY(AboutCredits::html().contains(
+    "href=\"https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md\""));
 }
 
 void TstAboutDialog::htmlHasEveryEntryAndLinks()

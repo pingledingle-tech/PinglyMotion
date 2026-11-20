@@ -97,6 +97,8 @@ as its Blender add-on) with a session key. For now it needs Aurora from the
 
 ## Credits and licence
 
+Thank you to everyone whose work PinglyMotion uses or learned from. The full list, with what we use each for and its licence, is in [CREDITS.md](CREDITS.md).
+
 Based on QAvimator by Zi Ree and the QAvimator team (Bitbucket: QAvimator_Team/qavimator), itself a Qt port of Avimator.
 Licensed under the GNU General Public License version 2 – see `LICENSE` / `COPYING`.
 
