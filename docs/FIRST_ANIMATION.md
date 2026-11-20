@@ -45,6 +45,8 @@ The arm now moves between your keys. To change the feel, click a key's joint. Th
 - Tick **Ease Out** for a slow start away from this key.
 - Tick **Ease In** for a slow finish into this key.
 
+To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle` in the `examples` folder. It is the bundled `jump.dingle` with every key 2.5 times later, so the same jump runs at 40 % of the speed. The file is made by `tools/slow_example.py`, and the original is unchanged.
+
 ## 7. Save
 
 1. Choose **File > Save As...**.
