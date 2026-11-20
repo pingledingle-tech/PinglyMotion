@@ -9,6 +9,7 @@
 #include <QtTest>
 
 #include "camera.h"
+#include "panellayout.h"
 #include "scenestate.h"
 
 Q_DECLARE_METATYPE(CameraDrag)
@@ -33,8 +34,14 @@ class TestCamera : public QObject
     void panWorksBelowTheFloor();
     void numberPadAfterGoingBelow();
     void storedPositionKeepsDistance();
+    void shiftedPerspectiveNoShift();
+    void shiftedPerspectiveCentresFreeArea();
 
   private:
+    // where a point in front of the camera (world space) ends up on screen
+    // (widget pixels), through this projection matrix and an otherwise
+    // plain view looking straight down -Z
+    static QPointF onScreen(const QMatrix4x4& projection,const QVector3D& point,const QSizeF& view);
     // where a world point ends up in camera space, as drawn
     static QVector3D seen(Camera& camera, const QVector3D& world);
     static void compare(const QVector3D& a, const QVector3D& b, float within = 0.01f);
@@ -278,6 +285,43 @@ void TestCamera::storedPositionKeepsDistance()
   camera.restoreCameraPosition(1);
   QCOMPARE(camera.distance(), 25.0f);
   compare(camera.pivot(), QVector3D(5, 30, 0));
+}
+
+QPointF TestCamera::onScreen(const QMatrix4x4& projection,const QVector3D& point,const QSizeF& view)
+{
+  const QVector4D clip=projection*QVector4D(point,1.0f);
+  const float w=(clip.w()!=0.0f) ? clip.w() : 1.0f;
+  // same mapping as AnimationView::ringPointOnScreen(): NDC to widget pixels
+  return QPointF((clip.x()/w*0.5+0.5)*view.width(),(0.5-clip.y()/w*0.5)*view.height());
+}
+
+// with the centre at the view's own middle, shiftedPerspective() is the
+// plain perspective matrix (P5, docs/PANELS_PLAN.md)
+void TestCamera::shiftedPerspectiveNoShift()
+{
+  const QRectF view(0,0,800,600);
+  const QMatrix4x4 shifted=shiftedPerspective(60.0f,view,view.center(),1.0f,2000.0f);
+  QMatrix4x4 plain;
+  plain.perspective(60.0f,float(view.width()/view.height()),1.0f,2000.0f);
+  for(int row=0;row<4;row++)
+    for(int col=0;col<4;col++)
+      QVERIFY(qAbs(shifted(row,col)-plain(row,col))<1e-5f);
+  // a point straight ahead projects to the middle of the view
+  compare(QVector3D(onScreen(shifted,QVector3D(0,0,-100),view.size())),QVector3D(400,300,0),0.5f);
+}
+
+// a floating panel covers the left half of the view: the free area is the
+// right half, and the figure (straight ahead of the camera) should land in
+// its middle, not the view's (P5, docs/PANELS_PLAN.md)
+void TestCamera::shiftedPerspectiveCentresFreeArea()
+{
+  const QRect view(0,0,800,600);
+  const QList<QRect> panels{QRect(0,0,300,600)};
+  const QRectF free=PanelLayout::freeArea(view,panels);
+  QCOMPARE(free,QRectF(300,0,500,600));
+  const QMatrix4x4 shifted=shiftedPerspective(60.0f,QRectF(view),free.center(),1.0f,2000.0f);
+  compare(QVector3D(onScreen(shifted,QVector3D(0,0,-100),QSizeF(view.size()))),
+          QVector3D(float(free.center().x()),float(free.center().y()),0),0.5f);
 }
 
 QTEST_GUILESS_MAIN(TestCamera)

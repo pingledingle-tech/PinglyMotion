@@ -22,6 +22,7 @@
 #include <cmath>
 #include <QtGlobal>
 #include <QMatrix4x4>
+#include <QtMath>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -33,6 +34,30 @@
 #include "scenestate.h"
 
 #include <QDebug>
+
+QMatrix4x4 shiftedPerspective(float fovYDegrees,const QRectF& view,const QPointF& center,
+                               float nearPlane,float farPlane)
+{
+  QMatrix4x4 m;
+  if(view.width()<=0 || view.height()<=0)
+  {
+    m.perspective(fovYDegrees,1.0f,nearPlane,farPlane);
+    return m;
+  }
+  const float aspect=float(view.width()/view.height());
+  // half the frustum's extent at the near plane, unshifted (the same
+  // calculation QMatrix4x4::perspective() uses internally)
+  const float halfHeight=nearPlane*std::tan(qDegreesToRadians(fovYDegrees)*0.5f);
+  const float halfWidth=halfHeight*aspect;
+  // how far the wanted centre is from the view's middle, as a fraction of
+  // the half view (screen Y points down, NDC Y points up, hence the minus)
+  const float ndcX=float((center.x()-view.center().x())/(view.width()*0.5));
+  const float ndcY=-float((center.y()-view.center().y())/(view.height()*0.5));
+  const float dx=-halfWidth*ndcX;
+  const float dy=-halfHeight*ndcY;
+  m.frustum(-halfWidth+dx,halfWidth+dx,-halfHeight+dy,halfHeight+dy,nearPlane,farPlane);
+  return m;
+}
 
 CameraPosition::CameraPosition(float px,float py,float pz,float rx,float ry)
 {
