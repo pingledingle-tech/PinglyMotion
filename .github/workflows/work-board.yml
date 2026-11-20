@@ -6,13 +6,17 @@ on:
   pull_request:
     branches: [main]
     types: [opened, edited, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
   pull-requests: read
+  issues: read
 
 jobs:
   work-board:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -26,3 +30,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/work.py check --mine
+
+  # Warning only: compares the jobs list (issue 74) with the open pull requests
+  # and the job files. Read-only, never fails, never writes to GitHub.
+  list-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Jobs list against reality (warnings only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/work.py check-lists --annotate || true

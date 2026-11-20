@@ -100,12 +100,15 @@ jobs:
             if [ -d dist/examples/motions/cmu ]; then mv dist/examples/motions/cmu dist/examples/cmu; cp tests/motions/cmu_02_01_walk.bvh dist/examples/cmu/; fi
           fi
           if [ -d tests/data/generated ]; then cp -r tests/data/generated dist/examples/edge-cases; fi
+          # the reference library (issue 19) is next to the program, not in examples/ (the smoke run opens every file there)
+          cp -r library dist/library
           echo "examples folder in the zip:"; (cd dist && find examples -type f | sort)
           # the MCP server goes with the program, so both are updated together
           mkdir -p dist/mcp
           cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt docs/ASSISTANT_GUIDE.md dist/mcp/
           # the Claude Desktop extension: double-click it to install (issue #7)
           python tools/mcp/build_mcpb.py dist/PinglyMotion.mcpb
+          cp "tools/mcp/START_HERE_CLAUDE.txt" "dist/START HERE - Claude.txt"
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/PinglyMotion.exe
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -192,6 +195,16 @@ jobs:
         run: python3 tests/test_mcpb.py
       - name: Generated edge-case animations are up to date
         run: python3 tests/test_gen_edge_bvh.py
+      - name: Generated SOMA 77 test skeleton is up to date (issue 18)
+        run: python3 tests/test_gen_soma77_bvh.py
+      - name: Kimodo text-to-motion helper (issue 18)
+        run: python3 tests/test_kimodo_helper.py
+      - name: Generated SMPL 22 test skeletons are up to date (issue 18)
+        run: python3 tests/test_gen_smpl22_bvh.py
+      - name: Reference library index is valid
+        run: python3 tests/test_reference_library.py
+      - name: Generated .dingle and .anim edge cases are up to date
+        run: python3 tests/test_gen_edge_motion.py
       - name: BVH comparer for the Blender round trip (issue 13)
         run: python3 tests/test_bvh_compare.py
       - name: Example files made by scripts are up to date (slow jump, wave)
@@ -211,6 +224,14 @@ jobs:
         env:
           PINGLYMOTION_MCP: node
         run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
+      - name: Evaluation set for the AI assistant, reference solutions (issue 129)
+        # every prompt's acceptance checks pass for a scripted reference solution and fail for an
+        # untouched animation; the manual driver (needs an API key, never run here) is tried on a fake API
+        run: |
+          xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/assistant/run_reference.py build/src/PinglyMotion
+          xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/assistant/selftest_driver.py build/src/PinglyMotion
+      - name: Golden clips are described sensibly (issue 129)
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/assistant/run_golden.py build/src/PinglyMotion
       - name: Smoke run with screenshots (issue 129)
         # the same run as in the Windows job, under Xvfb, but over every example and test-motion
         # file (recursively); fails only when the program crashes or does not answer

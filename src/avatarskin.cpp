@@ -171,8 +171,13 @@ int AvatarSkin::useJoint(int skeletonJoint)
 // a Bento mesh body (Max, Ruth2): up to four joints per vertex, straight from the file
 bool AvatarSkin::loadPmm(const QString& fileName, QString* errorMessage)
 {
-  PMMesh mesh;
-  if (!mesh.load(fileName, errorMessage)) return false;
+  const PMMesh::Result read = PMMesh::read(fileName);
+  if (!read.ok())
+  {
+    if (errorMessage) *errorMessage = read.error;
+    return false;
+  }
+  const PMMesh& mesh = *read.mesh;
   static_assert(PMMesh::INFLUENCES == INFLUENCES, "influence counts must match");
 
   QVector<int> used;   // file joint -> index in m_jointNames

@@ -66,10 +66,20 @@ class ControlApi
     // name and description of every command, for help texts and MCP
     static QJsonArray commandList();
 
-    // open_file and save_file only work inside this folder: PinglyMotion in the
+    // open_file, save_file and export_anim only work inside this folder: PinglyMotion in the
     // user's Documents folder, or PINGLYMOTION_CONTROL_FOLDER if set
     void setWorkFolder(const QString& folder) { m_workFolder = folder; }
     static QString defaultWorkFolder();
+
+    // find_reference and load_reference read the reference library (library/index.json, issue 19)
+    // and the index that tools/fetch_reference.py writes (downloaded_index.json). load_reference
+    // opens only files inside these two folders, never a path from the caller.
+    // Defaults: PINGLYMOTION_LIBRARY_FOLDER or library/ next to the program; and
+    // PINGLYMOTION_REFERENCE_FOLDER or PinglyMotion-reference in the home folder.
+    void setLibraryFolder(const QString& folder) { m_libraryFolder = folder; }
+    void setReferenceFolder(const QString& folder) { m_referenceFolder = folder; }
+    static QString defaultLibraryFolder();
+    static QString defaultReferenceFolder();
 
   private:
     typedef QJsonObject (ControlApi::*Handler)(const QJsonObject&);
@@ -90,14 +100,23 @@ class ControlApi
     QJsonObject openFile(const QJsonObject&);
     QJsonObject saveFile(const QJsonObject&);
     QJsonObject screenshot(const QJsonObject&);
+    QJsonObject screenshotSheet(const QJsonObject&);
+    QJsonObject pngAnswer(const QImage& image);
     QJsonObject setFigure(const QJsonObject&);
     QJsonObject setCamera(const QJsonObject&);
     QJsonObject describePose(const QJsonObject&);
+    QJsonObject describeMotion(const QJsonObject&);
+    QJsonObject checkAnimation(const QJsonObject&);
+    QJsonObject exportAnim(const QJsonObject&);
+    QJsonObject findReference(const QJsonObject&);
+    QJsonObject loadReference(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();
     // goes to "frame" when the request has one; false and an error if it is out of range
     bool applyFrame(const QJsonObject& request, QString& error);
+    // goes to a frame (0-based) and makes sure the animation is on it
+    void goToFrame(int frame);
     // the first frame is the reference pose; PinglyMotion refuses edits there unless the option is off
     bool checkNotProtected(QString& error);
     QJsonObject fail(const QString& message);
@@ -107,6 +126,8 @@ class ControlApi
 
     ControlHost* m_host;
     QString m_workFolder;
+    QString m_libraryFolder;
+    QString m_referenceFolder;
 };
 
 #endif

@@ -184,7 +184,16 @@ int Animation::getNumberOfFrames()
 void Animation::setNumberOfFrames(int num)
 {
   qDebug("Animation::setNumberOfFrames(%d)",num);
+  const int oldLast=totalFrames-1;
   totalFrames=num;
+  // a loop that ended on the last frame keeps ending on the last frame, and
+  // loop points past the new last frame move back onto it (issue #189);
+  // oldLast is -1 while the constructor reads the file, before any loop is set
+  if(oldLast>=0 && loopOutPoint>=0 && num>0)
+  {
+    if(loopOutPoint>=oldLast || loopOutPoint>num-1) loopOutPoint=num-1;
+    if(loopInPoint>loopOutPoint) loopInPoint=loopOutPoint;
+  }
   setDirty(true);
   emit numberOfFrames(num);
 }

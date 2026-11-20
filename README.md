@@ -29,6 +29,9 @@ The vision is an approachable path from an idea or existing movement to an anima
 The roadmap explores better posing and timeline tools, native SL animation export, AI-assisted workflows, import and retargeting from other tools, and eventually ideas such as video-based motion and reusable animation libraries. These are proposals, not promises of finished features.
 
 - [Product vision, user value and use cases](docs/PRODUCT.md)
+- [Working with Blender: export BVH and glTF, axes, SL skeleton, Mixamo warning](docs/BLENDER.md)
+- [From video to Second Life with XR Animator: record yourself, import the BVH, limits, privacy](docs/VIDEO_GUIDE.md)
+- [Make a motion from a sentence with NVIDIA Kimodo on your own graphics card (optional helper)](docs/TEXT_TO_MOTION_GUIDE.md)
 - [Ideas for the future](docs/IDEAS.md)
 - [Open issues and development work](https://github.com/pingledingle-tech/PinglyMotion/issues)
 
@@ -80,7 +83,7 @@ ctest --test-dir build --output-on-failure
 
 PinglyMotion has an open local interface (HTTP with JSON, and an MCP server) so an AI tool or script can
 pose the figure, look at it and save the animation. See [docs/CONTROL.md](docs/CONTROL.md).
-The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up, and `PinglyMotion.mcpb`, a one-click extension for the Claude app
+The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up, and `PinglyMotion.mcpb`, a one-click extension for the Claude app (steps in `START HERE - Claude.txt` next to it)
 (see [docs/CONTROL.md](docs/CONTROL.md#quick-way-the-claude-desktop-extension)).
 Every assistant that connects can read [docs/ASSISTANT_GUIDE.md](docs/ASSISTANT_GUIDE.md) with the `read_guide` tool: Second Life's rules for animations, joint names, which way each turn goes, typical poses and a work rhythm.
 
@@ -95,6 +98,8 @@ as its Blender add-on) with a session key. For now it needs Aurora from the
 
 ## Credits and licence
 
+Thank you to everyone whose work PinglyMotion uses or learned from. The full list, with what we use each for and its licence, is in [CREDITS.md](CREDITS.md).
+
 Based on QAvimator by Zi Ree and the QAvimator team (Bitbucket: QAvimator_Team/qavimator), itself a Qt port of Avimator.
 Licensed under the GNU General Public License version 2 – see `LICENSE` / `COPYING`.
 
@@ -107,5 +112,7 @@ The male figure shows **Roth2 v2**, the male body from the [Roth2 project](https
 The optional second body (Options > Body > Max) is "Maxine" from the [Max Avatar Project](https://github.com/RuthAndRoth/Max) by Ada Radius and the RuthAndRoth community, licensed under the Creative Commons Attribution 4.0 License. It is converted to PinglyMotion's own format by `tools/make_max_mesh.py`; notice and details are in `bin/data/character/max/`.
 
 The test motions in `tests/motions/cmu/` (in the Windows zip: `examples/cmu/`) and the walk clip in `tests/motions/` come from the CMU Graphics Lab Motion Capture Database, converted to BVH by cgspeed.com. The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. Source and licence notes: `tests/motions/cmu/README.md`.
+
+The reference library in `library/` (in the Windows zip: `library/` next to the program; format in `docs/REFERENCE_LIBRARY_SCHEMA.md`) holds 55 clips: 28 from the CMU Graphics Lab Motion Capture Database (converted to BVH by cgspeed.com; the data used in this project was obtained from mocap.cs.cmu.edu; the database was created with funding from NSF EIA-0196217) and 27 from [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. Each clip carries its licence and credit line in `library/index.json`.
 
 The test motions in `tests/motions/mesh2motion/` (in the Windows zip: `examples/mesh2motion/`) are eight clips from the [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app) project, released under CC0 1.0 (public domain). CC0 does not require a credit; PinglyMotion gives one anyway: thank you to the Mesh2Motion project. The source files and the commit they come from are in `tests/data/mesh2motion/`.
