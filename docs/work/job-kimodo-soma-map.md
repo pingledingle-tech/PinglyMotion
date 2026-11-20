@@ -1,6 +1,6 @@
 Branch: job/kimodo-soma-map
 Status: active
-Pull request: pending
+Pull request: #174
 Files:
 - src/retarget.*
 - tools/gen_soma77_bvh.py
