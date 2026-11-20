@@ -96,7 +96,7 @@ jobs:
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
           # TEMPORARY diagnosis: the control test once on its own first
-          (cd bin && QT_QPA_PLATFORM=offscreen ../build/tests/pinglymotion_control_tests.exe -o "$RUNNER_TEMP/ctl.txt,txt"; echo "control exit $?"; grep -E "FAIL|Loc:|Actual|Expected|Totals" -A2 "$RUNNER_TEMP/ctl.txt" || true)
+          (cd bin && QT_QPA_PLATFORM=offscreen ../build/tests/pinglymotion_control_tests.exe -o "$RUNNER_TEMP/ctl.txt,txt" || echo "control failed"; grep -E "FAIL|Loc:|Actual|Expected|Totals" -A2 "$RUNNER_TEMP/ctl.txt" || true)
           # a failed test is run again with its Qt Test output written to a file, so the log shows why
           ctest --test-dir build --output-on-failure || { python tools/ci/rerun_failed_tests.py build; exit 1; }
       - name: Package
