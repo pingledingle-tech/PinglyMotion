@@ -2,7 +2,57 @@
 
 File > Import BVH from another skeleton matches the joints of the file to the Second Life skeleton by name and tree shape (`src/retarget.*`, issue [#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)). When that guess is wrong for a few joints, the user can correct it by hand. This page describes the small file that holds such a correction: what it is for, its fields, where the program keeps it, and its limits. The code is `src/retargetmapping.*`; the tests are `tests/retargetmapping/`.
 
-State: the file format, reader, writer, fingerprint and store are built (step 4 of #16, core). The dialog that edits a mapping in the program is a later, visible job, so nothing uses the files on screen yet.
+State: the file format, reader, writer, fingerprint and store are built (step 4 of #16, core), and so is the dialog that edits a mapping (see "In the program" below).
+
+## In the program
+
+File > Import BVH from another skeleton (and File > Import glTF animation, which uses the same window) shows one row per joint of the file. The column "Joint on the avatar" is a list:
+
+- "(leave out)" first, then the body joints of the avatar (pelvis, spine, neck, head, arms, hands, fingers, legs, feet), then, after a line, the other joints (face, wings, tail, hind limbs).
+- Picking a joint gives it to this joint of the file. If another joint of the file had it, that joint is left out. The column "What happens" says "Changed by you" or "Left out by you", and the summary says how many joints were changed.
+- The animation is made again after every change. If a change leaves the pelvis, spine, head, an arm, a hand or a leg without a joint, the window says which avatar joints need one, and "Open the animation" stays off until it is fixed.
+- "Use the automatic match" undoes every change.
+- "Remember my changes for files with this skeleton" is ticked by default. When the user opens the animation with it ticked, the changes are saved with the store below (only the changes, as `differences()` gives them); with no changes, a saved file for this skeleton is deleted, so the automatic matching is used again. Unticked, nothing is saved or deleted.
+- When the window opens for a skeleton that has a saved file, the changes are used at once and the window says "Your saved changes for this skeleton were used." A saved file that cannot be read is not used, and the window says why.
+
+The state behind the window is `RetargetMapping::Editor` (no window, tested in `tests/retargetdialog/`): the automatic mapping, the changes on top, `setTarget()`, `reset()`, `toFile()`, `load()` and `save()`.
+
+## Ready mappings for known skeletons
+
+Some tools always write the same skeleton. For those the automatic matching does not guess from the names but uses a fixed table (`Retarget::detectKnownSkeleton`, `Mapping::known`); a hand-made mapping still goes on top, as for any other file.
+
+**SOMA 77 (NVIDIA Kimodo, text-to-motion, issue [#18](https://github.com/pingledingle-tech/PinglyMotion/issues/18)).** Recognised by its joint names and tree: `Hips` with `Spine1`, `Spine2`, `Chest`, `Neck1`, `Neck2`, `Head` in a row, and per side `Shoulder`, `Arm`, `ForeArm`, `Hand` below `Chest` and `Leg`, `Shin`, `Foot`, `ToeBase` below `Hips`. The names guessed alone would go wrong here: in SOMA `LeftLeg` is the thigh (in Mixamo it is the lower leg), and the first joint of each finger but the thumb sits in the palm.
+
+| SOMA 77 | Second Life |
+|---|---|
+| `Hips` | `mPelvis` (`hip`) |
+| `Spine1`, `Chest` | `mTorso` (`abdomen`), `mChest` (`chest`); `Spine2` is left out, its turn is passed on |
+| `Neck1`, `Head` | `mNeck` (`neck`), `mHead` (`head`); `Neck2` is left out, its turn is passed on |
+| `LeftShoulder`, `LeftArm`, `LeftForeArm`, `LeftHand` | `mCollarLeft`, `mShoulderLeft`, `mElbowLeft`, `mWristLeft` (`lCollar`, `lShldr`, `lForeArm`, `lHand`) |
+| `LeftLeg`, `LeftShin`, `LeftFoot`, `LeftToeBase` | `mHipLeft`, `mKneeLeft`, `mAnkleLeft`, `mFootLeft` (`lThigh`, `lShin`, `lFoot`) |
+| `LeftHandThumb1` to `3` | `mHandThumb1Left` to `3` |
+| `LeftHandIndex2` to `4` (and Middle, Ring, Pinky) | `mHandIndex1Left` to `3` |
+| the same for `Right…` | the right side |
+
+Left out and listed with a reason, never refused: the wrapper joint `Root` at the origin (Kimodo writes it above `Hips`), the face joints `Jaw`, `LeftEye`, `RightEye`, the palm joints (`…Index1`, `…Middle1`, `…Ring1`, `…Pinky1`) and the end joints (`HeadEnd`, `…End`, `…ToeEnd`). Kimodo's motion has no finger movement, so the fingers keep their rest pose. The test file `tests/retargetsoma/soma77_kimodo.bvh` is written by `tools/gen_soma77_bvh.py` (names, tree and layout as facts; our own offsets and motion) and checked by `tests/retargetsoma/` and `tests/test_gen_soma77_bvh.py`.
+
+**SMPL 22 (HumanML3D: MoMask and similar text-to-motion tools, issue [#18](https://github.com/pingledingle-tech/PinglyMotion/issues/18)).** Recognised by all 22 body joints of SMPL with SMPL's tree, under either of two naming styles:
+
+- as MoMask's BVH export writes them: `Hips`, `Spine`, `Spine1`, `Spine2`, `Neck`, `Head`, and per side `Shoulder`, `Arm`, `ForeArm`, `Hand`, `UpLeg`, `Leg`, `Foot`, `Toe` (exact case);
+- with SMPL's own names, in any case: `pelvis`, `spine1` to `spine3`, `neck`, `head`, and per side `left_collar`, `left_shoulder`, `left_elbow`, `left_wrist`, `left_hip`, `left_knee`, `left_ankle`, `left_foot`; also written `L_Hip` and with the prefix `m_avg_`.
+
+Every other joint must be a wrapper root above the pelvis or a leaf joint (such as the hand joint of the 24-joint SMPL). A rig with the same names and real finger chains is not taken for SMPL; it is matched by name as before, so it keeps its fingers.
+
+| SMPL 22 (MoMask name / SMPL name) | Second Life |
+|---|---|
+| `Hips` / `pelvis` | `mPelvis` (`hip`) |
+| `Spine`, `Spine2` / `spine1`, `spine3` | `mTorso` (`abdomen`), `mChest` (`chest`); the middle one (`Spine1` / `spine2`) is left out, its turn is passed on |
+| `Neck`, `Head` / `neck`, `head` | `mNeck` (`neck`), `mHead` (`head`) |
+| `LeftShoulder`, `LeftArm`, `LeftForeArm`, `LeftHand` / `left_collar`, `left_shoulder`, `left_elbow`, `left_wrist` | `mCollarLeft`, `mShoulderLeft`, `mElbowLeft`, `mWristLeft` (`lCollar`, `lShldr`, `lForeArm`, `lHand`) |
+| `LeftUpLeg`, `LeftLeg`, `LeftFoot`, `LeftToe` / `left_hip`, `left_knee`, `left_ankle`, `left_foot` | `mHipLeft`, `mKneeLeft`, `mAnkleLeft`, `mFootLeft` (`lThigh`, `lShin`, `lFoot`) |
+| the same for `Right…` / `right_…` | the right side |
+
+The names guessed alone would go wrong for SMPL's own names: `left_foot` is the toe, `left_ankle` the foot, `left_shoulder` the upper arm. Left out and listed with a reason, never refused: the wrapper root, and any extra leaf joint (SMPL has no fingers, so the fingers keep their rest pose). MoMask writes 20 frames per second; the import clean-up (`src/motioncleanup.*`) resamples to 30 like any other file. The test files `tests/retargetsmpl/smpl22_momask.bvh` and `smpl22_names.bvh` are written by `tools/gen_smpl22_bvh.py` (names, tree and layout as facts; our own offsets and motion) and checked by `tests/retargetsmpl/` and `tests/test_gen_smpl22_bvh.py`.
 
 ## What it is for
 

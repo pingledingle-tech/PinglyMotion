@@ -96,6 +96,21 @@ namespace Retarget
     QString reason;        // why it was ignored or refused
   };
 
+  // skeletons the import knows by heart: their joints are mapped with a fixed
+  // table instead of being guessed from the names (docs/RETARGET_MAPPING.md)
+  enum class KnownSkeleton
+  {
+    None,
+    Soma77,    // NVIDIA Kimodo's SOMA 77-joint skeleton (text-to-motion, issue #18)
+    Smpl22     // the HumanML3D / SMPL 22-joint body as MoMask and similar tools write it (issue #18)
+  };
+
+  // the known skeleton a source is, from its joint names and tree; None when
+  // it is none of them
+  KnownSkeleton detectKnownSkeleton(const AnimFile::Animation& source);
+  // a readable name for messages, empty for None
+  QString knownSkeletonName(KnownSkeleton skeleton);
+
   struct Mapping
   {
     // (source joint, target joint); every joint at most once on each side
@@ -104,6 +119,7 @@ namespace Retarget
     QStringList missingRequired;     // readable names of required slots the source lacks
     QStringList missingTarget;       // required slots the target skeleton lacks
     bool direct=false;               // the source already uses Second Life joint names
+    KnownSkeleton known=KnownSkeleton::None;   // mapped with the fixed table of a known skeleton
 
     bool ok() const { return missingRequired.isEmpty() && missingTarget.isEmpty() && !pairs.isEmpty(); }
   };

@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <QScopedValueRollback>
 #include <QActionGroup>
 #include <QMap>
 #include <QMenu>
@@ -68,6 +69,7 @@
 #include "controlserver.h"
 #include "controlindicator.h"
 #include "auroralink.h"
+#include "sliderscale.h"
 #include <QStatusBar>
 #include "prop.h"
 #include "jointgroups.h"
@@ -144,6 +146,9 @@ class WindowControlHost : public ControlHost
     bool openFile(const QString& path, QString& error) override
     {
       discardChanges();
+      // no modal message box while remote control opens a file: it would block the
+      // answer (and a headless run) until someone clicks it; the reason goes back in 'error'
+      const QScopedValueRollback<bool> quiet(w->m_quietDialogs, true);
       w->fileOpen(path);
       if (!animation() || (w->currentFile != path && w->m_avmOrigin.value(w->currentFile) != path))
       {
@@ -243,7 +248,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_dingleFilter(QObject::tr("PinglyMotion animation (*.dingle)")),
   m_propFilter("Props (*.prp)"),
   m_untitledName(DingleSave::defaultName()),
-  m_precision(100),
+  m_precision(SliderScale::precision),
   m_controlAction(nullptr),
   m_controlIndicator(nullptr)
 {
@@ -699,9 +704,9 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
     }
     else
     {
-      ui->xRotationSlider->setRange((int)(limits.minimum.x() * m_precision), (int)(limits.maximum.x() * m_precision));
-      ui->yRotationSlider->setRange((int)(limits.minimum.y() * m_precision), (int)(limits.maximum.y() * m_precision));
-      ui->zRotationSlider->setRange((int)(limits.minimum.z() * m_precision), (int)(limits.maximum.z() * m_precision));
+      ui->xRotationSlider->setRange(SliderScale::toSlider(limits.minimum.x()), SliderScale::toSlider(limits.maximum.x()));
+      ui->yRotationSlider->setRange(SliderScale::toSlider(limits.minimum.y()), SliderScale::toSlider(limits.maximum.y()));
+      ui->zRotationSlider->setRange(SliderScale::toSlider(limits.minimum.z()), SliderScale::toSlider(limits.maximum.z()));
     }
 
     // re-enable signals
@@ -1388,13 +1393,13 @@ void PinglyMotionWindow::rotationValue()
   double y=ui->yRotationEdit->text().toDouble();
   double z=ui->zRotationEdit->text().toDouble();
 
-  double min_x = ui->xRotationSlider->minimum() / m_precision;
-  double min_y = ui->yRotationSlider->minimum() / m_precision;
-  double min_z = ui->zRotationSlider->minimum() / m_precision;
+  double min_x = SliderScale::toValue(ui->xRotationSlider->minimum());
+  double min_y = SliderScale::toValue(ui->yRotationSlider->minimum());
+  double min_z = SliderScale::toValue(ui->zRotationSlider->minimum());
 
-  double max_x = ui->xRotationSlider->maximum() / m_precision;
-  double max_y = ui->yRotationSlider->maximum() / m_precision;
-  double max_z = ui->zRotationSlider->maximum() / m_precision;
+  double max_x = SliderScale::toValue(ui->xRotationSlider->maximum());
+  double max_y = SliderScale::toValue(ui->yRotationSlider->maximum());
+  double max_z = SliderScale::toValue(ui->zRotationSlider->maximum());
 
   if(x<min_x) x=min_x;
   if(y<min_y) y=min_y;
@@ -1457,13 +1462,13 @@ void PinglyMotionWindow::positionValue()
   double y=ui->yPositionEdit->text().toDouble();
   double z=ui->zPositionEdit->text().toDouble();
 
-  double min_x = ui->xPositionSlider->minimum() / m_precision;
-  double min_y = ui->yPositionSlider->minimum() / m_precision;
-  double min_z = ui->zPositionSlider->minimum() / m_precision;
+  double min_x = SliderScale::toValue(ui->xPositionSlider->minimum());
+  double min_y = SliderScale::toValue(ui->yPositionSlider->minimum());
+  double min_z = SliderScale::toValue(ui->zPositionSlider->minimum());
 
-  double max_x = ui->xPositionSlider->maximum() / m_precision;
-  double max_y = ui->yPositionSlider->maximum() / m_precision;
-  double max_z = ui->zPositionSlider->maximum() / m_precision;
+  double max_x = SliderScale::toValue(ui->xPositionSlider->maximum());
+  double max_y = SliderScale::toValue(ui->yPositionSlider->maximum());
+  double max_z = SliderScale::toValue(ui->zPositionSlider->maximum());
 
   if(x<min_x) x=min_x;
   if(y<min_y) y=min_y;
@@ -1516,9 +1521,9 @@ void PinglyMotionWindow::updateInputs()
       }
       else
       {
-        ui->xRotationSlider->setRange((int)(xMin * m_precision), (int)(xMax * m_precision));
-        ui->yRotationSlider->setRange((int)(yMin * m_precision), (int)(yMax * m_precision));
-        ui->zRotationSlider->setRange((int)(zMin * m_precision), (int)(zMax * m_precision));
+        ui->xRotationSlider->setRange(SliderScale::toSlider(xMin), SliderScale::toSlider(xMax));
+        ui->yRotationSlider->setRange(SliderScale::toSlider(yMin), SliderScale::toSlider(yMax));
+        ui->zRotationSlider->setRange(SliderScale::toSlider(zMin), SliderScale::toSlider(zMax));
       }
 
       setX(x);
@@ -1898,6 +1903,7 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file)
     BVH::checkFile(file,&m_lastOpenError);
 
   if(m_lastOpenError.isEmpty()) return true;
+  if(m_quietDialogs) return false;
   QMessageBox::warning(this,tr("Load Animation File"),
                        tr("<qt>%1<br><br>%2</qt>").arg(file.toHtmlEscaped(),m_lastOpenError.toHtmlEscaped()));
   return false;
@@ -1914,7 +1920,7 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     addToOpenFiles(shownName);
     Animation* anim=new Animation(ui->animationView->getBVH(),file);
     animationIds.append(anim);
-    if(ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion)
+    if(!m_quietDialogs && (ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion))
       QMessageBox::information(this,tr("Open Animation File"),
                                tr("This file comes from a newer version of PinglyMotion.\nSome parts of it are not shown here.\nSaving it will remove those parts. Save under another name to keep the original."));
     calculateLongestRunningTime();
@@ -2580,17 +2586,17 @@ void PinglyMotionWindow::setZ(float z)
 
 float PinglyMotionWindow::getX()
 {
-  return ui->xRotationSlider->value() / m_precision;
+  return SliderScale::toValue(ui->xRotationSlider->value());
 }
 
 float PinglyMotionWindow::getY()
 {
-  return ui->yRotationSlider->value() / m_precision;
+  return SliderScale::toValue(ui->yRotationSlider->value());
 }
 
 float PinglyMotionWindow::getZ()
 {
-  return ui->zRotationSlider->value() / m_precision;
+  return SliderScale::toValue(ui->zRotationSlider->value());
 }
 
 void PinglyMotionWindow::setXPos(float x)
@@ -2610,17 +2616,17 @@ void PinglyMotionWindow::setZPos(float z)
 
 float PinglyMotionWindow::getXPos()
 {
-  return ui->xPositionSlider->value() / m_precision;
+  return SliderScale::toValue(ui->xPositionSlider->value());
 }
 
 float PinglyMotionWindow::getYPos()
 {
-  return ui->yPositionSlider->value() / m_precision;
+  return SliderScale::toValue(ui->yPositionSlider->value());
 }
 
 float PinglyMotionWindow::getZPos()
 {
-  return ui->zPositionSlider->value() / m_precision;
+  return SliderScale::toValue(ui->zPositionSlider->value());
 }
 
 void PinglyMotionWindow::enableProps(bool state)
@@ -2727,7 +2733,7 @@ void PinglyMotionWindow::setSliderValue(QSlider* slider,QLineEdit* edit,float va
 {
   slider->blockSignals(true);
   edit->blockSignals(true);
-  slider->setValue((int)(value * m_precision));
+  slider->setValue(SliderScale::toSlider(value));
   edit->setText(QString::number(value));
   edit->blockSignals(false);
   slider->blockSignals(false);

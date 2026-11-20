@@ -127,8 +127,10 @@ class BVH
 
     void startRead();
     BVHNode* finishRead(BVHNode* root,const QString& limFile);
-    // the joint tree from the new parser's data model
-    BVHNode* buildTree(const AnimFile::Animation& anim);
+    // the joint tree from the new parser's data model; storedPositions: a
+    // position key takes the stored position of its frame (.dingle), not the
+    // root's key frames interpolated (.avm, as the old program did, #62)
+    BVHNode* buildTree(const AnimFile::Animation& anim,bool storedPositions=false);
     BVHNode* copySkeletonNode(BVHNode* reference,BVHNode* loaded);
     BVHNode* findLoadedNode(BVHNode* loaded,const QString& name) const;
     BVHNode* positionNode;

@@ -176,6 +176,8 @@ private slots:
   void curvedEaseSurvivesExport();
   void storedEasingSurvivesExport_data();
   void storedEasingSurvivesExport();
+  void customCurveSurvivesExport_data();
+  void customCurveSurvivesExport();
 };
 
 void TestAnimExport::quantiser()
@@ -661,6 +663,76 @@ void TestAnimExport::storedEasingSurvivesExport()
     double maxAngle=0;
     for(const ReadKey& k : keys) maxAngle=std::max(maxAngle,2.0*std::asin(k.v[0])*180.0/M_PI);
     QVERIFY(maxAngle>end+0.5);
+  }
+}
+
+// A custom curve (issue #11), stored as a "bezier" curve on the start key, is
+// baked into the export the same way: same file and tolerance as above.
+void TestAnimExport::customCurveSurvivesExport_data()
+{
+  QTest::addColumn<QString>("points");
+  QTest::addColumn<double>("x1");
+  QTest::addColumn<double>("y1");
+  QTest::addColumn<double>("x2");
+  QTest::addColumn<double>("y2");
+  QTest::newRow("soft start") << "0.6,0,0.9,0.4" << 0.6 << 0.0 << 0.9 << 0.4;
+  QTest::newRow("past the pose") << "0.2,1.4,0.5,1.2" << 0.2 << 1.4 << 0.5 << 1.2;
+  QTest::newRow("back first") << "0.3,-0.4,0.7,1" << 0.3 << -0.4 << 0.7 << 1.0;
+}
+
+void TestAnimExport::customCurveSurvivesExport()
+{
+  QFETCH(QString,points);
+  QFETCH(double,x1);
+  QFETCH(double,y1);
+  QFETCH(double,x2);
+  QFETCH(double,y2);
+  const Easing::Bezier curve{x1,y1,x2,y2};
+
+  const int steps=24;
+  const double end=60.0;
+  const QByteArray text=QByteArray(
+    "{\"format\":\"dingle\",\"version\":1,"
+    "\"timing\":{\"frames\":26,\"frameTime\":0.0333333},"
+    "\"skeleton\":["
+    "{\"name\":\"hip\",\"kind\":\"root\",\"parent\":-1,\"offset\":[0,0,0],"
+      "\"channels\":[\"Xposition\",\"Yposition\",\"Zposition\",\"Zrotation\",\"Xrotation\",\"Yrotation\"]},"
+    "{\"name\":\"lShldr\",\"kind\":\"joint\",\"parent\":0,\"offset\":[1,0,0],"
+      "\"channels\":[\"Zrotation\",\"Xrotation\",\"Yrotation\"]}],"
+    "\"tracks\":["
+    "{\"joint\":0,\"rotation\":[{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false}],"
+     "\"position\":[{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false}]},"
+    "{\"joint\":1,\"rotation\":["
+      "{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false},"
+      "{\"frame\":1,\"values\":[0,0,0],\"easeIn\":true,\"easeOut\":true,\"curve\":{\"type\":\"bezier\",\"points\":[")
+    +points.toLatin1()+"]}},"
+      "{\"frame\":25,\"values\":[60,0,0],\"easeIn\":true,\"easeOut\":true}]}]}";
+  const Dingle::Result read=Dingle::parse(text);
+  QVERIFY2(read.ok(),qPrintable(read.error));
+  QCOMPARE(read.ignoredKeys,0);
+  QVERIFY(read.animation->joints[1].keys[1].customCurve.has_value());
+  const Dingle::Result reopened=Dingle::parse(Dingle::write(*read.animation));
+  QVERIFY(reopened.ok());
+  QVERIFY(Dingle::equal(*read.animation,*reopened.animation));
+
+  // the expected frames are the module's baked curve
+  const std::vector<double> baked=Easing::bakeCustom(curve,steps);
+  const AnimExport::Result r=AnimExport::write(*reopened.animation);
+  QVERIFY2(r.ok(),qPrintable(r.error));
+  bool good=false;
+  const ReadAnim ra=readAnim(r.bytes,&good);
+  QVERIFY(good);
+  QCOMPARE(int(ra.joints.size()),2);
+  const std::vector<ReadKey>& keys=ra.joints[1].rot;
+  QCOMPARE(int(keys.size()),steps+1);
+  const double tolerance=0.01;
+  for(int pos=0;pos<=steps;pos++)
+  {
+    const double expected=end*baked[size_t(pos)];
+    QCOMPARE(expected,Easing::customSegmentValue(curve,0.0,end,steps,pos));
+    const double degrees=2.0*std::asin(keys[size_t(pos)].v[0])*180.0/M_PI;
+    QVERIFY2(std::fabs(degrees-expected)<tolerance,
+             qPrintable(QString("frame %1: %2 against %3").arg(pos).arg(degrees).arg(expected)));
   }
 }
 

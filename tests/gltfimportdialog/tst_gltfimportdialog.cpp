@@ -6,6 +6,8 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QSettings>
+#include <QTemporaryDir>
 #include <QtTest>
 
 #include "animfile.h"
@@ -30,7 +32,18 @@ class TestGltfImportDialog : public QObject
 {
   Q_OBJECT
 
+  QTemporaryDir m_settingsFolder;
+
   private slots:
+    void initTestCase()
+    {
+      // the clean-up choices are remembered in the settings: never in the real ones
+      QCoreApplication::setOrganizationName("PinglyMotionTest");
+      QCoreApplication::setApplicationName("gltfimportdialog");
+      QSettings::setDefaultFormat(QSettings::IniFormat);
+      QSettings::setPath(QSettings::IniFormat,QSettings::UserScope,m_settingsFolder.path());
+    }
+
     void clipsAreListedByName()
     {
       const GltfImport::ReadResult read=GltfImport::read(readFile(PINGLYMOTION_MOTIONS "/walk.glb"));

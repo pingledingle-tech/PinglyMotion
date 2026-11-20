@@ -23,7 +23,19 @@
 #define CAMERA_H
 
 #include <QObject>
+#include <QMatrix4x4>
+#include <QPointF>
+#include <QRectF>
 #include <QVector3D>
+
+// A perspective projection, shifted so a point straight ahead of the camera
+// projects to "center" instead of the middle of "view" (the lens shift used
+// to keep the figure in the middle of the free area when a floating panel
+// covers part of the 3D view, docs/PANELS_PLAN.md, job P5). With
+// center == view.center() this is the same matrix as plain
+// QMatrix4x4::perspective(fovYDegrees, aspect, nearPlane, farPlane).
+QMatrix4x4 shiftedPerspective(float fovYDegrees,const QRectF& view,const QPointF& center,
+                               float nearPlane,float farPlane);
 
 class CameraPosition
 {
@@ -101,6 +113,10 @@ class Camera : public QObject
     QVector3D pivot() const;
     float xRotation() const;
     float yRotation() const;
+    // the whole camera (turn, pan and pivot), to put it back exactly after a
+    // picture taken from another side (screenshot views, issue #129)
+    CameraPosition state() const;
+    void setState(const CameraPosition& position);
 
   public slots:
     void storeCameraPosition(int num);

@@ -20,6 +20,8 @@
 #include <QVector>
 #include <QVector3D>
 
+#include <optional>
+
 class PMMesh
 {
   public:
@@ -36,10 +38,25 @@ class PMMesh
       QVector<quint16> indices;     // three per triangle
     };
 
-    bool load(const QString& fileName, QString* errorMessage = nullptr);
+    // the result of read(): the mesh, or why the file was refused
+    struct Result;
+    static Result read(const QString& fileName);
 
     QStringList joints;             // SL names (mPelvis, mHandIndex1Left ...)
     QVector<Part> parts;
+
+  private:
+    bool load(const QString& fileName, QString* errorMessage);
+};
+
+struct PMMesh::Result
+{
+  // set when the file was read; then error is empty
+  std::optional<PMMesh> mesh;
+  // why the file cannot be read, for the user
+  QString error;
+
+  bool ok() const { return mesh.has_value(); }
 };
 
 #endif

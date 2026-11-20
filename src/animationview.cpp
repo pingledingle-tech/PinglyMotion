@@ -25,6 +25,7 @@
 #include <GL/gl.h>
 #endif
 
+#include <QDockWidget>
 #include <QMatrix4x4>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
@@ -41,6 +42,7 @@
 #include "bvh.h"
 #include "constants.h"
 #include "jointgroups.h"
+#include "panellayout.h"
 #include "propmanager.h"
 #include "scene.h"
 #include "floor.h"
@@ -48,6 +50,7 @@
 
 #include "usersettings.h"
 #include "scenestate.h"
+#include "screenshotsheet.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation* anim)
  : QOpenGLWidget(parent),
@@ -189,11 +192,52 @@ void AnimationView::drawProps()
   }
 }
 
+// a floating panel that lies over the view, in widget-local pixels, found by
+// looking at the dock widgets of the top-level window (not by a method on
+// it, so this view needs no change there, and other panel jobs can run
+// beside this one without touching the same file; docs/PANELS_PLAN.md, P5)
+QList<QRect> AnimationView::coveringPanelRects() const
+{
+  QList<QRect> panels;
+  const QWidget* top=window();
+  if(!top) return panels;
+  const QRect viewRect(QPoint(0,0),size());
+  const QList<QDockWidget*> docks=top->findChildren<QDockWidget*>();
+  for(const QDockWidget* dock : docks)
+  {
+    if(!dock->isFloating() || dock->isHidden()) continue;
+    const QRect local(mapFromGlobal(dock->mapToGlobal(QPoint(0,0))),dock->frameGeometry().size());
+    if(local.intersects(viewRect)) panels << local;
+  }
+  return panels;
+}
+
+// keeps the figure about the same size on screen when the view's height
+// changes: the vertical field of view is fixed, so a shorter (or taller)
+// view would otherwise shrink (or grow) the figure (docs/PANELS_PLAN.md, P5,
+// section 5 "Camera centring")
+void AnimationView::keepFigureSizeOnHeightChange(int newHeight)
+{
+  if(newHeight>0 && m_lastViewHeight>0 && newHeight!=m_lastViewHeight)
+    camera()->zoom(float(newHeight)/float(m_lastViewHeight));
+  if(newHeight>0) m_lastViewHeight=newHeight;
+}
+
 void AnimationView::setProjection()
 {
   const QSize size=m_renderSize.isValid() ? m_renderSize : QSize(width(),height());
-  QMatrix4x4 perspective;
-  perspective.perspective(60.0f,float(size.width())/qMax(1,size.height()),1.0f,2000.0f);
+  const QRect viewRect(QPoint(0,0),size);
+  QPointF center=viewRect.center();
+  // renderImage() draws at a size of its own (exporting a picture): neither
+  // the panels nor the live widget's height apply to that image
+  if(!m_renderSize.isValid())
+  {
+    keepFigureSizeOnHeightChange(size.height());
+    const QList<QRect> panels=coveringPanelRects();
+    if(!panels.isEmpty())
+      center=PanelLayout::freeArea(viewRect,panels).center();
+  }
+  const QMatrix4x4 perspective=shiftedPerspective(60.0f,QRectF(viewRect),center,1.0f,2000.0f);
   SceneState::setProjection(perspective);
 }
 
@@ -219,11 +263,37 @@ QImage AnimationView::renderImage(int imageWidth,int imageHeight)
   format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
   QOpenGLFramebufferObject buffer(imageWidth,imageHeight,format);
 
+  // a control command may ask for this one picture from another side, without
+  // the Bento markers, and for where the joints are (src/screenshotsheet.h);
+  // the camera is put back exactly afterwards, so the window does not change
+  ScreenshotSheet::Request* request=ScreenshotSheet::current();
+  const CameraPosition savedCamera=camera()->state();
+  if(request && request->overrideCamera)
+    camera()->orbit(request->height,request->angle,request->distance);
+  m_hideMarkers=request && request->hideMarkers;
+
   m_renderSize=QSize(imageWidth,imageHeight);
   buffer.bind();
   paintGL();
   buffer.release();
+
+  if(request && request->wantMarks)
+  {
+    // the joints of the first animation, where they were drawn
+    QList<QPair<QString,QVector3D>> world;
+    for(auto it=m_jointPositions.constBegin();it!=m_jointPositions.constEnd();++it)
+    {
+      if(it.key()>=static_cast<unsigned int>(OpenGlIds::AnimationIncrement)) continue;
+      const QString name=selectionName(it.key());
+      if(!name.isEmpty()) world.append(qMakePair(name,it.value()));
+    }
+    request->marks=ScreenshotSheet::project(world,SceneState::projection()*m_viewMatrix,m_renderSize);
+  }
+  if(request) request->drawn=true;
+
   m_renderSize=QSize();
+  m_hideMarkers=false;
+  camera()->setState(savedCamera);
 
   const QImage image=buffer.toImage();
   doneCurrent();
@@ -1087,7 +1157,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
         else
           SceneState::setColor(0,1,0,1);
 
-        if(isBentoBone(motion->name()))
+        if(isBentoBone(motion->name()) && !m_hideMarkers)
         {
           SceneState::pushMatrix();
           const float size=isFaceBone(motion->name()) ? 0.2f : 0.4f;
@@ -1204,7 +1274,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       // wings) can be seen and clicked. Face balls only show while the head
       // or a face bone is selected, otherwise they would cover the face.
       const QString& boneName=motion->name();
-      if(isBentoBone(boneName) && jointShown && (!isFaceBone(boneName) || faceFocus()))
+      if(isBentoBone(boneName) && !m_hideMarkers && jointShown && (!isFaceBone(boneName) || faceFocus()))
       {
         SceneState::pushMatrix();
         const float size=isFaceBone(boneName) ? 0.2f : 0.4f;

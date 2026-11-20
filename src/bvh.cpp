@@ -139,6 +139,7 @@ BVHNode* BVH::copySkeletonNode(BVHNode* reference,BVHNode* loaded)
         node->setEaseIn(keys[k],data.easeIn());
         node->setEaseOut(keys[k],data.easeOut());
         node->setCurve(keys[k],data.curve());
+        node->setCustomCurve(keys[k],data.customCurve());
       }
     }
     // joints the file does not have get a neutral key frame at the start
@@ -327,6 +328,7 @@ BVHNode* BVH::finishRead(BVHNode* root,const QString& limFile)
       lastLoadedPositionNode->setEaseIn(frameNum,frameData.easeIn());
       lastLoadedPositionNode->setEaseOut(frameNum,frameData.easeOut());
       lastLoadedPositionNode->setCurve(frameNum,frameData.curve());
+      lastLoadedPositionNode->setCustomCurve(frameNum,frameData.customCurve());
     }
   }
 
@@ -334,7 +336,7 @@ BVHNode* BVH::finishRead(BVHNode* root,const QString& limFile)
 }
 
 // builds the joint tree from what the parser read (src/animfile.*)
-BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
+BVHNode* BVH::buildTree(const AnimFile::Animation& anim,bool storedPositions)
 {
   const bool avm=(anim.format==AnimFile::Format::Avm);
   QVector<BVHNode*> nodes(anim.joints.size(),nullptr);
@@ -392,6 +394,7 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
       if(key.easeIn) node->setEaseIn(key.frame,true);
       if(key.easeOut) node->setEaseOut(key.frame,true);
       if(key.curve) node->setCurve(key.frame,key.curve);
+      if(key.customCurve) node->setCustomCurve(key.frame,key.customCurve);
     }
   }
 
@@ -400,18 +403,23 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim)
 
   if(avm && anim.hasPositionKeys)
   {
-    // The position of a position key frame is taken from the root joint's key
-    // frames, interpolated between them when the position key is not also a
-    // root key frame - exactly like the old parser (open question in #62:
-    // the motion values of that frame could be used instead).
+    // In a .dingle the position of a position key frame is the stored position
+    // of that frame: the file has its own position track, so a position key
+    // without a root rotation key at the same frame keeps its value (#188).
+    // In an .avm it is taken from the root joint's key frames, interpolated
+    // between them when the position key is not also a root key frame -
+    // exactly like the old parser (open question in #62).
     for(const AnimFile::Key& key : anim.positionKeys)
-      lastLoadedPositionNode->addKeyframe(key.frame,root->frameData(key.frame).position(),QVector3D());
+      lastLoadedPositionNode->addKeyframe(key.frame,
+                                          storedPositions ? anim.position(0,key.frame) : root->frameData(key.frame).position(),
+                                          QVector3D());
     for(const AnimFile::Key& key : anim.positionKeys)
     {
       if(!lastLoadedPositionNode->isKeyframe(key.frame)) continue;
       if(key.easeIn) lastLoadedPositionNode->setEaseIn(key.frame,true);
       if(key.easeOut) lastLoadedPositionNode->setEaseOut(key.frame,true);
       if(key.curve) lastLoadedPositionNode->setCurve(key.frame,key.curve);
+      if(key.customCurve) lastLoadedPositionNode->setCustomCurve(key.frame,key.customCurve);
     }
   }
 
@@ -500,7 +508,7 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
     lastLoadedLoopOut=anim.loopOut;
   }
 
-  return finishRead(buildTree(anim),limFile);
+  return finishRead(buildTree(anim,dingle),limFile);
 }
 
 bool BVH::checkFile(const QString& file,QString* error)
@@ -709,6 +717,7 @@ namespace
       key.easeIn=node->keyframeDataByIndex(i).easeIn();
       key.easeOut=node->keyframeDataByIndex(i).easeOut();
       key.curve=node->keyframeDataByIndex(i).curve();
+      key.customCurve=node->keyframeDataByIndex(i).customCurve();
       keys.append(key);
     }
     return keys;

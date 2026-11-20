@@ -8,6 +8,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               animation.cpp
               animationmanager.cpp
               animationview.cpp
+              animcheck.cpp
               animfile.cpp
               avatarskin.cpp
               auroralink.cpp
@@ -32,17 +33,23 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               jointlist.cpp
               propfile.cpp
               retarget.cpp
+              importoptions.cpp
+              motioncleanup.cpp
               retargetdialog.cpp
+              retargetmapping.cpp
               main.cpp
               mesh.cpp
               meshmodel.cpp
               paneltitlebar.cpp
+              motiondescribe.cpp
+              posedescribe.cpp
               prop.cpp
               propmanager.cpp
               releaseinfo.cpp
               pinglymotion.cpp
               pinglymotionwindow.cpp
               scene.cpp
+              screenshotsheet.cpp
               settings.cpp
               skinrenderer.cpp
               theme.cpp

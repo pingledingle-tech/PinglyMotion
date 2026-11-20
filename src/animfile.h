@@ -66,9 +66,13 @@ namespace AnimFile
     // (the key's "curve", issue #53 step 3). Empty: easeOut of this key and
     // easeIn of the next key pick the choice, as always (Easing::segmentPreset).
     std::optional<Easing::Preset> curve;
+    // .dingle only: a custom curve of that segment (a "curve" of type "bezier",
+    // issue #11). When set it wins over `curve` and the ease flags.
+    std::optional<Easing::Bezier> customCurve;
 
     bool operator==(const Key& other) const
-    { return frame==other.frame && easeIn==other.easeIn && easeOut==other.easeOut && curve==other.curve; }
+    { return frame==other.frame && easeIn==other.easeIn && easeOut==other.easeOut && curve==other.curve &&
+             customCurve==other.customCurve; }
     bool operator!=(const Key& other) const { return !(*this==other); }
   };
 

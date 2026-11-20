@@ -14,7 +14,7 @@
 
 #include <cstdlib>
 
-#include <QCoreApplication>
+#include <QGuiApplication>
 #include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -85,7 +85,9 @@ QTemporaryDir* g_folder = nullptr;
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
   qInstallMessageHandler(quiet);
-  static QCoreApplication app(*argc, *argv);
+  // a GUI application without a screen: screenshot draws captions and labels with QPainter, which needs fonts
+  if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "offscreen");
+  static QGuiApplication app(*argc, *argv);
   UserSettings::setJointLimits(true);
   UserSettings::setProtectFirstFrame(true);
   g_bvh = new BVH();

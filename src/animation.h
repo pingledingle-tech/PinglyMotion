@@ -140,6 +140,9 @@ class Animation : public QObject
     // starts at the key plays with it; empty means the two switches decide
     void setCurve(BVHNode* node,int frameNum,const std::optional<Easing::Preset>& curve);
     std::optional<Easing::Preset> curve(BVHNode* node,int frameNum);
+    // the custom curve of a key frame (issue #11); wins over curve() when set
+    void setCustomCurve(BVHNode* node,int frameNum,const std::optional<Easing::Bezier>& curve);
+    std::optional<Easing::Bezier> customCurve(BVHNode* node,int frameNum);
 
     void copyKeyFrame(int jointNumber,int from,int to);
     void moveKeyFrame(int jointNumber,int from,int to,bool copy=false);

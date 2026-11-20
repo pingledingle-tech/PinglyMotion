@@ -1,3 +1,5 @@
+> Where this page differs from [UX_DECISIONS.md](UX_DECISIONS.md) (20 November 2026), that page wins.
+
 # Posing UX plan (#88)
 
 Agreed with the project owner on 18 November 2026. This page is the plan for the new posing interface: what it should look like, how the mouse and keys work, and the order of the work. Issue #88 tracks it.

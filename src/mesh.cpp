@@ -169,80 +169,102 @@ void Mesh::draw() const
   }
 }
 
+// Reads the small .obj subset the program's own data files use: "v x y z",
+// "vn x y z" and triangles "f v//n v//n v//n" (indices from 1). Other lines
+// (comments, groups, smoothing) are ignored. On any error the mesh is left
+// empty, the reason is kept for errorString() and logged once.
 bool Mesh::readFromFile(const QString& fileName)
 {
   m_drawArraysValid = false;
   m_revision++;
+  m_vertices.clear();
+  m_normals.clear();
+  m_triangleVertexIndices.clear();
+  m_triangleNormalIndices.clear();
+  m_errorString.clear();
+
+  auto fail = [this, &fileName](const QString& reason)
+  {
+    m_vertices.clear();
+    m_normals.clear();
+    m_triangleVertexIndices.clear();
+    m_triangleNormalIndices.clear();
+    m_errorString = reason;
+    qWarning("Mesh: cannot read %s: %s", qPrintable(fileName), qPrintable(reason));
+    return false;
+  };
+
   QFile file(fileName);
   if (!file.exists())
-  {
-    // TODO Error: File does not exist
-    return false;
-  }
-  if (!file.open(QIODevice::ReadOnly
-                 | QIODevice::Text))
-  {
-    // TODO Error: Unable to open file for reading
-    return false;
-  }
+    return fail(QStringLiteral("the file does not exist"));
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    return fail(QStringLiteral("the file cannot be opened"));
 
-  QString fileText = (QString)(file.readAll());
+  const QString fileText = QString::fromUtf8(file.readAll());
+  const QStringList lines = fileText.split('\n');
 
-  QStringList lines = fileText.split("\n", Qt::SkipEmptyParts);
+  // three numbers after the keyword, all must be valid
+  auto readThree = [](const QStringList& tokens, QList<float>& out)
+  {
+    if (tokens.size() != 4) return false;
+    float values[3];
+    for (int j = 0; j < 3; ++j)
+    {
+      bool ok = false;
+      values[j] = tokens[j + 1].toFloat(&ok);
+      if (!ok || !qIsFinite(values[j])) return false;
+    }
+    out << values[0] << values[1] << values[2];
+    return true;
+  };
 
   for (int i = 0; i < lines.size(); ++i)
   {
-    auto tokens = lines[i].split(" ", Qt::SkipEmptyParts);
+    const QStringList tokens = lines[i].simplified().split(' ', Qt::SkipEmptyParts);
+    if (tokens.isEmpty()) continue;
+    const QString line = QString::number(i + 1);
 
-    if (tokens[0] == "v")
+    if (tokens[0] == QLatin1String("v"))
     {
-      if (tokens.size() == 4)
+      if (!readThree(tokens, m_vertices))
+        return fail(QStringLiteral("line %1: a vertex needs three numbers").arg(line));
+    }
+    else if (tokens[0] == QLatin1String("vn"))
+    {
+      if (!readThree(tokens, m_normals))
+        return fail(QStringLiteral("line %1: a normal needs three numbers").arg(line));
+    }
+    else if (tokens[0] == QLatin1String("f"))
+    {
+      if (tokens.size() != 4)
+        return fail(QStringLiteral("line %1: a face needs three corners").arg(line));
+      // each corner is "vertex//normal"
+      const QString separator = QStringLiteral("//");
+      for (int j = 1; j < 4; ++j)
       {
-        // TODO Handle errors converting to float
-        m_vertices << tokens[1].toFloat() << tokens[2].toFloat() << tokens[3].toFloat();
-      }
-      else
-      {
-        // TODO Handle unexpected number of tokens
-        return false;
+        bool vertexOk = false;
+        bool normalOk = false;
+        const QStringList parts = tokens[j].split(separator);
+        const int vertex = parts.value(0).toInt(&vertexOk);
+        const int normal = parts.value(1).toInt(&normalOk);
+        if (parts.size() != 2 || !vertexOk || !normalOk || vertex < 1 || normal < 1)
+          return fail(QStringLiteral("line %1: a face corner must be vertex//normal with numbers from 1").arg(line));
+        m_triangleVertexIndices.append(vertex - 1);
+        m_triangleNormalIndices.append(normal - 1);
       }
     }
-    else if (tokens[0] == "vn")
-    {
-      if (tokens.size() == 4)
-      {
-        // TODO Handle errors converting to float
-        m_normals << tokens[1].toFloat() << tokens[2].toFloat() << tokens[3].toFloat();
-      }
-      else
-      {
-        // TODO Handle unexpected number of tokens
-        return false;
-      }
-    }
-    else if (tokens[0] == "f")
-    {
-      // Separates the vertex index on the left from the normal index on the right
-      QString separator = "//";
-      if (tokens.size() == 4)
-      {
-        // TODO Handle errors converting to float
-        for (int j = 1; j < 4; ++j)
-        {
-          m_triangleVertexIndices.append(tokens[j].section(separator, 0, 0).toFloat() - 1.0f);
-          m_triangleNormalIndices.append(tokens[j].section(separator, 1, 1).toFloat() - 1.0f);
-        }
-      }
-      else
-      {
-        // TODO Handle unexpected number of tokens
-        return false;
-      }
-    }
-    else
-    {
-      // TODO Handle unexpected tokens; ignore for now
-    }
+    // other lines (comments, groups, smoothing) are not needed
+  }
+
+  // every face must point at vertices and normals that exist
+  const int vertexCount = m_vertices.size() / 3;
+  const int normalCount = m_normals.size() / 3;
+  for (int i = 0; i < m_triangleVertexIndices.size(); ++i)
+  {
+    if (m_triangleVertexIndices[i] >= vertexCount)
+      return fail(QStringLiteral("a face uses vertex %1, but there are only %2").arg(m_triangleVertexIndices[i] + 1).arg(vertexCount));
+    if (m_triangleNormalIndices[i] >= normalCount)
+      return fail(QStringLiteral("a face uses normal %1, but there are only %2").arg(m_triangleNormalIndices[i] + 1).arg(normalCount));
   }
 
   return true;
