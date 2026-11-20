@@ -71,6 +71,16 @@ class ControlApi
     void setWorkFolder(const QString& folder) { m_workFolder = folder; }
     static QString defaultWorkFolder();
 
+    // find_reference and load_reference read the reference library (library/index.json, issue 19)
+    // and the index that tools/fetch_reference.py writes (downloaded_index.json). load_reference
+    // opens only files inside these two folders, never a path from the caller.
+    // Defaults: PINGLYMOTION_LIBRARY_FOLDER or library/ next to the program; and
+    // PINGLYMOTION_REFERENCE_FOLDER or PinglyMotion-reference in the home folder.
+    void setLibraryFolder(const QString& folder) { m_libraryFolder = folder; }
+    void setReferenceFolder(const QString& folder) { m_referenceFolder = folder; }
+    static QString defaultLibraryFolder();
+    static QString defaultReferenceFolder();
+
   private:
     typedef QJsonObject (ControlApi::*Handler)(const QJsonObject&);
 
@@ -98,6 +108,8 @@ class ControlApi
     QJsonObject describeMotion(const QJsonObject&);
     QJsonObject checkAnimation(const QJsonObject&);
     QJsonObject exportAnim(const QJsonObject&);
+    QJsonObject findReference(const QJsonObject&);
+    QJsonObject loadReference(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();
@@ -114,6 +126,8 @@ class ControlApi
 
     ControlHost* m_host;
     QString m_workFolder;
+    QString m_libraryFolder;
+    QString m_referenceFolder;
 };
 
 #endif
