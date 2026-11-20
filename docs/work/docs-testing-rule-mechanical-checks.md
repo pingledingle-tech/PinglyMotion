@@ -1,6 +1,6 @@
 Branch: docs/testing-rule-mechanical-checks
 Status: active
-Pull request: pending
+Pull request: #154
 Files:
 - CLAUDE.md
 - docs/TESTING_RULE_AUDIT.md
