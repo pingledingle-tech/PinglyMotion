@@ -15,6 +15,7 @@
 
 #include "animation.h"
 #include "bvhnode.h"
+#include "posedescribe.h"
 #include "usersettings.h"
 
 #include "controlapi.h"
@@ -61,6 +62,8 @@ namespace
      "{\"figure\":{\"type\":\"string\",\"enum\":[\"female\",\"male\"]}}", "[\"figure\"]"},
     {"set_camera", "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side.",
      "{\"view\":{\"type\":\"string\",\"enum\":[\"front\",\"back\",\"left\",\"right\",\"three_quarter\"]},\"angle\":{\"type\":\"number\",\"description\":\"Degrees around the figure, 0 = front. Used when there is no view\"},\"height\":{\"type\":\"number\",\"description\":\"Degrees above the floor, 2 to 80, default 10\"},\"distance\":{\"type\":\"number\",\"description\":\"Distance from the figure, 30 to 500, default 100\"},\"reset\":{\"type\":\"boolean\"}}", "[]"},
+    {"describe_pose", "Describes a frame (default: current frame) in words instead of a picture: world positions of the head, hands, feet and hip (inches and metres, each foot's height above the floor); plain sentences for notable things (bent knees or elbows, a hand above the head or behind the body, feet flat or lifted, weight on one foot, a lean, the head turned or tipped); the classic joints that moved from frame 1, in everyday names, with \"more\" or \"less\"; left/right symmetry of the arms and legs; and a one-line summary. Covers the classic joints only, not the Bento fingers, face, wings or tail.",
+     "{\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[]"},
   };
 
   QJsonArray vector(const QVector3D& v)
@@ -181,10 +184,11 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
     {"new_animation", &ControlApi::newAnimation}, {"open_file", &ControlApi::openFile},
     {"save_file", &ControlApi::saveFile}, {"screenshot", &ControlApi::screenshot},
     {"set_figure", &ControlApi::setFigure}, {"set_camera", &ControlApi::setCamera},
+    {"describe_pose", &ControlApi::describePose},
   };
 
   const QString command = request.value("command").toString();
-  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera.");
+  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose.");
   if (!m_host->animation()) return fail("No animation is open.");
 
   for (const auto& entry : table)
@@ -569,6 +573,13 @@ QJsonObject ControlApi::setFigure(const QJsonObject& request)
   QJsonObject answer = ok();
   answer["figure"] = m_host->male() ? "male" : "female";
   return answer;
+}
+
+QJsonObject ControlApi::describePose(const QJsonObject& request)
+{
+  QString error;
+  if (!applyFrame(request, error)) return fail(error);
+  return PoseDescribe::describe(m_host->animation(), m_host->animation()->getFrame());
 }
 
 QJsonObject ControlApi::setCamera(const QJsonObject& request)
