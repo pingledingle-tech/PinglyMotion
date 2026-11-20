@@ -57,8 +57,10 @@
 namespace FootLock
 {
   // all thresholds in one place (metres and seconds; converted with metersPerUnit)
-  constexpr double CONTACT_HEIGHT=0.05;    // ankle above the floor, m
-  constexpr double CONTACT_SPEED=0.2;      // ankle speed, m/s
+  // ankle above the floor, m: 2 inches, the contact height of describe_motion
+  // and check_animation (src/motiondescribe.cpp, src/animcheck.cpp)
+  constexpr double CONTACT_HEIGHT=2.0*0.0254;
+  constexpr double CONTACT_SPEED=0.2;      // ankle speed, m/s (below check_animation's 0.5 m/s slide)
   constexpr double METERS_PER_UNIT=0.0254; // Second Life BVH files are in inches
   constexpr int MIN_CONTACT_FRAMES=3;
   constexpr int DEFAULT_BLEND_FRAMES=4;    // on each side of a contact
