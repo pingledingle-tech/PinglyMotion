@@ -31,12 +31,10 @@ def hip(frame, y, x=0, z=0):
 
 
 def opening(case):
-    """The commands that open the start file of a case. The get_pose is a workaround: right after
-    open_file, set_pose on frame 2 is refused as "Frame 1 is protected" until another frame has
-    been read (found while writing this set, see docs/DEV.md)."""
+    """The commands that open the start file of a case."""
     if not case.get("start"):
         return []
-    return [("open_file", {"path": case["start"]}), ("get_pose", {"frame": 3})]
+    return [("open_file", {"path": case["start"]})]
 
 
 NO_ERRORS = {"type": "check_animation"}
@@ -85,9 +83,8 @@ CASES = [
         "reference": frames(31) + [
             key(2, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
             key(16, rShldr=(0, 0, -70), rForeArm=(0, 90, 0)),
-            # the default loop ends one frame before the last (frame 30 of 31): the key that closes
-            # the loop goes there, and the last frame keeps it
-            key(30, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
+            # the default loop ends on the last frame (issue 189): the last key equal to the first
+            # closes the loop
             key(31, rShldr=(0, 0, -70), rForeArm=(0, 40, 0)),
         ],
         "checks": [

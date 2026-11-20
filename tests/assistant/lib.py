@@ -276,17 +276,10 @@ def run_checks(app, checks):
     return failures, skipped
 
 
-def refresh(app):
-    """After open_file, frame 2 shows the pose of frame 1 (in get_pose and describe_pose) until
-    some other frame has been read once (found while writing this set, see docs/DEV.md)."""
-    app.ask("get_pose", frame=3, all=True)
-
-
 def check_saved(app, name, checks):
     """Open the saved file again, as the user would, and run the checks on it."""
     app.reset()
     opened = app.run("open_file", path=name)
     if not opened.get("ok"):
         return ["the saved file %s does not open: %s" % (name, opened.get("error"))], []
-    refresh(app)
     return run_checks(app, checks)

@@ -262,8 +262,18 @@ bool ControlApi::applyFrame(const QJsonObject& request, QString& error)
     error = QString("Frame must be a whole number from 1 to %1.").arg(animation->getNumberOfFrames());
     return false;
   }
-  m_host->goToFrame(frame - 1);
+  goToFrame(frame - 1);
   return true;
+}
+
+// The window goes to a frame by moving its frame slider. Right after a file is opened
+// the slider can still hold the old animation's frame (issue #187): setting the same
+// value again does nothing and the animation stays where it is, so set it directly.
+void ControlApi::goToFrame(int frame)
+{
+  m_host->goToFrame(frame);
+  Animation* animation = m_host->animation();
+  if (animation->getFrame() != frame) animation->setFrame(frame);
 }
 
 bool ControlApi::checkNotProtected(QString& error)
@@ -702,7 +712,7 @@ QJsonObject ControlApi::screenshotSheet(const QJsonObject& request)
     const int trailWidth = 160;
     for (int sample : trailFrames)
     {
-      m_host->goToFrame(sample);
+      goToFrame(sample);
       ScreenshotSheet::Request dot = shot;
       dot.hideMarkers = true;
       dot.wantMarks = true;
@@ -711,13 +721,13 @@ QJsonObject ControlApi::screenshotSheet(const QJsonObject& request)
       dots << dot.marks;
     }
 
-    if (animation->getFrame() != frame - 1) m_host->goToFrame(frame - 1);
+    if (animation->getFrame() != frame - 1) goToFrame(frame - 1);
     QImage image;
     {
       ScreenshotSheet::Scope scope(&shot);
       image = m_host->screenshot(width, height);
     }
-    if (image.isNull()) { if (animation->getFrame() != startFrame) m_host->goToFrame(startFrame); return fail("The 3D view could not be captured."); }
+    if (image.isNull()) { if (animation->getFrame() != startFrame) goToFrame(startFrame); return fail("The 3D view could not be captured."); }
     image = image.convertToFormat(QImage::Format_RGB32);
     if (image.size() != QSize(width, height)) image = image.scaled(width, height);
 
@@ -743,7 +753,7 @@ QJsonObject ControlApi::screenshotSheet(const QJsonObject& request)
     images << image;
     cellList << cell;
   }
-  if (animation->getFrame() != startFrame) m_host->goToFrame(startFrame);
+  if (animation->getFrame() != startFrame) goToFrame(startFrame);
 
   QJsonObject answer = pngAnswer(grid ? ScreenshotSheet::grid(images, columns) : images.first());
   answer["columns"] = columns;

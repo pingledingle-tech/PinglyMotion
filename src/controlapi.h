@@ -103,6 +103,8 @@ class ControlApi
     QStringList jointNames();
     // goes to "frame" when the request has one; false and an error if it is out of range
     bool applyFrame(const QJsonObject& request, QString& error);
+    // goes to a frame (0-based) and makes sure the animation is on it
+    void goToFrame(int frame);
     // the first frame is the reference pose; PinglyMotion refuses edits there unless the option is off
     bool checkNotProtected(QString& error);
     QJsonObject fail(const QString& message);

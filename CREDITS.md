@@ -24,6 +24,7 @@ Where a licence does not require a credit (CC0, ideas only), we give one anyway.
 | Ruth2 v4 (RuthAndRoth; Shin Ingen, Ada Radius and many contributors) | The default avatar body, converted to `ruth2.pmm` | Mesh AGPL 3 or later; UV map CC BY Linden Lab; rig parts CC BY 3.0 Machinimatrix.org. Full notice: `bin/data/character/ruth2/` | https://github.com/RuthAndRoth/Ruth2 |
 | Roth2 v2 (RuthAndRoth; Shin Ingen, Ada Radius and many contributors) | The male figure, converted to `roth2.pmm` | Body parts AGPL 3 or later; head and UV map CC BY Linden Lab; rig parts CC BY 3.0 Machinimatrix.org. The non-commercial nails are not used. Full notice: `bin/data/character/roth2/` | https://github.com/RuthAndRoth/Roth2 |
 | "Maxine" from the Max Avatar Project (Ada Radius and the RuthAndRoth community) | The optional second body (Options > Body > Max), converted to `maxine.pmm` | CC BY 4.0. Full notice: `bin/data/character/max/` | https://github.com/RuthAndRoth/Max |
+| QAvimator toolbar icons and start files (`src/icons/`, `bin/data/*.bvh`, `.avm`, `SL.lim`, `cube.obj`, `torus.obj`, `tools/legacy/`) | The toolbar pictures and the classic skeleton and start files carried over from QAvimator | GPL 2 or later (QAvimator) | https://bitbucket.org/QAvimator_Team/qavimator |
 | Linden Lab | The Second Life skeleton and the UV map that Ruth2 and Roth2 build on | See the Ruth2 and Roth2 notices | https://secondlife.com |
 | Machinimatrix.org | The rig parts that Ruth2 and Roth2 build on | CC BY 3.0 | https://www.machinimatrix.org |
 
@@ -51,13 +52,20 @@ No code was taken from these; they showed us what is worth building.
 
 ## Research
 
-Ideas from these papers were re-implemented from scratch, in our own code, for the assistant commands (`describe_pose`, `describe_motion`, `check_animation`, labelled screenshots). Their own code, where it has a non-commercial licence, was not used.
+Only ideas were taken from these papers and projects (no code copied); they were re-implemented from scratch, in our own code, for the assistant commands (`describe_pose`, `describe_motion`, `check_animation`, labelled screenshots). Their own code, where it has a non-commercial licence, was not used.
 
 | Work | What we use the idea for | Link |
 |---|---|---|
 | PoseScript: Linking 3D Human Poses and Natural Language | `describe_pose`: rule-made sentences from joint geometry | https://arxiv.org/abs/2210.11795 |
 | MotionScript: Natural Language Descriptions for Human Motions | `describe_motion`: a motion in words per joint | https://arxiv.org/abs/2312.12634 |
 | Set-of-Mark Prompting | Labelled joint markers in screenshots so an assistant can tell them apart | https://arxiv.org/abs/2310.11441 |
+| PoseFix | Ideas for the AI-help design: describing a pose and its change in words | https://arxiv.org/abs/2309.08480 |
+| FreeMotion | Ideas for the AI-help design: how a language model can reason about motion | https://arxiv.org/abs/2406.10740 |
+| Encoder-Free Human Motion Understanding via Structured Motion Descriptions | Ideas for the AI-help design: a motion as structured text for a language model | https://arxiv.org/abs/2604.21668 |
+| How Much Do Large Language Models Know about Human Motion? | Ideas for the AI-help design: what a language model knows about human motion | https://arxiv.org/abs/2505.21531 |
+| Can Vision Language Models Judge Action Quality? | Ideas for the AI-help design: judging movement quality with a language model, and why exact numbers back up pictures | https://arxiv.org/abs/2604.08294 |
+| Kimodo benchmark metric definitions (NVIDIA) | Ideas for the AI-help design: metric definitions such as foot skate and contact consistency | https://research.nvidia.com/labs/sil/projects/kimodo/docs/benchmark/metrics.html |
+| Blender MCP (ahujasid) | The idea of showing the assistant a strip of frames (`views`, frame strip screenshots). No code used | https://github.com/ahujasid/blender-mcp |
 | Kimodo (NVIDIA): kinematic motion diffusion model | The joint map for its SOMA 77 skeleton (`src/retarget.*`) and the optional helper | https://github.com/nv-tlabs/kimodo, https://arxiv.org/abs/2603.15546 |
 | Research reports (text to motion, video to motion) | The studies in `docs/research/` read and compared many more models and papers (MDM, MoMask, HY-Motion, WHAM, GVHMR, MediaPipe and others); each is credited and linked there | `docs/research/` |
 
@@ -71,6 +79,8 @@ Ideas from these papers were re-implemented from scratch, in our own code, for t
 | Blender | Round-trip and comparison tools in `tools/blender/` | GPL | https://www.blender.org |
 | Mixamo (Adobe), Rigify, Avastar (Machinimatrix) | Named in `docs/BLENDER.md` as routes for users; not bundled | Their own terms | see `docs/BLENDER.md` |
 | Model Context Protocol and MCPB extension format (Anthropic and the MCP community) | The MCP server and one-click extension in `tools/mcp/` | MIT / Apache 2.0 | https://modelcontextprotocol.io |
+| NumPy | Builds the Max body mesh (`tools/make_max_mesh.py`); a tool for developers, not shipped | BSD 3-Clause | https://numpy.org |
+| Blender as a Python module (`bpy`) and uv (Astral) | Run the Blender round trip in CI (`.github/workflows/blender.yml`) | GPL (bpy); MIT or Apache 2.0 (uv) | https://pypi.org/project/bpy/, https://github.com/astral-sh/uv |
 | Node.js and Python | Run the MCP server and the project's tools | MIT / PSF | https://nodejs.org, https://www.python.org |
 
 ## Build and test infrastructure
@@ -80,6 +90,8 @@ Ideas from these papers were re-implemented from scratch, in our own code, for t
 | GitHub Actions: `actions/checkout`, `cache`, `upload-artifact`, `download-artifact`, `attest-build-provenance`, `dependency-review-action` | Builds, tests, releases and checks | MIT | https://github.com/actions |
 | `github/codeql-action` | Code scanning | MIT | https://github.com/github/codeql-action |
 | `jurplel/install-qt-action` | Installs Qt in the builds | MIT | https://github.com/jurplel/install-qt-action |
+| aqtinstall (miurahr) | Installs Qt behind `install-qt-action` in the builds | MIT | https://github.com/miurahr/aqtinstall |
+| Ubuntu packages `qt6-base-dev`, ccache, Xvfb | Linux builds and screenshot tests | LGPL 3 / GPL, GPL 3, X11 | https://packages.ubuntu.com |
 | libFuzzer and the sanitizers (LLVM, GCC) | Fuzzing and the sanitizer build | Apache 2.0 with LLVM exception | https://llvm.org |
 
 ## Standards and documentation

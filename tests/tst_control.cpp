@@ -39,7 +39,13 @@ class FakeHost : public ControlHost
     explicit FakeHost(Animation* animation) : m_animation(animation) {}
 
     Animation* animation() override { return m_animation; }
-    void goToFrame(int frame) override { m_animation->setFrame(frame); }
+    void goToFrame(int frame) override
+    {
+      // like the window's frame slider: setting the value it already has does nothing
+      if (staleSlider >= 0) { if (frame == staleSlider) return; staleSlider = frame; }
+      m_animation->setFrame(frame);
+    }
+    int staleSlider = -1;
     void refresh() override { refreshed++; }
     void selectJoint(const QString& name) override { selected = name; }
     // a grey picture; for a screenshot request it also finds the joints on the
@@ -129,6 +135,7 @@ class ControlTest : public QObject
     void stateShowsTheAnimation();
     void jointsHaveLimits();
     void setPoseRotatesAndKeys();
+    void frameIsReachedWhenTheSliderIsStale();
     void framesStartAtOne();
     void anglesAreClampedToTheLimits();
     void badPoseChangesNothing();
@@ -321,6 +328,36 @@ void ControlTest::jointsHaveLimits()
     if (joint["name"].toString() == "lForeArm") foundElbow = true;
   }
   QVERIFY(foundElbow);
+}
+
+// issue #187: right after open_file the window's slider still holds the old
+// animation's frame (frame 2) while the new animation is on frame 1; going to
+// frame 2 must still reach it, for set_pose, get_pose and describe_pose
+void ControlTest::frameIsReachedWhenTheSliderIsStale()
+{
+  BVHNode* shoulder = findNodeOrNull(m_animation, "lShldr");
+  QVERIFY(shoulder);
+  m_animation->setFrame(0);
+  m_host->staleSlider = 1;
+
+  const QJsonObject answer = run(R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,40]}})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(m_animation->getFrame(), 1);
+  QVERIFY(shoulder->isKeyframe(1));
+  QVERIFY(!shoulder->isKeyframe(0) || qAbs(shoulder->frameData(0).rotation().z()) < 0.01);
+
+  m_animation->setFrame(0);
+  m_host->staleSlider = 1;
+  const QJsonObject pose = run(R"({"command":"get_pose","frame":2})");
+  QVERIFY(pose["ok"].toBool());
+  QCOMPARE(pose["frame"].toInt(), 2);
+  QCOMPARE(pose["joints"].toObject()["lShldr"].toArray().at(2).toDouble(), 40.0);
+
+  m_animation->setFrame(0);
+  m_host->staleSlider = 1;
+  const QJsonObject described = run(R"({"command":"describe_pose","frame":2})");
+  QVERIFY(described["ok"].toBool());
+  QCOMPARE(described["frame"].toInt(), 2);
 }
 
 void ControlTest::setPoseRotatesAndKeys()
