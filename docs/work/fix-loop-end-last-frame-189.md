@@ -1,6 +1,6 @@
 Branch: fix/loop-end-last-frame-189
 Status: active
-Pull request: pending
+Pull request: #191
 Files:
 - src/animation.cpp
 - tests/tst_playback.cpp
