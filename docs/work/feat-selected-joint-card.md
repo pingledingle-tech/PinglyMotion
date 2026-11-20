@@ -1,6 +1,6 @@
 Branch: feat/selected-joint-card
 Status: active
-Pull request: pending
+Pull request: #148
 Files:
 - src/jointcard.*
 - src/jointturn.*
