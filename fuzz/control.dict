@@ -20,6 +20,7 @@
 "\"set_camera\""
 "\"describe_pose\""
 "\"describe_motion\""
+"\"check_animation\""
 "\"from\""
 "\"to\""
 "\"frame\""
