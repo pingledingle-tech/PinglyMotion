@@ -1,6 +1,6 @@
 Branch: docs/reference-library-plan
-Status: active
-Pull request: pending
+Status: done
+Pull request: #169
 Files:
 - docs/REFERENCE_LIBRARY_PLAN.md
 
