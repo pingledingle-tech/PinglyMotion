@@ -1,6 +1,6 @@
 Branch: docs/teaching-texts-inventory
 Status: active
-Pull request: pending
+Pull request: #165
 Files:
 - docs/TEACHING_TEXTS.md
 - tools/extract_texts.py
