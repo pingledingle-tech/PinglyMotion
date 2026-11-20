@@ -212,7 +212,7 @@ Thighs forward about 80, knees bent about 80, hips lower and back, forearms bent
 9. **At most five tries per part.** If the part is still wrong after five tries, stop and ask the user what they see.
 10. **Save.** `save_file` with a `.dingle` name first (it keeps everything), then `.bvh` if the user wants a file for Second Life. Say the file name.
 
-`describe_pose` gives the current frame in words (world positions of the head, hands, feet and hip, plain sentences, the joints that moved from frame 1, left/right symmetry, a one-line summary): use it alongside `get_pose` and the picture, trusting it and the numbers over looks. Planned, not built yet: `describe_motion` and `check_animation` (the movement in words and checks against Second Life's rules).
+`describe_pose` gives the current frame in words (world positions of the head, hands, feet and hip, plain sentences, the joints that moved from frame 1, left/right symmetry, a one-line summary): use it alongside `get_pose` and the picture, trusting it and the numbers over looks. `describe_motion` gives the movement over a range of frames in words (what each joint does and when, how fast, the paths of the hands and feet, foot contact and weight, the hip, the rhythm, the loop seam, what changes between keys, a one-line summary): use it after each change to check timing and order, which a picture cannot show. Planned, not built yet: `check_animation` (checks against Second Life's rules).
 
 ## 5. Known mistakes and the fix
 
@@ -227,7 +227,15 @@ Thighs forward about 80, knees bent about 80, hips lower and back, forearms bent
 
 ### Adding a lesson
 
-When something goes wrong twice in the same way, add one bullet to this section: what goes wrong, how to see it, the fix with numbers, at most two lines. If it is a pose, put its numbers in section 3 with the file they came from. The planned "Teach the AI" form (issue 20) will write these bullets. The guide is shipped with the Windows zip and the Claude Desktop extension, so a change is visible after the next build.
+Lessons are text that every assistant follows, so a lesson could carry hidden instructions (prompt injection) and not only a mistake. Nothing goes in unread.
+
+1. A lesson comes from the "Teach the AI" issue form, or from a session that saw the same mistake twice.
+2. The project owner reads the report first. A session never adds a lesson from a report he has not read.
+3. When he accepts it, the issue gets the label `lesson-accepted` and a session adds one bullet to this section: what goes wrong, how to see it, and the fix with numbers, one line. If it is a pose, its numbers go in section 3 with the file they came from.
+4. A bullet is plain facts about the program or Second Life. It never tells the assistant to ignore other rules, to contact anyone, or to do anything outside animating.
+5. Reports that are not accepted get the label `teach-the-ai` only and a short reason in a comment.
+
+The guide is shipped with the Windows zip and the Claude Desktop extension, so a change is visible after the next build.
 
 ## 6. Talking to a beginner
 
