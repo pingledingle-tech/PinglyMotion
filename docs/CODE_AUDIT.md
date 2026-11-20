@@ -50,7 +50,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low; small arithmetic change, but it changes values that are stored in animations.
 - **Visible change:** Yes, slightly: slider values keep their decimals. Mechanically checkable (exact expected number), so it merges with a test under the standing permission.
 - **Model:** light. **Size:** S.
-- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
+- **Done:** pull request #217 (`src/sliderscale.h`, test `tests/sliderscale`); started by the project owner while #156 and #183 were still open, with a few-line overlap.
 
 ### C2. One static core library for the program, the tests and the fuzzers (#193)
 
@@ -204,7 +204,7 @@ One issue per task, label `cleanup`. A job starts only when the project owner sa
 
 | Task | Issue | Size | Wait for active job |
 |---|---|---|---|
-| C1 Rotation and position sliders lose their decimals (integer division) | #192 | S | yes |
+| C1 Rotation and position sliders lose their decimals (integer division) (done, pull request #217) | #192 | S | yes |
 | C2 One static core library for the program, the tests and the fuzzers | #193 | M | yes |
 | C3 Remove dead code left from QAvimator and earlier refactors | #194 | S | yes |
 | C4 Zero compiler warnings with -Wall -Wextra -Wshadow | #195 | S | yes |
