@@ -214,16 +214,7 @@ namespace
 
   // ------------------------------------------------------------ what is sampled
 
-  struct Samples
-  {
-    int from = 0, to = 0, count = 0;   // 0-based frames, count = to - from + 1
-    double frameTime = 0;
-    QStringList joints;                                   // classic joints present
-    QHash<QString, std::vector<QVector3D>> rotation;      // per joint, unwrapped per axis
-    QHash<QString, std::vector<QQuaternion>> orientation; // per joint, the same turn as one rotation
-    QHash<QString, std::vector<QVector3D>> position;      // hip, head, hands, feet (inches)
-    std::vector<QVector3D> hipForward, hipLeft;           // the hip's own axes, flat on the floor
-  };
+  using MotionDescribe::Samples;
 
   const QStringList POINTS = {"hip", "head", "lHand", "rHand", "lFoot", "rFoot"};
 
@@ -283,7 +274,7 @@ namespace
     for (int i = 0; i < node->numChildren(); i++) place(cache, node->child(i), m, frame, out);
   }
 
-  Samples sample(Animation* animation, int from, int to)
+  Samples sampleFrames(Animation* animation, int from, int to)
   {
     Samples s;
     s.from = from;
@@ -943,7 +934,7 @@ QJsonObject MotionDescribe::describe(Animation* animation, int from, int to)
     if (!PoseDescribe::findJoint(animation, name))
       return QJsonObject{{"ok", false}, {"error", QString("The skeleton has no joint %1, so the motion cannot be described.").arg(name)}};
 
-  const Samples s = sample(animation, from, to);
+  const Samples s = sampleFrames(animation, from, to);
 
   QStringList still;
   const std::vector<JointMotion> motions = jointMotions(s, still);
@@ -1006,4 +997,15 @@ QJsonObject MotionDescribe::describe(Animation* animation, int from, int to)
   parts << seamLine;
   answer["summary"] = capitalize(parts.join("; ")) + ".";
   return answer;
+}
+
+MotionDescribe::Samples MotionDescribe::sample(Animation* animation, int from, int to)
+{
+  return sampleFrames(animation, from, to);
+}
+
+QJsonObject MotionDescribe::loopSeam(Animation* animation)
+{
+  QString line;
+  return seamJson(animation, line);
 }

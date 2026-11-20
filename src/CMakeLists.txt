@@ -8,6 +8,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               animation.cpp
               animationmanager.cpp
               animationview.cpp
+              animcheck.cpp
               animfile.cpp
               avatarskin.cpp
               auroralink.cpp
