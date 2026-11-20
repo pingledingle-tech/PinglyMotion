@@ -1,5 +1,5 @@
 Branch: job/smpl22-map
-Status: active
+Status: done
 Pull request: #216
 Files:
 - src/retarget.*
