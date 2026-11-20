@@ -1,6 +1,6 @@
 Branch: docs/roadmap-technical-line
-Status: active
-Pull request: pending
+Status: done
+Pull request: #153
 Files:
 - docs/ROADMAP.md
 

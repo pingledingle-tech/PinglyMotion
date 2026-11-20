@@ -22,7 +22,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 | 6 | #11 | Per-key curve and easing editor, then #53 easing presets | Visible, so the owner tests on Windows | none | Sonnet |
 | 7 | #14 | UX revision of poser and timeline | Visible, larger; discuss before building | #1 | Opus |
 
-Visible changes (steps 6 and 7, and #40) need the project owner's Windows test before merge. Steps 1 to 5 are technical jobs under the standing permission in `CLAUDE.md`.
+Visible changes (steps 6 and 7, and #40) need the project owner's Windows test before merge. Steps 1 to 5 were technical jobs under the standing permission in `CLAUDE.md`, except their menus: the `.anim` export and import menus (#110, #111), the BVH menu (#116) and the glTF import menu (#117) were visible, and the project owner tested them on Windows before they were merged. The BVH joint-mapping dialog (step 2) is still open and will need that test too.
 
 ## What can run in parallel
 
