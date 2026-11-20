@@ -93,6 +93,7 @@ class ControlApi
     QJsonObject setFigure(const QJsonObject&);
     QJsonObject setCamera(const QJsonObject&);
     QJsonObject describePose(const QJsonObject&);
+    QJsonObject describeMotion(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();
