@@ -1,6 +1,6 @@
 Branch: test/edge-cases
-Status: active
-Pull request: pending
+Status: done
+Pull request: #166
 Files:
 - tools/gen_edge_motion.py
 - tests/test_gen_edge_motion.py
@@ -9,6 +9,7 @@ Files:
 - tests/animfile/CMakeLists.txt
 - fuzz/corpus/dingle/**
 - fuzz/corpus/anim/**
+- .github/workflows/build.yml
 - docs/DEV.md
 
 ## What
