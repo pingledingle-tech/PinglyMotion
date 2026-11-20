@@ -728,12 +728,17 @@ void Animation::addKeyFrame(BVHNode* joint)
 {
   // a key frame that is set again keeps its stored easing choice (issue #53):
   // opening a file sets frame 0 of every joint again
+  // (its ease switches too: they hold the choice of the four old-style tiles, so
+  // a file opened and saved again must not lose them at frame 0)
+  const bool existing=joint->isKeyframe(frame);
+  const bool easeIn=existing ? joint->easeIn(frame) : UserSettings::easeIn();
+  const bool easeOut=existing ? joint->easeOut(frame) : UserSettings::easeOut();
   const std::optional<Easing::Preset> curve=joint->curve(frame);
   const std::optional<Easing::Bezier> customCurve=joint->customCurve(frame);
   joint->addKeyframe(frame,getPosition(),getRotation(joint));
 
-  setEaseIn(joint,frame,UserSettings::easeIn());
-  setEaseOut(joint,frame,UserSettings::easeOut());
+  setEaseIn(joint,frame,easeIn);
+  setEaseOut(joint,frame,easeOut);
   joint->setCurve(frame,curve);
   joint->setCustomCurve(frame,customCurve);
 

@@ -52,6 +52,8 @@ class ControlHost
     virtual void resetCamera() = 0;
     // current camera as height, angle, distance
     virtual QVector3D camera() = 0;
+    // loop points as frame numbers (first frame is 1), already checked by the command
+    virtual void setLoopPoints(int loopIn, int loopOut);
 };
 
 class ControlApi
@@ -91,6 +93,7 @@ class ControlApi
     QJsonObject setPosition(const QJsonObject&);
     QJsonObject deleteKey(const QJsonObject&);
     QJsonObject keys(const QJsonObject&);
+    QJsonObject setLoop(const QJsonObject&);
     QJsonObject setFrame(const QJsonObject&);
     QJsonObject setFrameCount(const QJsonObject&);
     QJsonObject setFps(const QJsonObject&);

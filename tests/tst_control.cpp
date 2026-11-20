@@ -150,6 +150,11 @@ class ControlTest : public QObject
     void saveFailureIsReported();
     void filesStayInWorkFolder();
     void openFileAcceptsDingle();
+    void easingIsSetAndRead();
+    void unknownEasingMakesNoKey();
+    void everyEasingKnownToTheProgramWorks();
+    void loopPointsAreSetAndRoundTrip();
+    void badLoopPointsChangeNothing();
     void unsavedChangesAreKept();
     void screenshotIsPng();
     void screenshotWithoutOptionsIsUnchanged();
@@ -477,6 +482,158 @@ void ControlTest::deleteKeyAndKeys()
   QVERIFY(run(R"({"command":"delete_key","joint":"lForeArm","frame":8})")["ok"].toBool());
   QVERIFY(!elbow->isKeyframe(7));
   QVERIFY(!run(R"({"command":"delete_key","joint":"lForeArm","frame":8})")["ok"].toBool());
+}
+
+// Job A of docs/AI_HELP_PLAN.md: easing on set_pose, read back with keys
+void ControlTest::easingIsSetAndRead()
+{
+  QVERIFY(run(R"({"command":"set_frame_count","frames":61})")["ok"].toBool());
+  QJsonObject answer = run(R"({"command":"set_pose","frame":31,"easing":"ease-out-overshoot","joints":{"lForeArm":[0,-45,0],"rShldr":[0,0,30]}})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["easing"].toString(), QString("ease-out-overshoot"));
+  // a key made without easing gets the default
+  QVERIFY(run(R"({"command":"set_pose","frame":41,"joints":{"lForeArm":[0,-10,0]}})")["ok"].toBool());
+
+  answer = run(R"({"command":"keys","joint":"lForeArm"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["easing"].toObject()["31"].toString(), QString("ease-out-overshoot"));
+  QCOMPARE(answer["easing"].toObject()["41"].toString(), QString("ease-in-out"));
+  QCOMPARE(answer["easing"].toObject()["1"].toString(), QString("ease-in-out"));
+  QCOMPARE(answer["frames"].toArray().size(), 3);   // the frames list is as before
+
+  // every key made by the same call got it
+  answer = run(R"({"command":"keys"})");
+  QCOMPARE(answer["easing"].toObject()["rShldr"].toObject()["31"].toString(), QString("ease-out-overshoot"));
+  QCOMPARE(answer["easing"].toObject()["lForeArm"].toObject()["41"].toString(), QString("ease-in-out"));
+
+  // posing the same key again without easing keeps its easing; with easing it changes
+  QVERIFY(run(R"({"command":"set_pose","frame":31,"joints":{"lForeArm":[0,-50,0]}})")["ok"].toBool());
+  QCOMPARE(run(R"({"command":"keys","joint":"lForeArm"})")["easing"].toObject()["31"].toString(), QString("ease-out-overshoot"));
+  QVERIFY(run(R"({"command":"set_pose","frame":31,"easing":"constant","joints":{"lForeArm":[0,-50,0]}})")["ok"].toBool());
+  QCOMPARE(run(R"({"command":"keys","joint":"lForeArm"})")["easing"].toObject()["31"].toString(), QString("constant"));
+  QCOMPARE(run(R"({"command":"keys","joint":"rShldr"})")["easing"].toObject()["31"].toString(), QString("ease-out-overshoot"));
+}
+
+void ControlTest::unknownEasingMakesNoKey()
+{
+  BVHNode* elbow = findNodeOrNull(m_animation, "lForeArm");
+  QVERIFY(elbow);
+  for (const char* bad : {"\"bounce\"", "\"Ease-In\"", "\"\"", "3", "null", "[\"linear\"]"})
+  {
+    const QString text = QString("{\"command\":\"set_pose\",\"frame\":10,\"easing\":%1,\"joints\":{\"lForeArm\":[0,-45,0]}}").arg(bad);
+    const QJsonObject answer = run(text.toUtf8().constData());
+    QVERIFY2(!answer["ok"].toBool(), bad);
+    for (const char* name : {"linear", "ease-in", "ease-out", "ease-in-out", "ease-out-overshoot", "constant"})
+      QVERIFY2(answer["error"].toString().contains(name), qPrintable(answer["error"].toString()));
+    QVERIFY(!elbow->isKeyframe(9));
+  }
+}
+
+// the command knows exactly the easing kinds the program has: a new kind in
+// src/easing.* fails here until set_pose, the command list and the docs know it
+void ControlTest::everyEasingKnownToTheProgramWorks()
+{
+  QCOMPARE(Easing::PresetCount, 6);
+  QVERIFY(run(R"({"command":"set_frame_count","frames":30})")["ok"].toBool());
+  QStringList names;
+  for (int i = 0; i < Easing::PresetCount; i++)
+  {
+    const Easing::Preset preset = static_cast<Easing::Preset>(i);
+    const QString name = QString::fromLatin1(Easing::technicalName(preset));
+    QVERIFY2(!name.isEmpty(), qPrintable(QString("easing %1 has no technical name").arg(i)));
+    names << name;
+    const int frame = 2 + i;
+    const QJsonObject answer = QJsonDocument::fromJson(QString("{\"command\":\"set_pose\",\"frame\":%1,\"easing\":\"%2\",\"joints\":{\"lForeArm\":[0,%3,0]}}")
+                                                       .arg(frame).arg(name).arg(-10 - i).toUtf8()).object();
+    const QJsonObject result = m_api->execute(answer);
+    QVERIFY2(result["ok"].toBool(), qPrintable(name + ": " + result["error"].toString()));
+    QCOMPARE(run("{\"command\":\"keys\",\"joint\":\"lForeArm\"}")["easing"].toObject()[QString::number(frame)].toString(), name);
+  }
+  QCOMPARE(names.size(), 6);
+  QCOMPARE(names, QStringList({"linear", "ease-in", "ease-out", "ease-in-out", "ease-out-overshoot", "constant"}));
+
+  // the command list offers the same names
+  QStringList offered;
+  for (const QJsonValue& command : ControlApi::commandList())
+    if (command.toObject()["name"].toString() == "set_pose")
+      for (const QJsonValue& name : command.toObject()["parameters"].toObject()["easing"].toObject()["enum"].toArray())
+        offered << name.toString();
+  QCOMPARE(offered, names);
+}
+
+// set_loop shows in state, and loop points and easing names survive save as
+// .dingle and open
+void ControlTest::loopPointsAreSetAndRoundTrip()
+{
+  QVERIFY(run(R"({"command":"set_frame_count","frames":62})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_pose","frame":10,"easing":"ease-in","joints":{"lForeArm":[0,-5,0]}})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_pose","frame":31,"easing":"ease-out-overshoot","joints":{"lForeArm":[0,-45,0]}})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_pose","frame":61,"easing":"constant","joints":{"lForeArm":[0,-5,0]}})")["ok"].toBool());
+
+  QJsonObject answer = run(R"({"command":"set_loop","in":2,"out":61})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["loop_in"].toInt(), 2);
+  QCOMPARE(answer["loop_out"].toInt(), 61);
+  answer = run(R"({"command":"state"})");
+  QCOMPARE(answer["loop_in"].toInt(), 2);
+  QCOMPARE(answer["loop_out"].toInt(), 61);
+  QVERIFY(m_animation->dirty());
+
+  answer = run(R"({"command":"keys","joint":"lForeArm"})");
+  QCOMPARE(answer["easing"].toObject()["10"].toString(), QString("ease-in"));
+  QCOMPARE(answer["easing"].toObject()["31"].toString(), QString("ease-out-overshoot"));
+  QCOMPARE(answer["easing"].toObject()["61"].toString(), QString("constant"));
+
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString file = dir.filePath("loop.dingle");
+  QString error;
+  QVERIFY2(m_bvh->dingleWrite(m_animation, file, error), qPrintable(error));
+
+  // new_animation, then open_file: the program's own reader gives the same animation
+  m_animation->setDirty(false);
+  QVERIFY(run(R"({"command":"new_animation"})")["ok"].toBool());
+  BVH bvh;
+  Animation reopened(&bvh, file);
+  FakeHost host(&reopened);
+  ControlApi api(&host);
+  answer = api.execute(QJsonObject{{"command", "state"}});
+  QCOMPARE(answer["frames"].toInt(), 62);
+  QCOMPARE(answer["loop_in"].toInt(), 2);
+  QCOMPARE(answer["loop_out"].toInt(), 61);
+  answer = api.execute(QJsonObject{{"command", "keys"}, {"joint", "lForeArm"}});
+  QCOMPARE(answer["easing"].toObject()["10"].toString(), QString("ease-in"));
+  QCOMPARE(answer["easing"].toObject()["31"].toString(), QString("ease-out-overshoot"));
+  QCOMPARE(answer["easing"].toObject()["61"].toString(), QString("constant"));
+  QCOMPARE(answer["easing"].toObject()["1"].toString(), QString("ease-in-out"));
+
+  // off goes back to the default: the whole animation, from frame 2 (first frame is protected)
+  answer = run(R"({"command":"set_loop","off":true})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["loop_in"].toInt(), 2);
+  QCOMPARE(answer["loop_out"].toInt(), 62);
+}
+
+void ControlTest::badLoopPointsChangeNothing()
+{
+  QVERIFY(run(R"({"command":"set_loop","in":3,"out":20})")["ok"].toBool());
+  m_animation->setDirty(false);
+  for (const char* bad : {R"({"command":"set_loop","in":20,"out":3})", R"({"command":"set_loop","in":5,"out":5})",
+                          R"({"command":"set_loop","in":0,"out":10})", R"({"command":"set_loop","in":2,"out":31})",
+                          R"({"command":"set_loop","in":-4,"out":10})", R"({"command":"set_loop","in":2})",
+                          R"({"command":"set_loop","out":10})", R"({"command":"set_loop","in":2.5,"out":10})",
+                          R"({"command":"set_loop","in":"2","out":10})", R"({"command":"set_loop"})",
+                          R"({"command":"set_loop","off":true,"in":2,"out":10})", R"({"command":"set_loop","off":"yes"})",
+                          R"({"command":"set_loop","in":1e30,"out":1e31})"})
+  {
+    const QJsonObject answer = run(bad);
+    QVERIFY2(!answer["ok"].toBool(), bad);
+    QVERIFY2(!answer["error"].toString().isEmpty(), bad);
+    const QJsonObject state = run(R"({"command":"state"})");
+    QCOMPARE(state["loop_in"].toInt(), 3);
+    QCOMPARE(state["loop_out"].toInt(), 20);
+    QVERIFY2(!m_animation->dirty(), bad);
+  }
 }
 
 void ControlTest::firstFrameKeepsItsKeys()
@@ -1352,9 +1509,10 @@ void ControlTest::describePoseOnRaisedHand()
 // from frame 2 to 10 and down again by frame 20, then holds to frame 30
 void ControlTest::describeMotionOfAHandMadeArmLift()
 {
-  for (const char* request : {R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,0]}})",
-                              R"({"command":"set_pose","frame":10,"joints":{"lShldr":[0,0,90]}})",
-                              R"({"command":"set_pose","frame":20,"joints":{"lShldr":[0,0,0]}})",
+  // straight lines, so the speed below is a plain division (new keys are ease-in-out unless told)
+  for (const char* request : {R"({"command":"set_pose","frame":2,"easing":"linear","joints":{"lShldr":[0,0,0]}})",
+                              R"({"command":"set_pose","frame":10,"easing":"linear","joints":{"lShldr":[0,0,90]}})",
+                              R"({"command":"set_pose","frame":20,"easing":"linear","joints":{"lShldr":[0,0,0]}})",
                               R"({"command":"set_frame","frame":5})"})
   {
     const QJsonObject answer = run(request);
