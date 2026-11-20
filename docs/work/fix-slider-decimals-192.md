@@ -1,5 +1,5 @@
 Branch: fix/slider-decimals-192
-Status: active
+Status: done
 Pull request: #217
 Files:
 - src/sliderscale.h
