@@ -149,16 +149,12 @@ def split_expression(text):
 
 
 def find_errors(answer):
-    """The problems of check_animation that Second Life would refuse."""
-    problems = []
-    for key in ("errors", "problems", "issues", "checks"):
-        for item in answer.get(key, []) or []:
-            if isinstance(item, dict):
-                level = str(item.get("level") or item.get("severity") or item.get("status") or "").lower()
-                if key == "errors" or level in ("error", "fail", "failed"):
-                    problems.append(item)
-            elif key == "errors":
-                problems.append(item)
+    """The findings of check_animation that Second Life would refuse (severity error). The answer
+    has the counts `errors`, `warnings`, `notes` and the list `findings` (docs/CONTROL.md)."""
+    problems = [f for f in answer.get("findings", []) if str(f.get("severity")).lower() == "error"]
+    count = answer.get("errors", 0)
+    if not problems and isinstance(count, int) and count > 0:
+        problems = [{"errors": count}]
     return problems
 
 
