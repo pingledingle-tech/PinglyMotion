@@ -1,6 +1,6 @@
 Branch: research/video-to-motion
 Status: active
-Pull request: pending
+Pull request: #170
 Files:
 - docs/research/VIDEO_TO_MOTION.md
 - docs/research/README.md
