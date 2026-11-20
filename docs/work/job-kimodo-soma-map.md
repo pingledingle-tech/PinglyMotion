@@ -1,16 +1,14 @@
 Branch: job/kimodo-soma-map
-Status: active
+Status: done
 Pull request: #174
 Files:
 - src/retarget.*
 - tools/gen_soma77_bvh.py
 - tests/test_gen_soma77_bvh.py
-- tests/data/generated/soma77*
 - tests/retargetsoma/**
 - CMakeLists.txt
 - .github/workflows/build.yml
 - docs/RETARGET_MAPPING.md
-- docs/research/TEXT_TO_MOTION.md
 
 ## What
 
