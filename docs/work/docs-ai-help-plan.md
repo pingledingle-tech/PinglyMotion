@@ -1,6 +1,6 @@
 Branch: docs/ai-help-plan
-Status: active
-Pull request: pending
+Status: done
+Pull request: #168
 Files:
 - docs/AI_HELP_PLAN.md
 
