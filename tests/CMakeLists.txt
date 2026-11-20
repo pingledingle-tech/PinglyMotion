@@ -115,6 +115,9 @@ ADD_SUBDIRECTORY (animexport)
 ADD_SUBDIRECTORY (animimport)
 ADD_SUBDIRECTORY (aboutdialog)
 
+# ready joint matching for the BVH files of XR Animator (#17)
+ADD_SUBDIRECTORY (retargetxra)
+
 # clean-up of imported motion: resample, start pose, in place, loop seam, smoothing (#17, #18)
 ADD_SUBDIRECTORY (motioncleanup)
 
