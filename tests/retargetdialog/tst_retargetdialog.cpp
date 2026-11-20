@@ -360,6 +360,7 @@ class TestRetargetDialog : public QObject
       QFile file(path);
       QVERIFY(file.open(QIODevice::ReadOnly));
       const QByteArray bytes=file.readAll();
+      file.close();   // Windows cannot delete a file that is still open, and the end of this test deletes it
       QCOMPARE(bytes,RetargetMapping::write(editor.toFile("PinglyMotion test")));
       const QVector<RetargetMapping::Entry> expected={
         {"mixamorig:Spine1",RetargetMapping::canonicalSlName(w.target.joints[t].name)},

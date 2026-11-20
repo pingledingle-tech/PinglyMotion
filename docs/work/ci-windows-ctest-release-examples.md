@@ -9,6 +9,8 @@ Files:
 - docs/DEV.md
 - .gitattributes
 - CMakeLists.txt
+- tests/tst_control.cpp
+- tests/retargetdialog/tst_retargetdialog.cpp
 
 ## What
 
