@@ -17,6 +17,8 @@
 #include "bvh.h"
 #include "bvhnode.h"
 #include "constants.h"
+#include "dingle.h"
+#include "easing.h"
 
 // ---------------------------------------------------------------- helpers
 
@@ -97,6 +99,8 @@ class RoundTripTest : public QObject
     void savingTwiceGivesTheSameFile();
     void corpus_data();
     void corpus();
+    void storedEasingSurvivesOpenSaveAndExport();
+    void overshootExportStaysInsideLimits();
 };
 
 // guards against a wrong folder making all data-driven tests silently empty
@@ -285,6 +289,142 @@ void RoundTripTest::corpus()
   {
     QVERIFY2(!accepted, "a broken file was accepted");
     QVERIFY2(!reason.isEmpty(), "a reason must be given");
+  }
+}
+
+// issue #53 step 3: an easing choice stored in a .dingle file reaches the
+// program's joints, shapes playback, is saved again, and is what the export
+// (BVH::snapshot, the input of the .anim writer) gets
+void RoundTripTest::storedEasingSurvivesOpenSaveAndExport()
+{
+  const Dingle::Result read = Dingle::parse(readAll(PINGLYMOTION_EXAMPLES "/jump.dingle"));
+  QVERIFY2(read.ok(), qPrintable(read.error));
+  AnimFile::Animation model = *read.animation;
+  const int joint = model.findJoint("lShldr");
+  QVERIFY(joint >= 0);
+  QVERIFY(model.joints[joint].keys.size() >= 2);
+
+  // the first segment of the joint that moves by more than a degree on some channel
+  int segment = -1;
+  for (int k = 0; segment < 0 && k + 1 < model.joints[joint].keys.size(); k++)
+  {
+    const int a = model.joints[joint].keys[k].frame;
+    const int b = model.joints[joint].keys[k + 1].frame;
+    if (b - a >= 3 && (model.rotation(joint, a) - model.rotation(joint, b)).length() > 1.0f) segment = k;
+  }
+  QVERIFY(segment >= 0);
+  const int from = model.joints[joint].keys[segment].frame;
+  const int to = model.joints[joint].keys[segment + 1].frame;
+  model.joints[joint].keys[segment].curve = Easing::Preset::HoldThenSnap;
+
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString first = dir.path() + "/hold.dingle";
+  {
+    QFile file(first);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write(Dingle::write(model));
+  }
+
+  BVH bvh1;
+  Animation anim1(&bvh1, first);
+  BVHNode* node = nullptr;
+  for (BVHNode* n : joints(anim1.getMotion()))
+    if (n->name() == "lShldr") node = n;
+  QVERIFY(node);
+  QCOMPARE(node->curve(from), std::optional<Easing::Preset>(Easing::Preset::HoldThenSnap));
+  QVERIFY(!node->curve(to));
+  // playback holds the start pose until the target key
+  const QVector3D start = node->frameData(from).rotation();
+  for (int frame = from; frame < to; frame++)
+    QVERIFY2(near(node->frameData(frame).rotation(), start, 1e-4f), qPrintable(QString("frame %1").arg(frame)));
+  QVERIFY(!near(node->frameData(to).rotation(), start, 0.5f));
+
+  // the export gets the held frames too
+  const AnimFile::Animation exported = bvh1.snapshot(&anim1, AnimFile::Format::Bvh);
+  const int column = exported.findJoint("lShldr");
+  QVERIFY(column >= 0);
+  for (int frame = from; frame < to; frame++)
+    QVERIFY(near(exported.rotation(column, frame), exported.rotation(column, from), 1e-4f));
+
+  // save and open again: the choice is still there and nothing else changed
+  const QString second = dir.path() + "/again.dingle";
+  QString error;
+  QVERIFY2(anim1.saveBVH(second, &error), qPrintable(error));
+  QVERIFY(readAll(second).contains("\"curve\": {\"type\": \"constant\"}"));
+  BVH bvh2;
+  Animation anim2(&bvh2, second);
+  BVHNode* node2 = nullptr;
+  for (BVHNode* n : joints(anim2.getMotion()))
+    if (n->name() == "lShldr") node2 = n;
+  QVERIFY(node2);
+  QCOMPARE(node2->curve(from), std::optional<Easing::Preset>(Easing::Preset::HoldThenSnap));
+  for (int frame = 0; frame < anim1.getNumberOfFrames(); frame++)
+    QVERIFY(near(node2->frameData(frame).rotation(), node->frameData(frame).rotation(), 1e-3f));
+  // only that one key has a choice
+  int stored = 0;
+  for (BVHNode* n : joints(anim2.getMotion()))
+    for (int key : n->keyframeList())
+      if (n->curve(key)) stored++;
+  QCOMPARE(stored, 1);
+}
+
+// issue #53 proposal 4: with the program's limits file loaded, "Overshoot,
+// then settle" into a key that sits exactly on a joint limit never passes
+// that limit in playback, and the export (BVH::snapshot) gets the same frames
+void RoundTripTest::overshootExportStaysInsideLimits()
+{
+  BVH bvh;
+  Animation anim(&bvh, PINGLYMOTION_EXAMPLES "/jump.dingle");
+  BVHNode* node = nullptr;
+  for (BVHNode* n : joints(anim.getMotion()))
+    if (n->name() == "lShldr") node = n;
+  QVERIFY(node);
+
+  // the X rotation channel and its limit from data/SL.lim (lShldr X -135..90)
+  int channel = -1;
+  for (int i = 0; i < node->numChannels; i++)
+    if (node->channelType[i] == BVH_XROT) channel = i;
+  QVERIFY(channel >= 0);
+  const float high = float(node->channelMax[channel]);
+  QVERIFY2(high < 10000.0f, "the limits file was not loaded (run from bin/)");
+
+  // two keys of our own: 0 -> the limit over ten frames, with the overshoot choice
+  const QList<int> keys = node->keyframeList();
+  const int from = keys[0];
+  QVERIFY(keys.size() >= 2);
+  const int to = keys[1];
+  QVERIFY(to - from >= 2);
+  QVector3D start = node->frameData(from).rotation();
+  start.setX(0.0f);
+  QVector3D end = node->frameData(to).rotation();
+  end.setX(high);
+  node->setKeyframeRotation(from, start);
+  node->setKeyframeRotation(to, end);
+  node->setCurve(from, Easing::Preset::OvershootThenSettle);
+
+  bool cut = false;
+  for (int frame = from; frame <= to; frame++)
+  {
+    const float x = node->frameData(frame).rotation().x();
+    QVERIFY2(x <= high && x >= 0.0f, qPrintable(QString("frame %1 x %2").arg(frame).arg(x)));
+    if (Easing::segmentValue(Easing::Preset::OvershootThenSettle, 0.0, high, to - from, frame - from) > high)
+    {
+      QCOMPARE(x, high);
+      cut = true;
+    }
+  }
+  QVERIFY(cut);
+
+  // the export samples the same clamped values
+  const AnimFile::Animation exported = bvh.snapshot(&anim, AnimFile::Format::Bvh);
+  const int column = exported.findJoint("lShldr");
+  QVERIFY(column >= 0);
+  for (int frame = from; frame <= to; frame++)
+  {
+    const float x = exported.rotation(column, frame).x();
+    QVERIFY2(x <= high && x >= 0.0f, qPrintable(QString("export frame %1 x %2").arg(frame).arg(x)));
+    QCOMPARE(x, node->frameData(frame).rotation().x());
   }
 }
 

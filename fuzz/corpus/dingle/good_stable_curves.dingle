@@ -1,0 +1,32 @@
+{
+  "format": "dingle",
+  "version": 1,
+  "generator": "PinglyMotion",
+  "timing": {"frames": 31, "frameTime": 0.0333333},
+  "figure": "female",
+  "scale": 1,
+  "loop": {"in": -1, "out": 31},
+  "skeleton": [
+    {"name": "hip", "kind": "root", "parent": -1, "offset": [0, 0, 0], "channels": ["Xposition", "Yposition", "Zposition", "Zrotation", "Xrotation", "Yrotation"]},
+    {"name": "lShldr", "kind": "joint", "parent": 0, "offset": [3.285171, 0, 0], "channels": ["Zrotation", "Yrotation", "Xrotation"]}
+  ],
+  "tracks": [
+    {"joint": 0,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ],
+     "position": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false, "curve": {"type": "constant"}},
+       {"frame": 30, "values": [0, 2, 0], "easeIn": false, "easeOut": false}
+     ]},
+    {"joint": 1,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": true, "curve": {"type": "ease-out-overshoot"}},
+       {"frame": 10, "values": [60, 0, 0], "easeIn": true, "easeOut": true, "curve": {"type": "linear"}},
+       {"frame": 20, "values": [0, 30, 0], "easeIn": true, "easeOut": false, "curve": {"type": "ease-in-out"}},
+       {"frame": 30, "values": [0, 0, -45], "easeIn": false, "easeOut": false, "curve": {"type": "ease-in"}}
+     ]}
+  ],
+  "camera": null,
+  "extensions": {}
+}

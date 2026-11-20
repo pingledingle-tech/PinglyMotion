@@ -26,6 +26,10 @@
 #include <qstring.h>
 #include <QVector3D>
 
+#include <optional>
+
+#include "easing.h"
+
 typedef enum { BVH_POS, BVH_ROOT, BVH_JOINT, BVH_END, BVH_NO_SL } BVHNodeType;
 typedef enum { BVH_XPOS, BVH_YPOS, BVH_ZPOS, BVH_XROT, BVH_YROT, BVH_ZROT } BVHChannelType;
 typedef enum { BVH_XYZ=1, BVH_ZYX, BVH_XZY, BVH_YZX, BVH_YXZ, BVH_ZXY} BVHOrderType;
@@ -50,6 +54,12 @@ class FrameData
     void setEaseIn(bool state);
     void setEaseOut(bool state);
 
+    // the easing choice of the segment that starts at this key, when one is
+    // stored (a .dingle key's "curve", issue #53 step 3); empty: the ease
+    // switches pick it (Easing::segmentPreset)
+    std::optional<Easing::Preset> curve() const;
+    void setCurve(const std::optional<Easing::Preset>& curve);
+
     // for debugging purposes, dumps all frame data to debug console
 
   protected:
@@ -60,6 +70,7 @@ class FrameData
 
     bool m_easeIn;
     bool m_easeOut;
+    std::optional<Easing::Preset> m_curve;
 };
 
 class BVHNode
@@ -95,6 +106,10 @@ class BVHNode
     void setEaseOut(int frame,bool state);
     bool easeIn(int frame);
     bool easeOut(int frame);
+    // the stored easing choice of a key frame (see FrameData::curve); nothing
+    // happens on a frame that is not a key frame
+    void setCurve(int frame,const std::optional<Easing::Preset>& curve);
+    std::optional<Easing::Preset> curve(int frame) const;
 
     const QVector3D* getCachedRotation(int frame);
     const QVector3D* getCachedPosition(int frame);
@@ -131,6 +146,14 @@ class BVHNode
   protected:
     void setName(const QString& newName);
     double interpolate(double from,double to,int steps,int pos,bool easeOut,bool easeIn) const;
+    double interpolate(double from,double to,int steps,int pos,Easing::Preset preset) const;
+    // the in-between rotation of an "Overshoot, then settle" segment, cut at
+    // the joint's loaded limits (channelMin/channelMax of the rotation
+    // channels, issue #53 proposal 4). A channel with no limits loaded (the
+    // -10000..10000 defaults) and a joint without that rotation channel are
+    // left alone. The cut is never tighter than the two keys themselves, so a
+    // key that already sits outside its limits still plays as stored.
+    QVector3D clampOvershoot(const QVector3D& rotation,const QVector3D& from,const QVector3D& to) const;
 
     int getKeyframeNumberBefore(int frame) const;
     int getKeyframeNumberAfter(int frame) const;

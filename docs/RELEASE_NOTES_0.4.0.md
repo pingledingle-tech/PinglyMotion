@@ -33,7 +33,8 @@
 - **Test motions.** The folder `examples/mesh2motion` holds eight clips (walk, jog, jump, sitting, dance and more) from the Mesh2Motion project, released under CC0. Help > About and the README say thank you to Mesh2Motion.
 - **Head and neck** can bend up to 45 degrees forward and back.
 - **Opening files** uses a new reader. A broken file is refused with a reason that names the line, for example "Line 12: …". Files with values that make no sense (for example numbers too large for a decimal) and AVM files with extra property data are now refused; an empty file says "The file is empty."
-- **Window title** shows the version, where the build came from and its commit, so you can tell which build you are testing.
+- **Window title** shows the version, where the build came from (pull request or branch), its commit and the build number, from the moment the program starts, so you can tell which build you are testing. Test builds of pull requests showed only "dev" before.
+- **Timeline** is visible at every start. Before, closing the program with the window's close button switched the timeline off for the next start. Hiding it now lasts until you close the program.
 - **Links inside the program** (About, update notice, release info) point to the PinglyMotion repository.
 - The Windows zip and the Linux AppImage are built with the newer Qt 6.12 (long-term support), which includes security fixes.
 

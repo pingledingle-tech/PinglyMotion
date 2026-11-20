@@ -14,6 +14,7 @@
 
 #include "animexport.h"
 #include "animfile.h"
+#include "dingle.h"
 #include "easing.h"
 
 using AnimFile::Channel;
@@ -173,6 +174,8 @@ private slots:
   void realFile();
   void curvedEaseSurvivesExport_data();
   void curvedEaseSurvivesExport();
+  void storedEasingSurvivesExport_data();
+  void storedEasingSurvivesExport();
 };
 
 void TestAnimExport::quantiser()
@@ -564,6 +567,101 @@ void TestAnimExport::curvedEaseSurvivesExport()
   if(overshoot) QVERIFY(maxAngle>end+0.5);                   // it really goes past the target
   else QVERIFY(maxAngle<end+tolerance);
   QVERIFY(std::fabs(2.0*std::asin(keys.back().v[0])*180.0/M_PI-end)<tolerance);   // ends on the target
+}
+
+// Easing stored in a .dingle file (issue #53 step 3): the choice on the start key
+// shapes the frames in between when the file is read, and the export writes those
+// frames. Same joint and tolerance as above: lShldr turns 0 to 60 degrees about BVH
+// z over 24 frames, with every one of the six choices stored as the key's curve.
+// The ease switches are both set, so a stored choice that was not used would show.
+void TestAnimExport::storedEasingSurvivesExport_data()
+{
+  QTest::addColumn<int>("presetIndex");
+  for(int i=0;i<Easing::PresetCount;i++)
+  {
+    Easing::Preset preset;
+    QVERIFY(Easing::presetFromIndex(i,preset));
+    QTest::newRow(Easing::plainName(preset)) << i;
+  }
+}
+
+void TestAnimExport::storedEasingSurvivesExport()
+{
+  QFETCH(int,presetIndex);
+  Easing::Preset preset;
+  QVERIFY(Easing::presetFromIndex(presetIndex,preset));
+
+  const int steps=24;
+  const double end=60.0;
+  // frame 0 is the reference frame, frame 1 the start key, frame 1+steps the target key
+  const QByteArray text=QByteArray(
+    "{\"format\":\"dingle\",\"version\":1,"
+    "\"timing\":{\"frames\":26,\"frameTime\":0.0333333},"
+    "\"skeleton\":["
+    "{\"name\":\"hip\",\"kind\":\"root\",\"parent\":-1,\"offset\":[0,0,0],"
+      "\"channels\":[\"Xposition\",\"Yposition\",\"Zposition\",\"Zrotation\",\"Xrotation\",\"Yrotation\"]},"
+    "{\"name\":\"lShldr\",\"kind\":\"joint\",\"parent\":0,\"offset\":[1,0,0],"
+      "\"channels\":[\"Zrotation\",\"Xrotation\",\"Yrotation\"]}],"
+    "\"tracks\":["
+    "{\"joint\":0,\"rotation\":[{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false}],"
+     "\"position\":[{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false}]},"
+    "{\"joint\":1,\"rotation\":["
+      "{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false},"
+      "{\"frame\":1,\"values\":[0,0,0],\"easeIn\":true,\"easeOut\":true,\"curve\":{\"type\":\"")
+    +Easing::technicalName(preset)+"\"}},"
+      "{\"frame\":25,\"values\":[60,0,0],\"easeIn\":true,\"easeOut\":true}]}]}";
+  const Dingle::Result read=Dingle::parse(text);
+  QVERIFY2(read.ok(),qPrintable(read.error));
+  QCOMPARE(read.ignoredKeys,0);
+  QCOMPARE(read.animation->joints[1].keys[1].curve,std::optional<Easing::Preset>(preset));
+
+  // and once more through save and open, as the program does it
+  const Dingle::Result reopened=Dingle::parse(Dingle::write(*read.animation));
+  QVERIFY(reopened.ok());
+  QVERIFY(Dingle::equal(*read.animation,*reopened.animation));
+
+  std::vector<double> expected;
+  for(int pos=0;pos<=steps;pos++) expected.push_back(Easing::segmentValue(preset,0.0,end,steps,pos));
+  // the stored choice matches the easing module's own baked curve
+  const std::vector<double> baked=Easing::bakeValues(preset,0.0,end,steps);
+  if(preset==Easing::Preset::Even || preset==Easing::Preset::OvershootThenSettle || preset==Easing::Preset::HoldThenSnap)
+    for(int pos=0;pos<=steps;pos++) QVERIFY(std::fabs(baked[size_t(pos)]-expected[size_t(pos)])<1e-9);
+
+  const AnimExport::Result r=AnimExport::write(*reopened.animation);
+  QVERIFY2(r.ok(),qPrintable(r.error));
+  bool good=false;
+  const ReadAnim ra=readAnim(r.bytes,&good);
+  QVERIFY(good);
+  QCOMPARE(int(ra.joints.size()),2);
+  const std::vector<ReadKey>& keys=ra.joints[1].rot;
+  QCOMPARE(int(keys.size()),steps+1);                        // frames 1..25; nothing thinned out
+  const double tolerance=0.01;                               // degrees
+  for(int pos=0;pos<=steps;pos++)
+  {
+    const ReadKey& k=keys[size_t(pos)];
+    QVERIFY(std::fabs(k.v[1])<1e-4 && std::fabs(k.v[2])<1e-4);   // no other axis
+    const double degrees=2.0*std::asin(k.v[0])*180.0/M_PI;
+    QVERIFY2(std::fabs(degrees-expected[size_t(pos)])<tolerance,
+             qPrintable(QString("frame %1: %2 against %3").arg(pos).arg(degrees).arg(expected[size_t(pos)])));
+  }
+  if(preset==Easing::Preset::HoldThenSnap)
+  {
+    // it stays at 0 until the target frame, then it is at 60
+    for(int pos=0;pos<steps;pos++) QVERIFY(std::fabs(keys[size_t(pos)].v[0])<1e-4);
+    QVERIFY(std::fabs(2.0*std::asin(keys.back().v[0])*180.0/M_PI-end)<tolerance);
+  }
+  if(preset==Easing::Preset::Even)
+  {
+    // a straight line although both ease switches are set
+    for(int pos=0;pos<=steps;pos++)
+      QVERIFY(std::fabs(2.0*std::asin(keys[size_t(pos)].v[0])*180.0/M_PI-end*pos/steps)<tolerance);
+  }
+  if(preset==Easing::Preset::OvershootThenSettle)
+  {
+    double maxAngle=0;
+    for(const ReadKey& k : keys) maxAngle=std::max(maxAngle,2.0*std::asin(k.v[0])*180.0/M_PI);
+    QVERIFY(maxAngle>end+0.5);
+  }
 }
 
 QTEST_APPLESS_MAIN(TestAnimExport)

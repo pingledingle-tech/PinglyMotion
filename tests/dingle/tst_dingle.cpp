@@ -14,6 +14,7 @@
 
 #include "animfile.h"
 #include "dingle.h"
+#include "easing.h"
 
 namespace
 {
@@ -92,6 +93,11 @@ private slots:
   void limits();
   void corpus();
   void avmFilesGoThroughTheWriter();
+  void storedEasingRoundTrip();
+  void oldFileHasNoStoredEasing();
+  void unknownEasingFallsBackToEven();
+  void storedEasingShapesTheFramesInBetween();
+  void storedEasingOnPositionKeys();
 };
 
 void TestDingle::readsTheSample()
@@ -224,7 +230,7 @@ void TestDingle::countsUnknownKeys()
   const Dingle::Result r=Dingle::parse(text);
   QVERIFY2(r.ok(),qPrintable(r.error));
   QCOMPARE(r.ignoredKeys,4);
-  // a curve on a key is skipped and counted
+  // a curve of a type this version does not know is counted (and falls back to Even)
   const Dingle::Result curve=Dingle::parse(mutate(sample(),"{\"frame\":5,","{\"frame\":5,\"curve\":{\"type\":\"bezier\"},"));
   QVERIFY2(curve.ok(),qPrintable(curve.error));
   QCOMPARE(curve.ignoredKeys,1);
@@ -449,6 +455,159 @@ void TestDingle::avmFilesGoThroughTheWriter()
     tried++;
   }
   QVERIFY(tried>=3);
+}
+
+// ---------------------------------------------------------------- stored easing (issue #53 step 3)
+
+namespace
+{
+  // the sample with a "curve" on the root's rotation key at frame 5
+  QByteArray withCurve(const QByteArray& curve)
+  {
+    return mutate(sample(),"{\"frame\":5,\"values\":[10,20,30],\"easeIn\":false,\"easeOut\":true}",
+                  "{\"frame\":5,\"values\":[10,20,30],\"easeIn\":false,\"easeOut\":true,\"curve\":"+curve+"}");
+  }
+}
+
+// every one of the six choices is written and read back unchanged
+void TestDingle::storedEasingRoundTrip()
+{
+  for(int i=0;i<Easing::PresetCount;i++)
+  {
+    const Easing::Preset preset=static_cast<Easing::Preset>(i);
+    const QByteArray name=Easing::technicalName(preset);
+    const Dingle::Result first=Dingle::parse(withCurve("{\"type\":\""+name+"\"}"));
+    QVERIFY2(first.ok(),qPrintable(first.error));
+    QCOMPARE(first.ignoredKeys,0);
+    QCOMPARE(first.animation->joints[0].keys[1].curve,std::optional<Easing::Preset>(preset));
+    // keys without a curve keep none
+    QVERIFY(!first.animation->joints[0].keys[0].curve);
+    QVERIFY(!first.animation->joints[0].keys[2].curve);
+    QVERIFY(!first.animation->joints[1].keys[0].curve);
+
+    const QByteArray written=Dingle::write(*first.animation,first.extensions,"PinglyMotion test");
+    QCOMPARE(written.count("\"curve\""),1);
+    QVERIFY(written.contains("\"curve\": {\"type\": \""+name+"\"}"));
+    const Dingle::Result second=Dingle::parse(written);
+    QVERIFY2(second.ok(),qPrintable(second.error));
+    QCOMPARE(second.ignoredKeys,0);
+    QVERIFY(Dingle::equal(*first.animation,*second.animation));
+    QCOMPARE(second.animation->joints[0].keys[1].curve,std::optional<Easing::Preset>(preset));
+    // and byte for byte the same when saved again
+    QCOMPARE(Dingle::write(*second.animation,second.extensions,"PinglyMotion test"),written);
+  }
+  // a different choice is a different animation
+  const Dingle::Result a=Dingle::parse(withCurve("{\"type\":\"constant\"}"));
+  const Dingle::Result b=Dingle::parse(withCurve("{\"type\":\"ease-out-overshoot\"}"));
+  QVERIFY(!Dingle::equal(*a.animation,*b.animation));
+}
+
+// a version 1 file from before step 3 has no curve: nothing is stored, the switches
+// decide as before, and it is written back exactly as it was
+void TestDingle::oldFileHasNoStoredEasing()
+{
+  const Dingle::Result r=Dingle::parse(sample());
+  QVERIFY2(r.ok(),qPrintable(r.error));
+  for(const AnimFile::Joint& joint : r.animation->joints)
+    for(const AnimFile::Key& key : joint.keys) QVERIFY(!key.curve);
+  for(const AnimFile::Key& key : r.animation->positionKeys) QVERIFY(!key.curve);
+  QVERIFY(!Dingle::write(*r.animation).contains("curve"));
+
+  // the files written before step 3 still come out byte for byte the same
+  const QDir dir(PINGLYMOTION_DINGLE_CORPUS);
+  int stable=0;
+  for(const QString& name : dir.entryList({"good_stable_*"},QDir::Files,QDir::Name))
+  {
+    const QByteArray data=readFile(dir.filePath(name));
+    if(data.contains("\"curve\"")) continue;
+    const Dingle::Result old=Dingle::parse(data);
+    QVERIFY2(old.ok(),qPrintable(name));
+    QCOMPARE(Dingle::write(*old.animation,old.extensions,"PinglyMotion"),data);
+    stable++;
+  }
+  QVERIFY(stable>=3);
+}
+
+// a curve this version cannot read never refuses the file and never crashes: the
+// segment is Even, the curve counts as ignored (save warns), and the rest is kept
+void TestDingle::unknownEasingFallsBackToEven()
+{
+  const QList<QByteArray> unknown={
+    "{\"type\":\"bezier\",\"out\":[0.2,0.8]}", "{\"type\":\"Linear\"}", "{\"type\":\"\"}",
+    "{\"type\":5}", "{\"type\":null}", "{\"type\":[\"constant\"]}", "{}", "{\"kind\":\"constant\"}",
+    "\"constant\"", "null", "7", "true", "[]", "[\"constant\"]",
+    "{\"type\":\"constant\\u0000x\"}"};
+  for(const QByteArray& curve : unknown)
+  {
+    const Dingle::Result r=Dingle::parse(withCurve(curve));
+    QVERIFY2(r.ok(),qPrintable(curve+": "+r.error));
+    QVERIFY2(r.ignoredKeys==1,qPrintable(curve));
+    QCOMPARE(r.animation->joints[0].keys[1].curve,std::optional<Easing::Preset>(Easing::Preset::Even));
+    // Even: a straight line from 20 at frame 5 to 0 at frame 10, although easeOut is set
+    QCOMPARE(r.animation->value(6,4),16.0f);
+    QCOMPARE(r.animation->value(8,4),8.0f);
+    // saved as Even, which reads back without a warning
+    const Dingle::Result again=Dingle::parse(Dingle::write(*r.animation));
+    QVERIFY(again.ok());
+    QCOMPARE(again.ignoredKeys,0);
+    QVERIFY(Dingle::equal(*r.animation,*again.animation));
+  }
+  // a known type with extra keys of a later version: the type is used, the extra keys counted
+  const Dingle::Result extra=Dingle::parse(withCurve("{\"type\":\"constant\",\"strength\":2}"));
+  QVERIFY2(extra.ok(),qPrintable(extra.error));
+  QCOMPARE(extra.ignoredKeys,1);
+  QCOMPARE(extra.animation->joints[0].keys[1].curve,std::optional<Easing::Preset>(Easing::Preset::HoldThenSnap));
+  // a curve given twice is a duplicate key like any other
+  QVERIFY(!Dingle::parse(withCurve("{\"type\":\"constant\"},\"curve\":{\"type\":\"linear\"}")).ok());
+  QVERIFY(!Dingle::parse(withCurve("{\"type\":\"constant\",\"type\":\"linear\"}")).ok());
+}
+
+// the frames in between follow the stored choice, exactly as playback computes them
+void TestDingle::storedEasingShapesTheFramesInBetween()
+{
+  // Xrotation of the root: 20 at frame 5 to 0 at frame 10 (column 4)
+  const Dingle::Result hold=Dingle::parse(withCurve("{\"type\":\"constant\"}"));
+  QVERIFY(hold.ok());
+  for(int frame=5;frame<10;frame++) QCOMPARE(hold.animation->value(frame,4),20.0f);
+  QCOMPARE(hold.animation->value(10,4),0.0f);
+  // the segment before the key is not changed: linear 0 to 20 over frames 0..5
+  QCOMPARE(hold.animation->value(2,4),8.0f);
+
+  const Dingle::Result overshoot=Dingle::parse(withCurve("{\"type\":\"ease-out-overshoot\"}"));
+  QVERIFY(overshoot.ok());
+  bool past=false;
+  for(int frame=5;frame<=10;frame++)
+  {
+    const float v=overshoot.animation->value(frame,4);
+    QCOMPARE(v,static_cast<float>(Easing::segmentValue(Easing::Preset::OvershootThenSettle,20,0,5,frame-5)));
+    if(v<0) past=true;
+  }
+  QVERIFY(past);
+
+  // the four old-style choices stored as a curve give what their switches give
+  const Dingle::Result both=Dingle::parse(withCurve("{\"type\":\"ease-in-out\"}"));
+  const Dingle::Result plain=Dingle::parse(sample());   // easeOut on frame 5, easeIn on frame 10
+  for(int frame=0;frame<11;frame++) QCOMPARE(both.animation->value(frame,4),plain.animation->value(frame,4));
+  const Dingle::Result slowFinish=Dingle::parse(withCurve("{\"type\":\"ease-out\"}"));
+  for(int frame=5;frame<=10;frame++)
+    QCOMPARE(slowFinish.animation->value(frame,4),static_cast<float>(Easing::segmentValue(Easing::Preset::SlowFinish,20,0,5,frame-5)));
+}
+
+// position keys carry the choice too; every joint with position channels must list the same one
+void TestDingle::storedEasingOnPositionKeys()
+{
+  const QByteArray text=mutate(sample(),"{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false},"
+                                        "{\"frame\":10,\"values\":[10,20,30]",
+                                        "{\"frame\":0,\"values\":[0,0,0],\"easeIn\":false,\"easeOut\":false,\"curve\":{\"type\":\"constant\"}},"
+                                        "{\"frame\":10,\"values\":[10,20,30]");
+  const Dingle::Result r=Dingle::parse(text);
+  QVERIFY2(r.ok(),qPrintable(r.error));
+  QCOMPARE(r.animation->positionKeys[0].curve,std::optional<Easing::Preset>(Easing::Preset::HoldThenSnap));
+  QCOMPARE(r.animation->position(0,9),QVector3D(0,0,0));
+  QCOMPARE(r.animation->position(0,10),QVector3D(10,20,30));
+  const Dingle::Result again=Dingle::parse(Dingle::write(*r.animation));
+  QVERIFY(again.ok());
+  QVERIFY(Dingle::equal(*r.animation,*again.animation));
 }
 
 QTEST_APPLESS_MAIN(TestDingle)
