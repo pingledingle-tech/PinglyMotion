@@ -71,10 +71,19 @@ class PinglyMotionError(Exception):
 
 
 # PinglyMotion only listens on this machine. The token must never go anywhere else,
-# so the URL from control.json is checked and proxy settings (HTTP_PROXY etc.)
-# are ignored: urllib would otherwise send the request, token included, to the proxy.
-LOCAL_URL = re.compile(r"^http://(127\.0\.0\.1|localhost):[0-9]{1,5}$")
-OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+# so the URL from control.json is checked (the whole text, with fullmatch) and proxy
+# settings (HTTP_PROXY etc.) are ignored: urllib would otherwise send the request,
+# token included, to the proxy. Redirects are never followed either: urllib would
+# send the Authorization header along to wherever a redirect points.
+LOCAL_URL = re.compile(r"http://(127\.0\.0\.1|localhost):[0-9]{1,5}")
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None  # the 3xx answer comes back as an HTTPError instead
+
+
+OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
 # Name of the AI tool that started this server (from MCP "initialize"), shown in
 # PinglyMotion's status bar. Printable ASCII only, so it fits in an HTTP header.
@@ -104,7 +113,7 @@ def request(path, body=None, timeout=30):
 
     url = info.get("url") if isinstance(info, dict) else None
     token = info.get("token") if isinstance(info, dict) else None
-    if not isinstance(url, str) or not LOCAL_URL.match(url) or not isinstance(token, str):
+    if not isinstance(url, str) or not LOCAL_URL.fullmatch(url) or not isinstance(token, str):
         raise PinglyMotionError(
             "The PinglyMotion connection file is not valid. Restart PinglyMotion with remote control on."
         )

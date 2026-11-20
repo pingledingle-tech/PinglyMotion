@@ -1,6 +1,6 @@
 Branch: fix/mcp-python-local-url
-Status: active
-Pull request: pending
+Status: done
+Pull request: #225
 Files:
 - tools/mcp/pinglymotion_mcp.py
 - tests/test_mcp_proxy.py

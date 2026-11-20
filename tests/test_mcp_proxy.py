@@ -4,6 +4,7 @@
 - It talks to PinglyMotion directly, never through HTTP_PROXY (issue #9).
 - It refuses a connection file that points anywhere but this machine.
 - It sends the key only after the program on the port proved it knows the key (issue #15).
+- It never follows a redirect, so the key never goes anywhere but the checked address.
 - It names the AI tool (X-PinglyMotion-Client) and sends heartbeats (issue #43).
 - The assistant guide (issue #129): short instructions, the read_guide tool and the guide resource.
 """
@@ -58,6 +59,12 @@ class FakeServer(http.server.BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         self.rfile.read(length)
         self.server.posts.append((self.path, self.headers.get("X-PinglyMotion-Client")))
+        if self.server.redirect_to:
+            self.send_response(302)
+            self.send_header("Location", self.server.redirect_to + self.path)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         self.answer({"ok": True, "from": self.server.name})
 
     def log_message(self, *args):
@@ -71,6 +78,7 @@ def start(name, hello):
     server.posts = []
     server.name = name
     server.hello = hello
+    server.redirect_to = None
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
 
@@ -80,6 +88,9 @@ def main():
     impostor = start("impostor", "wrong")
     old_version = start("old", "none")
     proxy = start("proxy", "right")
+    elsewhere = start("elsewhere", "right")
+    redirector = start("redirector", "right")
+    redirector.redirect_to = "http://127.0.0.1:%d" % elsewhere.server_port
 
     with tempfile.TemporaryDirectory() as tmp:
         control = os.path.join(tmp, "control.json")
@@ -124,9 +135,19 @@ def main():
         assert "Bearer " + TOKEN not in impostor.seen
 
         for bad in ("http://evil.example:80", "https://127.0.0.1:1234", "http://127.0.0.1:1234/x",
-                    "http://127.0.0.1.evil.example:80", "file:///etc/passwd"):
+                    "http://127.0.0.1.evil.example:80", "file:///etc/passwd",
+                    "http://127.0.0.1:%d\n" % pinglymotion.server_port):
             assert refused(bad), "accepted connection URL %s" % bad
         assert proxy.seen == []
+
+        # a redirect is never followed, so the key does not travel on
+        write("http://127.0.0.1:%d" % redirector.server_port)
+        try:
+            pinglymotion_mcp.request("/api", {"command": "state"})
+        except pinglymotion_mcp.PinglyMotionError:
+            pass
+        assert redirector.seen == [None, "Bearer " + TOKEN], redirector.seen
+        assert elsewhere.seen == [], "followed a redirect: %r" % elsewhere.seen
 
         # the AI tool's name from "initialize" goes along, made safe for a header (issue #43)
         write("http://127.0.0.1:%d" % pinglymotion.server_port)
