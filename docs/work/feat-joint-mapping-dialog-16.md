@@ -1,6 +1,6 @@
 Branch: feat/joint-mapping-dialog-16
 Status: active
-Pull request: pending
+Pull request: #155
 Files:
 - src/retargetdialog.*
 - src/retargetmapping.*
