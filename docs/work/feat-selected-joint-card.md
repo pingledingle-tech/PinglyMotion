@@ -1,5 +1,5 @@
 Branch: feat/selected-joint-card
-Status: active
+Status: done
 Pull request: #148
 Files:
 - src/jointcard.*
