@@ -5,6 +5,7 @@ Files:
 - .github/workflows/build.yml
 - .github/workflows/release.yml
 - tools/ci/package_examples.sh
+- tools/ci/rerun_failed_tests.py
 - docs/DEV.md
 - .gitattributes
 - CMakeLists.txt

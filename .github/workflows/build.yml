@@ -95,7 +95,8 @@ jobs:
           PINGLYMOTION_EXPECT_BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
-          ctest --test-dir build --output-on-failure
+          # a failed test is run again with its Qt Test output written to a file, so the log shows why
+          ctest --test-dir build --output-on-failure || { python tools/ci/rerun_failed_tests.py build; exit 1; }
       - name: Package
         shell: bash
         run: |
