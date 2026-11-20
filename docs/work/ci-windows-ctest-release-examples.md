@@ -1,6 +1,6 @@
 Branch: ci/windows-ctest-release-examples
-Status: active
-Pull request: pending
+Status: done
+Pull request: #219
 Files:
 - .github/workflows/build.yml
 - .github/workflows/release.yml
