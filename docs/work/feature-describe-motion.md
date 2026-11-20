@@ -1,6 +1,6 @@
 Branch: feature/describe-motion
 Status: active
-Pull request: pending
+Pull request: #161
 Files:
 - src/controlapi.*
 - src/motiondescribe.*
