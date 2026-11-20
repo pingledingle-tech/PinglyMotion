@@ -36,6 +36,24 @@ Some tools always write the same skeleton. For those the automatic matching does
 
 Left out and listed with a reason, never refused: the wrapper joint `Root` at the origin (Kimodo writes it above `Hips`), the face joints `Jaw`, `LeftEye`, `RightEye`, the palm joints (`…Index1`, `…Middle1`, `…Ring1`, `…Pinky1`) and the end joints (`HeadEnd`, `…End`, `…ToeEnd`). Kimodo's motion has no finger movement, so the fingers keep their rest pose. The test file `tests/retargetsoma/soma77_kimodo.bvh` is written by `tools/gen_soma77_bvh.py` (names, tree and layout as facts; our own offsets and motion) and checked by `tests/retargetsoma/` and `tests/test_gen_soma77_bvh.py`.
 
+**SMPL 22 (HumanML3D: MoMask and similar text-to-motion tools, issue [#18](https://github.com/pingledingle-tech/PinglyMotion/issues/18)).** Recognised by all 22 body joints of SMPL with SMPL's tree, under either of two naming styles:
+
+- as MoMask's BVH export writes them: `Hips`, `Spine`, `Spine1`, `Spine2`, `Neck`, `Head`, and per side `Shoulder`, `Arm`, `ForeArm`, `Hand`, `UpLeg`, `Leg`, `Foot`, `Toe` (exact case);
+- with SMPL's own names, in any case: `pelvis`, `spine1` to `spine3`, `neck`, `head`, and per side `left_collar`, `left_shoulder`, `left_elbow`, `left_wrist`, `left_hip`, `left_knee`, `left_ankle`, `left_foot`; also written `L_Hip` and with the prefix `m_avg_`.
+
+Every other joint must be a wrapper root above the pelvis or a leaf joint (such as the hand joint of the 24-joint SMPL). A rig with the same names and real finger chains is not taken for SMPL; it is matched by name as before, so it keeps its fingers.
+
+| SMPL 22 (MoMask name / SMPL name) | Second Life |
+|---|---|
+| `Hips` / `pelvis` | `mPelvis` (`hip`) |
+| `Spine`, `Spine2` / `spine1`, `spine3` | `mTorso` (`abdomen`), `mChest` (`chest`); the middle one (`Spine1` / `spine2`) is left out, its turn is passed on |
+| `Neck`, `Head` / `neck`, `head` | `mNeck` (`neck`), `mHead` (`head`) |
+| `LeftShoulder`, `LeftArm`, `LeftForeArm`, `LeftHand` / `left_collar`, `left_shoulder`, `left_elbow`, `left_wrist` | `mCollarLeft`, `mShoulderLeft`, `mElbowLeft`, `mWristLeft` (`lCollar`, `lShldr`, `lForeArm`, `lHand`) |
+| `LeftUpLeg`, `LeftLeg`, `LeftFoot`, `LeftToe` / `left_hip`, `left_knee`, `left_ankle`, `left_foot` | `mHipLeft`, `mKneeLeft`, `mAnkleLeft`, `mFootLeft` (`lThigh`, `lShin`, `lFoot`) |
+| the same for `Right…` / `right_…` | the right side |
+
+The names guessed alone would go wrong for SMPL's own names: `left_foot` is the toe, `left_ankle` the foot, `left_shoulder` the upper arm. Left out and listed with a reason, never refused: the wrapper root, and any extra leaf joint (SMPL has no fingers, so the fingers keep their rest pose). MoMask writes 20 frames per second; the import clean-up (`src/motioncleanup.*`) resamples to 30 like any other file. The test files `tests/retargetsmpl/smpl22_momask.bvh` and `smpl22_names.bvh` are written by `tools/gen_smpl22_bvh.py` (names, tree and layout as facts; our own offsets and motion) and checked by `tests/retargetsmpl/` and `tests/test_gen_smpl22_bvh.py`.
+
 ## What it is for
 
 - A mapping file lists only the corrections: which joint of the user's file drives which Second Life joint, or that a joint is to be left out. Everything not listed stays as the automatic matching decides.

@@ -100,9 +100,9 @@ class Ruth2Test : public QObject
 // (Mesh/Ruth2_v4/DAE in the Ruth2 repository, see the README next to the file)
 void Ruth2Test::meshFile()
 {
-  PMMesh mesh;
-  QString error;
-  QVERIFY2(mesh.load(ruthFile(), &error), qPrintable(error));
+  const PMMesh::Result read = PMMesh::read(ruthFile());
+  QVERIFY2(read.ok(), qPrintable(read.error));
+  const PMMesh& mesh = *read.mesh;
   QCOMPARE(mesh.parts.size(), 5);
 
   struct Expected { const char* name; bool eye; int vertices; int triangles; };
@@ -135,8 +135,9 @@ void Ruth2Test::meshFile()
 // every joint a vertex is weighted to is a joint of PinglyMotion's skeleton
 void Ruth2Test::jointsAreInSkeleton()
 {
-  PMMesh mesh;
-  QVERIFY(mesh.load(ruthFile()));
+  const PMMesh::Result read = PMMesh::read(ruthFile());
+  QVERIFY(read.ok());
+  const PMMesh& mesh = *read.mesh;
   const QSet<QString> skeleton = skeletonSlNames();
   QCOMPARE(skeleton.size(), 133);
 

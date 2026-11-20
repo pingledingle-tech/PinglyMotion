@@ -19,8 +19,8 @@
  * handled (Format::Bvh): an AVM or .dingle file with key frames is refused.
  *
  * Suggested order for an import: resample, smooth, inPlace, blendLoopSeam,
- * then insertStartPose. Foot lock (planted feet that do not slide) is not
- * built yet.
+ * then insertStartPose. Foot lock (planted feet that do not slide) is in
+ * src/footlock.h: FootLock::lockFeet(), after smooth() and before inPlace().
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

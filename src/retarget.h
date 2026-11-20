@@ -101,7 +101,8 @@ namespace Retarget
   enum class KnownSkeleton
   {
     None,
-    Soma77     // NVIDIA Kimodo's SOMA 77-joint skeleton (text-to-motion, issue #18)
+    Soma77,    // NVIDIA Kimodo's SOMA 77-joint skeleton (text-to-motion, issue #18)
+    Smpl22     // the HumanML3D / SMPL 22-joint body as MoMask and similar tools write it (issue #18)
   };
 
   // the known skeleton a source is, from its joint names and tree; None when

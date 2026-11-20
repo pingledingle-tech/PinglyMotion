@@ -102,6 +102,7 @@ class RoundTripTest : public QObject
     void storedEasingSurvivesOpenSaveAndExport();
     void overshootExportStaysInsideLimits();
     void slowJumpLoadsAndKeepsTheKeys();
+    void hipPositionKeyWithoutRotationKeySurvivesReopen();
 };
 
 // guards against a wrong folder making all data-driven tests silently empty
@@ -456,6 +457,39 @@ void RoundTripTest::slowJumpLoadsAndKeepsTheKeys()
       QVERIFY2((before-after).length()<1e-4f, "a key value changed");
     }
   }
+}
+
+// issue #188: a hip position key at a frame where the hip has no rotation key
+// keeps its value when the saved .dingle is opened again
+void RoundTripTest::hipPositionKeyWithoutRotationKeySurvivesReopen()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString file = dir.path() + "/hip.dingle";
+
+  BVH bvh1;
+  Animation anim1(&bvh1);
+  const QVector3D start = anim1.getNode(0)->frameData(0).position();
+  anim1.setFrame(9);
+  anim1.setPosition(0, 30, 0);
+  QCOMPARE(anim1.getNode(0)->frameData(9).position(), QVector3D(0, 30, 0));
+  // the hip (the root) has no rotation key at that frame
+  QVERIFY(!anim1.getMotion()->isKeyframe(9));
+  QString error;
+  QVERIFY2(anim1.saveBVH(file, &error), qPrintable(error));
+
+  BVH bvh2;
+  Animation anim2(&bvh2, file);
+  BVHNode* position = anim2.getNode(0);
+  QVERIFY(position->isKeyframe(9));
+  QCOMPARE(position->frameData(9).position(), QVector3D(0, 30, 0));
+  QCOMPARE(position->frameData(0).position(), start);
+  QVERIFY(!anim2.getMotion()->isKeyframe(9));
+
+  // saving it again gives the same file
+  const QString again = dir.path() + "/again.dingle";
+  QVERIFY2(anim2.saveBVH(again, &error), qPrintable(error));
+  QCOMPARE(readAll(again), readAll(file));
 }
 
 QTEST_MAIN(RoundTripTest)
