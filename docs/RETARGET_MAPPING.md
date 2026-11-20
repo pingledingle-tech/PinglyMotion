@@ -2,7 +2,20 @@
 
 File > Import BVH from another skeleton matches the joints of the file to the Second Life skeleton by name and tree shape (`src/retarget.*`, issue [#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)). When that guess is wrong for a few joints, the user can correct it by hand. This page describes the small file that holds such a correction: what it is for, its fields, where the program keeps it, and its limits. The code is `src/retargetmapping.*`; the tests are `tests/retargetmapping/`.
 
-State: the file format, reader, writer, fingerprint and store are built (step 4 of #16, core). The dialog that edits a mapping in the program is a later, visible job, so nothing uses the files on screen yet.
+State: the file format, reader, writer, fingerprint and store are built (step 4 of #16, core), and so is the dialog that edits a mapping (see "In the program" below).
+
+## In the program
+
+File > Import BVH from another skeleton (and File > Import glTF animation, which uses the same window) shows one row per joint of the file. The column "Joint on the avatar" is a list:
+
+- "(leave out)" first, then the body joints of the avatar (pelvis, spine, neck, head, arms, hands, fingers, legs, feet), then, after a line, the other joints (face, wings, tail, hind limbs).
+- Picking a joint gives it to this joint of the file. If another joint of the file had it, that joint is left out. The column "What happens" says "Changed by you" or "Left out by you", and the summary says how many joints were changed.
+- The animation is made again after every change. If a change leaves the pelvis, spine, head, an arm, a hand or a leg without a joint, the window says which avatar joints need one, and "Open the animation" stays off until it is fixed.
+- "Use the automatic match" undoes every change.
+- "Remember my changes for files with this skeleton" is ticked by default. When the user opens the animation with it ticked, the changes are saved with the store below (only the changes, as `differences()` gives them); with no changes, a saved file for this skeleton is deleted, so the automatic matching is used again. Unticked, nothing is saved or deleted.
+- When the window opens for a skeleton that has a saved file, the changes are used at once and the window says "Your saved changes for this skeleton were used." A saved file that cannot be read is not used, and the window says why.
+
+The state behind the window is `RetargetMapping::Editor` (no window, tested in `tests/retargetdialog/`): the automatic mapping, the changes on top, `setTarget()`, `reset()`, `toFile()`, `load()` and `save()`.
 
 ## What it is for
 

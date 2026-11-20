@@ -10,6 +10,7 @@ Files:
 - docs/RETARGET_MAPPING.md
 - docs/PRODUCT.md
 - docs/ROADMAP.md
+- docs/RELEASE_NOTES_0.4.0.md
 
 ## What
 

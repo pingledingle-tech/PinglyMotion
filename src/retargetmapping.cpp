@@ -677,4 +677,174 @@ bool Store::remove(const QString& fingerprint) const
   return QFile::remove(path) && !QFileInfo::exists(path);
 }
 
+
+// ---------------------------------------------------------------------------
+// editing
+// ---------------------------------------------------------------------------
+
+namespace
+{
+  // three different rotation channels (the retargeting writes all three)
+  bool hasThreeRotations(const Joint& joint)
+  {
+    int axes[3]={0,0,0};
+    int n=0;
+    for(AnimFile::Channel c : joint.channels)
+    {
+      int a=-1;
+      if(c==AnimFile::Channel::XRotation) a=0;
+      else if(c==AnimFile::Channel::YRotation) a=1;
+      else if(c==AnimFile::Channel::ZRotation) a=2;
+      if(a<0) continue;
+      if(n>=3) return false;
+      axes[n++]=a;
+    }
+    return n==3 && axes[0]!=axes[1] && axes[1]!=axes[2] && axes[0]!=axes[2];
+  }
+
+  QVector<int> targetsOf(const Retarget::Mapping& m,int ns,int nt)
+  {
+    QVector<int> out(ns,-1);
+    QVector<char> used(nt,0);
+    for(const auto& p : m.pairs)
+    {
+      if(p.first<0 || p.first>=ns || p.second<0 || p.second>=nt) continue;
+      if(out[p.first]>=0 || used[p.second]) continue;
+      out[p.first]=p.second;
+      used[p.second]=1;
+    }
+    return out;
+  }
+}
+
+Editor::Editor(const Animation& source,const Animation& target) :
+  m_source(source),
+  m_target(target)
+{
+  m_fingerprint=RetargetMapping::fingerprint(source);
+  m_automatic=Retarget::mapSkeletons(source,target);
+  m_current=m_automatic;
+  if(structureUsable(target))
+  {
+    for(int t=0;t<target.joints.size();t++)
+    {
+      const Joint& j=target.joints[t];
+      if(j.kind!=JointKind::EndSite && !canonicalSlName(j.name).isEmpty() && hasThreeRotations(j))
+        m_choices << t;
+    }
+  }
+  m_automaticTarget=targetsOf(m_automatic,source.joints.size(),target.joints.size());
+}
+
+bool Editor::isBodyJoint(int targetJoint) const
+{
+  if(targetJoint<0 || targetJoint>=m_target.joints.size()) return false;
+  return !Retarget::slChain(m_target.joints[targetJoint].name).isEmpty();
+}
+
+int Editor::targetOf(int sourceJoint) const
+{
+  if(sourceJoint<0 || sourceJoint>=m_source.joints.size()) return -1;
+  for(const auto& p : m_current.pairs)
+    if(p.first==sourceJoint) return p.second;
+  return -1;
+}
+
+int Editor::sourceOf(int targetJoint) const
+{
+  if(targetJoint<0 || targetJoint>=m_target.joints.size()) return -1;
+  for(const auto& p : m_current.pairs)
+    if(p.second==targetJoint) return p.first;
+  return -1;
+}
+
+bool Editor::setTarget(int sourceJoint,int targetJoint)
+{
+  if(sourceJoint<0 || sourceJoint>=m_source.joints.size()) return false;
+  if(m_source.joints[sourceJoint].kind==JointKind::EndSite) return false;
+  if(targetJoint<-1 || (targetJoint>=0 && !m_choices.contains(targetJoint))) return false;
+  if(targetOf(sourceJoint)==targetJoint) return true;
+
+  Mapping one;
+  Entry e;
+  // apply() finds the source joint by name; a name that is there twice would
+  // find the first one, so such a joint cannot be changed by hand
+  if(findSourceJoint(m_source,m_source.joints[sourceJoint].name)!=sourceJoint) return false;
+  e.source=m_source.joints[sourceJoint].name;
+  if(targetJoint>=0) e.target=canonicalSlName(m_target.joints[targetJoint].name);
+  one.entries << e;
+  const Applied applied=apply(m_current,one,m_source,m_target);
+  if(!applied.notes.isEmpty()) return false;
+  m_current=applied.mapping;
+  return true;
+}
+
+void Editor::reset()
+{
+  m_current=m_automatic;
+}
+
+bool Editor::changedByHand(int sourceJoint) const
+{
+  if(sourceJoint<0 || sourceJoint>=m_source.joints.size()) return false;
+  return targetOf(sourceJoint)!=m_automaticTarget[sourceJoint];
+}
+
+bool Editor::hasChanges() const
+{
+  for(int s=0;s<m_source.joints.size();s++)
+    if(m_source.joints[s].kind!=JointKind::EndSite && changedByHand(s)) return true;
+  return false;
+}
+
+Mapping Editor::toFile(const QString& generator) const
+{
+  Mapping m;
+  m.fingerprint=m_fingerprint;
+  int count=0;
+  for(const Joint& j : m_source.joints) if(j.kind!=JointKind::EndSite) count++;
+  m.jointCount=qMin(count,AnimFile::MAX_JOINTS);
+  if(!m_source.joints.isEmpty() && m_source.joints[0].name.toUtf8().size()<=MAX_LABEL_BYTES)
+    m.root=m_source.joints[0].name;
+  if(generator.toUtf8().size()<=MAX_LABEL_BYTES) m.generator=generator;
+  m.entries=differences(m_automatic,m_current,m_source,m_target);
+  return m;
+}
+
+QStringList Editor::use(const Mapping& saved)
+{
+  const Applied applied=apply(m_automatic,saved,m_source,m_target);
+  m_current=applied.mapping;
+  return applied.notes;
+}
+
+Editor::Loaded Editor::load(const Store& store)
+{
+  Loaded out;
+  if(m_fingerprint.isEmpty()) return out;
+  const Store::LoadResult r=store.load(m_fingerprint);
+  out.found=r.found;
+  if(!r.ok())
+  {
+    out.error=r.error;
+    return out;
+  }
+  out.notes=use(*r.mapping);
+  return out;
+}
+
+QString Editor::save(const Store& store,const QString& generator) const
+{
+  if(m_fingerprint.isEmpty())
+    return QObject::tr("This skeleton cannot be remembered.");
+  if(!hasChanges())
+  {
+    if(!store.remove(m_fingerprint))
+      return QObject::tr("The saved mapping could not be deleted: %1")
+             .arg(QDir::toNativeSeparators(store.filePath(m_fingerprint)));
+    return QString();
+  }
+  return store.save(toFile(generator));
+}
+
 }
