@@ -1,28 +1,36 @@
 # Roadmap proposal (19 November 2026)
 
-Status: **proposal for the project owner to confirm.** It sets an order for the open issues after the Aurora comparison (`docs/AURORA_STUDIO.md`) and the open-source check (`docs/OPEN_SOURCE_CHECK.md`). It does not replace `docs/PRODUCT.md` or `docs/DECISIONS.md`; where they disagree, those win until the owner decides.
+Status: **proposal for the project owner to confirm.** It sets an order for the open issues after the Aurora comparison (`docs/AURORA_STUDIO.md`) and the open-source check (`docs/OPEN_SOURCE_CHECK.md`). It does not replace `docs/PRODUCT.md` or `docs/DECISIONS.md`; where they disagree on goals or decisions, those win until the owner decides. This file is the one place for progress status; `docs/PRODUCT.md` does not repeat it, and running pull requests and the owner's tests are in the jobs list (#74) and the test list (#47).
 
-## Starting point
+## Current state (20 November 2026)
 
-- Done: parser and data model (#9), `.dingle` working format (#26: reader, writer, conversion, opening (#70) and saving with the start poses (#113) merged), Ruth2 body and menu (the system avatar is removed, #15; Roth2 v2 for a male body is merged (#112)), version in title, `.anim` writer (#63), `.anim` reader (#65), BVH retargeting core (#66), glTF import reader (#69), Blender guide (#68), scripted Blender round trip with a BVH comparer (issue #13) and Maya note (#67). Fuzzing runs all targets at the same time, about 10 minutes on a branch (#71). The import and export menus are merged too (see the proposed order below).
+- Foundation done: modern renderer (OpenGL 3.3 core, GPU skinning), joint limits on the SL standard and a new IK solver, joint tabs with the Firestorm joint data, status bar, new parser and data model with round-trip tests and fuzzing (#9), security audit fixes (`docs/SECURITY_AUDIT.md`), version in the window title, Ruth2 and Roth2 bodies (#15), live link to Aurora with quaternion poses (old #78, #95).
+- File formats (steps 1 to 5 below): `.dingle` (#26), `.anim` export and import (#10, #22), BVH retargeting with the hand-made `.jointmap` core (#16), glTF import (#12), all with their menus; Blender guide and scripted round trip, not yet run in Blender (#13). Left: the dialog that edits the BVH joint mapping (visible, in the owner's test).
+- Test motions (step 4, #27): the Mesh2Motion and CMU clips are in `examples/`.
+- Easing (step 6, #11, #53): #53 steps 1 to 5 are done (maths, playback, `curve` in `.dingle`, export, tile row); the wave (step 6) is next.
+- Posing (step 7, #14): camera and keys, joint list names and panels P1 to P4 are done; P5 and P6 are in the owner's test; the selected-joint card, mirror and whole-pose buttons and the rest are open.
+- Not validated yet: real upload and playback in Second Life (#159). It runs beside the UX work and blocks nothing.
+
+## Starting point (19 November 2026)
+
 - Order already decided in `docs/DECISIONS.md`: `.anim` export (#10), then `.anim` import (#22), then BVH retargeting (#16), then glTF (#12), then Blender docs (#13). Rejected: glTF export, FBX (only on demand), Collada, VMD, VRMA, Firestorm pose XML, Assimp.
 - New since then: Mesh2Motion's MIT-licensed retargeting is a ready reference (#16), and its CC0 animations are a source of test motions (#27).
 
 ## Proposed order
 
-**State on 20 November 2026:** steps 1, 2, 3 and 5 are done as first parts (writer, reader, retargeting core, glTF reader, Blender guide), and their menus are merged too (#110, #111, #116, #117). What is left in them is the dialog that edits the BVH joint mapping (visible, so it needs the owner's Windows test). Step 4 (#27): the CMU clips (#3, merged 19 November 2026) are next to the eight Mesh2Motion clips. Step 6 (#11, #53): #53 steps 1 to 5 are merged (easing maths, playback through it, the choice stored as `curve` in `.dingle`, export test, and the tile row, #134); the wave (step 6) is next. Step 7 (#14) is in progress: camera and keys (#1) and the first panel jobs (#119, #138, #141) are merged, the rest is open. `.dingle` (#26): jobs 1 to 6 are merged (#48, #51, #57, #70, #113). The table below is the original proposal.
+The table is the original proposal; the state of each step is under "Current state" above.
 
 | Step | Issue | Job | Why now | Depends on | Model |
 |---|---|---|---|---|---|
-| 1 | #10, then #22 | `.anim` export, then import, one job at a time (same format code); the export and import menus are merged (#110, #111) | Decided order; gives priority, ease and loop points that BVH upload cannot; real motion needed to check it | #9 (done) | Sonnet |
-| 2 | #16 | BVH retargeting core: name mapping, SL/Bento slots, swing-twist (core merged; the menu with the list of matched and left out joints is merged; the hand-made mapping core, `.jointmap` files found by skeleton fingerprint, is merged; left: the dialog that edits the mapping, visible) | New files, so it does not collide with step 1; Mesh2Motion removes most of the design risk | none | Opus |
-| 3 | #12 | glTF 2.0 import using the retargeting core (reader merged, #69; the menu merged, #117) | Needs step 2 | #16 core | Sonnet |
-| 4 | #27 | Test motions: CMU clips (#3) and CC0 clips from Mesh2Motion (converter, tests, the eight clips in `examples/mesh2motion` and the seven clips in `examples/cmu` are merged) | Needs #12 or a conversion script | #3, #12 | Haiku |
-| 5 | #13 | Blender round trip: guide (#68) and scripted round trip with a BVH comparer (`tools/blender/`, not tested in Blender yet) merged; glTF part can follow now that the glTF menu is merged (#117) | Docs and tools only | #12 | Sonnet |
+| 1 | #10, then #22 | `.anim` export, then import, one job at a time (same format code) | Decided order; gives priority, ease and loop points that BVH upload cannot; real motion needed to check it | #9 (done) | Sonnet |
+| 2 | #16 | BVH retargeting core: name mapping, SL/Bento slots, swing-twist | New files, so it does not collide with step 1; Mesh2Motion removes most of the design risk | none | Opus |
+| 3 | #12 | glTF 2.0 import using the retargeting core | Needs step 2 | #16 core | Sonnet |
+| 4 | #27 | Test motions: CMU clips (#3) and CC0 clips from Mesh2Motion | Needs #12 or a conversion script | #3, #12 | Haiku |
+| 5 | #13 | Blender round trip: guide, then a scripted round trip; glTF part after #12 | Docs and tools only | #12 | Sonnet |
 | 6 | #11 | Per-key curve and easing editor, then #53 easing presets | Visible, so the owner tests on Windows | none | Sonnet |
 | 7 | #14 | UX revision of poser and timeline | Visible, larger; discuss before building | #1 | Opus |
 
-Visible changes (steps 6 and 7, and #40) need the project owner's Windows test before merge. Steps 1 to 5 were technical jobs under the standing permission in `CLAUDE.md`, except their menus: the `.anim` export and import menus (#110, #111), the BVH menu (#116) and the glTF import menu (#117) were visible, and the project owner tested them on Windows before they were merged. The BVH joint-mapping dialog (step 2) is still open and will need that test too.
+Visible changes (steps 6 and 7, and #40) need the project owner's Windows test before merge. Steps 1 to 5 were technical jobs under the standing permission in `CLAUDE.md`, except their menus: the `.anim` export and import menus (#110, #111), the BVH menu (#116) and the glTF import menu (#117) were visible, and the project owner tested them on Windows before they were merged.
 
 ## What can run in parallel
 
