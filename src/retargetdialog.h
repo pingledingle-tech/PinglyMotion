@@ -27,6 +27,7 @@
 #include <functional>
 
 #include "animfile.h"
+#include "importoptions.h"
 #include "retarget.h"
 #include "retargetmapping.h"
 
@@ -34,6 +35,7 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QPushButton;
+class QVBoxLayout;
 class QTableWidget;
 
 namespace RetargetUi
@@ -92,8 +94,16 @@ class RetargetDialog : public QDialog
                    const QString& fileName,
                    const std::function<QString(const QString&)>& friendly,QWidget* parent=nullptr);
 
-    // the retargeted animation, valid after the dialog was accepted
-    const Retarget::Result& result() const { return m_result; }
+    // the animation to open, valid after the dialog was accepted: the
+    // retargeted one with the chosen clean-up steps applied (src/importoptions.*)
+    const Retarget::Result& result() const { return m_final; }
+
+    // the retargeted animation before the clean-up
+    const Retarget::Result& retargeted() const { return m_result; }
+
+    // the clean-up choices shown (for tests); setting them runs the steps again
+    ImportOptions::CleanupOptions cleanupOptions() const;
+    void setCleanupOptions(const ImportOptions::CleanupOptions& options);
 
     // things the reader left out or changed (for example from a glTF file), shown under the summary
     void setNotes(const QStringList& notes);
@@ -129,6 +139,11 @@ class RetargetDialog : public QDialog
     QVector<int> m_rowJoint;   // joint of the user's file per table row
     QStringList m_readerNotes;
     QStringList m_mappingNotes;
+
+    ImportOptions::CleanupOptions m_cleanup;
+    Retarget::Result m_final;               // m_result with the clean-up applied
+    QVector<QCheckBox*> m_cleanupBoxes;     // one per ImportOptions::rows(), same order
+    QVBoxLayout* m_cleanupLayout;           // foot lock gets its box here (docs: top of importoptions.h)
 
     QLabel* m_summary;
     QLabel* m_saved;

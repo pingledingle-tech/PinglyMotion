@@ -5,6 +5,8 @@ FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test Widgets)
 ADD_EXECUTABLE (pinglymotion_retargetdialog_tests tst_retargetdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/retargetdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/retarget.cpp
+                ${CMAKE_SOURCE_DIR}/src/importoptions.cpp
+                ${CMAKE_SOURCE_DIR}/src/motioncleanup.cpp
                 ${CMAKE_SOURCE_DIR}/src/retargetmapping.cpp
                 ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_retargetdialog_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)

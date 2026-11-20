@@ -13,6 +13,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDialogButtonBox>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -191,6 +192,26 @@ RetargetDialog::RetargetDialog(const AnimFile::Animation& source,const AnimFile:
   connect(m_startsInPose,&QCheckBox::toggled,this,&RetargetDialog::run);
   layout->addWidget(m_startsInPose);
 
+  // clean-up choices, remembered between imports
+  m_cleanup=ImportOptions::load();
+  QGroupBox* cleanup=new QGroupBox(tr("Clean up the movement"),this);
+  m_cleanupLayout=new QVBoxLayout(cleanup);
+  for(const ImportOptions::Row& row : ImportOptions::rows())
+  {
+    QCheckBox* box=new QCheckBox(row.label,cleanup);
+    box->setToolTip(row.tip);
+    box->setChecked(m_cleanup.*row.field);
+    connect(box,&QCheckBox::toggled,this,[this,row](bool on)
+    {
+      m_cleanup.*row.field=on;
+      run();
+    });
+    m_cleanupLayout->addWidget(box);
+    m_cleanupBoxes << box;
+  }
+  // foot lock: add its check box to m_cleanupLayout here, after "Keep it in one place"
+  layout->addWidget(cleanup);
+
   QHBoxLayout* mappingRow=new QHBoxLayout;
   m_remember=new QCheckBox(tr("Remember my changes for files with this skeleton"),this);
   m_remember->setToolTip(tr("The next file from the same skeleton gets your changes."));
@@ -212,6 +233,23 @@ RetargetDialog::RetargetDialog(const AnimFile::Animation& source,const AnimFile:
 
   fillTable();
   loadSaved();
+  run();
+}
+
+ImportOptions::CleanupOptions RetargetDialog::cleanupOptions() const
+{
+  return m_cleanup;
+}
+
+void RetargetDialog::setCleanupOptions(const ImportOptions::CleanupOptions& options)
+{
+  m_cleanup=options;
+  const QList<ImportOptions::Row>& rows=ImportOptions::rows();
+  for(int i=0;i<rows.size() && i<m_cleanupBoxes.size();i++)
+  {
+    const QSignalBlocker block(m_cleanupBoxes[i]);
+    m_cleanupBoxes[i]->setChecked(m_cleanup.*rows[i].field);
+  }
   run();
 }
 
@@ -322,6 +360,7 @@ void RetargetDialog::accept()
     if(!error.isEmpty())
       QMessageBox::warning(this,windowTitle(),tr("Your changes could not be remembered.\n%1\nThe animation opens anyway.").arg(error));
   }
+  ImportOptions::save(m_cleanup);
   QDialog::accept();
 }
 
@@ -331,10 +370,21 @@ void RetargetDialog::run()
   Retarget::Options options;
   options.firstFrameAsRest=m_startsInPose->isChecked();
   m_result=Retarget::retarget(m_source,m_target,m_editor.current(),options);
+  QString problem=RetargetUi::problem(m_result,m_editor.hasChanges());
+  m_final=m_result;
+  if(problem.isEmpty())
+  {
+    const MotionCleanup::Result cleaned=ImportOptions::apply(*m_result.animation,m_cleanup);
+    if(cleaned.ok()) m_final.animation=cleaned.animation;
+    else
+    {
+      m_final.animation.reset();
+      problem=cleaned.error;
+    }
+  }
   QApplication::restoreOverrideCursor();
 
   updateTable();
-  const QString problem=RetargetUi::problem(m_result,m_editor.hasChanges());
   m_problem->setText(problem);
   m_problem->setVisible(!problem.isEmpty());
   m_open->setEnabled(problem.isEmpty());

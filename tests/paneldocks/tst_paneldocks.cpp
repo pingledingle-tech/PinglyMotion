@@ -24,6 +24,7 @@
 
 #include "panellayout.h"
 #include "panelwindow.h"
+#include "paneltitlebar.h"
 
 // a main window with the three panels, built as PinglyMotionWindow::buildDocks() does
 struct ThreePanelWindow
@@ -35,7 +36,7 @@ struct ThreePanelWindow
 
   ThreePanelWindow()
   {
-    window.setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks);
+    window.setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks | QMainWindow::GroupedDragging);
     window.setCentralWidget(new QLabel("3D view"));
     joints=makeDock("Joints",PanelLayout::JointsDock,Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     jointCard=makeDock("Selected joint",PanelLayout::JointCardDock,Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -103,6 +104,10 @@ class TestPanelDocks : public QObject
     void panelOpenedWhileHiddenEndsTheHiddenState();
     void tabWithNoPanelOpenChangesNothing();
     void resetWhileHiddenShowsAllPanels();
+    // P6
+    void groupedDraggingIsOn();
+    void floatingPanelKeepsItsPlaceAndSizeAfterRoundTrip();
+    void doubleClickOnTitleBarFloatsAndDocksAgain();
 };
 
 void TestPanelDocks::defaultLayoutHasThreePanelsOnTheirSides()
@@ -446,6 +451,84 @@ void TestPanelDocks::resetWhileHiddenShowsAllPanels()
   next.window.show();
   QVERIFY(QTest::qWaitForWindowExposed(&next.window));
   for(QDockWidget* dock : next.docks()) QVERIFY(dock->isVisible());
+}
+
+// ---- P6: two screens -----------------------------------------------------
+
+// Panels docked (or tabbed) together on the same side move together while
+// one of them is dragged, instead of leaving the others behind.
+void TestPanelDocks::groupedDraggingIsOn()
+{
+  ThreePanelWindow w;
+  QVERIFY(w.window.dockOptions() & QMainWindow::GroupedDragging);
+}
+
+// A floating panel (as if moved onto a second screen: the offscreen test
+// platform only gives one small screen, so this uses a place on it) keeps
+// its exact place and size after being saved and loaded again in a new
+// window, as long as the screen it was on is still among the known ones
+// (docs/PANELS_PLAN.md, job P6, owner test steps 1-2). This is the
+// mechanically checkable part of P6: an exact round trip of geometry, not a
+// judgement about how a real second monitor looks; that is the owner's
+// Windows test.
+void TestPanelDocks::floatingPanelKeepsItsPlaceAndSizeAfterRoundTrip()
+{
+  QByteArray saved;
+  const QRect floatingPlace(120,80,400,300);
+  {
+    ThreePanelWindow before;
+    before.window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&before.window));
+    before.timeline->setFloating(true);
+    before.timeline->setGeometry(floatingPlace);
+    saved=before.save();
+  }
+  QVERIFY(!saved.isEmpty());
+
+  ThreePanelWindow next;
+  QVERIFY(next.load(saved));
+  next.window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&next.window));
+  QVERIFY(next.timeline->isFloating());
+  QCOMPARE(next.timeline->geometry(),floatingPlace);
+
+  // the screen it was on is still among the known screens: pulling onto a
+  // screen leaves it exactly where it was (only a screen that is gone moves
+  // it, tested by floatingPanelOffEveryScreenIsPulledBack above)
+  const QList<QRect> screens{QRect(0,0,800,600)};
+  QCOMPARE(PanelWindow::pullFloatingPanelsOntoScreen(next.docks(),screens),0);
+  QCOMPARE(next.timeline->geometry(),floatingPlace);
+}
+
+// Double-clicking the title bar (not the buttons) floats a docked panel, and
+// docks it again, the same as the float button (docs/PANELS_PLAN.md, job P6:
+// "docking back by its button or by double-clicking the title bar").
+void TestPanelDocks::doubleClickOnTitleBarFloatsAndDocksAgain()
+{
+  QMainWindow window;
+  window.setCentralWidget(new QLabel("3D view"));
+  QDockWidget* dock=new QDockWidget("Timeline",&window);
+  dock->setObjectName(PanelLayout::TimelineDock);
+  dock->setWidget(new QLabel("timeline"));
+  dock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+  PanelTitleBar* titleBar=new PanelTitleBar(dock);
+  dock->setTitleBarWidget(titleBar);
+  window.addDockWidget(Qt::BottomDockWidgetArea,dock);
+  window.resize(900,700);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  QVERIFY(!dock->isFloating());
+
+  // a point on the bar's left side, inside the title text, away from the
+  // float and close buttons on the right
+  const QPoint onTitle(10,titleBar->height()/2);
+  // the toggle is deferred to the next pass through the event loop (see
+  // paneltitlebar.cpp), so events must be processed before checking it
+  QTest::mouseDClick(titleBar,Qt::LeftButton,Qt::NoModifier,onTitle);
+  QTRY_VERIFY(dock->isFloating());
+
+  QTest::mouseDClick(dock->titleBarWidget(),Qt::LeftButton,Qt::NoModifier,onTitle);
+  QTRY_VERIFY(!dock->isFloating());
 }
 
 QTEST_MAIN(TestPanelDocks)
