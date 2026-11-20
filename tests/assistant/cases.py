@@ -26,10 +26,8 @@ def key(frame, **joints):
 
 
 def hip(frame, y, x=0, z=0):
-    """A hip position key. The hip also gets a rotation key at that frame: a position key alone is
-    lost when the saved file is opened again (found while writing this set, see docs/DEV.md)."""
-    return [("set_pose", {"frame": frame, "joints": {"hip": [0, 0, 0]}}),
-            ("set_position", {"frame": frame, "x": x, "y": y, "z": z})]
+    """A hip position key alone, without a hip rotation key at that frame (issue 188)."""
+    return [("set_position", {"frame": frame, "x": x, "y": y, "z": z})]
 
 
 def opening(case):
