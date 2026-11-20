@@ -191,11 +191,41 @@
             ]
         },
         {
-            "description": "Takes a picture of the 3D view of the current frame, so you can see the pose. The picture is 4:3. Returns a PNG as base64 text.",
+            "description": "Takes a picture of the 3D view, so you can see the pose. Each picture is 4:3. Returns a PNG as base64 text. Optional, for checking your own work: views (up to 6 of front, back, left, right, three_quarter) gives one picture per view in a grid; frames (up to 12 frame numbers) gives one picture per frame (a strip, in rows of 4; with views, one row per frame and one column per view); each picture is captioned, and the answer lists what is in each cell. labels: true writes the classic joint names, the figure's own left side in blue and its right side in orange. trail: true adds dots where the hands and feet are at every frame (blue left, orange right). markers: false leaves out the small Bento joint balls. The program window, its camera and the current frame do not change.",
             "name": "screenshot",
             "parameters": {
+                "frames": {
+                    "description": "Frame numbers, first frame is 1",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "type": "array"
+                },
+                "labels": {
+                    "type": "boolean"
+                },
+                "markers": {
+                    "description": "Default true",
+                    "type": "boolean"
+                },
+                "trail": {
+                    "type": "boolean"
+                },
+                "views": {
+                    "items": {
+                        "enum": [
+                            "front",
+                            "back",
+                            "left",
+                            "right",
+                            "three_quarter"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "width": {
-                    "description": "Width in pixels, default 800",
+                    "description": "Width of one picture in pixels, default 800 (400 with views or frames)",
                     "type": "integer"
                 }
             },

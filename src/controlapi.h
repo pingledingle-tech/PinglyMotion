@@ -90,6 +90,8 @@ class ControlApi
     QJsonObject openFile(const QJsonObject&);
     QJsonObject saveFile(const QJsonObject&);
     QJsonObject screenshot(const QJsonObject&);
+    QJsonObject screenshotSheet(const QJsonObject&);
+    QJsonObject pngAnswer(const QImage& image);
     QJsonObject setFigure(const QJsonObject&);
     QJsonObject setCamera(const QJsonObject&);
     QJsonObject describePose(const QJsonObject&);

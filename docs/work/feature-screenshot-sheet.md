@@ -1,6 +1,6 @@
 Branch: feature/screenshot-sheet
-Status: active
-Pull request: pending
+Status: done
+Pull request: #186
 Files:
 - src/controlapi.*
 - src/screenshotsheet.*
@@ -11,6 +11,7 @@ Files:
 - tests/CMakeLists.txt
 - fuzz/CMakeLists.txt
 - fuzz/control.dict
+- fuzz/fuzz_control.cpp
 - tools/mcp/commands.json
 - docs/CONTROL.md
 - docs/ASSISTANT_GUIDE.md
