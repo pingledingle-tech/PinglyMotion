@@ -193,6 +193,8 @@ jobs:
         run: python3 tests/test_mcpb.py
       - name: Generated edge-case animations are up to date
         run: python3 tests/test_gen_edge_bvh.py
+      - name: Generated .dingle and .anim edge cases are up to date
+        run: python3 tests/test_gen_edge_motion.py
       - name: BVH comparer for the Blender round trip (issue 13)
         run: python3 tests/test_bvh_compare.py
       - name: Exported BVH files pass Second Life's upload rules
