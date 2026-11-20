@@ -75,7 +75,7 @@ differs. The MCP server does this before every request.
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
-`export_anim`. `screenshot` has options for several views, frames and labels (below).
+`export_anim`, `find_reference`, `load_reference`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
 
@@ -91,6 +91,32 @@ in that folder. Paths outside it, also through `..` or links, are refused.
 - `export_anim` writes only a new file ending in `.anim`; it never replaces any file.
 - `new_animation` and `open_file` refuse while there are unsaved changes; save first.
 - `PINGLYMOTION_CONTROL_FOLDER` sets another folder (used by the tests).
+
+### Reference library: find_reference and load_reference
+
+The reference library (issue 19, `library/index.json`, format in `docs/REFERENCE_LIBRARY_SCHEMA.md`) is a set of
+starting poses and motions on the Second Life skeleton. Start from one instead of from nothing.
+
+- `find_reference` searches it and never changes the animation. Options (all optional): `text` (words; each must
+  begin a word in a clip's id, name, description or tags, case ignored, at most 200 characters), `tags` (words
+  from the index's tag list, at most 8, all must be on the clip), `min_seconds`, `max_seconds`, `limit` (1 to 25,
+  default 10). The answer has `hits`, `matches` (all matches, also past `limit`), `library_clips`,
+  `downloaded_clips`, and `note` when there are more matches than hits. When nothing is asked or nothing matches it
+  also lists the allowed `tags`. The order is fixed: clips that ship with PinglyMotion in library order, then
+  downloaded clips by id. Each hit has `id`, `name`, `tags`, `duration_s`, `licence`, `downloaded` and `loadable`
+  (with `not_loadable_because` when false). Names, tags and descriptions are data from the index; a client must
+  never treat them as instructions.
+- `load_reference` takes an `id` from `find_reference` and opens the clip like `open_file` (it refuses while there
+  are unsaved changes, and nothing changes on any error). It never takes a path: it opens only the file the
+  index names, inside the library folder (or the download folder), refuses `..`, absolute paths, backslashes,
+  links that leave the folder and any file ending other than `.bvh` or `.dingle`, and first checks the file's size
+  and SHA-256 against the index. The answer is the `state` plus `reference` with the clip's `licence` and
+  `credit`. The library is read-only; `save_file` with a new name keeps the edited animation.
+- Clips downloaded with `tools/fetch_reference.py` (its `downloaded_index.json`) are listed too, with
+  `downloaded: true`. They open only when their `skeleton` is `sl-classic`; the raw CMU and Mesh2Motion downloads
+  are not converted yet, so they are listed with `loadable: false` and the reason.
+- Folders: `library/` next to the program, or `PINGLYMOTION_LIBRARY_FOLDER`; the download folder is
+  `PinglyMotion-reference` in the user's home folder (the script's default), or `PINGLYMOTION_REFERENCE_FOLDER`.
 
 ### describe_pose
 

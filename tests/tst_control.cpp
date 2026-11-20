@@ -6,6 +6,7 @@
  */
 
 #include <QBuffer>
+#include <QCryptographicHash>
 #include <QElapsedTimer>
 #include <QMessageAuthenticationCode>
 #include <QtTest>
@@ -178,6 +179,12 @@ class ControlTest : public QObject
     void exportAnimMatchesTheExporter();
     void exportAnimRefusesBadPathsAndOptions();
     void exportAnimRefusesCheckErrors();
+
+    void findReferenceSearchesTheLibrary();
+    void findReferenceRefusesBadOptions();
+    void loadReferenceOpensALibraryClip();
+    void loadReferenceRefusesChangedAndOutsideFiles();
+    void downloadedClipsAreMarked();
 
     void serverAnswersWithKey();
     void serverRefusesWithoutKey();
@@ -1994,6 +2001,288 @@ void ControlTest::indicatorShowsTheState()
   indicator.setRunning(false);
   QCOMPARE(indicator.state(), CI::Off);
   QCOMPARE(indicator.text(), QString("Remote control off"));
+}
+
+// ------------------------------------------------------------ reference library (issue 19)
+
+static QStringList hitIds(const QJsonObject& answer)
+{
+  QStringList ids;
+  for (const QJsonValue& hit : answer["hits"].toArray()) ids << hit.toObject()["id"].toString();
+  return ids;
+}
+
+// a small library in a temporary folder: index.json plus the listed files
+static QByteArray writeClip(const QString& folder, const QString& relative, const QByteArray& content)
+{
+  QDir().mkpath(QFileInfo(folder + "/" + relative).absolutePath());
+  QFile file(folder + "/" + relative);
+  if (!file.open(QIODevice::WriteOnly)) return QByteArray();
+  file.write(content);
+  return QCryptographicHash::hash(content, QCryptographicHash::Sha256).toHex();
+}
+
+static void writeJson(const QString& path, const QJsonObject& object)
+{
+  QFile file(path);
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  file.write(QJsonDocument(object).toJson());
+}
+
+static QJsonObject libraryEntry(const QString& id, const QString& file, const QByteArray& sha, qint64 bytes, const QString& skeleton = "sl-classic")
+{
+  return QJsonObject{{"id", id}, {"name", "Clip " + id}, {"description", "A test clip."}, {"tags", QJsonArray{"sit"}},
+                     {"source", "test"}, {"licence", "CC0 1.0"}, {"credit", "Test credit."}, {"skeleton", skeleton},
+                     {"duration_s", 2.0}, {"file", file}, {"bytes", double(bytes)}, {"sha256", QString::fromLatin1(sha)}};
+}
+
+void ControlTest::findReferenceSearchesTheLibrary()
+{
+  QTemporaryDir nothing;
+  m_api->setLibraryFolder(QString(PINGLYMOTION_TOOLS) + "/../library");
+  m_api->setReferenceFolder(nothing.path());
+
+  QJsonObject answer = run(R"({"command":"find_reference","text":"sit"})");
+  const QJsonObject firstAnswer = answer;
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(hitIds(answer), (QStringList{"cmu-13-04", "cmu-14-30", "m2m-sitting-enter", "m2m-sitting-exit", "m2m-sitting-talking",
+                                        "m2m-sitting-writing", "m2m-sit-ground-idle", "m2m-sit-ground-crying", "m2m-meditate"}));
+  QCOMPARE(answer["matches"].toInt(), 9);
+  QCOMPARE(answer["library_clips"].toInt(), 55);
+  QCOMPARE(answer["downloaded_clips"].toInt(), 0);
+  QVERIFY(!answer.contains("note"));
+  const QJsonObject first = answer["hits"].toArray().at(0).toObject();
+  QCOMPARE(first["downloaded"].toBool(), false);
+  QCOMPARE(first["loadable"].toBool(), true);
+  QVERIFY(!first["licence"].toString().isEmpty());
+  QVERIFY(first["tags"].toArray().contains("sit"));
+  QVERIFY(first["duration_s"].toDouble() > 0);
+
+  // the same search again gives the same answer
+  const QJsonObject again = run(R"({"command":"find_reference","text":"sit"})");
+  QCOMPARE(QJsonDocument(again).toJson(), QJsonDocument(firstAnswer).toJson());
+
+  // all words must match the start of a word; case does not matter
+  QCOMPARE(hitIds(run(R"({"command":"find_reference","text":"Slow WALK"})")), (QStringList{"cmu-07-04", "cmu-37-01"}));
+  QCOMPARE(hitIds(run(R"({"command":"find_reference","tags":["dance"]})")),
+           (QStringList{"cmu-05-03", "cmu-05-06", "cmu-05-12", "cmu-60-01", "m2m-dance-arm-pump", "m2m-dance-body-roll", "m2m-dance-charleston", "m2m-dance-reach-hip"}));
+  QCOMPARE(hitIds(run(R"({"command":"find_reference","text":"sit","tags":["talk"]})")), (QStringList{"m2m-sitting-talking"}));
+
+  // limit and the note about the rest
+  answer = run(R"({"command":"find_reference","text":"sit","limit":3})");
+  QCOMPARE(hitIds(answer), (QStringList{"cmu-13-04", "cmu-14-30", "m2m-sitting-enter"}));
+  QCOMPARE(answer["matches"].toInt(), 9);
+  QCOMPARE(answer["note"].toString(), QString("6 more match; narrow the search or raise limit."));
+
+  // no search: the first ten, at most; the allowed tags come with it
+  answer = run(R"({"command":"find_reference"})");
+  QCOMPARE(answer["hits"].toArray().size(), 10);
+  QCOMPARE(answer["matches"].toInt(), 55);
+  QVERIFY(answer["tags"].toArray().contains("sit"));
+
+  // length
+  answer = run(R"({"command":"find_reference","max_seconds":0.9})");
+  QCOMPARE(hitIds(answer), (QStringList{"m2m-head-nod", "m2m-angry"}));
+  answer = run(R"({"command":"find_reference","text":"walk","min_seconds":3.7,"max_seconds":3.8})");
+  QCOMPARE(hitIds(answer), (QStringList{"cmu-07-04"}));
+
+  // no hits: an ok answer with an empty list and the allowed tags
+  answer = run(R"({"command":"find_reference","text":"xyzzy"})");
+  QVERIFY(answer["ok"].toBool());
+  QVERIFY(answer["hits"].toArray().isEmpty());
+  QCOMPARE(answer["matches"].toInt(), 0);
+  QVERIFY(answer["tags"].toArray().contains("walk"));
+
+  // searching changes nothing
+  QVERIFY(m_host->opened.isEmpty());
+  QCOMPARE(m_animation->getNumberOfFrames(), 30);
+}
+
+void ControlTest::findReferenceRefusesBadOptions()
+{
+  QTemporaryDir nothing;
+  m_api->setLibraryFolder(QString(PINGLYMOTION_TOOLS) + "/../library");
+  m_api->setReferenceFolder(nothing.path());
+  for (const char* request : {R"({"command":"find_reference","text":5})", R"({"command":"find_reference","tags":"sit"})",
+                              R"({"command":"find_reference","tags":[1]})", R"({"command":"find_reference","limit":0})",
+                              R"({"command":"find_reference","limit":26})", R"({"command":"find_reference","limit":2.5})",
+                              R"({"command":"find_reference","min_seconds":"a"})", R"({"command":"find_reference","min_seconds":5,"max_seconds":2})",
+                              R"({"command":"find_reference","path":"/etc/passwd"})"})
+    QVERIFY2(!run(request)["ok"].toBool(), request);
+  QJsonObject answer = run(R"({"command":"find_reference","tags":["flying"]})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY(answer["error"].toString().startsWith("Unknown tag \"flying\". Tags: angry, backwards"));
+  answer = run(R"({"command":"find_reference","path":"x"})");
+  QCOMPARE(answer["error"].toString(), QString("Unknown option \"path\". Options: text, tags, min_seconds, max_seconds, limit."));
+
+  m_api->setLibraryFolder(nothing.path() + "/missing");
+  answer = run(R"({"command":"find_reference"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY(answer["error"].toString().startsWith("The reference library was not found."));
+}
+
+void ControlTest::loadReferenceOpensALibraryClip()
+{
+  QTemporaryDir nothing;
+  const QString library = QDir::cleanPath(QString(PINGLYMOTION_TOOLS) + "/../library");
+  m_api->setLibraryFolder(library);
+  m_api->setReferenceFolder(nothing.path());
+  m_animation->setDirty(false);
+
+  QJsonObject answer = run(R"({"command":"load_reference","id":"cmu-07-04"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(m_host->opened, QFileInfo(library + "/cmu/cmu_07_04.bvh").canonicalFilePath());
+  const QJsonObject reference = answer["reference"].toObject();
+  QCOMPARE(reference["id"].toString(), QString("cmu-07-04"));
+  QCOMPARE(reference["name"].toString(), QString("Slow walk"));
+  QVERIFY(reference["credit"].toString().contains("mocap.cs.cmu.edu"));
+  QVERIFY(reference["licence"].toString().startsWith("CMU:"));
+  QVERIFY(answer.contains("frames"));   // the state comes with it
+
+  // a Mesh2Motion clip too
+  m_host->opened.clear();
+  answer = run(R"({"command":"load_reference","id":"m2m-head-nod"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(QFileInfo(m_host->opened).fileName(), QString("m2m_head-nod.bvh"));
+  QVERIFY(m_host->opened.startsWith(QFileInfo(library).canonicalFilePath() + "/mesh2motion/"));
+  QCOMPARE(answer["reference"].toObject()["licence"].toString(), QString("CC0 1.0"));
+
+  // unknown or missing id: error, nothing opened
+  m_host->opened.clear();
+  answer = run(R"({"command":"load_reference","id":"no-such-clip"})");
+  QCOMPARE(answer["error"].toString(), QString("No reference clip with the id \"no-such-clip\". Use find_reference to see the ids."));
+  QVERIFY(!run(R"({"command":"load_reference"})")["ok"].toBool());
+  QVERIFY(!run(R"({"command":"load_reference","id":7})")["ok"].toBool());
+  // a path in place of an id is an unknown id, a path option is refused
+  QVERIFY(!run(R"({"command":"load_reference","id":"/etc/passwd"})")["ok"].toBool());
+  QVERIFY(!run(R"({"command":"load_reference","id":"cmu-07-04","path":"/etc/passwd"})")["ok"].toBool());
+  QVERIFY(m_host->opened.isEmpty());
+
+  // unsaved changes are kept
+  m_animation->setDirty(true);
+  answer = run(R"({"command":"load_reference","id":"cmu-07-04"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY(answer["error"].toString().startsWith("There are unsaved changes."));
+  QVERIFY(m_host->opened.isEmpty());
+}
+
+void ControlTest::loadReferenceRefusesChangedAndOutsideFiles()
+{
+  QTemporaryDir root;
+  QVERIFY(root.isValid());
+  const QString library = root.filePath("library");
+  QTemporaryDir nothing;
+  m_api->setLibraryFolder(library);
+  m_api->setReferenceFolder(nothing.path());
+  m_animation->setDirty(false);
+
+  const QByteArray content = "HIERARCHY\n";
+  const QByteArray sha = writeClip(library, "a/good.bvh", content);
+  writeClip(library, "a/changed.bvh", "other content");
+  const QByteArray outsideSha = writeClip(root.path(), "outside.bvh", content);
+  writeClip(library, "a/note.txt", content);
+  QVERIFY(QFile::link(root.filePath("outside.bvh"), library + "/a/link.bvh"));
+  QJsonArray clips{
+    libraryEntry("t-good", "a/good.bvh", sha, content.size()),
+    libraryEntry("t-changed", "a/changed.bvh", sha, content.size()),
+    libraryEntry("t-size", "a/good.bvh", sha, content.size() + 1),
+    libraryEntry("t-nosha", "a/good.bvh", QByteArray(), content.size()),
+    libraryEntry("t-parent", "../outside.bvh", outsideSha, content.size()),
+    libraryEntry("t-absolute", root.filePath("outside.bvh"), outsideSha, content.size()),
+    libraryEntry("t-link", "a/link.bvh", outsideSha, content.size()),
+    libraryEntry("t-backslash", "a\\good.bvh", sha, content.size()),
+    libraryEntry("t-dot", "a/./good.bvh", sha, content.size()),
+    libraryEntry("t-text", "a/note.txt", sha, content.size()),
+    libraryEntry("t-gone", "a/gone.bvh", sha, content.size()),
+    libraryEntry("t-other-skeleton", "a/good.bvh", sha, content.size(), "mesh2motion-humanoid"),
+  };
+  writeJson(library + "/index.json", QJsonObject{{"schema_version", 1}, {"tag_vocabulary", QJsonArray{"sit"}}, {"clips", clips}});
+
+  QJsonObject answer = run(R"({"command":"load_reference","id":"t-good"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(m_host->opened, QFileInfo(library + "/a/good.bvh").canonicalFilePath());
+  QCOMPARE(answer["reference"].toObject()["credit"].toString(), QString("Test credit."));
+
+  for (const char* id : {"t-changed", "t-size", "t-nosha", "t-parent", "t-absolute", "t-link", "t-backslash", "t-dot", "t-text", "t-gone", "t-other-skeleton"})
+  {
+    m_host->opened.clear();
+    answer = run((QString(R"({"command":"load_reference","id":")") + id + "\"}").toUtf8().constData());
+    QVERIFY2(!answer["ok"].toBool(), id);
+    QVERIFY2(m_host->opened.isEmpty(), id);
+  }
+  answer = run(R"({"command":"load_reference","id":"t-changed"})");
+  QCOMPARE(answer["error"].toString(), QString("The clip's file does not match the library index (changed or damaged), so it was not opened."));
+  answer = run(R"({"command":"load_reference","id":"t-parent"})");
+  QCOMPARE(answer["error"].toString(), QString("The index entry has no usable file path."));
+  answer = run(R"({"command":"load_reference","id":"t-link"})");
+  QCOMPARE(answer["error"].toString(), QString("The clip's file is outside the library folder."));
+  answer = run(R"({"command":"load_reference","id":"t-gone"})");
+  QCOMPARE(answer["error"].toString(), QString("The clip's file is missing from the library folder."));
+}
+
+void ControlTest::downloadedClipsAreMarked()
+{
+  QTemporaryDir root;
+  QVERIFY(root.isValid());
+  const QString library = root.filePath("library");
+  const QString download = root.filePath("download");
+  m_api->setLibraryFolder(library);
+  m_api->setReferenceFolder(download);
+  m_animation->setDirty(false);
+
+  const QByteArray content = "HIERARCHY\n";
+  const QByteArray sha = writeClip(library, "a/sit.bvh", content);
+  writeJson(library + "/index.json", QJsonObject{{"schema_version", 1}, {"tag_vocabulary", QJsonArray{"sit", "walk"}},
+            {"clips", QJsonArray{libraryEntry("t-sit", "a/sit.bvh", sha, content.size())}}});
+
+  // what tools/fetch_reference.py writes: path, size, length_s (null), downloaded: true
+  const QByteArray rawSha = writeClip(download, "cmu/data/001/01_01.bvh", content);
+  const QByteArray convertedSha = writeClip(download, "converted/sit_down.bvh", content);
+  const QByteArray escapeSha = writeClip(root.path(), "secret.bvh", content);
+  const auto downloaded = [](const QString& id, const QString& path, const QByteArray& sha, const QString& skeleton)
+  {
+    return QJsonObject{{"id", id}, {"name", id.section('/', -1)}, {"description", ""}, {"tags", QJsonArray()}, {"tags_reviewed", false},
+                       {"source", "Test"}, {"licence", "Test licence"}, {"credit", "Downloaded credit."}, {"format", "bvh"},
+                       {"skeleton", skeleton}, {"length_s", QJsonValue::Null}, {"fps", QJsonValue::Null}, {"path", path},
+                       {"url", "https://example.invalid/x"}, {"sha256", QString::fromLatin1(sha)}, {"size", 10}, {"downloaded", true}};
+  };
+  writeJson(download + "/downloaded_index.json", QJsonObject{{"version", 1}, {"entries", QJsonArray{
+    downloaded("zzz/sit_down", "converted/sit_down.bvh", convertedSha, "sl-classic"),
+    downloaded("cmu/01_01", "cmu/data/001/01_01.bvh", rawSha, "cmu-bvh"),
+    downloaded("cmu/escape", "../secret.bvh", escapeSha, "sl-classic"),
+  }}});
+
+  // bundled clips first, then the downloaded ones by id; each is marked
+  QJsonObject answer = run(R"({"command":"find_reference"})");
+  QCOMPARE(hitIds(answer), (QStringList{"t-sit", "cmu/01_01", "cmu/escape", "zzz/sit_down"}));
+  QCOMPARE(answer["library_clips"].toInt(), 1);
+  QCOMPARE(answer["downloaded_clips"].toInt(), 3);
+  const QJsonArray hits = answer["hits"].toArray();
+  QCOMPARE(hits.at(0).toObject()["downloaded"].toBool(), false);
+  QCOMPARE(hits.at(1).toObject()["downloaded"].toBool(), true);
+  QCOMPARE(hits.at(1).toObject()["loadable"].toBool(), false);
+  QCOMPARE(hits.at(1).toObject()["not_loadable_because"].toString(),
+           QString("Downloaded as the original cmu-bvh skeleton; not yet converted to the Second Life skeleton, so PinglyMotion cannot open it as it is."));
+  QVERIFY(hits.at(1).toObject()["duration_s"].isNull());
+  QCOMPARE(hits.at(3).toObject()["loadable"].toBool(), true);
+  QCOMPARE(hitIds(run(R"({"command":"find_reference","text":"sit down"})")), (QStringList{"zzz/sit_down"}));
+  // a length limit leaves out clips whose length is not known
+  QCOMPARE(hitIds(run(R"({"command":"find_reference","max_seconds":60})")), (QStringList{"t-sit"}));
+
+  // loading
+  answer = run(R"({"command":"load_reference","id":"zzz/sit_down"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(m_host->opened, QFileInfo(download + "/converted/sit_down.bvh").canonicalFilePath());
+  QCOMPARE(answer["reference"].toObject()["credit"].toString(), QString("Downloaded credit."));
+  m_host->opened.clear();
+  QVERIFY(run(R"({"command":"load_reference","id":"cmu/01_01"})")["error"].toString().startsWith("Cannot open cmu/01_01: Downloaded as the original"));
+  QVERIFY(!run(R"({"command":"load_reference","id":"cmu/escape"})")["ok"].toBool());
+  QVERIFY(m_host->opened.isEmpty());
+
+  // no download folder: only the library
+  QTemporaryDir empty;
+  m_api->setReferenceFolder(empty.path());
+  QCOMPARE(hitIds(run(R"({"command":"find_reference"})")), (QStringList{"t-sit"}));
 }
 
 QTEST_MAIN(ControlTest)

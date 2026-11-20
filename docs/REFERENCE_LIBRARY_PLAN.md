@@ -1,6 +1,6 @@
 # Reference library plan (issue 19)
 
-Status: job 1 (index and 55 curated clips) built, format in `docs/REFERENCE_LIBRARY_SCHEMA.md`; Quaternius not yet bundled; jobs 2 and 3 open. Written 20 November 2026. Waiting for the project owner's go. Licence readings below come from the sources' own pages, fetched on this date. **This is not legal advice.** Where a point is uncertain it is marked **UNCERTAIN**.
+Status: job 1 (index and 55 curated clips) built, format in `docs/REFERENCE_LIBRARY_SCHEMA.md`; Quaternius not yet bundled; job 2 built, job 3 first part (the control commands `find_reference` and `load_reference`) built; the browser panel waits for the owner. Written 20 November 2026. Waiting for the project owner's go. Licence readings below come from the sources' own pages, fetched on this date. **This is not legal advice.** Where a point is uncertain it is marked **UNCERTAIN**.
 
 ## Goal
 

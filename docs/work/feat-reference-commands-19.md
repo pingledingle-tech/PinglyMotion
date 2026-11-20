@@ -1,6 +1,6 @@
 Branch: feat/reference-commands-19
-Status: active
-Pull request: pending
+Status: done
+Pull request: #213
 Files:
 - src/controlapi.*
 - tests/tst_control.cpp
