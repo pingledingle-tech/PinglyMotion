@@ -1,5 +1,5 @@
 Branch: docs/homepage-status-section
-Status: active
+Status: done
 Pull request: #160
 Files:
 - docs/index.html
