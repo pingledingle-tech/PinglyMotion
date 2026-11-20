@@ -1,6 +1,6 @@
 Branch: docs/easing-tiles-merged-status
-Status: active
-Pull request: pending
+Status: done
+Pull request: #223
 Files:
 - docs/EASING.md
 
