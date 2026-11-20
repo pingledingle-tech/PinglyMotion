@@ -1,5 +1,5 @@
 Branch: cleanup/scene-tests-202
-Status: active
+Status: done
 Pull request: #212
 Files:
 - tests/tst_scene.cpp

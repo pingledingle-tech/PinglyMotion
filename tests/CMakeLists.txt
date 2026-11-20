@@ -141,3 +141,21 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_mesh_tests PRIVATE ${CMAKE_SOURCE_DIR}/
 TARGET_LINK_LIBRARIES (pinglymotion_mesh_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME mesh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_mesh_tests)
 SET_TESTS_PROPERTIES (mesh PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# props, the prop manager, the animation manager and the scene, without drawing (#202)
+ADD_EXECUTABLE (pinglymotion_scene_tests tst_scene.cpp ${CORE_SRC}
+                ${CMAKE_SOURCE_DIR}/src/scene.cpp ${CMAKE_SOURCE_DIR}/src/animationmanager.cpp
+                ${CMAKE_SOURCE_DIR}/src/prop.cpp ${CMAKE_SOURCE_DIR}/src/propmanager.cpp
+                ${CMAKE_SOURCE_DIR}/src/meshmodel.cpp ${CMAKE_SOURCE_DIR}/src/mesh.cpp
+                ${CMAKE_SOURCE_DIR}/src/floor.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scene_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_scene_tests ${PINGLYMOTION_QT_LIBS} OpenGL::GL Qt6::Test)
+ADD_TEST (NAME scene WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scene_tests)
+SET_TESTS_PROPERTIES (scene PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# the timeline: clicks, drags, wheel, Delete and Insert (#202)
+ADD_EXECUTABLE (pinglymotion_timeline_tests tst_timeline.cpp ${CORE_SRC} ${CMAKE_SOURCE_DIR}/src/timeline.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_timeline_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_timeline_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME timeline WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timeline_tests)
+SET_TESTS_PROPERTIES (timeline PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
