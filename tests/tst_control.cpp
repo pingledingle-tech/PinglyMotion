@@ -110,6 +110,11 @@ class ControlTest : public QObject
     void describePoseOnTPose();
     void describePoseOnSittingExample();
     void describePoseOnRaisedHand();
+    void describeMotionOfAHandMadeArmLift();
+    void describeMotionRefusesBadRanges();
+    void describeMotionOfTheCmuWalk();
+    void describeMotionOfTheCmuWave();
+    void describeMotionOfTheGeneratedEdgeCases();
 
     void serverAnswersWithKey();
     void serverRefusesWithoutKey();
@@ -1045,6 +1050,231 @@ void ControlTest::describePoseOnRaisedHand()
   const QJsonObject lHand = answer["positions"].toObject()["lHand"].toObject();
   const QJsonObject head = answer["positions"].toObject()["head"].toObject();
   QVERIFY(lHand["y"].toDouble() > head["y"].toDouble());
+}
+
+// issue #129: describe_motion on a hand-made arm lift: the left arm goes up
+// from frame 2 to 10 and down again by frame 20, then holds to frame 30
+void ControlTest::describeMotionOfAHandMadeArmLift()
+{
+  for (const char* request : {R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,0]}})",
+                              R"({"command":"set_pose","frame":10,"joints":{"lShldr":[0,0,90]}})",
+                              R"({"command":"set_pose","frame":20,"joints":{"lShldr":[0,0,0]}})",
+                              R"({"command":"set_frame","frame":5})"})
+  {
+    const QJsonObject answer = run(request);
+    QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  }
+
+  const QJsonObject answer = run(R"({"command":"describe_motion"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  // frame 1 is not played by Second Life, so the range starts at frame 2
+  QCOMPARE(answer["from"].toInt(), 2);
+  QCOMPARE(answer["to"].toInt(), 30);
+  QCOMPARE(answer["frames"].toInt(), 29);
+  // the command never moves the current frame
+  QCOMPARE(m_animation->getFrame(), 4);
+
+  QCOMPARE(answer["order"].toArray(), QJsonArray{"lShldr"});
+  const QJsonArray joints = answer["joints"].toArray();
+  QCOMPARE(joints.size(), 1);
+  const QJsonObject shoulder = joints.first().toObject();
+  QCOMPARE(shoulder["friendly"].toString(), QString("left shoulder"));
+  QCOMPARE(shoulder["axis"].toString(), QString("Z"));
+  QCOMPARE(shoulder["reach"].toDouble(), 90.0);
+  QCOMPARE(shoulder["travel"].toDouble(), 180.0);
+  QCOMPARE(shoulder["first_moves"].toInt(), 2);
+  // 90 degrees in 8 frames at 30 per second: 337.5 degrees per second
+  QCOMPARE(shoulder["top_speed"].toDouble(), 338.0);
+  QCOMPARE(shoulder["speed"].toString(), QString("fast"));
+
+  const QJsonArray segments = shoulder["segments"].toArray();
+  QCOMPARE(segments.size(), 3);
+  QCOMPARE(segments[0].toObject(), (QJsonObject{{"from", 2}, {"to", 10}, {"change", "increases"}, {"degrees", 90.0},
+                                                {"top_speed", 338.0}, {"speed", "fast"}}));
+  QCOMPARE(segments[1].toObject(), (QJsonObject{{"from", 10}, {"to", 20}, {"change", "decreases"}, {"degrees", 90.0},
+                                                {"top_speed", 270.0}, {"speed", "fast"}}));
+  QCOMPARE(segments[2].toObject(), (QJsonObject{{"from", 20}, {"to", 30}, {"change", "holds"}}));
+
+  QCOMPARE(answer["still"].toArray().size(), 18);
+  QVERIFY(!answer["still"].toArray().contains("lShldr"));
+
+  // the left hand swings up and comes back down: two moves, relative to the hip
+  const QJsonArray moves = answer["paths"].toObject()["lHand"].toObject()["moves"].toArray();
+  QCOMPARE(moves.size(), 2);
+  QCOMPARE(moves[0].toObject()["from"].toInt(), 2);
+  QCOMPARE(moves[0].toObject()["to"].toInt(), 10);
+  QCOMPARE(moves[0].toObject()["shape"].toString(), QString("arc"));
+  QVERIFY(moves[0].toObject()["height"].toString().startsWith("rises "));
+  QCOMPARE(moves[1].toObject()["to"].toInt(), 20);
+  QVERIFY(moves[1].toObject()["height"].toString().startsWith("lowers "));
+  QCOMPARE(answer["paths"].toObject()["rHand"].toObject()["moves"].toArray(), QJsonArray());
+
+  // nothing moves the legs: both feet stay down, no landings, no sliding
+  const QJsonObject contact = answer["contact"].toObject();
+  for (const char* foot : {"lFoot", "rFoot"})
+  {
+    QCOMPARE(contact[foot].toObject()["on_floor_percent"].toDouble(), 100.0);
+    QCOMPARE(contact[foot].toObject()["landings"].toInt(), 0);
+    QCOMPARE(contact[foot].toObject()["slide_top_speed"].toDouble(), 0.0);
+  }
+  QCOMPARE(contact["weight"].toArray(), (QJsonArray{QJsonObject{{"from", 2}, {"to", 30}, {"on", "both feet"}}}));
+
+  QCOMPARE(answer["hip"].toObject()["bob"].toDouble(), 0.0);
+  QCOMPARE(answer["rhythm"].toObject()["repeats"].toBool(), false);
+  QCOMPARE(answer["rhythm"].toObject()["arms"].toString(), QString("not both moving"));
+
+  const QJsonObject loop = answer["loop"].toObject();
+  QCOMPARE(loop["loop_in"].toInt(), 2);
+  QCOMPARE(loop["loop_out"].toInt(), 30);
+  QCOMPARE(loop["seam"].toString(), QString("smooth"));
+
+  // keys at 2, 10 and 20 (and the end of the range): what changes between them
+  const QJsonObject keys = answer["keys"].toObject();
+  const QJsonArray table = keys["table"].toArray();
+  QCOMPARE(table.size(), 3);
+  QCOMPARE(table[0].toObject()["from"].toInt(), 2);
+  QCOMPARE(table[0].toObject()["to"].toInt(), 10);
+  QCOMPARE(table[0].toObject()["changes"].toArray(),
+           (QJsonArray{QJsonObject{{"joint", "lShldr"}, {"friendly", "left shoulder"}, {"axis", "Z"}, {"degrees", 90.0}}}));
+  QCOMPARE(table[1].toObject()["changes"].toArray().first().toObject()["degrees"].toDouble(), -90.0);
+  QCOMPARE(table[2].toObject()["from"].toInt(), 20);
+  QCOMPARE(table[2].toObject()["to"].toInt(), 30);
+  QCOMPARE(table[2].toObject()["changes"].toArray(), QJsonArray());
+
+  QCOMPARE(answer["summary"].toString(),
+           QString("0.93 s at 30 fps (frames 2 to 30); 1 joint move, the left shoulder most (turns up to 90 degrees, fast); "
+                   "weight on both feet throughout; loop seam smooth."));
+
+  // a part of the range: only the lift
+  const QJsonObject part = run(R"({"command":"describe_motion","from":2,"to":10})");
+  QVERIFY2(part["ok"].toBool(), qPrintable(part["error"].toString()));
+  QCOMPARE(part["joints"].toArray().first().toObject()["segments"].toArray().size(), 1);
+  QCOMPARE(part["loop"].toObject()["seam"].toString(), QString("smooth"));   // the loop points do not change with the range
+}
+
+void ControlTest::describeMotionRefusesBadRanges()
+{
+  const char* bad[] = {
+    R"({"command":"describe_motion","from":0})",
+    R"({"command":"describe_motion","to":31})",
+    R"({"command":"describe_motion","from":2.5})",
+    R"({"command":"describe_motion","from":"2"})",
+    R"({"command":"describe_motion","from":10,"to":10})",
+    R"({"command":"describe_motion","from":20,"to":10})",
+  };
+  for (const char* request : bad)
+  {
+    const QJsonObject answer = run(request);
+    QVERIFY2(!answer["ok"].toBool(), request);
+    QVERIFY(!answer["error"].toString().isEmpty());
+  }
+
+  QJsonObject answer = run(R"({"command":"set_frame_count","frames":1})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  answer = run(R"({"command":"describe_motion"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY(answer["error"].toString().contains("only one frame"));
+
+  // two frames: the range is frames 1 to 2
+  answer = run(R"({"command":"set_frame_count","frames":2})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  answer = run(R"({"command":"describe_motion"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["from"].toInt(), 1);
+  QCOMPARE(answer["to"].toInt(), 2);
+}
+
+static QJsonObject describeMotionOfFile(const QString& path)
+{
+  BVH bvh;
+  Animation animation(&bvh, path);
+  FakeHost host(&animation);
+  ControlApi api(&host);
+  return api.execute(QJsonObject{{"command", "describe_motion"}});
+}
+
+// the CMU walk (tests/motions): a walk repeats about once a second, legs and
+// arms swing in opposition, the feet land in turn and the hip travels forward
+void ControlTest::describeMotionOfTheCmuWalk()
+{
+  const QJsonObject answer = describeMotionOfFile(PINGLYMOTION_TOOLS "/../tests/motions/cmu_02_01_walk.bvh");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+
+  const QJsonObject rhythm = answer["rhythm"].toObject();
+  QVERIFY(rhythm["repeats"].toBool());
+  QVERIFY2(rhythm["period_seconds"].toDouble() > 0.9 && rhythm["period_seconds"].toDouble() < 1.3,
+           qPrintable(QString::number(rhythm["period_seconds"].toDouble())));
+  QCOMPARE(rhythm["legs"].toString(), QString("move in opposition"));
+  QCOMPARE(rhythm["arms"].toString(), QString("move in opposition"));
+  QVERIFY(rhythm["feet_alternate"].toBool());
+
+  const QJsonObject contact = answer["contact"].toObject();
+  QVERIFY(contact["lFoot"].toObject()["landings"].toInt() + contact["rFoot"].toObject()["landings"].toInt() >= 3);
+  QVERIFY(answer["hip"].toObject()["forward"].toDouble() > 100.0);
+
+  // the knees bend most, quickly; the swing of a hand is a series of arcs
+  QCOMPARE(answer["joints"].toArray().first().toObject()["joint"].toString(), QString("rShin"));
+  for (const QJsonValue& move : answer["paths"].toObject()["rHand"].toObject()["moves"].toArray())
+    QCOMPARE(move.toObject()["shape"].toString(), QString("arc"));
+  QVERIFY(!answer["keys"].toObject().contains("table"));   // motion capture: no key table
+  QVERIFY(answer["summary"].toString().contains("legs move in opposition; arms move in opposition; feet alternate"));
+}
+
+// the CMU wave: the right arm goes up, waves, and comes down
+void ControlTest::describeMotionOfTheCmuWave()
+{
+  const QJsonObject answer = describeMotionOfFile(PINGLYMOTION_TOOLS "/../tests/motions/cmu/cmu_13_26_wave.bvh");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QVERIFY(answer["summary"].toString().contains("the right shoulder most"));
+
+  const QJsonObject rHand = answer["paths"].toObject()["rHand"].toObject();
+  const QJsonArray moves = rHand["moves"].toArray();
+  QVERIFY(moves.size() >= 3);
+  QVERIFY(moves.first().toObject()["height"].toString().startsWith("rises "));
+  QVERIFY(moves.last().toObject()["height"].toString().startsWith("lowers "));
+  QVERIFY2(rHand["highest"].toDouble() > 60.0, qPrintable(QString::number(rHand["highest"].toDouble())));   // above the shoulders
+
+  // Euler angles near gimbal lock swing wildly; "reach" is one rotation and stays a real angle
+  for (const QJsonValue& joint : answer["joints"].toArray())
+    QVERIFY(joint.toObject()["reach"].toDouble() <= 180.0);
+}
+
+// every generated edge-case file that opens gets a well-formed answer: no
+// crash, finite numbers, and the 180 degree wrap counted as 10 degrees, not 350
+void ControlTest::describeMotionOfTheGeneratedEdgeCases()
+{
+  // the files the parser accepts (tests/data/generated/README.md); a refused
+  // file would open a message box in Animation::loadBVH(). edge_max_frames.bvh
+  // is left out: 10000 frames are slow to open in a debug build.
+  const QDir folder(PINGLYMOTION_TOOLS "/../tests/data/generated");
+  const QStringList files = {"edge_one_frame.bvh", "edge_root_only.bvh", "edge_all_identity.bvh",
+                             "edge_extreme_rotations.bvh", "edge_wrap_180.bvh", "edge_large_translation.bvh",
+                             "edge_min_frame_time.bvh", "edge_max_frame_time.bvh", "edge_loop_one_frame.bvh"};
+  for (const QString& file : files)
+  {
+    QVERIFY2(folder.exists(file), qPrintable(file));
+    BVH bvh;
+    Animation animation(&bvh, folder.filePath(file));
+    FakeHost host(&animation);
+    ControlApi api(&host);
+    const QJsonObject answer = api.execute(QJsonObject{{"command", "describe_motion"}});
+    if (animation.getNumberOfFrames() < 2)
+    {
+      QVERIFY2(!answer["ok"].toBool() && answer["error"].toString().contains("only one frame"), qPrintable(file));
+      continue;
+    }
+    QVERIFY2(answer["ok"].toBool(), qPrintable(file + ": " + answer["error"].toString()));
+    QVERIFY2(!answer["summary"].toString().isEmpty(), qPrintable(file));
+    const QByteArray text = QJsonDocument(answer).toJson(QJsonDocument::Compact);
+    QVERIFY2(!text.contains("null") && !text.contains("nan") && !text.contains("inf"), qPrintable(file));
+
+    if (file == "edge_wrap_180.bvh")
+    {
+      const QJsonObject hip = answer["joints"].toArray().first().toObject();
+      QCOMPARE(hip["joint"].toString(), QString("hip"));
+      QVERIFY2(hip["reach"].toDouble() < 20.0, qPrintable(QString::number(hip["reach"].toDouble())));
+    }
+  }
 }
 
 // issue #43: the status bar learns who is connected and what it did

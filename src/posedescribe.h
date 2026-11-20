@@ -26,9 +26,13 @@
 #ifndef POSEDESCRIBE_H
 #define POSEDESCRIBE_H
 
+#include <QHash>
 #include <QJsonObject>
+#include <QMatrix4x4>
+#include <QStringList>
 
 class Animation;
+class BVHNode;
 
 namespace PoseDescribe
 {
@@ -36,6 +40,15 @@ namespace PoseDescribe
   // "animation" is not changed. "animation" must have an open file (a
   // skeleton loaded with the classic joints).
   QJsonObject describe(Animation* animation, int frame);
+
+  // shared with describe_motion (src/motiondescribe.*): the classic joints
+  // this module covers, their everyday names, a joint by name (nullptr when
+  // the skeleton has none), and the world matrix of every joint at a
+  // 0-based frame, hip position track included
+  const QStringList& classicJoints();
+  QString friendlyName(const QString& joint);
+  BVHNode* findJoint(Animation* animation, const QString& name);
+  QHash<BVHNode*, QMatrix4x4> worldTransforms(Animation* animation, int frame);
 }
 
 #endif

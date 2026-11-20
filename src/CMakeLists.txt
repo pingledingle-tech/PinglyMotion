@@ -38,6 +38,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               mesh.cpp
               meshmodel.cpp
               paneltitlebar.cpp
+              motiondescribe.cpp
               posedescribe.cpp
               prop.cpp
               propmanager.cpp
