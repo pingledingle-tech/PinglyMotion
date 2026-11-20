@@ -66,7 +66,7 @@ class ControlApi
     // name and description of every command, for help texts and MCP
     static QJsonArray commandList();
 
-    // open_file and save_file only work inside this folder: PinglyMotion in the
+    // open_file, save_file and export_anim only work inside this folder: PinglyMotion in the
     // user's Documents folder, or PINGLYMOTION_CONTROL_FOLDER if set
     void setWorkFolder(const QString& folder) { m_workFolder = folder; }
     static QString defaultWorkFolder();
@@ -94,6 +94,8 @@ class ControlApi
     QJsonObject setCamera(const QJsonObject&);
     QJsonObject describePose(const QJsonObject&);
     QJsonObject describeMotion(const QJsonObject&);
+    QJsonObject checkAnimation(const QJsonObject&);
+    QJsonObject exportAnim(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();

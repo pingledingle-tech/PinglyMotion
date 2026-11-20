@@ -218,6 +218,14 @@ jobs:
         env:
           PINGLYMOTION_MCP: node
         run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
+      - name: Evaluation set for the AI assistant, reference solutions (issue 129)
+        # every prompt's acceptance checks pass for a scripted reference solution and fail for an
+        # untouched animation; the manual driver (needs an API key, never run here) is tried on a fake API
+        run: |
+          xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/assistant/run_reference.py build/src/PinglyMotion
+          xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/assistant/selftest_driver.py build/src/PinglyMotion
+      - name: Golden clips are described sensibly (issue 129)
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/assistant/run_golden.py build/src/PinglyMotion
       - name: Smoke run with screenshots (issue 129)
         # the same run as in the Windows job, under Xvfb, but over every example and test-motion
         # file (recursively); fails only when the program crashes or does not answer

@@ -21,7 +21,9 @@ Second Life animation can then read the pose and the motion and find rule breaks
    right; several views and labelled sides in one image help it check its own work, and a frame
    strip shows a movement without many calls.
 
-Later (not in these three): the evaluation set, copy/move/mirror keys and undo through commands,
+Built: the evaluation set (`tests/assistant/`, `docs/DEV.md`, "Evaluation set for the AI assistant").
+
+Later (not in these three): copy/move/mirror keys and undo through commands,
 starter poses and hand presets, `.anim` import through commands, worked examples, the
 Teach-the-AI form (issue 20).
 
@@ -50,6 +52,9 @@ Teach-the-AI form (issue 20).
   the curve editor job (it changes `src/easing.*` and `src/animation.*`) merged first.
 
 ## Job B: `export_anim` command
+
+**Status:** built (pull request "Control command export_anim"); the `loop` option uses the loop points as
+the program stores them, so it works before job A's `set_loop` exists.
 
 - **Goal:** the assistant writes the Second Life `.anim` file itself, with the right priority,
   loop and hand pose, and tells the user the file name to upload.
