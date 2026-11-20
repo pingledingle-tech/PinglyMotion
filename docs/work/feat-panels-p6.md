@@ -1,5 +1,5 @@
 Branch: feat/panels-p6
-Status: active
+Status: done
 Pull request: #156
 Files:
 - src/pinglymotionwindow.*
