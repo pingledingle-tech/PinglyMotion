@@ -80,7 +80,7 @@ ctest --test-dir build --output-on-failure
 
 PinglyMotion has an open local interface (HTTP with JSON, and an MCP server) so an AI tool or script can
 pose the figure, look at it and save the animation. See [docs/CONTROL.md](docs/CONTROL.md).
-The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up, and `PinglyMotion.mcpb`, a one-click extension for the Claude app
+The Windows download has the MCP server in its `mcp` folder, with a `README.txt` on how to set it up, and `PinglyMotion.mcpb`, a one-click extension for the Claude app (steps in `START HERE - Claude.txt` next to it)
 (see [docs/CONTROL.md](docs/CONTROL.md#quick-way-the-claude-desktop-extension)).
 Every assistant that connects can read [docs/ASSISTANT_GUIDE.md](docs/ASSISTANT_GUIDE.md) with the `read_guide` tool: Second Life's rules for animations, joint names, which way each turn goes, typical poses and a work rhythm.
 

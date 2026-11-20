@@ -1,6 +1,6 @@
 Branch: docs/mcpb-install-howto
-Status: active
-Pull request: pending
+Status: done
+Pull request: #163
 Files:
 - docs/work/docs-mcpb-install-howto.md
 - tools/mcp/START_HERE_CLAUDE.txt
