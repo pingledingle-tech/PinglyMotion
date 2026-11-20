@@ -1,6 +1,6 @@
 Branch: feat/reference-library-19
 Status: active
-Pull request: pending
+Pull request: #221
 Files:
 - tools/convert_reference.py
 - tests/test_convert_reference.py
@@ -10,6 +10,7 @@ Files:
 - .github/workflows/reference-fetch.yml
 - docs/REFERENCE_LIBRARY_SCHEMA.md
 - docs/REFERENCE_LIBRARY_PLAN.md
+- docs/CONTROL.md
 - CREDITS.md
 
 ## What
