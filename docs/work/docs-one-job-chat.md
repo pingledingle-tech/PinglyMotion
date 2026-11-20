@@ -1,6 +1,6 @@
 Branch: docs/one-job-chat
-Status: active
-Pull request: pending
+Status: done
+Pull request: #150
 Files:
 - CLAUDE.md
 - docs/DEV.md

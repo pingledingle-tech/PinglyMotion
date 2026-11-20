@@ -80,6 +80,7 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 
 ## Git and GitHub from a session
 
+- Only the job chat starts jobs; before any job read `work.py list`, the open pull requests and the jobs list, and open the job file and draft pull request first (`CLAUDE.md`, "Before you start").
 - `main` is protected. Work on your own branch, open a draft pull request, mark it ready when it is done (`CLAUDE.md`).
 - A shallow clone is fine. Fetch another branch with an explicit refspec: `git fetch --depth=50 origin +refs/heads/X:refs/remotes/origin/X`. Push with `git -c push.negotiate=true push`.
 - If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. Update a branch: `PUT .../pulls/N/update-branch`. Squash merge: `PUT .../pulls/N/merge -f merge_method=squash`.
