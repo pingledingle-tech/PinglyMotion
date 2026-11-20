@@ -15,6 +15,7 @@ Files:
 - docs/POSING_UX.md
 - docs/RELEASE_NOTES_0.4.0.md
 - docs/TEACHING.md
+- docs/FIRST_ANIMATION.md
 
 ## What
 
