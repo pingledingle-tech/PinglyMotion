@@ -1,5 +1,5 @@
 Branch: ci/windows-smoke-screenshots
-Status: active
+Status: done
 Pull request: #142
 Files:
 - .github/workflows/build.yml
