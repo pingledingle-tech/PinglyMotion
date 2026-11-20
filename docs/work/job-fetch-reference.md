@@ -1,6 +1,6 @@
 Branch: job/fetch-reference
 Status: active
-Pull request: pending
+Pull request: #173
 Files:
 - tools/fetch_reference.py
 - tools/reference_manifest.json
