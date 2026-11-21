@@ -1,6 +1,6 @@
 Branch: cleanup/one-rotation-maths
 Status: active
-Pull request: pending
+Pull request: #231
 Files:
 - src/rotation.h
 - src/iktree.*
