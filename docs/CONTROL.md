@@ -112,7 +112,8 @@ letters, `:` anywhere, `..`, empty parts, a trailing dot or space, and device na
 - `set_loop` takes `in` and `out`, two whole frame numbers (first frame is 1), `in` before `out`, both
   from 1 to the number of frames; or `off: true`, which puts the loop points back to the default (the whole
   animation, from frame 2 while the first frame is protected). Anything else fails and changes nothing. The
-  answer has `loop_in` and `loop_out`.
+  answer has `loop_in` and `loop_out`. The Loop In and Loop Out fields under the timeline show the new points
+  at once, as when the user types them.
 - `state` returns `loop_in` and `loop_out` (the same default when none are stored yet). `.dingle` keeps both
   the easing and the loop points.
 
