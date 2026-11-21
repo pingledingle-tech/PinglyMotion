@@ -1,6 +1,6 @@
 Branch: docs/sl-validation-wording
-Status: active
-Pull request: pending
+Status: done
+Pull request: #233
 Files:
 - docs/FIRST_ANIMATION.md
 - docs/ROADMAP.md
