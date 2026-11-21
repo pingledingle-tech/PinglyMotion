@@ -21,10 +21,10 @@ static const float MAX_COORDINATE = 10.0f;      // metres; the avatar is about 2
 static const int NAME_SIZE = 64;
 static const int VERTEX_SIZE = 6 * 4 + PMMesh::INFLUENCES * (1 + 4);
 
-static bool fail(QString* errorMessage, const QString& text)
+// the error text for load() to return
+static QString fail(const QString& text)
 {
-  if (errorMessage) *errorMessage = text;
-  return false;
+  return text;
 }
 
 namespace
@@ -103,56 +103,57 @@ PMMesh::Result PMMesh::read(const QString& fileName)
 {
   Result result;
   PMMesh mesh;
-  if (mesh.load(fileName, &result.error))
+  result.error = mesh.load(fileName);
+  if (result.error.isEmpty())
     result.mesh = std::move(mesh);
   return result;
 }
 
-bool PMMesh::load(const QString& fileName, QString* errorMessage)
+QString PMMesh::load(const QString& fileName)
 {
   joints.clear();
   parts.clear();
 
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly))
-    return fail(errorMessage, QString("Could not open %1: %2").arg(fileName, file.errorString()));
+    return fail(QString("Could not open %1: %2").arg(fileName, file.errorString()));
   if (file.size() > MAX_FILE_SIZE)
-    return fail(errorMessage, QString("%1 is too big").arg(fileName));
+    return fail(QString("%1 is too big").arg(fileName));
   const QByteArray data = file.readAll();
   const QString bad = QString("%1 is not a valid PinglyMotion mesh file: %2").arg(fileName);
 
   Reader in(data);
   if (!in.raw(PMM_MAGIC, sizeof(PMM_MAGIC)))
-    return fail(errorMessage, bad.arg("wrong header"));
+    return fail(bad.arg("wrong header"));
 
   QStringList names;
   quint32 jointCount;
   if (!in.u32(jointCount) || jointCount == 0 || jointCount > MAX_JOINTS)
-    return fail(errorMessage, bad.arg("joint count"));
+    return fail(bad.arg("joint count"));
   for (quint32 j = 0; j < jointCount; j++)
   {
     QString name;
-    if (!in.name(name)) return fail(errorMessage, bad.arg("joint name"));
+    if (!in.name(name)) return fail(bad.arg("joint name"));
     names << name;
   }
 
   quint32 partCount;
   if (!in.u32(partCount) || partCount == 0 || partCount > MAX_PARTS)
-    return fail(errorMessage, bad.arg("part count"));
+    return fail(bad.arg("part count"));
   QVector<Part> loaded;
   for (quint32 p = 0; p < partCount; p++)
   {
     Part part;
     quint32 flags, vertexCount, indexCount;
     if (!in.name(part.name) || !in.u32(flags) || !in.u32(vertexCount) || !in.u32(indexCount))
-      return fail(errorMessage, bad.arg("part header"));
+      return fail(bad.arg("part header"));
     if (vertexCount == 0 || vertexCount > MAX_VERTICES)
-      return fail(errorMessage, bad.arg("vertex count"));
+      return fail(bad.arg("vertex count"));
     if (indexCount == 0 || indexCount % 3 != 0 || indexCount > MAX_INDICES)
-      return fail(errorMessage, bad.arg("index count"));
+      return fail(bad.arg("index count"));
     // check the length before reserving memory
     if (in.left() < qint64(vertexCount) * VERTEX_SIZE + qint64(indexCount) * 2)
-      return fail(errorMessage, bad.arg("file is too short"));
+      return fail(bad.arg("file is too short"));
     part.eye = (flags & 1) != 0;
 
     part.vertices.reserve(vertexCount);
@@ -163,27 +164,27 @@ bool PMMesh::load(const QString& fileName, QString* errorMessage)
     {
       float f[6];
       for (float& value : f)
-        if (!in.f32(value)) return fail(errorMessage, bad.arg("vertex"));
+        if (!in.f32(value)) return fail(bad.arg("vertex"));
       const QVector3D position(f[0], f[1], f[2]);
       const QVector3D normal(f[3], f[4], f[5]);
       if (!finiteVector(position, MAX_COORDINATE) || !finiteVector(normal, 2.0f))
-        return fail(errorMessage, bad.arg("vertex position or normal out of range"));
+        return fail(bad.arg("vertex position or normal out of range"));
       part.vertices << position;
       part.normals << normal;
 
       quint8 joint[INFLUENCES];
       float weight[INFLUENCES];
       for (quint8& value : joint)
-        if (!in.u8(value) || value >= jointCount) return fail(errorMessage, bad.arg("vertex joint"));
+        if (!in.u8(value) || value >= jointCount) return fail(bad.arg("vertex joint"));
       float total = 0.0f;
       for (float& value : weight)
       {
         if (!in.f32(value) || !std::isfinite(value) || value < 0.0f || value > 1.001f)
-          return fail(errorMessage, bad.arg("vertex weight"));
+          return fail(bad.arg("vertex weight"));
         total += value;
       }
       if (std::fabs(total - 1.0f) > 0.01f)
-        return fail(errorMessage, bad.arg("vertex weights do not add up to 1"));
+        return fail(bad.arg("vertex weights do not add up to 1"));
       for (int i = 0; i < INFLUENCES; i++)
       {
         part.joints << joint[i];
@@ -194,14 +195,14 @@ bool PMMesh::load(const QString& fileName, QString* errorMessage)
     for (quint32 i = 0; i < indexCount; i++)
     {
       quint16 index;
-      if (!in.u16(index) || index >= vertexCount) return fail(errorMessage, bad.arg("triangle corner"));
+      if (!in.u16(index) || index >= vertexCount) return fail(bad.arg("triangle corner"));
       part.indices << index;
     }
     loaded << part;
   }
   if (in.left() != 0)
-    return fail(errorMessage, bad.arg("extra data at the end"));
+    return fail(bad.arg("extra data at the end"));
   joints = names;
   parts = loaded;
-  return true;
+  return QString();
 }
