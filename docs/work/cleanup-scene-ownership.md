@@ -1,6 +1,6 @@
 Branch: cleanup/scene-ownership
 Status: active
-Pull request: pending
+Pull request: #242
 Files:
 - src/animationview.*
 - src/scene.*
