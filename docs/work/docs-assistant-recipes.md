@@ -1,6 +1,6 @@
 Branch: docs/assistant-recipes
 Status: active
-Pull request: pending
+Pull request: #229
 Files:
 - docs/ASSISTANT_GUIDE.md
 - tests/assistant/**
