@@ -207,6 +207,7 @@ class ControlTest : public QObject
     void serverRefusesBadRequests();
     void serverChecksKeyBeforeBody();
     void serverLimitsConnections();
+    void serverClosesConnectionsWithoutKeyQuickly();
     void serverRefusesLargeHeaders();
     void serverListensOnLoopbackOnly();
     void connectionFileHasAddressAndKey();
@@ -1282,6 +1283,52 @@ void ControlTest::serverLimitsConnections()
     delete socket;
   }
   QTRY_COMPARE_WITH_TIMEOUT(statusOf(post(R"({"command":"state"})")), 200, 3000);
+}
+
+// issue 249: a connection must send its whole request header within 2 seconds; the key then
+// gives it the longer time for the body
+void ControlTest::serverClosesConnectionsWithoutKeyQuickly()
+{
+  // a silent connection is closed by the server after about 2 seconds
+  {
+    QTcpSocket socket;
+    socket.connectToHost(QHostAddress::LocalHost, m_server->port());
+    QVERIFY(socket.waitForConnected(2000));
+    QElapsedTimer timer;
+    timer.start();
+    socket.write("POST /api HTTP/1.1\r\nHost: 127.0.0.1\r\n");   // the header never ends
+    QTRY_COMPARE_WITH_TIMEOUT(socket.state(), QAbstractSocket::UnconnectedState, 6000);
+    QVERIFY2(timer.elapsed() >= 1500 && timer.elapsed() < 5000, qPrintable(QString::number(timer.elapsed())));
+  }
+
+  // eight silent connections free their slots by themselves
+  QList<QTcpSocket*> idle;
+  for (int i = 0; i < 8; i++)
+  {
+    QTcpSocket* socket = new QTcpSocket(this);
+    socket->connectToHost(QHostAddress::LocalHost, m_server->port());
+    QVERIFY(socket->waitForConnected(2000));
+    idle.append(socket);
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(statusOf(post(R"({"command":"state"})")), 503, 3000);
+  QTest::qWait(2500);
+  QCOMPARE(statusOf(post(R"({"command":"state"})")), 200);
+  qDeleteAll(idle);
+
+  // an admitted request may send its body later than 2 seconds
+  const QByteArray body = R"({"command":"state"})";
+  QTcpSocket socket;
+  QByteArray answer;
+  connect(&socket, &QTcpSocket::readyRead, [&]() { answer += socket.readAll(); });
+  socket.connectToHost(QHostAddress::LocalHost, m_server->port());
+  QVERIFY(socket.waitForConnected(2000));
+  socket.write("POST /api HTTP/1.1\r\nHost: 127.0.0.1:" + QByteArray::number(m_server->port()) + "\r\nAuthorization: Bearer " +
+               m_server->token().toLatin1() + "\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\n\r\n");
+  QTest::qWait(2500);
+  QCOMPARE(socket.state(), QAbstractSocket::ConnectedState);
+  socket.write(body);
+  QTRY_VERIFY_WITH_TIMEOUT(answer.contains("\r\n\r\n") && answer.endsWith("}"), 4000);
+  QCOMPARE(statusOf(answer), 200);
 }
 
 // issue #145: the complete header block may be at most 16 KB, also when its end has arrived

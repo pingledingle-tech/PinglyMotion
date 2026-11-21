@@ -48,7 +48,8 @@ Authorization: Bearer <token>
 ```
 
 Limits: the request line and headers together at most 16 KB and the body at most 64 KB (larger
-requests get `413`); at most 8 connections at a time (more get `503`).
+requests get `413`); at most 8 connections at a time (more get `503`); a connection must send its whole request
+header within 2 seconds, otherwise it is closed, and the rest of the request within 15 seconds (issue 249).
 
 `GET /api/commands` lists every command with its parameters. Answers are JSON with `"ok": true`,
 or `"ok": false` and an `"error"` that says what to do.
