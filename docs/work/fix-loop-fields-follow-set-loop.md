@@ -1,10 +1,8 @@
 Branch: fix/loop-fields-follow-set-loop
-Status: active
+Status: done
 Pull request: #276
 Files:
 - src/pinglymotionwindow.cpp
-- src/controlapi.*
-- tests/smoke_control.py
 - docs/AI_HELP_PLAN.md
 - docs/CONTROL.md
 
