@@ -170,3 +170,19 @@ ADD_EXECUTABLE (pinglymotion_labwatcher_tests tst_labwatcher.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_labwatcher_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_labwatcher_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME labwatcher COMMAND pinglymotion_labwatcher_tests)
+
+# Script Lab step 7 (#293): what a run does to the avatar, the animation lookup and the 3D view's preview
+ADD_EXECUTABLE (pinglymotion_labeffects_tests tst_labeffects.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labeffects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_labeffects_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
+TARGET_LINK_LIBRARIES (pinglymotion_labeffects_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME labeffects WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_labeffects_tests)
+
+# ... and the panel's "Show effects in 3D view" box with a watched folder
+ADD_EXECUTABLE (pinglymotion_scriptlabeffects_tests tst_scriptlabeffects.cpp
+                ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/paneltitlebar.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabeffects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabeffects_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabeffects_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME scriptlabeffects WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scriptlabeffects_tests)
+SET_TESTS_PROPERTIES (scriptlabeffects PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

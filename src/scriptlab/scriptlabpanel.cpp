@@ -4,6 +4,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QCheckBox>
 #include <QDesktopServices>
 #include <QDir>
 #include <QDockWidget>
@@ -33,6 +34,7 @@
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
+#include "effectspreview.h"
 #include "labwatcher.h"
 #include "paneltitlebar.h"
 #include "rlvbehaviours.h"
@@ -396,6 +398,7 @@ void ScriptLabPanel::changeEvent(QEvent* event)
     applyStyle();
     refresh();
     refreshLive();
+    refreshEffects();
   }
 }
 
@@ -555,6 +558,21 @@ void ScriptLabPanel::buildLivePage()
   m_liveStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   layout->addWidget(m_liveStatus);
 
+  // Script Lab step 7 (issue 293): the run's effects in the 3D view, off until ticked
+  m_effectsBox = new QCheckBox(tr("Show effects in 3D view"), page);
+  m_effectsBox->setObjectName("scriptLabShowEffects");
+  m_effectsBox->setChecked(false);
+  m_effectsBox->setToolTip(tr("Play the animation the script started on a preview figure and show worn objects and locks. "
+                              "Your animation is not changed; untick to see it again."));
+  layout->addWidget(m_effectsBox);
+  m_effectsStatus = new QLabel(page);
+  m_effectsStatus->setObjectName("scriptLabEffectsStatus");
+  m_effectsStatus->setWordWrap(true);
+  m_effectsStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_effectsStatus->hide();
+  layout->addWidget(m_effectsStatus);
+  connect(m_effectsBox, &QCheckBox::toggled, this, &ScriptLabPanel::effectsToggled);
+
   // the script, read only, with line numbers
   layout->addSpacing(SpacingL - SpacingS);
   QHBoxLayout* scriptRow = new QHBoxLayout;
@@ -604,7 +622,8 @@ void ScriptLabPanel::buildLivePage()
 
   setTabOrder(m_liveFolder, m_watch);
   setTabOrder(m_watch, m_unwatch);
-  setTabOrder(m_unwatch, m_openEditor);
+  setTabOrder(m_unwatch, m_effectsBox);
+  setTabOrder(m_effectsBox, m_openEditor);
   setTabOrder(m_openEditor, m_scriptView);
   setTabOrder(m_scriptView, m_problems);
   setTabOrder(m_problems, m_runLog);
@@ -621,6 +640,7 @@ void ScriptLabPanel::setWatcher(LabWatcher* watcher)
     m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshLive);
   }
   m_refusal.clear();
+  connectEffectsToWatcher();
   refreshLive();
 }
 
@@ -860,4 +880,53 @@ void ScriptLabPanel::refreshLive()
   }
   setLiveStatus(tr("OK: %1 ran without errors (run %2), %n log line(s).", nullptr, int(run.value("log").toArray().size()))
                   .arg(file).arg(runNumber) + rlvText, 1);
+}
+
+// --- Script Lab step 7 (issue 293): effects in the 3D view
+
+void ScriptLabPanel::setEffects(EffectsPreview* preview)
+{
+  for (const QMetaObject::Connection& c : m_effectsConnections) disconnect(c);
+  m_effectsConnections.clear();
+  m_effects = preview;
+  if (preview)
+  {
+    preview->setEnabled(m_effectsBox && m_effectsBox->isChecked());
+    m_effectsConnections << connect(preview, &EffectsPreview::changed, this, &ScriptLabPanel::refreshEffects);
+  }
+  connectEffectsToWatcher();
+  refreshEffects();
+}
+
+void ScriptLabPanel::connectEffectsToWatcher()
+{
+  for (const QMetaObject::Connection& c : m_effectsWatcherConnections) disconnect(c);
+  m_effectsWatcherConnections.clear();
+  if (!m_effects || !m_watcher) return;
+  // every new run (and the end of a watch) goes to the preview, which does nothing while it is off
+  auto show = [this]() { if (m_effects) m_effects->showLatest(m_watcher); };
+  m_effectsWatcherConnections << connect(m_watcher, &LabWatcher::resultChanged, this, show);
+  m_effectsWatcherConnections << connect(m_watcher, &LabWatcher::watchChanged, this, show);
+}
+
+void ScriptLabPanel::effectsToggled(bool on)
+{
+  if (!m_effects) return;
+  m_effects->setEnabled(on);
+  // ticked: show the newest run at once, without waiting for the next save
+  if (on) m_effects->showLatest(m_watcher);
+  refreshEffects();
+}
+
+void ScriptLabPanel::refreshEffects()
+{
+  if (!m_effectsStatus) return;
+  const QStringList lines = m_effects && m_effects->enabled() ? m_effects->lines() : QStringList();
+  m_effectsStatus->setText(lines.join(QLatin1Char('\n')));
+  m_effectsStatus->setVisible(!lines.isEmpty());
+  // an error starts with the word Error; the danger colour only backs it up (P10)
+  const bool dark = isDark(palette());
+  QPalette p = m_effectsStatus->palette();
+  p.setColor(QPalette::WindowText, m_effects && m_effects->hasError() ? dangerColour(dark) : mutedColour(dark));
+  m_effectsStatus->setPalette(p);
 }

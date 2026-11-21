@@ -11,7 +11,7 @@ Files:
 - src/CMakeLists.txt
 - tests/CMakeLists.txt
 - tests/tst_labeffects.cpp
-- tests/scriptlabeffects/**
+- tests/tst_scriptlabeffects.cpp
 - examples/scriptlab/anim_*.lsl
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md

@@ -94,6 +94,7 @@
 #include "pinglymotionwindow.h"
 #include "playback.h"
 #include "scriptlab/scriptlabpanel.h"
+#include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
@@ -534,6 +535,10 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_scriptLabPanel->setState(&m_controlApi->rlv());
   // and the same folder watch as lab_watch (issue 292)
   m_scriptLabPanel->setWatcher(&m_controlApi->lab());
+  // and shows what a Live run does in the 3D view, off until its box is ticked (issue 293)
+  EffectsPreview* effects=new EffectsPreview(this);
+  ui->animationView->setEffectsPreview(effects);
+  m_scriptLabPanel->setEffects(effects);
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
   m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));
