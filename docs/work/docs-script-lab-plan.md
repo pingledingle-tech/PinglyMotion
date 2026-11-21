@@ -1,6 +1,6 @@
 Branch: docs/script-lab-plan
-Status: active
-Pull request: pending
+Status: done
+Pull request: #286
 Files:
 - docs/SCRIPT_LAB_PLAN.md
 - docs/DECISIONS.md

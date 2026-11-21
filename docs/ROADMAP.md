@@ -39,6 +39,19 @@ Visible changes (steps 6 and 7, and #40) need the project owner's Windows test b
 - Documentation jobs (Maya and live-link notes, issue clean-up) never collide with code jobs.
 - Steps 3 and 4 wait for step 2.
 
+## Script Lab track (separate from animation and UX)
+
+Status: **planned, nothing started.** A sandbox for testing RLV and LSL scripts written with Claude Code; decision in [DECISIONS.md](DECISIONS.md), plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md). It mostly adds new files under `src/scriptlab/` and does not wait for the animation and UX steps above. One issue per step, started only on the project owner's word:
+
+1. RLV core ([#287](https://github.com/pingledingle-tech/PinglyMotion/issues/287), technical)
+2. Script Lab panel ([#288](https://github.com/pingledingle-tech/PinglyMotion/issues/288), visible)
+3. LSL interpreter, minimum ([#289](https://github.com/pingledingle-tech/PinglyMotion/issues/289), technical)
+4. Link: `llOwnerSay("@...")` to the RLV core ([#290](https://github.com/pingledingle-tech/PinglyMotion/issues/290), technical)
+5. Events and several objects ([#291](https://github.com/pingledingle-tech/PinglyMotion/issues/291), technical + visible)
+6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible)
+7. Effects in the 3D view ([#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293), visible)
+8. Separate repository for the owner's RLV tools, description only ([#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294), technical)
+
 ## Aurora track (separate repository, owner decides)
 
 1. **Option C first:** try Aurora's editor offline with the environment variables from `docs/AURORA_STUDIO.md`, on the owner's Windows PC. No code, a few minutes. Result decides whether an own-named "studio mode" fork (option B) is worth it.
