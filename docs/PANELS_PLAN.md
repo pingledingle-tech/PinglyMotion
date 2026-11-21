@@ -1,3 +1,5 @@
+> The design charter (docs/DESIGN_CHARTER.md) wins if this document disagrees.
+
 # Panels plan (posing UX step 3)
 
 This page is the plan for step 3 of [POSING_UX.md](POSING_UX.md): panels that can be moved, docked and popped out; **Tab** hides all panels; **Reset layout**; the layout is remembered; the camera keeps the figure in the middle of the free area; two screens work. Issue #14 tracks the posing work.

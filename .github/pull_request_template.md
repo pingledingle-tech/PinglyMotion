@@ -17,3 +17,12 @@
 
 - [ ] No: the checks are enough
 - [ ] Yes: the project owner tests the Windows build before this is merged. Test steps, one at a time:
+
+## Charter principles followed
+
+<!-- Required for every visible change; a visible pull request without it is not merged.
+     Name the ids from docs/DESIGN_CHARTER.md and one line each on how, for example:
+     P1: colours and radius from docs/DESIGN_SYSTEM.md; P6: disabled with the reason "Open an animation first".
+     Write "Not visible" when nothing changes on screen. -->
+
+Charter principles followed: 
