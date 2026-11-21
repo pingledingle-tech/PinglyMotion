@@ -1,6 +1,6 @@
 Branch: docs/code-analysis
 Status: active
-Pull request: (pending)
+Pull request: #236
 Files:
 - docs/CODE_ANALYSIS.md
 - CREDITS.md (only if QAvimator is not yet credited for ideas)
