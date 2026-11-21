@@ -1,5 +1,5 @@
 Branch: feat/texts-menus-labels
-Status: active
+Status: done
 Pull request: #277
 Files:
 - src/pinglymotionwindow.ui
