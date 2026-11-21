@@ -774,9 +774,28 @@ QJsonObject ControlApi::saveFile(const QJsonObject& request)
   if (file.isEmpty()) return fail(error);
   // never replace another file; saving again to the open file is fine
   const QString current = m_host->fileName().isEmpty() ? QString() : QFileInfo(m_host->fileName()).canonicalFilePath();
-  if (QFileInfo::exists(file) && file != current)
+  const bool exists = QFileInfo::exists(file);
+  if (exists && file != current)
     return fail("A file with this name already exists: " + QFileInfo(file).fileName() + ". Choose another name.");
-  if (!m_host->saveFile(file, error)) return fail(error);
+  // a new name: make the file first, only if it does not exist yet (NewOnly), so a file that
+  // appears between the check above and the save is never replaced (issue 248)
+  if (!exists)
+  {
+    QFile reserve(file);
+    if (!reserve.open(QIODevice::WriteOnly | QIODevice::NewOnly))
+    {
+      if (QFileInfo::exists(file))
+        return fail("A file with this name already exists: " + QFileInfo(file).fileName() + ". Choose another name.");
+      return fail("Could not write " + QFileInfo(file).fileName() + ": " + reserve.errorString());
+    }
+    reserve.close();
+  }
+  if (!m_host->saveFile(file, error))
+  {
+    // the empty file made above is not left behind
+    if (!exists) QFile::remove(file);
+    return fail(error);
+  }
   QJsonObject answer = ok();
   answer["file"] = file;
   return answer;
