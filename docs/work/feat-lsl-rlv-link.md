@@ -28,3 +28,6 @@ Script Lab step 4 (issue 290): `llOwnerSay("@...")` in a script run by `lsl_run`
 goes to the RLV core for that script's object. Replies come back as listen
 events on the reply channel. The log shows the command, the result and the
 final restrictions. Does not restructure `src/scriptlab/rlv*`; uses its public API only.
+
+Checked locally: the Script Lab, LSL and control tests pass. The fuzz target `fuzz_lsl` now
+runs scripts through `RlvWorld` with an RLV state.
