@@ -28,7 +28,7 @@ Frame 0 is locked. Do not pose there. To unlock it, turn off **Options > Protect
 
 Turning a joint saves a key for that joint at once. You will see a mark in the timeline.
 
-The key button has a key icon. It sits right of the play button. It looks pressed when the joint has a key here.
+The key button has a key icon. It sits right of the time marker's bar. It looks pressed when the joint has a key here.
 
 ## 5. Set another key
 
@@ -37,8 +37,9 @@ The key button has a key icon. It sits right of the play button. It looks presse
 
 ## 6. Play
 
-1. Click the play button, left of the key button.
-2. Click it again to stop. If it still plays, click once more.
+1. Click **Start**, under the time marker's bar.
+2. Click **Stop** to stop. **Replay from start** plays again from the first frame.
+3. With **Loop** ticked (the default) it plays again and again. Untick it to play once.
 
 The arm now moves between your keys. To change the feel, click your second key on the timeline. Then look at the row of six tiles under the timeline:
 

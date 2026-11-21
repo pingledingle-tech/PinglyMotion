@@ -16,6 +16,8 @@ Files:
 - docs/UX_DECISIONS.md
 - docs/POSING_UX.md
 - docs/CONTROL.md
+- docs/FIRST_ANIMATION.md
+- docs/TEACHING_TEXTS.md
 
 ## What
 
