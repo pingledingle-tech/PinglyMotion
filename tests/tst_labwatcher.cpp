@@ -23,6 +23,7 @@
 #include <QTemporaryDir>
 
 #include "scriptlab/labwatcher.h"
+#include "scriptlab/rlvstate.h"
 
 namespace
 {
@@ -68,6 +69,7 @@ class TestLabWatcher : public QObject
     void hiddenAndDeepFoldersAreSkipped();
     void linksDoNotLeaveTheFolder();
     void endlessLoopIsStopped();
+    void rlvLinesReachTheSharedState();
 };
 
 void TestLabWatcher::refusals()
@@ -93,7 +95,7 @@ void TestLabWatcher::runOptionsAreChecked()
   QTemporaryDir dir;
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"seconds", -1}}).error,
            QString("\"seconds\" must be between 0 and 3600 (simulated seconds)."));
-  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"inputs", QJsonArray{QJsonObject{{"type", "wave"}}}}}).error,
            QString("Input 1: \"type\" must be \"chat\" or \"touch\"."));
   QVERIFY(!w.watching());
@@ -301,6 +303,29 @@ void TestLabWatcher::endlessLoopIsStopped()
   nextSecond();
   QVERIFY(writeFile(dir.filePath("loop.lsl"), Hello));
   QTRY_COMPARE_WITH_TIMEOUT(ownerSays(w.lastResult()), QStringList{"hello"}, 5000);
+}
+
+// llOwnerSay("@...") in a watched script goes to the RLV state the panel shows; each run starts empty
+void TestLabWatcher::rlvLinesReachTheSharedState()
+{
+  LabWatcher w;
+  RlvState rlv;
+  w.setRlvState(&rlv);
+  QTemporaryDir dir;
+  QVERIFY(writeFile(dir.filePath("lock.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));
+  QVERIFY(w.watch(dir.path()).ok());
+  QVERIFY(rlv.has("detach"));
+  QVERIFY(rlv.has("sendim"));
+  const QJsonObject state = w.lastResult().value("result").toObject().value("rlv").toObject().value("state").toObject();
+  QCOMPARE(state.value("blocked").toArray(), (QJsonArray{"detach", "sendim"}));
+  // the next run starts from an empty state
+  nextSecond();
+  QVERIFY(writeFile(dir.filePath("lock.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n\"); } }"));
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 5000);
+  QVERIFY(rlv.has("detach"));
+  QVERIFY(!rlv.has("sendim"));
+  // keep_rlv is checked like lsl_run checks it
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"keep_rlv", "yes"}}).error, QString("\"keep_rlv\" must be true or false."));
 }
 
 QTEST_GUILESS_MAIN(TestLabWatcher)

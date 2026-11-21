@@ -841,7 +841,8 @@ void ScriptLabPanel::refreshLive()
   }
   QString rlvText;
   const QJsonArray held = run.value("rlv").toObject().value("state").toObject().value("restrictions").toArray();
-  if (run.value("rlv").isObject())
+  // only for a script that sent RLV lines (or left restrictions held)
+  if (run.value("rlv").toObject().value("lines").toInt() > 0 || !held.isEmpty())
   {
     QStringList names;
     for (const QJsonValue& r : held)

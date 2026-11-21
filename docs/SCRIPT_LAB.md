@@ -44,8 +44,8 @@ visibility are saved with the layout. View > Reset layout closes it again.
 
 ## What exists now (step 3, issue 289): the LSL interpreter
 
-A small LSL interpreter, used through the control commands only: the panel does not show scripts yet (step 6), and
-scripts do not talk to the RLV core yet (step 4, issue 290).
+A small LSL interpreter, used through the control commands and, for scripts in a watched folder, the panel's Live
+page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
 
 - `src/scriptlab/lsl/`: lexer, recursive descent parser (no flex or bison), a checker with the Second Life compiler's
   name and type rules, the interpreter with a simulated clock, the built-in functions, and `world.*`, which turns what
@@ -71,7 +71,8 @@ Code) edits in their own editor and sees the result in PinglyMotion at once. The
   shows a status line that starts with a word (`OK` or `Error`; the colour only backs it up), the script read-only
   with line numbers (an error's line number is bold in the danger colour and the line is underlined), the errors
   and warnings with line and column (Enter or a double-click shows the line in the script), the event log of the
-  run, and the RLV restrictions at the end. **Open in editor** opens the file in the program the computer uses for
+  run, and the RLV restrictions at the end. The script's `llOwnerSay("@...")` lines go to the same RLV state the
+  Commands page shows (emptied before each run, as `lsl_run` does unless `keep_rlv` is true). **Open in editor** opens the file in the program the computer uses for
   `.lsl` files; if there is none, the status line says so.
 - Control commands `lab_watch`, `lab_unwatch` and `lab_result` ([CONTROL.md](CONTROL.md), "Script Lab Live"):
   the same watch and the same results as the panel.

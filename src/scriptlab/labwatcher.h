@@ -5,7 +5,7 @@
  * LSL scripts. When a .lsl file in it is saved, the watcher waits a short
  * moment (so an editor's several writes count as one change), reads the
  * file, checks it as lsl_check does and, when it compiles, runs it as
- * lsl_run does. The result is kept per file; the panel and the control
+ * lsl_run does (with the RLV state the panel shows). The result is kept per file; the panel and the control
  * command lab_result show the latest one.
  *
  * Safety: the folder is only read, never written. At most MAX_SCRIPTS
@@ -60,7 +60,7 @@ class LabWatcher : public QObject
 
     // Starts watching a folder (absolute path to an existing folder). Stops
     // watching the folder before, if any. seconds and inputs are given to
-    // every run, as in lsl_run; they are checked here. Then the newest script
+    // every run, as in lsl_run (also keep_rlv); they are checked here. Then the newest script
     // in the folder is run once, so there is a result at once.
     Result watch(const QString& folder, const QJsonObject& runOptions = QJsonObject());
     // stops watching; false when nothing was watched

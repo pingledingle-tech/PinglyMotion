@@ -62,8 +62,8 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
   // seconds and inputs are checked the way lsl_run checks them: an empty
   // script never compiles, so an answer with "errors" means the options are fine
   for (auto it = runOptions.begin(); it != runOptions.end(); ++it)
-    if (it.key() != QLatin1String("seconds") && it.key() != QLatin1String("inputs"))
-      return {"Unknown run option \"" + it.key().left(40) + "\". Options: seconds, inputs."};
+    if (it.key() != QLatin1String("seconds") && it.key() != QLatin1String("inputs") && it.key() != QLatin1String("keep_rlv"))
+      return {"Unknown run option \"" + it.key().left(40) + "\". Options: seconds, inputs, keep_rlv."};
   QJsonObject probe = runOptions;
   probe["command"] = "lsl_run";
   probe["source"] = QString();
@@ -250,7 +250,8 @@ void LabWatcher::runScript(const QString& relative)
         QJsonObject request = m_options;
         request["command"] = "lsl_run";
         request["source"] = source;
-        result["result"] = lsl::Control::run(request);
+        // llOwnerSay("@...") goes to the sandbox's RLV state, the one the panel and rlv_state show
+        result["result"] = lsl::Control::run(request, m_rlv);
       }
     }
   }

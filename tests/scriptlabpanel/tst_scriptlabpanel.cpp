@@ -500,7 +500,7 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QCOMPARE(panel.problemList()->count(), 0);
   QCOMPARE(panel.scriptView()->extraSelections().size(), 0);
   QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: locked"));
-  QVERIFY(panel.liveStatus()->text().startsWith("OK: collar.lsl ran without errors (run 2), 3 log line(s)."));
+  QCOMPARE(panel.liveStatus()->text(), QString("OK: collar.lsl ran without errors (run 2), 3 log line(s)."));
   QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::successColour(dark));
   saveShot(panel, "-ok");
 
@@ -527,6 +527,16 @@ void TestScriptLabPanel::liveFollowsControlCommands()
   QCOMPARE(panel.liveFolderField()->text(), QDir::toNativeSeparators(QFileInfo(dir.path()).canonicalFilePath()));
   QCOMPARE(panel.liveScriptName()->text(), QString("Script: hello.lsl"));
   QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: hi"));
+  // a script with RLV lines: the restrictions show in the status line and on the Commands page
+  panel.setState(&api.rlv());
+  QTest::qWait(1100);   // a new file time
+  QVERIFY(writeScript(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));
+  QTRY_COMPARE_WITH_TIMEOUT(api.lab().runCount(), 2, 5000);
+  QCOMPARE(panel.liveStatus()->text(),
+           QString("OK: hello.lsl ran without errors (run 2), 3 log line(s). RLV restrictions at the end: detach, sendim."));
+  QCOMPARE(restrictionRows(panel).size(), 2);
+  QCOMPARE(shownStates(panel).value("detach"), QString("Blocked"));
+  QVERIFY(panel.runLog()->toPlainText().endsWith("rlv_command: @detach=n,sendim=n"));
   QVERIFY(api.execute(QJsonObject{{"command", "lab_unwatch"}})["ok"].toBool());
   QCOMPARE(panel.liveFolderField()->text(), QString());
 }

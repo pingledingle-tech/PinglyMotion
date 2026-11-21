@@ -405,9 +405,11 @@ tools, PinglyMotion notices the save, checks and runs the script, and the assist
 The Script Lab panel's Live page shows the same watch and the same results, so the user sees what the
 assistant sees. The code is `src/scriptlab/labwatcher.*`.
 
-- `lab_watch {path, seconds, inputs}` watches the folder `path` (the whole path; a relative path, a file,
-  a missing folder or a network folder is refused). Watching another folder stops the one before.
-  `seconds` and `inputs` are given to every run, as in `lsl_run`, and are checked the same way. The
+- `lab_watch {path, seconds, inputs, keep_rlv}` watches the folder `path` (the whole path; a relative path,
+  a file, a missing folder or a network folder is refused). Watching another folder stops the one before.
+  `seconds`, `inputs` and `keep_rlv` are given to every run, as in `lsl_run`, and are checked the same way:
+  `llOwnerSay("@...")` goes to the sandbox's RLV state (the one `rlv_state` and the panel show), which is
+  emptied before each run unless `keep_rlv` is `true`. The
   newest script in the folder is run once at once. The answer has `folder` (the path without links),
   `scripts` (the `.lsl` files found, relative to the folder, sorted), `truncated` (true when the scan
   stopped at a limit), `runs` and `result` (as in `lab_result`; `null` when the folder has no script).
