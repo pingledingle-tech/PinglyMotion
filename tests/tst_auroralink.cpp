@@ -270,6 +270,21 @@ void AuroraLinkTest::poseHasNeutralFrameThenPose()
   for (int i = 3; i < neutral.size(); i++) QCOMPARE(neutral[i], 0.0);
   QVERIFY(pose.contains(10.0) && pose.contains(20.0) && pose.contains(30.0));
 
+  // the text is a valid BVH that reads back to the same pose
+  const AnimFile::Result parsed = AnimFile::parseBvh(text.toUtf8());
+  QVERIFY2(parsed.ok(), qPrintable(parsed.error));
+  const AnimFile::Animation& model = *parsed.animation;
+  QCOMPARE(model.frames, 3);
+  const int joint = model.findJoint("lForeArm");
+  QVERIFY(joint >= 0);
+  QCOMPARE(model.rotation(joint, 0), QVector3D());
+  QCOMPARE(model.rotation(joint, 1), QVector3D(10, 20, 30));
+  QCOMPARE(model.rotation(joint, 2), QVector3D(10, 20, 30));
+  const QVector3D hip = m_animation->getNode(0)->frameData(4).position();
+  QCOMPARE(model.position(0, 1), hip);
+  QCOMPARE(model.position(0, 2), hip);
+  QCOMPARE(model.position(0, 0), m_animation->getNode(0)->frameData(0).position());
+
   const QByteArray out = qgetenv("PINGLYMOTION_POSE_OUT");
   if (!out.isEmpty())
   {
