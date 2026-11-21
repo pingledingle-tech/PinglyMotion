@@ -1,5 +1,5 @@
 Branch: feat/lsl-events-objects
-Status: active
+Status: done
 Pull request: #303
 Files:
 - src/scriptlab/lsl/**
