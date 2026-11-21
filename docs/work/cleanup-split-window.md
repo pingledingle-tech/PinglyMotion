@@ -1,6 +1,6 @@
 Branch: cleanup/split-window
 Status: active
-Pull request: pending
+Pull request: #237
 Files:
 - src/pinglymotionwindow.*
 - src/pinglymotionwindowfile.cpp
