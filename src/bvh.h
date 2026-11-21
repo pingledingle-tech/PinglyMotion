@@ -41,7 +41,9 @@ class BVH
     ~BVH();
 
     void setChannelLimits(BVHNode* node,BVHChannelType type,double min,double max) const;
-    void parseLimFile(BVHNode* root,const QString& limFile) const;
+    // reads the joint limits; the result has an empty title when all was well,
+    // otherwise the title and text of the error for the window to show
+    Animation::LoadProblem parseLimFile(BVHNode* root,const QString& limFile) const;
 
     void setNumFrames(int numFrames);
     int numFrames() const;
@@ -90,6 +92,8 @@ class BVH
 
     // why the last animRead() returned NULL
     QString lastError;
+    // the problem the last read had with the limits file (empty title: none)
+    Animation::LoadProblem lastLimitsProblem;
 
     QStringList bvhTypeName;
     QStringList bvhChannelName;
