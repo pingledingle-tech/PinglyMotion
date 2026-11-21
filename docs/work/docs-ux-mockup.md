@@ -1,6 +1,6 @@
 Branch: docs/ux-mockup
 Status: active
-Pull request: pending
+Pull request: #285
 Files:
 - docs/mockup/**
 - .github/workflows/pages.yml
