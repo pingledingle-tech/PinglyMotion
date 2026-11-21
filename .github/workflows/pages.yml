@@ -1,6 +1,6 @@
 name: Pages
 
-# Publishes docs/index.html to GitHub Pages with a live status section built
+# Publishes docs/index.html (and the hidden UX mockup in docs/mockup/) to GitHub Pages with a live status section built
 # from GitHub's own data (tools/site/build_status.py). Runs on changes to the
 # page and every night, so the status stays current without anyone editing it.
 on:
@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - docs/index.html
+      - docs/mockup/**
       - tools/site/**
       - .github/workflows/pages.yml
   schedule:
@@ -40,6 +41,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 tools/site/build_status.py _site
+      # The UX mockup: a hidden page (noindex, not linked from the front page).
+      - name: Add the UX mockup
+        run: cp -r docs/mockup _site/mockup
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

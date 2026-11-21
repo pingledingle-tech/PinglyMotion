@@ -4,7 +4,6 @@ Pull request: #285
 Files:
 - docs/mockup/**
 - .github/workflows/pages.yml
-- tools/site/build_status.py
 - CREDITS.md
 
 ## What
