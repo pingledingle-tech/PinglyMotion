@@ -1,6 +1,6 @@
 Branch: feat/lsl-rlv-link
 Status: active
-Pull request: pending
+Pull request: #300
 Files:
 - docs/work/feat-lsl-rlv-link.md
 - src/scriptlab/lsl/**
