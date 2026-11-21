@@ -18,9 +18,9 @@ namespace lsl
 {
 namespace Control
 {
-  static const int MAX_INPUTS = 200;
-  static const int MAX_SECONDS = 3600;
-  static const int DEFAULT_SECONDS = 10;
+  static constexpr int MAX_INPUTS = 200;
+  static constexpr int MAX_SECONDS = 3600;
+  static constexpr int DEFAULT_SECONDS = 10;
 
   // {"command":"lsl_check","source":"..."}: errors and warnings with line and column
   QJsonObject check(const QJsonObject& request);

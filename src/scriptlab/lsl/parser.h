@@ -27,8 +27,8 @@ namespace lsl
 class Parser
 {
   public:
-    static const int MAX_DEPTH = 100;
-    static const int MAX_ERRORS = 50;
+    static constexpr int MAX_DEPTH = 100;
+    static constexpr int MAX_ERRORS = 50;
 
     struct Result
     {

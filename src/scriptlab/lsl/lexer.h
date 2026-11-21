@@ -47,9 +47,9 @@ struct Diagnostic
 class Lexer
 {
   public:
-    static const int MAX_SOURCE_CHARS = 262144;
-    static const int MAX_TOKENS = 100000;
-    static const int MAX_STRING_CHARS = 65536;
+    static constexpr int MAX_SOURCE_CHARS = 262144;
+    static constexpr int MAX_TOKENS = 100000;
+    static constexpr int MAX_STRING_CHARS = 65536;
 
     struct Result
     {

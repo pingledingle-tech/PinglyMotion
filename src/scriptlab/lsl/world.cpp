@@ -16,9 +16,9 @@ QString World::clip(const QString& text)
   return text.size() > MAX_TEXT_CHARS ? text.left(MAX_TEXT_CHARS) : text;
 }
 
-void World::log(double time, QJsonObject entry)
+void World::log(double time, QJsonObject entry, bool force)
 {
-  if (m_log.size() >= MAX_LOG_ENTRIES)
+  if (m_log.size() >= MAX_LOG_ENTRIES && !force)
   {
     m_truncated = true;
     return;

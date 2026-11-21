@@ -124,7 +124,7 @@ void Interpreter::stopWith(const Stop& stop)
   m_stopReason = stop.message;
   QJsonObject entry{{"type", stop.kind}, {"message", stop.message}};
   if (stop.line > 0) { entry["line"] = stop.line; entry["column"] = stop.column; }
-  m_world.log(m_now, entry);
+  m_world.log(m_now, entry, true);
   m_queue.clear();
   m_frames.clear();
 }
