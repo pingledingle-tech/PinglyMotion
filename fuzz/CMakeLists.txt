@@ -1,7 +1,7 @@
 # PinglyMotion fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGLYMOTION_FUZZ=ON
 #   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping \
-#     fuzz_openfile fuzz_retargetbvh fuzz_controlserver
+#     fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_lsl
 # See fuzz/README.md for how to run them.
 
 SET (FUZZ_FLAGS -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g)
@@ -109,3 +109,16 @@ TARGET_INCLUDE_DIRECTORIES (fuzz_controlserver PRIVATE ${CMAKE_SOURCE_DIR}/src $
 TARGET_COMPILE_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_controlserver fuzz_core ${PINGLYMOTION_QT_LIBS})
+
+# Script Lab: the LSL interpreter (issue 289); lsl_check and lsl_run reach it through the control commands
+SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/lexer.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/parser.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/interp.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/world.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/control.cpp)
+TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LSL_FILES})
+TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
+ADD_EXECUTABLE (fuzz_lsl fuzz_lsl.cpp ${FUZZ_LSL_FILES})
+TARGET_INCLUDE_DIRECTORIES (fuzz_lsl PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_lsl PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_lsl PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_lsl Qt6::Core)

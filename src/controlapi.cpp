@@ -34,6 +34,7 @@
 #include "usersettings.h"
 
 #include "controlapi.h"
+#include "scriptlab/lsl/control.h"
 
 namespace
 {
@@ -91,6 +92,10 @@ namespace
      "{\"text\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"min_seconds\":{\"type\":\"number\"},\"max_seconds\":{\"type\":\"number\"},\"limit\":{\"type\":\"integer\"}}", "[]"},
     {"load_reference", "Opens a reference library clip by the id that find_reference gave, in PinglyMotion, like open_file. Only library files are opened, never a path you give. The file is checked against the index (size and SHA-256) first. Fails if there are unsaved changes, if the id is unknown, if the clip is not on the Second Life skeleton, or if the file is missing or changed; then nothing is changed. The library folder is read-only: change the clip and save it with save_file under a new name. Frame 1 is the reference pose, edit from frame 2. The answer is the state, plus the clip's licence and credit. Keep the credit when you pass the animation on.",
      "{\"id\":{\"type\":\"string\",\"description\":\"A clip id from find_reference\"}}", "[\"id\"]"},
+    {"lsl_check", "Script Lab: checks an LSL script the way the Second Life compiler does, without running it. Answers valid (true or false), errors and warnings, each with line, column (both start at 1) and message, and the state names. Errors: syntax, undeclared names, wrong types, wrong argument counts, unknown functions, events or states, missing return. Warnings: valid LSL that the sandbox does not run yet (a function that is not supported yet, an event it never raises). Never changes the animation.",
+     "{\"source\":{\"type\":\"string\",\"description\":\"The LSL script as text\"}}", "[\"source\"]"},
+    {"lsl_run", "Script Lab: runs an LSL script in a sandbox with a simulated clock (not Second Life) and answers the event log as plain data: what the script said (owner_say, say, whisper, shout, region_say, instant_message), listens it opened, timer changes, events it handled, state changes, permissions, animations it started or stopped (animation_start, animation_stop; not played in the 3D view yet), and errors. Each entry has t (simulated seconds) and type. Runs state_entry of the default state first, then events until seconds have passed. inputs: chat or touches at given times, for listen and touch_start: [{\"at\":1,\"channel\":7,\"text\":\"dance\"},{\"at\":2,\"type\":\"touch\"}] (name and id default to the owner). The owner's permissions are granted at once. Hard limits stop a script that loops forever or uses too much memory; then stopped is true and stop_reason says why. A function that is not supported yet stops the script with type unsupported. A script that does not compile is not run: the answer has ok false and the errors (as lsl_check). Never changes the animation. Test the final script in Second Life too.",
+     "{\"source\":{\"type\":\"string\",\"description\":\"The LSL script as text\"},\"seconds\":{\"type\":\"number\",\"description\":\"Simulated seconds to run, 0 to 3600, default 10\"},\"inputs\":{\"type\":\"array\",\"description\":\"Chat or touches during the run, at most 200\",\"items\":{\"type\":\"object\",\"properties\":{\"at\":{\"type\":\"number\"},\"type\":{\"type\":\"string\",\"enum\":[\"chat\",\"touch\"]},\"channel\":{\"type\":\"integer\"},\"name\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}}}}}", "[\"source\"]"},
   };
 
   QJsonArray vector(const QVector3D& v)
@@ -256,6 +261,9 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
 
   const QString command = request.value("command").toString();
   if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference.");
+  // Script Lab (issue 289): these do not need an open animation
+  if (command == QLatin1String("lsl_check")) return lsl::Control::check(request);
+  if (command == QLatin1String("lsl_run")) return lsl::Control::run(request);
   if (!m_host->animation()) return fail("No animation is open.");
 
   for (const auto& entry : table)

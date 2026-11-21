@@ -45,7 +45,7 @@ Status: **planned, nothing started.** A sandbox for testing RLV and LSL scripts 
 
 1. RLV core ([#287](https://github.com/pingledingle-tech/PinglyMotion/issues/287), technical)
 2. Script Lab panel ([#288](https://github.com/pingledingle-tech/PinglyMotion/issues/288), visible)
-3. LSL interpreter, minimum ([#289](https://github.com/pingledingle-tech/PinglyMotion/issues/289), technical)
+3. LSL interpreter, minimum ([#289](https://github.com/pingledingle-tech/PinglyMotion/issues/289), technical): done, with the control commands `lsl_check` and `lsl_run` (`docs/CONTROL.md`)
 4. Link: `llOwnerSay("@...")` to the RLV core ([#290](https://github.com/pingledingle-tech/PinglyMotion/issues/290), technical)
 5. Events and several objects ([#291](https://github.com/pingledingle-tech/PinglyMotion/issues/291), technical + visible)
 6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible)

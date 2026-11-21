@@ -420,6 +420,67 @@
             "required": [
                 "id"
             ]
+        },
+        {
+            "description": "Script Lab: checks an LSL script the way the Second Life compiler does, without running it. Answers valid (true or false), errors and warnings, each with line, column (both start at 1) and message, and the state names. Errors: syntax, undeclared names, wrong types, wrong argument counts, unknown functions, events or states, missing return. Warnings: valid LSL that the sandbox does not run yet (a function that is not supported yet, an event it never raises). Never changes the animation.",
+            "name": "lsl_check",
+            "parameters": {
+                "source": {
+                    "description": "The LSL script as text",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "source"
+            ]
+        },
+        {
+            "description": "Script Lab: runs an LSL script in a sandbox with a simulated clock (not Second Life) and answers the event log as plain data: what the script said (owner_say, say, whisper, shout, region_say, instant_message), listens it opened, timer changes, events it handled, state changes, permissions, animations it started or stopped (animation_start, animation_stop; not played in the 3D view yet), and errors. Each entry has t (simulated seconds) and type. Runs state_entry of the default state first, then events until seconds have passed. inputs: chat or touches at given times, for listen and touch_start: [{\"at\":1,\"channel\":7,\"text\":\"dance\"},{\"at\":2,\"type\":\"touch\"}] (name and id default to the owner). The owner's permissions are granted at once. Hard limits stop a script that loops forever or uses too much memory; then stopped is true and stop_reason says why. A function that is not supported yet stops the script with type unsupported. A script that does not compile is not run: the answer has ok false and the errors (as lsl_check). Never changes the animation. Test the final script in Second Life too.",
+            "name": "lsl_run",
+            "parameters": {
+                "inputs": {
+                    "description": "Chat or touches during the run, at most 200",
+                    "items": {
+                        "properties": {
+                            "at": {
+                                "type": "number"
+                            },
+                            "channel": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "text": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "enum": [
+                                    "chat",
+                                    "touch"
+                                ],
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "seconds": {
+                    "description": "Simulated seconds to run, 0 to 3600, default 10",
+                    "type": "number"
+                },
+                "source": {
+                    "description": "The LSL script as text",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "source"
+            ]
         }
     ],
     "ok": true

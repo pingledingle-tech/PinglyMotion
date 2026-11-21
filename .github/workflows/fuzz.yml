@@ -108,11 +108,11 @@ jobs:
           ccache --zero-stats
           CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DBUILD_NUMBER=0 -DPINGLYMOTION_FUZZ=ON \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping fuzz_openfile fuzz_retargetbvh fuzz_controlserver -j 4
+          cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_lsl -j 4
           ccache --show-stats
       - name: Pack fuzz targets
         # tar keeps the executable bit
-        run: tar -cf fuzz-targets.tar -C build-fuzz/fuzz fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping fuzz_openfile fuzz_retargetbvh fuzz_controlserver
+        run: tar -cf fuzz-targets.tar -C build-fuzz/fuzz fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_lsl
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fuzz-targets
@@ -169,6 +169,10 @@ jobs:
             corpus: fuzz/corpus/controlserver
             max_len: 2048
             dict: fuzz/controlserver.dict
+          - target: lsl
+            corpus: fuzz/corpus/lsl
+            max_len: 8192
+            dict: fuzz/lsl.dict
     env:
       ASAN_OPTIONS: detect_leaks=0
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
