@@ -1,6 +1,6 @@
 # Script Lab plan
 
-Status: plan, nothing built yet. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
+Status: step 1 (the RLV core) is built, see [SCRIPT_LAB.md](SCRIPT_LAB.md); the other steps are a plan. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
 
 ## 1. Goal
 
@@ -31,7 +31,12 @@ In order. Each step is small and testable. "Technical" means nothing changes on 
 | 7 | [#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293) | visible | Effects in the 3D view | 2, 4, 5 | medium |
 | 8 | [#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294) | technical | Separate repository for the owner's RLV tools (description only) | 1, 6 | light |
 
-### Step 1: RLV core (technical)
+### Step 1: RLV core (technical, done)
+
+Built as a modified port written anew with Qt types: the syntax, return codes, behaviour names and `@clear`/`@getstatus` rules follow RLVa, but no RLVa file was copied, so no LGPL header or bundled LGPL text was needed; each file carries a licence note naming RLVa ([CREDITS.md](../CREDITS.md)). What was built: [SCRIPT_LAB.md](SCRIPT_LAB.md).
+
+The original plan:
+
 
 - Command parser and behaviour table taken from Firestorm's RLVa (`indra/newview/rlv*.cpp` and `.h`, LGPL 2.1, copyright Kitty Barnett). `RlvCommand::parseCommand` is plain `std::string` and can be copied nearly as is. The behaviour dictionary and the handler depend on viewer types and must be adapted.
 - Files taken keep their original LGPL 2.1 header and are marked as modified. The LGPL text is bundled and there is an entry in [CREDITS.md](../CREDITS.md). They do not need to be relicensed to GPL: LGPL 2.1 code may be part of a GPL 2-or-later program.

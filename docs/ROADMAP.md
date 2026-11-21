@@ -41,9 +41,9 @@ Visible changes (steps 6 and 7, and #40) need the project owner's Windows test b
 
 ## Script Lab track (separate from animation and UX)
 
-Status: **planned, nothing started.** A sandbox for testing RLV and LSL scripts written with Claude Code; decision in [DECISIONS.md](DECISIONS.md), plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md). It mostly adds new files under `src/scriptlab/` and does not wait for the animation and UX steps above. One issue per step, started only on the project owner's word:
+Status: **step 1 done** (the RLV core, issue 287: parser, behaviour state and the control commands `rlv_command`, `rlv_state`, `rlv_reset`; see [SCRIPT_LAB.md](SCRIPT_LAB.md)); the other steps are planned. A sandbox for testing RLV and LSL scripts written with Claude Code; decision in [DECISIONS.md](DECISIONS.md), plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md). It mostly adds new files under `src/scriptlab/` and does not wait for the animation and UX steps above. One issue per step, started only on the project owner's word:
 
-1. RLV core ([#287](https://github.com/pingledingle-tech/PinglyMotion/issues/287), technical)
+1. RLV core ([#287](https://github.com/pingledingle-tech/PinglyMotion/issues/287), technical) — done
 2. Script Lab panel ([#288](https://github.com/pingledingle-tech/PinglyMotion/issues/288), visible)
 3. LSL interpreter, minimum ([#289](https://github.com/pingledingle-tech/PinglyMotion/issues/289), technical)
 4. Link: `llOwnerSay("@...")` to the RLV core ([#290](https://github.com/pingledingle-tech/PinglyMotion/issues/290), technical)

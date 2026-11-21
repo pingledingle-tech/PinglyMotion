@@ -20,6 +20,8 @@
 #include <QString>
 #include <QVector3D>
 
+#include "scriptlab/rlvstate.h"
+
 class Animation;
 class BVHNode;
 
@@ -91,6 +93,9 @@ class ControlApi
     static QString defaultLibraryFolder();
     static QString defaultReferenceFolder();
 
+    // the Script Lab's RLV state that rlv_command, rlv_state and rlv_reset work on (issue 287)
+    RlvState& rlv() { return m_rlv; }
+
   private:
     typedef QJsonObject (ControlApi::*Handler)(const QJsonObject&);
 
@@ -121,6 +126,9 @@ class ControlApi
     QJsonObject exportAnim(const QJsonObject&);
     QJsonObject findReference(const QJsonObject&);
     QJsonObject loadReference(const QJsonObject&);
+    QJsonObject rlvCommand(const QJsonObject&);
+    QJsonObject rlvStateAnswer(const QJsonObject&);
+    QJsonObject rlvReset(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();
@@ -139,6 +147,7 @@ class ControlApi
     QString m_workFolder;
     QString m_libraryFolder;
     QString m_referenceFolder;
+    RlvState m_rlv;
 };
 
 #endif

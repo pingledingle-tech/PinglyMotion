@@ -1,0 +1,3 @@
+a|@tplm=n,tploc=n,tplure=n,sittp=n,edit=n,rez=n,touchall=n
+a|@showinv=n,showloc=n,showminimap=n,showworldmap=n,share=n,recvim=n,recvchat=n,sendchat=n,sendchannel=n
+a|@clear=show

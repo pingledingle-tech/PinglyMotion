@@ -76,7 +76,7 @@ differs. The MCP server does this before every request.
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
-`export_anim`, `find_reference`, `load_reference`. `screenshot` has options for several views, frames and labels (below).
+`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
 
@@ -144,6 +144,43 @@ starting poses and motions on the Second Life skeleton. Start from one instead o
   (ids starting with `sl/`) that open (layout in `docs/REFERENCE_LIBRARY_SCHEMA.md`).
 - Folders: `library/` next to the program, or `PINGLYMOTION_LIBRARY_FOLDER`; the download folder is
   `PinglyMotion-reference` in the user's home folder (the script's default), or `PINGLYMOTION_REFERENCE_FOLDER`.
+
+### Script Lab: rlv_command, rlv_state and rlv_reset
+
+The first step of the Script Lab (issue 287, [SCRIPT_LAB.md](SCRIPT_LAB.md)): an RLV sandbox. A client sends the
+line an LSL script would send with `llOwnerSay("@...")` and reads back what the avatar may and may not do. Nothing in
+the animation or on screen changes, and these three commands work without an open animation. The sandbox answers as
+RLV 3.4.3; it is never identical to Second Life.
+
+- `rlv_command` takes `object` (an id for the sending object: 1 to 64 letters, digits, `-`, `_`, `.` or spaces, for
+  example a UUID or `collar`) and `text` (starts with `@`, at most 1024 characters and 64 commands). The text is made
+  lower case and split on `,`; each command is `<behaviour>[:<option>]=<param>`, where param is `n` or `add` (set a
+  restriction), `y` or `rem` (lift it), `force`, or a channel number from 1 to 2147483647 (answer on that channel).
+  `@clear` lifts all of this object's restrictions, `@clear=<filter>` those whose `behaviour[:option]` contains the
+  filter. A comma always starts a new command, so a `@getstatus` separator cannot be a comma.
+  The answer has `results`, one per command in order: `command`, `behaviour`, `option` (when there is one), `param`,
+  `type` (add, remove, force, reply, clear or invalid), `result` and, when it failed or was retained, `reason`.
+  Results: `success`; `unset` (lifted something that was not set); `duplicate` (this object had already set it);
+  `failed` (bad syntax, an unknown behaviour, a parameter type the behaviour does not take, an option on a behaviour
+  without options, or a limit); `retained` (a `force` command was accepted but is not carried out in the sandbox).
+  `replies` lists what a script listening on the channel would hear (`channel`, `text`): `@version` gives
+  `RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)`, `@versionnew` the same with `RestrainedLove`,
+  `@versionnum` gives `3040300`, `@getstatus[:<filter>[;<separator>]]` this object's restrictions as
+  `/detach/sendim:<uuid>` and `@getstatusall` those of all objects; a reply is at most 1023 characters.
+  `restrictions` is the number now held. A line that does not start with `@`, is too long, has too many commands or
+  a bad object id fails as a whole and changes nothing.
+- `rlv_state` returns `rlv_version` (`3.4.3`), `objects` (object id to its restrictions, such as `detach` or
+  `sendim:<uuid>`), `restrictions` (each with `object`, `behaviour` and `option`), `counts` (how many objects hold
+  each restriction), `actions` (each with `id`, `label` and `allowed`), `blocked` (the ids of the blocked actions) and
+  `behaviours` (the names the sandbox knows). Only a restriction without an option blocks an action: with an option it
+  is an exception (`@sendim:<uuid>=add`) or a limited form.
+- `rlv_reset` lifts every restriction of every object; `removed` says how many.
+- Known behaviours (others parse but fail as unknown): `detach`, `sendim`, `recvim`, `sendchat`, `recvchat`,
+  `sendchannel`, `tplm`, `tploc`, `tplure`, `fly`, `sit`, `unsit`, `sittp`, `edit`, `rez`, `touchall`, `showinv`,
+  `showloc`, `showminimap`, `showworldmap`, `share` (restrictions; `detach`, `sit` and `unsit` also take `force`) and
+  `version`, `versionnew`, `versionnum`, `getstatus`, `getstatusall` (questions answered on a channel).
+- Limits: at most 64 objects hold restrictions at a time, and each at most 128. An object without restrictions is
+  dropped. The text comes from scripts and AI clients, so it is treated as data: it is checked, never run.
 
 ### describe_pose
 
