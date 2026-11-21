@@ -26,6 +26,7 @@
 #include <csignal>
 #endif
 
+#include "applog.h"
 #include "pinglymotionwindow.h"
 #include "constants.h"
 
@@ -39,6 +40,8 @@ static void requestEnd(int) { endRequested = 1; }
 
 int main( int argc, char ** argv )
 {
+    // the local error log (issue 239), before anything else can go wrong
+    AppLog::install();
 #ifndef Q_OS_WIN
     // first thing, before the window exists and the remote control key file is written
     std::signal(SIGTERM, requestEnd);
@@ -67,5 +70,7 @@ int main( int argc, char ** argv )
     endTimer.start(300);
 #endif
     // Start the event loop
-    return application.exec();
+    const int result = application.exec();
+    AppLog::markCleanExit();
+    return result;
 }
