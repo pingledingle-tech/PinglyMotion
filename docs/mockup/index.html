@@ -884,6 +884,7 @@ function updateMsgDefault() { if (msgLock || reasonShown) return; if (hintsOn) s
 let reasonShown = false;
 function describe(el) {
   const name = el.dataset.name; if (!name) return null;
+  if (el.closest(".menu") && el.getAttribute("aria-disabled") !== "true") return null;
   let tipline = el.dataset.tipline || ""; if (el.dataset.tip && hintsOn) tipline = TXT[el.dataset.tip];
   if (!hintsOn && !el.dataset.why) tipline = el.dataset.tipline && !el.dataset.tip && !el.classList.contains("tile") ? el.dataset.tipline : "";
   return { name, key: el.dataset.key, why: el.getAttribute("aria-disabled") === "true" ? el.dataset.why : null, tipline };
@@ -1035,6 +1036,7 @@ function selectJoint(id, from) {
 }
 function setRot(axis, val) {
   if (!doc || !sel) return; if (!override[sel]) { pushUndo(); override[sel] = rotOf(sel); }
+  val = ((val + 180) % 360 + 360) % 360 - 180;
   override[sel][axis] = val;
   if (ui.side === "M") { const m = mirrorId(sel); if (m !== sel) { override[m] = override[m] || rotOf(m); override[m][axis] = axis === 0 ? val : -val; } }
   renderScene(); checkCards();
@@ -1072,7 +1074,7 @@ $$(".mtitle").forEach((t, idx, all) => {
   });
 });
 document.addEventListener("mousedown", e => { if (!e.target.closest(".menubar")) closeMenus(); });
-$$(".menu [role^=menuitem]").forEach(i => { i.dataset.name = i.dataset.name || ""; });
+$$(".menu [role^=menuitem]").forEach(i => { const g = $(".grow", i); i.dataset.name = g ? g.textContent.replace(/\.\.\.$/, "") : ""; });
 
 // ---------- Clicks ----------
 document.addEventListener("click", e => {
