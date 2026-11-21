@@ -51,6 +51,7 @@ Status: **steps 1, 2 and 3 done** (the RLV core, issue 287: parser, behaviour st
 6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible)
 7. Effects in the 3D view ([#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293), visible)
 8. Separate repository for the owner's RLV tools, description only ([#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294), technical)
+9. RLVa-only behaviours and a plain RLV / RLVa mode switch ([#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297), technical)
 
 ### Script Lab: later (not planned yet)
 
