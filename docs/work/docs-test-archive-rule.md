@@ -1,6 +1,6 @@
 Branch: docs/test-archive-rule
-Status: active
-Pull request: pending
+Status: done
+Pull request: #270
 Files:
 - docs/work/docs-test-archive-rule.md
 - CLAUDE.md
