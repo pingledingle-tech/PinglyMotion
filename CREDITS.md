@@ -27,6 +27,7 @@ Where a licence does not require a credit (CC0, ideas only), we give one anyway.
 | QAvimator toolbar icons and start files (`src/icons/`, `bin/data/*.bvh`, `.avm`, `SL.lim`, `cube.obj`, `torus.obj`, `tools/legacy/`) | The toolbar pictures and the classic skeleton and start files carried over from QAvimator | GPL 2 or later (QAvimator) | https://bitbucket.org/QAvimator_Team/qavimator |
 | Linden Lab | The Second Life skeleton and the UV map that Ruth2 and Roth2 build on | See the Ruth2 and Roth2 notices | https://secondlife.com |
 | Machinimatrix.org | The rig parts that Ruth2 and Roth2 build on | CC BY 3.0 | https://www.machinimatrix.org |
+| Lucide icons (Lucide Icons and Contributors; some icons derived from Feather by Cole Bemis) | The one icon set of the design system (`docs/DESIGN_SYSTEM.md`); first used as inline SVG in the UX mockup `docs/mockup/index.html`. Licence text: `docs/mockup/LUCIDE_LICENSE.txt` | ISC (Feather-derived icons MIT) | https://lucide.dev |
 
 ## Motion data
 
