@@ -1,6 +1,6 @@
 Branch: fix/security-tidy-ups
-Status: active
-Pull request: pending
+Status: done
+Pull request: #263
 Files:
 - tools/site/build_status.py
 - tests/test_build_status.py

@@ -23,6 +23,10 @@ Pull request: #156, Panels P6 ("two screens"). About 3 minutes.
 Pull request: #127, Claude Desktop extension without Python. About 5 minutes.
 """
 
+def pull(title, draft, repo="pingledingle-tech/PinglyMotion", login="pingledingle-tech"):
+    return {"title": title, "draft": draft, "head": {"repo": {"full_name": repo}}, "user": {"login": login}}
+
+
 DATA = {
     "milestones": [
         {"number": 2, "title": "Later", "open_issues": 3, "closed_issues": 1, "due_on": None},
@@ -30,8 +34,8 @@ DATA = {
     ],
     "test_list": {"body": BODY},
     "pulls": [
-        {"title": "Ready thing (#9)", "draft": False},
-        {"title": "Draft thing", "draft": True},
+        pull("Ready thing (#9)", False),
+        pull("Draft thing", True),
     ],
 }
 
@@ -56,8 +60,14 @@ class Tests(unittest.TestCase):
         self.assertEqual([m["title"] for m in v["milestones"]], ["First", "Later"])
         self.assertEqual(v["building"], ["Draft thing", "Ready thing"])
 
+    def test_forks_and_other_accounts_stay_off_the_homepage(self):
+        d = dict(DATA, pulls=[pull("Own", False), pull("From a fork", False, repo="someone/PinglyMotion", login="someone"),
+                              pull("Other account", True, login="someone"),
+                              {"title": "Deleted fork", "draft": False, "head": {"repo": None}, "user": {"login": "x"}}])
+        self.assertEqual(b.build_view(d)["building"], ["Own"])
+
     def test_render_escapes(self):
-        d = dict(DATA, pulls=[{"title": "<script>x</script>", "draft": False}])
+        d = dict(DATA, pulls=[pull("<script>x</script>", False)])
         out = b.render(b.build_view(d))
         self.assertNotIn("<script>", out)
         self.assertIn("&lt;script&gt;", out)

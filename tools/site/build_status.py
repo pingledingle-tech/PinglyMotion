@@ -81,13 +81,22 @@ def milestone_view(ms):
             "url": ms.get("html_url", "")}
 
 
-def build_view(data):
+def own_pull(pull, repo):
+    """True for a pull request from a branch of this repository, opened by its owner account.
+    Pull requests from forks never put their title on the homepage (issue 252)."""
+    head_repo = ((pull.get("head") or {}).get("repo") or {}).get("full_name")
+    login = (pull.get("user") or {}).get("login")
+    return head_repo == repo and login == repo.split("/")[0]
+
+
+def build_view(data, repo=REPO_DEFAULT):
     """Plain structure that render() turns into HTML. Pure, so it is testable."""
     if data is None:
         return None
     ms = sorted(data["milestones"], key=lambda m: (m.get("due_on") or "9", m["number"]))
-    pulls = [p for p in data["pulls"] if not p.get("draft")]
-    drafts = [p for p in data["pulls"] if p.get("draft")]
+    own = [p for p in data["pulls"] if own_pull(p, repo)]
+    pulls = [p for p in own if not p.get("draft")]
+    drafts = [p for p in own if p.get("draft")]
     return {
         "milestones": [milestone_view(m) for m in ms[:MAX_MILESTONES]],
         "waiting": parse_waiting(data["test_list"].get("body")),
@@ -142,7 +151,7 @@ def main(argv):
     token = os.environ.get("GITHUB_TOKEN", "")
     with open(src, encoding="utf-8") as f:
         page = f.read()
-    out = insert(page, render(build_view(fetch(repo, token))))
+    out = insert(page, render(build_view(fetch(repo, token), repo)))
     os.makedirs(argv[1], exist_ok=True)
     with open(os.path.join(argv[1], "index.html"), "w", encoding="utf-8") as f:
         f.write(out)
