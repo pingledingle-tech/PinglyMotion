@@ -1,0 +1,97 @@
+{
+  "about": "PinglyMotion design tokens. The machine-readable part of docs/DESIGN_SYSTEM.md; the two must agree. Colours are sRGB hex. Sizes are logical pixels at 100 percent scale.",
+  "version": 1,
+  "themes": {
+    "dark": {
+      "background": "#1E1F22",
+      "surface": "#2A2B2F",
+      "surface_raised": "#35373C",
+      "border": "#767B85",
+      "text": "#E6E7EA",
+      "text_muted": "#AEB2BA",
+      "text_disabled": "#868A93",
+      "accent": "#3272DD",
+      "on_accent": "#FFFFFF",
+      "accent_text": "#7FB0FF",
+      "focus_ring": "#9CC2FF",
+      "danger": "#FF7B72",
+      "danger_fill": "#C93A32",
+      "success": "#56D39A",
+      "warning": "#F2C14E",
+      "selection": "#3272DD",
+      "area_body": "#6EA8FE",
+      "area_face": "#F4A261",
+      "area_hands": "#C792EA",
+      "area_other": "#5CC8C8"
+    },
+    "light": {
+      "background": "#F3F4F6",
+      "surface": "#FFFFFF",
+      "surface_raised": "#E9EBEF",
+      "border": "#7A808A",
+      "text": "#1C1E22",
+      "text_muted": "#535963",
+      "text_disabled": "#7A808A",
+      "accent": "#1F63C9",
+      "on_accent": "#FFFFFF",
+      "accent_text": "#1A56B0",
+      "focus_ring": "#1F63C9",
+      "danger": "#B42318",
+      "danger_fill": "#B42318",
+      "success": "#18794E",
+      "warning": "#8A5A00",
+      "selection": "#1F63C9",
+      "area_body": "#1F63C9",
+      "area_face": "#B4570F",
+      "area_hands": "#8241B8",
+      "area_other": "#0F7C7C"
+    }
+  },
+  "radius": {
+    "small": 4,
+    "control": 6,
+    "panel": 8,
+    "round": 999
+  },
+  "spacing": {
+    "xs": 4,
+    "s": 8,
+    "m": 12,
+    "l": 16,
+    "xl": 24,
+    "xxl": 32
+  },
+  "control_height": {
+    "compact": 24,
+    "default": 32,
+    "large": 40
+  },
+  "border_width": 1,
+  "focus_ring": {
+    "width": 2,
+    "offset": 2
+  },
+  "icon": {
+    "set": "Lucide",
+    "grid": 24,
+    "stroke": 2,
+    "sizes": [16, 20, 24]
+  },
+  "type": {
+    "family": "system UI font",
+    "monospace": "system monospace font",
+    "caption": { "size": 11, "weight": 400 },
+    "body": { "size": 13, "weight": 400 },
+    "label": { "size": 13, "weight": 600 },
+    "title": { "size": 16, "weight": 600 },
+    "heading": { "size": 20, "weight": 600 }
+  },
+  "scale": {
+    "min_percent": 100,
+    "max_percent": 200
+  },
+  "motion": {
+    "short_ms": 120,
+    "medium_ms": 200
+  }
+}

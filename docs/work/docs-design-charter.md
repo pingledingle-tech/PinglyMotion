@@ -1,6 +1,6 @@
 Branch: docs/design-charter
-Status: active
-Pull request: pending
+Status: done
+Pull request: #282
 Files:
 - docs/DESIGN_CHARTER.md
 - docs/DESIGN_SYSTEM.md

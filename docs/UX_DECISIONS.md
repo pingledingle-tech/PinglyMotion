@@ -1,3 +1,7 @@
+> The design charter (docs/DESIGN_CHARTER.md) wins if this document disagrees.
+>
+> Note: the "Homepage" section below (English only, with the mascot as the star) may be outdated; the homepage is being redone from the project owner's own text. It is left unchanged until the project owner decides.
+
 # UX decisions: timeline and poser as one design
 
 Status: agreed with the project owner on 20 November 2026. Each step starts only when the owner says start. Step 1 (transport buttons) is built and waits for the owner's Windows test; the other steps are not built yet. Issue #14 tracks the work. Where this page and [POSING_UX.md](POSING_UX.md) differ, this page wins.

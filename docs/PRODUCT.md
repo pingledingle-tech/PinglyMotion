@@ -120,7 +120,7 @@ These stages are suggested groupings, not deadlines or a claim that every step m
 
 ### Combined plan (18 November 2026)
 
-This replaces the numbered work order of 16 November. The order of stages above still holds: posing comes before the parser, and the new parser keeps today's interface to the rest of the program. File formats were decided in old #118; the posing interface in [POSING_UX.md](POSING_UX.md) ([#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14)).
+This replaces the numbered work order of 16 November. The order of stages above still holds: posing comes before the parser, and the new parser keeps today's interface to the rest of the program. File formats were decided in old #118; the posing interface in [POSING_UX.md](POSING_UX.md) ([#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14)). Since 21 November 2026 the [design charter](DESIGN_CHARTER.md) is the top authority for the look and behaviour of the whole program and wins where older UX documents disagree.
 
 What is done and what is next in each step is in [ROADMAP.md](ROADMAP.md); per pull request, in the jobs list ([#74](https://github.com/pingledingle-tech/PinglyMotion/issues/74)).
 
