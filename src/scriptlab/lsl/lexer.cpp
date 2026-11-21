@@ -203,7 +203,7 @@ Lexer::Result Lexer::tokenize(const QString& source)
       }
       if (!found)
       {
-        const QString shown = c.isPrint() ? QString("'%1'").arg(c) : QString("U+%1").arg(c.unicode(), 4, 16, QChar('0')).toUpper();
+        const QString shown = c.isPrint() ? QString("'%1'").arg(c) : QString("U+%1").arg(uint(c.unicode()), 4, 16, QChar('0')).toUpper();
         return fail("Unexpected character " + shown + ".", line, column);
       }
     }
