@@ -1,6 +1,6 @@
 Branch: cleanup/skeleton-walk
 Status: active
-Pull request: pending
+Pull request: #235
 Files:
 - src/skeletonwalk.h
 - src/posedescribe.cpp
