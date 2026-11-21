@@ -350,7 +350,7 @@
             ]
         },
         {
-            "description": "Exports the animation as a Second Life .anim file in the PinglyMotion folder (see 'folder' in state), the file the user uploads in Second Life. Runs check_animation first and refuses when it finds an error (Second Life would refuse the file or lose part of it); its warnings come back in the answer. Options as in File > Export as Second Life .anim: priority, loop (between the loop points), slow start and finish in seconds, and the hand pose by name. Will not replace an existing file. The answer gives the file, its size, the joints written and left out, and the warnings. Never changes the animation.",
+            "description": "Exports the animation as a Second Life .anim file in the PinglyMotion folder (see 'folder' in state), the file the user uploads in Second Life. Runs check_animation first and refuses when it finds an error (Second Life would refuse the file or lose part of it); its warnings come back in the answer. Options as in File > Export for Second Life (.anim): priority, loop (between the loop points), slow start and finish in seconds, and the hand pose by name. Will not replace an existing file. The answer gives the file, its size, the joints written and left out, and the warnings. Never changes the animation.",
             "name": "export_anim",
             "parameters": {
                 "ease_in": {

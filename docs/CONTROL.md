@@ -236,7 +236,7 @@ Lists in a finding are cut after 8 entries; `count` gives the total where it mat
 ### export_anim
 
 `export_anim` writes the Second Life `.anim` file, the file the user uploads (Build > Upload >
-Animation), with the same writer and the same defaults as File > Export as Second Life .anim. It never
+Animation), with the same writer and the same defaults as File > Export for Second Life (.anim). It never
 changes the animation. Parameters:
 
 | Parameter | Default | Meaning |
@@ -337,5 +337,5 @@ server refuses to talk to an old PinglyMotion.
   `angle`; also `height` and `distance`; `reset: true` for the start view). Left and right are the figure's
   own sides. It never changes the animation, so use it instead of turning the hip to see the side.
 - `set_figure` shows the female or male body. It only changes the display; the saved BVH is the same.
-- `play` and `stop` do the same as the Start and Stop buttons under the timeline: `play` plays from the current frame (from the loop-in frame when it is on the last frame), repeating between the loop points while Loop is on (Options > Loop, or the Loop switch next to the buttons). To replay from the start, send `set_frame` with frame 1, then `play`.
+- `play` and `stop` do the same as the Start and Stop buttons under the timeline: `play` plays from the current frame (from the loop-in frame when it is on the last frame), repeating between the loop points while Loop is on (Options > Loop playback, or the Loop switch next to the buttons). To replay from the start, send `set_frame` with frame 1, then `play`.
 - Mirroring (Tools > Mirror) applies to commands too: with it on, posing a left joint also poses the right one.
