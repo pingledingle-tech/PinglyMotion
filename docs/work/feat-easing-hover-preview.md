@@ -1,6 +1,6 @@
 Branch: feat/easing-hover-preview
 Status: active
-Pull request: pending
+Pull request: #269
 Files:
 - src/easingtiles.*
 - tests/easingtiles/**
