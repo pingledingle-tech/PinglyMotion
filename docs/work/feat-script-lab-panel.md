@@ -1,5 +1,5 @@
 Branch: feat/script-lab-panel
-Status: active
+Status: done
 Pull request: #298
 Files:
 - src/scriptlab/scriptlabpanel.*
