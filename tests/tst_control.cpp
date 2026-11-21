@@ -80,7 +80,16 @@ class FakeHost : public ControlHost
     }
     bool newAnimation(QString&) override { return true; }
     bool openFile(const QString& path, QString&) override { opened = path; m_file = path; return true; }
-    bool saveFile(const QString& path, QString& error) override { if (!m_animation->saveBVH(path, &error)) return false; m_file = path; return true; }
+    bool saveFile(const QString& path, QString& error) override
+    {
+      existedAtSave = QFileInfo::exists(path);
+      if (failSave) { error = "Could not write " + QFileInfo(path).fileName() + ": simulated"; return false; }
+      if (!m_animation->saveBVH(path, &error)) return false;
+      m_file = path;
+      return true;
+    }
+    bool existedAtSave = false;
+    bool failSave = false;
     void setPlaying(bool on) override { isPlaying = on; }
     bool playing() override { return isPlaying; }
     QString fileName() override { return m_file; }
@@ -149,6 +158,7 @@ class ControlTest : public QObject
     void saveWritesBvh();
     void saveFailureIsReported();
     void filesStayInWorkFolder();
+    void saveFileMakesNewNamesFirst();
     void unusualNamesAreRefusedByText();
     void openFileAcceptsDingle();
     void easingIsSetAndRead();
@@ -800,6 +810,38 @@ void ControlTest::filesStayInWorkFolder()
 
 // issue #26 (job 4): open_file accepts a .dingle file, and the file it hands
 // to the window opens with the program's open path
+// issue 248: a new name is made with NewOnly before the program writes it, so a file that
+// appears in between is never replaced; a failed save leaves no empty file behind
+void ControlTest::saveFileMakesNewNamesFirst()
+{
+  QTemporaryDir root;
+  QVERIFY(root.isValid());
+  m_api->setWorkFolder(root.path());
+  const QString work = QFileInfo(root.path()).canonicalFilePath();
+
+  QJsonObject answer = run(R"({"command":"save_file","path":"new.bvh"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QVERIFY(m_host->existedAtSave);                  // made before the save
+  QVERIFY(QFileInfo(work + "/new.bvh").size() > 0);  // and then written
+
+  // saving again to the open file does not make it first
+  QVERIFY(run(R"({"command":"save_file"})")["ok"].toBool());
+  QVERIFY(m_host->existedAtSave);
+
+  // a failed save of a new name leaves nothing behind
+  m_host->failSave = true;
+  answer = run(R"({"command":"save_file","path":"failed.bvh"})");
+  QVERIFY(!answer["ok"].toBool());
+  QCOMPARE(answer["error"].toString(), QString("Could not write failed.bvh: simulated"));
+  QVERIFY(!QFileInfo::exists(work + "/failed.bvh"));
+
+  // a failed save to the open file keeps that file
+  answer = run(R"({"command":"save_file"})");
+  QVERIFY(!answer["ok"].toBool());
+  QVERIFY(QFileInfo(work + "/new.bvh").size() > 0);
+  m_host->failSave = false;
+}
+
 // issue 244: unusual names are refused by their text alone, before any file system call
 void ControlTest::unusualNamesAreRefusedByText()
 {

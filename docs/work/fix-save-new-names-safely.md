@@ -1,6 +1,6 @@
 Branch: fix/save-new-names-safely
-Status: active
-Pull request: pending
+Status: done
+Pull request: #264
 Files:
 - src/controlapi.cpp
 - tests/tst_control.cpp
