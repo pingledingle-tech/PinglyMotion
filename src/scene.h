@@ -23,11 +23,14 @@
 
 #include <QObject>
 
+#include <memory>
+
 #include "animationmanager.h"
 #include "floor.h"
 #include "prop.h"
 
 class Animation;
+class BVH;
 class Camera;
 class PropManager;
 
@@ -67,6 +70,10 @@ class Scene : public QObject
 
     void drawFloor();
 
+    // the reader the scene's animations load, save and free their keys with;
+    // it lives as long as the scene, so longer than every animation in it
+    BVH* bvh();
+
     // the camera and the props of the scene
     Camera* camera();
     PropManager* propManager();
@@ -92,6 +99,8 @@ class Scene : public QObject
     void restoreCameraPosition(int num);
 
   private:
+    // declared first, so it is freed after the animations
+    std::unique_ptr<BVH> m_bvh;
     AnimationManager m_animationManager;
 
     Floor m_floor;
