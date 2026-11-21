@@ -88,10 +88,17 @@ class BVH
     // number of nodes (joints and End Sites) in a tree
     static int countNodes(BVHNode* node);
 
-    // reads the whole file and returns false, with the reason in error, if it
+    // what checkFile() answers: error is empty when the file can be opened
+    struct CheckResult
+    {
+      QString error;
+      bool ok() const { return error.isEmpty(); }
+    };
+
+    // reads the whole file and says, with the reason in error, if it
     // is not an animation PinglyMotion can open; nothing is kept
     // (with data: checks those bytes instead of reading the file, see animRead())
-    static bool checkFile(const QString& file,QString* error,const QByteArray* data=nullptr);
+    static CheckResult checkFile(const QString& file,const QByteArray* data=nullptr);
 
     // why the last animRead() returned NULL
     QString lastError;

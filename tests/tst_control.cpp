@@ -913,7 +913,8 @@ void ControlTest::openFileAcceptsDingle()
 
   // what the window does with it (PinglyMotionWindow::checkAnimationFile, then Animation)
   QString error;
-  QVERIFY2(BVH::checkFile(m_host->opened, &error), qPrintable(error));
+  error = BVH::checkFile(m_host->opened).error;
+  QVERIFY2(error.isEmpty(), qPrintable(error));
   BVH bvh;
   Animation jump(&bvh, m_host->opened);
   QCOMPARE(jump.getNumberOfFrames(), 30);
@@ -2586,15 +2587,19 @@ void ControlTest::readerParsesTheGivenBytes()
   broken.close();
 
   QString error;
-  QVERIFY(!BVH::checkFile(path, &error));
+  error = BVH::checkFile(path).error;
+  QVERIFY(!error.isEmpty());
   QVERIFY(!error.isEmpty());
   error.clear();
-  QVERIFY2(BVH::checkFile(path, &error, &good), qPrintable(error));
+  error = BVH::checkFile(path, &good).error;
+  QVERIFY2(error.isEmpty(), qPrintable(error));
   // a missing file opens from its bytes too
-  QVERIFY2(BVH::checkFile(dir.filePath("missing.bvh"), &error, &good), qPrintable(error));
+  error = BVH::checkFile(dir.filePath("missing.bvh"), &good).error;
+  QVERIFY2(error.isEmpty(), qPrintable(error));
   // and good bytes on disk do not rescue broken given bytes
   const QByteArray bad = "not an animation\n";
-  QVERIFY(!BVH::checkFile(Constants::femaleBvhPath(), &error, &bad));
+  error = BVH::checkFile(Constants::femaleBvhPath(), &bad).error;
+  QVERIFY(!error.isEmpty());
 }
 
 void ControlTest::downloadedClipsAreMarked()
