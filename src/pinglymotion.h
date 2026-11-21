@@ -33,7 +33,7 @@ class PinglyMotion : public QObject
   public:
     explicit PinglyMotion(QObject* parent = nullptr);
 
-    // TODO Temporary method while logic is moved around
+    // the scene that the prop commands work on; owned by the window
     void setScene(Scene* scene);
 
   public slots:

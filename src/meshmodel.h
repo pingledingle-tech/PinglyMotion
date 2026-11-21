@@ -41,7 +41,7 @@ class MeshModel : public QObject
   private:
     QSharedPointer<Mesh> m_mesh;
 
-    // TODO Temporarily used for only scaling
+    // the scale of the shape (the only transformation the shapes need)
     QVector3D m_modelView;
 
 };

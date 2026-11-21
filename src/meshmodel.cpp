@@ -45,7 +45,7 @@ void MeshModel::draw() const
 {
   SceneState::pushMatrix();
 
-  // TODO Handle only scaling for now
+  // only the scale is applied: the handle shapes need nothing else
   SceneState::scale(m_modelView.x(), m_modelView.y(), m_modelView.z());
   m_mesh->draw();
 

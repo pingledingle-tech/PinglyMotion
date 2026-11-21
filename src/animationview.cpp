@@ -155,9 +155,14 @@ QStringList AnimationView::partNames() const
   return names;
 }
 
-Scene* AnimationView::initializeScene(QObject* parent)
+int AnimationView::firstObjectId()
 {
-  return m_scene = new Scene(static_cast<int>(OpenGlIds::ObjectStart), parent);
+  return static_cast<int>(OpenGlIds::ObjectStart);
+}
+
+void AnimationView::setScene(Scene* scene)
+{
+  m_scene = scene;
 }
 
 BVH* AnimationView::getBVH() const
