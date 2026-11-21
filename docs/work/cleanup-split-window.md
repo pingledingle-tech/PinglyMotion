@@ -1,5 +1,5 @@
 Branch: cleanup/split-window
-Status: active
+Status: done
 Pull request: #237
 Files:
 - src/pinglymotionwindow.*

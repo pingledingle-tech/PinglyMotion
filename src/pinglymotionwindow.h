@@ -251,6 +251,8 @@ class PinglyMotionWindow : public QMainWindow
 
     void frameSlider(int position);
     void nextPlaystate();
+    void setDefaultLoopIn(Animation* anim);
+    void connectAnimation(Animation* anim);
     void setLoopInPoint(int inFrame);
     void setLoopOutPoint(int outFrame);
     void numFramesChanged(int num);

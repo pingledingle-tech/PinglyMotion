@@ -48,6 +48,9 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               releaseinfo.cpp
               pinglymotion.cpp
               pinglymotionwindow.cpp
+              pinglymotionwindowfile.cpp
+              pinglymotionwindowprops.cpp
+              pinglymotionwindowplayback.cpp
               scene.cpp
               screenshotsheet.cpp
               settings.cpp
