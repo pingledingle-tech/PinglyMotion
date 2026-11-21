@@ -1358,6 +1358,8 @@
      <string>Help</string>
     </property>
     <addaction name="helpWhatsNewAction"/>
+    <addaction name="helpOpenLogAction"/>
+    <addaction name="helpClearLogAction"/>
     <addaction name="helpAboutAction"/>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -1598,6 +1600,16 @@
   <action name="optionsConfigurePinglyMotionAction">
    <property name="text">
     <string>Configure PinglyMotion...</string>
+   </property>
+  </action>
+  <action name="helpOpenLogAction">
+   <property name="text">
+    <string>Open log</string>
+   </property>
+  </action>
+  <action name="helpClearLogAction">
+   <property name="text">
+    <string>Clear log</string>
    </property>
   </action>
   <action name="helpAboutAction">

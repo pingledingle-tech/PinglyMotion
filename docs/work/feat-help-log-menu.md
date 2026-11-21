@@ -1,12 +1,12 @@
 Branch: feat/help-log-menu
-Status: active
+Status: done
 Pull request: #267
 Files:
 - src/pinglymotionwindow.*
 - src/applog.*
 - tests/applog/**
 - tests/CMakeLists.txt
-- docs/PRODUCT.md
+- docs/DEV.md
 
 ## What
 
