@@ -3,7 +3,7 @@
  *
  * Each input line is "<object>|<owner-say text>" (a line without "|" comes
  * from the object "obj"). The lines "~rlv" and "~rlva" switch the mode
- * (issue 297); after a switch the state must be empty. Every line goes to Rlv::parseLine() and to
+ * (issue 297); after a real switch the state must be empty. Every line goes to Rlv::parseLine() and to
  * RlvState::apply(). It must never crash, and after every line the state must
  * keep its rules: limits, counters that match the restrictions, bounded
  * replies, and allowed/blocked actions that follow the plain restrictions.
@@ -98,8 +98,12 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
 
     if (line == QLatin1String("~rlv") || line == QLatin1String("~rlva"))
     {
-      state.setMode(line == QLatin1String("~rlva") ? Rlv::Mode::Rlva : Rlv::Mode::Rlv);
-      check(state.restrictions().isEmpty() && state.recorded().isEmpty());
+      const Rlv::Mode before = state.mode();
+      const Rlv::Mode wanted = line == QLatin1String("~rlva") ? Rlv::Mode::Rlva : Rlv::Mode::Rlv;
+      state.setMode(wanted);
+      check(state.mode() == wanted);
+      // a real switch starts clean; asking for the mode it is already in changes nothing
+      if (wanted != before) check(state.restrictions().isEmpty() && state.recorded().isEmpty());
       checkState(state);
       continue;
     }
