@@ -4,7 +4,8 @@ Runs every reference solution of the evaluation set against a real PinglyMotion 
 result with the case's own acceptance checks (the file is saved as .dingle, opened again, and
 asked through the control commands). This proves that every check CAN be passed. It also proves
 the checks are not empty: an untouched animation must fail them, and so must the broken start
-file of a "fix this" prompt. Part of CI; needs a display (xvfb-run) and no network.
+file of a "fix this" prompt. Then it runs the worked recipes of docs/ASSISTANT_GUIDE.md, section 7,
+exactly as the guide writes them (recipes.py). Part of CI; needs a display (xvfb-run) and no network.
 
 Usage: tests/assistant/run_reference.py path/to/PinglyMotion
 """
@@ -16,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import cases  # noqa: E402
 import lib  # noqa: E402
+import recipes  # noqa: E402
 
 failed = []
 skipped = []
@@ -41,6 +43,7 @@ def apply(app, commands):
 
 
 def main():
+    recipes.library_environment()      # the bundled library, for the recipe that starts from a clip
     app = lib.App(sys.argv[1])
     try:
         for case in cases.CASES:
@@ -65,6 +68,8 @@ def main():
                 app.reset()
                 problems, _ = lib.run_checks(app, [c for c in case["checks"] if c["type"] != "check_animation"])
                 report(case["id"] + ": an untouched animation fails", [] if problems else ["it passes"], [])
+
+        recipes.run_all(app, report)
     finally:
         app.close()
 

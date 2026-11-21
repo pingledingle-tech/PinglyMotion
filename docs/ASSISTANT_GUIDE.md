@@ -2,6 +2,8 @@
 
 For an AI assistant that is connected to PinglyMotion (MCP tool `read_guide`, or this file). Read it once, then work. Plain English on purpose: the words in sections 4 to 6 are the words to use with the user.
 
+For a wave, sitting on a chair, a calm standing idle or a calm walk, follow the worked recipes in section 7, step by step.
+
 Numbers here come from the program's own files and tests, not from memory. Where something is not built yet it says **planned**. If this guide and the program disagree, the program is right: tell the user.
 
 ## 1. What Second Life does with an animation
@@ -256,3 +258,150 @@ The user may never have animated. Use these words, not the left column.
 - **Say what you did in one line.** For example: "I turned the left elbow so the hand is by the chin."
 - **Ask one question, with a default.** For example: "Should the wave be slow and gentle? I will go with that unless you say otherwise."
 - **Say what to do, not what is wrong.** Short sentences. No numbers unless the user asks.
+
+## 7. Worked recipes
+
+Four requests a beginner often makes, done from start to finish. Every command below was run against the program and every number in "What you should see" is what it answered; the evaluation set (`tests/assistant/`) runs these exact lines in the Linux build check, so if a command changes, the test fails and this section is fixed. Each line is one command: `command` is the tool name, the rest are its arguments. Send them in order, one at a time, and read each answer before the next. A recipe starts with a new animation (`new_animation`; save first if `state` says `unsaved_changes`).
+
+The numbers check what numbers can check: where the hand and feet are, which joints move, that the loop closes, that Second Life accepts the file. They cannot say whether the movement looks natural. After each recipe, tell the user what to look at (the line "The user looks at") and change it with them.
+
+File names: `save_file` and `export_anim` never replace a file. If the name is taken, add a number (`wave2.anim`).
+
+### Recipe A: a friendly wave
+
+The user asks for "a wave". The right hand goes up beside the head, palm forward, and the forearm swings side to side three times. It plays once (no loop). Call `find_reference` with `wave` first: today the library has only "Direct traffic" (8 s), which is not a friendly wave, so this recipe builds it from the start pose.
+
+<!-- recipe:wave -->
+```
+{"command": "new_animation"}
+{"command": "set_fps", "fps": 30}
+{"command": "set_frame_count", "frames": 46}
+{"command": "set_pose", "frame": 2, "joints": {"rShldr": [-90, 0, -20], "rForeArm": [0, 60, 0]}}
+{"command": "set_pose", "frame": 9, "joints": {"rForeArm": [0, 110, 0]}, "easing": "ease-in-out"}
+{"command": "set_pose", "frame": 16, "joints": {"rForeArm": [0, 60, 0]}, "easing": "ease-in-out"}
+{"command": "set_pose", "frame": 23, "joints": {"rForeArm": [0, 110, 0]}, "easing": "ease-in-out"}
+{"command": "set_pose", "frame": 31, "joints": {"rForeArm": [0, 60, 0]}, "easing": "ease-in-out"}
+{"command": "set_pose", "frame": 38, "joints": {"rForeArm": [0, 110, 0]}, "easing": "ease-in-out"}
+{"command": "set_pose", "frame": 46, "joints": {"rForeArm": [0, 60, 0]}, "easing": "ease-in-out"}
+{"command": "describe_pose", "frame": 2}
+{"command": "describe_pose", "frame": 9}
+{"command": "keys", "joint": "rForeArm"}
+{"command": "describe_motion"}
+{"command": "check_animation"}
+{"command": "screenshot", "views": ["front", "left"], "frames": [2, 9], "labels": true}
+{"command": "save_file", "path": "wave.dingle"}
+{"command": "export_anim", "path": "wave.anim", "priority": 3, "loop": false, "ease_in": 0.3, "ease_out": 0.5}
+```
+
+Why these numbers: `rShldr` X -90 turns the arm so the elbow bends upward, Z -20 lifts the upper arm a little above the shoulder (calibration table: right shoulder Z minus is up). `rForeArm` Y between 60 and 110 swings the hand side to side; a key every 7 or 8 frames is one swing out and back every half second, a lively wave. Only the right arm is keyed: the other joints never move, so the export leaves them out and the user's own stand keeps them.
+
+What you should see:
+- `describe_pose` frame 2: right hand at x -17.0, y 72.7 (the head is at y 67.8), "right hand above head". Frame 9: right hand at x -10.4, y 70.9: the hand moved 6.6 to the side and stayed above the head.
+- `keys` `rForeArm`: frames 1, 2, 9, 16, 23, 31, 38, 46, each `ease-in-out`.
+- `describe_motion`: 1.47 s, one joint moves (the right elbow, 50 degrees, fast, top speed 334 degrees per second), "repeats every 0.5 s (120 per minute)", 3 cycles.
+- `check_animation`: no errors or warnings; one note that 17 joints never move and are left out. That note is right: only the right arm should move.
+- `export_anim`: 1.47 s, 3 joints written (right shoulder, right elbow and the pelvis), no warnings.
+- `describe_pose` also says "both feet lifted off the floor" here. In the start pose the ankle joint is 4.16 above the floor, and that sentence reads the ankle; it is not a mistake in the wave.
+
+The user looks at: is the wave too fast or too slow (a key every 10 frames is calmer), and does the hand go high enough.
+
+Usual mistakes: posing on frame 1 (refused; frame 1 is the reference); `rShldr` X +90 instead of -90 (the elbow bends down: the hand ends at y 59.6, below the shoulder, and `describe_pose` no longer says "right hand above head"); keying `rShldr` again on the last frame with the same value (`check_animation` notes an identical key; it does no harm, but it is not needed).
+
+### Recipe B: sit on a chair
+
+The user asks to "sit on the chair". Use the seated pose of section 3 (from `examples/throne.dingle`) on frame 2, hold it, and loop it. A sit for a chair is a held pose: one key on frame 2 is enough.
+
+<!-- recipe:sit -->
+```
+{"command": "new_animation"}
+{"command": "set_fps", "fps": 30}
+{"command": "set_frame_count", "frames": 31}
+{"command": "set_pose", "frame": 2, "joints": {"lCollar": [0.1, 2.0, -4.0], "rCollar": [0.1, -2.0, 4.0], "lShldr": [3.7, -8.0, -54.4], "rShldr": [3.7, 8.0, 54.4], "lForeArm": [20, -77, 0], "rForeArm": [20, 77, 0], "lHand": [30, -4.1, -7.5], "rHand": [30, 4.1, 7.5]}}
+{"command": "set_pose", "frame": 2, "joints": {"lThigh": [-81.5, -0.6, 3.6], "rThigh": [-80.5, 0.6, -3.6], "lShin": [78.8, -1.4, -5.0], "rShin": [77.8, 1.4, 5.0], "lFoot": [-5.1, 3.3, 4.0], "rFoot": [-5.1, -3.3, -4.0]}}
+{"command": "set_position", "frame": 2, "x": 0, "y": 28, "z": -8}
+{"command": "describe_pose", "frame": 2}
+{"command": "check_animation"}
+{"command": "screenshot", "views": ["front", "left"], "labels": true}
+{"command": "save_file", "path": "sit.dingle"}
+{"command": "export_anim", "path": "sit.anim", "priority": 4, "loop": true, "ease_in": 0.5, "ease_out": 0.5}
+```
+
+Arms first, then legs, then the hip: one body part per call. The hip comes down from 43.5 to 28 and back by 8, so the seat is under the hip and the feet reach the floor. Priority 4 so the sit wins over the user's stand.
+
+What you should see:
+- `describe_pose` frame 2: hip at y 28, z -8; feet at z 12.3, in front of the hip; the ankles 5.0 and 4.7 above the floor (in the start pose they are 4.16, so the feet are on the floor); hands at y 36.5, in the lap; "arms are symmetric", "legs are symmetric".
+- `check_animation`: no errors or warnings; one note that 5 joints (hip turn, belly, chest, neck, head) are left out. No `dead_start` warning: a pose held from frame 2 is fine.
+- `export_anim`: 0.97 s, loops from frame 2 to 31, 15 joints written, no warnings.
+
+The user looks at: whether the hips sit on the seat of their own chair. Chairs differ: if the avatar floats above the seat or sinks in, change the hip height `y` in steps of 1 to 2 (and the sit target of the chair in Second Life), never the leg angles.
+
+Usual mistakes: leaving out `set_position` (the hip stays at 43.5 and the feet hang in the air: `describe_pose` gives the ankles about 20 above the floor); forgetting the collar, hand and foot values (those joints stay in the start pose); setting the hip on frame 1 (refused).
+
+### Recipe C: a calm standing idle that loops
+
+The user asks for "a calm idle" or "just standing, breathing". The relaxed stand of section 3 on frame 2, then the chest breathes and the head looks a little to the side and back, over 4 seconds, and the last key equals the first so the loop has no jump.
+
+<!-- recipe:idle -->
+```
+{"command": "new_animation"}
+{"command": "set_fps", "fps": 30}
+{"command": "set_frame_count", "frames": 121}
+{"command": "set_pose", "frame": 2, "joints": {"lCollar": [0.1, 2.0, -4.0], "rCollar": [0.1, -2.0, 4.0], "lShldr": [-4.3, 4.0, -50.4], "rShldr": [-4.3, -4.0, 50.4], "lForeArm": [-4.5, -9.1, 0], "rForeArm": [-4.5, 9.1, 0], "lHand": [-3.4, -4.1, -7.5], "rHand": [-3.4, 4.1, 7.5]}}
+{"command": "set_pose", "frame": 2, "joints": {"lThigh": [-11.5, -0.6, 3.6], "rThigh": [-11.5, 0.6, -3.6], "lShin": [21.8, -1.4, -5.0], "rShin": [21.8, 1.4, 5.0], "lFoot": [-5.1, 3.3, 4.0], "rFoot": [-5.1, -3.3, -4.0]}}
+{"command": "set_position", "frame": 2, "x": 0, "y": 41, "z": 0.4}
+{"command": "set_pose", "frame": 2, "joints": {"chest": [0, 0, 0], "head": [0, 0, 0]}}
+{"command": "set_pose", "frame": 41, "joints": {"chest": [-4, 0, 0], "head": [-3, 12, 0]}, "easing": "ease-in-out"}
+{"command": "set_pose", "frame": 81, "joints": {"chest": [-2, 0, 0], "head": [0, -6, 0]}, "easing": "ease-in-out"}
+{"command": "set_pose", "frame": 121, "joints": {"chest": [0, 0, 0], "head": [0, 0, 0]}, "easing": "ease-in-out"}
+{"command": "set_loop", "in": 2, "out": 121}
+{"command": "state"}
+{"command": "describe_motion"}
+{"command": "check_animation"}
+{"command": "screenshot", "views": ["front"], "frames": [2, 41, 81, 121]}
+{"command": "save_file", "path": "idle.dingle"}
+{"command": "export_anim", "path": "idle.anim", "priority": 2, "loop": true}
+```
+
+The chest and head keys on frame 2 equal the start pose: they are there so the movement starts from 0 and the last key (frame 121) can equal it. Chest X minus lifts the chest a little (breathing in); head Y plus turns the face to the figure's left.
+
+What you should see:
+- `state`: `loop_in` 2, `loop_out` 121.
+- `describe_motion`: 3.97 s, the head moves (12.4 degrees, slow, top speed 22 degrees per second), weight on both feet, "loop seam smooth". The chest is not listed: 4 degrees is under the 5 degrees `describe_motion` counts as moving, but it is in the file.
+- `check_animation`: no errors or warnings; one note that 3 joints (hip turn, belly, neck) are left out.
+- `export_anim`: 3.97 s, loops from frame 2 to 121, 17 joints written (the chest and head among them), no warnings.
+
+The user looks at: whether it is too still or too busy. Bigger: head Y up to about 20, chest X to -6. Slower: more frames (`set_frame_count` 181 for 6 seconds, keys at 2, 61, 121, 181, loop out 181).
+
+Usual mistakes: a last key that differs from the first (with the head at Y 8 on frame 121, `describe_motion` `loop` says `small jump` and `check_animation` adds a `loop_seam` note; a bigger difference is a `jump` and a warning); exporting with `loop` false (it plays once and stops).
+
+### Recipe D: a calm walk from the library
+
+The user asks for "a calm walk". Do not build a walk from nothing: start from a library clip, change it, save it under a new name.
+
+<!-- recipe:walk -->
+```
+{"command": "new_animation"}
+{"command": "find_reference", "text": "walk", "tags": ["calm"]}
+{"command": "load_reference", "id": "m2m-walk-relaxed"}
+{"command": "describe_motion"}
+{"command": "set_fps", "fps": 24}
+{"command": "state"}
+{"command": "check_animation"}
+{"command": "screenshot", "frames": [2, 12, 22, 32], "trail": true}
+{"command": "save_file", "path": "calm_walk.dingle"}
+{"command": "export_anim", "path": "calm_walk.anim", "priority": 3, "loop": true}
+```
+
+`find_reference` lists the clips that match; pick one with the `loop` tag for a walk that repeats ("Walk, relaxed", `m2m-walk-relaxed`, CC0, 1.4 s). More clips may be in the library by now; read the hits, do not assume the list. `set_fps` 24 instead of 30 plays the same frames slower, a calmer walk (the frames stay, the seconds grow). The library is read-only, so `save_file` with a new name.
+
+What you should see:
+- `find_reference`: "Walk, relaxed" (`m2m-walk-relaxed`, 1.4 s, tags walk, calm, loop) among the hits.
+- `load_reference`: 43 frames at 30 per second, licence CC0 1.0, credit "Animation from Mesh2Motion (github.com/Mesh2Motion/mesh2motion-app), CC0 1.0.".
+- `describe_motion` (before `set_fps`): 1.37 s, 14 joints move, arms move in opposition, weight shifts from foot to foot.
+- `state` after `set_fps` 24: still 43 frames, `fps` 24.
+- `check_animation`: no errors, 3 warnings, all expected for a motion-capture walk: keys past joint limits (motion capture bends a little further than the limits), foot sliding (a walk in place slides the planted foot back; Second Life moves the avatar forward), and loop seam (the left knee jumps 16 degrees from frame 43 back to frame 2; inside the clip the knee already moves 22 degrees from frame 42 to 43, so this is one ordinary step). Tell the user about them in one line.
+- `export_anim`: 1.71 s, loops from frame 2 to 43, 19 joints written, the same 3 warnings.
+
+The user looks at: the speed (24 is calm; 20 is slow; 30 is the original) and whether the steps look right on their avatar.
+
+Usual mistakes: changing a motion-capture clip key by key (it has a key on every frame: change the speed, the loop points or a whole body part instead); forgetting the credit: `load_reference` gives it, tell the user and keep it with the animation; treating its warnings as errors (they are expected, see above).
