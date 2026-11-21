@@ -61,12 +61,12 @@ class Constants
     static const QString cubeMeshFilePath();
     static const QString torusMeshFilePath();
 
-    static const int keyWidth();
-    static const int keyHeight();
-    static const int lineHeight();
-    static const int leftStrut();
+    static int keyWidth();
+    static int keyHeight();
+    static int lineHeight();
+    static int leftStrut();
     // FIXME: find out at runtime
-    static const int numParts();
+    static int numParts();
     // number of timeline tracks: position plus every node of the skeleton
     static void setNumParts(int parts);
 

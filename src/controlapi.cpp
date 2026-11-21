@@ -30,6 +30,7 @@
 #include "motiondescribe.h"
 #include "posedescribe.h"
 #include "screenshotsheet.h"
+#include "skeletonwalk.h"
 #include "usersettings.h"
 
 #include "controlapi.h"
@@ -97,17 +98,10 @@ namespace
     return QJsonArray{qRound(v.x() * 100.0) / 100.0, qRound(v.y() * 100.0) / 100.0, qRound(v.z() * 100.0) / 100.0};
   }
 
-  void collect(BVHNode* node, QList<BVHNode*>& list)
-  {
-    if (!node) return;
-    if (node->type != BVH_END) list << node;
-    for (int i = 0; i < node->numChildren(); i++) collect(node->child(i), list);
-  }
-
   QList<BVHNode*> allJoints(Animation* animation)
   {
     QList<BVHNode*> list;
-    collect(animation->getMotion(), list);
+    SkeletonWalk::collect(animation->getMotion(), list);
     return list;
   }
 

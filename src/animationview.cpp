@@ -38,6 +38,7 @@
 #include <QToolTip>
 
 #include "animation.h"
+#include "logging.h"
 #include "animationview.h"
 #include "bvh.h"
 #include "constants.h"
@@ -46,6 +47,7 @@
 #include "propmanager.h"
 #include "scene.h"
 #include "floor.h"
+#include "skeletonwalk.h"
 #include "skinrenderer.h"
 
 #include "usersettings.h"
@@ -63,7 +65,7 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   bvh=new BVH();
   if(!bvh)
   {
-    qDebug("AnimationView::AnimationView(): BVH initialisation failed.");
+    qCWarning(lcView,"AnimationView(): BVH initialisation failed.");
     return;
   }
 
@@ -79,14 +81,14 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   changeZ=0;
 
   QString limFile = Constants::limitsFilePath();
-  qDebug("AnimationView::AnimationView(): using limits file '%s'",limFile.toLatin1().constData());
+  qCDebug(lcView,"AnimationView(): using limits file '%s'",limFile.toLatin1().constData());
 
   // read SL reference models to restore joint positions, in case another model has joints
   // we do not support (e.g. the SL example bvh files)
   for(int i=0;i<Animation::NUM_FIGURES;i++)
   {
     QString model(figureFiles[i]);
-    qDebug("Reading reference model '%s'",model.toLatin1().constData());
+    qCDebug(lcView,"Reading reference model '%s'",model.toLatin1().constData());
     joints[i]=bvh->animRead(model,limFile);
   }
 
@@ -143,19 +145,13 @@ bool AnimationView::faceFocus() const
 
 // names of all timeline tracks: "position", then every node of the skeleton
 // in the order they are drawn ("Site" for End Sites)
-static void collectPartNames(BVHNode* node,QStringList& names)
-{
-  if(!node) return;
-  names << node->name();
-  for(int i=0;i<node->numChildren();i++)
-    collectPartNames(node->child(i),names);
-}
-
 QStringList AnimationView::partNames() const
 {
   QStringList names;
   names << "position";
-  collectPartNames(joints[0],names);
+  QList<BVHNode*> nodes;
+  SkeletonWalk::collect(joints[0],nodes,true);
+  for(BVHNode* node : nodes) names << node->name();
   return names;
 }
 
@@ -1016,10 +1012,10 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
 
   if(num>=0)
   {
-    Qt::KeyboardModifiers modifier=event->modifiers();
-    if(modifier==Qt::ShiftModifier)
+    Qt::KeyboardModifiers keyModifiers=event->modifiers();
+    if(keyModifiers==Qt::ShiftModifier)
       emit storeCameraPosition(num);
-    else if(modifier==Qt::NoModifier)
+    else if(keyModifiers==Qt::NoModifier)
     {
       emit restoreCameraPosition(num);
       update();
@@ -1119,17 +1115,17 @@ void AnimationView::drawFigure(Animation* anim,unsigned int index)
 }
 
 // NOTE: joints == motion for now
-void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,int frame,BVHNode* motion,BVHNode* joints,int mode)
+void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,int frame,BVHNode* motion,BVHNode* jointRoot,int mode)
 {
   const bool selecting=isPicking();
-  if(motion && joints)
+  if(motion && jointRoot)
   {
     selectName++;
     SceneState::pushMatrix();
-    // the male skeleton moves joints further from bigger parents
-    const QVector3D offset=QVector3D(joints->offset[0],joints->offset[1],joints->offset[2])*m_parentScale
-                          +m_avatarSkin.jointShift(joints->name());
-    const QVector3D ownScale=m_avatarSkin.jointScale(joints->name());
+    // the male skeleton moves jointRoot further from bigger parents
+    const QVector3D offset=QVector3D(jointRoot->offset[0],jointRoot->offset[1],jointRoot->offset[2])*m_parentScale
+                          +m_avatarSkin.jointShift(jointRoot->name());
+    const QVector3D ownScale=m_avatarSkin.jointScale(jointRoot->name());
     SceneState::translate(offset.x(),offset.y(),offset.z());
     if(motion->type==BVH_NO_SL)
     {
@@ -1143,7 +1139,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
 
       // face bones only get a ball while the head or a face bone is selected,
       // otherwise the many face balls cover the whole head
-      if(joints->type!=BVH_ROOT && JointGroups::shown(motion->name()) &&
+      if(jointRoot->type!=BVH_ROOT && JointGroups::shown(motion->name()) &&
          (!isFaceBone(motion->name()) || faceFocus()))
       {
         // draw joint spheres in skeleton mode, red for selected parts,
@@ -1211,7 +1207,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
         }
       }
     }
-    // joints of a hidden group take the name of the nearest shown joint
+    // jointRoot of a hidden group take the name of the nearest shown joint
     // above them, so clicking or hovering the body there picks that joint
     const unsigned int shownAncestor=m_shownAncestor;
     const bool jointShown=JointGroups::shown(motion->name());
@@ -1294,7 +1290,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
     m_parentScale=ownScale;
     for(int i=0;i<motion->numChildren();i++)
     {
-      drawPart(anim,currentAnimationIndex,frame,motion->child(i),joints->child(i),mode);
+      drawPart(anim,currentAnimationIndex,frame,motion->child(i),jointRoot->child(i),mode);
     }
     m_parentScale=parentScale;
     m_shownAncestor=shownAncestor;
@@ -1656,11 +1652,10 @@ void AnimationView::setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<
 void AnimationView::selectPart(int partNum)
 {
   BVHNode* node=m_scene->getAnimation()->getNode(partNum);
-  qDebug("AnimationView::selectPart(%d)",partNum);
 
   if(!node)
   {
-    qDebug("AnimationView::selectPart(%d): node==0!",partNum);
+    qCWarning(lcView,"selectPart(%d): node==0!",partNum);
     return;
   }
 
@@ -1680,11 +1675,10 @@ void AnimationView::selectPart(BVHNode* node)
 {
   if(!node)
   {
-    qDebug("AnimationView::selectPart(node): node==0!");
+    qCWarning(lcView,"selectPart(node): node==0!");
     return;
   }
 
-  qDebug("AnimationView::selectPart(node): %s",node->name().toLatin1().constData());
   // make sure no prop is selected anymore
   propManager()->selectProp(0);
   propDragging=0;

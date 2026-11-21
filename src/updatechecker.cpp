@@ -85,8 +85,7 @@ UpdateChecker::UpdateChecker(QObject* parent, QWidget* parentWidget) :
   UpdaterSettings::readSettings();
   readNews();
 
-  connect(m_networkAccessManager.data(), SIGNAL(finished(QNetworkReply*)),
-          this, SLOT(replyFinished(QNetworkReply*)));
+  connect(m_networkAccessManager.data(), &QNetworkAccessManager::finished, this, &UpdateChecker::replyFinished);
 }
 
 UpdateChecker::~UpdateChecker()

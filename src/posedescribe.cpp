@@ -14,6 +14,7 @@
 #include "bvhnode.h"
 
 #include "posedescribe.h"
+#include "skeletonwalk.h"
 
 namespace
 {
@@ -24,20 +25,9 @@ namespace
 
   // -------------------------------------------------------------- the tree
 
-  void findAll(BVHNode* node, QList<BVHNode*>& list)
-  {
-    if (!node) return;
-    if (node->type != BVH_END) list << node;
-    for (int i = 0; i < node->numChildren(); i++) findAll(node->child(i), list);
-  }
-
   BVHNode* findNode(BVHNode* root, const QString& name)
   {
-    QList<BVHNode*> all;
-    findAll(root, all);
-    for (BVHNode* node : all)
-      if (node->name() == name) return node;
-    return nullptr;
+    return SkeletonWalk::findNode(root, name, false);
   }
 
   // world matrix of every joint at "frame" (0-based): the joint's offset,
@@ -47,31 +37,13 @@ namespace
   // are not part of the skeleton itself). The root (hip) has offset (0,0,0)
   // in the shipped skeletons; the hip's own world position is the animation's
   // position track (Animation::getNode(0)), added once, here.
-  void place(BVHNode* node, const QMatrix4x4& parent, int frame, QHash<BVHNode*, QMatrix4x4>& out)
-  {
-    QMatrix4x4 m = parent;
-    m.translate(node->offset[0], node->offset[1], node->offset[2]);
-    const QVector3D rotation = node->frameData(frame).rotation();
-    for (int i = 0; i < node->numChannels; i++)
-    {
-      switch (node->channelType[i])
-      {
-        case BVH_XROT: m.rotate(rotation.x(), 1, 0, 0); break;
-        case BVH_YROT: m.rotate(rotation.y(), 0, 1, 0); break;
-        case BVH_ZROT: m.rotate(rotation.z(), 0, 0, 1); break;
-        default: break;
-      }
-    }
-    out[node] = m;
-    for (int i = 0; i < node->numChildren(); i++) place(node->child(i), m, frame, out);
-  }
-
   QHash<BVHNode*, QMatrix4x4> worldTransforms(Animation* animation, int frame)
   {
     QHash<BVHNode*, QMatrix4x4> out;
     QMatrix4x4 base;
     base.translate(animation->getNode(0)->frameData(frame).position());
-    place(animation->getMotion(), base, frame, out);
+    SkeletonWalk::place(animation->getMotion(), base,
+                        [frame](BVHNode* node) { return node->frameData(frame).rotation(); }, out);
     return out;
   }
 
@@ -124,12 +96,6 @@ namespace
     out["z"] = round2(inches.z());
     out["meters"] = QJsonObject{{"x", round3(metres.x())}, {"y", round3(metres.y())}, {"z", round3(metres.z())}};
     return out;
-  }
-
-  QString capitalize(QString text)
-  {
-    if (!text.isEmpty()) text[0] = text[0].toUpper();
-    return text;
   }
 
   // -------------------------------------------------------------- rule sentences
@@ -369,7 +335,7 @@ QJsonObject PoseDescribe::describe(Animation* animation, int frame)
   answer["symmetry"] = symmetryNotes(rotation);
   answer["summary"] = rules.sentences.isEmpty()
                          ? QString("A neutral pose: nothing bent, raised or shifted enough to describe.")
-                         : capitalize(rules.sentences.join("; ")) + ".";
+                         : SkeletonWalk::capitalize(rules.sentences.join("; ")) + ".";
   return answer;
 }
 

@@ -30,9 +30,11 @@
 #include <climits>
 
 #include "animfile.h"
+#include "logging.h"
 #include "bvh.h"
 #include "constants.h"
 #include "dingle.h"
+#include "skeletonwalk.h"
 
 BVH::BVH()
 {
@@ -64,7 +66,7 @@ void BVH::loadBentoJoints()
   QFile file(Constants::pinglyMotionDataPath()+"/bento_joints.txt");
   if(!file.open(QIODevice::ReadOnly))
   {
-    qDebug("BVH::loadBentoJoints(): bento_joints.txt not found, Bento joints disabled");
+    qCWarning(lcFile,"loadBentoJoints(): bento_joints.txt not found, Bento joints disabled");
     return;
   }
 
@@ -169,14 +171,13 @@ bool BVH::failed(const QString& reason)
   if(lastError.isEmpty())
   {
     lastError=reason;
-    qDebug("BVH: cannot read the file: %s",reason.toLatin1().constData());
+    qCWarning(lcFile,"BVH: cannot read the file: %s",reason.toLatin1().constData());
   }
   return false;
 }
 
 void BVH::removeNoSLNodes(BVHNode* root)
 {
-  qDebug("BVH::removeNoSLNodes()");
   // walk through list of all child nodes
   for(int i=0;i<root->numChildren();i++)
   {
@@ -184,7 +185,7 @@ void BVH::removeNoSLNodes(BVHNode* root)
     // if this is an unsupported node, remove it
     if(child->type==BVH_NO_SL)
     {
-      qDebug("BVH::removeNoSLNodes(): removing node '%s'",child->name().toLatin1().constData());
+      qCDebug(lcFile,"removeNoSLNodes(): removing node '%s'",child->name().toLatin1().constData());
       // find all child joints of the unsupported child
       for(int j=0;j<child->numChildren();j++)
       {
@@ -205,7 +206,6 @@ void BVH::removeNoSLNodes(BVHNode* root)
 
 void BVH::setChannelLimits(BVHNode *node,BVHChannelType type,double min,double max) const
 {
-  qDebug("BVH::setChannelLimits()");
 
   int i;
   if(!node) return;
@@ -223,7 +223,6 @@ void BVH::setChannelLimits(BVHNode *node,BVHChannelType type,double min,double m
 // read joint limits file
 void BVH::parseLimFile(BVHNode* root,const QString& limFile) const
 {
-  qDebug("BVH::parseLimFile('%s')",limFile.toLatin1().constData());
 
   QFile limit(limFile);
 
@@ -269,7 +268,7 @@ void BVH::parseLimFile(BVHNode* root,const QString& limFile) const
       } // for
     }
     else
-      qDebug("BVH::parseLimFile(): Node '%s' not in animation. This will lead to problems!",name.toLatin1().constData());
+      qCWarning(lcFile,"parseLimFile(): Node '%s' not in animation. This will lead to problems!",name.toLatin1().constData());
   }
   limit.close();
 }
@@ -751,16 +750,7 @@ bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
 
 BVHNode* BVH::bvhFindNode(BVHNode* root,const QString& name) const
 {
-  BVHNode *node;
-  if(!root) return NULL;
-  if(root->name()==name) return root;
-
-  for(int i=0;i<root->numChildren();i++)
-  {
-    if((node=bvhFindNode(root->child(i),name))) return node;
-  }
-
-  return NULL;
+  return SkeletonWalk::findNode(root,name);
 }
 
 void BVH::bvhGetChannelLimits(BVHNode* node,BVHChannelType type,double* min, double* max)

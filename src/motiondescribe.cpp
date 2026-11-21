@@ -21,6 +21,7 @@
 #include "posedescribe.h"
 
 #include "motiondescribe.h"
+#include "skeletonwalk.h"
 
 namespace
 {
@@ -103,12 +104,6 @@ namespace
   double round1(double v) { return rounded(v, 10.0); }
   double round2(double v) { return rounded(v, 100.0); }
   QString wholeText(double v) { return QString::number(whole(v), 'f', 0); }
-
-  QString capitalize(QString text)
-  {
-    if (!text.isEmpty()) text[0] = text[0].toUpper();
-    return text;
-  }
 
   // the shortest signed difference between two angles in degrees
   double angleDelta(double from, double to)
@@ -254,26 +249,6 @@ namespace
 
   // the world matrix of every joint, as PoseDescribe::worldTransforms() and
   // drawPart() in animationview.cpp place them, through the KeyCache
-  void place(KeyCache& cache, BVHNode* node, const QMatrix4x4& parent, int frame, QHash<BVHNode*, QMatrix4x4>& out)
-  {
-    if (!node || node->type == BVH_END) return;
-    QMatrix4x4 m = parent;
-    m.translate(node->offset[0], node->offset[1], node->offset[2]);
-    const QVector3D rotation = cache.at(node, frame).rotation();
-    for (int i = 0; i < node->numChannels; i++)
-    {
-      switch (node->channelType[i])
-      {
-        case BVH_XROT: m.rotate(rotation.x(), 1, 0, 0); break;
-        case BVH_YROT: m.rotate(rotation.y(), 0, 1, 0); break;
-        case BVH_ZROT: m.rotate(rotation.z(), 0, 0, 1); break;
-        default: break;
-      }
-    }
-    out[node] = m;
-    for (int i = 0; i < node->numChildren(); i++) place(cache, node->child(i), m, frame, out);
-  }
-
   Samples sampleFrames(Animation* animation, int from, int to)
   {
     Samples s;
@@ -301,7 +276,8 @@ namespace
       QHash<BVHNode*, QMatrix4x4> world;
       QMatrix4x4 base;
       base.translate(cache.at(animation->getNode(0), f).position());
-      place(cache, animation->getMotion(), base, f, world);
+      SkeletonWalk::place(animation->getMotion(), base,
+                          [&cache, f](BVHNode* joint) { return cache.at(joint, f).rotation(); }, world, true);
       for (const QString& name : s.joints)
       {
         const QVector3D r = cache.at(node[name], f).rotation();
@@ -995,7 +971,7 @@ QJsonObject MotionDescribe::describe(Animation* animation, int from, int to)
   parts << weightLine;
   if (!travelLine.isEmpty()) parts << travelLine;
   parts << seamLine;
-  answer["summary"] = capitalize(parts.join("; ")) + ".";
+  answer["summary"] = SkeletonWalk::capitalize(parts.join("; ")) + ".";
   return answer;
 }
 

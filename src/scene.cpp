@@ -53,7 +53,7 @@ void Scene::setAnimation(Animation* animation)
 
   m_animationManager.setAnimation(animation);
   m_animationManager.append(animation);
-  connect(animation, SIGNAL(frameChanged()), this, SIGNAL(repaint()));
+  connect(animation, &Animation::frameChanged, this, &Scene::repaint);
   emit repaint();
 }
 
@@ -67,7 +67,7 @@ void Scene::addAnimation(Animation* animation)
     if (!m_animationManager.isEmpty() && animation != m_animationManager.first())
       animation->setFrame(m_animationManager.first()->getFrame());
 
-    connect(animation, SIGNAL(frameChanged()), this, SIGNAL(repaint()));
+    connect(animation, &Animation::frameChanged, this, &Scene::repaint);
     emit repaint();
   }
 }

@@ -38,8 +38,10 @@ class AboutDialog : public QDialog
   signals:
     void checkUpdates();
 
-  private slots:
+  public slots:
     void updateCheckFinished();
+
+  private slots:
 
     void on_checkUpdatesButton_clicked();
     void on_autoUpdatesCheckBox_stateChanged(int state);

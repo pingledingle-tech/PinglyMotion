@@ -568,7 +568,7 @@ namespace
         return fail(QObject::tr("The joint \"%1\" has no rotation keys.").arg(anim.joints[i].name.left(40)));
       if(positions>0 && !hasPositionTrack[s])
         return fail(QObject::tr("The joint \"%1\" has no position keys.").arg(anim.joints[i].name.left(40)));
-      if(!hasRotationTrack[s]) rotationTracks[s].keys << Key{0,false,false};
+      if(!hasRotationTrack[s]) rotationTracks[s].keys << Key{0,false,false,std::nullopt,std::nullopt};
 
       if(positions>0)
       {
@@ -578,7 +578,7 @@ namespace
       }
     }
     if(firstWithPosition>=0) anim.positionKeys=positionTracks[static_cast<size_t>(firstWithPosition)].keys;
-    else anim.positionKeys << Key{0,false,false};
+    else anim.positionKeys << Key{0,false,false,std::nullopt,std::nullopt};
     anim.hasPositionKeys=true;
     for(int i=0;i<anim.joints.size();i++) anim.joints[i].keys=rotationTracks[static_cast<size_t>(i)].keys;
     return true;
@@ -743,7 +743,7 @@ namespace
   {
     if(!keys.isEmpty()) return keys;
     QVector<Key> all;   // a BVH animation: every frame is a key frame
-    for(int frame=0;frame<frames;frame++) all << Key{frame,false,false};
+    for(int frame=0;frame<frames;frame++) all << Key{frame,false,false,std::nullopt,std::nullopt};
     return all;
   }
 

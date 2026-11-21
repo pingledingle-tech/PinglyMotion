@@ -202,29 +202,29 @@ const QString Constants::torusMeshFilePath()
   return pinglyMotionDataPath() + "/torus.obj";
 }
 
-const int Constants::keyWidth()
+int Constants::keyWidth()
 {
   return 10;
 }
 
-const int Constants::keyHeight()
+int Constants::keyHeight()
 {
   return 10;
 }
 
-const int Constants::lineHeight()
+int Constants::lineHeight()
 {
   return 11;
 }
 
-const int Constants::leftStrut()
+int Constants::leftStrut()
 {
   return 120;
 }
 
 int Constants::m_numParts = 25;
 
-const int Constants::numParts()
+int Constants::numParts()
 {
   return m_numParts;
 }

@@ -105,8 +105,8 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   });
   connect(easingTiles_,&EasingTiles::customCurveRequested,this,&TimelineView::editCustomCurve);
 
-  connect(timeline,SIGNAL(animationChanged(Animation*)),this,SLOT(setAnimation(Animation*)));
-  connect(timeline,SIGNAL(trackClicked(int)),this,SLOT(selectTrack(int)));
+  connect(timeline, &Timeline::animationChanged, this, &TimelineView::setAnimation);
+  connect(timeline, &Timeline::trackClicked, this, &TimelineView::selectTrack);
 }
 
 TimelineView::~TimelineView()

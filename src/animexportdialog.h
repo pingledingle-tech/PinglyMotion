@@ -70,7 +70,7 @@ class AnimExportDialog : public QDialog
   Q_OBJECT
 
   public:
-    AnimExportDialog(double seconds,QWidget* parent=nullptr);
+    explicit AnimExportDialog(double seconds,QWidget* parent=nullptr);
     AnimExportUi::Settings settings() const;
 
   private:

@@ -44,7 +44,7 @@ struct IKBone
 class IKTree
 {
   public:
-    IKTree(BVHNode *root = NULL);
+    explicit IKTree(BVHNode *root = nullptr);
 
     void set(BVHNode *root);
     void setGoal(int frame, const QString& name);

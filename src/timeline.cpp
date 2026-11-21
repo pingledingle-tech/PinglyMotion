@@ -22,6 +22,7 @@
 #include <QPaintEvent>
 
 #include "animation.h"
+#include "logging.h"
 #include "constants.h"
 #include "jointgroups.h"
 
@@ -30,7 +31,6 @@
 Timeline::Timeline(QWidget* parent, Qt::WindowFlags)
   : QFrame(parent)
 {
-  qDebug("Timeline(0x%p)",(const void*) this);
 
   // init offscreen pixmap as 0 so the first change of number of frames will not
   // try to copy old pixmap data
@@ -83,13 +83,12 @@ void Timeline::paintEvent(QPaintEvent* /* e */)
   if(!animation) return;
   if(isHidden()) return;
 
-  qDebug("Timeline::paintEvent(%d)",(int) fullRepaint);
 
   QSize newSize = QSize(numOfFrames * Constants::keyWidth(), (timelineRows() - 1) * Constants::lineHeight());
 
   if(newSize!=size())
   {
-    qDebug("Timeline::paintEvent(): resizing timeline widget to %dx%d",newSize.width(),newSize.height());
+    qCDebug(lcView,"paintEvent(): resizing timeline widget to %dx%d",newSize.width(),newSize.height());
     resize(newSize);
     emit resized(newSize);
   }
@@ -123,12 +122,10 @@ void Timeline::paintEvent(QPaintEvent* /* e */)
   // draw current frame marker
   p.fillRect(xpos + Constants::keyWidth() / 2 - 1, 0, 2, height(), QColor("#ff0000"));
 
-  qDebug("Timeline::paintEvent(): done");
 }
 
 void Timeline::setNumberOfFrames(int frames)
 {
-  qDebug("Timeline::setNumberOfFrames(%d==%d): %p",numOfFrames,frames,(const void*) offscreen);
 
   numOfFrames=frames;
 
@@ -161,21 +158,20 @@ void Timeline::setAnimation(Animation* anim)
 
   if(animation)
   {
-    disconnect(animation,SIGNAL(numberOfFrames(int)),this,SLOT(setNumberOfFrames(int)));
-    disconnect(animation,SIGNAL(redrawTrack(int)),this,SLOT(redrawTrackImmediately(int)));
-    disconnect(this,SIGNAL(deleteFrame(int,int)),animation,SLOT(deleteFrame(int,int)));
-    disconnect(this,SIGNAL(insertFrame(int,int)),animation,SLOT(insertFrame(int,int)));
+    disconnect(animation, &Animation::numberOfFrames, this, &Timeline::setNumberOfFrames);
+    disconnect(animation, &Animation::redrawTrack, this, &Timeline::redrawTrackImmediately);
+    disconnect(this, &Timeline::deleteFrame, animation, &Animation::deleteFrame);
+    disconnect(this, &Timeline::insertFrame, animation, &Animation::insertFrame);
   }
   animation=anim;
 
   if(animation)
   {
-    connect(animation,SIGNAL(numberOfFrames(int)),this,SLOT(setNumberOfFrames(int)));
-    connect(animation,SIGNAL(redrawTrack(int)),this,SLOT(redrawTrackImmediately(int)));
-    connect(this,SIGNAL(deleteFrame(int,int)),animation,SLOT(deleteFrame(int,int)));
-    connect(this,SIGNAL(insertFrame(int,int)),animation,SLOT(insertFrame(int,int)));
+    connect(animation, &Animation::numberOfFrames, this, &Timeline::setNumberOfFrames);
+    connect(animation, &Animation::redrawTrack, this, &Timeline::redrawTrackImmediately);
+    connect(this, &Timeline::deleteFrame, animation, &Animation::deleteFrame);
+    connect(this, &Timeline::insertFrame, animation, &Animation::insertFrame);
 
-    qDebug("Timeline::setAnimation(): signal setup done");
   }
 
   emit animationChanged(anim);
@@ -283,7 +279,6 @@ void Timeline::drawTrack(int track)
 {
   if(track==-1) return;
   if(!offscreen) return;
-  qDebug("Timeline::drawTrack(%d, %d)",track,trackSelected);
 
   // normal tracks get default background color
   QPalette::ColorRole baseColor=QPalette::Window;
@@ -357,7 +352,7 @@ void Timeline::drawTrack(int track)
         if(frameNum>0)
         {
           // create new painter here, will be out of scope before drawKeyframe() gets called
-          QPainter p(offscreen);
+          QPainter painter(offscreen);
           // check if it differs from the previous frame, if it does, draw a line there
           // but only if this line is inside the "dirty" redraw region
           if(
@@ -379,10 +374,10 @@ void Timeline::drawTrack(int track)
                 QPoint newPos(x + oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
                               (int)(y + sin(x * 6.283 / (frameDiff - Constants::keyWidth() + 1)) * (Constants::lineHeight() / 2 - 1) + Constants::lineHeight() / 2)
                              );
-                p.setPen(pen1);
-                p.drawLine(oldPos,newPos);
-                p.setPen(pen2);
-                p.drawLine(oldPos+QPoint(0,1),newPos+QPoint(0,1));
+                painter.setPen(pen1);
+                painter.drawLine(oldPos,newPos);
+                painter.setPen(pen2);
+                painter.drawLine(oldPos+QPoint(0,1),newPos+QPoint(0,1));
                 oldPos=newPos;
               }
             }
@@ -390,11 +385,11 @@ void Timeline::drawTrack(int track)
             {
               // we use fillRect instead of drawLine because for some reason the windows
               // version did not draw properly
-              p.fillRect(oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
+              painter.fillRect(oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
                          y + Constants::keyHeight() / 2,
                          frameDiff - Constants::keyWidth(),
                          1, QBrush(pen1));
-              p.fillRect(oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
+              painter.fillRect(oldFrame * Constants::keyWidth() + Constants::keyWidth() - 1,
                          y + Constants::keyHeight() / 2 + 1,
                          frameDiff,
                          1, QBrush(pen2));
@@ -408,20 +403,20 @@ void Timeline::drawTrack(int track)
                 QPoint newPos(x + oldFrame * Constants::keyWidth() + frameDiff - 1,
                               (int)(y + sin(x * 6.283 / (frameDiff - Constants::keyWidth() + 1)) * (Constants::lineHeight() / 2 - 1) + Constants::lineHeight() / 2)
                              );
-                p.setPen(pen1);
-                p.drawLine(oldPos,newPos);
-                p.setPen(pen2);
-                p.drawLine(oldPos+QPoint(0,1),newPos+QPoint(0,1));
+                painter.setPen(pen1);
+                painter.drawLine(oldPos,newPos);
+                painter.setPen(pen2);
+                painter.drawLine(oldPos+QPoint(0,1),newPos+QPoint(0,1));
                 oldPos=newPos;
               }
             }
             else
             {
-              p.fillRect(oldFrame * Constants::keyWidth() + frameDiff - 1,
+              painter.fillRect(oldFrame * Constants::keyWidth() + frameDiff - 1,
                          y + Constants::keyHeight() / 2,
                          frameDiff,
                          1, QBrush(pen1));
-              p.fillRect(oldFrame * Constants::keyWidth() + frameDiff - 1,
+              painter.fillRect(oldFrame * Constants::keyWidth() + frameDiff - 1,
                          y + Constants::keyHeight() / 2 + 1,
                          frameDiff,
                          1, QBrush(pen2));

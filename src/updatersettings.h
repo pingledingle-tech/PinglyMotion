@@ -30,7 +30,7 @@ class UpdaterSettings
 
     static const QString lastSuccessfulCheck();
     static void setLastSuccessfulCheck(const QString& checkDateTime);
-    static const bool hasAutomaticUpdates();
+    static bool hasAutomaticUpdates();
     static void setHasAutomaticUpdates(bool on);
     static const QString greatestInstalledVersion();
     static void setGreatestInstalledVersion(const QString& version);

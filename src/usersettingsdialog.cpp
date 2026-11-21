@@ -33,7 +33,6 @@ UserSettingsDialog::UserSettingsDialog(QWidget* parent) :
           | Qt::MSWindowsFixedSizeDialogHint),
   ui(new Ui::UserSettingsDialog)
 {
-  qDebug("UserSettingsDialog::UserSettingsDialog()");
 
   ui->setupUi(this);
 
@@ -45,46 +44,38 @@ UserSettingsDialog::UserSettingsDialog(QWidget* parent) :
 
 UserSettingsDialog::~UserSettingsDialog()
 {
-  qDebug("UserSettingsDialog::~UserSettingsDialog()");
 }
 
 void UserSettingsDialog::on_applyButton_clicked()
 {
-  qDebug("accept()");
   apply();
 }
 
 void UserSettingsDialog::on_okButton_clicked()
 {
-  qDebug("acceptOk()");
   apply();
   accept();
 }
 
 void UserSettingsDialog::on_cancelButton_clicked()
 {
-  qDebug("reject()");
   reject();
 }
 
-void UserSettingsDialog::on_useFogCheckbox_toggled(bool state)
+void UserSettingsDialog::on_useFogCheckbox_toggled(bool)
 {
-  qDebug("useFogToggled(%d)",state);
 }
 
-void UserSettingsDialog::on_floorTranslucencySpin_valueChanged(int value)
+void UserSettingsDialog::on_floorTranslucencySpin_valueChanged(int)
 {
-  qDebug("floorTranslucencyChanged(%d)",value);
 }
 
-void UserSettingsDialog::on_easeInCheckbox_toggled(bool state)
+void UserSettingsDialog::on_easeInCheckbox_toggled(bool)
 {
-  qDebug("easeInToggled(%d)",state);
 }
 
-void UserSettingsDialog::on_easeOutCheckbox_toggled(bool state)
+void UserSettingsDialog::on_easeOutCheckbox_toggled(bool)
 {
-  qDebug("easeOutToggled(%d)",state);
 }
 
 void UserSettingsDialog::apply()
