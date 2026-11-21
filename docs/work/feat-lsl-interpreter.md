@@ -1,6 +1,6 @@
 Branch: feat/lsl-interpreter
 Status: active
-Pull request: pending
+Pull request: #296
 Files:
 - src/scriptlab/lsl/**
 - src/scriptlab/lslbuiltins_data.inc
