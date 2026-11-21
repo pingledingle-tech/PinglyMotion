@@ -12,23 +12,30 @@ TARGET_COMPILE_OPTIONS (fuzz_prop PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_prop PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_prop Qt6::Core)
 
-# the same core files as the control tests
-SET (FUZZ_CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
-                   ${CMAKE_SOURCE_DIR}/src/animfile.cpp
-                   ${CMAKE_SOURCE_DIR}/src/avatarskin.cpp
-                   ${CMAKE_SOURCE_DIR}/src/bvh.cpp
-                   ${CMAKE_SOURCE_DIR}/src/bvhnode.cpp
-                   ${CMAKE_SOURCE_DIR}/src/constants.cpp
-                   ${CMAKE_SOURCE_DIR}/src/dingle.cpp
-                   ${CMAKE_SOURCE_DIR}/src/iktree.cpp
-                   ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp
-                   ${CMAKE_SOURCE_DIR}/src/pmmesh.cpp
-                   ${CMAKE_SOURCE_DIR}/src/jointgroups.cpp
-                   ${CMAKE_SOURCE_DIR}/src/propfile.cpp
-                   ${CMAKE_SOURCE_DIR}/src/settings.cpp
-                   ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
-                   ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp
-                   ${CMAKE_SOURCE_DIR}/src/controlapi.cpp
+# the core files of the program, built once with the fuzz flags for the targets below
+SET (FUZZ_CORE_FILES ${CMAKE_SOURCE_DIR}/src/animation.cpp
+                    ${CMAKE_SOURCE_DIR}/src/animfile.cpp
+                    ${CMAKE_SOURCE_DIR}/src/avatarskin.cpp
+                    ${CMAKE_SOURCE_DIR}/src/bvh.cpp
+                    ${CMAKE_SOURCE_DIR}/src/bvhnode.cpp
+                    ${CMAKE_SOURCE_DIR}/src/constants.cpp
+                    ${CMAKE_SOURCE_DIR}/src/dingle.cpp
+                    ${CMAKE_SOURCE_DIR}/src/dinglesave.cpp
+                    ${CMAKE_SOURCE_DIR}/src/iktree.cpp
+                    ${CMAKE_SOURCE_DIR}/src/releaseinfo.cpp
+                    ${CMAKE_SOURCE_DIR}/src/pmmesh.cpp
+                    ${CMAKE_SOURCE_DIR}/src/jointgroups.cpp
+                    ${CMAKE_SOURCE_DIR}/src/propfile.cpp
+                    ${CMAKE_SOURCE_DIR}/src/settings.cpp
+                    ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
+                    ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
+ADD_LIBRARY (fuzz_core STATIC ${FUZZ_CORE_FILES})
+TARGET_INCLUDE_DIRECTORIES (fuzz_core PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_OPTIONS (fuzz_core PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_LIBRARIES (fuzz_core PUBLIC ${PINGLYMOTION_QT_LIBS})
+
+# the same program files as the control tests, on top of the core library
+SET (FUZZ_CONTROL_SRC ${CMAKE_SOURCE_DIR}/src/controlapi.cpp
                    ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
                    ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
                    ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
@@ -37,25 +44,25 @@ SET (FUZZ_CORE_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
                    ${CMAKE_SOURCE_DIR}/src/animimport.cpp
                    ${CMAKE_SOURCE_DIR}/src/screenshotsheet.cpp)
 
-ADD_EXECUTABLE (fuzz_control fuzz_control.cpp ${FUZZ_CORE_SRC})
+ADD_EXECUTABLE (fuzz_control fuzz_control.cpp ${FUZZ_CONTROL_SRC})
 TARGET_INCLUDE_DIRECTORIES (fuzz_control PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_OPTIONS (fuzz_control PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_control PRIVATE ${FUZZ_LINK})
-TARGET_LINK_LIBRARIES (fuzz_control ${PINGLYMOTION_QT_LIBS})
+TARGET_LINK_LIBRARIES (fuzz_control fuzz_core ${PINGLYMOTION_QT_LIBS})
 
 # the new BVH/AVM parser (#62); reads from memory; Qt Gui only for QVector3D
-ADD_EXECUTABLE (fuzz_animfile fuzz_animfile.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+ADD_EXECUTABLE (fuzz_animfile fuzz_animfile.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_animfile PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_animfile PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_animfile PRIVATE ${FUZZ_LINK})
-TARGET_LINK_LIBRARIES (fuzz_animfile Qt6::Core Qt6::Gui)
+TARGET_LINK_LIBRARIES (fuzz_animfile fuzz_core Qt6::Core Qt6::Gui)
 
 # the .dingle reader and writer (#26); reads from memory
-ADD_EXECUTABLE (fuzz_dingle fuzz_dingle.cpp ${CMAKE_SOURCE_DIR}/src/dingle.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+ADD_EXECUTABLE (fuzz_dingle fuzz_dingle.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_dingle PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_dingle PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_dingle PRIVATE ${FUZZ_LINK})
-TARGET_LINK_LIBRARIES (fuzz_dingle Qt6::Core Qt6::Gui)
+TARGET_LINK_LIBRARIES (fuzz_dingle fuzz_core Qt6::Core Qt6::Gui)
 
 # the .anim reader (#22); reads from memory
 ADD_EXECUTABLE (fuzz_anim fuzz_anim.cpp ${CMAKE_SOURCE_DIR}/src/animimport.cpp)
@@ -66,16 +73,16 @@ TARGET_LINK_LIBRARIES (fuzz_anim Qt6::Core)
 
 # the glTF import (#12): reader, sampling and retargeting; reads from memory
 ADD_EXECUTABLE (fuzz_gltf fuzz_gltf.cpp ${CMAKE_SOURCE_DIR}/src/gltfimport.cpp
-                ${CMAKE_SOURCE_DIR}/src/retarget.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+                ${CMAKE_SOURCE_DIR}/src/retarget.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_gltf PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_gltf PRIVATE ${FUZZ_LINK})
-TARGET_LINK_LIBRARIES (fuzz_gltf Qt6::Core Qt6::Gui)
+TARGET_LINK_LIBRARIES (fuzz_gltf fuzz_core Qt6::Core Qt6::Gui)
 
 # the hand-made joint mapping files (#16 step 4): reader, writer, on top of the automatic mapping; reads from memory
 ADD_EXECUTABLE (fuzz_retargetmapping fuzz_retargetmapping.cpp ${CMAKE_SOURCE_DIR}/src/retargetmapping.cpp
-                ${CMAKE_SOURCE_DIR}/src/retarget.cpp ${CMAKE_SOURCE_DIR}/src/animfile.cpp)
+                ${CMAKE_SOURCE_DIR}/src/retarget.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_retargetmapping PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_retargetmapping PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_retargetmapping PRIVATE ${FUZZ_LINK})
-TARGET_LINK_LIBRARIES (fuzz_retargetmapping Qt6::Core Qt6::Gui)
+TARGET_LINK_LIBRARIES (fuzz_retargetmapping fuzz_core Qt6::Core Qt6::Gui)

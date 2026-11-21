@@ -49,6 +49,8 @@ private:
 
 void SceneTest::initTestCase()
 {
+  // QSignalSpy needs the pointer type registered by name to record Scene::animationSelected
+  qRegisterMetaType<Animation*>("Animation*");
   m_mesh = QSharedPointer<Mesh>(new Mesh(QString(), Mesh::Shape::SPHERE));
 }
 

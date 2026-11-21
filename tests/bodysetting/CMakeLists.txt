@@ -4,12 +4,8 @@
 # tests/CMakeLists.txt while other jobs change it.
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 
-ADD_EXECUTABLE (pinglymotion_bodysetting_tests tst_bodysetting.cpp
-                ${CMAKE_SOURCE_DIR}/src/constants.cpp
-                ${CMAKE_SOURCE_DIR}/src/settings.cpp
-                ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
-                ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
+ADD_EXECUTABLE (pinglymotion_bodysetting_tests tst_bodysetting.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_bodysetting_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_bodysetting_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_bodysetting_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME bodysetting COMMAND pinglymotion_bodysetting_tests)
 SET_TESTS_PROPERTIES (bodysetting PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
