@@ -1,6 +1,6 @@
 Branch: feat/frame-step
 Status: active
-Pull request: pending
+Pull request: #271
 Files:
 - src/transportbar.*
 - src/playback.h

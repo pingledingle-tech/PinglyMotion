@@ -2,7 +2,8 @@
  * PinglyMotion - animation editor for Second Life avatars
  *
  * Play button logic that needs no window (the transport buttons Start, Stop,
- * Replay from start and the Loop switch use it; tests/tst_playback.cpp).
+ * Replay from start, the frame step buttons and the Loop switch use it;
+ * tests/tst_playback.cpp, tests/transportbar).
  * After a one-shot play the playhead stays on the last frame. Pressing play
  * there must start again, not stop at once.
  */
@@ -66,6 +67,33 @@ inline Buttons buttons(PlayState state)
 {
   const bool playing=state!=PLAYSTATE_STOPPED;
   return Buttons{!playing,playing,true};
+}
+
+// --- frame step (docs/UX_DECISIONS.md section 1, build order step 2): one
+// frame back or forward. It stops at the first and the last frame and never
+// wraps around. The buttons and the left / right arrow keys use it.
+
+// the frame after a step of delta frames (-1 back, +1 forward), kept between
+// the first frame (0) and the last frame
+inline int stepFrame(int frame,int totalFrames,int delta)
+{
+  int next=frame+delta;
+  if(next>totalFrames-1) next=totalFrames-1;
+  if(next<0) next=0;
+  return next;
+}
+
+// which frame step buttons can be clicked: back not on the first frame,
+// forward not on the last frame
+struct StepButtons
+{
+  bool back;
+  bool forward;
+};
+
+inline StepButtons stepButtons(int frame,int totalFrames)
+{
+  return StepButtons{frame>0,frame<totalFrames-1};
 }
 }
 
