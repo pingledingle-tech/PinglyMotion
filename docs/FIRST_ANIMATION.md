@@ -16,7 +16,7 @@ The figure holds one pose, a T-pose. It has 30 frames. A frame is one step in ti
 1. Find the slider under the timeline. It is the time marker.
 2. Drag it to the middle, about frame 15.
 
-Frame 0 is locked. Do not pose there. To unlock it, turn off **Options > Protect First Frame**.
+Frame 0 is locked. Do not pose there. To unlock it, turn off **Options > Lock the first frame**.
 
 ## 3. Pose the figure
 
@@ -65,9 +65,9 @@ To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle`
 
 ## 7. Save
 
-1. Choose **File > Save As...**.
+1. Choose **File > Save as...**.
 2. Pick a name. The file ends in `.dingle`. This is the working format. It keeps all your work.
-3. Choose **File > Export as Second Life .anim...** to make a file for Second Life.
+3. Choose **File > Export for Second Life (.anim)...** to make a file for Second Life.
 4. A small box opens. Set what you want, then click **Choose file...**:
    - **Priority (0 to 6):** when two animations move the same joint, the higher number wins.
    - **Slow start:** how long the animation takes to fade in.
@@ -76,13 +76,13 @@ To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle`
    - **Hands:** how the fingers look while it plays.
 5. Pick a name. The file ends in `.anim`.
 
-**File > Export For Second Life** still makes a `.bvh` file instead.
+**File > Export BVH** makes a `.bvh` file instead.
 
 Export, upload and playback in Second Life were validated on 21 November 2026 in Firestorm: timing, loop, slow start and finish, hands, easing, the BVH route and importing the uploaded `.anim` again.
 
 ## 8. Bring in other files
 
-All of these are in the **File** menu. Each one opens the result as an untitled animation. Save it with **File > Save As...** to keep it. Your original file is not changed.
+All of these are in the **File** menu. Each one opens the result as an untitled animation. Save it with **File > Save as...** to keep it. Your original file is not changed.
 
 - **Import Second Life .anim...** opens an `.anim` file. If something could not be brought in, a list under **What could not be imported:** tells you what.
 - **Import a BVH from another skeleton...** is for a `.bvh` file made for a different skeleton. A box shows a list. The program matched each joint in your file to a joint on the avatar. **Matched** means it will move. **Left out** means it has no partner on the avatar. Tick **My file starts in a T-pose or A-pose** if the first frame is a standing pose with the arms out. Then click **Open the animation**.

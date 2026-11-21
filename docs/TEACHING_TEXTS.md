@@ -1,6 +1,6 @@
 # Teaching texts in the program: inventory, voice guide and proposed wording
 
-Status: **proposal for the project owner's review.** Nothing here is in the program yet. Part of issue #54 (plan step). The texts in the program are changed in a later job, after the owner's ok.
+Status: **approved by the project owner on 20 November 2026.** Part of issue #54. Step 1 (menus and labels, sections 3.1 to 3.3) is built; steps 2 to 4 (section 5) are not. The tables below still show the wording before step 1 in the column "Current wording".
 
 How this page relates to `docs/TEACHING.md`: that page is the register of the 45 planned beginner texts (welcome card, tips, hint bar, next-step line, starter poses, warnings). The owner approved them on 19 November 2026. This page covers what is **already in the program and the docs today**: menus, labels, dialogs, messages and error texts. It checks them against the same rules and proposes new wording where they break the rules.
 
@@ -277,7 +277,7 @@ The 45 register texts (`docs/TEACHING.md`) have no screen yet, except the six ea
 
 One job changes the texts, in small steps, each as its own pull request:
 
-1. Menus and labels (3.1 to 3.3).
+1. Menus and labels (3.1 to 3.3). **Built** (pull request "Texts step 1: approved wording for menus and labels"); the test `pinglymotion_menutexts_tests` (`tests/menutexts`) checks every new text exactly. Left as they are, after checking the code: A2 stays "Add..." (it opens a second animation next to this one, so "Add to this animation..." would not be true); A10 has no dots ("Export BVH"), because it saves at once without a dialog; B3 (the Alt, Ctrl and Shift labels next to the turn fields) waits for a check of what those keys still do; in B7 the percent hints stay next to the fields for now (moving them into the tip changes the layout); in C2 only the group title changed ("Default for new keys"), the two boxes keep "Ease In" and "Ease Out" until it is checked which of slow start and slow finish each one gives.
 2. Dialogs and messages (3.5 to 3.7), with the tests that check the exact wording.
 3. File error details (3.8).
 4. The docs (3.9).

@@ -61,7 +61,7 @@ XR Animator writes the BVH from the skeleton of a VRM avatar. If BVH is not offe
    - Leave **My file starts in a T-pose or A-pose** off. An XR Animator file starts with your first recorded pose.
 5. Click **Open the animation**. It opens as a new animation without a name.
 6. Press play and look at it from several sides.
-7. Save your work with **File > Save As...**. The file ends in `.dingle`.
+7. Save your work with **File > Save as...**. The file ends in `.dingle`.
 
 If a joint is matched wrongly, change it in the list in step 4. More about the list: [RETARGET_MAPPING.md](RETARGET_MAPPING.md).
 
@@ -69,7 +69,7 @@ If a joint is matched wrongly, change it in the list in step 4. More about the l
 
 - **Frame 1 is not played.** Second Life uses frame 1 only to compare. Your movement starts at frame 2. This is why you stood still for a second at the start.
 - **Fix the feet.** Video capture often lets the feet slide. Fix the worst frames by hand.
-- **Make the file.** Choose **File > Export as Second Life .anim...**, set the options, then click **Choose file...**. The steps are in [FIRST_ANIMATION.md](FIRST_ANIMATION.md), section 7.
+- **Make the file.** Choose **File > Export for Second Life (.anim)...**, set the options, then click **Choose file...**. The steps are in [FIRST_ANIMATION.md](FIRST_ANIMATION.md), section 7.
 
 **Clean up the movement.** The window where you check the joint list (step 4) has a box called **Clean up the movement**. Each choice is a tick box, and PinglyMotion remembers your choices for the next import. Move the mouse over a choice to read what it does.
 
