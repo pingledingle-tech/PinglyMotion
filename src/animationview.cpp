@@ -458,7 +458,7 @@ void AnimationView::drawEffectMarkers()
       }
     }
     if(!state) continue;
-    const int slot=used.value(joint)++;
+    const int slot=used[joint]++;
     SceneState::pushMatrix();
     SceneState::modelview()=state->matrix;
     SceneState::translate(2.6f*slot,0,0);

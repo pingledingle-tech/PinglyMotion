@@ -49,7 +49,7 @@ Status: **steps 1, 2, 3, 4 and 6 done** (the RLV core, issue 287: parser, behavi
 4. Link: `llOwnerSay("@...")` to the RLV core ([#290](https://github.com/pingledingle-tech/PinglyMotion/issues/290), technical) — done
 5. Events and several objects ([#291](https://github.com/pingledingle-tech/PinglyMotion/issues/291), technical + visible)
 6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible) — done: the Live page and `lab_watch`, `lab_unwatch`, `lab_result`
-7. Effects in the 3D view ([#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293), visible)
+7. Effects in the 3D view ([#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293), visible) — done: the Live page's "Show effects in 3D view" box (off by default) plays the animation a script started on a preview figure and shows worn objects and locks as markers
 8. Separate repository for the owner's RLV tools, description only ([#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294), technical)
 9. RLVa-only behaviours and a plain RLV / RLVa mode switch ([#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297), technical)
 

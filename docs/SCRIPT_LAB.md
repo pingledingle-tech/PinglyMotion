@@ -87,6 +87,40 @@ Code) edits in their own editor and sees the result in PinglyMotion at once. The
   Stop watching, the limits, links, an endless loop), the Live part of `tests/scriptlabpanel/` and of
   `tests/tst_control.cpp`.
 
+## What exists now (step 7, issue 293): effects in the 3D view
+
+What a Live run does to the avatar shows in the 3D view, only while the Live page's **Show effects in 3D view** box is
+ticked. The box is off each time the program starts, so someone who only animates never sees a change.
+
+- **Animations:** the run's event log is replayed: `llStartAnimation` starts an animation, `llStopAnimation` stops it,
+  starting one that already plays changes nothing. The newest animation still playing at the end of the run is shown;
+  the others are named in the text under the box ("Also playing, not shown"). It plays on a preview figure from the
+  frame it has reached after the run's simulated seconds (it starts on frame 1, moves one frame per frame time and
+  repeats between its loop points), then on in real time.
+- **Where an animation comes from:** a file named like the animation, `<name>.dingle`, `.bvh` or `.avm` (in that order),
+  next to the script, in the watched folder, then in the `examples` folder next to the program (in the Windows zip;
+  `examples/` in the source tree), each up to two folder levels down. Names are compared with the folder listing (case
+  matters, as in Second Life); a name with a folder separator, a leading dot or a character no file name can hold is
+  refused, links and hidden entries are skipped, and files over 16 MB are not taken. So a script can never reach a file
+  outside these folders. Example: `examples/scriptlab/anim_wave.lsl` waves with the bundled `wave.dingle`.
+- **Worn objects and locks:** objects of the run with an attachment point (the answer's `objects`, step 5) are small
+  boxes at the point's joint (accent colour); an object holding `@detach=n` and points locked with `@detach:<point>=n`
+  get a ball (danger colour). HUD points are named in the text only. The text under the box says the same in words
+  ("Worn: cuffs on Left Hand, locked.", "Locked points: Neck."), so colour is never the only sign. An object holding
+  `@detach=n` that is not worn (the single-script form of `lsl_run`) locks nothing on the avatar, and the text says so.
+- **Safety:** the preview has its own copy of the animation, loaded with a reader of its own. The user's open
+  animations, the scene, the timeline and the "changed" mark are never touched, and nothing is written. While the
+  preview plays, the figure cannot be clicked. Unticking the box, stopping the watch, a run in which nothing plays or a
+  script that does not compile removes the preview, and the 3D view shows the user's animation again exactly as it was.
+- An unknown animation is an Error line under the box (in the danger colour as well), for example
+  `Error: Animation "dance1" was not found: put dance1.dingle, dance1.bvh or dance1.avm next to the script or in the
+  examples folder.` Second Life's built-in animations are not bundled.
+- Code: `src/scriptlab/labeffects.*` (the run answer read as data, the lookup, the frame), `src/scriptlab/effectspreview.*`
+  (the preview the 3D view draws), the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`.
+  Tests: `tests/tst_labeffects.cpp` and `tests/tst_scriptlabeffects.cpp`.
+- With an AI assistant: `lab_watch` the folder, write a script that calls `llStartAnimation("wave")`, and with the box
+  ticked the control command `screenshot` shows the waving figure. The box itself is ticked by the user in the panel.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
