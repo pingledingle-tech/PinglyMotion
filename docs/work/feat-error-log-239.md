@@ -1,5 +1,5 @@
 Branch: feat/error-log-239
-Status: active
+Status: done
 Pull request: #255
 Files:
 - src/applog.*
