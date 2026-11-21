@@ -1,6 +1,6 @@
 Branch: docs/script-lab-later
 Status: active
-Pull request: pending
+Pull request: #301
 Files:
 - docs/ROADMAP.md
 - docs/SCRIPT_LAB.md
