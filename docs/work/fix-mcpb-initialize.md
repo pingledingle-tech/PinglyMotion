@@ -1,5 +1,5 @@
 Branch: fix/mcpb-initialize
-Status: active
+Status: done
 Pull request: #238
 Files:
 - docs/work/fix-mcpb-initialize.md
