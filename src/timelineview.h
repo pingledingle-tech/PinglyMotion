@@ -83,6 +83,8 @@ class TimelineView : public QFrame
 
   protected:
     QScrollArea* view;
+    // the outer area that scrolls the track rows up and down
+    QScrollArea* outerView_=nullptr;
     Timeline* timeline;
     TimelineTracks* timelineTracks;
     EasingTiles* easingTiles_;
