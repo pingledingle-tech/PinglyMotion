@@ -1,6 +1,6 @@
 # Script Lab
 
-Script Lab is a planned sandbox inside PinglyMotion for testing RLV and LSL scripts for Second Life. It is not a full
+Script Lab is a sandbox, being built, inside PinglyMotion for testing RLV and LSL scripts for Second Life. It is not a full
 LSL IDE: there is no built-in script editor, and the scripts stay in the user's own folder or repository. The plan,
 the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the track is in [ROADMAP.md](ROADMAP.md).
 
@@ -42,6 +42,23 @@ visibility are saved with the layout. View > Reset layout closes it again.
   `@detach=n,sendim=n`, `@clear`, Reset, replies, a line through `rlv_command`, colour tokens, and the panel's place
   after saving and loading the layout).
 
+## What exists now (step 3, issue 289): the LSL interpreter
+
+A small LSL interpreter, used through the control commands only: the panel does not show scripts yet (step 6), and
+scripts do not talk to the RLV core yet (step 4, issue 290).
+
+- `src/scriptlab/lsl/`: lexer, recursive descent parser (no flex or bison), a checker with the Second Life compiler's
+  name and type rules, the interpreter with a simulated clock, the built-in functions, and `world.*`, which turns what
+  a script does into the event log (step 4 sends `llOwnerSay("@...")` to the RLV core there; step 7 plays the
+  animations).
+- `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 72 functions run; the others give "not supported yet".
+- Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
+  HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
+  entries and the limits).
+- Tests: `tests/tst_lsllexer.cpp`, `tests/tst_lslparser.cpp`, `tests/tst_lslinterp.cpp` and the LSL part of
+  `tests/tst_control.cpp`; fuzz target `fuzz/fuzz_lsl.cpp`. Examples: `examples/scriptlab/`.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -56,11 +73,22 @@ line and sends it again. Example:
 With the Script Lab panel open, the project owner sees the same restrictions and actions the assistant just set, so
 both look at one state.
 
+For LSL: write the script, `lsl_check` it, fix each error at its line and column, `lsl_run` it with inputs (chat or
+touches at given times), read the log (what it said, its listens, timers and animations), fix and run again:
+
+```
+{"command": "lsl_check", "source": "default { state_entry() { llOwnerSay(1); } }"}
+                                  -> errors: [{"line": 1, "column": 38, "message": "Argument 1 of llOwnerSay must be a string, not an integer."}]
+{"command": "lsl_run", "source": "...", "seconds": 5, "inputs": [{"at": 1, "channel": 7, "text": "dance"}]}
+```
+
 ## Limits
 
 - Only the behaviours in the table; others parse but are reported as unknown.
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
-- No LSL yet (step 3). The sandbox is never identical to Second Life; the final test is always in Second Life.
+- LSL: one script at a time, the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start` and
+  `run_time_permissions`, and 72 built-in functions; hard limits on steps, memory, nesting and time (step 5 adds more
+  events and several objects). The sandbox is never identical to Second Life; the final test is always in Second Life.
 
 ## Licence
 

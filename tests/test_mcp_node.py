@@ -140,6 +140,7 @@ def main():
 
     with open(os.path.join(MCP_DIR, "commands.json"), encoding="utf-8") as handle:
         bundled = [command["name"] for command in json.load(handle)["commands"]] + ["read_guide"]
+        assert "lsl_check" in bundled and "lsl_run" in bundled, bundled
     with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
         guide = handle.read()
 

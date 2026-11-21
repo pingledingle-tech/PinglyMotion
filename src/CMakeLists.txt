@@ -23,6 +23,10 @@ SET (PINGLYMOTION_CORE_SRC animation.cpp
 ADD_LIBRARY (pinglymotion_core STATIC ${PINGLYMOTION_CORE_SRC})
 TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
 
+# Script Lab: the LSL interpreter (issue 289), QtCore only; the control commands lsl_check and lsl_run
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp
+                scriptlab/lsl/builtins.cpp scriptlab/lsl/interp.cpp scriptlab/lsl/world.cpp scriptlab/lsl/control.cpp)
+
 # Sources
 SET (PINGLYMOTION_SRC aboutcredits.cpp
               aboutdialog.cpp

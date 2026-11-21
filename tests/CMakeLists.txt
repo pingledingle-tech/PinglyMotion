@@ -155,3 +155,12 @@ FOREACH (RLV_TEST rlvcommand rlvstate)
   ADD_TEST (NAME ${RLV_TEST} COMMAND pinglymotion_${RLV_TEST}_tests)
   SET_TESTS_PROPERTIES (${RLV_TEST} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 ENDFOREACH ()
+
+# Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
+FOREACH (LSL_TEST lsllexer lslparser lslinterp)
+  ADD_EXECUTABLE (pinglymotion_${LSL_TEST}_tests tst_${LSL_TEST}.cpp)
+  TARGET_INCLUDE_DIRECTORIES (pinglymotion_${LSL_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+  TARGET_COMPILE_DEFINITIONS (pinglymotion_${LSL_TEST}_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
+  TARGET_LINK_LIBRARIES (pinglymotion_${LSL_TEST}_tests pinglymotion_core Qt6::Core Qt6::Test)
+  ADD_TEST (NAME ${LSL_TEST} COMMAND pinglymotion_${LSL_TEST}_tests)
+ENDFOREACH ()
