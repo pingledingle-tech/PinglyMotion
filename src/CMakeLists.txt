@@ -1,3 +1,24 @@
+# The core of the program: model, file formats and settings. Built once as a static
+# library that the program, the automatic tests and the tools link against.
+SET (PINGLYMOTION_CORE_SRC animation.cpp
+              animfile.cpp
+              avatarskin.cpp
+              bvh.cpp
+              bvhnode.cpp
+              constants.cpp
+              dingle.cpp
+              dinglesave.cpp
+              iktree.cpp
+              releaseinfo.cpp
+              pmmesh.cpp
+              jointgroups.cpp
+              propfile.cpp
+              settings.cpp
+              usersettings.cpp
+              versionnumber.cpp)
+ADD_LIBRARY (pinglymotion_core STATIC ${PINGLYMOTION_CORE_SRC})
+TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
+
 # Sources
 SET (PINGLYMOTION_SRC aboutcredits.cpp
               aboutdialog.cpp
@@ -5,20 +26,12 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               animexportdialog.cpp
               animimport.cpp
               animimportconvert.cpp
-              animation.cpp
               animationmanager.cpp
               animationview.cpp
               animcheck.cpp
-              animfile.cpp
-              avatarskin.cpp
               auroralink.cpp
-              bvh.cpp
-              bvhnode.cpp
               camera.cpp
-              constants.cpp
               controlapi.cpp
-              dingle.cpp
-              dinglesave.cpp
               easing.cpp
               easingtiles.cpp
               controlindicator.cpp
@@ -26,12 +39,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               floor.cpp
               gltfimport.cpp
               gltfimportdialog.cpp
-              iktree.cpp
-              pmmesh.cpp
-              jointgroups.cpp
               jointinfo.cpp
               jointlist.cpp
-              propfile.cpp
               retarget.cpp
               importoptions.cpp
               motioncleanup.cpp
@@ -45,7 +54,6 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               posedescribe.cpp
               prop.cpp
               propmanager.cpp
-              releaseinfo.cpp
               pinglymotion.cpp
               pinglymotionwindow.cpp
               pinglymotionwindowfile.cpp
@@ -53,7 +61,6 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowplayback.cpp
               scene.cpp
               screenshotsheet.cpp
-              settings.cpp
               skinrenderer.cpp
               theme.cpp
               timeline.cpp
@@ -61,9 +68,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               updatechecker.cpp
               updatenotificationdialog.cpp
               updatersettings.cpp
-              usersettings.cpp
               usersettingsdialog.cpp
-              versionnumber.cpp
               whatsnewdialog.cpp)
 
 # Interfaces
@@ -83,7 +88,7 @@ ENDIF (WIN32)
 
 # Compile and link (ui files and resources are handled by AUTOUIC/AUTORCC)
 ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
-TARGET_LINK_LIBRARIES (pinglymotion ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
 # The program file keeps its old name for now (a later rename job changes it)
 SET_TARGET_PROPERTIES (pinglymotion PROPERTIES OUTPUT_NAME PinglyMotion)
 
