@@ -30,6 +30,9 @@ Files:
 - src/pinglymotionwindow.cpp
 - src/usersettingsdialog.cpp
 - src/logging.h
+- src/aboutdialog.h
+- src/pinglymotionwindow.h
+- src/timelineview.h
 
 ## What
 
