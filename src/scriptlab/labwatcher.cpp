@@ -136,6 +136,9 @@ QMap<QString, LabWatcher::Entry> LabWatcher::scan(QStringList* folders)
         m_truncated = true;
         return found;
       }
+      // a name that starts with a dot is hidden on every system (on Windows
+      // hidden is a separate flag, so .git would show up otherwise)
+      if (info.fileName().startsWith(QLatin1Char('.'))) continue;
       if (info.isDir())
       {
         // a linked folder is never entered, so a link cannot lead out of the folder

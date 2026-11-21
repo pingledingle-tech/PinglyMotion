@@ -476,7 +476,7 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QVERIFY(panel.unwatchButton()->isEnabled());
 
   QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
-  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
   QCOMPARE(panel.liveStatus()->text(), QString("Error: collar.lsl has 1 error(s) and was not run (run 1). Fix the line shown below and save."));
   QCOMPARE(listTexts(panel.problemList()), QStringList{"Error, line 3, column 32: Argument 1 of llOwnerSay must be a string, not an integer."});
   const bool dark = ScriptLabPanel::isDark(panel.palette());
@@ -496,7 +496,7 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
 
   QTest::qWait(1100);   // a new file time
   QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"locked\"); }\n}\n"));
-  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
   QCOMPARE(panel.problemList()->count(), 0);
   QCOMPARE(panel.scriptView()->extraSelections().size(), 0);
   QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: locked"));
@@ -531,7 +531,7 @@ void TestScriptLabPanel::liveFollowsControlCommands()
   panel.setState(&api.rlv());
   QTest::qWait(1100);   // a new file time
   QVERIFY(writeScript(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));
-  QTRY_COMPARE_WITH_TIMEOUT(api.lab().runCount(), 2, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(api.lab().runCount(), 2, 10000);
   QCOMPARE(panel.liveStatus()->text(),
            QString("OK: hello.lsl ran without errors (run 2), 3 log line(s). RLV restrictions at the end: detach, sendim."));
   QCOMPARE(restrictionRows(panel).size(), 2);

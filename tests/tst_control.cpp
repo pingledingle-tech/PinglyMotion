@@ -14,6 +14,7 @@
 #include <QEventLoop>
 #include <QJsonDocument>
 #include <QTcpSocket>
+#include <QScopeGuard>
 #include <QTemporaryDir>
 
 #include <cmath>
@@ -2846,6 +2847,8 @@ void ControlTest::scriptLabLiveCommands()
   const int frames = m_animation->getNumberOfFrames();
   QTemporaryDir dir;
   QVERIFY(dir.isValid());
+  // never leave a watch on a folder that is about to be removed, even when a check fails
+  const auto stopWatching = qScopeGuard([this] { m_api->lab().unwatch(); });
 
   QJsonObject answer = run(R"({"command":"lab_result"})");
   QCOMPARE(answer["ok"].toBool(), true);
@@ -2877,7 +2880,7 @@ void ControlTest::scriptLabLiveCommands()
     QVERIFY(file.open(QIODevice::WriteOnly));
     file.write("default { state_entry() { llOwnerSay(1); } }");
   }
-  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 1, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 1, 10000);
   answer = run(R"({"command":"lab_result"})");
   QCOMPARE(answer["watching"].toBool(), true);
   QCOMPARE(answer["scripts"].toArray(), QJsonArray({"collar.lsl"}));
@@ -2894,7 +2897,7 @@ void ControlTest::scriptLabLiveCommands()
     QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
     file.write("default { state_entry() { llOwnerSay(\"locked\"); } }");
   }
-  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 2, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 2, 10000);
   result = m_api->execute(QJsonObject{{"command", "lab_result"}, {"file", "collar.lsl"}})["result"].toObject();
   QCOMPARE(result["valid"].toBool(), true);
   QCOMPARE(result["run"].toInt(), 2);

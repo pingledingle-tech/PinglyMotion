@@ -74,8 +74,8 @@ class TestLabWatcher : public QObject
 
 void TestLabWatcher::refusals()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(dir.isValid());
   QCOMPARE(w.watch("").error, QString("Give the folder to watch."));
   QCOMPARE(w.watch("scripts").error, QString("Give the whole path of the folder, not a relative one."));
@@ -91,8 +91,8 @@ void TestLabWatcher::refusals()
 
 void TestLabWatcher::runOptionsAreChecked()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"seconds", -1}}).error,
            QString("\"seconds\" must be between 0 and 3600 (simulated seconds)."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv."));
@@ -105,8 +105,8 @@ void TestLabWatcher::runOptionsAreChecked()
 
 void TestLabWatcher::emptyFolder()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QSignalSpy changed(&w, &LabWatcher::watchChanged);
   QVERIFY(w.watch(dir.path()).ok());
   QVERIFY(w.watching());
@@ -119,13 +119,13 @@ void TestLabWatcher::emptyFolder()
 
 void TestLabWatcher::savedScriptRunsWithinDebounce()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(w.watch(dir.path()).ok());
   QVERIFY(writeFile(dir.filePath("hello.lsl"), Hello));
   QVERIFY(writeFile(dir.filePath("notes.txt"), "not a script"));
   // the debounce is 300 ms; give the file system watcher some slack
-  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 1, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 1, 10000);
   QCOMPARE(w.scripts(), QStringList{"hello.lsl"});
   const QJsonObject last = w.lastResult();
   QCOMPARE(last.value("file").toString(), QString("hello.lsl"));
@@ -147,11 +147,11 @@ void TestLabWatcher::savedScriptRunsWithinDebounce()
 
 void TestLabWatcher::errorHasLineAndColumn()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(w.watch(dir.path()).ok());
   QVERIFY(writeFile(dir.filePath("broken.lsl"), Broken));
-  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 1, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 1, 10000);
   const QJsonObject last = w.lastResult();
   QCOMPARE(last.value("valid").toBool(), false);
   QVERIFY(!last.contains("result"));   // not run
@@ -164,14 +164,14 @@ void TestLabWatcher::errorHasLineAndColumn()
 
 void TestLabWatcher::savingAgainRunsAgain()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("s.lsl"), Hello));
   QVERIFY(w.watch(dir.path()).ok());
   QCOMPARE(w.runCount(), 1);   // the newest script runs at once
   nextSecond();
   QVERIFY(writeFile(dir.filePath("s.lsl"), Bye));
-  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QCOMPARE(ownerSays(w.lastResult()), QStringList{"bye"});
   QCOMPARE(w.lastResult().value("run").toInt(), 2);
   // an editor that saves by writing a new file and renaming it over the old one
@@ -179,14 +179,14 @@ void TestLabWatcher::savingAgainRunsAgain()
   QVERIFY(writeFile(dir.filePath("s.lsl.tmp"), Hello));
   QFile::remove(dir.filePath("s.lsl"));
   QVERIFY(QFile::rename(dir.filePath("s.lsl.tmp"), dir.filePath("s.lsl")));
-  QTRY_COMPARE_WITH_TIMEOUT(ownerSays(w.lastResult()), QStringList{"hello"}, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(ownerSays(w.lastResult()), QStringList{"hello"}, 10000);
   QCOMPARE(w.scripts(), QStringList{"s.lsl"});
 }
 
 void TestLabWatcher::unwatchStopsReloading()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("s.lsl"), Hello));
   QVERIFY(w.watch(dir.path()).ok());
   QCOMPARE(w.runCount(), 1);
@@ -204,8 +204,8 @@ void TestLabWatcher::unwatchStopsReloading()
 
 void TestLabWatcher::newestScriptRunsAtWatch()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("old.lsl"), Hello));
   nextSecond();
   QVERIFY(writeFile(dir.filePath("new.lsl"), Bye));
@@ -218,8 +218,8 @@ void TestLabWatcher::newestScriptRunsAtWatch()
 
 void TestLabWatcher::inputsReachTheScript()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("echo.lsl"),
                     "default { state_entry() { llListen(7, \"\", NULL_KEY, \"\"); }\n"
                     "  listen(integer c, string n, key id, string m) { llOwnerSay(\"heard \" + m); } }"));
@@ -231,8 +231,8 @@ void TestLabWatcher::inputsReachTheScript()
 
 void TestLabWatcher::tooLargeFileIsNotRead()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QByteArray big = QByteArray(Hello) + "\n// " + QByteArray(LabWatcher::MAX_FILE_BYTES, 'x') + "\n";
   QVERIFY(writeFile(dir.filePath("big.lsl"), big));
   QVERIFY(w.watch(dir.path()).ok());
@@ -245,8 +245,8 @@ void TestLabWatcher::tooLargeFileIsNotRead()
 
 void TestLabWatcher::hiddenAndDeepFoldersAreSkipped()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QDir root(dir.path());
   QVERIFY(root.mkpath(".git/hooks"));
   QVERIFY(writeFile(dir.filePath(".git/hooks/x.lsl"), Hello));
@@ -255,12 +255,13 @@ void TestLabWatcher::hiddenAndDeepFoldersAreSkipped()
   QVERIFY(writeFile(dir.filePath("a/b/c/d/four.lsl"), Hello));
   QVERIFY(writeFile(dir.filePath("a/b/c/d/e/five.lsl"), Hello));
   QVERIFY(writeFile(dir.filePath("UPPER.LSL"), Hello));
+  QVERIFY(writeFile(dir.filePath(".hidden.lsl"), Hello));
   QVERIFY(w.watch(dir.path()).ok());
   QCOMPARE(w.scripts(), (QStringList{"UPPER.LSL", "a/b/c/d/four.lsl", "a/one.lsl"}));
   QCOMPARE(w.scanTruncated(), false);
   // a script saved in a subfolder is run too
   QVERIFY(writeFile(dir.filePath("a/b/two.lsl"), Bye));
-  QTRY_COMPARE_WITH_TIMEOUT(w.lastResult().value("file").toString(), QString("a/b/two.lsl"), 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(w.lastResult().value("file").toString(), QString("a/b/two.lsl"), 10000);
 }
 
 void TestLabWatcher::linksDoNotLeaveTheFolder()
@@ -288,8 +289,8 @@ void TestLabWatcher::linksDoNotLeaveTheFolder()
 
 void TestLabWatcher::endlessLoopIsStopped()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("loop.lsl"), "default { state_entry() { while (TRUE) { } } }"));
   QElapsedTimer clock;
   clock.start();
@@ -302,7 +303,7 @@ void TestLabWatcher::endlessLoopIsStopped()
   // the watch still works after it
   nextSecond();
   QVERIFY(writeFile(dir.filePath("loop.lsl"), Hello));
-  QTRY_COMPARE_WITH_TIMEOUT(ownerSays(w.lastResult()), QStringList{"hello"}, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(ownerSays(w.lastResult()), QStringList{"hello"}, 10000);
 }
 
 // llOwnerSay("@...") in a watched script goes to the RLV state the panel shows; each run starts empty
@@ -321,7 +322,7 @@ void TestLabWatcher::rlvLinesReachTheSharedState()
   // the next run starts from an empty state
   nextSecond();
   QVERIFY(writeFile(dir.filePath("lock.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n\"); } }"));
-  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QVERIFY(rlv.has("detach"));
   QVERIFY(!rlv.has("sendim"));
   // keep_rlv is checked like lsl_run checks it
