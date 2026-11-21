@@ -48,7 +48,7 @@ Status: **steps 1, 2 and 3 done** (the RLV core, issue 287: parser, behaviour st
 3. LSL interpreter, minimum ([#289](https://github.com/pingledingle-tech/PinglyMotion/issues/289), technical) — done, with the control commands `lsl_check` and `lsl_run`
 4. Link: `llOwnerSay("@...")` to the RLV core ([#290](https://github.com/pingledingle-tech/PinglyMotion/issues/290), technical)
 5. Events and several objects ([#291](https://github.com/pingledingle-tech/PinglyMotion/issues/291), technical + visible)
-6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible)
+6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible) — done: the Live page and `lab_watch`, `lab_unwatch`, `lab_result`
 7. Effects in the 3D view ([#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293), visible)
 8. Separate repository for the owner's RLV tools, description only ([#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294), technical)
 9. RLVa-only behaviours and a plain RLV / RLVa mode switch ([#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297), technical)

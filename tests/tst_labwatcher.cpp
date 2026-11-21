@@ -263,6 +263,9 @@ void TestLabWatcher::hiddenAndDeepFoldersAreSkipped()
 
 void TestLabWatcher::linksDoNotLeaveTheFolder()
 {
+#ifdef Q_OS_WIN
+  QSKIP("QFile::link makes .lnk shortcuts on Windows, not file system links.");
+#endif
   LabWatcher w;
   QTemporaryDir outside;
   QTemporaryDir dir;

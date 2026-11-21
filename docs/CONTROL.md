@@ -76,7 +76,8 @@ differs. The MCP server does this before every request.
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
-`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_run`. `screenshot` has options for several views, frames and labels (below).
+`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_run`,
+`lab_watch`, `lab_unwatch`, `lab_result`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
 
@@ -387,6 +388,45 @@ keeps 2 000 entries, each text at most 1 024 characters. A limit stops the scrip
 How an AI assistant uses it: write the script, `lsl_check` it, fix the errors at their line and column,
 `lsl_run` it with inputs, read the log (what it said, which listens and animations), fix and run again.
 Examples: `examples/scriptlab/` (also in the Windows zip).
+
+### Script Lab Live: lab_watch, lab_unwatch and lab_result
+
+Three commands for the write, run, fix loop with scripts on disk (Script Lab step 6, issue 292): the
+assistant edits a `.lsl` file in the user's folder (a cloned repository, for example) with its own file
+tools, PinglyMotion notices the save, checks and runs the script, and the assistant reads the outcome.
+The Script Lab panel's Live page shows the same watch and the same results, so the user sees what the
+assistant sees. The code is `src/scriptlab/labwatcher.*`.
+
+- `lab_watch {path, seconds, inputs}` watches the folder `path` (the whole path; a relative path, a file,
+  a missing folder or a network folder is refused). Watching another folder stops the one before.
+  `seconds` and `inputs` are given to every run, as in `lsl_run`, and are checked the same way. The
+  newest script in the folder is run once at once. The answer has `folder` (the path without links),
+  `scripts` (the `.lsl` files found, relative to the folder, sorted), `truncated` (true when the scan
+  stopped at a limit), `runs` and `result` (as in `lab_result`; `null` when the folder has no script).
+- `lab_unwatch` stops watching; `was_watching` says whether a folder was watched.
+- `lab_result {file}` answers `watching`, `folder`, `scripts`, `runs` and `result`, the newest result
+  (with `file`, a script path relative to the folder: that script's latest result). `runs` counts up by
+  one with every run, so after a save the assistant calls `lab_result` until `runs` has gone up.
+
+A result has `file`, `run` (the value of `runs` after it), `valid`, `errors` and `warnings` (each
+`{line, column, message}`, as in `lsl_check`), `read_error` when the file could not be read (too large,
+no permission), and `result`, the whole `lsl_run` answer (log, final state, `stopped`, `stop_reason`,
+the RLV state at the end and the rest), only when the script compiled.
+
+When a run happens: about 0.3 seconds after the last write to a `.lsl` file in the folder or its
+subfolders (several writes in a row count as one change), also when an editor saves by writing a new
+file and renaming it over the old one.
+
+Limits and safety (the folder may hold anything):
+
+- The folder is only read, never written. Only `.lsl` files are read (any upper or lower case).
+- At most 200 scripts of at most 262 144 bytes each; the scan stops after 5 000 entries and 4 folder
+  levels below the watched folder. Hidden folders (`.git` and the like) are not entered.
+- Links are never followed out of the folder: a linked folder is not entered at all, and a linked file
+  counts only when its target is inside the watched folder.
+- Each run has every limit of `lsl_run`, including its 2 seconds of real time, so a script that loops
+  forever is stopped and the program keeps answering. When several scripts change at once, at most 4
+  are run in a row before the program draws and answers again; the rest follow.
 
 ## Set up an AI assistant
 

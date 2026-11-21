@@ -19,6 +19,7 @@ Files:
 - docs/SCRIPT_LAB.md
 - docs/SCRIPT_LAB_PLAN.md
 - docs/ROADMAP.md
+- docs/DECISIONS.md
 
 ## What
 

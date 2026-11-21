@@ -72,6 +72,7 @@ The original plan:
 - PinglyMotion watches a folder (a cloned repository) and reloads a script when it changes.
 - Control commands `lsl_check` (errors with line and column), `lsl_run` (event log plus final RLV state), `lsl_event`. `lsl_check` and `lsl_run` came early, with step 3 (issue 289, [CONTROL.md](CONTROL.md)); this step adds `lsl_event` and the final RLV state.
 - The panel shows the script read-only with line numbers and error marks, and a button "Open in editor" that opens the file in the user's own editor. No built-in editor for now.
+- Done (issue 292): the folder watch, the Live page with the script, errors and log, "Open in editor", and the control commands `lab_watch`, `lab_unwatch` and `lab_result` ([SCRIPT_LAB.md](SCRIPT_LAB.md)). `lsl_event` became the `inputs` option of `lab_watch`, because each run starts fresh with a simulated clock. The final RLV state of a run comes from step 4 (issue 290).
 
 ### Step 7: Effects in the 3D view (visible)
 
