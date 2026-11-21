@@ -8,4 +8,4 @@ Files:
 
 ## What
 
-New homepage (issue 147) built from the project owner's own Norwegian text, word for word, in one self-contained HTML file with a calm, simple design. Shown to the owner as a preview first; not merged until he approves it. The page builder publishes the page unchanged when it has no status markers.
+New homepage (issue 147) built from the project owner's own text: his Norwegian original word for word, plus English, German, Polish and Dutch translations, in one self-contained HTML file with a language picker and a calm, simple design. Shown to the owner as a preview first; not merged until he approves it. The page builder publishes the page unchanged when it has no status markers.
