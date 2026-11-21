@@ -1,6 +1,6 @@
 Branch: cleanup/core-library
 Status: active
-Pull request: pending
+Pull request: #240
 Files:
 - CMakeLists.txt
 - src/CMakeLists.txt
