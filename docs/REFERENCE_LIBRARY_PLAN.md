@@ -1,6 +1,6 @@
 # Reference library plan (issue 19)
 
-Status: job 1 (index and 55 curated clips) built, format in `docs/REFERENCE_LIBRARY_SCHEMA.md`; job 2 built, with Quaternius as a download source and the conversion of downloaded clips to the Second Life skeleton (`tools/convert_reference.py`); job 3 first part (the control commands `find_reference` and `load_reference`) built; Quaternius not bundled; the browser panel waits for the owner. Written 20 November 2026. Waiting for the project owner's go. Licence readings below come from the sources' own pages, fetched on this date. **This is not legal advice.** Where a point is uncertain it is marked **UNCERTAIN**.
+Status: job 1 (index and 55 curated clips, then 51 more on 21 November 2026, 106 in all, from CMU and Mesh2Motion; Quaternius not bundled because it would need a new Help > About line) built, format in `docs/REFERENCE_LIBRARY_SCHEMA.md`; job 2 built, with Quaternius as a download source and the conversion of downloaded clips to the Second Life skeleton (`tools/convert_reference.py`); job 3 first part (the control commands `find_reference` and `load_reference`) built; Quaternius not bundled; the browser panel waits for the owner. Written 20 November 2026. Waiting for the project owner's go. Licence readings below come from the sources' own pages, fetched on this date. **This is not legal advice.** Where a point is uncertain it is marked **UNCERTAIN**.
 
 ## Goal
 

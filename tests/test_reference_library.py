@@ -20,6 +20,9 @@ CLIP_FIELDS = ["id", "name", "description", "tags", "source", "licence", "credit
                "skeleton", "joints", "frames", "fps", "duration_s"]
 
 
+EXPECTED_CLIPS = 106  # 55 first batch + 51 second batch (change with the index)
+
+
 def load():
     with open(os.path.join(LIB, "index.json"), encoding="utf-8") as f:
         return json.load(f)
@@ -48,6 +51,16 @@ class Index(unittest.TestCase):
             self.assertRegex(tag, r"^[a-z]+$")
         self.assertGreaterEqual(len(self.index["clips"]), 30)
         self.assertLessEqual(len(self.index["clips"]), 200)
+
+    def test_clip_count_and_size(self):
+        clips = self.index["clips"]
+        self.assertEqual(len(clips), EXPECTED_CLIPS)
+        files = [os.path.join(f, n) for f, _, names in os.walk(LIB) for n in names if n.endswith(".bvh")]
+        self.assertEqual(len(files), len(clips))
+        # Keep the bundled data small (the Windows zip carries it): a few MB in all, no heavy clip.
+        self.assertLess(sum(c["bytes"] for c in clips if "file" in c), 8 * 1024 * 1024)
+        for clip in clips:
+            self.assertLess(clip.get("bytes", 0), 200 * 1024, clip["id"])
 
     def test_sources(self):
         for sid, src in self.index["sources"].items():
@@ -80,6 +93,11 @@ class Index(unittest.TestCase):
             self.assertTrue(1 <= len(clip["tags"]) <= 8, cid)
             for tag in clip["tags"]:
                 self.assertIn(tag, vocabulary, "%s: tag %r not in tag_vocabulary" % (cid, tag))
+            src = self.index["sources"][clip["source"]]
+            self.assertEqual(clip["licence"], src["licence"], cid)
+            self.assertEqual(clip["credit"], src["credit"], cid)
+            if "tags_reviewed" in clip:
+                self.assertIsInstance(clip["tags_reviewed"], bool, cid)
             self.assertEqual(clip["skeleton"], "sl-classic", cid)
             self.assertEqual(clip["joints"], 19, cid)
             self.assertTrue(0 < clip["duration_s"] <= 60, "%s: duration" % cid)

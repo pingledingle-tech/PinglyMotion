@@ -1,10 +1,11 @@
 Branch: feat/reference-library-more-clips
-Status: active
+Status: done
 Pull request: #230
 Files:
 - library/**
 - tools/build_reference_index.py
 - tests/test_reference_library.py
+- tests/tst_control.cpp
 - docs/REFERENCE_LIBRARY_SCHEMA.md
 - docs/REFERENCE_LIBRARY_PLAN.md
 - CREDITS.md
