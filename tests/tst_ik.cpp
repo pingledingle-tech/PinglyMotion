@@ -49,7 +49,7 @@ class TestIKTree : public IKTree
 
     void resetTo(int frame) { reset(frame); }
 
-    void euler(const QQuaternion& q, BVHOrderType order, double& x, double& y, double& z)
+    void euler(const QQuaternion& q, Rotation::Order order, double& x, double& y, double& z)
     {
       toEuler(q, order, x, y, z);
     }
@@ -486,10 +486,10 @@ void IKTest::eulerRoundTrip()
   Animation anim(&bvh, QString());
   TestIKTree tree(anim.getMotion());
 
-  struct Order { BVHOrderType type; int axes[3]; };
+  struct Order { Rotation::Order type; int axes[3]; };
   const Order orders[] = {
-    {BVH_XYZ, {0, 1, 2}}, {BVH_XZY, {0, 2, 1}}, {BVH_YXZ, {1, 0, 2}},
-    {BVH_YZX, {1, 2, 0}}, {BVH_ZXY, {2, 0, 1}}, {BVH_ZYX, {2, 1, 0}},
+    {Rotation::Order::XYZ, {0, 1, 2}}, {Rotation::Order::XZY, {0, 2, 1}}, {Rotation::Order::YXZ, {1, 0, 2}},
+    {Rotation::Order::YZX, {1, 2, 0}}, {Rotation::Order::ZXY, {2, 0, 1}}, {Rotation::Order::ZYX, {2, 1, 0}},
   };
   const QVector3D axis[3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
   // the middle angle stays inside (-90, 90), where Euler angles are unique

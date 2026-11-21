@@ -12,6 +12,7 @@
  */
 
 #include "retarget.h"
+#include "rotation.h"
 
 #include <QHash>
 #include <QObject>
@@ -934,19 +935,7 @@ void updateMissing(Mapping& m,const Animation& target)
 
 namespace
 {
-  bool axesOf(RotationOrder order,int axes[3])
-  {
-    switch(order)
-    {
-      case RotationOrder::XYZ: axes[0]=0; axes[1]=1; axes[2]=2; return true;
-      case RotationOrder::ZYX: axes[0]=2; axes[1]=1; axes[2]=0; return true;
-      case RotationOrder::XZY: axes[0]=0; axes[1]=2; axes[2]=1; return true;
-      case RotationOrder::YZX: axes[0]=1; axes[1]=2; axes[2]=0; return true;
-      case RotationOrder::YXZ: axes[0]=1; axes[1]=0; axes[2]=2; return true;
-      case RotationOrder::ZXY: axes[0]=2; axes[1]=0; axes[2]=1; return true;
-    }
-    return false;
-  }
+  using Rotation::axesOf;
 
   QVector3D axisVector(int axis)
   {
@@ -958,39 +947,11 @@ namespace
     return QQuaternion::fromAxisAndAngle(axisVector(axis),degrees);
   }
 
-  void eulerFromAxes(const QQuaternion& qIn,const int axes[3],float angles[3])
+  void eulerFromAxes(const QQuaternion& q,const int axes[3],float angles[3])
   {
-    // rotation matrix in double precision; R = R(a0) * R(a1) * R(a2)
-    QQuaternion qn=qIn.normalized();
-    const double w=qn.scalar(),x=qn.x(),y=qn.y(),z=qn.z();
-    const double M[3][3]={
-      {1-2*(y*y+z*z), 2*(x*y-z*w),   2*(x*z+y*w)},
-      {2*(x*y+z*w),   1-2*(x*x+z*z), 2*(y*z-x*w)},
-      {2*(x*z-y*w),   2*(y*z+x*w),   1-2*(x*x+y*y)}};
-    const int i=axes[0],j=axes[1],k=axes[2];
-    // +1 for XYZ, YZX, ZXY; -1 for the others
-    const double s=((j-i+3)%3==1) ? 1.0 : -1.0;
-    const double sb=std::clamp(s*M[i][k],-1.0,1.0);
-    double b=std::asin(sb);
-    double a,c;
-    // the turn comes in float precision, so very close to a quarter turn of the
-    // middle axis the first and last angles cannot be told apart any more
-    if(std::sqrt(std::max(0.0,1.0-sb*sb))>1e-3)
-    {
-      a=std::atan2(-s*M[j][k],M[k][k]);
-      c=std::atan2(-s*M[i][j],M[i][i]);
-    }
-    else
-    {
-      // gimbal lock: put all of the turn into the first angle
-      c=0.0;
-      b=sb>0.0 ? PI/2.0 : -PI/2.0;
-      a=std::atan2(s*M[k][j],M[j][j]);
-    }
-    const double toDeg=180.0/PI;
-    angles[0]=float(a*toDeg);
-    angles[1]=float(b*toDeg);
-    angles[2]=float(c*toDeg);
+    double degrees[3];
+    Rotation::eulerFromAxes(q,axes,degrees);
+    for(int i=0;i<3;i++) angles[i]=float(degrees[i]);
   }
 
   // the rotation axes of a joint in channel order; false unless 0 or 3 different ones
