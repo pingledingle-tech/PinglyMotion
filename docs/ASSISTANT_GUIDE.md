@@ -269,7 +269,7 @@ File names: `save_file` and `export_anim` never replace a file. If the name is t
 
 ### Recipe A: a friendly wave
 
-The user asks for "a wave". The right hand goes up beside the head, palm forward, and the forearm swings side to side three times. It plays once (no loop). Call `find_reference` with `wave` first: today the library has only "Direct traffic" (8 s), which is not a friendly wave, so this recipe builds it from the start pose.
+The user asks for "a wave". The right hand goes up beside the head, palm forward, and the forearm swings side to side three times. It plays once (no loop). Call `find_reference` with `wave` first and read the hits. On 21 Nov 2026 they were "Direct traffic" and "Direct traffic, wave and point" (8 s each, not a friendly wave) and "Greeting" (`m2m-greeting`, 4.9 s). If a clip fits what the user wants, start from it the way recipe D does. For a short, quick wave, or when nothing fits, build it from the start pose as below.
 
 <!-- recipe:wave -->
 ```
