@@ -54,6 +54,7 @@ class ControlIndicator;
 class AuroraIndicator;
 class TipsSwitch;
 class TransportBar;
+class ScriptLabPanel;
 class AuroraLink;
 class WindowControlHost;
 class Scene;
@@ -343,6 +344,9 @@ class PinglyMotionWindow : public QMainWindow
     QDockWidget* m_timelineDock=nullptr;
     QDockWidget* m_jointsDock=nullptr;
     QDockWidget* m_jointCardDock=nullptr;
+    // Script Lab (issue 288): hidden until View > Script Lab
+    QDockWidget* m_scriptLabDock=nullptr;
+    ScriptLabPanel* m_scriptLabPanel=nullptr;
     QScrollArea* m_jointsScroll=nullptr;
     QScrollArea* m_jointCardScroll=nullptr;
     // Tab (job P4): which panels Tab hid, so the next Tab shows the same ones;

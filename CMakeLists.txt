@@ -157,6 +157,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/calibration)
   # the approved wording of menus and labels (#54, texts step 1)
   ADD_SUBDIRECTORY (tests/menutexts)
+  # the Script Lab panel: RLV commands, restrictions, allowed and blocked actions (#288)
+  ADD_SUBDIRECTORY (tests/scriptlabpanel)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

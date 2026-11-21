@@ -93,6 +93,7 @@
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
 #include "playback.h"
+#include "scriptlab/scriptlabpanel.h"
 #include "theme.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
@@ -441,6 +442,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
     addDockWidget(Qt::RightDockWidgetArea,m_jointCardDock);
   if(!m_timelineDock->isFloating() && !(dockWidgetArea(m_timelineDock) & m_timelineDock->allowedAreas()))
     addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
+  if(!m_scriptLabDock->isFloating() && !(dockWidgetArea(m_scriptLabDock) & m_scriptLabDock->allowedAreas()))
+    addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
   // the timeline stands visible at every start; hiding it lasts for this session only
   PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
 
@@ -517,6 +520,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_controlHost.reset(new WindowControlHost(this));
   m_controlApi.reset(new ControlApi(m_controlHost.data()));
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
+  // the Script Lab panel shows and changes the same RLV state as rlv_command (issue 288)
+  m_scriptLabPanel->setState(&m_controlApi->rlv());
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
   m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));
@@ -967,6 +972,12 @@ void PinglyMotionWindow::buildDocks()
   // View > Reset layout brings back
   PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
 
+  // --- Script Lab panel (issue 288): RLV commands and what the avatar may
+  // still do. Hidden until View > Script Lab; place, size and visibility
+  // are saved with the layout like the other panels.
+  m_scriptLabPanel=new ScriptLabPanel;
+  m_scriptLabDock=ScriptLabPanel::makeDock(this,m_scriptLabPanel);
+
   // View menu: a tick for each panel, then Hide panels (Tab) and Reset
   // layout. The Timeline item comes from the designer file; the other two
   // are the panels' own.
@@ -980,6 +991,7 @@ void PinglyMotionWindow::buildDocks()
   ui->menuView->insertAction(ui->optionsShowTimelineAction,showJointCardAction);
   // closing the timeline with its own button unticks Timeline (closing the window does not)
   PanelVisibility::linkMenuItem(this,m_timelineDock,ui->optionsShowTimelineAction);
+  ui->menuView->addAction(m_scriptLabDock->toggleViewAction());
 
   ui->menuView->addSeparator();
   // Hide panels (job P4): Tab while the 3D view has the keys. The shortcut
@@ -1020,7 +1032,7 @@ void PinglyMotionWindow::buildDocks()
 
 QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
 {
-  return {m_jointsDock,m_jointCardDock,m_timelineDock};
+  return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock};
 }
 
 // View > Reset layout: the default layout built in code, all three panels
@@ -1030,6 +1042,10 @@ void PinglyMotionWindow::resetPanelLayout()
   m_applyingTab=true;
   m_tabState.reset();
   PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
+  // the Script Lab goes back to its side and closes, as at the first start
+  m_scriptLabDock->setFloating(false);
+  addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
+  m_scriptLabDock->hide();
   m_applyingTab=false;
   m_hidePanelsAction->setChecked(false);
   ui->optionsShowTimelineAction->setChecked(true);
