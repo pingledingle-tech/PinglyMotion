@@ -1,5 +1,5 @@
 Branch: feat/script-lab-live
-Status: active
+Status: done
 Pull request: #302
 Files:
 - docs/work/feat-script-lab-live.md

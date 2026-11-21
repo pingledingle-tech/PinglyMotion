@@ -77,7 +77,7 @@ Code) edits in their own editor and sees the result in PinglyMotion at once. The
 - Control commands `lab_watch`, `lab_unwatch` and `lab_result` ([CONTROL.md](CONTROL.md), "Script Lab Live"):
   the same watch and the same results as the panel.
 - Safety: the folder is only read; at most 200 scripts of at most 262 144 bytes, 5 000 entries and 4 folder levels;
-  hidden folders such as `.git` are skipped; links are not followed out of the folder; every run has the
+  names that start with a dot, such as `.git`, are skipped; links are not followed out of the folder; every run has the
   interpreter's limits, including 2 seconds of real time.
 - `lsl_event` from the plan became the `inputs` option of `lab_watch`: the chat and touches given to every run. Each
   run starts fresh with a simulated clock, so there is no script that keeps running between commands to send an

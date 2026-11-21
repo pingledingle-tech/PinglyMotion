@@ -431,7 +431,8 @@ Limits and safety (the folder may hold anything):
 
 - The folder is only read, never written. Only `.lsl` files are read (any upper or lower case).
 - At most 200 scripts of at most 262 144 bytes each; the scan stops after 5 000 entries and 4 folder
-  levels below the watched folder. Hidden folders (`.git` and the like) are not entered.
+  levels below the watched folder. Names that start with a dot (`.git` and the like, folders and files) are
+  skipped on every system.
 - Links are never followed out of the folder: a linked folder is not entered at all, and a linked file
   counts only when its target is inside the watched folder.
 - Each run has every limit of `lsl_run`, including its 2 seconds of real time, so a script that loops
