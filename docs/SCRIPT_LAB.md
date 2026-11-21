@@ -44,8 +44,8 @@ visibility are saved with the layout. View > Reset layout closes it again.
 
 ## What exists now (step 3, issue 289): the LSL interpreter
 
-A small LSL interpreter, used through the control commands only: the panel does not show scripts yet (step 6), and
-scripts do not talk to the RLV core yet (step 4, issue 290).
+A small LSL interpreter, used through the control commands and, for scripts in a watched folder, the panel's Live
+page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
 
 - `src/scriptlab/lsl/`: lexer, recursive descent parser (no flex or bison), a checker with the Second Life compiler's
   name and type rules, the interpreter with a simulated clock, the built-in functions, and `world.*`, which turns what
@@ -88,6 +88,34 @@ Several scripts run in one world, so a HUD and a restraint can talk on a channel
 - Example: `examples/scriptlab/hud_cuffs_hud.lsl` with `hud_cuffs_cuffs.lsl` (a HUD asks with a dialog and tells the
   cuffs on a channel; the cuffs lock with `@detach=n`).
 
+## What exists now (step 6, issue 292): Live
+
+The Script Lab watches a folder of scripts and runs a script again each time it is saved, so the user (or Claude
+Code) edits in their own editor and sees the result in PinglyMotion at once. There is no built-in editor.
+
+- The panel has two pages: **Commands** (the RLV lines of step 2) and **Live**. On Live, **Watch folder...** picks
+  the folder (a cloned repository, for example); **Stop watching** ends it. When a watch starts, here or through
+  `lab_watch`, the Live page comes to the front.
+- About 0.3 seconds after a `.lsl` file in the folder is saved, it is checked and, when it compiles, run. The page
+  shows a status line that starts with a word (`OK` or `Error`; the colour only backs it up), the script read-only
+  with line numbers (an error's line number is bold in the danger colour and the line is underlined), the errors
+  and warnings with line and column (Enter or a double-click shows the line in the script), the event log of the
+  run, and the RLV restrictions at the end. The script's `llOwnerSay("@...")` lines go to the same RLV state the
+  Commands page shows (emptied before each run, as `lsl_run` does unless `keep_rlv` is true). **Open in editor** opens the file in the program the computer uses for
+  `.lsl` files; if there is none, the status line says so.
+- Control commands `lab_watch`, `lab_unwatch` and `lab_result` ([CONTROL.md](CONTROL.md), "Script Lab Live"):
+  the same watch and the same results as the panel.
+- Safety: the folder is only read; at most 200 scripts of at most 262 144 bytes, 5 000 entries and 4 folder levels;
+  names that start with a dot, such as `.git`, are skipped; links are not followed out of the folder; every run has the
+  interpreter's limits, including 2 seconds of real time.
+- `lab_watch` has an `inputs` option: the chat and touches given to every run. Each run starts fresh with a
+  simulated clock. To send events to a world that keeps running between commands, use `lsl_run` and then
+  `lsl_event` (step 5).
+- Code: `src/scriptlab/labwatcher.*` and the Live page in `src/scriptlab/scriptlabpanel.*`. Tests:
+  `tests/tst_labwatcher.cpp` (a saved script runs within the debounce, errors with line and column, saving again,
+  Stop watching, the limits, links, an endless loop), the Live part of `tests/scriptlabpanel/` and of
+  `tests/tst_control.cpp`.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -101,6 +129,10 @@ line and sends it again. Example:
 
 With the Script Lab panel open, the project owner sees the same restrictions and actions the assistant just set, so
 both look at one state.
+
+With scripts on disk (step 6): `lab_watch` the folder once, then edit a `.lsl` file with the assistant's own file
+tools, call `lab_result` until `runs` goes up, read the errors (line and column) or the log, fix the file and save
+again. No copying and pasting of scripts; the panel's Live page shows the same result to the user.
 
 For LSL: write the script, `lsl_check` it, fix each error at its line and column, `lsl_run` it with inputs (chat or
 touches at given times), read the log (what it said, its listens, timers and animations), fix and run again:

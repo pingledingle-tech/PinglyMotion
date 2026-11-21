@@ -94,6 +94,11 @@ namespace
      "{\"text\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"min_seconds\":{\"type\":\"number\"},\"max_seconds\":{\"type\":\"number\"},\"limit\":{\"type\":\"integer\"}}", "[]"},
     {"load_reference", "Opens a reference library clip by the id that find_reference gave, in PinglyMotion, like open_file. Only library files are opened, never a path you give. The file is checked against the index (size and SHA-256) first. Fails if there are unsaved changes, if the id is unknown, if the clip is not on the Second Life skeleton, or if the file is missing or changed; then nothing is changed. The library folder is read-only: change the clip and save it with save_file under a new name. Frame 1 is the reference pose, edit from frame 2. The answer is the state, plus the clip's licence and credit. Keep the credit when you pass the animation on.",
      "{\"id\":{\"type\":\"string\",\"description\":\"A clip id from find_reference\"}}", "[\"id\"]"},
+    {"lab_watch", "Script Lab Live: watches a folder of LSL scripts on this computer (for example the repository you edit), read only. path: the whole path of the folder. Whenever a .lsl file in it (or in its subfolders, up to 4 levels, hidden folders like .git skipped) is saved, PinglyMotion checks it as lsl_check does and, when it compiles, runs it as lsl_run does, about 0.3 seconds after the last write, and shows the script, its errors with line and column, the event log and the RLV state in the Script Lab panel. Read the outcome with lab_result. seconds, inputs and keep_rlv are given to every run, as in lsl_run; llOwnerSay(\"@...\") goes to the sandbox RLV state that rlv_state and the panel show (emptied before each run unless keep_rlv is true). The newest script is run once at once. Limits: at most 200 scripts of at most 262144 bytes, 5000 entries scanned; links that lead out of the folder are not followed; every run has lsl_run's limits. Watching another folder stops the one before. Never writes to the folder and never changes the animation.",
+     "{\"path\":{\"type\":\"string\",\"description\":\"Whole path of the folder with the .lsl scripts\"},\"seconds\":{\"type\":\"number\",\"description\":\"Simulated seconds for every run, 0 to 3600, default 10\"},\"inputs\":{\"type\":\"array\",\"description\":\"Chat or touches for every run, as in lsl_run, at most 200\",\"items\":{\"type\":\"object\"}},\"keep_rlv\":{\"type\":\"boolean\",\"description\":\"Keep the RLV restrictions held before each run (default false)\"}}", "[\"path\"]"},
+    {"lab_unwatch", "Script Lab Live: stops watching the folder that lab_watch (or the panel) started. Scripts are no longer run when they change.", "{}", "[]"},
+    {"lab_result", "Script Lab Live: the latest result of the watched folder: watching (true or false), folder, scripts (the .lsl files found, relative to the folder), runs (counts up by one with every run, so you can tell whether your last save was run yet: it is run about 0.3 seconds after the last write) and result: file, run, valid, errors and warnings (line, column, message, as in lsl_check), read_error when the file could not be read, and result (the lsl_run answer: log, state, stopped, stop_reason and the rest) when it compiled. file: a script path relative to the folder, for that script's latest result instead of the newest one. Typical loop: edit a .lsl file on disk, call lab_result until runs goes up, read the errors or the log, fix the file, again.",
+     "{\"file\":{\"type\":\"string\",\"description\":\"A script path relative to the watched folder. Omit for the newest result\"}}", "[]"},
     {"rlv_command", "Script Lab (RLV sandbox): runs one RLV line as if the object had sent it with llOwnerSay, for example \"@detach=n,sendim=n\", \"@clear\", \"@clear=send\", \"@version=2222\" or \"@getstatus=2222\". object: an id for the sending object (1 to 64 letters, digits, '-', '_', '.' or spaces, e.g. a UUID or \"collar\"); text: starts with @, at most 1024 characters and 64 commands. Each command is <behaviour>[:<option>]=<n|add|y|rem|force|channel>. The answer has one result per command (success, unset, duplicate, failed with a reason, or retained for force commands, which are not carried out), the replies a script would hear (channel and text), and the number of restrictions now held. Nothing in the animation changes. Read the whole state with rlv_state.",
      "{\"object\":{\"type\":\"string\",\"description\":\"Id of the sending object, e.g. collar\"},\"text\":{\"type\":\"string\",\"description\":\"The owner-say line, starting with @\"}}", "[\"object\",\"text\"]"},
     {"rlv_state", "Script Lab (RLV sandbox): shows the RLV state: the mode (rlv or rlva), the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, the behaviours known in this mode, the names of the RLVa-only behaviours, and the outside effects recorded by force commands (recorded, never carried out). A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.", "{}", "[]"},
@@ -136,6 +141,7 @@ ControlApi::ControlApi(ControlHost* host) :
   m_host(host),
   m_workFolder(defaultWorkFolder())
 {
+  m_lab.setRlvState(&m_rlv);
 }
 
 QString ControlApi::defaultWorkFolder()
@@ -270,10 +276,11 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
   static const struct { const char* name; Handler handler; } rlvTable[] =
   {
     {"rlv_command", &ControlApi::rlvCommand}, {"rlv_state", &ControlApi::rlvStateAnswer}, {"rlv_reset", &ControlApi::rlvReset},
+    {"lab_watch", &ControlApi::labWatch}, {"lab_unwatch", &ControlApi::labUnwatch}, {"lab_result", &ControlApi::labResult},
   };
 
   const QString command = request.value("command").toString();
-  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference, rlv_command, rlv_state, rlv_reset, lsl_check, lsl_run, lsl_event.");
+  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference, rlv_command, rlv_state, rlv_reset, lsl_check, lsl_run, lsl_event, lab_watch, lab_unwatch, lab_result.");
   for (const auto& entry : rlvTable)
     if (command == QLatin1String(entry.name))
       return (this->*entry.handler)(request);
@@ -1578,5 +1585,71 @@ QJsonObject ControlApi::rlvReset(const QJsonObject& request)
   QJsonObject answer = ok();
   answer["removed"] = removed;
   answer["mode"] = Rlv::modeName(m_rlv.mode());
+  return answer;
+}
+
+// --- Script Lab Live (issue 292): watch a folder, read the latest run
+
+QJsonObject ControlApi::labWatch(const QJsonObject& request)
+{
+  static const QStringList known = {"command", "path", "seconds", "inputs", "keep_rlv"};
+  for (auto it = request.begin(); it != request.end(); ++it)
+    if (!known.contains(it.key()))
+      return fail("lab_watch: unknown option \"" + it.key().left(40) + "\". Options: path, seconds, inputs, keep_rlv.");
+  if (!request.value("path").isString()) return fail("lab_watch needs \"path\": the whole path of the folder with the .lsl scripts.");
+  QJsonObject options;
+  if (request.contains("seconds")) options["seconds"] = request.value("seconds");
+  if (request.contains("inputs")) options["inputs"] = request.value("inputs");
+  if (request.contains("keep_rlv")) options["keep_rlv"] = request.value("keep_rlv");
+  const LabWatcher::Result result = m_lab.watch(request.value("path").toString(), options);
+  if (!result.ok()) return fail("lab_watch: " + result.error);
+  QJsonObject answer = ok();
+  answer["folder"] = m_lab.folder();
+  answer["scripts"] = QJsonArray::fromStringList(m_lab.scripts());
+  answer["truncated"] = m_lab.scanTruncated();
+  answer["runs"] = m_lab.runCount();
+  const QJsonObject last = m_lab.lastResult();
+  answer["result"] = last.isEmpty() ? QJsonValue() : QJsonValue(last);
+  if (m_lab.scripts().isEmpty()) answer["note"] = "No .lsl file in the folder yet. Save one there and call lab_result.";
+  return answer;
+}
+
+QJsonObject ControlApi::labUnwatch(const QJsonObject& request)
+{
+  for (auto it = request.begin(); it != request.end(); ++it)
+    if (it.key() != QLatin1String("command")) return fail("lab_unwatch takes no options.");
+  QJsonObject answer = ok();
+  answer["was_watching"] = m_lab.unwatch();
+  return answer;
+}
+
+QJsonObject ControlApi::labResult(const QJsonObject& request)
+{
+  for (auto it = request.begin(); it != request.end(); ++it)
+    if (it.key() != QLatin1String("command") && it.key() != QLatin1String("file"))
+      return fail("lab_result: unknown option \"" + it.key().left(40) + "\". Options: file.");
+  if (request.contains("file") && !request.value("file").isString())
+    return fail("lab_result: \"file\" must be a script path relative to the watched folder.");
+
+  QJsonObject answer = ok();
+  answer["watching"] = m_lab.watching();
+  answer["folder"] = m_lab.folder();
+  answer["scripts"] = QJsonArray::fromStringList(m_lab.scripts());
+  answer["runs"] = m_lab.runCount();
+  if (!m_lab.watching())
+  {
+    answer["result"] = QJsonValue();
+    answer["note"] = "No folder is watched. Start with lab_watch and the folder's path.";
+    return answer;
+  }
+  QJsonObject result = m_lab.lastResult();
+  if (request.contains("file"))
+  {
+    const QString file = request.value("file").toString();
+    if (m_lab.absolutePath(file).isEmpty())
+      return fail("lab_result: \"" + file.left(200) + "\" is not a watched script. The scripts are listed in \"scripts\" of lab_result without file.");
+    result = m_lab.result(file);
+  }
+  answer["result"] = result.isEmpty() ? QJsonValue() : QJsonValue(result);
   return answer;
 }

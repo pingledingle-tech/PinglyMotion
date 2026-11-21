@@ -8,8 +8,15 @@
  * docs/design_tokens.json, and the panel's place, size and visibility after
  * saving and loading the layout.
  *
+ * Live page (issue 292): the empty state, the folder shown after watching,
+ * a saved script with an error (status line, error list with line and
+ * column, the line mark), the fixed script (status, event log, script text),
+ * a control command lab_watch showing in the panel, and Stop watching.
+ *
  * Set PINGLYMOTION_SCRIPTLAB_SHOT to a PNG path to save a picture of the
- * panel after "@detach=n,sendim=n" (for the session's own look at it).
+ * panel after "@detach=n,sendim=n" (for the session's own look at it), and
+ * PINGLYMOTION_SCRIPTLAB_LIVE_SHOT for pictures of the Live page (an error,
+ * then a run; "-error" and "-ok" are added before ".png").
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -23,6 +30,9 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QTabWidget>
+#include <QTemporaryDir>
 #include <QMainWindow>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -30,6 +40,7 @@
 
 #include "controlapi.h"
 #include "panellayout.h"
+#include "scriptlab/labwatcher.h"
 #include "scriptlab/rlvbehaviours.h"
 #include "scriptlab/rlvstate.h"
 #include "scriptlab/scriptlabpanel.h"
@@ -129,6 +140,9 @@ class TestScriptLabPanel : public QObject
     void colourTokens();
     void floatingPlaceRoundTrip();
     void dockedAndHiddenRoundTrip();
+    void liveTabAndEmptyState();
+    void liveShowsErrorsAndRuns();
+    void liveFollowsControlCommands();
 };
 
 // View > Script Lab: the dock's own action, with exactly this text, hidden at first
@@ -312,6 +326,18 @@ void TestScriptLabPanel::colourTokens()
   QVERIFY(panel.runButton()->styleSheet().contains("border: 2px solid " + theme.value("focus_ring").toString() + ";"));
   QVERIFY(panel.runButton()->styleSheet().contains(QString("border-radius: %1px;").arg(tokens.value("radius").toObject().value("control").toInt())));
   QCOMPARE(panel.runButton()->minimumHeight(), tokens.value("control_height").toObject().value("default").toInt());
+
+  // the Live page (issue 292): Watch folder is the main button, the other two are normal buttons
+  QVERIFY(panel.watchButton()->styleSheet().contains("background: " + theme.value("accent").toString() + ";"));
+  for (QPushButton* normal : {panel.unwatchButton(), panel.openEditorButton()})
+  {
+    QVERIFY(normal->styleSheet().contains("background: " + theme.value("surface_raised").toString() + ";"));
+    QVERIFY(normal->styleSheet().contains("color: " + theme.value("text").toString() + ";"));
+    QVERIFY(normal->styleSheet().contains("border: 1px solid " + theme.value("border").toString() + ";"));
+    QVERIFY(normal->styleSheet().contains(":disabled { color: " + theme.value("text_disabled").toString() + "; }"));
+    QVERIFY(normal->styleSheet().contains("border: 2px solid " + theme.value("focus_ring").toString() + ";"));
+    QCOMPARE(normal->minimumHeight(), tokens.value("control_height").toObject().value("default").toInt());
+  }
 }
 
 // a floating Script Lab keeps its place, size and visibility after save and load
@@ -375,6 +401,144 @@ void TestScriptLabPanel::dockedAndHiddenRoundTrip()
   QVERIFY(last.dock->isHidden());
   QVERIFY(!last.dock->toggleViewAction()->isChecked());
   QCOMPARE(last.window.dockWidgetArea(last.dock), Qt::LeftDockWidgetArea);
+}
+
+namespace
+{
+  bool writeScript(const QString& path, const QByteArray& text)
+  {
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) return false;
+    return file.write(text) == text.size();
+  }
+
+  QStringList listTexts(const QListWidget* list)
+  {
+    QStringList out;
+    for (int i = 0; i < list->count(); ++i) out << list->item(i)->text();
+    return out;
+  }
+
+  void saveShot(ScriptLabPanel& panel, const QString& suffix)
+  {
+    QString shot = qEnvironmentVariable("PINGLYMOTION_SCRIPTLAB_LIVE_SHOT");
+    if (shot.isEmpty()) return;
+    shot.replace(".png", suffix + ".png");
+    panel.resize(460, 860);
+    panel.show();
+    QVERIFY(panel.grab().save(shot));
+  }
+}
+
+// two pages, Commands and Live; the Live page says what to do when no folder is watched
+void TestScriptLabPanel::liveTabAndEmptyState()
+{
+  ScriptLabPanel panel;
+  LabWatcher watcher;
+  panel.setWatcher(&watcher);
+  QCOMPARE(panel.tabs()->count(), 2);
+  QCOMPARE(panel.tabs()->tabText(0), QString("Commands"));
+  QCOMPARE(panel.tabs()->tabText(1), QString("Live"));
+  QCOMPARE(panel.tabs()->currentIndex(), 0);
+  QCOMPARE(panel.watchButton()->text(), QString("Watch folder..."));
+  QCOMPARE(panel.unwatchButton()->text(), QString("Stop watching"));
+  QCOMPARE(panel.openEditorButton()->text(), QString("Open in editor"));
+  QCOMPARE(panel.liveStatus()->text(),
+           QString("No folder is watched. Choose the folder with your .lsl scripts: each time you save one, it is checked and run again here."));
+  QCOMPARE(panel.liveFolderField()->text(), QString());
+  QCOMPARE(panel.liveFolderField()->placeholderText(), QString("No folder watched"));
+  QVERIFY(panel.liveFolderField()->isReadOnly());
+  QVERIFY(panel.scriptView()->isReadOnly());
+  // greyed out with a reason (charter P6)
+  QVERIFY(!panel.unwatchButton()->isEnabled());
+  QCOMPARE(panel.unwatchButton()->toolTip(), QString("Not watching a folder. Choose one with Watch folder first."));
+  QVERIFY(!panel.openEditorButton()->isEnabled());
+  QCOMPARE(panel.openEditorButton()->toolTip(), QString("No script yet. Watch a folder and save a .lsl file in it first."));
+  // a refused folder says why
+  QVERIFY(!panel.watchFolder("relative"));
+  QCOMPARE(panel.liveStatus()->text(), QString("Error: Give the whole path of the folder, not a relative one."));
+  QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::dangerColour(ScriptLabPanel::isDark(panel.palette())));
+}
+
+// a saved script with an error shows the error with line and column; the fixed script runs
+void TestScriptLabPanel::liveShowsErrorsAndRuns()
+{
+  ScriptLabPanel panel;
+  LabWatcher watcher;
+  panel.setWatcher(&watcher);
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+
+  QVERIFY(panel.watchFolder(dir.path()));
+  QCOMPARE(panel.liveFolderField()->text(), QDir::toNativeSeparators(QFileInfo(dir.path()).canonicalFilePath()));
+  QCOMPARE(panel.liveStatus()->text(), QString("Watching. No .lsl file in this folder yet: save one here and it runs at once."));
+  QCOMPARE(panel.tabs()->currentIndex(), 1);   // the Live page comes to the front
+  QVERIFY(panel.unwatchButton()->isEnabled());
+
+  QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
+  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
+  QCOMPARE(panel.liveStatus()->text(), QString("Error: collar.lsl has 1 error(s) and was not run (run 1). Fix the line shown below and save."));
+  QCOMPARE(listTexts(panel.problemList()), QStringList{"Error, line 3, column 32: Argument 1 of llOwnerSay must be a string, not an integer."});
+  const bool dark = ScriptLabPanel::isDark(panel.palette());
+  QCOMPARE(panel.problemList()->item(0)->foreground().color(), ScriptLabPanel::dangerColour(dark));
+  QCOMPARE(panel.liveScriptName()->text(), QString("Script: collar.lsl"));
+  QCOMPARE(panel.scriptView()->toPlainText(), QString("default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
+  // the line is marked, and Enter on the error moves the cursor there
+  QCOMPARE(panel.scriptView()->extraSelections().size(), 1);
+  QCOMPARE(panel.scriptView()->extraSelections().first().cursor.blockNumber(), 2);
+  QVERIFY(panel.openEditorButton()->isEnabled());
+  QCOMPARE(panel.runLog()->toPlainText(), QString());
+  panel.problemList()->setCurrentRow(0);
+  emit panel.problemList()->itemActivated(panel.problemList()->item(0));
+  QCOMPARE(panel.scriptView()->textCursor().blockNumber(), 2);
+  QCOMPARE(panel.scriptView()->textCursor().positionInBlock(), 31);
+  saveShot(panel, "-error");
+
+  QTest::qWait(1100);   // a new file time
+  QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"locked\"); }\n}\n"));
+  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
+  QCOMPARE(panel.problemList()->count(), 0);
+  QCOMPARE(panel.scriptView()->extraSelections().size(), 0);
+  QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: locked"));
+  QCOMPARE(panel.liveStatus()->text(), QString("OK: collar.lsl ran without errors (run 2), 3 log line(s)."));
+  QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::successColour(dark));
+  saveShot(panel, "-ok");
+
+  panel.stopWatching();
+  QCOMPARE(panel.liveFolderField()->text(), QString());
+  QCOMPARE(panel.scriptView()->toPlainText(), QString());
+  QCOMPARE(panel.runLog()->toPlainText(), QString());
+  QVERIFY(!panel.unwatchButton()->isEnabled());
+  QCOMPARE(panel.liveStatus()->text(),
+           QString("No folder is watched. Choose the folder with your .lsl scripts: each time you save one, it is checked and run again here."));
+}
+
+// lab_watch and lab_unwatch from an AI client show up in the panel at once
+void TestScriptLabPanel::liveFollowsControlCommands()
+{
+  NoAnimationHost host;
+  ControlApi api(&host);
+  ScriptLabPanel panel;
+  panel.setWatcher(&api.lab());
+  QTemporaryDir dir;
+  QVERIFY(writeScript(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"hi\"); } }"));
+  const QJsonObject answer = api.execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(panel.liveFolderField()->text(), QDir::toNativeSeparators(QFileInfo(dir.path()).canonicalFilePath()));
+  QCOMPARE(panel.liveScriptName()->text(), QString("Script: hello.lsl"));
+  QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: hi"));
+  // a script with RLV lines: the restrictions show in the status line and on the Commands page
+  panel.setState(&api.rlv());
+  QTest::qWait(1100);   // a new file time
+  QVERIFY(writeScript(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));
+  QTRY_COMPARE_WITH_TIMEOUT(api.lab().runCount(), 2, 10000);
+  QCOMPARE(panel.liveStatus()->text(),
+           QString("OK: hello.lsl ran without errors (run 2), 3 log line(s). RLV restrictions at the end: detach, sendim."));
+  QCOMPARE(restrictionRows(panel).size(), 2);
+  QCOMPARE(shownStates(panel).value("detach"), QString("Blocked"));
+  QVERIFY(panel.runLog()->toPlainText().endsWith("rlv_command: @detach=n,sendim=n"));
+  QVERIFY(api.execute(QJsonObject{{"command", "lab_unwatch"}})["ok"].toBool());
+  QCOMPARE(panel.liveFolderField()->text(), QString());
 }
 
 QTEST_MAIN(TestScriptLabPanel)

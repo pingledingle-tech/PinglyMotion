@@ -22,6 +22,8 @@ SET (PINGLYMOTION_CORE_SRC animation.cpp
               versionnumber.cpp)
 ADD_LIBRARY (pinglymotion_core STATIC ${PINGLYMOTION_CORE_SRC})
 TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
+# Script Lab Live (issue 292): the folder watch behind lab_watch and the panel
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labwatcher.cpp)
 
 # Script Lab: the LSL interpreter (issue 289), QtCore only; the control commands lsl_check and lsl_run
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp

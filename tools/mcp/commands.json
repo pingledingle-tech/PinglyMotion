@@ -422,6 +422,54 @@
             ]
         },
         {
+            "description": "Script Lab Live: watches a folder of LSL scripts on this computer (for example the repository you edit), read only. path: the whole path of the folder. Whenever a .lsl file in it (or in its subfolders, up to 4 levels, hidden folders like .git skipped) is saved, PinglyMotion checks it as lsl_check does and, when it compiles, runs it as lsl_run does, about 0.3 seconds after the last write, and shows the script, its errors with line and column, the event log and the RLV state in the Script Lab panel. Read the outcome with lab_result. seconds, inputs and keep_rlv are given to every run, as in lsl_run; llOwnerSay(\"@...\") goes to the sandbox RLV state that rlv_state and the panel show (emptied before each run unless keep_rlv is true). The newest script is run once at once. Limits: at most 200 scripts of at most 262144 bytes, 5000 entries scanned; links that lead out of the folder are not followed; every run has lsl_run's limits. Watching another folder stops the one before. Never writes to the folder and never changes the animation.",
+            "name": "lab_watch",
+            "parameters": {
+                "inputs": {
+                    "description": "Chat or touches for every run, as in lsl_run, at most 200",
+                    "items": {
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "keep_rlv": {
+                    "description": "Keep the RLV restrictions held before each run (default false)",
+                    "type": "boolean"
+                },
+                "path": {
+                    "description": "Whole path of the folder with the .lsl scripts",
+                    "type": "string"
+                },
+                "seconds": {
+                    "description": "Simulated seconds for every run, 0 to 3600, default 10",
+                    "type": "number"
+                }
+            },
+            "required": [
+                "path"
+            ]
+        },
+        {
+            "description": "Script Lab Live: stops watching the folder that lab_watch (or the panel) started. Scripts are no longer run when they change.",
+            "name": "lab_unwatch",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Script Lab Live: the latest result of the watched folder: watching (true or false), folder, scripts (the .lsl files found, relative to the folder), runs (counts up by one with every run, so you can tell whether your last save was run yet: it is run about 0.3 seconds after the last write) and result: file, run, valid, errors and warnings (line, column, message, as in lsl_check), read_error when the file could not be read, and result (the lsl_run answer: log, state, stopped, stop_reason and the rest) when it compiled. file: a script path relative to the folder, for that script's latest result instead of the newest one. Typical loop: edit a .lsl file on disk, call lab_result until runs goes up, read the errors or the log, fix the file, again.",
+            "name": "lab_result",
+            "parameters": {
+                "file": {
+                    "description": "A script path relative to the watched folder. Omit for the newest result",
+                    "type": "string"
+                }
+            },
+            "required": [
+            ]
+        },
+        {
             "description": "Script Lab (RLV sandbox): runs one RLV line as if the object had sent it with llOwnerSay, for example \"@detach=n,sendim=n\", \"@clear\", \"@clear=send\", \"@version=2222\" or \"@getstatus=2222\". object: an id for the sending object (1 to 64 letters, digits, '-', '_', '.' or spaces, e.g. a UUID or \"collar\"); text: starts with @, at most 1024 characters and 64 commands. Each command is <behaviour>[:<option>]=<n|add|y|rem|force|channel>. The answer has one result per command (success, unset, duplicate, failed with a reason, or retained for force commands, which are not carried out), the replies a script would hear (channel and text), and the number of restrictions now held. Nothing in the animation changes. Read the whole state with rlv_state.",
             "name": "rlv_command",
             "parameters": {

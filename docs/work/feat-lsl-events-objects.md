@@ -9,6 +9,7 @@ Files:
 - src/controlapi.*
 - src/CMakeLists.txt
 - tests/tst_lslworld.cpp
+- tests/tst_labwatcher.cpp
 - tests/tst_lslinterp.cpp
 - tests/tst_control.cpp
 - tests/CMakeLists.txt
@@ -27,6 +28,7 @@ Files:
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md
 - docs/SCRIPT_LAB_PLAN.md
+- docs/DECISIONS.md
 
 ## What
 
