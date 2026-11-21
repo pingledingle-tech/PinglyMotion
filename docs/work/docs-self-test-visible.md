@@ -1,6 +1,6 @@
 Branch: docs/self-test-visible
 Status: active
-Pull request: pending
+Pull request: #281
 Files:
 - docs/work/docs-self-test-visible.md
 - CLAUDE.md
