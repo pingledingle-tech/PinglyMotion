@@ -1,6 +1,6 @@
 Branch: feat/rlv-core
 Status: active
-Pull request: pending
+Pull request: #295
 Files:
 - src/scriptlab/**
 - src/CMakeLists.txt
