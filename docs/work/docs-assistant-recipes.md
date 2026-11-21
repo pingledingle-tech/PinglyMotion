@@ -1,5 +1,5 @@
 Branch: docs/assistant-recipes
-Status: active
+Status: done
 Pull request: #229
 Files:
 - docs/ASSISTANT_GUIDE.md
