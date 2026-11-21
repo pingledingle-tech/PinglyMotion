@@ -923,13 +923,15 @@ void BentoTest::badFilesAreRefused()
   QElapsedTimer timer;
   timer.start();
   QString error;
-  QVERIFY(!BVH::checkFile(path, &error));
+  error = BVH::checkFile(path).error;
+  QVERIFY(!error.isEmpty());
   QVERIFY2(!error.isEmpty(), "a reason must be given");
   QVERIFY2(timer.elapsed() < 5000, "refusing a file must be quick");
 
   // the program keeps working after a refused file
   QString okError;
-  QVERIFY2(BVH::checkFile(Constants::defaultPosePath(), &okError), qPrintable(okError));
+  okError = BVH::checkFile(Constants::defaultPosePath()).error;
+  QVERIFY2(okError.isEmpty(), qPrintable(okError));
 }
 
 // a data folder in the folder the program is started from must not be read (#7)

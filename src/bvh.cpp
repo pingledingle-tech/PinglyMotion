@@ -516,18 +516,15 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile,const QByteArr
   return finishRead(buildTree(anim,dingle),limFile);
 }
 
-bool BVH::checkFile(const QString& file,QString* error,const QByteArray* data)
+BVH::CheckResult BVH::checkFile(const QString& file,const QByteArray* data)
 {
   BVH test;
   BVHNode* root=test.animRead(file,QString(),data);
   delete test.lastLoadedPositionNode;
-  if(!root)
-  {
-    if(error) *error=test.lastError;
-    return false;
-  }
+  // a failed read always gives a reason, so ok() cannot say yes to a file that was refused
+  if(!root) return {test.lastError.isEmpty() ? QStringLiteral("The file could not be read.") : test.lastError};
   test.bvhDelete(root);
-  return true;
+  return {};
 }
 
 // The pose of one frame for the live link, as a small BVH: the first frame is neutral

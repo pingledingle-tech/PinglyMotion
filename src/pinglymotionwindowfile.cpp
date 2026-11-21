@@ -261,7 +261,7 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file,const QByteArray
   if(!data && !QFile::exists(file))
     m_lastOpenError=tr("Animation file not found.");
   else
-    BVH::checkFile(file,&m_lastOpenError,data);
+    m_lastOpenError=BVH::checkFile(file,data).error;
 
   if(m_lastOpenError.isEmpty()) return true;
   if(m_quietDialogs) return false;

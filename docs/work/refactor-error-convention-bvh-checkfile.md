@@ -1,6 +1,6 @@
 Branch: refactor/error-convention-bvh-checkfile
-Status: active
-Pull request: pending
+Status: done
+Pull request: #278
 Files:
 - src/bvh.h
 - src/bvh.cpp
