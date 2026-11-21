@@ -1,5 +1,5 @@
 Branch: site/homepage-design-system
-Status: active
+Status: done
 Pull request: #284
 Files:
 - docs/index.html
