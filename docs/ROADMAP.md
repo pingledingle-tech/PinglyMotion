@@ -41,10 +41,10 @@ Visible changes (steps 6 and 7, and #40) need the project owner's Windows test b
 
 ## Script Lab track (separate from animation and UX)
 
-Status: **steps 1 and 3 done** (the RLV core, issue 287: parser, behaviour state and the control commands `rlv_command`, `rlv_state`, `rlv_reset`; the LSL interpreter, issue 289, with `lsl_check` and `lsl_run`; see [SCRIPT_LAB.md](SCRIPT_LAB.md)); the other steps are planned. A sandbox for testing RLV and LSL scripts written with Claude Code; decision in [DECISIONS.md](DECISIONS.md), plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md). It mostly adds new files under `src/scriptlab/` and does not wait for the animation and UX steps above. One issue per step, started only on the project owner's word:
+Status: **steps 1, 2 and 3 done** (the RLV core, issue 287: parser, behaviour state and the control commands `rlv_command`, `rlv_state`, `rlv_reset`; the Script Lab panel, issue 288: View > Script Lab; the LSL interpreter, issue 289, with `lsl_check` and `lsl_run`; see [SCRIPT_LAB.md](SCRIPT_LAB.md)); the other steps are planned. A sandbox for testing RLV and LSL scripts written with Claude Code; decision in [DECISIONS.md](DECISIONS.md), plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md). It mostly adds new files under `src/scriptlab/` and does not wait for the animation and UX steps above. One issue per step, started only on the project owner's word:
 
 1. RLV core ([#287](https://github.com/pingledingle-tech/PinglyMotion/issues/287), technical) — done
-2. Script Lab panel ([#288](https://github.com/pingledingle-tech/PinglyMotion/issues/288), visible)
+2. Script Lab panel ([#288](https://github.com/pingledingle-tech/PinglyMotion/issues/288), visible) — done
 3. LSL interpreter, minimum ([#289](https://github.com/pingledingle-tech/PinglyMotion/issues/289), technical) — done, with the control commands `lsl_check` and `lsl_run`
 4. Link: `llOwnerSay("@...")` to the RLV core ([#290](https://github.com/pingledingle-tech/PinglyMotion/issues/290), technical)
 5. Events and several objects ([#291](https://github.com/pingledingle-tech/PinglyMotion/issues/291), technical + visible)
