@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "easing.h"
+#include "rotation.h"
 
 namespace AnimFile
 {
@@ -53,8 +54,8 @@ namespace AnimFile
 
   enum class JointKind : quint8 { Root, Joint, EndSite };
 
-  // the order of the rotation channels of a joint; the same values as BVHOrderType in bvhnode.h
-  enum class RotationOrder : quint8 { XYZ=1, ZYX, XZY, YZX, YXZ, ZXY };
+  // the order of the rotation channels of a joint (one type for the whole program, see rotation.h)
+  using RotationOrder=Rotation::Order;
 
   // a key frame of an AVM or .dingle file
   struct Key

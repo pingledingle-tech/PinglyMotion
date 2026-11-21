@@ -368,7 +368,7 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim,bool storedPositions)
       node->channelMin[k]=-10000;
       node->channelMax[k]=10000;
     }
-    node->channelOrder=static_cast<BVHOrderType>(joint.rotationOrder());
+    node->channelOrder=joint.rotationOrder();
 
     if(joint.parent>=0 && joint.parent<i)
       nodes[joint.parent]->addChild(node);

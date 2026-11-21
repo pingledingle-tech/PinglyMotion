@@ -37,7 +37,7 @@ BVHNode::BVHNode(const QString& name)
   // every field gets a defined value; the readers set the real ones
   type=BVH_JOINT;
   numChannels=0;
-  channelOrder=BVH_XYZ;
+  channelOrder=Rotation::Order::XYZ;
   for(int i=0;i<3;i++) offset[i]=0.0;
   for(int i=0;i<6;i++)
   {

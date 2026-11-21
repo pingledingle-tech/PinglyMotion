@@ -162,37 +162,16 @@ void IKTree::addJoint(BVHNode *node, int parent)
 void IKTree::toEuler(const QQuaternion &q, BVHOrderType order,
                      double &x, double &y, double &z)
 {
-  // the axes in file order (0 = x, 1 = y, 2 = z)
-  int a0 = 0, a1 = 1, a2 = 2;
-  switch (order) {
-    case BVH_XYZ: a0 = 0; a1 = 1; a2 = 2; break;
-    case BVH_XZY: a0 = 0; a1 = 2; a2 = 1; break;
-    case BVH_YXZ: a0 = 1; a1 = 0; a2 = 2; break;
-    case BVH_YZX: a0 = 1; a1 = 2; a2 = 0; break;
-    case BVH_ZXY: a0 = 2; a1 = 0; a2 = 1; break;
-    case BVH_ZYX: a0 = 2; a1 = 1; a2 = 0; break;
-  }
-
-  // rotation matrix of q (normalised)
-  double w = q.scalar(), qx = q.x(), qy = q.y(), qz = q.z();
-  const double len = std::sqrt(w*w + qx*qx + qy*qy + qz*qz);
+  int axes[3];
   double angles[3] = {0, 0, 0};
-  if (len >= EPSILON) {
-    w /= len; qx /= len; qy /= len; qz /= len;
-    const double m[3][3] = {
-      {1 - 2*(qy*qy + qz*qz), 2*(qx*qy - w*qz),     2*(qx*qz + w*qy)},
-      {2*(qx*qy + w*qz),     1 - 2*(qx*qx + qz*qz), 2*(qy*qz - w*qx)},
-      {2*(qx*qz - w*qy),     2*(qy*qz + w*qx),     1 - 2*(qx*qx + qy*qy)}
-    };
-    // +1 when the axes are in cyclic order (xyz, yzx, zxy), -1 otherwise
-    const double s = ((a1 - a0 + 3) % 3 == 1) ? 1.0 : -1.0;
-    angles[a1] = std::asin(qBound(-1.0, s * m[a0][a2], 1.0));
-    angles[a0] = std::atan2(-s * m[a1][a2], m[a2][a2]);
-    angles[a2] = std::atan2(-s * m[a0][a1], m[a0][a0]);
+  if (Rotation::axesOf(order, axes)) {
+    double inOrder[3];
+    Rotation::eulerFromAxes(q, axes, inOrder);
+    for (int i=0; i<3; i++) angles[axes[i]] = inOrder[i];  // by axis: x, y, z
   }
-  x = qRadiansToDegrees(angles[0]);
-  y = qRadiansToDegrees(angles[1]);
-  z = qRadiansToDegrees(angles[2]);
+  x = angles[0];
+  y = angles[1];
+  z = angles[2];
 }
 
 void IKTree::updateBones(int i)

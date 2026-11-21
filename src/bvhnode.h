@@ -29,10 +29,11 @@
 #include <optional>
 
 #include "easing.h"
+#include "rotation.h"
 
 typedef enum { BVH_POS, BVH_ROOT, BVH_JOINT, BVH_END, BVH_NO_SL } BVHNodeType;
 typedef enum { BVH_XPOS, BVH_YPOS, BVH_ZPOS, BVH_XROT, BVH_YROT, BVH_ZROT } BVHChannelType;
-typedef enum { BVH_XYZ=1, BVH_ZYX, BVH_XZY, BVH_YZX, BVH_YXZ, BVH_ZXY} BVHOrderType;
+using BVHOrderType=Rotation::Order;
 
 class FrameData
 {
