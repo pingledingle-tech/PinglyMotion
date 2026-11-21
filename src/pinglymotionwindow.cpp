@@ -35,6 +35,9 @@
 #include <QFileDialog>
 #include "startfolder.h"
 #include "logging.h"
+#include "applog.h"
+#include <QDesktopServices>
+#include <QUrl>
 #include <QMessageBox>
 #include <QSaveFile>
 #include <QTemporaryDir>
@@ -2145,6 +2148,21 @@ void PinglyMotionWindow::on_helpAboutAction_triggered()
 void PinglyMotionWindow::on_helpWhatsNewAction_triggered()
 {
   helpWhatsNew();
+}
+
+// Help > Open log: the local error log (issue 239) in the system's text viewer
+void PinglyMotionWindow::on_helpOpenLogAction_triggered()
+{
+  const QString path = AppLog::filePath();
+  if (path.isEmpty() || !QDesktopServices::openUrl(QUrl::fromLocalFile(path)))
+    statusBar()->showMessage(tr("The log could not be opened."), 5000);
+}
+
+// Help > Clear log: empties the local error log
+void PinglyMotionWindow::on_helpClearLogAction_triggered()
+{
+  statusBar()->showMessage(AppLog::clear() ? tr("The log is empty now.")
+                                           : tr("The log could not be cleared."), 5000);
 }
 
 // ------- Additional Toolbar Element Slots --------

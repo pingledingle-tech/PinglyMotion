@@ -141,6 +141,8 @@ class PinglyMotionWindow : public QMainWindow
 
     void on_helpAboutAction_triggered();
     void on_helpWhatsNewAction_triggered();
+    void on_helpOpenLogAction_triggered();
+    void on_helpClearLogAction_triggered();
 
     // ------- Additional Toolbar Element Slots -------
 

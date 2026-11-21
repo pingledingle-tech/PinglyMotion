@@ -3,12 +3,15 @@
  *
  * Tests of the local error log (src/applog.*, issue 239): the 5 MB limit drops the
  * oldest lines, the home folder is replaced, the clean-exit marker and the crash
- * detection at the next start, and emptying the log. Every test writes into a
- * temporary folder, never into the real application data folder.
+ * detection at the next start, emptying the log, and the two Help menu entries
+ * "Open log" and "Clear log" (their exact labels and place in the main window's
+ * .ui file). Every test writes into a temporary folder, never into the real
+ * application data folder.
  */
 #include <QFile>
 #include <QLoggingCategory>
 #include <QTemporaryDir>
+#include <QXmlStreamReader>
 #include <QtTest>
 
 #include "applog.h"
@@ -144,6 +147,51 @@ private slots:
     QCOMPARE(QFileInfo(AppLog::filePath()).size(), qint64(0));
     qCWarning(lcTest, "after clearing");
     QVERIFY(readAll(AppLog::filePath()).contains("after clearing"));
+  }
+
+  // Help menu of src/pinglymotionwindow.ui: What's New, Open log, Clear log, About,
+  // in that order, with exactly these labels
+  void helpMenuHasLogEntries()
+  {
+    QFile ui(QStringLiteral(PINGLYMOTION_WINDOW_UI));
+    QVERIFY2(ui.open(QIODevice::ReadOnly), PINGLYMOTION_WINDOW_UI);
+    QXmlStreamReader xml(&ui);
+    QStringList helpActions;
+    QMap<QString, QString> texts;
+    bool inHelp = false;
+    QString action;
+    while (!xml.atEnd())
+    {
+      xml.readNext();
+      if (xml.isStartElement())
+      {
+        const QString name = xml.name().toString();
+        const QString objectName = xml.attributes().value(QStringLiteral("name")).toString();
+        if (name == QStringLiteral("widget") && objectName == QStringLiteral("menuHelp"))
+          inHelp = true;
+        else if (inHelp && name == QStringLiteral("addaction"))
+          helpActions << objectName;
+        else if (name == QStringLiteral("action"))
+          action = objectName;
+        else if (!action.isEmpty() && name == QStringLiteral("property") && objectName == QStringLiteral("text"))
+        {
+          xml.readNextStartElement();
+          texts[action] = xml.readElementText();
+        }
+      }
+      else if (xml.isEndElement())
+      {
+        if (inHelp && xml.name() == QStringLiteral("widget"))
+          inHelp = false;
+        else if (xml.name() == QStringLiteral("action"))
+          action.clear();
+      }
+    }
+    QVERIFY(!xml.hasError());
+    QCOMPARE(helpActions, QStringList({QStringLiteral("helpWhatsNewAction"), QStringLiteral("helpOpenLogAction"),
+                                       QStringLiteral("helpClearLogAction"), QStringLiteral("helpAboutAction")}));
+    QCOMPARE(texts.value(QStringLiteral("helpOpenLogAction")), QStringLiteral("Open log"));
+    QCOMPARE(texts.value(QStringLiteral("helpClearLogAction")), QStringLiteral("Clear log"));
   }
 
   void defaultFolderIsInApplicationData()
