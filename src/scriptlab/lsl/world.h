@@ -18,6 +18,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
+#include <QStringList>
 
 namespace lsl
 {
@@ -44,6 +45,21 @@ class World
     virtual void instantMessage(double time, const QString& key, const QString& text);
     // llStartAnimation / llStopAnimation (logged only until step 7)
     virtual void animation(double time, bool start, const QString& name);
+    // llRegionSayTo (step 5): to one object or avatar, any distance
+    virtual void chatTo(double time, const QString& target, int channel, const QString& text);
+    // llDialog (step 5): a blue dialog for an avatar; a button press comes back as chat on the channel
+    virtual void dialog(double time, const QString& avatar, const QString& message, const QStringList& buttons, int channel);
+
+    // where the object is (llGetPos) and its attachment point (llGetAttached, 0 = not attached)
+    virtual void position(float out[3]) const { out[0] = 128.0f; out[1] = 128.0f; out[2] = 20.0f; }
+    virtual int attachPoint() const { return 0; }
+    // llKey2Name and llGetOwnerKey: the name and owner of a key in the sandbox (empty when unknown)
+    virtual QString nameOf(const QString& key) const;
+    virtual QString ownerOf(const QString& key) const;
+
+    // Step 5: entries go to another World's log instead (the shared log of several objects), each with
+    // "object" set to tag when tag is not empty. The target must outlive this World.
+    void forwardLog(World* target, const QString& tag) { m_target = target; m_tag = tag; }
 
     // adds an entry; "t" is set from time. Past MAX_LOG_ENTRIES entries are dropped and truncated() is true,
     // except a forced entry (why the script stopped), which always comes last.
@@ -58,6 +74,8 @@ class World
   private:
     QJsonArray m_log;
     bool m_truncated = false;
+    World* m_target = nullptr;
+    QString m_tag;
 };
 
 } // namespace lsl

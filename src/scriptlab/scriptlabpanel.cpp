@@ -34,6 +34,7 @@
 #include <QVBoxLayout>
 
 #include "labwatcher.h"
+#include "objectsview.h"
 #include "paneltitlebar.h"
 #include "rlvbehaviours.h"
 #include "rlvstate.h"
@@ -316,6 +317,9 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_log->setMinimumHeight(4 * m_log->fontMetrics().height() + 2 * SpacingS);
   layout->addWidget(m_log, 2);
 
+  // --- objects of the last LSL run and the newest dialog (step 5); hidden until a script has run
+  m_objectsView = new ScriptLabObjectsView(commandsPage);
+  layout->addWidget(m_objectsView, 2);
   m_tabs->addTab(commandsPage, tr("Commands"));
   m_tabs->setTabToolTip(0, tr("Type RLV lines by hand and see what the avatar may still do"));
   buildLivePage();
@@ -331,6 +335,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_reset, m_restrictions);
   setTabOrder(m_restrictions, m_actions);
   setTabOrder(m_actions, m_log);
+  setTabOrder(m_log, m_objectsView->list());
 
   applyStyle();
   refresh();
@@ -343,6 +348,11 @@ void ScriptLabPanel::setState(RlvState* state)
   m_state = state;
   if (state) m_changedConnection = connect(state, &RlvState::changed, this, &ScriptLabPanel::refresh);
   refresh();
+}
+
+void ScriptLabPanel::setSession(lsl::Session* session)
+{
+  m_objectsView->setSession(session);
 }
 
 bool ScriptLabPanel::isDark(const QPalette& palette)

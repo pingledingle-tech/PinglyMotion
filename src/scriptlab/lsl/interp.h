@@ -59,14 +59,36 @@ class Interpreter
   public:
     Interpreter(const Script& script, World& world, const Limits& limits = Limits());
 
-    // enters the default state and runs state_entry (and what it queues at time 0)
-    void start();
+    // enters the default state and runs state_entry (and what it queues at time 0); with run false
+    // state_entry only waits in the queue (the Sandbox starts every object first, then runs them)
+    void start(bool run = true);
     // runs events until the simulated clock reaches the given time, or nothing is left to do
     void runUntil(double seconds);
     // chat or touch at a simulated time (sorted in; an input in the past is taken at once)
     void addInput(const Input& input);
     // a message heard on a channel now, as if said nearby (step 4: RLV replies)
     void hear(int channel, const QString& name, const QString& id, const QString& text);
+
+    // Step 5: what the Sandbox (several objects on one simulated clock) drives each script with.
+    // The time of the script's next own event (its timer), or infinity.
+    double nextWake() const;
+    // moves the script's clock to at least t and queues the timer when it is due
+    void advanceTo(double t);
+    // moves the script's clock to at least t, nothing else (a message from another object said at t)
+    void syncTo(double t);
+    // runs the waiting events
+    void runQueue() { processQueue(); }
+    // events are waiting
+    bool hasQueued() const { return !m_stopped && !m_queue.empty(); }
+    // stops the script when the real time limit is over; true when stopped
+    bool checkRealTime();
+    // a fresh real-time, step and event budget for the next command (lsl_event)
+    void newBudget();
+    // chat heard now on a channel from name/id: queues a listen event for every matching listen, logs nothing
+    void receive(int channel, const QString& name, const QString& id, const QString& text);
+    // queues touch_start (detected key and name), attach (with the key, NULL_KEY on detach)
+    void touch(const QString& id, const QString& name);
+    void attachEvent(const QString& id);
 
     bool stopped() const { return m_stopped; }
     QString stopReason() const { return m_stopReason; }
