@@ -1,11 +1,10 @@
 Branch: fix/timeline-scroll-to-joint
-Status: active
-Pull request: pending
+Status: done
+Pull request: #273
 Files:
 - src/timelineview.*
 - tests/tst_timelineview.cpp
 - tests/CMakeLists.txt
-- docs/PRODUCT.md
 - docs/work/fix-timeline-scroll-to-joint.md
 
 ## What
