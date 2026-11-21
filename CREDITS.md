@@ -51,6 +51,8 @@ No code was taken from these; they showed us what is worth building.
 | sketchpunklabs/threejs_proto | The swing-twist retargeter that Mesh2Motion builds on | ISC (per its `package.json`) | https://github.com/sketchpunklabs/threejs_proto |
 | anim-to-bvh | Table of Second Life joint names and BVH aliases, used as a reference for `.anim` import | MIT (per its `package.json`) | see `docs/OPEN_SOURCE_CHECK.md` |
 | PoseForge, Black Dragon viewer, tanimbomb | Ideas only (no code read or copied); see `docs/REUSE_REFERENCES.md` and `docs/OPEN_SOURCE_CHECK.md` | Various | see those documents |
+| Firestorm RLVa (Kitty Barnett and the Firestorm project) | Planned Script Lab (`docs/SCRIPT_LAB_PLAN.md`): the RLV command parser and behaviour table are meant to be taken from `indra/newview/rlv*.cpp/h`, keeping the original header and marking changes. Nothing is copied yet; the notice is added in the job that copies it | LGPL 2.1 | https://github.com/FirestormViewer/phoenix-firestorm |
+| lslint, OpenSimulator, LSL-PyOptimizer | Planned Script Lab: reference for the LSL grammar (lslint) and LSL behaviour (OpenSimulator, LSL-PyOptimizer). Reference only, no code copied; LSL-PyOptimizer is GPLv3 and is never copied | Public domain, BSD, GPLv3 | https://github.com/Makopo/lslint, http://opensimulator.org, https://github.com/Sei-Lisa/LSL-PyOptimizer |
 
 ## Research
 

@@ -4,6 +4,10 @@ Decisions taken while the project lived in the old repository, and the decisions
 
 "Reason: not written down" means the source records the decision but no reason. Newest first within each group.
 
+## Script Lab
+
+**21 Nov 2026 - Script Lab: a sandbox inside PinglyMotion for testing RLV/LSL scripts written with Claude Code; not a full LSL IDE and no built-in script editor for now.** The scripts live in a repository on disk; Claude Code writes them; PinglyMotion runs them in a sandbox and shows restrictions, allowed and blocked actions, log and animations; Claude reads the same result through the control interface. It is its own track, separate from animation and UX, with eight steps in order (plan: [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md)). Reasons: the project owner wants to build RLV tools with Claude Code and GitHub and test them quickly; an interpreter for the parts the scripts need is far smaller than a full LSL IDE. Limits: not full LSL, not all RLV behaviours, world effects (teleport, sitting, inventory) shown only as allowed or blocked. Rejected for now: a built-in script editor (the panel has an "Open in editor" button for the user's own editor), using flex or bison (the Windows CI would need new tools). Source: the project owner, 21 November 2026.
+
 ## The move (18 November 2026)
 
 **New repository, new name.** The project continues in this repository under the name PinglyMotion. The old repository will be deleted. Reason: not written down. Source: the project owner, 18 November 2026.
