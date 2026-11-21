@@ -34,7 +34,6 @@ SET (FUZZ_CORE_FILES ${CMAKE_SOURCE_DIR}/src/animation.cpp
                     ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
                     ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
 ADD_LIBRARY (fuzz_core STATIC ${FUZZ_CORE_FILES})
-TARGET_SOURCES (fuzz_core PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_core PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_OPTIONS (fuzz_core PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_LIBRARIES (fuzz_core PUBLIC ${PINGLYMOTION_QT_LIBS})
@@ -129,6 +128,9 @@ SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/control.cpp)
 TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LSL_FILES})
 TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
+# Script Lab Live (issue 292): the folder watch behind lab_watch, used by controlapi.cpp
+TARGET_SOURCES (fuzz_control PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp)
+TARGET_SOURCES (fuzz_controlserver PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp)
 ADD_EXECUTABLE (fuzz_lsl fuzz_lsl.cpp ${FUZZ_LSL_FILES})
 TARGET_INCLUDE_DIRECTORIES (fuzz_lsl PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_lsl PRIVATE ${FUZZ_FLAGS})
