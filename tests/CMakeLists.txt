@@ -105,6 +105,9 @@ ADD_SUBDIRECTORY (animexport)
 ADD_SUBDIRECTORY (animimport)
 ADD_SUBDIRECTORY (aboutdialog)
 
+# the local error log (#239)
+ADD_SUBDIRECTORY (applog)
+
 # ready joint matching for the BVH files of XR Animator (#17)
 ADD_SUBDIRECTORY (retargetxra)
 
