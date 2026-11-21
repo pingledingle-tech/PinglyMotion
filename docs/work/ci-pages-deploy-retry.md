@@ -1,5 +1,5 @@
 Branch: ci/pages-deploy-retry
-Status: active
+Status: done
 Pull request: #283
 Files:
 - .github/workflows/pages.yml
