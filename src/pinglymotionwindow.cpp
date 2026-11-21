@@ -241,6 +241,16 @@ class WindowControlHost : public ControlHost
       return QVector3D(c->xRotation(), c->yRotation(), c->distance());
     }
 
+    void setLoopPoints(int loopIn, int loopOut) override
+    {
+      ControlHost::setLoopPoints(loopIn, loopOut);
+      // the Loop In and Loop Out fields under the timeline show the new
+      // points, as when the user types them (the animation already holds
+      // valid points, so the window keeps them unchanged)
+      w->setLoopOutPoint(loopOut);
+      w->setLoopInPoint(loopIn);
+    }
+
   private:
     // the command already checked that changes may be lost; avoid the question dialog
     void discardChanges()
