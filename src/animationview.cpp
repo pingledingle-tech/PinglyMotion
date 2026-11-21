@@ -54,7 +54,7 @@
 #include "scenestate.h"
 #include "screenshotsheet.h"
 
-AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation* anim)
+AnimationView::AnimationView(QWidget* parent, const char* /* name */)
  : QOpenGLWidget(parent),
    m_cubeMeshModel(nullptr),
    m_sphereMeshModel(nullptr),
@@ -97,7 +97,6 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   JointGroups::setTracks(m_partNames);
 
   modifier=Qt::NoModifier;
-  if(anim) m_scene->setAnimation(anim);
   setMouseTracking(true);
   setFocusPolicy(Qt::StrongFocus);
 }

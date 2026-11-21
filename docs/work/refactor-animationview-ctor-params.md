@@ -1,6 +1,6 @@
 Branch: refactor/animationview-ctor-params
-Status: active
-Pull request: pending
+Status: done
+Pull request: #279
 Files:
 - src/animationview.*
 - docs/CODE_AUDIT.md

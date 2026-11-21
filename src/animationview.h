@@ -62,7 +62,7 @@ class AnimationView : public QOpenGLWidget
     QStringList partNames() const;
     static bool isBentoBone(const QString& name);
     static bool isFaceBone(const QString& name);
-    AnimationView(QWidget* parent=0, const char* name=0, Animation* anim=0);
+    AnimationView(QWidget* parent=0, const char* name=0);
     ~AnimationView();
 
     // The scene (animations, props, camera) belongs to the window; the view only draws it.
