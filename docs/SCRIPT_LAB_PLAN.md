@@ -65,12 +65,12 @@ The original plan:
 
 ### Step 5: Events and several objects (technical + visible)
 
-`listen`, `timer`, `touch_start`, `llDialog`, `attach`. Several objects at once, so a HUD and a restraint can talk on a channel. A simulated clock.
+`listen`, `timer`, `touch_start`, `llDialog`, `attach`. Several objects at once, so a HUD and a restraint can talk on a channel. A simulated clock. Step 3 already runs `listen`, `timer`, `touch_start` and `run_time_permissions` for one script with a simulated clock; this step adds the rest and several objects.
 
 ### Step 6: Live (visible)
 
 - PinglyMotion watches a folder (a cloned repository) and reloads a script when it changes.
-- Control commands `lsl_check` (errors with line and column), `lsl_run` (event log plus final RLV state), `lsl_event`.
+- Control commands `lsl_check` (errors with line and column), `lsl_run` (event log plus final RLV state), `lsl_event`. `lsl_check` and `lsl_run` came early, with step 3 (issue 289, [CONTROL.md](CONTROL.md)); this step adds `lsl_event` and the final RLV state.
 - The panel shows the script read-only with line numbers and error marks, and a button "Open in editor" that opens the file in the user's own editor. No built-in editor for now.
 
 ### Step 7: Effects in the 3D view (visible)

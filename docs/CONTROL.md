@@ -76,7 +76,7 @@ differs. The MCP server does this before every request.
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
-`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`. `screenshot` has options for several views, frames and labels (below).
+`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_run`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
 
@@ -322,6 +322,71 @@ Each picture is captioned (the view, and for frames the frame number and its tim
 (in order, each with `cell`, `row`, `column` and its `view`, `frame` and `seconds`) and, with labels or a
 trail, `legend`. The program window, its camera (also a panned camera) and the current frame stay as
 they were: the 3D view turns its camera for each picture only and puts it back.
+
+### Script Lab: lsl_check and lsl_run
+
+Two commands for testing LSL scripts (Second Life's scripting language) in a sandbox inside PinglyMotion
+(Script Lab, step 3, issue 289; plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md)). They do not need an
+open animation and never change it. The code is in `src/scriptlab/lsl/`: an own recursive descent parser
+and interpreter (QtCore only), not the Second Life compiler. The sandbox is never identical to Second
+Life: test the final script there too.
+
+- `lsl_check {source}` checks the script the way the Second Life compiler does, without running it:
+  `valid`, `errors` and `warnings` (each `{line, column, message}`, both counted from 1) and `states`.
+  Errors are syntax mistakes, undeclared names, wrong types or argument counts, unknown functions,
+  events or states, a missing `return`, `state` in a function, and LSL's own rules (a declaration alone
+  as the body of an `if`, a global that starts with a calculation, a list in a list). Warnings are valid
+  LSL that the sandbox does not run yet: a function that is not supported yet, or an event it never raises.
+- `lsl_run {source, seconds, inputs}` runs the script with a simulated clock: `state_entry` of the default
+  state first, then events until `seconds` (0 to 3600, default 10) have passed. Nothing waits for real
+  time. `inputs` (at most 200) are chat or touches at given times:
+  `[{"at":1,"channel":7,"text":"dance"},{"at":2,"type":"touch"}]`; `name` and `id` default to the owner.
+  A script that does not compile is not run: the answer has `ok: false` and the `errors` of `lsl_check`.
+
+The answer of `lsl_run` has `log` (the event log, plain data), `log_truncated`, `stopped` and
+`stop_reason`, `state` (the state at the end), `time`, `steps`, `open_listens`, `timer` and `warnings`.
+Every log entry has `t` (simulated seconds) and `type`:
+
+| type | What happened | Other fields |
+|---|---|---|
+| `state` | the script entered a state | `name` |
+| `event` | the script handled an event | `name`, `args` (as text) |
+| `owner_say` | `llOwnerSay` | `text` |
+| `say`, `whisper`, `shout`, `region_say` | chat | `channel`, `text` |
+| `instant_message` | `llInstantMessage` | `to`, `text` |
+| `listen`, `listen_remove` | `llListen`, `llListenRemove` | `handle`, `channel`, `name`, `id`, `message` |
+| `timer_set` | `llSetTimerEvent` | `seconds` |
+| `sleep` | `llSleep` (moves the simulated clock) | `seconds` |
+| `permissions` | `llRequestPermissions`; the owner's are granted at once, then `run_time_permissions` follows | `mask`, `granted`, `note` |
+| `animation_start`, `animation_stop` | `llStartAnimation`, `llStopAnimation` (logged only; the 3D view plays them in step 7) | `name` |
+| `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text` |
+| `debug` | what Second Life says on the debug channel without stopping the script (an animation without permission, `llRegionSay` on channel 0) | `channel`, `text` |
+| `event_dropped` | more than 64 events were waiting, as in Second Life | `name`, `message` |
+| `reset` | `llResetScript` | |
+| `error` | a runtime error stopped the script (division by zero, too many listens) | `message`, `line`, `column` |
+| `unsupported` | the script called a function the sandbox does not run yet, and was stopped there | `message`, `line`, `column` |
+| `limit` | a limit stopped the script | `message`, `line`, `column` |
+
+What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
+and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
+the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start` and `run_time_permissions`; 72
+built-in functions (chat, listen, timer, time, owner and object keys, permissions, animations, list,
+string and maths functions). All 426 function names and signatures, 39 events and the constants come
+from the viewer's LSL keyword list (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`),
+so the checker knows every LSL function. LSL quirks are kept: the right side of an operator is evaluated
+first, `&&` and `||` do not short-circuit and have the same precedence, integers wrap around, `(string)`
+of a float has 6 decimals and of a vector 5, and `NULL_KEY` (a string) is true in an `if`.
+
+Limits (the input is untrusted, an AI tool writes it): the script at most 262 144 characters and 100 000
+tokens, nesting at most 100 levels; while running at most 500 000 steps, 64 nested function calls, 10 000
+events, 65 open listens, 64 waiting events, strings of 65 536 characters, lists of 4 096 entries, about
+256 KB for all variables together (Second Life gives a script 64 KB) and 2 seconds of real time; the log
+keeps 2 000 entries, each text at most 1 024 characters. A limit stops the script; the last log entry and
+`stop_reason` say which.
+
+How an AI assistant uses it: write the script, `lsl_check` it, fix the errors at their line and column,
+`lsl_run` it with inputs, read the log (what it said, which listens and animations), fix and run again.
+Examples: `examples/scriptlab/` (also in the Windows zip).
 
 ## Set up an AI assistant
 

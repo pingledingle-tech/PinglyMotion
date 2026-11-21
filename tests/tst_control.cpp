@@ -210,6 +210,7 @@ class ControlTest : public QObject
     void findReferenceRefusesBadOptions();
     void loadReferenceOpensALibraryClip();
     void loadReferenceRefusesChangedAndOutsideFiles();
+    void scriptLabLslCommands();
     void readerParsesTheGivenBytes();
     void downloadedClipsAreMarked();
 
@@ -2834,6 +2835,24 @@ void ControlTest::rlvaModeInputIsValidated()
   // a refused mode changes nothing: still RLVa, restriction still held
   QCOMPARE(m_api->rlv().mode(), Rlv::Mode::Rlva);
   QVERIFY(m_api->rlv().has("interact"));
+}
+
+// Script Lab (issue 289): lsl_check and lsl_run go through the control commands and never touch the animation
+void ControlTest::scriptLabLslCommands()
+{
+  const int frames = m_animation->getNumberOfFrames();
+  QJsonObject answer = run(R"({"command":"lsl_check","source":"default { state_entry() { llOwnerSay(1); } }"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["valid"].toBool(), false);
+  QCOMPARE(answer["errors"].toArray().first().toObject()["column"].toInt(), 38);
+  answer = run(R"({"command":"lsl_run","source":"default { state_entry() { llOwnerSay(\"hi\"); } }","seconds":1})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  bool said = false;
+  for (const QJsonValue& v : answer["log"].toArray())
+    if (v.toObject()["type"] == "owner_say" && v.toObject()["text"] == "hi") said = true;
+  QVERIFY(said);
+  QVERIFY(!run(R"({"command":"lsl_run"})")["ok"].toBool());
+  QCOMPARE(m_animation->getNumberOfFrames(), frames);
 }
 
 QTEST_MAIN(ControlTest)
