@@ -1,0 +1,63 @@
+name: kimodo-lock
+
+# The Kimodo helper's hash lock and pinned model (issue 247). A pull request that changes them gets
+# the checks: the lock is valid (every package pinned with a SHA-256 hash, versions as in
+# kimodo_helper.py), the pinned model revision exists on Hugging Face, and an install with one hash
+# changed fails. Started by hand, it also makes a fresh lock and names the newest model revision,
+# prints both and uploads the lock (the AI sessions' sandboxes cannot reach these hosts).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/kimodo/requirements.in
+      - tools/kimodo/requirements.lock.txt
+      - tools/kimodo/kimodo_lock.py
+      - tools/kimodo/kimodo_helper.py
+      - tools/blender/ci-requirements.txt
+      - .github/workflows/kimodo-lock.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv (pinned with hashes)
+        run: pip install --require-hashes --no-deps -r tools/blender/ci-requirements.txt
+      - name: The lock is valid
+        run: python3 tools/kimodo/kimodo_lock.py validate
+      - name: The pinned model revision exists
+        run: python3 tools/kimodo/kimodo_lock.py model-revision --check
+      - name: A changed hash makes the install fail
+        run: python3 tools/kimodo/kimodo_lock.py tamper-test --uv uv
+
+  compile:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv (pinned with hashes)
+        run: pip install --require-hashes --no-deps -r tools/blender/ci-requirements.txt
+      - name: Make the lock
+        run: python3 tools/kimodo/kimodo_lock.py compile --uv uv --out "$RUNNER_TEMP/requirements.lock.txt"
+      - name: Newest model revision
+        run: python3 tools/kimodo/kimodo_lock.py model-revision
+      - name: Print the lock
+        run: |
+          echo "----- BEGIN requirements.lock.txt -----"
+          cat "$RUNNER_TEMP/requirements.lock.txt"
+          echo "----- END requirements.lock.txt -----"
+          sha256sum "$RUNNER_TEMP/requirements.lock.txt"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kimodo-requirements-lock
+          path: ${{ runner.temp }}/requirements.lock.txt

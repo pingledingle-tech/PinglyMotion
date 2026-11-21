@@ -20,6 +20,7 @@ sys.path.insert(0, KIMODO)
 sys.dont_write_bytecode = True  # no __pycache__ in tools/kimodo
 
 import kimodo_helper as kh  # noqa: E402
+import kimodo_lock as kl  # noqa: E402
 
 
 
@@ -327,14 +328,100 @@ class Scripts(unittest.TestCase):
 
     def test_versions_are_in_the_readme(self):
         readme = read(os.path.join(KIMODO, "README.md"))
-        for text in (kh.MODEL, kh.KIMODO_COMMIT, kh.TORCH_PACKAGE, "NVIDIA Open Model License",
+        for text in (kh.MODEL, kh.KIMODO_COMMIT, kh.TORCH_PACKAGE, kh.MODEL_REVISION, "NVIDIA Open Model License",
                      "Llama 3", "research"):
             self.assertIn(text, readme)
 
     def test_nothing_of_kimodo_is_committed(self):
-        allowed = {"README.md", "PinglyMotion-Kimodo.bat", "kimodo_setup.ps1", "kimodo_helper.py"}
+        allowed = {"README.md", "PinglyMotion-Kimodo.bat", "kimodo_setup.ps1", "kimodo_helper.py",
+                   "kimodo_lock.py", "requirements.in", "requirements.lock.txt"}
         names = {n for n in os.listdir(KIMODO) if n != "__pycache__"}
         self.assertEqual(names, allowed)
+
+
+class HashLock(unittest.TestCase):
+    """Issue 247: the install takes every package from the hash lock, and the model has a pinned revision."""
+
+    def test_the_committed_lock_is_valid(self):
+        self.assertEqual(kl.validate(read(kh.LOCK_FILE)), [])
+
+    def test_the_lock_agrees_with_requirements_in(self):
+        wanted = [l for l in read(kl.INPUT).splitlines() if l.strip() and not l.startswith("#")]
+        self.assertEqual(wanted, [kh.TORCH_PACKAGE, kh.KIMODO_PACKAGE])
+
+    def test_validate_finds_a_missing_hash_and_a_loose_version(self):
+        good = read(kh.LOCK_FILE)
+        no_hash = good + "extra-package==1.0\n"
+        self.assertTrue(any("extra-package has no hash" in p for p in kl.validate(no_hash)))
+        loose = good + "loose>=1.0 --hash=sha256:" + "a" * 64 + "\n"
+        self.assertTrue(any("not pinned" in p for p in kl.validate(loose)))
+        option = "--index-url https://example.invalid/simple\n" + good
+        self.assertTrue(any("options are not allowed" in p for p in kl.validate(option)))
+        wrong_torch = good.replace("torch==2.8.0+cu126", "torch==2.9.0+cu126")
+        self.assertTrue(any("torch is not" in p for p in kl.validate(wrong_torch)))
+        wrong_kimodo = good.replace(kh.KIMODO_COMMIT, "f" * 40)
+        self.assertTrue(any("kimodo is not" in p for p in kl.validate(wrong_kimodo)))
+        md5 = good.replace("--hash=sha256:", "--hash=md5:", 1)
+        self.assertNotEqual(kl.validate(md5), [])
+
+    def test_install_requires_hashes_from_the_lock(self):
+        cmd = kh.install_command("uv")
+        self.assertIn("--require-hashes", cmd)
+        self.assertEqual(cmd[cmd.index("-r") + 1], kh.LOCK_FILE)
+        self.assertEqual(cmd[cmd.index("--extra-index-url") + 1], kh.TORCH_INDEX)
+        # nothing is installed by bare name or version outside the lock
+        self.assertNotIn(kh.TORCH_PACKAGE, cmd)
+        self.assertNotIn(kh.KIMODO_PACKAGE, cmd)
+
+    def test_install_refuses_without_the_lock(self):
+        with Env() as e, tempfile.TemporaryDirectory() as tmp:
+            uv = os.path.join(tmp, "uv")
+            open(uv, "w").close()
+            missing = os.path.join(tmp, "requirements.lock.txt")
+            with mock.patch.dict(os.environ, {"PINGLYMOTION_KIMODO_UV": uv}), mock.patch.object(kh, "LOCK_FILE", missing):
+                lines = []
+                self.assertEqual(kh.run_install(out=lines.append), 3)
+                self.assertIn("requirements.lock.txt", "\n".join(lines))
+
+    def test_a_changed_lock_means_install_again(self):
+        with Env() as e:
+            os.makedirs(e.home, exist_ok=True)
+            with open(os.path.join(e.home, "installed.txt"), "w") as f:
+                f.write("%s\n%s\n%s\n%s\n" % (kh.MODEL, kh.KIMODO_COMMIT, kh.TORCH_PACKAGE, kh.lock_digest()))
+            self.assertTrue(kh.installed())
+            with open(os.path.join(e.home, "installed.txt"), "w") as f:
+                f.write("%s\n%s\n%s\n%s\n" % (kh.MODEL, kh.KIMODO_COMMIT, kh.TORCH_PACKAGE, "0" * 64))
+            self.assertFalse(kh.installed())
+
+    def test_model_revision_is_pinned(self):
+        self.assertRegex(kh.MODEL_REVISION, r"^[0-9a-f]{40}$")
+        self.assertEqual(kh.MODEL_REPO, "nvidia/" + kh.MODEL)
+        with Env() as e:
+            cmd = kh.model_download_command()
+            self.assertIn("revision=sys.argv[2]", cmd[2])
+            self.assertEqual(cmd[3:], [kh.MODEL_REPO, kh.MODEL_REVISION, os.path.join(e.home, "models", kh.MODEL)])
+            # Kimodo loads <CHECKPOINT_DIR>/<model name>: the pinned copy
+            self.assertEqual(kh.kimodo_env(FAKE_TOKEN)["CHECKPOINT_DIR"], os.path.join(e.home, "models"))
+
+    def test_model_is_downloaded_once_per_revision(self):
+        with Env() as e:
+            calls = []
+            def fake_run(cmd, env, token, out):
+                calls.append(cmd)
+                return 0
+            with mock.patch.object(kh, "run_streamed", fake_run):
+                self.assertTrue(kh.ensure_model(FAKE_TOKEN, out=lambda s="": None))
+                self.assertTrue(kh.ensure_model(FAKE_TOKEN, out=lambda s="": None))
+            self.assertEqual(len(calls), 1)
+            self.assertTrue(kh.model_ready())
+            with mock.patch.object(kh, "MODEL_REVISION", "1" * 40):
+                self.assertFalse(kh.model_ready())
+
+    def test_failed_model_download_is_not_marked(self):
+        with Env() as e:
+            with mock.patch.object(kh, "run_streamed", lambda *a, **k: 5):
+                self.assertFalse(kh.ensure_model(FAKE_TOKEN, out=lambda s="": None))
+            self.assertFalse(kh.model_ready())
 
 
 if __name__ == "__main__":

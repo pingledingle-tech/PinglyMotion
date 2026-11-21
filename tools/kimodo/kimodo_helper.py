@@ -28,6 +28,7 @@ See tools/kimodo/README.md for the licences and versions.
 import argparse
 import ctypes
 import getpass
+import hashlib
 import os
 import re
 import shutil
@@ -45,6 +46,13 @@ KIMODO_COMMIT = "e1c219c99b4b94ba48be1fb6a1cbc64ecee4c954"  # nv-tlabs/kimodo, 1
 KIMODO_PACKAGE = "kimodo @ https://github.com/nv-tlabs/kimodo/archive/%s.zip" % KIMODO_COMMIT
 TORCH_PACKAGE = "torch==2.8.0"
 TORCH_INDEX = "https://download.pytorch.org/whl/cu126"  # CUDA 12.6 builds still include RTX 20xx (Turing)
+PYPI_INDEX = "https://pypi.org/simple"
+# every package, Kimodo and PyTorch included, pinned and checked by SHA-256 (issue 247);
+# made by kimodo_lock.py compile in the workflow kimodo-lock.yml
+LOCK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "requirements.lock.txt")
+# the model is downloaded at this exact Hugging Face commit, never "whatever is newest" (issue 247)
+MODEL_REPO = "nvidia/" + MODEL
+MODEL_REVISION = "0e3c89024d896064b6851201373f7834784a386b"
 
 LLAMA_PAGE = "https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct"
 TOKEN_PAGE = "https://huggingface.co/settings/tokens/new?tokenType=read"
@@ -387,9 +395,52 @@ def kimodo_env(token):
         "HF_HUB_DISABLE_TELEMETRY": "1",
         "TEXT_ENCODER_DEVICE": "cpu",  # low-VRAM mode: under 3 GB on the graphics card
         "TEXT_ENCODER_MODE": "local",  # no text encoder server
+        # Kimodo loads the model from <CHECKPOINT_DIR>/<model name>, the copy at the pinned revision
+        "CHECKPOINT_DIR": models_folder(),
         "PYTHONIOENCODING": "utf-8",
     })
     return env
+
+
+def models_folder():
+    return os.path.join(helper_home(), "models")
+
+
+def model_marker():
+    return os.path.join(models_folder(), MODEL, ".pinglymotion-revision")
+
+
+def model_ready():
+    try:
+        with open(model_marker(), encoding="ascii") as f:
+            return f.read().strip() == MODEL_REVISION
+    except OSError:
+        return False
+
+
+def model_download_command():
+    """Downloads the model at the pinned revision into models/<MODEL> (huggingface_hub comes with Kimodo)."""
+    code = ("import sys; from huggingface_hub import snapshot_download; "
+            "snapshot_download(repo_id=sys.argv[1], revision=sys.argv[2], local_dir=sys.argv[3])")
+    return [venv_python(), "-c", code, MODEL_REPO, MODEL_REVISION, os.path.join(models_folder(), MODEL)]
+
+
+def ensure_model(token, out=print):
+    """The Kimodo model at MODEL_REVISION; downloads it once. False if that failed."""
+    if model_ready():
+        return True
+    if not re.match(r"^[0-9a-f]{40}$", MODEL_REVISION):
+        out("This helper has no pinned model version. Get a newer PinglyMotion helper.")
+        return False
+    os.makedirs(models_folder(), exist_ok=True)
+    code = run_streamed(model_download_command(), kimodo_env(token), token, out)
+    if code != 0:
+        out("Downloading the model failed (exit code %d). The lines above say why; try again." % code)
+        return False
+    os.makedirs(os.path.dirname(model_marker()), exist_ok=True)
+    with open(model_marker(), "w", encoding="ascii") as f:
+        f.write(MODEL_REVISION + "\n")
+    return True
 
 
 def generator_command():
@@ -445,6 +496,9 @@ def run_make(prompt, length="4s", name=None, seed=None, constraints=None, out=pr
     target = output_path(folder, text, name)
     out('Making "%s", %g seconds. The first time this downloads the models and can take a long' % (text, seconds))
     out("time; later it takes about a minute. The text is read on the processor, so the computer is busy.")
+    # a test stands in for Kimodo and needs no model
+    if not os.environ.get("PINGLYMOTION_KIMODO_GENERATOR") and not ensure_model(token, out):
+        return 4
     with tempfile.TemporaryDirectory(prefix="kimodo-") as tmp:
         stem = os.path.join(tmp, "motion")
         code = run_streamed(generator_command() + build_generate_args(text, seconds, stem, seed, constraints),
@@ -464,12 +518,10 @@ def run_install(out=print):
     if not uv or not os.path.exists(uv):
         out("Start the setup with PinglyMotion-Kimodo.bat; it brings the installer (uv).")
         return 3
-    py = venv_python()
-    steps = [
-        ("PyTorch for NVIDIA cards (about 3 GB)",
-         [uv, "pip", "install", "--python", py, TORCH_PACKAGE, "--index-url", TORCH_INDEX]),
-        ("Kimodo " + KIMODO_COMMIT[:7], [uv, "pip", "install", "--python", py, KIMODO_PACKAGE]),
-    ]
+    if not os.path.isfile(LOCK_FILE):
+        out("The list of checked packages (requirements.lock.txt) is missing next to this helper. Get the helper again.")
+        return 3
+    steps = [("PyTorch for NVIDIA cards and Kimodo " + KIMODO_COMMIT[:7] + " (about 3 GB)", install_command(uv))]
     env = dict(os.environ)
     for title, cmd in steps:
         out("Installing %s..." % title)
@@ -484,15 +536,29 @@ def run_install(out=print):
         return 4
     out("Installed. The models (about 17 GB) are downloaded the first time you make a motion.")
     with open(os.path.join(helper_home(), "installed.txt"), "w", encoding="ascii") as f:
-        f.write("%s\n%s\n%s\n" % (MODEL, KIMODO_COMMIT, TORCH_PACKAGE))
+        f.write("%s\n%s\n%s\n%s\n" % (MODEL, KIMODO_COMMIT, TORCH_PACKAGE, lock_digest()))
     return 0
+
+
+def install_command(uv):
+    """Installs exactly the packages in the lock; uv refuses any file whose SHA-256 differs."""
+    return [uv, "pip", "install", "--python", venv_python(), "--require-hashes", "-r", LOCK_FILE,
+            "--index-url", PYPI_INDEX, "--extra-index-url", TORCH_INDEX, "--index-strategy", "unsafe-best-match"]
+
+
+def lock_digest():
+    try:
+        with open(LOCK_FILE, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()
+    except OSError:
+        return "none"
 
 
 def installed():
     try:
         with open(os.path.join(helper_home(), "installed.txt"), encoding="ascii") as f:
             lines = f.read().split()
-        return lines[:3] == [MODEL, KIMODO_COMMIT, TORCH_PACKAGE]
+        return lines[:4] == [MODEL, KIMODO_COMMIT, TORCH_PACKAGE, lock_digest()]
     except OSError:
         return False
 

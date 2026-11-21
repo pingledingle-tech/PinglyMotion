@@ -1,0 +1,6 @@
+# Inputs for the Kimodo helper's hash lock (issue 247). Do not install from this file:
+# tools/kimodo/kimodo_lock.py compile turns it into requirements.lock.txt (every package pinned to an
+# exact version and checked by SHA-256), for 64-bit Windows and Python 3.11. Keep the versions equal to
+# TORCH_PACKAGE and KIMODO_COMMIT in kimodo_helper.py (the tests check this).
+torch==2.8.0
+kimodo @ https://github.com/nv-tlabs/kimodo/archive/e1c219c99b4b94ba48be1fb6a1cbc64ecee4c954.zip
