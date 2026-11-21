@@ -1,7 +1,7 @@
 # PinglyMotion fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGLYMOTION_FUZZ=ON
 #   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping \
-#     fuzz_openfile fuzz_retargetbvh fuzz_controlserver
+#     fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_rlv
 # See fuzz/README.md for how to run them.
 
 SET (FUZZ_FLAGS -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g)
@@ -27,6 +27,9 @@ SET (FUZZ_CORE_FILES ${CMAKE_SOURCE_DIR}/src/animation.cpp
                     ${CMAKE_SOURCE_DIR}/src/pmmesh.cpp
                     ${CMAKE_SOURCE_DIR}/src/jointgroups.cpp
                     ${CMAKE_SOURCE_DIR}/src/propfile.cpp
+                    ${CMAKE_SOURCE_DIR}/src/scriptlab/rlvbehaviours.cpp
+                    ${CMAKE_SOURCE_DIR}/src/scriptlab/rlvcommand.cpp
+                    ${CMAKE_SOURCE_DIR}/src/scriptlab/rlvstate.cpp
                     ${CMAKE_SOURCE_DIR}/src/settings.cpp
                     ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
                     ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
@@ -109,3 +112,10 @@ TARGET_INCLUDE_DIRECTORIES (fuzz_controlserver PRIVATE ${CMAKE_SOURCE_DIR}/src $
 TARGET_COMPILE_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_controlserver fuzz_core ${PINGLYMOTION_QT_LIBS})
+
+# the RLV command parser and restriction state of the Script Lab (issue 287); reads from memory
+ADD_EXECUTABLE (fuzz_rlv fuzz_rlv.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_rlv PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_rlv PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_rlv PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_rlv fuzz_core Qt6::Core)

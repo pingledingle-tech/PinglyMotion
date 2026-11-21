@@ -420,6 +420,40 @@
             "required": [
                 "id"
             ]
+        },
+        {
+            "description": "Script Lab (RLV sandbox): runs one RLV line as if the object had sent it with llOwnerSay, for example \"@detach=n,sendim=n\", \"@clear\", \"@clear=send\", \"@version=2222\" or \"@getstatus=2222\". object: an id for the sending object (1 to 64 letters, digits, '-', '_', '.' or spaces, e.g. a UUID or \"collar\"); text: starts with @, at most 1024 characters and 64 commands. Each command is <behaviour>[:<option>]=<n|add|y|rem|force|channel>. The answer has one result per command (success, unset, duplicate, failed with a reason, or retained for force commands, which are not carried out), the replies a script would hear (channel and text), and the number of restrictions now held. Nothing in the animation changes. Read the whole state with rlv_state.",
+            "name": "rlv_command",
+            "parameters": {
+                "object": {
+                    "description": "Id of the sending object, e.g. collar",
+                    "type": "string"
+                },
+                "text": {
+                    "description": "The owner-say line, starting with @",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "object",
+                "text"
+            ]
+        },
+        {
+            "description": "Script Lab (RLV sandbox): shows the RLV state: the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, and the behaviours the sandbox knows. A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.",
+            "name": "rlv_state",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed.",
+            "name": "rlv_reset",
+            "parameters": {
+            },
+            "required": [
+            ]
         }
     ],
     "ok": true

@@ -167,6 +167,11 @@ def main():
         tools = mcp.send("tools/list")["result"]["tools"]
         assert [tool["name"] for tool in tools] == bundled, tools
         assert all(tool["inputSchema"]["type"] == "object" for tool in tools)
+        # the Script Lab commands (issue 287) are offered as tools with their required inputs
+        by_name = {tool["name"]: tool for tool in tools}
+        for name in ("rlv_command", "rlv_state", "rlv_reset"):
+            assert name in by_name, name
+        assert by_name["rlv_command"]["inputSchema"].get("required") == ["object", "text"], by_name["rlv_command"]
 
         # the guide comes from a file next to the server, also when PinglyMotion is not running
         result = mcp.tool("read_guide")

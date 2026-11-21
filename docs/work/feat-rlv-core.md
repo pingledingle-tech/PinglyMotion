@@ -12,6 +12,8 @@ Files:
 - tests/test_mcp_node.py
 - tools/mcp/commands.json
 - fuzz/fuzz_rlv.cpp
+- fuzz/control.dict
+- fuzz/corpus/control/**
 - fuzz/rlv.dict
 - fuzz/corpus/rlv/**
 - fuzz/CMakeLists.txt

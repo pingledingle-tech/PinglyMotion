@@ -230,6 +230,10 @@ class ControlTest : public QObject
     void connectionFileFailureKeepsTheOldFile();
     void serverReportsClientAndCommand();
     void indicatorShowsTheState();
+    void rlvAcceptanceCheck();
+    void rlvAnswersEveryCommand();
+    void rlvInputIsValidated();
+    void rlvWorksWithoutAnAnimation();
 
   private:
     QJsonObject run(const char* text) { return m_api->execute(json(text)); }
@@ -2665,6 +2669,107 @@ void ControlTest::downloadedClipsAreMarked()
   QTemporaryDir empty;
   m_api->setReferenceFolder(empty.path());
   QCOMPARE(hitIds(run(R"({"command":"find_reference"})")), (QStringList{"t-sit"}));
+}
+
+// Script Lab, step 1 (issue 287): the acceptance check of the issue
+void ControlTest::rlvAcceptanceCheck()
+{
+  QJsonObject answer = run(R"({"command":"rlv_command","object":"collar","text":"@detach=n,sendim=n"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["restrictions"].toInt(), 2);
+
+  answer = run(R"({"command":"rlv_state"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["restrictions"].toArray().size(), 2);
+  QCOMPARE(answer["objects"].toObject()["collar"].toArray(), (QJsonArray{"detach", "sendim"}));
+  QCOMPARE(answer["blocked"].toArray(), (QJsonArray{"detach", "sendim"}));
+  QCOMPARE(answer["rlv_version"].toString(), QString("3.4.3"));
+  bool sawSendIm = false;
+  for (const QJsonValue& value : answer["actions"].toArray())
+  {
+    const QJsonObject action = value.toObject();
+    if (action["id"].toString() == "sendim")
+    {
+      sawSendIm = true;
+      QCOMPARE(action["allowed"].toBool(), false);
+      QVERIFY(!action["label"].toString().isEmpty());
+    }
+    if (action["id"].toString() == "fly") QCOMPARE(action["allowed"].toBool(), true);
+  }
+  QVERIFY(sawSendIm);
+
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@clear"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["restrictions"].toInt(), 0);
+  QCOMPARE(run(R"({"command":"rlv_state"})")["restrictions"].toArray().size(), 0);
+
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@version=2222,getstatus=3333"})");
+  const QJsonArray replies = answer["replies"].toArray();
+  QCOMPARE(replies.size(), 2);
+  QCOMPARE(replies[0].toObject()["channel"].toInt(), 2222);
+  QVERIFY(replies[0].toObject()["text"].toString().startsWith("RestrainedLife viewer v3.4.3"));
+  QCOMPARE(replies[1].toObject()["channel"].toInt(), 3333);
+  QCOMPARE(replies[1].toObject()["text"].toString(), QString());
+}
+
+void ControlTest::rlvAnswersEveryCommand()
+{
+  QJsonObject answer = run(R"({"command":"rlv_command","object":"hud","text":"@fly=n,fly=n,dance=n,unsit=force,tplm=y,sendim:abc=n"})");
+  QVERIFY(answer["ok"].toBool());
+  const QJsonArray results = answer["results"].toArray();
+  QCOMPARE(results.size(), 6);
+  const QStringList expected = {"success", "duplicate", "failed", "retained", "unset", "success"};
+  for (int i = 0; i < expected.size(); i++)
+    QCOMPARE(results[i].toObject()["result"].toString(), expected[i]);
+  QVERIFY(results[2].toObject()["reason"].toString().contains("unknown behaviour"));
+  QCOMPARE(results[5].toObject()["option"].toString(), QString("abc"));
+  QCOMPARE(results[5].toObject()["type"].toString(), QString("add"));
+
+  run(R"({"command":"rlv_command","object":"collar","text":"@fly=n"})");
+  answer = run(R"({"command":"rlv_state"})");
+  QCOMPARE(answer["counts"].toObject()["fly"].toInt(), 2);
+
+  answer = run(R"({"command":"rlv_reset"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["removed"].toInt(), 3);
+  QCOMPARE(run(R"({"command":"rlv_state"})")["objects"].toObject().size(), 0);
+}
+
+void ControlTest::rlvInputIsValidated()
+{
+  const char* bad[] =
+  {
+    R"({"command":"rlv_command"})",
+    R"({"command":"rlv_command","object":"collar"})",
+    R"({"command":"rlv_command","text":"@fly=n"})",
+    R"({"command":"rlv_command","object":7,"text":"@fly=n"})",
+    R"({"command":"rlv_command","object":"collar","text":["@fly=n"]})",
+    R"({"command":"rlv_command","object":"","text":"@fly=n"})",
+    R"({"command":"rlv_command","object":"../x","text":"@fly=n"})",
+    R"({"command":"rlv_command","object":"collar","text":"fly=n"})",
+    R"({"command":"rlv_command","object":"collar","text":"@"})",
+  };
+  for (const char* request : bad)
+  {
+    const QJsonObject answer = run(request);
+    QVERIFY2(!answer["ok"].toBool(), request);
+    QVERIFY(!answer["error"].toString().isEmpty());
+  }
+  const QString longText = "@" + QString(2000, 'a');
+  QJsonObject request{{"command", "rlv_command"}, {"object", "collar"}, {"text", longText}};
+  QVERIFY(!m_api->execute(request)["ok"].toBool());
+  QVERIFY(m_api->rlv().restrictions().isEmpty());
+}
+
+void ControlTest::rlvWorksWithoutAnAnimation()
+{
+  FakeHost host(nullptr);
+  ControlApi api(&host);
+  QJsonObject answer = api.execute(QJsonObject{{"command", "rlv_command"}, {"object", "collar"}, {"text", "@detach=n"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QVERIFY(api.execute(QJsonObject{{"command", "rlv_state"}})["ok"].toBool());
+  QVERIFY(api.execute(QJsonObject{{"command", "rlv_reset"}})["ok"].toBool());
+  QVERIFY(!api.execute(QJsonObject{{"command", "state"}})["ok"].toBool());
 }
 
 QTEST_MAIN(ControlTest)
