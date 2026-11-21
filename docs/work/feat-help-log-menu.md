@@ -1,6 +1,6 @@
 Branch: feat/help-log-menu
 Status: active
-Pull request: pending
+Pull request: #267
 Files:
 - src/pinglymotionwindow.*
 - src/applog.*
