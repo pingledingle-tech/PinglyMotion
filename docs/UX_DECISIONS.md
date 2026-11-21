@@ -15,6 +15,7 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - Loop on/off switch, on by default.
 - Step 1 (built, waiting for the owner's test): Start, Stop and Replay from start buttons and a Loop check box under the timeline (`src/transportbar.*`). Start can be clicked only while stopped, Stop only while playing, Replay from start always. The Loop check box and Options > Loop are the same setting, remembered between sessions. Frame step buttons follow in step 2.
 - Speed control: not now. Add it later if it is missed.
+- Look (built, waiting for the owner's test): Start is a green button with a white triangle, Stop a red button with a white square, Replay from start has a round arrow. All transport buttons are rounded and follow the light and dark theme; a button that cannot be clicked is shown pale. The icons are drawn by the program (`src/transportlook.*`), so they need no picture files. Texts, order and behaviour are unchanged.
 
 ## 2. Easing tiles
 

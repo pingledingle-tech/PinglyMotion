@@ -14,6 +14,7 @@
 #include <QPushButton>
 
 #include "playback.h"
+#include "transportlook.h"
 
 TransportBar::TransportBar(QWidget* parent) : QWidget(parent)
 {
@@ -36,6 +37,8 @@ TransportBar::TransportBar(QWidget* parent) : QWidget(parent)
   m_loop->setObjectName("transportLoopCheckBox");
   m_loop->setToolTip(tr("Play the animation again and again between the loop points"));
   m_loop->setChecked(true);
+  // green Start, red Stop, a round arrow on Replay (transportlook.h)
+  TransportLook::apply(this,m_start,m_stop,m_replay);
 
   layout->addWidget(m_start);
   layout->addWidget(m_stop);
