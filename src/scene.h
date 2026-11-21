@@ -67,7 +67,7 @@ class Scene : public QObject
 
     void drawFloor();
 
-    // TODO Temporary methods while logic is moved around
+    // the camera and the props of the scene
     Camera* camera();
     PropManager* propManager();
 

@@ -268,7 +268,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   frameDataValid=false;
   currentPart=0;
   longestRunningTime=0.0;
-  scene = ui->animationView->initializeScene(this);
+  scene = new Scene(AnimationView::firstObjectId(), this);
+  ui->animationView->setScene(scene);
   m_pinglyMotion->setScene(scene);
   ui->animationView->setMeshModels(cubeMesh, sphereMesh, coneMesh);
 

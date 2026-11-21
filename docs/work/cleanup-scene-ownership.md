@@ -1,5 +1,5 @@
 Branch: cleanup/scene-ownership
-Status: active
+Status: done
 Pull request: #242
 Files:
 - src/animationview.*

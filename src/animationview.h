@@ -65,10 +65,12 @@ class AnimationView : public QOpenGLWidget
     AnimationView(QWidget* parent=0, const char* name=0, Animation* anim=0);
     ~AnimationView();
 
-    // TODO Temporary method while logic is moving around
-    Scene* initializeScene(QObject* parent);
+    // The scene (animations, props, camera) belongs to the window; the view only draws it.
+    // The first id the scene may give to objects: the view uses the ids below it for its own parts.
+    static int firstObjectId();
+    void setScene(Scene* scene);
 
-    // exports the BVH class handler (ugly, need to find a better way)
+    // the BVH reader and writer that the window uses to make animations for this view
     BVH* getBVH() const;
 
     void selectPart(BVHNode* node);
@@ -80,7 +82,7 @@ class AnimationView : public QOpenGLWidget
     QImage renderImage(int imageWidth, int imageHeight);
     Camera* camera() const;
 
-    // TODO Temporary method to set mesh models for removing GLUT
+    // the shapes the view draws for its handles (cube, sphere and cone)
     void setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<Mesh> sphereMesh, QSharedPointer<Mesh> coneMesh);
 
   signals:
@@ -273,13 +275,13 @@ class AnimationView : public QOpenGLWidget
       RotateRingZ = 300002
     };
 
-    // TODO Temporary methods while logic is moved around
+    // the props of the scene
     PropManager* propManager() const;
 
-    // TODO Temporary pointer to scene while logic is being moved around
-    Scene* m_scene;
+    // the scene that is drawn; owned by the window
+    Scene* m_scene=nullptr;
 
-    // TODO Temporary mesh models to remove GLUT
+    // the handle shapes
     QScopedPointer<MeshModel> m_cubeMeshModel;
     QScopedPointer<MeshModel> m_sphereMeshModel;
     QScopedPointer<MeshModel> m_coneMeshModel;
