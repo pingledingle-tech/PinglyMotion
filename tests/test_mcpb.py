@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -77,6 +78,62 @@ def main():
         assert replies[0]["id"] == 1 and "serverInfo" in replies[0]["result"], replies
         names = [tool["name"] for tool in replies[1]["result"]["tools"]]
         assert "state" in names and "screenshot" in names and "read_guide" in names, names
+        # Claude Desktop may load the server through its own launcher, so the file is not the main
+        # module (`require.main !== module`) and the launcher may pass extra arguments. In every way it
+        # can be started it must answer initialize (id 0, a newer protocol version than we know) and
+        # tools/list within a few seconds.
+        launcher = os.path.join(tmp, "launcher.js")
+        with open(launcher, "w", encoding="utf-8") as handle:
+            handle.write("require(%s);\n" % json.dumps(entry))
+        requests = "\n".join(json.dumps(m) for m in (
+            {"jsonrpc": "2.0", "id": 0, "method": "initialize",
+             "params": {"protocolVersion": "2099-01-01", "capabilities": {},
+                        "clientInfo": {"name": "claude-ai", "version": "0.1.0"}}},
+            {"jsonrpc": "2.0", "method": "notifications/initialized"},
+            {"jsonrpc": "2.0", "id": 1, "method": "tools/list"})) + "\n"
+        launches = {
+            "direct": [node, entry],
+            "launcher that requires the file": [node, launcher],
+            "launcher with the file as an extra argument": [node, launcher, entry],
+            "node -e require()": [node, "-e", "require(%s)" % json.dumps(entry)],
+        }
+        for how, command in launches.items():
+            process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
+            try:
+                # stdin stays open, as in Claude Desktop: the answers must come without end of input
+                process.stdin.write(requests)
+                process.stdin.flush()
+                lines = []
+                reader = threading.Thread(target=lambda: lines.extend(
+                    [process.stdout.readline(), process.stdout.readline()]), daemon=True)
+                reader.start()
+                reader.join(10)
+                assert not reader.is_alive(), "%s: no answer to initialize within 10 seconds" % how
+            finally:
+                process.kill()
+                process.communicate()
+            assert all(line.strip() for line in lines), "%s: the server never answered initialize: %r" % (how, lines)
+            replies = [json.loads(line) for line in lines]
+            first = replies[0]
+            assert first["jsonrpc"] == "2.0" and first["id"] == 0, (how, first)
+            assert first["result"]["serverInfo"]["name"] == "pinglymotion", (how, first)
+            assert first["result"]["protocolVersion"] == "2025-06-18", (how, first)
+            assert replies[1]["id"] == 1 and "state" in [t["name"] for t in replies[1]["result"]["tools"]], (how, replies[1])
+        # a test that loads the file as a library does not start a second server: with stdin kept
+        # open, a started server would keep running, so the process must end on its own
+        process = subprocess.Popen(
+            [node, "-e", "const m = require(%s); console.log(typeof m.commandList)" % json.dumps(entry)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            env=dict(env, PINGLYMOTION_MCP_LIBRARY="1"))
+        try:
+            process.wait(10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise AssertionError("loading the server as a library started it")
+        finally:
+            process.stdin.close()
+        assert process.returncode == 0 and process.stdout.read().strip() == "function", process.stderr.read()
         # the guide ships in the bundle, next to the server, and the tool reads it from there
         with open(os.path.join(build_mcpb.ROOT, "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
             guide = handle.read()
