@@ -24,6 +24,7 @@
 #include "animimport.h"
 #include "bvh.h"
 #include "bvhnode.h"
+#include "constants.h"
 #include "camera.h"
 #include "controlapi.h"
 #include "controlindicator.h"
@@ -79,7 +80,9 @@ class FakeHost : public ControlHost
       return image;
     }
     bool newAnimation(QString&) override { return true; }
-    bool openFile(const QString& path, QString&) override { opened = path; m_file = path; return true; }
+    bool openFile(const QString& path, QString&) override { opened = path; openedData.clear(); m_file = path; return true; }
+    bool openFileData(const QString& path, const QByteArray& data, QString&) override { opened = path; openedData = data; m_file = path; return true; }
+    QByteArray openedData;
     bool saveFile(const QString& path, QString& error) override
     {
       existedAtSave = QFileInfo::exists(path);
@@ -207,6 +210,7 @@ class ControlTest : public QObject
     void findReferenceRefusesBadOptions();
     void loadReferenceOpensALibraryClip();
     void loadReferenceRefusesChangedAndOutsideFiles();
+    void readerParsesTheGivenBytes();
     void downloadedClipsAreMarked();
 
     void serverAnswersWithKey();
@@ -2539,6 +2543,8 @@ void ControlTest::loadReferenceRefusesChangedAndOutsideFiles()
   QJsonObject answer = run(R"({"command":"load_reference","id":"t-good"})");
   QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
   QCOMPARE(m_host->opened, QFileInfo(library + "/a/good.bvh").canonicalFilePath());
+  // the program gets exactly the bytes that were checked against the index, not the path to read again
+  QCOMPARE(m_host->openedData, content);
   QCOMPARE(answer["reference"].toObject()["credit"].toString(), QString("Test credit."));
 
   for (const char* id : {"t-changed", "t-size", "t-nosha", "t-parent", "t-absolute", "t-link", "t-backslash", "t-dot", "t-text", "t-gone", "t-other-skeleton"})
@@ -2560,6 +2566,35 @@ void ControlTest::loadReferenceRefusesChangedAndOutsideFiles()
 #endif
   answer = run(R"({"command":"load_reference","id":"t-gone"})");
   QCOMPARE(answer["error"].toString(), QString("The clip's file is missing from the library folder."));
+}
+
+// BVH::checkFile and animRead with bytes parse those bytes, never the file of that name
+// (load_reference opens a clip from the bytes it checked, issue 248)
+void ControlTest::readerParsesTheGivenBytes()
+{
+  QFile female(Constants::femaleBvhPath());
+  QVERIFY(female.open(QIODevice::ReadOnly));
+  const QByteArray good = female.readAll();
+  QVERIFY(!good.isEmpty());
+
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString path = dir.filePath("clip.bvh");
+  QFile broken(path);
+  QVERIFY(broken.open(QIODevice::WriteOnly));
+  broken.write("not an animation\n");
+  broken.close();
+
+  QString error;
+  QVERIFY(!BVH::checkFile(path, &error));
+  QVERIFY(!error.isEmpty());
+  error.clear();
+  QVERIFY2(BVH::checkFile(path, &error, &good), qPrintable(error));
+  // a missing file opens from its bytes too
+  QVERIFY2(BVH::checkFile(dir.filePath("missing.bvh"), &error, &good), qPrintable(error));
+  // and good bytes on disk do not rescue broken given bytes
+  const QByteArray bad = "not an animation\n";
+  QVERIFY(!BVH::checkFile(Constants::femaleBvhPath(), &error, &bad));
 }
 
 void ControlTest::downloadedClipsAreMarked()

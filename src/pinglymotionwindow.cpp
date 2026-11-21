@@ -150,11 +150,22 @@ class WindowControlHost : public ControlHost
 
     bool openFile(const QString& path, QString& error) override
     {
+      return open(path, nullptr, error);
+    }
+
+    bool openFileData(const QString& path, const QByteArray& data, QString& error) override
+    {
+      return open(path, &data, error);
+    }
+
+    bool open(const QString& path, const QByteArray* data, QString& error)
+    {
       discardChanges();
       // no modal message box while remote control opens a file: it would block the
       // answer (and a headless run) until someone clicks it; the reason goes back in 'error'
       const QScopedValueRollback<bool> quiet(w->m_quietDialogs, true);
-      w->fileOpen(path);
+      if (data) w->fileOpenData(path, *data);
+      else w->fileOpen(path);
       if (!animation() || (w->currentFile != path && w->m_avmOrigin.value(w->currentFile) != path))
       {
         error = "The file could not be opened.";

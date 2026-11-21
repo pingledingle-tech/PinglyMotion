@@ -134,7 +134,9 @@ starting poses and motions on the Second Life skeleton. Start from one instead o
   are unsaved changes, and nothing changes on any error). It never takes a path: it opens only the file the
   index names, inside the library folder (or the download folder), refuses `..`, absolute paths, backslashes,
   links that leave the folder and any file ending other than `.bvh` or `.dingle`, and first checks the file's size
-  and SHA-256 against the index. The answer is the `state` plus `reference` with the clip's `licence` and
+  and SHA-256 against the index. It reads the file once and opens the clip from those same bytes, so the file
+  cannot change between the check and the open. The index lies in the same folder as the clips, so the check
+  finds damage, not tampering: the library is trusted like any file the user opens. The answer is the `state` plus `reference` with the clip's `licence` and
   `credit`. The library is read-only; `save_file` with a new name keeps the edited animation.
 - Clips downloaded with `tools/fetch_reference.py` (its `downloaded_index.json`) are listed too, with
   `downloaded: true`. They open only when their `skeleton` is `sl-classic`: the raw CMU, Mesh2Motion and Quaternius

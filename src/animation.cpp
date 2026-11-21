@@ -36,7 +36,7 @@
 
 #include "animation.h"
 
-Animation::Animation(BVH* newBVH, const QString& bvhFile)
+Animation::Animation(BVH* newBVH, const QString& bvhFile, const QByteArray* data)
   : frame(0),
     totalFrames(0),
     mirrored(false)
@@ -60,7 +60,7 @@ Animation::Animation(BVH* newBVH, const QString& bvhFile)
   else
     fileName=Constants::defaultPosePath();
 
-  loadBVH(fileName);
+  loadBVH(fileName,bvhFile.isEmpty() ? nullptr : data);
   calcPartMirrors();
   setNumberOfFrames(bvh->lastLoadedNumberOfFrames);
   setAvatarScale(bvh->lastLoadedAvatarScale);
@@ -91,7 +91,7 @@ Animation::~Animation()
   if(positionNode) delete positionNode;
 }
 
-void Animation::loadBVH(const QString& bvhFile)
+void Animation::loadBVH(const QString& bvhFile,const QByteArray* data)
 {
 
   // read the Bento reference skeleton first, as reading a file resets the
@@ -105,7 +105,7 @@ void Animation::loadBVH(const QString& bvhFile)
     qWarning("Animation::loadBVH(): reference skeleton %s: %s",Constants::femaleBvhPath().toLatin1().constData(),
              bvh->lastError.toLatin1().constData());
 
-  BVHNode* loaded=bvh->animRead(bvhFile ,Constants::limitsFilePath());
+  BVHNode* loaded=bvh->animRead(bvhFile,Constants::limitsFilePath(),data);
   if(!bvh->lastLimitsProblem.title.isEmpty()) m_loadProblems << bvh->lastLimitsProblem;
   // files the user opens are checked before (BVH::checkFile); this is for the program's own data files
   if(!loaded)

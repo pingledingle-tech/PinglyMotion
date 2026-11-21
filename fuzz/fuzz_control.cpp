@@ -50,6 +50,7 @@ class FuzzHost : public ControlHost
     }
     bool newAnimation(QString&) override { return true; }
     bool openFile(const QString&, QString&) override { return true; }
+    bool openFileData(const QString&, const QByteArray&, QString&) override { return true; }
     bool saveFile(const QString&, QString&) override { return true; }
     void setPlaying(bool on) override { m_playing = on; }
     bool playing() override { return m_playing; }

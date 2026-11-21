@@ -1,5 +1,5 @@
 Branch: fix/load-reference-same-bytes
-Status: active
+Status: done
 Pull request: #268
 Files:
 - src/controlapi.*
@@ -11,6 +11,7 @@ Files:
 - fuzz/fuzz_control.cpp
 - fuzz/fuzz_controlserver.cpp
 - docs/REFERENCE_LIBRARY_SCHEMA.md
+- docs/CONTROL.md
 
 ## What
 

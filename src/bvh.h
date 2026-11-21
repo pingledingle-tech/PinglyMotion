@@ -73,8 +73,10 @@ class BVH
 
     // opens a .bvh or .avm file with the new parser (src/animfile.*), or a
     // .dingle file with its reader (src/dingle.*); returns NULL with the
-    // reason in lastError when the file cannot be opened
-    BVHNode* animRead(const QString& file,const QString& limFile);
+    // reason in lastError when the file cannot be opened. With data, those bytes
+    // are parsed instead of reading the file (file still gives the name and type),
+    // so a caller that has checked the bytes parses exactly what it checked.
+    BVHNode* animRead(const QString& file,const QString& limFile,const QByteArray* data=nullptr);
 
     bool dingleWrite(Animation* root,const QString& file,QString& error);
     bool animWrite(Animation* root,const QString& file,QString& error);
@@ -88,7 +90,8 @@ class BVH
 
     // reads the whole file and returns false, with the reason in error, if it
     // is not an animation PinglyMotion can open; nothing is kept
-    static bool checkFile(const QString& file,QString* error);
+    // (with data: checks those bytes instead of reading the file, see animRead())
+    static bool checkFile(const QString& file,QString* error,const QByteArray* data=nullptr);
 
     // why the last animRead() returned NULL
     QString lastError;

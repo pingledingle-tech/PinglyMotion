@@ -1466,18 +1466,23 @@ QJsonObject ControlApi::loadReference(const QJsonObject& request)
   const QString file = clipFilePath(*found, error);
   if (file.isEmpty()) return fail(error);
 
-  // the file must be what the index says (size and SHA-256), so a swapped file is never opened
-  QFile data(file);
-  if (data.size() > REFERENCE_MAX_CLIP_BYTES || !data.open(QIODevice::ReadOnly)) return fail("The clip's file could not be read.");
-  QCryptographicHash hash(QCryptographicHash::Sha256);
-  if (!hash.addData(&data)) return fail("The clip's file could not be read.");
-  if (found->sha256.isEmpty() || QString::fromLatin1(hash.result().toHex()) != found->sha256 ||
+  // the file must be what the index says (size and SHA-256), so a swapped file is never opened.
+  // The bytes are read once and the same bytes are parsed, so the file cannot change between the
+  // check and the open. The index sits in the same user-writable folder, so this catches damage,
+  // not tampering: the library is trusted like any file the user opens.
+  QFile input(file);
+  if (input.size() > REFERENCE_MAX_CLIP_BYTES || !input.open(QIODevice::ReadOnly)) return fail("The clip's file could not be read.");
+  const QByteArray data = input.read(REFERENCE_MAX_CLIP_BYTES + 1);
+  const bool readOk = input.error() == QFileDevice::NoError;
+  input.close();
+  if (!readOk || data.size() > REFERENCE_MAX_CLIP_BYTES) return fail("The clip's file could not be read.");
+  const QByteArray sha256 = QCryptographicHash::hash(data, QCryptographicHash::Sha256).toHex();
+  if (found->sha256.isEmpty() || QString::fromLatin1(sha256) != found->sha256 ||
       (found->bytes >= 0 && data.size() != found->bytes))
     return fail("The clip's file does not match the library index (changed or damaged), so it was not opened.");
-  data.close();
 
   if (m_host->unsavedChanges()) return fail("There are unsaved changes. Save with save_file first, or ask the user to save or close them in PinglyMotion.");
-  if (!m_host->openFile(file, error)) return fail(error);
+  if (!m_host->openFileData(file, data, error)) return fail(error);
 
   QJsonObject answer = state(QJsonObject());
   answer["reference"] = QJsonObject{{"id", found->id}, {"name", clip(found->name, 80)}, {"licence", clip(found->licence, 200)}, {"credit", clip(found->credit, 400)}};

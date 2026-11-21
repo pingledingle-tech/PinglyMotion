@@ -427,7 +427,7 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim,bool storedPositions)
 
 // opens a file with the parser in src/animfile.* (issue #62), or a .dingle
 // file with the reader in src/dingle.* (issue #26)
-BVHNode* BVH::animRead(const QString& file,const QString& limFile)
+BVHNode* BVH::animRead(const QString& file,const QString& limFile,const QByteArray* given)
 {
   startRead();
 
@@ -440,24 +440,30 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
   }
   const qsizetype maxBytes=dingle ? Dingle::MAX_FILE_BYTES : AnimFile::MAX_FILE_BYTES;
 
-  QFile animationFile(file);
-  if(!animationFile.open(QIODevice::ReadOnly))
+  QByteArray data;
+  if(given)
+    data=*given;
+  else
   {
-    failed(QObject::tr("The file could not be opened: %1").arg(animationFile.errorString()));
-    return NULL;
+    QFile animationFile(file);
+    if(!animationFile.open(QIODevice::ReadOnly))
+    {
+      failed(QObject::tr("The file could not be opened: %1").arg(animationFile.errorString()));
+      return NULL;
+    }
+    if(animationFile.size()>maxBytes)
+    {
+      failed(QObject::tr("The file is larger than %1 MB.").arg(maxBytes/(1024*1024)));
+      return NULL;
+    }
+    data=animationFile.read(maxBytes+1);
+    if(animationFile.error()!=QFileDevice::NoError)
+    {
+      failed(QObject::tr("The file could not be read: %1").arg(animationFile.errorString()));
+      return NULL;
+    }
+    animationFile.close();
   }
-  if(animationFile.size()>maxBytes)
-  {
-    failed(QObject::tr("The file is larger than %1 MB.").arg(maxBytes/(1024*1024)));
-    return NULL;
-  }
-  const QByteArray data=animationFile.read(maxBytes+1);
-  if(animationFile.error()!=QFileDevice::NoError)
-  {
-    failed(QObject::tr("The file could not be read: %1").arg(animationFile.errorString()));
-    return NULL;
-  }
-  animationFile.close();
   if(data.size()>maxBytes)
   {
     failed(QObject::tr("The file is larger than %1 MB.").arg(maxBytes/(1024*1024)));
@@ -510,10 +516,10 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile)
   return finishRead(buildTree(anim,dingle),limFile);
 }
 
-bool BVH::checkFile(const QString& file,QString* error)
+bool BVH::checkFile(const QString& file,QString* error,const QByteArray* data)
 {
   BVH test;
-  BVHNode* root=test.animRead(file,QString());
+  BVHNode* root=test.animRead(file,QString(),data);
   delete test.lastLoadedPositionNode;
   if(!root)
   {
