@@ -1,6 +1,6 @@
 Branch: fix/combined-own-prs-only
-Status: active
-Pull request: pending
+Status: done
+Pull request: #257
 Files:
 - tools/update_combined.sh
 - tests/test_update_combined.py
