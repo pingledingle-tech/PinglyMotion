@@ -148,7 +148,7 @@ ADD_TEST (NAME timeline WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingly
 SET_TESTS_PROPERTIES (timeline PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the timeline panel scrolls to the row of the selected joint
-ADD_EXECUTABLE (pinglymotion_timelineview_tests tst_timelineview.cpp)
+ADD_EXECUTABLE (pinglymotion_timelineview_tests tst_timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timeline.cpp ${CMAKE_SOURCE_DIR}/src/easingtiles.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_timelineview_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_timelineview_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME timelineview WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timelineview_tests)
