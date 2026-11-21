@@ -310,15 +310,16 @@ async function handle(message) {
 }
 
 function main() {
-  const argv = process.argv.slice(2);
-  if (argv.length > 0) {
-    // Started by hand (or by a test), not by an AI tool: say what this is and stop
-    if (argv[0] === "--version" || argv[0] === "-V") {
-      console.log(SERVER_NAME + " " + SERVER_VERSION);
-    } else {
-      console.log("PinglyMotion MCP server " + SERVER_VERSION + ". An AI tool starts it and talks MCP over stdin/stdout; " +
-        "see docs/CONTROL.md.");
-    }
+  // Only these flags stop the server. Any other argument is ignored: a launcher (Claude Desktop's
+  // built-in Node) may pass its own arguments, such as the path of this file.
+  const argv = process.argv.slice(1);
+  if (argv.includes("--version") || argv.includes("-V")) {
+    console.log(SERVER_NAME + " " + SERVER_VERSION);
+    return;
+  }
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log("PinglyMotion MCP server " + SERVER_VERSION + ". An AI tool starts it and talks MCP over stdin/stdout; " +
+      "see docs/CONTROL.md.");
     return;
   }
   // Messages are handled one after the other, in the order they came, as in the Python server
@@ -346,7 +347,10 @@ function main() {
   });
 }
 
-if (require.main === module) {
+// Always start, also when the file is not the main module: Claude Desktop loads it through its own
+// launcher, so `require.main === module` is false there and the server never answered (initialize
+// timed out). A test that only wants the functions sets PINGLYMOTION_MCP_LIBRARY=1 before require().
+if (process.env.PINGLYMOTION_MCP_LIBRARY !== "1") {
   main();
 }
 

@@ -6,7 +6,6 @@ Files:
 - tools/mcp/pinglymotion_mcp.js
 - tests/test_mcpb.py
 - docs/DEV.md
-- docs/CONTROL.md
 
 ## What
 
