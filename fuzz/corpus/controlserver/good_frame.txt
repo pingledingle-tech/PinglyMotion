@@ -1,0 +1,7 @@
+POST /api HTTP/1.1
+Host: 127.0.0.1:@PORT@
+Authorization: Bearer @KEY@
+X-PinglyMotion-Client: fuzz
+Content-Length: 44
+
+{"command":"set_frame","frame":3,"x":"é"}
