@@ -1,6 +1,6 @@
 Branch: feat/texts-menus-labels
 Status: active
-Pull request: pending
+Pull request: #277
 Files:
 - src/pinglymotionwindow.ui
 - src/pinglymotionwindow.cpp
