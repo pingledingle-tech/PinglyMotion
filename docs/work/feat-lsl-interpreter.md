@@ -23,6 +23,7 @@ Files:
 - docs/ROADMAP.md
 - docs/SCRIPT_LAB_PLAN.md
 - docs/SCRIPT_LAB.md
+- docs/DECISIONS.md
 - CREDITS.md
 
 ## What
