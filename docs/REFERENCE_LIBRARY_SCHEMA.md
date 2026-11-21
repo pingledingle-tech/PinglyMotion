@@ -37,12 +37,13 @@ All fields are required unless marked.
 | `duration_s` | `(frames - 1) / fps`. At most 60 (the Second Life limit). |
 | `file` | Path relative to `index.json`, for a bundled clip. |
 | `bytes`, `sha256` | Size and SHA-256 of `file`. |
+| `tags_reviewed` | Optional. `false` on the clips of the second batch: their tags and descriptions were written from the source's clip names and index text, and checked by numbers only, not yet reviewed by the project owner. Absent on the first batch. |
 
 A clip that is not bundled has `download` instead of `file`: `{"url": ..., "sha256": ..., "conversion": ...}` (written by `tools/fetch_reference.py`; `bytes` and `sha256` of the converted file may be added once it exists). The bundled-file tests apply only to entries with `file`; every entry needs the licence and credit fields.
 
 ## Bundled content (November 2026)
 
-55 clips, about 3.8 MB, 11.3 s at most, in `library/cmu/` (28 clips from the CMU Graphics Lab Motion Capture Database, converted with `tools/cmu_to_sl.py`) and `library/mesh2motion/` (27 CC0 clips from Mesh2Motion, converted with `glb2sl_bvh`). Not bundled: the clips already in `tests/motions/` (they stay there), Quaternius (see below).
+106 clips, about 6.8 MB, 11.3 s at most, in `library/cmu/` (47 clips from the CMU Graphics Lab Motion Capture Database, converted with `tools/cmu_to_sl.py`) and `library/mesh2motion/` (59 CC0 clips from Mesh2Motion, converted with `glb2sl_bvh`). The first 55 are the first batch (3.8 MB); the second batch (51 clips, about 3.0 MB, 21 November 2026) has `tags_reviewed: false`. Not bundled: the clips already in `tests/motions/` (they stay there), Quaternius (see below).
 
 Quaternius Universal Animation Library: not bundled, a download source instead (see below). Bundling clips of it would also need the name Quaternius in the Help > About credits text, which the bundled-index test requires; that is a visible change and a separate job.
 

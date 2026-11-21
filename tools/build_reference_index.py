@@ -80,6 +80,27 @@ CMU = [
     ("13_27", 3.0, 11.0, "Direct traffic", "Waves and points like a traffic guard.", ["gesture", "wave"]),
     ("18_08", 0.0, 10.0, "Explain with gestures", "Talks and explains with hand gestures.", ["talk", "gesture"]),
     ("18_10", 0.0, 10.0, "Angry gestures", "An argument with angry hand gestures.", ["talk", "gesture", "angry"]),
+    # More clips (November 2026, second batch). Descriptions follow the CMU index text
+    # (cmu-mocap-index-text.txt in the source repository). The last field marks clips whose
+    # tags the project owner has not reviewed.
+    ("13_01", 2.0, 10.0, "Sit on a high stool and get up", "Sits down on a high stool and stands up again.", ["sit", "transition"], True),
+    ("14_29", 2.0, 9.0, "Sit on a stepstool, swing legs", "Sits on a stepstool, swings the legs and stands up.", ["sit", "transition"], True),
+    ("15_10", 3.0, 10.0, "Sit on a high stool, second take", "Sits on a high stool and stands up again.", ["sit", "transition"], True),
+    ("14_24", 3.0, 11.0, "Direct traffic, wave and point", "Waves and points like a traffic guard.", ["gesture", "wave"], True),
+    ("17_01", 2.0, 8.0, "Walk, angry", "A walk with anger and frustration.", ["walk", "angry"], True),
+    ("17_03", 2.0, 8.0, "Walk, stealthy", "A stealthy walk.", ["walk", "slow"], True),
+    ("17_05", 2.0, 8.0, "Walk, hobbling", "A hobbling walk.", ["walk", "sad"], True),
+    ("17_06", 2.0, 8.0, "Walk, jaunty", "A jaunty, cheerful walk.", ["walk", "happy"], True),
+    ("17_08", 2.0, 8.0, "Walk, heavy build", "The walk of a muscular, heavyset person.", ["walk"], True),
+    ("20_06", None, None, "March", "Soldiers march.", ["walk", "loop"], True),
+    ("20_08", None, None, "Zombie march", "A stiff zombie march.", ["walk", "slow"], True),
+    ("20_11", None, None, "High five and walk", "Reaches for a high five and walks on.", ["gesture", "walk", "happy"], True),
+    ("55_02", 0.0, 8.0, "Lambada", "Lambada dancing, eight seconds.", ["dance", "music"], True),
+    ("18_15", 0.0, 8.0, "Chicken dance", "The chicken dance, eight seconds.", ["dance", "happy"], True),
+    ("05_02", 0.0, 8.0, "Dance, expressive arms", "Modern dance with expressive arms and a pirouette.", ["dance"], True),
+    ("49_09", 0.0, 8.0, "Dance, arms high", "Modern dance with arms held high and a side arabesque.", ["dance", "calm"], True),
+    ("13_29", 0.0, 8.0, "Jumping jacks and twists", "Jumping jacks and side twists.", ["sport", "fast"], True),
+    ("26_09", None, None, "Bend and pick up", "Bends down and picks something up.", ["work", "transition"], True),
 ]
 
 # file stem, name, description, tags
@@ -111,6 +132,40 @@ M2M = [
     ("walk-happy", "Walk, happy", "A cheerful walk, on the spot.", ["walk", "happy", "loop"]),
     ("walk-relaxed", "Walk, relaxed", "A relaxed walk, on the spot.", ["walk", "calm", "loop"]),
     ("walk-female", "Walk, female", "A walk with a female gait, on the spot.", ["walk", "loop"]),
+    # More clips (November 2026, second batch). Descriptions follow the clip names.
+    ("sitting-idle", "Sit, idle", "Seated, idle.", ["sit", "idle", "calm"], True),
+    ("greeting", "Greeting", "A greeting with a wave.", ["wave", "gesture", "happy"], True),
+    ("dance-simple", "Dance, simple", "A simple dance.", ["dance"], True),
+    ("dab", "Dab", "A dab move.", ["dance", "emote"], True),
+    ("drunk-walk", "Walk, drunk", "A staggering walk.", ["walk"], True),
+    ("walk", "Walk", "A plain walk, on the spot.", ["walk", "loop"], True),
+    ("walk-backwards", "Walk backwards", "Walks backwards, on the spot.", ["walk", "backwards", "loop"], True),
+    ("walk-cautious", "Walk, cautious", "A careful walk, on the spot.", ["walk", "slow", "loop"], True),
+    ("walk-formal", "Walk, formal", "A formal, upright walk, on the spot.", ["walk", "calm", "loop"], True),
+    ("walk-injured", "Walk, injured", "A limping walk, on the spot.", ["walk", "sad", "slow", "loop"], True),
+    ("walk-carry", "Walk, carrying", "Walks carrying something, on the spot.", ["walk", "work", "loop"], True),
+    ("jog", "Jog", "A jog, on the spot.", ["run", "loop"], True),
+    ("run-female", "Run, female", "A run with a female gait, on the spot.", ["run", "loop"], True),
+    ("sprint", "Sprint", "A fast sprint, on the spot.", ["run", "fast", "loop"], True),
+    ("idle-a", "Stand, idle", "A standing idle.", ["stand", "idle"], True),
+    ("idle-hurt", "Stand, hurt", "A standing idle, as if hurt.", ["stand", "idle", "sad"], True),
+    ("idle-talkingphone", "Stand, on the phone", "Standing and talking on a phone.", ["stand", "talk"], True),
+    ("texting-walk", "Walk and text", "Walks while looking at a phone, on the spot.", ["walk", "loop"], True),
+    ("singing", "Sing", "Singing.", ["emote", "music", "happy"], True),
+    ("sleeping", "Sleep", "Sleeping.", ["lie", "calm"], True),
+    ("yes", "Say yes", "A nod for yes.", ["gesture", "emote"], True),
+    ("tired-hunched", "Tired, hunched", "Standing tired and hunched over.", ["stand", "sad", "slow"], True),
+    ("tired-kneeling", "Tired, kneeling", "Kneeling, tired.", ["kneel", "sad"], True),
+    ("jumping-jacks", "Jumping jacks", "Jumping jacks, on the spot.", ["sport", "loop"], True),
+    ("moonwalk", "Moonwalk", "A moonwalk.", ["dance", "backwards"], True),
+    ("drumming", "Drum", "Drumming.", ["music"], True),
+    ("guitar-playing", "Play guitar", "Playing a guitar.", ["music"], True),
+    ("consume", "Eat or drink", "Brings something to the mouth to eat or drink.", ["drink"], True),
+    ("pick-up", "Pick up", "Bends down and picks something up.", ["work"], True),
+    ("open-door", "Open a door", "Opens a door.", ["work"], True),
+    ("knock", "Knock", "Knocks on a door.", ["gesture"], True),
+    ("crawl", "Crawl", "Crawls on hands and knees.", ["crouch"], True),
+    ("crouch-walk", "Crouch walk", "Walks in a crouch.", ["crouch", "walk"], True),
 ]
 
 
@@ -144,7 +199,7 @@ def main():
         os.makedirs(os.path.join(a.out, sub), exist_ok=True)
     clips = []
 
-    def add(source, cid, rel, name, desc, tags, origin):
+    def add(source, cid, rel, name, desc, tags, origin, unreviewed=False):
         path = os.path.join(a.out, rel)
         frames, fps = bvh_info(path)
         src = SOURCES[source]
@@ -155,8 +210,10 @@ def main():
             "frames": frames, "fps": fps, "duration_s": round((frames - 1) / fps, 2),
             "file": rel, "bytes": os.path.getsize(path), "sha256": sha256(path),
         })
+        if unreviewed:
+            clips[-1]["tags_reviewed"] = False
 
-    for trial, start, end, name, desc, tags in CMU:
+    for trial, start, end, name, desc, tags, *more in CMU:
         cid = "cmu-" + trial.replace("_", "-")
         rel = "cmu/cmu_%s.bvh" % trial
         folder = "%03d" % int(trial.split("_")[0])
@@ -167,13 +224,13 @@ def main():
             cmd += ["--start", str(start), "--end", str(end)]
             origin += ", %.1f to %.1f s" % (start, end)
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-        add("cmu", cid, rel, name, desc, tags, origin)
+        add("cmu", cid, rel, name, desc, tags, origin, bool(more))
 
-    for stem, name, desc, tags in M2M:
+    for stem, name, desc, tags, *more in M2M:
         rel = "mesh2motion/m2m_%s.bvh" % stem
         subprocess.run([a.glb2sl, os.path.join(a.m2m, stem + ".glb"), os.path.join(a.out, rel)],
                        check=True, stdout=subprocess.DEVNULL)
-        add("mesh2motion", "m2m-" + stem, rel, name, desc, tags, "Mesh2Motion clip " + stem + ".glb")
+        add("mesh2motion", "m2m-" + stem, rel, name, desc, tags, "Mesh2Motion clip " + stem + ".glb", bool(more))
 
     index = {"schema_version": 1, "tag_vocabulary": sorted(TAGS), "sources": SOURCES, "clips": clips}
     with open(os.path.join(a.out, "index.json"), "w") as f:

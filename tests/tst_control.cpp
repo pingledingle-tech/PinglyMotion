@@ -2241,12 +2241,12 @@ void ControlTest::findReferenceSearchesTheLibrary()
   QJsonObject answer = run(R"({"command":"find_reference","text":"sit"})");
   const QJsonObject firstAnswer = answer;
   QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
-  QCOMPARE(hitIds(answer), (QStringList{"cmu-13-04", "cmu-14-30", "m2m-sitting-enter", "m2m-sitting-exit", "m2m-sitting-talking",
-                                        "m2m-sitting-writing", "m2m-sit-ground-idle", "m2m-sit-ground-crying", "m2m-meditate"}));
-  QCOMPARE(answer["matches"].toInt(), 9);
-  QCOMPARE(answer["library_clips"].toInt(), 55);
+  QCOMPARE(hitIds(answer), (QStringList{"cmu-13-04", "cmu-14-30", "cmu-13-01", "cmu-14-29", "cmu-15-10", "m2m-sitting-enter",
+                                        "m2m-sitting-exit", "m2m-sitting-talking", "m2m-sitting-writing", "m2m-sit-ground-idle"}));
+  QCOMPARE(answer["matches"].toInt(), 13);
+  QCOMPARE(answer["note"].toString(), QString("3 more match; narrow the search or raise limit."));
+  QCOMPARE(answer["library_clips"].toInt(), 106);
   QCOMPARE(answer["downloaded_clips"].toInt(), 0);
-  QVERIFY(!answer.contains("note"));
   const QJsonObject first = answer["hits"].toArray().at(0).toObject();
   QCOMPARE(first["downloaded"].toBool(), false);
   QCOMPARE(first["loadable"].toBool(), true);
@@ -2259,26 +2259,27 @@ void ControlTest::findReferenceSearchesTheLibrary()
   QCOMPARE(QJsonDocument(again).toJson(), QJsonDocument(firstAnswer).toJson());
 
   // all words must match the start of a word; case does not matter
-  QCOMPARE(hitIds(run(R"({"command":"find_reference","text":"Slow WALK"})")), (QStringList{"cmu-07-04", "cmu-37-01"}));
+  QCOMPARE(hitIds(run(R"({"command":"find_reference","text":"Slow WALK"})")), (QStringList{"cmu-07-04", "cmu-37-01", "cmu-17-03", "cmu-20-08", "m2m-walk-cautious", "m2m-walk-injured"}));
   QCOMPARE(hitIds(run(R"({"command":"find_reference","tags":["dance"]})")),
-           (QStringList{"cmu-05-03", "cmu-05-06", "cmu-05-12", "cmu-60-01", "m2m-dance-arm-pump", "m2m-dance-body-roll", "m2m-dance-charleston", "m2m-dance-reach-hip"}));
+           (QStringList{"cmu-05-03", "cmu-05-06", "cmu-05-12", "cmu-60-01", "cmu-55-02", "cmu-18-15", "cmu-05-02", "cmu-49-09", "m2m-dance-arm-pump",
+                        "m2m-dance-body-roll"}));
   QCOMPARE(hitIds(run(R"({"command":"find_reference","text":"sit","tags":["talk"]})")), (QStringList{"m2m-sitting-talking"}));
 
   // limit and the note about the rest
   answer = run(R"({"command":"find_reference","text":"sit","limit":3})");
-  QCOMPARE(hitIds(answer), (QStringList{"cmu-13-04", "cmu-14-30", "m2m-sitting-enter"}));
-  QCOMPARE(answer["matches"].toInt(), 9);
-  QCOMPARE(answer["note"].toString(), QString("6 more match; narrow the search or raise limit."));
+  QCOMPARE(hitIds(answer), (QStringList{"cmu-13-04", "cmu-14-30", "cmu-13-01"}));
+  QCOMPARE(answer["matches"].toInt(), 13);
+  QCOMPARE(answer["note"].toString(), QString("10 more match; narrow the search or raise limit."));
 
   // no search: the first ten, at most; the allowed tags come with it
   answer = run(R"({"command":"find_reference"})");
   QCOMPARE(answer["hits"].toArray().size(), 10);
-  QCOMPARE(answer["matches"].toInt(), 55);
+  QCOMPARE(answer["matches"].toInt(), 106);
   QVERIFY(answer["tags"].toArray().contains("sit"));
 
   // length
   answer = run(R"({"command":"find_reference","max_seconds":0.9})");
-  QCOMPARE(hitIds(answer), (QStringList{"m2m-head-nod", "m2m-angry"}));
+  QCOMPARE(hitIds(answer), (QStringList{"m2m-head-nod", "m2m-angry", "m2m-run-female", "m2m-sprint", "m2m-tired-kneeling"}));
   answer = run(R"({"command":"find_reference","text":"walk","min_seconds":3.7,"max_seconds":3.8})");
   QCOMPARE(hitIds(answer), (QStringList{"cmu-07-04"}));
 
