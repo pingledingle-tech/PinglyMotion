@@ -1,5 +1,5 @@
 Branch: cleanup/skeleton-walk
-Status: active
+Status: done
 Pull request: #235
 Files:
 - src/skeletonwalk.h
