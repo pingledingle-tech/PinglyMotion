@@ -71,10 +71,11 @@ class Animation : public QObject
       QString text;
     };
 
-    Animation(BVH* bvh,const QString& bvhFile=QString());
+    // with data: those bytes are parsed instead of reading bvhFile (see BVH::animRead())
+    Animation(BVH* bvh,const QString& bvhFile=QString(),const QByteArray* data=nullptr);
     ~Animation();
 
-    void loadBVH(const QString& bvhFile);
+    void loadBVH(const QString& bvhFile,const QByteArray* data=nullptr);
     // what went wrong while the constructor read its files; empty when all was well
     const QList<LoadProblem>& loadProblems() const { return m_loadProblems; }
     // false and an error text when the file could not be written; unsaved changes stay marked

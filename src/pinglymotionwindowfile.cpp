@@ -228,6 +228,15 @@ void PinglyMotionWindow::fileOpen(const QString& name)
   partChoice();
 }
 
+void PinglyMotionWindow::fileOpenData(const QString& file,const QByteArray& data)
+{
+  if(file.isEmpty() || !checkAnimationFile(file,&data)) return;
+  if(!clearOpenFiles()) return;
+  emit clearProps();
+  addAnimationFile(file,&data);
+  partChoice();
+}
+
 // Menu action: File / Add New Animation ...
 void PinglyMotionWindow::fileAdd()
 {
@@ -246,13 +255,13 @@ void PinglyMotionWindow::fileAdd(const QString& name)
 }
 
 // shows why when the file cannot be opened; the reason is kept for remote control
-bool PinglyMotionWindow::checkAnimationFile(const QString& file)
+bool PinglyMotionWindow::checkAnimationFile(const QString& file,const QByteArray* data)
 {
   m_lastOpenError.clear();
-  if(!QFile::exists(file))
+  if(!data && !QFile::exists(file))
     m_lastOpenError=tr("Animation file not found.");
   else
-    BVH::checkFile(file,&m_lastOpenError);
+    BVH::checkFile(file,&m_lastOpenError,data);
 
   if(m_lastOpenError.isEmpty()) return true;
   if(m_quietDialogs) return false;
@@ -262,7 +271,7 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file)
 }
 
 // adds a file that checkAnimationFile() has accepted
-void PinglyMotionWindow::addAnimationFile(const QString& file)
+void PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* data)
 {
   {
     // an old .avm file shows up under its new name, <same name>.dingle, and counts as changed
@@ -270,7 +279,7 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     const QString shownName=oldAvm ? DingleSave::suggestedName(file,m_untitledName) : file;
     if(oldAvm) m_avmOrigin.insert(shownName,file);
     addToOpenFiles(shownName);
-    Animation* anim=new Animation(scene->bvh(),file);
+    Animation* anim=new Animation(scene->bvh(),file,data);
     showLoadProblems(anim);
     animationIds.append(anim);
     if(!m_quietDialogs && (scene->bvh()->lastLoadedIgnoredKeys>0 || scene->bvh()->lastLoadedNewerVersion))

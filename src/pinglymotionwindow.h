@@ -197,11 +197,14 @@ class PinglyMotionWindow : public QMainWindow
     void fileNew();
     void fileOpen();
     void fileOpen(const QString& fileName);
+    // opens fileName from these bytes instead of reading the file (load_reference
+    // checks the bytes against the library index first)
+    void fileOpenData(const QString& fileName,const QByteArray& data);
     // "add" a new file without clearing the old one(s)
     void fileAdd();
     void fileAdd(const QString& fileName);
-    bool checkAnimationFile(const QString& fileName);
-    void addAnimationFile(const QString& fileName);
+    bool checkAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
+    void addAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
     bool fileSave();
     bool fileSaveAs();
     // after a save to newFile: when the animation came from an old .avm file with the same name,

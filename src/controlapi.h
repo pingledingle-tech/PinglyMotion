@@ -38,6 +38,9 @@ class ControlHost
     virtual QImage screenshot(int width, int height) = 0;
     virtual bool newAnimation(QString& error) = 0;
     virtual bool openFile(const QString& path, QString& error) = 0;
+    // like openFile, but parses these bytes instead of reading the file again
+    // (load_reference: the bytes it checked against the library index)
+    virtual bool openFileData(const QString& path, const QByteArray& data, QString& error) = 0;
     virtual bool saveFile(const QString& path, QString& error) = 0;
     virtual void setPlaying(bool on) = 0;
     virtual bool playing() = 0;
