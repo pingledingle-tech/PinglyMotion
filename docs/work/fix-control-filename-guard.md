@@ -1,11 +1,10 @@
 Branch: fix/control-filename-guard
-Status: active
-Pull request: pending
+Status: done
+Pull request: #254
 Files:
 - src/controlapi.*
 - tests/tst_control.cpp
 - docs/CONTROL.md
-- SECURITY.md
 
 ## What
 
