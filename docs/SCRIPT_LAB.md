@@ -90,6 +90,10 @@ touches at given times), read the log (what it said, its listens, timers and ani
   `run_time_permissions`, and 72 built-in functions; hard limits on steps, memory, nesting and time (step 5 adds more
   events and several objects). The sandbox is never identical to Second Life; the final test is always in Second Life.
 
+## Later
+
+Ideas that come after the planned steps (not planned yet, nothing is being built): see "Script Lab: later" in [ROADMAP.md](ROADMAP.md).
+
 ## Licence
 
 The command syntax, return codes, behaviour names and the `@clear` and `@getstatus` rules follow Firestorm's RLVa
