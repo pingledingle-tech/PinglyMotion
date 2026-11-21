@@ -72,6 +72,11 @@ class ControlApi
     // user's Documents folder, or PINGLYMOTION_CONTROL_FOLDER if set
     void setWorkFolder(const QString& folder) { m_workFolder = folder; }
     static QString defaultWorkFolder();
+    // Checks a file name for open_file, save_file and export_anim by its text alone, before any
+    // file system call: refuses absolute paths outside the work folder, network names, drive
+    // letters, ':', '..' and device names (CON, NUL, COM1 ...). On success "relative" is the name
+    // relative to the work folder (issue 244).
+    static bool plainNameInWorkFolder(const QString& workFolder, const QString& path, QString& relative);
 
     // find_reference and load_reference read the reference library (library/index.json, issue 19)
     // and the index that tools/fetch_reference.py writes (downloaded_index.json). load_reference

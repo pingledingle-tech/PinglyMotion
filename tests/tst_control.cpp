@@ -149,6 +149,7 @@ class ControlTest : public QObject
     void saveWritesBvh();
     void saveFailureIsReported();
     void filesStayInWorkFolder();
+    void unusualNamesAreRefusedByText();
     void openFileAcceptsDingle();
     void easingIsSetAndRead();
     void unknownEasingMakesNoKey();
@@ -798,6 +799,57 @@ void ControlTest::filesStayInWorkFolder()
 
 // issue #26 (job 4): open_file accepts a .dingle file, and the file it hands
 // to the window opens with the program's open path
+// issue 244: unusual names are refused by their text alone, before any file system call
+void ControlTest::unusualNamesAreRefusedByText()
+{
+  const QString work = "/pm-work/PinglyMotion";
+  const QStringList refused = {
+    "//example.invalid/s/a.bvh", "\\\\example.invalid\\s\\a.bvh", "/etc/a.bvh", "\\a.bvh",
+    "C:/a.bvh", "c:a.bvh", "a.bvh:stream", "file://example.invalid/a.bvh",
+    "../a.bvh", "sub/../a.bvh", "sub\\..\\..\\a.bvh", "a//b.bvh", "sub/",
+    "CON", "nul.bvh", "Aux.dingle", "sub/COM1.bvh", "lpt9.bvh", "com\u00b9.bvh", "CONIN$.bvh",
+    "a.bvh.", "a.bvh ", "a\tb.bvh", "", "/pm-work/other/a.bvh", "/pm-work/PinglyMotion/../a.bvh",
+    "/pm-work/PinglyMotionX/a.bvh"};
+  for (const QString& path : refused)
+  {
+    QString relative = "unchanged";
+    QVERIFY2(!ControlApi::plainNameInWorkFolder(work, path, relative), qPrintable(path));
+    QVERIFY(relative.isEmpty());
+  }
+
+  const QList<QPair<QString, QString>> accepted = {
+    {"pose.bvh", "pose.bvh"}, {"sub/pose.dingle", "sub/pose.dingle"}, {"sub\\pose.bvh", "sub/pose.bvh"},
+    {"./pose.bvh", "./pose.bvh"}, {"console.bvh", "console.bvh"}, {"com10.bvh", "com10.bvh"},
+    {"my pose.bvh", "my pose.bvh"}, {"/pm-work/PinglyMotion/pose.bvh", "pose.bvh"},
+    {"/pm-work/PinglyMotion/sub/pose.bvh", "sub/pose.bvh"}};
+  for (const auto& pair : accepted)
+  {
+    QString relative;
+    QVERIFY2(ControlApi::plainNameInWorkFolder(work, pair.first, relative), qPrintable(pair.first));
+    QCOMPARE(relative, pair.second);
+  }
+
+  // through the commands: the answer comes before the work folder is even made, so no file
+  // system call happened for the name
+  QTemporaryDir root;
+  QVERIFY(root.isValid());
+  const QString missing = root.filePath("not-made-yet");
+  m_api->setWorkFolder(missing);
+  for (const QString& command : {QString("open_file"), QString("save_file"), QString("export_anim")})
+  {
+    for (const QString& path : {QString("//example.invalid/s/a.bvh"), QString("\\\\example.invalid\\s\\a.bvh"), QString("NUL.bvh")})
+    {
+      QString name = path;
+      if (command == "export_anim") name.replace(".bvh", ".anim");
+      const QJsonObject answer = m_api->execute(QJsonObject{{"command", command}, {"path", name}});
+      QVERIFY2(!answer["ok"].toBool(), qPrintable(command + " " + name));
+      QVERIFY2(answer["error"].toString().startsWith("Files can only be opened and saved in the PinglyMotion folder"),
+               qPrintable(command + " " + name + ": " + answer["error"].toString()));
+    }
+  }
+  QVERIFY(!QFileInfo::exists(missing));
+}
+
 void ControlTest::openFileAcceptsDingle()
 {
   QTemporaryDir root;
