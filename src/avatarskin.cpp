@@ -16,11 +16,6 @@
 static const float INCH = 39.3700787f;      // metres to BVH units
 static const float PELVIS_HEIGHT = 1.067015f; // mPelvis above the feet, metres
 
-static bool fail(QString* errorMessage, const QString& text)
-{
-  if (errorMessage) *errorMessage = text;
-  return false;
-}
 
 // SL (x forward, y left, z up) -> BVH (x left, y up, z forward)
 static QVector3D slToBvh(const QVector3D& v)
@@ -28,7 +23,7 @@ static QVector3D slToBvh(const QVector3D& v)
   return QVector3D(v.y(), v.z(), v.x());
 }
 
-bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
+AvatarSkin::Result AvatarSkin::load(const QString& dataPath, Body body)
 {
   m_skeleton.clear();
   m_skeletonBySlName.clear();
@@ -44,7 +39,8 @@ bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
   m_maleShifts.clear();
   m_restRevision++;
 
-  if (!loadJoints(dataPath + "/skin_joints.txt", errorMessage)) return false;
+  const QString jointsError = loadJoints(dataPath + "/skin_joints.txt");
+  if (!jointsError.isEmpty()) return {jointsError};
 
   // Male_Skeleton (param 32 in avatar_lad.xml of the Second Life viewer):
   // scale added to the joint, SL axes (x forward, y left, z up)
@@ -85,16 +81,17 @@ bool AvatarSkin::load(const QString& dataPath, Body body, QString* errorMessage)
 
   const QString folder = dataPath + "/character/";
   const QString file = body == MaxBody ? "max/maxine.pmm" : "ruth2/ruth2.pmm";
-  if (!loadPmm(folder + file, errorMessage))
+  const QString bodyError = loadPmm(folder + file);
+  if (!bodyError.isEmpty())
   {
     m_parts.clear();
-    return false;
+    return {bodyError};
   }
   m_jointScales.fill(QVector3D(1, 1, 1), m_jointNames.size());
   // the male figure's body; a missing or damaged file only means the male
   // figure falls back to the body above
   loadMaleMesh(folder + "roth2/roth2.pmm");
-  return true;
+  return {};
 }
 
 void AvatarSkin::swapMesh(MeshState& other)
@@ -111,8 +108,8 @@ void AvatarSkin::loadMaleMesh(const QString& fileName)
   // load into the members, then move the result out of the way
   MeshState chosen;
   swapMesh(chosen);   // chosen body away, members empty
-  QString error;
-  const bool ok = loadPmm(fileName, &error);
+  const QString error = loadPmm(fileName);
+  const bool ok = error.isEmpty();
   if (ok)
     m_jointScales.fill(QVector3D(1, 1, 1), m_jointNames.size());
   else
@@ -123,11 +120,11 @@ void AvatarSkin::loadMaleMesh(const QString& fileName)
   if (!ok) m_roth = MeshState();
 }
 
-bool AvatarSkin::loadJoints(const QString& fileName, QString* errorMessage)
+QString AvatarSkin::loadJoints(const QString& fileName)
 {
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    return fail(errorMessage, QString("Could not open %1: %2").arg(fileName, file.errorString()));
+    return QString("Could not open %1: %2").arg(fileName, file.errorString());
 
   QTextStream in(&file);
   while (!in.atEnd())
@@ -136,7 +133,7 @@ bool AvatarSkin::loadJoints(const QString& fileName, QString* errorMessage)
     if (line.isEmpty() || line.startsWith('#')) continue;
     const QStringList fields = line.split(' ', Qt::SkipEmptyParts);
     if (fields.size() != 7)
-      return fail(errorMessage, QString("%1: bad line '%2'").arg(fileName, line));
+      return QString("%1: bad line '%2'").arg(fileName, line);
 
     SkinJoint joint;
     joint.fileName = fields[0];
@@ -145,7 +142,7 @@ bool AvatarSkin::loadJoints(const QString& fileName, QString* errorMessage)
     joint.base = fields[3] == "base";
     joint.rest = QVector3D(fields[4].toFloat(), fields[5].toFloat(), fields[6].toFloat());
     if (joint.parent < 0 && fields[2] != "-")
-      return fail(errorMessage, QString("%1: joint %2 comes before its parent").arg(fileName, joint.slName));
+      return QString("%1: joint %2 comes before its parent").arg(fileName, joint.slName);
 
     const int index = m_skeleton.size();
     if (joint.parent >= 0) m_skeleton[joint.parent].children << index;
@@ -153,8 +150,8 @@ bool AvatarSkin::loadJoints(const QString& fileName, QString* errorMessage)
     m_skeleton << joint;
   }
   if (m_skeleton.isEmpty())
-    return fail(errorMessage, QString("%1 has no joints").arg(fileName));
-  return true;
+    return QString("%1 has no joints").arg(fileName);
+  return QString();
 }
 
 int AvatarSkin::useJoint(int skeletonJoint)
@@ -169,14 +166,10 @@ int AvatarSkin::useJoint(int skeletonJoint)
 }
 
 // a Bento mesh body (Max, Ruth2): up to four joints per vertex, straight from the file
-bool AvatarSkin::loadPmm(const QString& fileName, QString* errorMessage)
+QString AvatarSkin::loadPmm(const QString& fileName)
 {
   const PMMesh::Result read = PMMesh::read(fileName);
-  if (!read.ok())
-  {
-    if (errorMessage) *errorMessage = read.error;
-    return false;
-  }
+  if (!read.ok()) return read.error;
   const PMMesh& mesh = *read.mesh;
   static_assert(PMMesh::INFLUENCES == INFLUENCES, "influence counts must match");
 
@@ -185,7 +178,7 @@ bool AvatarSkin::loadPmm(const QString& fileName, QString* errorMessage)
   {
     const int skeletonJoint = m_skeletonBySlName.value(name, -1);
     if (skeletonJoint < 0)
-      return fail(errorMessage, QString("%1: joint %2 is not in the skeleton").arg(fileName, name));
+      return QString("%1: joint %2 is not in the skeleton").arg(fileName, name);
     used << useJoint(skeletonJoint);
   }
 
@@ -243,7 +236,7 @@ bool AvatarSkin::loadPmm(const QString& fileName, QString* errorMessage)
     part.normals = part.restNormals;
     m_parts << part;
   }
-  return true;
+  return QString();
 }
 
 QVector3D AvatarSkin::jointScale(const QString& name) const
