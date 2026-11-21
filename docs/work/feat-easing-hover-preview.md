@@ -1,5 +1,5 @@
 Branch: feat/easing-hover-preview
-Status: active
+Status: done
 Pull request: #269
 Files:
 - src/easingtiles.*
