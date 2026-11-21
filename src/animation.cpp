@@ -23,7 +23,6 @@
 #include <QApplication.h>
 #endif
 
-#include <QMessageBox>
 
 #include <iostream>
 #include <stdio.h>
@@ -98,6 +97,7 @@ void Animation::loadBVH(const QString& bvhFile)
   // read the Bento reference skeleton first, as reading a file resets the
   // lastLoaded... values that are used after loading the animation
   BVHNode* reference=bvh->animRead(Constants::femaleBvhPath(),Constants::limitsFilePath());
+  if(!bvh->lastLimitsProblem.title.isEmpty()) m_loadProblems << bvh->lastLimitsProblem;
   delete bvh->lastLoadedPositionNode;
   bvh->lastLoadedPositionNode=NULL;
 
@@ -106,10 +106,11 @@ void Animation::loadBVH(const QString& bvhFile)
              bvh->lastError.toLatin1().constData());
 
   BVHNode* loaded=bvh->animRead(bvhFile ,Constants::limitsFilePath());
+  if(!bvh->lastLimitsProblem.title.isEmpty()) m_loadProblems << bvh->lastLimitsProblem;
   // files the user opens are checked before (BVH::checkFile); this is for the program's own data files
   if(!loaded)
-    QMessageBox::critical(nullptr,QObject::tr("Animation file"),
-                          QObject::tr("<qt>%1 could not be read:<br>%2</qt>").arg(bvhFile.toHtmlEscaped(),bvh->lastError.toHtmlEscaped()));
+    m_loadProblems << LoadProblem{QObject::tr("Animation file"),
+                                  QObject::tr("<qt>%1 could not be read:<br>%2</qt>").arg(bvhFile.toHtmlEscaped(),bvh->lastError.toHtmlEscaped())};
 
   // put the animation on the full skeleton, so old files get the Bento joints too
   frames=bvh->conformToSkeleton(loaded,reference);

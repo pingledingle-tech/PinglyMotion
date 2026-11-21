@@ -99,6 +99,8 @@ class BentoTest : public QObject
     void maleAndFemaleMatch();
     void jointList();
     void newAnimation();
+    void limitsFileErrorsAreReturned();
+    void ownFilesGiveNoProblems();
     void oldFilesKeepKeyFrames_data();
     void oldFilesKeepKeyFrames();
     void saveAndLoad_data();
@@ -224,6 +226,41 @@ void BentoTest::newAnimation()
   for (BVHNode* node : list)
     QVERIFY2(node->isKeyframe(0), qPrintable(node->name() + " has no key frame at frame 0"));
   QVERIFY(anim.getNumberOfFrames() > 0);
+}
+
+// the model returns the error text (the window shows it); no message box opens here
+void BentoTest::limitsFileErrorsAreReturned()
+{
+  BVH bvh;
+  Animation anim(&bvh);
+  BVHNode* root = anim.getMotion();
+
+  const QString missing = QDir::tempPath() + "/pinglymotion-no-such-limits-file.lim";
+  QFile::remove(missing);
+  const Animation::LoadProblem notFound = bvh.parseLimFile(root, missing);
+  QCOMPARE(notFound.title, QString("Missing Limits File"));
+  QCOMPARE(notFound.text, QString("<qt>Limits file not found at:<br>%1</qt>").arg(missing));
+
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString broken = dir.filePath("broken.lim");
+  QFile file(broken);
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  file.write("\n");
+  file.close();
+  const Animation::LoadProblem bad = bvh.parseLimFile(root, broken);
+  QCOMPARE(bad.title, QString("Error reading limits file"));
+  QCOMPARE(bad.text, QString("Error reading limits file."));
+
+  const Animation::LoadProblem fine = bvh.parseLimFile(root, Constants::limitsFilePath());
+  QVERIFY2(fine.title.isEmpty(), qPrintable(fine.text));
+}
+
+void BentoTest::ownFilesGiveNoProblems()
+{
+  BVH bvh;
+  Animation anim(&bvh);
+  QVERIFY(anim.loadProblems().isEmpty());
 }
 
 void BentoTest::oldFilesKeepKeyFrames_data()

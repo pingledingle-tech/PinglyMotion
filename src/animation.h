@@ -23,6 +23,8 @@
 #define ANIMATION_H
 
 #include <QJsonObject>
+#include <QList>
+#include <QString>
 #include <QTimer>
 #include <QVector3D>
 
@@ -61,10 +63,20 @@ class Animation : public QObject
       NUM_FIGURES
     } FigureType;
 
+    // A problem with one of the program's own data files (skeleton, limits file):
+    // the model does not show it, the window does (same title and text as always).
+    struct LoadProblem
+    {
+      QString title;
+      QString text;
+    };
+
     Animation(BVH* bvh,const QString& bvhFile=QString());
     ~Animation();
 
     void loadBVH(const QString& bvhFile);
+    // what went wrong while the constructor read its files; empty when all was well
+    const QList<LoadProblem>& loadProblems() const { return m_loadProblems; }
     // false and an error text when the file could not be written; unsaved changes stay marked
     bool saveBVH(const QString& bvhFile, QString* error=nullptr);
     // the pose of one frame as a small BVH, for the Aurora link
@@ -191,6 +203,7 @@ class Animation : public QObject
     int loopOutPoint;
 
     bool mirrored;
+    QList<LoadProblem> m_loadProblems;
     bool ikOn[NUM_IK];
     IKTree ikTree;
 

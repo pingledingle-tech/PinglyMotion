@@ -253,6 +253,8 @@ class PinglyMotionWindow : public QMainWindow
     void nextPlaystate();
     void setDefaultLoopIn(Animation* anim);
     void connectAnimation(Animation* anim);
+    // the window shows what the model found wrong with the program's own data files
+    void showLoadProblems(Animation* anim);
     void setLoopInPoint(int inFrame);
     void setLoopOutPoint(int outFrame);
     void numFramesChanged(int num);

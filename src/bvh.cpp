@@ -21,7 +21,6 @@
 
 #include <QQuaternion>
 #include <QJsonArray>
-#include <QMessageBox>
 #include <QDir>
 #include <QFile>
 #include <QSaveFile>
@@ -221,15 +220,15 @@ void BVH::setChannelLimits(BVHNode *node,BVHChannelType type,double min,double m
 }
 
 // read joint limits file
-void BVH::parseLimFile(BVHNode* root,const QString& limFile) const
+// Returns what went wrong (empty title: nothing); the caller shows it.
+Animation::LoadProblem BVH::parseLimFile(BVHNode* root,const QString& limFile) const
 {
 
   QFile limit(limFile);
 
   if(!limit.open(QIODevice::ReadOnly))
   {
-    QMessageBox::critical(0,QObject::tr("Missing Limits File"),QObject::tr("<qt>Limits file not found at:<br>%1</qt>").arg(limFile));
-    return;
+    return {QObject::tr("Missing Limits File"),QObject::tr("<qt>Limits file not found at:<br>%1</qt>").arg(limFile)};
   }
 
   while(!limit.atEnd())
@@ -237,8 +236,7 @@ void BVH::parseLimFile(BVHNode* root,const QString& limFile) const
     QString line=limit.readLine(4096).trimmed();
     if(line.isEmpty())
     {
-      QMessageBox::critical(0,QObject::tr("Error reading limits file"),QObject::tr("Error reading limits file."));
-      return;
+      return {QObject::tr("Error reading limits file"),QObject::tr("Error reading limits file.")};
     }
 
     QStringList parameters=line.split(' ');
@@ -271,6 +269,7 @@ void BVH::parseLimFile(BVHNode* root,const QString& limFile) const
       qCWarning(lcFile,"parseLimFile(): Node '%s' not in animation. This will lead to problems!",name.toLatin1().constData());
   }
   limit.close();
+  return {};
 }
 
 /* .avm files look suspiciously like .bvh files, except
@@ -279,6 +278,7 @@ void BVH::parseLimFile(BVHNode* root,const QString& limFile) const
 // the defaults for everything a file may leave out
 void BVH::startRead()
 {
+  lastLimitsProblem=Animation::LoadProblem();
   // positions pseudonode
   lastLoadedPositionNode=new BVHNode("position");
   lastLoadedPositionNode->type=BVH_POS;
@@ -310,8 +310,9 @@ BVHNode* BVH::finishRead(BVHNode* root,const QString& limFile)
   if(lastLoadedLoopOut<0 || lastLoadedLoopOut>lastLoadedNumberOfFrames)
     lastLoadedLoopOut=lastLoadedNumberOfFrames;
 
+  lastLimitsProblem=Animation::LoadProblem();
   if(!limFile.isEmpty())
-    parseLimFile(root,limFile);
+    lastLimitsProblem=parseLimFile(root,limFile);
 
   removeNoSLNodes(root);
 

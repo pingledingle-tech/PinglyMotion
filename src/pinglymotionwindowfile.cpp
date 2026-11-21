@@ -120,6 +120,14 @@ void PinglyMotionWindow::setDefaultLoopIn(Animation* anim)
   }
 }
 
+// errors of the model are shown here, not by the model (no box while nobody can click it)
+void PinglyMotionWindow::showLoadProblems(Animation* anim)
+{
+  if(m_quietDialogs) return;
+  for(const Animation::LoadProblem& problem : anim->loadProblems())
+    QMessageBox::critical(this,problem.title,problem.text);
+}
+
 // the window follows the frame of the animation
 void PinglyMotionWindow::connectAnimation(Animation* anim)
 {
@@ -133,6 +141,7 @@ void PinglyMotionWindow::fileNew()
   emit clearProps();
 
   Animation* anim=new Animation(ui->animationView->getBVH());
+  showLoadProblems(anim);
 
   // set timeline animation first, because ...
   timeline->setAnimation(anim);
@@ -262,6 +271,7 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     if(oldAvm) m_avmOrigin.insert(shownName,file);
     addToOpenFiles(shownName);
     Animation* anim=new Animation(ui->animationView->getBVH(),file);
+    showLoadProblems(anim);
     animationIds.append(anim);
     if(!m_quietDialogs && (ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion))
       QMessageBox::information(this,tr("Open Animation File"),

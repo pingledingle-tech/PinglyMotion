@@ -1,5 +1,5 @@
 Branch: cleanup/no-messagebox-in-model
-Status: active
+Status: done
 Pull request: #241
 Files:
 - src/bvh.*
