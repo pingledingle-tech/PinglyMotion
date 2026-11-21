@@ -1,6 +1,6 @@
 Branch: feat/transport-buttons
 Status: active
-Pull request: pending
+Pull request: #251
 Files:
 - src/playback.h
 - src/transportbar.*
