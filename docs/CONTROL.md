@@ -400,4 +400,5 @@ to `claude mcp add` so it works from every folder.
   `angle`; also `height` and `distance`; `reset: true` for the start view). Left and right are the figure's
   own sides. It never changes the animation, so use it instead of turning the hip to see the side.
 - `set_figure` shows the female or male body. It only changes the display; the saved BVH is the same.
+- `play` and `stop` do the same as the Start and Stop buttons under the timeline: `play` plays from the current frame (from the loop-in frame when it is on the last frame), repeating between the loop points while Loop is on (Options > Loop, or the Loop switch next to the buttons). To replay from the start, send `set_frame` with frame 1, then `play`.
 - Mirroring (Tools > Mirror) applies to commands too: with it on, posing a left joint also poses the right one.

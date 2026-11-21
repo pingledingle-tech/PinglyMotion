@@ -91,6 +91,7 @@
 #include "pinglymotionwindow.h"
 #include "playback.h"
 #include "theme.h"
+#include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
 #include "wheelguard.h"
@@ -178,9 +179,9 @@ class WindowControlHost : public ControlHost
 
     void setPlaying(bool on) override
     {
-      // the play button steps through stopped, looping and playing
-      for (int step = 0; step < 3 && (w->playstate == PLAYSTATE_STOPPED) == on; step++)
-        w->nextPlaystate();
+      // the same as clicking Start or Stop under the timeline
+      if (on) w->startPlaying();
+      else w->stopPlaying();
     }
 
     bool playing() override { return w->playstate != PLAYSTATE_STOPPED; }
@@ -276,11 +277,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // fill the joint lists from the Bento skeleton
   buildPartLists();
 
-  // prepare play button icons
-  stopIcon=QIcon(":/icons/icons/stop.png");
-  playIcon=QIcon(":/icons/icons/play.png");
-  loopIcon=QIcon(":/icons/icons/loop.png");
-
   // playback stopped by default
   setPlaystate(PLAYSTATE_STOPPED);
 
@@ -303,6 +299,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   }
 
   ui->optionsLoopAction->setChecked(UserSettings::loop());
+  m_transport->setLoop(UserSettings::loop());
   ui->optionsSkeletonAction->setChecked(UserSettings::skeleton());
   ui->optionsJointLimitsAction->setChecked(UserSettings::jointLimits());
 
@@ -848,9 +845,19 @@ void PinglyMotionWindow::buildDocks()
   timelineLayout->addWidget(ui->timelineView,1);
   QHBoxLayout* playLayout=new QHBoxLayout;
   playLayout->addWidget(ui->currentFrameSlider,1);
-  playLayout->addWidget(ui->playButton);
   playLayout->addWidget(ui->keyframeButton);
   timelineLayout->addLayout(playLayout);
+
+  // Start, Stop, Replay from start and Loop (docs/UX_DECISIONS.md section 1)
+  m_transport=new TransportBar(timelinePanel);
+  connect(m_transport,&TransportBar::startClicked,this,&PinglyMotionWindow::startPlaying);
+  connect(m_transport,&TransportBar::stopClicked,this,&PinglyMotionWindow::stopPlaying);
+  connect(m_transport,&TransportBar::replayClicked,this,&PinglyMotionWindow::replayFromStart);
+  connect(m_transport,&TransportBar::loopToggled,ui->optionsLoopAction,&QAction::setChecked);
+  QHBoxLayout* transportLayout=new QHBoxLayout;
+  transportLayout->addWidget(m_transport);
+  transportLayout->addStretch(1);
+  timelineLayout->addLayout(transportLayout);
 
   QHBoxLayout* rangeLayout=new QHBoxLayout;
   rangeLayout->addWidget(ui->loopInLabel);
@@ -1703,13 +1710,19 @@ void PinglyMotionWindow::setSkeleton(bool on)
 void PinglyMotionWindow::setLoop(bool on)
 {
   UserSettings::setLoop(on);
+  // the Loop switch under the timeline and Options > Loop show the same
+  m_transport->setLoop(on);
 
-  // update play state
-  if(playstate==PLAYSTATE_LOOPING)
-    setPlaystate(PLAYSTATE_PLAYING);
-  else
-    // just update play button icon (in case we're stopped it changes from/to looping icon)
-    setPlaystate(playstate);
+  // while playing: switched off, play to the last frame and stop; switched
+  // on, go on repeating
+  Animation* anim=scene->getAnimation();
+  if(!anim) return;
+  const PlayState state=Playback::loopSwitched(playstate,on,anim->getFrame(),anim->getLoopOutPoint());
+  if(state!=playstate)
+  {
+    setPlaystate(state);
+    anim->setPlaystate(state);
+  }
 }
 
 // Menu Action: Options / Joint Limits

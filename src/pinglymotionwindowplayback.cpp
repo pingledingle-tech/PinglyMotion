@@ -90,6 +90,7 @@
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
 #include "playback.h"
+#include "transportbar.h"
 #include "theme.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
@@ -126,54 +127,53 @@ void PinglyMotionWindow::frameTimeout()
   }
 }
 
-void PinglyMotionWindow::nextPlaystate()
+// Start: play from the playhead. At the last frame it begins again at the
+// loop-in frame (or the first frame), so Start always plays something.
+void PinglyMotionWindow::startPlaying()
 {
-
+  if(playstate!=PLAYSTATE_STOPPED) return;
   Animation* anim=scene->getAnimation();
+  if(!anim) return;
 
-  switch(playstate)
-  {
-    case PLAYSTATE_STOPPED:
-    {
-      // the playhead stays on the last frame after a one-shot play: start again
-      anim->setFrame(Playback::startFrame(anim->getFrame(),anim->getNumberOfFrames(),anim->getLoopInPoint()));
+  anim->setFrame(Playback::startFrame(anim->getFrame(),anim->getNumberOfFrames(),anim->getLoopInPoint()));
+  beginPlaying(anim);
+}
 
-      // if we're suposed to loop and the current frame is not past loop out point
-      if(UserSettings::loop() && anim->getFrame()<anim->getLoopOutPoint())
-      {
-        // start looping animation
-        setPlaystate(PLAYSTATE_LOOPING);
-        anim->setPlaystate(PLAYSTATE_LOOPING);
-      }
-      else
-      {
-        // start one-shot animation
-        setPlaystate(PLAYSTATE_PLAYING);
-        anim->setPlaystate(PLAYSTATE_PLAYING);
-      }
+// Stop: the playhead stays on the frame that is shown
+void PinglyMotionWindow::stopPlaying()
+{
+  if(playstate==PLAYSTATE_STOPPED) return;
+  timer.stop();
 
-      timer.start((int)(1.0/anim->fps()*1000.0));
-      break;
-    }
-    case PLAYSTATE_LOOPING:
-    {
-      setPlaystate(PLAYSTATE_PLAYING);
-      anim->setPlaystate(PLAYSTATE_PLAYING);
-      break;
-    }
-    case PLAYSTATE_PLAYING:
-    {
-      // take care of locks, key frames ...
-      frameSlider(ui->currentFrameSlider->value());
-      setPlaystate(PLAYSTATE_STOPPED);
-      anim->setPlaystate(PLAYSTATE_STOPPED);
+  // take care of locks, key frames ... (also shows the stopped state)
+  frameSlider(ui->currentFrameSlider->value());
+  if(Animation* anim=scene->getAnimation())
+    anim->setPlaystate(PLAYSTATE_STOPPED);
 
-      break;
-    }
-    default:
-      qCWarning(lcView,"nextPlaystate(): unknown playstate %d",(int) playstate);
-  }
+  updateInputs();
+}
 
+// Replay from start: back to the first frame and play, also while playing
+void PinglyMotionWindow::replayFromStart()
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim) return;
+  timer.stop();
+
+  frameSlider(Playback::replayFrame());
+  anim->setPlaystate(PLAYSTATE_STOPPED);
+  beginPlaying(anim);
+}
+
+// plays from the current frame: repeating between the loop points when Loop
+// is on, otherwise once to the last frame
+void PinglyMotionWindow::beginPlaying(Animation* anim)
+{
+  const PlayState state=Playback::startState(UserSettings::loop(),anim->getFrame(),anim->getLoopOutPoint());
+  setPlaystate(state);
+  anim->setPlaystate(state);
+
+  timer.start((int)(1.0/anim->fps()*1000.0));
   updateInputs();
 }
 
@@ -283,25 +283,13 @@ void PinglyMotionWindow::setPlaystate(PlayState state)
   // set state
   playstate=state;
 
-  // set play button icons according to play state
-  if(state==PLAYSTATE_STOPPED)
-    ui->playButton->setIcon(UserSettings::loop() ? loopIcon : playIcon);
-  else if(state==PLAYSTATE_LOOPING)
-    ui->playButton->setIcon(playIcon);
-  else if(state==PLAYSTATE_PLAYING)
-    ui->playButton->setIcon(stopIcon);
-  else
-    qCWarning(lcView,"setPlaystate(): unknown playstate %d",(int) state);
+  // Start only while stopped, Stop only while playing
+  if(m_transport) m_transport->setPlaystate(state);
 }
 
 void PinglyMotionWindow::on_currentFrameSlider_valueChanged(int newValue)
 {
   frameSlider(newValue);
-}
-
-void PinglyMotionWindow::on_playButton_clicked()
-{
-  nextPlaystate();
 }
 
 void PinglyMotionWindow::on_keyframeButton_toggled(bool)

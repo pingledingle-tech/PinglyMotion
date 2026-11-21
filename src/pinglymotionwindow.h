@@ -53,6 +53,7 @@ class ControlServer;
 class ControlIndicator;
 class AuroraIndicator;
 class TipsSwitch;
+class TransportBar;
 class AuroraLink;
 class WindowControlHost;
 class Scene;
@@ -180,7 +181,6 @@ class PinglyMotionWindow : public QMainWindow
     void on_propZRotSpin_valueChanged(int);
 
     void on_currentFrameSlider_valueChanged(int newValue);
-    void on_playButton_clicked();
     void on_keyframeButton_toggled(bool on);
     void on_loopInSpinBox_editingFinished();
     void on_loopOutSpinBox_editingFinished();
@@ -250,7 +250,12 @@ class PinglyMotionWindow : public QMainWindow
     void easingChoiceClicked(Easing::Preset preset);
 
     void frameSlider(int position);
-    void nextPlaystate();
+    // the transport buttons under the timeline (docs/UX_DECISIONS.md section 1);
+    // remote control play and stop do the same
+    void startPlaying();
+    void stopPlaying();
+    void replayFromStart();
+    void beginPlaying(Animation* anim);
     void setDefaultLoopIn(Animation* anim);
     void connectAnimation(Animation* anim);
     // the window shows what the model found wrong with the program's own data files
@@ -346,9 +351,8 @@ class PinglyMotionWindow : public QMainWindow
 
     Timeline* timeline;
     // icons for play button
-    QIcon playIcon;
-    QIcon loopIcon;
-    QIcon stopIcon;
+    // Start, Stop, Replay from start and Loop under the timeline
+    TransportBar* m_transport=nullptr;
 
     // holds the current playing status
     PlayState playstate;
