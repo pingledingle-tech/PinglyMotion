@@ -155,6 +155,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/startfolder)
   # the calibration table of the assistant guide (#129)
   ADD_SUBDIRECTORY (tests/calibration)
+  # the approved wording of menus and labels (#54, texts step 1)
+  ADD_SUBDIRECTORY (tests/menutexts)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

@@ -340,9 +340,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
   struct BodyChoice { const char* key; AvatarSkin::Body body; QString text; QString tip; };
   const BodyChoice bodyChoices[]={
     {"ruth2",AvatarSkin::RuthBody,tr("Ruth2"),
-     tr("The open source Ruth2 avatar, with fingers and a face that follow the Bento bones.")},
+     tr("The open source Ruth2 avatar, with fingers and a face that follow the extra Second Life bones.")},
     {"max",AvatarSkin::MaxBody,tr("Max"),
-     tr("The open source Max avatar, with fingers and a face that follow the Bento bones.")}};
+     tr("The open source Max avatar, with fingers and a face that follow the extra Second Life bones.")}};
   QMap<QString,QAction*> bodyActions;
   for(const BodyChoice& choice : bodyChoices)
   {
@@ -390,7 +390,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   jointsMenu->addSeparator();
   QAction* hideInListsAction=jointsMenu->addAction(tr("Hide in lists"));
   hideInListsAction->setCheckable(true);
-  hideInListsAction->setToolTip(tr("Leave hidden joints out of the timeline and the part list. Off: they are listed dimmed."));
+  hideInListsAction->setToolTip(tr("Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed."));
   hideInListsAction->setChecked(UserSettings::hideJointsInLists());
   connect(hideInListsAction,&QAction::toggled,this,[this](bool on)
   {
@@ -416,10 +416,10 @@ PinglyMotionWindow::PinglyMotionWindow() :
     UserSettings::setBody(key);
   });
 
-  // Options > Light...: brightness, shine and warmth of the body light
+  // Options > Lighting...: brightness, shine and warmth of the body light
   ui->animationView->setBodyLight(UserSettings::lightBrightness(),UserSettings::lightShine(),
                                   UserSettings::lightWarmth(),UserSettings::floorShadow());
-  QAction* lightAction=new QAction(tr("Light..."),this);
+  QAction* lightAction=new QAction(tr("Lighting..."),this);
   lightAction->setToolTip(tr("Change how the body is lit: brightness, shine, warmth and the shadow on the floor."));
   ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
   connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
@@ -519,7 +519,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
-  m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. Off every time PinglyMotion starts, unless started with --control."));
+  m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));
   ui->menuOptions->addAction(m_controlAction);
   connect(m_controlAction,&QAction::toggled,this,[this](bool on){ setRemoteControl(on,true); });
 
@@ -1047,7 +1047,7 @@ void PinglyMotionWindow::togglePanelsHidden()
   if(!hidden) ui->optionsShowTimelineAction->setChecked(!m_timelineDock->isHidden());
 }
 
-// Options > Light...: three sliders that change the body light at once.
+// Options > Lighting...: three sliders that change the body light at once.
 // The dialog stays open while you work; the values are saved with the
 // other settings.
 void PinglyMotionWindow::showLightDialog()
@@ -1265,9 +1265,9 @@ void PinglyMotionWindow::fillJointTable()
       if(!r.slName.isEmpty())
         tip=tr("Second Life name: %1").arg(r.slName);
       if(r.fileName!=r.slName && r.fileName!=JointList::POSITION_TRACK)
-        tip+=(tip.isEmpty() ? QString() : QStringLiteral("\n"))+tr("Name in the animation file: %1").arg(r.fileName);
+        tip+=(tip.isEmpty() ? QString() : QStringLiteral("\n"))+tr("Name in the file: %1").arg(r.fileName);
       if(r.fileName==JointList::POSITION_TRACK)
-        tip=tr("Moves the whole avatar.");
+        tip=tr("Moves the whole figure.");
       item->setToolTip(tip);
       if(r.dimmed)
         item->setForeground(palette().color(QPalette::Disabled,QPalette::Text));
@@ -1329,7 +1329,7 @@ void PinglyMotionWindow::buildPartLists()
   const QStringList names=ui->animationView->partNames();
 
   ui->attachToComboBox->clear();
-  ui->attachToComboBox->addItem(tr("* not attached *"));
+  ui->attachToComboBox->addItem(tr("(not attached)"));
   // attachment point number equals the track number
   for(int track=1;track<names.count();track++)
     ui->attachToComboBox->addItem(names[track]=="Site" ? "-" : names[track]);
@@ -1724,7 +1724,7 @@ void PinglyMotionWindow::setSkeleton(bool on)
 void PinglyMotionWindow::setLoop(bool on)
 {
   UserSettings::setLoop(on);
-  // the Loop switch under the timeline and Options > Loop show the same
+  // the Loop switch under the timeline and Options > Loop playback show the same
   m_transport->setLoop(on);
 
   // while playing: switched off, play to the last frame and stop; switched
@@ -1739,7 +1739,7 @@ void PinglyMotionWindow::setLoop(bool on)
   }
 }
 
-// Menu Action: Options / Joint Limits
+// Menu Action: Options / Stop joints at their furthest turn
 void PinglyMotionWindow::setJointLimits(bool on)
 {
   UserSettings::setJointLimits(on);
@@ -1751,7 +1751,7 @@ void PinglyMotionWindow::setJointLimits(bool on)
   }
 }
 
-// Menu Action: Options / Protect First Frame
+// Menu Action: Options / Lock the first frame
 void PinglyMotionWindow::setProtectFirstFrame(bool on)
 {
   UserSettings::setProtectFirstFrame(on);
@@ -1768,7 +1768,7 @@ void PinglyMotionWindow::showTimeline(bool on)
   m_timelineDock->setVisible(on);
 }
 
-// Menu Action: Options / Configure PinglyMotion
+// Menu Action: Options / Settings
 void PinglyMotionWindow::configure()
 {
   UserSettingsDialog* dialog=new UserSettingsDialog(this);

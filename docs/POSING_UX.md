@@ -1,3 +1,5 @@
+> The design charter (docs/DESIGN_CHARTER.md) wins if this document disagrees.
+
 > Where this page differs from [UX_DECISIONS.md](UX_DECISIONS.md) (20 November 2026), that page wins.
 
 # Posing UX plan (#88)

@@ -161,7 +161,7 @@ Rules the reader applies on top of the list above, so the data model stays valid
 ## Opening an old `.avm`
 
 1. The AVM reader stays for opening old files. The animation remembers the path of the `.avm` it came from. The title shows the new name `<same name>.dingle` and the file counts as changed, so Save is always offered.
-2. Save (or Save As with a name ending in `.dingle`) writes `<same name>.dingle` beside the old file. If it exists, the existing overwrite question comes first.
+2. Save (or Save as with a name ending in `.dingle`) writes `<same name>.dingle` beside the old file. If it exists, the existing overwrite question comes first.
 3. The file is written with `QSaveFile`, so a crash never leaves half a file.
 4. **Verify:** the new file is read back with the `.dingle` reader and compared with the animation in memory.
 5. Only if it matches, the old `.avm` is moved to the recycle bin with `QFile::moveToTrash()`. If that fails (no recycle bin on that drive or system), the `.avm` stays where it is and the user gets one plain sentence saying so. It is never deleted outright.
