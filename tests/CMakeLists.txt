@@ -157,7 +157,7 @@ FOREACH (RLV_TEST rlvcommand rlvstate rlva)
 ENDFOREACH ()
 
 # Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
-FOREACH (LSL_TEST lsllexer lslparser lslinterp)
+FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv)
   ADD_EXECUTABLE (pinglymotion_${LSL_TEST}_tests tst_${LSL_TEST}.cpp)
   TARGET_INCLUDE_DIRECTORIES (pinglymotion_${LSL_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
   TARGET_COMPILE_DEFINITIONS (pinglymotion_${LSL_TEST}_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")

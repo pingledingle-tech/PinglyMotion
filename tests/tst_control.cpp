@@ -211,6 +211,7 @@ class ControlTest : public QObject
     void loadReferenceOpensALibraryClip();
     void loadReferenceRefusesChangedAndOutsideFiles();
     void scriptLabLslCommands();
+    void scriptLabLslRlv();
     void readerParsesTheGivenBytes();
     void downloadedClipsAreMarked();
 
@@ -2940,6 +2941,22 @@ void ControlTest::scriptLabLslCommands()
   QVERIFY(said);
   QVERIFY(!run(R"({"command":"lsl_run"})")["ok"].toBool());
   QCOMPARE(m_animation->getNumberOfFrames(), frames);
+}
+
+// Script Lab step 4 (issue 290): a script's llOwnerSay("@detach=n") shows in rlv_state, and keep_rlv is checked
+void ControlTest::scriptLabLslRlv()
+{
+  FakeHost host(nullptr);
+  ControlApi api(&host);
+  QJsonObject answer = api.execute(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { llOwnerSay(\"@detach=n\"); } }"}, {"seconds", 1}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["rlv"].toObject()["state"].toObject()["blocked"].toArray(), QJsonArray({"detach"}));
+  answer = api.execute(QJsonObject{{"command", "rlv_state"}});
+  QCOMPARE(answer["blocked"].toArray(), QJsonArray({"detach"}));
+  QVERIFY(!api.execute(QJsonObject{{"command", "lsl_run"}, {"source", "default {}"}, {"keep_rlv", "yes"}})["ok"].toBool());
+  // the next run starts from an empty state unless keep_rlv is true
+  api.execute(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { } }"}, {"seconds", 1}});
+  QCOMPARE(api.execute(QJsonObject{{"command", "rlv_state"}})["blocked"].toArray().size(), 0);
 }
 
 QTEST_MAIN(ControlTest)

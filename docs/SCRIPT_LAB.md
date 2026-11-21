@@ -49,14 +49,14 @@ scripts do not talk to the RLV core yet (step 4, issue 290).
 
 - `src/scriptlab/lsl/`: lexer, recursive descent parser (no flex or bison), a checker with the Second Life compiler's
   name and type rules, the interpreter with a simulated clock, the built-in functions, and `world.*`, which turns what
-  a script does into the event log (step 4 sends `llOwnerSay("@...")` to the RLV core there; step 7 plays the
-  animations).
+  a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
+  the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
   `tools/gen_lsl_builtins.py` from the viewer's keyword list. 72 functions run; the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
-- Tests: `tests/tst_lsllexer.cpp`, `tests/tst_lslparser.cpp`, `tests/tst_lslinterp.cpp` and the LSL part of
+- Tests: `tests/tst_lsllexer.cpp`, `tests/tst_lslparser.cpp`, `tests/tst_lslinterp.cpp`, `tests/tst_lslrlv.cpp` and the LSL part of
   `tests/tst_control.cpp`; fuzz target `fuzz/fuzz_lsl.cpp`. Examples: `examples/scriptlab/`.
 
 ## What exists now (step 6, issue 292): Live
@@ -113,6 +113,11 @@ touches at given times), read the log (what it said, its listens, timers and ani
 {"command": "lsl_run", "source": "...", "seconds": 5, "inputs": [{"at": 1, "channel": 7, "text": "dance"}]}
 ```
 
+A script can use RLV: `llOwnerSay("@detach=n,sendim=n")` runs in the RLV core, `llOwnerSay("@version=2222")` is
+answered in the script's `listen` event on channel 2222. The log shows each command with its results, and the answer
+has `rlv.state` (the restrictions at the end, as `rlv_state` shows them); the same state is what the panel shows.
+Examples: `examples/scriptlab/rlv_lock.lsl` and `rlv_status.lsl`.
+
 ## RLV and RLVa mode (step 9, issue 297)
 
 Every behaviour in the table is marked `RLV` (in the plain RLV API) or `RLVa only` (RLVa's extended and experimental
@@ -144,7 +149,7 @@ command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cp
 
 - Only the behaviours in the table; others parse but are reported as unknown.
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
-- LSL: one script at a time, the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start` and
+- LSL: one script at a time (one object id for it), at most 100 RLV lines per run, the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start` and
   `run_time_permissions`, and 72 built-in functions; hard limits on steps, memory, nesting and time (step 5 adds more
   events and several objects). The sandbox is never identical to Second Life; the final test is always in Second Life.
 

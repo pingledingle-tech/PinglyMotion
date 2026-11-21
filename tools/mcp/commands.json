@@ -517,7 +517,7 @@
             ]
         },
         {
-            "description": "Script Lab: runs an LSL script in a sandbox with a simulated clock (not Second Life) and answers the event log as plain data: what the script said (owner_say, say, whisper, shout, region_say, instant_message), listens it opened, timer changes, events it handled, state changes, permissions, animations it started or stopped (animation_start, animation_stop; not played in the 3D view yet), and errors. Each entry has t (simulated seconds) and type. Runs state_entry of the default state first, then events until seconds have passed. inputs: chat or touches at given times, for listen and touch_start: [{\"at\":1,\"channel\":7,\"text\":\"dance\"},{\"at\":2,\"type\":\"touch\"}] (name and id default to the owner). The owner's permissions are granted at once. Hard limits stop a script that loops forever or uses too much memory; then stopped is true and stop_reason says why. A function that is not supported yet stops the script with type unsupported. A script that does not compile is not run: the answer has ok false and the errors (as lsl_check). Never changes the animation. Test the final script in Second Life too.",
+            "description": "Script Lab: runs an LSL script in a sandbox with a simulated clock (not Second Life) and answers the event log as plain data: what the script said (owner_say, say, whisper, shout, region_say, instant_message), RLV commands it sent (llOwnerSay text that starts with @, for example \"@detach=n\" or \"@version=2222\", is run as an RLV command: the log entry rlv_command has one result per command and the replies, which the script hears in its listen event on the reply channel; other llOwnerSay text stays an owner_say line; at most 100 such lines per run), listens it opened, timer changes, events it handled, state changes, permissions, animations it started or stopped (animation_start, animation_stop; not played in the 3D view yet), and errors. Each entry has t (simulated seconds) and type. Runs state_entry of the default state first, then events until seconds have passed. inputs: chat or touches at given times, for listen and touch_start: [{\"at\":1,\"channel\":7,\"text\":\"dance\"},{\"at\":2,\"type\":\"touch\"}] (name and id default to the owner). The owner's permissions are granted at once. The answer has rlv: lines run, lines refused and state, the restrictions at the end in the same shape as rlv_state; the script's object holds them in the sandbox RLV state, so rlv_state shows them too. The script runs in the RLV mode the sandbox is in (rlv or rlva, see rlv_reset); a run does not change it. The RLV state is emptied before each run unless keep_rlv is true. Hard limits stop a script that loops forever or uses too much memory; then stopped is true and stop_reason says why. A function that is not supported yet stops the script with type unsupported. A script that does not compile is not run: the answer has ok false and the errors (as lsl_check). Never changes the animation. Test the final script in Second Life too.",
             "name": "lsl_run",
             "parameters": {
                 "inputs": {
@@ -550,6 +550,10 @@
                         "type": "object"
                     },
                     "type": "array"
+                },
+                "keep_rlv": {
+                    "description": "Keep the RLV restrictions that are held before the run (default false: they are removed first)",
+                    "type": "boolean"
                 },
                 "seconds": {
                     "description": "Simulated seconds to run, 0 to 3600, default 10",
