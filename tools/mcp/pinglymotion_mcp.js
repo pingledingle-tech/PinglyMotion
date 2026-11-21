@@ -2,8 +2,8 @@
 /*
  * PinglyMotion MCP server (Node version)
  *
- * The same server as pinglymotion_mcp.py, written for Node so that Claude Desktop,
- * which ships its own Node, can run it without Python (issue #7). It talks to
+ * The MCP server, written for Node so that Claude Desktop, which ships its own Node,
+ * can run it without Python (issue #7). It is the only MCP server; the old Python one was removed. It talks to
  * PinglyMotion's local control interface (see docs/CONTROL.md), so PinglyMotion must
  * be running with remote control on: start it with `pinglymotion --control`, or tick
  * Options > Allow remote control.
@@ -27,7 +27,7 @@ const SERVER_NAME = "pinglymotion";
 const SERVER_VERSION = "0.1.0";
 const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
-// Text that goes to the AI tool together with the tool list (the same as in the Python server).
+// Text that goes to the AI tool together with the tool list.
 // Short on purpose: the long teaching text is the assistant guide, read with the read_guide tool.
 const INSTRUCTIONS =
   "PinglyMotion is a Second Life animation editor that you control with these tools. " +
@@ -322,7 +322,7 @@ function main() {
       "see docs/CONTROL.md.");
     return;
   }
-  // Messages are handled one after the other, in the order they came, as in the Python server
+  // Messages are handled one after the other, in the order they came
   let queue = Promise.resolve();
   const lines = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
   lines.on("line", (line) => {

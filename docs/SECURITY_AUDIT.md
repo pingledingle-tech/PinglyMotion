@@ -29,7 +29,7 @@ Every finding below was checked again against the code and workflows on `main` @
 | PM-06 | fixed | #25 (issue #6). `frames.bvh` refused ("Frames must be a whole number from 1 to 10000"); peak memory 46 MB. File size capped (`MAX_FILE_BYTES`). |
 | PM-07 | fixed | #25 (issue #7). `Constants::pinglyMotionDataPath()` uses the program folder, never the current folder. Program started in a folder with a planted `data/SLFemale.bvh` (= `channels.bvh`) and `data/SL.lim`: the planted files were not read. Test `dataFolderIsNotTheCurrentFolder`. |
 | PM-08 | fixed | #27 (issue #8). Live: `save_file`/`open_file` outside the work folder (absolute path, `../`) refused with the same text; an existing other file is not overwritten; `new_animation`/`open_file` refuse while there are unsaved changes. |
-| PM-09 | fixed | #26 (issue #9). `ProxyHandler({})`, only `http://127.0.0.1:` / `localhost:` URLs. `tests/test_mcp_proxy.py` passes. |
+| PM-09 | fixed | #26 (issue #9). `ProxyHandler({})`, only `http://127.0.0.1:` / `localhost:` URLs. fixed in the Python server, which was later removed; the Node server has the same protections and `tests/test_mcp_node.py` checks them. |
 | PM-10 | fixed | #36 (issue #10). Key checked before the body, at most 8 connections, body limit 64 KB. Live: 50 connections with 4 MB bodies and no key, memory did not grow. Appendix C header part: see below (old #145, fixed). |
 | PM-11 | fixed | #31 (issue #14). Saving uses `QSaveFile`, `commit()` and stream status are checked, the error is passed on. Test `saveFailureIsReported`. (Not re-tested live: the audit sandbox runs as root, so a read-only folder does not fail.) |
 | PM-12 | fixed | #32 (issue #15). `control.json` still stays after a crash (checked), but the MCP server now sends the key only after the program on the port answers a nonce with HMAC-SHA256 of the key (`/api/hello`); the file is rewritten at the next start. |
@@ -270,7 +270,7 @@ What is done well (verified): server binds only to `127.0.0.1` (`controlserver.c
 
 ### PM-09 – MCP server sends the bearer token through `HTTP_PROXY` — **Medium**
 
-- **File:** `tools/mcp/pinglymotion_mcp.py:52-71`
+- **File:** `tools/mcp/pinglymotion_mcp.py:52-71` (the Python server, removed since; the Node server replaced it)
 - **Explanation:** `urllib.request.urlopen()` honours `HTTP_PROXY`/`http_proxy`. `proxy_bypass("127.0.0.1")` is false unless `NO_PROXY` lists it. The request to `http://127.0.0.1:<port>/api` – including `Authorization: Bearer <token>` – is then sent to the proxy. The project notes already record the symptom ("urllib needs `ProxyHandler({})` in the cloud sandbox (proxy otherwise gives 404)").
 - **Evidence:** A fake proxy on port 3999 and `HTTP_PROXY=http://127.0.0.1:3999`, then `pinglymotion_mcp.request('/api', {'command':'state'})`:
   ```
@@ -396,7 +396,7 @@ These were not reproduced. They are listed so they are not forgotten.
 | ID | Area | Concern | Why unverified / next step |
 |---|---|---|---|
 | P-01 | `src/bvhparser.cpp:153-510`, `src/filemanager.cpp` | The newer `BvhParser` dereferences the end iterator in `nextToken()`/`token()` (`:458-467`) on truncated files, skips the first token, has unbounded recursion and channel counts, and all error branches are empty. | Dead code today (no callers of `FileManager::loadAnimationFromFile`). Fix or delete before it is wired in. |
-| P-02 | `pinglymotion_mcp.py` on Windows | Whether urllib on Windows sends 127.0.0.1 through the system (registry) proxy depends on `ProxyOverride`/`<local>` settings. | Test on the maintainer's Windows PC with a system proxy set. The PM-09 fix covers it either way. |
+| P-02 | `pinglymotion_mcp.py` (removed; the Node server replaced it) on Windows | Whether urllib on Windows sends 127.0.0.1 through the system (registry) proxy depends on `ProxyOverride`/`<local>` settings. | Test on the maintainer's Windows PC with a system proxy set. The PM-09 fix covers it either way. |
 | P-03 | `controlserver.cpp:133-141` | `control.json` is opened (created with umask permissions), then `chmod 0600`, then written. The token is written after the chmod, so no exposure was seen. On Windows `setPermissions` does not set ACLs; protection relies on `%LOCALAPPDATA%` being private. `PINGLYMOTION_CONTROL_FILE` can redirect the file anywhere. | Low risk; use `QSaveFile` and create with restrictive permissions from the start; consider ignoring the env override in release builds. |
 | P-04 | PM-01 exploitability | Whether the heap overflow can be turned into code execution. | Written values are mostly constant; not attempted. |
 | P-05 | Qt CVEs (SC-02) | Whether PinglyMotion reaches the vulnerable Qt code. | PinglyMotion uses `QNetworkAccessManager` for the update check (HTTPS to api.github.com) and PNG writing; not analysed further. |

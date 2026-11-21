@@ -111,10 +111,7 @@ jobs:
           # ONE folder examples/ next to the program holds every file the project owner may open: no
           # separate downloads; library/ goes next to the program. The release packages use the same script.
           bash tools/ci/package_examples.sh dist
-          # the MCP server goes with the program, so both are updated together
-          mkdir -p dist/mcp
-          cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt docs/ASSISTANT_GUIDE.md dist/mcp/
-          # the Claude Desktop extension: double-click it to install (issue #7)
+          # the Claude Desktop extension (issue #7)
           python tools/mcp/build_mcpb.py dist/PinglyMotion.mcpb
           cp "tools/mcp/START_HERE_CLAUDE.txt" "dist/START HERE - Claude.txt"
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/PinglyMotion.exe
@@ -195,9 +192,7 @@ jobs:
         env:
           PINGLYMOTION_EXPECT_BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
         run: ctest --test-dir build --output-on-failure
-      - name: MCP server connects safely
-        run: python3 tests/test_mcp_proxy.py
-      - name: MCP server in Node connects safely (issue 7)
+      - name: MCP server (Node) connects safely (issue 7)
         run: node --version && python3 tests/test_mcp_node.py node
       - name: Claude Desktop extension (.mcpb) is correct
         run: python3 tests/test_mcpb.py
@@ -230,11 +225,7 @@ jobs:
           python3 tools/check_sl_bvh.py exports/posed_bones.bvh --expect-animated mHandIndex2Left mHandThumb1Right mFaceJaw mTail2
       - name: Program starts and opens files
         run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build/src/PinglyMotion
-      - name: Remote control works from start to finish (HTTP and MCP)
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
-      - name: Remote control works from start to finish with the Node MCP server
-        env:
-          PINGLYMOTION_MCP: node
+      - name: Remote control works from start to finish (HTTP and the Node MCP server)
         run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build/src/PinglyMotion
       - name: Evaluation set for the AI assistant, reference solutions (issue 129)
         # every prompt's acceptance checks pass for a scripted reference solution and fail for an

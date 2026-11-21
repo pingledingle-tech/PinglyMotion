@@ -120,9 +120,6 @@ jobs:
           cp bin/NEWS LICENSE "$DIR/"
           # the same examples/ and library/ folders as the zip of every pull request (build.yml)
           bash tools/ci/package_examples.sh "$DIR"
-          # the MCP server goes with the program, so both are updated together
-          mkdir -p "$DIR/mcp"
-          cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt docs/ASSISTANT_GUIDE.md "$DIR/mcp/"
           # the Claude Desktop extension: in the zip and as its own download (issue #7)
           python tools/mcp/build_mcpb.py PinglyMotion.mcpb
           cp PinglyMotion.mcpb "$DIR/"
@@ -200,8 +197,6 @@ jobs:
           cp bin/NEWS LICENSE "$APPDIR/usr/bin/"
           # examples/ and library/ next to the program, as in the Windows zip (the file dialogs start in examples/)
           bash tools/ci/package_examples.sh "$APPDIR/usr/bin"
-          mkdir -p "$APPDIR/usr/bin/mcp"
-          cp tools/mcp/pinglymotion_mcp.py tools/mcp/commands.json tools/mcp/README.txt docs/ASSISTANT_GUIDE.md "$APPDIR/usr/bin/mcp/"
           # the Windows icon is 32x32; scaled up for the desktop
           convert "src/icons/pinglymotion.ico[0]" -filter point -resize 256x256 \
             "$APPDIR/usr/share/icons/hicolor/256x256/apps/pinglymotion.png"

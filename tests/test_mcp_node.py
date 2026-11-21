@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Checks the Node version of the MCP server (tools/mcp/pinglymotion_mcp.js, issue #7).
 
-It is spoken to over stdin/stdout, as an AI tool does, and must behave like the Python
-server (tests/test_mcp_proxy.py):
+It is spoken to over stdin/stdout, as an AI tool does, and checks:
 
 - It talks to PinglyMotion directly, never through HTTP_PROXY (issue #9).
 - It refuses a connection file that points anywhere but this machine.
@@ -259,7 +258,7 @@ def main():
         other.close()
 
     print("OK: Node MCP server ignores HTTP_PROXY, only connects locally, checks it is PinglyMotion before sending "
-          "the key, names the AI tool, sends heartbeats and speaks MCP like the Python server")
+          "the key, names the AI tool, sends heartbeats and speaks MCP")
 
 
 if __name__ == "__main__":

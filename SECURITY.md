@@ -43,7 +43,7 @@ In scope:
   `.anim`, glTF (`.glb`, `.gltf`), `.prp` props, joint mapping files, the
   reference library and data files
 - the remote control interface (`PinglyMotion --control`, local HTTP on
-  127.0.0.1, with a key), the MCP servers in `tools/mcp/` and the Claude
+  127.0.0.1, with a key), the MCP server in `tools/mcp/` and the Claude
   Desktop extension (`PinglyMotion.mcpb`)
 - the live link to the Aurora viewer, including its mutual authentication
 - the optional Kimodo text-to-motion helper in `tools/kimodo/` (its README
