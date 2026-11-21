@@ -21,6 +21,7 @@ Files:
 - fuzz/control.dict
 - fuzz/lsl.dict
 - fuzz/corpus/lsl/**
+- fuzz/corpus/control/**
 - examples/scriptlab/**
 - docs/CONTROL.md
 - docs/SCRIPT_LAB.md
