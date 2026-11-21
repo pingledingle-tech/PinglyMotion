@@ -216,7 +216,7 @@ void Interpreter::enterState(int index)
   queueEvent(Event{"state_entry", {}, QString(), QString()});
 }
 
-void Interpreter::start()
+void Interpreter::start(bool run)
 {
   if (m_started) return;
   m_started = true;
@@ -232,7 +232,7 @@ void Interpreter::start()
   }
   m_world.log(m_now, QJsonObject{{"type", "state"}, {"name", currentState()}});
   enterState(0);
-  processQueue();
+  if (run) processQueue();
 }
 
 void Interpreter::resetScript()
@@ -381,14 +381,69 @@ void Interpreter::deliverInput(const Input& input)
   }
   const QString text = World::clip(input.text);
   m_world.log(m_now, QJsonObject{{"type", "input"}, {"input", "chat"}, {"channel", input.channel}, {"name", name}, {"text", text}});
-  for (const Listen& l : m_listens)
+  receive(input.channel, name, id, text);
+}
+
+void Interpreter::receive(int channel, const QString& name, const QString& id, const QString& text)
+{
+  if (m_stopped) return;
+  const QString clipped = World::clip(text);
+  // a copy: queueing never changes the listens, but keep the loop independent of them
+  const std::vector<Listen> listens = m_listens;
+  for (const Listen& l : listens)
   {
-    if (!l.active || l.channel != input.channel) continue;
+    if (!l.active || l.channel != channel) continue;
     if (!l.name.isEmpty() && l.name != name) continue;
     if (!l.id.isEmpty() && l.id != "00000000-0000-0000-0000-000000000000" && l.id != id) continue;
-    if (!l.message.isEmpty() && l.message != text) continue;
-    queueEvent(Event{"listen", {Value::integer(input.channel), Value::string(name), Value::key(id), Value::string(text)}, QString(), QString()});
+    if (!l.message.isEmpty() && l.message != clipped) continue;
+    queueEvent(Event{"listen", {Value::integer(channel), Value::string(name), Value::key(id), Value::string(clipped)}, QString(), QString()});
   }
+}
+
+void Interpreter::touch(const QString& id, const QString& name)
+{
+  queueEvent(Event{"touch_start", {Value::integer(1)}, id, name});
+}
+
+void Interpreter::attachEvent(const QString& id)
+{
+  queueEvent(Event{"attach", {Value::key(id)}, QString(), QString()});
+}
+
+double Interpreter::nextWake() const
+{
+  if (m_stopped || m_timerInterval <= 0.0) return std::numeric_limits<double>::infinity();
+  return m_nextTimer;
+}
+
+void Interpreter::syncTo(double t)
+{
+  if (std::isfinite(t)) m_now = qMax(m_now, qBound(0.0, t, MAX_TIME));
+}
+
+void Interpreter::advanceTo(double t)
+{
+  if (m_stopped) return;
+  syncTo(t);
+  if (m_timerInterval > 0.0 && m_nextTimer <= m_now)
+  {
+    m_nextTimer = qMax(m_nextTimer + m_timerInterval, m_now + MIN_TIMER);
+    queueEvent(Event{"timer", {}, QString(), QString()});
+  }
+}
+
+bool Interpreter::checkRealTime()
+{
+  if (!m_stopped && m_clock.elapsed() > m_limits.maxWallMs)
+    stopWith(Stop{"limit", QString("The script ran longer than %1 ms of real time and was stopped.").arg(m_limits.maxWallMs), 0, 0});
+  return m_stopped;
+}
+
+void Interpreter::newBudget()
+{
+  m_clock.restart();
+  m_steps = 0;
+  m_events = 0;
 }
 
 void Interpreter::runUntil(double seconds)

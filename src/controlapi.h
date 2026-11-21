@@ -21,6 +21,7 @@
 #include <QVector3D>
 
 #include "scriptlab/rlvstate.h"
+#include "scriptlab/lsl/session.h"
 
 class Animation;
 class BVHNode;
@@ -95,6 +96,8 @@ class ControlApi
 
     // the Script Lab's RLV state that rlv_command, rlv_state and rlv_reset work on (issue 287)
     RlvState& rlv() { return m_rlv; }
+    // the world of the last lsl_run, for lsl_event and the panel's object list (Script Lab step 5)
+    lsl::Session& lslSession() { return m_lslSession; }
 
   private:
     typedef QJsonObject (ControlApi::*Handler)(const QJsonObject&);
@@ -148,6 +151,7 @@ class ControlApi
     QString m_libraryFolder;
     QString m_referenceFolder;
     RlvState m_rlv;
+    lsl::Session m_lslSession;     // after m_rlv: its world refers to m_rlv
 };
 
 #endif

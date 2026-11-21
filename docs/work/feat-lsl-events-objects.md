@@ -4,6 +4,8 @@ Pull request: #303
 Files:
 - src/scriptlab/lsl/**
 - src/scriptlab/scriptlabpanel.*
+- src/scriptlab/objectsview.*
+- src/pinglymotionwindow.cpp
 - src/controlapi.*
 - src/CMakeLists.txt
 - tests/tst_lslworld.cpp
@@ -14,6 +16,9 @@ Files:
 - tests/test_mcp_node.py
 - tools/mcp/commands.json
 - fuzz/fuzz_lsl.cpp
+- fuzz/fuzz_control.cpp
+- fuzz/CMakeLists.txt
+- fuzz/control.dict
 - fuzz/lsl.dict
 - fuzz/corpus/lsl/**
 - examples/scriptlab/**

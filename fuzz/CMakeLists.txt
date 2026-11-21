@@ -125,7 +125,8 @@ SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/parser.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/interp.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/world.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/rlvworld.cpp
-                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/control.cpp)
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/control.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/sandbox.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/session.cpp)
 TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LSL_FILES})
 TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
 ADD_EXECUTABLE (fuzz_lsl fuzz_lsl.cpp ${FUZZ_LSL_FILES})
