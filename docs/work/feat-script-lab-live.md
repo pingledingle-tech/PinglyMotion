@@ -1,6 +1,6 @@
 Branch: feat/script-lab-live
 Status: active
-Pull request: pending
+Pull request: #302
 Files:
 - docs/work/feat-script-lab-live.md
 - src/scriptlab/labwatcher.*
