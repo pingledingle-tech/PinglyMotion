@@ -65,7 +65,7 @@ The original plan:
 
 ### Step 5: Events and several objects (technical + visible)
 
-`listen`, `timer`, `touch_start`, `llDialog`, `attach`. Several objects at once, so a HUD and a restraint can talk on a channel. A simulated clock. Step 3 already runs `listen`, `timer`, `touch_start` and `run_time_permissions` for one script with a simulated clock; this step adds the rest and several objects.
+`listen`, `timer`, `touch_start`, `llDialog`, `attach`. Several objects at once, so a HUD and a restraint can talk on a channel. A simulated clock. Step 3 already runs `listen`, `timer`, `touch_start` and `run_time_permissions` for one script with a simulated clock; this step adds the rest and several objects. Done (issue 291): `lsl_run` with `objects`, the control command `lsl_event` (one event to the world of the last `lsl_run`), and the panel's Objects and Dialog part ([SCRIPT_LAB.md](SCRIPT_LAB.md)).
 
 ### Step 6: Live (visible)
 

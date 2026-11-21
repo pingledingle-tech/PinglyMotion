@@ -375,10 +375,67 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `unsupported` | the script called a function the sandbox does not run yet, and was stopped there | `message`, `line`, `column` |
 | `limit` | a limit stopped the script | `message`, `line`, `column` |
 
+#### Several objects and lsl_event (Script Lab step 5, issue 291)
+
+`lsl_run` can run several scripts in one world: instead of `source` give `objects`, a list of 1 to 16 entries
+`{name, source, key, owner, owner_name, position, attached}`. Only `name` (1 to 63 characters, each object its own) and
+`source` are needed. `key` and `owner` are keys (1 to 36 letters, digits or `-`; default: the object keys
+`c0ffee00-0000-4000-8000-000000000002`, `...03` and so on in list order, and the owner's key); `owner_name` needs
+`owner`. `position` is `[x, y, z]` in region metres (x and y 0 to 256, z 0 to 4096; default `[128, 128, 20]`, where the
+owner's avatar stands); `attached` is an attachment point from 1 to 55 (0, the default, means rezzed at `position`). A
+worn object is where the avatar is, and gets `attach` with the owner's key after its `state_entry`. All scripts
+together are at most 524 288 characters; nothing runs unless every script compiles (the answer then names the
+`object` and lists its `errors`).
+
+- One simulated clock for all objects. Things due at the same moment run in a fixed order, so the same request always
+  gives the same log: every object's `state_entry` first, in list order; then timers before inputs, objects in list
+  order, inputs in the order given; an object's events run before the next object's. A message said in `state_entry`
+  is heard only by objects whose `state_entry` (and `llListen`) ran before, so put the listeners first.
+- Objects hear each other's chat within the Second Life ranges: `llWhisper` 10 m, `llSay` 20 m, `llShout` 100 m,
+  `llRegionSay` the whole region, `llRegionSayTo` only the object with that key, at any distance. An object never
+  hears itself. The speaker's name and key are the object's, so `llListen` filters on name, key and message work.
+- Each object's `llOwnerSay("@...")` goes to the shared RLV state under the object's own key: two objects can hold
+  the same restriction (the count is 2), and `@clear` from one removes only its own. The cap of 100 `@` lines is per object.
+- More inputs (in `inputs` and in `lsl_event`): `object` names the object (default the first); `type` is also
+  `dialog` (`button`: the text of a button of that object's last `llDialog`; the avatar says it on the dialog's
+  channel; in the sandbox the object that showed the dialog always hears it, other objects within 20 m of the avatar
+  too), `attach` (`point`, default the object's point or 1) or `detach` (the object is dropped where the avatar stands
+  and gets `attach` with `NULL_KEY`). Chat from an avatar is heard by the objects within `kind`'s range of the avatar
+  (`say`, the default, 20 m; `whisper` 10 m; `shout` 100 m).
+- New functions: `llDialog` (Second Life's checks: a message, at most 12 buttons of at most 24 bytes; an empty list
+  gives `OK`; a refused dialog is a `debug` line), `llRegionSayTo`, `llGetPos`, `llGetAttached`, `llGetOwnerKey` (the
+  key itself when the sandbox does not know it); `llKey2Name` knows every object. New event: `attach`.
+- Log entries with several objects have `object` (the object's name). New entry types: `dialog` (`to`, `message`,
+  `buttons`, `channel`) and `region_say_to` (`to`, `channel`, `text`); `input` entries can be `dialog`, `attach` and
+  `detach` (with `error` when there is nothing to answer, detach or no such object).
+- The answer with `objects` has `objects` (per object: `name`, `key`, `owner`, `attached`, `position`, `state`,
+  `stopped`, `stop_reason`, `open_listens`, `timer`, `steps`, `restrictions` it holds, and its last `dialog`), `dialog`
+  (the newest dialog of any object), `stopped` (true when every script stopped), `time`, `warnings` (each with
+  `object`), `rlv` and `log`. A limit stops only the script that hit it; the others run on. The answer of a single
+  script (`source`) is as before, plus `objects` and `dialog`.
+
+`lsl_event {type, object, channel, text, kind, name, id, button, point, seconds}` sends one event to the world of the
+last `lsl_run` (with `source` or `objects`; each `lsl_run` starts a new world) at the moment that run or the last event
+ended, then runs the world on for `seconds` (default 1, at most 3600) of simulated time. The fields are those of an
+input, without `at`. The answer has the `log` of this command only, `objects`, `dialog`, `rlv`, `stopped` and `time`.
+The RLV state is not emptied. Each command gets a fresh real-time, step and event budget per script. It fails when no
+`lsl_run` has run yet, when the object does not exist, or when every script has stopped. The Script Lab panel lists
+the objects and the newest dialog after each `lsl_run` and `lsl_event` ([SCRIPT_LAB.md](SCRIPT_LAB.md)).
+
+```
+{"command": "lsl_run", "seconds": 2, "objects": [
+   {"name": "hud", "source": "...", "attached": 35},
+   {"name": "cuffs", "source": "...", "attached": 30}]}
+{"command": "lsl_event", "type": "touch", "object": "hud"}
+{"command": "lsl_event", "type": "dialog", "object": "hud", "button": "Lock"}
+```
+
+Examples: `examples/scriptlab/hud_cuffs_hud.lsl` and `hud_cuffs_cuffs.lsl`.
+
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
-the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start` and `run_time_permissions`; 72
-built-in functions (chat, listen, timer, time, owner and object keys, permissions, animations, list,
+the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions` and `attach`; 77
+built-in functions (chat, listen, timer, time, owner and object keys, permissions, animations, dialogs, position, list,
 string and maths functions). All 426 function names and signatures, 39 events and the constants come
 from the viewer's LSL keyword list (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`),
 so the checker knows every LSL function. LSL quirks are kept: the right side of an operator is evaluated

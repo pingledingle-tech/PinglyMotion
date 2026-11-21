@@ -25,6 +25,7 @@ Files:
 - docs/CONTROL.md
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md
+- docs/SCRIPT_LAB_PLAN.md
 
 ## What
 
