@@ -1,6 +1,6 @@
 Branch: cleanup/no-messagebox-in-model
 Status: active
-Pull request: pending
+Pull request: #241
 Files:
 - src/bvh.*
 - src/animation.*
