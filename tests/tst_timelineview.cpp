@@ -30,8 +30,8 @@ struct Fixture
   Fixture() : anim(&bvh)
   {
     Constants::setNumParts(BVH::countNodes(anim.getMotion()) + 1);
-    anim.setNumberOfFrames(20);
     view.getTimeline()->setAnimation(&anim);
+    anim.setNumberOfFrames(20);
     view.resize(600, 150);
   }
 };
