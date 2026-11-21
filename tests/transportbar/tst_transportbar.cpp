@@ -544,7 +544,15 @@ void TestTransportBar::lookFocusRingAndKeyboard()
   QCOMPARE(bar->replayButton()->focusPolicy() & Qt::TabFocus, Qt::TabFocus);
   QCOMPARE(bar->startButton()->nextInFocusChain(), static_cast<QWidget*>(bar->stopButton()));
   QCOMPARE(bar->stopButton()->nextInFocusChain(), static_cast<QWidget*>(bar->replayButton()));
-  QCOMPARE(bar->replayButton()->nextInFocusChain(), static_cast<QWidget*>(bar->loopCheckBox()));
+  // after Replay come the bar's other controls (such as frame step buttons)
+  // and then the Loop switch
+  QWidget* next = bar->replayButton()->nextInFocusChain();
+  for (int i = 0; i < 8 && next != bar->loopCheckBox(); i++)
+  {
+    QCOMPARE(next->parentWidget(), static_cast<QWidget*>(bar));
+    next = next->nextInFocusChain();
+  }
+  QCOMPARE(next, static_cast<QWidget*>(bar->loopCheckBox()));
 
   // focus from the keyboard shows the ring, in focus_ring, round the button
   bar->replayButton()->setFocus(Qt::MouseFocusReason);
