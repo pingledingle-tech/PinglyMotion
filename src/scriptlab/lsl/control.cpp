@@ -12,6 +12,8 @@
 #include "interp.h"
 #include "lexer.h"
 #include "parser.h"
+#include "rlvworld.h"
+#include "scriptlab/rlvstate.h"
 
 namespace lsl
 {
@@ -66,9 +68,9 @@ QJsonObject check(const QJsonObject& request)
   return answer;
 }
 
-QJsonObject run(const QJsonObject& request)
+QJsonObject run(const QJsonObject& request, RlvState* rlv)
 {
-  const QString problem = checkRequest(request, {"command", "source", "seconds", "inputs"});
+  const QString problem = checkRequest(request, {"command", "source", "seconds", "inputs", "keep_rlv"});
   if (!problem.isEmpty()) return fail(problem);
 
   double seconds = DEFAULT_SECONDS;
@@ -79,6 +81,9 @@ QJsonObject run(const QJsonObject& request)
     if (!std::isfinite(seconds) || seconds < 0 || seconds > MAX_SECONDS)
       return fail(QString("\"seconds\" must be between 0 and %1 (simulated seconds).").arg(MAX_SECONDS));
   }
+
+  if (request.contains("keep_rlv") && !request.value("keep_rlv").isBool()) return fail("\"keep_rlv\" must be true or false.");
+  const bool keepRlv = request.value("keep_rlv").toBool(false);
 
   std::vector<Input> inputs;
   if (request.contains("inputs"))
@@ -127,8 +132,12 @@ QJsonObject run(const QJsonObject& request)
     return answer;
   }
 
-  World world;
+  RlvState ownState;
+  RlvState& state = rlv ? *rlv : ownState;
+  if (!keepRlv) state.reset();
+  RlvWorld world(state);
   Interpreter interp(*parsed.script, world);
+  world.attach(&interp);
   for (const Input& in : inputs) interp.addInput(in);
   interp.start();
   interp.runUntil(seconds);
@@ -143,6 +152,7 @@ QJsonObject run(const QJsonObject& request)
                      {"open_listens", interp.openListens()},
                      {"timer", interp.timerInterval()},
                      {"warnings", diagnostics(parsed.warnings)}};
+  answer["rlv"] = QJsonObject{{"lines", world.rlvLines()}, {"refused", world.refusedLines()}, {"state", RlvWorld::stateJson(state)}};
   if (interp.stopped()) answer["stop_reason"] = interp.stopReason();
   answer["note"] = "A sandbox with a simulated clock, not Second Life: test the final script in Second Life too.";
   return answer;

@@ -72,3 +72,8 @@
 "ZERO_VECTOR"
 "TRUE"
 "PI"
+"@detach=n"
+"@version=2222"
+"@getstatus=1"
+"@clear"
+"@sendim=n,"
