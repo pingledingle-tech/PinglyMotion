@@ -1,5 +1,5 @@
 Branch: docs/ux-mockup
-Status: active
+Status: done
 Pull request: #285
 Files:
 - docs/mockup/**
