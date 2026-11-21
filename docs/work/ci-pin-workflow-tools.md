@@ -1,6 +1,6 @@
 Branch: ci/pin-workflow-tools
-Status: active
-Pull request: pending
+Status: done
+Pull request: #258
 Files:
 - .github/workflows/reference-fetch.yml
 - .github/workflows/blender.yml
