@@ -1,6 +1,6 @@
 Branch: cleanup/scene-owns-bvh
-Status: active
-Pull request: pending
+Status: done
+Pull request: #259
 Files:
 - src/animationview.*
 - src/scene.*

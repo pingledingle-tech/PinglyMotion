@@ -212,7 +212,7 @@ One issue per task, label `cleanup`. A job starts only when the project owner sa
 | C6 Use AnimFile::write for the BVH pose text instead of a second BVH writer | #197 | M | yes |
 | C7 One Euler/quaternion conversion and one rotation order type | #198 | M | no |
 | C8 Split pinglymotionwindow.cpp and merge the duplicated open/add code | #199 | L | yes |
-| C9 Finish the QAvimator scene refactor: remove the 'temporary' scaffolding | #200 | L | yes |
+| C9 Finish the QAvimator scene refactor: remove the 'temporary' scaffolding (started: the window owns the scene, pull request #242; the scene owns the BVH reader, pull request #259) | #200 | L | yes |
 | C10 Shared skeleton walk helpers instead of local copies | #201 | S | yes |
 | C11 Tests for props, the scene and the timeline (done, pull request #212) | #202 | M | yes |
 | C12 Function-pointer connects instead of SIGNAL()/SLOT() strings | #203 | S | yes |

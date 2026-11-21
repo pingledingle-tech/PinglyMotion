@@ -62,13 +62,6 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
 {
   figureFiles << Constants::maleBvhPath() << Constants::femaleBvhPath();
 
-  bvh=new BVH();
-  if(!bvh)
-  {
-    qCWarning(lcView,"AnimationView(): BVH initialisation failed.");
-    return;
-  }
-
   // init
   partHighlighted=0;
   propDragging=0;
@@ -84,12 +77,14 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   qCDebug(lcView,"AnimationView(): using limits file '%s'",limFile.toLatin1().constData());
 
   // read SL reference models to restore joint positions, in case another model has joints
-  // we do not support (e.g. the SL example bvh files)
+  // we do not support (e.g. the SL example bvh files); the animations use the
+  // scene's reader (Scene::bvh), this one only reads the reference skeletons
+  BVH reader;
   for(int i=0;i<Animation::NUM_FIGURES;i++)
   {
     QString model(figureFiles[i]);
     qCDebug(lcView,"Reading reference model '%s'",model.toLatin1().constData());
-    joints[i]=bvh->animRead(model,limFile);
+    joints[i]=reader.animRead(model,limFile);
   }
 
   QString skinError;
@@ -163,11 +158,6 @@ int AnimationView::firstObjectId()
 void AnimationView::setScene(Scene* scene)
 {
   m_scene = scene;
-}
-
-BVH* AnimationView::getBVH() const
-{
-  return bvh;
 }
 
 void AnimationView::drawProp(const Prop* prop) const
