@@ -9,18 +9,20 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
-#include <QApplication>
 #include <QCheckBox>
-#include <QGuiApplication>
-#include <QImage>
-#include <QLayout>
-#include <QPalette>
 #include <QPushButton>
 #include <QSettings>
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QtTest>
+
+// for the look of the buttons (transportlook.h)
+#include <QApplication>
+#include <QGuiApplication>
+#include <QImage>
+#include <QLayout>
+#include <QPalette>
 
 #include "constants.h"
 #include "transportbar.h"
