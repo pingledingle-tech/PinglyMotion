@@ -1,6 +1,6 @@
 Branch: ci/run-xr-animator-test
-Status: active
-Pull request: pending
+Status: done
+Pull request: #243
 Files:
 - .github/workflows/build.yml
 - docs/CODE_AUDIT.md

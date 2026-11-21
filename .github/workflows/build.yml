@@ -209,6 +209,8 @@ jobs:
         run: python3 tests/test_kimodo_helper.py
       - name: Generated SMPL 22 test skeletons are up to date (issue 18)
         run: python3 tests/test_gen_smpl22_bvh.py
+      - name: Generated XR Animator test skeleton is up to date
+        run: python3 tests/test_gen_xr_animator_bvh.py
       - name: Reference library index is valid
         run: python3 tests/test_reference_library.py
       - name: Generated .dingle and .anim edge cases are up to date
