@@ -1,0 +1,25 @@
+Branch: feat/script-lab-3d
+Status: active
+Pull request: pending
+Files:
+- src/scriptlab/labeffects.*
+- src/scriptlab/effectspreview.*
+- src/scriptlab/scriptlabpanel.*
+- src/animationview.*
+- src/pinglymotionwindow.cpp
+- src/pinglymotionwindow.h
+- src/CMakeLists.txt
+- tests/CMakeLists.txt
+- tests/tst_labeffects.cpp
+- tests/scriptlabeffects/**
+- examples/scriptlab/anim_*.lsl
+- docs/SCRIPT_LAB.md
+- docs/ROADMAP.md
+- docs/SCRIPT_LAB_PLAN.md
+
+## What
+
+Script Lab step 7 (issue 293): what a Live script run does shows in the 3D view, only while the panel's
+"Show effects in 3D view" box is ticked (off by default): `llStartAnimation` / `llStopAnimation` play or stop a
+bundled animation on a preview figure (the user's animation is never changed), and worn objects and RLV locks
+appear as small markers at their attachment points.
