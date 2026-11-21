@@ -1,6 +1,6 @@
 Branch: feat/script-lab-panel
 Status: active
-Pull request: pending
+Pull request: #298
 Files:
 - src/scriptlab/rlvpanel.*
 - src/scriptlab/rlvstate.* (small accessor only, if needed)
