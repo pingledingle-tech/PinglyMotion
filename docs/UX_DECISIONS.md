@@ -1,6 +1,6 @@
 # UX decisions: timeline and poser as one design
 
-Status: agreed with the project owner on 20 November 2026. Nothing is built yet; each step starts only when the owner says start. Issue #14 tracks the work. Where this page and [POSING_UX.md](POSING_UX.md) differ, this page wins.
+Status: agreed with the project owner on 20 November 2026. Each step starts only when the owner says start. Step 1 (transport buttons) is built and waits for the owner's Windows test; the other steps are not built yet. Issue #14 tracks the work. Where this page and [POSING_UX.md](POSING_UX.md) differ, this page wins.
 
 ## General rules
 
@@ -13,6 +13,7 @@ Status: agreed with the project owner on 20 November 2026. Nothing is built yet;
 
 - Buttons: Start, Stop, Replay from start, Step one frame back, Step one frame forward.
 - Loop on/off switch, on by default.
+- Step 1 (built, waiting for the owner's test): Start, Stop and Replay from start buttons and a Loop check box under the timeline (`src/transportbar.*`). Start can be clicked only while stopped, Stop only while playing, Replay from start always. The Loop check box and Options > Loop are the same setting, remembered between sessions. Frame step buttons follow in step 2.
 - Speed control: not now. Add it later if it is missed.
 
 ## 2. Easing tiles

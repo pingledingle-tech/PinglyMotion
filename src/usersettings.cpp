@@ -140,7 +140,8 @@ void UserSettings::readSettings()
   {
     settings.beginGroup(m_userSettingsVersionGroup);
 
-    setLoop(settings.value(m_loopKey).toBool());
+    // Loop is on by default (docs/UX_DECISIONS.md section 1)
+    setLoop(settings.value(m_loopKey, true).toBool());
     setSkeleton(settings.value(m_skeletonKey).toBool());
     setJointLimits(settings.value(m_jointLimitsKey).toBool());
     setProtectFirstFrame(settings.value(m_protectFirstFrameKey).toBool());

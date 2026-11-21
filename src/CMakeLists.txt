@@ -59,6 +59,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowfile.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp
+              transportbar.cpp
               scene.cpp
               screenshotsheet.cpp
               skinrenderer.cpp

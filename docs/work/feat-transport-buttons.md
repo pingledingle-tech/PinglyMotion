@@ -1,5 +1,5 @@
 Branch: feat/transport-buttons
-Status: active
+Status: done
 Pull request: #251
 Files:
 - src/playback.h
