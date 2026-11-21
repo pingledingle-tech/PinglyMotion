@@ -70,6 +70,7 @@ void RlvWorld::ownerSay(double time, const QString& text)
 QJsonObject RlvWorld::stateJson(const RlvState& rlv)
 {
   QJsonObject answer;
+  answer["mode"] = Rlv::modeName(rlv.mode());
   answer["rlv_version"] = QString("%1.%2.%3").arg(Rlv::VERSION_MAJOR).arg(Rlv::VERSION_MINOR).arg(Rlv::VERSION_PATCH);
 
   QJsonObject objects;
@@ -102,9 +103,15 @@ QJsonObject RlvWorld::stateJson(const RlvState& rlv)
   answer["actions"] = actions;
   answer["blocked"] = blocked;
 
-  QJsonArray known;
-  for (const Rlv::Behaviour& behaviour : Rlv::behaviours()) known << behaviour.name;
-  answer["behaviours"] = known;
+  answer["behaviours"] = QJsonArray::fromStringList(Rlv::behaviourNames(rlv.mode()));
+  QJsonArray rlvaOnly;
+  for (const Rlv::Behaviour& behaviour : Rlv::behaviours())
+    if (behaviour.dialect == Rlv::Dialect::RlvaOnly) rlvaOnly << behaviour.name;
+  answer["rlva_only"] = rlvaOnly;
+  QJsonObject recorded;
+  const QMap<QString, QString> effects = rlv.recorded();
+  for (auto it = effects.constBegin(); it != effects.constEnd(); ++it) recorded[it.key()] = it.value();
+  answer["recorded"] = recorded;
   return answer;
 }
 

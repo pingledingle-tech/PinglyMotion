@@ -36,6 +36,7 @@
 
 #include "controlapi.h"
 #include "scriptlab/lsl/control.h"
+#include "scriptlab/lsl/rlvworld.h"
 
 namespace
 {
@@ -95,11 +96,11 @@ namespace
      "{\"id\":{\"type\":\"string\",\"description\":\"A clip id from find_reference\"}}", "[\"id\"]"},
     {"rlv_command", "Script Lab (RLV sandbox): runs one RLV line as if the object had sent it with llOwnerSay, for example \"@detach=n,sendim=n\", \"@clear\", \"@clear=send\", \"@version=2222\" or \"@getstatus=2222\". object: an id for the sending object (1 to 64 letters, digits, '-', '_', '.' or spaces, e.g. a UUID or \"collar\"); text: starts with @, at most 1024 characters and 64 commands. Each command is <behaviour>[:<option>]=<n|add|y|rem|force|channel>. The answer has one result per command (success, unset, duplicate, failed with a reason, or retained for force commands, which are not carried out), the replies a script would hear (channel and text), and the number of restrictions now held. Nothing in the animation changes. Read the whole state with rlv_state.",
      "{\"object\":{\"type\":\"string\",\"description\":\"Id of the sending object, e.g. collar\"},\"text\":{\"type\":\"string\",\"description\":\"The owner-say line, starting with @\"}}", "[\"object\",\"text\"]"},
-    {"rlv_state", "Script Lab (RLV sandbox): shows the RLV state: the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, and the behaviours the sandbox knows. A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.", "{}", "[]"},
-    {"rlv_reset", "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed.", "{}", "[]"},
+    {"rlv_state", "Script Lab (RLV sandbox): shows the RLV state: the mode (rlv or rlva), the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, the behaviours known in this mode, the names of the RLVa-only behaviours, and the outside effects recorded by force commands (recorded, never carried out). A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.", "{}", "[]"},
+    {"rlv_reset", "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed. Optional mode: \"rlv\" (plain RLV, the default at start) or \"rlva\" (also the behaviours that only the RLVa viewers have; in plain RLV mode those answer as unknown). Switching the mode always starts from a clean state. Camera, sky and debug behaviours are only recorded and logged; the real program never changes.", "{\"mode\":{\"type\":\"string\",\"description\":\"rlv or rlva. Omit to keep the current mode\"}}", "[]"},
     {"lsl_check", "Script Lab: checks an LSL script the way the Second Life compiler does, without running it. Answers valid (true or false), errors and warnings, each with line, column (both start at 1) and message, and the state names. Errors: syntax, undeclared names, wrong types, wrong argument counts, unknown functions, events or states, missing return. Warnings: valid LSL that the sandbox does not run yet (a function that is not supported yet, an event it never raises). Never changes the animation.",
      "{\"source\":{\"type\":\"string\",\"description\":\"The LSL script as text\"}}", "[\"source\"]"},
-    {"lsl_run", "Script Lab: runs an LSL script in a sandbox with a simulated clock (not Second Life) and answers the event log as plain data: what the script said (owner_say, say, whisper, shout, region_say, instant_message), RLV commands it sent (llOwnerSay text that starts with @, for example \"@detach=n\" or \"@version=2222\", is run as an RLV command: the log entry rlv_command has one result per command and the replies, which the script hears in its listen event on the reply channel; other llOwnerSay text stays an owner_say line; at most 100 such lines per run), listens it opened, timer changes, events it handled, state changes, permissions, animations it started or stopped (animation_start, animation_stop; not played in the 3D view yet), and errors. Each entry has t (simulated seconds) and type. Runs state_entry of the default state first, then events until seconds have passed. inputs: chat or touches at given times, for listen and touch_start: [{\"at\":1,\"channel\":7,\"text\":\"dance\"},{\"at\":2,\"type\":\"touch\"}] (name and id default to the owner). The owner's permissions are granted at once. The answer has rlv: lines run, lines refused and state, the restrictions at the end in the same shape as rlv_state; the script's object holds them in the sandbox RLV state, so rlv_state shows them too. The RLV state is emptied before each run unless keep_rlv is true. Hard limits stop a script that loops forever or uses too much memory; then stopped is true and stop_reason says why. A function that is not supported yet stops the script with type unsupported. A script that does not compile is not run: the answer has ok false and the errors (as lsl_check). Never changes the animation. Test the final script in Second Life too.",
+    {"lsl_run", "Script Lab: runs an LSL script in a sandbox with a simulated clock (not Second Life) and answers the event log as plain data: what the script said (owner_say, say, whisper, shout, region_say, instant_message), RLV commands it sent (llOwnerSay text that starts with @, for example \"@detach=n\" or \"@version=2222\", is run as an RLV command: the log entry rlv_command has one result per command and the replies, which the script hears in its listen event on the reply channel; other llOwnerSay text stays an owner_say line; at most 100 such lines per run), listens it opened, timer changes, events it handled, state changes, permissions, animations it started or stopped (animation_start, animation_stop; not played in the 3D view yet), and errors. Each entry has t (simulated seconds) and type. Runs state_entry of the default state first, then events until seconds have passed. inputs: chat or touches at given times, for listen and touch_start: [{\"at\":1,\"channel\":7,\"text\":\"dance\"},{\"at\":2,\"type\":\"touch\"}] (name and id default to the owner). The owner's permissions are granted at once. The answer has rlv: lines run, lines refused and state, the restrictions at the end in the same shape as rlv_state; the script's object holds them in the sandbox RLV state, so rlv_state shows them too. The script runs in the RLV mode the sandbox is in (rlv or rlva, see rlv_reset); a run does not change it. The RLV state is emptied before each run unless keep_rlv is true. Hard limits stop a script that loops forever or uses too much memory; then stopped is true and stop_reason says why. A function that is not supported yet stops the script with type unsupported. A script that does not compile is not run: the answer has ok false and the errors (as lsl_check). Never changes the animation. Test the final script in Second Life too.",
      "{\"source\":{\"type\":\"string\",\"description\":\"The LSL script as text\"},\"seconds\":{\"type\":\"number\",\"description\":\"Simulated seconds to run, 0 to 3600, default 10\"},\"inputs\":{\"type\":\"array\",\"description\":\"Chat or touches during the run, at most 200\",\"items\":{\"type\":\"object\",\"properties\":{\"at\":{\"type\":\"number\"},\"type\":{\"type\":\"string\",\"enum\":[\"chat\",\"touch\"]},\"channel\":{\"type\":\"integer\"},\"name\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}}}},\"keep_rlv\":{\"type\":\"boolean\",\"description\":\"Keep the RLV restrictions that are held before the run (default false: they are removed first)\"}}", "[\"source\"]"},
   };
 
@@ -1552,51 +1553,27 @@ QJsonObject ControlApi::rlvCommand(const QJsonObject& request)
 
 QJsonObject ControlApi::rlvStateAnswer(const QJsonObject&)
 {
-  QJsonObject answer = ok();
-  answer["rlv_version"] = QString("%1.%2.%3").arg(Rlv::VERSION_MAJOR).arg(Rlv::VERSION_MINOR).arg(Rlv::VERSION_PATCH);
-
-  QJsonObject objects;
-  const QMap<QString, QStringList> map = m_rlv.objects();
-  for (auto it = map.constBegin(); it != map.constEnd(); ++it)
-    objects[it.key()] = QJsonArray::fromStringList(it.value());
-  answer["objects"] = objects;
-
-  QJsonArray restrictions;
-  QJsonObject counts;
-  for (const RlvState::Restriction& r : m_rlv.restrictions())
-  {
-    QJsonObject entry{{"object", r.object}, {"behaviour", r.behaviour}};
-    if (!r.option.isEmpty()) entry["option"] = r.option;
-    restrictions << entry;
-    const QString key = r.option.isEmpty() ? r.behaviour : r.behaviour + ":" + r.option;
-    counts[key] = m_rlv.count(r.behaviour, r.option);
-  }
-  answer["restrictions"] = restrictions;
-  answer["counts"] = counts;
-
-  QJsonArray actions;
-  QJsonArray blocked;
-  const QMap<QString, bool> allowed = m_rlv.actions();
-  for (const Rlv::Action& action : Rlv::actions())
-  {
-    const bool yes = allowed.value(action.id, true);
-    actions << QJsonObject{{"id", action.id}, {"label", action.label}, {"allowed", yes}};
-    if (!yes) blocked << action.id;
-  }
-  answer["actions"] = actions;
-  answer["blocked"] = blocked;
-
-  QJsonArray known;
-  for (const Rlv::Behaviour& behaviour : Rlv::behaviours()) known << behaviour.name;
-  answer["behaviours"] = known;
+  // one builder for this answer and for the rlv.state of lsl_run
+  QJsonObject answer = lsl::RlvWorld::stateJson(m_rlv);
+  answer["ok"] = true;
   return answer;
 }
 
-QJsonObject ControlApi::rlvReset(const QJsonObject&)
+QJsonObject ControlApi::rlvReset(const QJsonObject& request)
 {
+  // optional mode: validated before anything changes
+  Rlv::Mode mode = m_rlv.mode();
+  if (request.contains("mode"))
+  {
+    const QJsonValue value = request.value("mode");
+    if (!value.isString() || !Rlv::parseMode(value.toString(), mode))
+      return fail("rlv_reset: \"mode\" must be \"rlv\" or \"rlva\".");
+  }
   const int removed = static_cast<int>(m_rlv.restrictions().size());
   m_rlv.reset();
+  m_rlv.setMode(mode);
   QJsonObject answer = ok();
   answer["removed"] = removed;
+  answer["mode"] = Rlv::modeName(m_rlv.mode());
   return answer;
 }

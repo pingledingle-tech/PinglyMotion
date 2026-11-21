@@ -31,3 +31,4 @@ final restrictions. Does not restructure `src/scriptlab/rlv*`; uses its public A
 
 Checked locally: the Script Lab, LSL and control tests pass. The fuzz target `fuzz_lsl` now
 runs scripts through `RlvWorld` with an RLV state.
+`rlv_state` and the `rlv.state` of `lsl_run` use one builder (`RlvWorld::stateJson`), so the shape stays the same.

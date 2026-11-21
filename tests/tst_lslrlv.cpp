@@ -27,6 +27,7 @@ class LslRlvTest : public QObject
     void ownStateWithoutHost();
     void stateIsClearedUnlessKept();
     void spamIsCapped();
+    void followsTheRlvMode();
     void examplesRun();
 
   private:
@@ -170,6 +171,21 @@ void LslRlvTest::spamIsCapped()
     if (v.toObject().contains("error")) ++refused;
   QCOMPARE(refused, 1);
   QVERIFY(entries(a, "rlv_command").size() <= 101);
+}
+
+void LslRlvTest::followsTheRlvMode()
+{
+  // the script runs in the mode the sandbox is in: an RLVa-only behaviour is unknown in plain RLV
+  RlvState rlv;
+  const QString source = "default { state_entry() { llOwnerSay(\"@interact=n\"); } }";
+  QJsonObject a = run(source, &rlv);
+  QCOMPARE(entries(a, "rlv_command").first().toObject()["results"].toArray().first().toObject()["result"].toString(), QString("failed"));
+  QCOMPARE(a["rlv"].toObject()["state"].toObject()["mode"].toString(), QString("rlv"));
+  rlv.setMode(Rlv::Mode::Rlva);
+  a = run(source, &rlv);
+  QCOMPARE(entries(a, "rlv_command").first().toObject()["results"].toArray().first().toObject()["result"].toString(), QString("success"));
+  QCOMPARE(a["rlv"].toObject()["state"].toObject()["mode"].toString(), QString("rlva"));
+  QCOMPARE(rlv.mode(), Rlv::Mode::Rlva);   // the run leaves the mode as it was
 }
 
 void LslRlvTest::examplesRun()

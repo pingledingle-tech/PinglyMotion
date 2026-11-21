@@ -170,13 +170,21 @@ RLV 3.4.3; it is never identical to Second Life.
   `/detach/sendim:<uuid>` and `@getstatusall` those of all objects; a reply is at most 1023 characters.
   `restrictions` is the number now held. A line that does not start with `@`, is too long, has too many commands or
   a bad object id fails as a whole and changes nothing.
-- `rlv_state` returns `rlv_version` (`3.4.3`), `objects` (object id to its restrictions, such as `detach` or
+- `rlv_state` returns `mode` (`rlv` or `rlva`), `rlv_version` (`3.4.3`), `objects` (object id to its restrictions, such as `detach` or
   `sendim:<uuid>`), `restrictions` (each with `object`, `behaviour` and `option`), `counts` (how many objects hold
   each restriction), `actions` (each with `id`, `label` and `allowed`), `blocked` (the ids of the blocked actions) and
-  `behaviours` (the names the sandbox knows). Only a restriction without an option blocks an action: with an option it
+  `behaviours` (the names known in this mode), `rlva_only` (the names that only RLVa has; unknown in plain RLV mode)
+  and `recorded` (the outside effects that force commands asked for, option by behaviour; recorded, never carried
+  out). Only a restriction without an option blocks an action: with an option it
   is an exception (`@sendim:<uuid>=add`) or a limited form.
-- `rlv_reset` lifts every restriction of every object; `removed` says how many.
-- Known behaviours (others parse but fail as unknown): `detach`, `sendim`, `recvim`, `sendchat`, `recvchat`,
+- `rlv_reset` lifts every restriction of every object; `removed` says how many. The optional `mode` (`rlv` or
+  `rlva`, any case) sets the mode: plain RLV is the default at start, and in plain RLV mode the behaviours that only
+  RLVa has (step 9, issue 297; the list is `rlva_only` in `rlv_state`) fail as unknown. Switching the mode always
+  starts from a clean state; the answer has `mode`. Any other `mode` value fails and changes nothing. Camera, sky and
+  debug behaviours are only recorded and shown in the `reason` of the result ("recorded only"); the real program
+  never changes.
+- Known behaviours of the RLV core (others parse but fail as unknown; the camera, sky and debug behaviours of plain
+  RLV and the `rlva_only` names are listed in [SCRIPT_LAB.md](SCRIPT_LAB.md)): `detach`, `sendim`, `recvim`, `sendchat`, `recvchat`,
   `sendchannel`, `tplm`, `tploc`, `tplure`, `fly`, `sit`, `unsit`, `sittp`, `edit`, `rez`, `touchall`, `showinv`,
   `showloc`, `showminimap`, `showworldmap`, `share` (restrictions; `detach`, `sit` and `unsit` also take `force`) and
   `version`, `versionnew`, `versionnum`, `getstatus`, `getstatusall` (questions answered on a channel).
@@ -338,7 +346,7 @@ Life: test the final script there too.
   RLV state (the one `rlv_state` shows) gets it from the script's object (its key, as `llGetKey` returns), and
   the reply lines of `@version=<channel>`, `@getstatus=<channel>` and the like arrive in the script's `listen`
   event on that channel, as a viewer would answer (spoken by the owner). Other `llOwnerSay` text stays an `owner_say`
-  line. The RLV state is emptied before each run unless `keep_rlv` is `true`; what the script set stays in the
+  line. The script runs in the mode the sandbox is in (plain RLV or RLVa, set with `rlv_reset`'s `mode`; a run never changes it). The RLV state is emptied before each run unless `keep_rlv` is `true`; what the script set stays in the
   state after the run, so `rlv_state` shows it. At most 100 `@` lines per run.
 
 The answer of `lsl_run` has `log` (the event log, plain data), `log_truncated`, `stopped` and

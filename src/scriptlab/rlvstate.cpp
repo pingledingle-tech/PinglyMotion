@@ -63,7 +63,7 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
   Outcome outcome;
   outcome.command = command;
 
-  const QString problem = Rlv::checkCommand(command);
+  const QString problem = Rlv::checkCommand(command, m_mode);
   if (!problem.isEmpty())
   {
     outcome.result = Rlv::Result::Failed;
@@ -118,6 +118,7 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
       m_counts[entry.key()] += 1;
       anyChange = true;
       outcome.result = Rlv::Result::Success;
+      outcome.reason = outsideNote(command.behaviour);
       return outcome;
     }
 
@@ -143,9 +144,20 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
     }
 
     case Rlv::ParamType::Force:
+    {
       outcome.result = Rlv::Result::Retained;
       outcome.reason = QStringLiteral("accepted; force commands are not carried out in the sandbox");
+      const Rlv::Behaviour* behaviour = Rlv::findBehaviour(command.behaviour, m_mode);
+      if (behaviour && behaviour->external)
+      {
+        // acts outside the sandbox: remember it and say so in the log, change nothing real
+        QString option = command.option;
+        option.truncate(MAX_RECORDED_LENGTH);
+        m_recorded.insert(behaviour->name, option);
+        outcome.reason = QStringLiteral("accepted; ") + behaviour->note;
+      }
       return outcome;
+    }
 
     case Rlv::ParamType::Reply:
     {
@@ -156,6 +168,18 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
       else if (command.behaviour == QLatin1String("versionnum")) reply.text = Rlv::versionNumber();
       else if (command.behaviour == QLatin1String("getstatus")) reply.text = status(objectId, command.option, false);
       else if (command.behaviour == QLatin1String("getstatusall")) reply.text = status(objectId, command.option, true);
+      else if (command.behaviour == QLatin1String("getcommand"))
+      {
+        // RLVa: the behaviours this viewer knows whose name contains the option
+        for (const QString& name : Rlv::behaviourNames(m_mode))
+          if (command.option.isEmpty() || name.contains(command.option)) reply.text += QStringLiteral("/") + name;
+      }
+      else if (command.behaviour == QLatin1String("getheightoffset")) reply.text = QStringLiteral("0");
+      else if (Rlv::findBehaviour(command.behaviour, m_mode) &&
+               Rlv::findBehaviour(command.behaviour, m_mode)->dialect == Rlv::Dialect::RlvaOnly)
+      {
+        // RLVa questions about the avatar, inventory and camera: the sandbox has none, so the answer is empty
+      }
       else
       {
         outcome.result = Rlv::Result::Failed;
@@ -174,6 +198,12 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
   outcome.result = Rlv::Result::Failed;
   outcome.reason = QStringLiteral("bad syntax");
   return outcome;
+}
+
+QString RlvState::outsideNote(const QString& behaviour) const
+{
+  const Rlv::Behaviour* known = Rlv::findBehaviour(behaviour, m_mode);
+  return (known && known->external) ? known->note : QString();
 }
 
 QString RlvState::status(const QString& objectId, const QString& option, bool all) const
@@ -258,5 +288,14 @@ void RlvState::reset()
   const bool had = !m_objects.isEmpty();
   m_objects.clear();
   m_counts.clear();
+  m_recorded.clear();
   if (had) emit changed();
+}
+
+void RlvState::setMode(Rlv::Mode mode)
+{
+  if (mode == m_mode) return;
+  reset();
+  m_mode = mode;
+  emit modeChanged();
 }

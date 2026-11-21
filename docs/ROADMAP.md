@@ -51,6 +51,23 @@ Status: **steps 1, 2, 3 and 4 done** (the RLV core, issue 287: parser, behaviour
 6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible)
 7. Effects in the 3D view ([#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293), visible)
 8. Separate repository for the owner's RLV tools, description only ([#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294), technical)
+9. RLVa-only behaviours and a plain RLV / RLVa mode switch ([#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297), technical)
+
+### Script Lab: later (not planned yet)
+
+Ideas only; nothing is being built now. They come after steps 3 to 7 and each needs the project owner's word first.
+
+1. **Notecard recipes:** read a recipe from a notecard scripting tool (triggers, actions, menus, conditions, including sending RLV commands) and show what it does. It is its own language, so it is a new step after the LSL parts. Only test recipes are used, and the tool's author is asked before anything is built against it.
+2. **Stand-in for a closed third-party RLV HUD product:** a simulated copy that listens on the product's control chat channel (69), logs what it hears and answers, so a user's own HUD can be tested without the real product.
+3. **Input buttons in the panel:** buttons that simulate a touch or a chat message on a channel, so input can be tested without writing a script.
+4. **Script warnings (lint):** warn when a script uses something Second Life would reject, such as a wrong function name.
+5. **Animating simple objects:** `llSetPos` and rotation on simple shapes such as a box or a sphere in the 3D view. A much simpler alternative: jump straight to a "closed" state when a lock triggers.
+6. **Chain and leash visuals:** a plain line between two cuffs or a leash. Second Life uses `llParticleSystem` for this; for now only the logic is tested.
+7. **HUD workflow:** an AI makes the HUD picture and the script, Script Lab tests that the buttons do the right things, and the owner uploads the texture in Second Life. The appearance cannot be previewed.
+
+A script repository from another creator may later be worked on through a fork and a pull request, only with that creator's permission and after steps 3 to 6.
+
+Out of scope: full LSL, all functions and all RLV behaviours; a slow ring or collar closing animation, chain physics, particles as pictures, mesh and texture preview; real money transfers (only the logic and messages around them). The final test is always in Second Life.
 
 ## Aurora track (separate repository, owner decides)
 

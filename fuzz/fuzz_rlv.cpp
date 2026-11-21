@@ -2,7 +2,8 @@
  * PinglyMotion - fuzz target for the Script Lab's RLV core (issue 287)
  *
  * Each input line is "<object>|<owner-say text>" (a line without "|" comes
- * from the object "obj"). Every line goes to Rlv::parseLine() and to
+ * from the object "obj"). The lines "~rlv" and "~rlva" switch the mode
+ * (issue 297); after a real switch the state must be empty. Every line goes to Rlv::parseLine() and to
  * RlvState::apply(). It must never crash, and after every line the state must
  * keep its rules: limits, counters that match the restrictions, bounded
  * replies, and allowed/blocked actions that follow the plain restrictions.
@@ -49,8 +50,23 @@ static void checkState(const RlvState& state)
     const Rlv::Behaviour* behaviour = Rlv::findBehaviour(r.behaviour);
     check(behaviour != nullptr);
     check(behaviour->params & Rlv::AllowAddRemove);
+    // plain RLV mode never holds an RLVa-only behaviour; a required option is always there
+    if (state.mode() == Rlv::Mode::Rlv) check(behaviour->dialect == Rlv::Dialect::Rlv);
+    if (behaviour->option == Rlv::OptionUse::Required) check(!r.option.isEmpty());
+    if (behaviour->option == Rlv::OptionUse::None) check(r.option.isEmpty());
     check(state.count(r.behaviour, r.option) == counts.value(r.option.isEmpty() ? r.behaviour : r.behaviour + ":" + r.option));
     check(state.has(r.behaviour, r.option));
+  }
+
+  // outside effects are only recorded: known in this mode, external, bounded
+  const QMap<QString, QString> recorded = state.recorded();
+  check(recorded.size() <= Rlv::behaviours().size());
+  for (auto it = recorded.constBegin(); it != recorded.constEnd(); ++it)
+  {
+    const Rlv::Behaviour* behaviour = Rlv::findBehaviour(it.key(), state.mode());
+    check(behaviour != nullptr);
+    check(behaviour->external);
+    check(it.value().length() <= RlvState::MAX_RECORDED_LENGTH);
   }
 
   const QMap<QString, bool> actions = state.actions();
@@ -80,6 +96,18 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
       text = line.mid(bar + 1);
     }
 
+    if (line == QLatin1String("~rlv") || line == QLatin1String("~rlva"))
+    {
+      const Rlv::Mode before = state.mode();
+      const Rlv::Mode wanted = line == QLatin1String("~rlva") ? Rlv::Mode::Rlva : Rlv::Mode::Rlv;
+      state.setMode(wanted);
+      check(state.mode() == wanted);
+      // a real switch starts clean; asking for the mode it is already in changes nothing
+      if (wanted != before) check(state.restrictions().isEmpty() && state.recorded().isEmpty());
+      checkState(state);
+      continue;
+    }
+
     const Rlv::ParseResult parsed = Rlv::parseLine(text);
     if (parsed.ok())
     {
@@ -101,6 +129,14 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
     if (result.ok())
     {
       check(parsed.ok());
+      // in plain RLV mode a command for an RLVa-only behaviour never succeeds
+      if (state.mode() == Rlv::Mode::Rlv)
+        for (const RlvState::Outcome& outcome : result.outcomes)
+          if (outcome.command.type != Rlv::ParamType::Clear && outcome.command.valid)
+          {
+            const Rlv::Behaviour* known = Rlv::findBehaviour(outcome.command.behaviour);
+            if (known && known->dialect == Rlv::Dialect::RlvaOnly) check(outcome.result == Rlv::Result::Failed);
+          }
       check(result.outcomes.size() == parsed.commands.size());
       for (const RlvState::Outcome& outcome : result.outcomes)
         if (outcome.result == Rlv::Result::Failed) check(!outcome.reason.isEmpty());
