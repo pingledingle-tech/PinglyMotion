@@ -18,6 +18,7 @@
 
 class QCheckBox;
 class QPushButton;
+class QString;
 
 class TransportBar : public QWidget
 {
@@ -44,6 +45,8 @@ class TransportBar : public QWidget
     void loopToggled(bool on);
 
   private:
+    static void setTip(QPushButton* button,const QString& tip);
+
     QPushButton* m_start;
     QPushButton* m_stop;
     QPushButton* m_replay;

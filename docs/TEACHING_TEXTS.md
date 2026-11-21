@@ -108,6 +108,7 @@ Where: `src/pinglymotionwindow.ui`, `src/pinglymotionwindow.cpp`, `src/jointlist
 | B12 | Search joints / "Type part of a joint name, for example "elbow" or "left hand"." | Joint search | no change | no |
 | B13 | Second Life name: %1 / Name in the animation file: %1 / Moves the whole avatar. | Joint list tips | Second Life name: %1 / Name in the file: %1 / Moves the whole figure. | yes |
 | B14 | Close this panel (bring it back from the Options menu) / Put this panel back into the main window / Make this panel a window of its own | Panel buttons | no change | no |
+| B15 | Start / Stop / Replay from start, tips "Play the animation from where the playhead is" / "Stop playing; the playhead stays on this frame" / "Go back to the first frame and play"; when a button cannot be clicked: "It is already playing. Click Stop to stop it." / "It is not playing. Click Start to play it." (`src/transportbar.cpp`) | Transport buttons and the reason a button cannot be clicked (charter P6) | no change | no |
 
 ### 3.3 Settings, About, update
 
