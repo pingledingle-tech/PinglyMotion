@@ -46,7 +46,8 @@ class PMMesh
     QVector<Part> parts;
 
   private:
-    bool load(const QString& fileName, QString* errorMessage);
+    // the error for the user, empty when the file was read
+    QString load(const QString& fileName);
 };
 
 struct PMMesh::Result
