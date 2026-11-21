@@ -1,6 +1,6 @@
 Branch: fix/control-header-timeout
-Status: active
-Pull request: pending
+Status: done
+Pull request: #261
 Files:
 - src/controlserver.cpp
 - tests/tst_control.cpp

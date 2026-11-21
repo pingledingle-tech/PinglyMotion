@@ -36,6 +36,9 @@ namespace
   const int MAX_REQUEST_BYTES = MAX_HEADER_BYTES + 4 + MAX_BODY_BYTES;
   const int MAX_CONNECTIONS = 8;
   const int CONNECTION_TIMEOUT_MS = 15000;
+  // the complete request header, and with it the key, must arrive within this time; only an
+  // admitted connection may take the longer time above for its body (issue 249)
+  const int HEADER_TIMEOUT_MS = 2000;
 
   ControlServer::FileStep failingStep = ControlServer::FileStep::None;
 
@@ -251,7 +254,12 @@ void ControlServer::onNewConnection()
       m_admitted.remove(socket);
       socket->deleteLater();
     });
-    // a connection that stays silent is closed
+    // a connection that does not show its key quickly is closed, so silent connections cannot
+    // keep all slots busy (issue 249); any connection is closed after the longer time
+    QTimer::singleShot(HEADER_TIMEOUT_MS, socket, [this, socket]()
+    {
+      if (!m_admitted.contains(socket) && m_buffers.contains(socket)) socket->abort();
+    });
     QTimer::singleShot(CONNECTION_TIMEOUT_MS, socket, [socket]() { socket->disconnectFromHost(); });
   }
 }
