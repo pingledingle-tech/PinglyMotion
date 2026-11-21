@@ -440,7 +440,7 @@
             ]
         },
         {
-            "description": "Script Lab (RLV sandbox): shows the RLV state: the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, and the behaviours the sandbox knows. A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.",
+            "description": "Script Lab (RLV sandbox): shows the RLV state: the mode (rlv or rlva), the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, the behaviours known in this mode, the names of the RLVa-only behaviours, and the outside effects recorded by force commands (recorded, never carried out). A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.",
             "name": "rlv_state",
             "parameters": {
             },
@@ -448,9 +448,13 @@
             ]
         },
         {
-            "description": "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed.",
+            "description": "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed. Optional mode: \"rlv\" (plain RLV, the default at start) or \"rlva\" (also the behaviours that only the RLVa viewers have; in plain RLV mode those answer as unknown). Switching the mode always starts from a clean state. Camera, sky and debug behaviours are only recorded and logged; the real program never changes.",
             "name": "rlv_reset",
             "parameters": {
+                "mode": {
+                    "description": "rlv or rlva. Omit to keep the current mode",
+                    "type": "string"
+                }
             },
             "required": [
             ]

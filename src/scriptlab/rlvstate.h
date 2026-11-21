@@ -23,6 +23,7 @@
 #include <QStringList>
 #include <QVector>
 
+#include "rlvbehaviours.h"
 #include "rlvcommand.h"
 
 class RlvState : public QObject
@@ -34,6 +35,7 @@ class RlvState : public QObject
     static constexpr int MAX_OBJECTS = 64;
     static constexpr int MAX_RESTRICTIONS_PER_OBJECT = 128;
     static constexpr int MAX_OBJECT_ID_LENGTH = 64;
+    static constexpr int MAX_RECORDED_LENGTH = 128;
 
     struct Reply
     {
@@ -83,12 +85,25 @@ class RlvState : public QObject
     QMap<QString, QStringList> objects() const;
     // every action id (Rlv::actions()) -> true when allowed, false when blocked
     QMap<QString, bool> actions() const;
-    // removes every restriction of every object
+    // removes every restriction of every object (and the recorded outside effects)
     void reset();
+
+    // The mode the sandbox answers in: plain RLV (the default) or RLVa. In plain
+    // mode the RLVa-only behaviours are unknown. Changing the mode starts from a
+    // clean state (as after a relog): every restriction and recorded effect is removed.
+    Rlv::Mode mode() const { return m_mode; }
+    void setMode(Rlv::Mode mode);
+
+    // Effects outside the sandbox (camera, sky, debug settings and so on) that a
+    // force command asked for: behaviour -> the option of the last command. They
+    // are only recorded; the real program never changes.
+    QMap<QString, QString> recorded() const { return m_recorded; }
 
   signals:
     // the set of restrictions changed
     void changed();
+    // the mode was switched
+    void modeChanged();
 
   private:
     struct Entry
@@ -99,6 +114,7 @@ class RlvState : public QObject
     };
 
     Outcome run(const QString& objectId, const Rlv::Command& command, QVector<Reply>& replies, bool& changed);
+    QString outsideNote(const QString& behaviour) const;
     QString status(const QString& objectId, const QString& option, bool all) const;
     void removeEntry(const QString& objectId, int index);
 
@@ -106,6 +122,9 @@ class RlvState : public QObject
     QMap<QString, QVector<Entry>> m_objects;
     // "behaviour" or "behaviour:option" -> how many objects hold it
     QMap<QString, int> m_counts;
+    Rlv::Mode m_mode = Rlv::Mode::Rlv;
+    // behaviour -> option of the last force command that acts outside the sandbox (at most one per known behaviour)
+    QMap<QString, QString> m_recorded;
 };
 
 #endif

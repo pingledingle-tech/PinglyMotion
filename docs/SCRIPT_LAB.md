@@ -56,6 +56,33 @@ line and sends it again. Example:
 With the Script Lab panel open, the project owner sees the same restrictions and actions the assistant just set, so
 both look at one state.
 
+## RLV and RLVa mode (step 9, issue 297)
+
+Every behaviour in the table is marked `RLV` (in the plain RLV API) or `RLVa only` (RLVa's extended and experimental
+command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cpp`: the entries flagged
+`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL`), not from memory.
+
+- The mode is plain RLV at start. In plain RLV mode a RLVa-only behaviour answers as unknown, like any name the table
+  does not have. In RLVa mode it is accepted. Switching the mode removes every restriction and recorded effect (as
+  after a relog). Set it with the control command `rlv_reset` and its `mode` field ([CONTROL.md](CONTROL.md)).
+- RLVa-only behaviours by group: teleport and chat (`accepttprequest`, `tprequest`, `tplocal`, `sendchannel_except`),
+  interaction and view (`interact`, `touchhud`, `sendgesture`, `showself`, `showselfhead`, `shownearby`,
+  `viewtransparent`, `viewwireframe`, `allowidle`), shared folder (`sharedwear`, `sharedunwear`), camera
+  (`setcam_avdistmin`, `setcam_avdistmax`, `setcam_origindistmin`, `setcam_origindistmax`, and the force commands
+  `setcam_focus`, `setcam_fov`, `setcam_mode`) and questions (`findfolders`, `getcommand`, `getheightoffset`,
+  `getaddattachnames`, `getaddoutfitnames`, `getattachnames`, `getoutfitnames`, `getremattachnames`,
+  `getremoutfitnames`, `getcam_avdist`, `getcam_avdistmin`, `getcam_avdistmax`, `getcam_fov`, `getcam_fovmin`,
+  `getcam_fovmax`, `getcam_textures`).
+- Plain RLV behaviours with effects outside the sandbox are known in both modes: `setenv`, `setdebug`, `setcam`,
+  `setcam_avdist`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_fovmin`,
+  `setcam_fovmax`, `setcam_mouselook`, `setcam_textures`, `setcam_unlock`.
+- Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
+  shown in the log ("recorded only"); the real program never changes. A force command of that kind is `retained`
+  and its option is kept in `rlv_state` under `recorded`.
+- The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
+  answers `0`). `getcommand` lists the behaviours known in the current mode.
+- `setcam_*` behaviours with a distance need it as option (`@setcam_avdistmin:2=n`); without it the command fails.
+
 ## Limits
 
 - Only the behaviours in the table; others parse but are reported as unknown.
@@ -65,5 +92,5 @@ both look at one state.
 ## Licence
 
 The command syntax, return codes, behaviour names and the `@clear` and `@getstatus` rules follow Firestorm's RLVa
-(LGPL 2.1). The code is a modified port written anew with Qt types; no RLVa file is copied. See
+(LGPL 2.1); so do the RLVa-only names, parameter types and marks of step 9. The code is a modified port written anew with Qt types; no RLVa file is copied. See
 [CREDITS.md](../CREDITS.md).

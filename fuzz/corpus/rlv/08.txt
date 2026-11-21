@@ -1,0 +1,7 @@
+~rlva
+@interact=n,tprequest:abc=add,setcam_avdistmin:2=n
+@setcam_fov:1.2=force,getcommand:cam=77
+~rlv
+@interact=n,fly=n
+~rlva
+collar|@sharedwear=n,setcam_avdistmax=n,getcam_fov=5

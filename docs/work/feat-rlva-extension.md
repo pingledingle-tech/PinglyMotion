@@ -1,6 +1,6 @@
 Branch: feat/rlva-extension
 Status: active
-Pull request: pending
+Pull request: #299
 Files:
 - src/scriptlab/rlvbehaviours.*
 - src/scriptlab/rlvstate.*
@@ -16,6 +16,9 @@ Files:
 - docs/CONTROL.md
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md
+- CREDITS.md
+- tools/mcp/commands.json
+- fuzz/corpus/rlv/08.txt
 - docs/work/feat-rlva-extension.md
 
 ## What

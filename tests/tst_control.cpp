@@ -234,6 +234,8 @@ class ControlTest : public QObject
     void rlvAnswersEveryCommand();
     void rlvInputIsValidated();
     void rlvWorksWithoutAnAnimation();
+    void rlvaModeSwitch();
+    void rlvaModeInputIsValidated();
 
   private:
     QJsonObject run(const char* text) { return m_api->execute(json(text)); }
@@ -2770,6 +2772,68 @@ void ControlTest::rlvWorksWithoutAnAnimation()
   QVERIFY(api.execute(QJsonObject{{"command", "rlv_state"}})["ok"].toBool());
   QVERIFY(api.execute(QJsonObject{{"command", "rlv_reset"}})["ok"].toBool());
   QVERIFY(!api.execute(QJsonObject{{"command", "state"}})["ok"].toBool());
+}
+
+void ControlTest::rlvaModeSwitch()
+{
+  // plain RLV is the default; RLVa-only behaviours are unknown there
+  QJsonObject answer = run(R"({"command":"rlv_state"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlv"));
+  QVERIFY(!answer["behaviours"].toArray().contains(QJsonValue("interact")));
+  QVERIFY(answer["rlva_only"].toArray().contains(QJsonValue("interact")));
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@interact=n"})");
+  QCOMPARE(answer["results"].toArray()[0].toObject()["result"].toString(), QString("failed"));
+  QVERIFY(answer["results"].toArray()[0].toObject()["reason"].toString().contains("unknown behaviour"));
+
+  // switch through rlv_reset: starts clean, answers the new mode
+  run(R"({"command":"rlv_command","object":"collar","text":"@fly=n"})");
+  answer = run(R"({"command":"rlv_reset","mode":"rlva"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["removed"].toInt(), 1);
+  QCOMPARE(answer["mode"].toString(), QString("rlva"));
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@interact=n,setcam_fov:1.2=force,getcommand:interact=77"})");
+  const QJsonArray results = answer["results"].toArray();
+  QCOMPARE(results[0].toObject()["result"].toString(), QString("success"));
+  QCOMPARE(results[1].toObject()["result"].toString(), QString("retained"));
+  QVERIFY(results[1].toObject()["reason"].toString().contains("recorded only"));
+  QCOMPARE(answer["replies"].toArray()[0].toObject()["text"].toString(), QString("/interact"));
+  answer = run(R"({"command":"rlv_state"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlva"));
+  QVERIFY(answer["behaviours"].toArray().contains(QJsonValue("interact")));
+  QCOMPARE(answer["recorded"].toObject()["setcam_fov"].toString(), QString("1.2"));
+  QVERIFY(answer["blocked"].toArray().contains(QJsonValue("interact")));
+
+  // a reset without mode keeps the mode; back to rlv removes everything RLVa-only
+  answer = run(R"({"command":"rlv_reset"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlva"));
+  run(R"({"command":"rlv_command","object":"collar","text":"@interact=n"})");
+  answer = run(R"({"command":"rlv_reset","mode":"RLV"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlv"));
+  QCOMPARE(answer["removed"].toInt(), 1);
+  QCOMPARE(run(R"({"command":"rlv_state"})")["restrictions"].toArray().size(), 0);
+}
+
+void ControlTest::rlvaModeInputIsValidated()
+{
+  run(R"({"command":"rlv_reset","mode":"rlva"})");
+  run(R"({"command":"rlv_command","object":"collar","text":"@interact=n"})");
+  const char* bad[] =
+  {
+    R"({"command":"rlv_reset","mode":"firestorm"})",
+    R"({"command":"rlv_reset","mode":""})",
+    R"({"command":"rlv_reset","mode":7})",
+    R"({"command":"rlv_reset","mode":null})",
+    R"({"command":"rlv_reset","mode":["rlv"]})",
+  };
+  for (const char* request : bad)
+  {
+    const QJsonObject answer = run(request);
+    QVERIFY2(!answer["ok"].toBool(), request);
+    QVERIFY(!answer["error"].toString().isEmpty());
+  }
+  // a refused mode changes nothing: still RLVa, restriction still held
+  QCOMPARE(m_api->rlv().mode(), Rlv::Mode::Rlva);
+  QVERIFY(m_api->rlv().has("interact"));
 }
 
 QTEST_MAIN(ControlTest)

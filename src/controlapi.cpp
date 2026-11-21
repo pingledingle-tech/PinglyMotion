@@ -94,8 +94,8 @@ namespace
      "{\"id\":{\"type\":\"string\",\"description\":\"A clip id from find_reference\"}}", "[\"id\"]"},
     {"rlv_command", "Script Lab (RLV sandbox): runs one RLV line as if the object had sent it with llOwnerSay, for example \"@detach=n,sendim=n\", \"@clear\", \"@clear=send\", \"@version=2222\" or \"@getstatus=2222\". object: an id for the sending object (1 to 64 letters, digits, '-', '_', '.' or spaces, e.g. a UUID or \"collar\"); text: starts with @, at most 1024 characters and 64 commands. Each command is <behaviour>[:<option>]=<n|add|y|rem|force|channel>. The answer has one result per command (success, unset, duplicate, failed with a reason, or retained for force commands, which are not carried out), the replies a script would hear (channel and text), and the number of restrictions now held. Nothing in the animation changes. Read the whole state with rlv_state.",
      "{\"object\":{\"type\":\"string\",\"description\":\"Id of the sending object, e.g. collar\"},\"text\":{\"type\":\"string\",\"description\":\"The owner-say line, starting with @\"}}", "[\"object\",\"text\"]"},
-    {"rlv_state", "Script Lab (RLV sandbox): shows the RLV state: the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, and the behaviours the sandbox knows. A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.", "{}", "[]"},
-    {"rlv_reset", "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed.", "{}", "[]"},
+    {"rlv_state", "Script Lab (RLV sandbox): shows the RLV state: the mode (rlv or rlva), the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, the behaviours known in this mode, the names of the RLVa-only behaviours, and the outside effects recorded by force commands (recorded, never carried out). A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.", "{}", "[]"},
+    {"rlv_reset", "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed. Optional mode: \"rlv\" (plain RLV, the default at start) or \"rlva\" (also the behaviours that only the RLVa viewers have; in plain RLV mode those answer as unknown). Switching the mode always starts from a clean state. Camera, sky and debug behaviours are only recorded and logged; the real program never changes.", "{\"mode\":{\"type\":\"string\",\"description\":\"rlv or rlva. Omit to keep the current mode\"}}", "[]"},
   };
 
   QJsonArray vector(const QVector3D& v)
@@ -1545,6 +1545,7 @@ QJsonObject ControlApi::rlvCommand(const QJsonObject& request)
 QJsonObject ControlApi::rlvStateAnswer(const QJsonObject&)
 {
   QJsonObject answer = ok();
+  answer["mode"] = Rlv::modeName(m_rlv.mode());
   answer["rlv_version"] = QString("%1.%2.%3").arg(Rlv::VERSION_MAJOR).arg(Rlv::VERSION_MINOR).arg(Rlv::VERSION_PATCH);
 
   QJsonObject objects;
@@ -1578,17 +1579,33 @@ QJsonObject ControlApi::rlvStateAnswer(const QJsonObject&)
   answer["actions"] = actions;
   answer["blocked"] = blocked;
 
-  QJsonArray known;
-  for (const Rlv::Behaviour& behaviour : Rlv::behaviours()) known << behaviour.name;
-  answer["behaviours"] = known;
+  answer["behaviours"] = QJsonArray::fromStringList(Rlv::behaviourNames(m_rlv.mode()));
+  QJsonArray rlvaOnly;
+  for (const Rlv::Behaviour& behaviour : Rlv::behaviours())
+    if (behaviour.dialect == Rlv::Dialect::RlvaOnly) rlvaOnly << behaviour.name;
+  answer["rlva_only"] = rlvaOnly;
+  QJsonObject recorded;
+  const QMap<QString, QString> effects = m_rlv.recorded();
+  for (auto it = effects.constBegin(); it != effects.constEnd(); ++it) recorded[it.key()] = it.value();
+  answer["recorded"] = recorded;
   return answer;
 }
 
-QJsonObject ControlApi::rlvReset(const QJsonObject&)
+QJsonObject ControlApi::rlvReset(const QJsonObject& request)
 {
+  // optional mode: validated before anything changes
+  Rlv::Mode mode = m_rlv.mode();
+  if (request.contains("mode"))
+  {
+    const QJsonValue value = request.value("mode");
+    if (!value.isString() || !Rlv::parseMode(value.toString(), mode))
+      return fail("rlv_reset: \"mode\" must be \"rlv\" or \"rlva\".");
+  }
   const int removed = static_cast<int>(m_rlv.restrictions().size());
   m_rlv.reset();
+  m_rlv.setMode(mode);
   QJsonObject answer = ok();
   answer["removed"] = removed;
+  answer["mode"] = Rlv::modeName(m_rlv.mode());
   return answer;
 }
