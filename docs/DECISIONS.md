@@ -111,3 +111,5 @@ Decisions taken while the project lived in the old repository, and the decisions
 **15 Nov 2026 – Release betas as pre-releases.** Versions like `0.3.0-beta.1` are published as pre-releases, which the update check ignores, so users of the last stable version are not told about a beta. Source: old-repo item 52.
 
 **15 Nov 2026 – Rules for parallel AI sessions.** Each job works on its own branch, never on `main`, registers its branch and files on the work board first, and waits when files overlap. Commits use the GitHub noreply address, and a privacy check guards commits. Source: old-repo items 45 and 48, `CLAUDE.md`.
+
+**21 Nov 2026 – Claude extension: install from Settings first.** Double-clicking `PinglyMotion.mcpb` did nothing on the project owner's Windows PC (Windows offered no Claude app), while Settings > Extensions > Advanced settings > Install Extension... worked. Per Anthropic's docs, that route and drag and drop are the supported ones next to double-click, so the texts lead with Settings and mention double-click only as an extra.

@@ -295,14 +295,19 @@ short `START HERE - Claude.txt` with the same steps. No file editing and no type
 1. Unzip the download first (do not open the `.mcpb` from inside the zip). Nothing else has to be
    installed: the extension runs on the Node that the Claude app brings, so Python is not needed.
    If it does not start, say so in issue #7.
-2. Double-click `PinglyMotion.mcpb`. The Claude app opens an install window: click **Install**. If
-   double-click does nothing, start the Claude app, open **Settings > Extensions** and drag the file in.
+2. In the Claude app open **Settings > Extensions** (in newer versions: **Settings > Desktop app**, then
+   **Manage** next to Extensions). Click **Advanced settings**, find the section **Extension Developer**,
+   click **Install Extension...** and pick `PinglyMotion.mcpb`. The app shows a window about the
+   extension; follow its prompts to finish. Alternative: drag the file into the Claude window.
+   Double-clicking the file may also work, but on some Windows PCs it does nothing or Windows asks which
+   app to use (the Claude app is not offered); then ignore that and use the Settings route. Companies
+   and teams can block own extensions in the Claude app; then an administrator has to allow it.
 3. Start PinglyMotion and turn on **Options > Allow remote control (AI and other programs)** (it is off
    at every start).
 4. In a new chat in the Claude app, ask: "Raise the avatar's right arm and show me a picture." If
-   Claude asks for permission to use PinglyMotion, allow it.
+   Claude asks for permission to use PinglyMotion, allow it; if it does not ask, that is fine.
 
-Update: install the `PinglyMotion.mcpb` from the new download the same way. The extension holds no
+Update: install the `PinglyMotion.mcpb` from the new download the same way (step 2). The extension holds no
 settings and no key; it is the same MCP server as below, with the same protections (it talks only to
 `127.0.0.1` and checks that it really is PinglyMotion before it sends the key). The extension is
 built from this repository by `tools/mcp/build_mcpb.py` and is not signed. Claude Desktop does not

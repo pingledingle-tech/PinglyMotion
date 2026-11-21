@@ -1,6 +1,6 @@
 Branch: docs/mcpb-manual-install
-Status: active
-Pull request:
+Status: done
+Pull request: #265
 Files:
 - docs/work/docs-mcpb-manual-install.md
 - tools/mcp/START_HERE_CLAUDE.txt
@@ -8,7 +8,7 @@ Files:
 - tools/mcp/README.txt
 - docs/CONTROL.md
 - README.md
-- docs/DEV.md
+- docs/DECISIONS.md
 
 ## What
 

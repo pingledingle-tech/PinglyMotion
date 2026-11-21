@@ -10,5 +10,6 @@ Claude talks to PinglyMotion only on this computer. A screenshot of the 3D view 
 Claude can only open and save animations in the PinglyMotion folder in your Documents folder.
 Nothing secret is stored in this extension.
 
-Update: install the new PinglyMotion.mcpb from the new PinglyMotion download.
+Update: install the new PinglyMotion.mcpb from the new PinglyMotion download the same way
+(Claude app: Settings > Extensions > Advanced settings > Install Extension...).
 More: https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md

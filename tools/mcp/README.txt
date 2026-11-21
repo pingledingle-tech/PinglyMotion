@@ -8,7 +8,7 @@ You need Python 3 (https://www.python.org). Nothing else has to be installed.
 
 
 Easiest for the Claude app: see "START HERE - Claude.txt" next to the program (unzip first, then
-double-click PinglyMotion.mcpb and click Install). No Python is needed for that. Then do step 1 below. The rest of
+in the Claude app: Settings > Extensions > Advanced settings > Install Extension... and pick PinglyMotion.mcpb). No Python is needed for that. Then do step 1 below. The rest of
 this file is the manual way, which still needs Python.
 
 
