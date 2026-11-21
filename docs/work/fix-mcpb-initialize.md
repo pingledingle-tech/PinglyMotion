@@ -1,7 +1,12 @@
 Branch: fix/mcpb-initialize
 Status: active
-Pull request: (pending)
-Files: docs/work/fix-mcpb-initialize.md, tools/mcp/pinglymotion_mcp.js, tests/test_mcpb.py, docs/DEV.md, docs/CONTROL.md
+Pull request: #238
+Files:
+- docs/work/fix-mcpb-initialize.md
+- tools/mcp/pinglymotion_mcp.js
+- tests/test_mcpb.py
+- docs/DEV.md
+- docs/CONTROL.md
 
 ## What
 
