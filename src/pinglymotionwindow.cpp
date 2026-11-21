@@ -532,6 +532,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
   // the Script Lab panel shows and changes the same RLV state as rlv_command (issue 288)
   m_scriptLabPanel->setState(&m_controlApi->rlv());
+  // and the same folder watch as lab_watch (issue 292)
+  m_scriptLabPanel->setWatcher(&m_controlApi->lab());
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
   m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));

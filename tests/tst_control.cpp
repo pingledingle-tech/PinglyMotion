@@ -237,6 +237,7 @@ class ControlTest : public QObject
     void rlvWorksWithoutAnAnimation();
     void rlvaModeSwitch();
     void rlvaModeInputIsValidated();
+    void scriptLabLiveCommands();
 
   private:
     QJsonObject run(const char* text) { return m_api->execute(json(text)); }
@@ -2835,6 +2836,92 @@ void ControlTest::rlvaModeInputIsValidated()
   // a refused mode changes nothing: still RLVa, restriction still held
   QCOMPARE(m_api->rlv().mode(), Rlv::Mode::Rlva);
   QVERIFY(m_api->rlv().has("interact"));
+}
+
+// Script Lab Live (issue 292): lab_watch, lab_result and lab_unwatch on a temporary folder;
+// the folder is only read and the animation never changes
+void ControlTest::scriptLabLiveCommands()
+{
+  const int frames = m_animation->getNumberOfFrames();
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+
+  QJsonObject answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["ok"].toBool(), true);
+  QCOMPARE(answer["watching"].toBool(), false);
+  QVERIFY(answer["result"].isNull());
+  QCOMPARE(answer["note"].toString(), QString("No folder is watched. Start with lab_watch and the folder's path."));
+
+  QCOMPARE(run(R"({"command":"lab_watch"})")["error"].toString(),
+           QString("lab_watch needs \"path\": the whole path of the folder with the .lsl scripts."));
+  QCOMPARE(run(R"({"command":"lab_watch","path":"relative/folder"})")["error"].toString(),
+           QString("lab_watch: Give the whole path of the folder, not a relative one."));
+  QCOMPARE(run(R"({"command":"lab_watch","path":"/x","fast":true})")["error"].toString(),
+           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs."));
+  QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"seconds", 5000}})["error"].toString(),
+           QString("lab_watch: \"seconds\" must be between 0 and 3600 (simulated seconds)."));
+  QCOMPARE(run(R"({"command":"lab_unwatch","now":1})")["error"].toString(), QString("lab_unwatch takes no options."));
+
+  // an empty folder, then a script with an error, then the fixed script
+  answer = m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"seconds", 1}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["folder"].toString(), QFileInfo(dir.path()).canonicalFilePath());
+  QCOMPARE(answer["scripts"].toArray().size(), 0);
+  QCOMPARE(answer["runs"].toInt(), 0);
+  QVERIFY(answer["result"].isNull());
+  QCOMPARE(answer["note"].toString(), QString("No .lsl file in the folder yet. Save one there and call lab_result."));
+
+  {
+    QFile file(dir.filePath("collar.lsl"));
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write("default { state_entry() { llOwnerSay(1); } }");
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 1, 5000);
+  answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["watching"].toBool(), true);
+  QCOMPARE(answer["scripts"].toArray(), QJsonArray({"collar.lsl"}));
+  QJsonObject result = answer["result"].toObject();
+  QCOMPARE(result["file"].toString(), QString("collar.lsl"));
+  QCOMPARE(result["valid"].toBool(), false);
+  QCOMPARE(result["errors"].toArray().size(), 1);
+  QCOMPARE(result["errors"].toArray().first().toObject()["line"].toInt(), 1);
+  QCOMPARE(result["errors"].toArray().first().toObject()["column"].toInt(), 38);
+
+  QTest::qWait(1100);   // a new file time
+  {
+    QFile file(dir.filePath("collar.lsl"));
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    file.write("default { state_entry() { llOwnerSay(\"locked\"); } }");
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 2, 5000);
+  result = m_api->execute(QJsonObject{{"command", "lab_result"}, {"file", "collar.lsl"}})["result"].toObject();
+  QCOMPARE(result["valid"].toBool(), true);
+  QCOMPARE(result["run"].toInt(), 2);
+  QJsonArray said;
+  for (const QJsonValue& v : result["result"].toObject()["log"].toArray())
+    if (v.toObject()["type"] == "owner_say") said.append(v.toObject()["text"]);
+  QCOMPARE(said, QJsonArray({"locked"}));
+  QCOMPARE(result["result"].toObject()["time"].toDouble(), 1.0);
+
+  QCOMPARE(run(R"({"command":"lab_result","file":"other.lsl"})")["error"].toString(),
+           QString("lab_result: \"other.lsl\" is not a watched script. The scripts are listed in \"scripts\" of lab_result without file."));
+  QCOMPARE(run(R"({"command":"lab_result","file":3})")["error"].toString(),
+           QString("lab_result: \"file\" must be a script path relative to the watched folder."));
+
+  // after lab_unwatch a saved change is not run
+  QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), true);
+  QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), false);
+  QTest::qWait(1100);
+  {
+    QFile file(dir.filePath("collar.lsl"));
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    file.write("default { state_entry() { llOwnerSay(\"again\"); } }");
+  }
+  QTest::qWait(1000);
+  answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["watching"].toBool(), false);
+  QCOMPARE(answer["runs"].toInt(), 2);
+  QCOMPARE(m_animation->getNumberOfFrames(), frames);
 }
 
 // Script Lab (issue 289): lsl_check and lsl_run go through the control commands and never touch the animation

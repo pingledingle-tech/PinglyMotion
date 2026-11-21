@@ -5,7 +5,6 @@ Files:
 - docs/work/feat-script-lab-live.md
 - src/scriptlab/labwatcher.*
 - src/scriptlab/scriptlabpanel.*
-- src/scriptlab/scriptview.*
 - src/controlapi.*
 - src/pinglymotionwindow.cpp
 - src/CMakeLists.txt
@@ -20,7 +19,6 @@ Files:
 - docs/SCRIPT_LAB.md
 - docs/SCRIPT_LAB_PLAN.md
 - docs/ROADMAP.md
-- docs/TEACHING_TEXTS.md
 
 ## What
 

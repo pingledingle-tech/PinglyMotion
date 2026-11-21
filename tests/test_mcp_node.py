@@ -143,6 +143,8 @@ def main():
         assert "lsl_check" in bundled and "lsl_run" in bundled, bundled
     with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
         guide = handle.read()
+    # Script Lab Live (issue 292): the folder watch commands are in the bundled list
+    assert all(name in bundled for name in ("lab_watch", "lab_unwatch", "lab_result")), bundled
 
     with tempfile.TemporaryDirectory() as tmp:
         control = os.path.join(tmp, "control.json")

@@ -34,6 +34,7 @@ SET (FUZZ_CORE_FILES ${CMAKE_SOURCE_DIR}/src/animation.cpp
                     ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
                     ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
 ADD_LIBRARY (fuzz_core STATIC ${FUZZ_CORE_FILES})
+TARGET_SOURCES (fuzz_core PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_core PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_OPTIONS (fuzz_core PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_LIBRARIES (fuzz_core PUBLIC ${PINGLYMOTION_QT_LIBS})

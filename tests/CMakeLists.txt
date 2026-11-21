@@ -164,3 +164,9 @@ FOREACH (LSL_TEST lsllexer lslparser lslinterp)
   TARGET_LINK_LIBRARIES (pinglymotion_${LSL_TEST}_tests pinglymotion_core Qt6::Core Qt6::Test)
   ADD_TEST (NAME ${LSL_TEST} COMMAND pinglymotion_${LSL_TEST}_tests)
 ENDFOREACH ()
+
+# Script Lab Live (#292): the folder watch, reloading changed scripts, its limits
+ADD_EXECUTABLE (pinglymotion_labwatcher_tests tst_labwatcher.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labwatcher_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_labwatcher_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME labwatcher COMMAND pinglymotion_labwatcher_tests)
