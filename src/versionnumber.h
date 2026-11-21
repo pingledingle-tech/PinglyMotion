@@ -26,7 +26,7 @@
 class VersionNumber
 {
   public:
-    VersionNumber(const QString& versionNumber);
+    explicit VersionNumber(const QString& versionNumber);
     ~VersionNumber();
 
     const QString& toString() const;

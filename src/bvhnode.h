@@ -84,7 +84,7 @@ class FrameData
 class BVHNode
 {
   public:
-    BVHNode(const QString& name);
+    explicit BVHNode(const QString& name);
     ~BVHNode();
 
     const QString& name() const;

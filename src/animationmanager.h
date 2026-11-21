@@ -44,7 +44,7 @@ class AnimationManager : public QObject
     // List access used by Scene. Kept until the data model is replaced (#62).
 
     int count() const;
-    Animation* const at(int index) const;
+    Animation* at(int index) const;
     bool contains(Animation* const animation) const;
     bool isEmpty() const;
     int indexOf(Animation* const animation) const;

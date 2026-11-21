@@ -9,7 +9,7 @@ SET (CMAKE_AUTORCC ON)
 SET (CMAKE_CXX_STANDARD 17)
 SET (CMAKE_CXX_STANDARD_REQUIRED ON)
 IF (NOT MSVC)
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 ENDIF (NOT MSVC)
 
 # Release mode build should not generate debug messages

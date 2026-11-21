@@ -48,7 +48,7 @@ class GltfImportDialog : public QDialog
   Q_OBJECT
 
   public:
-    GltfImportDialog(const GltfImport::Document& document,QWidget* parent=nullptr);
+    explicit GltfImportDialog(const GltfImport::Document& document,QWidget* parent=nullptr);
 
     int animation() const;
     int skeleton() const;

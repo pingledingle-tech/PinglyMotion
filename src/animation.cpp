@@ -30,6 +30,7 @@
 #include <string.h>
 
 // #include "main.h"
+#include "logging.h"
 #include "bvh.h"
 #include "constants.h"
 #include "usersettings.h"
@@ -41,7 +42,6 @@ Animation::Animation(BVH* newBVH, const QString& bvhFile)
     totalFrames(0),
     mirrored(false)
 {
-  qDebug("Animation::Animation(%p)",(const void*) this);
 
   // IK starts off for every limb (setIK() below compares with the old value)
   for(int i=0;i<NUM_IK;i++) ikOn[i]=false;
@@ -49,7 +49,7 @@ Animation::Animation(BVH* newBVH, const QString& bvhFile)
   bvh=newBVH;
   if(!bvh)
   {
-    qDebug("Animation::Animation(): BVH initialisation failed.");
+    qCWarning(lcAnimation,"Animation(): BVH initialisation failed.");
     return;
   }
 
@@ -85,7 +85,6 @@ Animation::Animation(BVH* newBVH, const QString& bvhFile)
 
 Animation::~Animation()
 {
-  qDebug("Animation::~Animation(%p)",(const void*) this);
 
   // remove rotation keyframes
   if(frames) bvh->bvhDelete(frames);
@@ -95,7 +94,6 @@ Animation::~Animation()
 
 void Animation::loadBVH(const QString& bvhFile)
 {
-  qDebug("Animation::loadBVH(%s)",bvhFile.toLatin1().constData());
 
   // read the Bento reference skeleton first, as reading a file resets the
   // lastLoaded... values that are used after loading the animation
@@ -123,7 +121,6 @@ void Animation::loadBVH(const QString& bvhFile)
 
 bool Animation::saveBVH(const QString& bvhFile, QString* error)
 {
-  qDebug("Animation::saveBVH(%s)",bvhFile.toLatin1().constData());
   QString message;
   if(!bvh->animWrite(this,bvhFile,message))
   {
@@ -134,16 +131,16 @@ bool Animation::saveBVH(const QString& bvhFile, QString* error)
   return true;
 }
 
-QString Animation::poseBvhText(int frame)
+QString Animation::poseBvhText(int frameNumber)
 {
   if(!frames) return QString();
-  return bvh->bvhPoseText(this,frame);
+  return bvh->bvhPoseText(this,frameNumber);
 }
 
-QJsonObject Animation::poseQuaternions(int frame)
+QJsonObject Animation::poseQuaternions(int frameNumber)
 {
   if(!frames) return QJsonObject();
-  return bvh->bvhPoseQuaternions(this,frame);
+  return bvh->bvhPoseQuaternions(this,frameNumber);
 }
 
 int Animation::fps() const
@@ -166,7 +163,7 @@ void Animation::setFPS(int fps)
 // convenience
 void Animation::setFrameTime(double frameTime)
 {
-  framesPerSecond=(int) (1.0/frameTime+0.5);
+  framesPerSecond=qRound(1.0/frameTime);
 }
 
 // convenience
@@ -182,7 +179,6 @@ int Animation::getNumberOfFrames()
 
 void Animation::setNumberOfFrames(int num)
 {
-  qDebug("Animation::setNumberOfFrames(%d)",num);
   const int oldLast=totalFrames-1;
   totalFrames=num;
   // a loop that ended on the last frame keeps ending on the last frame, and
@@ -251,7 +247,7 @@ void Animation::setEaseIn(BVHNode* node,int frameNum,bool state)
 {
   if(!node)
   {
-    qDebug("Animation::setEaseIn(): node==0!");
+    qCWarning(lcAnimation,"setEaseIn(): node==0!");
     return;
   }
 
@@ -268,7 +264,7 @@ void Animation::setEaseOut(BVHNode* node,int frameNum,bool state)
 {
   if(!node)
   {
-    qDebug("Animation::setEaseOut(): node==0!");
+    qCWarning(lcAnimation,"setEaseOut(): node==0!");
     return;
   }
 
@@ -285,7 +281,7 @@ void Animation::setCurve(BVHNode* node,int frameNum,const std::optional<Easing::
 {
   if(!node)
   {
-    qDebug("Animation::setCurve(): node==0!");
+    qCWarning(lcAnimation,"setCurve(): node==0!");
     return;
   }
 
@@ -308,7 +304,7 @@ void Animation::setCustomCurve(BVHNode* node,int frameNum,const std::optional<Ea
 {
   if(!node)
   {
-    qDebug("Animation::setCustomCurve(): node==0!");
+    qCWarning(lcAnimation,"setCustomCurve(): node==0!");
     return;
   }
 
@@ -332,7 +328,7 @@ bool Animation::easeIn(BVHNode* node,int frameNum)
 {
   if(!node)
   {
-    qDebug("Animation::easeIn(): node==0!");
+    qCWarning(lcAnimation,"easeIn(): node==0!");
     return false;
   }
 
@@ -340,7 +336,7 @@ bool Animation::easeIn(BVHNode* node,int frameNum)
   {
     return node->easeIn(frameNum);
   }
-  qDebug("Animation::easeIn(%s): requested easeIn for non-keyframe!",node->name().toLatin1().constData());
+  qCWarning(lcAnimation,"easeIn(%s): requested easeIn for non-keyframe!",node->name().toLatin1().constData());
   return false;
 }
 
@@ -348,7 +344,7 @@ bool Animation::easeOut(BVHNode* node,int frameNum)
 {
   if(!node)
   {
-    qDebug("Animation::easeOut(): node==0!");
+    qCWarning(lcAnimation,"easeOut(): node==0!");
     return false;
   }
 
@@ -356,7 +352,7 @@ bool Animation::easeOut(BVHNode* node,int frameNum)
   {
     return node->easeOut(frameNum);
   }
-  qDebug("Animation::easeOut(%s): requested easeOut for non-keyframe!",node->name().toLatin1().constData());
+  qCWarning(lcAnimation,"easeOut(%s): requested easeOut for non-keyframe!",node->name().toLatin1().constData());
   return false;
 }
 
@@ -597,7 +593,7 @@ void Animation::setRotation(BVHNode* node,double x,double y,double z)
   }
   else
   {
-    qDebug("Animaiton::setRotation(): node==0!");
+    qCWarning(lcAnimation,"setRotation(): node==0!");
   }
 }
 
@@ -607,7 +603,7 @@ QVector3D Animation::getRotation(BVHNode* node)
   {
     return node->frameData(frame).rotation();
   }
-  qDebug("Animation::getRotation(): node==0!");
+  qCWarning(lcAnimation,"getRotation(): node==0!");
   return QVector3D();
 }
 
@@ -638,7 +634,7 @@ RotationLimits Animation::getRotationLimits(BVHNode* node)
     rotLimit.maximum = QVector3D(xMax, yMax, zMax);
     return rotLimit;
   }
-  qDebug("Animation::getRotationLimits(): node==0!");
+  qCWarning(lcAnimation,"getRotationLimits(): node==0!");
   return RotationLimits();
 }
 
@@ -760,7 +756,7 @@ bool Animation::isKeyFrame(const QString& jointName)
     BVHNode* node=bvh->bvhFindNode(frames,jointName);
     return node->isKeyframe(frame);
   }
-  qDebug("Animation::isKeyFrame('%s'): no node found.",jointName.toLatin1().constData());
+  qCWarning(lcAnimation,"isKeyFrame('%s'): no node found.",jointName.toLatin1().constData());
 }
 
 bool Animation::isKeyFrame()
@@ -769,10 +765,10 @@ bool Animation::isKeyFrame()
   return isKeyFrameHelper(frames);
 }
 
-bool Animation::isKeyFrame(int jointNumber,int frame)
+bool Animation::isKeyFrame(int jointNumber,int frameNumber)
 {
   const BVHNode* joint=getNode(jointNumber);
-  return joint->isKeyframe(frame);
+  return joint->isKeyframe(frameNumber);
 }
 
 void Animation::deleteKeyFrame(BVHNode* joint,int frameNum,bool silent)
@@ -920,7 +916,6 @@ void Animation::copyKeyFrame(int jointNumber,int from,int to)
 // moves the position and rotation data of one body part to another key frame position
 void Animation::moveKeyFrame(int jointNumber,int from,int to,bool copy)
 {
-  qDebug("Animation::moveKeyFrame(): jointNumber: %d",jointNumber);
 
   // make sure we don't drag a trail of mirror keys behind
   setMirrored(false);
@@ -968,7 +963,7 @@ void Animation::moveKeyFrame(int jointNumber,int from,int to,bool copy)
 bool Animation::compareFrames(const BVHNode* node,int key1,int key2) const
 {
   if(node) return node->compareFrames(key1,key2);
-  qDebug("Animation::compareFrames(node): node==0!");
+  qCWarning(lcAnimation,"compareFrames(node): node==0!");
   return false;
 }
 
@@ -987,11 +982,11 @@ BVHNode* Animation::getNode(int jointNumber)
   return bvh->bvhFindNode(frames,getPartName(jointNumber));
 }
 
-void Animation::insertFrameHelper(BVHNode* joint,int frame)
+void Animation::insertFrameHelper(BVHNode* joint,int frameNumber)
 {
-  joint->insertFrame(frame);
+  joint->insertFrame(frameNumber);
   for(int i=0;i<joint->numChildren();i++)
-    insertFrameHelper(joint->child(i),frame);
+    insertFrameHelper(joint->child(i),frameNumber);
 }
 
 void Animation::insertFrame(int track,int pos)
@@ -1014,11 +1009,11 @@ void Animation::insertFrame(int track,int pos)
 }
 
 // recursively remove frames from joint and all its children
-void Animation::deleteFrameHelper(BVHNode* joint,int frame)
+void Animation::deleteFrameHelper(BVHNode* joint,int frameNumber)
 {
-  joint->deleteFrame(frame);
+  joint->deleteFrame(frameNumber);
   for(int i=0;i<joint->numChildren();i++)
-    deleteFrameHelper(joint->child(i),frame);
+    deleteFrameHelper(joint->child(i),frameNumber);
   emit redrawTrack(getPartIndex(joint));
 }
 

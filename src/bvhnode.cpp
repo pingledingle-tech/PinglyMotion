@@ -22,6 +22,7 @@
 #include <math.h>
 
 #include "bvhnode.h"
+#include "logging.h"
 #include "easing.h"
 
 BVHNode::BVHNode(const QString& name)
@@ -107,7 +108,7 @@ void BVHNode::addKeyframe(int frame, QVector3D position, QVector3D rotation)
 
 void BVHNode::setKeyframePosition(int frame, const QVector3D& position)
 {
-  if(!isKeyframe(frame)) qDebug("setKeyframePosition(%d): not a keyframe!",frame);
+  if(!isKeyframe(frame)) qCWarning(lcAnimation,"setKeyframePosition(%d): not a keyframe!",frame);
   else
   {
     FrameData& key=keyframes[frame];
@@ -117,7 +118,7 @@ void BVHNode::setKeyframePosition(int frame, const QVector3D& position)
 
 void BVHNode::setKeyframeRotation(int frame, const QVector3D& rotation)
 {
-  if(!isKeyframe(frame)) qDebug("setKeyframeRotation(%d): not a keyframe!",frame);
+  if(!isKeyframe(frame)) qCWarning(lcAnimation,"setKeyframeRotation(%d): not a keyframe!",frame);
   else
   {
     FrameData& key=keyframes[frame];
@@ -156,9 +157,9 @@ void BVHNode::insertFrame(int frame)
   do
   {
     // get current keyframe's position
-    int frame=(*itLook).frameNumber();
+    int oldFrame=(*itLook).frameNumber();
     // increment frame number in frame data
-    (*itLook).setFrameNumber(frame+1);
+    (*itLook).setFrameNumber(oldFrame+1);
     // decrement iterator here already, so it does not get invalidated by remove() later
     itLook--;
     // copy frame data into next frame
@@ -185,9 +186,9 @@ void BVHNode::deleteFrame(int frame)
   while(itCurrent!=keyframes.end())
   {
     // get current keyframe's position
-    int frame=(*itCurrent).frameNumber();
+    int oldFrame=(*itCurrent).frameNumber();
     // decrement frame number in frame data
-    (*itCurrent).setFrameNumber(frame-1);
+    (*itCurrent).setFrameNumber(oldFrame-1);
     // increment iterator here already, so it does not get invalidated by remove() later
     itCurrent++;
     // copy frame data into previous frame
@@ -314,7 +315,7 @@ const FrameData BVHNode::getKeyframeBefore(int frame) const
   if(frame<=0)
   {
     // should never happen
-    qDebug("BVHNode::getKeyframeBefore(int frame): frame==0!");
+    qCDebug(lcAnimation,"getKeyframeBefore(int frame): frame==0!");
     return keyframes[0];
   }
   return frameData(getKeyframeNumberBefore(frame));
@@ -341,7 +342,7 @@ int BVHNode::getKeyframeNumberBefore(int frame) const
   if(frame<=0)
   {
     // should never happen
-    qDebug("BVHNode::getKeyframeNumberBefore(int frame): frame==0!");
+    qCDebug(lcAnimation,"getKeyframeNumberBefore(int frame): frame==0!");
     return 0;
   }
 
@@ -401,7 +402,7 @@ bool BVHNode::easeIn(int frame)
   if(keyframes.contains(frame))
     return (*keyframes.find(frame)).easeIn();
 
-  qDebug("BVHNode::easeIn(): asked on non-keyframe!");
+  qCWarning(lcAnimation,"easeIn(): asked on non-keyframe!");
   return false;
 }
 
@@ -410,7 +411,7 @@ bool BVHNode::easeOut(int frame)
   if(keyframes.contains(frame))
     return (*keyframes.find(frame)).easeOut();
 
-  qDebug("BVHNode::easeOut(): asked on non-keyframe!");
+  qCWarning(lcAnimation,"easeOut(): asked on non-keyframe!");
   return false;
 }
 

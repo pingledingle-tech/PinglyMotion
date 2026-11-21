@@ -24,7 +24,8 @@
 
 PropManager::PropManager(int nextPropId, QObject* parent)
   : QObject(parent),
-    m_nextPropId(nextPropId)
+    m_nextPropId(nextPropId),
+    propSelected(0)
 {
 }
 

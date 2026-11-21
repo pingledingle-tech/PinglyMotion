@@ -30,7 +30,7 @@ class PropManager : public QObject
   Q_OBJECT
 
   public:
-    PropManager(int nextPropId, QObject* parent = nullptr);
+    explicit PropManager(int nextPropId, QObject* parent = nullptr);
     ~PropManager();
 
     unsigned int getSelectedPropId();

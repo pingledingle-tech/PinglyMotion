@@ -46,7 +46,7 @@ void UpdaterSettings::setLastSuccessfulCheck(const QString& checkDateTime)
   m_lastSuccessfulCheck = checkDateTime;
 }
 
-const bool UpdaterSettings::hasAutomaticUpdates()
+bool UpdaterSettings::hasAutomaticUpdates()
 {
   return m_hasAutomaticUpdates;
 }

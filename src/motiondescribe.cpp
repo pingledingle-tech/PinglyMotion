@@ -277,7 +277,7 @@ namespace
       QMatrix4x4 base;
       base.translate(cache.at(animation->getNode(0), f).position());
       SkeletonWalk::place(animation->getMotion(), base,
-                          [&cache, f](BVHNode* node) { return cache.at(node, f).rotation(); }, world, true);
+                          [&cache, f](BVHNode* joint) { return cache.at(joint, f).rotation(); }, world, true);
       for (const QString& name : s.joints)
       {
         const QVector3D r = cache.at(node[name], f).rotation();

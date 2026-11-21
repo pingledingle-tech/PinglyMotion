@@ -24,7 +24,7 @@ bool PropFile::parse(const QByteArray& data, QList<PropRecord>& props, QString* 
 {
   props.clear();
   // all props or none
-  const auto fail = [&props](QString* error, const QString& reason) { props.clear(); return ::fail(error, reason); };
+  const auto fail = [&props](QString* errorOut, const QString& reason) { props.clear(); return ::fail(errorOut, reason); };
   if (data.size() > MAX_FILE_BYTES)
     return fail(error, QObject::tr("The prop file is larger than %1 KB.").arg(MAX_FILE_BYTES / 1024));
 

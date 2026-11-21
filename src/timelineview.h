@@ -73,9 +73,9 @@ class TimelineView : public QFrame
     void backgroundClicked();
     // joint groups were shown or hidden (JointGroups)
     void layoutChanged();
+    void scrollTo(int x);
 
   protected slots:
-    void scrollTo(int x);
     void setAnimation(Animation* anim);
     // "Custom curve" was clicked on the tile row: edit the pose change that
     // ends at the current frame of the selected joint (issue #11)

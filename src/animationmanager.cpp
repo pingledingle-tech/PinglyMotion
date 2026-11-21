@@ -82,7 +82,7 @@ int AnimationManager::count() const
   return animationList.count();
 }
 
-Animation* const AnimationManager::at(int index) const
+Animation* AnimationManager::at(int index) const
 {
   return animationList.at(index);
 }

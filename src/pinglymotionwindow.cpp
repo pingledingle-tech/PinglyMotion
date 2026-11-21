@@ -34,6 +34,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include "startfolder.h"
+#include "logging.h"
 #include <QMessageBox>
 #include <QSaveFile>
 #include <QTemporaryDir>
@@ -433,38 +434,27 @@ PinglyMotionWindow::PinglyMotionWindow() :
 
 
   connect(m_pinglyMotion.data(), &PinglyMotion::repaint, ui->animationView, static_cast<void (AnimationView::*)()>(&AnimationView::repaint));
-  connect(scene, SIGNAL(repaint()), ui->animationView, SLOT(update()));
-  connect(scene, SIGNAL(animationSelected(Animation*)), this, SLOT(selectAnimation(Animation*)));
-  connect(this, SIGNAL(protectFrame(bool)), scene, SLOT(protectFrame(bool)));
+  connect(scene, &Scene::repaint, ui->animationView, qOverload<>(&QWidget::update));
+  connect(scene, &Scene::animationSelected, this, &PinglyMotionWindow::selectAnimation);
+  connect(this, &PinglyMotionWindow::protectFrame, scene, &Scene::protectFrame);
 
-  connect(ui->animationView, SIGNAL(storeCameraPosition(int)), scene, SLOT(storeCameraPosition(int)));
-  connect(ui->animationView, SIGNAL(restoreCameraPosition(int)), scene, SLOT(restoreCameraPosition(int)));
+  connect(ui->animationView, &AnimationView::storeCameraPosition, scene, &Scene::storeCameraPosition);
+  connect(ui->animationView, &AnimationView::restoreCameraPosition, scene, &Scene::restoreCameraPosition);
 
-  connect(ui->animationView,SIGNAL(partClicked(BVHNode*,
-                                           QVector3D,
-                                           RotationLimits,
-                                           QVector3D)),
-                     this,SLOT(partClicked(BVHNode*,
-                                           QVector3D,
-                                           RotationLimits,
-                                           QVector3D)));
+  connect(ui->animationView, qOverload<BVHNode*,QVector3D,RotationLimits,QVector3D>(&AnimationView::partClicked), this, &PinglyMotionWindow::partClicked);
 
-  connect(ui->animationView,SIGNAL(partDragged(BVHNode*,double,double,double)),
-                     this,SLOT(partDragged(BVHNode*,double,double,double)));
+  connect(ui->animationView, &AnimationView::partDragged, this, &PinglyMotionWindow::partDragged);
 
-  connect(ui->animationView,SIGNAL(propClicked(Prop*)),this,SLOT(propClicked(Prop*)));
+  connect(ui->animationView, &AnimationView::propClicked, this, &PinglyMotionWindow::propClicked);
 
-  connect(ui->animationView,SIGNAL(propDragged(Prop*,double,double,double)),
-                     this,SLOT(propDragged(Prop*,double,double,double)));
+  connect(ui->animationView, &AnimationView::propDragged, this, &PinglyMotionWindow::propDragged);
 
-  connect(ui->animationView,SIGNAL(propScaled(Prop*,double,double,double)),
-                     this,SLOT(propScaled(Prop*,double,double,double)));
+  connect(ui->animationView, &AnimationView::propScaled, this, &PinglyMotionWindow::propScaled);
 
-  connect(ui->animationView,SIGNAL(propRotated(Prop*,double,double,double)),
-                     this,SLOT(propRotated(Prop*,double,double,double)));
+  connect(ui->animationView, &AnimationView::propRotated, this, &PinglyMotionWindow::propRotated);
 
-  connect(ui->animationView,SIGNAL(backgroundClicked()),this,SLOT(backgroundClicked()));
-  connect(ui->animationView,SIGNAL(animationSelected(Animation*)),this,SLOT(selectAnimation(Animation*)));
+  connect(ui->animationView, &AnimationView::backgroundClicked, this, &PinglyMotionWindow::backgroundClicked);
+  connect(ui->animationView, &AnimationView::animationSelected, this, &PinglyMotionWindow::selectAnimation);
 
   connect(this, &PinglyMotionWindow::newProp, m_pinglyMotion.data(), &PinglyMotion::newProp);
   connect(this, static_cast<void (PinglyMotionWindow::*)(int)>(&PinglyMotionWindow::selectProp), m_pinglyMotion.data(), &PinglyMotion::selectProp);
@@ -486,16 +476,16 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // the easing tile row on the timeline (issue #53 step 5)
   connect(ui->timelineView->easingTiles(),&EasingTiles::choiceClicked,this,&PinglyMotionWindow::easingChoiceClicked);
 
-  connect(&timer,SIGNAL(timeout()),this,SLOT(frameTimeout()));
+  connect(&timer, &QTimer::timeout, this, &PinglyMotionWindow::frameTimeout);
 
-  connect(this,SIGNAL(resetCamera()),ui->animationView,SLOT(resetCamera()));
+  connect(this, &PinglyMotionWindow::resetCamera, ui->animationView, &AnimationView::resetCamera);
 
-  connect(ui->animationView,SIGNAL(partClicked(int)),ui->timelineView,SLOT(selectTrack(int)));
-  connect(ui->animationView,SIGNAL(backgroundClicked()),ui->timelineView,SLOT(backgroundClicked()));
+  connect(ui->animationView, qOverload<int>(&AnimationView::partClicked), ui->timelineView, &TimelineView::selectTrack);
+  connect(ui->animationView, &AnimationView::backgroundClicked, ui->timelineView, &TimelineView::backgroundClicked);
 
   timeline=ui->timelineView->getTimeline();
-  connect(timeline,SIGNAL(positionCenter(int)),ui->timelineView,SLOT(scrollTo(int)));
-  connect(timeline,SIGNAL(trackClicked(int)),ui->animationView,SLOT(selectPart(int)));
+  connect(timeline, &Timeline::positionCenter, ui->timelineView, &TimelineView::scrollTo);
+  connect(timeline, &Timeline::trackClicked, ui->animationView, qOverload<int>(&AnimationView::selectPart));
 
   ui->xRotationSlider->setPageStep(10 * m_precision);
   ui->yRotationSlider->setPageStep(10 * m_precision);
@@ -660,7 +650,7 @@ void PinglyMotionWindow::queueAfterShow()
   // QTimer creates a timerEvent
   // - This is a convenient way to queue "afterShow" to
   //   run after the main window shows
-  QTimer::singleShot(0, this, SLOT(afterShow()));
+  QTimer::singleShot(0, this, &PinglyMotionWindow::afterShow);
 }
 
 void PinglyMotionWindow::afterShow()
@@ -676,13 +666,12 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
 
   if(!node)
   {
-    qDebug("pinglymotion::partClicked(node,...): node==0!");
+    qCWarning(lcView,"partClicked(node,...): node==0!");
     return;
   }
 
   if(node)
   {
-    qDebug("pinglymotion::partClicked(node): %s",node->name().toLatin1().constData());
     currentPart=node;
 
     // show the joint in the joint table, on its tab
@@ -776,7 +765,7 @@ void PinglyMotionWindow::partDragged(BVHNode* node,double x,double y,double z)
       updateKeyBtn();
     }
   }
-  else qDebug("pinglymotion::partDragged(): node==0!");
+  else qCWarning(lcView,"partDragged(): node==0!");
 }
 
 // slot gets called by AnimationView::propClicked()
@@ -1456,7 +1445,6 @@ void PinglyMotionWindow::positionSlider(const QObject* slider)
 
 void PinglyMotionWindow::positionValue()
 {
-  qDebug("pinglymotion::positionValue()");
 
   double x=ui->xPositionEdit->text().toDouble();
   double y=ui->yPositionEdit->text().toDouble();
@@ -1579,7 +1567,6 @@ void PinglyMotionWindow::updateInputs()
 void PinglyMotionWindow::updateKeyBtn()
 {
   Animation* anim=scene->getAnimation();
-  qDebug("pinglymotion::updateKeyBtn(): anim=%p",(const void*) anim);
 
   // make sure we don't send a toggle signal on display update
   ui->keyframeButton->blockSignals(true);
@@ -1642,7 +1629,6 @@ void PinglyMotionWindow::frameTimeout()
 
 void PinglyMotionWindow::nextPlaystate()
 {
-//  qDebug("pinglymotion::nextPlaystate(): current playstate %d",(int) playstate);
 
   Animation* anim=scene->getAnimation();
 
@@ -1686,7 +1672,7 @@ void PinglyMotionWindow::nextPlaystate()
       break;
     }
     default:
-      qDebug("pinglymotion::nextPlaystate(): unknown playstate %d",(int) playstate);
+      qCWarning(lcView,"nextPlaystate(): unknown playstate %d",(int) playstate);
   }
 
   updateInputs();
@@ -1694,7 +1680,6 @@ void PinglyMotionWindow::nextPlaystate()
 
 void PinglyMotionWindow::setFPS(int fps)
 {
-  qDebug("pinglymotion::setFPS(%d)",fps);
 
   Animation* anim=scene->getAnimation();
   if(!anim) return;
@@ -1790,7 +1775,6 @@ void PinglyMotionWindow::fileNew()
 
   if(UserSettings::protectFirstFrame())
   {
-//    qDebug("pinglymotion::fileNew(): adding loop points for protected frame 1 animation");
     // skip first frame, since it's protected anyway
     anim->setFrame(1);
     setCurrentFrame(1);
@@ -1798,7 +1782,6 @@ void PinglyMotionWindow::fileNew()
   }
   else
   {
-//    qDebug("pinglymotion::fileNew(): adding loop points for unprotected frame 1 animation");
     anim->setFrame(0);
     setCurrentFrame(0);
     setLoopInPoint(1);
@@ -1810,7 +1793,7 @@ void PinglyMotionWindow::fileNew()
   protect=false;
 
   // FIXME: code duplication
-  connect(anim,SIGNAL(currentFrame(int)),this,SLOT(setCurrentFrame(int)));
+  connect(anim, &Animation::currentFrame, this, &PinglyMotionWindow::setCurrentFrame);
 
   selectTrackInTable(1);
 
@@ -1931,24 +1914,20 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     timeline->setAnimation(anim);
     selectAnimation(anim);
 
-//    qDebug("pinglymotion::fileAdd(): checking for loop points");
     // no loop in point? must be a BVH or an older avm. set a sane default
     if(anim->getLoopInPoint()==-1)
     {
-//      qDebug("pinglymotion::fileAdd(): no loop points, adding new");
       // first set loop out point to avoid clamping of loop in point
       setLoopOutPoint(anim->getNumberOfFrames());
 
       if(UserSettings::protectFirstFrame())
       {
-//        qDebug("pinglymotion::fileAdd(): adding loop points for protected frame 1 animation");
         anim->setFrame(1);
         setCurrentFrame(1);
         setLoopInPoint(2);
       }
       else
       {
-//        qDebug("pinglymotion::fileAdd(): adding loop points for unprotected frame 1 animation");
         anim->setFrame(0);
         setCurrentFrame(0);
         setLoopInPoint(1);
@@ -1956,13 +1935,12 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     }
     else
     {
-//      qDebug("pinglymotion::fileAdd(): reading saved loop points");
       setLoopInPoint(anim->getLoopInPoint()+1);
       setLoopOutPoint(anim->getLoopOutPoint()+1);
     }
 
     // FIXME: code duplication
-    connect(anim,SIGNAL(currentFrame(int)),this,SLOT(setCurrentFrame(int)));
+    connect(anim, &Animation::currentFrame, this, &PinglyMotionWindow::setCurrentFrame);
 
     ui->animationView->selectPart(m_selectedTrack);
     updateInputs();
@@ -2074,7 +2052,7 @@ void PinglyMotionWindow::fileExportForSecondLife()
     QFileInfo fileInfo(currentFile);
     QString exportName=fileInfo.path()+"/"+fileInfo.completeBaseName()+".bvh";
 
-    qDebug("pinglymotion::fileExportForSecondLife(): exporting animation as '%s'.",exportName.toLatin1().constData());
+    qCDebug(lcFile,"fileExportForSecondLife(): exporting animation as '%s'.",exportName.toLatin1().constData());
     QString error;
     if(!scene->getAnimation()->saveBVH(exportName,&error))
     {
@@ -2444,7 +2422,6 @@ void PinglyMotionWindow::fileExit()
 // Menu Action: Edit / Cut
 void PinglyMotionWindow::editCut()
 {
-//  qDebug("pinglymotion::editCut()");
   scene->getAnimation()->cutFrame();
   frameDataValid=true;
   updateInputs();
@@ -2528,7 +2505,7 @@ void PinglyMotionWindow::showTimeline(bool on)
 void PinglyMotionWindow::configure()
 {
   UserSettingsDialog* dialog=new UserSettingsDialog(this);
-  connect(dialog,SIGNAL(configChanged()),this,SLOT(configChanged()));
+  connect(dialog, &UserSettingsDialog::configChanged, this, &PinglyMotionWindow::configChanged);
 
   dialog->exec();
 
@@ -2544,10 +2521,10 @@ void PinglyMotionWindow::configChanged()
 void PinglyMotionWindow::helpAbout()
 {
   QScopedPointer<AboutDialog> dialog(new AboutDialog(this));
-  connect(dialog.data(), SIGNAL(checkUpdates()),
-          &updateChecker, SLOT(checkUpdates()));
-  connect(&updateChecker, SIGNAL(updateCheckFinished()),
-          dialog.data(), SLOT(updateCheckFinished()));
+  connect(dialog.data(), &AboutDialog::checkUpdates,
+          &updateChecker, &UpdateChecker::checkUpdates);
+  connect(&updateChecker, &UpdateChecker::updateCheckFinished,
+          dialog.data(), &AboutDialog::updateCheckFinished);
   dialog->exec();
 }
 
@@ -2856,7 +2833,6 @@ void PinglyMotionWindow::setCurrentFrame(int frame)
 // gets called by selecting an animation from the animation combo box
 void PinglyMotionWindow::animationChanged(int which)
 {
-  qDebug("pinglymotion::animationChanged(%d)",which);
 
   // safety to check if "which" is out of bounds of loaded animations
   if(which>=openFiles.count()) return;
@@ -2918,7 +2894,6 @@ void PinglyMotionWindow::setLoopInPoint(int inFrame)
 
   int numOfFrames=anim->getNumberOfFrames();
   int outFrame=anim->getLoopOutPoint();
-  qDebug("pinglymotion::setLoopInPoint(%d) (%d frames)",inFrame,numOfFrames);
 
   if(inFrame>numOfFrames) inFrame=numOfFrames;
   if(inFrame>outFrame) inFrame=outFrame+1;
@@ -2937,7 +2912,6 @@ void PinglyMotionWindow::setLoopOutPoint(int outFrame)
   Animation* anim=scene->getAnimation();
   int numOfFrames=anim->getNumberOfFrames();
   int inFrame=anim->getLoopInPoint();
-  qDebug("pinglymotion::setLoopOutPoint(%d) (%d frames)",outFrame,numOfFrames);
 
   if(outFrame>numOfFrames) outFrame=numOfFrames;
   if((outFrame-1)<inFrame) outFrame=inFrame+1;
@@ -2952,7 +2926,6 @@ void PinglyMotionWindow::setLoopOutPoint(int outFrame)
 
 void PinglyMotionWindow::setPlaystate(PlayState state)
 {
-//  qDebug("pinglymotion::setPlaystate(): setting playstate %d",(int) state);
   // set state
   playstate=state;
 
@@ -2964,7 +2937,7 @@ void PinglyMotionWindow::setPlaystate(PlayState state)
   else if(state==PLAYSTATE_PLAYING)
     ui->playButton->setIcon(stopIcon);
   else
-    qDebug("pinglymotion::setPlaystate(): unknown playstate %d",(int) state);
+    qCWarning(lcView,"setPlaystate(): unknown playstate %d",(int) state);
 }
 
 // options, window place and panel layout, remembered for next time
@@ -2998,7 +2971,6 @@ void PinglyMotionWindow::closeEvent(QCloseEvent* event)
 // calculates the longest running time of all animations
 double PinglyMotionWindow::calculateLongestRunningTime()
 {
-  qDebug("pinglymotion::calculateLongestRunningTime()");
   longestRunningTime=0.0;
   for(unsigned int index=0;index< (unsigned int) animationIds.count();index++)
   {
@@ -3006,7 +2978,6 @@ double PinglyMotionWindow::calculateLongestRunningTime()
     double time=anim->getNumberOfFrames()/((double) anim->fps());
     if(time>longestRunningTime) longestRunningTime=time;
   }
-  qDebug("pinglymotion::calculateLongestRunningTime(): longestRunningTime now: %f seconds",longestRunningTime);
   return longestRunningTime;
 }
 
@@ -3251,7 +3222,7 @@ void PinglyMotionWindow::on_newTorusPropButton_clicked()
   emit newProp(Prop::Torus, torusMesh);
 }
 
-void PinglyMotionWindow::on_propNameCombo_activated(int index)
+void PinglyMotionWindow::on_propNameCombo_activated(int)
 {
   selectProp();
 }
@@ -3326,9 +3297,8 @@ void PinglyMotionWindow::on_playButton_clicked()
   nextPlaystate();
 }
 
-void PinglyMotionWindow::on_keyframeButton_toggled(bool on)
+void PinglyMotionWindow::on_keyframeButton_toggled(bool)
 {
-  qDebug("on_keyframeButton_toggled(%d)",(int) on);
   scene->getAnimation()->toggleKeyFrame(currentPart); // (animationView->getSelectedPart());
   ui->animationView->update();
 }

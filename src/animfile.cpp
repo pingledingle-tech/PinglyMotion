@@ -190,7 +190,7 @@ namespace
   class Parser
   {
     public:
-      Parser(const QByteArray& data,Format format) : tokens(data), data(data), format(format) {}
+      Parser(const QByteArray& input,Format fileFormat) : tokens(input), data(input), format(fileFormat) {}
 
       Result run();
 
@@ -404,7 +404,7 @@ namespace
       }
 
       for(int frame=0;frame<anim.frames;frame++)
-        if(isKey[static_cast<size_t>(frame)]) joint.keys << Key{frame,false,false};
+        if(isKey[static_cast<size_t>(frame)]) joint.keys << Key{frame,false,false,std::nullopt,std::nullopt};
     }
 
     // the root's first key frame is also the first position key frame
@@ -548,7 +548,7 @@ namespace
         {
           for(int frame : positionKeyFrames())
             anim.positionKeys << Key{frame,positionEaseIn[static_cast<size_t>(frame)]!=0,
-                                     positionEaseOut[static_cast<size_t>(frame)]!=0};
+                                     positionEaseOut[static_cast<size_t>(frame)]!=0,std::nullopt,std::nullopt};
         }
         else
           // older files: the position keys are the root's key frames

@@ -166,7 +166,7 @@ class PinglyMotionWindow : public QMainWindow
     void on_newSpherePropButton_clicked();
     void on_newConePropButton_clicked();
     void on_newTorusPropButton_clicked();
-    void on_propNameCombo_activated(int index);
+    void on_propNameCombo_activated(int);
     void on_deletePropButton_clicked();
     void on_attachToComboBox_activated(int attachmentPoint);
     void on_propXPosSpin_valueChanged(int);
