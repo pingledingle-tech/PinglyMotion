@@ -1,6 +1,6 @@
 Branch: cleanup/propfile-result
-Status: active
-Pull request: pending
+Status: done
+Pull request: #256
 Files:
 - src/propfile.*
 - src/pinglymotionwindowfile.cpp

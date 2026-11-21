@@ -682,7 +682,13 @@ void PinglyMotionWindow::fileLoadProps()
   else if(file.size()>PropFile::MAX_FILE_BYTES)
     error=tr("The prop file is larger than %1 KB.").arg(PropFile::MAX_FILE_BYTES/1024);
   else
-    PropFile::parse(file.readAll(),records,&error);
+  {
+    const PropFile::Result result=PropFile::parse(file.readAll());
+    if(result.ok())
+      records=*result.props;
+    else
+      error=result.error;
+  }
 
   if(!error.isEmpty())
   {

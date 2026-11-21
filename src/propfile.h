@@ -16,6 +16,8 @@
 #include <QList>
 #include <QString>
 
+#include <optional>
+
 struct PropRecord
 {
   int type = 0;
@@ -35,9 +37,19 @@ namespace PropFile
   // attachment points are joint numbers
   const int MAX_ATTACHMENT = 10000;
 
-  // reads all props, or none: returns false with the reason in error when a
-  // line is not a valid prop
-  bool parse(const QByteArray& data, QList<PropRecord>& props, QString* error);
+  // the result of parse(): all props, or none and why the file was refused
+  struct Result
+  {
+    // set when the file was read (an empty file gives an empty list); then error is empty
+    std::optional<QList<PropRecord>> props;
+    // why the file cannot be read, for the user
+    QString error;
+
+    bool ok() const { return props.has_value(); }
+  };
+
+  // reads all props, or none when a line is not a valid prop
+  Result parse(const QByteArray& data);
 }
 
 #endif

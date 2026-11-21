@@ -981,11 +981,10 @@ void BentoTest::propFiles()
   QFETCH(bool, valid);
   QFETCH(int, count);
 
-  QList<PropRecord> props;
-  QString error;
-  QCOMPARE(PropFile::parse(content, props, &error), valid);
-  QCOMPARE(error.isEmpty(), valid);
-  QCOMPARE(props.size(), count);
+  const PropFile::Result result = PropFile::parse(content);
+  QCOMPARE(result.ok(), valid);
+  QCOMPARE(result.error.isEmpty(), valid);
+  QCOMPARE(result.ok() ? int(result.props->size()) : 0, count);
 }
 
 // ------------------------------------------------ the Max Bento avatar
