@@ -1,6 +1,6 @@
 Branch: docs/close-sl-validation
-Status: active
-Pull request: pending
+Status: done
+Pull request: #232
 Files:
 - docs/FIRST_ANIMATION.md
 - docs/ROADMAP.md

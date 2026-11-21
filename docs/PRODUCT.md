@@ -33,7 +33,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 - **User and need:** An SL user wants a sit to fit their avatar and furniture.
 - **Journey:** Open or create the pose, select body parts, adjust joints, inspect the result, then save and export.
 - **Value:** Less guesswork and easier correction. Aurora live preview could reduce repeated uploads.
-- **Status:** Core manual editing exists. Live preview in Aurora works (old #78, old #95; tested on Windows with the Aurora fork). End-to-end export and SL upload still need validation.
+- **Status:** Core manual editing exists. Live preview in Aurora works (old #78, old #95; tested on Windows with the Aurora fork). End-to-end export and SL upload were validated in Firestorm on 21 November 2026 (export, upload, playback, loop, slow start and finish, hands, easing, BVH route, re-import); the Linden viewer and the priority steps were not tested.
 - **Pass when:** a sit is adjusted, previewed on the avatar in Aurora, saved as `.dingle`, exported as `.anim`, uploaded and plays in SL as it looked in PinglyMotion. Fail if the upload is refused or the pose in SL differs.
 - **Issues:** [#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14), [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)
 
@@ -133,7 +133,7 @@ The work runs in **two tracks side by side**. They mostly change different files
 3. Floating, movable panels; Tab hides them; reset layout. Plan: [PANELS_PLAN.md](PANELS_PLAN.md) (jobs P1 to P6).
 4. Selected-joint card: trackball, sliders, joint limit warning.
 5. Left / Right / Mirror and the whole-pose buttons.
-6. **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL (validated by [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)).
+6. **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL (validated in Firestorm on 21 November 2026, [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)).
 7. The remaining posing steps: Hands tab, timeline, help tips and hint bar, command search, pose library and export selection, settings, visual polish and own icon, 3D view follows the tab.
 
 **Track 2 – file formats (old #118)**
