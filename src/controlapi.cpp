@@ -29,6 +29,7 @@
 #include "bvhnode.h"
 #include "motiondescribe.h"
 #include "posedescribe.h"
+#include "scriptlab/rlvbehaviours.h"
 #include "screenshotsheet.h"
 #include "skeletonwalk.h"
 #include "usersettings.h"
@@ -92,6 +93,10 @@ namespace
      "{\"text\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"min_seconds\":{\"type\":\"number\"},\"max_seconds\":{\"type\":\"number\"},\"limit\":{\"type\":\"integer\"}}", "[]"},
     {"load_reference", "Opens a reference library clip by the id that find_reference gave, in PinglyMotion, like open_file. Only library files are opened, never a path you give. The file is checked against the index (size and SHA-256) first. Fails if there are unsaved changes, if the id is unknown, if the clip is not on the Second Life skeleton, or if the file is missing or changed; then nothing is changed. The library folder is read-only: change the clip and save it with save_file under a new name. Frame 1 is the reference pose, edit from frame 2. The answer is the state, plus the clip's licence and credit. Keep the credit when you pass the animation on.",
      "{\"id\":{\"type\":\"string\",\"description\":\"A clip id from find_reference\"}}", "[\"id\"]"},
+    {"rlv_command", "Script Lab (RLV sandbox): runs one RLV line as if the object had sent it with llOwnerSay, for example \"@detach=n,sendim=n\", \"@clear\", \"@clear=send\", \"@version=2222\" or \"@getstatus=2222\". object: an id for the sending object (1 to 64 letters, digits, '-', '_', '.' or spaces, e.g. a UUID or \"collar\"); text: starts with @, at most 1024 characters and 64 commands. Each command is <behaviour>[:<option>]=<n|add|y|rem|force|channel>. The answer has one result per command (success, unset, duplicate, failed with a reason, or retained for force commands, which are not carried out), the replies a script would hear (channel and text), and the number of restrictions now held. Nothing in the animation changes. Read the whole state with rlv_state.",
+     "{\"object\":{\"type\":\"string\",\"description\":\"Id of the sending object, e.g. collar\"},\"text\":{\"type\":\"string\",\"description\":\"The owner-say line, starting with @\"}}", "[\"object\",\"text\"]"},
+    {"rlv_state", "Script Lab (RLV sandbox): shows the RLV state: the RLV version the sandbox answers with (3.4.3), every object with its restrictions, how many objects hold each restriction, every action with allowed true or false (for example Send instant messages blocked by @sendim=n), the blocked action ids, and the behaviours the sandbox knows. A restriction with an option (such as sendim:<uuid>) is an exception or a limited form and does not block the action by itself.", "{}", "[]"},
+    {"rlv_reset", "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed.", "{}", "[]"},
     {"lsl_check", "Script Lab: checks an LSL script the way the Second Life compiler does, without running it. Answers valid (true or false), errors and warnings, each with line, column (both start at 1) and message, and the state names. Errors: syntax, undeclared names, wrong types, wrong argument counts, unknown functions, events or states, missing return. Warnings: valid LSL that the sandbox does not run yet (a function that is not supported yet, an event it never raises). Never changes the animation.",
      "{\"source\":{\"type\":\"string\",\"description\":\"The LSL script as text\"}}", "[\"source\"]"},
     {"lsl_run", "Script Lab: runs an LSL script in a sandbox with a simulated clock (not Second Life) and answers the event log as plain data: what the script said (owner_say, say, whisper, shout, region_say, instant_message), listens it opened, timer changes, events it handled, state changes, permissions, animations it started or stopped (animation_start, animation_stop; not played in the 3D view yet), and errors. Each entry has t (simulated seconds) and type. Runs state_entry of the default state first, then events until seconds have passed. inputs: chat or touches at given times, for listen and touch_start: [{\"at\":1,\"channel\":7,\"text\":\"dance\"},{\"at\":2,\"type\":\"touch\"}] (name and id default to the owner). The owner's permissions are granted at once. Hard limits stop a script that loops forever or uses too much memory; then stopped is true and stop_reason says why. A function that is not supported yet stops the script with type unsupported. A script that does not compile is not run: the answer has ok false and the errors (as lsl_check). Never changes the animation. Test the final script in Second Life too.",
@@ -258,9 +263,17 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
     {"check_animation", &ControlApi::checkAnimation}, {"export_anim", &ControlApi::exportAnim},
     {"find_reference", &ControlApi::findReference}, {"load_reference", &ControlApi::loadReference},
   };
+  // the Script Lab commands work without an open animation
+  static const struct { const char* name; Handler handler; } rlvTable[] =
+  {
+    {"rlv_command", &ControlApi::rlvCommand}, {"rlv_state", &ControlApi::rlvStateAnswer}, {"rlv_reset", &ControlApi::rlvReset},
+  };
 
   const QString command = request.value("command").toString();
-  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference.");
+  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference, rlv_command, rlv_state, rlv_reset, lsl_check, lsl_run.");
+  for (const auto& entry : rlvTable)
+    if (command == QLatin1String(entry.name))
+      return (this->*entry.handler)(request);
   // Script Lab (issue 289): these do not need an open animation
   if (command == QLatin1String("lsl_check")) return lsl::Control::check(request);
   if (command == QLatin1String("lsl_run")) return lsl::Control::run(request);
@@ -1495,5 +1508,95 @@ QJsonObject ControlApi::loadReference(const QJsonObject& request)
   QJsonObject answer = state(QJsonObject());
   answer["reference"] = QJsonObject{{"id", found->id}, {"name", clip(found->name, 80)}, {"licence", clip(found->licence, 200)}, {"credit", clip(found->credit, 400)}};
   answer["note"] = "Opened from the read-only reference library. Edit from frame 2 and save with save_file under a new name; keep the credit if you pass the animation on.";
+  return answer;
+}
+
+// ---- Script Lab: the RLV sandbox (issue 287) ----
+
+QJsonObject ControlApi::rlvCommand(const QJsonObject& request)
+{
+  const QJsonValue objectValue = request.value("object");
+  const QJsonValue textValue = request.value("text");
+  if (!objectValue.isString()) return fail("rlv_command needs \"object\": an id for the sending object, e.g. \"collar\".");
+  if (!textValue.isString()) return fail("rlv_command needs \"text\": the owner-say line, e.g. \"@detach=n\".");
+  const QString object = objectValue.toString();
+  const QString text = textValue.toString();
+
+  const RlvState::ApplyResult result = m_rlv.apply(object, text);
+  if (!result.ok()) return fail(result.error + ".");
+
+  QJsonArray results;
+  for (const RlvState::Outcome& outcome : result.outcomes)
+  {
+    QJsonObject entry;
+    entry["command"] = outcome.command.text;
+    entry["behaviour"] = outcome.command.behaviour;
+    if (!outcome.command.option.isEmpty()) entry["option"] = outcome.command.option;
+    entry["param"] = outcome.command.param;
+    entry["type"] = Rlv::paramTypeName(outcome.command.type);
+    entry["result"] = Rlv::resultName(outcome.result);
+    if (!outcome.reason.isEmpty()) entry["reason"] = outcome.reason;
+    results << entry;
+  }
+  QJsonArray replies;
+  for (const RlvState::Reply& reply : result.replies)
+    replies << QJsonObject{{"channel", reply.channel}, {"text", reply.text}};
+
+  QJsonObject answer = ok();
+  answer["object"] = object;
+  answer["results"] = results;
+  answer["replies"] = replies;
+  answer["restrictions"] = static_cast<int>(m_rlv.restrictions().size());
+  return answer;
+}
+
+QJsonObject ControlApi::rlvStateAnswer(const QJsonObject&)
+{
+  QJsonObject answer = ok();
+  answer["rlv_version"] = QString("%1.%2.%3").arg(Rlv::VERSION_MAJOR).arg(Rlv::VERSION_MINOR).arg(Rlv::VERSION_PATCH);
+
+  QJsonObject objects;
+  const QMap<QString, QStringList> map = m_rlv.objects();
+  for (auto it = map.constBegin(); it != map.constEnd(); ++it)
+    objects[it.key()] = QJsonArray::fromStringList(it.value());
+  answer["objects"] = objects;
+
+  QJsonArray restrictions;
+  QJsonObject counts;
+  for (const RlvState::Restriction& r : m_rlv.restrictions())
+  {
+    QJsonObject entry{{"object", r.object}, {"behaviour", r.behaviour}};
+    if (!r.option.isEmpty()) entry["option"] = r.option;
+    restrictions << entry;
+    const QString key = r.option.isEmpty() ? r.behaviour : r.behaviour + ":" + r.option;
+    counts[key] = m_rlv.count(r.behaviour, r.option);
+  }
+  answer["restrictions"] = restrictions;
+  answer["counts"] = counts;
+
+  QJsonArray actions;
+  QJsonArray blocked;
+  const QMap<QString, bool> allowed = m_rlv.actions();
+  for (const Rlv::Action& action : Rlv::actions())
+  {
+    const bool yes = allowed.value(action.id, true);
+    actions << QJsonObject{{"id", action.id}, {"label", action.label}, {"allowed", yes}};
+    if (!yes) blocked << action.id;
+  }
+  answer["actions"] = actions;
+  answer["blocked"] = blocked;
+
+  QJsonArray known;
+  for (const Rlv::Behaviour& behaviour : Rlv::behaviours()) known << behaviour.name;
+  answer["behaviours"] = known;
+  return answer;
+}
+
+QJsonObject ControlApi::rlvReset(const QJsonObject&)
+{
+  const int removed = static_cast<int>(m_rlv.restrictions().size());
+  m_rlv.reset();
+  QJsonObject answer = ok();
+  answer["removed"] = removed;
   return answer;
 }

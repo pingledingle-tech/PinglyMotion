@@ -14,6 +14,9 @@ SET (PINGLYMOTION_CORE_SRC animation.cpp
               pmmesh.cpp
               jointgroups.cpp
               propfile.cpp
+              scriptlab/rlvbehaviours.cpp
+              scriptlab/rlvcommand.cpp
+              scriptlab/rlvstate.cpp
               settings.cpp
               usersettings.cpp
               versionnumber.cpp)

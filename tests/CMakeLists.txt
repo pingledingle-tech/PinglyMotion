@@ -147,6 +147,15 @@ TARGET_LINK_LIBRARIES (pinglymotion_timeline_tests pinglymotion_core ${PINGLYMOT
 ADD_TEST (NAME timeline WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timeline_tests)
 SET_TESTS_PROPERTIES (timeline PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# the Script Lab's RLV core: command parser and restriction state (#287)
+FOREACH (RLV_TEST rlvcommand rlvstate)
+  ADD_EXECUTABLE (pinglymotion_${RLV_TEST}_tests tst_${RLV_TEST}.cpp)
+  TARGET_INCLUDE_DIRECTORIES (pinglymotion_${RLV_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+  TARGET_LINK_LIBRARIES (pinglymotion_${RLV_TEST}_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+  ADD_TEST (NAME ${RLV_TEST} COMMAND pinglymotion_${RLV_TEST}_tests)
+  SET_TESTS_PROPERTIES (${RLV_TEST} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+ENDFOREACH ()
+
 # Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
 FOREACH (LSL_TEST lsllexer lslparser lslinterp)
   ADD_EXECUTABLE (pinglymotion_${LSL_TEST}_tests tst_${LSL_TEST}.cpp)

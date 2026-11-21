@@ -16,6 +16,7 @@ The targets, all built with libFuzzer, AddressSanitizer and UndefinedBehaviorSan
 | `fuzz_openfile` | Opening a file end to end (issue 250): each input written as a `.bvh`, `.avm` and `.dingle` file, then `BVH::checkFile()` and a whole `Animation` (`BVH::animRead`, the joint tree, the limits, the Bento reference skeleton), as File > Open and the remote control do | The parsers have their own targets; this one tests what happens after them with a real file |
 | `fuzz_retargetbvh` | Importing a BVH from another skeleton (issue 250): `Retarget::mapSkeletons()` on foreign joint names and trees, then `Retarget::retarget()` with both rest poses onto `bin/data/SLFemale.bvh`; mapping indices stay inside both skeletons and every result passes `Retarget::validate()` | BVH files from other programs (Mixamo, CMU, XR Animator, MoMask) are imported this way |
 | `fuzz_controlserver` | The control server's HTTP framing (issue 250): any bytes over a real local connection, in two pieces, to `ControlServer` (request line, headers, limits, Host, Origin, key, Content-Length, body); `@KEY@` and `@PORT@` in an input become the real key and port | Any program on the computer can connect to the server |
+| `fuzz_rlv` | The Script Lab's RLV core (`src/scriptlab/`, issue 287): each line `<object>|<text>` goes to `Rlv::parseLine()` and `RlvState::apply()`; after every line the limits hold, the counters match the held restrictions, replies stay within 1023 characters and blocked actions follow the plain restrictions | LSL scripts and AI clients send RLV lines through the control command `rlv_command` |
 | `fuzz_lsl` | The Script Lab LSL interpreter (`src/scriptlab/lsl/`, issue 289): any bytes as an LSL script through the lexer, parser and checker (what `lsl_check` does); every error has a line, a column and a message; a script that compiles is then run with small limits, one chat and one touch (what `lsl_run` does) and must stay inside the limits | An AI client writes the scripts and sends them over the control commands |
 
 Not fuzzed here: `SL.lim` and the `.pmm` body meshes (read only from PinglyMotion's own data folder), and the old BVH/AVM parser in `src/bvh.cpp`. `fuzz_animfile` fuzzes the new parser that replaces it (issue #62); until the program uses it (part 2 of #62), it does not test the code that opens files today.
@@ -37,7 +38,7 @@ Needs clang and its sanitizer runtime (Ubuntu: `sudo apt-get install clang libcl
 ```
 CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_FUZZ=ON
 cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping \
-  fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_lsl -j 2
+  fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_rlv fuzz_lsl -j 2
 
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 QT_QPA_PLATFORM=offscreen
 mkdir -p /tmp/prop /tmp/control
@@ -55,6 +56,8 @@ mkdir -p /tmp/openfile /tmp/retargetbvh /tmp/controlserver
 build-fuzz/fuzz/fuzz_openfile -max_total_time=300 -max_len=65536 -dict=fuzz/animfile.dict /tmp/openfile fuzz/corpus/bvh fuzz/corpus/avm fuzz/corpus/dingle
 build-fuzz/fuzz/fuzz_retargetbvh -max_total_time=300 -max_len=65536 -dict=fuzz/animfile.dict /tmp/retargetbvh fuzz/corpus/bvh tests/data/xr_animator tests/retargetsmpl tests/motions/cmu
 build-fuzz/fuzz/fuzz_controlserver -max_total_time=300 -max_len=2048 -dict=fuzz/controlserver.dict /tmp/controlserver fuzz/corpus/controlserver
+mkdir -p /tmp/rlv
+build-fuzz/fuzz/fuzz_rlv -max_total_time=300 -max_len=4096 -dict=fuzz/rlv.dict /tmp/rlv fuzz/corpus/rlv
 mkdir -p /tmp/lsl
 build-fuzz/fuzz/fuzz_lsl -max_total_time=300 -max_len=8192 -dict=fuzz/lsl.dict /tmp/lsl fuzz/corpus/lsl
 ```
