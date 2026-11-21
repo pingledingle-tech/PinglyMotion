@@ -1,5 +1,5 @@
 Branch: cleanup/core-library
-Status: active
+Status: done
 Pull request: #240
 Files:
 - CMakeLists.txt
@@ -7,6 +7,7 @@ Files:
 - tests/CMakeLists.txt
 - tests/*/CMakeLists.txt
 - fuzz/CMakeLists.txt
+- tests/tst_scene.cpp
 
 ## What
 
