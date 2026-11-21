@@ -1287,6 +1287,12 @@ void BentoTest::programHasVersionNumber()
   QVERIFY(Constants::versionNumber().isValid());
   QVERIFY(Constants::versionNumber().compare(VersionNumber("0.0.0")) > 0);
   QVERIFY(VersionNumber("0.10.0").compare(VersionNumber("0.9.3")) > 0);
+  // only dots separate the parts (issue 252)
+  QVERIFY(VersionNumber("1.2").isValid());
+  QVERIFY(VersionNumber("0.3.0").isValid());
+  QVERIFY(VersionNumber("10.0.1.2").isValid());
+  for (const char* bad : {"1x2", "1-2-3", "0.3x0", "1.2.", ".1.2", "01.2", "1..2", "v1.2", ""})
+    QVERIFY2(!VersionNumber(bad).isValid(), bad);
 }
 
 #include "tst_bento.moc"

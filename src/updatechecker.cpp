@@ -28,6 +28,7 @@
 
 #include "constants.h"
 #include "releaseinfo.h"
+
 #include "settings.h"
 #include "updatenotificationdialog.h"
 #include "updatersettings.h"
@@ -35,6 +36,12 @@
 
 #include "updatechecker.h"
 #include "whatsnewdialog.h"
+
+namespace
+{
+  // the most of the release information that is read (GitHub's answer is a few KB)
+  const qint64 MAX_REPLY_BYTES = 1024 * 1024;
+}
 
 UpdateCheckResults::UpdateCheckResults() :
   m_hasUpdates(false),
@@ -146,7 +153,12 @@ void UpdateChecker::checkUpdates()
   request.setHeader(QNetworkRequest::UserAgentHeader,
                     QString("PinglyMotion/%1").arg(Constants::versionNumberString()));
   request.setRawHeader("Accept", "application/vnd.github+json");
-  m_networkAccessManager->get(request);
+  QNetworkReply* reply = m_networkAccessManager->get(request);
+  // the release information is a few KB; a far larger answer is stopped (issue 252)
+  connect(reply, &QNetworkReply::downloadProgress, reply, [reply](qint64 received, qint64)
+  {
+    if (received > MAX_REPLY_BYTES) reply->abort();
+  });
 }
 
 bool UpdateChecker::showNews()
@@ -163,7 +175,11 @@ bool UpdateChecker::showNews()
 
 void UpdateChecker::replyFinished(QNetworkReply* reply)
 {
-  UpdateCheckResults updateCheckResults = processUpdates(reply->readAll());
+  // a failed or stopped request is not read: it is the same as no answer (issue 252)
+  QByteArray answer;
+  if (reply->error() == QNetworkReply::NoError) answer = reply->read(MAX_REPLY_BYTES + 1);
+  if (answer.size() > MAX_REPLY_BYTES) answer.clear();
+  UpdateCheckResults updateCheckResults = processUpdates(answer);
   if (updateCheckResults.hasUpdates())
   {
     execDialog(DialogType::UpdateNotification);
