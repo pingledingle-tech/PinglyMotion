@@ -87,9 +87,9 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
     joints[i]=reader.animRead(model,limFile);
   }
 
-  QString skinError;
-  if(!m_avatarSkin.load(Constants::pinglyMotionDataPath(),&skinError))
-    qWarning("AnimationView::AnimationView(): no avatar body: %s",skinError.toLatin1().constData());
+  const AvatarSkin::Result skinResult=m_avatarSkin.load(Constants::pinglyMotionDataPath());
+  if(!skinResult.ok())
+    qWarning("AnimationView::AnimationView(): no avatar body: %s",skinResult.error.toLatin1().constData());
 
   // the reference skeleton decides how many tracks the timeline has
   Constants::setNumParts(BVH::countNodes(joints[0])+1);
@@ -1050,15 +1050,16 @@ bool AnimationView::setBody(AvatarSkin::Body wanted)
 {
   if(m_avatarSkin.isLoaded() && m_avatarSkin.body()==wanted) return true;
 
-  QString error;
-  bool ok=m_avatarSkin.load(Constants::pinglyMotionDataPath(),wanted,&error);
+  const AvatarSkin::Result result=m_avatarSkin.load(Constants::pinglyMotionDataPath(),wanted);
+  const bool ok=result.ok();
   if(!ok)
   {
-    qWarning("AnimationView::setBody(): %s",error.toLatin1().constData());
+    qWarning("AnimationView::setBody(): %s",result.error.toLatin1().constData());
     // fall back to the other body, so that something is shown if one file is damaged
     const AvatarSkin::Body other=wanted==AvatarSkin::RuthBody ? AvatarSkin::MaxBody : AvatarSkin::RuthBody;
-    if(!m_avatarSkin.load(Constants::pinglyMotionDataPath(),other,&error))
-      qWarning("AnimationView::setBody(): no avatar body: %s",error.toLatin1().constData());
+    const AvatarSkin::Result fallback=m_avatarSkin.load(Constants::pinglyMotionDataPath(),other);
+    if(!fallback.ok())
+      qWarning("AnimationView::setBody(): no avatar body: %s",fallback.error.toLatin1().constData());
   }
   update();
   return ok;

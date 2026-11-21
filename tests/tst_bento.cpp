@@ -729,8 +729,7 @@ static QVector<QMatrix4x4> restMatrices(const AvatarSkin& skin)
 void BentoTest::skinRestPose()
 {
   AvatarSkin skin;
-  QString error;
-  QVERIFY2(skin.load(Constants::pinglyMotionDataPath(), &error), qPrintable(error));
+  { const AvatarSkin::Result loaded = skin.load(Constants::pinglyMotionDataPath()); QVERIFY2(loaded.ok(), qPrintable(loaded.error)); }
   QCOMPARE(skin.body(), AvatarSkin::RuthBody);   // the default body
   QCOMPARE(skin.parts().size(), 5);   // body, feet, eyelashes, two eyes
 
@@ -754,7 +753,7 @@ void BentoTest::skinRestPose()
 void BentoTest::skinFollowsSkeleton()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath()).ok());
 
   BVH bvh;
   BVHNode* root = bvh.animRead(Constants::femaleBvhPath(), Constants::limitsFilePath());
@@ -783,7 +782,7 @@ void BentoTest::skinFollowsSkeleton()
 void BentoTest::skinBendsElbow()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath()));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath()).ok());
   const QStringList names = skin.jointNames();
   const int elbow = names.indexOf("lForeArm");
   const int hand = names.indexOf("lHand");
@@ -846,7 +845,7 @@ void BentoTest::skinMaleShape()
   QVERIFY(QFile::copy(data + "/skin_joints.txt", dir.path() + "/skin_joints.txt"));
   QVERIFY(QFile::copy(data + "/character/ruth2/ruth2.pmm", dir.path() + "/character/ruth2/ruth2.pmm"));
   AvatarSkin skin;
-  QVERIFY(skin.load(dir.path()));
+  QVERIFY(skin.load(dir.path()).ok());
   QVector<QVector<QVector3D>> female;
   for (const AvatarSkin::Part& part : skin.parts()) female << part.restVertices;
 
@@ -1019,8 +1018,7 @@ static QVector<QMatrix4x4> turnJoint(const AvatarSkin& skin, const QStringList& 
 void BentoTest::maxBodyLoads()
 {
   AvatarSkin skin;
-  QString error;
-  QVERIFY2(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody, &error), qPrintable(error));
+  { const AvatarSkin::Result loaded = skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody); QVERIFY2(loaded.ok(), qPrintable(loaded.error)); }
   QCOMPARE(skin.body(), AvatarSkin::MaxBody);
   QCOMPARE(skin.parts().size(), 4);   // body, eyelashes, two eyes
 
@@ -1052,7 +1050,7 @@ void BentoTest::maxBodyLoads()
 void BentoTest::maxFingerBends()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody).ok());
   const QStringList finger = {"mHandIndex1Left", "mHandIndex2Left", "mHandIndex3Left"};
   for (const QString& name : finger) QVERIFY(jointIndex(skin, name) >= 0);
   skin.skin(turnJoint(skin, QStringList{"mHandIndex1Left"}, 60, QVector3D(0, 0, 1)));
@@ -1075,7 +1073,7 @@ void BentoTest::maxFingerBends()
 void BentoTest::maxJawOpens()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::MaxBody).ok());
   skin.skin(turnJoint(skin, QStringList{"mFaceJaw"}, 20, QVector3D(1, 0, 0)));
 
   const int jaw = jointIndex(skin, "mFaceJaw");
@@ -1151,9 +1149,9 @@ void BentoTest::badMaxMeshIsRefused()
   out.close();
 
   AvatarSkin skin;
-  QString error;
-  QVERIFY(!skin.load(dir.path(), AvatarSkin::MaxBody, &error));
-  QVERIFY(!error.isEmpty());
+  const AvatarSkin::Result failed = skin.load(dir.path(), AvatarSkin::MaxBody);
+  QVERIFY(!failed.ok());
+  QVERIFY(!failed.error.isEmpty());
   QVERIFY(!skin.isLoaded());
 }
 

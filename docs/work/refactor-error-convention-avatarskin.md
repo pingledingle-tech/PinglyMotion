@@ -1,6 +1,6 @@
 Branch: refactor/error-convention-avatarskin
-Status: active
-Pull request: pending
+Status: done
+Pull request: #274
 Files:
 - src/avatarskin.*
 - src/animationview.cpp

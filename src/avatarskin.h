@@ -65,9 +65,15 @@ class AvatarSkin
       MaxBody         // the Max Bento avatar, character/max/maxine.pmm
     };
 
+    // what load() answers: error is empty when it worked
+    struct Result
+    {
+      QString error;
+      bool ok() const { return error.isEmpty(); }
+    };
+
     // reads skin_joints.txt and the body's mesh files from the data folder
-    bool load(const QString& dataPath, QString* errorMessage = nullptr) { return load(dataPath, RuthBody, errorMessage); }
-    bool load(const QString& dataPath, Body body, QString* errorMessage = nullptr);
+    Result load(const QString& dataPath, Body body = RuthBody);
     Body body() const { return m_body; }
     bool isLoaded() const { return !m_parts.isEmpty(); }
 
@@ -136,8 +142,8 @@ class AvatarSkin
     void swapMesh(MeshState& other);       // exchanges the mesh in use with other
     void loadMaleMesh(const QString& fileName);
 
-    bool loadJoints(const QString& fileName, QString* errorMessage);
-    bool loadPmm(const QString& fileName, QString* errorMessage);
+    QString loadJoints(const QString& fileName);   // error text, empty when it worked
+    QString loadPmm(const QString& fileName);      // error text, empty when it worked
     int useJoint(int skeletonJoint);
 
     QVector<SkinJoint> m_skeleton;          // whole skeleton, SL order
