@@ -1,6 +1,6 @@
 Branch: fix/loop-fields-follow-set-loop
 Status: active
-Pull request: pending
+Pull request: #276
 Files:
 - src/pinglymotionwindow.cpp
 - src/controlapi.*
