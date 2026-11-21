@@ -1,9 +1,9 @@
 Branch: docs/code-analysis
-Status: active
+Status: done
 Pull request: #236
 Files:
 - docs/CODE_ANALYSIS.md
-- CREDITS.md (only if QAvimator is not yet credited for ideas)
+- CREDITS.md (not changed: QAvimator is already credited)
 - docs/work/docs-code-analysis.md
 
 ## What
