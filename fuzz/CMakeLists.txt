@@ -1,6 +1,7 @@
 # PinglyMotion fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGLYMOTION_FUZZ=ON
-#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping
+#   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping \
+#     fuzz_openfile fuzz_retargetbvh fuzz_controlserver
 # See fuzz/README.md for how to run them.
 
 SET (FUZZ_FLAGS -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g)
@@ -86,3 +87,25 @@ TARGET_INCLUDE_DIRECTORIES (fuzz_retargetmapping PRIVATE ${CMAKE_SOURCE_DIR}/src
 TARGET_COMPILE_OPTIONS (fuzz_retargetmapping PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_retargetmapping PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_retargetmapping fuzz_core Qt6::Core Qt6::Gui)
+
+# opening a file end to end (issue 250): checkFile, then a whole Animation (animRead, joint tree,
+# limits, Bento reference skeleton) from a .bvh, .avm and .dingle file
+ADD_EXECUTABLE (fuzz_openfile fuzz_openfile.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_openfile PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_OPTIONS (fuzz_openfile PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_openfile PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_openfile fuzz_core ${PINGLYMOTION_QT_LIBS})
+
+# importing a BVH from another skeleton (issue 250): mapSkeletons and retarget onto SLFemale.bvh
+ADD_EXECUTABLE (fuzz_retargetbvh fuzz_retargetbvh.cpp ${CMAKE_SOURCE_DIR}/src/retarget.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_retargetbvh PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_OPTIONS (fuzz_retargetbvh PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_retargetbvh PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_retargetbvh fuzz_core Qt6::Core Qt6::Gui)
+
+# the control server's HTTP framing over a real local connection (issue 250)
+ADD_EXECUTABLE (fuzz_controlserver fuzz_controlserver.cpp ${CMAKE_SOURCE_DIR}/src/controlserver.cpp ${FUZZ_CONTROL_SRC})
+TARGET_INCLUDE_DIRECTORIES (fuzz_controlserver PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_controlserver fuzz_core ${PINGLYMOTION_QT_LIBS})

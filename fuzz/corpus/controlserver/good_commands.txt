@@ -1,0 +1,4 @@
+GET /api/commands HTTP/1.1
+Host: 127.0.0.1:@PORT@
+Authorization: Bearer @KEY@
+

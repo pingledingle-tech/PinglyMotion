@@ -1,6 +1,6 @@
 Branch: test/fuzz-three-targets
-Status: active
-Pull request: pending
+Status: done
+Pull request: #262
 Files:
 - fuzz/**
 - .github/workflows/fuzz.yml
