@@ -1,6 +1,6 @@
 Branch: docs/recipe-wave-library
 Status: done
-Pull request: pending
+Pull request: #234
 Files:
 - docs/ASSISTANT_GUIDE.md
 
