@@ -14,7 +14,7 @@ PinglyMotion is a free, open-source animation editor based on QAvimator. The goa
 - **Get optional AI assistance:** use the [local control interface and MCP server](docs/CONTROL.md) to pose joints, inspect screenshots and save animations. Manual editing works without AI.
 - **Use Windows or Linux:** builds use Qt 6.
 
-PinglyMotion is under active development. Automated checks validate exported BVH against rules based on the Second Life loader; actual upload and compatibility testing is still needed. Current builds require OpenGL 3.3.
+PinglyMotion is under active development. Automated checks validate exported BVH against rules based on the Second Life loader; upload and playback in Second Life were validated in Firestorm on 21 November 2026; the Linden viewer and animation priority are not tested yet. Current builds require OpenGL 3.3.
 
 ## Download and get started
 

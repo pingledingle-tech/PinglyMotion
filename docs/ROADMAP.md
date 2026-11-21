@@ -9,7 +9,7 @@ Status: **proposal for the project owner to confirm.** It sets an order for the 
 - Test motions (step 4, #27): the Mesh2Motion and CMU clips are in `examples/`.
 - Easing (step 6, #11, #53): #53 steps 1 to 5 are done (maths, playback, `curve` in `.dingle`, export, tile row); the wave (step 6, `examples/wave.dingle`) is done; the custom speed curve for one pose change (#11, first step) is merged, per-joint choices are still missing.
 - Posing (step 7, #14): camera and keys, joint list names and panels P1 to P6 are done; the selected-joint card, mirror and whole-pose buttons and the rest are open. The agreed UX decisions and build order are in [UX_DECISIONS.md](UX_DECISIONS.md) (20 November).
-- Not validated yet: real upload and playback in Second Life (#159). It runs beside the UX work and blocks nothing.
+- Validated on 21 November 2026 in Firestorm: export, upload, playback, loop, slow start and finish, hands, easing, the BVH route and re-import (#159, closed). Not tested: the Linden viewer and the priority steps.
 
 ## Starting point (19 November 2026)
 

@@ -77,7 +77,7 @@ To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle`
 
 **File > Export For Second Life** still makes a `.bvh` file instead.
 
-Upload to Second Life is still being tested. Do not rely on it yet.
+Export, upload and playback in Second Life were validated on 21 November 2026 in Firestorm: timing, loop, slow start and finish, hands, easing, the BVH route and importing the uploaded `.anim` again. Not tested yet: the Linden viewer and animation priority.
 
 ## 8. Bring in other files
 
