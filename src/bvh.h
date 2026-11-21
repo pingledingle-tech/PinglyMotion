@@ -45,8 +45,6 @@ class BVH
 
     void setNumFrames(int numFrames);
     int numFrames() const;
-    void bvhIndent(QTextStream& out,int depth);
-    void bvhWriteNode(BVHNode* node,QTextStream& out,int depth);
 
     // the write functions return false and set error when the file could not be written;
     // an existing file is then left as it was
@@ -60,7 +58,6 @@ class BVH
     // rotations relative to the rest pose, the hip offset from frame 0 in metres
     QJsonObject bvhPoseQuaternions(Animation* anim,int frame);
     void bvhPoseNodeQuaternions(BVHNode* node,int frame,QJsonObject& rotations);
-    void bvhWritePoseFrame(BVHNode* node,QTextStream& out,int frame,bool neutral);
     BVHNode* bvhFindNode(BVHNode* root,const QString& name) const;
 
     void bvhGetChannelLimits(BVHNode* node, BVHChannelType type, double *min, double *max);
