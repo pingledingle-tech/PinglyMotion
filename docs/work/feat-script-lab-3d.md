@@ -1,6 +1,6 @@
 Branch: feat/script-lab-3d
 Status: active
-Pull request: pending
+Pull request: #304
 Files:
 - src/scriptlab/labeffects.*
 - src/scriptlab/effectspreview.*
