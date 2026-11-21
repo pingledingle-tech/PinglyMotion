@@ -29,7 +29,7 @@ namespace
 // the functions that run in the sandbox
 enum class Fn
 {
-  OwnerSay, Say, Whisper, Shout, RegionSay, InstantMessage,
+  OwnerSay, Say, Whisper, Shout, RegionSay, RegionSayTo, InstantMessage, Dialog, GetPos, GetAttached, GetOwnerKey,
   Listen, ListenRemove, ListenControl, SetTimerEvent, Sleep,
   GetTime, ResetTime, GetAndResetTime, GetUnixTime,
   GetOwner, GetKey, Key2Name, GetObjectName, GetScriptName, GenerateKey, ResetScript,
@@ -45,7 +45,8 @@ enum class Fn
 const struct { const char* name; Fn fn; } SUPPORTED[] =
 {
   {"llOwnerSay", Fn::OwnerSay}, {"llSay", Fn::Say}, {"llWhisper", Fn::Whisper}, {"llShout", Fn::Shout},
-  {"llRegionSay", Fn::RegionSay}, {"llInstantMessage", Fn::InstantMessage},
+  {"llRegionSay", Fn::RegionSay}, {"llRegionSayTo", Fn::RegionSayTo}, {"llInstantMessage", Fn::InstantMessage},
+  {"llDialog", Fn::Dialog}, {"llGetPos", Fn::GetPos}, {"llGetAttached", Fn::GetAttached}, {"llGetOwnerKey", Fn::GetOwnerKey},
   {"llListen", Fn::Listen}, {"llListenRemove", Fn::ListenRemove}, {"llListenControl", Fn::ListenControl},
   {"llSetTimerEvent", Fn::SetTimerEvent}, {"llSleep", Fn::Sleep},
   {"llGetTime", Fn::GetTime}, {"llResetTime", Fn::ResetTime}, {"llGetAndResetTime", Fn::GetAndResetTime}, {"llGetUnixTime", Fn::GetUnixTime},
@@ -338,9 +339,45 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       }
       m_world.chat(m_now, "region_say", a[0].i, a[1].s);
       return Value();
+    case Fn::RegionSayTo:
+      m_world.chatTo(m_now, a[0].s, a[1].i, a[2].s);
+      return Value();
     case Fn::InstantMessage:
       m_world.instantMessage(m_now, a[0].s, a[1].s);
       return Value();
+    case Fn::Dialog:
+    {
+      // the checks and messages of Second Life's llDialog; a refused dialog is not shown
+      QString problem;
+      QStringList buttons;
+      for (const Value& v : a[2].list) buttons << toLslString(v);
+      if (a[1].s.isEmpty()) problem = "llDialog: must supply a message";
+      else if (a[1].s.toUtf8().size() >= 512) problem = "llDialog: message too long, must be less than 512 characters";
+      else if (buttons.size() > 12) problem = "llDialog: button list too long, must be 12 or fewer entries";
+      for (const QString& b : buttons)
+        if (problem.isEmpty() && b.trimmed().isEmpty()) problem = "llDialog: all buttons must have label strings";
+        else if (problem.isEmpty() && b.toUtf8().size() > 24) problem = "llDialog: button labels must be 24 or fewer characters long";
+      if (!problem.isEmpty())
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", problem}});
+        return Value();
+      }
+      if (buttons.isEmpty()) buttons << "OK";
+      m_world.dialog(m_now, a[0].s, a[1].s, buttons, a[3].i);
+      return Value();
+    }
+    case Fn::GetPos:
+    {
+      float p[3];
+      m_world.position(p);
+      return Value::vector(p[0], p[1], p[2]);
+    }
+    case Fn::GetAttached: return Value::integer(m_world.attachPoint());
+    case Fn::GetOwnerKey:
+    {
+      const QString owner = m_world.ownerOf(a[0].s);
+      return Value::key(owner.isEmpty() ? a[0].s : owner);
+    }
 
     // -------------------------------------------- listen and timer
     case Fn::Listen:
@@ -409,10 +446,7 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     // -------------------------------------------- object and owner
     case Fn::GetOwner: return Value::key(m_world.ownerKey());
     case Fn::GetKey: return Value::key(m_world.objectKey());
-    case Fn::Key2Name:
-      if (a[0].s == m_world.ownerKey()) return Value::string(m_world.ownerName());
-      if (a[0].s == m_world.objectKey()) return Value::string(m_world.objectName());
-      return Value::string(QString());
+    case Fn::Key2Name: return Value::string(m_world.nameOf(a[0].s));
     case Fn::GetObjectName: return Value::string(m_world.objectName());
     case Fn::GetScriptName: return Value::string("Script");
     case Fn::GenerateKey: return Value::key(nextKey());

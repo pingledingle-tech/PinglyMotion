@@ -52,12 +52,41 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 72 functions run; the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 77 functions run (72 from step 3, five more from step 5); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
 - Tests: `tests/tst_lsllexer.cpp`, `tests/tst_lslparser.cpp`, `tests/tst_lslinterp.cpp`, `tests/tst_lslrlv.cpp` and the LSL part of
   `tests/tst_control.cpp`; fuzz target `fuzz/fuzz_lsl.cpp`. Examples: `examples/scriptlab/`.
+
+## What exists now (step 5, issue 291): events and several objects
+
+Several scripts run in one world, so a HUD and a restraint can talk on a channel.
+
+- `src/scriptlab/lsl/sandbox.*`: up to 16 objects, each with its own script, key, name, owner, position or
+  attachment point, listens and timer, on one simulated clock. Chat between objects follows the Second Life ranges
+  (whisper 10 m, say 20 m, shout 100 m, `llRegionSay` the region, `llRegionSayTo` one object); an object never hears
+  itself. Things due at the same moment run in a fixed order (objects in list order, timers before inputs), so a run
+  is deterministic. Each object's RLV lines are held under its own key, so `@clear` from one object leaves the
+  others' restrictions alone.
+- New: the `attach` event, `llDialog`, `llRegionSayTo`, `llGetPos`, `llGetAttached`, `llGetOwnerKey`. Inputs from
+  outside: chat from an avatar (with a range), a touch, a dialog button, attach and detach.
+- `src/scriptlab/lsl/session.*`: keeps the world of the last `lsl_run`, so the control command `lsl_event` can send it
+  one more event and run it on.
+- Control commands: `lsl_run` with `objects` instead of `source`, and `lsl_event` ([CONTROL.md](CONTROL.md),
+  "Several objects and lsl_event"). The single-script form of `lsl_run` works as before.
+- The panel: below the replies, **Objects** lists the objects of the last run (name; where it is, or "Worn (point
+  35)"; "Running" or "Stopped: <why>" in the danger colour and bold; the restrictions it holds) and **Dialog** shows the
+  newest dialog (which object, the message, the buttons and the channel). The part is hidden until a script has run,
+  and follows every `lsl_run` and `lsl_event` at once. Code: `src/scriptlab/objectsview.*`.
+- Tests: `tests/tst_lslworld.cpp` (two objects talking on a channel, whisper out of range not heard, timer order,
+  touch, dialog, attach and detach through `lsl_event`, two objects holding the same restriction where `@clear`
+  removes only its own, limits that stop one script while the others run on, refused input) and
+  `tests/scriptlabpanel/tst_scriptlabobjects.cpp` (the panel's exact rows, dialog text and colours). Fuzz: `fuzz_lsl`
+  runs every script as two objects with every input type; `fuzz_control` takes a list of requests, so `lsl_event`
+  after `lsl_run` is reached.
+- Example: `examples/scriptlab/hud_cuffs_hud.lsl` with `hud_cuffs_cuffs.lsl` (a HUD asks with a dialog and tells the
+  cuffs on a channel; the cuffs lock with `@detach=n`).
 
 ## What exists now (step 6, issue 292): Live
 
@@ -79,9 +108,9 @@ Code) edits in their own editor and sees the result in PinglyMotion at once. The
 - Safety: the folder is only read; at most 200 scripts of at most 262 144 bytes, 5 000 entries and 4 folder levels;
   names that start with a dot, such as `.git`, are skipped; links are not followed out of the folder; every run has the
   interpreter's limits, including 2 seconds of real time.
-- `lsl_event` from the plan became the `inputs` option of `lab_watch`: the chat and touches given to every run. Each
-  run starts fresh with a simulated clock, so there is no script that keeps running between commands to send an
-  event to.
+- `lab_watch` has an `inputs` option: the chat and touches given to every run. Each run starts fresh with a
+  simulated clock. To send events to a world that keeps running between commands, use `lsl_run` and then
+  `lsl_event` (step 5).
 - Code: `src/scriptlab/labwatcher.*` and the Live page in `src/scriptlab/scriptlabpanel.*`. Tests:
   `tests/tst_labwatcher.cpp` (a saved script runs within the debounce, errors with line and column, saving again,
   Stop watching, the limits, links, an endless loop), the Live part of `tests/scriptlabpanel/` and of
@@ -184,9 +213,11 @@ command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cp
 
 - Only the behaviours in the table; others parse but are reported as unknown.
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
-- LSL: one script at a time (one object id for it), at most 100 RLV lines per run, the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start` and
-  `run_time_permissions`, and 72 built-in functions; hard limits on steps, memory, nesting and time (step 5 adds more
-  events and several objects). The sandbox is never identical to Second Life; the final test is always in Second Life.
+- LSL: up to 16 objects in one run, at most 100 RLV lines per object and run, the events `state_entry`, `state_exit`,
+  `timer`, `listen`, `touch_start`, `run_time_permissions` and `attach`, and 77 built-in functions; hard limits on
+  steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
+  and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
+  the final test is always in Second Life.
 
 ## Later
 

@@ -533,6 +533,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
   // the Script Lab panel shows and changes the same RLV state as rlv_command (issue 288)
   m_scriptLabPanel->setState(&m_controlApi->rlv());
+  m_scriptLabPanel->setSession(&m_controlApi->lslSession());
   // and the same folder watch as lab_watch (issue 292)
   m_scriptLabPanel->setWatcher(&m_controlApi->lab());
   // and shows what a Live run does in the 3D view, off until its box is ticked (issue 293)

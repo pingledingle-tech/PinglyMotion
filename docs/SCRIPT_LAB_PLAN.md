@@ -65,14 +65,14 @@ The original plan:
 
 ### Step 5: Events and several objects (technical + visible)
 
-`listen`, `timer`, `touch_start`, `llDialog`, `attach`. Several objects at once, so a HUD and a restraint can talk on a channel. A simulated clock. Step 3 already runs `listen`, `timer`, `touch_start` and `run_time_permissions` for one script with a simulated clock; this step adds the rest and several objects.
+`listen`, `timer`, `touch_start`, `llDialog`, `attach`. Several objects at once, so a HUD and a restraint can talk on a channel. A simulated clock. Step 3 already runs `listen`, `timer`, `touch_start` and `run_time_permissions` for one script with a simulated clock; this step adds the rest and several objects. Done (issue 291): `lsl_run` with `objects`, the control command `lsl_event` (one event to the world of the last `lsl_run`), and the panel's Objects and Dialog part ([SCRIPT_LAB.md](SCRIPT_LAB.md)).
 
 ### Step 6: Live (visible)
 
 - PinglyMotion watches a folder (a cloned repository) and reloads a script when it changes.
 - Control commands `lsl_check` (errors with line and column), `lsl_run` (event log plus final RLV state), `lsl_event`. `lsl_check` and `lsl_run` came early, with step 3 (issue 289, [CONTROL.md](CONTROL.md)); this step adds `lsl_event` and the final RLV state.
 - The panel shows the script read-only with line numbers and error marks, and a button "Open in editor" that opens the file in the user's own editor. No built-in editor for now.
-- Done (issue 292): the folder watch, the Live page with the script, errors and log, "Open in editor", and the control commands `lab_watch`, `lab_unwatch` and `lab_result` ([SCRIPT_LAB.md](SCRIPT_LAB.md)). `lsl_event` became the `inputs` option of `lab_watch`, because each run starts fresh with a simulated clock. The final RLV state of a run comes from step 4 (issue 290).
+- Done (issue 292): the folder watch, the Live page with the script, errors and log, "Open in editor", and the control commands `lab_watch`, `lab_unwatch` and `lab_result` ([SCRIPT_LAB.md](SCRIPT_LAB.md)). The watch's runs take their chat and touches from the `inputs` option of `lab_watch`, because each run starts fresh with a simulated clock; `lsl_event` came with step 5 (issue 291) and sends an event to the world of the last `lsl_run`. The final RLV state of a run comes from step 4 (issue 290).
 
 ### Step 7: Effects in the 3D view (visible)
 
