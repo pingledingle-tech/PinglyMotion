@@ -10,6 +10,8 @@ Decisions taken while the project lived in the old repository, and the decisions
 
 **21 Nov 2026 - Script Lab step 3 brings `lsl_check` and `lsl_run` early.** The plan had them in step 6; they came with the LSL interpreter (issue 289), because an AI assistant can only use the interpreter through the control commands, and the commands need no panel. Step 6 still adds `lsl_event`, the folder watch and the final RLV state. Interpreter limits are fixed in code (steps, call depth, memory, string and list sizes, events, real time) and documented in [CONTROL.md](CONTROL.md). Source: the job for issue 289, started on the project owner's word ("finish the whole Script Lab"), 21 November 2026.
 
+**21 Nov 2026 - Script Lab step 6: `lsl_event` became the `inputs` option of `lab_watch`.** The live folder watch (issue 292) runs a script again from the start each time it is saved, with a simulated clock, as `lsl_run` does; there is no script that keeps running between commands, so a separate `lsl_event` command would have nothing to send to. The chat and touches a script should get are given once to `lab_watch` and reach every run; `lab_result` reads the outcome. The folder is only read, with fixed limits on files, size, depth and links (CONTROL.md, "Script Lab Live"). Source: the job for issue 292, started on the project owner's word ("start all jobs you can on RLV" and "I want this finished"), 21 November 2026.
+
 ## The move (18 November 2026)
 
 **New repository, new name.** The project continues in this repository under the name PinglyMotion. The old repository will be deleted. Reason: not written down. Source: the project owner, 18 November 2026.

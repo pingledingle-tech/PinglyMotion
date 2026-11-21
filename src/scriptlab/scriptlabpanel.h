@@ -18,17 +18,23 @@
 #define SCRIPTLABPANEL_H
 
 #include <QColor>
+#include <QJsonObject>
+#include <QList>
 #include <QPointer>
 #include <QWidget>
 
+#include "labwatcher.h"
 #include "rlvstate.h"
+
 
 class QDockWidget;
 class QLabel;
 class QLineEdit;
 class QMainWindow;
 class QPlainTextEdit;
+class QListWidget;
 class QPushButton;
+class QTabWidget;
 class QTreeWidget;
 
 class ScriptLabPanel : public QWidget
@@ -55,6 +61,18 @@ class ScriptLabPanel : public QWidget
     // Removes every restriction of every object (the control command rlv_reset).
     void resetAll();
 
+    // --- Live (issue 292): the folder watch to show and start. Not owned
+    // (the control API owns it, so the panel and lab_watch share one watch).
+    void setWatcher(LabWatcher* watcher);
+    LabWatcher* watcher() const { return m_watcher; }
+    // starts watching a folder, as Watch folder does after the folder is
+    // chosen; false when refused (the status line says why)
+    bool watchFolder(const QString& folder);
+    // stops watching, as Stop watching does
+    void stopWatching();
+    // the text of a run's event log entry, as the Live page shows it
+    static QString logLine(const QJsonObject& entry);
+
     // The colour tokens the panel uses, from docs/design_tokens.json; dark
     // or light is chosen from the window colour of the palette.
     static QColor successColour(bool dark);
@@ -76,10 +94,22 @@ class ScriptLabPanel : public QWidget
     QPushButton* runButton() const { return m_run; }
     QPushButton* resetButton() const { return m_reset; }
     QLabel* emptyHint() const { return m_empty; }
+    QTabWidget* tabs() const { return m_tabs; }
+    QLineEdit* liveFolderField() const { return m_liveFolder; }
+    QPushButton* watchButton() const { return m_watch; }
+    QPushButton* unwatchButton() const { return m_unwatch; }
+    QLabel* liveStatus() const { return m_liveStatus; }
+    QLabel* liveScriptName() const { return m_liveScript; }
+    QPushButton* openEditorButton() const { return m_openEditor; }
+    QPlainTextEdit* scriptView() const { return m_scriptView; }
+    QListWidget* problemList() const { return m_problems; }
+    QPlainTextEdit* runLog() const { return m_runLog; }
 
   public slots:
     // reads the state again (connected to RlvState::changed)
     void refresh();
+    // reads the watch and its newest result again (connected to LabWatcher)
+    void refreshLive();
 
   protected:
     void changeEvent(QEvent* event) override;
@@ -88,6 +118,11 @@ class ScriptLabPanel : public QWidget
     void runCommandField();
     void appendLog(const QString& line);
     void applyStyle();
+    void buildLivePage();
+    void chooseFolder();
+    void openInEditor();
+    void showProblem(int index);
+    void setLiveStatus(const QString& text, int tone);   // tone: 0 muted, 1 success, 2 danger
 
     QPointer<RlvState> m_state;
     QLineEdit* m_object;
@@ -99,6 +134,24 @@ class ScriptLabPanel : public QWidget
     QTreeWidget* m_actions;
     QPlainTextEdit* m_log;
     QMetaObject::Connection m_changedConnection;
+
+    QPointer<LabWatcher> m_watcher;
+    QTabWidget* m_tabs = nullptr;
+    QLineEdit* m_liveFolder = nullptr;
+    QPushButton* m_watch = nullptr;
+    QPushButton* m_unwatch = nullptr;
+    QLabel* m_liveStatus = nullptr;
+    int m_liveTone = 0;
+    bool m_wasWatching = false;
+    QString m_refusal;                 // why the last Watch folder was refused, until the next change
+    QLabel* m_liveScript = nullptr;
+    QPushButton* m_openEditor = nullptr;
+    QPlainTextEdit* m_scriptView = nullptr;
+    QListWidget* m_problems = nullptr;
+    QPlainTextEdit* m_runLog = nullptr;
+    QString m_shownFile;               // the script shown in the view (relative to the folder)
+    QList<QJsonObject> m_shownProblems;
+    QList<QMetaObject::Connection> m_watcherConnections;
 };
 
 #endif

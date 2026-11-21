@@ -147,6 +147,8 @@ def main():
         assert "rlv_command" in lsl_run["description"] and "keep_rlv" in lsl_run["parameters"], lsl_run
     with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
         guide = handle.read()
+    # Script Lab Live (issue 292): the folder watch commands are in the bundled list
+    assert all(name in bundled for name in ("lab_watch", "lab_unwatch", "lab_result")), bundled
 
     with tempfile.TemporaryDirectory() as tmp:
         control = os.path.join(tmp, "control.json")

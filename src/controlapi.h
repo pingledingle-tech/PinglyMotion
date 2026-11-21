@@ -20,6 +20,7 @@
 #include <QString>
 #include <QVector3D>
 
+#include "scriptlab/labwatcher.h"
 #include "scriptlab/rlvstate.h"
 
 class Animation;
@@ -95,6 +96,8 @@ class ControlApi
 
     // the Script Lab's RLV state that rlv_command, rlv_state and rlv_reset work on (issue 287)
     RlvState& rlv() { return m_rlv; }
+    // the Script Lab's folder watch that lab_watch, lab_unwatch and lab_result work on (issue 292)
+    LabWatcher& lab() { return m_lab; }
 
   private:
     typedef QJsonObject (ControlApi::*Handler)(const QJsonObject&);
@@ -129,6 +132,9 @@ class ControlApi
     QJsonObject rlvCommand(const QJsonObject&);
     QJsonObject rlvStateAnswer(const QJsonObject&);
     QJsonObject rlvReset(const QJsonObject&);
+    QJsonObject labWatch(const QJsonObject&);
+    QJsonObject labUnwatch(const QJsonObject&);
+    QJsonObject labResult(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();
@@ -148,6 +154,7 @@ class ControlApi
     QString m_libraryFolder;
     QString m_referenceFolder;
     RlvState m_rlv;
+    LabWatcher m_lab;
 };
 
 #endif

@@ -41,14 +41,14 @@ Visible changes (steps 6 and 7, and #40) need the project owner's Windows test b
 
 ## Script Lab track (separate from animation and UX)
 
-Status: **steps 1, 2, 3 and 4 done** (the RLV core, issue 287: parser, behaviour state and the control commands `rlv_command`, `rlv_state`, `rlv_reset`; the Script Lab panel, issue 288: View > Script Lab; the LSL interpreter, issue 289, with `lsl_check` and `lsl_run`; the link, issue 290: `llOwnerSay("@...")` runs as an RLV command; see [SCRIPT_LAB.md](SCRIPT_LAB.md)); the other steps are planned. A sandbox for testing RLV and LSL scripts written with Claude Code; decision in [DECISIONS.md](DECISIONS.md), plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md). It mostly adds new files under `src/scriptlab/` and does not wait for the animation and UX steps above. One issue per step, started only on the project owner's word:
+Status: **steps 1, 2, 3, 4 and 6 done** (the RLV core, issue 287: parser, behaviour state and the control commands `rlv_command`, `rlv_state`, `rlv_reset`; the Script Lab panel, issue 288: View > Script Lab; the LSL interpreter, issue 289, with `lsl_check` and `lsl_run`; the link, issue 290: `llOwnerSay("@...")` runs as an RLV command; Live, issue 292: the folder watch, the panel's Live page and `lab_watch`, `lab_unwatch`, `lab_result`; see [SCRIPT_LAB.md](SCRIPT_LAB.md)); the other steps are planned. A sandbox for testing RLV and LSL scripts written with Claude Code; decision in [DECISIONS.md](DECISIONS.md), plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md). It mostly adds new files under `src/scriptlab/` and does not wait for the animation and UX steps above. One issue per step, started only on the project owner's word:
 
 1. RLV core ([#287](https://github.com/pingledingle-tech/PinglyMotion/issues/287), technical) — done
 2. Script Lab panel ([#288](https://github.com/pingledingle-tech/PinglyMotion/issues/288), visible) — done
 3. LSL interpreter, minimum ([#289](https://github.com/pingledingle-tech/PinglyMotion/issues/289), technical) — done, with the control commands `lsl_check` and `lsl_run`
 4. Link: `llOwnerSay("@...")` to the RLV core ([#290](https://github.com/pingledingle-tech/PinglyMotion/issues/290), technical) — done
 5. Events and several objects ([#291](https://github.com/pingledingle-tech/PinglyMotion/issues/291), technical + visible)
-6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible)
+6. Live: folder watch and `lsl_*` commands ([#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292), visible) — done: the Live page and `lab_watch`, `lab_unwatch`, `lab_result`
 7. Effects in the 3D view ([#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293), visible)
 8. Separate repository for the owner's RLV tools, description only ([#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294), technical)
 9. RLVa-only behaviours and a plain RLV / RLVa mode switch ([#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297), technical)

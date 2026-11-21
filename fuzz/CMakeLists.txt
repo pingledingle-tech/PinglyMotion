@@ -128,6 +128,9 @@ SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/control.cpp)
 TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LSL_FILES})
 TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
+# Script Lab Live (issue 292): the folder watch behind lab_watch, used by controlapi.cpp
+TARGET_SOURCES (fuzz_control PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp)
+TARGET_SOURCES (fuzz_controlserver PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp)
 ADD_EXECUTABLE (fuzz_lsl fuzz_lsl.cpp ${FUZZ_LSL_FILES})
 TARGET_INCLUDE_DIRECTORIES (fuzz_lsl PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_lsl PRIVATE ${FUZZ_FLAGS})
