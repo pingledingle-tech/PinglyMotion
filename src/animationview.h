@@ -70,9 +70,6 @@ class AnimationView : public QOpenGLWidget
     static int firstObjectId();
     void setScene(Scene* scene);
 
-    // the BVH reader and writer that the window uses to make animations for this view
-    BVH* getBVH() const;
-
     void selectPart(BVHNode* node);
     void selectProp();
     BVHNode* getSelectedPart();
@@ -163,8 +160,6 @@ class AnimationView : public QOpenGLWidget
     void drawProps();
     void drawProp(const Prop* prop) const;
     void drawDragHandles(const Prop* prop) const;
-
-    BVH* bvh;
 
     // keys held down, for the prop handles (Shift: scale, Ctrl: rotate)
     Qt::KeyboardModifiers modifier;

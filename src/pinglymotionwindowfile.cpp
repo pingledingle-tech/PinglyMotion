@@ -140,7 +140,7 @@ void PinglyMotionWindow::fileNew()
   if(!clearOpenFiles()) return;
   emit clearProps();
 
-  Animation* anim=new Animation(ui->animationView->getBVH());
+  Animation* anim=new Animation(scene->bvh());
   showLoadProblems(anim);
 
   // set timeline animation first, because ...
@@ -270,10 +270,10 @@ void PinglyMotionWindow::addAnimationFile(const QString& file)
     const QString shownName=oldAvm ? DingleSave::suggestedName(file,m_untitledName) : file;
     if(oldAvm) m_avmOrigin.insert(shownName,file);
     addToOpenFiles(shownName);
-    Animation* anim=new Animation(ui->animationView->getBVH(),file);
+    Animation* anim=new Animation(scene->bvh(),file);
     showLoadProblems(anim);
     animationIds.append(anim);
-    if(!m_quietDialogs && (ui->animationView->getBVH()->lastLoadedIgnoredKeys>0 || ui->animationView->getBVH()->lastLoadedNewerVersion))
+    if(!m_quietDialogs && (scene->bvh()->lastLoadedIgnoredKeys>0 || scene->bvh()->lastLoadedNewerVersion))
       QMessageBox::information(this,tr("Open Animation File"),
                                tr("This file comes from a newer version of PinglyMotion.\nSome parts of it are not shown here.\nSaving it will remove those parts. Save under another name to keep the original."));
     calculateLongestRunningTime();
@@ -387,7 +387,7 @@ void PinglyMotionWindow::replaceOldAvm(const QString& avmFile,const QString& new
   if(saved.open(QIODevice::ReadOnly) && saved.size()<=Dingle::MAX_FILE_BYTES)
   {
     const Dingle::Result read=Dingle::parse(saved.readAll());
-    same=read.ok() && DingleSave::sameAnimation(*read.animation,ui->animationView->getBVH()->snapshot(scene->getAnimation(),AnimFile::Format::Avm));
+    same=read.ok() && DingleSave::sameAnimation(*read.animation,scene->bvh()->snapshot(scene->getAnimation(),AnimFile::Format::Avm));
   }
   if(!same)
   {
@@ -431,7 +431,7 @@ void PinglyMotionWindow::fileExportAnim()
     return;
   }
 
-  const AnimFile::Animation model=ui->animationView->getBVH()->snapshot(animation,AnimFile::Format::Bvh);
+  const AnimFile::Animation model=scene->bvh()->snapshot(animation,AnimFile::Format::Bvh);
   const QString problem=AnimExportUi::problemBeforeExport(model);
   if(!problem.isEmpty())
   {
@@ -682,7 +682,13 @@ void PinglyMotionWindow::fileLoadProps()
   else if(file.size()>PropFile::MAX_FILE_BYTES)
     error=tr("The prop file is larger than %1 KB.").arg(PropFile::MAX_FILE_BYTES/1024);
   else
-    PropFile::parse(file.readAll(),records,&error);
+  {
+    const PropFile::Result result=PropFile::parse(file.readAll());
+    if(result.ok())
+      records=*result.props;
+    else
+      error=result.error;
+  }
 
   if(!error.isEmpty())
   {

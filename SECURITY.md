@@ -7,7 +7,7 @@ branch and go into the next release. Only the latest release gets fixes.
 
 | Version | Supported |
 |---|---|
-| Latest release (currently 0.2.x) | Yes |
+| Latest release (the next one is 0.3.x) | Yes |
 | Older releases | No |
 | QAvimator (the program PinglyMotion is based on) | No – it is no longer maintained |
 
@@ -22,8 +22,9 @@ Please report security problems **privately**, not in a public issue:
 Please include:
 
 - what the problem is and which part of PinglyMotion it affects (for example
-  opening a BVH/AVM file, remote control, the MCP server, the live link to
-  Aurora, or the build and release workflows)
+  opening a file, remote control, the MCP server or the Claude Desktop
+  extension, the live link to Aurora, the Kimodo helper, or the build and
+  release workflows)
 - the version or commit you tested
 - the steps or a small file that shows the problem
 - what an attacker could do with it
@@ -38,11 +39,18 @@ if you want it.
 In scope:
 
 - crashes, memory errors, hangs or excessive memory use caused by files
-  PinglyMotion opens (`.bvh`, `.avm`, `.prp`, data files)
+  PinglyMotion opens or imports: `.dingle`, `.bvh`, `.avm`, Second Life
+  `.anim`, glTF (`.glb`, `.gltf`), `.prp` props, joint mapping files, the
+  reference library and data files
 - the remote control interface (`PinglyMotion --control`, local HTTP on
-  127.0.0.1) and the MCP server in `tools/mcp/`
-- the live link to the Aurora viewer
-- the GitHub Actions workflows and the release packages
+  127.0.0.1, with a key), the MCP servers in `tools/mcp/` and the Claude
+  Desktop extension (`PinglyMotion.mcpb`)
+- the live link to the Aurora viewer, including its mutual authentication
+- the optional Kimodo text-to-motion helper in `tools/kimodo/` (its README
+  says which versions are pinned and how)
+- the update check (it only reads the newest release from GitHub)
+- the GitHub Actions workflows, the combined test build script and the
+  release packages
 
 Out of scope:
 
@@ -66,9 +74,9 @@ to compare with the one in `SHA256SUMS`.
 
 ## Known issues
 
-The security audit of November 2026 is in
-[docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md). Its findings are public
-issues labelled
+The security audits are in [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md)
+(November 2026) and [docs/SECURITY_AUDIT_21NOV.md](docs/SECURITY_AUDIT_21NOV.md)
+(21 November 2026). Their findings are public issues labelled
 [`security`](https://github.com/pingledingle-tech/PinglyMotion/issues?q=label%3Asecurity)
 and
 [`security-hardening`](https://github.com/pingledingle-tech/PinglyMotion/issues?q=label%3Asecurity-hardening);

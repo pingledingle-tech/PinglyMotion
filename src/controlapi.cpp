@@ -132,15 +132,60 @@ QString ControlApi::defaultWorkFolder()
   return QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/PinglyMotion");
 }
 
+bool ControlApi::plainNameInWorkFolder(const QString& workFolder, const QString& path, QString& relative)
+{
+  // text only: no file system call happens before this check passes (issue 244). On Windows a
+  // name like \\host\share\a.bvh would make the system contact that host as soon as it is
+  // looked at, so unusual names are refused by their text alone.
+  relative.clear();
+  if (path.isEmpty()) return false;
+  for (const QChar c : path)
+    if (c.unicode() < 0x20 || c.unicode() == 0x7f) return false;
+
+#ifdef Q_OS_WIN
+  const Qt::CaseSensitivity cs = Qt::CaseInsensitive;
+#else
+  const Qt::CaseSensitivity cs = Qt::CaseSensitive;
+#endif
+  QString name = path;
+  name.replace('\\', '/');
+  // the full path of a file in the work folder is fine: compared as text, then made relative
+  const QString folder = QDir::fromNativeSeparators(workFolder);
+  if (!folder.isEmpty() && name.startsWith(folder + "/", cs)) name = name.mid(folder.size() + 1);
+
+  // absolute paths, network names (// or \\), drive letters, streams and URLs
+  if (name.startsWith('/') || name.contains(':')) return false;
+  static const QStringList devices = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$", "CLOCK$"};
+  for (const QString& part : name.split('/'))
+  {
+    if (part.isEmpty() || part == "..") return false;
+    if (part == ".") continue;
+    // Windows drops trailing dots and spaces, so "a.bvh." would mean "a.bvh"
+    if (part.endsWith('.') || part.endsWith(' ')) return false;
+    // device names, also with an extension (NUL.bvh) and on any folder level
+    const QString base = part.section('.', 0, 0).trimmed().toUpper();
+    if (devices.contains(base)) return false;
+    if (base.size() == 4 && (base.startsWith("COM") || base.startsWith("LPT")))
+    {
+      const QChar digit = base.at(3);
+      if ((digit >= '0' && digit <= '9') || digit == QChar(0x00b9) || digit == QChar(0x00b2) || digit == QChar(0x00b3)) return false;
+    }
+  }
+  relative = name;
+  return true;
+}
+
 QString ControlApi::resolveInWorkFolder(const QString& path, bool mustExist, QString& error)
 {
   const QString outside = "Files can only be opened and saved in the PinglyMotion folder: " + QDir::toNativeSeparators(m_workFolder);
+  QString relative;
+  if (!plainNameInWorkFolder(m_workFolder, path, relative)) { error = outside; return QString(); }
   if (!QDir().mkpath(m_workFolder)) { error = "The PinglyMotion folder could not be created: " + QDir::toNativeSeparators(m_workFolder); return QString(); }
   const QString folder = QFileInfo(m_workFolder).canonicalFilePath();
   if (folder.isEmpty()) { error = outside; return QString(); }
 
   // a plain file name means a file in the work folder
-  const QFileInfo info(QDir(folder), path);
+  const QFileInfo info(QDir(folder), relative);
   // resolve links and ".." so the check below sees the real place
   const QString parent = QFileInfo(info.absolutePath()).canonicalFilePath();
   if (parent.isEmpty()) { error = outside; return QString(); }

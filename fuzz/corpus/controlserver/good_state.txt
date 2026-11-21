@@ -1,0 +1,6 @@
+POST /api HTTP/1.1
+Host: 127.0.0.1:@PORT@
+Authorization: Bearer @KEY@
+Content-Length: 19
+
+{"command":"state"}

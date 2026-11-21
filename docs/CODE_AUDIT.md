@@ -34,7 +34,7 @@ A review of `src/` (137 files, about 32,000 lines) and a short look at `tools/` 
 | Legacy OpenGL / old parser | None left. `SceneState` is a small matrix stack for the shaders, not fixed-function OpenGL. Stale comments about GLUT and FLTK remain (C3, C9). |
 | Error handling | Message boxes from `bvh.cpp` and `animation.cpp` (C5); three error-reporting styles (C16); `.obj` reader ignores bad numbers (C13). |
 | Old Qt style | 37 string-based `SIGNAL()`/`SLOT()` connects (C12); 110 `qDebug` calls, many printf-style or commented out (C14). |
-| Missing tests | `prop`, `propmanager`, `scene`, `animationmanager`, `timeline`, `timelineview`, `mesh` have no test (C11). `test_gen_xr_animator_bvh.py` and `test_slow_example.py` are not run by any workflow (C15). |
+| Missing tests | `prop`, `propmanager`, `scene`, `animationmanager`, `timeline`, `timelineview`, `mesh` have no test (C11). `test_gen_xr_animator_bvh.py` and `test_slow_example.py` were not run by any workflow (C15, done). |
 | Risky spots | Global mutable state: `SceneState::state()`, `Constants::setNumParts`, `JointGroups::setTracks` and the static `UserSettings` members are process-wide, which makes a second avatar (File > Add) and test isolation fragile; FIXMEs in `animationview.cpp` already say that part picking breaks with several animations. The `BVHNode` tree uses raw `new`/`delete`. No task yet: both are larger design changes; C9 is the first step. |
 | Not findings | cppcheck "ignored return value" for `release()` in `skinrenderer.cpp` and "always false" in `retargetmapping.cpp` are false positives (no Qt configuration). clang-tidy "unchecked optional access" warnings in `pinglymotionwindow.cpp`, `gltfimport.cpp` and `animimportconvert.cpp` were spot-checked and are guarded by `ok()` checks the tool does not follow. |
 
@@ -212,11 +212,11 @@ One issue per task, label `cleanup`. A job starts only when the project owner sa
 | C6 Use AnimFile::write for the BVH pose text instead of a second BVH writer | #197 | M | yes |
 | C7 One Euler/quaternion conversion and one rotation order type | #198 | M | no |
 | C8 Split pinglymotionwindow.cpp and merge the duplicated open/add code | #199 | L | yes |
-| C9 Finish the QAvimator scene refactor: remove the 'temporary' scaffolding | #200 | L | yes |
+| C9 Finish the QAvimator scene refactor: remove the 'temporary' scaffolding (started: the window owns the scene, pull request #242; the scene owns the BVH reader, pull request #259) | #200 | L | yes |
 | C10 Shared skeleton walk helpers instead of local copies | #201 | S | yes |
 | C11 Tests for props, the scene and the timeline (done, pull request #212) | #202 | M | yes |
 | C12 Function-pointer connects instead of SIGNAL()/SLOT() strings | #203 | S | yes |
 | C13 Error handling in the .obj mesh reader (done, pull request #210) | #204 | S | no |
 | C14 Logging categories instead of 110 qDebug calls | #205 | M | yes |
-| C15 Run the two Python tests that CI never runs | #206 | S | no |
-| C16 One error-reporting convention for new and old code (started: convention in docs/DEV.md and `PMMesh` converted, pull request #214) | #207 | M | no |
+| C15 Run the two Python tests that CI never runs (done, pull request #243) | #206 | S | no |
+| C16 One error-reporting convention for new and old code (started: convention in docs/DEV.md and `PMMesh` converted, pull request #214; `PropFile::parse` converted, pull request #256) | #207 | M | no |

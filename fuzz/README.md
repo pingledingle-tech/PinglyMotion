@@ -13,6 +13,9 @@ The targets, all built with libFuzzer, AddressSanitizer and UndefinedBehaviorSan
 | `fuzz_anim` | `AnimImport::parse()` – Second Life `.anim` files (`src/animimport.*`, issue #22, [ANIM_FORMAT.md](../docs/ANIM_FORMAT.md)); an accepted file must keep every limit of the data model | `.anim` files will be opened from outside |
 | `fuzz_gltf` | The glTF import (`src/gltfimport.*`, issue #12): `GltfImport::read()`, sampling to frames with both rest poses, and retargeting onto a small Second Life skeleton; every accepted result must keep the rules of a parsed animation | `.glb` and `.gltf` files come from the internet (Blender, Mixamo and other tools export them) |
 | `fuzz_retargetmapping` | The hand-made joint mapping files for retargeting (`src/retargetmapping.*`, issue #16 step 4, [RETARGET_MAPPING.md](../docs/RETARGET_MAPPING.md)): `RetargetMapping::parse()`, the writer round trip, the entries on top of the automatic mapping of a small skeleton, and the retarget with it | A mapping file can come from another person or be written by an AI client |
+| `fuzz_openfile` | Opening a file end to end (issue 250): each input written as a `.bvh`, `.avm` and `.dingle` file, then `BVH::checkFile()` and a whole `Animation` (`BVH::animRead`, the joint tree, the limits, the Bento reference skeleton), as File > Open and the remote control do | The parsers have their own targets; this one tests what happens after them with a real file |
+| `fuzz_retargetbvh` | Importing a BVH from another skeleton (issue 250): `Retarget::mapSkeletons()` on foreign joint names and trees, then `Retarget::retarget()` with both rest poses onto `bin/data/SLFemale.bvh`; mapping indices stay inside both skeletons and every result passes `Retarget::validate()` | BVH files from other programs (Mixamo, CMU, XR Animator, MoMask) are imported this way |
+| `fuzz_controlserver` | The control server's HTTP framing (issue 250): any bytes over a real local connection, in two pieces, to `ControlServer` (request line, headers, limits, Host, Origin, key, Content-Length, body); `@KEY@` and `@PORT@` in an input become the real key and port | Any program on the computer can connect to the server |
 
 Not fuzzed here: `SL.lim` and the `.pmm` body meshes (read only from PinglyMotion's own data folder), and the old BVH/AVM parser in `src/bvh.cpp`. `fuzz_animfile` fuzzes the new parser that replaces it (issue #62); until the program uses it (part 2 of #62), it does not test the code that opens files today.
 
@@ -32,7 +35,8 @@ Needs clang and its sanitizer runtime (Ubuntu: `sudo apt-get install clang libcl
 
 ```
 CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_FUZZ=ON
-cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping -j 2
+cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping \
+  fuzz_openfile fuzz_retargetbvh fuzz_controlserver -j 2
 
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 QT_QPA_PLATFORM=offscreen
 mkdir -p /tmp/prop /tmp/control
@@ -46,11 +50,15 @@ mkdir -p /tmp/gltf
 build-fuzz/fuzz/fuzz_gltf -max_total_time=300 -max_len=65536 -dict=fuzz/gltf.dict /tmp/gltf fuzz/corpus/gltf
 mkdir -p /tmp/retargetmapping
 build-fuzz/fuzz/fuzz_retargetmapping -max_total_time=300 -max_len=16384 -dict=fuzz/retargetmapping.dict /tmp/retargetmapping fuzz/corpus/retargetmapping
+mkdir -p /tmp/openfile /tmp/retargetbvh /tmp/controlserver
+build-fuzz/fuzz/fuzz_openfile -max_total_time=300 -max_len=65536 -dict=fuzz/animfile.dict /tmp/openfile fuzz/corpus/bvh fuzz/corpus/avm fuzz/corpus/dingle
+build-fuzz/fuzz/fuzz_retargetbvh -max_total_time=300 -max_len=65536 -dict=fuzz/animfile.dict /tmp/retargetbvh fuzz/corpus/bvh tests/data/xr_animator tests/retargetsmpl tests/motions/cmu
+build-fuzz/fuzz/fuzz_controlserver -max_total_time=300 -max_len=2048 -dict=fuzz/controlserver.dict /tmp/controlserver fuzz/corpus/controlserver
 ```
 
 The first folder collects new interesting inputs; `fuzz/corpus/` holds the starting inputs and is only read.
 
-`fuzz_control` makes a fresh animation for every input, so a crash can always be repeated with that one input. That makes it slow (about 30 inputs per second); `fuzz_prop` runs thousands per second.
+`fuzz_control` makes a fresh animation for every input, so a crash can always be repeated with that one input. That makes it slow (about 30 inputs per second); `fuzz_prop` runs thousands per second. `fuzz_openfile` opens three files per input and is slow too (about 20 per second). `fuzz_controlserver` keeps one animation between inputs (about 100 per second); the server code it tests keeps nothing between connections.
 
 ## In CI
 

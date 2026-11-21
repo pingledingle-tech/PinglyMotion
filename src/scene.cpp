@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "animation.h"
+#include "bvh.h"
 #include "camera.h"
 #include "propmanager.h"
 
@@ -26,6 +27,7 @@
 
 Scene::Scene(int nextPropId, QObject* parent)
   : QObject(parent),
+    m_bvh(std::make_unique<BVH>()),
     m_animationManager(this),
     m_floor(this),
     m_propManager(new PropManager(nextPropId, this)),
@@ -36,6 +38,11 @@ Scene::Scene(int nextPropId, QObject* parent)
 Scene::~Scene()
 {
   clear();
+}
+
+BVH* Scene::bvh()
+{
+  return m_bvh.get();
 }
 
 void Scene::selectAnimation(int index)

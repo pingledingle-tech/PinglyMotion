@@ -28,7 +28,8 @@ VersionNumber::VersionNumber(const QString& versionNumber) :
   m_versionNumber(versionNumber),
   m_isValid(true)
 {
-  QRegularExpression regularExpression("^(0|([1-9][0-9]*)).(0|([1-9][0-9]*))(.(0|([1-9][0-9]*)))*$");
+  // the dots are real dots, not "any character" (issue 252)
+  QRegularExpression regularExpression("^(0|([1-9][0-9]*))\\.(0|([1-9][0-9]*))(\\.(0|([1-9][0-9]*)))*$");
   auto matchResult = regularExpression.match(m_versionNumber);
   if (!matchResult.hasMatch())
   {

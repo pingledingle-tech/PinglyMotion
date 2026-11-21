@@ -1,0 +1,6 @@
+# uv for the Blender round-trip workflow (.github/workflows/blender.yml), pinned with hashes (issue 246).
+# To update: pick the version on https://pypi.org/project/uv/ and copy the sha256 of the
+# manylinux x86_64 wheel and of the source archive.
+uv==0.13.9 \
+    --hash=sha256:d7f459fe4fd247d830351c75686d3996ace3c6f3f728eb0e85a30b7ada0cef19 \
+    --hash=sha256:dd6f4f93ddf8a668c73f0945f3638444b2140a4e15a3912067493fc6335543e4

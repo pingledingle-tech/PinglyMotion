@@ -48,7 +48,8 @@ Authorization: Bearer <token>
 ```
 
 Limits: the request line and headers together at most 16 KB and the body at most 64 KB (larger
-requests get `413`); at most 8 connections at a time (more get `503`).
+requests get `413`); at most 8 connections at a time (more get `503`); a connection must send its whole request
+header within 2 seconds, otherwise it is closed, and the rest of the request within 15 seconds (issue 249).
 
 `GET /api/commands` lists every command with its parameters. Answers are JSON with `"ok": true`,
 or `"ok": false` and an `"error"` that says what to do.
@@ -82,7 +83,10 @@ Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key
 `open_file`, `save_file` and `export_anim` only work in one folder: `PinglyMotion` in the Documents folder of the user
 who runs PinglyMotion (for example `C:\Users\<name>\Documents\PinglyMotion` on Windows). It is made when
 it is first needed, and `state` shows it as `folder`. A plain file name such as `pose.bvh` means a file
-in that folder. Paths outside it, also through `..` or links, are refused.
+in that folder. Paths outside it, also through `..` or links, are refused. Unusual names are refused by their
+text alone, before the program looks at any file (issue 244): network names (`//host/...`, `\\host\...`), drive
+letters, `:` anywhere, `..`, empty parts, a trailing dot or space, and device names such as `CON`, `NUL` or `COM1`
+(also `NUL.bvh`). A full path is only accepted when its text starts with the folder shown in `state`.
 
 - `open_file` opens `.dingle`, `.bvh` and `.avm` files (the ending in any case). A file that cannot be
   read gives an error that says why, at once: while remote control opens a file the program shows

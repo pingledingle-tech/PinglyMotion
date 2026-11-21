@@ -149,6 +149,7 @@ class ControlTest : public QObject
     void saveWritesBvh();
     void saveFailureIsReported();
     void filesStayInWorkFolder();
+    void unusualNamesAreRefusedByText();
     void openFileAcceptsDingle();
     void easingIsSetAndRead();
     void unknownEasingMakesNoKey();
@@ -206,6 +207,7 @@ class ControlTest : public QObject
     void serverRefusesBadRequests();
     void serverChecksKeyBeforeBody();
     void serverLimitsConnections();
+    void serverClosesConnectionsWithoutKeyQuickly();
     void serverRefusesLargeHeaders();
     void serverListensOnLoopbackOnly();
     void connectionFileHasAddressAndKey();
@@ -798,6 +800,57 @@ void ControlTest::filesStayInWorkFolder()
 
 // issue #26 (job 4): open_file accepts a .dingle file, and the file it hands
 // to the window opens with the program's open path
+// issue 244: unusual names are refused by their text alone, before any file system call
+void ControlTest::unusualNamesAreRefusedByText()
+{
+  const QString work = "/pm-work/PinglyMotion";
+  const QStringList refused = {
+    "//example.invalid/s/a.bvh", "\\\\example.invalid\\s\\a.bvh", "/etc/a.bvh", "\\a.bvh",
+    "C:/a.bvh", "c:a.bvh", "a.bvh:stream", "file://example.invalid/a.bvh",
+    "../a.bvh", "sub/../a.bvh", "sub\\..\\..\\a.bvh", "a//b.bvh", "sub/",
+    "CON", "nul.bvh", "Aux.dingle", "sub/COM1.bvh", "lpt9.bvh", "com\u00b9.bvh", "CONIN$.bvh",
+    "a.bvh.", "a.bvh ", "a\tb.bvh", "", "/pm-work/other/a.bvh", "/pm-work/PinglyMotion/../a.bvh",
+    "/pm-work/PinglyMotionX/a.bvh"};
+  for (const QString& path : refused)
+  {
+    QString relative = "unchanged";
+    QVERIFY2(!ControlApi::plainNameInWorkFolder(work, path, relative), qPrintable(path));
+    QVERIFY(relative.isEmpty());
+  }
+
+  const QList<QPair<QString, QString>> accepted = {
+    {"pose.bvh", "pose.bvh"}, {"sub/pose.dingle", "sub/pose.dingle"}, {"sub\\pose.bvh", "sub/pose.bvh"},
+    {"./pose.bvh", "./pose.bvh"}, {"console.bvh", "console.bvh"}, {"com10.bvh", "com10.bvh"},
+    {"my pose.bvh", "my pose.bvh"}, {"/pm-work/PinglyMotion/pose.bvh", "pose.bvh"},
+    {"/pm-work/PinglyMotion/sub/pose.bvh", "sub/pose.bvh"}};
+  for (const auto& pair : accepted)
+  {
+    QString relative;
+    QVERIFY2(ControlApi::plainNameInWorkFolder(work, pair.first, relative), qPrintable(pair.first));
+    QCOMPARE(relative, pair.second);
+  }
+
+  // through the commands: the answer comes before the work folder is even made, so no file
+  // system call happened for the name
+  QTemporaryDir root;
+  QVERIFY(root.isValid());
+  const QString missing = root.filePath("not-made-yet");
+  m_api->setWorkFolder(missing);
+  for (const QString& command : {QString("open_file"), QString("save_file"), QString("export_anim")})
+  {
+    for (const QString& path : {QString("//example.invalid/s/a.bvh"), QString("\\\\example.invalid\\s\\a.bvh"), QString("NUL.bvh")})
+    {
+      QString name = path;
+      if (command == "export_anim") name.replace(".bvh", ".anim");
+      const QJsonObject answer = m_api->execute(QJsonObject{{"command", command}, {"path", name}});
+      QVERIFY2(!answer["ok"].toBool(), qPrintable(command + " " + name));
+      QVERIFY2(answer["error"].toString().startsWith("Files can only be opened and saved in the PinglyMotion folder"),
+               qPrintable(command + " " + name + ": " + answer["error"].toString()));
+    }
+  }
+  QVERIFY(!QFileInfo::exists(missing));
+}
+
 void ControlTest::openFileAcceptsDingle()
 {
   QTemporaryDir root;
@@ -1230,6 +1283,52 @@ void ControlTest::serverLimitsConnections()
     delete socket;
   }
   QTRY_COMPARE_WITH_TIMEOUT(statusOf(post(R"({"command":"state"})")), 200, 3000);
+}
+
+// issue 249: a connection must send its whole request header within 2 seconds; the key then
+// gives it the longer time for the body
+void ControlTest::serverClosesConnectionsWithoutKeyQuickly()
+{
+  // a silent connection is closed by the server after about 2 seconds
+  {
+    QTcpSocket socket;
+    socket.connectToHost(QHostAddress::LocalHost, m_server->port());
+    QVERIFY(socket.waitForConnected(2000));
+    QElapsedTimer timer;
+    timer.start();
+    socket.write("POST /api HTTP/1.1\r\nHost: 127.0.0.1\r\n");   // the header never ends
+    QTRY_COMPARE_WITH_TIMEOUT(socket.state(), QAbstractSocket::UnconnectedState, 6000);
+    QVERIFY2(timer.elapsed() >= 1500 && timer.elapsed() < 5000, qPrintable(QString::number(timer.elapsed())));
+  }
+
+  // eight silent connections free their slots by themselves
+  QList<QTcpSocket*> idle;
+  for (int i = 0; i < 8; i++)
+  {
+    QTcpSocket* socket = new QTcpSocket(this);
+    socket->connectToHost(QHostAddress::LocalHost, m_server->port());
+    QVERIFY(socket->waitForConnected(2000));
+    idle.append(socket);
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(statusOf(post(R"({"command":"state"})")), 503, 3000);
+  QTest::qWait(2500);
+  QCOMPARE(statusOf(post(R"({"command":"state"})")), 200);
+  qDeleteAll(idle);
+
+  // an admitted request may send its body later than 2 seconds
+  const QByteArray body = R"({"command":"state"})";
+  QTcpSocket socket;
+  QByteArray answer;
+  connect(&socket, &QTcpSocket::readyRead, [&]() { answer += socket.readAll(); });
+  socket.connectToHost(QHostAddress::LocalHost, m_server->port());
+  QVERIFY(socket.waitForConnected(2000));
+  socket.write("POST /api HTTP/1.1\r\nHost: 127.0.0.1:" + QByteArray::number(m_server->port()) + "\r\nAuthorization: Bearer " +
+               m_server->token().toLatin1() + "\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\n\r\n");
+  QTest::qWait(2500);
+  QCOMPARE(socket.state(), QAbstractSocket::ConnectedState);
+  socket.write(body);
+  QTRY_VERIFY_WITH_TIMEOUT(answer.contains("\r\n\r\n") && answer.endsWith("}"), 4000);
+  QCOMPARE(statusOf(answer), 200);
 }
 
 // issue #145: the complete header block may be at most 16 KB, also when its end has arrived

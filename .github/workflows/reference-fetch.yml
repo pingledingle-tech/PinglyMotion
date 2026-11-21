@@ -28,20 +28,26 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: python tests/test_fetch_reference.py
       - run: python tests/test_convert_reference.py
   compute-hashes:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Pin hashes
         env:
+          # read-only token, only sent to api.github.com to list the pinned commits' files
+          # (without it the API's rate limit for anonymous calls stops the job)
           GITHUB_TOKEN: ${{ github.token }}
           PIN_PRINT: '1'
         run: python3 tools/fetch_reference.py --compute-hashes --out reference_manifest.new.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: reference-manifest
           path: reference_manifest.new.json
