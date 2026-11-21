@@ -1,6 +1,6 @@
 Branch: feat/lsl-events-objects
 Status: active
-Pull request: pending
+Pull request: #303
 Files:
 - src/scriptlab/lsl/**
 - src/scriptlab/scriptlabpanel.*
