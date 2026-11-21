@@ -1,11 +1,10 @@
 Branch: fix/kimodo-hash-lock
-Status: active
+Status: done
 Pull request: #260
 Files:
 - tools/kimodo/**
 - tests/test_kimodo_helper.py
 - .github/workflows/kimodo-lock.yml
-- .github/workflows/build.yml
 
 ## What
 

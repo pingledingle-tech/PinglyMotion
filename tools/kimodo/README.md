@@ -13,6 +13,8 @@ State (20 November 2026): written and tested without a graphics card (`tests/tes
 | `PinglyMotion-Kimodo.bat` | Double-click to start. Runs `kimodo_setup.ps1` with all arguments. |
 | `kimodo_setup.ps1` | Gets the `uv` installer (pinned, checked by SHA-256), makes a private Python 3.11, then starts `kimodo_helper.py`. |
 | `kimodo_helper.py` | The helper itself (Python standard library only): `check`, `login`, `install`, `make`, `menu`, `forget-token`, `where`. |
+| `requirements.lock.txt` | Every package the install takes (PyTorch, Kimodo and all their dependencies), each pinned to one version and checked by SHA-256 (`uv pip install --require-hashes`, issue 247). Made by a workflow, never by hand. |
+| `requirements.in`, `kimodo_lock.py` | For maintainers: the inputs of the lock, and the tool that makes, validates and tests it (see "For developers"). |
 
 Started with no arguments it walks through everything: check the computer, Meta's licence and your token, install, then asks "Motion:" and "Length in seconds:" again and again. From a command prompt: `PinglyMotion-Kimodo.bat make "wave with the right hand" 4s` (options: `--name`, `--seed`, `--constraints <file saved from Kimodo's own demo>`).
 
@@ -21,8 +23,9 @@ Started with no arguments it walks through everything: check the computer, Meta'
 | Part | Version |
 |---|---|
 | Kimodo code | `nv-tlabs/kimodo` commit `e1c219c99b4b94ba48be1fb6a1cbc64ecee4c954` (15 October 2026), installed from GitHub's archive of that commit |
-| Model | `Kimodo-SOMA-RP-v1.2` (Hugging Face `nvidia/Kimodo-SOMA-RP-v1.2`), downloaded by Kimodo on first use |
+| Model | `Kimodo-SOMA-RP-v1.2` (Hugging Face `nvidia/Kimodo-SOMA-RP-v1.2`) at revision `0e3c89024d896064b6851201373f7834784a386b` (the newest on 21 November 2026), downloaded by the helper on first use into `models\` and given to Kimodo with `CHECKPOINT_DIR` |
 | Text encoder | LLM2Vec on Meta Llama 3 8B Instruct (`McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp` and `-supervised`, base `meta-llama/Meta-Llama-3-8B-Instruct`), downloaded by Kimodo on first use |
+| Packages | All from `requirements.lock.txt`, each checked by SHA-256 (80 packages) |
 | PyTorch | `torch==2.8.0` from the CUDA 12.6 index (`download.pytorch.org/whl/cu126`); CUDA 12.6 builds still include RTX 20xx (Turing) cards |
 | Python | 3.11, a private copy made by uv |
 | uv | 0.13.9, the Windows wheel from PyPI, SHA-256 `6a44b2ed8111d2f60d2b92627c5dccda3f7ed7570b18ce115e569cd68c28246b` |
@@ -42,7 +45,7 @@ Kimodo's README suggests Docker for Windows. On a home PC that means Docker Desk
 
 ## Where things go
 
-- Helper folder: `%LOCALAPPDATA%\PinglyMotion\kimodo` (uv, Python, PyTorch, Kimodo, the downloaded models in `huggingface\`, and the token in `hf_token`). Delete this folder to remove everything.
+- Helper folder: `%LOCALAPPDATA%\PinglyMotion\kimodo` (uv, Python, PyTorch, Kimodo, the Kimodo model at its pinned revision in `models\`, the text encoder in `huggingface\`, and the token in `hf_token`). Delete this folder to remove everything.
 - BVH files: `Documents\PinglyMotion\kimodo_<words>.bvh`; an existing file is never replaced (`_2`, `_3` …).
 
 ## The Hugging Face token
@@ -71,3 +74,5 @@ Kimodo accepts full-body keyframe constraints, but as local rotations of the SOM
 - `python3 tests/test_kimodo_helper.py` (runs in CI): arguments, length, file names, the token never in the output, a whole `make` with a stand-in for Kimodo.
 - Test-only environment variables: `PINGLYMOTION_KIMODO_HOME` (helper folder), `PINGLYMOTION_CONTROL_FOLDER` (work folder, the same variable as the program's remote control), `PINGLYMOTION_KIMODO_GENERATOR` (a script that stands in for Kimodo).
 - When you change a version, change it in `kimodo_helper.py` or `kimodo_setup.ps1` and in the table above (the test checks the table).
+- The lock: change `requirements.in` (and `TORCH_PACKAGE` / `KIMODO_COMMIT` to match), start the workflow `kimodo-lock` by hand (`gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/kimodo-lock.yml/dispatches -f ref=<branch>`), and copy the lock it prints between the BEGIN and END lines (or its artifact) to `requirements.lock.txt`; its log also names the newest model revision for `MODEL_REVISION`. On a pull request the same workflow checks that the lock is valid, that the pinned model revision exists, and that an install with one changed hash fails. `python3 tools/kimodo/kimodo_lock.py validate` works offline.
+- Not locked yet: the build tools uv fetches to build Kimodo itself (setuptools; uv does not hash-check build dependencies), and the text encoder (the McGill-NLP LLM2Vec adapters and Meta's Llama 3 base model), which Kimodo still downloads from Hugging Face by name.

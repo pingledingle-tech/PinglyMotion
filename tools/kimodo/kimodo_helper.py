@@ -52,7 +52,7 @@ PYPI_INDEX = "https://pypi.org/simple"
 LOCK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "requirements.lock.txt")
 # the model is downloaded at this exact Hugging Face commit, never "whatever is newest" (issue 247)
 MODEL_REPO = "nvidia/" + MODEL
-MODEL_REVISION = "0000000000000000000000000000000000000000"
+MODEL_REVISION = "0e3c89024d896064b6851201373f7834784a386b"
 
 LLAMA_PAGE = "https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct"
 TOKEN_PAGE = "https://huggingface.co/settings/tokens/new?tokenType=read"
@@ -437,6 +437,7 @@ def ensure_model(token, out=print):
     if code != 0:
         out("Downloading the model failed (exit code %d). The lines above say why; try again." % code)
         return False
+    os.makedirs(os.path.dirname(model_marker()), exist_ok=True)
     with open(model_marker(), "w", encoding="ascii") as f:
         f.write(MODEL_REVISION + "\n")
     return True
