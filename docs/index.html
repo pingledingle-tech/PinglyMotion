@@ -1,1 +1,202 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PinglyMotion — make movement your own</title><meta name="description" content="An open source animation editor for Second Life."><style>:root{--ink:#1c2431;--muted:#657079;--line:#d5ddd9;--lime:#d8ef84;--dark:#192729;--paper:#f6f7f0}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif}a{color:inherit}nav{height:86px;display:flex;align-items:center;justify-content:space-between;max-width:1370px;margin:auto;padding:0 5%;border-bottom:1px solid var(--line)}.brand{font-weight:800;letter-spacing:-.07em;font-size:27px;text-decoration:none}.brand b{color:#6b8f39}.navlinks{display:flex;gap:34px;align-items:center;font-size:14px;font-weight:600}.navlinks a{text-decoration:none}.smallbtn{border:1px solid #a8b1aa;padding:12px 20px;border-radius:6px}.hero{max-width:1370px;margin:auto;padding:76px 5% 74px;display:grid;grid-template-columns:1fr 1.02fr;gap:6%;align-items:center}.eyebrow{text-transform:uppercase;font-size:11px;letter-spacing:.19em;font-weight:800;color:#54714b;display:flex;align-items:center;gap:10px}.eyebrow:before{content:'';width:25px;height:2px;background:#7a9e5c}h1{font-size:clamp(54px,6.8vw,100px);letter-spacing:-.07em;line-height:.98;margin:26px 0}h1 em{font-family:Georgia,serif;font-weight:400;color:#718e50}.lead{font-size:18px;color:#56636a;line-height:1.7;max-width:500px}.buttons{display:flex;gap:12px;flex-wrap:wrap;margin:30px 0}.btn{display:inline-block;background:#1f302f;color:white;padding:16px 23px;text-decoration:none;border-radius:5px;font-size:14px;font-weight:700}.btn.light{background:transparent;color:#263b37;border:1px solid #aebcb0}.note{font-size:12px;color:#78837a}.visual{background:#1e2c2d;min-height:470px;border-radius:10px;position:relative;overflow:hidden;color:#d7e5d5;box-shadow:0 28px 70px #182d2220}.visual:before{content:'';position:absolute;inset:0;background:linear-gradient(#ffffff09 1px,transparent 1px),linear-gradient(90deg,#ffffff09 1px,transparent 1px);background-size:32px 32px}.topline{position:absolute;top:24px;left:27px;right:27px;display:flex;justify-content:space-between;font-size:10px;letter-spacing:.16em;color:#b2c3b1}.visual svg{position:absolute;width:85%;height:78%;left:7%;top:10%}.tag{position:absolute;bottom:25px;left:27px;border:1px solid #8b9e83;border-radius:30px;padding:9px 14px;font-size:10px;letter-spacing:.1em}.visual-label{position:absolute;right:28px;bottom:29px;color:#a8bdab;font-size:11px}.band{background:#e8eddd;border-top:1px solid #d4ddc8;border-bottom:1px solid #d4ddc8}.band div{max-width:1250px;margin:auto;padding:20px 5%;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;font-size:12px;font-weight:700;color:#536759}.section{max-width:1250px;margin:auto;padding:110px 5%}.section-head{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:end;margin-bottom:50px}h2{font-size:clamp(38px,5vw,66px);line-height:1.05;letter-spacing:-.06em;margin:16px 0}h2 em{font-family:Georgia,serif;font-weight:400;color:#79965b}.section-head p,.desc{line-height:1.7;color:#64706c}.features{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}.feature{padding:34px 30px 20px 0;margin-right:30px;border-bottom:1px solid var(--line)}.num{font-size:12px;color:#8da381;font-weight:700}.feature h3{font-size:22px;letter-spacing:-.04em;margin:28px 0 10px}.feature p{font-size:14px;line-height:1.75;color:#67716e}.dark{background:#1c2c2b;color:#f4f6e9}.dark .section{padding-top:100px;padding-bottom:100px}.dark h2{max-width:750px}.dark .desc{color:#b1c1b7;max-width:620px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:35px;margin-top:55px}.step{border-top:1px solid #536963;padding-top:23px}.step span{font-family:Georgia,serif;font-size:32px;color:#cde487}.step h3{font-size:17px}.step p{font-size:14px;line-height:1.7;color:#aebfb5}.road{display:grid;grid-template-columns:1fr 1.5fr;gap:10%}.road h2{margin-top:18px}.road-item{padding:24px 0;border-bottom:1px solid var(--line)}.road-item small{font-size:10px;letter-spacing:.14em;color:#668c54;font-weight:800}.road-item h3{font-size:20px;margin:9px 0}.road-item p{color:#6b7671;line-height:1.65;font-size:14px;margin:0}.callout{background:#d9e9ba;border-radius:9px;padding:60px;display:flex;justify-content:space-between;align-items:center;gap:25px}.callout h2{font-size:48px;margin:0 0 12px}.callout p{max-width:520px;line-height:1.6;color:#56664d}.footer{max-width:1250px;margin:auto;padding:35px 5% 50px;display:flex;justify-content:space-between;font-size:12px;color:#77827a}.footer a{margin-left:20px}.ms-row{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin:30px 0}.ms h3,.two h3{font-size:18px;margin:0 0 10px}.bar{height:8px;background:#dfe5d6;border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:#7a9e5c}.ms p,.two li,.two p{font-size:14px;line-height:1.7;color:#64706c}.two{display:grid;grid-template-columns:1fr 1fr;gap:40px}.two ul{padding-left:18px}@media(max-width:800px){.ms-row,.two{grid-template-columns:1fr}.navlinks a:not(.smallbtn){display:none}.hero,.section-head,.road{grid-template-columns:1fr}.hero{padding-top:55px}.visual{min-height:380px}.features,.steps{grid-template-columns:1fr}.feature{margin:0}.section{padding:75px 6%}.callout{padding:35px;display:block}.footer{display:block}.footer a{margin:10px 15px 0 0;display:inline-block}} </style></head><body><nav><a class="brand" href="#top">ping<b>●</b>mator</a><div class="navlinks"><a href="#features">Features</a><a href="#how">How it works</a><a href="#status">Status</a><a href="#roadmap">Roadmap</a><a class="smallbtn" href="https://github.com/pingledingle-tech/PinglyMotion">View on GitHub ↗</a></div></nav><main id="top"><section class="hero"><div><div class="eyebrow">Open source · made for Second Life</div><h1>Make movement<br><em>your own.</em></h1><p class="lead">Create, pose and refine Second Life animations with a free tool built for the way you imagine, make and move.</p><div class="buttons"><a class="btn" href="https://github.com/pingledingle-tech/PinglyMotion/releases">Explore downloads ↗</a><a class="btn light" href="#features">Discover PinglyMotion ↓</a></div><p class="note">Early-stage project · Windows and Linux · GPL licensed</p></div><div class="visual" role="img" aria-label="Illustration of an animation rig with joint markers"><div class="topline"><span>PINGLYMOTION / MOTION STUDY</span><span>01 — 133 JOINTS</span></div><svg viewBox="0 0 400 400" fill="none" aria-hidden="true"><circle cx="200" cy="200" r="151" stroke="#8aa28c" stroke-opacity=".26"/><circle cx="200" cy="200" r="115" stroke="#8aa28c" stroke-opacity=".18" stroke-dasharray="3 8"/><path d="M200 75 L200 126 L158 145 L125 190 L95 213 M200 126 L242 145 L275 183 L309 164 M200 126 L200 218 M200 218 L173 257 L155 315 M200 218 L235 255 L262 312" stroke="#c8e4ae" stroke-width="4" stroke-linecap="round"/><circle cx="200" cy="57" r="18" stroke="#c8e4ae" stroke-width="3"/><g fill="#d8ef84" stroke="#283b35" stroke-width="3"><circle cx="200" cy="126" r="7"/><circle cx="158" cy="145" r="7"/><circle cx="125" cy="190" r="7"/><circle cx="95" cy="213" r="7"/><circle cx="242" cy="145" r="7"/><circle cx="275" cy="183" r="7"/><circle cx="309" cy="164" r="7"/><circle cx="200" cy="218" r="8"/><circle cx="173" cy="257" r="7"/><circle cx="155" cy="315" r="7"/><circle cx="235" cy="255" r="7"/><circle cx="262" cy="312" r="7"/></g><path d="M70 320H330" stroke="#a1b7a0" stroke-opacity=".5"/><path d="M45 85h30 M45 85v30 M355 85h-30 M355 85v30 M45 325h30 M45 325v-30 M355 325h-30 M355 325v-30" stroke="#abc39f" stroke-opacity=".5"/></svg><div class="tag">● &nbsp; MADE TO MOVE</div><span class="visual-label">Illustrative rig · not a screenshot</span></div></section><div class="band"><div><span>01 &nbsp; POSE WITH PURPOSE</span><span>02 &nbsp; CREATE AT YOUR PACE</span><span>03 &nbsp; BRING IT INTO SECOND LIFE</span></div></div><section class="section" id="features"><div class="section-head"><div><div class="eyebrow">A more approachable way to animate</div><h2>Small movements.<br><em>Big possibilities.</em></h2></div><p>Whether you're shaping a sitting pose or experimenting with a new motion, PinglyMotion is being built to make animation creation more accessible.</p></div><div class="features"><article class="feature"><span class="num">01 / POSE</span><h3>Get hands-on.</h3><p>Select and rotate Bento joints, including fingers, face, wings and tail. Work with keyframes, mirroring and joint limits.</p></article><article class="feature"><span class="num">02 / CREATE</span><h3>Make it yours.</h3><p>Open and edit animation files, explore different poses and save your work. Exported BVH is checked against Second Life upload rules.</p></article><article class="feature"><span class="num">03 / EXPLORE</span><h3>Bring an assistant.</h3><p>An optional local interface lets compatible AI tools pose joints, inspect screenshots and help you iterate. Manual editing remains available.</p></article></div></section><section class="dark" id="how"><div class="section"><div class="eyebrow" style="color:#c0d796">From idea to animation</div><h2>Make a move.<br><em>Make it meaningful.</em></h2><p class="desc">Designed around the creative journey, from the first pose to an animation you can bring into Second Life.</p><div class="steps"><div class="step"><span>01</span><h3>Start with a pose</h3><p>Open an existing animation or create your own. Select a joint and shape the pose you have in mind.</p></div><div class="step"><span>02</span><h3>Refine the motion</h3><p>Work with keyframes and the timeline. Use manual controls or explore optional AI assistance.</p></div><div class="step"><span>03</span><h3>Save and export</h3><p>Save your work and export BVH for Second Life. Upload and playback are validated in Firestorm.</p></div></div></div></section><!--STATUS--><section class="section" id="status"><div class="eyebrow">Built in the open</div><h2>Project <em>status.</em></h2><p class="desc">The live status is added when the page is published. See the project on GitHub for the current state.</p></section><!--/STATUS--><section class="section road" id="roadmap"><div><div class="eyebrow">Built in the open</div><h2>Where we're<br><em>going next.</em></h2><p class="desc">PinglyMotion is a work in progress. These directions are ideas and active development, not promises of finished features.</p><a class="btn light" href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/PRODUCT.md">Explore the full vision ↗</a></div><div><div class="road-item"><small>AVAILABLE WITH AURORA FORK</small><h3>Preview with Aurora</h3><p>The live link can show poses locally on your avatar without an upload. It currently requires a specific Aurora fork; see the documentation on GitHub.</p></div><div class="road-item"><small>PLANNED</small><h3>More intuitive animation</h3><p>Explore a clearer timeline, better posing tools, smoother loops and native Second Life animation export.</p></div><div class="road-item"><small>IDEAS TO EXPLORE</small><h3>More ways to create</h3><p>Video-based motion, retargeting from other tools, reusable sequences and creator workflows are part of the longer-term vision.</p></div></div></section><section class="section" style="padding-top:0"><div class="callout"><div><div class="eyebrow">An open invitation</div><h2>Let's make things move.</h2><p>Follow the project, try a build, share feedback or help shape what comes next.</p></div><a class="btn" href="https://github.com/pingledingle-tech/PinglyMotion">Meet the project ↗</a></div></section></main><footer class="footer"><div><strong>ping●mator</strong> &nbsp; · &nbsp; An open-source Second Life animation project.</div><div><a href="https://github.com/pingledingle-tech/PinglyMotion">GitHub</a><a href="https://github.com/pingledingle-tech/PinglyMotion/issues">Feedback</a><a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/LICENSE">Licence</a></div></footer></body></html>
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>PinglyMotion</title>
+<meta name="description" content="Fra «jeg skal bare lage en animasjon» til full bevegelse i galskapen.">
+<style>
+:root{
+  --bg:#fbf7f1;--paper:#fffdf9;--ink:#2a2420;--muted:#5e534b;--line:#e6dccf;
+  --accent:#a2471f;--accent-soft:#f0dccb;--focus:#1f5fbf;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#1b1816;--paper:#231f1c;--ink:#efe8e0;--muted:#c2b6aa;--line:#3a332e;
+    --accent:#f0a77d;--accent-soft:#4a3528;--focus:#8ab4ff;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:1.0625rem;line-height:1.7}
+a{color:var(--accent);text-underline-offset:.18em}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:2px}
+.skip{position:absolute;left:-999px;top:0;background:var(--paper);color:var(--ink);padding:.6rem 1rem;border:2px solid var(--focus)}
+.skip:focus{left:1rem;top:1rem}
+.wrap{max-width:40rem;margin:0 auto;padding:0 1.25rem}
+header{padding:4.5rem 0 3rem;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(2.4rem,7vw,3.6rem);line-height:1.05;letter-spacing:-.02em;margin:0 0 1rem}
+.tagline{font-size:clamp(1.15rem,3vw,1.35rem);color:var(--muted);margin:0;max-width:32rem}
+main{padding:1rem 0 3rem}
+section{padding:2.25rem 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+h2{font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 1.1rem;line-height:1.4}
+p{margin:0 0 1rem}
+.welcome{font-weight:600}
+ul.list{margin:0 0 1rem;padding-left:1.25rem}
+ul.list li{margin:.25rem 0}
+.quotes{margin:0 0 1rem}
+.quotes p{margin:0 0 .5rem;padding-left:1rem;border-left:3px solid var(--accent-soft);color:var(--muted);font-style:italic}
+.dialog{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:0 0 1.25rem}
+.dialog p{margin:.3rem 0}
+.dialog b{display:inline-block;min-width:3.6rem;color:var(--accent);font-weight:600}
+blockquote{margin:0 0 1rem;padding:.2rem 0 .2rem 1rem;border-left:3px solid var(--accent);font-weight:600}
+blockquote p{margin:0}
+.closing{font-size:1.15rem;font-weight:600}
+footer{border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--muted);font-size:.95rem}
+footer p{margin:0 0 .6rem}
+@media (max-width:30rem){header{padding:3rem 0 2rem}body{font-size:1rem}}
+@media print{.skip{display:none}a{color:inherit}}
+</style>
+</head>
+<body>
+<a class="skip" href="#innhold">Gå til innholdet</a>
+
+<div class="wrap">
+<header>
+  <h1>PinglyMotion</h1>
+  <p class="tagline">Fra «jeg skal bare lage en animasjon» til full bevegelse i galskapen.</p>
+</header>
+
+<main id="innhold">
+
+<section aria-label="Innledning">
+  <p>Noen går inn i Second Life for å danse, treffe folk eller finne et sted å bo.</p>
+  <p>Pingle går inn, oppdager at en arm beveger seg feil, og ender med et programvareprosjekt.</p>
+  <p>Det var selvfølgelig ikke planen. Planen var å fikse én liten ting. Men én liten ting har slektninger. Nå har den tidslinje, nøkkelbilder, GitHub-saker og et natteskift med kunstig intelligens.</p>
+  <p class="welcome">Velkommen til PinglyMotion.</p>
+</section>
+
+<section aria-labelledby="h-pingle">
+  <h2 id="h-pingle">Hvem er Pingle?</h2>
+  <p>PingleDingle er navnet. Nysgjerrighet er drivstoffet. «Men går det ikke an å …?» er vanligvis starten på problemene.</p>
+  <p>Pingle er typen som ser en avatar sitte rart og tenker at dette må kunne løses. Et normalt menneske ville kanskje valgt en annen stol. Pingle begynner å undersøke animasjonsprioriteter.</p>
+  <p>Det er ikke nødvendigvis den korteste veien til en behagelig kveld. Men det kan bli programvare av det.</p>
+  <p>Bak prosjektet ligger en enkel ambisjon: Å gjøre det lettere å lage bevegelser og uttrykk til Second Life. Å kunne prøve en idé, se hva den gjør, justere den og få den inn i verdenen der den skal brukes.</p>
+  <p>Og helst forstå hvorfor armen plutselig befinner seg bak hodet.</p>
+</section>
+
+<section aria-labelledby="h-sl">
+  <h2 id="h-sl">Second Life: et sted hvor «sitt» er et teknisk spørsmål</h2>
+  <p>Second Life er en verden der du kan være nesten hvem du vil, bygge nesten hva du vil og bruke overraskende mye tid på hvorfor du sitter gjennom gulvet.</p>
+  <p>Her kan en helt vanlig kveld inneholde:</p>
+  <ul class="list">
+    <li>En fantastisk avatar.</li>
+    <li>Et vakkert landskap.</li>
+    <li>En stol med sterke meninger.</li>
+    <li>Tre animasjoner som alle mener de bestemmer over beina dine.</li>
+    <li>En venstrearm som har startet et selvstendig liv.</li>
+  </ul>
+  <p>Det er en del av sjarmen. Det er også en del av motivasjonen.</p>
+  <p>For når kroppen din er digital, burde det være mulig å gi den litt tydeligere beskjeder enn «vær så snill å slutte med det der».</p>
+</section>
+
+<section aria-labelledby="h-hva">
+  <h2 id="h-hva">Hva er PinglyMotion?</h2>
+  <p>PinglyMotion er et prosjekt under utvikling for arbeid med positurer og animasjoner til Second Life.</p>
+  <p>Tanken er å gi skapere en mer tilgjengelig vei fra idé til bevegelse. Et sted der man kan arbeide med avatarens ledd, forme positurer og bygge bevegelser over tid.</p>
+  <p>Det kan begynne med noe enkelt: En hånd som ligger riktig. En kropp som sitter naturlig. Et uttrykk som faktisk passer figuren.</p>
+  <p>Så kommer resten.</p>
+  <div class="quotes">
+    <p>«Kan vi gjøre overgangen mykere?»</p>
+    <p>«Kan denne posituren gjenbrukes?»</p>
+    <p>«Hva med import?»</p>
+    <p>«Hva med Blender?»</p>
+    <p>«Kunne KI hjulpet her?»</p>
+  </div>
+  <p>Og der forsvant den helgen.</p>
+  <p>Ambisjonene er store. Funksjonene må bygges, prøves og dokumenteres underveis. Fremtidsplaner er fremtidsplaner, selv når de har fått et imponerende navn på GitHub.</p>
+</section>
+
+<section aria-labelledby="h-personlighet">
+  <h2 id="h-personlighet">Bevegelser med personlighet</h2>
+  <p>En animasjon er mer enn en arm som flyttes fra A til B.</p>
+  <p>Det er forskjellen på å vinke og å forsøke å skremme bort en veps. Mellom å sette seg elegant og å gi opp livet midlertidig i en sofa. Mellom en selvsikker positur og en avatar som ser ut til å vente på omstart.</p>
+  <p>Små endringer betyr mye.</p>
+  <p>Vinkelen på hodet. Plasseringen av hendene. Et lite opphold før neste bevegelse. Hvor mye kroppen følger med.</p>
+  <p>Det er her personligheten bor.</p>
+  <p>PinglyMotion handler om å gjøre det lettere å arbeide med disse detaljene — enten målet er naturlige bevegelser, uttrykksfulle positurer eller noe så fullstendig absurd at det bare gir mening i Second Life.</p>
+  <p>Vi respekterer alle tre.</p>
+</section>
+
+<section aria-labelledby="h-verdenen">
+  <h2 id="h-verdenen">Et prosjekt for dem som faktisk bruker verdenen</h2>
+  <p>Ideene kommer fra situasjoner som oppstår i Second Life.</p>
+  <p>Du vil sitte på bakken, men en annen animasjon har innvendinger. Du har laget en positur som nesten fungerer, bortsett fra den hånden. Du ønsker en bevegelse som passer akkurat din figur, ditt humør eller din scene.</p>
+  <p>Og noen ganger ønsker du bare å lage noe ingen andre har hatt noen fornuftig grunn til å lage.</p>
+  <p>Det er også en gyldig brukssituasjon.</p>
+  <p>Second Life har aldri vært avhengig av at alt er fornuftig. Det ville blitt veldig stille der.</p>
+</section>
+
+<section aria-labelledby="h-ki">
+  <h2 id="h-ki">Pingle og KI-avdelingen</h2>
+  <p>Bak kulissene brukes KI som hjelp i utviklingen. Det gir høy fart, mange forslag og enkelte øyeblikk der prosjektlederen må trekke pusten gjennom nesen.</p>
+  <p>Et lite dramatisert innblikk:</p>
+  <div class="dialog">
+    <p><b>Pingle:</b> Vi må få dette enklere.</p>
+    <p><b>KI:</b> Jeg foreslår en ny arbeidsflyt.</p>
+    <p><b>Pingle:</b> Vi har en arbeidsflyt.</p>
+    <p><b>KI:</b> Da foreslår jeg en oppgave for å undersøke arbeidsflyten.</p>
+    <p><b>Pingle:</b> Den oppgaven finnes allerede.</p>
+    <p><b>KI:</b> Flott. Har du testet?</p>
+    <p><b>Pingle:</b> Ja. I går.</p>
+    <p><b>KI:</b> Her er en sjekkliste for testing.</p>
+  </div>
+  <p>Det er derfor prosjektet trenger et menneske ved roret.</p>
+  <p>KI kan bidra med kode, analyser og dokumentasjon. Pingle bidrar med retning, faktiske erfaringer og den nødvendige setningen:</p>
+  <blockquote><p>«Se på det som allerede er gjort.»</p></blockquote>
+</section>
+
+<section aria-labelledby="h-kvalitet">
+  <h2 id="h-kvalitet">Kvalitet, med et lite nervøst smil</h2>
+  <p>Det er lett å lage noe som ser lovende ut på et skjermbilde.</p>
+  <p>Det er mer arbeid å lage noe som bygger, starter, reagerer riktig og tåler at et menneske bruker det på en måte utvikleren ikke hadde tenkt på.</p>
+  <p>Og mennesker er imponerende flinke til akkurat det.</p>
+  <p>Derfor er testing en del av prosjektet. Bygg, sikkerhetskontroller og praktisk utprøving skal bidra til at nye forbedringer faktisk er forbedringer.</p>
+  <p>Samtidig skal ikke hver liten endring måtte gjennom en administrativ pilgrimsreise.</p>
+  <p>Målet er en utviklingsflyt som er grundig, forståelig og rask nok til at man husker hva man holdt på med når kontrollene er ferdige.</p>
+  <p>En grønn hake er fint. En fungerende animasjon er enda bedre.</p>
+</section>
+
+<section aria-labelledby="h-visjonen">
+  <h2 id="h-visjonen">Visjonen</h2>
+  <p>PinglyMotion skal gjøre avstanden mellom «jeg ser for meg en bevegelse» og «der gjør avataren den» kortere.</p>
+  <p>På veien finnes ideer om bedre arbeidsflyt, gjenbruk av positurer, samspill med andre verktøy og KI som kan hjelpe skapere videre. Det er retningen prosjektet utforsker, ikke et løfte om at alt allerede ligger klart bak neste knapp.</p>
+  <p>Det viktigste er hva brukeren får til.</p>
+  <p>Flere egne uttrykk. Mindre unødvendig knot. Mer tid til å skape.</p>
+  <p>Og gjerne litt mindre tid med en albue inne i brystkassen.</p>
+</section>
+
+<section aria-labelledby="h-hvem">
+  <h2 id="h-hvem">Hvem passer dette for?</h2>
+  <p>For deg som lager animasjoner og har tenkt: «Dette burde vært enklere.»</p>
+  <p>For deg som har en idé til en positur, men ikke ønsker å ta en mindre ingeniørutdanning før du får flyttet hånden.</p>
+  <p>For deg som bygger historier, karakterer og situasjoner i Second Life.</p>
+  <p>For deg som liker å eksperimentere.</p>
+  <p>Og for deg som har sett avataren din gjøre noe uforklarlig og tenkt:</p>
+  <blockquote><p>«Det der var feil. Men det var faktisk ganske morsomt. Kan jeg lagre det?»</p></blockquote>
+</section>
+
+<section aria-labelledby="h-verkstedet">
+  <h2 id="h-verkstedet">Velkommen til verkstedet</h2>
+  <p>PinglyMotion vokser frem mellom faktiske behov, tekniske utfordringer og ideer som kanskje burde fått modne litt før noen åpnet utviklingsverktøyene.</p>
+  <p>Her er det plass til skaperglede, prøving, feiling og den spesielle tilfredsstillelsen når en bevegelse endelig sitter.</p>
+  <p>Prosjektet har retning. Pingle har ideer. KI har forslag.</p>
+  <p>Avataren har foreløpig en arm i feil retning.</p>
+  <p class="closing">PinglyMotion — store ideer, små nøkkelbilder og en albue vi fortsatt må snakke om.</p>
+</section>
+
+</main>
+
+<footer>
+  <p>Prosjektet på GitHub: <a href="https://github.com/pingledingle-tech/PinglyMotion">github.com/pingledingle-tech/PinglyMotion</a></p>
+  <p>PinglyMotion bygger på arbeidet til mange andre. Takk til alle sammen: <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">se hvem i CREDITS.md</a>.</p>
+</footer>
+</div>
+</body>
+</html>

@@ -137,7 +137,7 @@ def render(view):
 def insert(page, section):
     pattern = re.compile(re.escape(MARK_START) + ".*?" + re.escape(MARK_END), re.S)
     if not pattern.search(page):
-        raise ValueError("docs/index.html has no status markers")
+        return page
     return pattern.sub(lambda _: section, page, count=1)
 
 
@@ -151,7 +151,10 @@ def main(argv):
     token = os.environ.get("GITHUB_TOKEN", "")
     with open(src, encoding="utf-8") as f:
         page = f.read()
-    out = insert(page, render(build_view(fetch(repo, token), repo)))
+    if MARK_START in page:
+        out = insert(page, render(build_view(fetch(repo, token), repo)))
+    else:
+        out = page  # the page has no status section: publish it unchanged
     os.makedirs(argv[1], exist_ok=True)
     with open(os.path.join(argv[1], "index.html"), "w", encoding="utf-8") as f:
         f.write(out)

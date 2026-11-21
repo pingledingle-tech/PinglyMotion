@@ -1,6 +1,6 @@
 Branch: site/homepage-owner-text
-Status: active
-Pull request: pending
+Status: done
+Pull request: #280
 Files:
 - docs/index.html
 - tools/site/build_status.py
