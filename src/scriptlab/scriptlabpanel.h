@@ -24,6 +24,8 @@
 #include "rlvstate.h"
 
 class QDockWidget;
+class ScriptLabObjectsView;
+namespace lsl { class Session; }
 class QLabel;
 class QLineEdit;
 class QMainWindow;
@@ -48,6 +50,10 @@ class ScriptLabPanel : public QWidget
     // control API does, so the panel and rlv_command share one state).
     void setState(RlvState* state);
     RlvState* state() const { return m_state; }
+
+    // The world of the last LSL run, for the Objects and Dialog part (step 5). Not owned.
+    void setSession(lsl::Session* session);
+    ScriptLabObjectsView* objectsView() const { return m_objectsView; }
 
     // Runs one line from the command field's object, as Enter does. Returns
     // false when the whole line was refused (the log says why).
@@ -99,6 +105,7 @@ class ScriptLabPanel : public QWidget
     QTreeWidget* m_actions;
     QPlainTextEdit* m_log;
     QMetaObject::Connection m_changedConnection;
+    ScriptLabObjectsView* m_objectsView;
 };
 
 #endif

@@ -18,6 +18,7 @@
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
+#include "objectsview.h"
 #include "paneltitlebar.h"
 #include "rlvbehaviours.h"
 #include "rlvstate.h"
@@ -180,6 +181,10 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_log->setMinimumHeight(4 * m_log->fontMetrics().height() + 2 * SpacingS);
   layout->addWidget(m_log, 2);
 
+  // --- objects of the last LSL run and the newest dialog (step 5); hidden until a script has run
+  m_objectsView = new ScriptLabObjectsView(this);
+  layout->addWidget(m_objectsView, 2);
+
   connect(m_command, &QLineEdit::returnPressed, this, &ScriptLabPanel::runCommandField);
   connect(m_run, &QPushButton::clicked, this, &ScriptLabPanel::runCommandField);
   connect(m_reset, &QPushButton::clicked, this, &ScriptLabPanel::resetAll);
@@ -191,6 +196,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_reset, m_restrictions);
   setTabOrder(m_restrictions, m_actions);
   setTabOrder(m_actions, m_log);
+  setTabOrder(m_log, m_objectsView->list());
 
   applyStyle();
   refresh();
@@ -202,6 +208,11 @@ void ScriptLabPanel::setState(RlvState* state)
   m_state = state;
   if (state) m_changedConnection = connect(state, &RlvState::changed, this, &ScriptLabPanel::refresh);
   refresh();
+}
+
+void ScriptLabPanel::setSession(lsl::Session* session)
+{
+  m_objectsView->setSession(session);
 }
 
 bool ScriptLabPanel::isDark(const QPalette& palette)

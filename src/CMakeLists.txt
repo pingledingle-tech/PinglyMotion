@@ -72,6 +72,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               scene.cpp
               screenshotsheet.cpp
               scriptlab/scriptlabpanel.cpp
+              scriptlab/objectsview.cpp
               skinrenderer.cpp
               theme.cpp
               timeline.cpp

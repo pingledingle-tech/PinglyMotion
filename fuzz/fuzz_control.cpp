@@ -3,7 +3,9 @@
  *
  * Feeds any bytes as a JSON request to ControlApi::execute(), the code that
  * runs the commands an AI client sends. It must never crash, and every answer
- * must have "ok", with an "error" when ok is false.
+ * must have "ok", with an "error" when ok is false. A JSON list of up to 8
+ * requests is sent one after another to the same API (lsl_event after lsl_run,
+ * Script Lab step 5).
  *
  * The stand-in host does not open, save or draw anything, so no files are
  * touched. A fresh animation is made for every input, so a crash can always
@@ -16,6 +18,7 @@
 
 #include <QGuiApplication>
 #include <QDir>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTemporaryDir>
@@ -102,7 +105,15 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
 {
   const QByteArray bytes(reinterpret_cast<const char*>(data), static_cast<int>(size));
   const QJsonDocument document = QJsonDocument::fromJson(bytes);
-  if (!document.isObject()) return -1;  // not a request; do not keep it in the corpus
+  // one request, or a list of up to 8 requests sent one after another to the same API
+  // (so commands that build on an earlier one, such as lsl_event after lsl_run, are reached)
+  if (!document.isObject() && !document.isArray()) return -1;  // not a request; do not keep it in the corpus
+  QJsonArray requests;
+  if (document.isObject()) requests.append(document.object());
+  else requests = document.array();
+  if (requests.isEmpty() || requests.size() > 8) return -1;
+  for (const QJsonValue& request : requests)
+    if (!request.isObject()) return -1;
 
   Animation animation(g_bvh);
   animation.setNumberOfFrames(30);
@@ -110,9 +121,12 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   ControlApi api(&host);
   api.setWorkFolder(g_folder->path());
 
-  const QJsonObject answer = api.execute(document.object());
-  check(answer.contains("ok") && answer["ok"].isBool());
-  if (!answer["ok"].toBool())
-    check(!answer["error"].toString().isEmpty());
+  for (const QJsonValue& request : requests)
+  {
+    const QJsonObject answer = api.execute(request.toObject());
+    check(answer.contains("ok") && answer["ok"].isBool());
+    if (!answer["ok"].toBool())
+      check(!answer["error"].toString().isEmpty());
+  }
   return 0;
 }

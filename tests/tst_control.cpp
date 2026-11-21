@@ -2870,6 +2870,16 @@ void ControlTest::scriptLabLslRlv()
   // the next run starts from an empty state unless keep_rlv is true
   api.execute(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { } }"}, {"seconds", 1}});
   QCOMPARE(api.execute(QJsonObject{{"command", "rlv_state"}})["blocked"].toArray().size(), 0);
+
+  // Script Lab step 5 (issue 291): several objects, then lsl_event touches one; its RLV line shows in rlv_state
+  answer = api.execute(QJsonObject{{"command", "lsl_run"}, {"seconds", 1},
+                                   {"objects", QJsonArray{QJsonObject{{"name", "hud"}, {"source", "default { touch_start(integer n) { llSay(5, \"lock\"); } }"}},
+                                                          QJsonObject{{"name", "cuffs"}, {"source", "default { state_entry() { llListen(5, \"\", NULL_KEY, \"lock\"); } listen(integer c, string n, key id, string m) { llOwnerSay(\"@detach=n\"); } }"}}}}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  answer = api.execute(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"object", "hud"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["time"].toDouble(), 2.0);
+  QCOMPARE(api.execute(QJsonObject{{"command", "rlv_state"}})["objects"].toObject().keys(), QStringList({"c0ffee00-0000-4000-8000-000000000003"}));
 }
 
 QTEST_MAIN(ControlTest)
