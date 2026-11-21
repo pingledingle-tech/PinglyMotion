@@ -14,6 +14,8 @@
 
 #include <QJsonObject>
 
+class RlvState;
+
 namespace lsl
 {
 namespace Control
@@ -24,8 +26,10 @@ namespace Control
 
   // {"command":"lsl_check","source":"..."}: errors and warnings with line and column
   QJsonObject check(const QJsonObject& request);
-  // {"command":"lsl_run","source":"...","seconds":10,"inputs":[...]}: the event log
-  QJsonObject run(const QJsonObject& request);
+  // {"command":"lsl_run","source":"...","seconds":10,"inputs":[...],"keep_rlv":false}: the event log.
+  // llOwnerSay("@...") goes to rlv (the sandbox's RLV state, the one rlv_state shows); without it
+  // the run uses a state of its own. Unless "keep_rlv" is true the state is emptied before the run.
+  QJsonObject run(const QJsonObject& request, RlvState* rlv = nullptr);
 }
 }
 

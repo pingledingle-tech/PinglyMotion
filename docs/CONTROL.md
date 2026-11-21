@@ -329,14 +329,21 @@ Life: test the final script there too.
   events or states, a missing `return`, `state` in a function, and LSL's own rules (a declaration alone
   as the body of an `if`, a global that starts with a calculation, a list in a list). Warnings are valid
   LSL that the sandbox does not run yet: a function that is not supported yet, or an event it never raises.
-- `lsl_run {source, seconds, inputs}` runs the script with a simulated clock: `state_entry` of the default
+- `lsl_run {source, seconds, inputs, keep_rlv}` runs the script with a simulated clock: `state_entry` of the default
   state first, then events until `seconds` (0 to 3600, default 10) have passed. Nothing waits for real
   time. `inputs` (at most 200) are chat or touches at given times:
   `[{"at":1,"channel":7,"text":"dance"},{"at":2,"type":"touch"}]`; `name` and `id` default to the owner.
   A script that does not compile is not run: the answer has `ok: false` and the `errors` of `lsl_check`.
+  `llOwnerSay` text that starts with `@` is run as an RLV command (Script Lab step 4, issue 290): the sandbox's
+  RLV state (the one `rlv_state` shows) gets it from the script's object (its key, as `llGetKey` returns), and
+  the reply lines of `@version=<channel>`, `@getstatus=<channel>` and the like arrive in the script's `listen`
+  event on that channel, as a viewer would answer (spoken by the owner). Other `llOwnerSay` text stays an `owner_say`
+  line. The RLV state is emptied before each run unless `keep_rlv` is `true`; what the script set stays in the
+  state after the run, so `rlv_state` shows it. At most 100 `@` lines per run.
 
 The answer of `lsl_run` has `log` (the event log, plain data), `log_truncated`, `stopped` and
-`stop_reason`, `state` (the state at the end), `time`, `steps`, `open_listens`, `timer` and `warnings`.
+`stop_reason`, `state` (the state at the end), `time`, `steps`, `open_listens`, `timer`, `warnings` and `rlv`
+(`lines` run, `refused` over the cap, and `state`: the restrictions at the end in the shape of the `rlv_state` answer).
 Every log entry has `t` (simulated seconds) and `type`:
 
 | type | What happened | Other fields |
@@ -346,6 +353,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `owner_say` | `llOwnerSay` | `text` |
 | `say`, `whisper`, `shout`, `region_say` | chat | `channel`, `text` |
 | `instant_message` | `llInstantMessage` | `to`, `text` |
+| `rlv_command` | `llOwnerSay("@...")` went to the RLV core | `object`, `text`, `results` (one per command, as in `rlv_command`), `replies` (`channel`, `text`), `restrictions` (how many are held now), or `error` when the whole line was refused |
 | `listen`, `listen_remove` | `llListen`, `llListenRemove` | `handle`, `channel`, `name`, `id`, `message` |
 | `timer_set` | `llSetTimerEvent` | `seconds` |
 | `sleep` | `llSleep` (moves the simulated clock) | `seconds` |

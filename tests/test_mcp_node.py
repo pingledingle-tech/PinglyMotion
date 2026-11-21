@@ -141,6 +141,10 @@ def main():
     with open(os.path.join(MCP_DIR, "commands.json"), encoding="utf-8") as handle:
         bundled = [command["name"] for command in json.load(handle)["commands"]] + ["read_guide"]
         assert "lsl_check" in bundled and "lsl_run" in bundled, bundled
+    with open(os.path.join(MCP_DIR, "commands.json"), encoding="utf-8") as handle:
+        lsl_run = [c for c in json.load(handle)["commands"] if c["name"] == "lsl_run"][0]
+        # step 4: llOwnerSay("@...") runs as an RLV command, and keep_rlv is an option
+        assert "rlv_command" in lsl_run["description"] and "keep_rlv" in lsl_run["parameters"], lsl_run
     with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
         guide = handle.read()
 

@@ -1,10 +1,11 @@
 Branch: feat/lsl-rlv-link
-Status: active
+Status: done
 Pull request: #300
 Files:
 - docs/work/feat-lsl-rlv-link.md
 - src/scriptlab/lsl/**
 - src/controlapi.cpp
+- src/CMakeLists.txt
 - tests/tst_lslrlv.cpp
 - tests/tst_control.cpp
 - tests/test_mcp_node.py
@@ -12,6 +13,9 @@ Files:
 - examples/scriptlab/rlv_lock.lsl
 - examples/scriptlab/rlv_status.lsl
 - fuzz/fuzz_lsl.cpp
+- fuzz/lsl.dict
+- fuzz/README.md
+- fuzz/CMakeLists.txt
 - fuzz/corpus/lsl/**
 - tests/CMakeLists.txt
 - docs/CONTROL.md

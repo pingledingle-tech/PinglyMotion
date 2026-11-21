@@ -4,7 +4,8 @@
  * Feeds any bytes, read as UTF-8, to the LSL lexer, parser and checker
  * (Parser::parse, what lsl_check does). Every error must have a place and a
  * message. A script that compiles is then run in the sandbox with small
- * limits (what lsl_run does), with one chat and one touch as input. Nothing
+ * limits (what lsl_run does), with one chat and one touch as input; llOwnerSay
+ * text that starts with @ goes to the RLV core (Script Lab step 4). Nothing
  * may crash, and a run must stay inside its limits.
  *
  * Licensed under the GNU General Public License version 2 or later.
@@ -16,6 +17,8 @@
 
 #include "scriptlab/lsl/interp.h"
 #include "scriptlab/lsl/parser.h"
+#include "scriptlab/lsl/rlvworld.h"
+#include "scriptlab/rlvstate.h"
 
 using namespace lsl;
 
@@ -43,8 +46,11 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   limits.maxSteps = 20000;
   limits.maxWallMs = 1000;
   limits.maxEvents = 200;
-  World world;
+  // llOwnerSay("@...") reaches the RLV core (step 4, issue 290)
+  RlvState rlv;
+  RlvWorld world(rlv);
   Interpreter interp(*parsed.script, world, limits);
+  world.attach(&interp);
   Input chat;
   chat.at = 1.0;
   chat.channel = 1;
@@ -60,5 +66,8 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   check(interp.steps() <= limits.maxSteps + limits.maxListLength + 1);
   check(world.entries().size() <= World::MAX_LOG_ENTRIES + 1);
   check(interp.now() <= 1.0e7);
+  check(world.rlvLines() <= RlvWorld::MAX_RLV_LINES);
+  check(rlv.restrictions().size() <= RlvState::MAX_OBJECTS * RlvState::MAX_RESTRICTIONS_PER_OBJECT);
+  check(!RlvWorld::stateJson(rlv).isEmpty());
   return 0;
 }
