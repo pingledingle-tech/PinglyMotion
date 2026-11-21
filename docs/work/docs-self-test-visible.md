@@ -1,5 +1,5 @@
 Branch: docs/self-test-visible
-Status: active
+Status: done
 Pull request: #281
 Files:
 - docs/work/docs-self-test-visible.md
