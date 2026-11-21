@@ -33,6 +33,7 @@
 #include "bvh.h"
 #include "constants.h"
 #include "dingle.h"
+#include "skeletonwalk.h"
 
 BVH::BVH()
 {
@@ -751,16 +752,7 @@ bool BVH::animWrite(Animation* anim,const QString& file,QString& error)
 
 BVHNode* BVH::bvhFindNode(BVHNode* root,const QString& name) const
 {
-  BVHNode *node;
-  if(!root) return NULL;
-  if(root->name()==name) return root;
-
-  for(int i=0;i<root->numChildren();i++)
-  {
-    if((node=bvhFindNode(root->child(i),name))) return node;
-  }
-
-  return NULL;
+  return SkeletonWalk::findNode(root,name);
 }
 
 void BVH::bvhGetChannelLimits(BVHNode* node,BVHChannelType type,double* min, double* max)

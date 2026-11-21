@@ -46,6 +46,7 @@
 #include "propmanager.h"
 #include "scene.h"
 #include "floor.h"
+#include "skeletonwalk.h"
 #include "skinrenderer.h"
 
 #include "usersettings.h"
@@ -143,19 +144,13 @@ bool AnimationView::faceFocus() const
 
 // names of all timeline tracks: "position", then every node of the skeleton
 // in the order they are drawn ("Site" for End Sites)
-static void collectPartNames(BVHNode* node,QStringList& names)
-{
-  if(!node) return;
-  names << node->name();
-  for(int i=0;i<node->numChildren();i++)
-    collectPartNames(node->child(i),names);
-}
-
 QStringList AnimationView::partNames() const
 {
   QStringList names;
   names << "position";
-  collectPartNames(joints[0],names);
+  QList<BVHNode*> nodes;
+  SkeletonWalk::collect(joints[0],nodes,true);
+  for(BVHNode* node : nodes) names << node->name();
   return names;
 }
 
