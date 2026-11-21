@@ -277,15 +277,10 @@ they were: the 3D view turns its camera for each picture only and puts it back.
 
 ## Set up an AI assistant
 
-`pinglymotion_mcp.py` is an MCP server: it lets an AI assistant such as the Claude app (Claude Desktop)
-or Claude Code use remote control. It needs Python 3.8 or newer and nothing else; the assistant
-starts it by itself.
-
-The Windows zip has it in the `mcp` folder next to `PinglyMotion.exe`. Register that copy: unpacking a
-new zip over the old folder then updates the program and the MCP server together. In the source
-tree it is `tools/mcp/pinglymotion_mcp.py`.
-
-The examples below use `C:\PinglyMotion`. Replace it with the folder where you unpacked PinglyMotion.
+The Claude Desktop extension `PinglyMotion.mcpb` is the one way to connect an AI assistant. It holds an
+MCP server (`tools/mcp/pinglymotion_mcp.js` in the source tree, Node, built-in modules only) that lets
+the Claude app use remote control. The Windows zip and each release carry the extension. There is no
+Python server any more, and no manual setup of a server by path.
 
 ### Quick way: the Claude Desktop extension
 
@@ -293,7 +288,7 @@ The Windows zip (and each release) has `PinglyMotion.mcpb`, an extension for the
 short `START HERE - Claude.txt` with the same steps. No file editing and no typed paths:
 
 1. Unzip the download first (do not open the `.mcpb` from inside the zip). Nothing else has to be
-   installed: the extension runs on the Node that the Claude app brings, so Python is not needed.
+   installed: the extension runs on the Node that the Claude app brings.
    If it does not start, say so in issue #7.
 2. In the Claude app open **Settings > Extensions** (in newer versions: **Settings > Desktop app**, then
    **Manage** next to Extensions). Click **Advanced settings**, find the section **Extension Developer**,
@@ -308,79 +303,19 @@ short `START HERE - Claude.txt` with the same steps. No file editing and no type
    Claude asks for permission to use PinglyMotion, allow it; if it does not ask, that is fine.
 
 Update: install the `PinglyMotion.mcpb` from the new download the same way (step 2). The extension holds no
-settings and no key; it is the same MCP server as below, with the same protections (it talks only to
-`127.0.0.1` and checks that it really is PinglyMotion before it sends the key). The extension is
-built from this repository by `tools/mcp/build_mcpb.py` and is not signed. Claude Desktop does not
-ship Python, so the extension uses the Node version of the server (`tools/mcp/pinglymotion_mcp.js`).
-The manual way below still uses the Python server for now (issue #7).
+settings and no key; it talks only to `127.0.0.1` and checks that it really is PinglyMotion
+before it sends the key. The extension is
+built from this repository by `tools/mcp/build_mcpb.py` and is not signed. Claude Desktop ships its own
+Node, so nothing else has to be installed.
 
-The steps below are the manual way, also for Claude Code.
+Other assistants, and anything that does not speak MCP, can use the plain HTTP commands described above.
 
-### 1. Install Python
-
-Download it from https://www.python.org. On Windows, tick **Add python.exe to PATH** in the
-installer. Check in a command window: `python --version`.
-
-### 2a. Claude app (Claude Desktop)
-
-1. Open **Settings > Developer > Edit Config**. This opens `claude_desktop_config.json`.
-2. Add `pinglymotion` under `mcpServers`. If the file is empty or has only `{}`, use all of this:
-
-   ```json
-   {
-     "mcpServers": {
-       "pinglymotion": {
-         "command": "python",
-         "args": ["C:\\PinglyMotion\\mcp\\pinglymotion_mcp.py"]
-       }
-     }
-   }
-   ```
-
-   If `mcpServers` already has other servers, add only the `"pinglymotion": { ... }` part, with a
-   comma between the entries. Backslashes in the path must be written twice.
-3. Save the file and quit the app completely (also from the system tray), then start it again.
-
-If the app cannot find `python`, use the full path to `python.exe` as `command`. `where python` in a
-command window shows it (again with double backslashes in the file).
-
-### 2b. Claude Code
-
-In a command window:
-
-```
-claude mcp add pinglymotion -- python "C:\PinglyMotion\mcp\pinglymotion_mcp.py"
-```
-
-### 2c. Other assistants
-
-Any tool that takes an `mcpServers` list works the same way. On Linux and macOS use `python3` and
-the path to `pinglymotion_mcp.py`.
-
-### 3. Use it
+### Use it
 
 Start PinglyMotion and turn on **Options > Allow remote control** (or start it with `--control`).
 Then ask the assistant to pose the figure. The tools are listed even when PinglyMotion is not running,
 and say what to do if one is called then. Restart the assistant after updating PinglyMotion: a new MCP
 server refuses to talk to an old PinglyMotion.
-
-### 4. Updating
-
-Unpack each new zip **over the old folder**. Then the program and the MCP server you registered
-are updated together.
-
-If you unpack a new zip into another folder, the assistant still starts the old MCP server from the
-folder you registered. PinglyMotion then works, but newer tools are missing or answer "Unknown tool".
-Fix it in one of these ways:
-
-- copy the new `mcp` folder over the old one, or
-- register the new folder instead. Claude Code:
-  `claude mcp remove pinglymotion`, then `claude mcp add` with the new path (see 2b).
-  Claude app: change the path in `claude_desktop_config.json` and restart the app.
-
-Claude Code registers the server for the folder you were in when you ran `claude mcp add`. Start
-`claude` from that same folder (for example `cd C:\PinglyMotion`, then `claude`), or add `--scope user`
-to `claude mcp add` so it works from every folder.
 
 ## Good to know when posing
 

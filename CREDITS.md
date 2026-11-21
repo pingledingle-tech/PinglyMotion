@@ -83,7 +83,7 @@ Only ideas were taken from these papers and projects (no code copied); they were
 | Model Context Protocol and MCPB extension format (Anthropic and the MCP community) | The MCP server and one-click extension in `tools/mcp/` | MIT / Apache 2.0 | https://modelcontextprotocol.io |
 | NumPy | Builds the Max body mesh (`tools/make_max_mesh.py`); a tool for developers, not shipped | BSD 3-Clause | https://numpy.org |
 | Blender as a Python module (`bpy`) and uv (Astral) | Run the Blender round trip in CI (`.github/workflows/blender.yml`) | GPL (bpy); MIT or Apache 2.0 (uv) | https://pypi.org/project/bpy/, https://github.com/astral-sh/uv |
-| Node.js and Python | Run the MCP server and the project's tools | MIT / PSF | https://nodejs.org, https://www.python.org |
+| Node.js and Python | Node runs the MCP server (Claude Desktop ships its own); Python runs the project's tools and tests | MIT / PSF | https://nodejs.org, https://www.python.org |
 
 ## Build and test infrastructure
 

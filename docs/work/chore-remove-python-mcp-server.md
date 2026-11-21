@@ -1,6 +1,6 @@
 Branch: chore/remove-python-mcp-server
-Status: active
-Pull request: pending
+Status: done
+Pull request: #266
 Files:
 - tools/mcp/**
 - tests/test_mcp_proxy.py
