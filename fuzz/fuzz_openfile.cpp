@@ -52,12 +52,8 @@ void openAs(const QByteArray& bytes, const char* suffix)
     check(out.open(QIODevice::WriteOnly | QIODevice::Truncate));
     check(out.write(bytes) == bytes.size());
   }
-  QString error;
-  if (!BVH::checkFile(file, &error))
-  {
-    check(!error.isEmpty());
-    return;
-  }
+  const BVH::CheckResult checked = BVH::checkFile(file);
+  if (!checked.ok()) return;
   Animation animation(g_bvh, file);
   check(animation.getMotion() != nullptr);
   check(animation.getNumberOfFrames() >= 1);
