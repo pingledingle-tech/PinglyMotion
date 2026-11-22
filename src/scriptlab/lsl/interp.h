@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <QElapsedTimer>
+#include <QMap>
 #include <QString>
 #include <QStringList>
 
@@ -171,6 +172,7 @@ class Interpreter
     int m_controls = 0;              // step 9b-6: the controls llTakeControls took (0 = none)
     bool m_controlsAccept = false;
     bool m_controlsPassOn = false;
+    QMap<QString, QString> m_overrides;   // step 9b-8: llSetAnimationOverride, by animation state
     QStringList m_playing;           // step 9b-5: animations this script started and has not stopped (llGetAnimationList)
     QString m_detectedKey;
     QString m_detectedName;
