@@ -313,6 +313,25 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_actions->setMinimumHeight(6 * m_actions->fontMetrics().height() + 2 * SpacingS);
   layout->addWidget(m_actions, 3);
 
+  // --- camera limits in the 3D view (job 7b), off at start
+  m_cameraBox = new QCheckBox(tr("Show camera limits in 3D view"), commandsPage);
+  m_cameraBox->setObjectName("scriptLabShowCameraLimits");
+  m_cameraBox->setChecked(false);
+  m_cameraBox->setToolTip(tr("Let the camera limits the script holds (distance from the avatar, focus on the avatar) "
+                             "limit the 3D view. Untick to get your own camera back exactly as it was."));
+  layout->addWidget(m_cameraBox);
+  m_cameraStatus = new QLabel(commandsPage);
+  m_cameraStatus->setObjectName("scriptLabCameraStatus");
+  m_cameraStatus->setWordWrap(true);
+  m_cameraStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_cameraStatus->hide();
+  layout->addWidget(m_cameraStatus);
+  connect(m_cameraBox, &QCheckBox::toggled, this, [this](bool on)
+  {
+    if (m_camera) m_camera->setEnabled(on);
+    refreshCamera();
+  });
+
   // --- replies and messages
   layout->addSpacing(SpacingL - SpacingS);
   layout->addWidget(sectionLabel(tr("Replies and messages"), this));
@@ -327,7 +346,14 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   // --- objects of the last LSL run and the newest dialog (step 5); hidden until a script has run
   m_objectsView = new ScriptLabObjectsView(commandsPage);
   layout->addWidget(m_objectsView, 2);
-  m_tabs->addTab(commandsPage, tr("Commands"));
+  // with the camera box (job 7b) the page is taller than a small docked panel: it scrolls, as the Live page does
+  QScrollArea* commandsScroll = new QScrollArea(m_tabs);
+  commandsScroll->setObjectName("scriptLabCommandsScroll");
+  commandsScroll->setWidgetResizable(true);
+  commandsScroll->setFrameShape(QFrame::NoFrame);
+  commandsScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  commandsScroll->setWidget(commandsPage);
+  m_tabs->addTab(commandsScroll, tr("Commands"));
   m_tabs->setTabToolTip(0, tr("Type RLV lines by hand and see what the avatar may still do"));
   buildLivePage();
 
@@ -341,7 +367,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_run, m_reset);
   setTabOrder(m_reset, m_restrictions);
   setTabOrder(m_restrictions, m_actions);
-  setTabOrder(m_actions, m_log);
+  setTabOrder(m_actions, m_cameraBox);
+  setTabOrder(m_cameraBox, m_log);
   setTabOrder(m_log, m_objectsView->list());
 
   applyStyle();
@@ -424,6 +451,7 @@ void ScriptLabPanel::changeEvent(QEvent* event)
     refreshLive();
     refreshEffects();
     refreshInput();
+    refreshCamera();
   }
 }
 
@@ -982,6 +1010,31 @@ void ScriptLabPanel::refreshEffects()
   m_effectsStatus->setPalette(p);
 }
 
+// --- Job 7b: camera limits in the 3D view
+
+void ScriptLabPanel::setCameraOverride(CameraOverride* cameraOverride)
+{
+  if (m_cameraConnection) disconnect(m_cameraConnection);
+  m_camera = cameraOverride;
+  if (cameraOverride)
+  {
+    cameraOverride->setEnabled(m_cameraBox->isChecked());
+    m_cameraConnection = connect(cameraOverride, &CameraOverride::changed, this, &ScriptLabPanel::refreshCamera);
+  }
+  refreshCamera();
+}
+
+void ScriptLabPanel::refreshCamera()
+{
+  if (!m_cameraStatus) return;
+  const QStringList lines = m_camera ? m_camera->lines() : QStringList();
+  m_cameraStatus->setText(lines.join(QLatin1Char('\n')));
+  m_cameraStatus->setVisible(!lines.isEmpty());
+  // muted text; the words say everything, no colour carries meaning here (P10)
+  QPalette p = m_cameraStatus->palette();
+  p.setColor(QPalette::WindowText, mutedColour(isDark(palette())));
+  m_cameraStatus->setPalette(p);
+}
 
 // --- Input buttons (issue 308): touch, chat and dialog answers for the world of the last run
 

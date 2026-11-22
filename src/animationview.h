@@ -52,6 +52,7 @@ class QMouseEvent;
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
 class Animation;
+class CameraOverride;
 class EffectsPreview;
 class PropManager;
 class Scene;
@@ -74,6 +75,9 @@ class AnimationView : public QOpenGLWidget
     // Script Lab effects (issue 293): while the preview has an animation it is drawn instead of the
     // scene's animations (and cannot be clicked); its markers are drawn on the figure. Not owned.
     void setEffectsPreview(EffectsPreview* preview);
+    // Script Lab camera limits (job 7b): while the override is active the camera keeps to its
+    // constraint; when it stops, the camera from before is put back exactly. Not owned.
+    void setCameraOverride(CameraOverride* cameraOverride);
 
     void selectPart(BVHNode* node);
     void selectProp();
@@ -287,6 +291,10 @@ class AnimationView : public QOpenGLWidget
     Scene* m_scene=nullptr;
     // the Script Lab effects preview (issue 293); owned by the window
     QPointer<EffectsPreview> m_effects;
+    // the Script Lab camera override (job 7b); owned by the window
+    QPointer<CameraOverride> m_cameraOverride;
+    // puts the override's constraint on the camera, or takes it off
+    void applyCameraOverride();
 
     // the handle shapes
     QScopedPointer<MeshModel> m_cubeMeshModel;

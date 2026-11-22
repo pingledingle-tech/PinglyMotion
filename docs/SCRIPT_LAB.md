@@ -223,6 +223,34 @@ a script run through the control commands), the one the Objects part shows.
   and reaches every script of the object. No new control command; details in [CONTROL.md](CONTROL.md), "The events on_rez and changed".
 - Tests: `tests/tst_lslevents.cpp`. Fuzz: `fuzz_lsl` also sends a `changed` input and a start parameter.
 
+## Camera limits in the 3D view (job 7b, part 1)
+
+The camera restrictions a script holds can limit the main 3D view's camera, only while the Commands page's **Show
+camera limits in 3D view** box is ticked (under the Actions list). The box is off each time the program starts. The
+Commands page now scrolls when the panel is small, as the Live page does.
+
+- What is shown: `setcam_avdistmin` (and the older name `camdistmin`): the camera stays at least this many metres
+  from the avatar; `setcam_avdistmax` (`camdistmax`): at most this far; `setcam_unlock` (`camunlock`): the camera
+  focus stays on the avatar. With several objects the strictest limit wins (the largest minimum, the smallest
+  maximum); a maximum below the minimum wins over it. A maximum smaller than the 3D view can come (3 inches) is shown
+  as close as it goes. An option that is not a distance in metres is named in the text as not used.
+  `setcam_avdistmin` and `setcam_avdistmax` are RLVa only, so they need RLVa mode (`rlv_reset` with `mode`); the old
+  names `camdistmin` and `camdistmax` work in plain RLV mode too.
+- While any of them holds, the camera turns around the avatar's middle (its hip at rest; it does not follow the
+  animation) and panning cannot move it away; turning, zooming within the limits, the number pad views, `set_camera`
+  and the AI's `screenshot` keep to the limits.
+- The text under the box says in words what limits the camera, for example "Camera limited by the script: max
+  distance 3 m." and which objects hold it; with the box off it says that the script limits the camera and that
+  ticking the box shows it.
+- The user's camera is never changed for good: when the limits come on, the camera is kept as it was; unticking
+  the box, `@clear`, Reset, a mode switch or the last limit going away puts exactly that camera back. Moves made
+  while the limits were on are not kept. Nothing is saved.
+- Not yet: field of view (`setcam_fovmin`, `setcam_fovmax`, `setcam_fov`), forced focus and offsets
+  (`setcam_focus`, `setcam_eyeoffset`, `setcam_focusoffset`), mouselook. They are still recorded only.
+- Code: `src/scriptlab/cameraoverride.*` (the limits read from the RLV state and the words), the constraint in
+  `src/camera.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`. Tests:
+  `tests/tst_cameraoverride.cpp`, `tests/tst_scriptlabcamera.cpp` and the constraint part of `tests/tst_camera.cpp`.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -308,7 +336,8 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   nothing about the rest. In the sandbox a notification only tells about changes made by the object that holds it (a
   limit of the sandbox: answers go to the object that ran the line). One line makes at most 256 answers.
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
-  shown in the log ("recorded only"); the real program never changes. A force command of that kind is `retained`
+  shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
+  the 3D view with the "Show camera limits in 3D view" box (below, "Camera limits in the 3D view"). A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
   answers `0`). `getcommand` lists the behaviours known in the current mode.

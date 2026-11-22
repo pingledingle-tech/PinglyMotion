@@ -62,6 +62,24 @@ enum class CameraDrag
   Zoom            // up/down moves closer/further
 };
 
+// Limits a Script Lab script puts on the camera (RLV camera restrictions,
+// src/scriptlab/cameraoverride.h). Distances are in world units (inches).
+// While a constraint is on, the camera keeps to it after every move.
+struct CameraConstraint
+{
+  float minDistance = 0;          // 0: no minimum
+  float maxDistance = 0;          // 0: no maximum
+  bool turnAroundPoint = false;   // the camera turns around `point` (the avatar), panning does not move it away
+  QVector3D point;
+
+  bool operator==(const CameraConstraint& o) const
+  {
+    return minDistance == o.minDistance && maxDistance == o.maxDistance &&
+           turnAroundPoint == o.turnAroundPoint && point == o.point;
+  }
+  bool operator!=(const CameraConstraint& o) const { return !(*this == o); }
+};
+
 class Camera : public QObject
 {
   Q_OBJECT
@@ -118,6 +136,17 @@ class Camera : public QObject
     CameraPosition state() const;
     void setState(const CameraPosition& position);
 
+    // Script Lab camera override: the first setConstraint() keeps the camera
+    // as it is now, then the limits hold at once and after every move;
+    // another setConstraint() while one is on only changes the limits.
+    // clearConstraint() puts back exactly the kept camera (moves made while
+    // the limits were on are not kept), so the override never changes the
+    // user's own camera.
+    void setConstraint(const CameraConstraint& constraint);
+    void clearConstraint();
+    bool constrained() const { return m_constrained; }
+    CameraConstraint constraint() const { return m_constraint; }
+
   public slots:
     void storeCameraPosition(int num);
     void restoreCameraPosition(int num);
@@ -132,6 +161,16 @@ class Camera : public QObject
     QVector3D toWorld(const QVector3D& camera) const;
 
     QList<CameraPosition*> positions;
+
+  private:
+    // moves the camera so it keeps to the constraint (does nothing without one)
+    void applyConstraint();
+    // places the camera so it looks at a world point from a distance, keeping its turn
+    void place(const QVector3D& point, float distance);
+
+    bool m_constrained = false;
+    CameraConstraint m_constraint;
+    float m_savedPanX = 0, m_savedPanY = 0, m_savedPanZ = 0, m_savedRotX = 0, m_savedRotY = 0, m_savedPivot = 0;
 };
 
 #endif
