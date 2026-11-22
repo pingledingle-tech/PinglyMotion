@@ -1,6 +1,6 @@
 # Script Lab plan
 
-Status: step 1 (the RLV core) is built, see [SCRIPT_LAB.md](SCRIPT_LAB.md); the other steps are a plan. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
+Status: steps 1 to 7 and 9 are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9a is an open pull request (not merged); 9b and 9c are planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
 
 ## 1. Goal
 
@@ -29,7 +29,11 @@ In order. Each step is small and testable. "Technical" means nothing changes on 
 | 5 | [#291](https://github.com/pingledingle-tech/PinglyMotion/issues/291) | technical + visible | Events and several objects | 4 (2 for the visible part) | strong |
 | 6 | [#292](https://github.com/pingledingle-tech/PinglyMotion/issues/292) | visible | Live: watch a folder, reload, `lsl_*` commands | 2, 3, 4 | medium |
 | 7 | [#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293) | visible | Effects in the 3D view | 2, 4, 5 | medium |
-| 8 | [#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294) | technical | Separate repository for the owner's RLV tools (description only) | 1, 6 | light |
+| 8 | [#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294) | technical | Separate repository for the owner's RLV tools (description only; description written, repository not created) | 1, 6 | light |
+| 9 | [#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297) | technical | RLVa-only behaviours and a plain RLV / RLVa mode switch (done) | 1 | strong |
+| 9a | [#305](https://github.com/pingledingle-tech/PinglyMotion/issues/305) | technical | Several scripts in one object, link messages and Linkset Data (in progress: open pull request, not merged) | 3, 5 | strong |
+| 9b | none yet | technical | More common LSL functions (planned) | 3 | strong |
+| 9c | none yet | technical | Gap list: what scripts use that the sandbox does not run yet (planned) | 9a, 9b | light |
 
 ### Step 1: RLV core (technical, done)
 
@@ -80,9 +84,25 @@ The original plan:
 
 - Done (issue 293): the Live page's "Show effects in 3D view" box, off by default. The newest animation still playing at the end of a run plays on a preview figure in place of the user's animation (which is never changed); worn objects are boxes and `@detach` locks are balls at their attachment points ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Effects in the 3D view").
 
-### Step 8: Separate repository for the owner's RLV tools (technical)
+### Step 8: Separate repository for the owner's RLV tools (technical, description written)
 
-A template, examples and scenario files (`.rlvtest`: a command, then the expected state) that run headless in CI. Creating that repository needs the project owner's go-ahead; this step only describes it.
+A template, examples and scenario files (`.rlvtest`: a command, then the expected state) that run headless in CI. Creating that repository needs the project owner's go-ahead; this step only describes it. The description is [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md). The `.rlvtest` format and its runner are not built yet (the layout in section 6 names them, but they do not exist); they are a separate small job.
+
+### Step 9: RLVa-only behaviours and a mode switch (technical, done)
+
+Done (issue 297): every behaviour is marked `RLV` or `RLVa only`; plain RLV is the start mode, RLVa mode accepts the RLVa-only behaviours; `rlv_reset` has a `mode` field ([SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV and RLVa mode").
+
+### Step 9a: several scripts in one object and link messages (technical, in progress)
+
+`llMessageLinked`, the `link_message` event and Linkset Data, with several scripts in one object, so a main script and helper scripts (menu, relay, storage) can be tested together. An open pull request; not merged, so it is not described as built anywhere else yet.
+
+### Step 9b: more common functions (technical, planned)
+
+More LSL functions that real scripts use. Which ones come from the gap list (9c) and from the scripts the project owner brings. No issue yet.
+
+### Step 9c: gap list (technical, planned)
+
+A list of what Second Life scripts use that the sandbox does not run yet (functions, events, RLV behaviours), so the next steps are chosen from real scripts. No issue yet.
 
 ## 4. Limits
 
@@ -96,6 +116,8 @@ A template, examples and scenario files (`.rlvtest`: a command, then the expecte
 From [UX_DECISIONS.md](UX_DECISIONS.md) and [DESIGN_CHARTER.md](DESIGN_CHARTER.md): a clean screen, advanced things hidden until asked for, panels that move and pop out, and nothing changes for someone who only animates.
 
 ## 6. Proposed module layout
+
+This is the layout proposed at the start. `rlvscenario.*`, `tests/data/rlv/*.rlvtest` and `examples/scriptlab/basic.rlvtest` have not been built (see step 8); the rest exists, with the `lsl/` files and the Live, effects and objects files added by later steps (see [SCRIPT_LAB.md](SCRIPT_LAB.md) for what exists).
 
 - `src/scriptlab/rlvcommand.{h,cpp}`, `rlvbehaviours.{h,cpp}`, `rlvstate.{h,cpp}`, `rlvscenario.{h,cpp}`
 - `src/scriptlab/lsl/{lexer,parser,ast,interp,builtins,world}.{h,cpp}`
