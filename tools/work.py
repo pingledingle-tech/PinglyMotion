@@ -21,6 +21,14 @@
                             Options: --annotate (print ::warning:: lines for CI),
                             --body-file PATH (use this text instead of issue 74)
 
+    work.py status          read-only overview of every open pull request: draft
+                            or ready, merge conflict state (mergeable_state,
+                            "unknown" if GitHub has not computed it), the
+                            latest run of each check (by start time; a
+                            cancelled run that was replaced is ignored) and
+                            minutes since the last push ("stopped?" over 40).
+                            Never writes to GitHub. Always exits 0.
+
 Option for list and check:
     --no-remote   do not ask GitHub, use the job files in this checkout only
 
@@ -52,6 +60,8 @@ import os
 import re
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 
 WORK_DIR = "docs/work"
 NOT_JOBS = {"README.md", "HISTORY.md"}
@@ -593,6 +603,105 @@ def cmd_check_lists(annotate, body_file):
     return 0
 
 
+STALE_MINUTES = 40
+
+
+def latest_runs(runs):
+    """{check name: run} keeping only the newest run (by started_at) of each name."""
+    best = {}
+    for run_ in runs:
+        name = run_.get("name") or "?"
+        if name not in best or (run_.get("started_at") or "") > (best[name].get("started_at") or ""):
+            best[name] = run_
+    return best
+
+
+def run_state(run_):
+    """One word for a check run: passed, failed, running, cancelled, skipped, ..."""
+    if run_.get("status") != "completed":
+        return "running"
+    conclusion = run_.get("conclusion") or "unknown"
+    return {"success": "passed", "neutral": "passed", "failure": "failed", "timed_out": "failed",
+            "action_required": "failed", "startup_failure": "failed"}.get(conclusion, conclusion)
+
+
+def minutes_since(iso, now):
+    """Whole minutes from an ISO time like 2026-11-22T21:00:00Z to `now` (a datetime); None if unreadable."""
+    try:
+        then = datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+    return max(0, int((now - then).total_seconds() // 60))
+
+
+def merge_text(state):
+    if not state or state == "unknown":
+        return "unknown"
+    return {"dirty": "CONFLICT", "clean": "no conflict", "behind": "behind main (no conflict)",
+            "blocked": "no conflict (blocked by rules/checks)", "unstable": "no conflict (a check is not green)",
+            "has_hooks": "no conflict", "draft": "no conflict (draft)"}.get(state, state)
+
+
+def format_pull(pull, runs, minutes):
+    """Lines for one pull request from canned or live data. `pull` has number, title, draft,
+    mergeable_state; `runs` is the list of check runs of its head commit."""
+    lines = ["#%d %s" % (pull["number"], pull.get("title", ""))]
+    lines.append("  %s; merge: %s" % ("draft" if pull.get("draft") else "ready", merge_text(pull.get("mergeable_state"))))
+    if minutes is None:
+        lines.append("  last push: unknown")
+    else:
+        lines.append("  last push: %d min ago%s" % (minutes, " (stopped?)" if minutes > STALE_MINUTES else ""))
+    latest = latest_runs(runs)
+    if not latest:
+        lines.append("  checks: none yet")
+    for name in sorted(latest):
+        lines.append("  check %s: %s" % (name, run_state(latest[name])))
+    return lines
+
+
+def read_mergeable(slug, number, tries=5, pause=3):
+    """The pull request with mergeable_state; asks again a few times while GitHub
+    has not computed it (null or "unknown"). Leaves it "unknown" if it never does."""
+    pull = None
+    for attempt in range(tries):
+        pull = json.loads(gh_api("repos/%s/pulls/%d" % (slug, number)))
+        if pull.get("mergeable_state") not in (None, "unknown"):
+            return pull
+        if attempt + 1 < tries:
+            time.sleep(pause)
+    pull["mergeable_state"] = "unknown"
+    return pull
+
+
+def cmd_status():
+    try:
+        slug = repo_slug()
+        numbers = [p["number"] for p in gh_lines("repos/%s/pulls?state=open&per_page=100" % slug, ".[]|{number}")]
+    except FileNotFoundError:
+        print("gh is not installed: cannot read GitHub")
+        return 0
+    except (RuntimeError, subprocess.CalledProcessError) as error:
+        print("cannot read the open pull requests: %s" % ((getattr(error, "stderr", "") or str(error)).strip().splitlines() or ["no details"])[-1])
+        return 0
+    if not numbers:
+        print("No open pull requests.")
+        return 0
+    now = datetime.now(timezone.utc)
+    for number in sorted(numbers):
+        try:
+            pull = read_mergeable(slug, number)
+            sha = pull["head"]["sha"]
+            runs = gh_lines("repos/%s/commits/%s/check-runs?per_page=100" % (slug, sha),
+                            ".check_runs[]|{name,status,conclusion,started_at}")
+            date = gh_api("repos/%s/commits/%s" % (slug, sha), "--jq", ".commit.committer.date").strip()
+            minutes = minutes_since(date, now)
+        except (subprocess.CalledProcessError, KeyError, ValueError) as error:
+            print("#%d: could not read (%s)" % (number, ((getattr(error, "stderr", "") or str(error)).strip().splitlines() or ["no details"])[-1]))
+            continue
+        print("\n".join(format_pull(pull, runs, minutes)))
+    return 0
+
+
 def main(argv):
     args = [a for a in argv[1:]]
     no_remote = "--no-remote" in args
@@ -606,9 +715,11 @@ def main(argv):
             del args[i:i + 2]
     dry_run = "--dry-run" in args
     args = [a for a in args if not a.startswith("--")]
-    if len(args) != 1 or args[0] not in ("list", "check", "check-lists", "archive"):
+    if len(args) != 1 or args[0] not in ("list", "check", "check-lists", "archive", "status"):
         print(__doc__)
         return 2
+    if args[0] == "status":
+        return cmd_status()
     if args[0] == "archive":
         return cmd_archive(dry_run)
     if args[0] == "check-lists":
