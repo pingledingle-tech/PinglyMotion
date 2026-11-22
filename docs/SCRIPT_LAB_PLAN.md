@@ -90,7 +90,7 @@ A template, examples and scenario files (`.rlvtest`: a command, then the expecte
 
 ### Step 9: RLVa-only behaviours and a mode switch (technical, done)
 
-Done (issue 297): every behaviour is marked `RLV` or `RLVa only`; plain RLV is the start mode, RLVa mode accepts the RLVa-only behaviours; `rlv_reset` has a `mode` field ([SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV and RLVa mode").
+Done (issue 297): every behaviour is marked `RLV`, `RLVa only` or `RLV only` (the third mark was added with the table work of issue 294); plain RLV is the start mode, RLVa mode accepts the RLVa-only behaviours; `rlv_reset` has a `mode` field ([SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV and RLVa mode").
 
 ### Step 9a: several scripts in one object and link messages (technical, done)
 

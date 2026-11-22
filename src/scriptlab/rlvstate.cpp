@@ -200,6 +200,8 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
           if (command.option.isEmpty() || name.contains(command.option)) reply.text += QStringLiteral("/") + name;
       }
       else if (command.behaviour == QLatin1String("getheightoffset")) reply.text = QStringLiteral("0");
+      else if (command.behaviour == QLatin1String("versionnumbl")) reply.text = Rlv::versionNumber() + QStringLiteral(",");
+      else if (command.behaviour == QLatin1String("getcam_zoommin")) reply.text = QStringLiteral("1");
       else if (command.behaviour == QLatin1String("getsitid")) reply.text = QStringLiteral("00000000-0000-0000-0000-000000000000");
       else if (command.behaviour == QLatin1String("getgroup")) reply.text = QStringLiteral("none");
       else if (command.behaviour == QLatin1String("getoutfit")) reply.text = Rlv::wornString(Rlv::clothingLayers(), command.option);
