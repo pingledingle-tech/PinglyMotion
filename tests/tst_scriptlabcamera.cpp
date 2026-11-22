@@ -20,6 +20,7 @@
 #include <QTreeWidget>
 
 #include "scriptlab/cameraoverride.h"
+#include "scriptlab/environmentoverride.h"
 #include "scriptlab/rlvstate.h"
 #include "scriptlab/scriptlabpanel.h"
 
@@ -29,6 +30,7 @@ class TestScriptLabCamera : public QObject
 
   private slots:
     void boxAndText();
+    void environmentBox();
 };
 
 void TestScriptLabCamera::boxAndText()
@@ -109,6 +111,76 @@ void TestScriptLabCamera::boxAndText()
   box->setChecked(false);
   QVERIFY(!cameraOverride.enabled());
   QVERIFY(status->isHidden());
+}
+
+// job 7c: the "Show environment in 3D view" box under the camera box
+void TestScriptLabCamera::environmentBox()
+{
+  RlvState rlv;
+  CameraOverride cameraOverride;
+  cameraOverride.setState(&rlv);
+  EnvironmentOverride environment;
+  environment.setState(&rlv);
+
+  ScriptLabPanel panel;
+  panel.setState(&rlv);
+  panel.setCameraOverride(&cameraOverride);
+  panel.setEnvironmentOverride(&environment);
+  panel.resize(420, 1000);
+  panel.show();
+
+  QCheckBox* box = panel.environmentBox();
+  QVERIFY(box);
+  QCOMPARE(box->objectName(), QString("scriptLabShowEnvironment"));
+  QCOMPARE(box->text(), QString("Show environment in 3D view"));
+  QCOMPARE(box->toolTip(), QString("Show the sky colour and the draw distance the script asks for as the 3D view's background "
+                                   "and fog (a rough hint). Untick to get the 3D view's own look back exactly as it was."));
+  QVERIFY(!box->isChecked());
+  QVERIFY(!environment.enabled());
+  // right after the camera box, on the same page, in the tab order (P8)
+  QCOMPARE(box->parentWidget(), panel.cameraBox()->parentWidget());
+  QWidget* w = panel.cameraBox()->nextInFocusChain();
+  for (int i = 0; i < 50 && w != box && !((w->focusPolicy() & Qt::TabFocus) && w->isVisibleTo(&panel)); ++i)
+    w = w->nextInFocusChain();
+  QCOMPARE(w, static_cast<QWidget*>(box));
+
+  QLabel* status = panel.environmentStatus();
+  QVERIFY(status);
+  QCOMPARE(status->objectName(), QString("scriptLabEnvironmentStatus"));
+  QVERIFY(status->isHidden());
+
+  // a time of day typed in the panel, box off
+  QVERIFY(panel.runLine("@setenv_daytime:0.25=force"));
+  QVERIFY(!status->isHidden());
+  QCOMPARE(status->text(), QString("The script changes the environment: sky colour 0.8/0.55/0.45 from daytime 0.25. "
+                                   "Tick the box to see a hint in the 3D view."));
+  QVERIFY(!environment.active());
+
+  box->setChecked(true);
+  QVERIFY(environment.enabled());
+  QVERIFY(environment.active());
+  QCOMPARE(status->text(), QString("Environment set by the script: sky colour 0.8/0.55/0.45 from daytime 0.25.\n"
+                                   "The 3D view has no sky: it shows this as the background colour and the fog. A rough hint only.\n"
+                                   "Set by: panel.\n"
+                                   "Untick the box to get the 3D view's own look back."));
+  QCOMPARE(status->palette().color(QPalette::WindowText),
+           ScriptLabPanel::mutedColour(ScriptLabPanel::isDark(panel.palette())));
+  // the camera box is not touched
+  QVERIFY(!cameraOverride.enabled());
+
+  // @clear forgets the forced value
+  QVERIFY(panel.runLine("@clear"));
+  QVERIFY(!environment.active());
+  QVERIFY(status->isHidden());
+
+  // Reset
+  QVERIFY(rlv.apply("blind", "@camdrawmax:5=n").ok());
+  QCOMPARE(status->text().section('\n', 0, 0), QString("Environment set by the script: camdraw fog of colour 0/0/0 reaching 1 at 5 m."));
+  panel.resetAll();
+  QVERIFY(status->isHidden());
+
+  box->setChecked(false);
+  QVERIFY(!environment.enabled());
 }
 
 QTEST_MAIN(TestScriptLabCamera)

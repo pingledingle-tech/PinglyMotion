@@ -53,6 +53,7 @@ class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
 class Animation;
 class CameraOverride;
+class EnvironmentOverride;
 class EffectsPreview;
 class PropManager;
 class Scene;
@@ -78,6 +79,8 @@ class AnimationView : public QOpenGLWidget
     // Script Lab camera limits (job 7b): while the override is active the camera keeps to its
     // constraint; when it stops, the camera from before is put back exactly. Not owned.
     void setCameraOverride(CameraOverride* cameraOverride);
+    // Script Lab sky and draw distance (job 7c): the background and fog while its box is ticked
+    void setEnvironmentOverride(EnvironmentOverride* environmentOverride);
 
     void selectPart(BVHNode* node);
     void selectProp();
@@ -293,6 +296,7 @@ class AnimationView : public QOpenGLWidget
     QPointer<EffectsPreview> m_effects;
     // the Script Lab camera override (job 7b); owned by the window
     QPointer<CameraOverride> m_cameraOverride;
+    QPointer<EnvironmentOverride> m_environmentOverride;
     // puts the override's constraint on the camera, or takes it off
     void applyCameraOverride();
 

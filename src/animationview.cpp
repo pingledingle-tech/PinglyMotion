@@ -54,6 +54,7 @@
 #include "scenestate.h"
 #include "screenshotsheet.h"
 #include "scriptlab/cameraoverride.h"
+#include "scriptlab/environmentoverride.h"
 #include "scriptlab/effectspreview.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
@@ -175,6 +176,14 @@ void AnimationView::setCameraOverride(CameraOverride* cameraOverride)
   m_cameraOverride=cameraOverride;
   if(cameraOverride) connect(cameraOverride,&CameraOverride::changed,this,&AnimationView::applyCameraOverride);
   applyCameraOverride();
+}
+
+void AnimationView::setEnvironmentOverride(EnvironmentOverride* environmentOverride)
+{
+  if(m_environmentOverride) disconnect(m_environmentOverride,nullptr,this,nullptr);
+  m_environmentOverride=environmentOverride;
+  if(environmentOverride) connect(environmentOverride,&EnvironmentOverride::changed,this,[this]() { update(); });
+  update();
 }
 
 void AnimationView::applyCameraOverride()
@@ -392,13 +401,21 @@ void AnimationView::draw()
   }
 
   // fog towards the background colour, the shaders use it (exponential)
+  EnvironmentOverride::Scene look;
+  look.background=QVector3D(clearValue,clearValue,clearValue);
+  look.fogOn=UserSettings::fog();
+  look.fogDensity=0.005f;
+  look.fogColour=look.background;
+  // Script Lab sky and draw distance (job 7c): only while its box is ticked; worked out for every picture,
+  // so the view's own look comes back exactly when it is switched off
+  if(m_environmentOverride) look=m_environmentOverride->scene(look);
   SceneState::Fog fog;
-  fog.on=UserSettings::fog();
-  fog.density=0.005f;
-  fog.color=QVector3D(clearValue,clearValue,clearValue);
+  fog.on=look.fogOn;
+  fog.density=look.fogDensity;
+  fog.color=look.fogColour;
   SceneState::setFog(fog);
 
-  glClearColor(clearValue,clearValue,clearValue,0.3f);
+  glClearColor(look.background.x(),look.background.y(),look.background.z(),0.3f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   SceneState::setLighting(false);
   glEnable(GL_DEPTH_TEST);

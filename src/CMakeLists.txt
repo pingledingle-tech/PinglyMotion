@@ -27,7 +27,7 @@ TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labwatcher.cpp)
 # Script Lab step 7 (issue 293): what a run does to the avatar, and the preview the 3D view draws
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labeffects.cpp scriptlab/effectspreview.cpp)
 # Script Lab job 7b: the RLV camera limits the 3D view can keep to (uses only the CameraConstraint struct of camera.h)
-TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/cameraoverride.cpp)
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/cameraoverride.cpp scriptlab/environmentoverride.cpp)
 
 # Script Lab: the LSL interpreter (issue 289), QtCore only; the control commands lsl_check and lsl_run
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp

@@ -273,6 +273,37 @@ Commands page now scrolls when the panel is small, as the Live page does.
   `tests/tst_cameraoverride.cpp` (with the force commands), `tests/tst_scriptlabcamera.cpp` and the constraint, field of view and eye part of
   `tests/tst_camera.cpp`.
 
+## Environment in the 3D view (job 7c)
+
+The 3D view has no sky and no water: a plain background and fog towards the background colour. With the Commands
+page's **Show environment in 3D view** box ticked (under the camera box; off each time the program starts), what a
+script asks of the sky and the draw distance is shown as a rough hint in that background and fog:
+
+- `setenv_daytime:<0..1>=force`: the background takes a sky colour for the time of day (the RLV API's points:
+  midnight 0, sunrise 0.25, midday 0.567, sunset 0.75; four fixed colours with straight blends between them, not
+  Second Life's sky). `-1` is the region's own sky and changes nothing.
+- `setenv_bluehorizon:<r/g/b>=force` (or the old one-part names `setenv_bluehorizonr`, `_g`, `_b`; a part not given is
+  0): the background takes that colour (each part 0 to 1); it wins over the time of day. The fog follows the
+  background, as in the view's own look, and keeps the user's fog switch and density.
+- `camdrawmax:<metres>` with `camdrawalphamax` (default 1) and `camdrawcolor` (default black) held as restrictions
+  (RLV only): fog of that colour that reaches the alpha at that distance from the camera (exponential, as the view's
+  own fog; an alpha of 1 is shown as 0.99); the background beyond takes the colour at that alpha. With several
+  objects the smallest distance and the largest alpha win, the colour of the first one. `camdrawmin` and
+  `camdrawalphamin` are named as not shown (the fog starts at the camera).
+- `setsphere` (held) with `setsphere_distmax`, `setsphere_valuemax` and `setsphere_color` (held, or sent as `=force`;
+  a held value wins), mode 0 only: the same kind of fog. Another mode, or no `setsphere_distmax`, is named as not
+  shown; with camdraw fog the sphere is named as not shown (one fog at a time). The origin is always the camera.
+- Any other `setenv_<name>` (presets, sun, moon, clouds, haze, water) is named as not shown; an option that is not
+  a usable number or `r/g/b` colour is named as not used.
+- The text under the box says what is shown ("Environment set by the script: sky colour 0.8/0.55/0.45 from daytime
+  0.25."), that it is a rough hint, which objects set it, and what is not shown. With the box off it says what the
+  script changes and that ticking the box shows a hint.
+- The view's own look is never changed: the background and fog are worked out again for every picture, so unticking
+  the box, `@clear` (forced values belong to their object), Reset or a mode switch gives exactly the picture from
+  before (checked pixel by pixel in the self-test).
+- Code: `src/scriptlab/environmentoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
+  `src/animationview.cpp` (`draw()`). Tests: `tests/tst_environmentoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -403,7 +434,8 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   no camera).
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
-  the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view"). A force command of that kind is `retained`
+  the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view") and the sky and
+  draw distance hint of the "Show environment in 3D view" box (above, "Environment in the 3D view"). A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`; a new or changed value is a change of the state (the panel
   and the 3D view follow it), and the object's `@clear` forgets its recorded values.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
