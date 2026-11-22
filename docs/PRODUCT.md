@@ -1,6 +1,6 @@
 # PinglyMotion: product vision and roadmap
 
-This document brings together the product vision, user value, use cases and proposed direction. It complements [IDEAS.md](IDEAS.md), the work board in [work/README.md](work/README.md) and the linked issues. Progress status (what is done, what is next) is kept in one place: [ROADMAP.md](ROADMAP.md), with the jobs list ([#74](https://github.com/pingledingle-tech/PinglyMotion/issues/74)) for running work. This document does not repeat it. The project restarted in this repository on 18 November 2026: a number written "old #N" is an item in the old repository, see [MIGRATION.md](MIGRATION.md) for the moved items and [DECISIONS.md](DECISIONS.md) for the decisions. The sequence below is a proposal, not a commitment, schedule or replacement for existing technical decisions.
+This document brings together the product vision, user value, use cases and proposed direction. It complements [IDEAS.md](IDEAS.md), the work board in [work/README.md](work/README.md) and the linked issues. Progress status (what is done, what is next) is kept in one place: [ROADMAP.md](ROADMAP.md), with the open pull requests for running work and the jobs list ([#74](https://github.com/pingledingle-tech/PinglyMotion/issues/74)) for the job queue. This document does not repeat it. The project restarted in this repository on 18 November 2026: a number written "old #N" is an item in the old repository, see [MIGRATION.md](MIGRATION.md) for the moved items and [DECISIONS.md](DECISIONS.md) for the decisions. The sequence below is a proposal, not a commitment, schedule or replacement for existing technical decisions.
 
 ## Vision
 
@@ -122,7 +122,7 @@ These stages are suggested groupings, not deadlines or a claim that every step m
 
 This replaces the numbered work order of 16 November. The order of stages above still holds: posing comes before the parser, and the new parser keeps today's interface to the rest of the program. File formats were decided in old #118; the posing interface in [POSING_UX.md](POSING_UX.md) ([#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14)). Since 21 November 2026 the [design charter](DESIGN_CHARTER.md) is the top authority for the look and behaviour of the whole program and wins where older UX documents disagree.
 
-What is done and what is next in each step is in [ROADMAP.md](ROADMAP.md); per pull request, in the jobs list ([#74](https://github.com/pingledingle-tech/PinglyMotion/issues/74)).
+What is done and what is next in each step is in [ROADMAP.md](ROADMAP.md); per pull request, in the open pull requests and the report comment on each merged one; the job queue is in the jobs list ([#74](https://github.com/pingledingle-tech/PinglyMotion/issues/74)).
 
 The work runs in **two tracks side by side**. They mostly change different files: the posing track the window, panels and 3D view; the format track the parser, the data model and file import/export. Where a step in one track needs a file another active job has, the work board ([work/README.md](work/README.md)) decides who waits. Within a track, one step at a time, each tested on Windows before it is merged.
 

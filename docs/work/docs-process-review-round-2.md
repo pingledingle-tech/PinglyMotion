@@ -10,8 +10,7 @@ Files:
 - docs/README.md
 - docs/PRODUCT.md
 - docs/ROADMAP.md
-- docs/work/README.md
-- .github/pull_request_template.md
+- .github/workflows/build.yml
 - .github/workflows/work-board.yml
 - tools/ci/changes.py
 - tools/work.py

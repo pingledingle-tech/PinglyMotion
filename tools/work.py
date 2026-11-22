@@ -5,24 +5,23 @@
     work.py check           fail when two active jobs claim overlapping files,
                             warn when this branch changes files its job file
                             does not list
-    work.py jobs-draft      print a DRAFT of the "Active jobs" and "Merged" parts
-                            of the jobs list (issue 74) from the job files and
-                            the open pull requests. Never writes to GitHub.
-                            Option: --since YYYY-MM-DD (merged since; default today, UTC)
     work.py archive         git mv every job file with "Status: done" whose pull
                             request is merged (asked from GitHub) into
                             docs/work/archive/. Skips "Pull request: pending"
                             and numbers GitHub does not know. Option: --dry-run
                             (only print what would move)
-    work.py check-lists     compare issue 74 with reality and print findings
-                            (a pull request listed as active that is merged or
-                            closed, an open pull request that is not mentioned,
-                            a done job file whose pull request is still listed
-                            as active). Always exits 0. Never writes to GitHub.
+    work.py check-lists     check the queue in the jobs list (issue 74): warn
+                            when the "## Queue" section is missing, or when a
+                            queue entry names a pull request that is already
+                            merged or closed (its job ran, so it should have
+                            left the queue). Always exits 0. Never writes to
+                            GitHub. The jobs list holds only the queue and
+                            "Waiting for the owner"; what runs is the open pull
+                            requests, what is done is their report comments.
                             Options: --annotate (print ::warning:: lines for CI),
                             --body-file PATH (use this text instead of issue 74)
 
-Options (both commands):
+Option for list and check:
     --no-remote   do not ask GitHub, use the job files in this checkout only
 
 Option for check:
@@ -53,7 +52,6 @@ import os
 import re
 import subprocess
 import sys
-import datetime
 
 WORK_DIR = "docs/work"
 NOT_JOBS = {"README.md", "HISTORY.md"}
@@ -495,7 +493,9 @@ def pull_refs(text):
 
 
 def list_section(body, title_start):
-    """Text of the '## <title_start>...' part of the jobs list, '' if missing."""
+    """Text of the '## <title_start>...' part of the jobs list, '' if missing.
+    The title must start with title_start as a whole word ('Queue' does not
+    match '## Queued')."""
     lines = body.splitlines()
     out = []
     inside = False
@@ -503,70 +503,28 @@ def list_section(body, title_start):
         if line.startswith("## "):
             if inside:
                 break
-            inside = line[3:].strip().lower().startswith(title_start.lower())
+            inside = re.match(re.escape(title_start.lower()) + r"\b", line[3:].strip().lower()) is not None
             continue
         if inside:
             out.append(line)
     return "\n".join(out)
 
 
-def check_lists(body, states, open_prs, jobs):
-    """Findings (list of strings) comparing the jobs list text with reality.
+def check_lists(body, states):
+    """Findings (list of strings) for the queue in the jobs list text.
 
     states   {pull request number: "open" | "merged" | "closed"}; numbers that
              are not pull requests (issues) are simply absent
-    open_prs the numbers of all open pull requests
-    jobs     Job objects read from the job files
     """
+    if not any(line.startswith("## ") and re.match(r"queue\b", line[3:].strip().lower())
+               for line in body.splitlines()):
+        return ["#%d has no '## Queue' section" % JOBS_LIST_ISSUE]
     findings = []
-    active = pull_refs(list_section(body, "Active jobs"))
-    mentioned = set(pull_refs(body))
-    for n in active:
+    for n in pull_refs(list_section(body, "Queue")):
         if states.get(n) in ("merged", "closed"):
-            findings.append("pull request %d is %s but still listed under Active jobs in #%d"
+            findings.append("pull request %d is %s but still named in the queue in #%d"
                             % (n, states[n], JOBS_LIST_ISSUE))
-    for n in sorted(open_prs):
-        if n not in mentioned:
-            findings.append("pull request %d is open but not mentioned in #%d" % (n, JOBS_LIST_ISSUE))
-    for job in sorted(jobs, key=lambda j: j.branch):
-        n = pr_number(job.pull_request)
-        if job.status == "done" and n in active and states.get(n) != "open":
-            findings.append("job file %s/%s says done, but pull request %d is still listed under Active jobs in #%d"
-                            % (WORK_DIR, job_file_name(job.branch), n, JOBS_LIST_ISSUE))
     return findings
-
-
-def jobs_draft(jobs, open_prs, merged, today):
-    """Draft text for the 'Active jobs' and 'Merged' parts of the jobs list.
-
-    jobs      Job objects (job files plus the ones on open pull request branches)
-    open_prs  {number: title} of the open pull requests
-    merged    [(number, title)] of pull requests merged in the period, oldest first
-    """
-    by_pr = {}
-    for job in jobs:
-        n = pr_number(job.pull_request)
-        if n is not None:
-            by_pr[n] = job
-    lines = ["DRAFT (never written to GitHub; check it before pasting into #%d)" % JOBS_LIST_ISSUE, ""]
-    lines.append("## Active jobs (open pull requests)")
-    lines.append("")
-    for n in sorted(open_prs):
-        job = by_pr.get(n)
-        if job:
-            lines.append("- **%s** (pull request %d, job file `%s/%s`, status %s): %s"
-                         % (job.branch, n, WORK_DIR, job_file_name(job.branch), job.status or "?",
-                            job.what or open_prs[n]))
-        else:
-            lines.append("- **%s** (pull request %d, no job file): needs a job file" % (open_prs[n], n))
-    lines.append("")
-    lines.append("## Merged today (%s)" % today)
-    lines.append("")
-    for n, title in merged:
-        job = by_pr.get(n)
-        text = (job.what if job and job.what else title)
-        lines.append("- %s (pull request %d)" % (text, n))
-    return "\n".join(lines)
 
 
 def gh_lines(path, jq):
@@ -575,27 +533,24 @@ def gh_lines(path, jq):
 
 
 def fetch_states(slug, numbers, notes):
-    """(open {number: title}, states {number: state}) from GitHub, or None on failure."""
-    try:
-        opened = {p["number"]: p["title"] for p in gh_lines(
-            "repos/%s/pulls?state=open&per_page=100" % slug, ".[] | {number, title}")}
-    except FileNotFoundError:
-        notes.append("gh is not installed: GitHub not checked")
-        return None
-    except subprocess.CalledProcessError as error:
-        last = (error.stderr or "").strip().splitlines()
-        notes.append("GitHub call failed (%s)" % (last[-1] if last else "no details"))
-        return None
-    states = {n: "open" for n in opened}
+    """{number: "open" | "merged" | "closed"} for the pull requests among
+    `numbers` (issue numbers are left out), or None when GitHub cannot be asked."""
+    states = {}
     for n in numbers:
-        if n in states:
-            continue
         try:
             info = json.loads(gh_api("repos/%s/pulls/%d" % (slug, n), "--jq", "{state, merged: (.merged_at != null)}"))
-        except subprocess.CalledProcessError:
-            continue  # not a pull request (an issue number)
+        except FileNotFoundError:
+            notes.append("gh is not installed: GitHub not checked")
+            return None
+        except subprocess.CalledProcessError as error:
+            text = (error.stderr or "").lower()
+            if "404" in text or "not found" in text:
+                continue  # not a pull request (an issue number)
+            last = (error.stderr or "").strip().splitlines()
+            notes.append("GitHub call failed (%s)" % (last[-1] if last else "no details"))
+            return None
         states[n] = "merged" if info.get("merged") else info.get("state", "closed")
-    return opened, states
+    return states
 
 
 def fetch_body(slug, notes):
@@ -611,7 +566,6 @@ def fetch_body(slug, notes):
 
 def cmd_check_lists(annotate, body_file):
     notes = []
-    jobs = local_jobs()
     body = None
     slug = None
     try:
@@ -623,57 +577,19 @@ def cmd_check_lists(annotate, body_file):
             body = handle.read()
     elif slug:
         body = fetch_body(slug, notes)
-    result = None
+    states = None
     if body is not None and slug:
-        numbers = pull_refs(list_section(body, "Active jobs"))
-        result = fetch_states(slug, numbers, notes)
+        states = fetch_states(slug, pull_refs(list_section(body, "Queue")), notes)
     findings = []
-    if result is not None:
-        opened, states = result
-        findings = check_lists(body, states, opened.keys(), jobs)
-    if result is None:
+    if states is None:
         for note in notes:
-            findings.append("could not finish the comparison: " + note)
-    elif not findings:
-        print("The jobs list (#%d) agrees with the open pull requests and the job files." % JOBS_LIST_ISSUE)
+            findings.append("could not finish the check: " + note)
+    else:
+        findings = check_lists(body, states)
+        if not findings:
+            print("The queue in the jobs list (#%d) names no merged or closed pull request." % JOBS_LIST_ISSUE)
     for f in findings:
         print(("::warning::" + f) if annotate else "warning: " + f)
-    return 0
-
-
-def cmd_jobs_draft(since):
-    notes = []
-    today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
-    since = since or today
-    jobs_by_branch, job_notes = collect(False, current_branch())
-    notes.extend(job_notes)
-    opened, merged = {}, []
-    try:
-        slug = repo_slug()
-        opened = {p["number"]: p["title"] for p in gh_lines(
-            "repos/%s/pulls?state=open&per_page=100" % slug, ".[] | {number, title}")}
-        closed = json.loads(gh_api(
-            "repos/%s/pulls?state=closed&sort=updated&direction=desc&per_page=100" % slug,
-            "--jq", "[.[] | select(.merged_at != null) | {number, title, merged_at}]"))
-        merged = sorted(((p["number"], p["title"]) for p in closed if p["merged_at"][:10] >= since))
-    except FileNotFoundError:
-        notes.append("gh is not installed: the open and merged pull requests are missing; "
-                     "only what the job files say is printed")
-    except (subprocess.CalledProcessError, RuntimeError) as error:
-        last = (getattr(error, "stderr", "") or str(error)).strip().splitlines()
-        notes.append("GitHub call failed (%s): only what the job files say is printed"
-                     % (last[-1] if last else "no details"))
-    jobs = list(jobs_by_branch.values())
-    if not opened:
-        # without GitHub: list the active job files instead
-        opened = {}
-        for job in jobs:
-            n = pr_number(job.pull_request)
-            if job.active and n is not None:
-                opened[n] = job.branch
-    print(jobs_draft(jobs, opened, merged, today))
-    for note in notes:
-        print("note: " + note, file=sys.stderr)
     return 0
 
 
@@ -683,20 +599,18 @@ def main(argv):
     mine = "--mine" in args
     annotate = "--annotate" in args
     values = {}
-    for opt in ("--since", "--body-file"):
+    for opt in ("--body-file",):
         if opt in args:
             i = args.index(opt)
             values[opt] = args[i + 1] if i + 1 < len(args) else None
             del args[i:i + 2]
     dry_run = "--dry-run" in args
     args = [a for a in args if not a.startswith("--")]
-    if len(args) != 1 or args[0] not in ("list", "check", "jobs-draft", "check-lists", "archive"):
+    if len(args) != 1 or args[0] not in ("list", "check", "check-lists", "archive"):
         print(__doc__)
         return 2
     if args[0] == "archive":
         return cmd_archive(dry_run)
-    if args[0] == "jobs-draft":
-        return cmd_jobs_draft(values.get("--since"))
     if args[0] == "check-lists":
         return cmd_check_lists(annotate, values.get("--body-file"))
     if args[0] == "list":

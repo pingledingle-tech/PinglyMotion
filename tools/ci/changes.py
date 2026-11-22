@@ -15,7 +15,8 @@ Reads one path per line on standard input (the output of
 
 Each file is one of three kinds:
   text     Markdown anywhere, docs/, LICENSE, COPYING, INSTALL
-  website  issue templates, the Pages workflow, tools/site/ and its test
+  website  issue templates, the Pages workflow, tools/site/ and its test,
+           and the website page tests tests/test_site_*.py
   program  everything else (src/, CMake, tests, other tools, every other
            workflow, this script)
 
@@ -41,6 +42,8 @@ WEBSITE_FILES = {
     ".github/workflows/pages.yml",
     "tests/test_build_status.py",
 }
+# tests of the website pages themselves (the website job runs them)
+WEBSITE_TESTS = re.compile(r"^tests/test_site_[^/]+\.py$")
 
 # files the CodeQL Actions analysis reads
 ACTIONS_PREFIXES = (
@@ -53,7 +56,7 @@ def kind(path):
     """'text', 'website' or 'program' for one changed path."""
     if TEXT.search(path):
         return "text"
-    if path in WEBSITE_FILES or path.startswith(WEBSITE_PREFIXES):
+    if path in WEBSITE_FILES or path.startswith(WEBSITE_PREFIXES) or WEBSITE_TESTS.search(path):
         return "website"
     return "program"
 

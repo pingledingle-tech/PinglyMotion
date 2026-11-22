@@ -128,20 +128,22 @@ class LocalFilesTests(unittest.TestCase):
             self.assertEqual(good.problems, [])
 
 
-BODY_74 = """Intro text. Updated 20 Nov (after the merge of pull requests 130, 134 and 157; open: pull request 156).
+BODY_74 = """Intro text, pull request 130 is mentioned outside the queue.
 
-## Active jobs (open pull requests)
+## Roadmap confirmed by the project owner
 
-- **Panels P6** (pull request 156, job file `feat/panels-p6`): pop-out panels.
-- **Install steps** (part of issue 7, pull request 163, job file `docs/x`): merged already.
-- **Closed idea** (#170, no pull request): an issue number.
+1. Something (pull request 131).
 
-## Merged today (20 Nov 2026)
-- Something old (pull request 130).
+## Queue
 
-## Queued, not started
+1. Panels P6 (issue 14), pull request 156 is open.
+2. Install steps (part of issue 7, pull request 163): merged already.
+3. Closed idea (#170).
+4. Timeline (issue 17 and a#5).
 
-- Timeline (issue 14), pull request 999 is only queued.
+## Waiting for the owner
+
+- Test of pull request 171.
 """
 
 
@@ -156,10 +158,11 @@ class ListDriftTests(unittest.TestCase):
         self.assertEqual(work.pull_refs("issue 17 and a#5 and &#7"), [])
 
     def test_section(self):
-        active = work.list_section(BODY_74, "Active jobs")
-        self.assertIn("Panels P6", active)
-        self.assertNotIn("Something old", active)
+        queue = work.list_section(BODY_74, "Queue")
+        self.assertIn("Panels P6", queue)
+        self.assertNotIn("pull request 171", queue)
         self.assertEqual(work.list_section(BODY_74, "Nothing here"), "")
+        self.assertEqual(work.list_section("## Queued, not started\n- A (pull request 5)\n", "Queue"), "")
 
     def test_what_sentence(self):
         text = "Branch: a\nStatus: done\n\n## What\n\nFirst one. Second\none.\n\n## More\nOther.\n"
@@ -167,37 +170,23 @@ class ListDriftTests(unittest.TestCase):
         self.assertEqual(work.what_sentence("Branch: a\n"), "")
 
     def test_check_lists_exact_findings(self):
-        states = {156: "open", 163: "merged", 170: "closed"}
-        jobs = [done_job("docs/x", "#163"), done_job("feat/panels-p6", "#156"), done_job("feat/n", "pending")]
-        findings = work.check_lists(BODY_74, states, [156, 220], jobs)
-        self.assertEqual(findings, [
-            "pull request 163 is merged but still listed under Active jobs in #74",
-            "pull request 170 is closed but still listed under Active jobs in #74",
-            "pull request 220 is open but not mentioned in #74",
-            "job file docs/work/docs-x.md says done, but pull request 163 is still listed under Active jobs in #74",
+        states = {130: "merged", 131: "merged", 156: "open", 163: "merged", 170: "closed", 171: "merged"}
+        self.assertEqual(work.check_lists(BODY_74, states), [
+            "pull request 163 is merged but still named in the queue in #74",
+            "pull request 170 is closed but still named in the queue in #74",
         ])
 
     def test_check_lists_clean(self):
-        body = "## Active jobs\n\n- A (pull request 5)\n\n## Merged\n- B (pull request 4)\n"
-        self.assertEqual(work.check_lists(body, {5: "open"}, [5], [done_job("b", "#4")]), [])
+        body = "## Queue\n\n1. A (issue 5)\n2. B (pull request 6)\n\n## Waiting for the owner\n\nNothing waiting.\n"
+        self.assertEqual(work.check_lists(body, {6: "open"}), [])
 
-    def test_jobs_draft_exact(self):
-        jobs = [work.parse_job("Branch: feat/a\nStatus: active\nPull request: #5\nFiles:\n- x\n\n## What\nDoes A. More text.\n"),
-                done_job("feat/b", "#4")]
-        text = work.jobs_draft(jobs, {5: "Title A", 6: "Title C"}, [(4, "Title B"), (3, "Title D")], "20 Nov 2026")
-        self.assertEqual(text, "\n".join([
-            "DRAFT (never written to GitHub; check it before pasting into #74)",
-            "",
-            "## Active jobs (open pull requests)",
-            "",
-            "- **feat/a** (pull request 5, job file `docs/work/feat-a.md`, status active): Does A.",
-            "- **Title C** (pull request 6, no job file): needs a job file",
-            "",
-            "## Merged today (20 Nov 2026)",
-            "",
-            "- Text. (pull request 4)",
-            "- Title D (pull request 3)",
-        ]))
+    def test_check_lists_empty_queue(self):
+        body = "## Queue\n\nNo queue approved yet.\n\n## Waiting for the owner\n\nNothing waiting.\n"
+        self.assertEqual(work.check_lists(body, {}), [])
+
+    def test_check_lists_missing_queue(self):
+        body = "## Active jobs\n\n- A (pull request 5)\n"
+        self.assertEqual(work.check_lists(body, {5: "merged"}), ["#74 has no '## Queue' section"])
 
 
 class ArchiveTests(unittest.TestCase):

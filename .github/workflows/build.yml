@@ -73,8 +73,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Tests for the page builder
-        run: python3 tests/test_build_status.py
+      - name: Tests for the page builder and the website pages
+        run: |
+          python3 tests/test_build_status.py
+          for t in tests/test_site_*.py; do [ -e "$t" ] || continue; echo "== $t"; python3 "$t"; done
 
   windows:
     needs: changes
