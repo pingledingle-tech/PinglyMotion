@@ -1,6 +1,6 @@
 Branch: job/scriptlab-prim-media
 Status: active
-Pull request: pending
+Pull request: #374
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/world.*
