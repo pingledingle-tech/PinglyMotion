@@ -225,7 +225,11 @@ def main(argv=None):
         header.append("Source: " + args.source)
     header.append("Columns: name, types (restriction, force, query), notes")
     write(table, out, header)
-    print("%s: %d names" % (os.path.relpath(out, ROOT), len(table.types)))
+    try:
+        shown = os.path.relpath(out, ROOT)
+    except ValueError:   # another drive on Windows
+        shown = out
+    print("%s: %d names" % (shown, len(table.types)))
     return 0
 
 
