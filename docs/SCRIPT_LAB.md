@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 158 behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 181 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -367,6 +367,21 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   `shownametags`, `viewnote`, `viewscript`, `viewtexture`, `editworld`, `editattach` (and `editobj:<uuid>`), `buy`
   and `pay`. `acceptpermission` and `denypermission` (`RLV only`) are held as state: the sandbox grants every
   permission to a script anyway.
+- Group, movement and teleport (all marked `RLV` except `setrot`): `setgroup` (restriction; `=force` with a group
+  name or `none` is retained), `temprun`, `alwaysrun` and `jump` block their own action, `standtp` and `accepttp` are
+  held as state (the sandbox has no avatar position and no teleports), and `adjustheight`, `tpto`, `sitground` and
+  `setrot` are force commands, answered `retained` and not carried out. `setrot` is marked `RLV only`.
+- Questions with fixed sandbox answers. The sandbox has no avatar, group or inventory model yet:
+  `getsitid` answers the null key (`00000000-0000-0000-0000-000000000000`), `getgroup` answers `none`, `getoutfit`
+  answers 16 zeros (one per clothing layer, gloves to physics; with a layer name as option, one `0`, and empty for a
+  name that is none of them) and `getattach` answers 41 zeros (index 0 is "none", then 40 attachment points from
+  chest to root; one `0` for a point name as option). `getinv`, `getinvworn`, `findfolder`, `getpath` and
+  `getpathnew` answer empty because there is no folder model yet; the same is true of `findfolders` and the
+  `getadd*`, `getrem*` and `get*names` questions.
+- Families by prefix: `setdebug_<name>:<value>=force` and `setenv_<name>:<value>=force` (any name) are retained and the
+  value is recorded (`recorded` in `rlv_state`, at most 256 entries, a known name can still change); `getdebug_<name>`
+  and `getenv_<name>` answer the recorded value of the same name, or empty. They are marked `RLV` and left out of
+  `getcommand` (it lists the table, not the prefixes).
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
   the 3D view with the "Show camera limits in 3D view" box (below, "Camera limits in the 3D view"). A force command of that kind is `retained`

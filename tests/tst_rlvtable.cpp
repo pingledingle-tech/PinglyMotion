@@ -46,6 +46,15 @@ class TestRlvTable : public QObject
     void forceCommandsAreRetained();
     void exceptionsAreHeldPerFolder();
     void touchRowsBlockTheirOwnAction();
+    void fixedAnswers_data();
+    void fixedAnswers();
+    void outfitAndAttachAnswers();
+    void folderQuestionsAnswerEmpty_data();
+    void folderQuestionsAnswerEmpty();
+    void debugAndEnvFamilies();
+    void familiesAreBounded();
+    void movementRestrictions();
+    void setrotIsRlvOnly();
 
   private:
     static RlvState::Outcome one(RlvState& state, const QString& line, const QString& object = "obj")
@@ -464,7 +473,10 @@ static const Spec specs[] = {
   {"viewtexture", AR, OP, "viewtexture", PLAIN},
   {"editobj", AR, RQ, "", PLAIN}, {"editworld", AR, NO, "editworld", PLAIN}, {"editattach", AR, NO, "editattach", PLAIN},
   {"buy", AR, NO, "buy", PLAIN}, {"pay", AR, OP, "pay", PLAIN},
-  {"acceptpermission", AR, NO, "", PLAIN}, {"denypermission", AR, NO, "", Rlv::Dialect::RlvOnly}};
+  {"acceptpermission", AR, NO, "", PLAIN}, {"denypermission", AR, NO, "", Rlv::Dialect::RlvOnly},
+  {"setgroup", AR | FO, OP, "setgroup", PLAIN}, {"temprun", AR, NO, "temprun", PLAIN}, {"alwaysrun", AR, NO, "alwaysrun", PLAIN},
+  {"jump", AR, NO, "jump", PLAIN}, {"setrot", FO, RQ, "", Rlv::Dialect::RlvOnly}, {"adjustheight", FO, RQ, "", PLAIN},
+  {"tpto", FO, RQ, "", PLAIN}, {"standtp", AR, NO, "", PLAIN}, {"accepttp", AR, OP, "", PLAIN}, {"sitground", FO, NO, "", PLAIN}};
 
 void TestRlvTable::everyActionOnce()
 {
@@ -532,7 +544,7 @@ void TestRlvTable::rowsOfThisPart()
     if (spec.option == OP)
     {
       one(state, "@" + name + "=n");
-      QCOMPARE(state.actions().value(b->blocks.value(0)), b->blocks.isEmpty());
+      if (!b->blocks.isEmpty()) QCOMPARE(state.actions().value(b->blocks.value(0)), false);
       QVERIFY(!state.has(name, arg));
     }
   }
@@ -590,6 +602,11 @@ void TestRlvTable::forceCommandsAreRetained_data()
   QTest::newRow("detachall") << "@detachall:Clothes=force";
   QTest::newRow("detachthis") << "@detachthis=force";
   QTest::newRow("detachallthis") << "@detachallthis=force";
+  QTest::newRow("setgroup") << "@setgroup:none=force";
+  QTest::newRow("setrot") << "@setrot:1.57=force";
+  QTest::newRow("adjustheight") << "@adjustheight:0.1;1=force";
+  QTest::newRow("tpto") << "@tpto:128/128/30=force";
+  QTest::newRow("sitground") << "@sitground=force";
 }
 
 void TestRlvTable::forceCommandsAreRetained()
@@ -628,6 +645,146 @@ void TestRlvTable::touchRowsBlockTheirOwnAction()
   QCOMPARE(state.actions().value("touchattach"), true);
   QCOMPARE(state.actions().value("touchattachother"), true);
   QCOMPARE(state.restrictions().size(), 5);
+}
+
+void TestRlvTable::fixedAnswers_data()
+{
+  QTest::addColumn<QString>("line");
+  QTest::addColumn<QString>("text");
+  QTest::newRow("getsitid") << "@getsitid=5" << "00000000-0000-0000-0000-000000000000";
+  QTest::newRow("getgroup") << "@getgroup=5" << "none";
+}
+
+void TestRlvTable::fixedAnswers()
+{
+  QFETCH(QString, line);
+  QFETCH(QString, text);
+  RlvState state;
+  const RlvState::ApplyResult r = state.apply("obj", line);
+  QCOMPARE(r.outcomes.value(0).result, Rlv::Result::Success);
+  QCOMPARE(r.replies.size(), 1);
+  QCOMPARE(r.replies[0].channel, 5);
+  QCOMPARE(r.replies[0].text, text);
+  // a question takes no n or force
+  QVERIFY(state.apply("obj", line.left(line.indexOf('=')) + "=n").outcomes.value(0).reason.contains("does not take"));
+}
+
+void TestRlvTable::outfitAndAttachAnswers()
+{
+  RlvState state;
+  QCOMPARE(Rlv::clothingLayers().size(), 16);
+  QCOMPARE(Rlv::attachmentPoints().size(), 41);
+  QCOMPARE(state.apply("obj", "@getoutfit=9").replies.value(0).text, QString(16, '0'));
+  QCOMPARE(state.apply("obj", "@getattach=9").replies.value(0).text, QString(41, '0'));
+  // one name: one digit; a name that is none of them: empty
+  QCOMPARE(state.apply("obj", "@getoutfit:shirt=9").replies.value(0).text, QString("0"));
+  QCOMPARE(state.apply("obj", "@getoutfit:physics=9").replies.value(0).text, QString("0"));
+  QCOMPARE(state.apply("obj", "@getoutfit:hat=9").replies.value(0).text, QString());
+  QCOMPARE(state.apply("obj", "@getattach:left hand=9").replies.value(0).text, QString("0"));
+  QCOMPARE(state.apply("obj", "@getattach:root=9").replies.value(0).text, QString("0"));
+  QCOMPARE(state.apply("obj", "@getattach:tail=9").replies.value(0).text, QString());
+  QCOMPARE(state.apply("obj", "@getattach:tail=9").replies.size(), 1);   // still answers, with an empty line
+  QCOMPARE(Rlv::attachmentPoints().first(), QString("none"));
+  QCOMPARE(Rlv::attachmentPoints().last(), QString("root"));
+  QCOMPARE(Rlv::clothingLayers().first(), QString("gloves"));
+  QCOMPARE(Rlv::clothingLayers().last(), QString("physics"));
+}
+
+void TestRlvTable::folderQuestionsAnswerEmpty_data()
+{
+  QTest::addColumn<QString>("name");
+  for (const QString name : {"getinv", "getinvworn", "findfolder", "getpath", "getpathnew"}) QTest::newRow(qPrintable(name)) << name;
+}
+
+void TestRlvTable::folderQuestionsAnswerEmpty()
+{
+  QFETCH(QString, name);
+  RlvState state;
+  for (const QString& line : {"@" + name + "=8", "@" + name + ":clothes=8"})
+  {
+    const RlvState::ApplyResult r = state.apply("obj", line);
+    QCOMPARE(r.outcomes.value(0).result, Rlv::Result::Success);
+    QCOMPARE(r.replies.size(), 1);
+    QCOMPARE(r.replies[0].channel, 8);
+    QCOMPARE(r.replies[0].text, QString());
+  }
+  QVERIFY(Rlv::findBehaviour(name)->description.contains("no inventory"));
+}
+
+void TestRlvTable::debugAndEnvFamilies()
+{
+  RlvState state;
+  // a name after the prefix is needed; the prefix alone is no behaviour
+  QVERIFY(Rlv::findBehaviour("setdebug_renderfarclip"));
+  QVERIFY(Rlv::findBehaviour("getenv_sunmoonposition"));
+  QVERIFY(!Rlv::findBehaviour("setdebug_"));
+  QVERIFY(!Rlv::findBehaviour("setenvx"));
+  QCOMPARE(Rlv::findBehaviour("setenv_daytime")->group, Rlv::Group::Environment);
+  QCOMPARE(state.apply("obj", "@setdebug_=force").outcomes.value(0).reason, QString("unknown behaviour \"setdebug_\""));
+  // nothing set yet: the answer is empty
+  QCOMPARE(state.apply("obj", "@getdebug_renderfarclip=3").replies.value(0).text, QString());
+  RlvState::Outcome outcome = one(state, "@setdebug_renderfarclip:64=force");
+  QCOMPARE(outcome.result, Rlv::Result::Retained);
+  QVERIFY2(outcome.reason.contains("recorded only"), qPrintable(outcome.reason));
+  QCOMPARE(state.recorded().value("setdebug_renderfarclip"), QString("64"));
+  QCOMPARE(state.apply("obj", "@getdebug_renderfarclip=3").replies.value(0).text, QString("64"));
+  one(state, "@setenv_daytime:0.5=force");
+  QCOMPARE(state.recorded().value("setenv_daytime"), QString("0.5"));
+  QCOMPARE(state.apply("obj", "@getenv_daytime=3").replies.value(0).text, QString("0.5"));
+  QCOMPARE(state.apply("obj", "@getenv_other=3").replies.value(0).text, QString());
+  // the last value wins; debug and sky names do not mix
+  one(state, "@setdebug_renderfarclip:128=force");
+  QCOMPARE(state.apply("obj", "@getdebug_renderfarclip=3").replies.value(0).text, QString("128"));
+  QCOMPARE(state.apply("obj", "@getenv_renderfarclip=3").replies.value(0).text, QString());
+  QCOMPARE(state.recorded().size(), 2);
+  // parameter types and options
+  QVERIFY(one(state, "@setdebug_renderfarclip=force").reason.contains("needs an option"));
+  QVERIFY(one(state, "@setdebug_renderfarclip:64=n").reason.contains("does not take"));
+  QVERIFY(one(state, "@getdebug_renderfarclip:1=3").reason.contains("takes no option"));
+  QVERIFY(state.apply("obj", "@getdebug_renderfarclip=n").outcomes.value(0).reason.contains("does not take"));
+  // a reset forgets them
+  state.reset();
+  QVERIFY(state.recorded().isEmpty());
+  QCOMPARE(state.apply("obj", "@getdebug_renderfarclip=3").replies.value(0).text, QString());
+}
+
+void TestRlvTable::familiesAreBounded()
+{
+  RlvState state;
+  for (int i = 0; i < RlvState::MAX_RECORDED_ENTRIES + 20; i++)
+    state.apply("obj", QString("@setenv_name%1:1=force").arg(i));
+  QCOMPARE(state.recorded().size(), RlvState::MAX_RECORDED_ENTRIES);
+  const RlvState::Outcome refused = one(state, "@setenv_onemore:1=force");
+  QCOMPARE(refused.result, Rlv::Result::Failed);
+  QCOMPARE(refused.reason, QString("256 outside effects are already recorded (the most allowed)"));
+  // a name that is already recorded can still change
+  QCOMPARE(one(state, "@setenv_name0:2=force").result, Rlv::Result::Retained);
+  QCOMPARE(state.recorded().value("setenv_name0"), QString("2"));
+  QCOMPARE(state.recorded().size(), RlvState::MAX_RECORDED_ENTRIES);
+}
+
+void TestRlvTable::movementRestrictions()
+{
+  RlvState state;
+  one(state, "@temprun=n,alwaysrun=n,jump=n,setgroup=n");
+  const QMap<QString, bool> a = state.actions();
+  QCOMPARE(a.value("temprun"), false);
+  QCOMPARE(a.value("alwaysrun"), false);
+  QCOMPARE(a.value("jump"), false);
+  QCOMPARE(a.value("setgroup"), false);
+  QCOMPARE(a.value("fly"), true);
+  QCOMPARE(state.apply("obj", "@getstatus=2").replies.value(0).text, QString("/temprun/alwaysrun/jump/setgroup"));
+  // the group can still be named in an exception form, and force is accepted but not carried out
+  QCOMPARE(one(state, "@setgroup:none=force").result, Rlv::Result::Retained);
+}
+
+void TestRlvTable::setrotIsRlvOnly()
+{
+  QCOMPARE(Rlv::findBehaviour("setrot")->dialect, Rlv::Dialect::RlvOnly);
+  RlvState state;
+  QCOMPARE(one(state, "@setrot:3.14=force").result, Rlv::Result::Retained);
+  state.setMode(Rlv::Mode::Rlva);
+  QCOMPARE(one(state, "@setrot:3.14=force").reason, QString("unknown behaviour \"setrot\""));
 }
 
 QTEST_GUILESS_MAIN(TestRlvTable)

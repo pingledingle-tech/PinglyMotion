@@ -62,22 +62,26 @@ branch of `Aurora-Viewer/Aurora-Viewer`, **commit `cc9c980`** (full hash
 
 ### 2b. Our fork (what PinglyMotion uses)
 
-PinglyMotion's link ([AURORA_LINK.md](AURORA_LINK.md)) needs Aurora built from
-our fork (`pingledingle-tech/Aurora-Viewer-Fork`, branch `feat/livemesh-pose`).
-It adds three features that upstream does not have:
+PinglyMotion's link is described in [AURORA_LINK.md](AURORA_LINK.md), which is
+the up-to-date description; read it for the details. In short: for live poses
+it needs Aurora built from our fork (`pingledingle-tech/Aurora-Viewer-Fork`,
+branch `feat/livemesh-pose-on-main`). The fork adds pose features that upstream
+does not have:
 
-- `auth`: the key is in `livemesh.json`; the key itself is never sent. Aurora
-  sends a random challenge and the client answers with a signature made from
-  the key (HMAC-SHA256).
+- `auth` and `auth-mutual`: the client uses Aurora's own key from
+  `blender-live/<port>.token` (the same token file as upstream). The key itself
+  is never sent: Aurora sends a random challenge and the client answers with
+  an HMAC-SHA256 signature, and Aurora proves the same back.
 - `pose-bvh`: a pose sent as a small BVH text.
 - `pose`: a pose sent as one rotation (quaternion) per joint, in Second Life's
   avatar axes, relative to the rest pose, plus the hip position in metres.
 
-The fork still greets with `AURBLD1`. Upstream now answers `AURBLD1` with
-"protocol 2", so **PinglyMotion's link does not work with the official Aurora
-as of commit `cc9c980`**. Our fork and upstream have moved apart on the
-greeting and the key file. (Our `LIVE_LINK_RESEARCH.md` table still says
-upstream has "no key"; that was true on 15 November and is now out of date.)
+PinglyMotion greets with the 8 bytes `AURPOS1` plus a line break, the greeting
+of a pose tool; an Aurora without the pose link closes the connection at once.
+It does not use `AURBLD2` and never sends the key. So PinglyMotion's link
+needs the fork and does not work with the official Aurora, which has no pose
+feature. (Our `LIVE_LINK_RESEARCH.md` table still says upstream has "no key";
+that was true on 15 November and is now out of date.)
 
 ## 3. Could a Maya script be a client and send a pose?
 
@@ -94,10 +98,10 @@ its programming interface (OpenMaya, for example the joint class
 What such a script would need:
 
 - **The key file.** It must find and read the key file for the version of
-  Aurora it talks to (`livemesh.json` in our fork, `blender-live/<port>.token`
-  upstream), in the right folder for Windows, Linux or macOS, and answer the
-  greeting the right way. The two versions differ (section 2), so the script
-  would have to pick one.
+  Aurora it talks to (`blender-live/<port>.token`), in the right folder for
+  Windows, Linux or macOS, and answer the greeting the right way. A pose tool
+  (our fork, `docs/AURORA_LINK.md`) and a mesh tool (upstream, section 2a)
+  greet differently, so the script would have to pick one.
 - **Stay responsive.** Maya only allows its scene to be read from its main
   thread. The script would read the pose on the main thread (for example when
   the time slider changes) and do the network work in a background thread, so
@@ -170,8 +174,8 @@ depend on Aurora's protocol.
 1. Will the `pose` and `auth` features be offered to Aurora upstream, or stay
    in our fork? Aurora's document says pose streaming is "outside the live
    bridge's current scope".
-2. Should PinglyMotion's client move to upstream's protocol 2 greeting
-   (`AURBLD2` plus the token file), and should our fork follow upstream?
+2. Should our fork and upstream keep two greetings (`AURPOS1` for pose tools,
+   `AURBLD2` for mesh tools), or should they be merged?
 3. Is there real demand from Maya users? Without it, the file route is enough.
 4. Who would test a Maya client? It needs a Maya licence and a Windows machine
    with Aurora, which the project does not have.

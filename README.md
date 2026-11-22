@@ -93,7 +93,7 @@ In the Aurora viewer, open **Build > LiveMesh** and click **Enable preview**; th
 to Aurora** in PinglyMotion. The pose you make shows on your own avatar at once, visible only to you, with no
 upload. Playing the animation plays it on your avatar too. The link uses Aurora's LiveMesh (the same local link
 as its Blender add-on) with a session key. For now it needs Aurora from the
-[fork](https://github.com/pingledingle-tech/Aurora-Viewer-Fork) (branch `feat/livemesh-pose`). See
+[fork](https://github.com/pingledingle-tech/Aurora-Viewer-Fork) (branch `feat/livemesh-pose-on-main`). See
 [docs/AURORA_LINK.md](docs/AURORA_LINK.md).
 
 ## Credits and licence
@@ -113,6 +113,6 @@ The optional second body (Options > Body > Max) is "Maxine" from the [Max Avatar
 
 The test motions in `tests/motions/cmu/` (in the Windows zip: `examples/cmu/`) and the walk clip in `tests/motions/` come from the CMU Graphics Lab Motion Capture Database, converted to BVH by cgspeed.com. The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. Source and licence notes: `tests/motions/cmu/README.md`.
 
-The reference library in `library/` (in the Windows zip: `library/` next to the program; format in `docs/REFERENCE_LIBRARY_SCHEMA.md`) holds 55 clips: 28 from the CMU Graphics Lab Motion Capture Database (converted to BVH by cgspeed.com; the data used in this project was obtained from mocap.cs.cmu.edu; the database was created with funding from NSF EIA-0196217) and 27 from [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. Each clip carries its licence and credit line in `library/index.json`.
+The reference library in `library/` (in the Windows zip: `library/` next to the program; format in `docs/REFERENCE_LIBRARY_SCHEMA.md`) holds 106 clips: 46 from the CMU Graphics Lab Motion Capture Database (converted to BVH by cgspeed.com; the data used in this project was obtained from mocap.cs.cmu.edu; the database was created with funding from NSF EIA-0196217) and 60 from [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app), CC0 1.0. Each clip carries its licence and credit line in `library/index.json`.
 
 The test motions in `tests/motions/mesh2motion/` (in the Windows zip: `examples/mesh2motion/`) are eight clips from the [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app) project, released under CC0 1.0 (public domain). CC0 does not require a credit; PinglyMotion gives one anyway: thank you to the Mesh2Motion project. The source files and the commit they come from are in `tests/data/mesh2motion/`.
