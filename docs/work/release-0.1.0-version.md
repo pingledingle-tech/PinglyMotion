@@ -1,6 +1,6 @@
 Branch: release/0.1.0-version
 Status: active
-Pull request: pending
+Pull request: #341
 Files:
 - CMakeLists.txt
 - src/pinglymotion.rc
