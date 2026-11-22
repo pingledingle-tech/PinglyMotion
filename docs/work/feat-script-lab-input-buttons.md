@@ -1,5 +1,5 @@
 Branch: feat/script-lab-input-buttons
-Status: active
+Status: done
 Pull request: #309
 Files:
 - src/scriptlab/scriptlabpanel.*
@@ -7,6 +7,7 @@ Files:
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md
 - docs/work/feat-script-lab-input-buttons.md
+- tests/scriptlabpanel/CMakeLists.txt
 
 ## What
 
