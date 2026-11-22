@@ -113,11 +113,15 @@ void TestRlva::wikiNamesAreMarkedPlainRlv()
   QCOMPARE(state.mode(), Rlv::Mode::Rlv);
   QString line;
   if (behaviour->params & Rlv::AllowAddRemove) line = "@" + name + (behaviour->option == Rlv::OptionUse::Required ? ":1" : "") + "=n";
+  else if (behaviour->params & Rlv::AllowForce) line = "@" + name + ":1=force";
   else line = "@" + name + "=2222";
   const RlvState::ApplyResult r = state.apply("obj", line);
   QVERIFY2(r.ok(), qPrintable(line));
   QVERIFY2(!r.outcomes.value(0).reason.contains("unknown behaviour"), qPrintable(line));
-  QVERIFY2(r.outcomes.value(0).result == Rlv::Result::Success, qPrintable(line));
+  const Rlv::Result expected = (behaviour->params & Rlv::AllowAddRemove) || (behaviour->params & Rlv::AllowReply)
+                                   ? Rlv::Result::Success : Rlv::Result::Retained;
+  QVERIFY2(r.outcomes.value(0).result == expected, qPrintable(line));
+  if (behaviour->params == Rlv::AllowReply) QCOMPARE(r.replies.size(), 1);
 }
 
 void TestRlva::defaultModeIsPlainRlv()

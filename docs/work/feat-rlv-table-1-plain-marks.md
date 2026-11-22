@@ -1,8 +1,9 @@
 Branch: feat/rlv-table-1-plain-marks
-Status: active
-Pull request: pending
+Status: done
+Pull request: #312
 Files:
 - src/scriptlab/rlvbehaviours.*
+- src/scriptlab/rlvstate.cpp
 - tests/tst_rlva.cpp
 - tests/tst_rlvcommand.cpp
 - tests/tst_lslrlv.cpp
