@@ -1,5 +1,5 @@
 Branch: job/scriptlab-collision-events
-Status: active
+Status: done
 Pull request: #378
 Files:
 - src/scriptlab/lsl/interp.*
