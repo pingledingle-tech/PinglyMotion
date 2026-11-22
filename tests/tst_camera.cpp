@@ -41,6 +41,7 @@ class TestCamera : public QObject
     void constraintHoldsAfterMoves();
     void clearConstraintRestoresExactly();
     void secondConstraintKeepsFirstCamera();
+    void fieldOfViewFromConstraint();
 
   private:
     static void compareState(const CameraPosition& a, const CameraPosition& b);
@@ -447,6 +448,29 @@ void TestCamera::secondConstraintKeepsFirstCamera()
   camera.setConstraint(c);   // the limit was lifted, the moved camera stays until cleared
   QCOMPARE(camera.distance(), 30.0f);
   camera.clearConstraint();
+  compareState(camera.state(), before);
+}
+
+// Script Lab field of view limits (job 7b, part 2): only while the constraint sets one
+void TestCamera::fieldOfViewFromConstraint()
+{
+  Camera camera;
+  QCOMPARE(camera.fieldOfView(), 60.0f);
+  const CameraPosition before = camera.state();
+  CameraConstraint c;
+  c.fieldOfView = 30.0f;
+  camera.setConstraint(c);
+  QCOMPARE(camera.fieldOfView(), 30.0f);
+  // no distance limit and no fixed point: the camera does not move
+  compareState(camera.state(), before);
+  c.fieldOfView = 0;
+  camera.setConstraint(c);
+  QCOMPARE(camera.fieldOfView(), 60.0f);
+  c.fieldOfView = 90.0f;
+  camera.setConstraint(c);
+  QCOMPARE(camera.fieldOfView(), 90.0f);
+  camera.clearConstraint();
+  QCOMPARE(camera.fieldOfView(), 60.0f);
   compareState(camera.state(), before);
 }
 

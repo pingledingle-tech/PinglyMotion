@@ -317,7 +317,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_cameraBox = new QCheckBox(tr("Show camera limits in 3D view"), commandsPage);
   m_cameraBox->setObjectName("scriptLabShowCameraLimits");
   m_cameraBox->setChecked(false);
-  m_cameraBox->setToolTip(tr("Let the camera limits the script holds (distance from the avatar, focus on the avatar) "
+  m_cameraBox->setToolTip(tr("Let the camera limits the script holds (distance from the avatar, focus on the avatar, field of view) "
                              "limit the 3D view. Untick to get your own camera back exactly as it was."));
   layout->addWidget(m_cameraBox);
   m_cameraStatus = new QLabel(commandsPage);

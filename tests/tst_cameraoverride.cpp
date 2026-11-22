@@ -34,6 +34,11 @@ class TestCameraOverride : public QObject
     void cameraClampedAndRestored();
     void resetAndModeRestore();
     void otherRestrictionsDoNothing();
+    void fieldOfViewLimits();
+    void zoomLimits();
+    void viewMaxBelowMin();
+    void viewWithDistance();
+    void badViewOptions();
 
   private:
     static void compareState(const CameraPosition& a, const CameraPosition& b);
@@ -266,12 +271,115 @@ void TestCameraOverride::otherRestrictionsDoNothing()
 {
   RlvState state;
   state.setMode(Rlv::Mode::Rlva);
-  QVERIFY(state.apply("collar", "@detach=n,sendim=n,setcam_fovmin:0.5=n,setcam_mouselook=n").ok());
+  QVERIFY(state.apply("collar", "@detach=n,sendim=n,setcam_avdist:2=n,setcam_mouselook=n").ok());
   CameraOverride o;
   o.setState(&state);
   o.setEnabled(true);
   QVERIFY(!o.limits().any());
   QVERIFY(!o.active());
+}
+
+void TestCameraOverride::fieldOfViewLimits()
+{
+  RlvState state;   // setcam_fovmin and setcam_fovmax are plain RLV
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  Camera camera;
+  const CameraPosition before = camera.state();
+  connect(&o, &CameraOverride::changed, this, [&]() { apply(o, camera); });
+
+  // at most 0.5 rad (28.6 degrees): narrower than 60
+  QVERIFY(state.apply("collar", "@setcam_fovmax:0.5=n").ok());
+  QVERIFY(o.active());
+  QCOMPARE(o.limits().maxView, 28.64788975654116);
+  QCOMPARE(o.constraint().fieldOfView, 28.6478898f);
+  QVERIFY(!o.constraint().turnAroundPoint);
+  QCOMPARE(camera.fieldOfView(), 28.6478898f);
+  compareState(camera.state(), before);   // only the field of view changes
+  QCOMPARE(o.lines(), (QStringList{
+    "Camera limited by the script: max field of view 28.6 degrees.",
+    "The 3D view shows a field of view of 28.6 degrees instead of 60.",
+    "Held by: collar.",
+    "Untick the box to get your own camera back."}));
+
+  // a second object: at least 1.5 rad (85.9 degrees) from the hud, and the collar lets go
+  QVERIFY(state.apply("hud", "@setcam_fovmin:1.5=n").ok());
+  QVERIFY(state.apply("collar", "@clear").ok());
+  QCOMPARE(camera.fieldOfView(), 85.9436693f);
+  QCOMPARE(o.lines().at(1), QString("The 3D view shows a field of view of 85.9 degrees instead of 60."));
+
+  // a minimum below 60 leaves the view as it is
+  QVERIFY(state.apply("hud", "@setcam_fovmin:1.5=y,setcam_fovmin:0.25=n").ok());
+  QCOMPARE(camera.fieldOfView(), 60.0f);
+  QCOMPARE(o.lines().at(1), QString("The 3D view keeps its field of view of 60 degrees."));
+
+  // unticked: 60 degrees and the camera from before
+  o.setEnabled(false);
+  QCOMPARE(camera.fieldOfView(), 60.0f);
+  compareState(camera.state(), before);
+}
+
+void TestCameraOverride::zoomLimits()
+{
+  // the old zoom limits: a multiplier of the default 60 degrees
+  RlvState state;
+  QVERIFY(state.apply("collar", "@camzoommin:2=n").ok());   // cannot zoom out past 2x: 30 degrees at most
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  QCOMPARE(o.limits().maxView, 30.0);
+  QCOMPARE(o.constraint().fieldOfView, 30.0f);
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: max field of view 30 degrees."));
+  QVERIFY(state.apply("collar", "@camzoommin:2=y,camzoommax:0.5=n").ok());   // cannot zoom in past 0.5x: 120 at least
+  QCOMPARE(o.limits().minView, 120.0);
+  QCOMPARE(o.constraint().fieldOfView, 120.0f);
+}
+
+void TestCameraOverride::viewMaxBelowMin()
+{
+  RlvState state;
+  QVERIFY(state.apply("collar", "@camzoommax:0.5=n,setcam_fovmax:0.5235987755982988=n").ok());   // at least 120, at most 30
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  QCOMPARE(o.constraint().fieldOfView, 30.0f);
+  QCOMPARE(o.lines(), (QStringList{
+    "Camera limited by the script: min field of view 120 degrees, max field of view 30 degrees.",
+    "The max field of view is below the min field of view, so the max wins.",
+    "The 3D view shows a field of view of 30 degrees instead of 60.",
+    "Held by: collar.",
+    "Untick the box to get your own camera back."}));
+}
+
+void TestCameraOverride::viewWithDistance()
+{
+  RlvState state;
+  QVERIFY(state.apply("collar", "@camdistmax:2=n,setcam_fovmax:0.5=n").ok());
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  const CameraConstraint c = o.constraint();
+  QCOMPARE(c.maxDistance, 78.7401574f);
+  QCOMPARE(c.fieldOfView, 28.6478898f);
+  QVERIFY(c.turnAroundPoint);
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: max distance 2 m, max field of view 28.6 degrees."));
+  QCOMPARE(o.lines().at(2), QString("The camera turns around the avatar. Held by: collar."));
+}
+
+void TestCameraOverride::badViewOptions()
+{
+  RlvState state;
+  QVERIFY(state.apply("collar", "@setcam_fovmin:4=n,setcam_fovmax=n,camzoommax:0=n").ok());
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  QVERIFY(!o.active());
+  QCOMPARE(o.lines(), (QStringList{
+    "The script does not limit the camera now.",
+    "Not used: setcam_fovmin:4 is not an angle in radians.",
+    "Not used: setcam_fovmax: is not an angle in radians.",
+    "Not used: camzoommax:0 is not a zoom multiplier."}));
 }
 
 QTEST_GUILESS_MAIN(TestCameraOverride)
