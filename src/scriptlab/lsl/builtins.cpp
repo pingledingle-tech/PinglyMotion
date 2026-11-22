@@ -50,7 +50,13 @@ enum class Fn
   Euler2Rot, Rot2Euler, Rot2Fwd, Rot2Left, Rot2Up, AxisAngle2Rot, RotBetween,
   ListReplaceList, List2ListStrided, ListSortStrided, ReplaceSubString,
   StringToBase64, Base64ToString, IntegerToBase64, Base64ToInteger, MD5String, SHA1String, EscapeURL, UnescapeURL,
-  GetStartParameter, GetObjectDesc, SetObjectDesc, SetObjectName, GetScale, GetNumberOfPrims
+  GetStartParameter, GetObjectDesc, SetObjectDesc, SetObjectName, GetScale, GetNumberOfPrims,
+  // step 9b-3: prim state without effects, L$ logic, record-only stubs
+  SetText, SetAlpha, SetColor, SetTexture, SetLinkColor, SetLinkAlpha, SetLinkTexture, GetColor, GetAlpha, GetTexture,
+  SetPrimitiveParams, SetLinkPrimitiveParams, SetLinkPrimitiveParamsFast, GetPrimitiveParams, GetLinkPrimitiveParams,
+  SetPos, SetRot, GetRot, GetLocalRot, GetLocalPos, GetRootPosition, GetRootRotation, SetStatus, GetStatus, SetSitText,
+  TextBox, TransferLindenDollars,
+  ParticleSystem, LinkParticleSystem, TriggerSound, PlaySound, LoopSound, StopSound, PreloadSound, TargetOmega, LoadURL
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -93,6 +99,19 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llMD5String", Fn::MD5String}, {"llSHA1String", Fn::SHA1String}, {"llEscapeURL", Fn::EscapeURL}, {"llUnescapeURL", Fn::UnescapeURL},
   {"llGetStartParameter", Fn::GetStartParameter}, {"llGetObjectDesc", Fn::GetObjectDesc}, {"llSetObjectDesc", Fn::SetObjectDesc},
   {"llSetObjectName", Fn::SetObjectName}, {"llGetScale", Fn::GetScale}, {"llGetNumberOfPrims", Fn::GetNumberOfPrims},
+  {"llSetText", Fn::SetText}, {"llSetAlpha", Fn::SetAlpha}, {"llSetColor", Fn::SetColor}, {"llSetTexture", Fn::SetTexture},
+  {"llSetLinkColor", Fn::SetLinkColor}, {"llSetLinkAlpha", Fn::SetLinkAlpha}, {"llSetLinkTexture", Fn::SetLinkTexture},
+  {"llGetColor", Fn::GetColor}, {"llGetAlpha", Fn::GetAlpha}, {"llGetTexture", Fn::GetTexture},
+  {"llSetPrimitiveParams", Fn::SetPrimitiveParams}, {"llSetLinkPrimitiveParams", Fn::SetLinkPrimitiveParams},
+  {"llSetLinkPrimitiveParamsFast", Fn::SetLinkPrimitiveParamsFast}, {"llGetPrimitiveParams", Fn::GetPrimitiveParams},
+  {"llGetLinkPrimitiveParams", Fn::GetLinkPrimitiveParams},
+  {"llSetPos", Fn::SetPos}, {"llSetRot", Fn::SetRot}, {"llGetRot", Fn::GetRot}, {"llGetLocalRot", Fn::GetLocalRot},
+  {"llGetLocalPos", Fn::GetLocalPos}, {"llGetRootPosition", Fn::GetRootPosition}, {"llGetRootRotation", Fn::GetRootRotation},
+  {"llSetStatus", Fn::SetStatus}, {"llGetStatus", Fn::GetStatus}, {"llSetSitText", Fn::SetSitText},
+  {"llTextBox", Fn::TextBox}, {"llTransferLindenDollars", Fn::TransferLindenDollars},
+  {"llParticleSystem", Fn::ParticleSystem}, {"llLinkParticleSystem", Fn::LinkParticleSystem}, {"llTriggerSound", Fn::TriggerSound},
+  {"llPlaySound", Fn::PlaySound}, {"llLoopSound", Fn::LoopSound}, {"llStopSound", Fn::StopSound}, {"llPreloadSound", Fn::PreloadSound},
+  {"llTargetOmega", Fn::TargetOmega}, {"llLoadURL", Fn::LoadURL},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -517,6 +536,444 @@ QString unescapeUrl(const QString& s)
   return QString::fromUtf8(bytes);
 }
 
+
+// ---- prim state without effects (step 9b-3)
+// LINK_* values and PRIM_* rule numbers of Second Life
+enum { LINK_SET = -1, LINK_ALL_OTHERS = -2, LINK_ALL_CHILDREN = -3, LINK_THIS = -4, ALL_SIDES = -1 };
+enum
+{
+  PRIM_PHYSICS = 3, PRIM_TEMP_ON_REZ = 4, PRIM_PHANTOM = 5, PRIM_POSITION = 6, PRIM_SIZE = 7, PRIM_ROTATION = 8, PRIM_TEXTURE = 17,
+  PRIM_COLOR = 18, PRIM_FULLBRIGHT = 20, PRIM_GLOW = 25, PRIM_TEXT = 26, PRIM_NAME = 27, PRIM_DESC = 28, PRIM_ROT_LOCAL = 29,
+  PRIM_POS_LOCAL = 33, PRIM_LINK_TARGET = 34
+};
+
+double rnd5(float v) { return std::round(double(v) * 100000.0) / 100000.0; }
+QJsonArray vecJson(const float* v, int n = 3)
+{
+  QJsonArray a;
+  for (int i = 0; i < n; ++i) a.append(rnd5(v[i]));
+  return a;
+}
+
+// Second Life's rotation product: a * b applies a, then b (the same as the interpreter's)
+Quat lslMul(const Quat& a, const Quat& b)
+{
+  return Quat{b.s * a.x + b.x * a.s + b.y * a.z - b.z * a.y, b.s * a.y + b.y * a.s + b.z * a.x - b.x * a.z,
+              b.s * a.z + b.z * a.s + b.x * a.y - b.y * a.x, b.s * a.s - b.x * a.x - b.y * a.y - b.z * a.z};
+}
+Quat conj(const Quat& q) { return Quat{-q.x, -q.y, -q.z, q.s}; }
+// a vector turned by a rotation (v * q in LSL), length kept
+void rotVec(const Quat& q, const float v[3], float out[3])
+{
+  const float tx = 2.0f * (q.y * v[2] - q.z * v[1]), ty = 2.0f * (q.z * v[0] - q.x * v[2]), tz = 2.0f * (q.x * v[1] - q.y * v[0]);
+  out[0] = v[0] + q.s * tx + (q.y * tz - q.z * ty);
+  out[1] = v[1] + q.s * ty + (q.z * tx - q.x * tz);
+  out[2] = v[2] + q.s * tz + (q.x * ty - q.y * tx);
+}
+
+// the links a LINK_* value or number reaches in this object, as link numbers from 1
+std::vector<int> primLinks(World& w, int link)
+{
+  const int count = qMax(1, w.numberOfPrims());
+  const int own = qMax(1, w.linkNumber());
+  std::vector<int> out;
+  if (link == LINK_THIS) out.push_back(own);
+  else if (link == LINK_SET) for (int i = 1; i <= count; ++i) out.push_back(i);
+  else if (link == LINK_ALL_OTHERS) { for (int i = 1; i <= count; ++i) if (i != own) out.push_back(i); }
+  else if (link == LINK_ALL_CHILDREN) for (int i = 2; i <= count; ++i) out.push_back(i);
+  else if (link == 0) { if (count == 1) out.push_back(1); }
+  else if (link >= 1 && link <= count) out.push_back(link);
+  return out;
+}
+
+PrimState& primOf(World& w, int link) { return w.primStore().prim(link, qMax(1, w.numberOfPrims())); }
+// the number a log entry shows: 0 for the one prim of a single-prim object, as in Second Life
+int shownLink(World& w, int link) { return w.numberOfPrims() <= 1 ? 0 : link; }
+
+void logPrim(World& w, double now, const QString& op, int link, QJsonObject extra)
+{
+  if (w.logFull()) return;
+  extra["type"] = "prim";
+  extra["op"] = op;
+  extra["link"] = shownLink(w, link);
+  w.log(now, extra);
+}
+
+// the faces a face number reaches (ALL_SIDES: every face; a number outside the prim's faces: none)
+std::vector<int> facesOf(int face)
+{
+  std::vector<int> out;
+  if (face == ALL_SIDES) for (int i = 0; i < PrimState::FACES; ++i) out.push_back(i);
+  else if (face >= 0 && face < PrimState::FACES) out.push_back(face);
+  return out;
+}
+
+float clamp01(float v) { return !(v > 0.0f) ? 0.0f : (v > 1.0f ? 1.0f : v); }
+
+void setPrimColor(World& w, double now, int link, int face, const float color[3], bool hasColor, float alpha, bool hasAlpha)
+{
+  PrimState& p = primOf(w, link);
+  for (int f : facesOf(face))
+  {
+    if (hasColor) for (int i = 0; i < 3; ++i) p.faces[f].color[i] = clamp01(color[i]);
+    if (hasAlpha) p.faces[f].alpha = clamp01(alpha);
+  }
+  QJsonObject e{{"face", face}};
+  if (hasColor) e["color"] = vecJson(color);
+  if (hasAlpha) e["alpha"] = rnd5(clamp01(alpha));
+  logPrim(w, now, hasColor ? "color" : "alpha", link, e);
+}
+
+void setPrimTexture(World& w, double now, int link, int face, const QString& texture, const float repeats[2], const float offsets[2], float rotation, bool full)
+{
+  PrimState& p = primOf(w, link);
+  for (int f : facesOf(face))
+  {
+    p.faces[f].texture = texture;
+    if (full)
+    {
+      for (int i = 0; i < 2; ++i) { p.faces[f].repeats[i] = repeats[i]; p.faces[f].offsets[i] = offsets[i]; }
+      p.faces[f].rotation = rotation;
+    }
+  }
+  QJsonObject e{{"face", face}, {"texture", World::clip(texture)}};
+  if (full) { e["repeats"] = vecJson(repeats, 2); e["offsets"] = vecJson(offsets, 2); e["rotation"] = rnd5(rotation); }
+  logPrim(w, now, "texture", link, e);
+}
+
+void setPrimText(World& w, double now, int link, const QString& text, const float color[3], float alpha)
+{
+  PrimState& p = primOf(w, link);
+  p.text = text.left(254);
+  for (int i = 0; i < 3; ++i) p.textColor[i] = clamp01(color[i]);
+  p.textAlpha = clamp01(alpha);
+  logPrim(w, now, "text", link, QJsonObject{{"text", World::clip(p.text)}, {"color", vecJson(p.textColor)}, {"alpha", rnd5(p.textAlpha)}});
+}
+
+// where a prim is in the region (the root: the object's place; a child: the root's place plus its offset turned by the root's rotation)
+void primWorldPosition(World& w, int link, float out[3])
+{
+  float root[3];
+  w.position(root);
+  if (link <= 1) { for (int i = 0; i < 3; ++i) out[i] = root[i]; return; }
+  const PrimState& r = primOf(w, 1);
+  float turned[3];
+  rotVec(Quat{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]}, primOf(w, link).position, turned);
+  for (int i = 0; i < 3; ++i) out[i] = root[i] + turned[i];
+}
+
+// a rezzed object moves at most 10 m per call (llSetPos), stays inside the region, and a worn one only records the offset
+void movePrim(World& w, double now, int link, const float target[3], bool local)
+{
+  PrimState& p = primOf(w, link);
+  if (link <= 1)
+  {
+    if (w.attachPoint() > 0)
+    {
+      for (int i = 0; i < 3; ++i) p.position[i] = target[i];
+      logPrim(w, now, "position", link, QJsonObject{{"position", vecJson(target)}, {"note", "Worn: the offset from the avatar is recorded; llGetPos does not change."}});
+      return;
+    }
+    if (target[0] < 0.0f || target[0] > 256.0f || target[1] < 0.0f || target[1] > 256.0f || target[2] < 0.0f || target[2] > 4096.0f)
+    {
+      logPrim(w, now, "position", link, QJsonObject{{"position", vecJson(target)}, {"note", "The target is outside the region: the object did not move."}});
+      return;
+    }
+    float here[3], next[3];
+    w.position(here);
+    float d[3] = {target[0] - here[0], target[1] - here[1], target[2] - here[2]};
+    const float dist = std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    const float scale = dist > 10.0f ? 10.0f / dist : 1.0f;
+    for (int i = 0; i < 3; ++i) next[i] = here[i] + d[i] * scale;
+    w.setPosition(next);
+    QJsonObject e{{"position", vecJson(next)}};
+    if (scale < 1.0f) e["note"] = "A rezzed object moves at most 10 m per call; it moved 10 m towards the target.";
+    logPrim(w, now, "position", link, e);
+    return;
+  }
+  if (local) for (int i = 0; i < 3; ++i) p.position[i] = target[i];
+  else
+  {
+    float root[3], rel[3], un[3];
+    w.position(root);
+    for (int i = 0; i < 3; ++i) rel[i] = target[i] - root[i];
+    const PrimState& r = primOf(w, 1);
+    rotVec(conj(Quat{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]}), rel, un);
+    for (int i = 0; i < 3; ++i) p.position[i] = un[i];
+  }
+  logPrim(w, now, "position", link, QJsonObject{{"position", vecJson(p.position)}, {"local", true}});
+}
+
+Quat primRotation(World& w, int link, bool local)
+{
+  const PrimState& r = primOf(w, 1);
+  const Quat root{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]};
+  if (link <= 1) return root;
+  const PrimState& p = primOf(w, link);
+  const Quat own{p.rotation[0], p.rotation[1], p.rotation[2], p.rotation[3]};
+  return local ? own : lslMul(own, root);
+}
+
+void rotatePrim(World& w, double now, int link, const Quat& worldOrLocal, bool local)
+{
+  PrimState& p = primOf(w, link);
+  const Quat q = normalized(worldOrLocal);
+  Quat store = q;
+  if (link > 1 && !local)
+  {
+    const PrimState& r = primOf(w, 1);
+    store = lslMul(q, conj(Quat{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]}));
+  }
+  p.rotation[0] = store.x; p.rotation[1] = store.y; p.rotation[2] = store.z; p.rotation[3] = store.s;
+  const float shown[4] = {store.x, store.y, store.z, store.s};
+  logPrim(w, now, "rotation", link, QJsonObject{{"rotation", vecJson(shown, 4)}});
+}
+
+const char* ruleName(int rule)
+{
+  switch (rule)
+  {
+    case 2: return "PRIM_MATERIAL";
+    case 9: return "PRIM_TYPE";
+    case 19: return "PRIM_BUMP_SHINY";
+    case 21: return "PRIM_FLEXIBLE";
+    case 22: return "PRIM_TEXGEN";
+    case 23: return "PRIM_POINT_LIGHT";
+    case 30: return "PRIM_PHYSICS_SHAPE_TYPE";
+    case 32: return "PRIM_OMEGA";
+    case 35: return "PRIM_SLICE";
+    case 36: return "PRIM_SPECULAR";
+    case 37: return "PRIM_NORMAL";
+    case 39: return "PRIM_ALPHA_MODE";
+    case 40: return "PRIM_ALLOW_UNSIT";
+    case 41: return "PRIM_SCRIPTED_SIT_ONLY";
+    case 42: return "PRIM_SIT_TARGET";
+    case 44: return "PRIM_PROJECTOR";
+    case 45: return "PRIM_REFLECTION_PROBE";
+    case 49: return "PRIM_GLTF_NORMAL";
+    default: return nullptr;
+  }
+}
+
+struct RuleResult
+{
+  QString unsupported;   // a rule the sandbox does not run yet: the script stops with this
+  QString problem;       // a malformed rule: a debug line, and the rest of the list is skipped (as Second Life does)
+};
+
+// llSetPrimitiveParams and its link forms. The rules apply to every prim of links.
+RuleResult applyRules(World& w, double now, const QString& function, const std::vector<Value>& rules, std::vector<int> links)
+{
+  RuleResult result;
+  size_t i = 0;
+  const size_t n = rules.size();
+  auto bad = [&](const QString& rule, const QString& what)
+  {
+    result.problem = QString("%1: bad %2 rule at list position %3: %4").arg(function, rule).arg(int(i)).arg(what);
+  };
+  auto have = [&](size_t at, Type t) { return at < n && rules[at].type == t; };
+  while (i < n && result.problem.isEmpty() && result.unsupported.isEmpty())
+  {
+    if (rules[i].type != Type::Integer) { bad("primitive", "a rule starts with a PRIM_* integer"); break; }
+    const int rule = rules[i].i;
+    size_t used = 1;
+    switch (rule)
+    {
+      case PRIM_LINK_TARGET:
+        if (!have(i + 1, Type::Integer)) { bad("PRIM_LINK_TARGET", "needs a link number"); break; }
+        links = primLinks(w, rules[i + 1].i);
+        used = 2;
+        break;
+      case PRIM_POSITION:
+      case PRIM_POS_LOCAL:
+      case PRIM_SIZE:
+        if (!have(i + 1, Type::Vector)) { bad(rule == PRIM_SIZE ? "PRIM_SIZE" : "PRIM_POSITION", "needs a vector"); break; }
+        for (int link : links)
+        {
+          if (rule == PRIM_SIZE)
+          {
+            PrimState& p = primOf(w, link);
+            for (int k = 0; k < 3; ++k) p.size[k] = qBound(0.01f, rules[i + 1].f[k], 64.0f);
+            if (link <= 1) w.setScale(p.size);   // the root prim's size is what llGetScale answers
+            logPrim(w, now, "size", link, QJsonObject{{"size", vecJson(p.size)}});
+          }
+          else movePrim(w, now, link, rules[i + 1].f, rule == PRIM_POS_LOCAL);
+        }
+        used = 2;
+        break;
+      case PRIM_ROTATION:
+      case PRIM_ROT_LOCAL:
+        if (!have(i + 1, Type::Rotation)) { bad("PRIM_ROTATION", "needs a rotation"); break; }
+        for (int link : links) rotatePrim(w, now, link, quatOf(rules[i + 1]), rule == PRIM_ROT_LOCAL);
+        used = 2;
+        break;
+      case PRIM_COLOR:
+        if (!have(i + 1, Type::Integer) || !have(i + 2, Type::Vector) || !have(i + 3, Type::Float)) { bad("PRIM_COLOR", "needs face, color vector and alpha float"); break; }
+        for (int link : links)
+        {
+          setPrimColor(w, now, link, rules[i + 1].i, rules[i + 2].f, true, rules[i + 3].f[0], true);
+        }
+        used = 4;
+        break;
+      case PRIM_TEXTURE:
+        if (!have(i + 1, Type::Integer) || !(have(i + 2, Type::String) || have(i + 2, Type::Key)) || !have(i + 3, Type::Vector) || !have(i + 4, Type::Vector) || !have(i + 5, Type::Float))
+        { bad("PRIM_TEXTURE", "needs face, texture, repeats vector, offsets vector and rotation float"); break; }
+        for (int link : links)
+        {
+          const float repeats[2] = {rules[i + 3].f[0], rules[i + 3].f[1]};
+          const float offsets[2] = {rules[i + 4].f[0], rules[i + 4].f[1]};
+          setPrimTexture(w, now, link, rules[i + 1].i, rules[i + 2].s, repeats, offsets, rules[i + 5].f[0], true);
+        }
+        used = 6;
+        break;
+      case PRIM_TEXT:
+        if (!have(i + 1, Type::String) || !have(i + 2, Type::Vector) || !have(i + 3, Type::Float)) { bad("PRIM_TEXT", "needs text, color vector and alpha float"); break; }
+        for (int link : links) setPrimText(w, now, link, rules[i + 1].s, rules[i + 2].f, rules[i + 3].f[0]);
+        used = 4;
+        break;
+      case PRIM_NAME:
+      case PRIM_DESC:
+        if (!have(i + 1, Type::String)) { bad(rule == PRIM_NAME ? "PRIM_NAME" : "PRIM_DESC", "needs a string"); break; }
+        for (int link : links)
+        {
+          const QString text = rules[i + 1].s.left(rule == PRIM_NAME ? 63 : 127);
+          if (link <= 1) { if (rule == PRIM_NAME) w.setObjectName(text); else w.setObjectDesc(text); }
+          else if (rule == PRIM_NAME) primOf(w, link).name = text;
+          else primOf(w, link).description = text;
+          logPrim(w, now, rule == PRIM_NAME ? "name" : "description", link, QJsonObject{{"text", World::clip(text)}});
+        }
+        used = 2;
+        break;
+      case PRIM_FULLBRIGHT:
+        if (!have(i + 1, Type::Integer) || !have(i + 2, Type::Integer)) { bad("PRIM_FULLBRIGHT", "needs face and an integer"); break; }
+        for (int link : links)
+        {
+          for (int f : facesOf(rules[i + 1].i)) primOf(w, link).faces[f].fullbright = rules[i + 2].i != 0 ? 1 : 0;
+          logPrim(w, now, "fullbright", link, QJsonObject{{"face", rules[i + 1].i}, {"value", rules[i + 2].i != 0}});
+        }
+        used = 3;
+        break;
+      case PRIM_GLOW:
+        if (!have(i + 1, Type::Integer) || !have(i + 2, Type::Float)) { bad("PRIM_GLOW", "needs face and a float"); break; }
+        for (int link : links)
+        {
+          for (int f : facesOf(rules[i + 1].i)) primOf(w, link).faces[f].glow = qBound(0.0f, rules[i + 2].f[0], 1.0f);
+          logPrim(w, now, "glow", link, QJsonObject{{"face", rules[i + 1].i}, {"value", rnd5(qBound(0.0f, rules[i + 2].f[0], 1.0f))}});
+        }
+        used = 3;
+        break;
+      case PRIM_PHYSICS:
+      case PRIM_PHANTOM:
+      case PRIM_TEMP_ON_REZ:
+        if (!have(i + 1, Type::Integer)) { bad("PRIM_PHYSICS", "needs an integer"); break; }
+        for (int link : links)
+        {
+          PrimState& p = primOf(w, link);
+          int& field = rule == PRIM_PHYSICS ? p.physics : (rule == PRIM_PHANTOM ? p.phantom : p.tempOnRez);
+          field = rules[i + 1].i != 0 ? 1 : 0;
+          logPrim(w, now, rule == PRIM_PHYSICS ? "physics" : (rule == PRIM_PHANTOM ? "phantom" : "temp_on_rez"), link, QJsonObject{{"value", rules[i + 1].i != 0}});
+        }
+        used = 2;
+        break;
+      default:
+      {
+        const char* name = ruleName(rule);
+        result.unsupported = QString("%1 in %2 is not supported yet in the Script Lab sandbox, so the script was stopped here.")
+                               .arg(name ? QString::fromLatin1(name) : QString("The primitive rule %1").arg(rule), function);
+        break;
+      }
+    }
+    if (!result.problem.isEmpty() || !result.unsupported.isEmpty()) break;
+    i += used;
+  }
+  return result;
+}
+
+// llGetLinkPrimitiveParams: the rules the sandbox keeps state for
+RuleResult readRules(World& w, const QString& function, const std::vector<Value>& rules, int link, std::vector<Value>& out)
+{
+  RuleResult result;
+  if (link < 1) return result;
+  size_t i = 0;
+  const size_t n = rules.size();
+  auto vec = [](const float* v) { return Value::vector(v[0], v[1], v[2]); };
+  while (i < n && result.problem.isEmpty() && result.unsupported.isEmpty())
+  {
+    if (rules[i].type != Type::Integer) { result.problem = function + ": a rule starts with a PRIM_* integer"; break; }
+    const int rule = rules[i].i;
+    size_t used = 1;
+    const PrimState& p = primOf(w, link);
+    auto needFace = [&]() -> bool
+    {
+      if (i + 1 < n && rules[i + 1].type == Type::Integer) { used = 2; return true; }
+      result.problem = QString("%1: the rule at list position %2 needs a face number").arg(function).arg(int(i));
+      return false;
+    };
+    switch (rule)
+    {
+      case PRIM_NAME: out.push_back(Value::string(link <= 1 ? w.objectName() : p.name)); break;
+      case PRIM_DESC: out.push_back(Value::string(link <= 1 ? w.objectDesc() : p.description)); break;
+      case PRIM_POSITION: { float pos[3]; primWorldPosition(w, link, pos); out.push_back(vec(pos)); break; }
+      case PRIM_POS_LOCAL:
+      {
+        float pos[3];
+        if (link <= 1 && w.attachPoint() == 0) w.position(pos); else for (int k = 0; k < 3; ++k) pos[k] = p.position[k];
+        out.push_back(vec(pos));
+        break;
+      }
+      case PRIM_SIZE:
+      {
+        float size[3];
+        if (link <= 1) w.scale(size); else for (int k = 0; k < 3; ++k) size[k] = p.size[k];
+        out.push_back(vec(size));
+        break;
+      }
+      case PRIM_ROTATION: out.push_back(rotationOf(primRotation(w, link, false))); break;
+      case PRIM_ROT_LOCAL: out.push_back(rotationOf(primRotation(w, link, true))); break;
+      case PRIM_TEXT:
+        out.push_back(Value::string(p.text));
+        out.push_back(vec(p.textColor));
+        out.push_back(Value::number(p.textAlpha));
+        break;
+      case PRIM_PHYSICS: out.push_back(Value::integer(p.physics)); break;
+      case PRIM_PHANTOM: out.push_back(Value::integer(p.phantom)); break;
+      case PRIM_TEMP_ON_REZ: out.push_back(Value::integer(p.tempOnRez)); break;
+      case PRIM_COLOR:
+        if (!needFace()) break;
+        for (int f : facesOf(rules[i + 1].i)) { out.push_back(vec(p.faces[f].color)); out.push_back(Value::number(p.faces[f].alpha)); }
+        break;
+      case PRIM_TEXTURE:
+        if (!needFace()) break;
+        for (int f : facesOf(rules[i + 1].i))
+        {
+          out.push_back(Value::string(p.faces[f].texture));
+          out.push_back(Value::vector(p.faces[f].repeats[0], p.faces[f].repeats[1], 0.0f));
+          out.push_back(Value::vector(p.faces[f].offsets[0], p.faces[f].offsets[1], 0.0f));
+          out.push_back(Value::number(p.faces[f].rotation));
+        }
+        break;
+      case PRIM_FULLBRIGHT:
+        if (!needFace()) break;
+        for (int f : facesOf(rules[i + 1].i)) out.push_back(Value::integer(p.faces[f].fullbright));
+        break;
+      case PRIM_GLOW:
+        if (!needFace()) break;
+        for (int f : facesOf(rules[i + 1].i)) out.push_back(Value::number(p.faces[f].glow));
+        break;
+      default:
+      {
+        const char* name = ruleName(rule);
+        result.unsupported = QString("%1 in %2 is not supported yet in the Script Lab sandbox, so the script was stopped here.")
+                               .arg(name ? QString::fromLatin1(name) : QString("The primitive rule %1").arg(rule), function);
+        break;
+      }
+    }
+    if (!result.problem.isEmpty() || !result.unsupported.isEmpty()) break;
+    i += used;
+  }
+  return result;
+}
+
 } // namespace
 
 // ---------------------------------------------------------------- tables
@@ -615,7 +1072,7 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::GetPos:
     {
       float p[3];
-      m_world.position(p);
+      primWorldPosition(m_world, qMax(1, m_world.linkNumber()), p);
       return Value::vector(p[0], p[1], p[2]);
     }
     case Fn::GetAttached: return Value::integer(m_world.attachPoint());
@@ -1156,6 +1613,174 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       return Value::vector(s[0], s[1], s[2]);
     }
     case Fn::GetNumberOfPrims: return Value::integer(m_world.numberOfPrims());
+
+    // -------------------------------------------- prim state without effects (step 9b-3)
+    case Fn::SetText:
+      setPrimText(m_world, m_now, qMax(1, m_world.linkNumber()), a[0].s, a[1].f, a[2].f[0]);
+      return Value();
+    case Fn::SetAlpha:
+    case Fn::SetColor:
+    case Fn::SetTexture:
+    case Fn::SetLinkAlpha:
+    case Fn::SetLinkColor:
+    case Fn::SetLinkTexture:
+    {
+      const bool linkForm = *it == Fn::SetLinkAlpha || *it == Fn::SetLinkColor || *it == Fn::SetLinkTexture;
+      const std::vector<int> links = primLinks(m_world, linkForm ? a[0].i : LINK_THIS);
+      const size_t o = linkForm ? 1 : 0;   // the first value argument
+      const int face = a[o + 1].i;
+      for (int link : links)
+      {
+        if (*it == Fn::SetAlpha || *it == Fn::SetLinkAlpha) setPrimColor(m_world, m_now, link, face, nullptr, false, a[o].f[0], true);
+        else if (*it == Fn::SetColor || *it == Fn::SetLinkColor) setPrimColor(m_world, m_now, link, face, a[o].f, true, 0.0f, false);
+        else
+        {
+          const float none[2] = {0.0f, 0.0f};
+          setPrimTexture(m_world, m_now, link, face, a[o].s, none, none, 0.0f, false);
+        }
+      }
+      return Value();
+    }
+    case Fn::GetColor:
+    case Fn::GetAlpha:
+    case Fn::GetTexture:
+    {
+      const std::vector<int> faces = facesOf(a[0].i);
+      const PrimState& p = primOf(m_world, qMax(1, m_world.linkNumber()));
+      // face -1 (ALL_SIDES): the average over the faces, as the wiki says for llGetColor and llGetAlpha; a face the prim lacks gives the defaults
+      if (*it == Fn::GetTexture) return Value::string(faces.empty() ? QString() : p.faces[faces.front()].texture);
+      float sum[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+      for (int f : faces) { for (int k = 0; k < 3; ++k) sum[k] += p.faces[f].color[k]; sum[3] += p.faces[f].alpha; }
+      const float n = faces.empty() ? 1.0f : float(faces.size());
+      if (*it == Fn::GetAlpha) return Value::number(faces.empty() ? 0.0f : sum[3] / n);
+      return faces.empty() ? Value::vector(0.0f, 0.0f, 0.0f) : Value::vector(sum[0] / n, sum[1] / n, sum[2] / n);
+    }
+    case Fn::SetPrimitiveParams:
+    case Fn::SetLinkPrimitiveParams:
+    case Fn::SetLinkPrimitiveParamsFast:
+    {
+      const bool linkForm = *it != Fn::SetPrimitiveParams;
+      const QString function = *it == Fn::SetPrimitiveParams ? "llSetPrimitiveParams" : (*it == Fn::SetLinkPrimitiveParams ? "llSetLinkPrimitiveParams" : "llSetLinkPrimitiveParamsFast");
+      const RuleResult r = applyRules(m_world, m_now, function, a[linkForm ? 1 : 0].list, primLinks(m_world, linkForm ? a[0].i : LINK_THIS));
+      if (!r.unsupported.isEmpty()) failAt("unsupported", r.unsupported);
+      if (!r.problem.isEmpty())
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", r.problem}});
+      m_steps += qint64(a[linkForm ? 1 : 0].list.size());
+      return Value();
+    }
+    case Fn::GetPrimitiveParams:
+    case Fn::GetLinkPrimitiveParams:
+    {
+      const bool linkForm = *it == Fn::GetLinkPrimitiveParams;
+      const QString function = linkForm ? "llGetLinkPrimitiveParams" : "llGetPrimitiveParams";
+      // one prim: LINK_THIS, LINK_ROOT or a link number; a set of links gives an empty list
+      const int wanted = linkForm ? a[0].i : LINK_THIS;
+      const std::vector<int> links = primLinks(m_world, wanted);
+      std::vector<Value> out;
+      if (links.size() == 1 && wanted != LINK_SET && wanted != LINK_ALL_OTHERS && wanted != LINK_ALL_CHILDREN)
+      {
+        const RuleResult r = readRules(m_world, function, a[linkForm ? 1 : 0].list, links.front(), out);
+        if (!r.unsupported.isEmpty()) failAt("unsupported", r.unsupported);
+        if (!r.problem.isEmpty())
+          m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", r.problem}});
+      }
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
+    case Fn::SetPos:
+      movePrim(m_world, m_now, qMax(1, m_world.linkNumber()), a[0].f, true);
+      return Value();
+    case Fn::SetRot:
+      rotatePrim(m_world, m_now, qMax(1, m_world.linkNumber()), quatOf(a[0]), false);
+      return Value();
+    case Fn::GetRot: return rotationOf(primRotation(m_world, qMax(1, m_world.linkNumber()), false));
+    case Fn::GetLocalRot: return rotationOf(primRotation(m_world, qMax(1, m_world.linkNumber()), true));
+    case Fn::GetRootRotation: return rotationOf(primRotation(m_world, 1, false));
+    case Fn::GetRootPosition:
+    {
+      float p[3];
+      m_world.position(p);
+      return Value::vector(p[0], p[1], p[2]);
+    }
+    case Fn::GetLocalPos:
+    {
+      const int link = qMax(1, m_world.linkNumber());
+      float p[3];
+      if (link <= 1 && m_world.attachPoint() == 0) m_world.position(p);
+      else for (int k = 0; k < 3; ++k) p[k] = primOf(m_world, link).position[k];
+      return Value::vector(p[0], p[1], p[2]);
+    }
+    case Fn::SetStatus:
+    {
+      const int known = 0x7FF;
+      PrimStore& store = m_world.primStore();
+      const int mask = a[0].i & known;
+      if (a[1].i != 0) store.status |= mask; else store.status &= ~mask;
+      logPrim(m_world, m_now, "status", qMax(1, m_world.linkNumber()), QJsonObject{{"status", store.status}});
+      return Value();
+    }
+    case Fn::GetStatus:
+    {
+      const int mask = a[0].i;
+      return Value::integer(mask != 0 && (m_world.primStore().status & mask) == mask ? 1 : 0);
+    }
+    case Fn::SetSitText:
+    {
+      const int link = qMax(1, m_world.linkNumber());
+      primOf(m_world, link).sitText = a[0].s.left(254);
+      logPrim(m_world, m_now, "sit_text", link, QJsonObject{{"text", World::clip(primOf(m_world, link).sitText)}});
+      return Value();
+    }
+    case Fn::TextBox:
+      m_world.dialog(m_now, a[0].s, a[1].s, QStringList{"!!llTextBox!!"}, a[2].i);
+      return Value();
+    case Fn::TransferLindenDollars:
+    {
+      // logic and messages only: no L$ ever moves. The sandbox owner always has enough L$.
+      const QString id = nextKey();
+      QString failure;
+      if (!(m_permissions & 0x2))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to transfer L$ but PERMISSION_DEBIT permission not set"}});
+        failure = "MISSING_PERMISSION_DEBIT";
+      }
+      else if (!keyIsValid(a[0].s)) failure = "INVALID_DESTINATION";
+      else if (a[1].i <= 0) failure = "INVALID_AMOUNT";
+      else if (a[0].s != m_world.ownerKey() && !m_world.ownerOf(a[0].s).isEmpty()) failure = "LINDENDOLLAR_ENTITYDOESNOTEXIST";   // an object, not an avatar
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "linden_dollars"}, {"to", a[0].s}, {"amount", a[1].i}, {"transaction", id},
+                                       {"result", failure.isEmpty() ? "ok" : failure},
+                                       {"note", "Simulated: no L$ moved. The sandbox owner always has enough L$."}});
+      queueEvent(Event{"transaction_result", {Value::key(id), Value::integer(failure.isEmpty() ? 1 : 0),
+                                              Value::string(failure.isEmpty() ? a[0].s + "," + QString::number(a[1].i) : failure)}, QString(), QString()});
+      return Value::key(id);
+    }
+    case Fn::ParticleSystem:
+      m_world.recordOnly(m_now, "llParticleSystem", QJsonArray{int(a[0].list.size())});
+      return Value();
+    case Fn::LinkParticleSystem:
+      m_world.recordOnly(m_now, "llLinkParticleSystem", QJsonArray{a[0].i, int(a[1].list.size())});
+      return Value();
+    case Fn::TriggerSound:
+    case Fn::PlaySound:
+    case Fn::LoopSound:
+      m_world.recordOnly(m_now, *it == Fn::TriggerSound ? "llTriggerSound" : (*it == Fn::PlaySound ? "llPlaySound" : "llLoopSound"),
+                         QJsonArray{World::clip(a[0].s), rnd5(a[1].f[0])});
+      return Value();
+    case Fn::StopSound:
+      m_world.recordOnly(m_now, "llStopSound", QJsonArray());
+      return Value();
+    case Fn::PreloadSound:
+      m_world.recordOnly(m_now, "llPreloadSound", QJsonArray{World::clip(a[0].s)});
+      return Value();
+    case Fn::TargetOmega:
+      m_world.recordOnly(m_now, "llTargetOmega", QJsonArray{vecJson(a[0].f), rnd5(a[1].f[0]), rnd5(a[2].f[0])});
+      return Value();
+    case Fn::LoadURL:
+      m_world.recordOnly(m_now, "llLoadURL", QJsonArray{a[0].s, World::clip(a[1].s), World::clip(a[2].s)});
+      return Value();
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);
