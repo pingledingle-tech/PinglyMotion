@@ -26,6 +26,7 @@
 
 #include "animation.h"
 #include "bvh.h"
+#include "constants.h"
 #include "scriptlab/effectspreview.h"
 #include "scriptlab/labeffects.h"
 #include "scriptlab/lsl/control.h"
@@ -273,8 +274,12 @@ void TestLabEffects::previewOffByDefault()
 {
   EffectsPreview preview;
   QVERIFY(!preview.enabled());
-  // by default the examples folder of the source tree (the data folder is bin/data here)
-  QCOMPARE(preview.examplesFolder(), QDir::cleanPath(examples()));
+  // by default the folder "examples" next to the data folder, or the source tree's when the data folder is its bin/data
+  const QString data = QDir::cleanPath(Constants::pinglyMotionDataPath());
+  if (data.endsWith(QLatin1String("/bin/data")) && !QDir(data + "/../examples").exists())
+    QCOMPARE(preview.examplesFolder(), QDir::cleanPath(data + "/../../examples"));
+  else
+    QCOMPARE(preview.examplesFolder(), QDir::cleanPath(data + "/../examples"));
   preview.setExamplesFolder(examples());
   preview.showRun(run(startScript("wave"), 2.5), {});
   QVERIFY(preview.animation() == nullptr);

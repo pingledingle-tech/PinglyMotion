@@ -219,7 +219,7 @@ Found findAnimation(const QString& name, const QStringList& folders)
         for (const QFileInfo& info : entries)
         {
           if (++looked > MAX_SEARCH_ENTRIES) break;
-          if (info.isSymLink() || info.fileName().startsWith(QLatin1Char('.'))) continue;
+          if (info.isSymLink() || info.isShortcut() || info.fileName().startsWith(QLatin1Char('.'))) continue;
           if (info.isDir())
           {
             if (depth < MAX_SEARCH_DEPTH) next << info.absoluteFilePath();
