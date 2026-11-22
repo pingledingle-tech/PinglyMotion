@@ -18,6 +18,7 @@ SET (PINGLYMOTION_CORE_SRC animation.cpp
               scriptlab/rlvcommand.cpp
               scriptlab/rlvstate.cpp
               settings.cpp
+              textsize.cpp
               translation.cpp
               usersettings.cpp
               versionnumber.cpp)

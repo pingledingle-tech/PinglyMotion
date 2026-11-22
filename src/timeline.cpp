@@ -130,6 +130,8 @@ void Timeline::changeEvent(QEvent* event)
 {
   QFrame::changeEvent(event);
   if(event->type()==QEvent::ApplicationPaletteChange || event->type()==QEvent::PaletteChange) layoutChanged();
+  // the text size changed: the rows are taller or lower now (Constants::lineHeight)
+  else if(event->type()==QEvent::FontChange && offscreen) setNumberOfFrames(numOfFrames);
 }
 
 void Timeline::setNumberOfFrames(int frames)

@@ -192,6 +192,12 @@ void TimelineView::layoutChanged()
   timelineTracks->update();
 }
 
+void TimelineView::changeEvent(QEvent* event)
+{
+  QFrame::changeEvent(event);
+  if(event->type()==QEvent::FontChange) layoutChanged();
+}
+
 void TimelineView::backgroundClicked()
 {
   selectedTrack_=-1;

@@ -31,6 +31,8 @@
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QCloseEvent>
+#include <QResizeEvent>
+#include <QStyle>
 #include <QDir>
 #include <QFileDialog>
 #include "startfolder.h"
@@ -79,6 +81,8 @@
 #include "jointgroups.h"
 #include "jointinfo.h"
 #include "jointlist.h"
+#include "textsize.h"
+#include "panelcontent.h"
 #include "panellayout.h"
 #include "panelwindow.h"
 #include "paneltitlebar.h"
@@ -460,6 +464,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
     addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
   // the timeline stands visible at every start; hiding it lasts for this session only
   PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
+  // at large text or in a small window the panels rearrange (docs/UX_DECISIONS.md, 6c);
+  // decided once the window has its size
+  scheduleReflow();
 
 
   connect(m_pinglyMotion.data(), &PinglyMotion::repaint, ui->animationView, static_cast<void (AnimationView::*)()>(&AnimationView::repaint));
@@ -889,123 +896,24 @@ void PinglyMotionWindow::buildDocks()
   // leaving the others behind.
   setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks | QMainWindow::GroupedDragging);
 
-  // --- timeline panel: tracks, frame slider, play and key frame buttons,
-  // loop in / out, frame count and FPS
-  QWidget* timelinePanel=new QWidget;
-  QVBoxLayout* timelineLayout=new QVBoxLayout(timelinePanel);
-  timelineLayout->setContentsMargins(4,4,4,4);
-  // the old layout kept the timeline at a fixed height; in a panel it grows
-  ui->timelineView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-  ui->timelineView->setMinimumSize(200,100);
-  timelineLayout->addWidget(ui->timelineView,1);
-  QHBoxLayout* playLayout=new QHBoxLayout;
-  playLayout->addWidget(ui->currentFrameSlider,1);
-  playLayout->addWidget(ui->keyframeButton);
-  timelineLayout->addLayout(playLayout);
+  // the three panels and the 3D view, from the designer file (src/panelcontent.h)
+  m_panels.reset(new MainPanels);
+  m_panels->build(this,ui.data());
+  m_timelineDock=m_panels->timelineDock;
+  m_jointsDock=m_panels->jointsDock;
+  m_jointCardDock=m_panels->jointCardDock;
+  m_jointsScroll=m_panels->jointsScroll;
+  m_jointCardScroll=m_panels->jointCardScroll;
 
   // Start, Stop, Replay from start, Frame back, Frame forward and Loop
   // (docs/UX_DECISIONS.md section 1)
-  m_transport=new TransportBar(timelinePanel);
+  m_transport=m_panels->transport;
   connect(m_transport,&TransportBar::startClicked,this,&PinglyMotionWindow::startPlaying);
   connect(m_transport,&TransportBar::stopClicked,this,&PinglyMotionWindow::stopPlaying);
   connect(m_transport,&TransportBar::replayClicked,this,&PinglyMotionWindow::replayFromStart);
   connect(m_transport,&TransportBar::backClicked,this,[this]() { stepFrame(-1); });
   connect(m_transport,&TransportBar::forwardClicked,this,[this]() { stepFrame(1); });
   connect(m_transport,&TransportBar::loopToggled,ui->optionsLoopAction,&QAction::setChecked);
-  QHBoxLayout* transportLayout=new QHBoxLayout;
-  transportLayout->addWidget(m_transport);
-  transportLayout->addStretch(1);
-  timelineLayout->addLayout(transportLayout);
-
-  QHBoxLayout* rangeLayout=new QHBoxLayout;
-  rangeLayout->addWidget(ui->loopInLabel);
-  rangeLayout->addWidget(ui->loopInSpinBox);
-  rangeLayout->addWidget(ui->loopInPercentLabel);
-  rangeLayout->addSpacing(12);
-  rangeLayout->addWidget(ui->loopOutLabel);
-  rangeLayout->addWidget(ui->loopOutSpinBox);
-  rangeLayout->addWidget(ui->loopOutPercentLabel);
-  rangeLayout->addStretch(1);
-  rangeLayout->addWidget(ui->frameLabel);
-  rangeLayout->addWidget(ui->currentFrameLabel);
-  rangeLayout->addWidget(ui->ofLabel);
-  rangeLayout->addWidget(ui->framesSpin);
-  rangeLayout->addSpacing(12);
-  rangeLayout->addWidget(ui->fpsLabel);
-  rangeLayout->addWidget(ui->fpsSpin);
-  timelineLayout->addLayout(rangeLayout);
-
-  m_timelineDock=new QDockWidget(tr("Timeline"),this);
-  m_timelineDock->setObjectName(PanelLayout::TimelineDock);
-  m_timelineDock->setWidget(timelinePanel);
-  m_timelineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
-  m_timelineDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
-  m_timelineDock->setTitleBarWidget(new PanelTitleBar(m_timelineDock));
-
-  // A tall panel keeps its width, whatever the window around it does. If the
-  // window is too low for all of it, it scrolls. A wheel over a slider or spin
-  // box scrolls the panel instead of changing the value (issue #82: the figure
-  // moved while the panel was scrolled).
-  auto makeTallPanel=[this](const QString& title,const char* objectName,QWidget* panel,QScrollArea*& scroll)
-  {
-    QDockWidget* dock=new QDockWidget(title,this);
-    dock->setObjectName(QString::fromLatin1(objectName));
-    scroll=new QScrollArea;
-    scroll->setWidget(panel);
-    scroll->setWidgetResizable(true);
-    scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    dock->setWidget(scroll);
-    (new WheelGuard(scroll))->guardChildrenOf(panel);
-    dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
-    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    dock->setTitleBarWidget(new PanelTitleBar(dock));
-    return dock;
-  };
-
-  // --- Joints panel: the Avatar / Props switch (the tabs), with the joint
-  // tabs, search and list on Avatar, the prop list on Props
-  QWidget* jointsPanel=new QWidget;
-  QVBoxLayout* jointsLayout=new QVBoxLayout(jointsPanel);
-  jointsLayout->setContentsMargins(4,4,4,4);
-  jointsLayout->addWidget(ui->avatarPropsTab,1);
-  m_jointsDock=makeTallPanel(tr("Joints"),PanelLayout::JointsDock,jointsPanel,m_jointsScroll);
-
-  // --- Selected joint panel: the rotation and position boxes of the joint,
-  // or the position, scale and rotation boxes of the prop. The boxes come
-  // from the designer file and are moved here from the tabs; the page
-  // follows the Avatar / Props switch.
-  QWidget* jointCard=new QWidget;
-  QVBoxLayout* jointCardLayout=new QVBoxLayout(jointCard);
-  jointCardLayout->setContentsMargins(0,0,0,0);
-  jointCardLayout->addWidget(ui->rotationGroupBox);
-  jointCardLayout->addWidget(ui->positionGroupBox);
-  jointCardLayout->addStretch(1);
-  QWidget* propCard=new QWidget;
-  QVBoxLayout* propCardLayout=new QVBoxLayout(propCard);
-  propCardLayout->setContentsMargins(0,0,0,0);
-  propCardLayout->addWidget(ui->propPositionGroup);
-  propCardLayout->addWidget(ui->propScaleGroup);
-  propCardLayout->addWidget(ui->propRotationGroup);
-  propCardLayout->addStretch(1);
-  QStackedWidget* cardStack=new QStackedWidget;
-  cardStack->setObjectName("jointCardStack");
-  cardStack->addWidget(jointCard);
-  cardStack->addWidget(propCard);
-  cardStack->setCurrentIndex(ui->avatarPropsTab->currentIndex());
-  connect(ui->avatarPropsTab,&QTabWidget::currentChanged,cardStack,&QStackedWidget::setCurrentIndex);
-  QWidget* cardPanel=new QWidget;
-  QVBoxLayout* cardPanelLayout=new QVBoxLayout(cardPanel);
-  cardPanelLayout->setContentsMargins(4,4,4,4);
-  cardPanelLayout->addWidget(cardStack,1);
-  m_jointCardDock=makeTallPanel(tr("Selected joint"),PanelLayout::JointCardDock,cardPanel,m_jointCardScroll);
-
-  // --- 3D view in the middle (replaces the old fixed layout)
-  QWidget* central=new QWidget;
-  QVBoxLayout* centralLayout=new QVBoxLayout(central);
-  centralLayout->setContentsMargins(0,0,0,0);
-  centralLayout->addWidget(ui->animationView);
-  setCentralWidget(central);
 
   // the default layout is built in code (src/panelwindow.h), the same one
   // View > Reset layout brings back
@@ -1085,6 +993,8 @@ void PinglyMotionWindow::resetPanelLayout()
   m_scriptLabDock->setFloating(false);
   addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
   m_scriptLabDock->hide();
+  // this is the wide layout now; rearranged again if the window has no room for it
+  m_reflower.wideLayoutChanged(this,reflowDocks());
   m_applyingTab=false;
   m_hidePanelsAction->setChecked(false);
   ui->optionsShowTimelineAction->setChecked(true);
@@ -1183,15 +1093,87 @@ void PinglyMotionWindow::showLightDialog()
 // The Joints and Selected joint panels are as wide as their contents need -
 // no more, no less. Called again when the theme changes, since that changes
 // the widget sizes.
+// When the panels rearrange (docs/UX_DECISIONS.md, 6c) they may be wider.
 void PinglyMotionWindow::fitPanelWidths()
 {
-  for(QScrollArea* scroll : {m_jointsScroll,m_jointCardScroll})
+  m_panels->fit(m_reflower.mode());
+}
+
+PanelWindow::Docks PinglyMotionWindow::reflowDocks() const
+{
+  PanelWindow::Docks docks;
+  docks.joints=m_jointsDock;
+  docks.jointCard=m_jointCardDock;
+  docks.timeline=m_timelineDock;
+  docks.scriptLab=m_scriptLabDock;
+  return docks;
+}
+
+void PinglyMotionWindow::scheduleReflow()
+{
+  if(m_reflowPending) return;
+  m_reflowPending=true;
+  QTimer::singleShot(0,this,[this]() { m_reflowPending=false; updateReflow(); });
+}
+
+void PinglyMotionWindow::updateReflow()
+{
+  // a maximised or full-screen window may still be on its way to its size
+  if(!isVisible() || isMinimized()) return;
+  const PanelLayout::ReflowNeeds needs=m_panels->needs(this);
+  const PanelLayout::Reflow next=PanelLayout::chooseReflow(width(),needs);
+  const PanelLayout::Reflow was=m_reflower.mode();
+  // the timeline's rows break into shorter lines when they do not fit on one
+  m_panels->setTimelineWrapped(PanelLayout::wrapTimeline(next,width(),needs));
+  if(next==was) return;
+  qCInfo(lcView,"panels: %s layout for %d px (wide needs %d, medium %d) at %d percent text",
+         PanelLayout::reflowName(next),width(),PanelLayout::wideNeed(needs),PanelLayout::mediumNeed(needs),
+         TextSize::percent());
+  m_applyingTab=true;
+  m_reflower.setMode(this,reflowDocks(),next);
+  // fixed widths in their own columns, loose when they share a place
+  fitPanelWidths();
+  m_applyingTab=false;
+}
+
+void PinglyMotionWindow::resizeEvent(QResizeEvent* event)
+{
+  QMainWindow::resizeEvent(event);
+  scheduleReflow();
+}
+
+void PinglyMotionWindow::changeEvent(QEvent* event)
+{
+  QMainWindow::changeEvent(event);
+  if(event->type()==QEvent::FontChange)
   {
-    QWidget* panel=scroll->widget();
-    panel->ensurePolished();
-    const int width=qMax(panel->sizeHint().width(),panel->minimumSizeHint().width());
-    scroll->setFixedWidth(width+scroll->verticalScrollBar()->sizeHint().width());
+    // the text size changed. A widget with a style sheet keeps the font it
+    // had when the sheet was applied, so the sheet is applied again.
+    for(QWidget* widget : findChildren<QWidget*>())
+    {
+      const QString sheet=widget->styleSheet();
+      if(sheet.isEmpty()) continue;
+      widget->setStyleSheet(QString());
+      widget->setStyleSheet(sheet);
+    }
+    // rows and panels as big as the new text needs
+    m_jointTable->verticalHeader()->setDefaultSectionSize(m_jointTable->fontMetrics().height()+6);
+    m_jointTable->setMinimumHeight(10*m_jointTable->verticalHeader()->defaultSectionSize());
+    fitPanelWidths();
+    scheduleReflow();
   }
+  else if(event->type()==QEvent::WindowStateChange)
+    scheduleReflow();
+}
+
+void PinglyMotionWindow::setTextSizePercent(int percent)
+{
+  UserSettings::setTextSizePercent(percent);
+  // every widget gets a font change event; this window's changeEvent fits the panels
+  TextSize::apply(UserSettings::textSizePercent());
+  // rearranged at once, before the window is laid out for the new size, so a
+  // layout that no longer fits never makes the window grow
+  updateReflow();
 }
 
 // joint picker in the properties panel: tabs Body / Face / Hands / Other and
@@ -2102,7 +2084,8 @@ void PinglyMotionWindow::saveUserSettings()
   // panels hidden by Tab are not remembered: the program starts with them shown
   if(m_tabState.isHidden()) togglePanelsHidden();
   UserSettings::setMainWindowGeometry(saveGeometry());
-  UserSettings::setPanelLayout(saveState(PanelLayout::CurrentVersion));
+  // the user's own wide layout, also while the panels are rearranged (docs/UX_DECISIONS.md, 6c)
+  UserSettings::setPanelLayout(m_reflower.layoutToSave(this));
   UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
 
   UserSettings::writeSettings();
