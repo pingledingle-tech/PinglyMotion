@@ -118,8 +118,10 @@ Code) edits in their own editor and sees the result in PinglyMotion at once. The
 
 ## What exists now (step 7, issue 293): effects in the 3D view
 
-What a Live run does to the avatar shows in the 3D view, only while the Live page's **Show effects in 3D view** box is
-ticked. The box is off each time the program starts, so someone who only animates never sees a change.
+What a script run does to the avatar shows in the 3D view, only while the Live page's **Show effects in 3D view** box
+is ticked. The box is off each time the program starts, so someone who only animates never sees a change. Runs that
+count: each Live run, and each `lsl_run` and `lsl_event` from the control commands (the newest of them is shown).
+An animation started in one command keeps playing through the `lsl_event` commands that follow in the same world.
 
 - **Animations:** the run's event log is replayed: `llStartAnimation` starts an animation, `llStopAnimation` stops it,
   starting one that already plays changes nothing. The newest animation still playing at the end of the run is shown;
@@ -132,11 +134,12 @@ ticked. The box is off each time the program starts, so someone who only animate
   matters, as in Second Life); a name with a folder separator, a leading dot or a character no file name can hold is
   refused, links and hidden entries are skipped, and files over 16 MB are not taken. So a script can never reach a file
   outside these folders. Example: `examples/scriptlab/anim_wave.lsl` waves with the bundled `wave.dingle`.
-- **Worn objects and locks:** objects of the run with an attachment point (the answer's `objects`, step 5) are small
+- **Worn objects and locks:** objects of the run with an attachment point (`attached`, step 5) are small
   boxes at the point's joint (accent colour); an object holding `@detach=n` and points locked with `@detach:<point>=n`
   get a ball (danger colour). HUD points are named in the text only. The text under the box says the same in words
   ("Worn: cuffs on Left Hand, locked.", "Locked points: Neck."), so colour is never the only sign. An object holding
-  `@detach=n` that is not worn (the single-script form of `lsl_run`) locks nothing on the avatar, and the text says so.
+  `@detach=n` that is not worn (a single script is rezzed, not worn) locks nothing on the avatar, and the text says so.
+  So with `lsl_run` and `objects`, `attach` and `detach` (`lsl_event`) make the box appear and go, and `@clear` the ball.
 - **Safety:** the preview has its own copy of the animation, loaded with a reader of its own. The user's open
   animations, the scene, the timeline and the "changed" mark are never touched, and nothing is written. While the
   preview plays, the figure cannot be clicked. Unticking the box, stopping the watch, a run in which nothing plays or a
@@ -147,8 +150,9 @@ ticked. The box is off each time the program starts, so someone who only animate
 - Code: `src/scriptlab/labeffects.*` (the run answer read as data, the lookup, the frame), `src/scriptlab/effectspreview.*`
   (the preview the 3D view draws), the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`.
   Tests: `tests/tst_labeffects.cpp` and `tests/tst_scriptlabeffects.cpp`.
-- With an AI assistant: `lab_watch` the folder, write a script that calls `llStartAnimation("wave")`, and with the box
-  ticked the control command `screenshot` shows the waving figure. The box itself is ticked by the user in the panel.
+- With an AI assistant: `lab_watch` the folder (or `lsl_run`), with a script that calls `llStartAnimation("wave")`;
+  with the box ticked the control command `screenshot` shows the waving figure. The box itself is ticked by the user in
+  the panel.
 
 ## How an AI assistant uses it
 

@@ -36,6 +36,7 @@
 
 #include "effectspreview.h"
 #include "labwatcher.h"
+#include "lsl/session.h"
 #include "objectsview.h"
 #include "paneltitlebar.h"
 #include "rlvbehaviours.h"
@@ -355,6 +356,8 @@ void ScriptLabPanel::setState(RlvState* state)
 void ScriptLabPanel::setSession(lsl::Session* session)
 {
   m_objectsView->setSession(session);
+  m_session = session;
+  connectEffectsToWatcher();
 }
 
 bool ScriptLabPanel::isDark(const QPalette& palette)
@@ -912,11 +915,20 @@ void ScriptLabPanel::connectEffectsToWatcher()
 {
   for (const QMetaObject::Connection& c : m_effectsWatcherConnections) disconnect(c);
   m_effectsWatcherConnections.clear();
-  if (!m_effects || !m_watcher) return;
-  // every new run (and the end of a watch) goes to the preview, which does nothing while it is off
-  auto show = [this]() { if (m_effects) m_effects->showLatest(m_watcher); };
-  m_effectsWatcherConnections << connect(m_watcher, &LabWatcher::resultChanged, this, show);
-  m_effectsWatcherConnections << connect(m_watcher, &LabWatcher::watchChanged, this, show);
+  // every new Live run (and the end of a watch), and every lsl_run and lsl_event, goes to the
+  // preview, which does nothing while it is off; the newest of the two is shown when it is ticked
+  if (!m_effects) return;
+  if (m_watcher)
+  {
+    auto show = [this]() { m_effectsFromSession = false; if (m_effects) m_effects->showLatest(m_watcher); };
+    m_effectsWatcherConnections << connect(m_watcher, &LabWatcher::resultChanged, this, show);
+    m_effectsWatcherConnections << connect(m_watcher, &LabWatcher::watchChanged, this, show);
+  }
+  if (m_session)
+  {
+    auto show = [this]() { m_effectsFromSession = true; if (m_effects) m_effects->showSession(m_session); };
+    m_effectsWatcherConnections << connect(m_session, &lsl::Session::changed, this, show);
+  }
 }
 
 void ScriptLabPanel::effectsToggled(bool on)
@@ -924,7 +936,8 @@ void ScriptLabPanel::effectsToggled(bool on)
   if (!m_effects) return;
   m_effects->setEnabled(on);
   // ticked: show the newest run at once, without waiting for the next save
-  if (on) m_effects->showLatest(m_watcher);
+  if (on && m_effectsFromSession) m_effects->showSession(m_session);
+  else if (on) m_effects->showLatest(m_watcher);
   refreshEffects();
 }
 

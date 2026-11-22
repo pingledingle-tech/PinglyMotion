@@ -29,6 +29,8 @@
 #include "scriptlab/effectspreview.h"
 #include "scriptlab/labeffects.h"
 #include "scriptlab/lsl/control.h"
+#include "scriptlab/lsl/session.h"
+#include "scriptlab/rlvstate.h"
 
 namespace
 {
@@ -83,6 +85,7 @@ class TestLabEffects : public QObject
     void previewUnknownName();
     void previewMarkers();
     void userAnimationUntouched();
+    void sessionAttachLockAndClear();
 };
 
 void TestLabEffects::pointsAndJoints()
@@ -406,6 +409,60 @@ void TestLabEffects::userAnimationUntouched()
   QCOMPARE(user.getFrame(), 3);
   QVERIFY(!user.dirty());
   QCOMPARE(user.getNumberOfFrames(), frames);
+}
+
+void TestLabEffects::sessionAttachLockAndClear()
+{
+  // lsl_run with a worn object (step 5): it locks itself, starts "wave" and says @clear when told to
+  RlvState rlv;
+  lsl::Session session;
+  const QString cuffs =
+    "default {\n"
+    "  state_entry() { llOwnerSay(\"@detach=n\"); llListen(1, \"\", NULL_KEY, \"\");\n"
+    "                  llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION); }\n"
+    "  run_time_permissions(integer p) { llStartAnimation(\"wave\"); }\n"
+    "  listen(integer c, string n, key id, string m) { llOwnerSay(\"@clear\"); }\n"
+    "}\n";
+  EffectsPreview preview;
+  preview.setRealTime(false);
+  preview.setExamplesFolder(examples());
+  preview.setEnabled(true);
+  QObject::connect(&session, &lsl::Session::changed, &preview, [&]() { preview.showSession(&session); });
+
+  QJsonObject a = lsl::Control::run(QJsonObject{{"command", "lsl_run"}, {"seconds", 1.5},
+                                                {"objects", QJsonArray{QJsonObject{{"name", "cuffs"}, {"source", cuffs}, {"attached", 5}}}}},
+                                    &rlv, &session);
+  QVERIFY2(a.value("ok").toBool(), qPrintable(a.value("error").toString()));
+  QCOMPARE(preview.animationName(), QString("wave"));
+  QCOMPARE(preview.frame(), 46);   // started at 0, 1.5 s on
+  QCOMPARE(preview.markers().size(), 2);
+  QCOMPARE(preview.markers().at(0).kind, EffectsPreview::Marker::Object);
+  QCOMPARE(preview.markers().at(0).label, QString("cuffs"));
+  QCOMPARE(preview.markers().at(1).kind, EffectsPreview::Marker::Lock);
+  QCOMPARE(preview.lines(), QStringList({"Playing in the 3D view: wave (started at 0.000 s).",
+                                         "Worn: cuffs on Left Hand, locked."}));
+
+  // lsl_event: chat makes it send @clear; the lock goes, the object and the animation stay
+  a = lsl::Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "chat"}, {"channel", 1}, {"text", "x"}, {"seconds", 0.4}},
+                          &session);
+  QVERIFY2(a.value("ok").toBool(), qPrintable(a.value("error").toString()));
+  QCOMPARE(preview.markers().size(), 1);
+  QCOMPARE(preview.markers().at(0).kind, EffectsPreview::Marker::Object);
+  QCOMPARE(preview.animationName(), QString("wave"));
+  QCOMPARE(preview.frame(), 58);   // 1.9 s after the start, from the earlier command's log
+  QCOMPARE(preview.lines(), QStringList({"Playing in the 3D view: wave (started at 0.000 s).", "Worn: cuffs on Left Hand."}));
+
+  // detach: the object goes too
+  a = lsl::Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "detach"}, {"seconds", 0.0}}, &session);
+  QVERIFY2(a.value("ok").toBool(), qPrintable(a.value("error").toString()));
+  QVERIFY(preview.markers().isEmpty());
+  QCOMPARE(preview.animationName(), QString("wave"));
+
+  // a new lsl_run is a new world: nothing carried over
+  a = lsl::Control::run(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { } }"}}, &rlv, &session);
+  QVERIFY(a.value("ok").toBool());
+  QVERIFY(preview.animation() == nullptr);
+  QVERIFY(preview.markers().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(TestLabEffects)

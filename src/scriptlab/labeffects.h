@@ -70,8 +70,10 @@ namespace LabEffects
     bool logTruncated = false;   // the log was cut, so some effects may be missing
   };
 
-  // reads one run answer ({"ok": true, "log": [...], "time": ..., "rlv": {...}, "objects": [...]})
-  Effects fromRun(const QJsonObject& run);
+  // reads one run answer ({"ok": true, "log": [...], "time": ..., "rlv": {...}, "objects": [...]}).
+  // before: what was playing when this log began (an lsl_event runs on the world of the last lsl_run,
+  // and its log has only the new entries)
+  Effects fromRun(const QJsonObject& run, const QList<Playing>& before = QList<Playing>());
 
   // The frame (0-based) an animation shows elapsed seconds after it started: it starts on frame 1
   // (frame 0 is the reference pose; frame 0 for a one-frame animation), moves one frame each frameTime

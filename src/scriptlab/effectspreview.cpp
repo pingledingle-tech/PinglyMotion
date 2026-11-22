@@ -13,6 +13,9 @@
 #include "bvh.h"
 #include "constants.h"
 #include "labwatcher.h"
+#include "lsl/rlvworld.h"
+#include "lsl/sandbox.h"
+#include "lsl/session.h"
 
 EffectsPreview::EffectsPreview(QObject* parent)
   : QObject(parent)
@@ -65,6 +68,8 @@ void EffectsPreview::dropAnimation()
 
 void EffectsPreview::clear()
 {
+  m_playing.clear();
+  m_world = nullptr;
   const bool had = m_animation || !m_markers.isEmpty() || !m_lines.isEmpty();
   dropAnimation();
   m_markers.clear();
@@ -100,15 +105,41 @@ void EffectsPreview::showLatest(const LabWatcher* watcher)
   showRun(last.value("result").toObject(), folders);
 }
 
+void EffectsPreview::showSession(const lsl::Session* session)
+{
+  if (!m_enabled) return;
+  const lsl::Sandbox* world = session ? session->sandbox() : nullptr;
+  if (!world)
+  {
+    clear();
+    return;
+  }
+  // the same answer lsl_run and lsl_event give, from the world as it is now
+  lsl::Sandbox* sandbox = const_cast<lsl::Sandbox*>(world);
+  const QJsonObject run{{"log", world->log()}, {"log_truncated", world->truncated()},
+                        {"time", world->now()}, {"objects", world->objectsJson()},
+                        {"rlv", QJsonObject{{"state", lsl::RlvWorld::stateJson(sandbox->rlv())}}}};
+  const QList<LabEffects::Playing> before = world == m_world ? m_playing : QList<LabEffects::Playing>();
+  show(run, QStringList(), before);
+  m_world = world;
+}
+
 void EffectsPreview::showRun(const QJsonObject& run, const QStringList& folders)
 {
   if (!m_enabled) return;
+  show(run, folders, QList<LabEffects::Playing>());
+  m_world = nullptr;
+}
+
+void EffectsPreview::show(const QJsonObject& run, const QStringList& folders, const QList<LabEffects::Playing>& before)
+{
   dropAnimation();
   m_markers.clear();
   m_lines.clear();
   m_error = false;
 
-  const LabEffects::Effects effects = LabEffects::fromRun(run);
+  const LabEffects::Effects effects = LabEffects::fromRun(run, before);
+  m_playing = effects.playing;
 
   // the newest animation still playing
   if (!effects.playing.isEmpty())

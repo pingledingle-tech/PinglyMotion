@@ -177,6 +177,8 @@ class ScriptLabPanel : public QWidget
     QLabel* m_effectsStatus = nullptr;
     QList<QMetaObject::Connection> m_effectsConnections;
     QList<QMetaObject::Connection> m_effectsWatcherConnections;
+    QPointer<lsl::Session> m_session;
+    bool m_effectsFromSession = false;   // the newest run came from lsl_run or lsl_event, not Live
 };
 
 #endif

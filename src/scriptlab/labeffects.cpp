@@ -88,14 +88,14 @@ QStringList jointsForPoint(int point)
   return out;
 }
 
-Effects fromRun(const QJsonObject& run)
+Effects fromRun(const QJsonObject& run, const QList<Playing>& before)
 {
   Effects effects;
   effects.endTime = run.value("time").toDouble();
   effects.logTruncated = run.value("log_truncated").toBool();
 
   // animations: replay the log in order
-  QList<Playing> playing;
+  QList<Playing> playing = before;
   for (const QJsonValue& value : run.value("log").toArray())
   {
     const QJsonObject entry = value.toObject();

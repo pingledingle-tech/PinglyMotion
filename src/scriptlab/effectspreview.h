@@ -35,6 +35,7 @@
 class Animation;
 class BVH;
 class LabWatcher;
+namespace lsl { class Session; }
 
 class EffectsPreview : public QObject
 {
@@ -58,6 +59,9 @@ class EffectsPreview : public QObject
     void showRun(const QJsonObject& run, const QStringList& folders);
     // the newest Live result of the watcher: the script's folder and the watched folder are searched
     void showLatest(const LabWatcher* watcher);
+    // the world of the last lsl_run (step 5), after lsl_run or lsl_event: animations started by an
+    // earlier command in the same world keep playing; the examples folder is searched
+    void showSession(const lsl::Session* session);
     // removes the preview and the markers (the 3D view shows the user's animation again)
     void clear();
 
@@ -95,6 +99,7 @@ class EffectsPreview : public QObject
     void tick();
     void updateFrame();
     void dropAnimation();
+    void show(const QJsonObject& run, const QStringList& folders, const QList<LabEffects::Playing>& before);
 
     bool m_enabled = false;
     bool m_realTime = true;
@@ -110,6 +115,8 @@ class EffectsPreview : public QObject
     QList<Marker> m_markers;
     QStringList m_lines;
     bool m_error = false;
+    QList<LabEffects::Playing> m_playing;   // what played at the end of the last run shown
+    const void* m_world = nullptr;           // the session's world that run came from (identity only)
 };
 
 #endif
