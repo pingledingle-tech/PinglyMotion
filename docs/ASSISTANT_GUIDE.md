@@ -12,13 +12,13 @@ Numbers here come from the program's own files and tests, not from memory. Where
 - **A joint that does not move is dropped.** On export, a joint that never moves away from frame 1 is left out of the file. So a joint you want to move must differ from frame 1 at some key.
 - **At most 60 seconds.** About 1,800 frames at 30 per second. A longer animation is refused at export.
 - **Between keys Second Life moves in a straight line.** PinglyMotion's easing choices are turned into extra keys on export, so the movement is the same.
-- **Priority** says which animation wins when two move the same joint; the higher number wins. A `.anim` file can have 0 to 6 (default 2). A BVH uploaded in the viewer is limited to 0 to 4. The export dialog (File > Export as Second Life .anim) and the `export_anim` command set it.
+- **Priority** says which animation wins when two move the same joint; the higher number wins. A `.anim` file can have 0 to 6 (default 2). A BVH uploaded in the viewer is limited to 0 to 4. The export dialog (File > Export for Second Life (.anim)) and the `export_anim` command set it.
 - **Loop points** are two moments inside the animation. Between them it repeats. Make the last key equal to the first, or the loop jumps.
 - **Ease in and out of the whole animation** (the export dialog calls them slow start and slow finish, in seconds) fade it in and out against whatever else plays. That is not the same as the six easing choices between two keys (section 4).
 - **Hip offset.** The hip position (`set_position`) is stored as the offset from frame 1 and cannot be more than 5 metres (about 197 in the program's units, inches). Standing hip height is 43.5 in the start pose and 41 in the relaxed pose. When the legs bend, the hip must come down, see section 5.
 - **Hand pose** is a header value of an `.anim` file (14 shapes: relaxed, fist, point and so on). The finger joints of Bento (`mHand...`) are posed as ordinary joints and are separate from it.
 - **Upload changes the file a little.** The viewer reads the file and writes it again, so every number can move by one tiny step. Ignore it.
-- `save_file` writes `.dingle` (the working file) or `.bvh` (uploadable). `export_anim` writes the `.anim` file with priority, loop, slow start and finish, and hand pose, the same as File > Export as Second Life .anim.
+- `save_file` writes `.dingle` (the working file) or `.bvh` (uploadable). `export_anim` writes the `.anim` file with priority, loop, slow start and finish, and hand pose, the same as File > Export for Second Life (.anim).
 
 ## 2. The skeleton
 
@@ -241,14 +241,14 @@ The guide is shipped with the Windows zip and the Claude Desktop extension, so a
 
 ## 6. Talking to a beginner
 
-The user may never have animated. Use these words, not the left column.
+The user may never have animated. Use these words, not the left column. (Copy of the beginner rows of the glossary in `docs/TEACHING_TEXTS.md`, "Glossary: the words to use"; keep in sync. It stays here because AI clients read this guide on its own.)
 
 | Not this | Say this |
 |---|---|
 | key frame, keyframe | key (a saved pose) |
 | rotate, rotation | turn |
 | interpolation | the movement between two keys |
-| ease in, ease out | slow finish, slow start |
+| ease in, ease out | slow start, slow finish |
 | IK, inverse kinematics | drag the hand and the arm follows |
 | joint limit | the furthest this joint can turn |
 | quaternion, Euler | never say these |

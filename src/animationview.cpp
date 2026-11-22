@@ -53,8 +53,11 @@
 #include "usersettings.h"
 #include "scenestate.h"
 #include "screenshotsheet.h"
+#include "scriptlab/cameraoverride.h"
+#include "scriptlab/environmentoverride.h"
+#include "scriptlab/effectspreview.h"
 
-AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation* anim)
+AnimationView::AnimationView(QWidget* parent, const char* /* name */)
  : QOpenGLWidget(parent),
    m_cubeMeshModel(nullptr),
    m_sphereMeshModel(nullptr),
@@ -87,9 +90,9 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
     joints[i]=reader.animRead(model,limFile);
   }
 
-  QString skinError;
-  if(!m_avatarSkin.load(Constants::pinglyMotionDataPath(),&skinError))
-    qWarning("AnimationView::AnimationView(): no avatar body: %s",skinError.toLatin1().constData());
+  const AvatarSkin::Result skinResult=m_avatarSkin.load(Constants::pinglyMotionDataPath());
+  if(!skinResult.ok())
+    qWarning("AnimationView::AnimationView(): no avatar body: %s",skinResult.error.toLatin1().constData());
 
   // the reference skeleton decides how many tracks the timeline has
   Constants::setNumParts(BVH::countNodes(joints[0])+1);
@@ -97,7 +100,6 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */, Animation*
   JointGroups::setTracks(m_partNames);
 
   modifier=Qt::NoModifier;
-  if(anim) m_scene->setAnimation(anim);
   setMouseTracking(true);
   setFocusPolicy(Qt::StrongFocus);
 }
@@ -160,6 +162,40 @@ void AnimationView::setScene(Scene* scene)
   m_scene = scene;
 }
 
+void AnimationView::setEffectsPreview(EffectsPreview* preview)
+{
+  if(m_effects) disconnect(m_effects,nullptr,this,nullptr);
+  m_effects=preview;
+  if(preview) connect(preview,&EffectsPreview::changed,this,[this]() { update(); });
+  update();
+}
+
+void AnimationView::setCameraOverride(CameraOverride* cameraOverride)
+{
+  if(m_cameraOverride) disconnect(m_cameraOverride,nullptr,this,nullptr);
+  m_cameraOverride=cameraOverride;
+  if(cameraOverride) connect(cameraOverride,&CameraOverride::changed,this,&AnimationView::applyCameraOverride);
+  applyCameraOverride();
+}
+
+void AnimationView::setEnvironmentOverride(EnvironmentOverride* environmentOverride)
+{
+  if(m_environmentOverride) disconnect(m_environmentOverride,nullptr,this,nullptr);
+  m_environmentOverride=environmentOverride;
+  if(environmentOverride) connect(environmentOverride,&EnvironmentOverride::changed,this,[this]() { update(); });
+  update();
+}
+
+void AnimationView::applyCameraOverride()
+{
+  if(!m_scene) return;
+  if(m_cameraOverride && m_cameraOverride->active())
+    camera()->setConstraint(m_cameraOverride->constraint());
+  else
+    camera()->clearConstraint();
+  update();
+}
+
 void AnimationView::drawProp(const Prop* prop) const
 {
   Prop::State state=Prop::Normal;
@@ -184,7 +220,7 @@ void AnimationView::drawProps()
 // a floating panel that lies over the view, in widget-local pixels, found by
 // looking at the dock widgets of the top-level window (not by a method on
 // it, so this view needs no change there, and other panel jobs can run
-// beside this one without touching the same file; docs/PANELS_PLAN.md, P5)
+// beside this one without touching the same file; docs/archive/PANELS_PLAN.md, P5)
 QList<QRect> AnimationView::coveringPanelRects() const
 {
   QList<QRect> panels;
@@ -203,7 +239,7 @@ QList<QRect> AnimationView::coveringPanelRects() const
 
 // keeps the figure about the same size on screen when the view's height
 // changes: the vertical field of view is fixed, so a shorter (or taller)
-// view would otherwise shrink (or grow) the figure (docs/PANELS_PLAN.md, P5,
+// view would otherwise shrink (or grow) the figure (docs/archive/PANELS_PLAN.md, P5,
 // section 5 "Camera centring")
 void AnimationView::keepFigureSizeOnHeightChange(int newHeight)
 {
@@ -226,7 +262,8 @@ void AnimationView::setProjection()
     if(!panels.isEmpty())
       center=PanelLayout::freeArea(viewRect,panels).center();
   }
-  const QMatrix4x4 perspective=shiftedPerspective(60.0f,QRectF(viewRect),center,1.0f,2000.0f);
+  // 60 degrees, or what the Script Lab camera limits set (job 7b)
+  const QMatrix4x4 perspective=shiftedPerspective(camera()->fieldOfView(),QRectF(viewRect),center,1.0f,2000.0f);
   SceneState::setProjection(perspective);
 }
 
@@ -364,13 +401,21 @@ void AnimationView::draw()
   }
 
   // fog towards the background colour, the shaders use it (exponential)
+  EnvironmentOverride::Scene look;
+  look.background=QVector3D(clearValue,clearValue,clearValue);
+  look.fogOn=UserSettings::fog();
+  look.fogDensity=0.005f;
+  look.fogColour=look.background;
+  // Script Lab sky and draw distance (job 7c): only while its box is ticked; worked out for every picture,
+  // so the view's own look comes back exactly when it is switched off
+  if(m_environmentOverride) look=m_environmentOverride->scene(look);
   SceneState::Fog fog;
-  fog.on=UserSettings::fog();
-  fog.density=0.005f;
-  fog.color=QVector3D(clearValue,clearValue,clearValue);
+  fog.on=look.fogOn;
+  fog.density=look.fogDensity;
+  fog.color=look.fogColour;
   SceneState::setFog(fog);
 
-  glClearColor(clearValue,clearValue,clearValue,0.3f);
+  glClearColor(look.background.x(),look.background.y(),look.background.z(),0.3f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   SceneState::setLighting(false);
   glEnable(GL_DEPTH_TEST);
@@ -403,10 +448,72 @@ void AnimationView::drawShadows()
 
 void AnimationView::drawAnimations()
 {
+  // Script Lab effects (issue 293): the preview figure takes the place of the user's animations,
+  // which stay as they are; it is never picked, so a click cannot select or change anything in it
+  Animation* effect=m_effects ? m_effects->animation() : nullptr;
+  if(effect)
+  {
+    if(isPicking()) return;
+    // an index far above the scene's, so no joint of the preview counts as selected
+    drawFigure(effect,EffectFigureIndex);
+    drawEffectMarkers();
+    return;
+  }
+
+  Animation* current=m_scene->getAnimation();
   for(unsigned int index=0;index< (unsigned int) m_scene->getCountOfAnimations();index++)
   {
     drawFigure(m_scene->getAnimation(index),index);
+    if(m_scene->getAnimation(index)==current) drawEffectMarkers();
   }
+}
+
+void AnimationView::drawEffectMarkers()
+{
+  if(!m_effects || m_effects->markers().isEmpty() || isPicking() || !m_cubeMeshModel || !m_sphereMeshModel) return;
+  // colour tokens accent and danger_fill (docs/design_tokens.json, dark theme: the 3D view's background
+  // does not follow the theme); the shape tells them apart too: a box for an object, a ball for a lock
+  const QVector4D objectColour(0x32/255.0f,0x72/255.0f,0xDD/255.0f,1.0f);
+  const QVector4D lockColour(0xC9/255.0f,0x3A/255.0f,0x32/255.0f,1.0f);
+  QHash<QString,int> used;   // markers already drawn at a joint, so the next one sits beside them
+  // on top of the body, like the Bento balls, so a marker inside the body can be seen
+  const GLboolean depthWasOn=glIsEnabled(GL_DEPTH_TEST);
+  glDisable(GL_DEPTH_TEST);
+  SceneState::setLighting(true);
+  for(const EffectsPreview::Marker& marker : m_effects->markers())
+  {
+    const SkinJointState* state=nullptr;
+    QString joint;
+    for(const QString& name : marker.joints)
+    {
+      auto found=m_skinJointStates.constFind(name);
+      if(found!=m_skinJointStates.constEnd())
+      {
+        state=&found.value();
+        joint=name;
+        break;
+      }
+    }
+    if(!state) continue;
+    const int slot=used[joint]++;
+    SceneState::pushMatrix();
+    SceneState::modelview()=state->matrix;
+    SceneState::translate(2.6f*slot,0,0);
+    if(marker.kind==EffectsPreview::Marker::Lock)
+    {
+      SceneState::setColor(lockColour.x(),lockColour.y(),lockColour.z(),lockColour.w());
+      SceneState::scale(1.2f,1.2f,1.2f);
+      m_sphereMeshModel->draw();
+    }
+    else
+    {
+      SceneState::setColor(objectColour.x(),objectColour.y(),objectColour.z(),objectColour.w());
+      SceneState::scale(2.4f,2.4f,2.4f);
+      m_cubeMeshModel->draw();
+    }
+    SceneState::popMatrix();
+  }
+  if(depthWasOn) glEnable(GL_DEPTH_TEST);
 }
 
 bool AnimationView::drawWithShader(GLenum mode,const QVector<QVector3D>& positions,
@@ -705,7 +812,7 @@ void AnimationView::moveCamera(CameraDrag how,int dx,int dy)
   // zoom: 1% per pixel, down = further away
   const float zoom=std::pow(1.01f,(float) dy);
   // pan: the point the camera turns around follows the mouse
-  const float perPixel=2.0f*std::tan(30.0f*M_PI/180.0f)*camera()->distance()/qMax(1,height());
+  const float perPixel=2.0f*std::tan(camera()->fieldOfView()*0.5f*M_PI/180.0f)*camera()->distance()/qMax(1,height());
 
   switch(how)
   {
@@ -929,7 +1036,7 @@ void AnimationView::wheelEvent(QWheelEvent* event)
   update();
 }
 
-// Tab hides and shows the panels (docs/PANELS_PLAN.md, job P4). Qt's own
+// Tab hides and shows the panels (docs/archive/PANELS_PLAN.md, job P4). Qt's own
 // handling in QWidget::event would move the keyboard focus to the next
 // field instead, so Tab is taken here first. Only a plain Tab: Shift+Tab
 // and the others go on as before. Tab in a panel's field or in the search
@@ -1050,15 +1157,16 @@ bool AnimationView::setBody(AvatarSkin::Body wanted)
 {
   if(m_avatarSkin.isLoaded() && m_avatarSkin.body()==wanted) return true;
 
-  QString error;
-  bool ok=m_avatarSkin.load(Constants::pinglyMotionDataPath(),wanted,&error);
+  const AvatarSkin::Result result=m_avatarSkin.load(Constants::pinglyMotionDataPath(),wanted);
+  const bool ok=result.ok();
   if(!ok)
   {
-    qWarning("AnimationView::setBody(): %s",error.toLatin1().constData());
+    qWarning("AnimationView::setBody(): %s",result.error.toLatin1().constData());
     // fall back to the other body, so that something is shown if one file is damaged
     const AvatarSkin::Body other=wanted==AvatarSkin::RuthBody ? AvatarSkin::MaxBody : AvatarSkin::RuthBody;
-    if(!m_avatarSkin.load(Constants::pinglyMotionDataPath(),other,&error))
-      qWarning("AnimationView::setBody(): no avatar body: %s",error.toLatin1().constData());
+    const AvatarSkin::Result fallback=m_avatarSkin.load(Constants::pinglyMotionDataPath(),other);
+    if(!fallback.ok())
+      qWarning("AnimationView::setBody(): no avatar body: %s",fallback.error.toLatin1().constData());
   }
   update();
   return ok;

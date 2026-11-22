@@ -14,11 +14,25 @@ SET (PINGLYMOTION_CORE_SRC animation.cpp
               pmmesh.cpp
               jointgroups.cpp
               propfile.cpp
+              scriptlab/rlvbehaviours.cpp
+              scriptlab/rlvcommand.cpp
+              scriptlab/rlvstate.cpp
               settings.cpp
               usersettings.cpp
               versionnumber.cpp)
 ADD_LIBRARY (pinglymotion_core STATIC ${PINGLYMOTION_CORE_SRC})
 TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
+# Script Lab Live (issue 292): the folder watch behind lab_watch and the panel
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labwatcher.cpp)
+# Script Lab step 7 (issue 293): what a run does to the avatar, and the preview the 3D view draws
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labeffects.cpp scriptlab/effectspreview.cpp)
+# Script Lab job 7b: the RLV camera limits the 3D view can keep to (uses only the CameraConstraint struct of camera.h)
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/cameraoverride.cpp scriptlab/environmentoverride.cpp)
+
+# Script Lab: the LSL interpreter (issue 289), QtCore only; the control commands lsl_check and lsl_run
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp
+                scriptlab/lsl/builtins.cpp scriptlab/lsl/interp.cpp scriptlab/lsl/world.cpp scriptlab/lsl/rlvworld.cpp scriptlab/lsl/control.cpp
+                scriptlab/lsl/sandbox.cpp scriptlab/lsl/session.cpp)
 
 # Sources
 SET (PINGLYMOTION_SRC aboutcredits.cpp
@@ -63,6 +77,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               transportbar.cpp
               scene.cpp
               screenshotsheet.cpp
+              scriptlab/scriptlabpanel.cpp
+              scriptlab/objectsview.cpp
               skinrenderer.cpp
               theme.cpp
               timeline.cpp

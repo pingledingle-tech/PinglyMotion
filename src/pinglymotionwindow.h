@@ -54,6 +54,7 @@ class ControlIndicator;
 class AuroraIndicator;
 class TipsSwitch;
 class TransportBar;
+class ScriptLabPanel;
 class AuroraLink;
 class WindowControlHost;
 class Scene;
@@ -339,16 +340,19 @@ class PinglyMotionWindow : public QMainWindow
     void buildDocks();
     void resetPanelLayout();
     // Tab, or View > Hide panels: hides every open panel, or shows again the
-    // ones Tab hid (docs/PANELS_PLAN.md, job P4)
+    // ones Tab hid (docs/archive/PANELS_PLAN.md, job P4)
     void togglePanelsHidden();
     QList<QDockWidget*> panelDocks() const;
     void fitPanelWidths();
     void showLightDialog();
     void saveUserSettings();
-    // the three panels (docs/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
+    // the three panels (docs/archive/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
     QDockWidget* m_timelineDock=nullptr;
     QDockWidget* m_jointsDock=nullptr;
     QDockWidget* m_jointCardDock=nullptr;
+    // Script Lab (issue 288): hidden until View > Script Lab
+    QDockWidget* m_scriptLabDock=nullptr;
+    ScriptLabPanel* m_scriptLabPanel=nullptr;
     QScrollArea* m_jointsScroll=nullptr;
     QScrollArea* m_jointCardScroll=nullptr;
     // Tab (job P4): which panels Tab hid, so the next Tab shows the same ones;

@@ -93,6 +93,10 @@
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
 #include "playback.h"
+#include "scriptlab/scriptlabpanel.h"
+#include "scriptlab/cameraoverride.h"
+#include "scriptlab/environmentoverride.h"
+#include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
@@ -241,6 +245,16 @@ class WindowControlHost : public ControlHost
       return QVector3D(c->xRotation(), c->yRotation(), c->distance());
     }
 
+    void setLoopPoints(int loopIn, int loopOut) override
+    {
+      ControlHost::setLoopPoints(loopIn, loopOut);
+      // the Loop In and Loop Out fields under the timeline show the new
+      // points, as when the user types them (the animation already holds
+      // valid points, so the window keeps them unchanged)
+      w->setLoopOutPoint(loopOut);
+      w->setLoopInPoint(loopIn);
+    }
+
   private:
     // the command already checked that changes may be lost; avoid the question dialog
     void discardChanges()
@@ -301,7 +315,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   fillJointTable();
 
   // the window's place, size, maximised state and screen from last time
-  // (docs/PANELS_PLAN.md, job P3). Qt puts a window back onto a screen when
+  // (docs/archive/PANELS_PLAN.md, job P3). Qt puts a window back onto a screen when
   // its saved place is gone. The old width and height are used only while
   // no geometry has been saved yet.
   {
@@ -340,9 +354,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
   struct BodyChoice { const char* key; AvatarSkin::Body body; QString text; QString tip; };
   const BodyChoice bodyChoices[]={
     {"ruth2",AvatarSkin::RuthBody,tr("Ruth2"),
-     tr("The open source Ruth2 avatar, with fingers and a face that follow the Bento bones.")},
+     tr("The open source Ruth2 avatar, with fingers and a face that follow the extra Second Life bones.")},
     {"max",AvatarSkin::MaxBody,tr("Max"),
-     tr("The open source Max avatar, with fingers and a face that follow the Bento bones.")}};
+     tr("The open source Max avatar, with fingers and a face that follow the extra Second Life bones.")}};
   QMap<QString,QAction*> bodyActions;
   for(const BodyChoice& choice : bodyChoices)
   {
@@ -390,7 +404,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   jointsMenu->addSeparator();
   QAction* hideInListsAction=jointsMenu->addAction(tr("Hide in lists"));
   hideInListsAction->setCheckable(true);
-  hideInListsAction->setToolTip(tr("Leave hidden joints out of the timeline and the part list. Off: they are listed dimmed."));
+  hideInListsAction->setToolTip(tr("Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed."));
   hideInListsAction->setChecked(UserSettings::hideJointsInLists());
   connect(hideInListsAction,&QAction::toggled,this,[this](bool on)
   {
@@ -416,16 +430,16 @@ PinglyMotionWindow::PinglyMotionWindow() :
     UserSettings::setBody(key);
   });
 
-  // Options > Light...: brightness, shine and warmth of the body light
+  // Options > Lighting...: brightness, shine and warmth of the body light
   ui->animationView->setBodyLight(UserSettings::lightBrightness(),UserSettings::lightShine(),
                                   UserSettings::lightWarmth(),UserSettings::floorShadow());
-  QAction* lightAction=new QAction(tr("Light..."),this);
+  QAction* lightAction=new QAction(tr("Lighting..."),this);
   lightAction->setToolTip(tr("Change how the body is lit: brightness, shine, warmth and the shadow on the floor."));
   ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
   connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
 
   // panel layout from last time (size, place, floating panels). Only a layout
-  // saved by this version of the panels is loaded (docs/PANELS_PLAN.md, 7);
+  // saved by this version of the panels is loaded (docs/archive/PANELS_PLAN.md, 7);
   // the old window_state with the Properties panel is left alone, so the
   // default layout is used once after the move to three panels.
   const PanelLayout::StartupChoice startup=PanelLayout::chooseStartup(
@@ -441,6 +455,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
     addDockWidget(Qt::RightDockWidgetArea,m_jointCardDock);
   if(!m_timelineDock->isFloating() && !(dockWidgetArea(m_timelineDock) & m_timelineDock->allowedAreas()))
     addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
+  if(!m_scriptLabDock->isFloating() && !(dockWidgetArea(m_scriptLabDock) & m_scriptLabDock->allowedAreas()))
+    addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
   // the timeline stands visible at every start; hiding it lasts for this session only
   PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
 
@@ -517,9 +533,28 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_controlHost.reset(new WindowControlHost(this));
   m_controlApi.reset(new ControlApi(m_controlHost.data()));
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
+  // the Script Lab panel shows and changes the same RLV state as rlv_command (issue 288)
+  m_scriptLabPanel->setState(&m_controlApi->rlv());
+  m_scriptLabPanel->setSession(&m_controlApi->lslSession());
+  // and the same folder watch as lab_watch (issue 292)
+  m_scriptLabPanel->setWatcher(&m_controlApi->lab());
+  // and shows what a Live run does in the 3D view, off until its box is ticked (issue 293)
+  EffectsPreview* effects=new EffectsPreview(this);
+  ui->animationView->setEffectsPreview(effects);
+  m_scriptLabPanel->setEffects(effects);
+  // and lets the RLV camera limits limit the 3D view's camera, off until its box is ticked (job 7b)
+  CameraOverride* cameraOverride=new CameraOverride(this);
+  cameraOverride->setState(&m_controlApi->rlv());
+  ui->animationView->setCameraOverride(cameraOverride);
+  m_scriptLabPanel->setCameraOverride(cameraOverride);
+  // and shows the sky and draw distance a script asks for as the background and fog, off until its box is ticked (job 7c)
+  EnvironmentOverride* environmentOverride=new EnvironmentOverride(this);
+  environmentOverride->setState(&m_controlApi->rlv());
+  ui->animationView->setEnvironmentOverride(environmentOverride);
+  m_scriptLabPanel->setEnvironmentOverride(environmentOverride);
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
-  m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. Off every time PinglyMotion starts, unless started with --control."));
+  m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));
   ui->menuOptions->addAction(m_controlAction);
   connect(m_controlAction,&QAction::toggled,this,[this](bool on){ setRemoteControl(on,true); });
 
@@ -836,7 +871,7 @@ void PinglyMotionWindow::backgroundClicked()
 }
 
 // The 3D view fills the window. Three panels (dock widgets) stand around it
-// (docs/PANELS_PLAN.md, job P2): Joints on the left, Selected joint on the
+// (docs/archive/PANELS_PLAN.md, job P2): Joints on the left, Selected joint on the
 // right, Timeline at the bottom. Each can be resized, moved to another side,
 // put as a tab on another panel, or torn off into its own window. A panel
 // only goes where its shape fits: the timeline is wide (top or bottom), the
@@ -970,6 +1005,12 @@ void PinglyMotionWindow::buildDocks()
   // View > Reset layout brings back
   PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
 
+  // --- Script Lab panel (issue 288): RLV commands and what the avatar may
+  // still do. Hidden until View > Script Lab; place, size and visibility
+  // are saved with the layout like the other panels.
+  m_scriptLabPanel=new ScriptLabPanel;
+  m_scriptLabDock=ScriptLabPanel::makeDock(this,m_scriptLabPanel);
+
   // View menu: a tick for each panel, then Hide panels (Tab) and Reset
   // layout. The Timeline item comes from the designer file; the other two
   // are the panels' own.
@@ -983,6 +1024,7 @@ void PinglyMotionWindow::buildDocks()
   ui->menuView->insertAction(ui->optionsShowTimelineAction,showJointCardAction);
   // closing the timeline with its own button unticks Timeline (closing the window does not)
   PanelVisibility::linkMenuItem(this,m_timelineDock,ui->optionsShowTimelineAction);
+  ui->menuView->addAction(m_scriptLabDock->toggleViewAction());
 
   ui->menuView->addSeparator();
   // Hide panels (job P4): Tab while the 3D view has the keys. The shortcut
@@ -1023,7 +1065,7 @@ void PinglyMotionWindow::buildDocks()
 
 QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
 {
-  return {m_jointsDock,m_jointCardDock,m_timelineDock};
+  return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock};
 }
 
 // View > Reset layout: the default layout built in code, all three panels
@@ -1033,6 +1075,10 @@ void PinglyMotionWindow::resetPanelLayout()
   m_applyingTab=true;
   m_tabState.reset();
   PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
+  // the Script Lab goes back to its side and closes, as at the first start
+  m_scriptLabDock->setFloating(false);
+  addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
+  m_scriptLabDock->hide();
   m_applyingTab=false;
   m_hidePanelsAction->setChecked(false);
   ui->optionsShowTimelineAction->setChecked(true);
@@ -1050,7 +1096,7 @@ void PinglyMotionWindow::togglePanelsHidden()
   if(!hidden) ui->optionsShowTimelineAction->setChecked(!m_timelineDock->isHidden());
 }
 
-// Options > Light...: three sliders that change the body light at once.
+// Options > Lighting...: three sliders that change the body light at once.
 // The dialog stays open while you work; the values are saved with the
 // other settings.
 void PinglyMotionWindow::showLightDialog()
@@ -1268,9 +1314,9 @@ void PinglyMotionWindow::fillJointTable()
       if(!r.slName.isEmpty())
         tip=tr("Second Life name: %1").arg(r.slName);
       if(r.fileName!=r.slName && r.fileName!=JointList::POSITION_TRACK)
-        tip+=(tip.isEmpty() ? QString() : QStringLiteral("\n"))+tr("Name in the animation file: %1").arg(r.fileName);
+        tip+=(tip.isEmpty() ? QString() : QStringLiteral("\n"))+tr("Name in the file: %1").arg(r.fileName);
       if(r.fileName==JointList::POSITION_TRACK)
-        tip=tr("Moves the whole avatar.");
+        tip=tr("Moves the whole figure.");
       item->setToolTip(tip);
       if(r.dimmed)
         item->setForeground(palette().color(QPalette::Disabled,QPalette::Text));
@@ -1332,7 +1378,7 @@ void PinglyMotionWindow::buildPartLists()
   const QStringList names=ui->animationView->partNames();
 
   ui->attachToComboBox->clear();
-  ui->attachToComboBox->addItem(tr("* not attached *"));
+  ui->attachToComboBox->addItem(tr("(not attached)"));
   // attachment point number equals the track number
   for(int track=1;track<names.count();track++)
     ui->attachToComboBox->addItem(names[track]=="Site" ? "-" : names[track]);
@@ -1729,7 +1775,7 @@ void PinglyMotionWindow::setSkeleton(bool on)
 void PinglyMotionWindow::setLoop(bool on)
 {
   UserSettings::setLoop(on);
-  // the Loop switch under the timeline and Options > Loop show the same
+  // the Loop switch under the timeline and Options > Loop playback show the same
   m_transport->setLoop(on);
 
   // while playing: switched off, play to the last frame and stop; switched
@@ -1744,7 +1790,7 @@ void PinglyMotionWindow::setLoop(bool on)
   }
 }
 
-// Menu Action: Options / Joint Limits
+// Menu Action: Options / Stop joints at their furthest turn
 void PinglyMotionWindow::setJointLimits(bool on)
 {
   UserSettings::setJointLimits(on);
@@ -1756,7 +1802,7 @@ void PinglyMotionWindow::setJointLimits(bool on)
   }
 }
 
-// Menu Action: Options / Protect First Frame
+// Menu Action: Options / Lock the first frame
 void PinglyMotionWindow::setProtectFirstFrame(bool on)
 {
   UserSettings::setProtectFirstFrame(on);
@@ -1773,7 +1819,7 @@ void PinglyMotionWindow::showTimeline(bool on)
   m_timelineDock->setVisible(on);
 }
 
-// Menu Action: Options / Configure PinglyMotion
+// Menu Action: Options / Settings
 void PinglyMotionWindow::configure()
 {
   UserSettingsDialog* dialog=new UserSettingsDialog(this);

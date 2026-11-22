@@ -7,7 +7,8 @@
 The old name is built from two pieces so this file does not contain it.
 Allowed: the sentence "formerly called <old name>" in a few files, the
 names of the external Aurora fork branch and module in the security audit,
-and the finished rename job files docs/work/refactor-rename-*.
+and the finished rename job files docs/work/refactor-rename-* (also after they
+moved to docs/work/archive/).
 """
 import fnmatch
 import re
@@ -19,7 +20,7 @@ FORMERLY = re.compile("formerly called " + "ping" + "mator", re.IGNORECASE)
 FORK = re.compile(r"feat/ping" + "mator-link|ping" + "mator_link", re.IGNORECASE)
 
 # whole files that may contain the old name
-ALLOWED_FILES = ["docs/work/refactor-rename-*"]
+ALLOWED_FILES = ["docs/work/refactor-rename-*", "docs/work/archive/refactor-rename-*"]
 # files where the sentence "formerly called ..." is allowed
 FORMERLY_FILES = ["README.md", "CLAUDE.md", "docs/SECURITY_AUDIT.md", "docs/DECISIONS.md"]
 # files that may name the Aurora fork branch and module

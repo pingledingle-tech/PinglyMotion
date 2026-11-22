@@ -67,4 +67,4 @@ required check: it shows red as a warning, it does not block a merge.
 
 `HISTORY.md` lists the jobs from before this format. It is not edited any
 more. Merged pull requests are the history from now on. Job files of finished
-jobs stay in this folder until someone cleans up.
+jobs whose pull request is merged are moved to `docs/work/archive/` (22 November 2026); `tools/work.py` only reads this folder, not the archive. Move a job file there with `git mv` once it is done and merged.

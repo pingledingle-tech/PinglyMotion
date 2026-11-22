@@ -187,7 +187,7 @@
         <item row="3" column="0" colspan="4">
          <widget class="QGroupBox" name="rotationGroupBox">
           <property name="title">
-           <string>Rotation</string>
+           <string>Turn</string>
           </property>
           <layout class="QGridLayout">
            <item row="2" column="0">
@@ -199,7 +199,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Y Rotation:</string>
+              <string>Turn Y:</string>
              </property>
             </widget>
            </item>
@@ -261,7 +261,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Z Rotation:</string>
+              <string>Turn Z:</string>
              </property>
             </widget>
            </item>
@@ -323,7 +323,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>X Rotation:</string>
+              <string>Turn X:</string>
              </property>
             </widget>
            </item>
@@ -639,7 +639,7 @@
          <widget class="QComboBox" name="attachToComboBox">
           <item>
            <property name="text">
-            <string>* not attached *</string>
+            <string>(not attached)</string>
            </property>
           </item>
           <item>
@@ -858,7 +858,7 @@
         <item row="4" column="0" colspan="3">
          <widget class="QGroupBox" name="propScaleGroup">
           <property name="title">
-           <string>Scale</string>
+           <string>Size</string>
           </property>
           <layout class="QGridLayout">
            <item row="0" column="0">
@@ -870,7 +870,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>X Scale:</string>
+              <string>Size X:</string>
              </property>
             </widget>
            </item>
@@ -899,7 +899,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Y Scale:</string>
+              <string>Size Y:</string>
              </property>
             </widget>
            </item>
@@ -928,7 +928,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Z Scale:</string>
+              <string>Size Z:</string>
              </property>
             </widget>
            </item>
@@ -954,7 +954,7 @@
         <item row="5" column="0" colspan="3">
          <widget class="QGroupBox" name="propRotationGroup">
           <property name="title">
-           <string>Rotation</string>
+           <string>Turn</string>
           </property>
           <layout class="QGridLayout">
            <item row="0" column="0">
@@ -966,7 +966,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>X Rotation:</string>
+              <string>Turn X:</string>
              </property>
             </widget>
            </item>
@@ -995,7 +995,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Y Rotation:</string>
+              <string>Turn Y:</string>
              </property>
             </widget>
            </item>
@@ -1024,7 +1024,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Z Rotation:</string>
+              <string>Turn Z:</string>
              </property>
             </widget>
            </item>
@@ -1091,7 +1091,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Loop In:</string>
+         <string>Loop starts at:</string>
         </property>
        </widget>
       </item>
@@ -1149,7 +1149,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Loop Out:</string>
+         <string>Loop ends at:</string>
         </property>
        </widget>
       </item>
@@ -1270,7 +1270,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>FPS:</string>
+           <string>Frames per second:</string>
           </property>
          </widget>
         </item>
@@ -1456,7 +1456,7 @@
      <normaloff>:/icons/icons/filesaveas.png</normaloff>:/icons/icons/filesaveas.png</iconset>
    </property>
    <property name="text">
-    <string>Save As...</string>
+    <string>Save as...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
@@ -1464,12 +1464,12 @@
   </action>
   <action name="fileLoadPropsAction">
    <property name="text">
-    <string>Load Props...</string>
+    <string>Open props...</string>
    </property>
   </action>
   <action name="fileSavePropsAction">
    <property name="text">
-    <string>Save Props...</string>
+    <string>Save props...</string>
    </property>
   </action>
   <action name="fileExitAction">
@@ -1554,7 +1554,10 @@
   </action>
   <action name="toolsOptimizeBVHAction">
    <property name="text">
-    <string>Optimize BVH</string>
+    <string>Remove extra keys</string>
+   </property>
+   <property name="toolTip">
+    <string>Removes keys that change nothing.</string>
    </property>
   </action>
   <action name="optionsSkeletonAction">
@@ -1562,7 +1565,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Skeleton</string>
+    <string>Show skeleton</string>
    </property>
   </action>
   <action name="optionsJointLimitsAction">
@@ -1570,7 +1573,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Joint Limits</string>
+    <string>Stop joints at their furthest turn</string>
    </property>
   </action>
   <action name="optionsLoopAction">
@@ -1578,7 +1581,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Loop</string>
+    <string>Loop playback</string>
    </property>
   </action>
   <action name="optionsProtectFirstFrameAction">
@@ -1586,7 +1589,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Protect First Frame</string>
+    <string>Lock the first frame</string>
+   </property>
+   <property name="toolTip">
+    <string>Keeps frame 0 as it is, so the loop has no jump.</string>
    </property>
   </action>
   <action name="optionsShowTimelineAction">
@@ -1594,12 +1600,12 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Timeline</string>
+    <string>Show timeline</string>
    </property>
   </action>
   <action name="optionsConfigurePinglyMotionAction">
    <property name="text">
-    <string>Configure PinglyMotion...</string>
+    <string>Settings...</string>
    </property>
   </action>
   <action name="helpOpenLogAction">
@@ -1623,7 +1629,10 @@
      <normaloff>:/icons/icons/resetcamera.png</normaloff>:/icons/icons/resetcamera.png</iconset>
    </property>
    <property name="text">
-    <string>Reset Camera</string>
+    <string>Reset view</string>
+   </property>
+   <property name="toolTip">
+    <string>Puts the camera back where it started.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+0</string>
@@ -1631,7 +1640,10 @@
   </action>
   <action name="fileExportForSecondLifeAction">
    <property name="text">
-    <string>Export For Second Life</string>
+    <string>Export BVH</string>
+   </property>
+   <property name="toolTip">
+    <string>Makes a BVH file. For Second Life use Export for Second Life (.anim).</string>
    </property>
   </action>
   <action name="fileImportGltfAction">
@@ -1643,6 +1655,9 @@
    <property name="text">
     <string>Import BVH from another skeleton...</string>
    </property>
+   <property name="toolTip">
+    <string>Fits a BVH made for another skeleton onto this figure.</string>
+   </property>
   </action>
   <action name="fileImportAnimAction">
    <property name="text">
@@ -1651,7 +1666,7 @@
   </action>
   <action name="fileExportAnimAction">
    <property name="text">
-    <string>Export as Second Life .anim...</string>
+    <string>Export for Second Life (.anim)...</string>
    </property>
   </action>
   <action name="toolsMirrorAction">
@@ -1659,12 +1674,12 @@
     <string>Mirror</string>
    </property>
    <property name="toolTip">
-    <string>Mirror Animation or Track</string>
+    <string>Swaps left and right in the whole animation or in one joint.</string>
    </property>
   </action>
   <action name="helpWhatsNewAction">
    <property name="text">
-    <string>What's New...</string>
+    <string>What's new...</string>
    </property>
   </action>
  </widget>
