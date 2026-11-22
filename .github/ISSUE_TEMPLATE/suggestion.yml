@@ -1,0 +1,25 @@
+name: Suggestion / feedback
+description: An idea, a wish or general feedback about PinglyMotion.
+title: "Suggestion: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Ideas and feedback are welcome.
+
+        **Privacy:** do not write names, Second Life account names, email addresses or other personal details, in the text or in pictures.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea or feedback
+      description: What would you like to be able to do, or what did you notice?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help?
+      description: What are you trying to make in Second Life?
+    validations:
+      required: false
