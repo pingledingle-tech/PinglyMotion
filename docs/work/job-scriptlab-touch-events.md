@@ -1,5 +1,5 @@
 Branch: job/scriptlab-touch-events
-Status: active
+Status: done
 Pull request: #367
 Files:
 - src/scriptlab/lsl/**
