@@ -65,7 +65,7 @@ Where: `src/pinglymotionwindow.ui`.
 | ID | Current wording | Purpose | Proposed | Change |
 |---|---|---|---|---|
 | A1 | File, Edit, Options, View, Help, Tools | Menu titles | no change | no |
-| A2 | New / Open... / Add... | Start or open an animation | New / Open... / Add to this animation... | yes, verify |
+| A2 | New / Open... / Add... | Start or open an animation | New / Open... / Add to this animation... (since UX phase 1a New is "New animation", as in the mockup) | yes, verify |
 | A3 | Save / Save As... | Save the animation | Save / Save as... | yes |
 | A4 | Load Props... / Save Props... | Props file | Open props... / Save props... | yes |
 | A5 | Exit | Quit | no change | no |
@@ -86,7 +86,7 @@ Where: `src/pinglymotionwindow.ui`.
 | A20 | Reset Camera, tip "Reset camera view to default position" | Reset the 3D view | Reset view. Tip: "Puts the camera back where it started." | yes |
 | A21 | About... | Credits | no change | no |
 | A22 | What's New... | Release notes | What's new... | yes |
-| A23 | Dark theme | Option | no change | no |
+| A23 | Dark theme | Option | no change; since UX phase 1a it is View > Light theme (T), the same setting turned round (docs/UX_DECISIONS.md, 6e) | no |
 | A24 | Light... / tip "Change how the body is lit: brightness, shine, warmth and the shadow on the floor." | Lighting dialog | Lighting... Tip keeps its wording. | yes (label only) |
 | A25 | Body: Ruth2, Max (tips "The open source Ruth2 avatar, with fingers and a face that follow the Bento bones.") | Pick the figure | Body: no change. In the tips write "Bento bones" as "the extra Second Life bones" on first use. | yes |
 | A26 | Hide panels / "Hide all panels to see only the figure. Tab again brings them back." | Show only the figure | no change | no |

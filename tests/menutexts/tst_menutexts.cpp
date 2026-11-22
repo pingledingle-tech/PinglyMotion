@@ -13,9 +13,12 @@
 
 #include <QFile>
 #include <QMap>
+#include <QSet>
 #include <QStringList>
 #include <QXmlStreamReader>
 #include <QtTest>
+
+#include "menuspec.h"
 
 namespace
 {
@@ -31,11 +34,20 @@ namespace
     return QString::fromUtf8(file.readAll());
   }
 
+  QString readMockup()
+  {
+    QFile file(QStringLiteral(PINGLYMOTION_MOCKUP));
+    if (!file.open(QIODevice::ReadOnly)) return QString();
+    return QString::fromUtf8(file.readAll());
+  }
+
   // what a .ui file says: per action its text and tip, and every <string>
   struct UiTexts
   {
     QMap<QString, QString> actionText;
     QMap<QString, QString> actionTip;
+    QMap<QString, QString> actionShortcut;
+    QMap<QString, QString> actionEnabled;
     // the window title and the text of each named widget
     QMap<QString, QString> widgetText;
     QStringList strings;
@@ -61,12 +73,15 @@ namespace
         if (element == QStringLiteral("action")) action = objectName;
         else if (element == QStringLiteral("widget")) widgets << objectName;
         else if (element == QStringLiteral("property")) property = objectName;
+        else if (element == QStringLiteral("bool") && !action.isEmpty() && property == QStringLiteral("enabled"))
+          out.actionEnabled[action] = xml.readElementText();
         else if (element == QStringLiteral("string"))
         {
           const QString text = xml.readElementText();
           out.strings << text;
           if (!action.isEmpty() && property == QStringLiteral("text")) out.actionText[action] = text;
           else if (!action.isEmpty() && property == QStringLiteral("toolTip")) out.actionTip[action] = text;
+          else if (!action.isEmpty() && property == QStringLiteral("shortcut")) out.actionShortcut[action] = text;
           else if (action.isEmpty() && !widgets.isEmpty() &&
                    (property == QStringLiteral("text") || property == QStringLiteral("title") ||
                     property == QStringLiteral("windowTitle")))
@@ -99,6 +114,12 @@ class TestMenuTexts : public QObject
     void settingsDialog();
     void aboutAndUpdateDialogs();
     void controlCommandNamesTheMenu();
+    // UX phase 1a: File, View and Help as in the mockup
+    void phase1aTable();
+    void phase1aMatchesMockup();
+    void phase1aFileMenu();
+    void phase1aWindowUsesTable();
+    void phase1aOrder();
 };
 
 // 3.1: menu items in sentence case, verb first, dots only before a dialog
@@ -249,6 +270,175 @@ void TestMenuTexts::controlCommandNamesTheMenu()
   QVERIFY(!source.isEmpty());
   QVERIFY(source.contains(QStringLiteral("Options as in File > Export for Second Life (.anim):")));
   QVERIFY(!source.contains(QStringLiteral("Export as Second Life .anim")));
+}
+
+// ---- UX phase 1a: menus as in the mockup (docs/mockup/index.html) ----
+
+namespace
+{
+  struct Expected { const MenuSpec::Item* item; const char* id; const char* text; const char* key; const char* reason; };
+
+  // written out again here, letter for letter, so a change in menuspec.h shows up
+  const Expected phase1a[] = {
+    {&MenuSpec::fileNew, "fileNewAction", "New animation", "Ctrl+N", ""},
+    {&MenuSpec::fileExport, "fileExportAnimAction", "Export for Second Life (.anim)...", "Ctrl+Shift+E", ""},
+    {&MenuSpec::fileClose, "fileCloseAction", "Close animation", "Ctrl+W",
+     "Close animation is not built yet. Use New animation to start again."},
+    {&MenuSpec::viewFront, "viewFrontAction", "Front", "Numpad 1", ""},
+    {&MenuSpec::viewSide, "viewSideAction", "Side", "Numpad 3", ""},
+    {&MenuSpec::viewTop, "viewTopAction", "Top", "Numpad 7", ""},
+    {&MenuSpec::viewHome, "viewHomeAction", "Home view", "0", ""},
+    {&MenuSpec::viewScriptLab, "viewScriptLabAction", "Script Lab", "Ctrl+Shift+L", ""},
+    {&MenuSpec::viewHidePanels, "viewHidePanelsAction", "Hide panels", "Tab", ""},
+    {&MenuSpec::viewResetLayout, "viewResetLayoutAction", "Reset layout", "", ""},
+    {&MenuSpec::viewNextArea, "viewNextAreaAction", "Next area", "F6",
+     "Next area is not built yet. For now use Tab to move between the fields."},
+    {&MenuSpec::viewLightTheme, "viewLightThemeAction", "Light theme", "T", ""},
+    {&MenuSpec::viewExpertMode, "viewExpertModeAction", "Expert mode", "Shift+E", ""},
+    {&MenuSpec::viewTextSize, "viewTextSizeAction", "Text size: %1%", "Ctrl+=", ""},
+    {&MenuSpec::viewSetup, "viewSetupAction", "Setup...", "",
+     "Setup is not built yet. For now use Options > Settings."},
+    {&MenuSpec::helpSetup, "helpSetupAction", "Setup: beginner or experienced, mouse and keys...", "",
+     "Setup is not built yet. For now use Options > Settings."},
+    {&MenuSpec::helpWelcome, "helpWelcomeAction", "Show the welcome card again", "",
+     "The welcome card is not built yet."},
+    {&MenuSpec::helpHints, "helpHintsAction", "Show hints", "Shift+H", ""},
+    {&MenuSpec::helpKeys, "helpKeysAction", "Keys and mouse", "?",
+     "The keys and mouse page is not built yet."},
+    {&MenuSpec::helpCamera, "helpCameraAction", "Camera and keys...", "",
+     "Camera and keys is not built yet. It comes with Setup."},
+    {&MenuSpec::helpCharter, "helpCharterAction", "Show charter principles", "C",
+     "The charter overlay is not built yet."},
+  };
+  const int phase1aCount = int(sizeof(phase1a) / sizeof(phase1a[0]));
+}
+
+// every text, key and reason exactly, and nothing in the table that is not listed here
+void TestMenuTexts::phase1aTable()
+{
+  QCOMPARE(int(sizeof(MenuSpec::all) / sizeof(MenuSpec::all[0])), phase1aCount);
+  QSet<QString> ids;
+  for (const Expected& e : phase1a)
+  {
+    QCOMPARE(QString::fromLatin1(e.item->id), QString::fromLatin1(e.id));
+    QCOMPARE(QString::fromLatin1(e.item->text), QString::fromLatin1(e.text));
+    QCOMPARE(QString::fromLatin1(e.item->key), QString::fromLatin1(e.key));
+    QCOMPARE(QString::fromLatin1(e.item->reason), QString::fromLatin1(e.reason));
+    QVERIFY2(!ids.contains(QString::fromLatin1(e.id)), e.id);
+    ids.insert(QString::fromLatin1(e.id));
+  }
+  QCOMPARE(QString::fromLatin1(MenuSpec::lookFromHeading), QStringLiteral("Look from"));
+  QCOMPARE(QString::fromLatin1(MenuSpec::panelsHeading), QStringLiteral("Panels"));
+  // the label the menu shows: text, a tab, then the key
+  QCOMPARE(MenuSpec::label(MenuSpec::viewFront, QStringLiteral("Front")), QStringLiteral("Front\tNumpad 1"));
+  QCOMPARE(MenuSpec::label(MenuSpec::viewSetup, QStringLiteral("Setup...")), QStringLiteral("Setup..."));
+  // a reason says what is missing and what to do, in plain words, no more than 12 words a sentence
+  for (const Expected& e : phase1a)
+    if (e.reason[0])
+    {
+      QVERIFY2(QString::fromLatin1(e.reason).endsWith(QLatin1Char('.')), e.id);
+      for (const QString& sentence : QString::fromLatin1(e.reason).split(QStringLiteral(". ")))
+        QVERIFY2(sentence.split(QLatin1Char(' ')).size() <= 12, e.id);
+    }
+}
+
+// the texts and keys that the mockup shows are the ones in the table
+void TestMenuTexts::phase1aMatchesMockup()
+{
+  const QString html = readMockup();
+  QVERIFY(!html.isEmpty());
+  // not word for word: the real Export has a sibling (Export BVH), so it keeps ".anim"; Text size is
+  // written with a number inside (checked below)
+  int checked = 0;
+  for (const Expected& e : phase1a)
+  {
+    const QString id = QString::fromLatin1(e.id);
+    if (id == QStringLiteral("viewTextSizeAction") || id == QStringLiteral("fileExportAnimAction")) continue;
+    QString cell = QStringLiteral("<span class=\"grow\">%1</span>").arg(QString::fromLatin1(e.text));
+    if (e.key[0]) cell += QStringLiteral("<kbd>%1</kbd>").arg(QString::fromLatin1(e.key));
+    else cell += QStringLiteral("</button>");
+    QVERIFY2(html.contains(cell), qPrintable(id + QStringLiteral(": ") + cell));
+    ++checked;
+  }
+  QVERIFY(checked >= 15);
+  QVERIFY(html.contains(QStringLiteral("<span class=\"grow\">Text size: <span id=\"scaleNow\">100</span>%</span><kbd>Ctrl+=</kbd>")));
+  QVERIFY(html.contains(QStringLiteral("<div class=\"mh\" role=\"presentation\">Look from</div>")));
+  QVERIFY(html.contains(QStringLiteral("<div class=\"mh\" role=\"presentation\">Panels</div>")));
+  QVERIFY(html.contains(QStringLiteral("Export for Second Life...</span><kbd>Ctrl+Shift+E</kbd>")));
+}
+
+// File: the designer file holds New animation, Export and Close with their keys
+void TestMenuTexts::phase1aFileMenu()
+{
+  const UiTexts ui = readUi("pinglymotionwindow.ui");
+  QVERIFY(ui.ok);
+  for (const Expected* e = phase1a; e < phase1a + 3; ++e)
+  {
+    const QString id = QString::fromLatin1(e->id);
+    QCOMPARE(ui.actionText.value(id), QString::fromLatin1(e->text));
+    QCOMPARE(ui.actionShortcut.value(id), QString::fromLatin1(e->key));
+  }
+  // the keys are free: nothing else in the file uses them
+  const QStringList keys = ui.actionShortcut.values();
+  for (const char* key : {"Ctrl+Shift+E", "Ctrl+W"})
+    QCOMPARE(keys.count(QLatin1String(key)), 1);
+  // Close animation is greyed until it is built, and its tip is the reason
+  QCOMPARE(ui.actionEnabled.value(QStringLiteral("fileCloseAction")), QStringLiteral("false"));
+  const QString source = readSource("pinglymotionwindow.cpp");
+  QVERIFY(source.contains(QStringLiteral("ui->fileCloseAction->setToolTip(reason(fileClose));")));
+  QVERIFY(source.contains(QStringLiteral("ui->fileCloseAction->setStatusTip(reason(fileClose));")));
+}
+
+// the window builds View and Help from the table, and Dark theme in Options is gone
+void TestMenuTexts::phase1aWindowUsesTable()
+{
+  const QString source = readSource("pinglymotionwindow.cpp");
+  QVERIFY(!source.isEmpty());
+  QVERIFY(source.contains(QStringLiteral("specAction(this,*look.item,true)")));
+  for (const char* name : {"viewHome", "viewNextArea", "viewLightTheme",
+                           "viewExpertMode", "viewTextSize", "viewSetup", "helpSetup", "helpWelcome",
+                           "helpHints", "helpKeys", "helpCamera", "helpCharter"})
+    QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,").arg(QLatin1String(name))), name);
+  // the number pad items are built from the three Look values and show the key as a label
+  QVERIFY(source.contains(QStringLiteral("Look{&viewFront,0.0f,0.0f},Look{&viewSide,0.0f,90.0f},Look{&viewTop,90.0f,0.0f}")));
+  // only the items that work have a shortcut; a greyed item has none and only shows its key
+  for (const char* greyed : {"viewNextArea", "helpKeys", "helpCharter"})
+    QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,true)").arg(QLatin1String(greyed))), greyed);
+  for (const char* working : {"viewLightTheme", "viewExpertMode", "viewHome"})
+    QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,false)").arg(QLatin1String(working))), working);
+  QVERIFY(source.contains(QStringLiteral("UserSettings::setDarkTheme(!light);")));
+  QVERIFY(source.contains(QStringLiteral("UserSettings::setExpertMode(on);")));
+  QVERIFY(!source.contains(QStringLiteral("tr(\"Dark theme\")")));
+  QVERIFY(!source.contains(QStringLiteral("Options > Dark theme")));
+}
+
+// the order of the items in View and Help, as in the mockup
+void TestMenuTexts::phase1aOrder()
+{
+  const QString source = readSource("pinglymotionwindow.cpp");
+  const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::buildMenus()"));
+  QVERIFY(begin >= 0);
+  const QString body = source.mid(begin);
+  int last = -1;
+  for (const char* marker : {"lookFromHeading", "&viewFront", "&viewTop", "specAction(this,viewHome", "panelsHeading",
+                             "showJointsAction)", "showJointCardAction)", "optionsShowTimelineAction)", "scriptLabAction)",
+                             "m_hidePanelsAction)", "resetLayoutAction)", "viewNextArea", "lightAction)",
+                             "expertAction)", "m_textSizeAction)", "viewSetup"})
+  {
+    const int at = body.indexOf(QLatin1String(marker), last + 1);
+    QVERIFY2(at > last, marker);
+    last = at;
+  }
+  const int help = body.indexOf(QStringLiteral("ui->menuHelp->clear();"));
+  QVERIFY(help > last);
+  last = help;
+  for (const char* marker : {"helpSetup", "helpWelcome", "m_hintsAction)", "helpKeys", "helpCamera", "helpCharter",
+                             "whatsNew)", "helpOpenLogAction", "helpClearLogAction", "helpAboutAction"})
+  {
+    const int at = body.indexOf(QLatin1String(marker), last + 1);
+    QVERIFY2(at > last, marker);
+    last = at;
+  }
 }
 
 QTEST_GUILESS_MAIN(TestMenuTexts)

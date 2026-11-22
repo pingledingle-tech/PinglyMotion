@@ -5,7 +5,9 @@
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 
 ADD_EXECUTABLE (pinglymotion_menutexts_tests tst_menutexts.cpp)
-TARGET_COMPILE_DEFINITIONS (pinglymotion_menutexts_tests PRIVATE PINGLYMOTION_SOURCE_DIR="${CMAKE_SOURCE_DIR}/src")
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_menutexts_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_menutexts_tests PRIVATE PINGLYMOTION_SOURCE_DIR="${CMAKE_SOURCE_DIR}/src"
+                                                              PINGLYMOTION_MOCKUP="${CMAKE_SOURCE_DIR}/docs/mockup/index.html")
 TARGET_LINK_LIBRARIES (pinglymotion_menutexts_tests Qt6::Core Qt6::Test)
 ADD_TEST (NAME menutexts COMMAND pinglymotion_menutexts_tests)
 SET_TESTS_PROPERTIES (menutexts PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

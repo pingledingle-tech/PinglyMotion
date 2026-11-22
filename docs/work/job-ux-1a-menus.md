@@ -9,7 +9,8 @@ Files:
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/TEACHING_TEXTS.md
-- docs/ROADMAP.md
+- src/menuspec.h
+- README.md
 
 ## What
 

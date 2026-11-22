@@ -46,7 +46,7 @@ The roadmap explores better posing and timeline tools, native SL animation expor
 - Blender habits work too (middle-drag turns, **Shift** + middle-drag moves, **Ctrl** + middle-drag zooms, number pad **1 / 3 / 7** for front / side / top, number pad **.** to focus), and so do Second Life habits (**Alt** + drag turns and zooms, **Ctrl + Alt** + drag turns, **Ctrl + Alt + Shift** + drag moves, **Alt** + click a joint to turn around it). All controls: [docs/POSING_UX.md](docs/POSING_UX.md#mouse-and-keys)
 - **Ctrl** + double-click a hand or foot switches IK on or off; **Shift** + double-click selects the mirrored joint too
 - The balls for the face only show while the head or a face bone is selected
-- Dark theme is on by default; switch it off under **Options > Dark theme**
+- Dark theme is on by default; switch to the light theme under **View > Light theme** (or press **T** in the 3D view)
 - **Joints** (left), **Selected joint** (right) and **Timeline** (bottom) are panels: drag the line between a panel and the 3D view to resize, drag a panel's title bar to move it to another side or onto another panel as a tab, or double-click the title bar to tear it off into its own window (e.g. on a second screen). The **View** menu shows or hides each panel. The layout is remembered. **View > Reset layout** puts everything back
 
 ## Tests
