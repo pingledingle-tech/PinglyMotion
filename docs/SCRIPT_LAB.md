@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 26 common behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 85 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -216,6 +216,13 @@ a script run through the control commands), the one the Objects part shows.
   and the assistant reads what changed (restrictions, dialog, time). The log lines have the same shape as `lsl_event`'s,
   so an expected answer can be written once and checked in both places.
 
+## What exists now (step 9b-2, issue 314): on_rez and changed
+
+- `on_rez` is raised at the start of every object with its `start_parameter` (default 0), after `state_entry`; `llResetScript` does not raise it again.
+- `changed` comes from the new input type `changed` (`change`: a name such as `inventory`, `owner`, `link`, `region_start`, a list, or the flags as a number)
+  and reaches every script of the object. No new control command; details in [CONTROL.md](CONTROL.md), "The events on_rez and changed".
+- Tests: `tests/tst_lslevents.cpp`. Fuzz: `fuzz_lsl` also sends a `changed` input and a start parameter.
+
 ## Camera limits in the 3D view (job 7b, part 1)
 
 The camera restrictions a script holds can limit the main 3D view's camera, only while the Commands page's **Show
@@ -227,7 +234,8 @@ Commands page now scrolls when the panel is small, as the Live page does.
   focus stays on the avatar. With several objects the strictest limit wins (the largest minimum, the smallest
   maximum); a maximum below the minimum wins over it. A maximum smaller than the 3D view can come (3 inches) is shown
   as close as it goes. An option that is not a distance in metres is named in the text as not used.
-  `setcam_avdistmin` and `setcam_avdistmax` are RLVa only, so they need RLVa mode (`rlv_reset` with `mode`).
+  `setcam_avdistmin` and `setcam_avdistmax` are RLVa only, so they need RLVa mode (`rlv_reset` with `mode`); the old
+  names `camdistmin` and `camdistmax` work in plain RLV mode too.
 - While any of them holds, the camera turns around the avatar's middle (its hip at rest; it does not follow the
   animation) and panning cannot move it away; turning, zooming within the limits, the number pad views, `set_camera`
   and the AI's `screenshot` keep to the limits.
@@ -287,24 +295,30 @@ What it checks: that the buttons (touch, dialog buttons, chat on a channel) caus
 
 ## RLV and RLVa mode (step 9, issue 297)
 
-Every behaviour in the table is marked `RLV` (in the plain RLV API) or `RLVa only` (RLVa's extended and experimental
-command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cpp`: the entries flagged
-`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL`), not from memory.
+Every behaviour in the table is marked `RLV` (listed as plain RLV in the RLV wiki) or `RLVa only` (not listed there).
+The marks follow the wiki. RLVa's own flags (`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL` in `rlvhelper.cpp`) differ from the
+wiki for some names: 20 names that RLVa flags as extended are plain RLV in the wiki and are marked `RLV` here
+(`accepttprequest`, `allowidle`, `findfolders`, `getcam_avdistmax`, `getcam_avdistmin`, `getcam_fov`, `getcam_fovmax`,
+`getcam_fovmin`, `interact`, `sendchannel_except`, `sendgesture`, `setcam_avdistmax`, `setcam_avdistmin`, `setcam_fov`,
+`sharedunwear`, `sharedwear`, `shownearby`, `touchhud`, `tplocal`, `tprequest`).
 
 - The mode is plain RLV at start. In plain RLV mode a RLVa-only behaviour answers as unknown, like any name the table
   does not have. In RLVa mode it is accepted. Switching the mode removes every restriction and recorded effect (as
   after a relog). Set it with the control command `rlv_reset` and its `mode` field ([CONTROL.md](CONTROL.md)).
-- RLVa-only behaviours by group: teleport and chat (`accepttprequest`, `tprequest`, `tplocal`, `sendchannel_except`),
-  interaction and view (`interact`, `touchhud`, `sendgesture`, `showself`, `showselfhead`, `shownearby`,
-  `viewtransparent`, `viewwireframe`, `allowidle`), shared folder (`sharedwear`, `sharedunwear`), camera
-  (`setcam_avdistmin`, `setcam_avdistmax`, `setcam_origindistmin`, `setcam_origindistmax`, and the force commands
-  `setcam_focus`, `setcam_fov`, `setcam_mode`) and questions (`findfolders`, `getcommand`, `getheightoffset`,
-  `getaddattachnames`, `getaddoutfitnames`, `getattachnames`, `getoutfitnames`, `getremattachnames`,
-  `getremoutfitnames`, `getcam_avdist`, `getcam_avdistmin`, `getcam_avdistmax`, `getcam_fov`, `getcam_fovmin`,
-  `getcam_fovmax`, `getcam_textures`).
-- Plain RLV behaviours with effects outside the sandbox are known in both modes: `setenv`, `setdebug`, `setcam`,
-  `setcam_avdist`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_fovmin`,
+- Behaviours marked RLVa only (19): interaction and view (`showself`, `showselfhead`, `viewtransparent`,
+  `viewwireframe`), camera (`setcam_origindistmin`, `setcam_origindistmax`, and the force commands `setcam_focus` and
+  `setcam_mode`) and questions (`getcommand`, `getheightoffset`, `getaddattachnames`, `getaddoutfitnames`,
+  `getattachnames`, `getoutfitnames`, `getremattachnames`, `getremoutfitnames`, `getcam_avdist`, `getcam_textures`).
+- Plain RLV behaviours (all marked `RLV`, among them the 20 above) are known in both modes. Those with effects
+  outside the sandbox: `setenv`, `setdebug`, `setcam`, `setcam_avdist`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_fovmin`,
   `setcam_fovmax`, `setcam_mouselook`, `setcam_textures`, `setcam_unlock`.
+- Old names (aliases) share the state of the new name: `camdistmax` (`setcam_avdistmax`), `camdistmin`
+  (`setcam_avdistmin`), `camavdist` (`setcam_avdist`), `camtextures` (`setcam_textures`), `camunlock`
+  (`setcam_unlock`) and `fartouch` (`touchfar`). Holding one is holding the other (the same restriction under both
+  names is a duplicate, `=y` under either name lifts it, the action it blocks is blocked), and `@getstatus` shows the
+  name that was used. `camzoommax` and `camzoommin` (the old zoom limits, option: a zoom multiplier) are separate
+  entries, recorded only, because a multiplier is not a field of view angle. `touchfar` (option: distance in metres)
+  blocks the action "Touch objects farther away".
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
   the 3D view with the "Show camera limits in 3D view" box (below, "Camera limits in the 3D view"). A force command of that kind is `retained`
@@ -319,7 +333,7 @@ command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cp
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-  `link_message` and `linkset_data`, and 111 built-in functions; hard limits on
+  `link_message`, `linkset_data`, `on_rez` and `changed`, and 111 built-in functions; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

@@ -28,6 +28,7 @@ class TestCameraOverride : public QObject
     void strictestWins();
     void maxBelowMin();
     void unlockOnly();
+    void oldNamesInPlainRlv();
     void badOption();
     void linesWhileOff();
     void cameraClampedAndRestored();
@@ -152,6 +153,21 @@ void TestCameraOverride::unlockOnly()
   QCOMPARE(c.maxDistance, 0.0f);
   QVERIFY(c.turnAroundPoint);
   QCOMPARE(o.lines().first(), QString("Camera limited by the script: focus kept on the avatar."));
+}
+
+void TestCameraOverride::oldNamesInPlainRlv()
+{
+  // the old names are plain RLV aliases of the new ones
+  RlvState state;
+  QVERIFY(state.apply("collar", "@camdistmax:2=n,camdistmin:0.5=n,camunlock=n").ok());
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  QCOMPARE(o.limits().maxDistance, 2.0);
+  QCOMPARE(o.limits().minDistance, 0.5);
+  QVERIFY(o.limits().focusOnAvatar);
+  QCOMPARE(o.constraint().maxDistance, 78.7401574f);
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: min distance 0.5 m, max distance 2 m, focus kept on the avatar."));
 }
 
 void TestCameraOverride::badOption()

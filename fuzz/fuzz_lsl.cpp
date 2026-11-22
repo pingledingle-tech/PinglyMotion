@@ -88,10 +88,12 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   ObjectSpec near;
   near.name = "b";
   near.position[1] = 143.0f;
+  worn.startParameter = 7;
+  near.description = "d";
   check(sandbox.addObject(worn, script, limits).isEmpty());
   check(sandbox.addObject(near, script, limits).isEmpty());
-  const char* types[] = {"chat", "touch", "dialog", "detach", "attach"};
-  for (int i = 0; i < 5; ++i)
+  const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed"};
+  for (int i = 0; i < 6; ++i)
   {
     SandboxInput in;
     in.at = 0.5 * (i + 1);
@@ -100,6 +102,7 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
     in.channel = i - 2;
     in.text = "x";
     in.kind = i == 0 ? "whisper" : "say";
+    in.change = 1 << (i % 13);   // changed: one CHANGED_* flag
     check(sandbox.addInput(in));
   }
   sandbox.start();

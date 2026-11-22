@@ -92,6 +92,8 @@ class Interpreter
     // Step 9a: queues link_message (sender's link number, num, str, id) and linkset_data (action, name, value)
     void linkMessage(int sender, int num, const QString& str, const QString& id);
     void linksetDataEvent(int action, const QString& name, const QString& value);
+    // Step 9b-2: queues changed (the CHANGED_* flags, added together)
+    void changedEvent(int flags);
     // the current state has a handler for this event
     bool handles(const QString& event) const;
 
