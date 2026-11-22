@@ -31,6 +31,7 @@
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QCloseEvent>
+#include <QKeyEvent>
 #include <QDir>
 #include <QFileDialog>
 #include "startfolder.h"
@@ -163,6 +164,31 @@ void PinglyMotionWindow::replayFromStart()
   frameSlider(Playback::replayFrame());
   anim->setPlaystate(PLAYSTATE_STOPPED);
   beginPlaying(anim);
+}
+
+// Frame back / Frame forward: stop playing, then one frame, the same way as
+// moving the frame slider. At the first or the last frame nothing changes.
+void PinglyMotionWindow::stepFrame(int delta)
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim) return;
+  stopPlaying();
+
+  const int frame=Playback::stepFrame(anim->getFrame(),anim->getNumberOfFrames(),delta);
+  if(frame!=anim->getFrame()) frameSlider(frame);
+}
+
+// the left / right arrow keys step the frame (docs/POSING_UX.md, keys table).
+// Fields, lists and the frame slider use the arrow keys themselves and keep
+// them; the 3D view and the empty parts of the window pass them on to here.
+void PinglyMotionWindow::keyPressEvent(QKeyEvent* event)
+{
+  if(event->modifiers()==Qt::NoModifier || event->modifiers()==Qt::KeypadModifier)
+  {
+    if(event->key()==Qt::Key_Left) { stepFrame(-1); event->accept(); return; }
+    if(event->key()==Qt::Key_Right) { stepFrame(1); event->accept(); return; }
+  }
+  QMainWindow::keyPressEvent(event);
 }
 
 // plays from the current frame: repeating between the loop points when Loop

@@ -1,7 +1,7 @@
 /*
  * PinglyMotion - round trip of the three-panel layout with real dock widgets
  *
- * docs/PANELS_PLAN.md, job P2, section 6: a main window with the three
+ * docs/archive/PANELS_PLAN.md, job P2, section 6: a main window with the three
  * panels (Joints, Selected joint, Timeline) as in the program, with the same
  * object names and allowed sides. One panel is moved, the layout is saved,
  * a new window loads it, and the sides are checked. An old layout that names
@@ -467,7 +467,7 @@ void TestPanelDocks::groupedDraggingIsOn()
 // platform only gives one small screen, so this uses a place on it) keeps
 // its exact place and size after being saved and loaded again in a new
 // window, as long as the screen it was on is still among the known ones
-// (docs/PANELS_PLAN.md, job P6, owner test steps 1-2). This is the
+// (docs/archive/PANELS_PLAN.md, job P6, owner test steps 1-2). This is the
 // mechanically checkable part of P6: an exact round trip of geometry, not a
 // judgement about how a real second monitor looks; that is the owner's
 // Windows test.
@@ -501,7 +501,7 @@ void TestPanelDocks::floatingPanelKeepsItsPlaceAndSizeAfterRoundTrip()
 }
 
 // Double-clicking the title bar (not the buttons) floats a docked panel, and
-// docks it again, the same as the float button (docs/PANELS_PLAN.md, job P6:
+// docks it again, the same as the float button (docs/archive/PANELS_PLAN.md, job P6:
 // "docking back by its button or by double-clicking the title bar").
 void TestPanelDocks::doubleClickOnTitleBarFloatsAndDocksAgain()
 {

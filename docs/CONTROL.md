@@ -76,7 +76,8 @@ differs. The MCP server does this before every request.
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
-`export_anim`, `find_reference`, `load_reference`. `screenshot` has options for several views, frames and labels (below).
+`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_run`,
+`lab_watch`, `lab_unwatch`, `lab_result`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
 
@@ -112,7 +113,8 @@ letters, `:` anywhere, `..`, empty parts, a trailing dot or space, and device na
 - `set_loop` takes `in` and `out`, two whole frame numbers (first frame is 1), `in` before `out`, both
   from 1 to the number of frames; or `off: true`, which puts the loop points back to the default (the whole
   animation, from frame 2 while the first frame is protected). Anything else fails and changes nothing. The
-  answer has `loop_in` and `loop_out`.
+  answer has `loop_in` and `loop_out`. The Loop In and Loop Out fields under the timeline show the new points
+  at once, as when the user types them.
 - `state` returns `loop_in` and `loop_out` (the same default when none are stored yet). `.dingle` keeps both
   the easing and the loop points.
 
@@ -144,6 +146,51 @@ starting poses and motions on the Second Life skeleton. Start from one instead o
   (ids starting with `sl/`) that open (layout in `docs/REFERENCE_LIBRARY_SCHEMA.md`).
 - Folders: `library/` next to the program, or `PINGLYMOTION_LIBRARY_FOLDER`; the download folder is
   `PinglyMotion-reference` in the user's home folder (the script's default), or `PINGLYMOTION_REFERENCE_FOLDER`.
+
+### Script Lab: rlv_command, rlv_state and rlv_reset
+
+The first step of the Script Lab (issue 287, [SCRIPT_LAB.md](SCRIPT_LAB.md)): an RLV sandbox. A client sends the
+line an LSL script would send with `llOwnerSay("@...")` and reads back what the avatar may and may not do. Nothing in
+the animation or on screen changes, and these three commands work without an open animation. The sandbox answers as
+RLV 3.4.3; it is never identical to Second Life.
+
+- `rlv_command` takes `object` (an id for the sending object: 1 to 64 letters, digits, `-`, `_`, `.` or spaces, for
+  example a UUID or `collar`) and `text` (starts with `@`, at most 1024 characters and 64 commands). The text is made
+  lower case and split on `,`; each command is `<behaviour>[:<option>]=<param>`, where param is `n` or `add` (set a
+  restriction), `y` or `rem` (lift it), `force`, or a channel number from 1 to 2147483647 (answer on that channel).
+  `@clear` lifts all of this object's restrictions, `@clear=<filter>` those whose `behaviour[:option]` contains the
+  filter. A comma always starts a new command, so a `@getstatus` separator cannot be a comma.
+  The answer has `results`, one per command in order: `command`, `behaviour`, `option` (when there is one), `param`,
+  `type` (add, remove, force, reply, clear or invalid), `result` and, when it failed or was retained, `reason`.
+  Results: `success`; `unset` (lifted something that was not set); `duplicate` (this object had already set it);
+  `failed` (bad syntax, an unknown behaviour, a parameter type the behaviour does not take, an option on a behaviour
+  without options, or a limit); `retained` (a `force` command was accepted but is not carried out in the sandbox).
+  `replies` lists what a script listening on the channel would hear (`channel`, `text`): `@version` gives
+  `RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)`, `@versionnew` the same with `RestrainedLove`,
+  `@versionnum` gives `3040300`, `@getstatus[:<filter>[;<separator>]]` this object's restrictions as
+  `/detach/sendim:<uuid>` and `@getstatusall` those of all objects; a reply is at most 1023 characters.
+  `restrictions` is the number now held. A line that does not start with `@`, is too long, has too many commands or
+  a bad object id fails as a whole and changes nothing.
+- `rlv_state` returns `mode` (`rlv` or `rlva`), `rlv_version` (`3.4.3`), `objects` (object id to its restrictions, such as `detach` or
+  `sendim:<uuid>`), `restrictions` (each with `object`, `behaviour` and `option`), `counts` (how many objects hold
+  each restriction), `actions` (each with `id`, `label` and `allowed`), `blocked` (the ids of the blocked actions) and
+  `behaviours` (the names known in this mode), `rlva_only` (the names that only RLVa has; unknown in plain RLV mode)
+  and `recorded` (the outside effects that force commands asked for, option by behaviour; recorded, never carried
+  out). Only a restriction without an option blocks an action: with an option it
+  is an exception (`@sendim:<uuid>=add`) or a limited form.
+- `rlv_reset` lifts every restriction of every object; `removed` says how many. The optional `mode` (`rlv` or
+  `rlva`, any case) sets the mode: plain RLV is the default at start, and in plain RLV mode the behaviours that only
+  RLVa has (step 9, issue 297; the list is `rlva_only` in `rlv_state`) fail as unknown. Switching the mode always
+  starts from a clean state; the answer has `mode`. Any other `mode` value fails and changes nothing. Camera, sky and
+  debug behaviours are only recorded and shown in the `reason` of the result ("recorded only"); the real program
+  never changes.
+- Known behaviours of the RLV core: the table in `src/scriptlab/rlvbehaviours.cpp` holds 158 behaviours (restrictions,
+  questions answered on a channel such as `version` and `getstatus`, and force commands where they exist; each is marked
+  `RLV`, `RLVa only` or `RLV only`). The names known in the current mode are in `behaviours` of `rlv_state`; the
+  groups and the camera, sky and debug behaviours that are only recorded are described in
+  [SCRIPT_LAB.md](SCRIPT_LAB.md). Other names parse but fail as unknown.
+- Limits: at most 64 objects hold restrictions at a time, and each at most 128. An object without restrictions is
+  dropped. The text comes from scripts and AI clients, so it is treated as data: it is checked, never run.
 
 ### describe_pose
 
@@ -276,6 +323,401 @@ Each picture is captioned (the view, and for frames the frame number and its tim
 (in order, each with `cell`, `row`, `column` and its `view`, `frame` and `seconds`) and, with labels or a
 trail, `legend`. The program window, its camera (also a panned camera) and the current frame stay as
 they were: the 3D view turns its camera for each picture only and puts it back.
+
+### Script Lab: lsl_check and lsl_run
+
+Two commands for testing LSL scripts (Second Life's scripting language) in a sandbox inside PinglyMotion
+(Script Lab, step 3, issue 289; plan in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md)). They do not need an
+open animation and never change it. The code is in `src/scriptlab/lsl/`: an own recursive descent parser
+and interpreter (QtCore only), not the Second Life compiler. The sandbox is never identical to Second
+Life: test the final script there too.
+
+- `lsl_check {source}` checks the script the way the Second Life compiler does, without running it:
+  `valid`, `errors` and `warnings` (each `{line, column, message}`, both counted from 1) and `states`.
+  Errors are syntax mistakes, undeclared names, wrong types or argument counts, unknown functions,
+  events or states, a missing `return`, `state` in a function, and LSL's own rules (a declaration alone
+  as the body of an `if`, a global that starts with a calculation, a list in a list). Warnings are valid
+  LSL that the sandbox does not run yet: a function that is not supported yet, or an event it never raises.
+- `lsl_run {source, seconds, inputs, keep_rlv}` runs the script with a simulated clock: `state_entry` of the default
+  state first, then events until `seconds` (0 to 3600, default 10) have passed. Nothing waits for real
+  time. `inputs` (at most 200) are chat or touches at given times:
+  `[{"at":1,"channel":7,"text":"dance"},{"at":2,"type":"touch"}]`; `name` and `id` default to the owner.
+  A script that does not compile is not run: the answer has `ok: false` and the `errors` of `lsl_check`.
+  `llOwnerSay` text that starts with `@` is run as an RLV command (Script Lab step 4, issue 290): the sandbox's
+  RLV state (the one `rlv_state` shows) gets it from the script's object (its key, as `llGetKey` returns), and
+  the reply lines of `@version=<channel>`, `@getstatus=<channel>` and the like arrive in the script's `listen`
+  event on that channel, as a viewer would answer (spoken by the owner). Other `llOwnerSay` text stays an `owner_say`
+  line. The script runs in the mode the sandbox is in (plain RLV or RLVa, set with `rlv_reset`'s `mode`; a run never changes it). The RLV state is emptied before each run unless `keep_rlv` is `true`; what the script set stays in the
+  state after the run, so `rlv_state` shows it. At most 100 `@` lines per run.
+
+The answer of `lsl_run` has `log` (the event log, plain data), `log_truncated`, `stopped` and
+`stop_reason`, `state` (the state at the end), `time`, `steps`, `open_listens`, `timer`, `warnings` and `rlv`
+(`lines` run, `refused` over the cap, and `state`: the restrictions at the end in the shape of the `rlv_state` answer).
+Every log entry has `t` (simulated seconds) and `type`:
+
+| type | What happened | Other fields |
+|---|---|---|
+| `state` | the script entered a state | `name` |
+| `event` | the script handled an event | `name`, `args` (as text) |
+| `owner_say` | `llOwnerSay` | `text` |
+| `say`, `whisper`, `shout`, `region_say` | chat | `channel`, `text` |
+| `instant_message` | `llInstantMessage` | `to`, `text` |
+| `rlv_command` | `llOwnerSay("@...")` went to the RLV core | `object`, `text`, `results` (one per command, as in `rlv_command`), `replies` (`channel`, `text`), `restrictions` (how many are held now), or `error` when the whole line was refused |
+| `listen`, `listen_remove` | `llListen`, `llListenRemove` | `handle`, `channel`, `name`, `id`, `message` |
+| `timer_set` | `llSetTimerEvent` | `seconds` |
+| `sleep` | `llSleep` (moves the simulated clock) | `seconds` |
+| `permissions` | `llRequestPermissions`; the owner's are granted at once, then `run_time_permissions` follows | `mask`, `granted`, `note` |
+| `animation_start`, `animation_stop` | `llStartAnimation`, `llStopAnimation` (the 3D view plays them while the Script Lab's "Show effects in 3D view" box is ticked; [SCRIPT_LAB.md](SCRIPT_LAB.md)) | `name` |
+| `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text` |
+| `debug` | what Second Life says on the debug channel without stopping the script (an animation without permission, `llRegionSay` on channel 0) | `channel`, `text` |
+| `event_dropped` | more than 64 events were waiting, as in Second Life | `name`, `message` |
+| `reset` | `llResetScript` | |
+| `error` | a runtime error stopped the script (division by zero, too many listens) | `message`, `line`, `column` |
+| `unsupported` | the script called a function the sandbox does not run yet, and was stopped there | `message`, `line`, `column` |
+| `limit` | a limit stopped the script | `message`, `line`, `column` |
+| `message_linked` | `llMessageLinked` (step 9a) | `link` (as given, for example -1 for `LINK_SET`), `num`, `text`, `id`, `scripts` (how many scripts are in the prims it reaches) |
+| `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
+| `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`sit_target` (step 9b-5: `set`, `offset`, `rotation`), `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
+| `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
+| `give_inventory` | `llGiveInventory` (step 9b-4) | `to`, `item`, `result` (`given`, `not_found`, `unknown_target` or `name_exists`) |
+| `inventory` | a script removed an item with `llRemoveInventory` (step 9b-4) | `op` (`remove`), `item` |
+| `dataserver_request` | `llGetNotecardLine` or `llGetNumberOfNotecardLines` found the notecard; the `dataserver` event follows (step 9b-4) | `function`, `notecard`, `line` (not for the line count), `query` (the key the call returned) |
+| `rez` | `llRezObject` or `llRezAtRoot` (step 9b-4) | `item`, `position`, `velocity`, `rotation`, `param`, `at_root`, `result` (`ok` or `too_far`), `object` (the new object's key, with `ok`) |
+| `controls` | `llTakeControls` took controls or `llReleaseControls` gave them back (step 9b-6) | `op` (`take`, `release`), `avatar`, and for `take` `controls`, `accept`, `pass_on` |
+| `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
+| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
+
+#### Several objects and lsl_event (Script Lab step 5, issue 291)
+
+`lsl_run` can run several scripts in one world: instead of `source` give `objects`, a list of 1 to 16 entries
+`{name, source, key, owner, owner_name, position, attached}`. Only `name` (1 to 63 characters, each object its own) and
+`source` are needed. `key` and `owner` are keys (1 to 36 letters, digits or `-`; default: the object keys
+`c0ffee00-0000-4000-8000-000000000002`, `...03` and so on in list order, and the owner's key); `owner_name` needs
+`owner`. `position` is `[x, y, z]` in region metres (x and y 0 to 256, z 0 to 4096; default `[128, 128, 20]`, where the
+owner's avatar stands); `attached` is an attachment point from 1 to 55 (0, the default, means rezzed at `position`). A
+worn object is where the avatar is, and gets `attach` with the owner's key after its `state_entry`. All scripts
+together are at most 524 288 characters; nothing runs unless every script compiles (the answer then names the
+`object` and lists its `errors`).
+
+- One simulated clock for all objects. Things due at the same moment run in a fixed order, so the same request always
+  gives the same log: every object's `state_entry` first, in list order; then timers before inputs, objects in list
+  order, inputs in the order given; an object's events run before the next object's. A message said in `state_entry`
+  is heard only by objects whose `state_entry` (and `llListen`) ran before, so put the listeners first.
+- Objects hear each other's chat within the Second Life ranges: `llWhisper` 10 m, `llSay` 20 m, `llShout` 100 m,
+  `llRegionSay` the whole region, `llRegionSayTo` only the object with that key, at any distance. An object never
+  hears itself. The speaker's name and key are the object's, so `llListen` filters on name, key and message work.
+- Each object's `llOwnerSay("@...")` goes to the shared RLV state under the object's own key: two objects can hold
+  the same restriction (the count is 2), and `@clear` from one removes only its own. The cap of 100 `@` lines is per object (per script since step 9a).
+- More inputs (in `inputs` and in `lsl_event`): `object` names the object (default the first); `type` is also
+  `changed` (see below), `dialog` (`button`: the text of a button of that object's last `llDialog`; the avatar says it on the dialog's
+  channel; in the sandbox the object that showed the dialog always hears it, other objects within 20 m of the avatar
+  too), `changed` (`change`: what changed; step 9b-2, below), `attach` (`point`, default the object's point or 1) or `detach` (the object is dropped where the avatar stands
+  and gets `attach` with `NULL_KEY`). Chat from an avatar is heard by the objects within `kind`'s range of the avatar
+  (`say`, the default, 20 m; `whisper` 10 m; `shout` 100 m).
+- New functions: `llDialog` (Second Life's checks: a message, at most 12 buttons of at most 24 bytes; an empty list
+  gives `OK`; a refused dialog is a `debug` line), `llRegionSayTo`, `llGetPos`, `llGetAttached`, `llGetOwnerKey` (the
+  key itself when the sandbox does not know it); `llKey2Name` knows every object. New event: `attach`.
+- Log entries with several objects have `object` (the object's name). New entry types: `dialog` (`to`, `message`,
+  `buttons`, `channel`) and `region_say_to` (`to`, `channel`, `text`); `input` entries can be `dialog`, `attach` and
+  `detach` (with `error` when there is nothing to answer, detach or no such object).
+- The answer with `objects` has `objects` (per object: `name`, `key`, `owner`, `attached`, `position`, `state`,
+  `stopped`, `stop_reason`, `open_listens`, `timer`, `steps`, `restrictions` it holds, and its last `dialog`), `dialog`
+  (the newest dialog of any object), `stopped` (true when every script stopped), `time`, `warnings` (each with
+  `object`), `rlv` and `log`. A limit stops only the script that hit it; the others run on. The answer of a single
+  script (`source`) is as before, plus `objects` and `dialog`.
+
+`lsl_event {type, object, channel, text, kind, name, id, button, point, link, seconds}` sends one event to the world of the
+last `lsl_run` (with `source` or `objects`; each `lsl_run` starts a new world) at the moment that run or the last event
+ended, then runs the world on for `seconds` (default 1, at most 3600) of simulated time. The fields are those of an
+input, without `at`. The answer has the `log` of this command only, `objects`, `dialog`, `rlv`, `stopped` and `time`.
+The RLV state is not emptied. Each command gets a fresh real-time, step and event budget per script. It fails when no
+`lsl_run` has run yet, when the object does not exist, or when every script has stopped. The Script Lab panel lists
+the objects and the newest dialog after each `lsl_run` and `lsl_event` ([SCRIPT_LAB.md](SCRIPT_LAB.md)).
+
+```
+{"command": "lsl_run", "seconds": 2, "objects": [
+   {"name": "hud", "source": "...", "attached": 35},
+   {"name": "cuffs", "source": "...", "attached": 30}]}
+{"command": "lsl_event", "type": "touch", "object": "hud"}
+{"command": "lsl_event", "type": "dialog", "object": "hud", "button": "Lock"}
+```
+
+Examples: `examples/scriptlab/hud_cuffs_hud.lsl` and `hud_cuffs_cuffs.lsl`.
+
+#### Several scripts in one object: link messages and Linkset Data (Script Lab step 9a, issue 305)
+
+An entry of `objects` can give `scripts` instead of `source`: a list of 1 to 32 entries `{name, source, link}`
+(`name` 1 to 63 characters, each script of the object its own, as `llGetScriptName` gives it; `link` the prim the
+script is in, 1 the root, default 1), and `prims`, how many prims the object has (1 to 256; default the highest
+`link`). Each script has its own interpreter: its own variables and memory, its own queue of 64 waiting events, its
+own listens and timer. At most 64 scripts in all objects together. An entry with `source` is one script named
+`Script` in a single prim, as before.
+
+- `llMessageLinked(link, num, str, id)` queues `link_message(sender, num, str, id)` in every script of the prims the
+  link reaches, the sending script too when its prim is reached; `sender` is the sender's link number. In an object
+  of several prims the root is link 1 and the children 2 and up; `LINK_SET` reaches every prim, `LINK_ROOT` the root,
+  `LINK_ALL_OTHERS` every prim but the sender's, `LINK_ALL_CHILDREN` every prim but the root, `LINK_THIS` the
+  sender's prim, a number that prim. A single prim is link 0: there `0`, `LINK_THIS` and `LINK_SET` reach it and
+  `LINK_ROOT`, `LINK_ALL_OTHERS` and `LINK_ALL_CHILDREN` reach nothing (Second Life wiki). A link number the object
+  does not have reaches nothing, without an error. `llGetLinkNumber` answers 0 in a single prim.
+- Linkset Data belongs to the object, not to a script: every script of the object reads and writes the same pairs,
+  and they survive `llResetScript` and stay for `lsl_event`. `llLinksetDataWrite` answers `LINKSETDATA_OK`,
+  `LINKSETDATA_EMEMORY` (more than 131 072 bytes, 128 KiB, in all; a pair costs the UTF-8 bytes of its name plus its
+  value), `LINKSETDATA_ENOKEY` (empty name), `LINKSETDATA_NOTFOUND` (empty value for a name that is not there) or
+  `LINKSETDATA_NOUPDATE` (the same value again); an empty value deletes the pair. `llLinksetDataRead` answers `""`
+  for a missing name, `llLinksetDataDelete` `LINKSETDATA_OK` or `LINKSETDATA_NOTFOUND`; `llLinksetDataListKeys(start,
+  count)` lists the names in alphabetical order (`count` below 1: all from `start`; a `start` below 0 counts as 0);
+  `llLinksetDataAvailable`, `llLinksetDataCountKeys` and `llLinksetDataReset` as in Second Life. Every change sends
+  `linkset_data(action, name, value)` to every script of the object, the writer too: `LINKSETDATA_UPDATE` (1) with
+  the new value, `LINKSETDATA_DELETE` (2) with an empty value, `LINKSETDATA_RESET` (0) with an empty name and value.
+  Not supported yet (known to `lsl_check`, which warns; the script stops there with `unsupported`): the protected
+  functions (`llLinksetDataWriteProtected`, `llLinksetDataReadProtected`, `llLinksetDataDeleteProtected`) and
+  `llLinksetDataFindKeys`, `llLinksetDataCountFound`, `llLinksetDataDeleteFound`.
+- A `link_message` or `linkset_data` event whose arguments do not fit in the receiving script's free memory crashes
+  that script with a Stack-Heap Collision (an `error` entry), as in Second Life; the other scripts run on.
+- Chat: a prim never hears its own chat (no script in the same prim hears it); the other prims of the same object
+  do, at distance 0 (Second Life wiki, `llListen`). Every prim has the object's key and name in the sandbox (in
+  Second Life each prim has its own key), so a script's RLV lines are held under the object's key, whichever prim
+  it is in. The cap of 100 `@` lines is per script.
+- A touch (an input or `lsl_event` with `type` touch) can name `link`, the prim touched (default the root): the
+  scripts of that prim that handle `touch_start` get it; when none does, the root's scripts get it, as Second Life
+  passes touches on.
+- Order: Second Life runs scripts at the same time, in no set order. The sandbox runs them one after the other in a
+  fixed order (objects in list order, each object's scripts in list order; a script runs every event waiting for it
+  before the next script runs), so the same request always gives the same log. A set of scripts that only works in
+  one order may still fail in Second Life.
+- When more than 64 events wait for a script, Second Life drops the rest without a word; the sandbox drops them too
+  and writes an `event_dropped` entry for each. An endless exchange of link messages at one moment ends when a script
+  reaches its limit of events or steps (the other scripts run on), never in a hang.
+- Log entries of an object given with `scripts` have `script` (the script's name). The answer's `objects` entry of
+  such an object has `prims` and `scripts` (per script: `name`, `link`, `state`, `stopped`, `stop_reason`,
+  `open_listens`, `timer`, `steps` and `memory`, the rough byte count below); its `stopped` is true only when all its
+  scripts stopped (then `stop_reason` names each script), and `steps` and `open_listens` add up its scripts.
+  `linkset_data` (`count`, `used`, `available` and `pairs`, at most 200 pairs, each name and value cut at 1 024
+  characters) is in every entry given with `scripts` and in any entry whose store is not empty.
+
+```
+{"command": "lsl_run", "seconds": 2, "objects": [{"name": "box", "prims": 2, "scripts": [
+   {"name": "main", "source": "...", "link": 1},
+   {"name": "door", "source": "...", "link": 2}]}]}
+{"command": "lsl_event", "type": "touch", "object": "box", "link": 2}
+```
+
+#### Prim state, L$ and recorded-only functions (Script Lab step 9b-3, issue 317)
+
+The sandbox keeps a simulated state for every prim of an object (shared by all its scripts) and records each change as a `prim` log
+entry. Nothing is drawn, played or sent; the 3D view is not touched. A prim is a box with 6 faces; `ALL_SIDES` is every face, a face number
+outside 0 to 5 changes nothing (as in Second Life, silently).
+
+- **Set:** `llSetText` (at most 254 characters, colour and alpha clamped to 0..1), `llSetAlpha`, `llSetColor`, `llSetTexture`, the link forms
+  `llSetLinkAlpha`, `llSetLinkColor`, `llSetLinkTexture`, `llSetPos`, `llSetRot`, `llSetStatus`, `llSetSitText`, and
+  `llSetPrimitiveParams`, `llSetLinkPrimitiveParams`, `llSetLinkPrimitiveParamsFast` with the rules `PRIM_LINK_TARGET`, `PRIM_POSITION`, `PRIM_POS_LOCAL`,
+  `PRIM_SIZE`, `PRIM_ROTATION`, `PRIM_ROT_LOCAL`, `PRIM_COLOR`, `PRIM_TEXTURE`, `PRIM_TEXT`, `PRIM_NAME`, `PRIM_DESC`, `PRIM_FULLBRIGHT`, `PRIM_GLOW`,
+  `PRIM_PHYSICS`, `PRIM_PHANTOM` and `PRIM_TEMP_ON_REZ`. Any other rule (for example `PRIM_TYPE`, `PRIM_FLEXIBLE`, `PRIM_POINT_LIGHT`) stops the script with
+  "... is not supported yet". A malformed rule (a wrong type or a missing value) is a `debug` line on the debug channel; the rules before it are kept and the rest of the list is skipped.
+- **Read:** `llGetColor`, `llGetAlpha` (for `ALL_SIDES` the average of the faces), `llGetTexture`, `llGetPos`, `llGetLocalPos`, `llGetRootPosition`, `llGetRot`,
+  `llGetLocalRot`, `llGetRootRotation`, `llGetStatus`, and `llGetPrimitiveParams` / `llGetLinkPrimitiveParams` with `PRIM_NAME`, `PRIM_DESC`, `PRIM_POSITION`,
+  `PRIM_POS_LOCAL`, `PRIM_SIZE`, `PRIM_ROTATION`, `PRIM_ROT_LOCAL`, `PRIM_TEXT`, `PRIM_COLOR`, `PRIM_TEXTURE`, `PRIM_FULLBRIGHT`, `PRIM_GLOW`, `PRIM_PHYSICS`, `PRIM_PHANTOM`,
+  `PRIM_TEMP_ON_REZ`. A set of links (`LINK_SET` and so on) or a link the object does not have gives an empty list.
+- **Where the sandbox simplifies:** a new prim starts white, opaque, with Second Life's default plywood texture, size 0.5 m, and `STATUS_ROTATE_X`, `_Y` and `_Z` set. `llSetPos`
+  moves a rezzed object at most 10 m per call and not at all when the target is outside the region (0 to 256 in x and y, 0 to 4096 in z); in a child prim it sets the offset from the root,
+  and `PRIM_POSITION` in a child prim takes region coordinates. A worn object's `llSetPos` only records the offset (`llGetPos` stays at the avatar). Rotations multiply as in LSL
+  (a child's region rotation is its local rotation times the root's). `llSetObjectName` and the root prim's `PRIM_NAME` are the object's name. The root prim's `PRIM_SIZE` is `llGetScale`.
+- **Text boxes:** `llTextBox` is `llDialog` with the single button `!!llTextBox!!`, and so is `llDialog` with that button first. The log entry is a `dialog` entry with `buttons` empty and `text_box: true`
+  (the newest dialog in the answer has it too). The avatar's typed text is answered with the existing `dialog` input: `{"type": "dialog", "button": "the text typed"}` is said on the dialog's channel.
+- **`llTransferLindenDollars` and `PERMISSION_DEBIT`:** logic and messages only; no L$ ever moves and the sandbox has no balance (the owner always has enough). The function returns a key and a
+  `transaction_result(key id, integer success, string data)` event follows with that key. Without `PERMISSION_DEBIT` (the sandbox grants the owner's permissions at once, as for every permission) the
+  call logs a `debug` line and fails with `MISSING_PERMISSION_DEBIT` (the debug wording is the sandbox's). Other failures: `INVALID_AMOUNT` (0 or less), `INVALID_DESTINATION` (not a key),
+  `LINDENDOLLAR_ENTITYDOESNOTEXIST` (the key of an object; objects cannot be paid). Success gives `data` as `<avatar key>,<amount>`. The failure tags and the success format follow the Second Life wiki
+  (page "transaction_result"); `INSUFFICIENTFUNDS`, `THROTTLED` and the like never happen here. Each call is a `linden_dollars` log entry.
+- **Recorded only:** `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` do nothing but write a
+  `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
+- Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
+
+#### Controls (Script Lab step 9b-6)
+
+A new input type `control`, for `inputs` of `lsl_run` and for `lsl_event`: `{"at": 2, "type": "control", "levels": ["forward", "left"], "edges": "forward", "id": "<avatar key>"}` says which keys the avatar
+holds now (`levels`) and which just changed (`edges`). Each is a name (`forward` or `fwd`, `back`, `left`, `right`, `up`, `down`, `rot_left`, `rot_right`, `lbutton`, `ml_lbutton`; also written `CONTROL_FWD`), a list of names,
+or the `CONTROL_*` flags as a whole number; at least one must not be empty. `id` and `name` default to the owner. The log has an `input` entry (`input`: `control`, `id`, `levels`, `edges`).
+
+- `llTakeControls(controls, accept, pass_on)` needs `PERMISSION_TAKE_CONTROLS` (an avatar sitting on the object gets it at once, the owner as for every permission); without it a `debug` line
+  `Script trying to take controls but PERMISSION_TAKE_CONTROLS permission not set` is logged (the wording is the sandbox's) and nothing is taken. A taken set replaces the earlier one; `llReleaseControls` clears it.
+  Each is a `controls` log entry (`take` with `controls`, `accept`, `pass_on`; `release` only when something was held).
+- The `control(key id, integer level, integer edge)` event goes to a script that holds controls, has the permission from that avatar, and whose taken controls the input touches; `level` and `edge` are cut to the
+  controls the script took (Second Life's exact filtering with `accept` false is not simulated: `accept` and `pass_on` are only recorded). A script that did not take the control, or holds the permission from another avatar, gets nothing.
+- Not done: the avatar's movement itself (nothing moves), the repeat of `control` while a key is held (send one input for each change), and `llTakeCamera`/camera permissions.
+
+#### Sitting and pose balls (Script Lab step 9b-5)
+
+Two input types, for `inputs` of `lsl_run` and for `lsl_event`: `sit` (`{"at": 1, "type": "sit", "object": "chair", "link": 2, "id": "<avatar key>", "name": "<avatar name>"}`) puts an avatar on a prim
+of an object (`link` 1 to the prim count, default the root; `id` and `name` default to the owner), and `stand` (`{"type": "stand", "id": ...}`; `object` is optional: without it the avatar's object is used)
+takes it off. Each is an `input` entry (`input`: `sit` or `stand`, `id`, `name`; for `sit` also `on_target`, true when the avatar took the prim's sit target) and every script of the object gets `changed`
+with `CHANGED_LINK` (32). An avatar that is already sitting, a `stand` of an avatar that does not sit on the object, a link the object does not have and a 17th avatar on one object (16 at most) are an `input`
+entry with an `error`. The answer's `objects` entries have `sitters` (`key`, `name`, `link`, `on_target`) while someone sits.
+
+- **Sit targets:** `llSitTarget(offset, rotation)` sets the sit target of the script's prim and `llLinkSitTarget(link, offset, rotation)` that of a prim by link number (the `LINK_*` values reach the prims they name);
+  an offset and rotation that are both zero (rotation with x, y and z zero) remove it. Each call is a `prim` entry with `op` `sit_target` (`set`, `offset`, `rotation`). An avatar takes a prim's sit target when it has one and
+  no one else sits on it; otherwise it sits on the prim without a target (as in Second Life) and `llAvatarOnSitTarget` does not name it. `llAvatarOnSitTarget` is the avatar on the script's prim's target (`NULL_KEY` when none),
+  `llAvatarOnLinkSitTarget(link)` that of one link (`NULL_KEY` for a link the object does not have or a set of links). The sit position and the avatar's real place are not simulated, and the 3D view is not touched.
+- **`llGetNumberOfPrims`** counts the avatars that sit on the object, as Second Life does. `llGetLinkNumber` of a one-prim object stays 0 (Second Life gives 1 while an avatar sits on it).
+- **`llUnSit(key)`** takes an avatar off the script's own object (no other object; a key that does not sit there does nothing) and writes an `unsit` entry; every script of the object gets `changed` with `CHANGED_LINK`.
+  Second Life also asks for the right to do it (object owner or land owner); the sandbox does not.
+- **Permissions of a sitter:** `llRequestPermissions` on an avatar that sits on the object grants `PERMISSION_TRIGGER_ANIMATION` and `PERMISSION_TAKE_CONTROLS` at once (as Second Life does for sitters); the other bits
+  are not granted, and when none is left nothing is granted and no `run_time_permissions` comes. The `permissions` entry says so. The owner still gets everything at once, any other key nothing. So the usual pose ball works:
+  `changed` with `CHANGED_LINK`, `llAvatarOnSitTarget`, `llRequestPermissions`, `run_time_permissions`, `llStartAnimation`. Standing up does not stop the animation or take the permission away here: the script
+  must stop it itself (in Second Life the animation stops when the avatar stands).
+- **`llGetAnimationList(key)`** lists the keys of the animations this script started for that avatar (the avatar it holds permissions for) and has not stopped; an animation in the inventory (type `animation`) gives its
+  key, any other name a key made from the object's key and the name. The avatar's own animations (standing, sitting) are not in the list. **`llGetAnimation(key)`** answers `Sitting` for an avatar sitting on any object of the
+  world, `Standing` for the owner, and an empty string for any other key. **`llGetAgentInfo(key)`** answers `AGENT_SITTING | AGENT_ON_OBJECT` (0x30) for a sitting avatar, plus `AGENT_ATTACHMENTS` (2) for the owner
+  while any object of the world is worn, and 0 for everyone else (walking, flying, typing and the other flags are never set).
+- Not done: the avatar's position and rotation on the sit target, `llSitOnLink`, `llGetObjectPrimCount` and the link keys of sitting avatars, touch-to-sit (`llSetClickAction`), sit-text display, stand-up stopping animations, and the `control` event (the next step).
+
+#### Inventory, notecards and rezzing (Script Lab step 9b-4)
+
+An object holds the inventory the request gives it, and nothing else: no file is read. Give `inventory` inside an object of `objects`, or at the top of the
+request with `source`: a list of at most 224 items `{name, type, key, lines}`. `name` is 1 to 63 characters (each item its own); `type` is `texture`, `sound`,
+`landmark`, `clothing`, `object`, `notecard`, `script`, `bodypart`, `animation`, `gesture`, `setting` or `material` (also written `INVENTORY_NOTECARD`, any case;
+omitted when `lines` is given, which means a notecard); `key` is the asset key (default: the MD5 of the object's key, `/` and the name, written as a key, so it is
+the same in every run); `lines` is a notecard's list of text lines (at most 2000 lines and 65536 characters per notecard, 131072 per object). The object's scripts
+are in the inventory too, as type `script` (an item may not have a script's name). The answer's `objects` entries list the inventory as it is at the end (`name`, `type`).
+
+- `llGetInventoryNumber(type)` counts the items of that type (`INVENTORY_ALL`, -1, counts every item; a type with no items, or an unknown number, gives 0).
+  `llGetInventoryName(type, index)` lists them sorted by name, upper and lower case alike, and gives an empty string for an index out of range (also a negative one).
+  `llGetInventoryType(name)` gives the type or `INVENTORY_NONE` (-1; the name must match exactly). `llGetInventoryKey(name)` gives the item's key or `NULL_KEY`.
+  Every item counts as full permission here: Second Life gives `NULL_KEY` for an item the script may not read.
+- `llGiveInventory(destination, name)` writes a `give_inventory` entry: `given` to the owner's avatar (or the owner of any object of the world) and to another object of
+  the world (the item is copied into that object's inventory and every script there gets `changed` with `CHANGED_INVENTORY`), `not_found` when this object has no such item,
+  `unknown_target` for a key the sandbox does not know (including `NULL_KEY`), `name_exists` when the receiving object already has an item of that name (Second Life would rename
+  the item). The item stays in the giver (Second Life keeps a copy-permission item, too). `llGiveInventory` does not sleep here (Second Life sleeps 2 seconds).
+- `llRemoveInventory(name)` removes the item (a missing name does nothing, as in Second Life) and every script of the object gets `changed` with `CHANGED_INVENTORY`;
+  an `inventory` entry is logged. Removing the running script itself stops the script as "not supported yet". Removing another script only removes the item: that script keeps running here.
+- `llGetNotecardLine(name, line)` and `llGetNumberOfNotecardLines(name)` return a query key (`5c11ab00-...` numbered in the script, like every `llGenerateKey` and
+  `llTransferLindenDollars` key) and queue `dataserver(key query, string data)` at once (Second Life answers some time later): the line (cut at 255 bytes, never in the middle of a
+  character), `EOF` (`"\n\n\n"`) for a line past the end or a negative one, or the line count as text. A name that is missing or is not a notecard gives a `debug` line
+  `Couldn't find notecard <name>` and `NULL_KEY`, and no event. The queue holds 64 events, so asking for more than 64 lines at once drops the rest (`event_dropped`), as Second Life does.
+- `llRezObject(name, position, velocity, rotation, param)` and `llRezAtRoot` need an item of type `object` (else a `debug` line `Couldn't find object '<name>'`) and a position
+  within 10 m of the rezzing object (exactly 10 m is fine; farther gives a `rez` entry with `result: too_far` and nothing else). On success the entry has the new object's key and
+  the rezzing script gets `object_rez(key)`. The rezzed object is only a key: it does not run, has no `on_rez` and does not appear in the world (a copy-permission item stays in the
+  inventory). The sandbox does not check the other limits of Second Life (the region's object limit, the rez throttle, no-copy items disappearing).
+- Not done: `llGetInventoryPermMask`, `llGetInventoryCreator`, `llGiveInventoryList`, `llGetNotecardLineSync`, `llGetInventoryAcquireTime`, `llSetRemoteScriptAccessPin` and
+  `llRemoteLoadScriptPin`; the `allowed_drop` flag; the `changed` event for an avatar dropping an item (use the `changed` input).
+
+#### The events on_rez and changed (Script Lab step 9b-2, issue 314)
+
+- `on_rez(integer start_param)` is raised once when an object starts, after its `state_entry` and before `attach` (for a worn object).
+  The parameter is the object's `start_parameter` (default 0; per object in `objects`, or at the top of the request with `source`).
+  The log has an `event` entry named `on_rez`. Not as in Second Life: there, a script saved or reset in an object gets `state_entry` only,
+  and a rezzed object gets `on_rez`; the sandbox always starts a fresh script, so it gives both, in that order. `llResetScript` runs
+  `state_entry` again and does **not** raise `on_rez` again (as in Second Life). A `state` change in `state_entry` empties the event queue,
+  so an `on_rez` still waiting is dropped (as with any waiting event).
+- `changed(integer change)` comes from an input of type `changed` (in `inputs` and in `lsl_event`): `{"at": 1, "type": "changed", "object": "box", "change": "inventory"}`.
+  `change` is a name (`inventory`, `allowed_drop`, `color`, `shape`, `scale`, `texture`, `link`, `owner`, `region`, `teleport`,
+  `region_start`, `media`, `render_material`; also written `CHANGED_OWNER`, in any case), a list of names (the flags are added: `["link", "region_start"]` gives 1056), or
+  the flags as a whole number (1 to 8191, only known flags). Every script of the object gets the event, in any prim; other objects do not.
+  The log has an `input` entry (`input`: `changed`, `change`: the flags) and then the scripts' `event` entries. The event is only the event:
+  `llGetOwner`, the prim count and the inventory do not change with it (`owner` does not give the object a new owner). This is a new input type
+  for the existing `inputs`; no new control command.
+
+#### Pure functions and object state (Script Lab step 9b-1, issue 310)
+
+These run without any world: rotation maths (`llEuler2Rot`, `llRot2Euler`, `llRot2Fwd`, `llRot2Left`, `llRot2Up`,
+`llAxisAngle2Rot`, `llRotBetween`), lists (`llListReplaceList`, `llList2ListStrided`, `llListSortStrided`), strings
+(`llReplaceSubString`, `llStringToBase64`, `llBase64ToString`, `llIntegerToBase64`, `llBase64ToInteger`,
+`llMD5String`, `llSHA1String`, `llEscapeURL`, `llUnescapeURL`) and a little object state (`llGetStartParameter`,
+`llGetObjectDesc`, `llSetObjectDesc`, `llSetObjectName`, `llGetScale`, `llGetNumberOfPrims`). Where the sandbox has
+to choose:
+
+- Rotations are computed in 32-bit floats, as the Second Life servers do; `llRot2Fwd` and its two siblings turn the unit vector by the
+  normalised rotation. `llRotBetween` of two opposite vectors turns half a turn about an axis perpendicular to the first one (Second Life's
+  axis for that case is not documented).
+- `llListSortStrided` sorts by the element at `stride_index` (negative counts from the end; out of range gives an empty list; a list whose
+  length is not a multiple of the stride comes back unchanged; only `TRUE` (1) sorts ascending). The sort is stable here; Second Life's is
+  not. Lists that mix types keep their order across types (as `llListSort` does here).
+- `llList2ListStrided` counts the stride from the start of the list, not from `start` (`[0,1,2,3,4,5,6]` with start 1, end -1, stride 2 gives
+  `[2,4,6]`, as on the Second Life wiki). A **start after the end** (a range that wraps) in `llList2ListStrided` and `llListReplaceList` stops the script with
+  "not supported yet": the Second Life wiki contradicts itself about that case.
+- `llReplaceSubString` replaces plain text (no pattern language), left to right without overlaps; a negative count looks from the end; an empty
+  pattern changes nothing (sandbox choice).
+- `llEscapeURL` leaves only ASCII letters and digits and writes the others as upper-case `%XX` of their UTF-8 bytes; `llUnescapeURL` keeps a
+  `%` that is not followed by two hex digits. `llBase64ToString` gives `?` for bytes that are no valid text and for control characters
+  other than tab and line breaks (an approximation of Second Life's "unprintable characters"); text that is not Base64 gives an empty string.
+  `llMD5String` hashes `text + ":" + nonce` as UTF-8, and both hashes are lower-case hex.
+- Object state: `llSetObjectName` (at most 63 characters) changes the name that `llGetObjectName`, `llKey2Name` and chat from the object use;
+  the object stays addressable by the name it was given in `lsl_run` (`inputs`, log entries). `llSetObjectDesc` keeps at most 127 characters.
+  The values at the start come from the object's entry in `lsl_run`: `description` (text, at most 127 characters), `scale` (`[x, y, z]` metres,
+  each 0.001 to 64; default `[0.5, 0.5, 0.5]`; one size for the whole object), `start_parameter` (a whole number, default 0), and (step 9b-4) `inventory`.
+  For a single script (`source`) the same three options go at the top of the request; with `objects`, inside each object (at the top they are refused).
+  `llGetNumberOfPrims` answers the object's `prims`.
+
+What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
+and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
+the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez` and `control`; 167 built-in functions (chat, listen, timer, time, owner and object keys,
+permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, and functions that are only recorded). All 526
+function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
+(`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
+`llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events
+`linkset_data`, `on_damage`, `on_death`, `final_damage`, `game_control`), taken from Second Life's own
+lsl-definitions (`src/scriptlab/lslbuiltins_extra.inc`, made by `tools/gen_lsl_extra.py`; MIT licence, see
+[CREDITS.md](../CREDITS.md)), so the checker knows every LSL function. LSL quirks are kept: the right side of an operator is evaluated
+first, `&&` and `||` do not short-circuit and have the same precedence, integers wrap around, `(string)`
+of a float has 6 decimals and of a vector 5, and `NULL_KEY` (a string) is true in an `if`.
+
+Limits (the input is untrusted, an AI tool writes it): the script at most 262 144 characters and 100 000
+tokens, nesting at most 100 levels; while running at most 500 000 steps, 64 nested function calls, 10 000
+events, 65 open listens, 64 waiting events, strings of 65 536 characters, lists of 4 096 entries, about
+256 KB for all variables together per script (Second Life gives a script 64 KB, code included; the sandbox's
+count is rough, 16 bytes per value plus 2 per character, so it keeps the larger limit, and `llGetFreeMemory` answers
+against 64 KB) and 2 seconds of real time; the log
+keeps 2 000 entries, each text at most 1 024 characters. A limit stops the script; the last log entry and
+`stop_reason` say which.
+
+How an AI assistant uses it: write the script, `lsl_check` it, fix the errors at their line and column,
+`lsl_run` it with inputs, read the log (what it said, which listens and animations), fix and run again.
+Examples: `examples/scriptlab/` (also in the Windows zip).
+
+### Script Lab Live: lab_watch, lab_unwatch and lab_result
+
+Three commands for the write, run, fix loop with scripts on disk (Script Lab step 6, issue 292): the
+assistant edits a `.lsl` file in the user's folder (a cloned repository, for example) with its own file
+tools, PinglyMotion notices the save, checks and runs the script, and the assistant reads the outcome.
+The Script Lab panel's Live page shows the same watch and the same results, so the user sees what the
+assistant sees. The code is `src/scriptlab/labwatcher.*`.
+
+- `lab_watch {path, seconds, inputs, keep_rlv}` watches the folder `path` (the whole path; a relative path,
+  a file, a missing folder or a network folder is refused). Watching another folder stops the one before.
+  `seconds`, `inputs` and `keep_rlv` are given to every run, as in `lsl_run`, and are checked the same way:
+  `llOwnerSay("@...")` goes to the sandbox's RLV state (the one `rlv_state` and the panel show), which is
+  emptied before each run unless `keep_rlv` is `true`. The
+  newest script in the folder is run once at once. The answer has `folder` (the path without links),
+  `scripts` (the `.lsl` files found, relative to the folder, sorted), `truncated` (true when the scan
+  stopped at a limit), `runs` and `result` (as in `lab_result`; `null` when the folder has no script).
+- `lab_unwatch` stops watching; `was_watching` says whether a folder was watched.
+- `lab_result {file}` answers `watching`, `folder`, `scripts`, `runs` and `result`, the newest result
+  (with `file`, a script path relative to the folder: that script's latest result). `runs` counts up by
+  one with every run, so after a save the assistant calls `lab_result` until `runs` has gone up.
+
+A result has `file`, `run` (the value of `runs` after it), `valid`, `errors` and `warnings` (each
+`{line, column, message}`, as in `lsl_check`), `read_error` when the file could not be read (too large,
+no permission), and `result`, the whole `lsl_run` answer (log, final state, `stopped`, `stop_reason`,
+the RLV state at the end and the rest), only when the script compiled.
+
+When a run happens: about 0.3 seconds after the last write to a `.lsl` file in the folder or its
+subfolders (several writes in a row count as one change), also when an editor saves by writing a new
+file and renaming it over the old one.
+
+Limits and safety (the folder may hold anything):
+
+- The folder is only read, never written. Only `.lsl` files are read (any upper or lower case).
+- At most 200 scripts of at most 262 144 bytes each; the scan stops after 5 000 entries and 4 folder
+  levels below the watched folder. Names that start with a dot (`.git` and the like, folders and files) are
+  skipped on every system.
+- Links are never followed out of the folder: a linked folder is not entered at all, and a linked file
+  counts only when its target is inside the watched folder.
+- Each run has every limit of `lsl_run`, including its 2 seconds of real time, so a script that loops
+  forever is stopped and the program keeps answering. When several scripts change at once, at most 4
+  are run in a row before the program draws and answers again; the rest follow.
 
 ## Set up an AI assistant
 

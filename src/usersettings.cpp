@@ -38,6 +38,8 @@ bool UserSettings::m_darkTheme = true;
 const QString UserSettings::m_darkThemeKey = "dark_theme";
 QString UserSettings::m_body = "ruth2";
 const QString UserSettings::m_bodyKey = "body";
+QString UserSettings::m_language = "system";
+const QString UserSettings::m_languageKey = "language";
 const QString UserSettings::m_bentoBodyKey = "bento_body";
 int UserSettings::m_lightBrightness = 50;
 const QString UserSettings::m_lightBrightnessKey = "light_brightness";
@@ -94,6 +96,12 @@ void UserSettings::setBody(const QString& value)
   m_body = (value == "max") ? value : QString("ruth2");
 }
 QString UserSettings::body()                         { return m_body; }
+void UserSettings::setLanguage(const QString& value)
+{
+  const QString code = value.trimmed();
+  m_language = code.isEmpty() ? QString("system") : code;
+}
+QString UserSettings::language()                     { return m_language; }
 void UserSettings::setLightBrightness(int value)     { m_lightBrightness = qBound(0, value, 100); }
 int UserSettings::lightBrightness()                  { return m_lightBrightness; }
 void UserSettings::setLightShine(int value)          { m_lightShine = qBound(0, value, 100); }
@@ -153,6 +161,7 @@ void UserSettings::readSettings()
       setBody(settings.value(m_bentoBodyKey).toBool() ? "max" : "ruth2");
     else
       setBody("ruth2");
+    setLanguage(settings.value(m_languageKey, "system").toString());
     setLightBrightness(settings.value(m_lightBrightnessKey, 50).toInt());
     setLightShine(settings.value(m_lightShineKey, 50).toInt());
     setLightWarmth(settings.value(m_lightWarmthKey, 50).toInt());
@@ -197,6 +206,7 @@ void UserSettings::writeSettings()
   settings.setValue(m_protectFirstFrameKey, protectFirstFrame());
   settings.setValue(m_darkThemeKey, darkTheme());
   settings.setValue(m_bodyKey, body());
+  settings.setValue(m_languageKey, language());
   settings.remove(m_bentoBodyKey);
   settings.setValue(m_lightBrightnessKey, lightBrightness());
   settings.setValue(m_lightShineKey, lightShine());
@@ -209,7 +219,7 @@ void UserSettings::writeSettings()
   settings.setValue(m_panelLayoutVersionKey, panelLayoutVersion());
   settings.setValue(m_mainWindowGeometryKey, mainWindowGeometry());
   // show_timeline_panel, main_window_width and main_window_height are retired:
-  // read once above, never written again (docs/PANELS_PLAN.md, section 7)
+  // read once above, never written again (docs/archive/PANELS_PLAN.md, section 7)
 
   settings.setValue(m_lastPathKey, lastPath());
 

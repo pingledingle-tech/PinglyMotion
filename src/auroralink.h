@@ -73,6 +73,11 @@ class AuroraLink : public QObject
     // For information only: printable ASCII, at most 64 characters
     static QString clientName(const QString& buildLabel);
 
+    // text that came from the other side, made safe to show: control characters
+    // become spaces, white space is simplified, and more than 200 characters are
+    // cut after 200 with "..." added (issue 252)
+    static QString clipPeerText(const QString& text);
+
     // the folder where Aurora writes its LiveMesh token files (<port>.token)
     // on this computer; PINGLYMOTION_AURORA_TOKEN_DIR overrides it (for tests)
     static QString tokenFolder();

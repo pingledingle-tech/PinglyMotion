@@ -31,7 +31,7 @@
 // A perspective projection, shifted so a point straight ahead of the camera
 // projects to "center" instead of the middle of "view" (the lens shift used
 // to keep the figure in the middle of the free area when a floating panel
-// covers part of the 3D view, docs/PANELS_PLAN.md, job P5). With
+// covers part of the 3D view, docs/archive/PANELS_PLAN.md, job P5). With
 // center == view.center() this is the same matrix as plain
 // QMatrix4x4::perspective(fovYDegrees, aspect, nearPlane, farPlane).
 QMatrix4x4 shiftedPerspective(float fovYDegrees,const QRectF& view,const QPointF& center,
@@ -62,6 +62,30 @@ enum class CameraDrag
   Zoom            // up/down moves closer/further
 };
 
+// Limits a Script Lab script puts on the camera (RLV camera restrictions,
+// src/scriptlab/cameraoverride.h). Distances are in world units (inches).
+// While a constraint is on, the camera keeps to it after every move.
+struct CameraConstraint
+{
+  float minDistance = 0;          // 0: no minimum
+  float maxDistance = 0;          // 0: no maximum
+  bool turnAroundPoint = false;   // the camera turns around `point` (the avatar), panning does not move it away
+  QVector3D point;
+  float fieldOfView = 0;          // vertical field of view in degrees; 0: the camera's own (Camera::DefaultFieldOfView)
+  // with turnAroundPoint: the camera is held at `eye`, looking at `point` (it cannot be turned;
+  // the distance limits still hold along that line)
+  bool fixedEye = false;
+  QVector3D eye;
+
+  bool operator==(const CameraConstraint& o) const
+  {
+    return minDistance == o.minDistance && maxDistance == o.maxDistance &&
+           turnAroundPoint == o.turnAroundPoint && point == o.point && fieldOfView == o.fieldOfView &&
+           fixedEye == o.fixedEye && eye == o.eye;
+  }
+  bool operator!=(const CameraConstraint& o) const { return !(*this == o); }
+};
+
 class Camera : public QObject
 {
   Q_OBJECT
@@ -81,6 +105,9 @@ class Camera : public QObject
     static bool viewForKey(int key, Qt::KeyboardModifiers keys, float* height, float* angle);
     // Blender number pad "." (focus on the selected joint)
     static bool isFocusKey(int key, Qt::KeyboardModifiers keys);
+
+    // the vertical field of view of the 3D view, in degrees (the user cannot change it)
+    static constexpr float DefaultFieldOfView = 60.0f;
 
     Camera(QObject* parent = 0);
     ~Camera();
@@ -118,6 +145,23 @@ class Camera : public QObject
     CameraPosition state() const;
     void setState(const CameraPosition& position);
 
+    // Script Lab camera override: the first setConstraint() keeps the camera
+    // as it is now, then the limits hold at once and after every move;
+    // another setConstraint() while one is on only changes the limits.
+    // clearConstraint() puts back exactly the kept camera (moves made while
+    // the limits were on are not kept), so the override never changes the
+    // user's own camera.
+    void setConstraint(const CameraConstraint& constraint);
+    void clearConstraint();
+    bool constrained() const { return m_constrained; }
+    // the vertical field of view to draw with, in degrees: the constraint's while it sets one,
+    // otherwise DefaultFieldOfView
+    float fieldOfView() const
+    {
+      return m_constrained && m_constraint.fieldOfView > 0 ? m_constraint.fieldOfView : DefaultFieldOfView;
+    }
+    CameraConstraint constraint() const { return m_constraint; }
+
   public slots:
     void storeCameraPosition(int num);
     void restoreCameraPosition(int num);
@@ -132,6 +176,16 @@ class Camera : public QObject
     QVector3D toWorld(const QVector3D& camera) const;
 
     QList<CameraPosition*> positions;
+
+  private:
+    // moves the camera so it keeps to the constraint (does nothing without one)
+    void applyConstraint();
+    // places the camera so it looks at a world point from a distance, keeping its turn
+    void place(const QVector3D& point, float distance);
+
+    bool m_constrained = false;
+    CameraConstraint m_constraint;
+    float m_savedPanX = 0, m_savedPanY = 0, m_savedPanZ = 0, m_savedRotX = 0, m_savedRotY = 0, m_savedPivot = 0;
 };
 
 #endif

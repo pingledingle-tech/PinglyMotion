@@ -46,13 +46,13 @@ class UserSettings
     // three panels; read for old files only, never written again
     static void setDarkTheme(bool value);
     // the panel layout (QMainWindow::saveState) and the version it was saved
-    // with; a layout of another version is not loaded (docs/PANELS_PLAN.md, 7)
+    // with; a layout of another version is not loaded (docs/archive/PANELS_PLAN.md, 7)
     static void setPanelLayout(const QByteArray& value);
     static QByteArray panelLayout();
     static void setPanelLayoutVersion(int value);
     static int panelLayoutVersion();
     // the window's place, size, maximised state and screen
-    // (QMainWindow::saveGeometry), docs/PANELS_PLAN.md job P3
+    // (QMainWindow::saveGeometry), docs/archive/PANELS_PLAN.md job P3
     static void setMainWindowGeometry(const QByteArray& value);
     static QByteArray mainWindowGeometry();
     static bool darkTheme();
@@ -60,6 +60,10 @@ class UserSettings
     // Anything else, such as "system" from older versions, becomes "ruth2".
     static void setBody(const QString& value);
     static QString body();
+    // the language of the program's texts: "system" (default, follow the computer) or a
+    // language code such as "nb" (docs/TRANSLATION.md); not in any menu until a second language exists
+    static void setLanguage(const QString& value);
+    static QString language();
     // Options > Light...: 0-100, 50 is the standard look
     static void setLightBrightness(int value);
     static int lightBrightness();
@@ -80,7 +84,7 @@ class UserSettings
     static bool tipsOn();
 
     // retired: read once for the move to main_window_geometry, never written
-    // again (docs/PANELS_PLAN.md, section 7); 0 when the setting is missing
+    // again (docs/archive/PANELS_PLAN.md, section 7); 0 when the setting is missing
     static int mainWindowWidth();
     static int mainWindowHeight();
 
@@ -122,6 +126,8 @@ private:
     static const QString m_darkThemeKey;
     static QString m_body;
     static const QString m_bodyKey;
+    static QString m_language;
+    static const QString m_languageKey;
     static const QString m_bentoBodyKey;   // read from files of older versions
     static int m_lightBrightness;
     static const QString m_lightBrightnessKey;

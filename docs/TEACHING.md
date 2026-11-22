@@ -52,20 +52,7 @@ These rules are a draft until the project owner approves them.
 
 ### Plain-word table
 
-The left column lists words that must not appear in texts the user sees. Use the right column instead. This is a starting list. It will be extended, and the owner will approve it.
-
-| Avoid | Write instead |
-|---|---|
-| key frame, keyframe | key (explained once: "a saved pose") |
-| rotate, rotation | turn |
-| interpolation | the movement between two keys |
-| ease in / ease out | slow start / slow finish |
-| IK, inverse kinematics | "drag the hand and the arm follows" |
-| joint limit | "the furthest this joint can turn" |
-| quaternion, Euler | never shown to the user |
-| bake | "build extra keys" (only if it must appear at all) |
-
-The table applies to the program's texts. This page and other documents may use the technical words when they explain things to a programmer.
+The words to use and the words to avoid in texts the user sees are in the one glossary: [TEACHING_TEXTS.md, "Glossary: the words to use"](TEACHING_TEXTS.md#glossary-the-words-to-use). It applies to the program's texts; this page and other documents may use the technical words when they explain things to a programmer. `tools/check_texts.py` checks the register below against the avoided words.
 
 ## 4. The register
 

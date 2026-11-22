@@ -19,6 +19,7 @@
  *
  */
 
+#include <QCoreApplication>
 #include <QQuaternion>
 #include <QJsonArray>
 #include <QDir>
@@ -522,7 +523,7 @@ BVH::CheckResult BVH::checkFile(const QString& file,const QByteArray* data)
   BVHNode* root=test.animRead(file,QString(),data);
   delete test.lastLoadedPositionNode;
   // a failed read always gives a reason, so ok() cannot say yes to a file that was refused
-  if(!root) return {test.lastError.isEmpty() ? QStringLiteral("The file could not be read.") : test.lastError};
+  if(!root) return {test.lastError.isEmpty() ? QCoreApplication::translate("BVH","The file could not be read.") : test.lastError};
   test.bvhDelete(root);
   return {};
 }

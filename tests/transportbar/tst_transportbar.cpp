@@ -1,15 +1,19 @@
 /*
  * PinglyMotion - test of the transport buttons under the timeline
  *
- * docs/UX_DECISIONS.md section 1, build order step 1: three buttons Start,
- * Stop and Replay from start, and a Loop switch that is on by default and
- * remembered between sessions. Start can be clicked only while stopped, Stop
- * only while playing, Replay from start always.
+ * docs/UX_DECISIONS.md section 1, build order steps 1 and 2: buttons Start,
+ * Stop, Replay from start, Frame back and Frame forward, and a Loop switch
+ * that is on by default and remembered between sessions. Start can be clicked
+ * only while stopped, Stop only while playing, Replay from start always.
+ * Frame back and Frame forward go one frame and stop at the first and the
+ * last frame: Frame back cannot be clicked on the first frame, Frame forward
+ * not on the last.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
 #include <QCheckBox>
+#include <QLayout>
 #include <QPushButton>
 #include <QSettings>
 #include <QSignalSpy>
@@ -32,6 +36,7 @@
 #include "constants.h"
 #include "lucideicons.h"
 #include "theme.h"
+#include "playback.h"
 #include "transportbar.h"
 #include "transportlook.h"
 #include "usersettings.h"
@@ -51,6 +56,17 @@ class TestTransportBar : public QObject
     void loopIsOnByDefault();
     void setLoopSendsNoSignal();
     void loopClickIsReported();
+
+    void stepButtonTexts();
+    void stepButtonOrder();
+    void stepButtonsAtFirstMiddleAndLast();
+    void stepButtonsWithOneFrame();
+    void stepButtonsDoNotDependOnPlaying();
+    void stepClicksAreReported();
+    void stepGoesOneFrame();
+    void stepStopsAtTheEnds();
+    void stepThroughAWholeAnimation();
+    void buttonsDoNotTakeTheKeyboard();
 
     void loopSettingDefaultsToOn();
     void loopSettingDefaultsToOnInAnOlderFile();
@@ -184,6 +200,156 @@ void TestTransportBar::loopClickIsReported()
   bar.loopCheckBox()->click();
   QCOMPARE(toggled.count(), 2);
   QCOMPARE(toggled.at(1).at(0).toBool(), true);
+}
+
+void TestTransportBar::stepButtonTexts()
+{
+  TransportBar bar;
+  QCOMPARE(bar.backButton()->text(), QStringLiteral("Frame back"));
+  QCOMPARE(bar.forwardButton()->text(), QStringLiteral("Frame forward"));
+  QCOMPARE(bar.backButton()->toolTip(), QStringLiteral("Go one frame back (Left arrow key)"));
+  QCOMPARE(bar.forwardButton()->toolTip(), QStringLiteral("Go one frame forward (Right arrow key)"));
+  QVERIFY(!bar.backButton()->isCheckable());
+  QVERIFY(!bar.forwardButton()->isCheckable());
+}
+
+void TestTransportBar::stepButtonOrder()
+{
+  // next to the other transport buttons: Start, Stop, Replay from start,
+  // Frame back, Frame forward, then the Loop switch
+  TransportBar bar;
+  QLayout* layout = bar.layout();
+  QVERIFY(layout);
+  QCOMPARE(layout->count(), 6);
+  QCOMPARE(layout->itemAt(0)->widget(), bar.startButton());
+  QCOMPARE(layout->itemAt(1)->widget(), bar.stopButton());
+  QCOMPARE(layout->itemAt(2)->widget(), bar.replayButton());
+  QCOMPARE(layout->itemAt(3)->widget(), bar.backButton());
+  QCOMPARE(layout->itemAt(4)->widget(), bar.forwardButton());
+  QCOMPARE(layout->itemAt(5)->widget(), bar.loopCheckBox());
+}
+
+void TestTransportBar::stepButtonsAtFirstMiddleAndLast()
+{
+  TransportBar bar;
+  // the example wave has 61 frames (0 to 60 inside the program)
+  bar.setFrame(0, 61);
+  QVERIFY(!bar.backButton()->isEnabled());
+  QVERIFY(bar.forwardButton()->isEnabled());
+
+  bar.setFrame(1, 61);
+  QVERIFY(bar.backButton()->isEnabled());
+  QVERIFY(bar.forwardButton()->isEnabled());
+
+  bar.setFrame(30, 61);
+  QVERIFY(bar.backButton()->isEnabled());
+  QVERIFY(bar.forwardButton()->isEnabled());
+
+  bar.setFrame(59, 61);
+  QVERIFY(bar.backButton()->isEnabled());
+  QVERIFY(bar.forwardButton()->isEnabled());
+
+  bar.setFrame(60, 61);
+  QVERIFY(bar.backButton()->isEnabled());
+  QVERIFY(!bar.forwardButton()->isEnabled());
+}
+
+void TestTransportBar::stepButtonsWithOneFrame()
+{
+  // a new bar, and an animation of one frame: nowhere to step
+  TransportBar bar;
+  QVERIFY(!bar.backButton()->isEnabled());
+  QVERIFY(!bar.forwardButton()->isEnabled());
+  bar.setFrame(0, 1);
+  QVERIFY(!bar.backButton()->isEnabled());
+  QVERIFY(!bar.forwardButton()->isEnabled());
+}
+
+void TestTransportBar::stepButtonsDoNotDependOnPlaying()
+{
+  // while playing they can still be clicked (the window stops, then steps)
+  TransportBar bar;
+  bar.setFrame(5, 10);
+  for (PlayState state : {PLAYSTATE_LOOPING, PLAYSTATE_PLAYING, PLAYSTATE_STOPPED})
+  {
+    bar.setPlaystate(state);
+    QVERIFY(bar.backButton()->isEnabled());
+    QVERIFY(bar.forwardButton()->isEnabled());
+  }
+}
+
+void TestTransportBar::stepClicksAreReported()
+{
+  TransportBar bar;
+  QSignalSpy back(&bar, &TransportBar::backClicked);
+  QSignalSpy forward(&bar, &TransportBar::forwardClicked);
+  bar.setFrame(5, 10);
+
+  bar.forwardButton()->click();
+  QCOMPARE(forward.count(), 1);
+  QCOMPARE(back.count(), 0);
+  bar.backButton()->click();
+  QCOMPARE(back.count(), 1);
+  QCOMPARE(forward.count(), 1);
+
+  // on the first frame Frame back sends nothing, on the last Frame forward
+  bar.setFrame(0, 10);
+  bar.backButton()->click();
+  QCOMPARE(back.count(), 1);
+  bar.setFrame(9, 10);
+  bar.forwardButton()->click();
+  QCOMPARE(forward.count(), 1);
+}
+
+void TestTransportBar::stepGoesOneFrame()
+{
+  QCOMPARE(Playback::stepFrame(5, 10, 1), 6);
+  QCOMPARE(Playback::stepFrame(5, 10, -1), 4);
+  QCOMPARE(Playback::stepFrame(0, 10, 1), 1);
+  QCOMPARE(Playback::stepFrame(9, 10, -1), 8);
+}
+
+void TestTransportBar::stepStopsAtTheEnds()
+{
+  // no wrap-around: the first frame stays the first, the last stays the last
+  QCOMPARE(Playback::stepFrame(0, 10, -1), 0);
+  QCOMPARE(Playback::stepFrame(9, 10, 1), 9);
+  QCOMPARE(Playback::stepFrame(0, 1, 1), 0);
+  QCOMPARE(Playback::stepFrame(0, 1, -1), 0);
+}
+
+void TestTransportBar::stepThroughAWholeAnimation()
+{
+  // forward from the first frame to the last, one frame at a time, and back
+  const int total = 61;
+  int frame = 0;
+  for (int i = 1; i < total; ++i)
+  {
+    QVERIFY(Playback::stepButtons(frame, total).forward);
+    frame = Playback::stepFrame(frame, total, 1);
+    QCOMPARE(frame, i);
+  }
+  QVERIFY(!Playback::stepButtons(frame, total).forward);
+  QCOMPARE(Playback::stepFrame(frame, total, 1), total - 1);
+
+  for (int i = total - 2; i >= 0; --i)
+  {
+    QVERIFY(Playback::stepButtons(frame, total).back);
+    frame = Playback::stepFrame(frame, total, -1);
+    QCOMPARE(frame, i);
+  }
+  QVERIFY(!Playback::stepButtons(frame, total).back);
+  QCOMPARE(Playback::stepFrame(frame, total, -1), 0);
+}
+
+void TestTransportBar::buttonsDoNotTakeTheKeyboard()
+{
+  // a click must not take the keyboard focus, so the left / right arrow keys
+  // still step the frame afterwards
+  TransportBar bar;
+  for (QPushButton* button : {bar.startButton(), bar.stopButton(), bar.replayButton(),
+                              bar.backButton(), bar.forwardButton()})
+    QCOMPARE(button->focusPolicy(), Qt::TabFocus);
 }
 
 void TestTransportBar::loopSettingDefaultsToOn()

@@ -366,6 +366,12 @@ bool EasingTiles::isAnimating() const
   return m_timer->isActive();
 }
 
+std::optional<Easing::Preset> EasingTiles::animatingTile() const
+{
+  if(!m_timer->isActive()) return std::nullopt;
+  return m_hovered;
+}
+
 void EasingTiles::refreshHint()
 {
   for(int i=0;i<Easing::PresetCount;i++)
@@ -385,21 +391,16 @@ void EasingTiles::refreshHint()
     m_hint->setText(EasingChoice::hint(m_hovered ? *m_hovered : m_choice));
 }
 
-// the figures move only while the row is on screen and a key is selected
+// only the figure of the tile under the mouse moves, and only while the row is
+// on screen and a key is selected; every other figure stands at the start
 void EasingTiles::updateAnimation()
 {
-  const bool run=isVisible() && m_hasChoice;
-  if(run && !m_timer->isActive())
-  {
-    m_elapsedMs=0;
-    m_timer->start();
-  }
-  else if(!run && m_timer->isActive())
-  {
-    m_timer->stop();
-    m_elapsedMs=0;
-    for(int i=0;i<Easing::PresetCount;i++) m_tiles[i]->setPhase(0);
-  }
+  const bool run=isVisible() && m_hasChoice && m_hovered.has_value();
+  // a new hovered tile starts its run from the beginning
+  m_elapsedMs=0;
+  for(int i=0;i<Easing::PresetCount;i++) m_tiles[i]->setPhase(0);
+  if(run && !m_timer->isActive()) m_timer->start();
+  else if(!run && m_timer->isActive()) m_timer->stop();
 }
 
 void EasingTiles::showEvent(QShowEvent* event)
@@ -411,6 +412,9 @@ void EasingTiles::showEvent(QShowEvent* event)
 void EasingTiles::hideEvent(QHideEvent* event)
 {
   QWidget::hideEvent(event);
+  // a hidden row gets no leave event, so it forgets the hover here
+  m_hovered.reset();
+  refreshHint();
   updateAnimation();
 }
 
@@ -431,7 +435,7 @@ void EasingTiles::tick()
   m_elapsedMs=(m_elapsedMs+m_timer->interval())%cycleMs();
   // the run takes three quarters of the cycle, then the figure rests at the end
   const double phase=static_cast<double>(m_elapsedMs)/(cycleMs()*3/4);
-  for(int i=0;i<Easing::PresetCount;i++) m_tiles[i]->setPhase(phase);
+  if(m_hovered) m_tiles[static_cast<int>(*m_hovered)]->setPhase(phase);
 }
 
 void EasingTiles::tileClicked()
@@ -449,12 +453,18 @@ void EasingTiles::tileHovered(Easing::Preset preset)
 {
   m_hovered=preset;
   refreshHint();
+  updateAnimation();
 }
 
 void EasingTiles::tileLeft()
 {
+  // only the tile that is hovered may end the hover (leave and enter can come
+  // in either order when the mouse goes from one tile to the next)
+  EasingTile* tile=qobject_cast<EasingTile*>(sender());
+  if(tile && m_hovered && tile->preset()!=*m_hovered) return;
   m_hovered.reset();
   refreshHint();
+  updateAnimation();
 }
 
 // --------------------------------------------------------------- CurveEditor

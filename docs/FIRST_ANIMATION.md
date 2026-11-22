@@ -40,6 +40,7 @@ The key button has a key icon. It sits right of the time marker's bar. It looks 
 1. Click **Start**, under the time marker's bar.
 2. Click **Stop** to stop. **Replay from start** plays again from the first frame.
 3. With **Loop** ticked (the default) it plays again and again. Untick it to play once.
+4. **Frame back** and **Frame forward** go one frame at a time, so you can look at each pose. The left and right arrow keys do the same.
 
 The arm now moves between your keys. To change the feel, click your second key on the timeline. Then look at the row of six tiles under the timeline:
 
@@ -96,7 +97,7 @@ Choose **Help > About...** to see who made the avatar bodies and under which lic
 
 - **The figure does not move.** You are on frame 0. Drag the time marker to a later frame.
 - **A joint will not turn further.** It is at the furthest it can turn. Turn it back.
-- **You do not like a key.** Press **Ctrl+Z** to undo. Or click the key button to remove the key.
+- **You do not like a key.** Click the key button to remove the key.
 - **The view is lost.** Press **Esc** to reset the camera.
 - **You cannot see the face balls.** Click the head. They only show then.
 - **Nothing moves when you play.** Set a second key at another frame.

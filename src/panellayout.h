@@ -1,4 +1,4 @@
-// Layout rules for the panels (docs/PANELS_PLAN.md, job P1).
+// Layout rules for the panels (docs/archive/PANELS_PLAN.md, job P1).
 //
 // Plain functions and small structs: no widgets, no disk access, nothing that
 // changes the screen. Header-only, like easing.h. The window code (jobs P2 to
@@ -19,7 +19,7 @@
 
 namespace PanelLayout
 {
-  // Setting names (docs/PANELS_PLAN.md, section 7).
+  // Setting names (docs/archive/PANELS_PLAN.md, section 7).
   inline const char* const SettingLayout="panel_layout";
   inline const char* const SettingLayoutVersion="panel_layout_version";
   inline const char* const SettingWindowGeometry="main_window_geometry";

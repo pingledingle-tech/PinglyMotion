@@ -146,3 +146,81 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_timeline_tests PRIVATE ${CMAKE_SOURCE_D
 TARGET_LINK_LIBRARIES (pinglymotion_timeline_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME timeline WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timeline_tests)
 SET_TESTS_PROPERTIES (timeline PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# the timeline panel scrolls to the row of the selected joint
+ADD_EXECUTABLE (pinglymotion_timelineview_tests tst_timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timeline.cpp ${CMAKE_SOURCE_DIR}/src/easingtiles.cpp ${CMAKE_SOURCE_DIR}/src/easing.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_timelineview_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_timelineview_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME timelineview WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timelineview_tests)
+SET_TESTS_PROPERTIES (timelineview PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# the Script Lab's RLV core: command parser and restriction state (#287), RLVa-only behaviours and the mode switch (#297)
+FOREACH (RLV_TEST rlvcommand rlvstate rlva rlvtable)
+  ADD_EXECUTABLE (pinglymotion_${RLV_TEST}_tests tst_${RLV_TEST}.cpp)
+  TARGET_INCLUDE_DIRECTORIES (pinglymotion_${RLV_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+  TARGET_LINK_LIBRARIES (pinglymotion_${RLV_TEST}_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+  ADD_TEST (NAME ${RLV_TEST} COMMAND pinglymotion_${RLV_TEST}_tests)
+  SET_TESTS_PROPERTIES (${RLV_TEST} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+ENDFOREACH ()
+
+# Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
+FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv lslworld lsllink lslpure lslevents lslprims lslinventory lslsitting lslcontrols)
+  ADD_EXECUTABLE (pinglymotion_${LSL_TEST}_tests tst_${LSL_TEST}.cpp)
+  TARGET_INCLUDE_DIRECTORIES (pinglymotion_${LSL_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+  TARGET_COMPILE_DEFINITIONS (pinglymotion_${LSL_TEST}_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
+  TARGET_LINK_LIBRARIES (pinglymotion_${LSL_TEST}_tests pinglymotion_core Qt6::Core Qt6::Test)
+  ADD_TEST (NAME ${LSL_TEST} COMMAND pinglymotion_${LSL_TEST}_tests)
+ENDFOREACH ()
+
+# Script Lab Live (#292): the folder watch, reloading changed scripts, its limits
+ADD_EXECUTABLE (pinglymotion_labwatcher_tests tst_labwatcher.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labwatcher_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_labwatcher_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME labwatcher COMMAND pinglymotion_labwatcher_tests)
+
+# Script Lab step 7 (#293): what a run does to the avatar, the animation lookup and the 3D view's preview
+ADD_EXECUTABLE (pinglymotion_labeffects_tests tst_labeffects.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labeffects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_labeffects_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
+TARGET_LINK_LIBRARIES (pinglymotion_labeffects_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME labeffects WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_labeffects_tests)
+
+# ... and the panel's "Show effects in 3D view" box with a watched folder
+ADD_EXECUTABLE (pinglymotion_scriptlabeffects_tests tst_scriptlabeffects.cpp
+                ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/objectsview.cpp
+                ${CMAKE_SOURCE_DIR}/src/paneltitlebar.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabeffects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabeffects_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabeffects_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME scriptlabeffects WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scriptlabeffects_tests)
+SET_TESTS_PROPERTIES (scriptlabeffects PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Script Lab job 7b: the RLV camera limits the 3D view keeps to, with a real camera
+ADD_EXECUTABLE (pinglymotion_cameraoverride_tests tst_cameraoverride.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_cameraoverride_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_cameraoverride_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME cameraoverride COMMAND pinglymotion_cameraoverride_tests)
+SET_TESTS_PROPERTIES (cameraoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Script Lab job 7c: the RLV sky and draw distance shown as the 3D view's background and fog
+ADD_EXECUTABLE (pinglymotion_environmentoverride_tests tst_environmentoverride.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_environmentoverride_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_environmentoverride_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME environmentoverride COMMAND pinglymotion_environmentoverride_tests)
+SET_TESTS_PROPERTIES (environmentoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Script Lab job 7c: the RLV view modes (hidden avatar, plain floor, overlay) in the 3D view
+ADD_EXECUTABLE (pinglymotion_viewmodesoverride_tests tst_viewmodesoverride.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_viewmodesoverride_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_viewmodesoverride_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME viewmodesoverride COMMAND pinglymotion_viewmodesoverride_tests)
+SET_TESTS_PROPERTIES (viewmodesoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# ... and the panel's "Show camera limits in 3D view" box
+ADD_EXECUTABLE (pinglymotion_scriptlabcamera_tests tst_scriptlabcamera.cpp
+                ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/objectsview.cpp
+                ${CMAKE_SOURCE_DIR}/src/paneltitlebar.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabcamera_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabcamera_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME scriptlabcamera COMMAND pinglymotion_scriptlabcamera_tests)
+SET_TESTS_PROPERTIES (scriptlabcamera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

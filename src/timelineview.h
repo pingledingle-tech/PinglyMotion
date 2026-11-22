@@ -48,6 +48,8 @@ class TimelineTracks : public QWidget
     void setAnimation(Animation* anim);
 
     void selectTrack(int track);
+    // the highlighted track name row, -1 when none
+    int selectedTrackNumber() const { return selectedTrack; }
 
   protected:
     Animation* animation;
@@ -67,6 +69,11 @@ class TimelineView : public QFrame
     Timeline* getTimeline() const;
     // the easing tile row under the tracks (issue #53 step 5)
     EasingTiles* easingTiles() const;
+    // the joint that is selected (highlighted in the names and in the rows), -1 when none
+    int selectedTrack() const { return selectedTrack_; }
+    TimelineTracks* tracks() const { return timelineTracks; }
+    // the outer area that scrolls the track rows up and down
+    QScrollArea* rowScroller() const { return outerView_; }
 
   public slots:
     void selectTrack(int track);
@@ -83,6 +90,8 @@ class TimelineView : public QFrame
 
   protected:
     QScrollArea* view;
+    // the outer area that scrolls the track rows up and down
+    QScrollArea* outerView_=nullptr;
     Timeline* timeline;
     TimelineTracks* timelineTracks;
     EasingTiles* easingTiles_;

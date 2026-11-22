@@ -14,6 +14,7 @@
 #include <QEventLoop>
 #include <QJsonDocument>
 #include <QTcpSocket>
+#include <QScopeGuard>
 #include <QTemporaryDir>
 
 #include <cmath>
@@ -210,6 +211,8 @@ class ControlTest : public QObject
     void findReferenceRefusesBadOptions();
     void loadReferenceOpensALibraryClip();
     void loadReferenceRefusesChangedAndOutsideFiles();
+    void scriptLabLslCommands();
+    void scriptLabLslRlv();
     void readerParsesTheGivenBytes();
     void downloadedClipsAreMarked();
 
@@ -230,6 +233,13 @@ class ControlTest : public QObject
     void connectionFileFailureKeepsTheOldFile();
     void serverReportsClientAndCommand();
     void indicatorShowsTheState();
+    void rlvAcceptanceCheck();
+    void rlvAnswersEveryCommand();
+    void rlvInputIsValidated();
+    void rlvWorksWithoutAnAnimation();
+    void rlvaModeSwitch();
+    void rlvaModeInputIsValidated();
+    void scriptLabLiveCommands();
 
   private:
     QJsonObject run(const char* text) { return m_api->execute(json(text)); }
@@ -500,7 +510,7 @@ void ControlTest::deleteKeyAndKeys()
   QVERIFY(!run(R"({"command":"delete_key","joint":"lForeArm","frame":8})")["ok"].toBool());
 }
 
-// Job A of docs/AI_HELP_PLAN.md: easing on set_pose, read back with keys
+// Job A of docs/archive/AI_HELP_PLAN.md: easing on set_pose, read back with keys
 void ControlTest::easingIsSetAndRead()
 {
   QVERIFY(run(R"({"command":"set_frame_count","frames":61})")["ok"].toBool());
@@ -969,7 +979,7 @@ void ControlTest::screenshotIsPng()
   QVERIFY(!run(R"({"command":"screenshot","width":99999})")["ok"].toBool());
 }
 
-// readable screenshots (job C of docs/AI_HELP_PLAN.md)
+// readable screenshots (job C of docs/archive/AI_HELP_PLAN.md)
 static QImage decodePng(const QJsonObject& answer)
 {
   return QImage::fromData(QByteArray::fromBase64(answer["png_base64"].toString().toLatin1()), "PNG");
@@ -2665,6 +2675,301 @@ void ControlTest::downloadedClipsAreMarked()
   QTemporaryDir empty;
   m_api->setReferenceFolder(empty.path());
   QCOMPARE(hitIds(run(R"({"command":"find_reference"})")), (QStringList{"t-sit"}));
+}
+
+// Script Lab, step 1 (issue 287): the acceptance check of the issue
+void ControlTest::rlvAcceptanceCheck()
+{
+  QJsonObject answer = run(R"({"command":"rlv_command","object":"collar","text":"@detach=n,sendim=n"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["restrictions"].toInt(), 2);
+
+  answer = run(R"({"command":"rlv_state"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["restrictions"].toArray().size(), 2);
+  QCOMPARE(answer["objects"].toObject()["collar"].toArray(), (QJsonArray{"detach", "sendim"}));
+  QCOMPARE(answer["blocked"].toArray(), (QJsonArray{"detach", "sendim"}));
+  QCOMPARE(answer["rlv_version"].toString(), QString("3.4.3"));
+  bool sawSendIm = false;
+  for (const QJsonValue& value : answer["actions"].toArray())
+  {
+    const QJsonObject action = value.toObject();
+    if (action["id"].toString() == "sendim")
+    {
+      sawSendIm = true;
+      QCOMPARE(action["allowed"].toBool(), false);
+      QVERIFY(!action["label"].toString().isEmpty());
+    }
+    if (action["id"].toString() == "fly") QCOMPARE(action["allowed"].toBool(), true);
+  }
+  QVERIFY(sawSendIm);
+
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@clear"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["restrictions"].toInt(), 0);
+  QCOMPARE(run(R"({"command":"rlv_state"})")["restrictions"].toArray().size(), 0);
+
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@version=2222,getstatus=3333"})");
+  const QJsonArray replies = answer["replies"].toArray();
+  QCOMPARE(replies.size(), 2);
+  QCOMPARE(replies[0].toObject()["channel"].toInt(), 2222);
+  QVERIFY(replies[0].toObject()["text"].toString().startsWith("RestrainedLife viewer v3.4.3"));
+  QCOMPARE(replies[1].toObject()["channel"].toInt(), 3333);
+  QCOMPARE(replies[1].toObject()["text"].toString(), QString());
+}
+
+void ControlTest::rlvAnswersEveryCommand()
+{
+  QJsonObject answer = run(R"({"command":"rlv_command","object":"hud","text":"@fly=n,fly=n,dance=n,unsit=force,tplm=y,sendim:abc=n"})");
+  QVERIFY(answer["ok"].toBool());
+  const QJsonArray results = answer["results"].toArray();
+  QCOMPARE(results.size(), 6);
+  const QStringList expected = {"success", "duplicate", "failed", "retained", "unset", "success"};
+  for (int i = 0; i < expected.size(); i++)
+    QCOMPARE(results[i].toObject()["result"].toString(), expected[i]);
+  QVERIFY(results[2].toObject()["reason"].toString().contains("unknown behaviour"));
+  QCOMPARE(results[5].toObject()["option"].toString(), QString("abc"));
+  QCOMPARE(results[5].toObject()["type"].toString(), QString("add"));
+
+  run(R"({"command":"rlv_command","object":"collar","text":"@fly=n"})");
+  answer = run(R"({"command":"rlv_state"})");
+  QCOMPARE(answer["counts"].toObject()["fly"].toInt(), 2);
+
+  answer = run(R"({"command":"rlv_reset"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["removed"].toInt(), 3);
+  QCOMPARE(run(R"({"command":"rlv_state"})")["objects"].toObject().size(), 0);
+}
+
+void ControlTest::rlvInputIsValidated()
+{
+  const char* bad[] =
+  {
+    R"({"command":"rlv_command"})",
+    R"({"command":"rlv_command","object":"collar"})",
+    R"({"command":"rlv_command","text":"@fly=n"})",
+    R"({"command":"rlv_command","object":7,"text":"@fly=n"})",
+    R"({"command":"rlv_command","object":"collar","text":["@fly=n"]})",
+    R"({"command":"rlv_command","object":"","text":"@fly=n"})",
+    R"({"command":"rlv_command","object":"../x","text":"@fly=n"})",
+    R"({"command":"rlv_command","object":"collar","text":"fly=n"})",
+    R"({"command":"rlv_command","object":"collar","text":"@"})",
+  };
+  for (const char* request : bad)
+  {
+    const QJsonObject answer = run(request);
+    QVERIFY2(!answer["ok"].toBool(), request);
+    QVERIFY(!answer["error"].toString().isEmpty());
+  }
+  const QString longText = "@" + QString(2000, 'a');
+  QJsonObject request{{"command", "rlv_command"}, {"object", "collar"}, {"text", longText}};
+  QVERIFY(!m_api->execute(request)["ok"].toBool());
+  QVERIFY(m_api->rlv().restrictions().isEmpty());
+}
+
+void ControlTest::rlvWorksWithoutAnAnimation()
+{
+  FakeHost host(nullptr);
+  ControlApi api(&host);
+  QJsonObject answer = api.execute(QJsonObject{{"command", "rlv_command"}, {"object", "collar"}, {"text", "@detach=n"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QVERIFY(api.execute(QJsonObject{{"command", "rlv_state"}})["ok"].toBool());
+  QVERIFY(api.execute(QJsonObject{{"command", "rlv_reset"}})["ok"].toBool());
+  QVERIFY(!api.execute(QJsonObject{{"command", "state"}})["ok"].toBool());
+}
+
+void ControlTest::rlvaModeSwitch()
+{
+  // plain RLV is the default; RLVa-only behaviours are unknown there
+  QJsonObject answer = run(R"({"command":"rlv_state"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlv"));
+  QVERIFY(!answer["behaviours"].toArray().contains(QJsonValue("showselfhead")));
+  QVERIFY(answer["rlva_only"].toArray().contains(QJsonValue("showselfhead")));
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@showselfhead=n"})");
+  QCOMPARE(answer["results"].toArray()[0].toObject()["result"].toString(), QString("failed"));
+  QVERIFY(answer["results"].toArray()[0].toObject()["reason"].toString().contains("unknown behaviour"));
+
+  // switch through rlv_reset: starts clean, answers the new mode
+  run(R"({"command":"rlv_command","object":"collar","text":"@fly=n"})");
+  answer = run(R"({"command":"rlv_reset","mode":"rlva"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["removed"].toInt(), 1);
+  QCOMPARE(answer["mode"].toString(), QString("rlva"));
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@showselfhead=n,setcam_fov:1.2=force,getcommand:showselfhead=77"})");
+  const QJsonArray results = answer["results"].toArray();
+  QCOMPARE(results[0].toObject()["result"].toString(), QString("success"));
+  QCOMPARE(results[1].toObject()["result"].toString(), QString("retained"));
+  QVERIFY(results[1].toObject()["reason"].toString().contains("recorded only"));
+  QCOMPARE(answer["replies"].toArray()[0].toObject()["text"].toString(), QString("/showselfhead"));
+  answer = run(R"({"command":"rlv_state"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlva"));
+  QVERIFY(answer["behaviours"].toArray().contains(QJsonValue("showselfhead")));
+  QCOMPARE(answer["recorded"].toObject()["setcam_fov"].toString(), QString("1.2"));
+  QVERIFY(answer["blocked"].toArray().contains(QJsonValue("showselfhead")));
+
+  // a reset without mode keeps the mode; back to rlv removes everything RLVa-only
+  answer = run(R"({"command":"rlv_reset"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlva"));
+  run(R"({"command":"rlv_command","object":"collar","text":"@showselfhead=n"})");
+  answer = run(R"({"command":"rlv_reset","mode":"RLV"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlv"));
+  QCOMPARE(answer["removed"].toInt(), 1);
+  QCOMPARE(run(R"({"command":"rlv_state"})")["restrictions"].toArray().size(), 0);
+}
+
+void ControlTest::rlvaModeInputIsValidated()
+{
+  run(R"({"command":"rlv_reset","mode":"rlva"})");
+  run(R"({"command":"rlv_command","object":"collar","text":"@showselfhead=n"})");
+  const char* bad[] =
+  {
+    R"({"command":"rlv_reset","mode":"firestorm"})",
+    R"({"command":"rlv_reset","mode":""})",
+    R"({"command":"rlv_reset","mode":7})",
+    R"({"command":"rlv_reset","mode":null})",
+    R"({"command":"rlv_reset","mode":["rlv"]})",
+  };
+  for (const char* request : bad)
+  {
+    const QJsonObject answer = run(request);
+    QVERIFY2(!answer["ok"].toBool(), request);
+    QVERIFY(!answer["error"].toString().isEmpty());
+  }
+  // a refused mode changes nothing: still RLVa, restriction still held
+  QCOMPARE(m_api->rlv().mode(), Rlv::Mode::Rlva);
+  QVERIFY(m_api->rlv().has("showselfhead"));
+}
+
+// Script Lab Live (issue 292): lab_watch, lab_result and lab_unwatch on a temporary folder;
+// the folder is only read and the animation never changes
+void ControlTest::scriptLabLiveCommands()
+{
+  const int frames = m_animation->getNumberOfFrames();
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  // never leave a watch on a folder that is about to be removed, even when a check fails
+  const auto stopWatching = qScopeGuard([this] { m_api->lab().unwatch(); });
+
+  QJsonObject answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["ok"].toBool(), true);
+  QCOMPARE(answer["watching"].toBool(), false);
+  QVERIFY(answer["result"].isNull());
+  QCOMPARE(answer["note"].toString(), QString("No folder is watched. Start with lab_watch and the folder's path."));
+
+  QCOMPARE(run(R"({"command":"lab_watch"})")["error"].toString(),
+           QString("lab_watch needs \"path\": the whole path of the folder with the .lsl scripts."));
+  QCOMPARE(run(R"({"command":"lab_watch","path":"relative/folder"})")["error"].toString(),
+           QString("lab_watch: Give the whole path of the folder, not a relative one."));
+  QCOMPARE(run(R"({"command":"lab_watch","path":"/x","fast":true})")["error"].toString(),
+           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs, keep_rlv."));
+  QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"seconds", 5000}})["error"].toString(),
+           QString("lab_watch: \"seconds\" must be between 0 and 3600 (simulated seconds)."));
+  QCOMPARE(run(R"({"command":"lab_unwatch","now":1})")["error"].toString(), QString("lab_unwatch takes no options."));
+
+  // an empty folder, then a script with an error, then the fixed script
+  answer = m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"seconds", 1}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["folder"].toString(), QFileInfo(dir.path()).canonicalFilePath());
+  QCOMPARE(answer["scripts"].toArray().size(), 0);
+  QCOMPARE(answer["runs"].toInt(), 0);
+  QVERIFY(answer["result"].isNull());
+  QCOMPARE(answer["note"].toString(), QString("No .lsl file in the folder yet. Save one there and call lab_result."));
+
+  {
+    QFile file(dir.filePath("collar.lsl"));
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write("default { state_entry() { llOwnerSay(1); } }");
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 1, 10000);
+  answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["watching"].toBool(), true);
+  QCOMPARE(answer["scripts"].toArray(), QJsonArray({"collar.lsl"}));
+  QJsonObject result = answer["result"].toObject();
+  QCOMPARE(result["file"].toString(), QString("collar.lsl"));
+  QCOMPARE(result["valid"].toBool(), false);
+  QCOMPARE(result["errors"].toArray().size(), 1);
+  QCOMPARE(result["errors"].toArray().first().toObject()["line"].toInt(), 1);
+  QCOMPARE(result["errors"].toArray().first().toObject()["column"].toInt(), 38);
+
+  QTest::qWait(1100);   // a new file time
+  {
+    QFile file(dir.filePath("collar.lsl"));
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    file.write("default { state_entry() { llOwnerSay(\"locked\"); } }");
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 2, 10000);
+  result = m_api->execute(QJsonObject{{"command", "lab_result"}, {"file", "collar.lsl"}})["result"].toObject();
+  QCOMPARE(result["valid"].toBool(), true);
+  QCOMPARE(result["run"].toInt(), 2);
+  QJsonArray said;
+  for (const QJsonValue& v : result["result"].toObject()["log"].toArray())
+    if (v.toObject()["type"] == "owner_say") said.append(v.toObject()["text"]);
+  QCOMPARE(said, QJsonArray({"locked"}));
+  QCOMPARE(result["result"].toObject()["time"].toDouble(), 1.0);
+
+  QCOMPARE(run(R"({"command":"lab_result","file":"other.lsl"})")["error"].toString(),
+           QString("lab_result: \"other.lsl\" is not a watched script. The scripts are listed in \"scripts\" of lab_result without file."));
+  QCOMPARE(run(R"({"command":"lab_result","file":3})")["error"].toString(),
+           QString("lab_result: \"file\" must be a script path relative to the watched folder."));
+
+  // after lab_unwatch a saved change is not run
+  QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), true);
+  QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), false);
+  QTest::qWait(1100);
+  {
+    QFile file(dir.filePath("collar.lsl"));
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    file.write("default { state_entry() { llOwnerSay(\"again\"); } }");
+  }
+  QTest::qWait(1000);
+  answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["watching"].toBool(), false);
+  QCOMPARE(answer["runs"].toInt(), 2);
+  QCOMPARE(m_animation->getNumberOfFrames(), frames);
+}
+
+// Script Lab (issue 289): lsl_check and lsl_run go through the control commands and never touch the animation
+void ControlTest::scriptLabLslCommands()
+{
+  const int frames = m_animation->getNumberOfFrames();
+  QJsonObject answer = run(R"({"command":"lsl_check","source":"default { state_entry() { llOwnerSay(1); } }"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["valid"].toBool(), false);
+  QCOMPARE(answer["errors"].toArray().first().toObject()["column"].toInt(), 38);
+  answer = run(R"({"command":"lsl_run","source":"default { state_entry() { llOwnerSay(\"hi\"); } }","seconds":1})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  bool said = false;
+  for (const QJsonValue& v : answer["log"].toArray())
+    if (v.toObject()["type"] == "owner_say" && v.toObject()["text"] == "hi") said = true;
+  QVERIFY(said);
+  QVERIFY(!run(R"({"command":"lsl_run"})")["ok"].toBool());
+  QCOMPARE(m_animation->getNumberOfFrames(), frames);
+}
+
+// Script Lab step 4 (issue 290): a script's llOwnerSay("@detach=n") shows in rlv_state, and keep_rlv is checked
+void ControlTest::scriptLabLslRlv()
+{
+  FakeHost host(nullptr);
+  ControlApi api(&host);
+  QJsonObject answer = api.execute(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { llOwnerSay(\"@detach=n\"); } }"}, {"seconds", 1}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["rlv"].toObject()["state"].toObject()["blocked"].toArray(), QJsonArray({"detach"}));
+  answer = api.execute(QJsonObject{{"command", "rlv_state"}});
+  QCOMPARE(answer["blocked"].toArray(), QJsonArray({"detach"}));
+  QVERIFY(!api.execute(QJsonObject{{"command", "lsl_run"}, {"source", "default {}"}, {"keep_rlv", "yes"}})["ok"].toBool());
+  // the next run starts from an empty state unless keep_rlv is true
+  api.execute(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { } }"}, {"seconds", 1}});
+  QCOMPARE(api.execute(QJsonObject{{"command", "rlv_state"}})["blocked"].toArray().size(), 0);
+
+  // Script Lab step 5 (issue 291): several objects, then lsl_event touches one; its RLV line shows in rlv_state
+  answer = api.execute(QJsonObject{{"command", "lsl_run"}, {"seconds", 1},
+                                   {"objects", QJsonArray{QJsonObject{{"name", "hud"}, {"source", "default { touch_start(integer n) { llSay(5, \"lock\"); } }"}},
+                                                          QJsonObject{{"name", "cuffs"}, {"source", "default { state_entry() { llListen(5, \"\", NULL_KEY, \"lock\"); } listen(integer c, string n, key id, string m) { llOwnerSay(\"@detach=n\"); } }"}}}}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  answer = api.execute(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"object", "hud"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["time"].toDouble(), 2.0);
+  QCOMPARE(api.execute(QJsonObject{{"command", "rlv_state"}})["objects"].toObject().keys(), QStringList({"c0ffee00-0000-4000-8000-000000000003"}));
 }
 
 QTEST_MAIN(ControlTest)

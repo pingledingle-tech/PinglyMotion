@@ -140,8 +140,15 @@ def main():
 
     with open(os.path.join(MCP_DIR, "commands.json"), encoding="utf-8") as handle:
         bundled = [command["name"] for command in json.load(handle)["commands"]] + ["read_guide"]
+        assert "lsl_check" in bundled and "lsl_run" in bundled, bundled
+    with open(os.path.join(MCP_DIR, "commands.json"), encoding="utf-8") as handle:
+        lsl_run = [c for c in json.load(handle)["commands"] if c["name"] == "lsl_run"][0]
+        # step 4: llOwnerSay("@...") runs as an RLV command, and keep_rlv is an option
+        assert "rlv_command" in lsl_run["description"] and "keep_rlv" in lsl_run["parameters"], lsl_run
     with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
         guide = handle.read()
+    # Script Lab Live (issue 292): the folder watch commands are in the bundled list
+    assert all(name in bundled for name in ("lab_watch", "lab_unwatch", "lab_result")), bundled
 
     with tempfile.TemporaryDirectory() as tmp:
         control = os.path.join(tmp, "control.json")
@@ -167,6 +174,11 @@ def main():
         tools = mcp.send("tools/list")["result"]["tools"]
         assert [tool["name"] for tool in tools] == bundled, tools
         assert all(tool["inputSchema"]["type"] == "object" for tool in tools)
+        # the Script Lab commands (issue 287) are offered as tools with their required inputs
+        by_name = {tool["name"]: tool for tool in tools}
+        for name in ("rlv_command", "rlv_state", "rlv_reset"):
+            assert name in by_name, name
+        assert by_name["rlv_command"]["inputSchema"].get("required") == ["object", "text"], by_name["rlv_command"]
 
         # the guide comes from a file next to the server, also when PinglyMotion is not running
         result = mcp.tool("read_guide")

@@ -44,6 +44,13 @@ The rules in `docs/TEACHING.md` (section 3) stand. They are short: say what to d
 | skeleton | rig | The joints of a figure. Only in import dialogs. | none |
 | connection code | key (for the remote link) | The secret a program shows to prove who it is. | G7 "Aurora refused the key" |
 | T-pose | (explain on first use) | Standing with the arms straight out to the sides. | docs only |
+| the movement between two keys | interpolation | How the figure gets from one key to the next. | none |
+| drag the hand and the arm follows | IK, inverse kinematics | Moving a hand or foot moves the joints above it. | none |
+| the furthest this joint can turn | joint limit | The range a joint is allowed to turn in Second Life. | none |
+| build extra keys | bake | Only if it must appear at all. | none |
+| (never shown) | quaternion, Euler | Ways to store a turn. Never shown to the user. | none |
+
+This is the one glossary. Other pages link here; the AI assistant guide keeps a short copy of the beginner rows ([ASSISTANT_GUIDE.md](ASSISTANT_GUIDE.md), section 6), because AI clients read it on its own. `tools/check_texts.py` has its own list of avoided words for the register in `docs/TEACHING.md`; change it too when a "Do not use" word is added here.
 
 ## 2. How to read the inventory
 
