@@ -97,6 +97,9 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               emptystate.cpp
               topbar.cpp
               reasonline.cpp
+              setupdialog.cpp
+              camerakeysdialog.cpp
+              keysmousedialog.cpp
               scene.cpp
               skinrenderer.cpp
               updatechecker.cpp

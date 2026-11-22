@@ -306,17 +306,13 @@ namespace
     {&MenuSpec::viewLightTheme, "viewLightThemeAction", "Light theme", "T", ""},
     {&MenuSpec::viewExpertMode, "viewExpertModeAction", "Expert mode", "Shift+E", ""},
     {&MenuSpec::viewTextSize, "viewTextSizeAction", "Text size: %1%", "Ctrl+=", ""},
-    {&MenuSpec::viewSetup, "viewSetupAction", "Setup...", "",
-     "Setup is not built yet. For now use Options > Settings."},
-    {&MenuSpec::helpSetup, "helpSetupAction", "Setup: beginner or experienced, mouse and keys...", "",
-     "Setup is not built yet. For now use Options > Settings."},
+    {&MenuSpec::viewSetup, "viewSetupAction", "Setup...", "", ""},
+    {&MenuSpec::helpSetup, "helpSetupAction", "Setup: beginner or experienced, mouse and keys...", "", ""},
     {&MenuSpec::helpWelcome, "helpWelcomeAction", "Show the welcome card again", "",
      "The welcome card is not built yet."},
     {&MenuSpec::helpHints, "helpHintsAction", "Show hints", "Shift+H", ""},
-    {&MenuSpec::helpKeys, "helpKeysAction", "Keys and mouse", "?",
-     "The keys and mouse page is not built yet."},
-    {&MenuSpec::helpCamera, "helpCameraAction", "Camera and keys...", "",
-     "Camera and keys is not built yet. It comes with Setup."},
+    {&MenuSpec::helpKeys, "helpKeysAction", "Keys and mouse", "?", ""},
+    {&MenuSpec::helpCamera, "helpCameraAction", "Camera and keys...", "", ""},
     {&MenuSpec::helpCharter, "helpCharterAction", "Show charter principles", "C",
      "The charter overlay is not built yet."},
   };
@@ -413,14 +409,19 @@ void TestMenuTexts::phase1aWindowUsesTable()
   // the number pad items are built from the three Look values and show the key as a label
   QVERIFY(source.contains(QStringLiteral("Look{&viewFront,0.0f,0.0f},Look{&viewSide,0.0f,90.0f},Look{&viewTop,90.0f,0.0f}")));
   // only the items that work have a shortcut; a greyed item has none and only shows its key
-  for (const char* greyed : {"viewNextArea", "helpKeys", "helpCharter"})
+  for (const char* greyed : {"viewNextArea", "helpCharter"})
     QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,true)").arg(QLatin1String(greyed))), greyed);
-  for (const char* working : {"viewLightTheme", "viewExpertMode", "viewHome"})
+  for (const char* working : {"viewLightTheme", "viewExpertMode", "viewHome", "helpKeys"})
     QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,false)").arg(QLatin1String(working))), working);
   QVERIFY(source.contains(QStringLiteral("UserSettings::setDarkTheme(!light);")));
   QVERIFY(source.contains(QStringLiteral("UserSettings::setExpertMode(on);")));
   QVERIFY(!source.contains(QStringLiteral("tr(\"Dark theme\")")));
   QVERIFY(!source.contains(QStringLiteral("Options > Dark theme")));
+  // UX phase 1d: Setup, Camera and keys and Keys and mouse open their dialogs
+  QVERIFY(source.contains(QStringLiteral("connect(viewSetupAction,&QAction::triggered,this,&PinglyMotionWindow::openSetupDialog);")));
+  QVERIFY(source.contains(QStringLiteral("connect(helpSetupAction,&QAction::triggered,this,&PinglyMotionWindow::openSetupDialog);")));
+  QVERIFY(source.contains(QStringLiteral("connect(helpCameraAction,&QAction::triggered,this,&PinglyMotionWindow::openCameraKeysDialog);")));
+  QVERIFY(source.contains(QStringLiteral("connect(helpKeysAction,&QAction::triggered,this,&PinglyMotionWindow::openKeysMouseDialog);")));
 }
 
 // the order of the items in View and Help, as in the mockup
@@ -434,7 +435,7 @@ void TestMenuTexts::phase1aOrder()
   for (const char* marker : {"lookFromHeading", "&viewFront", "&viewTop", "specAction(this,viewHome", "panelsHeading",
                              "showJointsAction)", "showJointCardAction)", "optionsShowTimelineAction)", "scriptLabAction)",
                              "m_hidePanelsAction)", "resetLayoutAction)", "viewNextArea", "lightAction)",
-                             "expertAction)", "m_textSizeAction)", "viewSetup"})
+                             "m_expertModeAction)", "m_textSizeAction)", "viewSetup"})
   {
     const int at = body.indexOf(QLatin1String(marker), last + 1);
     QVERIFY2(at > last, marker);

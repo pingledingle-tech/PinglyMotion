@@ -551,7 +551,7 @@ void TestTransportBar::lookDrawnInTheTokenColours()
 void TestTransportBar::lookLucidePaths()
 {
   QCOMPARE(QString::fromLatin1(LucideIcons::version()), QStringLiteral("1.77.0"));
-  QCOMPARE(LucideIcons::names(), QStringList({"play", "square", "rotate-ccw", "undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun", "moon", "sparkles", "info"}));
+  QCOMPARE(LucideIcons::names(), QStringList({"play", "square", "rotate-ccw", "undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun", "moon", "sparkles", "info", "keyboard", "video"}));
   QVERIFY(LucideIcons::path(QStringLiteral("no-such-icon")).isEmpty());
   QVERIFY(LucideIcons::icon(QStringLiteral("no-such-icon"), Qt::white, Qt::gray).isNull());
 

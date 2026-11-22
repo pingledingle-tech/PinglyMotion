@@ -69,19 +69,18 @@ namespace MenuSpec
   inline constexpr Item viewLightTheme = {"viewLightThemeAction", QT_TRANSLATE_NOOP("MenuSpec", "Light theme"), "T", ""};
   inline constexpr Item viewExpertMode = {"viewExpertModeAction", QT_TRANSLATE_NOOP("MenuSpec", "Expert mode"), "Shift+E", ""};
   inline constexpr Item viewTextSize = {"viewTextSizeAction", QT_TRANSLATE_NOOP("MenuSpec", "Text size: %1%"), "Ctrl+=", ""};
-  inline constexpr Item viewSetup = {"viewSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup..."), "",
-    QT_TRANSLATE_NOOP("MenuSpec", "Setup is not built yet. For now use Options > Settings.")};
+  // built in UX phase 1d: the Setup dialog (src/setupdialog.*)
+  inline constexpr Item viewSetup = {"viewSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup..."), "", ""};
 
   // Help
-  inline constexpr Item helpSetup = {"helpSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup: beginner or experienced, mouse and keys..."), "",
-    QT_TRANSLATE_NOOP("MenuSpec", "Setup is not built yet. For now use Options > Settings.")};
+  inline constexpr Item helpSetup = {"helpSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup: beginner or experienced, mouse and keys..."), "", ""};
   inline constexpr Item helpWelcome = {"helpWelcomeAction", QT_TRANSLATE_NOOP("MenuSpec", "Show the welcome card again"), "",
     QT_TRANSLATE_NOOP("MenuSpec", "The welcome card is not built yet.")};
   inline constexpr Item helpHints = {"helpHintsAction", QT_TRANSLATE_NOOP("MenuSpec", "Show hints"), "Shift+H", ""};
-  inline constexpr Item helpKeys = {"helpKeysAction", QT_TRANSLATE_NOOP("MenuSpec", "Keys and mouse"), "?",
-    QT_TRANSLATE_NOOP("MenuSpec", "The keys and mouse page is not built yet.")};
-  inline constexpr Item helpCamera = {"helpCameraAction", QT_TRANSLATE_NOOP("MenuSpec", "Camera and keys..."), "",
-    QT_TRANSLATE_NOOP("MenuSpec", "Camera and keys is not built yet. It comes with Setup.")};
+  // built in UX phase 1d: the Keys and mouse dialog (src/keysmousedialog.*)
+  inline constexpr Item helpKeys = {"helpKeysAction", QT_TRANSLATE_NOOP("MenuSpec", "Keys and mouse"), "?", ""};
+  // built in UX phase 1d: the Camera and keys dialog (src/camerakeysdialog.*)
+  inline constexpr Item helpCamera = {"helpCameraAction", QT_TRANSLATE_NOOP("MenuSpec", "Camera and keys..."), "", ""};
   inline constexpr Item helpCharter = {"helpCharterAction", QT_TRANSLATE_NOOP("MenuSpec", "Show charter principles"), "C",
     QT_TRANSLATE_NOOP("MenuSpec", "The charter overlay is not built yet.")};
 

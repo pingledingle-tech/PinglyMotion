@@ -242,8 +242,7 @@ void TestEmptyState::topTableIsExact()
     {&MenuSpec::topExport, "topExportAction", "Export", "Export for Second Life", "Ctrl+Shift+E", "", "", "upload"},
     {&MenuSpec::topScriptLab, "topScriptLabAction", "Script Lab", "Script Lab: test RLV and LSL scripts", "Ctrl+Shift+L", "", "", "flask-conical"},
     {&MenuSpec::topSetup, "topSetupAction", "Setup", "Setup", "",
-     "Beginner or experienced, mouse and keys habits, theme, text size and hints.",
-     "Setup is not built yet. For now use Options > Settings.", "settings"},
+     "Beginner or experienced, mouse and keys habits, theme, text size and hints.", "", "settings"},
     {&MenuSpec::topTheme, "topThemeAction", "", "Switch theme", "T", "", "", "sun"},
   };
   QCOMPARE(int(sizeof(MenuSpec::topBar) / sizeof(MenuSpec::topBar[0])), 7);
@@ -332,8 +331,7 @@ void TestEmptyState::topTextsAndTips()
     {"topSaveAction", "Save  (Ctrl+S)\nSaves your animation to a file. You can open it again later."},
     {"topExportAction", "Export for Second Life  (Ctrl+Shift+E)"},
     {"topScriptLabAction", "Script Lab: test RLV and LSL scripts  (Ctrl+Shift+L)"},
-    {"topSetupAction", "Setup\nSetup is not built yet. For now use Options > Settings.\n"
-                       "Beginner or experienced, mouse and keys habits, theme, text size and hints."},
+    {"topSetupAction", "Setup\nBeginner or experienced, mouse and keys habits, theme, text size and hints."},
     {"topThemeAction", "Switch to the light theme  (T)"},
   };
   for (auto it = tips.cbegin(); it != tips.cend(); ++it)
@@ -343,7 +341,7 @@ void TestEmptyState::topTextsAndTips()
   }
   // a greyed button says why in the status line too; a working one says its name
   QCOMPARE(f.top->button("topUndoAction")->statusTip(), QStringLiteral("Undo is not built yet. Save a copy before big changes."));
-  QCOMPARE(f.top->button("topSetupAction")->statusTip(), QStringLiteral("Setup is not built yet. For now use Options > Settings."));
+  QCOMPARE(f.top->button("topSetupAction")->statusTip(), QStringLiteral("Setup"));
   QCOMPARE(f.top->button("topSaveAction")->statusTip(), QStringLiteral("Save"));
   QCOMPARE(f.top->button("topThemeAction")->statusTip(), QStringLiteral("Switch to the light theme"));
 }
@@ -353,7 +351,7 @@ void TestEmptyState::topEnabledWithAnimation()
   Fixture f;
   f.top->setAnimationOpen(true);
   const QMap<QString, bool> enabled = {{"topUndoAction", false}, {"topRedoAction", false}, {"topSaveAction", true},
-    {"topExportAction", true}, {"topScriptLabAction", true}, {"topSetupAction", false}, {"topThemeAction", true}};
+    {"topExportAction", true}, {"topScriptLabAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
   for (auto it = enabled.cbegin(); it != enabled.cend(); ++it)
     QVERIFY2(f.top->button(it.key().toLatin1().constData())->isEnabled() == it.value(), qPrintable(it.key()));
 }
