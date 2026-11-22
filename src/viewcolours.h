@@ -1,0 +1,65 @@
+/*
+ * PinglyMotion - colours of the 3D view's own drawing, from the design tokens
+ *
+ * The rotation rings, the axis lines of a prop, the joint balls, the bones
+ * and the effect markers are drawn in these colours (src/animationview.cpp).
+ * Every colour is a token of docs/design_tokens.json in the current theme or
+ * the theme given; nothing is written by hand (design charter P1, P7).
+ * tests/uxcolours checks each answer against the token for both themes.
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+#ifndef VIEWCOLOURS_H
+#define VIEWCOLOURS_H
+
+#include <QColor>
+#include <QVector4D>
+
+#include "theme.h"
+
+namespace ViewColours
+{
+  // the colour as the 4 floats the view's shaders take
+  inline QVector4D vector(const QColor& colour)
+  {
+    return QVector4D(colour.redF(),colour.greenF(),colour.blueF(),1.0f);
+  }
+
+  // axis 0 = X (axis_x, red), 1 = Y (axis_y, green), 2 = Z (axis_z, blue)
+  inline QColor axis(int axis,bool dark)
+  {
+    using Theme::Token;
+    return Theme::color(axis==0 ? Token::AxisX : axis==1 ? Token::AxisY : Token::AxisZ,dark);
+  }
+  inline QColor axis(int axisIndex) { return axis(axisIndex,Theme::isDark()); }
+
+  // a rotation ring: the axis colour; a ring that is not the one in use is
+  // 20 percent toward the background (the States rule of docs/DESIGN_SYSTEM.md)
+  inline QColor ring(int axisIndex,bool strong,bool dark)
+  {
+    const QColor colour=axis(axisIndex,dark);
+    return strong ? colour : Theme::mix(colour,Theme::color(Theme::Token::Background,dark),0.2);
+  }
+  inline QColor ring(int axisIndex,bool strong) { return ring(axisIndex,strong,Theme::isDark()); }
+
+  // the ball on a joint in skeleton mode
+  enum class Joint { Selected, Highlighted, Other };
+  inline QColor jointBall(Joint joint,bool dark)
+  {
+    using Theme::Token;
+    return Theme::color(joint==Joint::Selected ? Token::DangerFill : joint==Joint::Highlighted ? Token::Accent : Token::Success,dark);
+  }
+  inline QColor jointBall(Joint joint) { return jointBall(joint,Theme::isDark()); }
+
+  // the line from a joint to its parent in skeleton mode
+  inline QColor bone(bool dark) { return Theme::color(Theme::Token::AreaOther,dark); }
+  inline QColor bone() { return bone(Theme::isDark()); }
+
+  // effect preview markers: a box for an object, a ball for a lock
+  inline QColor objectMarker(bool dark) { return Theme::color(Theme::Token::Accent,dark); }
+  inline QColor objectMarker() { return objectMarker(Theme::isDark()); }
+  inline QColor lockMarker(bool dark) { return Theme::color(Theme::Token::DangerFill,dark); }
+  inline QColor lockMarker() { return lockMarker(Theme::isDark()); }
+}
+
+#endif

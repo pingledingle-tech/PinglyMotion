@@ -62,6 +62,7 @@ class Timeline : public QFrame
 
   protected:
     virtual void paintEvent(QPaintEvent* event);
+    void changeEvent(QEvent* event) override;
     virtual void mousePressEvent(QMouseEvent* e);
     virtual void mouseReleaseEvent(QMouseEvent* e);
     virtual void mouseMoveEvent(QMouseEvent* e);
