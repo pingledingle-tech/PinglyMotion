@@ -1,5 +1,5 @@
 Branch: docs/script-lab-step-8
-Status: active
+Status: done
 Pull request: #307
 Files:
 - docs/RLV_TOOLS_REPO.md
