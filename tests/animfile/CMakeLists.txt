@@ -15,6 +15,7 @@ SET (ANIMFILE_APP_SRC ${CMAKE_SOURCE_DIR}/src/animation.cpp
                       ${CMAKE_SOURCE_DIR}/src/jointgroups.cpp
                       ${CMAKE_SOURCE_DIR}/src/propfile.cpp
                       ${CMAKE_SOURCE_DIR}/src/settings.cpp
+                      ${CMAKE_SOURCE_DIR}/src/textsize.cpp
                       ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
                       ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
 

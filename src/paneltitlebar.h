@@ -24,6 +24,10 @@ class PanelTitleBar : public QWidget
   public:
     explicit PanelTitleBar(QDockWidget* dock);
 
+    // the reason the pop-out button gives when it is greyed out: the panels
+    // stand in one column and there is no room to float one (docs/UX_DECISIONS.md, 6c)
+    static QString noRoomToFloatText();
+
   protected:
     void changeEvent(QEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
@@ -32,6 +36,8 @@ class PanelTitleBar : public QWidget
   private:
     enum class Symbol { Float, Dock, Close };
     QIcon symbolIcon(Symbol symbol) const;
+    // float or dock is allowed: the panel floats, or it may float
+    bool canToggleFloating() const;
     void updateButtons();
 
     QDockWidget* m_dock;

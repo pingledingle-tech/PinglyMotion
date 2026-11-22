@@ -17,6 +17,7 @@
 
 #include "playstate.h"
 
+class QBoxLayout;
 class QCheckBox;
 class QPushButton;
 class QString;
@@ -36,6 +37,14 @@ class TransportBar : public QWidget
     // sets the Loop switch without sending loopToggled
     void setLoop(bool on);
     bool loop() const;
+    // the buttons on one line (false, the first layout) or in two lines,
+    // playing above stepping, when the panels stand in one column
+    void setWrapped(bool wrapped);
+    bool isWrapped() const;
+    // the smallest width on one line, whether wrapped now or not
+    int oneLineWidth() const;
+    // the smallest width in two lines
+    int wrappedWidth() const;
 
     QPushButton* startButton() const { return m_start; }
     QPushButton* stopButton() const { return m_stop; }
@@ -61,6 +70,7 @@ class TransportBar : public QWidget
     QPushButton* m_back;
     QPushButton* m_forward;
     QCheckBox* m_loop;
+    QBoxLayout* m_rows;
 };
 
 #endif

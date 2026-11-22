@@ -29,6 +29,7 @@
 #include "applog.h"
 #include "pinglymotionwindow.h"
 #include "constants.h"
+#include "textsize.h"
 #include "translation.h"
 #include "usersettings.h"
 
@@ -66,6 +67,8 @@ int main( int argc, char ** argv )
     UserSettings::readSettings();
     const QString language = Translation::install(application, UserSettings::language());
     qInfo("Language: %s", language.isEmpty() ? "English" : qUtf8Printable(language));
+    // the text size, 100 to 200 percent (src/textsize.h), before any window measures a text
+    TextSize::apply(UserSettings::textSizePercent());
     PinglyMotionWindow* pinglyMotionWindow = new PinglyMotionWindow();
     // Queue an event to show the main window
     pinglyMotionWindow->show();

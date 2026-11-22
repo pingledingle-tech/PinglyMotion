@@ -1,0 +1,288 @@
+/*
+ * PinglyMotion - the contents of the three panels, built from the designer file
+ *
+ * The Joints, Selected joint and Timeline panels hold widgets from
+ * pinglymotionwindow.ui, moved into dock widgets around the 3D view
+ * (docs/archive/PANELS_PLAN.md, job P2). This header builds them and knows
+ * how wide they must be at the current text size (docs/UX_DECISIONS.md, 6c):
+ * the tall panels as wide as their widest control, the timeline as wide as
+ * its rows, on one line or broken into shorter lines. Header-only, so the
+ * test in tests/uirender builds the very same panels from the designer file
+ * as the program does and checks that nothing is clipped.
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+#ifndef PANELCONTENT_H
+#define PANELCONTENT_H
+
+#include <QCoreApplication>
+#include <QDockWidget>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QMainWindow>
+#include <QScrollArea>
+#include <QScrollBar>
+#include <QStackedWidget>
+#include <QStyle>
+#include <QVBoxLayout>
+
+#include <algorithm>
+
+#include "panellayout.h"
+#include "paneltitlebar.h"
+#include "transportbar.h"
+#include "ui_pinglymotionwindow.h"
+#include "wheelguard.h"
+#include "wraprow.h"
+
+class MainPanels
+{
+public:
+  QDockWidget* timelineDock=nullptr;
+  QDockWidget* jointsDock=nullptr;
+  QDockWidget* jointCardDock=nullptr;
+  QScrollArea* timelineScroll=nullptr;
+  QScrollArea* jointsScroll=nullptr;
+  QScrollArea* jointCardScroll=nullptr;
+  TransportBar* transport=nullptr;
+  // the loop points, frame and speed row of the timeline panel
+  QBoxLayout* rangeRow=nullptr;
+
+  // Moves the panel widgets of the designer file into three docks of
+  // `window` and puts the 3D view in the middle. The docks are not placed
+  // yet (PanelWindow::applyDefaultLayout does that).
+  void build(QMainWindow* window,Ui::PinglyMotionWindow* ui)
+  {
+    // --- timeline panel: tracks, frame slider, play and key frame buttons,
+    // loop in / out, frame count and FPS
+    QWidget* timelinePanel=new QWidget;
+    QVBoxLayout* timelineLayout=new QVBoxLayout(timelinePanel);
+    timelineLayout->setContentsMargins(4,4,4,4);
+    // the old layout kept the timeline at a fixed height; in a panel it grows
+    ui->timelineView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    ui->timelineView->setMinimumSize(200,100);
+    timelineLayout->addWidget(ui->timelineView,1);
+    QHBoxLayout* playLayout=new QHBoxLayout;
+    playLayout->addWidget(ui->currentFrameSlider,1);
+    playLayout->addWidget(ui->keyframeButton);
+    timelineLayout->addLayout(playLayout);
+
+    // Start, Stop, Replay from start, Frame back, Frame forward and Loop
+    // (docs/UX_DECISIONS.md section 1); the window connects them
+    transport=new TransportBar(timelinePanel);
+    QHBoxLayout* transportLayout=new QHBoxLayout;
+    transportLayout->addWidget(transport);
+    transportLayout->addStretch(1);
+    timelineLayout->addLayout(transportLayout);
+
+    // the loop points, then the frame and the speed: one line, or two lines
+    // when they do not fit on one (docs/UX_DECISIONS.md, 6c)
+    QHBoxLayout* loopPart=new QHBoxLayout;
+    loopPart->addWidget(ui->loopInLabel);
+    loopPart->addWidget(ui->loopInSpinBox);
+    loopPart->addWidget(ui->loopInPercentLabel);
+    loopPart->addSpacing(12);
+    loopPart->addWidget(ui->loopOutLabel);
+    loopPart->addWidget(ui->loopOutSpinBox);
+    loopPart->addWidget(ui->loopOutPercentLabel);
+    loopPart->addStretch(1);
+    // the stretch first: the frame and the speed stand on the right
+    QHBoxLayout* framePart=new QHBoxLayout;
+    framePart->addStretch(1);
+    framePart->addWidget(ui->frameLabel);
+    framePart->addWidget(ui->currentFrameLabel);
+    framePart->addWidget(ui->ofLabel);
+    framePart->addWidget(ui->framesSpin);
+    framePart->addSpacing(12);
+    framePart->addWidget(ui->fpsLabel);
+    framePart->addWidget(ui->fpsSpin);
+    rangeRow=WrapRow::make({loopPart,framePart});
+    timelineLayout->addLayout(rangeRow);
+
+    timelineDock=new QDockWidget(text(QT_TRANSLATE_NOOP("PinglyMotionWindow","Timeline")),window);
+    timelineDock->setObjectName(PanelLayout::TimelineDock);
+    // when the window is too low for all of it, it scrolls down, never
+    // sideways: fit() keeps it as wide as its rows need
+    timelineScroll=new QScrollArea;
+    timelineScroll->setWidget(timelinePanel);
+    timelineScroll->setWidgetResizable(true);
+    timelineScroll->setFrameShape(QFrame::NoFrame);
+    timelineScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    timelineDock->setWidget(timelineScroll);
+    timelineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    timelineDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+    timelineDock->setTitleBarWidget(new PanelTitleBar(timelineDock));
+
+    // --- Joints panel: the Avatar / Props switch (the tabs), with the joint
+    // tabs, search and list on Avatar, the prop list on Props
+    QWidget* jointsPanel=new QWidget;
+    QVBoxLayout* jointsLayout=new QVBoxLayout(jointsPanel);
+    jointsLayout->setContentsMargins(4,4,4,4);
+    jointsLayout->addWidget(ui->avatarPropsTab,1);
+    jointsDock=makeTallPanel(window,text(QT_TRANSLATE_NOOP("PinglyMotionWindow","Joints")),PanelLayout::JointsDock,jointsPanel,jointsScroll);
+
+    // --- Selected joint panel: the rotation and position boxes of the joint,
+    // or the position, scale and rotation boxes of the prop. The boxes come
+    // from the designer file and are moved here from the tabs; the page
+    // follows the Avatar / Props switch.
+    QWidget* jointCard=new QWidget;
+    QVBoxLayout* jointCardLayout=new QVBoxLayout(jointCard);
+    jointCardLayout->setContentsMargins(0,0,0,0);
+    jointCardLayout->addWidget(ui->rotationGroupBox);
+    jointCardLayout->addWidget(ui->positionGroupBox);
+    jointCardLayout->addStretch(1);
+    QWidget* propCard=new QWidget;
+    QVBoxLayout* propCardLayout=new QVBoxLayout(propCard);
+    propCardLayout->setContentsMargins(0,0,0,0);
+    propCardLayout->addWidget(ui->propPositionGroup);
+    propCardLayout->addWidget(ui->propScaleGroup);
+    propCardLayout->addWidget(ui->propRotationGroup);
+    propCardLayout->addStretch(1);
+    QStackedWidget* cardStack=new QStackedWidget;
+    cardStack->setObjectName("jointCardStack");
+    cardStack->addWidget(jointCard);
+    cardStack->addWidget(propCard);
+    cardStack->setCurrentIndex(ui->avatarPropsTab->currentIndex());
+    QObject::connect(ui->avatarPropsTab,&QTabWidget::currentChanged,cardStack,&QStackedWidget::setCurrentIndex);
+    QWidget* cardPanel=new QWidget;
+    QVBoxLayout* cardPanelLayout=new QVBoxLayout(cardPanel);
+    cardPanelLayout->setContentsMargins(4,4,4,4);
+    cardPanelLayout->addWidget(cardStack,1);
+    jointCardDock=makeTallPanel(window,text(QT_TRANSLATE_NOOP("PinglyMotionWindow","Selected joint")),PanelLayout::JointCardDock,cardPanel,jointCardScroll);
+
+    // --- 3D view in the middle (replaces the old fixed layout)
+    QWidget* central=new QWidget;
+    QVBoxLayout* centralLayout=new QVBoxLayout(central);
+    centralLayout->setContentsMargins(0,0,0,0);
+    centralLayout->addWidget(ui->animationView);
+    window->setCentralWidget(central);
+  }
+
+  // The width a tall panel needs to show its widest control.
+  static int fitWidth(QScrollArea* scroll)
+  {
+    QWidget* panel=scroll->widget();
+    panel->ensurePolished();
+    const int width=std::max(panel->sizeHint().width(),panel->minimumSizeHint().width());
+    return width+scroll->verticalScrollBar()->sizeHint().width();
+  }
+
+  // The Joints and Selected joint panels are as wide as their contents need,
+  // no more and no less, in their own columns (the wide layout); when they
+  // share a place (medium) or stand in one column (narrow) they may be wider.
+  // The timeline is as wide as its rows need, as they stand now.
+  void fit(PanelLayout::Reflow mode) const
+  {
+    for (QScrollArea* scroll : {jointsScroll,jointCardScroll})
+    {
+      const int width=fitWidth(scroll);
+      if (mode==PanelLayout::Reflow::Wide)
+        scroll->setFixedWidth(width);
+      else
+      {
+        scroll->setMinimumWidth(width);
+        scroll->setMaximumWidth(QWIDGETSIZE_MAX);
+      }
+    }
+    fitTimeline();
+  }
+
+  // The smallest width of the timeline panel with its rows on one line and
+  // with its rows broken into shorter lines, whichever it shows now.
+  void timelineWidths(int& oneLine,int& wrapped) const
+  {
+    QLayout* layout=timelineScroll->widget()->layout();
+    oneLine=0;
+    wrapped=0;
+    for (int i=0;i<layout->count();++i)
+    {
+      QLayoutItem* item=layout->itemAt(i);
+      if (item->isEmpty()) continue;
+      int one=item->minimumSize().width();
+      int two=one;
+      if (item->layout()==rangeRow)
+      {
+        one=WrapRow::oneLineWidth(rangeRow);
+        two=WrapRow::wrappedWidth(rangeRow);
+      }
+      else if (item->layout() && item->layout()->indexOf(transport)>=0)
+      {
+        const QMargins m=item->layout()->contentsMargins();
+        one=transport->oneLineWidth()+m.left()+m.right();
+        two=transport->wrappedWidth()+m.left()+m.right();
+      }
+      oneLine=std::max(oneLine,one);
+      wrapped=std::max(wrapped,two);
+    }
+    const QMargins m=layout->contentsMargins();
+    const int scrollBar=timelineScroll->verticalScrollBar()->sizeHint().width();
+    oneLine+=m.left()+m.right()+scrollBar;
+    wrapped+=m.left()+m.right()+scrollBar;
+  }
+
+  bool isTimelineWrapped() const
+  {
+    return WrapRow::isWrapped(rangeRow);
+  }
+
+  // The timeline panel's rows on one line, or broken into shorter lines.
+  void setTimelineWrapped(bool wrapped) const
+  {
+    transport->setWrapped(wrapped);
+    WrapRow::setWrapped(rangeRow,wrapped);
+    fitTimeline();
+  }
+
+  // The widths the layouts need, at the current text size (PanelLayout::chooseReflow).
+  PanelLayout::ReflowNeeds needs(const QWidget* window) const
+  {
+    PanelLayout::ReflowNeeds n;
+    // fit() gave each scroll area its fit width as its smallest width; the
+    // dock adds its frame
+    const int jointsFrame=std::max(0,jointsDock->minimumSizeHint().width()-jointsScroll->minimumWidth());
+    const int cardFrame=std::max(0,jointCardDock->minimumSizeHint().width()-jointCardScroll->minimumWidth());
+    n.joints=fitWidth(jointsScroll)+jointsFrame;
+    n.jointCard=fitWidth(jointCardScroll)+cardFrame;
+    timelineWidths(n.timeline,n.timelineWrapped);
+    n.separator=window->style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent,nullptr,window);
+    return n;
+  }
+
+private:
+  static QString text(const char* source)
+  {
+    return QCoreApplication::translate("PinglyMotionWindow",source);
+  }
+
+  void fitTimeline() const
+  {
+    int oneLine=0;
+    int wrapped=0;
+    timelineWidths(oneLine,wrapped);
+    timelineScroll->setMinimumWidth(isTimelineWrapped() ? wrapped : oneLine);
+  }
+
+  // A tall panel keeps its width, whatever the window around it does. If the
+  // window is too low for all of it, it scrolls. A wheel over a slider or spin
+  // box scrolls the panel instead of changing the value (issue #82: the figure
+  // moved while the panel was scrolled).
+  static QDockWidget* makeTallPanel(QMainWindow* window,const QString& title,const char* objectName,
+                                    QWidget* panel,QScrollArea*& scroll)
+  {
+    QDockWidget* dock=new QDockWidget(title,window);
+    dock->setObjectName(QString::fromLatin1(objectName));
+    scroll=new QScrollArea;
+    scroll->setWidget(panel);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    dock->setWidget(scroll);
+    (new WheelGuard(scroll))->guardChildrenOf(panel);
+    dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    dock->setTitleBarWidget(new PanelTitleBar(dock));
+    return dock;
+  }
+};
+
+#endif

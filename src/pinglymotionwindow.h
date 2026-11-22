@@ -27,16 +27,20 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <QScopedPointer>
 #include <QTimer>
 
 #include "easing.h"
 #include "animfile.h"
 #include "panellayout.h"
+#include "panelwindow.h"
 #include "playstate.h"
 #include "prop.h"
 #include "updatechecker.h"
 
 class QCloseEvent;
+class QResizeEvent;
+class MainPanels;
 class QFileInfo;
 class QLineEdit;
 class QSlider;
@@ -191,12 +195,22 @@ class PinglyMotionWindow : public QMainWindow
     void on_fpsSpin_valueChanged(int num);
     // end autoconnection from designer UI
 
+  public:
+    // the text size, 100 to 200 percent (src/textsize.h): saved, applied to the
+    // whole window at once, and the panels rearranged if they no longer fit.
+    // No menu calls this yet; the Setup dialog will.
+    void setTextSizePercent(int percent);
+
   protected:
     // prevent closing of main window if there are unsaved changes
     virtual void closeEvent(QCloseEvent* event);
     // left / right arrow keys: one frame back / forward, when the key is not
     // used by a field, list or slider that has the keyboard focus
     void keyPressEvent(QKeyEvent* event) override;
+    // the window's width changed: the panels may need to rearrange (docs/UX_DECISIONS.md, 6c)
+    void resizeEvent(QResizeEvent* event) override;
+    // the text size changed: panel widths and the rearranging follow it
+    void changeEvent(QEvent* event) override;
 
     void fileNew();
     void fileOpen();
@@ -344,6 +358,12 @@ class PinglyMotionWindow : public QMainWindow
     void togglePanelsHidden();
     QList<QDockWidget*> panelDocks() const;
     void fitPanelWidths();
+    // rearranging at large text or in a small window (docs/UX_DECISIONS.md, 6c):
+    // the layout for the window's width now
+    PanelWindow::Docks reflowDocks() const;
+    void updateReflow();
+    // updateReflow() once, after the events that are waiting (resizing sends many)
+    void scheduleReflow();
     void showLightDialog();
     void saveUserSettings();
     // the three panels (docs/archive/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
@@ -360,6 +380,11 @@ class PinglyMotionWindow : public QMainWindow
     // the state while Tab is applied.
     PanelLayout::TabState m_tabState;
     bool m_applyingTab=false;
+    // the layout the panels stand in now, and the wide layout to go back to
+    PanelWindow::Reflower m_reflower;
+    // the contents of the three panels and how wide they must be (src/panelcontent.h)
+    QScopedPointer<MainPanels> m_panels;
+    bool m_reflowPending=false;
     QAction* m_hidePanelsAction=nullptr;
 
     BVHNode* currentPart;

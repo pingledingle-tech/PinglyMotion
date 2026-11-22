@@ -18,6 +18,12 @@ Files:
 - tests/uirender/**
 - tests/textsize/**
 - tests/CMakeLists.txt
+- tests/animfile/CMakeLists.txt
+- fuzz/CMakeLists.txt
+- src/constants.cpp
+- src/timeline.cpp
+- src/timelineview.cpp
+- src/panelcontent.h
 - CMakeLists.txt
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
