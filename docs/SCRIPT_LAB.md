@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 109 behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 158 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -267,7 +267,7 @@ What it checks: that the buttons (touch, dialog buttons, chat on a channel) caus
 
 ## RLV and RLVa mode (step 9, issue 297)
 
-Every behaviour in the table is marked `RLV` (listed as plain RLV in the RLV wiki) or `RLVa only` (not listed there).
+Every behaviour in the table is marked `RLV` (listed as plain RLV in the RLV wiki, and in RLVa), `RLVa only` (not listed in the wiki) or `RLV only` (in the wiki, but RLVa does not have it).
 The marks follow the wiki. RLVa's own flags (`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL` in `rlvhelper.cpp`) differ from the
 wiki for some names: 20 names that RLVa flags as extended are plain RLV in the wiki and are marked `RLV` here
 (`accepttprequest`, `allowidle`, `findfolders`, `getcam_avdistmax`, `getcam_avdistmin`, `getcam_fov`, `getcam_fovmax`,
@@ -275,7 +275,10 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 `sharedunwear`, `sharedwear`, `shownearby`, `touchhud`, `tplocal`, `tprequest`).
 
 - The mode is plain RLV at start. In plain RLV mode a RLVa-only behaviour answers as unknown, like any name the table
-  does not have. In RLVa mode it is accepted. Switching the mode removes every restriction and recorded effect (as
+  does not have. In RLVa mode it is accepted. The third mark works the other way round: an `RLV only` behaviour
+  (`defaultwear`, `denypermission`) is accepted in plain RLV mode and unknown in RLVa mode (it is also left out of
+  `getcommand` there). `rlv_state` lists `rlva_only` only; the `RLV only` names are the ones in `behaviours` of plain mode
+  that are missing in RLVa mode. Switching the mode removes every restriction and recorded effect (as
   after a relog). Set it with the control command `rlv_reset` and its `mode` field ([CONTROL.md](CONTROL.md)).
 - Behaviours marked RLVa only (19): interaction and view (`showself`, `showselfhead`, `viewtransparent`,
   `viewwireframe`), camera (`setcam_origindistmin`, `setcam_origindistmax`, and the force commands `setcam_focus` and
@@ -307,6 +310,22 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   negative number, a decimal or text as channel are refused. A full `@clear` removes the notification too, so it hears
   nothing about the rest. In the sandbox a notification only tells about changes made by the object that holds it (a
   limit of the sandbox: answers go to the object that ran the line). One line makes at most 256 answers.
+- Outfits and attachments (marked `RLV` unless stated). The sandbox has no avatar and no inventory, so a `=force`
+  command is accepted and answered `retained` (it is not carried out and nothing is held): `detachme`, `remattach`,
+  `remoutfit`, the shared-folder commands `attach`, `attachover`, `attachoverorreplace`, `attachall`, `attachallover`,
+  `attachalloverorreplace`, `detachall`, and the "this" family `attachthis`, `attachthisover`,
+  `attachthisoverorreplace`, `attachallthis`, `attachallthisover`, `attachallthisoverorreplace`, `detachthis`,
+  `detachallthis`. Restrictions (with an option they are an exception or a limited form and block nothing):
+  `addattach`, `remattach` (option: attachment point), `addoutfit`, `remoutfit` (option: layer), `unsharedwear`,
+  `unsharedunwear`, and `attachthis`, `attachallthis`, `detachthis`, `detachallthis` (option: folder). Their
+  `_except` forms (`attachthis_except` and the other three; option: folder) only hold the exception. `defaultwear`
+  (`RLV only`) is held as state and blocks nothing.
+- Touch, view and money (all `RLV`): `touchworld`, `touchattach`, `touchattachself`, `touchattachother` and `touchfar`
+  block their own action in the Allowed / Blocked list; `touchthis` and `touchme` only hold the exception;
+  `showhovertextall`, `showhovertexthud`, `showhovertextworld` (and `showhovertext:<uuid>` for one object), `shownames`,
+  `shownametags`, `viewnote`, `viewscript`, `viewtexture`, `editworld`, `editattach` (and `editobj:<uuid>`), `buy`
+  and `pay`. `acceptpermission` and `denypermission` (`RLV only`) are held as state: the sandbox grants every
+  permission to a script anyway.
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes. A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`.

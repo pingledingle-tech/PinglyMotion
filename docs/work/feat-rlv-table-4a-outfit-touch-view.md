@@ -1,6 +1,6 @@
 Branch: feat/rlv-table-4a-outfit-touch-view
-Status: active
-Pull request: pending
+Status: done
+Pull request: #320
 Files:
 - src/scriptlab/rlvbehaviours.*
 - tests/tst_rlvtable.cpp
