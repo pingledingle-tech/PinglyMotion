@@ -65,7 +65,9 @@ enum class Fn
   // step 9b-6: controls
   TakeControls, ReleaseControls,
   // step 9b-7: sensors and the detected data
-  Sensor, SensorRepeat, SensorRemove, DetectedPos, DetectedRot, DetectedVel, DetectedType, DetectedGroup, DetectedOwner
+  Sensor, SensorRepeat, SensorRemove, DetectedPos, DetectedRot, DetectedVel, DetectedType, DetectedGroup, DetectedOwner,
+  // step 9b-8: more record-only functions, and the animation override
+  RecordOnly, SetAnimationOverride, ResetAnimationOverride, GetAnimationOverride
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -132,6 +134,45 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llSensor", Fn::Sensor}, {"llSensorRepeat", Fn::SensorRepeat}, {"llSensorRemove", Fn::SensorRemove},
   {"llDetectedPos", Fn::DetectedPos}, {"llDetectedRot", Fn::DetectedRot}, {"llDetectedVel", Fn::DetectedVel}, {"llDetectedType", Fn::DetectedType},
   {"llDetectedGroup", Fn::DetectedGroup}, {"llDetectedOwner", Fn::DetectedOwner},
+  {"llSetAnimationOverride", Fn::SetAnimationOverride}, {"llResetAnimationOverride", Fn::ResetAnimationOverride},
+  {"llGetAnimationOverride", Fn::GetAnimationOverride},
+  {"llTriggerSoundLimited", Fn::RecordOnly},
+  {"llLoopSoundMaster", Fn::RecordOnly},
+  {"llLoopSoundSlave", Fn::RecordOnly},
+  {"llPlaySoundSlave", Fn::RecordOnly},
+  {"llSoundPreload", Fn::RecordOnly},
+  {"llAdjustSoundVolume", Fn::RecordOnly},
+  {"llSetSoundQueueing", Fn::RecordOnly},
+  {"llSetSoundRadius", Fn::RecordOnly},
+  {"llCollisionSound", Fn::RecordOnly},
+  {"llSetTextureAnim", Fn::RecordOnly},
+  {"llSetLinkTextureAnim", Fn::RecordOnly},
+  {"llOffsetTexture", Fn::RecordOnly},
+  {"llScaleTexture", Fn::RecordOnly},
+  {"llRotateTexture", Fn::RecordOnly},
+  {"llSetCameraEyeOffset", Fn::RecordOnly},
+  {"llSetCameraAtOffset", Fn::RecordOnly},
+  {"llSetCameraParams", Fn::RecordOnly},
+  {"llClearCameraParams", Fn::RecordOnly},
+  {"llSetLinkCamera", Fn::RecordOnly},
+  {"llSetPayPrice", Fn::RecordOnly},
+  {"llSetClickAction", Fn::RecordOnly},
+  {"llSetTouchText", Fn::RecordOnly},
+  {"llPointAt", Fn::RecordOnly},
+  {"llStopPointAt", Fn::RecordOnly},
+  {"llLookAt", Fn::RecordOnly},
+  {"llStopLookAt", Fn::RecordOnly},
+  {"llMakeExplosion", Fn::RecordOnly},
+  {"llMakeFountain", Fn::RecordOnly},
+  {"llMakeSmoke", Fn::RecordOnly},
+  {"llMakeFire", Fn::RecordOnly},
+  {"llCollisionFilter", Fn::RecordOnly},
+  {"llPassTouches", Fn::RecordOnly},
+  {"llPassCollisions", Fn::RecordOnly},
+  {"llSetRemoteScriptAccessPin", Fn::RecordOnly},
+  {"llSetParcelMusicURL", Fn::RecordOnly},
+  {"llRefreshPrimURL", Fn::RecordOnly},
+  {"llSetPrimURL", Fn::RecordOnly},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -566,6 +607,36 @@ enum
   PRIM_COLOR = 18, PRIM_FULLBRIGHT = 20, PRIM_GLOW = 25, PRIM_TEXT = 26, PRIM_NAME = 27, PRIM_DESC = 28, PRIM_ROT_LOCAL = 29,
   PRIM_POS_LOCAL = 33, PRIM_LINK_TARGET = 34
 };
+
+// the arguments of a record-only call as plain data: numbers, clipped text, vectors and rotations as arrays, a list as its length
+QJsonArray recordArgs(const std::vector<Value>& a)
+{
+  QJsonArray out;
+  for (const Value& v : a)
+  {
+    switch (v.type)
+    {
+      case Type::Integer: out.append(v.i); break;
+      case Type::Float: out.append(std::round(double(v.f[0]) * 100000.0) / 100000.0); break;
+      case Type::String:
+      case Type::Key: out.append(World::clip(v.s)); break;
+      case Type::Vector: out.append(QJsonArray{std::round(double(v.f[0]) * 100000.0) / 100000.0, std::round(double(v.f[1]) * 100000.0) / 100000.0, std::round(double(v.f[2]) * 100000.0) / 100000.0}); break;
+      case Type::Rotation: out.append(QJsonArray{std::round(double(v.f[0]) * 100000.0) / 100000.0, std::round(double(v.f[1]) * 100000.0) / 100000.0, std::round(double(v.f[2]) * 100000.0) / 100000.0, std::round(double(v.f[3]) * 100000.0) / 100000.0}); break;
+      case Type::List: out.append(int(v.list.size())); break;
+      default: out.append(QJsonValue()); break;
+    }
+  }
+  return out;
+}
+
+// the animation states llSetAnimationOverride knows
+bool knownAnimationState(const QString& s)
+{
+  static const QStringList states = {"Crouching", "CrouchWalking", "Falling Down", "Flying", "FlyingSlow", "Hovering", "Hovering Down", "Hovering Up",
+                                     "Jumping", "Landing", "PreJumping", "Running", "Sitting", "Sitting on Ground", "Soft Landing", "Standing",
+                                     "Standing Up", "Striding", "Taking Off", "Turning Left", "Turning Right", "Walking"};
+  return states.contains(s);
+}
 
 double rnd5(float v) { return std::round(double(v) * 100000.0) / 100000.0; }
 QJsonArray vecJson(const float* v, int n = 3)
@@ -2049,6 +2120,35 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       m_controls = 0;
       m_controlsAccept = m_controlsPassOn = false;
       return Value();
+
+    // -------------------------------------------- more record-only functions and the animation override (step 9b-8)
+    case Fn::RecordOnly:
+      m_world.recordOnly(m_now, name, recordArgs(a));
+      return Value();
+    case Fn::SetAnimationOverride:
+    case Fn::ResetAnimationOverride:
+    {
+      const bool set = *it == Fn::SetAnimationOverride;
+      QString problem;
+      if (!(m_permissions & 0x8000)) problem = "Script trying to override animations but PERMISSION_OVERRIDE_ANIMATIONS permission not set";
+      else if (!knownAnimationState(a[0].s)) problem = QString("%1: unknown animation state \"%2\"").arg(name, World::clip(a[0].s));
+      if (!problem.isEmpty())
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", problem}});
+        return Value();
+      }
+      if (set) m_overrides[a[0].s] = a[1].s; else m_overrides.remove(a[0].s);
+      if (!m_world.logFull())
+      {
+        QJsonObject e{{"type", "animation_override"}, {"op", set ? "set" : "reset"}, {"state", a[0].s}};
+        if (set) e["animation"] = World::clip(a[1].s);
+        m_world.log(m_now, e);
+      }
+      return Value();
+    }
+    case Fn::GetAnimationOverride:
+      // the animation set for the state; the default animation Second Life answers for a state with none is not simulated
+      return Value::string((m_permissions & 0x8000) ? m_overrides.value(a[0].s) : QString());
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);
