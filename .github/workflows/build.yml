@@ -87,7 +87,7 @@ jobs:
       # compiler cache (see "Compile faster" in docs/DEV.md): an object is reused only when compiler,
       # flags and source text are identical. The build number and time go into a generated header that
       # only constants.cpp includes, so the real run number can stay in the zip and the cache still hits.
-      CCACHE_DIR: ${{ runner.temp }}\ccache
+      CCACHE_DIR: C:\ccache
       CCACHE_COMPILERCHECK: content
       CCACHE_MAXSIZE: 500M
     steps:
@@ -117,7 +117,7 @@ jobs:
       - name: Cache compiler output (ccache)
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: ${{ runner.temp }}\ccache
+          path: C:\ccache
           key: ccache-windows-${{ hashFiles('**/CMakeLists.txt') }}-${{ github.sha }}
           restore-keys: |
             ccache-windows-${{ hashFiles('**/CMakeLists.txt') }}-
