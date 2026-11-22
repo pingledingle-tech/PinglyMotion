@@ -22,6 +22,7 @@
 
 #include <QElapsedTimer>
 #include <QString>
+#include <QStringList>
 
 #include "ast.h"
 #include "world.h"
@@ -163,6 +164,7 @@ class Interpreter
     double m_nextTimer = 0.0;
     int m_permissions = 0;
     QString m_permissionKey;
+    QStringList m_playing;           // step 9b-5: animations this script started and has not stopped (llGetAnimationList)
     QString m_detectedKey;
     QString m_detectedName;
     bool m_inEvent = false;

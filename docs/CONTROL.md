@@ -377,12 +377,13 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `limit` | a limit stopped the script | `message`, `line`, `column` |
 | `message_linked` | `llMessageLinked` (step 9a) | `link` (as given, for example -1 for `LINK_SET`), `num`, `text`, `id`, `scripts` (how many scripts are in the prims it reaches) |
 | `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
-| `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
+| `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`sit_target` (step 9b-5: `set`, `offset`, `rotation`), `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
 | `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
 | `give_inventory` | `llGiveInventory` (step 9b-4) | `to`, `item`, `result` (`given`, `not_found`, `unknown_target` or `name_exists`) |
 | `inventory` | a script removed an item with `llRemoveInventory` (step 9b-4) | `op` (`remove`), `item` |
 | `dataserver_request` | `llGetNotecardLine` or `llGetNumberOfNotecardLines` found the notecard; the `dataserver` event follows (step 9b-4) | `function`, `notecard`, `line` (not for the line count), `query` (the key the call returned) |
 | `rez` | `llRezObject` or `llRezAtRoot` (step 9b-4) | `item`, `position`, `velocity`, `rotation`, `param`, `at_root`, `result` (`ok` or `too_far`), `object` (the new object's key, with `ok`) |
+| `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
 | `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
@@ -532,6 +533,31 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
+#### Sitting and pose balls (Script Lab step 9b-5)
+
+Two new input types, for `inputs` of `lsl_run` and for `lsl_event`: `sit` (`{"at": 1, "type": "sit", "object": "chair", "link": 2, "id": "<avatar key>", "name": "<avatar name>"}`) puts an avatar on a prim
+of an object (`link` 1 to the prim count, default the root; `id` and `name` default to the owner), and `stand` (`{"type": "stand", "id": ...}`; `object` is optional: without it the avatar's object is used)
+takes it off. Each is an `input` entry (`input`: `sit` or `stand`, `id`, `name`; for `sit` also `on_target`, true when the avatar took the prim's sit target) and every script of the object gets `changed`
+with `CHANGED_LINK` (32). An avatar that is already sitting, a `stand` of an avatar that does not sit on the object, a link the object does not have and a 17th avatar on one object (16 at most) are an `input`
+entry with an `error`. The answer's `objects` entries have `sitters` (`key`, `name`, `link`, `on_target`) while someone sits.
+
+- **Sit targets:** `llSitTarget(offset, rotation)` sets the sit target of the script's prim and `llLinkSitTarget(link, offset, rotation)` that of a prim by link number (the `LINK_*` values reach the prims they name);
+  an offset and rotation that are both zero (rotation with x, y and z zero) remove it. Each call is a `prim` entry with `op` `sit_target` (`set`, `offset`, `rotation`). An avatar takes a prim's sit target when it has one and
+  no one else sits on it; otherwise it sits on the prim without a target (as in Second Life) and `llAvatarOnSitTarget` does not name it. `llAvatarOnSitTarget` is the avatar on the script's prim's target (`NULL_KEY` when none),
+  `llAvatarOnLinkSitTarget(link)` that of one link (`NULL_KEY` for a link the object does not have or a set of links). The sit position and the avatar's real place are not simulated, and the 3D view is not touched.
+- **`llGetNumberOfPrims`** counts the avatars that sit on the object, as Second Life does. `llGetLinkNumber` of a one-prim object stays 0 (Second Life gives 1 while an avatar sits on it).
+- **`llUnSit(key)`** takes an avatar off the script's own object (no other object; a key that does not sit there does nothing) and writes an `unsit` entry; every script of the object gets `changed` with `CHANGED_LINK`.
+  Second Life also asks for the right to do it (object owner or land owner); the sandbox does not.
+- **Permissions of a sitter:** `llRequestPermissions` on an avatar that sits on the object grants `PERMISSION_TRIGGER_ANIMATION` and `PERMISSION_TAKE_CONTROLS` at once (as Second Life does for sitters); the other bits
+  are not granted, and when none is left nothing is granted and no `run_time_permissions` comes. The `permissions` entry says so. The owner still gets everything at once, any other key nothing. So the usual pose ball works:
+  `changed` with `CHANGED_LINK`, `llAvatarOnSitTarget`, `llRequestPermissions`, `run_time_permissions`, `llStartAnimation`. Standing up does not stop the animation or take the permission away here: the script
+  must stop it itself (in Second Life the animation stops when the avatar stands).
+- **`llGetAnimationList(key)`** lists the keys of the animations this script started for that avatar (the avatar it holds permissions for) and has not stopped; an animation in the inventory (type `animation`) gives its
+  key, any other name a key made from the object's key and the name. The avatar's own animations (standing, sitting) are not in the list. **`llGetAnimation(key)`** answers `Sitting` for an avatar sitting on any object of the
+  world, `Standing` for the owner, and an empty string for any other key. **`llGetAgentInfo(key)`** answers `AGENT_SITTING | AGENT_ON_OBJECT` (0x30) for a sitting avatar, plus `AGENT_ATTACHMENTS` (2) for the owner
+  while any object of the world is worn, and 0 for everyone else (walking, flying, typing and the other flags are never set).
+- Not done: the avatar's position and rotation on the sit target, `llSitOnLink`, `llGetObjectPrimCount` and the link keys of sitting avatars, touch-to-sit (`llSetClickAction`), sit-text display, stand-up stopping animations, and the `control` event (the next step).
+
 #### Inventory, notecards and rezzing (Script Lab step 9b-4)
 
 An object holds the inventory the request gives it, and nothing else: no file is read. Give `inventory` inside an object of `objects`, or at the top of the
@@ -612,9 +638,9 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver` and `object_rez`; 157 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver` and `object_rez`; 165 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, and functions that are only recorded). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

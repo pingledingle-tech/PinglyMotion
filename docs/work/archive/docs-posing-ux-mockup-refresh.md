@@ -1,6 +1,6 @@
 Branch: docs/posing-ux-mockup-refresh
 Status: done
-Pull request: pending
+Pull request: #149
 Files:
 - docs/images/posing-ux/main-window.png
 - docs/images/posing-ux/hands-settings-poses.png
