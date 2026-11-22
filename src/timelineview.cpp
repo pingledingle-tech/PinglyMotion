@@ -171,8 +171,15 @@ void TimelineView::selectTrack(int track)
   const int row=(track<0) ? -1 : JointGroups::rowOfTrack(track);
   if(row>=0 && outerView_)
   {
-    const int y=row*Constants::lineHeight()+2;
-    outerView_->ensureVisible(0,y+Constants::lineHeight()/2,0,Constants::lineHeight()/2+2);
+    // scroll by the least amount that shows the whole row; a row already
+    // in view does not move the timeline
+    const int top=row*Constants::lineHeight()+2;
+    const int bottom=top+Constants::lineHeight();
+    QScrollBar* bar=outerView_->verticalScrollBar();
+    if(top<bar->value())
+      bar->setValue(row==0 ? 0 : top);
+    else if(bottom>bar->value()+bar->pageStep())
+      bar->setValue(bottom-bar->pageStep());
   }
 }
 
