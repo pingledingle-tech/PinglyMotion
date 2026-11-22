@@ -153,10 +153,10 @@ The file format does not care where the motion comes from, but you should. Mixam
 
 The BVH route above works only when the Blender skeleton already has SL joint names and the SL rest pose. Most Blender rigs do not.
 
-### 3.1 Planned
+### 3.1 Planned (status 22 November 2026: all three are now built; the list below keeps the original wording)
 
-- **Retargeting from any skeleton ([#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)).** Reads a BVH from another skeleton (Mixamo, Rigify, motion capture), finds which bone is which by name and position in the tree, and moves the motion onto the SL Bento skeleton. The core is in the code since pull request #66, tested but without a menu yet. With a menu, "bones with other names do nothing" (2.5) goes away.
-- **glTF 2.0 import ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)).** Blender exports glTF (`.glb`/`.gltf`) with its built-in exporter. glTF stores the rest pose, the bone names, metres and its own axis rule, so scale, axes and frame rate mistakes (2.1 to 2.3) mostly disappear. It uses the retargeting core from #16. When #12 is done, this guide gets a glTF section, and glTF becomes the recommended way from Blender into PinglyMotion.
+- **Retargeting from any skeleton ([#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)).** Reads a BVH from another skeleton (Mixamo, Rigify, motion capture), finds which bone is which by name and position in the tree, and moves the motion onto the SL Bento skeleton. The core is in the code since pull request #66; the menu File > Import BVH from another skeleton is merged (pull request #116, 19 Nov 2026), so this is done. With the menu, "bones with other names do nothing" (2.5) goes away.
+- **glTF 2.0 import ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)).** Blender exports glTF (`.glb`/`.gltf`) with its built-in exporter. glTF stores the rest pose, the bone names, metres and its own axis rule, so scale, axes and frame rate mistakes (2.1 to 2.3) mostly disappear. It uses the retargeting core from #16. Done: the reader (pull request #69) and the menu File > Import glTF animation (pull request #117, 19 Nov 2026) are merged, and section 1.7 is the glTF section.
 - **`.anim` export** is already done (#63): after editing in Blender and coming back, PinglyMotion can write SL's own `.anim` format with priority, ease and loop points, which BVH upload cannot.
 
 ### 3.2 Out of scope (decided)

@@ -28,8 +28,8 @@ Teach-the-AI form (issue 20).
 
 ## Job A: easing and loop points through the control commands
 
-**Status:** built (pull request "Control commands: easing on set_pose and keys, new set_loop, loop points in state"); `keys` returns an `easing` object next to the unchanged `frames`, and `off` is `"off": true`.
-**Follow-up (built, waiting for the owner's test):** the Loop In and Loop Out fields in the window now follow `set_loop` commands (pull request "Loop In and Loop Out fields follow the set_loop command"); playback and saved files were already right.
+**Status:** built and merged on 20 Nov 2026 (pull request 222, "Control commands: easing on set_pose and keys, new set_loop, loop points in state"); `keys` returns an `easing` object next to the unchanged `frames`, and `off` is `"off": true`.
+**Follow-up (built, tested and approved by the project owner in chat, merged 21 Nov 2026 in pull request 276):** the Loop In and Loop Out fields in the window now follow `set_loop` commands (pull request "Loop In and Loop Out fields follow the set_loop command"); playback and saved files were already right.
 
 - **Goal:** the assistant sets and reads the easing of a key and the loop points, so it can do
   steps 5 and 6 of the guide's work rhythm itself.
@@ -55,7 +55,7 @@ Teach-the-AI form (issue 20).
 
 ## Job B: `export_anim` command
 
-**Status:** built (pull request "Control command export_anim"); the `loop` option uses the loop points as
+**Status:** built and merged on 20 Nov 2026 (pull request 185, "Control command export_anim"); the `loop` option uses the loop points as
 the program stores them, so it works before job A's `set_loop` exists.
 
 - **Goal:** the assistant writes the Second Life `.anim` file itself, with the right priority,
@@ -82,7 +82,7 @@ the program stores them, so it works before job A's `set_loop` exists.
 
 ## Job C: readable screenshots
 
-**Status:** built (pull request "Readable screenshots for assistants"), with a `trail` option (dots where the
+**Status:** built and merged on 20 Nov 2026 (pull request 186, "Readable screenshots for assistants"), with a `trail` option (dots where the
 hands and feet go) in addition; frames are laid out in rows of 4.
 
 - **Goal:** one picture the assistant can check reliably: several views at once, the figure's

@@ -60,7 +60,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Medium: link order, Qt AUTOMOC for QObject classes in the library, the Windows build and the sanitizer build must all stay green.
 - **Visible change:** No.
 - **Model:** strong. **Size:** M.
-- **Wait:** src/CMakeLists.txt and tests/CMakeLists.txt are claimed by the open pull request for the import clean-up options (#183). Start after these are merged.
+- **Done:** pull request #240, merged 21 Nov 2026.
 
 ### C3. Remove dead code left from QAvimator and earlier refactors (#194)
 
@@ -70,7 +70,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low; the build and tests show at once if something was still used.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
-- **Wait:** src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
+- **Done:** pull request #224, merged 20 Nov 2026.
 
 ### C4. Zero compiler warnings with -Wall -Wextra -Wshadow (#195)
 
@@ -80,7 +80,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
-- **Wait:** src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
+- **Done:** pull request #235, merged 21 Nov 2026.
 
 ### C5. Model code shows message boxes: return errors to the window instead (#196)
 
@@ -90,7 +90,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Medium: error paths at start-up (missing data folder).
 - **Visible change:** Only on an error; the same text must still be shown. Mechanically checkable with a test that asserts the error text.
 - **Model:** strong. **Size:** M.
-- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
+- **Done:** pull request #241, merged 21 Nov 2026.
 
 ### C6. Use AnimFile::write for the BVH pose text instead of a second BVH writer (#197)
 
@@ -100,7 +100,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low to medium: the live link fallback for older Aurora versions.
 - **Visible change:** No.
 - **Model:** strong. **Size:** M.
-- **Wait:** src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
+- **Done:** pull request #226, merged 21 Nov 2026.
 
 ### C7. One Euler/quaternion conversion and one rotation order type (#198)
 
@@ -110,6 +110,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Medium: IK numbers must stay identical (tests/tst_ik_expected.inc holds the expected values).
 - **Visible change:** No.
 - **Model:** strong. **Size:** M.
+- **Done:** pull request #231, merged 21 Nov 2026.
 
 ### C8. Split pinglymotionwindow.cpp and merge the duplicated open/add code (#199)
 
@@ -119,7 +120,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Medium: big diff in the busiest file; do it when no other job claims the file.
 - **Visible change:** No (pure move).
 - **Model:** strong. **Size:** L.
-- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
+- **Done:** pull request #237, merged 21 Nov 2026.
 
 ### C9. Finish the QAvimator scene refactor: remove the 'temporary' scaffolding (#200)
 
@@ -129,7 +130,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Medium: ownership and lifetime changes.
 - **Visible change:** No.
 - **Model:** strong. **Size:** L.
-- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
+- **Wait:** none now: the pull requests that claimed these files (#183 and #156) are merged. Partly done, see Tracking.
 
 ### C10. Shared skeleton walk helpers instead of local copies (#201)
 
@@ -139,7 +140,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low; the calibration test and the control tests cover the describe output.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
-- **Wait:** src/bvh.cpp is claimed by the active job for the hip position key (#190). Start after these are merged.
+- **Done:** pull request #235, merged 21 Nov 2026.
 
 ### C11. Tests for props, the scene and the timeline (#202)
 
@@ -149,7 +150,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** None (tests only).
 - **Visible change:** No.
 - **Model:** strong. **Size:** M.
-- **Wait:** tests/CMakeLists.txt is claimed by the open pull request for the import clean-up options (#183). Start after these are merged.
+- **Done:** pull request #212, merged 20 Nov 2026.
 
 ### C12. Function-pointer connects instead of SIGNAL()/SLOT() strings (#203)
 
@@ -159,7 +160,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low (overloaded signals need `qOverload`).
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
-- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). Start after these are merged.
+- **Done:** pull request #235, merged 21 Nov 2026.
 
 ### C13. Error handling in the .obj mesh reader (#204)
 
@@ -169,6 +170,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
+- **Done:** pull request #210, merged 20 Nov 2026.
 
 ### C14. Logging categories instead of 110 qDebug calls (#205)
 
@@ -178,7 +180,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** Low.
 - **Visible change:** No.
 - **Model:** light. **Size:** M.
-- **Wait:** src/pinglymotionwindow.* is claimed by the open pull requests for the import clean-up options (#183) and panels P6 (#156). src/bvh.cpp is claimed by the active job for the hip position key (#190). src/animation.cpp is claimed by the active job for the loop end (#191). Start after these are merged.
+- **Done:** pull request #235, merged 21 Nov 2026.
 
 ### C15. Run the two Python tests that CI never runs (#206)
 
@@ -188,6 +190,7 @@ Ordered by value. "Wait" means an open pull request or active job claims some of
 - **Risk:** None.
 - **Visible change:** No.
 - **Model:** light. **Size:** S.
+- **Done:** pull request #243, merged 21 Nov 2026.
 
 ### C16. One error-reporting convention for new and old code (#207)
 
@@ -205,18 +208,18 @@ One issue per task, label `cleanup`. A job starts only when the project owner sa
 | Task | Issue | Size | Wait for active job |
 |---|---|---|---|
 | C1 Rotation and position sliders lose their decimals (integer division) (done, pull request #217) | #192 | S | yes |
-| C2 One static core library for the program, the tests and the fuzzers | #193 | M | yes |
-| C3 Remove dead code left from QAvimator and earlier refactors | #194 | S | yes |
-| C4 Zero compiler warnings with -Wall -Wextra -Wshadow | #195 | S | yes |
-| C5 Model code shows message boxes: return errors to the window instead | #196 | M | yes |
-| C6 Use AnimFile::write for the BVH pose text instead of a second BVH writer | #197 | M | yes |
-| C7 One Euler/quaternion conversion and one rotation order type | #198 | M | no |
-| C8 Split pinglymotionwindow.cpp and merge the duplicated open/add code | #199 | L | yes |
-| C9 Finish the QAvimator scene refactor: remove the 'temporary' scaffolding (started: the window owns the scene, pull request #242; the scene owns the BVH reader, pull request #259; the unused `Animation*` constructor parameter of the view removed, pull request #279) | #200 | L | yes |
-| C10 Shared skeleton walk helpers instead of local copies | #201 | S | yes |
+| C2 One static core library for the program, the tests and the fuzzers (done, pull request #240) | #193 | M | no |
+| C3 Remove dead code left from QAvimator and earlier refactors (done, pull request #224) | #194 | S | no |
+| C4 Zero compiler warnings with -Wall -Wextra -Wshadow (done, pull request #235) | #195 | S | no |
+| C5 Model code shows message boxes: return errors to the window instead (done, pull request #241) | #196 | M | no |
+| C6 Use AnimFile::write for the BVH pose text instead of a second BVH writer (done, pull request #226) | #197 | M | no |
+| C7 One Euler/quaternion conversion and one rotation order type (done, pull request #231) | #198 | M | no |
+| C8 Split pinglymotionwindow.cpp and merge the duplicated open/add code (done, pull request #237) | #199 | L | no |
+| C9 Finish the QAvimator scene refactor: remove the 'temporary' scaffolding (started, issue open: the window owns the scene, pull request #242; the scene owns the BVH reader, pull request #259; the unused `Animation*` constructor parameter of the view removed, pull request #279) | #200 | L | no |
+| C10 Shared skeleton walk helpers instead of local copies (done, pull request #235) | #201 | S | no |
 | C11 Tests for props, the scene and the timeline (done, pull request #212) | #202 | M | yes |
-| C12 Function-pointer connects instead of SIGNAL()/SLOT() strings | #203 | S | yes |
+| C12 Function-pointer connects instead of SIGNAL()/SLOT() strings (done, pull request #235) | #203 | S | no |
 | C13 Error handling in the .obj mesh reader (done, pull request #210) | #204 | S | no |
-| C14 Logging categories instead of 110 qDebug calls | #205 | M | yes |
+| C14 Logging categories instead of 110 qDebug calls (done, pull request #235) | #205 | M | no |
 | C15 Run the two Python tests that CI never runs (done, pull request #243) | #206 | S | no |
-| C16 One error-reporting convention for new and old code (started: convention in docs/DEV.md and `PMMesh` converted, pull request #214; `PropFile::parse` converted, pull request #256; `AvatarSkin::load`, pull request #274; `BVH::checkFile`, pull request #278) | #207 | M | no |
+| C16 One error-reporting convention for new and old code (started, issue open: convention in docs/DEV.md, pull request #214; the private mesh loader, pull request #272; `PropFile::parse` converted, pull request #256; `AvatarSkin::load`, pull request #274; `BVH::checkFile`, pull request #278) | #207 | M | no |

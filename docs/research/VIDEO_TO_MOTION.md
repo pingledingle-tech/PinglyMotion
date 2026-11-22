@@ -1,6 +1,6 @@
 # Research: Second Life animations from video (issue 17)
 
-Status: **research report, nothing built.** Written 20 November 2026 for
+Status: **research report; the recommended route (a) is built since (22 November 2026 check): the guide `docs/VIDEO_GUIDE.md` (pull request 180), the XR Animator joint map (pull request 176), the clean-up core (pull request 179), foot lock (pull request 182) and the import-window clean-up options (pull request 183). No video model or helper is built (job 3 is not started).** Written 20 November 2026 for
 [issue 17](https://github.com/pingledingle-tech/PinglyMotion/issues/17) and use case 7 in
 [PRODUCT.md](../PRODUCT.md). Sources are linked in each section. Licence texts were read from the
 projects' own `LICENSE` files where possible; prices and service terms were read from the vendors'
@@ -217,6 +217,8 @@ Two ways that are commonly treated as acceptable (not legal advice):
 
 ### Job 1: Guide and joint maps for video-mocap BVH (docs and data, technical)
 
+**Status:** done for the guide (`docs/VIDEO_GUIDE.md`, pull request 180) and the XR Animator map (pull request 176), both merged 20 Nov 2026; presets for other services' BVH skeletons are not built.
+
 - **What:** `docs/VIDEO_GUIDE.md` (tools, limits, privacy and rights, step by step to `.anim`) and
   bundled `.jointmap` presets for the BVH skeletons of XR Animator and of one or two services'
   default BVH skeletons, found from their documentation.
@@ -240,8 +242,8 @@ the foot keeps its turn in the world, and the pin is blended in and out over 4 f
 leg cannot reach (the hip has moved on at the end of a step) is followed only as far as the leg is
 long. With the joint limits of `bin/data/SL.lim` the planted feet of the CMU walk drift at most
 0.62 cm (2.48 cm before); a clip with no contact, every joint but the legs, and all frames away
-from a contact are unchanged. One call for the import dialog: `FootLock::lockFeet()`. Not built
-yet: control commands and the menu.
+from a contact are unchanged. One call for the import dialog: `FootLock::lockFeet()`. The import window's clean-up options
+are built (pull request 183, merged 20 Nov 2026). Not built yet: control commands.
 The 250,000 byte limit is the `.anim` exporter's job (key reduction, already built).
 
 - **What:** functions for zero-phase smoothing of rotations (quaternion-safe), foot lock (detect
