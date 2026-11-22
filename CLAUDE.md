@@ -24,7 +24,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
 ## When you are done
 
 1. In your job file set `Status: done`, in your last commit. Do not touch other jobs' files.
-2. Bring your branch up to date with `main` (rebase, or the pull request's "Update branch": `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/update-branch`). Build and run the tests (see README, "Tests"). They must pass. Run `python3 tools/work.py check`.
+2. Bring your branch up to date with `main` with the pull request's "Update branch": `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/update-branch` (then `git pull` in your checkout). Do not rebase: "Update branch" adds a merge commit on GitHub, so your own branch never needs a force-push (only `test/combined` may be force-pushed, see step 5). Build and run the tests (see README, "Tests"). They must pass. Run `python3 tools/work.py check`.
 3. Mark the pull request ready for review: `gh pr ready <number>`, or where GraphQL is blocked `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls/<number>/ccr/ready_for_review`. This starts the builds, the tests and CodeQL.
 4. Wait until all checks on the pull request are green (`gh api repos/pingledingle-tech/PinglyMotion/commits/<sha>/check-runs`). Skipped checks are fine.
 5. Merge, with squash: `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/merge -f merge_method=squash`. Who says yes:
