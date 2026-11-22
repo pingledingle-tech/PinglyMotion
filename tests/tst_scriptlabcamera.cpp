@@ -47,7 +47,7 @@ void TestScriptLabCamera::boxAndText()
   QVERIFY(box);
   QCOMPARE(box->objectName(), QString("scriptLabShowCameraLimits"));
   QCOMPARE(box->text(), QString("Show camera limits in 3D view"));
-  QCOMPARE(box->toolTip(), QString("Let the camera limits the script holds (distance from the avatar, focus on the avatar) "
+  QCOMPARE(box->toolTip(), QString("Let the camera limits the script holds (distance from the avatar, focus on the avatar, field of view) "
                                    "limit the 3D view. Untick to get your own camera back exactly as it was."));
   QVERIFY(!box->isChecked());
   QVERIFY(!cameraOverride.enabled());

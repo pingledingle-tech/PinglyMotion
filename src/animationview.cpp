@@ -253,7 +253,8 @@ void AnimationView::setProjection()
     if(!panels.isEmpty())
       center=PanelLayout::freeArea(viewRect,panels).center();
   }
-  const QMatrix4x4 perspective=shiftedPerspective(60.0f,QRectF(viewRect),center,1.0f,2000.0f);
+  // 60 degrees, or what the Script Lab camera limits set (job 7b)
+  const QMatrix4x4 perspective=shiftedPerspective(camera()->fieldOfView(),QRectF(viewRect),center,1.0f,2000.0f);
   SceneState::setProjection(perspective);
 }
 
@@ -794,7 +795,7 @@ void AnimationView::moveCamera(CameraDrag how,int dx,int dy)
   // zoom: 1% per pixel, down = further away
   const float zoom=std::pow(1.01f,(float) dy);
   // pan: the point the camera turns around follows the mouse
-  const float perPixel=2.0f*std::tan(30.0f*M_PI/180.0f)*camera()->distance()/qMax(1,height());
+  const float perPixel=2.0f*std::tan(camera()->fieldOfView()*0.5f*M_PI/180.0f)*camera()->distance()/qMax(1,height());
 
   switch(how)
   {

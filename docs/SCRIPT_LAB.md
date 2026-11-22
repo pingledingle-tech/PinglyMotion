@@ -223,7 +223,7 @@ a script run through the control commands), the one the Objects part shows.
   and reaches every script of the object. No new control command; details in [CONTROL.md](CONTROL.md), "The events on_rez and changed".
 - Tests: `tests/tst_lslevents.cpp`. Fuzz: `fuzz_lsl` also sends a `changed` input and a start parameter.
 
-## Camera limits in the 3D view (job 7b, part 1)
+## Camera limits in the 3D view (job 7b)
 
 The camera restrictions a script holds can limit the main 3D view's camera, only while the Commands page's **Show
 camera limits in 3D view** box is ticked (under the Actions list). The box is off each time the program starts. The
@@ -236,7 +236,12 @@ Commands page now scrolls when the panel is small, as the Live page does.
   as close as it goes. An option that is not a distance in metres is named in the text as not used.
   `setcam_avdistmin` and `setcam_avdistmax` are RLVa only, so they need RLVa mode (`rlv_reset` with `mode`); the old
   names `camdistmin` and `camdistmax` work in plain RLV mode too.
-- While any of them holds, the camera turns around the avatar's middle (its hip at rest; it does not follow the
+- Field of view (part 2): `setcam_fovmin` and `setcam_fovmax` keep the 3D view's vertical field of view at least or at
+  most this many radians (the view's own is 60 degrees); the old zoom limits are a multiplier of the default 60
+  degrees: `camzoommax:2` keeps it at 30 degrees or more (no zooming in past 2x), `camzoommin:2` at 30 degrees or less.
+  The view shows its own 60 degrees moved into the limits (strictest wins, a maximum below the minimum wins over it,
+  1 to 170 degrees). A field of view limit alone does not move the camera.
+- While a distance limit or `setcam_unlock` holds, the camera turns around the avatar's middle (its hip at rest; it does not follow the
   animation) and panning cannot move it away; turning, zooming within the limits, the number pad views, `set_camera`
   and the AI's `screenshot` keep to the limits.
 - The text under the box says in words what limits the camera, for example "Camera limited by the script: max
@@ -245,11 +250,12 @@ Commands page now scrolls when the panel is small, as the Live page does.
 - The user's camera is never changed for good: when the limits come on, the camera is kept as it was; unticking
   the box, `@clear`, Reset, a mode switch or the last limit going away puts exactly that camera back. Moves made
   while the limits were on are not kept. Nothing is saved.
-- Not yet: field of view (`setcam_fovmin`, `setcam_fovmax`, `setcam_fov`), forced focus and offsets
-  (`setcam_focus`, `setcam_eyeoffset`, `setcam_focusoffset`), mouselook. They are still recorded only.
+- Not yet: the forced field of view `setcam_fov`, forced focus and offsets (`setcam_focus`, `setcam_eyeoffset`,
+  `setcam_focusoffset`), mouselook. They are still recorded only.
 - Code: `src/scriptlab/cameraoverride.*` (the limits read from the RLV state and the words), the constraint in
   `src/camera.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`. Tests:
-  `tests/tst_cameraoverride.cpp`, `tests/tst_scriptlabcamera.cpp` and the constraint part of `tests/tst_camera.cpp`.
+  `tests/tst_cameraoverride.cpp`, `tests/tst_scriptlabcamera.cpp` and the constraint and field of view part of
+  `tests/tst_camera.cpp`.
 
 ## How an AI assistant uses it
 

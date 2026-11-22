@@ -71,11 +71,12 @@ struct CameraConstraint
   float maxDistance = 0;          // 0: no maximum
   bool turnAroundPoint = false;   // the camera turns around `point` (the avatar), panning does not move it away
   QVector3D point;
+  float fieldOfView = 0;          // vertical field of view in degrees; 0: the camera's own (Camera::DefaultFieldOfView)
 
   bool operator==(const CameraConstraint& o) const
   {
     return minDistance == o.minDistance && maxDistance == o.maxDistance &&
-           turnAroundPoint == o.turnAroundPoint && point == o.point;
+           turnAroundPoint == o.turnAroundPoint && point == o.point && fieldOfView == o.fieldOfView;
   }
   bool operator!=(const CameraConstraint& o) const { return !(*this == o); }
 };
@@ -99,6 +100,9 @@ class Camera : public QObject
     static bool viewForKey(int key, Qt::KeyboardModifiers keys, float* height, float* angle);
     // Blender number pad "." (focus on the selected joint)
     static bool isFocusKey(int key, Qt::KeyboardModifiers keys);
+
+    // the vertical field of view of the 3D view, in degrees (the user cannot change it)
+    static constexpr float DefaultFieldOfView = 60.0f;
 
     Camera(QObject* parent = 0);
     ~Camera();
@@ -145,6 +149,12 @@ class Camera : public QObject
     void setConstraint(const CameraConstraint& constraint);
     void clearConstraint();
     bool constrained() const { return m_constrained; }
+    // the vertical field of view to draw with, in degrees: the constraint's while it sets one,
+    // otherwise DefaultFieldOfView
+    float fieldOfView() const
+    {
+      return m_constrained && m_constraint.fieldOfView > 0 ? m_constraint.fieldOfView : DefaultFieldOfView;
+    }
     CameraConstraint constraint() const { return m_constraint; }
 
   public slots:

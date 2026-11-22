@@ -12,9 +12,16 @@
  *     from the avatar (metres; with several objects the largest wins);
  *   - setcam_avdistmax / camdistmax: at most this far (the smallest wins;
  *     a maximum below the minimum wins over it);
- *   - setcam_unlock / camunlock: the camera focus stays on the avatar.
- * While any of them holds, the camera turns around the avatar's middle
- * (its hip at rest, AvatarPoint) and panning cannot move it away.
+ *   - setcam_unlock / camunlock: the camera focus stays on the avatar;
+ *   - setcam_fovmin / setcam_fovmax: the vertical field of view in radians
+ *     at least / at most this (the view's own is 60 degrees);
+ *   - camzoommax / camzoommin: the old zoom limits, a multiplier of the
+ *     default 60 degrees (zoom 2 = 30 degrees): camzoommax:2 keeps the field
+ *     of view at 30 degrees or more, camzoommin:2 at 30 degrees or less.
+ * While a distance limit or setcam_unlock holds, the camera turns around the
+ * avatar's middle (its hip at rest, avatarPoint()) and panning cannot move it
+ * away. With several objects the strictest limit wins; a maximum below the
+ * minimum wins over it.
  *
  * The user's camera is never changed for good: Camera::setConstraint() keeps
  * the camera as it was, and switching the box off, @clear, Reset or the last
@@ -47,6 +54,9 @@ class CameraOverride : public QObject
     static QVector3D avatarPoint() { return QVector3D(0.0f, 43.528519f, 0.0f); }
     // the 3D view cannot come closer than this (Camera::pan), so a smaller maximum is shown as this
     static constexpr float ClosestDistance = 3.0f;
+    // the field of view the 3D view can show, in degrees
+    static constexpr double NarrowestView = 1.0;
+    static constexpr double WidestView = 170.0;
 
     // what the RLV state asks of the camera
     struct Limits
@@ -54,16 +64,23 @@ class CameraOverride : public QObject
       double minDistance = 0;     // metres; 0: none
       double maxDistance = -1;    // metres; < 0: none (0 is a real maximum)
       bool focusOnAvatar = false; // setcam_unlock held
+      double minView = 0;         // field of view in degrees; 0: none
+      double maxView = 0;         // degrees; 0: none
       QStringList objects;        // the objects that hold a camera limit, sorted
-      QStringList ignored;        // held restrictions whose option is not a distance, as "behaviour:option"
+      QStringList ignored;        // held restrictions whose option cannot be used, as "behaviour:option"
 
       bool hasMin() const { return minDistance > 0; }
       bool hasMax() const { return maxDistance >= 0; }
-      bool any() const { return hasMin() || hasMax() || focusOnAvatar; }
+      bool hasViewLimit() const { return minView > 0 || maxView > 0; }
+      // the camera turns around the avatar (a distance limit or setcam_unlock)
+      bool aroundAvatar() const { return hasMin() || hasMax() || focusOnAvatar; }
+      bool any() const { return aroundAvatar() || hasViewLimit(); }
+      // the field of view the limits leave of the view's own 60 degrees
+      double fieldOfView() const;
       bool operator==(const Limits& o) const
       {
         return minDistance == o.minDistance && maxDistance == o.maxDistance && focusOnAvatar == o.focusOnAvatar &&
-               objects == o.objects && ignored == o.ignored;
+               minView == o.minView && maxView == o.maxView && objects == o.objects && ignored == o.ignored;
       }
     };
 
@@ -73,6 +90,8 @@ class CameraOverride : public QObject
     static CameraConstraint constraintFor(const Limits& limits);
     // "3", "2.5", "0.25": a distance in metres for the text
     static QString metres(double value);
+    // "30", "28.6": degrees for the text, at most one decimal
+    static QString degrees(double value);
 
     explicit CameraOverride(QObject* parent = nullptr);
 
