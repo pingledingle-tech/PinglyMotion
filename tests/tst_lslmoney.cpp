@@ -504,7 +504,8 @@ void LslMoneyTest::inputErrors_data()
   QTest::newRow("zero amount") << QJsonObject{{"type", "money"}, {"amount", 0}} << "Input 1: a money input needs \"amount\": the L$ paid, a whole number from 1 to 2147483647.";
   QTest::newRow("half amount") << QJsonObject{{"type", "money"}, {"amount", 1.5}} << "Input 1: a money input needs \"amount\": the L$ paid, a whole number from 1 to 2147483647.";
   QTest::newRow("amount on chat") << QJsonObject{{"amount", 3}} << "Input 1: \"amount\" is only for money.";
-  QTest::newRow("link on email") << QJsonObject{{"type", "email"}, {"link", 1}} << "Input 1: \"link\" is only for touch (the prim touched), sit (the prim sat on) and money (the prim paid).";
+  QTest::newRow("link on email") << QJsonObject{{"type", "email"}, {"link", 1}}
+                                 << "Input 1: \"link\" is only for touch (the prim touched), sit (the prim sat on), money (the prim paid) and collision (the prim hit).";
   QTest::newRow("url on touch") << QJsonObject{{"type", "touch"}, {"url", "x"}} << "Input 1: \"url\" is only for http_request.";
   QTest::newRow("headers on money") << QJsonObject{{"type", "money"}, {"amount", 1}, {"headers", QJsonObject()}} << "Input 1: \"headers\" is only for http_request.";
   QTest::newRow("empty url") << QJsonObject{{"type", "http_request"}, {"url", ""}}
@@ -520,7 +521,8 @@ void LslMoneyTest::inputErrors_data()
   QTest::newRow("body on chat") << QJsonObject{{"body", "x"}} << "Input 1: \"body\" is only for http_request and email.";
   QTest::newRow("long subject") << QJsonObject{{"type", "email"}, {"subject", QString(256, 's')}} << "Input 1: \"subject\" must be text of at most 255 characters.";
   QTest::newRow("unknown type") << QJsonObject{{"type", "pay"}}
-                                << "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\" or \"email\".";
+                                << "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
+                                   "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\" or \"not_at_target\".";
 }
 
 void LslMoneyTest::inputErrors()
