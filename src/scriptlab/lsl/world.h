@@ -15,6 +15,7 @@
 #ifndef LSL_WORLD_H
 #define LSL_WORLD_H
 
+#include <deque>
 #include <vector>
 
 #include <QJsonArray>
@@ -161,6 +162,20 @@ struct Detected
   int link = 0;
 };
 
+// Step 9b-9: a canned answer to llHTTPRequest, given in the lsl_run input ("http"). The sandbox never goes on the
+// network: a request gets the first reply whose method and URL match, or status 499 when none does.
+struct HttpReply
+{
+  QString url;                      // the exact URL, or a prefix that ends in "*" ("*" alone matches every URL)
+  QString method;                   // GET, POST, PUT or DELETE; empty: any method
+  int status = 200;
+  QString body;
+
+  bool matches(const QString& requestMethod, const QString& requestUrl) const;
+  // the first reply of the list that matches, or null
+  static const HttpReply* find(const std::vector<HttpReply>& replies, const QString& method, const QString& url);
+};
+
 class World
 {
   public:
@@ -247,6 +262,16 @@ class World
     // llKey2Name and llGetOwnerKey: the name and owner of a key in the sandbox (empty when unknown)
     virtual QString nameOf(const QString& key) const;
     virtual QString ownerOf(const QString& key) const;
+    // Step 9b-9: the canned reply for an llHTTPRequest (null: none), the times of the object's recent requests (for the
+    // throttle), and http_response for every script of the requesting prim (false: the calling script queues it itself)
+    virtual const HttpReply* httpReply(const QString& method, const QString& url) const { return HttpReply::find(m_httpReplies, method, url); }
+    void setHttpReplies(const std::vector<HttpReply>& replies) { m_httpReplies = replies; }
+    virtual std::deque<double>& httpTimes() { return m_httpTimes; }
+    virtual bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body)
+    {
+      Q_UNUSED(time); Q_UNUSED(id); Q_UNUSED(status); Q_UNUSED(truncatedAt); Q_UNUSED(body);
+      return false;
+    }
 
     // Step 5: entries go to another World's log instead (the shared log of several objects), each with
     // "object" set to tag when tag is not empty, and "script" set to scriptTag when that is not empty
@@ -282,6 +307,8 @@ class World
     float m_scale[3] = {0.5f, 0.5f, 0.5f};
     PrimStore m_prims;
     Inventory m_inventory;
+    std::vector<HttpReply> m_httpReplies;
+    std::deque<double> m_httpTimes;
     QString m_objectName = "Object";
     QString m_objectDesc;
 };

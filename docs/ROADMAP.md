@@ -21,7 +21,7 @@ Status: **confirmed by the project owner on 22 November 2026.** It replaces the 
 
 ## Done before this roadmap
 
-File formats (`.dingle`, `.anim` export and import, BVH retargeting with the joint mapping dialog, glTF import), the Blender round trip, test motions, the renderer, joint limits and IK, easing presets with the tile row, the transport buttons, Frame back and Frame forward, the timeline scrolling to the picked joint, the clickable mockup, the translation plumbing, version 0.1.0, and Script Lab steps 1 to 9a and 9b-1 to 9b-8. Details are in the git history, `docs/SCRIPT_LAB.md` and `docs/SCRIPT_LAB_PLAN.md`.
+File formats (`.dingle`, `.anim` export and import, BVH retargeting with the joint mapping dialog, glTF import), the Blender round trip, test motions, the renderer, joint limits and IK, easing presets with the tile row, the transport buttons, Frame back and Frame forward, the timeline scrolling to the picked joint, the clickable mockup, the translation plumbing, version 0.1.0, and Script Lab steps 1 to 9a and 9b-1 to 9b-9. Details are in the git history, `docs/SCRIPT_LAB.md` and `docs/SCRIPT_LAB_PLAN.md`.
 
 ## Not doing
 

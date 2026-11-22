@@ -14,6 +14,20 @@
 namespace lsl
 {
 
+bool HttpReply::matches(const QString& requestMethod, const QString& requestUrl) const
+{
+  if (!method.isEmpty() && method != requestMethod) return false;
+  if (url.endsWith('*')) return requestUrl.startsWith(url.left(url.size() - 1));
+  return requestUrl == url;
+}
+
+const HttpReply* HttpReply::find(const std::vector<HttpReply>& replies, const QString& method, const QString& url)
+{
+  for (const HttpReply& r : replies)
+    if (r.matches(method, url)) return &r;
+  return nullptr;
+}
+
 QString World::clip(const QString& text)
 {
   return text.size() > MAX_TEXT_CHARS ? text.left(MAX_TEXT_CHARS) : text;

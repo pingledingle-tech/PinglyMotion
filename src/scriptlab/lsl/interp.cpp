@@ -449,6 +449,14 @@ void Interpreter::linkMessage(int sender, int num, const QString& str, const QSt
   queueEvent(Event{"link_message", {Value::integer(sender), Value::integer(num), Value::string(str), Value::key(id)}, QString(), QString()});
 }
 
+void Interpreter::httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body)
+{
+  const int HTTP_BODY_TRUNCATED = 0;
+  std::vector<Value> metadata;
+  if (truncatedAt >= 0) metadata = {Value::integer(HTTP_BODY_TRUNCATED), Value::integer(truncatedAt)};
+  queueEvent(Event{"http_response", {Value::key(id), Value::integer(status), Value::makeList(metadata), Value::string(body)}, QString(), QString()});
+}
+
 void Interpreter::linksetDataEvent(int action, const QString& name, const QString& value)
 {
   queueEvent(Event{"linkset_data", {Value::integer(action), Value::string(name), Value::string(value)}, QString(), QString()});
