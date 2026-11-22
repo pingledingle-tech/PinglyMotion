@@ -1,6 +1,6 @@
 Branch: job/ux-1a-menus
 Status: active
-Pull request: pending
+Pull request: #368
 Files:
 - src/pinglymotionwindow.ui
 - src/pinglymotionwindow.cpp
