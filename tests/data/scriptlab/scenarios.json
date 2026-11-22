@@ -1796,6 +1796,62 @@
       ]
     },
     {
+      "about": "region and avatar reads (gap list 2, step 3): a region given with region, an avatar with a height, the clock, the sun, llGetAgentList and llRequestAgentData through dataserver",
+      "name": "lsl_region_reads",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"t":0,"text":"Test Region <512000.00000, 768000.00000, 0.00000> ground 23.500000 water 21.250000","type":"owner_say"},
+              {"t":0,"text":"2026-03-08 2026-03-08T09:59:59.000000Z 7199.000000 15.000000 <1.00000, 0.00000, 0.00000>","type":"owner_say"},
+              {
+                "t": 0,
+                "text": "a2e76fcd-9360-4f6d-a924-000000000001, 11111111-2222-3333-4444-555555555555 <0.45000, 0.60000, 2.10000>",
+                "type": "owner_say"
+              },
+              {
+                "avatar": "11111111-2222-3333-4444-555555555555",
+                "data": 2,
+                "function": "llRequestAgentData",
+                "query": "5c11ab00-0000-4000-8000-000000000001",
+                "t": 0,
+                "type": "dataserver_request"
+              },
+              {"seconds":1.5,"t":0,"type":"timer_set"},
+              {"args":["5c11ab00-0000-4000-8000-000000000001","Guest Avatar"],"name":"dataserver","t":0,"type":"event"},
+              {"t":0,"text":"1 Guest Avatar","type":"owner_say"},
+              {"name":"timer","t":1.5,"type":"event"},
+              {"seconds":0,"t":1.5,"type":"timer_set"},
+              {"t":1.5,"text":"2026-03-08T10:00:00.500000Z 10800.500000 16.500000 <0.98769, 0.00000, 0.15643>","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "avatars": [{"height":2.1,"key":"11111111-2222-3333-4444-555555555555","name":"Guest Avatar"}],
+            "command": "lsl_run",
+            "region": {
+              "corner": [512000,768000,0],
+              "day_length": 60,
+              "ground": 23.5,
+              "name": "Test Region",
+              "time_of_day": 15,
+              "unix_start": 1772963999,
+              "water": 21.25
+            },
+            "seconds": 2,
+            "source": "key asked;\ndefault {\n  state_entry() {\n    llOwnerSay(llGetRegionName() + \" \" + (string)llGetRegionCorner() + \" ground \" + (string)llGround(ZERO_VECTOR) + \" water \" + (string)llWater(ZERO_VECTOR));\n    llOwnerSay(llGetDate() + \" \" + llGetTimestamp() + \" \" + (string)llGetWallclock() + \" \" + (string)llGetTimeOfDay() + \" \" + (string)llGetSunDirection());\n    llOwnerSay(llList2CSV(llGetAgentList(AGENT_LIST_REGION, [])) + \" \" + (string)llGetAgentSize(\"11111111-2222-3333-4444-555555555555\"));\n    asked = llRequestAgentData(\"11111111-2222-3333-4444-555555555555\", DATA_NAME);\n    llSetTimerEvent(1.5);\n  }\n  dataserver(key id, string data) { llOwnerSay((string)(id == asked) + \" \" + data); }\n  timer() {\n    llSetTimerEvent(0);\n    llOwnerSay(llGetTimestamp() + \" \" + (string)llGetWallclock() + \" \" + (string)llGetTimeOfDay() + \" \" + (string)llGetSunDirection());\n  }\n}"
+          }
+        },
+        {
+          "expect": {"error":"Region: \"day_length\" must be the seconds of one day, 60 to 2592000.","ok":false},
+          "request": {"command":"lsl_run","region":{"day_length":0},"source":"default { state_entry() { } }"}
+        }
+      ]
+    },
+    {
       "about": "a script that does not compile, an unknown function, a function not supported yet, an endless loop, bad lsl_event input",
       "name": "errors",
       "steps": [
@@ -1894,7 +1950,7 @@
         },
         {
           "expect": {
-            "error": "Unknown option \"colour\". Options: source, objects, seconds, inputs, keep_rlv, description, scale, start_parameter, inventory, avatars, http.",
+            "error": "Unknown option \"colour\". Options: source, objects, seconds, inputs, keep_rlv, description, scale, start_parameter, inventory, avatars, http, region.",
             "ok": false
           },
           "request": {"colour":1,"command":"lsl_run","source":"default { }"}

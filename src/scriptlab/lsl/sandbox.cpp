@@ -165,6 +165,8 @@ class ObjectWorld : public RlvWorld
       in.resetFromOtherScript();
       return 1;
     }
+    const RegionSettings& region() const override { return m_sandbox.m_region; }
+    QStringList agents() const override { return m_sandbox.agents(); }
     bool details(const QString& key, ObjectDetails& out) override { return m_sandbox.details(m_slot, key, out); }
 
   private:
@@ -820,6 +822,14 @@ QString Sandbox::setHttpReplies(const std::vector<HttpReply>& replies)
   return QString();
 }
 
+QString Sandbox::setRegion(const RegionSettings& region)
+{
+  if (m_started) return "The world has started already.";
+  if (!(region.dayLength > 0.0) || !std::isfinite(region.dayLength)) return "The length of a day must be more than 0 seconds.";
+  m_region = region;
+  return QString();
+}
+
 void Sandbox::httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body)
 {
   // every script in the prim that made the request gets the event (Second Life wiki, http_response)
@@ -1038,9 +1048,11 @@ bool Sandbox::details(int from, const QString& key, ObjectDetails& out) const
     return true;
   }
   // an avatar: one given for the sensors, someone sitting on an object, or the owner
-  auto asAvatar = [&](const QString& name, const float* position, const float* velocity, const float* rotation, bool inGroup)
+  auto asAvatar = [&](const QString& name, const float* position, const float* velocity, const float* rotation, bool inGroup,
+                      float height = RegionSettings::DEFAULT_AVATAR_HEIGHT)
   {
     out.avatar = true;
+    out.height = height;
     out.name = name;
     out.owner = key;
     out.inGroup = inGroup;
@@ -1065,12 +1077,25 @@ bool Sandbox::details(int from, const QString& key, ObjectDetails& out) const
     return true;
   };
   for (const AvatarSpec& a : m_avatars)
-    if (a.key == key) return asAvatar(a.name, a.position, a.velocity, a.rotation, a.inGroup);
+    if (a.key == key) return asAvatar(a.name, a.position, a.velocity, a.rotation, a.inGroup, a.height);
   if (key == OWNER_KEY) return asAvatar(OWNER_NAME, AVATAR_POSITION, nullptr, nullptr, false);
   for (const Object& o : m_objects)
     for (const Sitter& sitter : o.sitters)
       if (sitter.key == key) return asAvatar(sitter.name, AVATAR_POSITION, nullptr, nullptr, false);
   return false;
+}
+
+QStringList Sandbox::agents() const
+{
+  QStringList out;
+  bool ownerListed = false;
+  for (const AvatarSpec& a : m_avatars) if (a.key == OWNER_KEY) ownerListed = true;
+  if (!ownerListed) out << OWNER_KEY;
+  for (const AvatarSpec& a : m_avatars) if (!out.contains(a.key)) out << a.key;
+  for (const Object& o : m_objects)
+    for (const Sitter& sitter : o.sitters)
+      if (!out.contains(sitter.key)) out << sitter.key;
+  return out;
 }
 
 // ---------------------------------------------------------------- the answer
