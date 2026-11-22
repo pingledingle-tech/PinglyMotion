@@ -54,6 +54,7 @@ class QOpenGLShaderProgram;
 class Animation;
 class CameraOverride;
 class EnvironmentOverride;
+class ViewModesOverride;
 class EffectsPreview;
 class PropManager;
 class Scene;
@@ -81,6 +82,8 @@ class AnimationView : public QOpenGLWidget
     void setCameraOverride(CameraOverride* cameraOverride);
     // Script Lab sky and draw distance (job 7c): the background and fog while its box is ticked
     void setEnvironmentOverride(EnvironmentOverride* environmentOverride);
+    // Script Lab view modes (job 7c): hidden figure, plain floor, overlay while its box is ticked
+    void setViewModesOverride(ViewModesOverride* viewModesOverride);
 
     void selectPart(BVHNode* node);
     void selectProp();
@@ -297,6 +300,9 @@ class AnimationView : public QOpenGLWidget
     // the Script Lab camera override (job 7b); owned by the window
     QPointer<CameraOverride> m_cameraOverride;
     QPointer<EnvironmentOverride> m_environmentOverride;
+    QPointer<ViewModesOverride> m_viewModesOverride;
+    // draws the Script Lab overlay (setoverlay) over the whole view
+    void drawOverlay();
     // puts the override's constraint on the camera, or takes it off
     void applyCameraOverride();
 

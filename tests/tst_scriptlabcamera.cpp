@@ -21,6 +21,7 @@
 
 #include "scriptlab/cameraoverride.h"
 #include "scriptlab/environmentoverride.h"
+#include "scriptlab/viewmodesoverride.h"
 #include "scriptlab/rlvstate.h"
 #include "scriptlab/scriptlabpanel.h"
 
@@ -31,6 +32,7 @@ class TestScriptLabCamera : public QObject
   private slots:
     void boxAndText();
     void environmentBox();
+    void viewModesBox();
 };
 
 void TestScriptLabCamera::boxAndText()
@@ -181,6 +183,71 @@ void TestScriptLabCamera::environmentBox()
 
   box->setChecked(false);
   QVERIFY(!environment.enabled());
+}
+
+// job 7c: the "Show view modes in 3D view" box under the environment box
+void TestScriptLabCamera::viewModesBox()
+{
+  RlvState rlv;
+  rlv.setMode(Rlv::Mode::Rlva);
+  CameraOverride cameraOverride;
+  cameraOverride.setState(&rlv);
+  EnvironmentOverride environment;
+  environment.setState(&rlv);
+  ViewModesOverride viewModes;
+  viewModes.setState(&rlv);
+
+  ScriptLabPanel panel;
+  panel.setState(&rlv);
+  panel.setCameraOverride(&cameraOverride);
+  panel.setEnvironmentOverride(&environment);
+  panel.setViewModesOverride(&viewModes);
+  panel.resize(420, 1000);
+  panel.show();
+
+  QCheckBox* box = panel.viewModesBox();
+  QVERIFY(box);
+  QCOMPARE(box->objectName(), QString("scriptLabShowViewModes"));
+  QCOMPARE(box->text(), QString("Show view modes in 3D view"));
+  QCOMPARE(box->toolTip(), QString("Let the view restrictions the script holds (your own avatar hidden, textures replaced, an overlay) "
+                                   "change the 3D view. Untick to get the 3D view's own look back exactly as it was."));
+  QVERIFY(!box->isChecked());
+  QVERIFY(!viewModes.enabled());
+  QCOMPARE(box->parentWidget(), panel.environmentBox()->parentWidget());
+  QWidget* w = panel.environmentBox()->nextInFocusChain();
+  for (int i = 0; i < 50 && w != box && !((w->focusPolicy() & Qt::TabFocus) && w->isVisibleTo(&panel)); ++i)
+    w = w->nextInFocusChain();
+  QCOMPARE(w, static_cast<QWidget*>(box));
+
+  QLabel* status = panel.viewModesStatus();
+  QVERIFY(status);
+  QCOMPARE(status->objectName(), QString("scriptLabViewModesStatus"));
+  QVERIFY(status->isHidden());
+
+  QVERIFY(panel.runLine("@showself=n"));
+  QCOMPARE(status->text(), QString("The script changes the view: your own avatar hidden (showself). Tick the box to see it in the 3D view."));
+  QVERIFY(!viewModes.hideFigure());
+  box->setChecked(true);
+  QVERIFY(viewModes.hideFigure());
+  QCOMPARE(status->text(), QString("View changed by the script: your own avatar hidden (showself).\n"
+                                   "The figure and its shadow are not drawn.\n"
+                                   "Set by: panel.\n"
+                                   "Untick the box to get the 3D view's own look back."));
+  QCOMPARE(status->palette().color(QPalette::WindowText),
+           ScriptLabPanel::mutedColour(ScriptLabPanel::isDark(panel.palette())));
+  QVERIFY(!cameraOverride.enabled());
+  QVERIFY(!environment.enabled());
+
+  QVERIFY(panel.runLine("@clear"));
+  QVERIFY(!viewModes.active());
+  QVERIFY(status->isHidden());
+  QVERIFY(rlv.apply("hud", "@camtextures=n").ok());
+  QVERIFY(viewModes.plainFloor());
+  panel.resetAll();
+  QVERIFY(!viewModes.active());
+  QVERIFY(status->isHidden());
+  box->setChecked(false);
+  QVERIFY(!viewModes.enabled());
 }
 
 QTEST_MAIN(TestScriptLabCamera)
