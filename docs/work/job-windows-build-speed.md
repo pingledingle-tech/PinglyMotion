@@ -1,5 +1,5 @@
 Branch: job/windows-build-speed
-Status: active
+Status: done
 Pull request: #372
 Files:
 - .github/workflows/build.yml
