@@ -1,5 +1,5 @@
 Branch: fix/theme-tokens-from-file
-Status: active
+Status: done
 Pull request: #349
 Files:
 - src/theme.cpp
