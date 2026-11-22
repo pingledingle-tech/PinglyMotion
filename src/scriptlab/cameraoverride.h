@@ -25,6 +25,17 @@
  *     it cannot be turned or zoomed, only the distance limits still hold.
  *   With several objects holding an offset, the first one in the restriction
  *   list is used.
+ * Force commands (job 7c), kept by the RLV state as recorded values:
+ *   - setcam_fov:<radians>=force: the field of view the view starts from instead
+ *     of its own 60 degrees (the min and max limits above still hold);
+ *   - setcam_focus:<avatar key>=force: the camera focus stays on the avatar (the
+ *     3D view has only the avatar, so another target is named as not shown);
+ *   - setcam_focusoffset, setcam_eyeoffset, setcam_eyeoffsetscale with =force:
+ *     used as the held offsets above when no object holds that offset;
+ *   - setcam_mode=force: not shown (the 3D view always looks from outside the
+ *     avatar), only named in the text.
+ *   A forced value lasts until another force command changes it, its object's
+ *   @clear, Reset or a mode switch.
  * While a distance limit, an offset or setcam_unlock holds, the camera turns around the
  * avatar's middle (its hip at rest, avatarPoint()) and panning cannot move it
  * away. With several objects the strictest limit wins; a maximum below the
@@ -79,6 +90,14 @@ class CameraOverride : public QObject
       QVector3D eyeOffset;        // metres, Second Life axes
       bool hasEyeScale = false;
       double eyeScale = 1;        // setcam_eyeoffsetscale
+      bool hasForcedView = false;
+      double forcedView = 0;      // setcam_fov=force, degrees
+      bool forcedFocus = false;   // setcam_focus=force on the avatar
+      bool focusOffsetForced = false;   // the focus offset comes from =force
+      bool eyeOffsetForced = false;
+      bool eyeScaleForced = false;
+      bool hasForcedMode = false;
+      QString forcedMode;         // setcam_mode=force option (not shown)
       QStringList objects;        // the objects that hold a camera limit, sorted
       QStringList ignored;        // held restrictions whose option cannot be used, as "behaviour:option"
 
@@ -86,16 +105,25 @@ class CameraOverride : public QObject
       bool hasMax() const { return maxDistance >= 0; }
       bool hasViewLimit() const { return minView > 0 || maxView > 0; }
       // the camera turns around the avatar (a distance limit or setcam_unlock)
-      bool aroundAvatar() const { return hasMin() || hasMax() || focusOnAvatar || hasFocusOffset || hasEyeOffset; }
-      bool any() const { return aroundAvatar() || hasViewLimit(); }
-      // the field of view the limits leave of the view's own 60 degrees
+      // the view's field of view is set by a limit or a force command
+      bool setsView() const { return hasViewLimit() || hasForcedView; }
+      bool aroundAvatar() const
+      {
+        return hasMin() || hasMax() || focusOnAvatar || forcedFocus || hasFocusOffset || hasEyeOffset;
+      }
+      bool any() const { return aroundAvatar() || setsView(); }
+      // the field of view the limits leave of the view's own 60 degrees (or of a forced one)
       double fieldOfView() const;
       bool operator==(const Limits& o) const
       {
         return minDistance == o.minDistance && maxDistance == o.maxDistance && focusOnAvatar == o.focusOnAvatar &&
                minView == o.minView && maxView == o.maxView && hasFocusOffset == o.hasFocusOffset &&
                focusOffset == o.focusOffset && hasEyeOffset == o.hasEyeOffset && eyeOffset == o.eyeOffset &&
-               hasEyeScale == o.hasEyeScale && eyeScale == o.eyeScale && objects == o.objects && ignored == o.ignored;
+               hasEyeScale == o.hasEyeScale && eyeScale == o.eyeScale && hasForcedView == o.hasForcedView &&
+               forcedView == o.forcedView && forcedFocus == o.forcedFocus &&
+               focusOffsetForced == o.focusOffsetForced && eyeOffsetForced == o.eyeOffsetForced &&
+               eyeScaleForced == o.eyeScaleForced && hasForcedMode == o.hasForcedMode && forcedMode == o.forcedMode && objects == o.objects &&
+               ignored == o.ignored;
       }
     };
 

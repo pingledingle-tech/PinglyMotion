@@ -4,9 +4,7 @@ Pull request: #329
 Files:
 - src/scriptlab/rlvstate.*
 - src/scriptlab/cameraoverride.*
-- src/scriptlab/scriptlabpanel.cpp
 - tests/tst_cameraoverride.cpp
-- tests/tst_rlvtable.cpp
 - tests/tst_scriptlabcamera.cpp
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md

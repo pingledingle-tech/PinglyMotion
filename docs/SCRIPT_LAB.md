@@ -256,12 +256,21 @@ Commands page now scrolls when the panel is small, as the Live page does.
 - The user's camera is never changed for good: when the limits come on, the camera is kept as it was; unticking
   the box, `@clear`, Reset, a mode switch or the last limit going away puts exactly that camera back. Moves made
   while the limits were on are not kept. Nothing is saved.
-- Not yet: the force commands `setcam_fov`, `setcam_focus`, `setcam_mode` and the force forms of the offsets
-  (`=force`), and mouselook (`setcam_mouselook`). They are still recorded only: the RLV state keeps a force command
-  without telling the 3D view that it changed.
+- Force commands (job 7c, part 1): a force command that changes a recorded value now tells the 3D view (the RLV
+  state sends the same change signal as for a restriction). With the box ticked, `setcam_fov:<radians>=force` is
+  the field of view the view starts from instead of its own 60 degrees (the min and max limits still hold over it);
+  `setcam_focus:<avatar key>=force` (the sandbox avatar's key is the one `llGetOwner` gives; an optional
+  `;distance;direction` is ignored) keeps the camera focus on the avatar; the offsets sent as `=force`
+  (`setcam_focusoffset`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`) are used as above when no object holds that
+  offset as a restriction, and the text marks them "(forced)". Another focus target is named as not shown (the 3D
+  view has only the avatar); `setcam_mode=force` (for example mouselook) is named as not shown, because the 3D view
+  always looks from outside the avatar; mouselook (`setcam_mouselook`) stays recorded only. A forced value belongs
+  to the object that sent it: another force command changes it, and that object's `@clear` (no filter, or a filter
+  that `behaviour:option` contains), Reset or a mode switch forgets it, so the camera from before comes back
+  (decision in [DECISIONS.md](DECISIONS.md)).
 - Code: `src/scriptlab/cameraoverride.*` (the limits read from the RLV state and the words), the constraint in
   `src/camera.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`. Tests:
-  `tests/tst_cameraoverride.cpp`, `tests/tst_scriptlabcamera.cpp` and the constraint, field of view and eye part of
+  `tests/tst_cameraoverride.cpp` (with the force commands), `tests/tst_scriptlabcamera.cpp` and the constraint, field of view and eye part of
   `tests/tst_camera.cpp`.
 
 ## How an AI assistant uses it
@@ -395,7 +404,8 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
   the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view"). A force command of that kind is `retained`
-  and its option is kept in `rlv_state` under `recorded`.
+  and its option is kept in `rlv_state` under `recorded`; a new or changed value is a change of the state (the panel
+  and the 3D view follow it), and the object's `@clear` forgets its recorded values.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
   answers `0`). `getcommand` lists the behaviours known in the current mode.
 - `setcam_*` behaviours with a distance need it as option (`@setcam_avdistmin:2=n`); without it the command fails.

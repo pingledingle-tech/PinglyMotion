@@ -100,11 +100,17 @@ class RlvState : public QObject
 
     // Effects outside the sandbox (camera, sky, debug settings and so on) that a
     // force command asked for: behaviour -> the option of the last command. They
-    // are only recorded; the real program never changes.
+    // are only recorded; the real program never changes, except where the user
+    // lets the 3D view show them (src/scriptlab/cameraoverride.h). A force command
+    // that adds or changes a value emits changed(), as a restriction does.
     QMap<QString, QString> recorded() const { return m_recorded; }
+    // behaviour -> the object whose force command set the recorded value. A forced
+    // value belongs to that object: its @clear (with no filter, or a filter that
+    // "behaviour:option" contains) forgets it, so the 3D view goes back to how it was.
+    QMap<QString, QString> recordedBy() const { return m_recordedBy; }
 
   signals:
-    // the set of restrictions changed
+    // the set of restrictions or a recorded (forced) value changed
     void changed();
     // the mode was switched
     void modeChanged();
@@ -140,6 +146,8 @@ class RlvState : public QObject
     Rlv::Mode m_mode = Rlv::Mode::Rlv;
     // behaviour -> option of the last force command that acts outside the sandbox (at most one per known behaviour)
     QMap<QString, QString> m_recorded;
+    // behaviour -> the object that set the recorded value
+    QMap<QString, QString> m_recordedBy;
 };
 
 #endif
