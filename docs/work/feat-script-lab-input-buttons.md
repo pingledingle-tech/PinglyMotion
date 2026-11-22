@@ -1,6 +1,6 @@
 Branch: feat/script-lab-input-buttons
 Status: active
-Pull request: pending
+Pull request: #309
 Files:
 - src/scriptlab/scriptlabpanel.*
 - tests/scriptlabpanel/**
