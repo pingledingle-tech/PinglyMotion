@@ -1,5 +1,5 @@
 Branch: job/ux-1a-menus
-Status: active
+Status: done
 Pull request: #368
 Files:
 - src/pinglymotionwindow.ui
