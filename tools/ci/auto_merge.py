@@ -61,7 +61,6 @@ OWN_CHECKS = {"auto-merge"}
 PAGES_PATHS = (
     "docs/index.html",
     "docs/download.html",
-    "docs/code-signing.html",
     "docs/privacy.html",
     "docs/site.css",
     "docs/site.js",
