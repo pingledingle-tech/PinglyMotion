@@ -13,6 +13,13 @@
  * panels and Tab again shows the same ones, a panel closed while hidden
  * stays closed.
  *
+ * UX phase 0c (docs/UX_DECISIONS.md, 6c): at large text or in a small window
+ * the panels rearrange. Medium: Joints becomes a tab next to Selected joint
+ * on the right, Selected joint in front. Narrow: every panel docked in one
+ * column under the 3D view and pop-out greyed out with its reason. Back to
+ * wide: the user's own layout comes back. The title bar buttons grow with
+ * the text size.
+ *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -21,10 +28,13 @@
 #include <QDockWidget>
 #include <QLabel>
 #include <QMainWindow>
+#include <QTabBar>
+#include <QToolButton>
 
 #include "panellayout.h"
 #include "panelwindow.h"
 #include "paneltitlebar.h"
+#include "textsize.h"
 
 // a main window with the three panels, built as PinglyMotionWindow::buildDocks() does
 struct ThreePanelWindow
@@ -59,6 +69,83 @@ struct ThreePanelWindow
 
   QByteArray save() const { return window.saveState(PanelLayout::CurrentVersion); }
   bool load(const QByteArray& state) { return window.restoreState(state,PanelLayout::CurrentVersion); }
+};
+
+// the four panels with the program's title bars, Script Lab closed, as the
+// program builds them (src/panelcontent.h, ScriptLabPanel::makeDock)
+struct ReflowWindow
+{
+  QMainWindow window;
+  QDockWidget* joints;
+  QDockWidget* jointCard;
+  QDockWidget* timeline;
+  QDockWidget* scriptLab;
+  PanelWindow::Reflower reflower;
+
+  ReflowWindow()
+  {
+    window.setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks | QMainWindow::GroupedDragging);
+    window.setCentralWidget(new QLabel("3D view"));
+    joints=makeDock("Joints",PanelLayout::JointsDock,Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    jointCard=makeDock("Selected joint",PanelLayout::JointCardDock,Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    timeline=makeDock("Timeline",PanelLayout::TimelineDock,Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+    scriptLab=makeDock("Script Lab","scriptLabDock",Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    PanelWindow::applyDefaultLayout(&window,joints,jointCard,timeline);
+    window.addDockWidget(Qt::RightDockWidgetArea,scriptLab);
+    scriptLab->hide();
+    window.resize(1440,900);
+    window.show();
+  }
+
+  PanelWindow::Docks docks() const
+  {
+    PanelWindow::Docks d;
+    d.joints=joints;
+    d.jointCard=jointCard;
+    d.timeline=timeline;
+    d.scriptLab=scriptLab;
+    return d;
+  }
+
+  bool go(PanelLayout::Reflow mode)
+  {
+    const bool changed=reflower.setMode(&window,docks(),mode);
+    QCoreApplication::processEvents();
+    return changed;
+  }
+
+  QDockWidget* makeDock(const char* title,const char* objectName,Qt::DockWidgetAreas areas)
+  {
+    QDockWidget* dock=new QDockWidget(QString::fromLatin1(title),&window);
+    dock->setObjectName(QString::fromLatin1(objectName));
+    dock->setWidget(new QLabel(QString::fromLatin1(title)));
+    dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
+    dock->setAllowedAreas(areas);
+    dock->setTitleBarWidget(new PanelTitleBar(dock));
+    return dock;
+  }
+
+  // the title bar's buttons: pop-out first, close second
+  static QToolButton* floatButton(QDockWidget* dock)
+  {
+    return dock->titleBarWidget()->findChildren<QToolButton*>().value(0);
+  }
+  static QToolButton* closeButton(QDockWidget* dock)
+  {
+    return dock->titleBarWidget()->findChildren<QToolButton*>().value(1);
+  }
+
+  // the text of the front tab of the tab bar that shows `title`, empty when none
+  QString frontTabWith(const QString& title) const
+  {
+    for (QTabBar* bar : window.findChildren<QTabBar*>())
+    {
+      if (!bar->isVisible()) continue;
+      for (int i=0;i<bar->count();++i)
+        if (bar->tabText(i)==title) return bar->tabText(bar->currentIndex());
+    }
+    return QString();
+  }
 };
 
 // the old two-panel window: Properties and Timeline, saved with the old (no) version
@@ -108,6 +195,20 @@ class TestPanelDocks : public QObject
     void groupedDraggingIsOn();
     void floatingPanelKeepsItsPlaceAndSizeAfterRoundTrip();
     void doubleClickOnTitleBarFloatsAndDocksAgain();
+    // UX phase 0c: rearranging at large text or in a small window
+    void startsWide();
+    void mediumMakesJointsATabNextToSelectedJoint();
+    void mediumLeavesAFloatingJointsPanelFloating();
+    void mediumUsesScriptLabWhenSelectedJointIsClosed();
+    void narrowStacksEveryPanelInOneColumn();
+    void narrowGreysOutPopOutWithTheReason();
+    void narrowDocksAFloatingPanelAndWideFloatsItAgain();
+    void doubleClickDoesNotFloatInNarrow();
+    void backToWideGivesTheUsersLayoutBack();
+    void closedPanelStaysClosed();
+    void layoutToSaveIsTheWideOne();
+    void resetWhileNarrowStaysNarrowAndWideGetsTheDefault();
+    void titleBarButtonsGrowWithTheTextSize();
 };
 
 void TestPanelDocks::defaultLayoutHasThreePanelsOnTheirSides()
@@ -529,6 +630,253 @@ void TestPanelDocks::doubleClickOnTitleBarFloatsAndDocksAgain()
 
   QTest::mouseDClick(dock->titleBarWidget(),Qt::LeftButton,Qt::NoModifier,onTitle);
   QTRY_VERIFY(!dock->isFloating());
+}
+
+using PanelLayout::Reflow;
+
+void TestPanelDocks::startsWide()
+{
+  ReflowWindow w;
+  QCOMPARE(w.reflower.mode(),Reflow::Wide);
+  QCOMPARE(w.go(Reflow::Wide),false);
+  QCOMPARE(w.window.dockWidgetArea(w.joints),Qt::LeftDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.jointCard),Qt::RightDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.timeline),Qt::BottomDockWidgetArea);
+}
+
+void TestPanelDocks::mediumMakesJointsATabNextToSelectedJoint()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  QCOMPARE(w.go(Reflow::Medium),true);
+  QCOMPARE(w.reflower.mode(),Reflow::Medium);
+  QCOMPARE(w.window.dockWidgetArea(w.joints),Qt::RightDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.jointCard),Qt::RightDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.timeline),Qt::BottomDockWidgetArea);
+  QCOMPARE(w.window.tabifiedDockWidgets(w.jointCard),QList<QDockWidget*>({w.joints}));
+  // the tabs stand above the panels, Selected joint in front
+  QCOMPARE(w.window.tabPosition(Qt::RightDockWidgetArea),QTabWidget::North);
+  QCOMPARE(w.frontTabWith("Joints"),QStringLiteral("Selected joint"));
+  // nothing floats, and floating is still allowed
+  for (QDockWidget* dock : {w.joints,w.jointCard,w.timeline})
+  {
+    QVERIFY(!dock->isFloating());
+    QVERIFY(dock->features() & QDockWidget::DockWidgetFloatable);
+    QVERIFY(ReflowWindow::floatButton(dock)->isEnabled());
+  }
+}
+
+void TestPanelDocks::mediumLeavesAFloatingJointsPanelFloating()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  w.joints->setFloating(true);
+  QCoreApplication::processEvents();
+  w.go(Reflow::Medium);
+  QVERIFY(w.joints->isFloating());
+  QCOMPARE(w.window.tabifiedDockWidgets(w.jointCard),QList<QDockWidget*>());
+}
+
+void TestPanelDocks::mediumUsesScriptLabWhenSelectedJointIsClosed()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  w.jointCard->close();
+  w.scriptLab->show();
+  QCoreApplication::processEvents();
+  w.go(Reflow::Medium);
+  QCOMPARE(w.window.dockWidgetArea(w.joints),Qt::RightDockWidgetArea);
+  QCOMPARE(w.window.tabifiedDockWidgets(w.scriptLab),QList<QDockWidget*>({w.joints}));
+  QVERIFY(w.jointCard->isHidden());
+  QCOMPARE(w.frontTabWith("Joints"),QStringLiteral("Script Lab"));
+}
+
+void TestPanelDocks::narrowStacksEveryPanelInOneColumn()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  w.scriptLab->show();
+  QCoreApplication::processEvents();
+  w.go(Reflow::Narrow);
+  QCOMPARE(w.reflower.mode(),Reflow::Narrow);
+  const QList<QDockWidget*> column={w.joints,w.jointCard,w.scriptLab,w.timeline};
+  for (QDockWidget* dock : column)
+  {
+    QCOMPARE(w.window.dockWidgetArea(dock),Qt::BottomDockWidgetArea);
+    QVERIFY(!dock->isFloating());
+    QVERIFY(!(dock->features() & QDockWidget::DockWidgetFloatable));
+    QCOMPARE(dock->allowedAreas(),Qt::DockWidgetAreas(Qt::BottomDockWidgetArea));
+    QCOMPARE(w.window.tabifiedDockWidgets(dock),QList<QDockWidget*>());
+  }
+  // one under the other in this order, each as wide as the window, all under the 3D view
+  const QWidget* view=w.window.centralWidget();
+  int top=view->geometry().bottom();
+  for (QDockWidget* dock : column)
+  {
+    QVERIFY2(dock->geometry().top()>top,qPrintable(dock->objectName()));
+    QCOMPARE(dock->geometry().left(),0);
+    QCOMPARE(dock->width(),w.window.width());
+    top=dock->geometry().bottom();
+  }
+}
+
+void TestPanelDocks::narrowGreysOutPopOutWithTheReason()
+{
+  const QString reason=QStringLiteral("The window is too small to float panels. Make it bigger or the text smaller.");
+  QCOMPARE(PanelTitleBar::noRoomToFloatText(),reason);
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  QToolButton* button=ReflowWindow::floatButton(w.jointCard);
+  QVERIFY(button->isEnabled());
+  QCOMPARE(button->toolTip(),QStringLiteral("Make this panel a window of its own"));
+  w.go(Reflow::Narrow);
+  for (QDockWidget* dock : {w.joints,w.jointCard,w.timeline})
+  {
+    QToolButton* pop=ReflowWindow::floatButton(dock);
+    QVERIFY(!pop->isEnabled());
+    // the reason in the tip, in the status line and for screen readers (charter P6)
+    QCOMPARE(pop->toolTip(),reason);
+    QCOMPARE(pop->statusTip(),reason);
+    QCOMPARE(pop->accessibleDescription(),reason);
+    // closing a panel still works
+    QVERIFY(ReflowWindow::closeButton(dock)->isEnabled());
+  }
+  // and back
+  w.go(Reflow::Wide);
+  for (QDockWidget* dock : {w.joints,w.jointCard,w.timeline})
+  {
+    QToolButton* pop=ReflowWindow::floatButton(dock);
+    QVERIFY(pop->isEnabled());
+    QCOMPARE(pop->toolTip(),QStringLiteral("Make this panel a window of its own"));
+    QCOMPARE(pop->statusTip(),QStringLiteral("Make this panel a window of its own"));
+  }
+}
+
+void TestPanelDocks::narrowDocksAFloatingPanelAndWideFloatsItAgain()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  w.jointCard->setFloating(true);
+  const QRect place(200,150,320,420);
+  w.jointCard->setGeometry(place);
+  QCoreApplication::processEvents();
+  w.go(Reflow::Narrow);
+  QVERIFY(!w.jointCard->isFloating());
+  QCOMPARE(w.window.dockWidgetArea(w.jointCard),Qt::BottomDockWidgetArea);
+  w.go(Reflow::Wide);
+  QVERIFY(w.jointCard->isFloating());
+  QCOMPARE(w.jointCard->geometry(),place);
+  QVERIFY(w.jointCard->features() & QDockWidget::DockWidgetFloatable);
+  QCOMPARE(ReflowWindow::floatButton(w.jointCard)->toolTip(),QStringLiteral("Put this panel back into the main window"));
+}
+
+void TestPanelDocks::doubleClickDoesNotFloatInNarrow()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  w.go(Reflow::Narrow);
+  QWidget* titleBar=w.timeline->titleBarWidget();
+  QTest::mouseDClick(titleBar,Qt::LeftButton,Qt::NoModifier,QPoint(10,titleBar->height()/2));
+  QTest::qWait(50);
+  QCoreApplication::processEvents();
+  QVERIFY(!w.timeline->isFloating());
+  QCOMPARE(w.window.dockWidgetArea(w.timeline),Qt::BottomDockWidgetArea);
+}
+
+void TestPanelDocks::backToWideGivesTheUsersLayoutBack()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  // the user put Selected joint on the left, under Joints
+  w.window.addDockWidget(Qt::LeftDockWidgetArea,w.jointCard);
+  QCoreApplication::processEvents();
+  for (Reflow next : {Reflow::Medium,Reflow::Narrow,Reflow::Medium,Reflow::Wide})
+    w.go(next);
+  QCOMPARE(w.reflower.mode(),Reflow::Wide);
+  QCOMPARE(w.window.dockWidgetArea(w.joints),Qt::LeftDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.jointCard),Qt::LeftDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.timeline),Qt::BottomDockWidgetArea);
+  QCOMPARE(w.window.tabifiedDockWidgets(w.jointCard),QList<QDockWidget*>());
+  QCOMPARE(w.window.tabPosition(Qt::RightDockWidgetArea),QTabWidget::South);
+  QCOMPARE(w.joints->allowedAreas(),Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  QCOMPARE(w.timeline->allowedAreas(),Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+  QVERIFY(w.scriptLab->isHidden());
+}
+
+void TestPanelDocks::closedPanelStaysClosed()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  w.joints->close();
+  QCoreApplication::processEvents();
+  w.go(Reflow::Medium);
+  QVERIFY(w.joints->isHidden());
+  w.go(Reflow::Narrow);
+  QVERIFY(w.joints->isHidden());
+  QVERIFY(w.scriptLab->isHidden());
+  QVERIFY(!w.jointCard->isHidden());
+  w.go(Reflow::Wide);
+  QVERIFY(w.joints->isHidden());
+}
+
+void TestPanelDocks::layoutToSaveIsTheWideOne()
+{
+  QByteArray saved;
+  {
+    ReflowWindow w;
+    QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+    w.go(Reflow::Narrow);
+    saved=w.reflower.layoutToSave(&w.window);
+  }
+  ThreePanelWindow next;
+  QVERIFY(next.load(saved));
+  QCOMPARE(next.window.dockWidgetArea(next.joints),Qt::LeftDockWidgetArea);
+  QCOMPARE(next.window.dockWidgetArea(next.jointCard),Qt::RightDockWidgetArea);
+  QCOMPARE(next.window.dockWidgetArea(next.timeline),Qt::BottomDockWidgetArea);
+}
+
+void TestPanelDocks::resetWhileNarrowStaysNarrowAndWideGetsTheDefault()
+{
+  ReflowWindow w;
+  QVERIFY(QTest::qWaitForWindowExposed(&w.window));
+  w.window.addDockWidget(Qt::LeftDockWidgetArea,w.jointCard);
+  QCoreApplication::processEvents();
+  w.go(Reflow::Narrow);
+  // View > Reset layout while the panels stand in one column
+  PanelWindow::applyDefaultLayout(&w.window,w.joints,w.jointCard,w.timeline);
+  w.reflower.wideLayoutChanged(&w.window,w.docks());
+  QCoreApplication::processEvents();
+  QCOMPARE(w.reflower.mode(),Reflow::Narrow);
+  for (QDockWidget* dock : {w.joints,w.jointCard,w.timeline})
+  {
+    QCOMPARE(w.window.dockWidgetArea(dock),Qt::BottomDockWidgetArea);
+    QVERIFY(!ReflowWindow::floatButton(dock)->isEnabled());
+  }
+  w.go(Reflow::Wide);
+  QCOMPARE(w.window.dockWidgetArea(w.joints),Qt::LeftDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.jointCard),Qt::RightDockWidgetArea);
+  QCOMPARE(w.window.dockWidgetArea(w.timeline),Qt::BottomDockWidgetArea);
+}
+
+void TestPanelDocks::titleBarButtonsGrowWithTheTextSize()
+{
+  QDockWidget dock("Timeline");
+  PanelTitleBar* bar=new PanelTitleBar(&dock);
+  dock.setTitleBarWidget(bar);
+  QToolButton* pop=ReflowWindow::floatButton(&dock);
+  QToolButton* close=ReflowWindow::closeButton(&dock);
+  QCOMPARE(pop->size(),QSize(26,24));
+  QCOMPARE(pop->iconSize(),QSize(16,16));
+  const QList<std::pair<int,QSize>> sizes={{150,QSize(39,36)},{200,QSize(52,48)},{100,QSize(26,24)}};
+  for (const auto& [percent,size] : sizes)
+  {
+    TextSize::apply(percent);
+    QCoreApplication::processEvents();
+    QCOMPARE(pop->size(),size);
+    QCOMPARE(close->size(),size);
+    QCOMPARE(pop->iconSize(),QSize(TextSize::scaled(16),TextSize::scaled(16)));
+  }
+  TextSize::resetForTests();
 }
 
 QTEST_MAIN(TestPanelDocks)

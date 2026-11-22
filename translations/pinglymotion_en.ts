@@ -741,6 +741,10 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>The window is too small to float panels. Make it bigger or the text smaller.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Put this panel back into the main window</source>
         <translation type="unfinished"></translation>
     </message>

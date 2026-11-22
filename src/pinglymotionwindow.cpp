@@ -1147,7 +1147,16 @@ void PinglyMotionWindow::changeEvent(QEvent* event)
   QMainWindow::changeEvent(event);
   if(event->type()==QEvent::FontChange)
   {
-    // the text size changed: rows and panels as big as the new text needs
+    // the text size changed. A widget with a style sheet keeps the font it
+    // had when the sheet was applied, so the sheet is applied again.
+    for(QWidget* widget : findChildren<QWidget*>())
+    {
+      const QString sheet=widget->styleSheet();
+      if(sheet.isEmpty()) continue;
+      widget->setStyleSheet(QString());
+      widget->setStyleSheet(sheet);
+    }
+    // rows and panels as big as the new text needs
     m_jointTable->verticalHeader()->setDefaultSectionSize(m_jointTable->fontMetrics().height()+6);
     m_jointTable->setMinimumHeight(10*m_jointTable->verticalHeader()->defaultSectionSize());
     fitPanelWidths();
@@ -1160,8 +1169,11 @@ void PinglyMotionWindow::changeEvent(QEvent* event)
 void PinglyMotionWindow::setTextSizePercent(int percent)
 {
   UserSettings::setTextSizePercent(percent);
-  // every widget gets a font change event; this window's changeEvent does the rest
+  // every widget gets a font change event; this window's changeEvent fits the panels
   TextSize::apply(UserSettings::textSizePercent());
+  // rearranged at once, before the window is laid out for the new size, so a
+  // layout that no longer fits never makes the window grow
+  updateReflow();
 }
 
 // joint picker in the properties panel: tabs Body / Face / Hands / Other and

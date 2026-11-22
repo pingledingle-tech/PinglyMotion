@@ -6,32 +6,30 @@ Files:
 - src/panelwindow.h
 - src/paneltitlebar.*
 - src/pinglymotionwindow.*
-- src/pinglymotion.cpp
 - src/main.cpp
-- src/theme.*
 - src/textsize.*
 - src/usersettings.*
 - src/CMakeLists.txt
-- src/scriptlab/scriptlabpanel.*
 - tests/panellayout/**
 - tests/paneldocks/**
 - tests/uirender/**
 - tests/textsize/**
-- tests/CMakeLists.txt
 - tests/animfile/CMakeLists.txt
 - fuzz/CMakeLists.txt
 - src/constants.cpp
 - src/timeline.cpp
-- src/timelineview.cpp
+- src/timelineview.*
+- src/transportbar.*
+- tests/transportbar/tst_transportbar.cpp
+- src/easingtiles.*
+- src/wraprow.h
 - src/panelcontent.h
 - CMakeLists.txt
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/DESIGN_SYSTEM.md
 - docs/DEV.md
-- docs/PRODUCT.md
 - docs/TEACHING_TEXTS.md
-- tools/check_texts.py
 
 ## What
 

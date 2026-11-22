@@ -25,7 +25,7 @@ class TestUiRender : public QObject
   Q_OBJECT
 
   private slots:
-    void fourVariants();
+    void sixVariants();
     void scopeSetsAndRestoresThemeAndFont();
     void textSizeMakesThePanelBigger();
     void transportBarHasTheProgramLook();
@@ -35,12 +35,12 @@ class TestUiRender : public QObject
     void savesPicturesOnlyWhenAsked();
 };
 
-void TestUiRender::fourVariants()
+void TestUiRender::sixVariants()
 {
   QStringList names;
   for (const UiRender::Variant& v : UiRender::variants())
     names << v.name();
-  QCOMPARE(names, QStringList({"dark_100", "dark_200", "light_100", "light_200"}));
+  QCOMPARE(names, QStringList({"dark_100", "dark_150", "dark_200", "light_100", "light_150", "light_200"}));
 }
 
 void TestUiRender::scopeSetsAndRestoresThemeAndFont()

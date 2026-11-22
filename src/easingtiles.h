@@ -25,6 +25,7 @@
 
 class Animation;
 class BVHNode;
+class QBoxLayout;
 class QButtonGroup;
 class QLabel;
 class QPushButton;
@@ -94,6 +95,9 @@ class EasingTile : public QAbstractButton
     void leaveEvent(QEvent* event) override;
 
   private:
+    QFont nameFont() const;
+    int nameHeight() const;
+
     Easing::Preset m_preset;
     double m_phase=0;
 };
@@ -140,6 +144,14 @@ class EasingTiles : public QWidget
     // Length of one run of the figure, with the pause at the end, in ms.
     static int cycleMs() { return 2400; }
 
+    // The tiles on one line (false, the first layout) or in two lines when
+    // they do not fit (docs/UX_DECISIONS.md, 6c), and the smallest width of
+    // the row either way, whichever it shows now.
+    void setWrapped(bool wrapped);
+    bool isWrapped() const;
+    int oneLineWidth() const;
+    int wrappedWidth() const;
+
   signals:
     // The user clicked a tile (not emitted when the window sets the choice).
     void choiceClicked(Easing::Preset preset);
@@ -160,10 +172,12 @@ class EasingTiles : public QWidget
   private:
     void refreshHint();
     void updateAnimation();
+    int widthWith(int rowWidth) const;
 
     EasingTile* m_tiles[Easing::PresetCount];
     QButtonGroup* m_group;
     QPushButton* m_customButton;
+    QBoxLayout* m_rows=nullptr;
     QLabel* m_hint;
     QTimer* m_timer;
     bool m_hasChoice=false;

@@ -7,12 +7,14 @@
  */
 #include "uirender.h"
 
+#include <QAbstractScrollArea>
 #include <QApplication>
 #include <QCursor>
 #include <QDir>
 #include <QFont>
 #include <QtTest>
 
+#include "textsize.h"
 #include "theme.h"
 
 QString UiRender::Variant::name() const
@@ -22,24 +24,21 @@ QString UiRender::Variant::name() const
 
 QList<UiRender::Variant> UiRender::variants()
 {
-  return {{true, 100}, {true, 200}, {false, 100}, {false, 200}};
+  return {{true, 100}, {true, 150}, {true, 200}, {false, 100}, {false, 150}, {false, 200}};
 }
 
-UiRender::Scope::Scope(const Variant& variant) : m_wasDark(Theme::isDark()), m_font(QApplication::font())
+UiRender::Scope::Scope(const Variant& variant) : m_wasDark(Theme::isDark()), m_percent(TextSize::percent())
 {
   Theme::apply(variant.dark);
-  QFont font = m_font;
-  if (m_font.pointSizeF() > 0)
-    font.setPointSizeF(m_font.pointSizeF() * variant.percent / 100.0);
-  else if (m_font.pixelSize() > 0)
-    font.setPixelSize(m_font.pixelSize() * variant.percent / 100);
-  QApplication::setFont(font);
+  // the program's own text size (src/textsize.h): the application font and
+  // the sizes written as numbers, as in the program
+  TextSize::apply(variant.percent);
   QCoreApplication::processEvents();
 }
 
 UiRender::Scope::~Scope()
 {
-  QApplication::setFont(m_font);
+  TextSize::apply(m_percent);
   Theme::apply(m_wasDark);
   QCoreApplication::processEvents();
 }
@@ -104,6 +103,10 @@ QStringList UiRender::clipping(QWidget* root)
   {
     if (!child->isVisibleTo(root))
       continue;
+    // the inner parts of Qt's own widgets (the text field of a spin box, the
+    // viewport of a scroll area): their widget is checked instead
+    if (child->objectName().startsWith(QLatin1String("qt_")))
+      continue;
     const QString label = QStringLiteral("%1 '%2'").arg(QString::fromLatin1(child->metaObject()->className()),
                                                       child->objectName());
     // only widgets that hold no widgets of their own: a layout may squeeze
@@ -116,7 +119,21 @@ QStringList UiRender::clipping(QWidget* root)
                         .arg(label).arg(child->width()).arg(child->height()).arg(hint.width()).arg(hint.height());
     }
     QWidget* parent = child->parentWidget();
-    if (parent && !parent->rect().contains(child->geometry()))
+    // the contents of a scroll area may be taller or wider than it: that is
+    // what it scrolls; only a side that cannot be scrolled clips them
+    const QAbstractScrollArea* scroll =
+        parent ? qobject_cast<const QAbstractScrollArea*>(parent->parentWidget()) : nullptr;
+    if (scroll && scroll->viewport() == parent)
+    {
+      const QRect g = child->geometry();
+      if (scroll->horizontalScrollBarPolicy() == Qt::ScrollBarAlwaysOff && (g.left() < 0 || g.right() > parent->width() - 1))
+        problems << QStringLiteral("%1 is wider than its scroll area, which does not scroll sideways (%2 in %3)")
+                        .arg(label).arg(g.width()).arg(parent->width());
+      if (scroll->verticalScrollBarPolicy() == Qt::ScrollBarAlwaysOff && (g.top() < 0 || g.bottom() > parent->height() - 1))
+        problems << QStringLiteral("%1 is taller than its scroll area, which does not scroll up and down (%2 in %3)")
+                        .arg(label).arg(g.height()).arg(parent->height());
+    }
+    else if (parent && !parent->rect().contains(child->geometry()))
       problems << QStringLiteral("%1 sticks out of its parent").arg(label);
   }
   return problems;

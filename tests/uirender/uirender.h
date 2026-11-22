@@ -3,8 +3,8 @@
  *
  * A widget drawn with Qt's offscreen platform comes out in Qt's plain light
  * style unless the program's own theme is applied first. This helper applies
- * the theme (src/theme.*, Theme::apply, dark and light) and a text size
- * (100 or 200 percent of the application font, in the helper only), draws the
+ * the theme (src/theme.*, Theme::apply, dark and light) and the program's
+ * text size (src/textsize.*, TextSize::apply: 100, 150 or 200 percent), draws the
  * widget, checks token colours at known points and checks that nothing is
  * clipped, and saves the pictures to the folder in the environment variable
  * PINGLYMOTION_UI_OUT (nothing is saved when it is not set).
@@ -25,7 +25,8 @@
  *   }
  *
  * Tests only: nothing in the program uses this file. Link tests/uirender/
- * uirender.cpp and src/theme.cpp into the test program.
+ * uirender.cpp and src/theme.cpp into the test program, and pinglymotion_core
+ * (src/textsize.cpp).
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -48,17 +49,17 @@ namespace UiRender
   struct Variant
   {
     bool dark;
-    int percent; // text size, 100 or 200
+    int percent; // text size, 100, 150 or 200
 
     // for file names and messages, for example "dark_200"
     QString name() const;
   };
 
-  // dark and light, each at 100 and 200 percent
+  // dark and light, each at 100, 150 and 200 percent
   QList<Variant> variants();
 
   // applies the theme and the text size for as long as it lives, then puts
-  // the old theme and the old application font back. Make the widgets after it.
+  // the old theme and the old text size back. Make the widgets after it.
   class Scope
   {
     public:
@@ -69,7 +70,7 @@ namespace UiRender
 
     private:
       bool m_wasDark;
-      QFont m_font;
+      int m_percent;
   };
 
   // shows the widget at its own size hint (at least its minimum size hint),

@@ -28,8 +28,10 @@
 
 #include <algorithm>
 
+#include "easingtiles.h"
 #include "panellayout.h"
 #include "paneltitlebar.h"
+#include "timelineview.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
 #include "wheelguard.h"
@@ -45,6 +47,7 @@ public:
   QScrollArea* jointsScroll=nullptr;
   QScrollArea* jointCardScroll=nullptr;
   TransportBar* transport=nullptr;
+  TimelineView* timelineView=nullptr;
   // the loop points, frame and speed row of the timeline panel
   QBoxLayout* rangeRow=nullptr;
 
@@ -60,8 +63,11 @@ public:
     timelineLayout->setContentsMargins(4,4,4,4);
     // the old layout kept the timeline at a fixed height; in a panel it grows
     ui->timelineView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    ui->timelineView->setMinimumSize(200,100);
+    // at least 200 wide; as high as its tracks, easing tiles and hint need at
+    // the current text size (a fixed height squeezed the tiles at large text)
+    ui->timelineView->setMinimumWidth(200);
     timelineLayout->addWidget(ui->timelineView,1);
+    timelineView=ui->timelineView;
     QHBoxLayout* playLayout=new QHBoxLayout;
     playLayout->addWidget(ui->currentFrameSlider,1);
     playLayout->addWidget(ui->keyframeButton);
@@ -200,7 +206,15 @@ public:
       if (item->isEmpty()) continue;
       int one=item->minimumSize().width();
       int two=one;
-      if (item->layout()==rangeRow)
+      if (item->widget()==timelineView)
+      {
+        // the tracks take any width; the easing tile row under them does not
+        const QMargins m=timelineView->layout()->contentsMargins();
+        const int least=timelineView->minimumWidth();
+        one=std::max(least,timelineView->easingTiles()->oneLineWidth()+m.left()+m.right());
+        two=std::max(least,timelineView->easingTiles()->wrappedWidth()+m.left()+m.right());
+      }
+      else if (item->layout()==rangeRow)
       {
         one=WrapRow::oneLineWidth(rangeRow);
         two=WrapRow::wrappedWidth(rangeRow);
@@ -228,6 +242,7 @@ public:
   // The timeline panel's rows on one line, or broken into shorter lines.
   void setTimelineWrapped(bool wrapped) const
   {
+    timelineView->easingTiles()->setWrapped(wrapped);
     transport->setWrapped(wrapped);
     WrapRow::setWrapped(rangeRow,wrapped);
     fitTimeline();
