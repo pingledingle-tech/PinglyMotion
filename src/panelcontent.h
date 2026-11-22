@@ -19,6 +19,7 @@
 #include <QDockWidget>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QMainWindow>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -50,6 +51,9 @@ public:
   TimelineView* timelineView=nullptr;
   // the loop points, frame and speed row of the timeline panel
   QBoxLayout* rangeRow=nullptr;
+  // the "(10%)" labels after the loop points
+  QLabel* loopInPercent=nullptr;
+  QLabel* loopOutPercent=nullptr;
 
   // Moves the panel widgets of the designer file into three docks of
   // `window` and puts the 3D view in the middle. The docks are not placed
@@ -103,6 +107,8 @@ public:
     framePart->addWidget(ui->fpsLabel);
     framePart->addWidget(ui->fpsSpin);
     rangeRow=WrapRow::make({loopPart,framePart});
+    loopInPercent=ui->loopInPercentLabel;
+    loopOutPercent=ui->loopOutPercentLabel;
     timelineLayout->addLayout(rangeRow);
 
     timelineDock=new QDockWidget(text(QT_TRANSLATE_NOOP("PinglyMotionWindow","Timeline")),window);
@@ -269,8 +275,33 @@ private:
     return QCoreApplication::translate("PinglyMotionWindow",source);
   }
 
+  // The designer file gives the percent labels a fixed least width of 60
+  // pixels, which the layout trusts over the text: at large text it squeezed
+  // them below their text. Their least width is the widest text they show,
+  // "(100%)", in their font now.
+  // Answers whether the width changed.
+  static bool fitPercentLabel(QLabel* label)
+  {
+    const QMargins m=label->contentsMargins();
+    const int text=label->fontMetrics().horizontalAdvance(QStringLiteral("(100%)"))
+                   +m.left()+m.right()+2*label->margin()+2*label->frameWidth();
+    const int width=std::max(text,label->sizeHint().width());
+    if (label->minimumWidth()==width) return false;
+    label->setMinimumWidth(width);
+    return true;
+  }
+
   void fitTimeline() const
   {
+    const bool inChanged=fitPercentLabel(loopInPercent);
+    const bool outChanged=fitPercentLabel(loopOutPercent);
+    if (inChanged || outChanged)
+    {
+      // the layouts keep their old least sizes until the next layout pass;
+      // the widths below are measured now
+      for (QLayout* layout : timelineScroll->widget()->findChildren<QLayout*>())
+        layout->invalidate();
+    }
     int oneLine=0;
     int wrapped=0;
     timelineWidths(oneLine,wrapped);
