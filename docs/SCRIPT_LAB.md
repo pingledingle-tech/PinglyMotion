@@ -191,6 +191,30 @@ an RLV relay, a store), and they talk to each other.
   [CONTROL.md](CONTROL.md), "Pure functions and object state". New `lsl_run` fields: `description`, `scale`, `start_parameter`.
 - Tests: `tests/tst_lslpure.cpp`, exact answers computed outside the program.
 - Limits are unchanged: 256 KB of variables per script in the sandbox (Second Life: 64 KB).
+## Input buttons (issue 308)
+
+The **Send input** part at the bottom of the Live page (the page scrolls when the panel is small) sends one simulated
+input to the world of the last `lsl_run` and runs that world on for one simulated second. It calls the same code as the
+control command `lsl_event`, so the log lines are exactly the ones `lsl_event` answers; there is no new control command.
+The Live folder watch keeps no world between runs, so the buttons work on a world made by `lsl_run` (an AI assistant, or
+a script run through the control commands), the one the Objects part shows.
+
+- **To object** (the objects of the world) and **Touch**: sends a touch to that object.
+- **Channel**, **Name** and **Text** with **Say** (or Enter in Text): the avatar says the line on the channel. Name empty
+  means the owner's avatar. Every object within range hears it; the object chosen above is not used for chat.
+- **Dialog from ...**: the newest dialog, with one button for each of its buttons. A button answers it, as the avatar
+  says the button text on the dialog's channel.
+- A line under the part says in words why the buttons are off (no script has run; every script has stopped; Say needs
+  text) and the greyed buttons carry the same reason as a tooltip. After an input, **Sent: ...** (success colour) or
+  **Error: ...** (danger colour) says what happened, and the log under it lists the input and every event it caused. The
+  panel's restrictions, objects and dialog follow the new state at once.
+- Tab visits every control in screen order; Space presses a button and Enter in Text says the line.
+- Test: `tests/scriptlabpanel/tst_scriptlabinput.cpp` (disabled reasons, the exact log lines of a touch, a chat line and a
+  dialog answer with the HUD and cuffs example, refused input, a stopped world, keyboard use, the dark theme).
+- With an AI assistant: the world is shared. The owner can press Touch or a dialog button in the world the assistant just
+  made, and the assistant's next `lsl_event` and `rlv_state` continue from there, so the owner can show a case by hand
+  and the assistant reads what changed (restrictions, dialog, time). The log lines have the same shape as `lsl_event`'s,
+  so an expected answer can be written once and checked in both places.
 
 ## How an AI assistant uses it
 
@@ -232,7 +256,7 @@ A script-driven HUD is developed in two parts that the sandbox treats differentl
 2. **HUD and the thing it controls together.** For a HUD that talks to cuffs or a collar on a channel, send both scripts in one `lsl_run` with `objects` (the HUD as worn, the other object rezzed). Then `lsl_event` sends a touch or a dialog button to that world and runs it on, and `rlv_state` or the panel's Objects part shows who holds which restriction. Example: `examples/scriptlab/hud_cuffs_hud.lsl` with `hud_cuffs_cuffs.lsl`. The folder watch runs each `.lsl` file on its own, so it does not do this part.
 3. **A HUD of several scripts.** When the HUD itself has several scripts (for example a menu script and a main script that talk with `llMessageLinked`, or settings kept in Linkset Data), give that object `scripts` instead of `source` in `lsl_run` (step 9a, above); each log line names the script.
 
-What it checks: that the buttons (touch, dialog buttons, chat on a channel) cause the right messages and RLV commands. What it does not do: show how the HUD looks (textures, layout, buttons on screen are not previewed), or reproduce Second Life exactly. The texture is uploaded in Second Life by the project owner, and the final test is in Second Life. The panel has no buttons for sending a touch or chat yet; inputs go through `inputs`, `lsl_run` and `lsl_event` (an idea in "Script Lab: later", [ROADMAP.md](ROADMAP.md)).
+What it checks: that the buttons (touch, dialog buttons, chat on a channel) cause the right messages and RLV commands. What it does not do: show how the HUD looks (textures, layout, buttons on screen are not previewed), or reproduce Second Life exactly. The texture is uploaded in Second Life by the project owner, and the final test is in Second Life. The Live page has buttons for sending a touch, a chat line and a dialog answer (below, "Input buttons"); the same inputs also go through `inputs`, `lsl_run` and `lsl_event`.
 
 ## RLV and RLVa mode (step 9, issue 297)
 

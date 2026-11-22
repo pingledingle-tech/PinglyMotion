@@ -29,6 +29,9 @@
 
 
 class QCheckBox;
+class QComboBox;
+class QGridLayout;
+class QSpinBox;
 class QDockWidget;
 class ScriptLabObjectsView;
 namespace lsl { class Session; }
@@ -40,6 +43,7 @@ class QListWidget;
 class QPushButton;
 class QTabWidget;
 class QTreeWidget;
+class QVBoxLayout;
 
 class ScriptLabPanel : public QWidget
 {
@@ -84,6 +88,16 @@ class ScriptLabPanel : public QWidget
     EffectsPreview* effects() const { return m_effects; }
     QCheckBox* effectsBox() const { return m_effectsBox; }
     QLabel* effectsStatus() const { return m_effectsStatus; }
+    // --- Input buttons (issue 308): send a simulated touch, a chat line or a dialog answer to the world of
+    // the last lsl_run (the one the Objects part shows), as the control command lsl_event does (same code).
+    // Each returns false when nothing was sent (no world, every script stopped, empty chat text, unknown
+    // object, no dialog); the reason is in inputResult() and, for the buttons, in inputHint().
+    // object: the object's name; empty means the first. The world runs on one simulated second.
+    bool sendTouch(const QString& object);
+    // name empty: the owner's avatar says it; every object within range hears it (open chat range)
+    bool sendChat(int channel, const QString& name, const QString& text);
+    // answers the newest dialog with the button of that text
+    bool answerDialog(const QString& button);
     // the text of a run's event log entry, as the Live page shows it
     static QString logLine(const QJsonObject& entry);
 
@@ -118,6 +132,17 @@ class ScriptLabPanel : public QWidget
     QPlainTextEdit* scriptView() const { return m_scriptView; }
     QListWidget* problemList() const { return m_problems; }
     QPlainTextEdit* runLog() const { return m_runLog; }
+    QComboBox* inputObject() const { return m_inputObject; }
+    QPushButton* touchButton() const { return m_touch; }
+    QSpinBox* chatChannel() const { return m_chatChannel; }
+    QLineEdit* chatName() const { return m_chatName; }
+    QLineEdit* chatText() const { return m_chatText; }
+    QPushButton* sayButton() const { return m_say; }
+    QLabel* inputHint() const { return m_inputHint; }
+    QLabel* inputResult() const { return m_inputResult; }
+    QLabel* inputDialog() const { return m_inputDialog; }
+    QList<QPushButton*> dialogButtons() const;
+    QPlainTextEdit* inputLog() const { return m_inputLog; }
 
   public slots:
     // reads the state again (connected to RlvState::changed)
@@ -126,6 +151,9 @@ class ScriptLabPanel : public QWidget
     void refreshLive();
     // shows the effects preview's lines under the box (connected to EffectsPreview::changed)
     void refreshEffects();
+    // reads the world again: which buttons work and why not, the objects, the newest dialog
+    // (connected to lsl::Session::changed)
+    void refreshInput();
 
   protected:
     void changeEvent(QEvent* event) override;
@@ -139,6 +167,10 @@ class ScriptLabPanel : public QWidget
     void openInEditor();
     void showProblem(int index);
     void setLiveStatus(const QString& text, int tone);   // tone: 0 muted, 1 success, 2 danger
+    void buildInputSection(QWidget* page, QVBoxLayout* layout);
+    bool sendInput(QJsonObject request, const QString& what);
+    QString inputBlocker() const;      // why nothing can be sent now; empty when it can
+    void setInputResult(const QString& text, int tone);
 
     QPointer<RlvState> m_state;
     QLineEdit* m_object;
@@ -178,6 +210,21 @@ class ScriptLabPanel : public QWidget
     QList<QMetaObject::Connection> m_effectsConnections;
     QList<QMetaObject::Connection> m_effectsWatcherConnections;
     QPointer<lsl::Session> m_session;
+    QMetaObject::Connection m_inputConnection;
+    QComboBox* m_inputObject = nullptr;
+    QPushButton* m_touch = nullptr;
+    QSpinBox* m_chatChannel = nullptr;
+    QLineEdit* m_chatName = nullptr;
+    QLineEdit* m_chatText = nullptr;
+    QPushButton* m_say = nullptr;
+    QLabel* m_inputHint = nullptr;
+    QLabel* m_inputResult = nullptr;
+    QLabel* m_inputDialog = nullptr;
+    QWidget* m_dialogButtonBox = nullptr;
+    QGridLayout* m_dialogGrid = nullptr;
+    QPlainTextEdit* m_inputLog = nullptr;
+    QString m_shownDialogKey;          // the dialog the buttons were made for
+    int m_inputTone = 0;
     bool m_effectsFromSession = false;   // the newest run came from lsl_run or lsl_event, not Live
 };
 
