@@ -195,5 +195,26 @@ class ListDriftTests(unittest.TestCase):
         ]))
 
 
+class ArchiveTests(unittest.TestCase):
+    def named(self, branch, pr, status="done"):
+        j = done_job(branch, pr, status)
+        j.source = "local " + work.job_file_name(branch)
+        return j
+
+    def test_archive_plan(self):
+        jobs = [self.named("a/merged", "#1"), self.named("a/open", "#2"), self.named("a/closed", "#3"),
+                self.named("a/pending", "pending"), self.named("a/unknown", "#99"),
+                self.named("a/active", "#1", "active"), self.named("a/empty", "")]
+        moves, skipped = work.archive_plan(jobs, {1: "merged", 2: "open", 3: "closed"})
+        self.assertEqual(moves, ["a-merged.md"])
+        self.assertEqual(dict(skipped), {
+            "a-open.md": "pull request 2 is open",
+            "a-closed.md": "pull request 3 is closed",
+            "a-pending.md": "no pull request number (pending)",
+            "a-unknown.md": "pull request 99 not found on GitHub",
+            "a-empty.md": "no pull request number (empty)",
+        })
+
+
 if __name__ == "__main__":
     unittest.main()

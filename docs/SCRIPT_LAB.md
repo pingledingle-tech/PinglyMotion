@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 147 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 157 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -232,6 +232,14 @@ a script run through the control commands), the one the Objects part shows.
 - Nothing is drawn or played and the 3D view is not touched. Details and the places where the sandbox simplifies: [CONTROL.md](CONTROL.md), "Prim state, L$ and recorded-only functions".
 - Tests: `tests/tst_lslprims.cpp`. Limits unchanged (256 KB of variables per script; Second Life gives 64 KB).
 
+## What exists now (step 9b-4): inventory, notecards and rezzing
+
+- Objects get a simulated inventory from the `lsl_run` input (`inventory`: items with name, type, key and, for a notecard, lines); the object's scripts are in it too. Nothing is read from disk.
+- `llGetInventoryNumber`, `llGetInventoryName` (sorted by name), `llGetInventoryType`, `llGetInventoryKey`, `llGiveInventory` (to the avatar, or into another object of the world), `llRemoveInventory`,
+  `llGetNotecardLine`, `llGetNumberOfNotecardLines`, `llRezObject` and `llRezAtRoot` run; the events `dataserver` and `object_rez` are raised, and giving or removing an item raises `changed` with `CHANGED_INVENTORY`.
+- A rezzed object is only a key and a log entry: it does not run. Nothing is drawn and the 3D view is not touched. Details: [CONTROL.md](CONTROL.md), "Inventory, notecards and rezzing".
+- Tests: `tests/tst_lslinventory.cpp`. Limits unchanged; an item list holds at most 224 items, a notecard 2000 lines and 65536 characters.
+
 ## Camera limits in the 3D view (job 7b)
 
 The camera restrictions a script holds can limit the main 3D view's camera, only while the Commands page's **Show
@@ -312,6 +320,32 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
   before (checked pixel by pixel in the self-test).
 - Code: `src/scriptlab/environmentoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
   `src/animationview.cpp` (`draw()`). Tests: `tests/tst_environmentoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
+
+## View modes in the 3D view (job 7c)
+
+With the Commands page's **Show view modes in 3D view** box ticked (under the environment box; off each time the
+program starts), the view restrictions a script holds change the 3D view where that takes little drawing work:
+
+- `showself` (RLVa only): your own avatar is hidden: the figure, its shadow and the Script Lab markers are not drawn
+  (and cannot be clicked).
+- `setcam_textures` / `camtextures` (option: a texture UUID): the floor's checkerboard, the only texture-like pattern
+  in the view, is drawn in one plain colour (the middle of its two tile colours, red while the first frame is
+  protected); the figure has no textures. A texture cannot be loaded here; its UUID is named.
+- `setoverlay` with `setoverlay_texture`, `setoverlay_alpha` and `setoverlay_tint` (held, or sent as `=force`; a held
+  value wins; defaults tint 1/1/1 and alpha 1): the picture cannot be loaded here, so the whole 3D view is covered by
+  the tint at the alpha. Without `setoverlay_texture` nothing is shown (as an overlay without a picture), and the text
+  says so; `setoverlay_tween` is named (the overlay changes at once).
+- Named as not shown: `showselfhead` (the figure's head cannot be hidden on its own), `viewwireframe` and
+  `viewtransparent` (they block switching to a wireframe view or a transparent-object highlight, which the 3D view
+  does not have, so blocking them changes nothing).
+- The text under the box says what is changed, which objects hold it and what is not shown; with the box off it says
+  what the script changes and that ticking the box shows it.
+- Nothing is changed for good: the view asks for the modes for every picture, so unticking the box, `@clear`, Reset
+  or a mode switch gives exactly the picture from before (checked pixel by pixel in the self-test). The control
+  command `screenshot` shows the same picture as the window.
+- Code: `src/scriptlab/viewmodesoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
+  `src/animationview.cpp` (`drawAnimations()`, the floor hook, `drawOverlay()`). Tests:
+  `tests/tst_viewmodesoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
 
 ## How an AI assistant uses it
 
@@ -444,7 +478,8 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
   the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view") and the sky and
-  draw distance hint of the "Show environment in 3D view" box (above, "Environment in the 3D view"). A force command of that kind is `retained`
+  draw distance hint of the "Show environment in 3D view" box (above, "Environment in the 3D view") and the view
+  modes of the "Show view modes in 3D view" box (above, "View modes in the 3D view"). A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`; a new or changed value is a change of the state (the panel
   and the 3D view follow it), and the object's `@clear` forgets its recorded values.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
@@ -457,7 +492,7 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-  `link_message`, `linkset_data`, `on_rez` and `changed`, and 147 built-in functions; hard limits on
+  `link_message`, `linkset_data`, `on_rez` and `changed`, and 157 built-in functions; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

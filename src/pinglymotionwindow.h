@@ -194,6 +194,9 @@ class PinglyMotionWindow : public QMainWindow
   protected:
     // prevent closing of main window if there are unsaved changes
     virtual void closeEvent(QCloseEvent* event);
+    // left / right arrow keys: one frame back / forward, when the key is not
+    // used by a field, list or slider that has the keyboard focus
+    void keyPressEvent(QKeyEvent* event) override;
 
     void fileNew();
     void fileOpen();
@@ -261,6 +264,9 @@ class PinglyMotionWindow : public QMainWindow
     void startPlaying();
     void stopPlaying();
     void replayFromStart();
+    // Frame back (-1) / Frame forward (+1): stops playing and goes one frame,
+    // never past the first or the last frame (Playback::stepFrame)
+    void stepFrame(int delta);
     void beginPlaying(Animation* anim);
     void setDefaultLoopIn(Animation* anim);
     void connectAnimation(Animation* anim);

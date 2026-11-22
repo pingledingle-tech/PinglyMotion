@@ -73,6 +73,16 @@ for i in "${!prs[@]}"; do
   echo "merged pull request $n at $sha"
 done
 if [ "$push" = 1 ]; then
-  git -c push.negotiate=true push -f origin test/combined || exit 1
+  # --force-with-lease, never -f (CLAUDE.md). The branch was just rebuilt from main, so the local
+  # test/combined has nothing in common with the remote one. Lease against the remote commit that
+  # we fetch right now: if someone pushed in between, the push is refused.
+  git fetch -q origin test/combined 2>/dev/null || true
+  lease="$(git rev-parse --verify -q refs/remotes/origin/test/combined || true)"
+  if [ -n "$lease" ]; then
+    git -c push.negotiate=true push --force-with-lease="test/combined:$lease" origin test/combined || exit 1
+  else
+    # the remote branch does not exist yet: an empty expected value means "must not exist"
+    git -c push.negotiate=true push --force-with-lease="test/combined:" origin test/combined || exit 1
+  fi
   echo "pushed. Start the build: gh api -X POST repos/$repo/actions/workflows/build.yml/dispatches -f ref=test/combined"
 fi

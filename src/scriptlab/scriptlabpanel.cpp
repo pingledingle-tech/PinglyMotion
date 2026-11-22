@@ -351,6 +351,25 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
     refreshEnvironment();
   });
 
+  // --- view modes in the 3D view (job 7c), off at start
+  m_viewModesBox = new QCheckBox(tr("Show view modes in 3D view"), commandsPage);
+  m_viewModesBox->setObjectName("scriptLabShowViewModes");
+  m_viewModesBox->setChecked(false);
+  m_viewModesBox->setToolTip(tr("Let the view restrictions the script holds (your own avatar hidden, textures replaced, an overlay) "
+                                "change the 3D view. Untick to get the 3D view's own look back exactly as it was."));
+  layout->addWidget(m_viewModesBox);
+  m_viewModesStatus = new QLabel(commandsPage);
+  m_viewModesStatus->setObjectName("scriptLabViewModesStatus");
+  m_viewModesStatus->setWordWrap(true);
+  m_viewModesStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_viewModesStatus->hide();
+  layout->addWidget(m_viewModesStatus);
+  connect(m_viewModesBox, &QCheckBox::toggled, this, [this](bool on)
+  {
+    if (m_viewModes) m_viewModes->setEnabled(on);
+    refreshViewModes();
+  });
+
   // --- replies and messages
   layout->addSpacing(SpacingL - SpacingS);
   layout->addWidget(sectionLabel(tr("Replies and messages"), this));
@@ -388,7 +407,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_restrictions, m_actions);
   setTabOrder(m_actions, m_cameraBox);
   setTabOrder(m_cameraBox, m_environmentBox);
-  setTabOrder(m_environmentBox, m_log);
+  setTabOrder(m_environmentBox, m_viewModesBox);
+  setTabOrder(m_viewModesBox, m_log);
   setTabOrder(m_log, m_objectsView->list());
 
   applyStyle();
@@ -473,6 +493,7 @@ void ScriptLabPanel::changeEvent(QEvent* event)
     refreshInput();
     refreshCamera();
     refreshEnvironment();
+    refreshViewModes();
   }
 }
 
@@ -1081,6 +1102,32 @@ void ScriptLabPanel::refreshEnvironment()
   QPalette p = m_environmentStatus->palette();
   p.setColor(QPalette::WindowText, mutedColour(isDark(palette())));
   m_environmentStatus->setPalette(p);
+}
+
+// --- Job 7c: view modes in the 3D view
+
+void ScriptLabPanel::setViewModesOverride(ViewModesOverride* viewModesOverride)
+{
+  if (m_viewModesConnection) disconnect(m_viewModesConnection);
+  m_viewModes = viewModesOverride;
+  if (viewModesOverride)
+  {
+    viewModesOverride->setEnabled(m_viewModesBox->isChecked());
+    m_viewModesConnection = connect(viewModesOverride, &ViewModesOverride::changed, this, &ScriptLabPanel::refreshViewModes);
+  }
+  refreshViewModes();
+}
+
+void ScriptLabPanel::refreshViewModes()
+{
+  if (!m_viewModesStatus) return;
+  const QStringList lines = m_viewModes ? m_viewModes->lines() : QStringList();
+  m_viewModesStatus->setText(lines.join(QLatin1Char('\n')));
+  m_viewModesStatus->setVisible(!lines.isEmpty());
+  // muted text; the words say everything, no colour carries meaning here (P10)
+  QPalette p = m_viewModesStatus->palette();
+  p.setColor(QPalette::WindowText, mutedColour(isDark(palette())));
+  m_viewModesStatus->setPalette(p);
 }
 
 // --- Input buttons (issue 308): touch, chat and dialog answers for the world of the last run

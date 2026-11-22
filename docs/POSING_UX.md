@@ -69,7 +69,7 @@ One scheme for everyone. The first column is all a new user needs; the other two
 | Undo / redo | Ctrl + Z / Ctrl + Shift + Z | Same | Same |
 | Set a key | Set key button, or K | I | – |
 | Play / stop | Space | Space | – |
-| Previous / next frame | ← / → | Same | – |
+| Previous / next frame | ← / →, or the Frame back / Frame forward buttons (stop at the first and last frame) | Same | – |
 
 Orbiting turns the camera between 80 degrees above and 80 degrees below the floor, so the figure can also be seen from below. It stops just before straight up or straight down, so the view never flips.
 
@@ -95,7 +95,7 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 
 **Done: Panels, jobs P1 to P6** (old step 3; `src/panellayout.h`, `src/panelwindow.h`, `src/pinglymotionwindow.*`, `src/paneltitlebar.*`):
 
-- Three panels around the 3D view: **Joints** (left: Avatar / Props switch, joint tabs, search and list, or the prop list), **Selected joint** (right: the rotation and position boxes of the joint, or the prop position, scale and rotation boxes) and **Timeline** (bottom: tracks, the Start, Stop and Replay from start buttons with the Loop switch, key, loop in / out, frame count and FPS). They are Qt dock widgets, not overlays (the choice is explained in [PANELS_PLAN.md](archive/PANELS_PLAN.md)); each goes only where its shape fits, panels on one side can be tabbed together, and each can float as its own window.
+- Three panels around the 3D view: **Joints** (left: Avatar / Props switch, joint tabs, search and list, or the prop list), **Selected joint** (right: the rotation and position boxes of the joint, or the prop position, scale and rotation boxes) and **Timeline** (bottom: tracks, the Start, Stop, Replay from start, Frame back and Frame forward buttons with the Loop switch, key, loop in / out, frame count and FPS). They are Qt dock widgets, not overlays (the choice is explained in [PANELS_PLAN.md](archive/PANELS_PLAN.md)); each goes only where its shape fits, panels on one side can be tabbed together, and each can float as its own window.
 - The **View** menu: Joints, Selected joint, Timeline (ticks), Reset layout. The old Options items for the panels are gone.
 - The layout is saved as `panel_layout` with `panel_layout_version`; a layout of another version (for example the old `window_state` with the Properties panel) is not loaded. The window's place, size, maximised state and screen are saved as `main_window_geometry` (Qt's `saveGeometry`); the old width and height are read once and never written again. A floating panel whose saved place is on no screen is pulled back. **View > Reset layout** applies a default built in code (`src/panelwindow.h`).
 - **Tab** hides all open panels (docked and floating) and Tab again shows the same ones; also **View > Hide panels** (Tab shown as its shortcut). Tab is taken only while the 3D view has the keys, so it still moves between fields in the panels and in the search box. The hidden state is not saved: the program starts with the panels shown.

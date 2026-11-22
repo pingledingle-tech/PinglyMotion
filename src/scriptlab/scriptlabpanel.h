@@ -25,6 +25,7 @@
 
 #include "cameraoverride.h"
 #include "environmentoverride.h"
+#include "viewmodesoverride.h"
 #include "effectspreview.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
@@ -100,6 +101,10 @@ class ScriptLabPanel : public QWidget
     void setEnvironmentOverride(EnvironmentOverride* environmentOverride);
     QCheckBox* environmentBox() const { return m_environmentBox; }
     QLabel* environmentStatus() const { return m_environmentStatus; }
+    // the view modes shown in the 3D view (job 7c), off at start
+    void setViewModesOverride(ViewModesOverride* viewModesOverride);
+    QCheckBox* viewModesBox() const { return m_viewModesBox; }
+    QLabel* viewModesStatus() const { return m_viewModesStatus; }
     // --- Input buttons (issue 308): send a simulated touch, a chat line or a dialog answer to the world of
     // the last lsl_run (the one the Objects part shows), as the control command lsl_event does (same code).
     // Each returns false when nothing was sent (no world, every script stopped, empty chat text, unknown
@@ -170,6 +175,8 @@ class ScriptLabPanel : public QWidget
     void refreshCamera();
     // shows the environment override's lines under its box (connected to EnvironmentOverride::changed)
     void refreshEnvironment();
+    // shows the view modes override's lines under its box (connected to ViewModesOverride::changed)
+    void refreshViewModes();
 
   protected:
     void changeEvent(QEvent* event) override;
@@ -250,6 +257,10 @@ class ScriptLabPanel : public QWidget
     QMetaObject::Connection m_environmentConnection;
     QCheckBox* m_environmentBox = nullptr;
     QLabel* m_environmentStatus = nullptr;
+    QPointer<ViewModesOverride> m_viewModes;
+    QMetaObject::Connection m_viewModesConnection;
+    QCheckBox* m_viewModesBox = nullptr;
+    QLabel* m_viewModesStatus = nullptr;
 };
 
 #endif
