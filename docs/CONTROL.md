@@ -50,6 +50,10 @@ Authorization: Bearer <token>
 Limits: the request line and headers together at most 16 KB and the body at most 64 KB (larger
 requests get `413`); at most 8 connections at a time (more get `503`); a connection must send its whole request
 header within 2 seconds, otherwise it is closed, and the rest of the request within 15 seconds (issue 249).
+After an answer (any status) the server ends its side of the connection, reads and drops whatever the client still
+sends, and closes when the client closes, at most 2 seconds later. So an answer is never lost: closing at once with
+unread request bytes would send a TCP reset, and on Windows a reset throws away an answer the client has already
+received (a refused client then saw no `503` at all).
 
 `GET /api/commands` lists every command with its parameters. Answers are JSON with `"ok": true`,
 or `"ok": false` and an `"error"` that says what to do.
@@ -388,7 +392,8 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `sensor` | a scan ran (`llSensor` or a repeat), and the `sensor` or `no_sensor` event follows | `found` (how many), `names` |
 | `controls` | `llTakeControls` took controls or `llReleaseControls` gave them back (step 9b-6) | `op` (`take`, `release`), `avatar`, and for `take` `controls`, `accept`, `pass_on` |
 | `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
-| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
+| `animation_override` | `llSetAnimationOverride` or `llResetAnimationOverride` succeeded (step 9b-8) | `op` (`set` or `reset`), `state`, `animation` |
+| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, and the 37 stubs of step 9b-8 (see "Recorded only") | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
 
@@ -535,6 +540,8 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   (page "transaction_result"); `INSUFFICIENTFUNDS`, `THROTTLED` and the like never happen here. Each call is a `linden_dollars` log entry.
 - **Recorded only:** `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` do nothing but write a
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
+  Step 9b-8 adds 37 more with the same behaviour: `llTriggerSoundLimited`, `llLoopSoundMaster`, `llLoopSoundSlave`, `llPlaySoundSlave`, `llSoundPreload`, `llAdjustSoundVolume`, `llSetSoundQueueing`, `llSetSoundRadius`, `llCollisionSound`, `llSetTextureAnim`, `llSetLinkTextureAnim`, `llOffsetTexture`, `llScaleTexture`, `llRotateTexture`, `llSetCameraEyeOffset`, `llSetCameraAtOffset`, `llSetCameraParams`, `llClearCameraParams`, `llSetLinkCamera`, `llSetPayPrice`, `llSetClickAction`, `llSetTouchText`, `llPointAt`, `llStopPointAt`, `llLookAt`, `llStopLookAt`, `llMakeExplosion`, `llMakeFountain`, `llMakeSmoke`, `llMakeFire`, `llCollisionFilter`, `llPassTouches`, `llPassCollisions`, `llSetRemoteScriptAccessPin`, `llSetParcelMusicURL`, `llRefreshPrimURL`, `llSetPrimURL`.
+- **Animation overrides (step 9b-8):** `llSetAnimationOverride(state, animation)`, `llResetAnimationOverride(state)` (also `"ALL"`) and `llGetAnimationOverride(state)` need `PERMISSION_OVERRIDE_ANIMATIONS`; without it a debug line says so. An unknown state name gives a debug line. A successful set or reset writes an `animation_override` entry (`op`, `state`, `animation`), and the get answers the stored name, or an empty string.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
 #### Sensors (Script Lab step 9b-7)
@@ -673,7 +680,7 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor` and `no_sensor`; 176 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor` and `no_sensor`; 216 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
 maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list

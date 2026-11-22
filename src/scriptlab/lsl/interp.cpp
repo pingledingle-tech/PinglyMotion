@@ -249,6 +249,7 @@ void Interpreter::resetScript()
   m_permissions = 0;
   m_permissionKey.clear();
   m_playing.clear();
+  m_overrides.clear();
   m_sensorActive = false;
   m_controls = 0;
   m_controlsAccept = m_controlsPassOn = false;

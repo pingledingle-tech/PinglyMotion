@@ -22,6 +22,9 @@ ADD_EXECUTABLE (pinglymotion_control_tests tst_control.cpp
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_control_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_DEFINITIONS (pinglymotion_control_tests PRIVATE PINGLYMOTION_TOOLS="${CMAKE_SOURCE_DIR}/tools")
 TARGET_LINK_LIBRARIES (pinglymotion_control_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+IF (WIN32)
+  TARGET_LINK_LIBRARIES (pinglymotion_control_tests ws2_32)
+ENDIF (WIN32)
 ADD_TEST (NAME control WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_control_tests)
 SET_TESTS_PROPERTIES (control PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -164,7 +167,7 @@ FOREACH (RLV_TEST rlvcommand rlvstate rlva rlvtable)
 ENDFOREACH ()
 
 # Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
-FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv lslworld lsllink lslpure lslevents lslprims lslinventory lslsitting lslcontrols lslsensors)
+FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv lslworld lsllink lslpure lslevents lslprims lslinventory lslsitting lslcontrols lslsensors lslstubs)
   ADD_EXECUTABLE (pinglymotion_${LSL_TEST}_tests tst_${LSL_TEST}.cpp)
   TARGET_INCLUDE_DIRECTORIES (pinglymotion_${LSL_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
   TARGET_COMPILE_DEFINITIONS (pinglymotion_${LSL_TEST}_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
