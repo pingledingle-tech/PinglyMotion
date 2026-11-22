@@ -1,10 +1,12 @@
 Branch: fix/flaky-windows-control-test
-Status: active
+Status: done
 Pull request: #346
 Files:
 - tests/tst_control.cpp
+- tests/CMakeLists.txt
 - src/controlserver.*
-- docs/DEV.md
+- src/CMakeLists.txt
+- docs/CONTROL.md
 
 ## What
 
