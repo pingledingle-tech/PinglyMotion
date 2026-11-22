@@ -113,9 +113,9 @@ What does not work: the control commands cannot click a menu, select a joint in 
 
 ## The combined test build
 
-The project owner tests ONE combined build, branch `test/combined` (all open visible pull requests merged into it, never merged into `main`). After a visible job is ready, its session adds the pull request to the combined branch (merge it in, push, wait for the build) and puts the test on the test page and in the owner test list with the combined build's Windows link. When a test is approved, the pull request is merged on its own as today, and the test moves to the test page's archive (the store's `archive` collection: its steps and results, never deleted); it can be put back for a retest from there (CLAUDE.md, "Test page rules").
+The rules for `test/combined` (what goes in, when it is rebuilt, that it is the only branch that may be force-pushed) are in `CLAUDE.md`, "When you are done", step 5. The commands:
 
-`tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file. `test/combined` is rebuilt after every change to the set of open visible pull requests, and it is pushed with --force-with-lease; this is the only branch that may be force-pushed, and the project owner approved it for every session.
+`tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file.
 
 ## Pictures
 
@@ -123,12 +123,11 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 
 ## Git and GitHub from a session
 
-- Only the job chat starts jobs; before any job read `work.py list`, the open pull requests and the jobs list, and open the job file and draft pull request first (`CLAUDE.md`, "Before you start").
-- `main` is protected. Work on your own branch, open a draft pull request, mark it ready when it is done (`CLAUDE.md`).
+- The rules (who starts jobs, job file and draft pull request first, when to merge) are in `CLAUDE.md`; this list is only the how-to.
 - A shallow clone is fine. Fetch another branch with an explicit refspec: `git fetch --depth=50 origin +refs/heads/X:refs/remotes/origin/X`. Push with `git -c push.negotiate=true push`.
-- If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. Update a branch: `PUT .../pulls/N/update-branch`. Squash merge: `PUT .../pulls/N/merge -f merge_method=squash`.
+- If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. Update a branch (instead of a rebase, so no force-push is needed): `PUT .../pulls/N/update-branch`, then `git pull`. Squash merge: `PUT .../pulls/N/merge -f merge_method=squash`.
 - A check that fails with no log and no steps usually means the Actions account is out of minutes: read the check run annotations (`.../check-runs/<id>/annotations`).
-- After "Update branch" or a rebase, wait for the new checks. A required check that is still "expected" blocks the merge; a skipped one does not.
+- After "Update branch", wait for the new checks. A required check that is still "expected" blocks the merge; a skipped one does not.
 - Some source files have CRLF line endings: edit them without changing the endings (in Python open with `newline=''`).
 
 ## Reference library download (issue 19)
@@ -139,4 +138,4 @@ To pin hashes again (new commit or set), edit `sources` in the manifest and run 
 
 ## Privacy
 
-Never write a person's name, email address or home path anywhere (files, commits, issues, pull requests, comments). Write "the project owner". `tools/setup_clone.sh` installs a hook that runs `tools/check_privacy.py` before every push; the same check runs on every pull request.
+The privacy rules are in `CLAUDE.md`, "Privacy: no personal data anywhere". `tools/setup_clone.sh` installs a hook that runs `tools/check_privacy.py` before every push; the same check runs on every pull request. Run it by hand with `python3 tools/check_privacy.py origin/main HEAD`.
