@@ -1,6 +1,6 @@
 Branch: job/ux-1d-setup-dialog
 Status: active
-Pull request: pending
+Pull request: #379
 Files:
 - src/setupdialog.*
 - src/camerakeysdialog.*
