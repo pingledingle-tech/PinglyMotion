@@ -1,6 +1,6 @@
 Branch: docs/mockup-joint-drag
-Status: active
-Pull request: pending
+Status: done
+Pull request: #335
 Files:
 - docs/mockup/index.html
 - docs/UX_DECISIONS.md
