@@ -47,7 +47,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      # text-only and draft pull requests have nothing to analyse yet.
+      # text-only and draft pull requests have nothing to analyse yet; website-only ones
+      # (issue templates, pages.yml, tools/site/) have no C++ to analyse, so only the
+      # Python and workflow analyses run. The rule is tools/ci/changes.py.
       # The job still runs and passes quickly, so the required "analyze" check is reported.
       # (paths-ignore would skip the whole workflow and leave the required check waiting.)
       - name: Does the change touch more than text?
@@ -57,12 +59,21 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
           DRAFT: ${{ github.event.pull_request.draft }}
+          LANGUAGE: ${{ matrix.language }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           if [ "$DRAFT" = "true" ]; then echo "code=false" >> "$GITHUB_OUTPUT"; echo "Draft pull request: analysed when it is marked ready."; exit 0; fi
-          other=$(git diff --name-only "$BASE...$HEAD" | grep -vE '(\.md$|^docs/|^LICENSE$|^COPYING$|^INSTALL$)' || true)
-          if [ -n "$other" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
-          echo "Files other than text:"; echo "${other:-(none)}"
+          # any error here (git or the script) means the analysis runs, never a silent skip
+          if files=$(git diff --name-only "$BASE...$HEAD") && result=$(printf '%s\n' "$files" | python3 tools/ci/changes.py); then
+            echo "$result"
+            # C++: only when the program may have changed; Python and workflows: when anything but text changed
+            if [ "$LANGUAGE" = "cpp" ]; then key=code; else key=analyze; fi
+            value=$(echo "$result" | sed -n "s/^$key=//p")
+            if [ "$value" = "false" ]; then echo "code=false" >> "$GITHUB_OUTPUT"; else echo "code=true" >> "$GITHUB_OUTPUT"; fi
+          else
+            echo "Could not decide: analysing."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: steps.diff.outputs.code == 'true'
         with:

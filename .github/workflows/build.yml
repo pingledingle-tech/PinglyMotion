@@ -29,13 +29,15 @@ permissions:
   contents: read
 
 jobs:
-  # pull requests that only change text (Markdown, docs/, licence files) skip the build;
-  # a skipped job counts as passed for the required checks
+  # pull requests that only change text (Markdown, docs/, licence files) or only the
+  # website (issue templates, pages.yml, tools/site/) skip the build; a skipped job
+  # counts as passed for the required checks. The rule is tools/ci/changes.py.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       code: ${{ steps.diff.outputs.code }}
+      site: ${{ steps.diff.outputs.site }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,11 +51,30 @@ jobs:
           HEAD: ${{ github.event.pull_request.head.sha }}
           DRAFT: ${{ github.event.pull_request.draft }}
         run: |
-          if [ "$EVENT" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          if [ "$DRAFT" = "true" ]; then echo "code=false" >> "$GITHUB_OUTPUT"; echo "Draft pull request: skipped until it is marked ready."; exit 0; fi
-          other=$(git diff --name-only "$BASE...$HEAD" | grep -vE '(\.md$|^docs/|^LICENSE$|^COPYING$|^INSTALL$)' || true)
-          if [ -n "$other" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
-          echo "Files other than text:"; echo "${other:-(none)}"
+          if [ "$EVENT" != "pull_request" ]; then printf 'code=true\nsite=true\n' >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$DRAFT" = "true" ]; then printf 'code=false\nsite=false\n' >> "$GITHUB_OUTPUT"; echo "Draft pull request: skipped until it is marked ready."; exit 0; fi
+          # any error here (git or the script) means the full build, never a silent skip
+          if files=$(git diff --name-only "$BASE...$HEAD") && result=$(printf '%s\n' "$files" | python3 tools/ci/changes.py); then
+            echo "$result" | grep -E '^(code|site)=' >> "$GITHUB_OUTPUT"
+            echo "$result"
+          else
+            echo "Could not decide: running everything."
+            printf 'code=true\nsite=true\n' >> "$GITHUB_OUTPUT"
+          fi
+
+  # the website builder's tests (pages.yml runs them again before it publishes);
+  # not a required check
+  website:
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tests for the page builder
+        run: python3 tests/test_build_status.py
 
   windows:
     needs: changes
@@ -208,6 +229,10 @@ jobs:
         run: python3 tests/test_gen_soma77_bvh.py
       - name: Kimodo text-to-motion helper (issue 18)
         run: python3 tests/test_kimodo_helper.py
+      - name: CI path filter decides which jobs run
+        run: python3 tests/test_ci_changes.py
+      - name: Auto-merge decides only on green required checks
+        run: python3 tests/test_ci_auto_merge.py
       - name: Combined test build script refuses foreign pull requests (issue 245)
         run: python3 tests/test_update_combined.py
       - name: Generated SMPL 22 test skeletons are up to date (issue 18)

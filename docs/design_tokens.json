@@ -1,6 +1,6 @@
 {
   "about": "PinglyMotion design tokens. The machine-readable part of docs/DESIGN_SYSTEM.md; the two must agree. Colours are sRGB hex. Sizes are logical pixels at 100 percent scale.",
-  "version": 1,
+  "version": 2,
   "themes": {
     "dark": {
       "background": "#1E1F22",
@@ -22,7 +22,13 @@
       "area_body": "#6EA8FE",
       "area_face": "#F4A261",
       "area_hands": "#C792EA",
-      "area_other": "#5CC8C8"
+      "area_other": "#5CC8C8",
+      "axis_x": "#FF7A7A",
+      "axis_y": "#5FD068",
+      "axis_z": "#6A9EFF",
+      "on_axis": "#1E1F22",
+      "go_fill": "#1D7F45",
+      "replay_fill": "#7048C8"
     },
     "light": {
       "background": "#F3F4F6",
@@ -44,7 +50,13 @@
       "area_body": "#1F63C9",
       "area_face": "#B4570F",
       "area_hands": "#8241B8",
-      "area_other": "#0F7C7C"
+      "area_other": "#0F7C7C",
+      "axis_x": "#C42B1C",
+      "axis_y": "#1B7530",
+      "axis_z": "#1F5FD1",
+      "on_axis": "#FFFFFF",
+      "go_fill": "#18794E",
+      "replay_fill": "#6A3DBF"
     }
   },
   "radius": {

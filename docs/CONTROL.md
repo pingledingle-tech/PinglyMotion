@@ -50,6 +50,10 @@ Authorization: Bearer <token>
 Limits: the request line and headers together at most 16 KB and the body at most 64 KB (larger
 requests get `413`); at most 8 connections at a time (more get `503`); a connection must send its whole request
 header within 2 seconds, otherwise it is closed, and the rest of the request within 15 seconds (issue 249).
+After an answer (any status) the server ends its side of the connection, reads and drops whatever the client still
+sends, and closes when the client closes, at most 2 seconds later. So an answer is never lost: closing at once with
+unread request bytes would send a TCP reset, and on Windows a reset throws away an answer the client has already
+received (a refused client then saw no `503` at all).
 
 `GET /api/commands` lists every command with its parameters. Answers are JSON with `"ok": true`,
 or `"ok": false` and an `"error"` that says what to do.
