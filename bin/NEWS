@@ -1,3 +1,9 @@
+Version 0.1.0
+---------------------
+
+  - Very early preview: the first public PinglyMotion release. Expect rough edges and please report problems on GitHub
+  - Windows builds are not code signed yet, so Windows may warn when you start the program
+
 Version 0.3.0
 ---------------------
 
