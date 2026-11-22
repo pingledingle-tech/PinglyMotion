@@ -1,5 +1,5 @@
 Branch: ci/label-auto-merge
-Status: active
+Status: done
 Pull request: #348
 Files:
 - .github/workflows/auto-merge.yml
@@ -7,6 +7,7 @@ Files:
 - tools/ci/auto_merge.py
 - tests/test_ci_auto_merge.py
 - CLAUDE.md
+- docs/DEV.md
 - docs/DECISIONS.md
 
 ## What
@@ -14,5 +15,4 @@ Files:
 A small workflow that squash-merges an open technical pull request carrying the
 `auto-merge` label once every required check of the main ruleset is green
 (the project owner's choice, 22 Nov 2026). The main ruleset is unchanged. The
-decision logic lives in `tools/ci/auto_merge.py` with a test. `docs/DEV.md` is
-added to Files after pull request 346 (which claims it) is merged.
+decision logic lives in `tools/ci/auto_merge.py` with a test.
