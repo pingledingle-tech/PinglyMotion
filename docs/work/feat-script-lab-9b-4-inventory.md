@@ -1,6 +1,6 @@
 Branch: feat/script-lab-9b-4-inventory
 Status: active
-Pull request:
+Pull request: #334
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/world.*
