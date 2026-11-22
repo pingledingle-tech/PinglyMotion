@@ -1,6 +1,6 @@
 Branch: docs/process-review-round-2
 Status: active
-Pull request: pending
+Pull request: #358
 Files:
 - CLAUDE.md
 - README.md
