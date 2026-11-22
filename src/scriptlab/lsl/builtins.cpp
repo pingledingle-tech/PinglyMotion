@@ -202,6 +202,14 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llSetParcelMusicURL", Fn::RecordOnly},
   {"llRefreshPrimURL", Fn::RecordOnly},
   {"llSetPrimURL", Fn::RecordOnly},
+  // gap list 2, step 6, part 1: own-object movement and physics that need no motion model
+  {"llMoveToTarget", Fn::RecordOnly},
+  {"llStopMoveToTarget", Fn::RecordOnly},
+  {"llPushObject", Fn::RecordOnly},
+  {"llApplyImpulse", Fn::RecordOnly},
+  {"llSetBuoyancy", Fn::RecordOnly},
+  {"llRotLookAt", Fn::RecordOnly},
+  {"llVolumeDetect", Fn::RecordOnly},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
