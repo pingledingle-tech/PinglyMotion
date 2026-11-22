@@ -186,6 +186,15 @@ answered in the script's `listen` event on channel 2222. The log shows each comm
 has `rlv.state` (the restrictions at the end, as `rlv_state` shows them); the same state is what the panel shows.
 Examples: `examples/scriptlab/rlv_lock.lsl` and `rlv_status.lsl`.
 
+## HUD workflow (what works today)
+
+A script-driven HUD is developed in two parts that the sandbox treats differently.
+
+1. **One script at a time, live.** Keep the HUD script in the folder that Script Lab watches (Live page, or `lab_watch`). Each save checks and runs it again; the Live page and `lab_result` show errors with line and column, the log (what it said, its dialogs, listens and timers) and the RLV state at the end. The `inputs` option of `lab_watch` gives every run the chat lines and touches to test with; each run starts fresh. Claude edits the file with its own file tools and reads `lab_result`.
+2. **HUD and the thing it controls together.** For a HUD that talks to cuffs or a collar on a channel, send both scripts in one `lsl_run` with `objects` (the HUD as worn, the other object rezzed). Then `lsl_event` sends a touch or a dialog button to that world and runs it on, and `rlv_state` or the panel's Objects part shows who holds which restriction. Example: `examples/scriptlab/hud_cuffs_hud.lsl` with `hud_cuffs_cuffs.lsl`. The folder watch runs each `.lsl` file on its own, so it does not do this part.
+
+What it checks: that the buttons (touch, dialog buttons, chat on a channel) cause the right messages and RLV commands. What it does not do: show how the HUD looks (textures, layout, buttons on screen are not previewed), or reproduce Second Life exactly. The texture is uploaded in Second Life by the project owner, and the final test is in Second Life. The panel has no buttons for sending a touch or chat yet; inputs go through `inputs`, `lsl_run` and `lsl_event` (an idea in "Script Lab: later", [ROADMAP.md](ROADMAP.md)).
+
 ## RLV and RLVa mode (step 9, issue 297)
 
 Every behaviour in the table is marked `RLV` (in the plain RLV API) or `RLVa only` (RLVa's extended and experimental
@@ -225,7 +234,7 @@ command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cp
 
 ## Later
 
-Ideas that come after the planned steps (not planned yet, nothing is being built): see "Script Lab: later" in [ROADMAP.md](ROADMAP.md).
+A description of a separate repository for the owner's RLV tools (template, examples, `.rlvtest` scenarios in CI; not created, the scenario runner does not exist) is in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md). Ideas that come after the planned steps (not planned yet, nothing is being built): see "Script Lab: later" in [ROADMAP.md](ROADMAP.md).
 
 ## Licence
 
