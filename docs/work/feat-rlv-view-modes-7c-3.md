@@ -1,6 +1,6 @@
 Branch: feat/rlv-view-modes-7c-3
 Status: active
-Pull request: pending
+Pull request: #331
 Files:
 - src/scriptlab/viewmodesoverride.*
 - src/scriptlab/scriptlabpanel.*
