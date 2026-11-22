@@ -112,6 +112,14 @@ The File, View and Help menus follow the mockup (`docs/mockup/index.html`). One 
 - **Close animation** (Ctrl+W) asks about unsaved changes like New animation, then shows the empty state. A clean untitled animation stays behind it so the old code never meets "no animation"; the control commands see none (`state` and the other commands answer "No animation is open."; `new_animation`, `open_file`, `find_reference` and `load_reference` still work).
 - **Empty state** (`src/emptystate.*`): the title "No animation open", the line "Pick a pose to start. You can change it later." and the choices Standing, Sitting and Dance example, then New animation. The choices open the library clips "Stand, idle" (`m2m-idle-a`), "Sit, idle" (`m2m-sitting-idle`) and "Dance, simple" (`m2m-dance-simple`), by the same route as `load_reference`; each has the 19 joints, and the clip's credit shows in the status line. While it shows, the Joints, Selected joint and Timeline panels and the actions that need an animation are greyed ("Open an animation first."). Differences from the mockup, on purpose: the mockup's line is longer than 12 words, and its choice texts claim "a note on each key" which the library clips do not have, so the texts are shorter and true.
 
+## 6g. Reason line in the status bar (built, UX phase 1c, 22 November 2026)
+
+- **What it is** (`src/reasonline.*`): when the mouse rests on a greyed-out control, the left of the status bar shows the info icon, then the control's name, a colon and the reason, in the normal text colour, as in the mockup: "Save: Open an animation first." (charter P6). A working control shows nothing; the line is empty again when the mouse leaves. It adds no new words: the name is the control's own name and the reason is the one it already had as its tip (`src/menuspec.h`, the transport buttons, the pop-out button).
+- **Where it works:** top bar buttons, the transport buttons, the pop-out button of a panel, greyed menu items (while highlighted with the mouse or the arrow keys), and the Joints, Selected joint and Timeline panels while no animation is open ("Joints: Open an animation first."). Every other greyed control with a status tip gets it too, with no extra code.
+- **Qt's plain status message** with the same words is not shown next to the line.
+- **Difference from the mockup, on purpose:** the mockup shows the line also for keyboard focus, because its greyed controls keep the focus. Qt never gives keyboard focus to a greyed-out widget, so here the line follows the mouse and the menus, not the Tab key. Giving greyed controls focus would mean drawing them greyed without disabling them; that is a separate step.
+- Test: `tests/reasonline` (exact lines, none for working controls, gone on leave, dark and light theme, and the format against the mockup file).
+
 ## 7. Mirror and whole pose
 
 - Left / Right / Mirror switch at the top of the Joints panel.

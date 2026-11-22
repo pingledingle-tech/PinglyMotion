@@ -90,6 +90,8 @@ void PanelTitleBar::updateButtons()
   m_floatButton->setToolTip(tip);
   m_floatButton->setStatusTip(tip);
   m_floatButton->setAccessibleDescription(tip);
+  // the name the reason line shows with the reason (src/reasonline.h)
+  m_floatButton->setProperty("reasonName",tr("Make this panel a window of its own"));
   m_closeButton->setIcon(symbolIcon(Symbol::Close));
 }
 

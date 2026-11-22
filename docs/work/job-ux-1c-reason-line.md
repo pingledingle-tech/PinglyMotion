@@ -1,20 +1,18 @@
 Branch: job/ux-1c-reason-line
-Status: active
+Status: done
 Pull request: #375
 Files:
 - src/reasonline.*
 - src/lucideicons.cpp
 - src/CMakeLists.txt
+- src/paneltitlebar.cpp
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindow.h
-- src/menuspec.h
-- src/topbar.cpp
 - tests/reasonline/**
 - tests/transportbar/tst_transportbar.cpp
 - CMakeLists.txt
 - CREDITS.md
 - docs/UX_DECISIONS.md
-- docs/ROADMAP.md
 
 ## What
 

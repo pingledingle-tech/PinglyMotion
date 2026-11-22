@@ -96,6 +96,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowplayback.cpp
               emptystate.cpp
               topbar.cpp
+              reasonline.cpp
               scene.cpp
               skinrenderer.cpp
               updatechecker.cpp
