@@ -55,6 +55,12 @@ bool UserSettings::m_hideJointsInLists = false;
 const QString UserSettings::m_hideJointsInListsKey = "hide_joints_in_lists";
 bool UserSettings::m_tipsOn = true;
 const QString UserSettings::m_tipsOnKey = "tips_on";
+bool UserSettings::m_expertMode = false;
+const QString UserSettings::m_expertModeKey = "expert_mode";
+QString UserSettings::m_cameraHabit = "pinglymotion";
+const QString UserSettings::m_cameraHabitKey = "camera_habit";
+int UserSettings::m_textSizePercent = 100;
+const QString UserSettings::m_textSizePercentKey = "text_size_percent";
 QByteArray UserSettings::m_panelLayout;
 const QString UserSettings::m_panelLayoutKey = PanelLayout::SettingLayout;
 int UserSettings::m_panelLayoutVersion = 0;
@@ -116,6 +122,19 @@ void UserSettings::setHideJointsInLists(bool on)     { m_hideJointsInLists = on;
 bool UserSettings::hideJointsInLists()               { return m_hideJointsInLists; }
 void UserSettings::setTipsOn(bool on)                { m_tipsOn = on; }
 bool UserSettings::tipsOn()                          { return m_tipsOn; }
+void UserSettings::setExpertMode(bool on)            { m_expertMode = on; }
+bool UserSettings::expertMode()                      { return m_expertMode; }
+QStringList UserSettings::cameraHabits()
+{
+  return { QStringLiteral("pinglymotion"), QStringLiteral("maya"), QStringLiteral("blender"), QStringLiteral("sl") };
+}
+void UserSettings::setCameraHabit(const QString& value)
+{
+  m_cameraHabit = cameraHabits().contains(value) ? value : QString("pinglymotion");
+}
+QString UserSettings::cameraHabit()                  { return m_cameraHabit; }
+void UserSettings::setTextSizePercent(int value)     { m_textSizePercent = qBound(100, value, 200); }
+int UserSettings::textSizePercent()                  { return m_textSizePercent; }
 void UserSettings::setPanelLayout(const QByteArray& state) { m_panelLayout = state; }
 QByteArray UserSettings::panelLayout()               { return m_panelLayout; }
 void UserSettings::setPanelLayoutVersion(int value)  { m_panelLayoutVersion = value; }
@@ -169,6 +188,14 @@ void UserSettings::readSettings()
     setHiddenJointGroups(settings.value(m_hiddenJointGroupsKey, 7).toInt());
     setHideJointsInLists(settings.value(m_hideJointsInListsKey, false).toBool());
     setTipsOn(settings.value(m_tipsOnKey, true).toBool());
+    // only true/false (or 1/0) count; anything else gives Beginner mode
+    setExpertMode(settings.value(m_expertModeKey, false).toString().toLower() == "true"
+                  || settings.value(m_expertModeKey, false).toString() == "1");
+    setCameraHabit(settings.value(m_cameraHabitKey, "pinglymotion").toString());
+    // a stored value that is not a whole number gives 100
+    bool sizeOk = false;
+    const int size = settings.value(m_textSizePercentKey, 100).toInt(&sizeOk);
+    setTextSizePercent(sizeOk ? size : 100);
     // the old window_state (with the Properties panel) is not read any more
     setPanelLayout(settings.value(m_panelLayoutKey).toByteArray());
     setPanelLayoutVersion(settings.value(m_panelLayoutVersionKey, 0).toInt());
@@ -215,6 +242,9 @@ void UserSettings::writeSettings()
   settings.setValue(m_hiddenJointGroupsKey, hiddenJointGroups());
   settings.setValue(m_hideJointsInListsKey, hideJointsInLists());
   settings.setValue(m_tipsOnKey, tipsOn());
+  settings.setValue(m_expertModeKey, expertMode());
+  settings.setValue(m_cameraHabitKey, cameraHabit());
+  settings.setValue(m_textSizePercentKey, textSizePercent());
   settings.setValue(m_panelLayoutKey, panelLayout());
   settings.setValue(m_panelLayoutVersionKey, panelLayoutVersion());
   settings.setValue(m_mainWindowGeometryKey, mainWindowGeometry());

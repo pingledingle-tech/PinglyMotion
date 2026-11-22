@@ -1,6 +1,6 @@
 Branch: job/ux-0b-settings
-Status: active
-Pull request: pending
+Status: done
+Pull request: #362
 Files:
 - src/usersettings.*
 - tests/usersettings/**

@@ -26,6 +26,7 @@
 */
 
 #include <QByteArray>
+#include <QStringList>
 
 class QString;
 
@@ -82,6 +83,19 @@ class UserSettings
     // "Tips on" switch in the status bar: short help when the mouse rests on a control (#88)
     static void setTipsOn(bool on);
     static bool tipsOn();
+    // Beginner (default, false) or Expert (true) mode, docs/UX_DECISIONS.md section 8.
+    // Stored only; no part of the program reads it yet.
+    static void setExpertMode(bool on);
+    static bool expertMode();
+    // camera habit: one of cameraHabits(), default "pinglymotion"; anything else becomes the default.
+    // Stored only; the camera does not use it yet.
+    static void setCameraHabit(const QString& value);
+    static QString cameraHabit();
+    static QStringList cameraHabits();   // "pinglymotion", "maya", "blender", "sl"
+    // text size in percent, 100 (default) to 200; stored only, not applied yet.
+    // A value outside the range is cut to the nearest end.
+    static void setTextSizePercent(int value);
+    static int textSizePercent();
 
     // retired: read once for the move to main_window_geometry, never written
     // again (docs/archive/PANELS_PLAN.md, section 7); 0 when the setting is missing
@@ -143,6 +157,12 @@ private:
     static const QString m_hideJointsInListsKey;
     static bool m_tipsOn;
     static const QString m_tipsOnKey;
+    static bool m_expertMode;
+    static const QString m_expertModeKey;
+    static QString m_cameraHabit;
+    static const QString m_cameraHabitKey;
+    static int m_textSizePercent;
+    static const QString m_textSizePercentKey;
 
     static int m_mainWindowWidth;
     static const QString m_mainWindowWidthKey;
