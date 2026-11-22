@@ -1,6 +1,6 @@
 Branch: job/scriptlab-money-web-mail
 Status: active
-Pull request: pending
+Pull request: #373
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/interp.*
