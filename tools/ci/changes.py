@@ -2,19 +2,24 @@
 """Which CI jobs a pull request needs, from the list of files it changes.
 
 Reads one path per line on standard input (the output of
-`git diff --name-only BASE...HEAD`) and prints three lines for $GITHUB_OUTPUT:
+`git diff --name-only BASE...HEAD`) and prints five lines for $GITHUB_OUTPUT:
 
   code=true|false     the program may have changed: the Linux, Windows and
                       sanitizer builds and the C++ CodeQL analysis run
   analyze=true|false  something other than text changed: CodeQL analyses the
                       Python and the workflows
   site=true|false     a website file changed: the website tests run
+  python=true|false   a Python file (.py) changed: CodeQL analyses the Python
+  actions=true|false  a file under .github/workflows/ or .github/actions/
+                      changed: CodeQL analyses the workflows
 
 Each file is one of three kinds:
   text     Markdown anywhere, docs/, LICENSE, COPYING, INSTALL
   website  issue templates, the Pages workflow, tools/site/ and its test
   program  everything else (src/, CMake, tests, other tools, every other
            workflow, this script)
+
+`analyze` is kept for older readers; codeql.yml reads `python` and `actions`.
 
 Anything not listed as text or website counts as program, so a new kind of
 file starts the full build until someone adds it here on purpose.
@@ -37,6 +42,12 @@ WEBSITE_FILES = {
     "tests/test_build_status.py",
 }
 
+# files the CodeQL Actions analysis reads
+ACTIONS_PREFIXES = (
+    ".github/workflows/",
+    ".github/actions/",
+)
+
 
 def kind(path):
     """'text', 'website' or 'program' for one changed path."""
@@ -54,13 +65,15 @@ def classify(paths):
         "code": "program" in kinds,
         "analyze": bool(kinds - {"text"}),
         "site": "website" in kinds,
+        "python": any(p.strip().endswith(".py") for p in paths),
+        "actions": any(p.strip().startswith(ACTIONS_PREFIXES) for p in paths),
     }
 
 
 def main():
     paths = [line.strip() for line in sys.stdin if line.strip()]
     out = classify(paths)
-    for key in ("code", "analyze", "site"):
+    for key in ("code", "analyze", "site", "python", "actions"):
         print(f"{key}={'true' if out[key] else 'false'}")
     program = [p for p in paths if kind(p) == "program"]
     print("Program files: " + (", ".join(program) if program else "(none)"), file=sys.stderr)
