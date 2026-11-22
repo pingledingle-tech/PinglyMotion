@@ -105,6 +105,15 @@ class Interpreter
     // Step 9b-9: queues http_response(request, status, metadata, body); metadata is [HTTP_BODY_TRUNCATED, truncatedAt]
     // when the body was cut (truncatedAt >= 0), else empty
     void httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body);
+    // Gap list 2, step 4: an HTTP request from outside to a URL of this script. Queues http_request and keeps the request
+    // for llHTTPResponse (HTTP_RESPONSE_TIMEOUT seconds) and llGetHTTPHeader (HTTP_HEADER_TIMEOUT seconds); false, with
+    // nothing queued, when MAX_PENDING_HTTP requests wait for an answer (Second Life then answers 503)
+    static constexpr int MAX_PENDING_HTTP = 64;
+    static constexpr double HTTP_RESPONSE_TIMEOUT = 25.0;
+    static constexpr double HTTP_HEADER_TIMEOUT = 30.0;
+    bool httpRequestEvent(const IncomingRequest& request);
+    // queues money(payer, amount)
+    void moneyEvent(const QString& id, int amount);
     // the current state has a handler for this event
     bool handles(const QString& event) const;
     // Gap list 2, step 2. llSetScriptState from another script: a script that is not running keeps its variables, state,
@@ -204,6 +213,8 @@ class Interpreter
     void sense(const QString& name, const QString& id, int type, double range, double arc);
     bool m_inEvent = false;
     bool m_started = false;
+    std::vector<IncomingRequest> m_incoming;   // gap list 2, step 4: requests waiting for llHTTPResponse
+    void dropExpiredRequests();
 
     qint64 m_steps = 0;
     int m_callDepth = 0;

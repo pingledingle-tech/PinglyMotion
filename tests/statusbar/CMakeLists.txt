@@ -3,9 +3,8 @@
 # so this job stays out of tests/CMakeLists.txt while other jobs change it.
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 
-ADD_EXECUTABLE (pinglymotion_statusbar_tests tst_statusbar.cpp
-                ${CMAKE_SOURCE_DIR}/src/controlindicator.cpp)
+ADD_EXECUTABLE (pinglymotion_statusbar_tests tst_statusbar.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_statusbar_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_statusbar_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_statusbar_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME statusbar WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_statusbar_tests)
 SET_TESTS_PROPERTIES (statusbar PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

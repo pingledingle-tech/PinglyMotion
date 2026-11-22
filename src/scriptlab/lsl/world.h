@@ -233,6 +233,30 @@ struct RegionSettings
   void sunDirection(double now, float out[3]) const;         // llGetSunDirection
 };
 
+// Gap list 2, step 4: the sandbox's fake web server and mailbox. Nothing here opens a socket or sends mail.
+// An HTTP request from outside (an lsl_run input or lsl_event) to a URL a script got with llRequestURL or
+// llRequestSecureURL; the script answers with llHTTPResponse and reads headers with llGetHTTPHeader.
+struct IncomingRequest
+{
+  QString id;                       // the request key of http_request
+  QString method;                   // GET, POST, PUT or DELETE
+  QString url;                      // the script's URL (x-script-url)
+  QString path;                     // what follows the URL before "?" (x-path-info)
+  QString query;                    // what follows the first "?" (x-query-string)
+  QString body;                     // at most 2048 bytes (UTF-8)
+  QMap<QString, QString> headers;   // lower-case names: the input's headers and the generated x-* ones
+  double at = 0.0;                  // simulated time it arrived
+};
+
+// an email waiting in an object's mailbox (llGetNextEmail takes it out and raises email)
+struct Email
+{
+  QString time;                     // UTC seconds since 1970 as text, as the email event gives it
+  QString address;                  // the sender
+  QString subject;
+  QString message;
+};
+
 class World
 {
   public:
@@ -354,6 +378,22 @@ class World
     void setRegion(const RegionSettings& region) { m_region = region; }
     virtual QStringList agents() const { return QStringList{ownerKey()}; }
 
+    // Gap list 2, step 4: URLs of the sandbox's fake web server (host URL_HOST, which never resolves; port 12046 for
+    // http, 12043 for https, as in Second Life). MAX_URLS in the whole world (Second Life's cap of 38 per resident).
+    // grantUrl answers the new URL without a trailing slash, or "" when none is free; releaseUrl answers false when this
+    // script does not hold the URL; releaseAllUrls (script reset) frees every URL of this script.
+    static constexpr int MAX_URLS = 38;
+    static const char* const URL_HOST;
+    virtual QString grantUrl(bool secure);
+    virtual bool releaseUrl(const QString& url) { return m_urls.removeAll(url) > 0; }
+    virtual int releaseAllUrls() { const int n = int(m_urls.size()); m_urls.clear(); return n; }
+    virtual int freeUrls() const { return MAX_URLS - int(m_urls.size()); }
+    // the object's mailbox: llGetNextEmail takes the first email whose sender and subject match (an empty filter matches
+    // any; upper and lower case alike) and answers how many are left; false when none matches
+    static constexpr int MAX_MAILBOX = 100;
+    virtual bool nextEmail(const QString& address, const QString& subject, Email& out, int& left);
+    void addEmail(const Email& email) { if (int(m_mail.size()) < MAX_MAILBOX) m_mail.push_back(email); }
+
     // Step 5: entries go to another World's log instead (the shared log of several objects), each with
     // "object" set to tag when tag is not empty, and "script" set to scriptTag when that is not empty
     // (step 9a). The target must outlive this World.
@@ -377,6 +417,10 @@ class World
     // text cut to MAX_TEXT_CHARS
     static QString clip(const QString& text);
 
+  protected:
+    // a new URL for this script: the same in every run, never given twice
+    QString makeUrl(bool secure);
+
   private:
     QJsonArray m_log;
     bool m_truncated = false;
@@ -393,7 +437,13 @@ class World
     QString m_objectName = "Object";
     QString m_objectDesc;
     RegionSettings m_region;
+    QStringList m_urls;
+    int m_urlCounter = 0;
+    std::deque<Email> m_mail;
 };
+
+// gap list 2, step 4: true when an email matches the filters of llGetNextEmail
+bool emailMatches(const Email& email, const QString& address, const QString& subject);
 
 } // namespace lsl
 

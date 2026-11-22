@@ -22,6 +22,8 @@ namespace lsl
 const char* const Sandbox::OWNER_KEY = "a2e76fcd-9360-4f6d-a924-000000000001";
 const char* const Sandbox::OWNER_NAME = "Owner";
 const char* const Sandbox::NULL_KEY = "00000000-0000-0000-0000-000000000000";
+const char* const Sandbox::REMOTE_IP = "192.0.2.10";
+const char* const Sandbox::DEFAULT_EMAIL_SENDER = "sender@sandbox";
 
 namespace
 {
@@ -168,6 +170,46 @@ class ObjectWorld : public RlvWorld
     const RegionSettings& region() const override { return m_sandbox.m_region; }
     QStringList agents() const override { return m_sandbox.agents(); }
     bool details(const QString& key, ObjectDetails& out) override { return m_sandbox.details(m_slot, key, out); }
+    // gap list 2, step 4: the URLs are counted in the whole world; each belongs to the script that asked for it
+    QString grantUrl(bool secure) override
+    {
+      if (int(m_sandbox.m_urls.size()) >= MAX_URLS) return QString();
+      const QString url = makeUrl(secure);
+      m_sandbox.m_urls.push_back(Sandbox::UrlEntry{url, m_slot});
+      return url;
+    }
+    bool releaseUrl(const QString& url) override
+    {
+      std::vector<Sandbox::UrlEntry>& urls = m_sandbox.m_urls;
+      for (auto it = urls.begin(); it != urls.end(); ++it)
+        if (it->slot == m_slot && it->url == url)
+        {
+          urls.erase(it);
+          return true;
+        }
+      return false;
+    }
+    int releaseAllUrls() override
+    {
+      std::vector<Sandbox::UrlEntry>& urls = m_sandbox.m_urls;
+      const size_t before = urls.size();
+      urls.erase(std::remove_if(urls.begin(), urls.end(), [this](const Sandbox::UrlEntry& u) { return u.slot == m_slot; }), urls.end());
+      return int(before - urls.size());
+    }
+    int freeUrls() const override { return MAX_URLS - int(m_sandbox.m_urls.size()); }
+    bool nextEmail(const QString& address, const QString& subject, Email& out, int& left) override
+    {
+      std::deque<Email>& mail = state().mail;
+      for (auto it = mail.begin(); it != mail.end(); ++it)
+        if (emailMatches(*it, address, subject))
+        {
+          out = *it;
+          mail.erase(it);
+          left = int(mail.size());
+          return true;
+        }
+      return false;
+    }
 
   private:
     int object() const { return m_sandbox.m_slots[size_t(m_slot)].object; }
@@ -478,9 +520,14 @@ void Sandbox::deliver(const SandboxInput& input)
   int target = input.object.isEmpty() ? 0 : indexOf(input.object);
   if (m_objects.empty()) return;
   const bool single = m_slots.size() == 1;
+  if (input.type == "http_request")
+  {
+    deliverHttp(input);
+    return;
+  }
 
   if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
-      input.type == "sit" || input.type == "stand" || input.type == "control")
+      input.type == "sit" || input.type == "stand" || input.type == "control" || input.type == "money" || input.type == "email")
   {
     // a stand input without an object finds the object the avatar sits on
     if (input.type == "stand" && input.object.isEmpty())
@@ -595,10 +642,70 @@ void Sandbox::deliver(const SandboxInput& input)
       for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->changedEvent(0x20);
       return;
     }
+    if (input.type == "money")
+    {
+      // an avatar pays the object: the scripts of the prim paid that have a money event get it; when none has, the
+      // root's scripts with one (as touches are passed on); when no script has one, the object cannot be paid
+      const int link = input.link > 0 ? input.link : 1;
+      entry["id"] = key;
+      entry["amount"] = input.amount;
+      if (input.link > 0) entry["link"] = input.link;
+      if (link > o.spec.prims)
+      {
+        entry["error"] = QString("The object has %1 prim(s); there is no link %2.").arg(o.spec.prims).arg(link);
+        m_log.log(t, entry);
+        return;
+      }
+      std::vector<int> hit;
+      for (int pass = 0; pass < 2 && hit.empty(); ++pass)
+        for (int i = 0; i < o.slotCount; ++i)
+        {
+          const Slot& slot = m_slots[size_t(o.firstSlot + i)];
+          if (slot.link == (pass == 0 ? link : 1) && slot.interp->handles("money")) hit.push_back(o.firstSlot + i);
+        }
+      if (hit.empty())
+      {
+        entry["error"] = "No script of the object has a money event, so it cannot be paid.";
+        m_log.log(t, entry);
+        return;
+      }
+      entry["note"] = "Simulated: no L$ moved.";
+      m_log.log(t, entry);
+      for (int i : hit) m_slots[size_t(i)].interp->moneyEvent(key, input.amount);
+      return;
+    }
+    if (input.type == "email")
+    {
+      // an email arrives in the object's mailbox; a script takes it out with llGetNextEmail
+      entry.remove("name");
+      Email mail;
+      mail.time = QString::number(m_region.unixStart + qint64(std::floor(t)));
+      mail.address = input.address.isEmpty() ? QString(DEFAULT_EMAIL_SENDER) : input.address;
+      mail.subject = input.subject;
+      mail.message = input.body;
+      entry["address"] = World::clip(mail.address);
+      entry["subject"] = World::clip(mail.subject);
+      if (int(o.mail.size()) >= World::MAX_MAILBOX)
+      {
+        entry["error"] = QString("The object's mailbox is full (%1 emails); a script takes them out with llGetNextEmail.").arg(World::MAX_MAILBOX);
+        m_log.log(t, entry);
+        return;
+      }
+      o.mail.push_back(mail);
+      entry["waiting"] = int(o.mail.size());
+      m_log.log(t, entry);
+      return;
+    }
     if (input.type == "changed")
     {
       // every script of the object gets changed(flags), as in Second Life
       entry["change"] = input.change;
+      // a region change, teleport to another region or region restart frees the object's URLs (Second Life wiki, LSL http server)
+      if (input.change & (0x100 | 0x200 | 0x400))
+      {
+        const int released = releaseObjectUrls(target);
+        if (released > 0) entry["urls_released"] = released;
+      }
       m_log.log(t, entry);
       for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->changedEvent(input.change);
       return;
@@ -988,6 +1095,7 @@ void Sandbox::die(int from, double time)
 {
   Object& o = m_objects[size_t(m_slots[size_t(from)].object)];
   o.dead = true;
+  releaseObjectUrls(m_slots[size_t(from)].object);
   o.sitters.clear();   // the avatars sitting on it stand up (no changed event: no script of the object is left)
   for (int i = 0; i < o.slotCount; ++i)
   {
@@ -1172,6 +1280,103 @@ QJsonArray Sandbox::objectsJson() const
     out.append(entry);
   }
   return out;
+}
+
+// ---------------------------------------------------------------- web server and mail (gap list 2, step 4)
+
+int Sandbox::releaseObjectUrls(int object)
+{
+  const size_t before = m_urls.size();
+  m_urls.erase(std::remove_if(m_urls.begin(), m_urls.end(), [&](const UrlEntry& u) { return m_slots[size_t(u.slot)].object == object; }),
+               m_urls.end());
+  return int(before - m_urls.size());
+}
+
+namespace
+{
+  // at most max UTF-8 bytes of text, never cut inside a character
+  QString utf8Cut(const QString& text, int max)
+  {
+    QByteArray bytes = text.toUtf8();
+    if (bytes.size() <= max) return text;
+    bytes.truncate(max);
+    QString out = QString::fromUtf8(bytes);
+    while (out.endsWith(QChar(0xFFFD))) out.chop(1);
+    return out;
+  }
+}
+
+void Sandbox::deliverHttp(const SandboxInput& input)
+{
+  // a request from outside to the sandbox's fake web server: it goes to the script that holds the URL. Nothing is sent
+  // over the network; the request comes from the input and the script's answer (llHTTPResponse) is only logged.
+  QJsonObject entry{{"type", "input"}, {"input", "http_request"}, {"method", input.method}};
+  const UrlEntry* holder = nullptr;
+  QString full = input.url;
+  if (input.url.isEmpty())
+  {
+    const int target = input.object.isEmpty() ? 0 : indexOf(input.object);
+    for (auto it = m_urls.rbegin(); it != m_urls.rend() && target >= 0; ++it)
+      if (m_slots[size_t(it->slot)].object == target)
+      {
+        holder = &*it;
+        break;
+      }
+    if (holder) full = holder->url;
+  }
+  else
+    for (const UrlEntry& u : m_urls)
+      if (input.url == u.url || input.url.startsWith(u.url + "/") || input.url.startsWith(u.url + "?")) holder = &u;
+  entry["url"] = World::clip(full);
+  double t = m_now;
+  if (!holder)
+  {
+    entry["status"] = 404;
+    entry["error"] = input.url.isEmpty() ? QString("No script of the object holds a URL; a script gets one with llRequestURL or llRequestSecureURL.")
+                                         : QString("No script holds this URL: it was never granted, or it was released.");
+    m_log.log(t, entry);
+    return;
+  }
+  const Slot& slot = m_slots[size_t(holder->slot)];
+  if (m_tag) entry["object"] = m_objects[size_t(slot.object)].spec.name;
+  if (m_objects[size_t(slot.object)].tagScripts) entry["script"] = slot.name;
+  slot.interp->syncTo(m_now);
+  if (m_slots.size() == 1) t = slot.interp->now();
+  const QString base = holder->url;
+  const QString rest = full.mid(base.size());
+  if (rest.startsWith("?"))
+  {
+    entry["status"] = 500;
+    entry["error"] = "A query needs a slash after the URL (" + base + "/?a=1), as in Second Life.";
+    m_log.log(t, entry);
+    return;
+  }
+  const int mark = rest.indexOf('?');
+  IncomingRequest request;
+  request.id = QString("c0de0000-0000-4000-8000-%1").arg(++m_requestCounter, 12, 10, QChar('0'));
+  request.method = input.method;
+  request.url = base;
+  request.path = mark < 0 ? rest : rest.left(mark);
+  request.query = mark < 0 ? QString() : rest.mid(mark + 1);
+  request.body = utf8Cut(input.body, MAX_HTTP_IN_BODY_BYTES);
+  request.at = t;
+  for (auto it = input.headers.begin(); it != input.headers.end(); ++it)
+    request.headers.insert(it.key().toLower(), utf8Cut(it.value(), MAX_HTTP_HEADER_BYTES));
+  request.headers.insert("x-script-url", utf8Cut(base, MAX_HTTP_HEADER_BYTES));
+  request.headers.insert("x-path-info", utf8Cut(request.path, MAX_HTTP_HEADER_BYTES));
+  request.headers.insert("x-query-string", utf8Cut(request.query, MAX_HTTP_HEADER_BYTES));
+  request.headers.insert("x-remote-ip", REMOTE_IP);
+  if (!input.body.isEmpty()) entry["body"] = World::clip(request.body);
+  if (request.body.size() < input.body.size()) entry["body_truncated_at"] = MAX_HTTP_IN_BODY_BYTES;
+  if (!slot.interp->httpRequestEvent(request))
+  {
+    entry["status"] = 503;
+    entry["error"] = QString("The script already has %1 requests waiting for llHTTPResponse.").arg(Interpreter::MAX_PENDING_HTTP);
+    m_log.log(t, entry);
+    return;
+  }
+  entry["request"] = request.id;
+  m_log.log(t, entry);
 }
 
 } // namespace lsl
