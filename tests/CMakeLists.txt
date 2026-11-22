@@ -247,3 +247,21 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabcamera_tests PRIVATE ${CMAKE_S
 TARGET_LINK_LIBRARIES (pinglymotion_scriptlabcamera_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME scriptlabcamera COMMAND pinglymotion_scriptlabcamera_tests)
 SET_TESTS_PROPERTIES (scriptlabcamera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Script Lab as a whole: the scenarios in tests/data/scriptlab/scenarios.json (every example script,
+# each class of RLV command, several objects, inventory, sitting, controls, sensors, HTTP, errors)
+# through ControlApi; tests/smoke_scriptlab.py sends the same scenarios to the real program
+ADD_EXECUTABLE (pinglymotion_scriptlabwhole_tests tst_scriptlabwhole.cpp
+                ${CMAKE_SOURCE_DIR}/src/controlapi.cpp ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
+                ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
+                ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
+                ${CMAKE_SOURCE_DIR}/src/animimport.cpp
+                ${CMAKE_SOURCE_DIR}/src/screenshotsheet.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabwhole_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabwhole_tests PRIVATE
+  PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples"
+  PINGLYMOTION_SCENARIOS="${CMAKE_CURRENT_SOURCE_DIR}/data/scriptlab/scenarios.json")
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabwhole_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME scriptlabwhole WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scriptlabwhole_tests)
+SET_TESTS_PROPERTIES (scriptlabwhole PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
