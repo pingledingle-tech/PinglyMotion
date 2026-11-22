@@ -31,8 +31,24 @@ namespace MenuSpec
   // File
   inline constexpr Item fileNew = {"fileNewAction", QT_TRANSLATE_NOOP("MenuSpec", "New animation"), "Ctrl+N", ""};
   inline constexpr Item fileExport = {"fileExportAnimAction", QT_TRANSLATE_NOOP("MenuSpec", "Export for Second Life (.anim)..."), "Ctrl+Shift+E", ""};
-  inline constexpr Item fileClose = {"fileCloseAction", QT_TRANSLATE_NOOP("MenuSpec", "Close animation"), "Ctrl+W",
-    QT_TRANSLATE_NOOP("MenuSpec", "Close animation is not built yet. Use New animation to start again.")};
+  inline constexpr Item fileClose = {"fileCloseAction", QT_TRANSLATE_NOOP("MenuSpec", "Close animation"), "Ctrl+W", ""};
+
+  // Edit (UX phase 1b). Undo, Redo and Paste mirrored are not built yet, so they are greyed
+  // with a reason; Set key works through the key button and its reasons come from
+  // the state of the window (the setKey* texts below).
+  inline constexpr Item editUndo = {"editUndoAction", QT_TRANSLATE_NOOP("MenuSpec", "Undo"), "Ctrl+Z",
+    QT_TRANSLATE_NOOP("MenuSpec", "Undo is not built yet. Save a copy before big changes.")};
+  inline constexpr Item editRedo = {"editRedoAction", QT_TRANSLATE_NOOP("MenuSpec", "Redo"), "Ctrl+Shift+Z",
+    QT_TRANSLATE_NOOP("MenuSpec", "Redo is not built yet. It comes with Undo.")};
+  inline constexpr Item editSetKey = {"editSetKeyAction", QT_TRANSLATE_NOOP("MenuSpec", "Set key"), "K", ""};
+  inline constexpr Item editPasteMirrored = {"editPasteMirroredAction", QT_TRANSLATE_NOOP("MenuSpec", "Paste mirrored"), "Ctrl+Shift+V",
+    QT_TRANSLATE_NOOP("MenuSpec", "Paste mirrored is not built yet. Use Tools > Mirror to swap left and right.")};
+
+  // why a control cannot be used right now (design charter P6), not tied to one item
+  inline constexpr const char* openFirst = QT_TRANSLATE_NOOP("MenuSpec", "Open an animation first.");
+  inline constexpr const char* setKeyPickJoint = QT_TRANSLATE_NOOP("MenuSpec", "Pick a joint first. Click it on the figure or in the list.");
+  inline constexpr const char* setKeyStopPlaying = QT_TRANSLATE_NOOP("MenuSpec", "Stop playing first.");
+  inline constexpr const char* setKeyLocked = QT_TRANSLATE_NOOP("MenuSpec", "The first frame is locked. Turn off Lock the first frame to set a key.");
 
   // View: Look from
   inline constexpr Item viewFront = {"viewFrontAction", QT_TRANSLATE_NOOP("MenuSpec", "Front"), "Numpad 1", ""};
@@ -71,10 +87,48 @@ namespace MenuSpec
 
   inline constexpr const Item* all[] = {
     &fileNew, &fileExport, &fileClose,
+    &editUndo, &editRedo, &editSetKey, &editPasteMirrored,
     &viewFront, &viewSide, &viewTop, &viewHome,
     &viewScriptLab, &viewHidePanels, &viewResetLayout, &viewNextArea,
     &viewLightTheme, &viewExpertMode, &viewTextSize, &viewSetup,
     &helpSetup, &helpWelcome, &helpHints, &helpKeys, &helpCamera, &helpCharter};
+
+  // The top bar (UX phase 1b), left to right as in the mockup: Undo, Redo | Save, Export | Script Lab,
+  // Setup, theme. A button with no text shows only its icon; its name is its tip. The tip is the
+  // name, then the key, then the reason when it is greyed, then the tip line.
+  struct Button
+  {
+    const char* id;       // object name of the action
+    const char* text;     // on the button ("" for an icon only)
+    const char* name;     // first line of the tip
+    const char* key;      // as the tip shows it ("" for none)
+    const char* tipline;  // last line of the tip ("" for none)
+    const char* reason;   // why it is greyed for good ("" when it works)
+    const char* icon;     // Lucide name
+  };
+
+  inline constexpr Button topUndo = {"topUndoAction", "", QT_TRANSLATE_NOOP("MenuSpec", "Undo"), "Ctrl+Z", "",
+    editUndo.reason, "undo-2"};
+  inline constexpr Button topRedo = {"topRedoAction", "", QT_TRANSLATE_NOOP("MenuSpec", "Redo"), "Ctrl+Shift+Z", "",
+    editRedo.reason, "redo-2"};
+  inline constexpr Button topSave = {"topSaveAction", QT_TRANSLATE_NOOP("MenuSpec", "Save"), QT_TRANSLATE_NOOP("MenuSpec", "Save"), "Ctrl+S",
+    QT_TRANSLATE_NOOP("MenuSpec", "Saves your animation to a file. You can open it again later."), "", "save"};
+  inline constexpr Button topExport = {"topExportAction", QT_TRANSLATE_NOOP("MenuSpec", "Export"),
+    QT_TRANSLATE_NOOP("MenuSpec", "Export for Second Life"), "Ctrl+Shift+E", "", "", "upload"};
+  inline constexpr Button topScriptLab = {"topScriptLabAction", QT_TRANSLATE_NOOP("MenuSpec", "Script Lab"),
+    QT_TRANSLATE_NOOP("MenuSpec", "Script Lab: test RLV and LSL scripts"), "Ctrl+Shift+L", "", "", "flask-conical"};
+  inline constexpr Button topSetup = {"topSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup"), QT_TRANSLATE_NOOP("MenuSpec", "Setup"), "",
+    QT_TRANSLATE_NOOP("MenuSpec", "Beginner or experienced, mouse and keys habits, theme, text size and hints."),
+    viewSetup.reason, "settings"};
+  // the theme button shows the sun in the dark theme and the moon in the light theme; its name
+  // says what a click does
+  inline constexpr Button topTheme = {"topThemeAction", "", QT_TRANSLATE_NOOP("MenuSpec", "Switch theme"), "T", "", "", "sun"};
+  inline constexpr const char* themeToLight = QT_TRANSLATE_NOOP("MenuSpec", "Switch to the light theme");
+  inline constexpr const char* themeToDark = QT_TRANSLATE_NOOP("MenuSpec", "Switch to the dark theme");
+
+  inline constexpr const Button* topBar[] = {&topUndo, &topRedo, &topSave, &topExport, &topScriptLab, &topSetup, &topTheme};
+  // a divider stands after the second and the fourth button
+  inline constexpr int topBarDividers[] = {2, 4};
 
   inline QString text(const Item& item)
   {
@@ -84,6 +138,36 @@ namespace MenuSpec
   inline QString reason(const Item& item)
   {
     return QCoreApplication::translate("MenuSpec", item.reason);
+  }
+
+  inline QString text(const Button& button)
+  {
+    return QCoreApplication::translate("MenuSpec", button.text);
+  }
+
+  inline QString name(const Button& button)
+  {
+    return QCoreApplication::translate("MenuSpec", button.name);
+  }
+
+  inline QString reason(const Button& button)
+  {
+    return QCoreApplication::translate("MenuSpec", button.reason);
+  }
+
+  inline QString tipline(const Button& button)
+  {
+    return QCoreApplication::translate("MenuSpec", button.tipline);
+  }
+
+  // the tip of a button: name and key, then why it is greyed (when it is), then the tip line
+  inline QString tip(const Button& button, const QString& shownName, const QString& why)
+  {
+    QString out = shownName;
+    if (button.key[0]) out += QStringLiteral("  (") + QLatin1String(button.key) + QLatin1Char(')');
+    if (!why.isEmpty()) out += QLatin1Char('\n') + why;
+    if (button.tipline[0]) out += QLatin1Char('\n') + tipline(button);
+    return out;
   }
 
   // what the menu shows: "text<TAB>key", the part after the tab is drawn at the right

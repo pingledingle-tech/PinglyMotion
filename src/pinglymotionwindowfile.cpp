@@ -135,9 +135,10 @@ void PinglyMotionWindow::connectAnimation(Animation* anim)
 }
 
 // Menu action: File / New
-void PinglyMotionWindow::fileNew()
+bool PinglyMotionWindow::fileNew()
 {
-  if(!clearOpenFiles()) return;
+  if(!clearOpenFiles()) return false;
+  setEmptyMode(false);
   emit clearProps();
 
   Animation* anim=new Animation(scene->bvh());
@@ -176,6 +177,14 @@ void PinglyMotionWindow::fileNew()
   enableProps(false);
 
   anim->setDirty(false);
+  return true;
+}
+
+// File > Close animation: asks about unsaved changes like New animation does, then shows
+// the empty state. A clean untitled animation stays behind it (see m_empty).
+void PinglyMotionWindow::fileClose()
+{
+  if(fileNew()) setEmptyMode(true);
 }
 
 QString PinglyMotionWindow::selectFileToOpen(const QString& caption)
@@ -273,6 +282,7 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file,const QByteArray
 // adds a file that checkAnimationFile() has accepted
 void PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* data)
 {
+  setEmptyMode(false);
   {
     // an old .avm file shows up under its new name, <same name>.dingle, and counts as changed
     const bool oldAvm=QFileInfo(file).suffix().toLower()==QLatin1String("avm");
@@ -806,6 +816,11 @@ bool PinglyMotionWindow::checkFileOverwrite(const QFileInfo& fileInfo)
 void PinglyMotionWindow::on_fileNewAction_triggered()
 {
   fileNew();
+}
+
+void PinglyMotionWindow::on_fileCloseAction_triggered()
+{
+  fileClose();
 }
 
 void PinglyMotionWindow::on_fileOpenAction_triggered()

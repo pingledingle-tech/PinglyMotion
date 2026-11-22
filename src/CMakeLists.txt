@@ -94,6 +94,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowfile.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp
+              emptystate.cpp
+              topbar.cpp
               scene.cpp
               skinrenderer.cpp
               updatechecker.cpp

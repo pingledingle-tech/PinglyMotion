@@ -120,6 +120,11 @@ class TestMenuTexts : public QObject
     void phase1aFileMenu();
     void phase1aWindowUsesTable();
     void phase1aOrder();
+    // UX phase 1b: Edit, the top bar and the empty state in the window
+    void phase1bEditMenuMatchesMockup();
+    void phase1bEditMenuInTheWindow();
+    void phase1bTopBarInTheWindow();
+    void phase1bEmptyStateInTheWindow();
 };
 
 // 3.1: menu items in sentence case, verb first, dots only before a dialog
@@ -282,8 +287,13 @@ namespace
   const Expected phase1a[] = {
     {&MenuSpec::fileNew, "fileNewAction", "New animation", "Ctrl+N", ""},
     {&MenuSpec::fileExport, "fileExportAnimAction", "Export for Second Life (.anim)...", "Ctrl+Shift+E", ""},
-    {&MenuSpec::fileClose, "fileCloseAction", "Close animation", "Ctrl+W",
-     "Close animation is not built yet. Use New animation to start again."},
+    {&MenuSpec::fileClose, "fileCloseAction", "Close animation", "Ctrl+W", ""},
+    // UX phase 1b: Edit
+    {&MenuSpec::editUndo, "editUndoAction", "Undo", "Ctrl+Z", "Undo is not built yet. Save a copy before big changes."},
+    {&MenuSpec::editRedo, "editRedoAction", "Redo", "Ctrl+Shift+Z", "Redo is not built yet. It comes with Undo."},
+    {&MenuSpec::editSetKey, "editSetKeyAction", "Set key", "K", ""},
+    {&MenuSpec::editPasteMirrored, "editPasteMirroredAction", "Paste mirrored", "Ctrl+Shift+V",
+     "Paste mirrored is not built yet. Use Tools > Mirror to swap left and right."},
     {&MenuSpec::viewFront, "viewFrontAction", "Front", "Numpad 1", ""},
     {&MenuSpec::viewSide, "viewSideAction", "Side", "Numpad 3", ""},
     {&MenuSpec::viewTop, "viewTopAction", "Top", "Numpad 7", ""},
@@ -382,11 +392,12 @@ void TestMenuTexts::phase1aFileMenu()
   const QStringList keys = ui.actionShortcut.values();
   for (const char* key : {"Ctrl+Shift+E", "Ctrl+W"})
     QCOMPARE(keys.count(QLatin1String(key)), 1);
-  // Close animation is greyed until it is built, and its tip is the reason
-  QCOMPARE(ui.actionEnabled.value(QStringLiteral("fileCloseAction")), QStringLiteral("false"));
-  const QString source = readSource("pinglymotionwindow.cpp");
-  QVERIFY(source.contains(QStringLiteral("ui->fileCloseAction->setToolTip(reason(fileClose));")));
-  QVERIFY(source.contains(QStringLiteral("ui->fileCloseAction->setStatusTip(reason(fileClose));")));
+  // Close animation works since phase 1b: not greyed in the designer file, and it closes
+  QVERIFY(!ui.actionEnabled.contains(QStringLiteral("fileCloseAction")));
+  const QString source = readSource("pinglymotionwindowfile.cpp");
+  QVERIFY(source.contains(QStringLiteral("void PinglyMotionWindow::on_fileCloseAction_triggered()\n{\n  fileClose();\n}")));
+  QVERIFY(source.contains(QStringLiteral("if(fileNew()) setEmptyMode(true);")));
+  QVERIFY(!readSource("pinglymotionwindow.cpp").contains(QStringLiteral("fileCloseAction->setToolTip")));
 }
 
 // the window builds View and Help from the table, and Dark theme in Options is gone
@@ -439,6 +450,133 @@ void TestMenuTexts::phase1aOrder()
     QVERIFY2(at > last, marker);
     last = at;
   }
+}
+
+// ---- UX phase 1b ----
+
+// the Edit menu of the mockup: Undo, Redo, a line, Set key, Paste mirrored
+void TestMenuTexts::phase1bEditMenuMatchesMockup()
+{
+  const QString html = readMockup();
+  QVERIFY(!html.isEmpty());
+  const int begin = html.indexOf(QStringLiteral("<div class=\"menu\" role=\"menu\" id=\"m-edit\" aria-label=\"Edit\">"));
+  QVERIFY(begin > 0);
+  const QString menu = html.mid(begin, html.indexOf(QStringLiteral("</div>"), begin) - begin);
+  int last = -1;
+  for (const char* marker : {"<span class=\"grow\">Undo</span><kbd>Ctrl+Z</kbd>", "<span class=\"grow\">Redo</span><kbd>Ctrl+Shift+Z</kbd>",
+                             "<hr>", "<span class=\"grow\">Set key</span><kbd>K</kbd>",
+                             "<span class=\"grow\">Paste mirrored</span><kbd>Ctrl+Shift+V</kbd>"})
+  {
+    const int at = menu.indexOf(QLatin1String(marker), last + 1);
+    QVERIFY2(at > last, marker);
+    last = at;
+  }
+  QCOMPARE(menu.count(QStringLiteral("role=\"menuitem\"")), 4);
+  // the greyed-for-now reasons of the mockup's Set key, in the program's shorter words
+  QCOMPARE(QString::fromLatin1(MenuSpec::openFirst), QStringLiteral("Open an animation first."));
+  QCOMPARE(QString::fromLatin1(MenuSpec::setKeyPickJoint), QStringLiteral("Pick a joint first. Click it on the figure or in the list."));
+  QCOMPARE(QString::fromLatin1(MenuSpec::setKeyStopPlaying), QStringLiteral("Stop playing first."));
+  QCOMPARE(QString::fromLatin1(MenuSpec::setKeyLocked), QStringLiteral("The first frame is locked. Turn off Lock the first frame to set a key."));
+  QVERIFY(html.contains(QStringLiteral("Stop playing first.")));
+  QVERIFY(html.contains(QStringLiteral("Open an animation first.")));
+  for (const char* reason : {"Pick a joint first. Click it on the figure or in the list.",
+                             "The first frame is locked. Turn off Lock the first frame to set a key."})
+    for (const QString& sentence : QString::fromLatin1(reason).split(QStringLiteral(". ")))
+      QVERIFY2(sentence.split(QLatin1Char(' ')).size() <= 12, qPrintable(sentence));
+}
+
+void TestMenuTexts::phase1bEditMenuInTheWindow()
+{
+  const QString source = readSource("pinglymotionwindow.cpp");
+  const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::buildEditMenu()"));
+  QVERIFY(begin >= 0);
+  const QString body = source.mid(begin, source.indexOf(QStringLiteral("void PinglyMotionWindow::setKeyFromMenu()"), begin) - begin);
+  QVERIFY(body.contains(QStringLiteral("specAction(this,editUndo,true)")));
+  QVERIFY(body.contains(QStringLiteral("specAction(this,editRedo,true)")));
+  QVERIFY(body.contains(QStringLiteral("specAction(this,editSetKey,false)")));
+  QVERIFY(body.contains(QStringLiteral("specAction(this,editPasteMirrored,true)")));
+  QVERIFY(body.contains(QStringLiteral("keyInView(m_setKeyAction,ui->animationView)")));
+  // the order of the menu
+  int last = -1;
+  for (const char* marker : {"menuEdit->clear()", "addAction(m_undoAction)", "addAction(m_redoAction)", "addSeparator()",
+                             "addAction(m_setKeyAction)", "addAction(m_pasteMirroredAction)", "addSeparator()",
+                             "addAction(ui->editCutAction)", "addAction(ui->editCopyAction)", "addAction(ui->editPasteAction)"})
+  {
+    const int at = body.indexOf(QLatin1String(marker), last + 1);
+    QVERIFY2(at > last, marker);
+    last = at;
+  }
+  // the reasons of Set key are chosen in this order
+  const int reasons = source.indexOf(QStringLiteral("void PinglyMotionWindow::updateEditActions()"));
+  QVERIFY(reasons >= 0);
+  last = -1;
+  for (const char* marker : {"MenuSpec::openFirst", "MenuSpec::setKeyPickJoint", "MenuSpec::setKeyStopPlaying", "MenuSpec::setKeyLocked"})
+  {
+    const int at = source.indexOf(QLatin1String(marker), std::max(last + 1, reasons));
+    QVERIFY2(at > last, marker);
+    last = at;
+  }
+  // Undo and Redo are gone from the designer file's menu and tool bar (built in code now)
+  const UiTexts ui = readUi("pinglymotionwindow.ui");
+  QVERIFY(ui.ok);
+  QVERIFY(!ui.actionText.contains(QStringLiteral("editUndoAction")));
+  QVERIFY(!ui.actionText.contains(QStringLiteral("editRedoAction")));
+}
+
+// the top bar is built by src/topbar.cpp from MenuSpec::topBar; the window only gives it the
+// actions it follows and the theme switch
+void TestMenuTexts::phase1bTopBarInTheWindow()
+{
+  const QString source = readSource("pinglymotionwindow.cpp");
+  const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::buildTopBar()"));
+  QVERIFY(begin >= 0);
+  const QString body = source.mid(begin, source.indexOf(QStringLiteral("void PinglyMotionWindow::startFromLibrary"), begin) - begin);
+  for (const char* marker : {"sources.undo=m_undoAction;", "sources.redo=m_redoAction;", "sources.save=ui->fileSaveAction;",
+                             "sources.exportAnim=ui->fileExportAnimAction;", "sources.scriptLab=m_scriptLabDock->toggleViewAction();",
+                             "new TopBar(ui->toolBar,sources,this)", "m_lightThemeAction->toggle();"})
+    QVERIFY2(body.contains(QLatin1String(marker)), marker);
+  // the Light theme item tells the bar when the theme changes, and the choice is remembered
+  QVERIFY(source.contains(QStringLiteral("if(m_topBar) m_topBar->setDark(!light);")));
+  QVERIFY(source.contains(QStringLiteral("UserSettings::setDarkTheme(!light);")));
+  QVERIFY(source.contains(QStringLiteral("m_topBar->setDark(UserSettings::darkTheme());")));
+  // the designer file's tool bar holds nothing any more
+  const QString ui = readSource("pinglymotionwindow.ui");
+  const int bar = ui.indexOf(QStringLiteral("<widget class=\"QToolBar\" name=\"toolBar\">"));
+  QVERIFY(bar >= 0);
+  const QString barText = ui.mid(bar, ui.indexOf(QStringLiteral("</widget>"), bar) - bar);
+  QVERIFY(!barText.contains(QStringLiteral("<addaction")));
+  // the top bar's file is part of the program
+  QVERIFY(readSource("CMakeLists.txt").contains(QStringLiteral("topbar.cpp")));
+  QVERIFY(readSource("CMakeLists.txt").contains(QStringLiteral("emptystate.cpp")));
+}
+
+void TestMenuTexts::phase1bEmptyStateInTheWindow()
+{
+  const QString source = readSource("pinglymotionwindow.cpp");
+  // the start choices go through load_reference
+  const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::startFromLibrary"));
+  QVERIFY(begin >= 0);
+  const QString body = source.mid(begin, source.indexOf(QStringLiteral("void PinglyMotionWindow::setEmptyMode"), begin) - begin);
+  QVERIFY(body.contains(QStringLiteral("QStringLiteral(\"load_reference\")")));
+  QVERIFY(body.contains(QStringLiteral("m_controlApi->execute(")));
+  QVERIFY(source.contains(QStringLiteral("connect(m_emptyState,&EmptyState::startChosen,this,&PinglyMotionWindow::startFromLibrary);")));
+  // while the empty state shows, the commands see no animation
+  QVERIFY(source.contains(QStringLiteral("Animation* animation() override { return w->m_empty ? nullptr : w->scene->getAnimation(); }")));
+  // greyed while empty, with the reason, and back as they were
+  const int empty = source.indexOf(QStringLiteral("void PinglyMotionWindow::setEmptyMode"));
+  QVERIFY(empty >= 0);
+  const QString mode = source.mid(empty, 2600);
+  for (const char* action : {"ui->fileSaveAction", "ui->fileSaveAsAction", "ui->fileExportAnimAction", "ui->fileExportForSecondLifeAction",
+                             "ui->fileCloseAction", "ui->fileAddAction", "ui->editCutAction", "ui->editCopyAction", "ui->editPasteAction",
+                             "ui->toolsMirrorAction", "ui->toolsOptimizeBVHAction"})
+    QVERIFY2(mode.contains(QLatin1String(action)), action);
+  QVERIFY(mode.contains(QStringLiteral("MenuSpec::openFirst")));
+  QVERIFY(mode.contains(QStringLiteral("m_beforeEmpty.take(action)")));
+  QVERIFY(mode.contains(QStringLiteral("m_topBar->setAnimationOpen(!empty);")));
+  // opening or starting an animation leaves the empty state
+  const QString file = readSource("pinglymotionwindowfile.cpp");
+  QVERIFY(file.contains(QStringLiteral("if(!clearOpenFiles()) return false;\n  setEmptyMode(false);")));
+  QVERIFY(file.contains(QStringLiteral("const QByteArray* data)\n{\n  setEmptyMode(false);")));
 }
 
 QTEST_GUILESS_MAIN(TestMenuTexts)
