@@ -367,7 +367,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `timer_set` | `llSetTimerEvent` | `seconds` |
 | `sleep` | `llSleep` (moves the simulated clock) | `seconds` |
 | `permissions` | `llRequestPermissions`; the owner's are granted at once, then `run_time_permissions` follows | `mask`, `granted`, `note` |
-| `animation_start`, `animation_stop` | `llStartAnimation`, `llStopAnimation` (logged only; the 3D view plays them in step 7) | `name` |
+| `animation_start`, `animation_stop` | `llStartAnimation`, `llStopAnimation` (the 3D view plays them while the Script Lab's "Show effects in 3D view" box is ticked; [SCRIPT_LAB.md](SCRIPT_LAB.md)) | `name` |
 | `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text` |
 | `debug` | what Second Life says on the debug channel without stopping the script (an animation without permission, `llRegionSay` on channel 0) | `channel`, `text` |
 | `event_dropped` | more than 64 events were waiting, as in Second Life | `name`, `message` |

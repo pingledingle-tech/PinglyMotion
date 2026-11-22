@@ -53,6 +53,7 @@
 #include "usersettings.h"
 #include "scenestate.h"
 #include "screenshotsheet.h"
+#include "scriptlab/effectspreview.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
  : QOpenGLWidget(parent),
@@ -157,6 +158,14 @@ int AnimationView::firstObjectId()
 void AnimationView::setScene(Scene* scene)
 {
   m_scene = scene;
+}
+
+void AnimationView::setEffectsPreview(EffectsPreview* preview)
+{
+  if(m_effects) disconnect(m_effects,nullptr,this,nullptr);
+  m_effects=preview;
+  if(preview) connect(preview,&EffectsPreview::changed,this,[this]() { update(); });
+  update();
 }
 
 void AnimationView::drawProp(const Prop* prop) const
@@ -402,10 +411,72 @@ void AnimationView::drawShadows()
 
 void AnimationView::drawAnimations()
 {
+  // Script Lab effects (issue 293): the preview figure takes the place of the user's animations,
+  // which stay as they are; it is never picked, so a click cannot select or change anything in it
+  Animation* effect=m_effects ? m_effects->animation() : nullptr;
+  if(effect)
+  {
+    if(isPicking()) return;
+    // an index far above the scene's, so no joint of the preview counts as selected
+    drawFigure(effect,EffectFigureIndex);
+    drawEffectMarkers();
+    return;
+  }
+
+  Animation* current=m_scene->getAnimation();
   for(unsigned int index=0;index< (unsigned int) m_scene->getCountOfAnimations();index++)
   {
     drawFigure(m_scene->getAnimation(index),index);
+    if(m_scene->getAnimation(index)==current) drawEffectMarkers();
   }
+}
+
+void AnimationView::drawEffectMarkers()
+{
+  if(!m_effects || m_effects->markers().isEmpty() || isPicking() || !m_cubeMeshModel || !m_sphereMeshModel) return;
+  // colour tokens accent and danger_fill (docs/design_tokens.json, dark theme: the 3D view's background
+  // does not follow the theme); the shape tells them apart too: a box for an object, a ball for a lock
+  const QVector4D objectColour(0x32/255.0f,0x72/255.0f,0xDD/255.0f,1.0f);
+  const QVector4D lockColour(0xC9/255.0f,0x3A/255.0f,0x32/255.0f,1.0f);
+  QHash<QString,int> used;   // markers already drawn at a joint, so the next one sits beside them
+  // on top of the body, like the Bento balls, so a marker inside the body can be seen
+  const GLboolean depthWasOn=glIsEnabled(GL_DEPTH_TEST);
+  glDisable(GL_DEPTH_TEST);
+  SceneState::setLighting(true);
+  for(const EffectsPreview::Marker& marker : m_effects->markers())
+  {
+    const SkinJointState* state=nullptr;
+    QString joint;
+    for(const QString& name : marker.joints)
+    {
+      auto found=m_skinJointStates.constFind(name);
+      if(found!=m_skinJointStates.constEnd())
+      {
+        state=&found.value();
+        joint=name;
+        break;
+      }
+    }
+    if(!state) continue;
+    const int slot=used[joint]++;
+    SceneState::pushMatrix();
+    SceneState::modelview()=state->matrix;
+    SceneState::translate(2.6f*slot,0,0);
+    if(marker.kind==EffectsPreview::Marker::Lock)
+    {
+      SceneState::setColor(lockColour.x(),lockColour.y(),lockColour.z(),lockColour.w());
+      SceneState::scale(1.2f,1.2f,1.2f);
+      m_sphereMeshModel->draw();
+    }
+    else
+    {
+      SceneState::setColor(objectColour.x(),objectColour.y(),objectColour.z(),objectColour.w());
+      SceneState::scale(2.4f,2.4f,2.4f);
+      m_cubeMeshModel->draw();
+    }
+    SceneState::popMatrix();
+  }
+  if(depthWasOn) glEnable(GL_DEPTH_TEST);
 }
 
 bool AnimationView::drawWithShader(GLenum mode,const QVector<QVector3D>& positions,

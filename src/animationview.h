@@ -34,6 +34,7 @@
 
 #include <QOpenGLWidget>
 #include <QMatrix4x4>
+#include <QPointer>
 #include <QVector3D>
 
 #include <QHash>
@@ -51,6 +52,7 @@ class QMouseEvent;
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
 class Animation;
+class EffectsPreview;
 class PropManager;
 class Scene;
 
@@ -69,6 +71,9 @@ class AnimationView : public QOpenGLWidget
     // The first id the scene may give to objects: the view uses the ids below it for its own parts.
     static int firstObjectId();
     void setScene(Scene* scene);
+    // Script Lab effects (issue 293): while the preview has an animation it is drawn instead of the
+    // scene's animations (and cannot be clicked); its markers are drawn on the figure. Not owned.
+    void setEffectsPreview(EffectsPreview* preview);
 
     void selectPart(BVHNode* node);
     void selectProp();
@@ -154,6 +159,8 @@ class AnimationView : public QOpenGLWidget
 
     void drawAnimations();
     void drawFigure(Animation* anim, unsigned int index);
+    // the Script Lab markers (worn objects, locks) at the joints of the figure drawn last
+    void drawEffectMarkers();
     void drawPart(Animation* anim, unsigned int index, int frame, BVHNode *motion,
                   BVHNode *joints, int mode);
     void drawSkin();
@@ -247,6 +254,9 @@ class AnimationView : public QOpenGLWidget
     void startRingDrag(int axis, const QPoint& mouse);
 
   private:
+    // drawFigure() index of the Script Lab preview figure: its pick names are far from the scene's
+    static constexpr unsigned int EffectFigureIndex=99;
+
     enum class OpenGlIds
     {
       // defines where we start counting opengl ids for parts with multiple animations
@@ -275,6 +285,8 @@ class AnimationView : public QOpenGLWidget
 
     // the scene that is drawn; owned by the window
     Scene* m_scene=nullptr;
+    // the Script Lab effects preview (issue 293); owned by the window
+    QPointer<EffectsPreview> m_effects;
 
     // the handle shapes
     QScopedPointer<MeshModel> m_cubeMeshModel;
