@@ -29,6 +29,7 @@
 
 #include "versionnumber.h"
 
+#include "buildinfo.h"
 #include "constants.h"
 #include "textsize.h"
 
@@ -71,9 +72,10 @@
 #endif
 
 
-// The build source and commit come from a generated header, not from compiler options:
-// CMake drops a compiler option that contains "#", so "PR #12" never reached the program.
-#include "buildinfo.h"
+// The build source, commit, number and time come from the generated header buildinfo.h
+// (included at the top), not from compiler options: CMake drops a compiler option that
+// contains "#", so "PR #12" never reached the program, and an option that changes with
+// every build would defeat the compiler cache.
 
 QString Constants::composeBuildLabel(const QString& version, bool release, const QString& source,
                                      const QString& commit, const QString& build)

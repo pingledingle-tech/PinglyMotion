@@ -21,9 +21,10 @@ ENDIF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
 # The version number. Also change it in src/pinglymotion.rc and bin/NEWS.
 PROJECT (pinglymotion VERSION 0.1.0)
 
-# Timestamp when program was built; pass the current timestamp to the compiler
+# Timestamp when program was built. Like the build number and the build source below it goes
+# into the generated header buildinfo.h (only constants.cpp includes it), not onto the compiler
+# command line of every file: a changing option would make every compiler-cache lookup miss.
 STRING (TIMESTAMP BUILD_TIMESTAMP_Z "%Y-%m-%d %H:%M:%S UTC" UTC)
-ADD_DEFINITIONS (-DBUILD_TIMESTAMP_Z="${BUILD_TIMESTAMP_Z}")
 
 # Get the build number and pass to the compiler
 # (CI passes the run number; a local build uses the number of commits)
@@ -37,7 +38,6 @@ IF (NOT DEFINED BUILD_NUMBER)
     SET (BUILD_NUMBER "0")
   ENDIF ()
 ENDIF (NOT DEFINED BUILD_NUMBER)
-ADD_DEFINITIONS (-DBUILD_NUMBER="${BUILD_NUMBER}")
 
 # Where a build comes from, shown in the window title and in Help > About:
 # CI passes PINGLYMOTION_BUILD_SOURCE ("PR #12" or a branch name); a local build says "dev".

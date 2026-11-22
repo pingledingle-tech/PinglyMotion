@@ -37,39 +37,56 @@ TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/le
                 scriptlab/lsl/builtins.cpp scriptlab/lsl/interp.cpp scriptlab/lsl/world.cpp scriptlab/lsl/rlvworld.cpp scriptlab/lsl/control.cpp
                 scriptlab/lsl/sandbox.cpp scriptlab/lsl/session.cpp)
 
-# Sources
-SET (PINGLYMOTION_SRC aboutcredits.cpp
-              aboutdialog.cpp
+# Files that several automatic tests need besides the core: built once as a second static library
+# (before this, each test compiled its own copy: about 170 repeated compiles, most of the
+# Windows build time). The program links it too. Add a file here when two or more tests list it.
+SET (PINGLYMOTION_SHARED_SRC
+              animcheck.cpp
               animexport.cpp
               animexportdialog.cpp
               animimport.cpp
+              camera.cpp
+              controlapi.cpp
+              controlindicator.cpp
+              controlserver.cpp
+              easing.cpp
+              easingtiles.cpp
+              gltfimport.cpp
+              importoptions.cpp
+              jointinfo.cpp
+              lucideicons.cpp
+              mesh.cpp
+              motioncleanup.cpp
+              motiondescribe.cpp
+              paneltitlebar.cpp
+              posedescribe.cpp
+              retarget.cpp
+              retargetdialog.cpp
+              retargetmapping.cpp
+              screenshotsheet.cpp
+              scriptlab/objectsview.cpp
+              scriptlab/scriptlabpanel.cpp
+              theme.cpp
+              timeline.cpp
+              timelineview.cpp
+              transportbar.cpp
+              transportlook.cpp
+)
+ADD_LIBRARY (pinglymotion_shared STATIC ${PINGLYMOTION_SHARED_SRC})
+TARGET_LINK_LIBRARIES (pinglymotion_shared PUBLIC pinglymotion_core ${PINGLYMOTION_QT_LIBS})
+
+# Sources
+SET (PINGLYMOTION_SRC aboutcredits.cpp
+              aboutdialog.cpp
               animimportconvert.cpp
               animationmanager.cpp
               animationview.cpp
-              animcheck.cpp
               auroralink.cpp
-              camera.cpp
-              controlapi.cpp
-              easing.cpp
-              easingtiles.cpp
-              controlindicator.cpp
-              controlserver.cpp
               floor.cpp
-              gltfimport.cpp
               gltfimportdialog.cpp
-              jointinfo.cpp
               jointlist.cpp
-              retarget.cpp
-              importoptions.cpp
-              motioncleanup.cpp
-              retargetdialog.cpp
-              retargetmapping.cpp
               main.cpp
-              mesh.cpp
               meshmodel.cpp
-              paneltitlebar.cpp
-              motiondescribe.cpp
-              posedescribe.cpp
               prop.cpp
               propmanager.cpp
               pinglymotion.cpp
@@ -77,17 +94,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowfile.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp
-              transportbar.cpp
-              transportlook.cpp
-              lucideicons.cpp
               scene.cpp
-              screenshotsheet.cpp
-              scriptlab/scriptlabpanel.cpp
-              scriptlab/objectsview.cpp
               skinrenderer.cpp
-              theme.cpp
-              timeline.cpp
-              timelineview.cpp
               updatechecker.cpp
               updatenotificationdialog.cpp
               updatersettings.cpp
@@ -111,7 +119,7 @@ ENDIF (WIN32)
 
 # Compile and link (ui files and resources are handled by AUTOUIC/AUTORCC)
 ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
-TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
 # the control server shuts down a socket's sending side itself (controlserver.cpp, endAfterAnswer)
 IF (WIN32)
   TARGET_LINK_LIBRARIES (pinglymotion ws2_32)
