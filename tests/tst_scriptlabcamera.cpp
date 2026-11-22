@@ -4,7 +4,8 @@
  * Exact answers: the box is on the Commands page, unticked at start, with its
  * label and tooltip, after the Actions list in the tab order; the text under
  * it while off and while on, for a line typed in the panel; ticking and
- * unticking switch the override; @clear and Reset bring the text back.
+ * unticking switch the override; @clear and Reset bring the text back; a
+ * force command (job 7c) is shown and @clear forgets it.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -91,6 +92,17 @@ void TestScriptLabCamera::boxAndText()
   QVERIFY(rlv.apply("collar", "@setcam_unlock=n").ok());
   QCOMPARE(status->text().section('\n', 0, 0), QString("Camera limited by the script: focus kept on the avatar."));
   panel.resetAll();
+  QCOMPARE(status->text(), QString("The script does not limit the camera now."));
+
+  // a force command typed in the panel (job 7c): the forced field of view is shown, @clear forgets it
+  QVERIFY(panel.runLine("@setcam_fov:0.5=force"));
+  QVERIFY(cameraOverride.active());
+  QCOMPARE(status->text(), QString("Camera limited by the script: field of view forced to 28.6 degrees.\n"
+                                   "The 3D view shows a field of view of 28.6 degrees instead of 60.\n"
+                                   "Held by: panel.\n"
+                                   "Untick the box to get your own camera back."));
+  QVERIFY(panel.runLine("@clear"));
+  QVERIFY(!cameraOverride.active());
   QCOMPARE(status->text(), QString("The script does not limit the camera now."));
 
   // unticked: off, text hidden

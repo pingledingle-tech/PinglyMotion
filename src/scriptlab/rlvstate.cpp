@@ -92,6 +92,18 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
           }
         }
       }
+      // the object's forced values go with it (a sandbox choice, docs/DECISIONS.md)
+      for (auto it = m_recordedBy.begin(); it != m_recordedBy.end();)
+      {
+        const QString key = it.key() + QLatin1Char(':') + m_recorded.value(it.key());
+        if (it.value() == objectId && (filter.isEmpty() || key.contains(filter)))
+        {
+          m_recorded.remove(it.key());
+          it = m_recordedBy.erase(it);
+          anyChange = true;
+        }
+        else ++it;
+      }
       // the notify entries that are still there hear about what was lifted (oldest first)
       for (int i = removed.size() - 1; i >= 0; i--) notifyChange(objectId, removed.at(i), false, replies);
       outcome.result = Rlv::Result::Success;
@@ -178,7 +190,12 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
           outcome.reason = QString("%1 outside effects are already recorded (the most allowed)").arg(MAX_RECORDED_ENTRIES);
           return outcome;
         }
+        // a new or changed value is a change the 3D view can follow
+        if (!m_recorded.contains(recordKey) || m_recorded.value(recordKey) != option ||
+            m_recordedBy.value(recordKey) != objectId)
+          anyChange = true;
         m_recorded.insert(recordKey, option);
+        m_recordedBy.insert(recordKey, objectId);
         outcome.reason = QStringLiteral("accepted; ") + behaviour->note;
       }
       return outcome;
@@ -357,10 +374,11 @@ QMap<QString, bool> RlvState::actions() const
 
 void RlvState::reset()
 {
-  const bool had = !m_objects.isEmpty();
+  const bool had = !m_objects.isEmpty() || !m_recorded.isEmpty();
   m_objects.clear();
   m_counts.clear();
   m_recorded.clear();
+  m_recordedBy.clear();
   if (had) emit changed();
 }
 

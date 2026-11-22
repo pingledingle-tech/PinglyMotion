@@ -16,6 +16,7 @@
 
 #include "camera.h"
 #include "scriptlab/cameraoverride.h"
+#include "scriptlab/lsl/sandbox.h"
 #include "scriptlab/rlvstate.h"
 
 class TestCameraOverride : public QObject
@@ -42,6 +43,11 @@ class TestCameraOverride : public QObject
     void focusOffset();
     void eyeOffset();
     void badOffsets();
+    void forceCommandsSignal();
+    void forcedFieldOfView();
+    void forcedFocus();
+    void forcedOffsets();
+    void forcedModeAndBadForce();
 
   private:
     static void compareState(const CameraPosition& a, const CameraPosition& b);
@@ -462,6 +468,223 @@ void TestCameraOverride::badOffsets()
   QCOMPARE(o.lines(), (QStringList{
     "The script does not limit the camera now.",
     "Not used: setcam_eyeoffsetscale changes nothing without setcam_eyeoffset."}));
+}
+
+void TestCameraOverride::forceCommandsSignal()
+{
+  RlvState state;
+  QSignalSpy spy(&state, &RlvState::changed);
+  // a force command that acts outside the sandbox: recorded, owned by its object, and a change
+  QCOMPARE(state.apply("collar", "@setcam_fov:0.5=force").outcomes.value(0).result, Rlv::Result::Retained);
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(state.recorded(), (QMap<QString, QString>{{"setcam_fov", "0.5"}}));
+  QCOMPARE(state.recordedBy(), (QMap<QString, QString>{{"setcam_fov", "collar"}}));
+  // the same value again from the same object changes nothing
+  QVERIFY(state.apply("collar", "@setcam_fov:0.5=force").ok());
+  QCOMPARE(spy.count(), 1);
+  // a new value, then the same value from another object: each is a change
+  QVERIFY(state.apply("collar", "@setcam_fov:0.75=force").ok());
+  QCOMPARE(spy.count(), 2);
+  QVERIFY(state.apply("hud", "@setcam_fov:0.75=force").ok());
+  QCOMPARE(spy.count(), 3);
+  QCOMPARE(state.recordedBy().value("setcam_fov"), QString("hud"));
+  // sky and debug values too (one line, one signal)
+  QVERIFY(state.apply("collar", "@setenv_daytime:0.25=force,setdebug_renderfarclip:64=force").ok());
+  QCOMPARE(spy.count(), 4);
+  QCOMPARE(state.recordedBy(), (QMap<QString, QString>{{"setcam_fov", "hud"}, {"setdebug_renderfarclip", "collar"}, {"setenv_daytime", "collar"}}));
+  // a force command that is not carried out and not recorded is no change
+  QVERIFY(state.apply("collar", "@tpto:128/128/30=force").ok());
+  QCOMPARE(spy.count(), 4);
+  // @clear of an object that set nothing leaves the values
+  QVERIFY(state.apply("other", "@clear").ok());
+  QCOMPARE(spy.count(), 4);
+  QCOMPARE(state.recorded().size(), 3);
+  // @clear with a filter forgets only the collar's matching value
+  QVERIFY(state.apply("collar", "@clear=daytime").ok());
+  QCOMPARE(spy.count(), 5);
+  QCOMPARE(state.recorded(), (QMap<QString, QString>{{"setcam_fov", "0.75"}, {"setdebug_renderfarclip", "64"}}));
+  // @clear forgets all of the collar's values
+  QVERIFY(state.apply("collar", "@clear").ok());
+  QCOMPARE(spy.count(), 6);
+  QCOMPARE(state.recorded(), (QMap<QString, QString>{{"setcam_fov", "0.75"}}));
+  QCOMPARE(state.apply("collar", "@getdebug_renderfarclip=3").replies.value(0).text, QString());
+  // Reset with only a recorded value left is a change
+  state.reset();
+  QCOMPARE(spy.count(), 7);
+  QVERIFY(state.recorded().isEmpty());
+  QVERIFY(state.recordedBy().isEmpty());
+  state.reset();
+  QCOMPARE(spy.count(), 7);
+}
+
+void TestCameraOverride::forcedFieldOfView()
+{
+  RlvState state;   // setcam_fov is plain RLV
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  Camera camera;
+  const CameraPosition before = camera.state();
+  connect(&o, &CameraOverride::changed, this, [&]() { apply(o, camera); });
+
+  QVERIFY(state.apply("collar", "@setcam_fov:0.5=force").ok());
+  QVERIFY(o.active());
+  QVERIFY(o.limits().hasForcedView);
+  QCOMPARE(o.limits().forcedView, 28.64788975654116);
+  QCOMPARE(o.constraint().fieldOfView, 28.6478898f);
+  QVERIFY(!o.constraint().turnAroundPoint);
+  QCOMPARE(camera.fieldOfView(), 28.6478898f);
+  compareState(camera.state(), before);
+  QCOMPARE(o.lines(), (QStringList{
+    "Camera limited by the script: field of view forced to 28.6 degrees.",
+    "The 3D view shows a field of view of 28.6 degrees instead of 60.",
+    "Held by: collar.",
+    "Untick the box to get your own camera back."}));
+
+  // a held minimum still holds over the forced value
+  QVERIFY(state.apply("hud", "@setcam_fovmin:1.5=n").ok());
+  QCOMPARE(camera.fieldOfView(), 85.9436693f);
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: min field of view 85.9 degrees, field of view forced to 28.6 degrees."));
+  QCOMPARE(o.lines().at(2), QString("Held by: collar, hud."));
+  QVERIFY(state.apply("hud", "@clear").ok());
+  QCOMPARE(camera.fieldOfView(), 28.6478898f);
+
+  // a forced value can be wider than 60
+  QVERIFY(state.apply("collar", "@setcam_fov:1.5=force").ok());
+  QCOMPARE(camera.fieldOfView(), 85.9436693f);
+
+  // unticked and ticked again
+  o.setEnabled(false);
+  QCOMPARE(camera.fieldOfView(), 60.0f);
+  o.setEnabled(true);
+  QCOMPARE(camera.fieldOfView(), 85.9436693f);
+
+  // the collar's @clear forgets its forced value: 60 degrees and the camera from before
+  QVERIFY(state.apply("collar", "@clear").ok());
+  QVERIFY(!o.active());
+  QCOMPARE(camera.fieldOfView(), 60.0f);
+  compareState(camera.state(), before);
+  QCOMPARE(o.lines(), QStringList{"The script does not limit the camera now."});
+
+  // Reset does the same
+  QVERIFY(state.apply("collar", "@setcam_fov:0.5=force").ok());
+  QCOMPARE(camera.fieldOfView(), 28.6478898f);
+  state.reset();
+  QCOMPARE(camera.fieldOfView(), 60.0f);
+  compareState(camera.state(), before);
+}
+
+void TestCameraOverride::forcedFocus()
+{
+  RlvState state;
+  state.setMode(Rlv::Mode::Rlva);   // setcam_focus is RLVa only
+  CameraOverride o;
+  o.setState(&state);
+  Camera camera;
+  camera.panBy(20, 5);
+  const CameraPosition before = camera.state();
+  connect(&o, &CameraOverride::changed, this, [&]() { apply(o, camera); });
+  o.setEnabled(true);
+
+  const QString avatar = QString(lsl::Sandbox::OWNER_KEY);
+  QCOMPARE(avatar, QString("a2e76fcd-9360-4f6d-a924-000000000001"));
+  QVERIFY(state.apply("hud", "@setcam_focus:" + avatar + ";2;0=force").ok());
+  QVERIFY(o.limits().forcedFocus);
+  QVERIFY(o.active());
+  const CameraConstraint c = o.constraint();
+  QVERIFY(c.turnAroundPoint);
+  QVERIFY(!c.fixedEye);
+  QCOMPARE(c.point, CameraOverride::avatarPoint());
+  QVERIFY((camera.pivot() - CameraOverride::avatarPoint()).length() < 1e-4f);   // float rounding only
+  QCOMPARE(o.lines(), (QStringList{
+    "Camera limited by the script: focus forced on the avatar.",
+    "The camera turns around the avatar. Held by: hud.",
+    "Untick the box to get your own camera back."}));
+
+  // another target: the 3D view has nothing else to look at
+  QVERIFY(state.apply("hud", "@setcam_focus:11111111-2222-3333-4444-555555555555=force").ok());
+  QVERIFY(!o.active());
+  compareState(camera.state(), before);
+  QCOMPARE(o.lines(), (QStringList{
+    "The script does not limit the camera now.",
+    "Not shown: setcam_focus:11111111-2222-3333-4444-555555555555=force. The 3D view has only the avatar to focus on."}));
+
+  // the avatar again (upper case is the same key), then Reset
+  QVERIFY(state.apply("hud", "@setcam_focus:" + avatar.toUpper() + "=force").ok());
+  QVERIFY(o.active());
+  state.reset();
+  QVERIFY(!o.active());
+  compareState(camera.state(), before);
+}
+
+void TestCameraOverride::forcedOffsets()
+{
+  RlvState state;
+  CameraOverride o;
+  o.setState(&state);
+  Camera camera;
+  const CameraPosition before = camera.state();
+  connect(&o, &CameraOverride::changed, this, [&]() { apply(o, camera); });
+  o.setEnabled(true);
+
+  // a forced focus offset
+  QVERIFY(state.apply("hud", "@setcam_focusoffset:0/0/1=force").ok());
+  QVERIFY(o.limits().focusOffsetForced);
+  QCOMPARE(o.constraint().point, CameraOverride::avatarPoint() + QVector3D(0.0f, 39.3700787f, 0.0f));
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: focus offset 0/0/1 m (forced)."));
+
+  // a held focus offset wins over the forced one
+  QVERIFY(state.apply("collar", "@setcam_focusoffset:1/0/0=n").ok());
+  QVERIFY(!o.limits().focusOffsetForced);
+  QCOMPARE(o.constraint().point, CameraOverride::avatarPoint() + QVector3D(0.0f, 0.0f, 39.3700787f));
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: focus offset 1/0/0 m."));
+  QVERIFY(state.apply("collar", "@clear").ok());
+  QCOMPARE(o.constraint().point, CameraOverride::avatarPoint() + QVector3D(0.0f, 39.3700787f, 0.0f));
+
+  // forced eye offset and scale: the same camera as the held ones (eyeOffset())
+  QVERIFY(state.apply("hud", "@setcam_focusoffset:0/0/0=force,setcam_eyeoffset:-2/0/1=force").ok());
+  QCOMPARE(o.constraint().eye, CameraOverride::avatarPoint() + QVector3D(0.0f, 39.3700787f, -78.7401574f));
+  QCOMPARE(camera.distance(), 88.0342635f);
+  QCOMPARE(camera.xRotation(), 26.5650512f);
+  QCOMPARE(camera.yRotation(), 180.0f);
+  QVERIFY(state.apply("hud", "@setcam_eyeoffsetscale:0.5=force").ok());
+  QCOMPARE(o.constraint().eye, CameraOverride::avatarPoint() + QVector3D(0.0f, 19.6850394f, -39.3700787f));
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: focus offset 0/0/0 m (forced), "
+                                      "eye offset -2/0/1 m (forced), eye offset scale 0.5 (forced)."));
+
+  // the hud's @clear: exactly the camera from before
+  QVERIFY(state.apply("hud", "@clear").ok());
+  QVERIFY(!o.active());
+  compareState(camera.state(), before);
+}
+
+void TestCameraOverride::forcedModeAndBadForce()
+{
+  RlvState state;
+  state.setMode(Rlv::Mode::Rlva);   // setcam_mode is RLVa only
+  CameraOverride o;
+  o.setState(&state);
+  QSignalSpy spy(&o, &CameraOverride::changed);
+  QVERIFY(state.apply("hud", "@setcam_mode:mouselook=force").ok());
+  QCOMPARE(spy.count(), 1);
+  QVERIFY(o.limits().hasForcedMode);
+  QCOMPARE(o.limits().forcedMode, QString("mouselook"));
+  QVERIFY(!o.limits().any());
+  QCOMPARE(o.lines(), QStringList{"Not shown: setcam_mode:mouselook=force. The 3D view always looks from outside the avatar."});
+  o.setEnabled(true);
+  QVERIFY(!o.active());
+  QCOMPARE(o.lines(), (QStringList{
+    "The script does not limit the camera now.",
+    "Not shown: setcam_mode:mouselook=force. The 3D view always looks from outside the avatar."}));
+
+  // a forced field of view that is not an angle, an offset that is not x/y/z
+  QVERIFY(state.apply("hud", "@setcam_fov:wide=force").ok());
+  QVERIFY(!o.active());
+  QCOMPARE(o.lines().last(), QString("Not used: setcam_fov:wide=force is not an angle in radians."));
+  QVERIFY(state.apply("hud", "@setcam_eyeoffset:1/2=force").ok());
+  QCOMPARE(o.lines().last(), QString("Not used: setcam_eyeoffset:1/2=force is not an offset x/y/z in metres."));
+  state.reset();
+  QCOMPARE(o.lines(), QStringList{"The script does not limit the camera now."});
 }
 
 QTEST_GUILESS_MAIN(TestCameraOverride)
