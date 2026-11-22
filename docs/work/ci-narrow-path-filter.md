@@ -1,6 +1,6 @@
 Branch: ci/narrow-path-filter
-Status: active
-Pull request: pending
+Status: done
+Pull request: #345
 Files:
 - .github/workflows/build.yml
 - .github/workflows/codeql.yml

@@ -132,6 +132,7 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 - If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. Update a branch (instead of a rebase, so no force-push is needed): `PUT .../pulls/N/update-branch`, then `git pull`. Squash merge: `PUT .../pulls/N/merge -f merge_method=squash`.
 - A check that fails with no log and no steps usually means the Actions account is out of minutes: read the check run annotations (`.../check-runs/<id>/annotations`).
 - After "Update branch", wait for the new checks. A required check that is still "expected" blocks the merge; a skipped one does not.
+- Which jobs a pull request starts is decided by `tools/ci/changes.py` (text-only and website-only changes skip the program builds; anything it does not know runs everything). A new kind of file that never affects the program goes into its lists, with a case in `tests/test_ci_changes.py`.
 - Some source files have CRLF line endings: edit them without changing the endings (in Python open with `newline=''`).
 
 ## Reference library download (issue 19)
