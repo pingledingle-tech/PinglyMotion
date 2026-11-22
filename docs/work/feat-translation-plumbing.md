@@ -7,6 +7,8 @@ Files:
 - src/CMakeLists.txt
 - src/translation.*
 - src/*.cpp
+- src/*.h
+- src/scriptlab/labwatcher.cpp
 - src/*.ui
 - translations/**
 - tests/translation/**
