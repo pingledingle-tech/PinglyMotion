@@ -49,3 +49,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/work.py check-lists --annotate || true
+
+  # Warning only: a visible pull request must name the design charter
+  # principles it follows (docs/DESIGN_CHARTER.md, CLAUDE.md). Never fails.
+  charter-field:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tests for the charter field check
+        run: python3 tests/test_check_charter_field.py
+      - name: Charter principles named (warnings only)
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 tools/check_charter_field.py || true

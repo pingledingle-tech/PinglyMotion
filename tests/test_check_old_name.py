@@ -35,6 +35,10 @@ class Tests(unittest.TestCase):
         self.assertEqual(c.bad_text("docs/work/refactor-rename-docs.md", OLD), [])
         self.assertEqual(c.bad_text("docs/work/feat-x.md", OLD), [1])
 
+    def test_archived_rename_job_files(self):
+        self.assertEqual(c.bad_text("docs/work/archive/refactor-rename-docs.md", OLD), [])
+        self.assertEqual(c.bad_text("docs/work/archive/feat-x.md", OLD), [1])
+
 
 if __name__ == "__main__":
     unittest.main()

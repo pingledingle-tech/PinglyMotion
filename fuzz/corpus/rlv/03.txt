@@ -1,0 +1,4 @@
+collar|@detach=n
+hud|@detach=n
+collar|@clear=det
+hud|@getstatusall=2222

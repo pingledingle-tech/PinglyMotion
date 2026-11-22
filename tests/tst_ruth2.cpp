@@ -161,8 +161,7 @@ void Ruth2Test::jointsAreInSkeleton()
 void Ruth2Test::bodyLoads()
 {
   AvatarSkin skin;
-  QString error;
-  QVERIFY2(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody, &error), qPrintable(error));
+  { const AvatarSkin::Result loaded = skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody); QVERIFY2(loaded.ok(), qPrintable(loaded.error)); }
   QCOMPARE(skin.body(), AvatarSkin::RuthBody);
   QCOMPARE(skin.parts().size(), 5);
   QCOMPARE(skin.jointNames().size(), 97);
@@ -194,7 +193,7 @@ void Ruth2Test::bodyLoads()
 
   // the program loads Ruth2 when no body is named
   AvatarSkin plain;
-  QVERIFY2(plain.load(Constants::pinglyMotionDataPath(), &error), qPrintable(error));
+  { const AvatarSkin::Result loaded = plain.load(Constants::pinglyMotionDataPath()); QVERIFY2(loaded.ok(), qPrintable(loaded.error)); }
   QCOMPARE(plain.body(), AvatarSkin::RuthBody);
 }
 
@@ -204,7 +203,7 @@ void Ruth2Test::bodyLoads()
 void Ruth2Test::eyesInHead()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody).ok());
   const struct { const char* part; const char* joint; } eyes[] = {
     {"Ruth2 eye left", "mEyeLeft"}, {"Ruth2 eye right", "mEyeRight"}};
   for (const auto& eye : eyes)
@@ -227,7 +226,7 @@ void Ruth2Test::eyesInHead()
 void Ruth2Test::fingerBends()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody).ok());
   skin.skin(turnJoint(skin, "mHandIndex1Left", 60, QVector3D(0, 0, 1)));
   const AvatarSkin::Part* body = partNamed(skin, "Ruth2 body");
   QVERIFY(body);
@@ -248,7 +247,7 @@ void Ruth2Test::fingerBends()
 void Ruth2Test::jawOpens()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody));
+  QVERIFY(skin.load(Constants::pinglyMotionDataPath(), AvatarSkin::RuthBody).ok());
   const int jaw = skin.jointNames().indexOf("mFaceJaw");
   QVERIFY(jaw >= 0);
   QMatrix4x4 turn;   // 20 degrees around the jaw joint

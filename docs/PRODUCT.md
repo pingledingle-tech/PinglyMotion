@@ -88,7 +88,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 
 - **Journey:** Export an animation and use it in an AO, poseball or furniture object, potentially with a generated LSL template.
 - **Value:** Help users take finished animation into an SL object.
-- **Status:** LSL templates and reusable libraries are ideas. LSL controls animations; it is not the animation authoring format. A full LSL IDE is outside the stated scope.
+- **Status:** LSL templates and reusable libraries are ideas. LSL controls animations; it is not the animation authoring format. A full LSL IDE is outside the stated scope. The bounded exception is Script Lab, a sandbox for testing RLV and LSL scripts, with no built-in script editor ([SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md)).
 - **Pass when:** an uploaded animation plays from an object with `llStartAnimation`. LSL templates and libraries have no issue yet ([IDEAS.md](IDEAS.md), [#19](https://github.com/pingledingle-tech/PinglyMotion/issues/19)).
 - **Issues:** [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159), [#19](https://github.com/pingledingle-tech/PinglyMotion/issues/19)
 
@@ -120,26 +120,26 @@ These stages are suggested groupings, not deadlines or a claim that every step m
 
 ### Combined plan (18 November 2026)
 
-This replaces the numbered work order of 16 November. The order of stages above still holds: posing comes before the parser, and the new parser keeps today's interface to the rest of the program. File formats were decided in old #118; the posing interface in [POSING_UX.md](POSING_UX.md) ([#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14)).
+This replaces the numbered work order of 16 November. The order of stages above still holds: posing comes before the parser, and the new parser keeps today's interface to the rest of the program. File formats were decided in old #118; the posing interface in [POSING_UX.md](POSING_UX.md) ([#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14)). Since 21 November 2026 the [design charter](DESIGN_CHARTER.md) is the top authority for the look and behaviour of the whole program and wins where older UX documents disagree.
 
 What is done and what is next in each step is in [ROADMAP.md](ROADMAP.md); per pull request, in the jobs list ([#74](https://github.com/pingledingle-tech/PinglyMotion/issues/74)).
 
 The work runs in **two tracks side by side**. They mostly change different files: the posing track the window, panels and 3D view; the format track the parser, the data model and file import/export. Where a step in one track needs a file another active job has, the work board ([work/README.md](work/README.md)) decides who waits. Within a track, one step at a time, each tested on Windows before it is merged.
 
-**Track 1 – posing ([#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14), steps in [POSING_UX.md](POSING_UX.md#order-of-work))**
+**Track 1 – posing ([#14](https://github.com/pingledingle-tech/PinglyMotion/issues/14)).** The one numbered list of interface steps, with the old numbers of this list, is in [UX_DECISIONS.md, "Build order"](UX_DECISIONS.md#9-build-order); the parts in order:
 
-1. Camera and keys: one scheme for new users, Blender and Second Life habits; old joint modifier keys removed. Beside it: a data file from Firestorm with joint names, groups, left/right pairs and hand presets (LGPL notice), and the status bar (Claude, Aurora, tips switch).
-2. Friendly names, section headings and search in the joint list.
-3. Floating, movable panels; Tab hides them; reset layout. Plan: [PANELS_PLAN.md](PANELS_PLAN.md) (jobs P1 to P6).
-4. Selected-joint card: trackball, sliders, joint limit warning.
-5. Left / Right / Mirror and the whole-pose buttons.
-6. **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL (validated in Firestorm on 21 November 2026, [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)).
-7. The remaining posing steps: Hands tab, timeline, help tips and hint bar, command search, pose library and export selection, settings, visual polish and own icon, 3D view follows the tab.
+- Camera and keys: one scheme for new users, Blender and Second Life habits; old joint modifier keys removed. Beside it: a data file from Firestorm with joint names, groups, left/right pairs and hand presets (LGPL notice), and the status bar (Claude, Aurora, tips switch).
+- Friendly names, section headings and search in the joint list.
+- Floating, movable panels; Tab hides them; reset layout. Plan: [PANELS_PLAN.md](archive/PANELS_PLAN.md) (jobs P1 to P6).
+- Selected-joint card: trackball, sliders, joint limit warning.
+- Left / Right / Mirror and the whole-pose buttons.
+- **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL (validated in Firestorm on 21 November 2026, [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)).
+- The remaining posing steps: Hands tab, timeline, help tips and hint bar, command search, pose library and export selection, settings, visual polish and own icon, 3D view follows the tab.
 
 **Track 2 – file formats (old #118)**
 
 1. New parser and data model with fuzzing ([#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9)); reading and saving go through `animfile.*`.
-2. `.anim` export and easing ([#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11), [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53)). Menu: File > Export as Second Life .anim, a plain dialog with priority, slow start and finish, loop and hands; Save stays `.dingle` only. A key can carry one of six easing choices, stored as `curve` in `.dingle` and baked into the export. A pose change can also get a custom speed curve, drawn in a small dialog ("Custom curve..." next to the easing tiles, [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11) step 1), stored and baked the same way. Real upload and playback in SL: [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159).
+2. `.anim` export and easing ([#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11), [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53)). Menu: File > Export for Second Life (.anim), a plain dialog with priority, slow start and finish, loop and hands; Save stays `.dingle` only. A key can carry one of six easing choices, stored as `curve` in `.dingle` and baked into the export. A pose change can also get a custom speed curve, drawn in a small dialog ("Custom curve..." next to the easing tiles, [#11](https://github.com/pingledingle-tech/PinglyMotion/issues/11) step 1), stored and baked the same way. Real upload and playback in SL: [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159).
 3. `.anim` import ([#22](https://github.com/pingledingle-tech/PinglyMotion/issues/22)): opens the file as a new unsaved animation and lists what could not be imported.
 4. BVH from any skeleton, retargeted to the SL skeleton ([#16](https://github.com/pingledingle-tech/PinglyMotion/issues/16)): shows which joints were matched and which were left out (and why), with a switch for T-pose or A-pose starts; a hand-made mapping per source skeleton in a small `.jointmap` file ([RETARGET_MAPPING.md](RETARGET_MAPPING.md)), found again by a fingerprint of the skeleton, edited in a dialog.
 5. glTF/GLB import ([#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12)), then Blender ([#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13), docs first). No glTF export; FBX only on real demand. The own working format is `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26), [DINGLE_FORMAT.md](DINGLE_FORMAT.md)); AVM is no longer written, old `.avm` files still open and are saved as `.dingle`, an opened `.bvh` is left alone.

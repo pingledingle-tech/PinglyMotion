@@ -135,7 +135,8 @@ void RoundTripTest::roundTrip()
   QFETCH(QString, format);
 
   QString reason;
-  QVERIFY2(BVH::checkFile(file, &reason), qPrintable(reason));
+  reason = BVH::checkFile(file).error;
+  QVERIFY2(reason.isEmpty(), qPrintable(reason));
 
   QTemporaryDir dir;
   QVERIFY(dir.isValid());
@@ -145,7 +146,8 @@ void RoundTripTest::roundTrip()
   Animation first(&bvh1, file);
   QString error;
   QVERIFY2(first.saveBVH(saved, &error), qPrintable(error));
-  QVERIFY2(BVH::checkFile(saved, &reason), qPrintable(reason));
+  reason = BVH::checkFile(saved).error;
+  QVERIFY2(reason.isEmpty(), qPrintable(reason));
 
   BVH bvh2;
   Animation second(&bvh2, saved);
@@ -277,7 +279,8 @@ void RoundTripTest::corpus()
   QElapsedTimer timer;
   timer.start();
   QString reason;
-  const bool accepted = BVH::checkFile(file, &reason);
+  reason = BVH::checkFile(file).error;
+  const bool accepted = reason.isEmpty();
   QVERIFY2(timer.elapsed() < 5000, "checking a file must be quick");
 
   if (good)

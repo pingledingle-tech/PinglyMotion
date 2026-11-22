@@ -1,7 +1,7 @@
 /*
  * PinglyMotion - animation editor for Second Life avatars
  *
- * The panels on real dock widgets (docs/PANELS_PLAN.md, jobs P3 and P4).
+ * The panels on real dock widgets (docs/archive/PANELS_PLAN.md, jobs P3 and P4).
  *
  * panellayout.h holds the rules without widgets. This header applies them to
  * a QMainWindow and its QDockWidgets: the default layout built in code, the

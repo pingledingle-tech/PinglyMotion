@@ -650,8 +650,8 @@ void AnimFileTest::openRefusesBrokenCorpusFiles()
 {
   QFETCH(QString, file);
   QString error;
-  QVERIFY2(!BVH::checkFile(file, &error), "a broken file was accepted");
-  QVERIFY(!error.isEmpty());
+  error = BVH::checkFile(file).error;
+  QVERIFY2(!error.isEmpty(), "a broken file was accepted");
 
   BVH bvh;
   QVERIFY(!bvh.animRead(file, Constants::limitsFilePath()));
@@ -678,8 +678,8 @@ void AnimFileTest::openRefusesAuditFiles()
   QElapsedTimer timer;
   timer.start();
   QString error;
-  QVERIFY2(!BVH::checkFile(file, &error), "a crafted file was accepted");
-  QVERIFY(!error.isEmpty());
+  error = BVH::checkFile(file).error;
+  QVERIFY2(!error.isEmpty(), "a crafted file was accepted");
   QVERIFY2(timer.elapsed() < 5000, "checking a file must be quick");
 
   BVH bvh;
@@ -696,14 +696,17 @@ void AnimFileTest::openErrorTellsTheLine()
   const QString file = writeFile(dir, "broken.bvh",
                                  "HIERARCHY\nROOT hip\n{\n  OFFSET 0 zero 0\n");
   QString error;
-  QVERIFY(!BVH::checkFile(file, &error));
+  error = BVH::checkFile(file).error;
+  QVERIFY(!error.isEmpty());
   QVERIFY2(error.startsWith("Line 4: "), qPrintable(error));
   QVERIFY2(error.contains("zero"), qPrintable(error));
 
   // a file that is not there, and a name that is neither .bvh nor .avm
-  QVERIFY(!BVH::checkFile(dir.path() + "/missing.bvh", &error));
+  error = BVH::checkFile(dir.path() + "/missing.bvh").error;
+  QVERIFY(!error.isEmpty());
   QVERIFY(error.startsWith("The file could not be opened"));
-  QVERIFY(!BVH::checkFile(writeFile(dir, "pose.txt", "HIERARCHY"), &error));
+  error = BVH::checkFile(writeFile(dir, "pose.txt", "HIERARCHY")).error;
+  QVERIFY(!error.isEmpty());
   QVERIFY(error.contains(".bvh"));
 }
 
@@ -732,7 +735,8 @@ void AnimFileTest::openDingleGivesTheSameAnimation()
   QFETCH(QString, dingle);
 
   QString error;
-  QVERIFY2(BVH::checkFile(dingle, &error), qPrintable(error));
+  error = BVH::checkFile(dingle).error;
+  QVERIFY2(error.isEmpty(), qPrintable(error));
 
   BVH fromAvm;
   BVHNode* a = fromAvm.animRead(avm, Constants::limitsFilePath());
@@ -800,8 +804,8 @@ void AnimFileTest::openRefusesBrokenDingleFiles()
 {
   QFETCH(QString, file);
   QString error;
-  QVERIFY2(!BVH::checkFile(file, &error), "a broken file was accepted");
-  QVERIFY(!error.isEmpty());
+  error = BVH::checkFile(file).error;
+  QVERIFY2(!error.isEmpty(), "a broken file was accepted");
 
   BVH bvh;
   QVERIFY(!bvh.animRead(file, Constants::limitsFilePath()));
@@ -821,21 +825,26 @@ void AnimFileTest::openDingleErrorIsOneMessage()
   QString error;
   for (qsizetype cut : {qsizetype(0), qsizetype(1), jump.size() / 2, jump.size() - 2})
   {
-    QVERIFY(!BVH::checkFile(writeFile(dir, "cut.dingle", jump.left(cut)), &error));
+    error = BVH::checkFile(writeFile(dir, "cut.dingle", jump.left(cut))).error;
+    QVERIFY(!error.isEmpty());
     QVERIFY2(!error.isEmpty() && !error.contains('\n'), qPrintable(error));
   }
 
-  QVERIFY(!BVH::checkFile(writeFile(dir, "text.dingle", "HIERARCHY ROOT hip"), &error));
+  error = BVH::checkFile(writeFile(dir, "text.dingle", "HIERARCHY ROOT hip")).error;
+  QVERIFY(!error.isEmpty());
   QVERIFY2(error.contains(".dingle"), qPrintable(error));
 
-  QVERIFY(!BVH::checkFile(PINGLYMOTION_CORPUS "/dingle/bad_newer_version.dingle", &error));
+  error = BVH::checkFile(PINGLYMOTION_CORPUS "/dingle/bad_newer_version.dingle").error;
+  QVERIFY(!error.isEmpty());
   QVERIFY2(error.contains("newer version"), qPrintable(error));
 
   // the ending is matched in any case, like .bvh and .avm
-  QVERIFY2(BVH::checkFile(writeFile(dir, "JUMP.DINGLE", jump), &error), qPrintable(error));
+  error = BVH::checkFile(writeFile(dir, "JUMP.DINGLE", jump)).error;
+  QVERIFY2(error.isEmpty(), qPrintable(error));
 
   // a name with another ending names .dingle in the error
-  QVERIFY(!BVH::checkFile(writeFile(dir, "pose.txt", jump), &error));
+  error = BVH::checkFile(writeFile(dir, "pose.txt", jump)).error;
+  QVERIFY(!error.isEmpty());
   QVERIFY2(error.contains(".dingle"), qPrintable(error));
 }
 

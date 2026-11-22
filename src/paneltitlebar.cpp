@@ -115,7 +115,7 @@ void PanelTitleBar::paintEvent(QPaintEvent*)
 }
 
 // double click anywhere on the bar itself (not the buttons, which take the
-// event first): the same as clicking the float button (docs/PANELS_PLAN.md,
+// event first): the same as clicking the float button (docs/archive/PANELS_PLAN.md,
 // job P6). This is how Qt's own dock title bars work, so it matches what a
 // user who has used other docking windows expects.
 void PanelTitleBar::mouseDoubleClickEvent(QMouseEvent* event)
