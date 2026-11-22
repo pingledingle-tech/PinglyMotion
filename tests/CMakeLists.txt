@@ -265,3 +265,10 @@ TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabwhole_tests PRIVATE
 TARGET_LINK_LIBRARIES (pinglymotion_scriptlabwhole_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME scriptlabwhole WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scriptlabwhole_tests)
 SET_TESTS_PROPERTIES (scriptlabwhole PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Script Lab: the cheap reads and state of the object itself (gap list 2, step 2): llDie, llGetObjectDetails,
+# llSetScriptState, link names and keys, permission masks and the others
+ADD_EXECUTABLE (pinglymotion_lslownobject_tests tst_lslownobject.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslownobject_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslownobject_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslownobject COMMAND pinglymotion_lslownobject_tests)

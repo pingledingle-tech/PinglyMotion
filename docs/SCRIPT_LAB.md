@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 217 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 234 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2 of the second gap list); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -268,6 +268,45 @@ a script run through the control commands), the one the Objects part shows.
 - `llSensor`, `llSensorRepeat` and `llSensorRemove` scan for the avatars of the new `avatars` option of `lsl_run` (positions given in the input; the owner stands at the avatar's place) and for the other objects of the world,
   by name, key, type, range (96 m at most) and arc; the events `sensor` and `no_sensor` follow, and `llDetectedPos`, `Rot`, `Vel`, `Type`, `Group` and `Owner` join `llDetectedKey` and `llDetectedName`.
 - Avatars never move and nothing is drawn. Details: [CONTROL.md](CONTROL.md), "Sensors". Tests: `tests/tst_lslsensors.cpp`.
+
+## What exists now (second gap list, step 2): reads and state of the object itself
+
+- 17 more functions run: `llDie`, `llGetVel`, `llGetMass`, `llSetScale`, `llSetLocalRot`, `llGetLinkName`, `llGetLinkKey`,
+  `llDetectedLinkNumber`, `llGetObjectPermMask`, `llGetInventoryPermMask`, `llGetObjectDetails`, `llSameGroup`,
+  `llSetScriptState`, `llGetScriptState`, `llResetOtherScript`, `llGetCreator` and `llGetUsername`.
+- **`llDie`, the end state chosen:** the calling script stops at the call (nothing after it runs) with a `die` log entry
+  (with line and column); then the object is deleted: every other script of the object stops with its own `die` entry,
+  the avatars sitting on it stand up, and the answer's `objects` entry gets `deleted: true` (with `stopped: true` and
+  the stop reasons). A deleted object is no longer heard, found by sensors, named by `llKey2Name`, known to
+  `llGetObjectDetails` or a target for `llGiveInventory`, and an input sent to it is an `input` entry with the error
+  "The object was deleted with llDie.". In a worn object `llDie` does nothing and the script runs on (Second Life wiki).
+  Second Life may let the script run a little after the call; the sandbox stops it at once, so a script that relies on
+  code after `llDie` fails here first.
+- **Not running scripts:** `llSetScriptState(name, FALSE)` on another script of the same prim keeps its variables,
+  state, listens and timer, but it gets no events: the waiting ones are dropped, new ones too, and its timer and
+  sensor wait; set running again, its timer and sensor count their interval from that moment. A script can stop
+  itself (the rest of the event runs, then nothing more) but not start itself. The answer marks such a script
+  `running: false`. A script that stopped (an error or a limit) cannot be started or reset this way, as in Second Life.
+- What is canned (the same in every run) and every choice: [CONTROL.md](CONTROL.md), "Reads and state of the object itself".
+- Doubts, written down instead of guessed (the Second Life wiki does not say, and the sandbox chose):
+  the text of the debug line for a missing script (`llSetScriptState`, `llGetScriptState`, `llResetOtherScript`) is
+  the sandbox's own; the one for `llGetInventoryPermMask` (`No item named '...'`) is from memory of Second Life, not
+  from the wiki; whether a script that is not running keeps the events waiting for it (the sandbox drops them);
+  `llSetLocalRot` in the root prim (the sandbox treats it as `llSetRot`); the default next-owner mask (the sandbox
+  gives `PERM_MOVE | PERM_TRANSFER`, 532480); the mass formula (a box of 10 lindograms per cubic metre; Second
+  Life's mass also depends on the shape, hollow, cut and physics shape, which the sandbox does not have), and a worn
+  object's `llGetMass` (Second Life gives the avatar's mass, which is not known here, so the sandbox gives the
+  object's own); the values `llGetObjectDetails` gives for the costs, the avatar-only flags and the creation time.
+  The brief for this step said that unknown `llGetObjectDetails` flags give an empty list; the wiki says each unknown
+  flag gives `OBJECT_UNKNOWN_DETAIL` (-1) in the list (an unknown key gives an empty list), and the sandbox follows
+  the wiki.
+- Not done here: `OBJECT_HEALTH` to `OBJECT_VOLUME_DETECT` (50 to 56: health, damage, the permission lists, locked,
+  volume detect) give `OBJECT_UNKNOWN_DETAIL`; the keys of child prims (from `llGetLinkKey`) are not known to
+  `llGetObjectDetails`; `llSameGroup` in an attachment does not use the owner's active group; the forced delay of
+  `llSetLocalRot` (0.2 s) is not simulated, as for the other prim setters.
+- Tests: `tests/tst_lslownobject.cpp` (exact answers for every function) and the scenarios `lsl_own_object_reads` and
+  `lsl_own_object_state`. The tests that used `llGetMass` as the example of a function that does not run yet now use
+  `llGetEnergy`.
 
 ## Camera limits in the 3D view (job 7b)
 
@@ -570,7 +609,7 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   `tst_lsllint`), and one test per step: several objects (`tst_lslworld`), linked scripts (`tst_lsllink`), pure
   functions (`tst_lslpure`), `on_rez` and `changed` (`tst_lslevents`), prim state and L$ (`tst_lslprims`), inventory
   (`tst_lslinventory`), sitting (`tst_lslsitting`), controls (`tst_lslcontrols`), sensors (`tst_lslsensors`), stubs
-  (`tst_lslstubs`), HTTP (`tst_lslhttp`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
+  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
   `fuzz_control`.
 - **Live:** `tst_labwatcher.cpp` and the Live part of `tst_control.cpp`.
 - **Effects in the 3D view:** `tst_labeffects`, `tst_scriptlabeffects`, `tst_cameraoverride`,
@@ -578,12 +617,13 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   (animation and frame, camera limits, sky colour and fog distance, view modes), not the picture.
 - **The panel:** `tests/scriptlabpanel/` (the Commands page's rows, words and colour tokens, the Objects and Dialog
   part, the input buttons, the panel's place after saving the layout), offscreen.
-- **The whole tool through the control commands:** `tests/data/scriptlab/scenarios.json` holds 28 scenarios (93
+- **The whole tool through the control commands:** `tests/data/scriptlab/scenarios.json` holds 30 scenarios (98
   requests): each of the eight example scripts in `examples/scriptlab`, each kind of RLV command (restriction on and
   off, duplicates, two objects and `@clear`, force commands and recorded values, questions answered on a channel,
   exceptions, `@notify`, the RLVa and RLV modes, unknown behaviours and refused values, refused requests), RLV from a
   script, several objects with chat ranges, linked scripts with Linkset Data, a notecard from canned inventory, a pose
-  ball (sit and stand), controls, sensors, canned HTTP replies, `transaction_result`, and error cases (a script that
+  ball (sit and stand), controls, sensors, canned HTTP replies, `transaction_result`, reads and state of the object
+  itself (`llGetObjectDetails`, `llSetScriptState`, `llResetOtherScript`, `llDie`), and error cases (a script that
   does not compile, an unknown function, a function not supported yet, a runaway list, wrong `lsl_event` and `lsl_run`
   input). Each request lists the exact values some fields of its answer must have (whole event logs, RLV results and
   replies, the state). `tests/tst_scriptlabwhole.cpp` sends them to the control interface in a unit test (ctest
@@ -614,7 +654,7 @@ Not tested automatically (gaps):
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
   `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
-  `http_response`, `transaction_result`), and 217 built-in functions; HTTP only with canned replies, never on the network; hard limits on
+  `http_response`, `transaction_result`), and 234 built-in functions; HTTP only with canned replies, never on the network; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

@@ -393,7 +393,10 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text` |
 | `debug` | what Second Life says on the debug channel without stopping the script (an animation without permission, `llRegionSay` on channel 0) | `channel`, `text` |
 | `event_dropped` | more than 64 events were waiting, as in Second Life | `name`, `message` |
-| `reset` | `llResetScript` | |
+| `reset` | `llResetScript`, or `llResetOtherScript` from another script (then the reset script's entry) | |
+| `reset_other` | `llResetOtherScript` reset another script of the prim (its `reset` entry follows) | `target` (the script's name) |
+| `script_state` | `llSetScriptState` changed whether a script runs | `target` (the script's name), `running` |
+| `die` | `llDie` deleted the object: the calling script's entry (with `line` and `column`), then one for each other script of the object | `message`, `line`, `column` |
 | `error` | a runtime error stopped the script (division by zero, too many listens) | `message`, `line`, `column` |
 | `unsupported` | the script called a function the sandbox does not run yet, and was stopped there | `message`, `line`, `column` |
 | `limit` | a limit stopped the script | `message`, `line`, `column` |
@@ -599,7 +602,7 @@ with the owner's key is listed. Avatars do not move: a scan always sees them whe
 - `llDetectedName`, `llDetectedKey`, `llDetectedOwner` (an avatar is its own owner), `llDetectedType` (1 or 8, not the combinations Second Life reports for moving or physical objects), `llDetectedPos`, `llDetectedRot`
   (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
   gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated).
-- Not done: `llDetectedLinkNumber`, the touch data (`llDetectedTouch*`), `llDetectedGrab`, `llGetAgentList`, `llGetObjectDetails`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
+- Not done: the touch data (`llDetectedTouch*`), `llDetectedGrab`, `llGetAgentList`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
 
 #### Controls (Script Lab step 9b-6)
 
@@ -637,7 +640,7 @@ entry with an `error`. The answer's `objects` entries have `sitters` (`key`, `na
   key, any other name a key made from the object's key and the name. The avatar's own animations (standing, sitting) are not in the list. **`llGetAnimation(key)`** answers `Sitting` for an avatar sitting on any object of the
   world, `Standing` for the owner, and an empty string for any other key. **`llGetAgentInfo(key)`** answers `AGENT_SITTING | AGENT_ON_OBJECT` (0x30) for a sitting avatar, plus `AGENT_ATTACHMENTS` (2) for the owner
   while any object of the world is worn, and 0 for everyone else (walking, flying, typing and the other flags are never set).
-- Not done: the avatar's position and rotation on the sit target, `llSitOnLink`, `llGetObjectPrimCount` and the link keys of sitting avatars, touch-to-sit (`llSetClickAction`), sit-text display, stand-up stopping animations, and the `control` event (the next step).
+- Not done: the avatar's position and rotation on the sit target, `llSitOnLink`, `llGetObjectPrimCount`, touch-to-sit (`llSetClickAction`), sit-text display, stand-up stopping animations, and the `control` event (the next step).
 
 #### Inventory, notecards and rezzing (Script Lab step 9b-4)
 
@@ -666,7 +669,7 @@ are in the inventory too, as type `script` (an item may not have a script's name
   within 10 m of the rezzing object (exactly 10 m is fine; farther gives a `rez` entry with `result: too_far` and nothing else). On success the entry has the new object's key and
   the rezzing script gets `object_rez(key)`. The rezzed object is only a key: it does not run, has no `on_rez` and does not appear in the world (a copy-permission item stays in the
   inventory). The sandbox does not check the other limits of Second Life (the region's object limit, the rez throttle, no-copy items disappearing).
-- Not done: `llGetInventoryPermMask`, `llGetInventoryCreator`, `llGiveInventoryList`, `llGetNotecardLineSync`, `llGetInventoryAcquireTime`, `llSetRemoteScriptAccessPin` and
+- Not done: `llGetInventoryCreator`, `llGiveInventoryList`, `llGetNotecardLineSync`, `llGetInventoryAcquireTime`, `llSetRemoteScriptAccessPin` and
   `llRemoteLoadScriptPin`; the `allowed_drop` flag; the `changed` event for an avatar dropping an item (use the `changed` input).
 
 #### The events on_rez and changed (Script Lab step 9b-2, issue 314)
@@ -684,6 +687,71 @@ are in the inventory too, as type `script` (an item may not have a script's name
   The log has an `input` entry (`input`: `changed`, `change`: the flags) and then the scripts' `event` entries. The event is only the event:
   `llGetOwner`, the prim count and the inventory do not change with it (`owner` does not give the object a new owner). This is a new input type
   for the existing `inputs`; no new control command.
+
+#### Reads and state of the object itself (Script Lab, second gap list, step 2)
+
+Seventeen functions that read or change the script's own object. Where Second Life's behaviour is not documented the
+sandbox chooses, and [SCRIPT_LAB.md](SCRIPT_LAB.md) lists those doubts.
+
+- **`llDie()`** stops the calling script at once with a `die` entry; then the object is deleted: its other scripts stop
+  (a `die` entry each), sitting avatars stand up, and the answer's `objects` entry has `deleted: true`. A deleted object
+  is not heard, not found by sensors, unknown to `llKey2Name`, `llGetOwnerKey` and `llGetObjectDetails`, and no target for
+  `llGiveInventory`; an input sent to it is an `input` entry with `error` "The object was deleted with llDie.".
+  In a worn object `llDie` does nothing (as in Second Life).
+- **`llGetVel()`** is always `ZERO_VECTOR`: nothing moves in the sandbox. **`llGetMass()`** adds up the prims as boxes of 10
+  lindograms per cubic metre (Second Life's default density, 1000 kg/m3, in units of 100 kg): the root prim with the
+  object's scale, each child with its own size (a 0.5 m cube is 1.25). A worn object gives its own mass (Second Life:
+  the avatar's).
+- **`llSetScale(size)`** sets the script's prim size, each part clamped to 0.01..64 (as the wiki says); in the root it is
+  `llGetScale`. It does nothing while `STATUS_PHYSICS` is set. A `prim` entry with `op` `size`, as `PRIM_SIZE`.
+  **`llSetLocalRot(rot)`** sets a child prim's rotation relative to the root; in the root prim it sets the object's
+  rotation, as `llSetRot`. A `prim` entry with `op` `rotation`. The forced delays are not simulated.
+- **`llGetLinkName(link)`** and **`llGetLinkKey(link)`**: `LINK_THIS` and link numbers; `0` only in a single prim nobody sits
+  on. The root has the object's name and key; a child its name (`PRIM_NAME`, default `Object`) and a key made from the
+  object's key and its link number (the MD5 of `<object key>/link/<n>`, written as a key, the same in every run); avatars
+  sitting on the object are the links after the prims, in the order they sat, with their name and key. Any other
+  number (also `LINK_SET` and the like) gives `NULL_KEY`, for `llGetLinkName` too (Second Life wiki).
+- **`llDetectedLinkNumber(i)`**: in `touch_start`, the prim touched (a touch input's `link`; 0 in a single prim). A touch on
+  a prim without a touch script goes to the root's scripts with the number of the prim touched. Out of range, or in
+  an event that is not a touch (such as `sensor`), it is 0.
+- **Permission masks:** every object and item counts as made by its owner: `llGetObjectPermMask` and
+  `llGetInventoryPermMask` give `PERM_ALL` (2147483647) for `MASK_BASE` and `MASK_OWNER`, 0 for `MASK_GROUP` and
+  `MASK_EVERYONE`, `PERM_MOVE | PERM_TRANSFER` (532480) for `MASK_NEXT`; `MASK_COMBINED` changes nothing; another mask
+  gives 0. `llGetInventoryPermMask` on a missing item gives 0 and a `debug` line `No item named '<name>'`.
+- **`llGetCreator()`** is the owner's key. **`llGetUsername(id)`** is the legacy name of an avatar the sandbox knows (the
+  owner, the `avatars` of the request, sitters) in lower case with a dot, without the last name `Resident` (`Ann Smith`
+  gives `ann.smith`, `Bob Resident` gives `bob`, the owner `owner`); any other key gives `""`.
+- **`llSameGroup(id)`**: every object of the sandbox is set to one group, key `9a0c0000-0000-4000-8000-000000000001`.
+  `TRUE` for that key, for any object of the world, and for an avatar with `in_group`; `FALSE` for the owner and other
+  avatars, `NULL_KEY` and any other key.
+- **`llSetScriptState(name, running)`**, **`llGetScriptState(name)`** and **`llResetOtherScript(name)`** reach the scripts
+  in the same prim (Second Life wiki). A name that is not a script of the prim gives a `debug` line `<function>: there
+  is no script named "<name>" in this prim.` (the sandbox's wording) and, for `llGetScriptState`, `FALSE`. A script that
+  is not running keeps its variables, state, listens and timer but gets no events (waiting and new ones are dropped)
+  and its timer and sensor wait; running again, they count their interval from then. A script can stop itself (the
+  rest of the event still runs; `llGetScriptState` on itself then answers `FALSE`) but not start itself. A stopped script
+  (error or limit) counts as not running and is not changed. `llResetOtherScript` resets a running script (a `reset_other`
+  entry, then the script's `reset`, `state` and `state_entry`); a script that is not running is not reset; on the
+  calling script itself it is `llResetScript`. A change writes a `script_state` entry; the answer's script entries (or a
+  single script's object entry) have `running: false` while a script is not running.
+- **`llGetObjectDetails(id, params)`** knows the objects of the world (their root prim; not child prim keys and not deleted
+  objects) and the avatars (the owner, the `avatars` of the request, sitters). An unknown key gives an empty list.
+  Entries of `params` that are not integers are skipped; each unknown flag, and the flags 50 to 56 (`OBJECT_HEALTH`,
+  `OBJECT_DAMAGE`, `OBJECT_DAMAGE_TYPE`, `OBJECT_PERMS`, `OBJECT_PERMS_COMBINED`, `OBJECT_LOCKED`,
+  `OBJECT_VOLUME_DETECT`, not simulated yet), give `OBJECT_UNKNOWN_DETAIL` (-1). For an object: name, description,
+  position, rotation (the root's), velocity and omega zero, owner, group (the sandbox group), creator and rezzer (the
+  owner), running and total script counts, script memory 65536 per running script, script and character time 0.0,
+  prim equivalence and prim count the prims, server, streaming and physics cost 1.0 per prim (canned), root (its own
+  key), attachment point, pathfinding type `OPT_LEGACY_LINKSET` (`OPT_OTHER` when worn), physics and phantom (from
+  `llSetStatus`; 0 when worn), temp on rez, render weight 0, hover height 0.0, body shape -1.0, last owner `NULL_KEY`,
+  click action 0, inventory count (the scripts too), group tag `""`, temp attached 0, attached slots 0, creation and
+  rez time `2026-01-01T00:00:00.000000Z`, select count 0, sit count, animated count 0, animated slots 0, account level
+  -1, material `PRIM_MATERIAL_WOOD`, mass (as `llGetMass`), hover text, its colour and alpha, link number (0 for a single
+  prim nobody sits on, else 1), scale. For an avatar (per the wiki where it says): its name, `""` description, where it
+  stands, its own key as owner and as root (or the object it sits on), `NULL_KEY` group, creator, last owner and rezzer,
+  the scripts in the objects it wears, attachment point 0, `OPT_AVATAR`, render weight -1 (unknown), body shape 0.0,
+  attached slots 38 minus the objects it wears, animated slots 1, account level 0, scale, mass, text colour and text alpha zero, and 0 or empty
+  for the object-only flags (all canned).
 
 #### Pure functions and object state (Script Lab step 9b-1, issue 310)
 
@@ -719,9 +787,9 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor`, `no_sensor` and `http_response`; 217 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor`, `no_sensor` and `http_response`; 234 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, HTTP requests with canned replies, and functions that are only recorded). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, HTTP requests with canned replies, reads and state of the object itself (`llGetObjectDetails`, `llDie`, `llSetScriptState` and others), and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

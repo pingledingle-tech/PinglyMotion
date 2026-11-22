@@ -200,6 +200,7 @@ class Sandbox
       QString name;                // step 9b-1: the name now (llSetObjectName); spec.name stays the object's handle in logs and inputs
       QString description;         // the description now (llSetObjectDesc)
       bool tagScripts = false;     // given with "scripts": log entries name the script
+      bool dead = false;           // gap list 2, step 2: deleted with llDie (its scripts stopped; nothing finds it any more)
       int firstSlot = 0;
       int slotCount = 0;
     };
@@ -230,6 +231,11 @@ class Sandbox
     // step 9b-9: http_response to every script in the prim of the requesting script
     void httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body);
     std::vector<Detected> sense(int from, const QString& name, const QString& id, int type, double range, double arc);
+    // gap list 2, step 2: llDie (the object is gone and its other scripts stop), another script of the same prim by
+    // name (a slot, or -1), and what llGetObjectDetails knows about a key
+    void die(int from, double time);
+    int scriptInPrim(int from, const QString& name) const;
+    bool details(int from, const QString& key, ObjectDetails& out) const;
     bool isSitting(const QString& key) const;
     bool hasAttachments() const;
     int linkNumber(int slot) const;

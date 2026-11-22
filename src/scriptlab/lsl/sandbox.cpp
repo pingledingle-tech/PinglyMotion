@@ -121,6 +121,51 @@ class ObjectWorld : public RlvWorld
     int attachPoint() const override { return spec().attached; }
     QString nameOf(const QString& key) const override { return m_sandbox.nameOf(key); }
     QString ownerOf(const QString& key) const override { return m_sandbox.ownerOf(key); }
+    // gap list 2, step 2
+    bool die(double time) override
+    {
+      if (spec().attached > 0) return false;
+      m_sandbox.die(m_slot, time);
+      return true;
+    }
+    QString sitterKey(int index) const override
+    {
+      const std::vector<Sandbox::Sitter>& s = state().sitters;
+      return index >= 0 && index < int(s.size()) ? s[size_t(index)].key : QString();
+    }
+    QString sitterName(int index) const override
+    {
+      const std::vector<Sandbox::Sitter>& s = state().sitters;
+      return index >= 0 && index < int(s.size()) ? s[size_t(index)].name : QString();
+    }
+    int scriptState(const QString& name) const override
+    {
+      const int slot = m_sandbox.scriptInPrim(m_slot, name);
+      if (slot < 0) return -1;
+      const Interpreter& in = *m_sandbox.m_slots[size_t(slot)].interp;
+      return !in.stopped() && in.running() ? 1 : 0;   // a stopped script counts as not running, as in Second Life
+    }
+    int setScriptState(double time, const QString& name, bool running) override
+    {
+      const int slot = m_sandbox.scriptInPrim(m_slot, name);
+      if (slot < 0) return -1;
+      Interpreter& in = *m_sandbox.m_slots[size_t(slot)].interp;
+      if (in.stopped() || in.running() == running) return 0;
+      in.syncTo(time);
+      in.setRunning(running);
+      return 1;
+    }
+    int resetOtherScript(double time, const QString& name) override
+    {
+      const int slot = m_sandbox.scriptInPrim(m_slot, name);
+      if (slot < 0) return -1;
+      Interpreter& in = *m_sandbox.m_slots[size_t(slot)].interp;
+      if (in.stopped() || !in.running()) return 0;
+      in.syncTo(time);
+      in.resetFromOtherScript();
+      return 1;
+    }
+    bool details(const QString& key, ObjectDetails& out) override { return m_sandbox.details(m_slot, key, out); }
 
   private:
     int object() const { return m_sandbox.m_slots[size_t(m_slot)].object; }
@@ -390,6 +435,12 @@ void Sandbox::deliver(const SandboxInput& input)
     for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->syncTo(m_now);
     const double t = single ? m_slots[0].interp->now() : m_now;
     if (m_tag) entry["object"] = o.spec.name;
+    if (o.dead)
+    {
+      entry["error"] = "The object was deleted with llDie.";
+      m_log.log(t, entry);
+      return;
+    }
     if (input.type == "touch")
     {
       // the scripts of the touched prim that handle touch_start get it; when none does, the root's
@@ -412,7 +463,7 @@ void Sandbox::deliver(const SandboxInput& input)
       if (hit.empty())
         for (int i = 0; i < o.slotCount; ++i)
           if (m_slots[size_t(o.firstSlot + i)].link == 1) hit.push_back(o.firstSlot + i);
-      for (int i : hit) m_slots[size_t(i)].interp->touch(key, name);
+      for (int i : hit) m_slots[size_t(i)].interp->touch(key, name, o.spec.prims == 1 ? 0 : link);
       return;
     }
     if (input.type == "control")
@@ -667,7 +718,7 @@ QString Sandbox::giveInventory(int, double time, const QString& to, const Invent
 {
   for (Object& o : m_objects)
   {
-    if (o.spec.key != to) continue;
+    if (o.spec.key != to || o.dead) continue;
     // an object: the item goes into its inventory (a name it already has is refused: Second Life would rename)
     if (!o.inventory.add(item, o.spec.key)) return "name_exists";
     for (int i = 0; i < o.slotCount; ++i)
@@ -784,7 +835,7 @@ std::vector<Detected> Sandbox::sense(int from, const QString& name, const QStrin
   for (size_t i = 0; i < m_objects.size(); ++i)
   {
     Object& o = m_objects[i];
-    if (&o == &self) continue;
+    if (&o == &self || o.dead) continue;
     Detected d;
     d.key = o.spec.key;
     d.name = o.name;
@@ -847,7 +898,7 @@ QString Sandbox::nameOf(const QString& key) const
       if (sitter.key == key) return sitter.name;
   for (const Object& o : m_objects)
   {
-    if (o.spec.key == key) return o.name;
+    if (o.spec.key == key) return o.dead ? QString() : o.name;
     if (!o.spec.ownerKey.isEmpty() && o.spec.ownerKey == key && !o.spec.ownerName.isEmpty()) return o.spec.ownerName;
   }
   return QString();
@@ -856,8 +907,109 @@ QString Sandbox::nameOf(const QString& key) const
 QString Sandbox::ownerOf(const QString& key) const
 {
   for (const Object& o : m_objects)
-    if (o.spec.key == key) return o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+    if (o.spec.key == key && !o.dead) return o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
   return QString();
+}
+
+// ---------------------------------------------------------------- reads and state of the object itself (gap list 2, step 2)
+
+void Sandbox::die(int from, double time)
+{
+  Object& o = m_objects[size_t(m_slots[size_t(from)].object)];
+  o.dead = true;
+  o.sitters.clear();   // the avatars sitting on it stand up (no changed event: no script of the object is left)
+  for (int i = 0; i < o.slotCount; ++i)
+  {
+    const int slot = o.firstSlot + i;
+    if (slot == from) continue;
+    m_slots[size_t(slot)].interp->syncTo(time);
+    m_slots[size_t(slot)].interp->halt("die", "Another script of the object called llDie, so the object was deleted.");
+  }
+}
+
+int Sandbox::scriptInPrim(int from, const QString& name) const
+{
+  const Slot& caller = m_slots[size_t(from)];
+  const Object& o = m_objects[size_t(caller.object)];
+  for (int i = 0; i < o.slotCount; ++i)
+  {
+    const int slot = o.firstSlot + i;
+    const Slot& s = m_slots[size_t(slot)];
+    if (slot != from && s.link == caller.link && s.name == name) return slot;
+  }
+  return -1;
+}
+
+bool Sandbox::details(int from, const QString& key, ObjectDetails& out) const
+{
+  Q_UNUSED(from);
+  out = ObjectDetails();
+  out.key = key;
+  for (size_t i = 0; i < m_objects.size(); ++i)
+  {
+    const Object& o = m_objects[i];
+    if (o.spec.key != key || o.dead) continue;
+    Object& w = const_cast<Object&>(o);   // PrimStore makes its prims on first use
+    out.name = o.name;
+    out.description = o.description;
+    out.owner = o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+    where(int(i), out.position);
+    for (int k = 0; k < 3; ++k) out.scale[k] = o.spec.scale[k];
+    const PrimState& root = w.prims.prim(1, o.spec.prims);
+    for (int k = 0; k < 4; ++k) out.rotation[k] = root.rotation[k];
+    out.prims = o.spec.prims;
+    out.sitters = int(o.sitters.size());
+    out.attached = o.spec.attached;
+    out.totalScripts = o.slotCount;
+    for (int k = 0; k < o.slotCount; ++k)
+    {
+      const Interpreter& in = *m_slots[size_t(o.firstSlot + k)].interp;
+      if (!in.stopped() && in.running()) ++out.runningScripts;
+    }
+    out.inventoryItems = int(o.inventory.items().size());
+    out.physics = (o.prims.status & 0x1) ? 1 : 0;
+    out.phantom = (o.prims.status & 0x10) ? 1 : 0;
+    out.tempOnRez = root.tempOnRez;
+    out.mass = w.prims.mass(o.spec.scale, o.spec.prims);
+    out.text = root.text;
+    for (int k = 0; k < 3; ++k) out.textColor[k] = root.textColor[k];
+    out.textAlpha = root.textAlpha;
+    return true;
+  }
+  // an avatar: one given for the sensors, someone sitting on an object, or the owner
+  auto asAvatar = [&](const QString& name, const float* position, const float* velocity, const float* rotation, bool inGroup)
+  {
+    out.avatar = true;
+    out.name = name;
+    out.owner = key;
+    out.inGroup = inGroup;
+    for (int k = 0; k < 3; ++k) { out.position[k] = position[k]; out.velocity[k] = velocity ? velocity[k] : 0.0f; out.scale[k] = 0.0f; }
+    if (rotation) for (int k = 0; k < 4; ++k) out.rotation[k] = rotation[k];
+    // the scripts in the objects the avatar wears
+    for (const Object& o : m_objects)
+    {
+      const QString owner = o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+      if (o.dead || o.spec.attached <= 0 || owner != key) continue;
+      ++out.attached;
+      out.totalScripts += o.slotCount;
+      for (int k = 0; k < o.slotCount; ++k)
+      {
+        const Interpreter& in = *m_slots[size_t(o.firstSlot + k)].interp;
+        if (!in.stopped() && in.running()) ++out.runningScripts;
+      }
+    }
+    for (const Object& o : m_objects)
+      for (const Sitter& sitter : o.sitters)
+        if (sitter.key == key) out.sitRoot = o.spec.key;
+    return true;
+  };
+  for (const AvatarSpec& a : m_avatars)
+    if (a.key == key) return asAvatar(a.name, a.position, a.velocity, a.rotation, a.inGroup);
+  if (key == OWNER_KEY) return asAvatar(OWNER_NAME, AVATAR_POSITION, nullptr, nullptr, false);
+  for (const Object& o : m_objects)
+    for (const Sitter& sitter : o.sitters)
+      if (sitter.key == key) return asAvatar(sitter.name, AVATAR_POSITION, nullptr, nullptr, false);
+  return false;
 }
 
 // ---------------------------------------------------------------- the answer
@@ -889,6 +1041,7 @@ QJsonArray Sandbox::objectsJson() const
                     {"stopped", in.stopped()}, {"open_listens", in.openListens()}, {"timer", in.timerInterval()},
                     {"steps", double(in.steps())}, {"memory", double(in.memoryBytes())}};
       if (in.stopped()) s["stop_reason"] = in.stopReason();
+      else if (!in.running()) s["running"] = false;   // llSetScriptState
       scripts.append(s);
     }
     QJsonObject entry{{"name", o.spec.name}, {"key", o.spec.key}, {"owner", first.world->ownerKey()},
@@ -898,6 +1051,8 @@ QJsonArray Sandbox::objectsJson() const
                       {"open_listens", listens}, {"timer", first.interp->timerInterval()},
                       {"steps", steps}};
     if (stopped) entry["stop_reason"] = reasons.join(" ");
+    if (o.dead) entry["deleted"] = true;   // gap list 2, step 2: llDie
+    else if (!o.tagScripts && !first.interp->stopped() && !first.interp->running()) entry["running"] = false;   // llSetScriptState
     entry["restrictions"] = QJsonArray::fromStringList(m_rlv.objects().value(o.spec.key));
     if (!o.sitters.empty())
     {

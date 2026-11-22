@@ -279,4 +279,57 @@ QString World::ownerOf(const QString& key) const
   return QString();
 }
 
+const char* const World::GROUP_KEY = "9a0c0000-0000-4000-8000-000000000001";
+
+float PrimStore::mass(const float rootSize[3], int count)
+{
+  float total = 0.0f;
+  for (int link = 1; link <= qMax(1, count); ++link)
+  {
+    const float* s = link == 1 ? rootSize : prim(link, count).size;
+    total += s[0] * s[1] * s[2] * 10.0f;
+  }
+  return total;
+}
+
+bool World::details(const QString& key, ObjectDetails& out)
+{
+  out = ObjectDetails();
+  out.key = key;
+  if (key == objectKey())
+  {
+    out.name = objectName();
+    out.description = objectDesc();
+    out.owner = ownerKey();
+    position(out.position);
+    scale(out.scale);
+    const int count = qMax(1, numberOfPrims());
+    const PrimState& root = primStore().prim(1, count);
+    for (int i = 0; i < 4; ++i) out.rotation[i] = root.rotation[i];
+    out.prims = count;
+    out.sitters = sitterCount();
+    out.attached = attachPoint();
+    out.runningScripts = out.totalScripts = 1;   // a plain World runs one script
+    out.inventoryItems = int(inventory().items().size());
+    out.physics = (primStore().status & 1) ? 1 : 0;    // STATUS_PHYSICS
+    out.phantom = (primStore().status & 16) ? 1 : 0;   // STATUS_PHANTOM
+    out.tempOnRez = root.tempOnRez;
+    out.mass = primStore().mass(out.scale, count);
+    out.text = root.text;
+    for (int i = 0; i < 3; ++i) out.textColor[i] = root.textColor[i];
+    out.textAlpha = root.textAlpha;
+    return true;
+  }
+  if (key == ownerKey())
+  {
+    out.avatar = true;
+    out.name = ownerName();
+    out.owner = key;
+    const float avatar[3] = {128.0f, 128.0f, 20.0f};   // where the owner stands
+    for (int i = 0; i < 3; ++i) out.position[i] = avatar[i];
+    return true;
+  }
+  return false;
+}
+
 } // namespace lsl

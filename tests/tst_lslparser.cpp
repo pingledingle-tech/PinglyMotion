@@ -65,7 +65,7 @@ void LslParserTest::builtinData()
   QCOMPARE(int(f->args.size()), 3);
   QCOMPARE(f->args[1], Type::Integer);
   QVERIFY(f->supported);
-  QVERIFY(!Builtins::function("llGetMass")->supported);
+  QVERIFY(!Builtins::function("llGetEnergy")->supported);
   QCOMPARE(Builtins::event("listen")->args.size(), size_t(4));
   QCOMPARE(Builtins::constant("PERMISSION_TRIGGER_ANIMATION")->value.i, 0x10);
   QCOMPARE(Builtins::constant("TRUE")->value.i, 1);
@@ -266,12 +266,12 @@ void LslParserTest::checkErrors()
 void LslParserTest::warnings()
 {
   const Parser::Result r = Parser::parse(
-    "default {\n state_entry() {\n  llGetMass();\n }\n touch_end(integer n) { }\n collision(integer n) { }\n}");
+    "default {\n state_entry() {\n  llGetEnergy();\n }\n touch_end(integer n) { }\n collision(integer n) { }\n}");
   QVERIFY(r.ok());   // valid LSL: warnings only
   QCOMPARE(int(r.warnings.size()), 3);
   QCOMPARE(r.warnings[0].line, 3);
   QCOMPARE(r.warnings[0].column, 3);
-  QVERIFY(r.warnings[0].message.contains("llGetMass is not supported yet"));
+  QVERIFY(r.warnings[0].message.contains("llGetEnergy is not supported yet"));
   QVERIFY(r.warnings[1].message.contains("touch_end"));
   QVERIFY(r.warnings[1].message.contains("does not raise it yet"));
 }
