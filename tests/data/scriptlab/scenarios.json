@@ -1852,6 +1852,125 @@
       ]
     },
     {
+      "about": "money, web server and mail (gap list 2, step 4): a fake URL, an incoming POST answered with llHTTPResponse, a payment, an email read with llGetNextEmail, then a request with lsl_event and a refused money input",
+      "name": "lsl_money_web_mail",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {
+                "request": "5c11ab00-0000-4000-8000-000000000001",
+                "result": "granted",
+                "secure": false,
+                "t": 0,
+                "type": "url_request",
+                "url": "http://sandbox.invalid:12046/cap/6f0cbd9d-f152-d7f5-0b12-9df9c12137c8"
+              },
+              {"seconds":3,"t":0,"type":"timer_set"},
+              {
+                "args": [
+                  "5c11ab00-0000-4000-8000-000000000001",
+                  "URL_REQUEST_GRANTED",
+                  "http://sandbox.invalid:12046/cap/6f0cbd9d-f152-d7f5-0b12-9df9c12137c8"
+                ],
+                "name": "http_request",
+                "t": 0,
+                "type": "event"
+              },
+              {"t":0,"text":"url http://sandbox.invalid:12046/cap/6f0cbd9d-f152-d7f5-0b12-9df9c12137c8 free 37","type":"owner_say"},
+              {
+                "body": "hello",
+                "input": "http_request",
+                "method": "POST",
+                "request": "c0de0000-0000-4000-8000-000000000001",
+                "t": 1,
+                "type": "input",
+                "url": "http://sandbox.invalid:12046/cap/6f0cbd9d-f152-d7f5-0b12-9df9c12137c8/order?item=7"
+              },
+              {"args":["c0de0000-0000-4000-8000-000000000001","POST","hello"],"name":"http_request","t":1,"type":"event"},
+              {"t":1,"text":"POST /order?item=7 hello","type":"owner_say"},
+              {
+                "body": "thanks",
+                "request": "c0de0000-0000-4000-8000-000000000001",
+                "result": "sent",
+                "status": 200,
+                "t": 1,
+                "type": "http_server_response"
+              },
+              {
+                "amount": 50,
+                "id": "a2e76fcd-9360-4f6d-a924-000000000001",
+                "input": "money",
+                "name": "Owner",
+                "note": "Simulated: no L$ moved.",
+                "t": 2,
+                "type": "input"
+              },
+              {"args":["a2e76fcd-9360-4f6d-a924-000000000001","50"],"name":"money","t":2,"type":"event"},
+              {"t":2,"text":"paid 50","type":"owner_say"},
+              {"address":"mail1@sandbox","input":"email","subject":"Order","t":2.5,"type":"input","waiting":1},
+              {"name":"timer","t":3,"type":"event"},
+              {"seconds":0,"t":3,"type":"timer_set"},
+              {"address":"","found":true,"left":0,"subject":"","t":3,"type":"email_check"},
+              {"args":["1767225602","mail1@sandbox","Order","two apples","0"],"name":"email","t":3,"type":"event"},
+              {"t":3,"text":"1767225602 mail1@sandbox Order: two apples (0 left)","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "inputs": [
+              {
+                "at": 1,
+                "body": "hello",
+                "headers": {"User-Agent":"tester"},
+                "method": "POST",
+                "type": "http_request",
+                "url": "http://sandbox.invalid:12046/cap/6f0cbd9d-f152-d7f5-0b12-9df9c12137c8/order?item=7"
+              },
+              {"amount":50,"at":2,"type":"money"},
+              {"address":"mail1@sandbox","at":2.5,"body":"two apples","subject":"Order","type":"email"}
+            ],
+            "seconds": 4,
+            "source": "default {\n  state_entry() { llRequestURL(); llSetTimerEvent(3); }\n  http_request(key id, string method, string body) {\n    if (method == URL_REQUEST_GRANTED) { llOwnerSay(\"url \" + body + \" free \" + (string)llGetFreeURLs()); return; }\n    llOwnerSay(method + \" \" + llGetHTTPHeader(id, \"x-path-info\") + \"?\" + llGetHTTPHeader(id, \"x-query-string\") + \" \" + body);\n    llHTTPResponse(id, 200, \"thanks\");\n  }\n  money(key id, integer amount) { llOwnerSay(\"paid \" + (string)amount); }\n  timer() { llSetTimerEvent(0); llGetNextEmail(\"\", \"\"); }\n  email(string time, string address, string subject, string message, integer left) {\n    llOwnerSay(time + \" \" + address + \" \" + subject + \": \" + message + \" (\" + (string)left + \" left)\");\n  }\n}\n"
+          }
+        },
+        {
+          "expect": {
+            "log": [
+              {
+                "input": "http_request",
+                "method": "GET",
+                "request": "c0de0000-0000-4000-8000-000000000002",
+                "t": 4,
+                "type": "input",
+                "url": "http://sandbox.invalid:12046/cap/6f0cbd9d-f152-d7f5-0b12-9df9c12137c8"
+              },
+              {"args":["c0de0000-0000-4000-8000-000000000002","GET",""],"name":"http_request","t":4,"type":"event"},
+              {"t":4,"text":"GET ? ","type":"owner_say"},
+              {
+                "body": "thanks",
+                "request": "c0de0000-0000-4000-8000-000000000002",
+                "result": "sent",
+                "status": 200,
+                "t": 4,
+                "type": "http_server_response"
+              }
+            ],
+            "ok": true
+          },
+          "request": {"command":"lsl_event","seconds":1,"type":"http_request"}
+        },
+        {
+          "expect": {"error":"A money input needs \"amount\": the L$ paid, a whole number from 1 to 2147483647.","ok":false},
+          "request": {"command":"lsl_event","type":"money"}
+        }
+      ]
+    },
+    {
       "about": "a script that does not compile, an unknown function, a function not supported yet, an endless loop, bad lsl_event input",
       "name": "errors",
       "steps": [
@@ -1912,7 +2031,7 @@
         },
         {
           "expect": {
-            "error": "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\".",
+            "error": "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\" or \"email\".",
             "ok": false
           },
           "request": {"command":"lsl_event","type":"fly"}
@@ -1943,7 +2062,7 @@
         },
         {
           "expect": {
-            "error": "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\".",
+            "error": "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\" or \"email\".",
             "ok": false
           },
           "request": {"command":"lsl_run","inputs":[{"at":1,"type":"fly"}],"source":"default { }"}

@@ -95,7 +95,7 @@ struct ScriptEntry
 struct SandboxInput
 {
   double at = 0.0;
-  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control
+  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -108,6 +108,16 @@ struct SandboxInput
   int levels = 0;                 // control (step 9b-6): the CONTROL_* flags held now
   int edges = 0;                  // control: the CONTROL_* flags that changed
   double hold = 0.0;              // touch (gap list 2, step 1): seconds the touch is held (0: a click)
+  // gap list 2, step 4: money (the L$ paid; link: the prim paid), http_request (a request from outside to a URL a script
+  // got: the full URL with any path and query, empty: the newest URL of the object; method, body, headers with
+  // lower-case names) and email (sender address, subject, body as the message)
+  int amount = 0;
+  QString url;
+  QString method = "GET";
+  QString body;
+  QMap<QString, QString> headers;
+  QString address;
+  QString subject;
   // touch: the phases after touch_start are scheduled by the Sandbox itself as inputs: 0 the touch from outside,
   // 1 a touch event while held (at start + step * TOUCH_REPEAT), 2 touch_end (at start + hold)
   int phase = 0;
@@ -132,6 +142,12 @@ class Sandbox
     static constexpr double SAY_RANGE = 20.0;
     static constexpr double SHOUT_RANGE = 100.0;
     static constexpr int MAX_ATTACH_POINT = 55;
+    // gap list 2, step 4: an incoming request body is cut to 2048 bytes and a header value to 255 bytes (Second Life wiki,
+    // http_request); x-remote-ip is a documentation address (RFC 5737), never a real one
+    static constexpr int MAX_HTTP_IN_BODY_BYTES = 2048;
+    static constexpr int MAX_HTTP_HEADER_BYTES = 255;
+    static const char* const REMOTE_IP;
+    static const char* const DEFAULT_EMAIL_SENDER;
     // gap list 2, step 1: a held touch raises touch every TOUCH_REPEAT simulated seconds (Second Life raises it about
     // once per minimum event delay while the mouse button is held); a touch is held at most MAX_TOUCH_HOLD seconds
     static constexpr double TOUCH_REPEAT = 0.1;
@@ -215,6 +231,7 @@ class Sandbox
       QString description;         // the description now (llSetObjectDesc)
       bool tagScripts = false;     // given with "scripts": log entries name the script
       bool dead = false;           // gap list 2, step 2: deleted with llDie (its scripts stopped; nothing finds it any more)
+      std::deque<Email> mail;      // gap list 2, step 4: the object's mailbox (email inputs; llGetNextEmail)
       int firstSlot = 0;
       int slotCount = 0;
     };
@@ -253,6 +270,15 @@ class Sandbox
     // gap list 2, step 3: the avatars in the region (llGetAgentList): the owner unless listed, the listed avatars in
     // their order, then avatars sitting on an object that are not listed
     QStringList agents() const;
+    // gap list 2, step 4: the URLs of the fake web server, each held by one script (a slot)
+    struct UrlEntry
+    {
+      QString url;
+      int slot = 0;
+    };
+    // frees every URL held by a script of the object; answers how many
+    int releaseObjectUrls(int object);
+    void deliverHttp(const SandboxInput& input);
     bool isSitting(const QString& key) const;
     bool hasAttachments() const;
     int linkNumber(int slot) const;
@@ -278,6 +304,8 @@ class Sandbox
     std::vector<AvatarSpec> m_avatars;
     std::vector<HttpReply> m_http;
     RegionSettings m_region;
+    std::vector<UrlEntry> m_urls;
+    int m_requestCounter = 0;
     std::vector<SandboxInput> m_inputs;   // sorted by time, stable
     double m_now = 0.0;
     QJsonObject m_lastDialog;
