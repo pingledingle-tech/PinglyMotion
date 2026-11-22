@@ -2857,9 +2857,18 @@ void ControlTest::rlvWorksWithoutAnAnimation()
 
 void ControlTest::rlvaModeSwitch()
 {
-  // plain RLV is the default; RLVa-only behaviours are unknown there
+  // RLVa is the default; the RLV-only behaviours are unknown there
   QJsonObject answer = run(R"({"command":"rlv_state"})");
+  QCOMPARE(answer["mode"].toString(), QString("rlva"));
+  QVERIFY(answer["behaviours"].toArray().contains(QJsonValue("showselfhead")));
+  QVERIFY(!answer["behaviours"].toArray().contains(QJsonValue("camdrawmax")));
+  answer = run(R"({"command":"rlv_command","object":"collar","text":"@camdrawmax:20=n"})");
+  QCOMPARE(answer["results"].toArray()[0].toObject()["reason"].toString(), QString("unknown behaviour \"camdrawmax\""));
+
+  // plain RLV: the RLVa-only behaviours are unknown there
+  answer = run(R"({"command":"rlv_reset","mode":"rlv"})");
   QCOMPARE(answer["mode"].toString(), QString("rlv"));
+  answer = run(R"({"command":"rlv_state"})");
   QVERIFY(!answer["behaviours"].toArray().contains(QJsonValue("showselfhead")));
   QVERIFY(answer["rlva_only"].toArray().contains(QJsonValue("showselfhead")));
   answer = run(R"({"command":"rlv_command","object":"collar","text":"@showselfhead=n"})");

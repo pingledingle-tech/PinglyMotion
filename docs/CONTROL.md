@@ -183,14 +183,17 @@ RLV 3.4.3; it is never identical to Second Life.
   out). Only a restriction without an option blocks an action: with an option it
   is an exception (`@sendim:<uuid>=add`) or a limited form.
 - `rlv_reset` lifts every restriction of every object; `removed` says how many. The optional `mode` (`rlv` or
-  `rlva`, any case) sets the mode: plain RLV is the default at start, and in plain RLV mode the behaviours that only
-  RLVa has (step 9, issue 297; the list is `rlva_only` in `rlv_state`) fail as unknown. Switching the mode always
+  `rlva`, any case) sets the mode: RLVa (as in Firestorm) is the default at start; in RLVa mode the behaviours that
+  only plain RLV has (such as `camdrawmax`) fail as unknown, and in plain RLV mode (the RLV specification, as in Kokua)
+  the behaviours and parameter types that only RLVa has fail (step 9, issue 297; the list of RLVa-only names is
+  `rlva_only` in `rlv_state`). Switching the mode always
   starts from a clean state; the answer has `mode`. Any other `mode` value fails and changes nothing. Camera, sky and
   debug behaviours are only recorded and shown in the `reason` of the result ("recorded only"); the real program
   never changes.
-- Known behaviours of the RLV core: the table in `src/scriptlab/rlvbehaviours.cpp` holds 158 behaviours (restrictions,
+- Known behaviours of the RLV core: the table in `src/scriptlab/rlvbehaviours.cpp` holds 219 behaviours (restrictions,
   questions answered on a channel such as `version` and `getstatus`, and force commands where they exist; each is marked
-  `RLV`, `RLVa only` or `RLV only`). The names known in the current mode are in `behaviours` of `rlv_state`; the
+  `RLV`, `RLVa only` or `RLV only`, and the test `rlvsources` checks names, parameter types and marks against RLVa's
+  source and the RLV wiki, see [SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV and RLVa mode"). The names known in the current mode are in `behaviours` of `rlv_state`; the
   groups and the camera, sky and debug behaviours that are only recorded are described in
   [SCRIPT_LAB.md](SCRIPT_LAB.md). Other names parse but fail as unknown.
 - Limits: at most 64 objects hold restrictions at a time, and each at most 128. An object without restrictions is

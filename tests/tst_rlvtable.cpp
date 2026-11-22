@@ -94,7 +94,8 @@ void TestRlvTable::aliasRowsFollowTheirTarget()
   QVERIFY(t->alias.isEmpty());
   QCOMPARE(a->params, t->params);
   QCOMPARE(a->option, t->option);
-  QCOMPARE(a->dialect, t->dialect);
+  // the RLV wiki has the old name camavdist but not setcam_avdist, so only that pair differs in its mark
+  if (alias != QLatin1String("camavdist")) QCOMPARE(a->dialect, t->dialect);
   QCOMPARE(a->group, t->group);
   QCOMPARE(a->external, t->external);
   QCOMPARE(Rlv::canonicalName(alias), target);
@@ -457,9 +458,10 @@ static const Rlv::OptionUse NO = Rlv::OptionUse::None;
 static const Rlv::OptionUse OP = Rlv::OptionUse::Optional;
 static const Rlv::OptionUse RQ = Rlv::OptionUse::Required;
 static const Rlv::Dialect PLAIN = Rlv::Dialect::Rlv;
+static const Rlv::Dialect RLVAONLY = Rlv::Dialect::RlvaOnly;
 static const Spec specs[] = {
   {"addattach", AR, OP, "addattach", PLAIN}, {"remattach", AR | FO, OP, "remattach", PLAIN},
-  {"addoutfit", AR, OP, "addoutfit", PLAIN}, {"remoutfit", AR | FO, OP, "remoutfit", PLAIN},
+  {"addoutfit", AR | FO, OP, "addoutfit", PLAIN}, {"remoutfit", AR | FO, OP, "remoutfit", PLAIN},
   {"detachme", FO, NO, "", PLAIN}, {"defaultwear", AR, NO, "", Rlv::Dialect::RlvOnly},
   {"unsharedwear", AR, NO, "unsharedwear", PLAIN}, {"unsharedunwear", AR, NO, "unsharedunwear", PLAIN},
   {"attach", FO, RQ, "", PLAIN}, {"attachover", FO, RQ, "", PLAIN}, {"attachoverorreplace", FO, RQ, "", PLAIN},
@@ -480,10 +482,10 @@ static const Spec specs[] = {
   {"viewnote", AR, OP, "viewnote", PLAIN}, {"viewscript", AR, OP, "viewscript", PLAIN},
   {"viewtexture", AR, OP, "viewtexture", PLAIN},
   {"editobj", AR, RQ, "", PLAIN}, {"editworld", AR, NO, "editworld", PLAIN}, {"editattach", AR, NO, "editattach", PLAIN},
-  {"buy", AR, NO, "buy", PLAIN}, {"pay", AR, OP, "pay", PLAIN},
+  {"buy", AR, NO, "buy", RLVAONLY}, {"pay", AR, OP, "pay", RLVAONLY},
   {"acceptpermission", AR, NO, "", PLAIN}, {"denypermission", AR, NO, "", Rlv::Dialect::RlvOnly},
   {"setgroup", AR | FO, OP, "setgroup", PLAIN}, {"temprun", AR, NO, "temprun", PLAIN}, {"alwaysrun", AR, NO, "alwaysrun", PLAIN},
-  {"jump", AR, NO, "jump", PLAIN}, {"setrot", FO, RQ, "", Rlv::Dialect::RlvOnly}, {"adjustheight", FO, RQ, "", PLAIN},
+  {"jump", AR, NO, "jump", RLVAONLY}, {"setrot", FO, RQ, "", Rlv::Dialect::RlvOnly}, {"adjustheight", FO, RQ, "", PLAIN},
   {"tpto", FO, RQ, "", PLAIN}, {"standtp", AR, NO, "", PLAIN}, {"accepttp", AR, OP, "", PLAIN}, {"sitground", FO, NO, "", PLAIN}};
 
 void TestRlvTable::everyActionOnce()
@@ -528,11 +530,11 @@ void TestRlvTable::rowsOfThisPart()
 
   // the mark decides in which mode it is known
   const Rlv::Mode home = spec.dialect == Rlv::Dialect::RlvOnly ? Rlv::Mode::Rlv : Rlv::Mode::Rlva;
-  QVERIFY(Rlv::findBehaviour(name, Rlv::Mode::Rlv));
+  QCOMPARE(Rlv::findBehaviour(name, Rlv::Mode::Rlv) != nullptr, spec.dialect != Rlv::Dialect::RlvaOnly);
   QCOMPARE(Rlv::findBehaviour(name, Rlv::Mode::Rlva) != nullptr, spec.dialect != Rlv::Dialect::RlvOnly);
-  Q_UNUSED(home)
 
   RlvState state;
+  state.setMode(home);
   const QString arg = argumentFor(name);
   const QString withOption = ":" + arg;
   if (spec.params & Rlv::AllowAddRemove)
@@ -568,6 +570,7 @@ void TestRlvTable::rlvOnlyMark()
 {
   QCOMPARE(Rlv::findBehaviour("defaultwear")->dialect, Rlv::Dialect::RlvOnly);
   RlvState state;
+  state.setMode(Rlv::Mode::Rlv);
   QCOMPARE(one(state, "@defaultwear=n").result, Rlv::Result::Success);
   QCOMPARE(one(state, "@denypermission=n").result, Rlv::Result::Success);
   QVERIFY(state.has("defaultwear"));
@@ -615,12 +618,26 @@ void TestRlvTable::forceCommandsAreRetained_data()
   QTest::newRow("adjustheight") << "@adjustheight:0.1;1=force";
   QTest::newRow("tpto") << "@tpto:128/128/30=force";
   QTest::newRow("sitground") << "@sitground=force";
+  // RLVa only: fly=force and the addoutfit names of the shared folder force commands
+  QTest::newRow("fly") << "@fly=force";
+  QTest::newRow("addoutfit") << "@addoutfit:Clothes/Hat=force";
+  QTest::newRow("addoutfitall") << "@addoutfitall:Clothes=force";
+  QTest::newRow("addoutfitover") << "@addoutfitover:Clothes/Hat=force";
+  QTest::newRow("addoutfitallover") << "@addoutfitallover:Clothes=force";
+  QTest::newRow("addoutfitthis") << "@addoutfitthis=force";
+  QTest::newRow("addoutfitallthis") << "@addoutfitallthis=force";
+  QTest::newRow("addoutfitthisover") << "@addoutfitthisover=force";
+  QTest::newRow("addoutfitallthisover") << "@addoutfitallthisover=force";
 }
 
 void TestRlvTable::forceCommandsAreRetained()
 {
   QFETCH(QString, line);
   RlvState state;
+  // in the mode that knows it: RLVa, or plain RLV for an RLV-only name
+  const Rlv::Behaviour* b = Rlv::findBehaviour(Rlv::parseLine(line).commands.value(0).behaviour);
+  QVERIFY(b);
+  if (b->dialect == Rlv::Dialect::RlvOnly) state.setMode(Rlv::Mode::Rlv);
   const RlvState::Outcome outcome = one(state, line);
   QCOMPARE(outcome.result, Rlv::Result::Retained);
   QCOMPARE(outcome.reason, QString("accepted; force commands are not carried out in the sandbox"));
@@ -790,6 +807,7 @@ void TestRlvTable::setrotIsRlvOnly()
 {
   QCOMPARE(Rlv::findBehaviour("setrot")->dialect, Rlv::Dialect::RlvOnly);
   RlvState state;
+  state.setMode(Rlv::Mode::Rlv);
   QCOMPARE(one(state, "@setrot:3.14=force").result, Rlv::Result::Retained);
   state.setMode(Rlv::Mode::Rlva);
   QCOMPARE(one(state, "@setrot:3.14=force").reason, QString("unknown behaviour \"setrot\""));
@@ -801,13 +819,14 @@ static const Rlv::Dialect RLVONLY = Rlv::Dialect::RlvOnly;
 static const RecSpec recSpecs[] = {
   {"camdrawmin", AR, RQ, RLVONLY}, {"camdrawmax", AR, RQ, RLVONLY}, {"camdrawalphamin", AR, RQ, RLVONLY},
   {"camdrawalphamax", AR, RQ, RLVONLY}, {"camdrawcolor", AR, RQ, RLVONLY},
-  {"setsphere", AR, NO, PLAIN}, {"setsphere_mode", AR | FO, OP, PLAIN}, {"setsphere_origin", AR | FO, OP, PLAIN},
-  {"setsphere_color", AR | FO, OP, PLAIN}, {"setsphere_distmin", AR | FO, OP, PLAIN},
-  {"setsphere_distmax", AR | FO, OP, PLAIN}, {"setsphere_distextend", AR | FO, OP, PLAIN},
-  {"setsphere_param", AR | FO, OP, PLAIN}, {"setsphere_tween", AR | FO, OP, PLAIN},
-  {"setsphere_valuemin", AR | FO, OP, PLAIN}, {"setsphere_valuemax", AR | FO, OP, PLAIN},
-  {"setoverlay", AR, NO, PLAIN}, {"setoverlay_alpha", AR | FO, OP, PLAIN}, {"setoverlay_texture", AR | FO, OP, PLAIN},
-  {"setoverlay_tint", AR | FO, OP, PLAIN}, {"setoverlay_tween", AR | FO, OP, PLAIN}, {"setoverlay_touch", AR, NO, PLAIN}};
+  // RLVa only; RLVa sets the sphere and overlay values with =force only
+  {"setsphere", AR, NO, RLVAONLY}, {"setsphere_mode", FO, OP, RLVAONLY}, {"setsphere_origin", FO, OP, RLVAONLY},
+  {"setsphere_color", FO, OP, RLVAONLY}, {"setsphere_distmin", FO, OP, RLVAONLY},
+  {"setsphere_distmax", FO, OP, RLVAONLY}, {"setsphere_distextend", FO, OP, RLVAONLY},
+  {"setsphere_param", FO, OP, RLVAONLY}, {"setsphere_tween", FO, OP, RLVAONLY},
+  {"setsphere_valuemin", FO, OP, RLVAONLY}, {"setsphere_valuemax", FO, OP, RLVAONLY},
+  {"setoverlay", AR, NO, RLVAONLY}, {"setoverlay_alpha", FO, OP, RLVAONLY}, {"setoverlay_texture", FO, OP, RLVAONLY},
+  {"setoverlay_tint", FO, OP, RLVAONLY}, {"setoverlay_tween", FO, OP, RLVAONLY}, {"setoverlay_touch", AR, NO, RLVAONLY}};
 
 void TestRlvTable::recordedRows_data()
 {
@@ -829,11 +848,23 @@ void TestRlvTable::recordedRows()
   QVERIFY(b->external);
   QVERIFY(b->blocks.isEmpty());
   QVERIFY(b->note.startsWith("recorded only"));
-  QVERIFY(Rlv::findBehaviour(name, Rlv::Mode::Rlv));
+  QCOMPARE(Rlv::findBehaviour(name, Rlv::Mode::Rlv) != nullptr, spec.dialect != RLVAONLY);
   QCOMPARE(Rlv::findBehaviour(name, Rlv::Mode::Rlva) != nullptr, spec.dialect != RLVONLY);
 
   RlvState state;
+  state.setMode(spec.dialect == RLVONLY ? Rlv::Mode::Rlv : Rlv::Mode::Rlva);
   const QString opt = spec.option == NO ? QString() : ":1/0.5/0";
+  if (!(spec.params & AR))
+  {
+    // a value set with =force only
+    QCOMPARE(one(state, "@" + name + opt + "=n").reason, QString("@%1 does not take =n").arg(name));
+    QVERIFY(state.restrictions().isEmpty());
+    const RlvState::Outcome forced = one(state, "@" + name + ":2=force");
+    QCOMPARE(forced.result, Rlv::Result::Retained);
+    QVERIFY(forced.reason.contains("recorded only"));
+    QCOMPARE(state.recorded().value(name), QString("2"));
+    return;
+  }
   const RlvState::Outcome added = one(state, "@" + name + opt + "=n");
   QCOMPARE(added.result, Rlv::Result::Success);
   QVERIFY2(added.reason.contains("recorded only"), qPrintable(added.reason));
@@ -876,6 +907,7 @@ void TestRlvTable::sphereAndOverlayForce()
 void TestRlvTable::versionWithBlacklist()
 {
   RlvState state;
+  state.setMode(Rlv::Mode::Rlv);
   const RlvState::ApplyResult r = state.apply("obj", "@versionnumbl=1234");
   QCOMPARE(r.outcomes.value(0).result, Rlv::Result::Success);
   QCOMPARE(r.replies.size(), 1);
@@ -888,6 +920,7 @@ void TestRlvTable::versionWithBlacklist()
 void TestRlvTable::blacklistAndZoomAnswers()
 {
   RlvState state;
+  state.setMode(Rlv::Mode::Rlv);
   RlvState::ApplyResult r = state.apply("obj", "@getblacklist=77");
   QCOMPARE(r.replies.size(), 1);
   QCOMPARE(r.replies[0].text, QString());
@@ -915,6 +948,7 @@ void TestRlvTable::rlvOnlyNamesInRlvaMode()
 {
   QFETCH(QString, line);
   RlvState state;
+  state.setMode(Rlv::Mode::Rlv);
   const RlvState::Outcome known = one(state, line);
   QVERIFY2(known.result != Rlv::Result::Failed, qPrintable(line));   // known in plain RLV
   QVERIFY(!known.reason.contains("unknown behaviour"));

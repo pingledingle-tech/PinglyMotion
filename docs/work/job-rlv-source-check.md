@@ -3,6 +3,10 @@ Status: active
 Pull request: #360
 Files:
 - src/scriptlab/rlvbehaviours.*
+- src/scriptlab/rlvstate.h
+- src/scriptlab/lsl/lint.cpp
+- src/controlapi.cpp
+- tools/mcp/commands.json
 - tools/rlv_sources.py
 - tests/data/rlv/**
 - tests/tst_rlvsources.cpp
@@ -10,9 +14,16 @@ Files:
 - tests/CMakeLists.txt
 - tests/tst_rlvtable.cpp
 - tests/tst_rlva.cpp
+- tests/tst_rlvcommand.cpp
+- tests/tst_rlvstate.cpp
+- tests/tst_lslrlv.cpp
+- tests/tst_control.cpp
+- tests/tst_environmentoverride.cpp
+- tests/tst_viewmodesoverride.cpp
+- tests/tst_scriptlabcamera.cpp
 - CREDITS.md
-- docs/PRODUCT.md
-- docs/ROADMAP.md
+- docs/SCRIPT_LAB.md
+- docs/CONTROL.md
 - docs/DECISIONS.md
 
 ## What

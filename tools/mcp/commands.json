@@ -535,7 +535,7 @@
             ]
         },
         {
-            "description": "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed. Optional mode: \"rlv\" (plain RLV, the default at start) or \"rlva\" (also the behaviours that only the RLVa viewers have; in plain RLV mode those answer as unknown). Switching the mode always starts from a clean state. Camera, sky and debug behaviours are only recorded and logged; the real program never changes.",
+            "description": "Script Lab (RLV sandbox): removes every RLV restriction of every object, as if all objects were taken off. The answer says how many restrictions were removed. Optional mode: \"rlva\" (RLVa as in Firestorm, the default at start) or \"rlv\" (plain RLV as in the RLV specification and Kokua: the behaviours and parameter types that only RLVa has answer as unknown, and the RLV-only behaviours such as camdraw are known). Switching the mode always starts from a clean state. Camera, sky and debug behaviours are only recorded and logged; the real program never changes.",
             "name": "rlv_reset",
             "parameters": {
                 "mode": {
