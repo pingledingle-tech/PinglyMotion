@@ -1,6 +1,6 @@
 Branch: fix/theme-tokens-from-file
 Status: active
-Pull request: pending
+Pull request: #349
 Files:
 - src/theme.cpp
 - src/theme.h
