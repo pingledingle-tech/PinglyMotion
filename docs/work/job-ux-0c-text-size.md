@@ -1,5 +1,5 @@
 Branch: job/ux-0c-text-size
-Status: active
+Status: done
 Pull request: #363
 Files:
 - src/panellayout.h
