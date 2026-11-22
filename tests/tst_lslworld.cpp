@@ -14,6 +14,8 @@
 #include <QTest>
 
 #include "scriptlab/lsl/control.h"
+#include "scriptlab/lsl/parser.h"
+#include "scriptlab/lsl/sandbox.h"
 #include "scriptlab/lsl/session.h"
 #include "scriptlab/rlvstate.h"
 
@@ -272,18 +274,30 @@ void LslWorldTest::limitStopsOneObjectOthersRun()
            QStringList({"0 loop limit ", "1 clock owner_say tick", "2 clock owner_say tick", "3 clock owner_say tick"}));
   QCOMPARE(a["stopped"].toBool(), false);
 
-  // an endless ping-pong at one moment ends at the event limit of each script, not in a hang
-  RlvState rlv2;
+  // an endless ping-pong at one moment ends at the event limit of each script, not in a hang. Run with a
+  // smaller event limit and a long real-time limit, so the event limit ends it on a slow machine too
+  // (sanitizer builds); lsl_run uses the same Sandbox with the default limits
+  Limits limits;
+  limits.maxEvents = 2000;
+  limits.maxWallMs = 600000;
   const QString ping = "default { state_entry() { llListen(3, \"\", NULL_KEY, \"\"); llSay(3, \"x\"); } listen(integer c, string n, key id, string m) { llSay(3, m); } }";
-  const QJsonObject b = run({object("ping", ping), object("pong", ping)}, 1, rlv2);
-  QVERIFY2(b["ok"].toBool(), qPrintable(b["error"].toString()));
-  QCOMPARE(b["log_truncated"].toBool(), true);
+  std::shared_ptr<const Script> script(Parser::parse(ping).script.release());
+  QVERIFY(script);
+  RlvState rlv2;
+  Sandbox sandbox(rlv2, true);
+  ObjectSpec first, second;
+  first.name = "ping";
+  second.name = "pong";
+  QCOMPARE(sandbox.addObject(first, script, limits), QString());
+  QCOMPARE(sandbox.addObject(second, script, limits), QString());
+  sandbox.start();
+  sandbox.runUntil(1.0);
+  QCOMPARE(sandbox.truncated(), true);
   // ping reaches the limit first; pong then hears nothing more and keeps waiting
-  const QJsonArray pair = b["objects"].toArray();
-  QCOMPARE(pair[0].toObject()["stop_reason"].toString(), QString("The script handled more than 10000 events and was stopped."));
-  QCOMPARE(pair[1].toObject()["stopped"].toBool(), false);
-  QCOMPARE(b["stopped"].toBool(), false);
-  QCOMPARE(b["log"].toArray().last().toObject()["type"].toString(), QString("limit"));
+  QCOMPARE(sandbox.interpreter(0).stopReason(), QString("The script handled more than 2000 events and was stopped."));
+  QCOMPARE(sandbox.interpreter(1).stopped(), false);
+  QCOMPARE(sandbox.allStopped(), false);
+  QCOMPARE(sandbox.log().last().toObject()["type"].toString(), QString("limit"));
 
   // lsl_event refuses a world where every script stopped
   Session session;

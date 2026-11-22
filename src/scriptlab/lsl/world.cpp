@@ -36,8 +36,17 @@ void World::log(double time, QJsonObject entry, bool force)
   m_log.append(out);
 }
 
+bool World::logFull()
+{
+  if (m_target) return m_target->logFull();
+  if (m_log.size() < MAX_LOG_ENTRIES) return false;
+  m_truncated = true;
+  return true;
+}
+
 void World::chat(double time, const QString& kind, int channel, const QString& text)
 {
+  if (logFull()) return;
   log(time, QJsonObject{{"type", kind}, {"channel", channel}, {"text", clip(text)}});
 }
 
@@ -70,6 +79,7 @@ void World::dialog(double time, const QString& avatar, const QString& message, c
 
 void World::messageLinked(double time, int link, int num, const QString& str, const QString& id)
 {
+  if (logFull()) return;
   log(time, QJsonObject{{"type", "message_linked"}, {"link", link}, {"num", num}, {"text", clip(str)}, {"id", clip(id)}, {"scripts", 0}});
 }
 

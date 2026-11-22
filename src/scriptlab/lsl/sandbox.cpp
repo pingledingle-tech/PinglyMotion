@@ -70,7 +70,7 @@ class ObjectWorld : public RlvWorld
     void messageLinked(double time, int link, int num, const QString& str, const QString& id) override
     {
       const int reached = m_sandbox.messageLinked(m_slot, time, link, num, str, id);
-      log(time, QJsonObject{{"type", "message_linked"}, {"link", link}, {"num", num}, {"text", clip(str)}, {"id", clip(id)}, {"scripts", reached}});
+      if (!logFull()) log(time, QJsonObject{{"type", "message_linked"}, {"link", link}, {"num", num}, {"text", clip(str)}, {"id", clip(id)}, {"scripts", reached}});
     }
     LinksetData& linksetData() override { return m_sandbox.m_objects[size_t(object())].data; }
     void linksetDataChanged(double time, int action, const QString& name, const QString& value) override

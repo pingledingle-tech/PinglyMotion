@@ -120,6 +120,9 @@ class World
     // adds an entry; "t" is set from time. Past MAX_LOG_ENTRIES entries are dropped and truncated() is true,
     // except a forced entry (why the script stopped), which always comes last.
     void log(double time, QJsonObject entry, bool force = false);
+    // true when the log is full, so a new entry would be dropped: marks the log truncated. Callers check it
+    // before they build an entry, which saves time in long runs (an endless exchange between scripts).
+    bool logFull();
     const QJsonArray& entries() const { return m_log; }
     bool truncated() const { return m_truncated; }
     void clear() { m_log = QJsonArray(); m_truncated = false; }

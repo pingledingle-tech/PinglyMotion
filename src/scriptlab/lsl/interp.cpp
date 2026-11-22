@@ -325,14 +325,17 @@ void Interpreter::dispatch(const Event& event)
     }
   }
 
-  QJsonObject entry{{"type", "event"}, {"name", event.name}};
-  if (!event.args.empty())
+  if (!m_world.logFull())
   {
-    QJsonArray args;
-    for (const Value& v : event.args) args.append(World::clip(toLslString(v)));
-    entry["args"] = args;
+    QJsonObject entry{{"type", "event"}, {"name", event.name}};
+    if (!event.args.empty())
+    {
+      QJsonArray args;
+      for (const Value& v : event.args) args.append(World::clip(toLslString(v)));
+      entry["args"] = args;
+    }
+    m_world.log(m_now, entry);
   }
-  m_world.log(m_now, entry);
 
   m_frames.push_back(Frame());
   m_frames.back().scopes.emplace_back();

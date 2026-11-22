@@ -245,22 +245,40 @@ void LslLinkTest::primDoesNotHearItself()
 
 void LslLinkTest::endlessLoopBetweenScripts()
 {
-  RlvState rlv;
+  // the event limit, not the real-time limit, must end it, so the test does not depend on the machine's speed
+  Limits limits;
+  limits.maxEvents = 1000;
+  limits.maxWallMs = 600000;
   const QString ping = "default { state_entry() { if (llGetLinkNumber() == 1) llMessageLinked(LINK_ALL_OTHERS, 0, \"x\", \"\"); }"
                        " link_message(integer s, integer n, string m, key id) { llMessageLinked(s, n + 1, m, id); } }";
-  QElapsedTimer clock;
-  clock.start();
-  const QJsonObject o{{"name", "loop"}, {"scripts", QJsonArray{script("ping", ping, 1), script("pong", ping, 2)}}};
-  const QJsonObject r = run({o}, 5, rlv);
-  QVERIFY2(r["ok"].toBool(), qPrintable(r["error"].toString()));
-  QVERIFY(clock.elapsed() < 10000);
+  std::shared_ptr<const Script> script(Parser::parse(ping).script.release());
+  QVERIFY(script);
+  RlvState rlv;
+  Sandbox sandbox(rlv, true);
+  ObjectSpec spec;
+  spec.name = "loop";
+  spec.prims = 2;
+  ScriptEntry a, b;
+  a.name = "ping";
+  a.script = script;
+  b.name = "pong";
+  b.link = 2;
+  b.script = script;
+  QCOMPARE(sandbox.addObject(spec, std::vector<ScriptEntry>{a, b}, limits), QString());
+  sandbox.start();
+  sandbox.runUntil(5.0);
   // the scripts take turns at one moment; pong handled its state_entry and the first message in the first
-  // round, so it is one event ahead and reaches the event limit first; ping then waits forever
-  const QJsonArray scripts = r["objects"].toArray()[0].toObject()["scripts"].toArray();
-  QCOMPARE(scripts[1].toObject()["stop_reason"].toString(), QString("The script handled more than 10000 events and was stopped."));
-  QCOMPARE(scripts[0].toObject()["stopped"].toBool(), false);
-  QCOMPARE(r["log_truncated"].toBool(), true);
-  QCOMPARE(r["time"].toDouble(), 5.0);
+  // round, so it is one event ahead and reaches the event limit first; ping then waits for an answer forever
+  QCOMPARE(sandbox.scriptInterpreter(1).stopReason(), QString("The script handled more than 1000 events and was stopped."));
+  QCOMPARE(sandbox.scriptInterpreter(0).stopped(), false);
+  // about 2 entries per event (the event and its message_linked): the log is full at 2000 entries, and the
+  // entry that says why a script stopped always comes last
+  QCOMPARE(sandbox.truncated(), true);
+  const QJsonArray log = sandbox.log();
+  QCOMPARE(log.size(), 2001);
+  QCOMPARE(log.last().toObject()["type"].toString(), QString("limit"));
+  QCOMPARE(log.last().toObject()["script"].toString(), QString("pong"));
+  QCOMPARE(sandbox.now(), 5.0);
 }
 
 void LslLinkTest::linksetDataStore()
