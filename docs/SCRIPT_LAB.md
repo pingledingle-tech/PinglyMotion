@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 86 functions run (72 from step 3, five more from step 5, nine from step 9a); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 111 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -178,6 +178,20 @@ an RLV relay, a store), and they talk to each other.
   `builtins.cpp`. Tests: `tests/tst_lsllink.cpp`. Fuzz: `fuzz_lsl` also runs every script as three scripts in one
   object of two prims and drives the Linkset Data store from the input.
 
+## What exists now (step 9b-1, issue 310): the signature table and pure functions
+
+- The signature table knows every function, event and constant of Second Life's own lsl-definitions (526 functions, 43
+  events, 1 082 constants), not only the viewer's keyword list: `src/scriptlab/lslbuiltins_extra.inc`, made by
+  `tools/gen_lsl_extra.py` from `lsl_definitions.yaml` (MIT, Linden Research; [CREDITS.md](../CREDITS.md)). The
+  checker so accepts scripts that use `llReplaceSubString`, `llListSortStrided`, `llStartObjectAnimation`, `llSetLinkGLTFOverrides`
+  and the like, and warns "not supported yet" for those that do not run. (`llWarp2Pos` is in neither list: it is no LSL function.)
+- 25 more functions run: rotation maths, `llListReplaceList`, `llList2ListStrided`, `llListSortStrided`,
+  `llReplaceSubString`, Base64, MD5, SHA-1, URL escaping, `llGetStartParameter`, `llGetObjectDesc`, `llSetObjectDesc`,
+  `llSetObjectName`, `llGetScale`, `llGetNumberOfPrims`. The choices and the few cases that say "not supported yet" are in
+  [CONTROL.md](CONTROL.md), "Pure functions and object state". New `lsl_run` fields: `description`, `scale`, `start_parameter`.
+- Tests: `tests/tst_lslpure.cpp`, exact answers computed outside the program.
+- Limits are unchanged: 256 KB of variables per script in the sandbox (Second Life: 64 KB).
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -253,7 +267,7 @@ command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cp
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-  `link_message` and `linkset_data`, and 86 built-in functions; hard limits on
+  `link_message` and `linkset_data`, and 111 built-in functions; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

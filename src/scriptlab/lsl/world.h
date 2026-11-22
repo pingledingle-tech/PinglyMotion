@@ -74,7 +74,7 @@ class World
     virtual QString ownerKey() const { return "a2e76fcd-9360-4f6d-a924-000000000001"; }
     virtual QString ownerName() const { return "Owner"; }
     virtual QString objectKey() const { return "c0ffee00-0000-4000-8000-000000000002"; }
-    virtual QString objectName() const { return "Object"; }
+    virtual QString objectName() const { return m_objectName; }
 
     // llSay, llWhisper, llShout, llRegionSay: kind is "say", "whisper", "shout" or "region_say"
     virtual void chat(double time, const QString& kind, int channel, const QString& text);
@@ -99,6 +99,16 @@ class World
     virtual LinksetData& linksetData() { return m_linksetData; }
     // after a change of the Linkset Data: the Sandbox sends linkset_data to every script of the object
     virtual void linksetDataChanged(double time, int action, const QString& name, const QString& value);
+
+    // Step 9b-1: simple object state. llSetObjectName (at most 63 characters) and llSetObjectDesc (at most 127)
+    // change what llGetObjectName and llGetObjectDesc answer, and the speaker name of later chat.
+    virtual void setObjectName(const QString& name) { m_objectName = name; }
+    virtual QString objectDesc() const { return m_objectDesc; }
+    virtual void setObjectDesc(const QString& desc) { m_objectDesc = desc; }
+    // llGetScale (the object's size in metres; one size for every prim), llGetNumberOfPrims, llGetStartParameter
+    virtual void scale(float out[3]) const { out[0] = out[1] = out[2] = 0.5f; }
+    virtual int numberOfPrims() const { return 1; }
+    virtual int startParameter() const { return 0; }
 
     // where the object is (llGetPos) and its attachment point (llGetAttached, 0 = not attached)
     virtual void position(float out[3]) const { out[0] = 128.0f; out[1] = 128.0f; out[2] = 20.0f; }
@@ -137,6 +147,8 @@ class World
     QString m_tag;
     QString m_scriptTag;
     LinksetData m_linksetData;
+    QString m_objectName = "Object";
+    QString m_objectDesc;
 };
 
 } // namespace lsl

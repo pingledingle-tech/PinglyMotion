@@ -494,15 +494,49 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
 {"command": "lsl_event", "type": "touch", "object": "box", "link": 2}
 ```
 
+#### Pure functions and object state (Script Lab step 9b-1, issue 310)
+
+These run without any world: rotation maths (`llEuler2Rot`, `llRot2Euler`, `llRot2Fwd`, `llRot2Left`, `llRot2Up`,
+`llAxisAngle2Rot`, `llRotBetween`), lists (`llListReplaceList`, `llList2ListStrided`, `llListSortStrided`), strings
+(`llReplaceSubString`, `llStringToBase64`, `llBase64ToString`, `llIntegerToBase64`, `llBase64ToInteger`,
+`llMD5String`, `llSHA1String`, `llEscapeURL`, `llUnescapeURL`) and a little object state (`llGetStartParameter`,
+`llGetObjectDesc`, `llSetObjectDesc`, `llSetObjectName`, `llGetScale`, `llGetNumberOfPrims`). Where the sandbox has
+to choose:
+
+- Rotations are computed in 32-bit floats, as the Second Life servers do; `llRot2Fwd` and its two siblings turn the unit vector by the
+  normalised rotation. `llRotBetween` of two opposite vectors turns half a turn about an axis perpendicular to the first one (Second Life's
+  axis for that case is not documented).
+- `llListSortStrided` sorts by the element at `stride_index` (negative counts from the end; out of range gives an empty list; a list whose
+  length is not a multiple of the stride comes back unchanged; only `TRUE` (1) sorts ascending). The sort is stable here; Second Life's is
+  not. Lists that mix types keep their order across types (as `llListSort` does here).
+- `llList2ListStrided` counts the stride from the start of the list, not from `start` (`[0,1,2,3,4,5,6]` with start 1, end -1, stride 2 gives
+  `[2,4,6]`, as on the Second Life wiki). A **start after the end** (a range that wraps) in `llList2ListStrided` and `llListReplaceList` stops the script with
+  "not supported yet": the Second Life wiki contradicts itself about that case.
+- `llReplaceSubString` replaces plain text (no pattern language), left to right without overlaps; a negative count looks from the end; an empty
+  pattern changes nothing (sandbox choice).
+- `llEscapeURL` leaves only ASCII letters and digits and writes the others as upper-case `%XX` of their UTF-8 bytes; `llUnescapeURL` keeps a
+  `%` that is not followed by two hex digits. `llBase64ToString` gives `?` for bytes that are no valid text and for control characters
+  other than tab and line breaks (an approximation of Second Life's "unprintable characters"); text that is not Base64 gives an empty string.
+  `llMD5String` hashes `text + ":" + nonce` as UTF-8, and both hashes are lower-case hex.
+- Object state: `llSetObjectName` (at most 63 characters) changes the name that `llGetObjectName`, `llKey2Name` and chat from the object use;
+  the object stays addressable by the name it was given in `lsl_run` (`inputs`, log entries). `llSetObjectDesc` keeps at most 127 characters.
+  The values at the start come from the object's entry in `lsl_run`: `description` (text, at most 127 characters), `scale` (`[x, y, z]` metres,
+  each 0.001 to 64; default `[0.5, 0.5, 0.5]`; one size for the whole object), `start_parameter` (a whole number, default 0).
+  For a single script (`source`) the same three options go at the top of the request; with `objects`, inside each object (at the top they are refused).
+  `llGetNumberOfPrims` answers the object's `prims`.
+
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message` and `linkset_data`; 86 built-in functions (chat, listen, timer, time, owner and object keys,
-permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions). All 426
-function names and signatures, 39 events and the constants of the viewer's LSL keyword list
-(`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) are known, plus the 13 Linkset Data
-functions, the `linkset_data` event and the `LINKSETDATA_*` constants, which are newer than that list and are listed
-in `src/scriptlab/lsl/builtins.cpp`; so the checker knows every LSL function. LSL quirks are kept: the right side of an operator is evaluated
+`link_message` and `linkset_data`; 111 built-in functions (chat, listen, timer, time, owner and object keys,
+permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
+maths, Base64, MD5 and SHA-1, URL escaping, and a few object-state getters and setters). All 526
+function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
+(`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
+`llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events
+`linkset_data`, `on_damage`, `on_death`, `final_damage`, `game_control`), taken from Second Life's own
+lsl-definitions (`src/scriptlab/lslbuiltins_extra.inc`, made by `tools/gen_lsl_extra.py`; MIT licence, see
+[CREDITS.md](../CREDITS.md)), so the checker knows every LSL function. LSL quirks are kept: the right side of an operator is evaluated
 first, `&&` and `||` do not short-circuit and have the same precedence, integers wrap around, `(string)`
 of a float has 6 decimals and of a vector 5, and `NULL_KEY` (a string) is true in an `if`.
 
