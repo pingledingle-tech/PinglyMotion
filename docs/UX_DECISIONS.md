@@ -97,6 +97,7 @@ Shown in the clickable mockup, following what the program's panel holds ([SCRIPT
 
 - Starts in Beginner mode by default; Expert mode can be switched on (shows curves, IK, all tracks and so on).
 - The choice and the layout are remembered between sessions.
+- Where the choices are kept (built in UX phase 0b, nothing reads them yet): `UserSettings` in `src/usersettings.*`, in the same settings file as the other options. Expert mode (`expert_mode`, default off = Beginner), hints (`tips_on`, default on), camera habit (`camera_habit`: `pinglymotion` (default), `maya`, `blender` or `sl`), text size (`text_size_percent`, a whole number cut to 100 to 200, default 100) and theme (`dark_theme`, default dark). An unknown name or a value that is not a number gives the default; a number outside 100 to 200 is cut to the nearest end. Covered by `tests/usersettings`.
 - First start only: a small welcome window asks "New to animation, or experienced?". It never asks again; the choice can be changed later in the menu.
 
 ## 9. Build order
