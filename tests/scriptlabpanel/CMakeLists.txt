@@ -31,3 +31,16 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabobjects_tests PRIVATE ${CMAKE_
 TARGET_LINK_LIBRARIES (pinglymotion_scriptlabobjects_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME scriptlabobjects COMMAND pinglymotion_scriptlabobjects_tests)
 SET_TESTS_PROPERTIES (scriptlabobjects PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The input buttons of the Live page (issue 308): touch, chat and dialog answers to the world of the last run
+ADD_EXECUTABLE (pinglymotion_scriptlabinput_tests tst_scriptlabinput.cpp
+                ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/objectsview.cpp ${CMAKE_SOURCE_DIR}/src/paneltitlebar.cpp
+                ${CMAKE_SOURCE_DIR}/src/controlapi.cpp ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
+                ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
+                ${CMAKE_SOURCE_DIR}/src/animimport.cpp
+                ${CMAKE_SOURCE_DIR}/src/screenshotsheet.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabinput_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabinput_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME scriptlabinput COMMAND pinglymotion_scriptlabinput_tests)
+SET_TESTS_PROPERTIES (scriptlabinput PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
