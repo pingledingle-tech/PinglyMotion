@@ -1,6 +1,6 @@
 Branch: docs/homepage-download-privacy
 Status: active
-Pull request: pending
+Pull request: #342
 Files:
 - docs/index.html
 - docs/download.html
