@@ -79,7 +79,9 @@ enum class Fn
   // gap list 2, step 4: money, web server and mail stubs (no L$, no network, no mail)
   GiveMoney, Email, GetNextEmail, RequestURL, RequestSecureURL, ReleaseURL, GetFreeURLs, HTTPResponse, GetHTTPHeader,
   // gap list 2, step 5: prim media (record only: nothing is fetched or played)
-  SetPrimMediaParams, GetPrimMediaParams, ClearPrimMedia
+  SetPrimMediaParams, GetPrimMediaParams, ClearPrimMedia,
+  // second gap list, step 6, part 3: a simple motion model (llMoveToTarget stays record-only, a later job)
+  ApplyImpulse, SetBuoyancy
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -206,10 +208,11 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llMoveToTarget", Fn::RecordOnly},
   {"llStopMoveToTarget", Fn::RecordOnly},
   {"llPushObject", Fn::RecordOnly},
-  {"llApplyImpulse", Fn::RecordOnly},
-  {"llSetBuoyancy", Fn::RecordOnly},
   {"llRotLookAt", Fn::RecordOnly},
   {"llVolumeDetect", Fn::RecordOnly},
+  // second gap list, step 6, part 3: the simple motion model (llApplyImpulse and llSetBuoyancy are real now)
+  {"llApplyImpulse", Fn::ApplyImpulse},
+  {"llSetBuoyancy", Fn::SetBuoyancy},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1028,6 +1031,38 @@ void movePrim(World& w, double now, int link, const float target[3], bool local)
     for (int i = 0; i < 3; ++i) p.position[i] = un[i];
   }
   logPrim(w, now, "position", link, QJsonObject{{"position", vecJson(p.position)}, {"local", true}});
+}
+
+// second gap list, step 6, part 3: llApplyImpulse changes the velocity at once by impulse / mass (the same mass
+// formula as llGetMass); "local" turns the impulse by the root's rotation first, as llSetPos's local flag does.
+// No llSetStatus(STATUS_PHYSICS) check: the sandbox's simplification, the same as llGetMass makes no such check.
+void applyImpulse(World& w, double now, const float impulse[3], bool local)
+{
+  float turned[3];
+  if (local)
+  {
+    const PrimState& r = primOf(w, 1);
+    rotVec(Quat{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]}, impulse, turned);
+  }
+  else for (int i = 0; i < 3; ++i) turned[i] = impulse[i];
+  float rootSize[3];
+  w.scale(rootSize);
+  const float mass = w.primStore().mass(rootSize, qMax(1, w.numberOfPrims()));
+  float v[3];
+  w.velocity(v);
+  for (int i = 0; i < 3; ++i) v[i] += mass > 0.0f ? turned[i] / mass : 0.0f;
+  w.setVelocity(v);
+  if (w.logFull()) return;
+  w.log(now, QJsonObject{{"type", "velocity"}, {"op", "impulse"}, {"impulse", vecJson(turned)}, {"mass", rnd5(mass)}, {"velocity", vecJson(v)}});
+}
+
+// llSetBuoyancy: 0 (full gravity) to 1 (floats); the sandbox clamps to this range (Second Life allows other values)
+void setObjectBuoyancy(World& w, double now, float b)
+{
+  const float clamped = qBound(0.0f, b, 1.0f);
+  w.setBuoyancy(clamped);
+  if (w.logFull()) return;
+  w.log(now, QJsonObject{{"type", "velocity"}, {"op", "buoyancy"}, {"buoyancy", rnd5(clamped)}});
 }
 
 Quat primRotation(World& w, int link, bool local)
@@ -2791,7 +2826,20 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       if (m_world.attachPoint() > 0) return Value();
       m_dieRequested = true;
       failAt("die", "The object was deleted with llDie.");
-    case Fn::GetVel: return Value::vector(0.0f, 0.0f, 0.0f);   // nothing moves in the sandbox (a worn object: the avatar stands still)
+    case Fn::GetVel:
+    {
+      // second gap list, step 6, part 3: the simple motion model's velocity; still zero for a worn object (the
+      // model does not run on attachments) and for a rezzed object until llApplyImpulse or a "step" input changes it
+      float v[3];
+      m_world.velocity(v);
+      return Value::vector(v[0], v[1], v[2]);
+    }
+    case Fn::ApplyImpulse:
+      applyImpulse(m_world, m_now, a[0].f, a[1].i != 0);
+      return Value();
+    case Fn::SetBuoyancy:
+      setObjectBuoyancy(m_world, m_now, a[0].f[0]);
+      return Value();
     case Fn::GetMass:
     {
       float s[3];

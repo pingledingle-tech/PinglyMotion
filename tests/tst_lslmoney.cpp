@@ -522,7 +522,7 @@ void LslMoneyTest::inputErrors_data()
   QTest::newRow("long subject") << QJsonObject{{"type", "email"}, {"subject", QString(256, 's')}} << "Input 1: \"subject\" must be text of at most 255 characters.";
   QTest::newRow("unknown type") << QJsonObject{{"type", "pay"}}
                                 << "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                                   "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\" or \"not_at_target\".";
+                                   "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\" or \"step\".";
 }
 
 void LslMoneyTest::inputErrors()

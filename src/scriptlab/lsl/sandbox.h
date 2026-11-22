@@ -96,7 +96,7 @@ struct SandboxInput
 {
   double at = 0.0;
   QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email,
-                                   // collision, land_collision, moving, at_target, not_at_target
+                                   // collision, land_collision, moving, at_target, not_at_target, step
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -133,6 +133,11 @@ struct SandboxInput
   int tnum = 0;
   float targetpos[3] = {0.0f, 0.0f, 0.0f};
   float ourpos[3] = {0.0f, 0.0f, 0.0f};
+  // second gap list, step 6, part 3: "step" advances the simple motion model (gravity scaled by llSetBuoyancy;
+  // llApplyImpulse already changed the velocity at once) by "dt" simulated seconds for one object, and fires
+  // moving_start/moving_end itself when the object's speed crosses MOVING_SPEED_THRESHOLD. No motion model yet
+  // for llMoveToTarget, so at_target/not_at_target still only come from the manual inputs above (a later job).
+  double dt = 0.0;
 };
 
 class Sandbox
@@ -165,6 +170,10 @@ class Sandbox
     static const char* const OWNER_KEY;
     static const char* const OWNER_NAME;
     static const char* const NULL_KEY;
+    // second gap list, step 6, part 3: the simple motion model's own choices, not from Second Life
+    static constexpr float GRAVITY_Z = -9.8f;              // metres/s^2 along z, scaled by (1 - buoyancy)
+    static constexpr float MOVING_SPEED_THRESHOLD = 0.1f;  // moving_start/moving_end fire when speed (m/s) crosses this
+    static constexpr double MAX_STEP_SECONDS = 60.0;       // one "step" input advances the model by at most this many seconds
 
     Sandbox(RlvState& rlv, bool tagEntries);
     ~Sandbox();
@@ -242,6 +251,12 @@ class Sandbox
       bool tagScripts = false;     // given with "scripts": log entries name the script
       bool dead = false;           // gap list 2, step 2: deleted with llDie (its scripts stopped; nothing finds it any more)
       std::deque<Email> mail;      // gap list 2, step 4: the object's mailbox (email inputs; llGetNextEmail)
+      // second gap list, step 6, part 3: llGetVel and the simple motion model; llApplyImpulse changes velocity
+      // at once, "step" inputs advance it by gravity/buoyancy. llSetBuoyancy clamped to 0 (full gravity) .. 1
+      // (floats); "moving" is the last known speed-vs-threshold state, for moving_start/moving_end.
+      float velocity[3] = {0.0f, 0.0f, 0.0f};
+      float buoyancy = 0.0f;
+      bool moving = false;
       int firstSlot = 0;
       int slotCount = 0;
     };
