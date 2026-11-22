@@ -170,6 +170,16 @@ QString AuroraLink::clientName(const QString& buildLabel)
   return name.left(64).trimmed();
 }
 
+QString AuroraLink::clipPeerText(const QString& text)
+{
+  QString clean;
+  for(const QChar c:text)
+    clean+=(c.unicode()<0x20 || c.unicode()==0x7f || c.category()==QChar::Other_Control || c.category()==QChar::Other_Format) ? QChar(' ') : c;
+  clean=clean.simplified();
+  if(clean.size()<=200) return clean;
+  return clean.left(200)+QString("...");
+}
+
 void AuroraLink::setEnabled(bool on,quint16 port)
 {
   m_port=port;
@@ -312,7 +322,7 @@ void AuroraLink::handleLine(const QByteArray& line)
     // a preview that cannot take poses now answers with an error instead of a hello
     if(message.contains("ok") && !message.value("ok").toBool())
     {
-      fail(tr("Aurora's LiveMesh is on, but it cannot show live poses right now (%1).").arg(message.value("error").toString()));
+      fail(tr("Aurora's LiveMesh is on, but it cannot show live poses right now (%1).").arg(clipPeerText(message.value("error").toString())));
       return;
     }
     const QJsonArray features=message.value("features").toArray();
@@ -375,5 +385,5 @@ void AuroraLink::handleLine(const QByteArray& line)
     return;
   }
 
-  if(!ok) emit errorReceived(message.value("error").toString());
+  if(!ok) emit errorReceived(clipPeerText(message.value("error").toString()));
 }

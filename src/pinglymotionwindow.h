@@ -54,6 +54,7 @@ class ControlIndicator;
 class AuroraIndicator;
 class TipsSwitch;
 class TransportBar;
+class ScriptLabPanel;
 class AuroraLink;
 class WindowControlHost;
 class Scene;
@@ -193,15 +194,21 @@ class PinglyMotionWindow : public QMainWindow
   protected:
     // prevent closing of main window if there are unsaved changes
     virtual void closeEvent(QCloseEvent* event);
+    // left / right arrow keys: one frame back / forward, when the key is not
+    // used by a field, list or slider that has the keyboard focus
+    void keyPressEvent(QKeyEvent* event) override;
 
     void fileNew();
     void fileOpen();
     void fileOpen(const QString& fileName);
+    // opens fileName from these bytes instead of reading the file (load_reference
+    // checks the bytes against the library index first)
+    void fileOpenData(const QString& fileName,const QByteArray& data);
     // "add" a new file without clearing the old one(s)
     void fileAdd();
     void fileAdd(const QString& fileName);
-    bool checkAnimationFile(const QString& fileName);
-    void addAnimationFile(const QString& fileName);
+    bool checkAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
+    void addAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
     bool fileSave();
     bool fileSaveAs();
     // after a save to newFile: when the animation came from an old .avm file with the same name,
@@ -257,6 +264,9 @@ class PinglyMotionWindow : public QMainWindow
     void startPlaying();
     void stopPlaying();
     void replayFromStart();
+    // Frame back (-1) / Frame forward (+1): stops playing and goes one frame,
+    // never past the first or the last frame (Playback::stepFrame)
+    void stepFrame(int delta);
     void beginPlaying(Animation* anim);
     void setDefaultLoopIn(Animation* anim);
     void connectAnimation(Animation* anim);
@@ -330,16 +340,19 @@ class PinglyMotionWindow : public QMainWindow
     void buildDocks();
     void resetPanelLayout();
     // Tab, or View > Hide panels: hides every open panel, or shows again the
-    // ones Tab hid (docs/PANELS_PLAN.md, job P4)
+    // ones Tab hid (docs/archive/PANELS_PLAN.md, job P4)
     void togglePanelsHidden();
     QList<QDockWidget*> panelDocks() const;
     void fitPanelWidths();
     void showLightDialog();
     void saveUserSettings();
-    // the three panels (docs/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
+    // the three panels (docs/archive/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
     QDockWidget* m_timelineDock=nullptr;
     QDockWidget* m_jointsDock=nullptr;
     QDockWidget* m_jointCardDock=nullptr;
+    // Script Lab (issue 288): hidden until View > Script Lab
+    QDockWidget* m_scriptLabDock=nullptr;
+    ScriptLabPanel* m_scriptLabPanel=nullptr;
     QScrollArea* m_jointsScroll=nullptr;
     QScrollArea* m_jointCardScroll=nullptr;
     // Tab (job P4): which panels Tab hid, so the next Tab shows the same ones;

@@ -39,6 +39,8 @@ class Timeline : public QFrame
 
     void setAnimation(Animation* anim);
     void selectTrack(int track);
+    // the highlighted track, -1 when none
+    int selectedTrack() const { return trackSelected; }
     // joint groups were shown or hidden (JointGroups)
     void layoutChanged();
 

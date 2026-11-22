@@ -1,0 +1,377 @@
+/*
+ * PinglyMotion Script Lab - RLV camera limits shown in the 3D view (job 7b)
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
+#include <cmath>
+
+#include <QLocale>
+#include <QSet>
+
+#include "lsl/sandbox.h"
+#include "rlvstate.h"
+
+#include "cameraoverride.h"
+
+namespace
+{
+  bool isMin(const QString& b) { return b == QLatin1String("setcam_avdistmin") || b == QLatin1String("camdistmin"); }
+  bool isMax(const QString& b) { return b == QLatin1String("setcam_avdistmax") || b == QLatin1String("camdistmax"); }
+  bool isUnlock(const QString& b) { return b == QLatin1String("setcam_unlock") || b == QLatin1String("camunlock"); }
+  bool isFovMin(const QString& b) { return b == QLatin1String("setcam_fovmin"); }
+  bool isFovMax(const QString& b) { return b == QLatin1String("setcam_fovmax"); }
+  bool isZoomMax(const QString& b) { return b == QLatin1String("camzoommax"); }   // limits zooming in: a minimum field of view
+  bool isZoomMin(const QString& b) { return b == QLatin1String("camzoommin"); }   // limits zooming out: a maximum field of view
+  bool isAngle(const QString& b) { return isFovMin(b) || isFovMax(b); }
+  bool isZoom(const QString& b) { return isZoomMax(b) || isZoomMin(b); }
+
+  constexpr double Pi = 3.14159265358979323846;
+
+  bool isFocusOffset(const QString& b) { return b == QLatin1String("setcam_focusoffset"); }
+  bool isEyeOffset(const QString& b) { return b == QLatin1String("setcam_eyeoffset"); }
+  bool isEyeScale(const QString& b) { return b == QLatin1String("setcam_eyeoffsetscale"); }
+  bool isOffset(const QString& b) { return isFocusOffset(b) || isEyeOffset(b); }
+
+  // "x/y/z" in metres, each at most 100 m either way
+  bool offset(const QString& option, QVector3D* value)
+  {
+    const QStringList parts = option.split(QLatin1Char('/'));
+    if (parts.size() != 3) return false;
+    double v[3];
+    for (int i = 0; i < 3; ++i)
+    {
+      bool ok = false;
+      v[i] = QLocale::c().toDouble(parts.at(i).trimmed(), &ok);
+      if (!ok || !std::isfinite(v[i]) || std::fabs(v[i]) > 100) return false;
+    }
+    *value = QVector3D(float(v[0]), float(v[1]), float(v[2]));
+    return true;
+  }
+
+  // a scale: more than 0, at most 100
+  bool scale(const QString& option, double* value)
+  {
+    bool ok = false;
+    const double v = QLocale::c().toDouble(option.trimmed(), &ok);
+    if (!ok || !std::isfinite(v) || v <= 0 || v > 100) return false;
+    *value = v;
+    return true;
+  }
+
+  QString offsetText(const QVector3D& v)
+  {
+    return CameraOverride::metres(v.x()) + QLatin1Char('/') + CameraOverride::metres(v.y()) + QLatin1Char('/') +
+           CameraOverride::metres(v.z());
+  }
+
+  // a field of view in radians: more than 0, at most a half turn
+  bool angle(const QString& option, double* degrees)
+  {
+    bool ok = false;
+    const double v = QLocale::c().toDouble(option.trimmed(), &ok);
+    if (!ok || !std::isfinite(v) || v <= 0 || v > Pi) return false;
+    *degrees = v * 180.0 / Pi;
+    return true;
+  }
+
+  // a zoom multiplier of the default view: more than 0, at most 100; gives the field of view in degrees
+  bool zoom(const QString& option, double* degrees)
+  {
+    bool ok = false;
+    const double v = QLocale::c().toDouble(option.trimmed(), &ok);
+    if (!ok || !std::isfinite(v) || v <= 0 || v > 100) return false;
+    *degrees = double(Camera::DefaultFieldOfView) / v;
+    return true;
+  }
+
+  // a distance in metres: a plain number, 0 or more, at most 10 km
+  bool distance(const QString& option, double* value)
+  {
+    bool ok = false;
+    const double v = QLocale::c().toDouble(option.trimmed(), &ok);
+    if (!ok || !std::isfinite(v) || v < 0 || v > 10000) return false;
+    *value = v;
+    return true;
+  }
+}
+
+CameraOverride::Limits CameraOverride::limitsFrom(const RlvState& state)
+{
+  Limits limits;
+  QSet<QString> objects;
+  for (const RlvState::Restriction& r : state.restrictions())
+  {
+    if (isUnlock(r.behaviour))
+    {
+      limits.focusOnAvatar = true;
+      objects.insert(r.object);
+      continue;
+    }
+    if (isOffset(r.behaviour) || isEyeScale(r.behaviour))
+    {
+      QVector3D v;
+      double factor = 1;
+      if (!(isEyeScale(r.behaviour) ? scale(r.option, &factor) : offset(r.option, &v)))
+      {
+        const QString text = r.behaviour + QLatin1Char(':') + r.option;
+        if (!limits.ignored.contains(text)) limits.ignored << text;
+        continue;
+      }
+      // several objects: the first one held is used
+      if (isFocusOffset(r.behaviour) && !limits.hasFocusOffset) { limits.hasFocusOffset = true; limits.focusOffset = v; }
+      else if (isEyeOffset(r.behaviour) && !limits.hasEyeOffset) { limits.hasEyeOffset = true; limits.eyeOffset = v; }
+      else if (isEyeScale(r.behaviour) && !limits.hasEyeScale) { limits.hasEyeScale = true; limits.eyeScale = factor; }
+      objects.insert(r.object);
+      continue;
+    }
+    if (isAngle(r.behaviour) || isZoom(r.behaviour))
+    {
+      double deg = 0;
+      if (!(isAngle(r.behaviour) ? angle(r.option, &deg) : zoom(r.option, &deg)))
+      {
+        const QString text = r.behaviour + QLatin1Char(':') + r.option;
+        if (!limits.ignored.contains(text)) limits.ignored << text;
+        continue;
+      }
+      objects.insert(r.object);
+      if (isFovMin(r.behaviour) || isZoomMax(r.behaviour)) limits.minView = qMax(limits.minView, deg);
+      else limits.maxView = limits.maxView > 0 ? qMin(limits.maxView, deg) : deg;
+      continue;
+    }
+    if (!isMin(r.behaviour) && !isMax(r.behaviour)) continue;
+    double v = 0;
+    if (!distance(r.option, &v))
+    {
+      const QString text = r.behaviour + QLatin1Char(':') + r.option;
+      if (!limits.ignored.contains(text)) limits.ignored << text;
+      continue;
+    }
+    objects.insert(r.object);
+    // several objects: the strictest limit wins (largest minimum, smallest maximum)
+    if (isMin(r.behaviour)) limits.minDistance = qMax(limits.minDistance, v);
+    else limits.maxDistance = limits.hasMax() ? qMin(limits.maxDistance, v) : v;
+  }
+  // force commands (recorded values): used where no held restriction says otherwise
+  const QMap<QString, QString> recorded = state.recorded();
+  const QMap<QString, QString> by = state.recordedBy();
+  const auto notUsed = [&limits](const QString& behaviour, const QString& option)
+  {
+    const QString text = behaviour + QLatin1Char(':') + option + QStringLiteral("=force");
+    if (!limits.ignored.contains(text)) limits.ignored << text;
+  };
+  if (recorded.contains(QStringLiteral("setcam_fov")))
+  {
+    const QString option = recorded.value(QStringLiteral("setcam_fov"));
+    double deg = 0;
+    if (angle(option, &deg))
+    {
+      limits.hasForcedView = true;
+      limits.forcedView = deg;
+      objects.insert(by.value(QStringLiteral("setcam_fov")));
+    }
+    else notUsed(QStringLiteral("setcam_fov"), option);
+  }
+  if (recorded.contains(QStringLiteral("setcam_focus")))
+  {
+    // <target>[;<distance>[;<direction>]]: only the avatar is in the 3D view
+    const QString option = recorded.value(QStringLiteral("setcam_focus"));
+    if (option.section(QLatin1Char(';'), 0, 0).trimmed().compare(QLatin1String(lsl::Sandbox::OWNER_KEY), Qt::CaseInsensitive) == 0)
+    {
+      limits.forcedFocus = true;
+      objects.insert(by.value(QStringLiteral("setcam_focus")));
+    }
+    else notUsed(QStringLiteral("setcam_focus"), option);
+  }
+  for (const char* name : {"setcam_focusoffset", "setcam_eyeoffset", "setcam_eyeoffsetscale"})
+  {
+    const QString behaviour = QLatin1String(name);
+    if (!recorded.contains(behaviour)) continue;
+    const QString option = recorded.value(behaviour);
+    QVector3D v;
+    double factor = 1;
+    if (!(isEyeScale(behaviour) ? scale(option, &factor) : offset(option, &v)))
+    {
+      notUsed(behaviour, option);
+      continue;
+    }
+    // a held offset wins over a forced one
+    if (isFocusOffset(behaviour) && !limits.hasFocusOffset)
+    {
+      limits.hasFocusOffset = limits.focusOffsetForced = true;
+      limits.focusOffset = v;
+    }
+    else if (isEyeOffset(behaviour) && !limits.hasEyeOffset)
+    {
+      limits.hasEyeOffset = limits.eyeOffsetForced = true;
+      limits.eyeOffset = v;
+    }
+    else if (isEyeScale(behaviour) && !limits.hasEyeScale)
+    {
+      limits.hasEyeScale = limits.eyeScaleForced = true;
+      limits.eyeScale = factor;
+    }
+    else continue;
+    objects.insert(by.value(behaviour));
+  }
+  if (recorded.contains(QStringLiteral("setcam_mode")))
+  {
+    limits.hasForcedMode = true;
+    limits.forcedMode = recorded.value(QStringLiteral("setcam_mode"));
+  }
+
+  limits.objects = QStringList(objects.begin(), objects.end());
+  limits.objects.sort();
+  return limits;
+}
+
+double CameraOverride::Limits::fieldOfView() const
+{
+  double view = hasForcedView ? forcedView : double(Camera::DefaultFieldOfView);
+  if (minView > 0) view = qMax(view, minView);
+  // a maximum below the minimum wins over it
+  if (maxView > 0) view = qMin(view, maxView);
+  return qBound(NarrowestView, view, WidestView);
+}
+
+CameraConstraint CameraOverride::constraintFor(const Limits& limits)
+{
+  CameraConstraint c;
+  if (!limits.any()) return c;
+  if (limits.setsView()) c.fieldOfView = float(limits.fieldOfView());
+  if (!limits.aroundAvatar()) return c;
+  if (limits.hasMax()) c.maxDistance = qMax(ClosestDistance, float(limits.maxDistance * InchesPerMetre));
+  if (limits.hasMin())
+  {
+    c.minDistance = float(limits.minDistance * InchesPerMetre);
+    // a maximum below the minimum wins over it
+    if (limits.hasMax() && c.minDistance > c.maxDistance) c.minDistance = c.maxDistance;
+  }
+  c.turnAroundPoint = true;
+  c.point = avatarPoint();
+  if (limits.hasFocusOffset) c.point += toWorld(limits.focusOffset);
+  if (limits.hasEyeOffset)
+  {
+    c.fixedEye = true;
+    c.eye = avatarPoint() + toWorld(limits.eyeOffset * float(limits.eyeScale));
+  }
+  return c;
+}
+
+QString CameraOverride::metres(double value)
+{
+  return QLocale::c().toString(value, 'g', 6);
+}
+
+QVector3D CameraOverride::toWorld(const QVector3D& secondLife)
+{
+  return QVector3D(secondLife.y(), secondLife.z(), secondLife.x()) * InchesPerMetre;
+}
+
+QString CameraOverride::degrees(double value)
+{
+  return QLocale::c().toString(std::round(value * 10.0) / 10.0, 'g', 6);
+}
+
+CameraOverride::CameraOverride(QObject* parent) :
+  QObject(parent)
+{
+}
+
+void CameraOverride::setState(RlvState* state)
+{
+  for (const QMetaObject::Connection& c : m_connections) disconnect(c);
+  m_connections.clear();
+  m_state = state;
+  if (state)
+  {
+    m_connections << connect(state, &RlvState::changed, this, &CameraOverride::update);
+    m_connections << connect(state, &RlvState::modeChanged, this, &CameraOverride::update);
+  }
+  update();
+}
+
+void CameraOverride::setEnabled(bool on)
+{
+  if (on == m_enabled) return;
+  m_enabled = on;
+  emit changed();
+}
+
+void CameraOverride::update()
+{
+  const Limits limits = m_state ? limitsFrom(*m_state) : Limits();
+  if (limits == m_limits) return;
+  m_limits = limits;
+  emit changed();
+}
+
+QStringList CameraOverride::lines() const
+{
+  QStringList lines;
+  QStringList parts;
+  if (m_limits.hasMin()) parts << tr("min distance %1 m").arg(metres(m_limits.minDistance));
+  if (m_limits.hasMax()) parts << tr("max distance %1 m").arg(metres(m_limits.maxDistance));
+  if (m_limits.minView > 0) parts << tr("min field of view %1 degrees").arg(degrees(m_limits.minView));
+  if (m_limits.maxView > 0) parts << tr("max field of view %1 degrees").arg(degrees(m_limits.maxView));
+  if (m_limits.hasForcedView) parts << tr("field of view forced to %1 degrees").arg(degrees(m_limits.forcedView));
+  if (m_limits.focusOnAvatar) parts << tr("focus kept on the avatar");
+  if (m_limits.forcedFocus) parts << tr("focus forced on the avatar");
+  const QString forced = tr(" (forced)");
+  if (m_limits.hasFocusOffset)
+    parts << tr("focus offset %1 m").arg(offsetText(m_limits.focusOffset)) + (m_limits.focusOffsetForced ? forced : QString());
+  if (m_limits.hasEyeOffset)
+    parts << tr("eye offset %1 m").arg(offsetText(m_limits.eyeOffset)) + (m_limits.eyeOffsetForced ? forced : QString());
+  if (m_limits.hasEyeOffset && m_limits.hasEyeScale)
+    parts << tr("eye offset scale %1").arg(metres(m_limits.eyeScale)) + (m_limits.eyeScaleForced ? forced : QString());
+
+  if (!m_limits.any())
+  {
+    if (m_enabled) lines << tr("The script does not limit the camera now.");
+  }
+  else if (m_enabled)
+  {
+    lines << tr("Camera limited by the script: %1.").arg(parts.join(QStringLiteral(", ")));
+    if (m_limits.hasMin() && m_limits.hasMax() && m_limits.minDistance > m_limits.maxDistance)
+      lines << tr("The max distance is below the min distance, so the max distance wins.");
+    if (m_limits.hasMax() && m_limits.maxDistance * InchesPerMetre < ClosestDistance)
+      lines << tr("The 3D view goes as close as it can.");
+    if (m_limits.minView > 0 && m_limits.maxView > 0 && m_limits.minView > m_limits.maxView)
+      lines << tr("The max field of view is below the min field of view, so the max wins.");
+    if (m_limits.setsView())
+    {
+      const double view = m_limits.fieldOfView();
+      lines << (view == double(Camera::DefaultFieldOfView)
+                  ? tr("The 3D view keeps its field of view of %1 degrees.").arg(degrees(view))
+                  : tr("The 3D view shows a field of view of %1 degrees instead of %2.").arg(degrees(view), degrees(Camera::DefaultFieldOfView)));
+    }
+    if (m_limits.hasEyeOffset)
+      lines << tr("The camera is held at the eye offset, looking at the %1: turning and zooming do nothing.")
+                 .arg(m_limits.hasFocusOffset ? tr("focus offset") : tr("avatar"));
+    const QString holders = m_limits.objects.join(QStringLiteral(", "));
+    lines << (m_limits.aroundAvatar() ? tr("The camera turns around the avatar. Held by: %1.").arg(holders)
+                                      : tr("Held by: %1.").arg(holders));
+    lines << tr("Untick the box to get your own camera back.");
+  }
+  else
+  {
+    lines << tr("The script limits the camera: %1. Tick the box to see it in the 3D view.").arg(parts.join(QStringLiteral(", ")));
+  }
+  if (m_limits.hasForcedMode)
+    lines << tr("Not shown: setcam_mode:%1=force. The 3D view always looks from outside the avatar.").arg(m_limits.forcedMode);
+  if (m_limits.hasEyeScale && !m_limits.hasEyeOffset)
+    lines << tr("Not used: setcam_eyeoffsetscale changes nothing without setcam_eyeoffset.");
+  for (const QString& text : m_limits.ignored)
+  {
+    const QString behaviour = text.section(QLatin1Char(':'), 0, 0);
+    if (behaviour == QLatin1String("setcam_focus"))
+      lines << tr("Not shown: %1. The 3D view has only the avatar to focus on.").arg(text);
+    else if (behaviour == QLatin1String("setcam_fov")) lines << tr("Not used: %1 is not an angle in radians.").arg(text);
+    else if (isOffset(behaviour)) lines << tr("Not used: %1 is not an offset x/y/z in metres.").arg(text);
+    else if (isEyeScale(behaviour)) lines << tr("Not used: %1 is not a scale.").arg(text);
+    else if (isAngle(behaviour)) lines << tr("Not used: %1 is not an angle in radians.").arg(text);
+    else if (isZoom(behaviour)) lines << tr("Not used: %1 is not a zoom multiplier.").arg(text);
+    else lines << tr("Not used: %1 is not a distance in metres.").arg(text);
+  }
+  return lines;
+}

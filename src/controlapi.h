@@ -20,6 +20,10 @@
 #include <QString>
 #include <QVector3D>
 
+#include "scriptlab/labwatcher.h"
+#include "scriptlab/rlvstate.h"
+#include "scriptlab/lsl/session.h"
+
 class Animation;
 class BVHNode;
 
@@ -38,6 +42,9 @@ class ControlHost
     virtual QImage screenshot(int width, int height) = 0;
     virtual bool newAnimation(QString& error) = 0;
     virtual bool openFile(const QString& path, QString& error) = 0;
+    // like openFile, but parses these bytes instead of reading the file again
+    // (load_reference: the bytes it checked against the library index)
+    virtual bool openFileData(const QString& path, const QByteArray& data, QString& error) = 0;
     virtual bool saveFile(const QString& path, QString& error) = 0;
     virtual void setPlaying(bool on) = 0;
     virtual bool playing() = 0;
@@ -88,6 +95,13 @@ class ControlApi
     static QString defaultLibraryFolder();
     static QString defaultReferenceFolder();
 
+    // the Script Lab's RLV state that rlv_command, rlv_state and rlv_reset work on (issue 287)
+    RlvState& rlv() { return m_rlv; }
+    // the world of the last lsl_run, for lsl_event and the panel's object list (Script Lab step 5)
+    lsl::Session& lslSession() { return m_lslSession; }
+    // the Script Lab's folder watch that lab_watch, lab_unwatch and lab_result work on (issue 292)
+    LabWatcher& lab() { return m_lab; }
+
   private:
     typedef QJsonObject (ControlApi::*Handler)(const QJsonObject&);
 
@@ -118,6 +132,12 @@ class ControlApi
     QJsonObject exportAnim(const QJsonObject&);
     QJsonObject findReference(const QJsonObject&);
     QJsonObject loadReference(const QJsonObject&);
+    QJsonObject rlvCommand(const QJsonObject&);
+    QJsonObject rlvStateAnswer(const QJsonObject&);
+    QJsonObject rlvReset(const QJsonObject&);
+    QJsonObject labWatch(const QJsonObject&);
+    QJsonObject labUnwatch(const QJsonObject&);
+    QJsonObject labResult(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();
@@ -136,6 +156,9 @@ class ControlApi
     QString m_workFolder;
     QString m_libraryFolder;
     QString m_referenceFolder;
+    RlvState m_rlv;
+    lsl::Session m_lslSession;     // after m_rlv: its world refers to m_rlv
+    LabWatcher m_lab;
 };
 
 #endif

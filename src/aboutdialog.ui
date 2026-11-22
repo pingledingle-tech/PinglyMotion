@@ -43,7 +43,7 @@
    </item>
    <item>
     <widget class="QGroupBox" name="updatesGroupBox">
-     <property name="title"><string>Check for Updates</string></property>
+     <property name="title"><string>Updates</string></property>
      <layout class="QVBoxLayout" name="updatesLayout">
       <item>
        <widget class="QLabel" name="lastUpdateCheckLabel">
@@ -53,12 +53,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="checkUpdatesButton">
-        <property name="text"><string>Check Now</string></property>
+        <property name="text"><string>Check now</string></property>
        </widget>
       </item>
       <item>
        <widget class="QCheckBox" name="autoUpdatesCheckBox">
-        <property name="text"><string>Automatically Check for Updates</string></property>
+        <property name="text"><string>Check for updates automatically</string></property>
         <property name="checked"><bool>true</bool></property>
        </widget>
       </item>

@@ -91,11 +91,31 @@ Locally (Linux): `xvfb-run -a python3 tools/ci/smoke_screenshots.py --app /tmp/b
 - Adding a prompt: add a case with checks, write its reference, run `run_reference.py`. A check that the reference cannot pass, or that an untouched animation passes, is wrong.
 - Found while writing the set, all three fixed, with their workarounds removed from the test code: (1) fixed (issue 187): right after `open_file`, `set_pose` on frame 2 was refused as "Frame 1 is protected", and frame 2 read as the pose of frame 1, because the window's frame slider still held the old animation's frame; the control commands now make sure the animation is on the frame they asked for; (2) fixed (issue 188): a hip position key without a hip rotation key at the same frame now keeps its value when the saved `.dingle` is opened again, and `cases.hip` sets the position alone; (3) fixed (issue 189): when the frame count changes, a loop that ended on the last frame now keeps ending on the last frame (in the window and through `set_frame_count`), so a last key equal to the first closes the loop; loop points past a new, shorter end move onto the last frame.
 
+## How a session tests a visible change itself
+
+Before a visible pull request goes to the project owner's test, the session tests the feature itself and writes in the pull request what it did and saw (CLAUDE.md, "Test page rules"). Tried on 21 Nov 2026 on the timeline-scroll and transport-button pull requests, in an AI sandbox with Qt 6 from the distribution:
+
+1. **Build the branch** (program plus the one test, about 75 s with 2 CPUs; the target is lower case):
+   `cmake -S . -B /tmp/build -DPINGLYMOTION_TESTS=ON && cmake --build /tmp/build -j2 --target pinglymotion pinglymotion_<name>_tests`
+2. **The job's own Qt test, offscreen:** `cd bin && QT_QPA_PLATFORM=offscreen timeout -k 3 60 /tmp/build/tests/pinglymotion_<name>_tests`. To look at a panel, let the test save `widget.grab().save(path)` (for example only when an environment variable is set) and open the PNG: works offscreen, but in Qt's plain light style, not the program's dark look, and not for the 3D view.
+3. **The real program under Xvfb, driven by the control commands and xdotool** (`apt-get install xdotool` if missing). Start it in the background with a time limit and its own control file and folder:
+   ```
+   export PINGLYMOTION_CONTROL_FILE=/tmp/st/control.json PINGLYMOTION_CONTROL_FOLDER=/tmp/st/work HOME=/tmp/st/home
+   # inside a script run by: xvfb-run -a -s "-screen 0 1600x1000x24" script.sh
+   cd bin && timeout -k 3 120 /tmp/build/src/PinglyMotion --control > /tmp/st/app.log 2>&1 &
+   ```
+   Send commands with a few lines of Python: read `url` and `token` from the control file, `POST <url>/api` with `Authorization: Bearer <token>` and a JSON body (`docs/CONTROL.md`). `open_file` (files in the control folder, e.g. a copy of `examples/wave.dingle`), `state` (frame, playing, loop points, file) and `keys` read the program's state exactly.
+4. **Clicks and the whole window:** `WID=$(xdotool search --onlyvisible --name PinglyMotion | head -1); xdotool windowsize $WID 1600 980` gives a fixed layout; `import -window root /tmp/st/full.png` (or `-crop WxH+X+Y`) takes the whole window with menus, panels and the 3D view (Mesa in the sandbox drew the figure); the session opens the PNG to look at it. Find a widget's place in a first screenshot, then `xdotool mousemove X Y click 1` and `xdotool type "text"`, and screenshot again. Seen: clicking Right Arm > Forearm in the joint list scrolled the timeline to the highlighted `rForeArm` row; clicking Start gave `"playing":true` with the frame counting up in `state`, Stop gave `"playing":false`.
+5. **The control command `screenshot`** gives only the 3D view (800x600, views, frames, labels), never menus or panels.
+6. **Start-up smoke:** `HOME=/tmp/st/home timeout -k 5 120 xvfb-run -a bash tests/smoke_gui.sh /tmp/build/src/PinglyMotion` (each file is ended with `timeout -k`; the "Killed" lines are expected).
+
+What does not work: the control commands cannot click a menu, select a joint in the list or read a panel, so those need xdotool and screenshots; coordinates change with the window size, so always set the size first. The session cannot judge whether a movement looks natural or a layout feels right: it says what it saw and leaves that judgement to the owner. If something cannot be tested here (Windows-only behaviour, a second screen, dragging panels out), the pull request says so.
+
 ## The combined test build
 
-The project owner tests ONE combined build, branch `test/combined` (all open visible pull requests merged into it, never merged into `main`). After a visible job is ready, its session adds the pull request to the combined branch (merge it in, push, wait for the build) and puts the test on the test page and in the owner test list with the combined build's Windows link. When a test is approved, the pull request is merged on its own as today.
+The rules for `test/combined` (what goes in, when it is rebuilt, that it is the only branch that may be force-pushed) are in `CLAUDE.md`, "When you are done", step 5. The commands:
 
-`tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file. `test/combined` is rebuilt after every change to the set of open visible pull requests, and it is pushed with --force-with-lease; this is the only branch that may be force-pushed, and the project owner approved it for every session.
+`tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file.
 
 ## Pictures
 
@@ -103,12 +123,11 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 
 ## Git and GitHub from a session
 
-- Only the job chat starts jobs; before any job read `work.py list`, the open pull requests and the jobs list, and open the job file and draft pull request first (`CLAUDE.md`, "Before you start").
-- `main` is protected. Work on your own branch, open a draft pull request, mark it ready when it is done (`CLAUDE.md`).
+- The rules (who starts jobs, job file and draft pull request first, when to merge) are in `CLAUDE.md`; this list is only the how-to.
 - A shallow clone is fine. Fetch another branch with an explicit refspec: `git fetch --depth=50 origin +refs/heads/X:refs/remotes/origin/X`. Push with `git -c push.negotiate=true push`.
-- If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. Update a branch: `PUT .../pulls/N/update-branch`. Squash merge: `PUT .../pulls/N/merge -f merge_method=squash`.
+- If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. Update a branch (instead of a rebase, so no force-push is needed): `PUT .../pulls/N/update-branch`, then `git pull`. Squash merge: `PUT .../pulls/N/merge -f merge_method=squash`.
 - A check that fails with no log and no steps usually means the Actions account is out of minutes: read the check run annotations (`.../check-runs/<id>/annotations`).
-- After "Update branch" or a rebase, wait for the new checks. A required check that is still "expected" blocks the merge; a skipped one does not.
+- After "Update branch", wait for the new checks. A required check that is still "expected" blocks the merge; a skipped one does not.
 - Some source files have CRLF line endings: edit them without changing the endings (in Python open with `newline=''`).
 
 ## Reference library download (issue 19)
@@ -119,4 +138,4 @@ To pin hashes again (new commit or set), edit `sources` in the manifest and run 
 
 ## Privacy
 
-Never write a person's name, email address or home path anywhere (files, commits, issues, pull requests, comments). Write "the project owner". `tools/setup_clone.sh` installs a hook that runs `tools/check_privacy.py` before every push; the same check runs on every pull request.
+The privacy rules are in `CLAUDE.md`, "Privacy: no personal data anywhere". `tools/setup_clone.sh` installs a hook that runs `tools/check_privacy.py` before every push; the same check runs on every pull request. Run it by hand with `python3 tools/check_privacy.py origin/main HEAD`.

@@ -164,8 +164,7 @@ void Roth2Test::jointsAreInSkeleton()
 void Roth2Test::maleFigureShowsRoth2()
 {
   AvatarSkin skin;
-  QString error;
-  QVERIFY2(skin.load(dataPath(), AvatarSkin::RuthBody, &error), qPrintable(error));
+  { const AvatarSkin::Result loaded = skin.load(dataPath(), AvatarSkin::RuthBody); QVERIFY2(loaded.ok(), qPrintable(loaded.error)); }
   QVERIFY(skin.hasMaleMesh());
   QVERIFY(hasPart(skin, "Ruth2 body"));
   QVERIFY(!skin.maleMeshShown());
@@ -198,8 +197,7 @@ void Roth2Test::maleFigureShowsRoth2()
 void Roth2Test::femaleFigureKeepsChosenBody()
 {
   AvatarSkin skin;
-  QString error;
-  QVERIFY2(skin.load(dataPath(), AvatarSkin::MaxBody, &error), qPrintable(error));
+  { const AvatarSkin::Result loaded = skin.load(dataPath(), AvatarSkin::MaxBody); QVERIFY2(loaded.ok(), qPrintable(loaded.error)); }
   QCOMPARE(skin.body(), AvatarSkin::MaxBody);
   const QStringList maxJoints = skin.jointNames();
   const int maxParts = skin.parts().size();
@@ -218,7 +216,7 @@ void Roth2Test::femaleFigureKeepsChosenBody()
 void Roth2Test::maleBodyStandsRight()
 {
   AvatarSkin skin;
-  QVERIFY(skin.load(dataPath(), AvatarSkin::RuthBody));
+  QVERIFY(skin.load(dataPath(), AvatarSkin::RuthBody).ok());
   skin.setMale(true);
   skin.skin(restMatrices(skin));
   float lowest = 1e9f, highest = -1e9f, left = -1e9f, right = 1e9f;
@@ -252,8 +250,7 @@ void Roth2Test::missingFileFallsBack()
   QVERIFY(QFile::copy(dataPath() + "/character/ruth2/ruth2.pmm", dir.path() + "/character/ruth2/ruth2.pmm"));
 
   AvatarSkin skin;
-  QString error;
-  QVERIFY2(skin.load(dir.path(), AvatarSkin::RuthBody, &error), qPrintable(error));
+  { const AvatarSkin::Result loaded = skin.load(dir.path(), AvatarSkin::RuthBody); QVERIFY2(loaded.ok(), qPrintable(loaded.error)); }
   QVERIFY(!skin.hasMaleMesh());
   skin.setMale(true);
   QVERIFY(skin.isMale());

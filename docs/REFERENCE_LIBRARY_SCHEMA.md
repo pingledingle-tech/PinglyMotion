@@ -87,7 +87,7 @@ PinglyMotion-reference/
 | `format` | `bvh`, `glb` or `gltf`. |
 | `skeleton` | `sl-classic` for clips PinglyMotion can open; otherwise the original skeleton (`cmu-bvh`, `mesh2motion-humanoid`, `quaternius-rigify`), which `find_reference` lists as not loadable. |
 | `path` | The file, relative to the folder; never absolute, never `..`. |
-| `sha256`, `size` | Of that file. `load_reference` refuses a file that does not match. |
+| `sha256`, `size` | Of that file. `load_reference` refuses a file that does not match, and opens the clip from the same bytes it checked. The download folder is user-writable like the index, so this finds damage, not tampering: downloaded clips are trusted like any file the user opens. |
 | `length_s`, `fps` | Length in seconds (`(frames - 1) / fps`) and frame rate; `null` for originals. |
 | `downloaded` | `true`. |
 | `url` | Originals only: where the file came from. |

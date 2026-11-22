@@ -1,6 +1,6 @@
 name: Pages
 
-# Publishes docs/index.html to GitHub Pages with a live status section built
+# Publishes docs/index.html (and the hidden UX mockup in docs/mockup/) to GitHub Pages with a live status section built
 # from GitHub's own data (tools/site/build_status.py). Runs on changes to the
 # page and every night, so the status stays current without anyone editing it.
 on:
@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - docs/index.html
+      - docs/mockup/**
       - tools/site/**
       - .github/workflows/pages.yml
   schedule:
@@ -29,7 +30,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,9 +41,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 tools/site/build_status.py _site
+      # The UX mockup: a hidden page (noindex, not linked from the front page).
+      - name: Add the UX mockup
+        run: cp -r docs/mockup _site/mockup
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site
+      # deploy-pages sometimes cannot find the artifact that was uploaded a
+      # second earlier (a transient GitHub error). Try once more after a wait.
       - id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Wait before the second deploy attempt
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+      - id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

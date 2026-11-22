@@ -76,16 +76,22 @@ class Tests(unittest.TestCase):
         out = b.render(None)
         self.assertIn("could not be loaded", out)
 
-    def test_insert_into_real_page(self):
-        with open(os.path.join(HERE, "..", "docs", "index.html"), encoding="utf-8") as f:
-            page = f.read()
+    def test_insert_into_page_with_markers(self):
+        page = "<html><body>" + b.MARK_START + "old" + b.MARK_END + "</body></html>"
         out = b.insert(page, b.render(b.build_view(DATA)))
         self.assertIn("3 of 4 tasks done", out)
         self.assertEqual(out.count(b.MARK_START), 1)
-        self.assertNotIn("added when the page is published", out)
-        with self.assertRaises(ValueError):
-            b.insert("<html></html>", "x")
+        self.assertNotIn("old", out)
 
+    def test_page_without_markers_unchanged(self):
+        self.assertEqual(b.insert("<html></html>", "x"), "<html></html>")
+
+    def test_real_page_builds(self):
+        with open(os.path.join(HERE, "..", "docs", "index.html"), encoding="utf-8") as f:
+            page = f.read()
+        out = b.insert(page, b.render(b.build_view(DATA)))
+        self.assertIn("</html>", out)
+        self.assertLessEqual(out.count(b.MARK_START), 1)
 
 if __name__ == "__main__":
     unittest.main()

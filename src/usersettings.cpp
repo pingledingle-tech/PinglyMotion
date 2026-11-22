@@ -209,7 +209,7 @@ void UserSettings::writeSettings()
   settings.setValue(m_panelLayoutVersionKey, panelLayoutVersion());
   settings.setValue(m_mainWindowGeometryKey, mainWindowGeometry());
   // show_timeline_panel, main_window_width and main_window_height are retired:
-  // read once above, never written again (docs/PANELS_PLAN.md, section 7)
+  // read once above, never written again (docs/archive/PANELS_PLAN.md, section 7)
 
   settings.setValue(m_lastPathKey, lastPath());
 
