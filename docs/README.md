@@ -32,6 +32,10 @@ Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running wo
 | [TEXT_TO_MOTION_GUIDE.md](TEXT_TO_MOTION_GUIDE.md) | Make a motion from a sentence with the optional Kimodo helper (not yet tried on a real PC) | user | current guidance |
 | [AURORA_LINK.md](AURORA_LINK.md) | Live link that shows your pose on your avatar in the Aurora viewer | user | current guidance |
 | [index.html](index.html) | The project website (homepage) | user | current |
+| [download.html](download.html) | Website page: download (early preview), uninstall and system changes | user | current |
+| [code-signing.html](code-signing.html) | Website page: code signing policy (SignPath Foundation) | user, developer | current guidance |
+| [privacy.html](privacy.html) | Website page: privacy policy (what the program, the helper and the website do with data) | user | current guidance |
+| [site.css](site.css), [site.js](site.js) | Shared style, language picker and light/dark switch of the website pages | developer | current |
 
 ## Formats and reference
 
@@ -44,6 +48,7 @@ Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running wo
 | [CONTROL.md](CONTROL.md) | Remote control interface (HTTP, JSON, MCP): every command | AI client, developer | reference |
 | [ASSISTANT_GUIDE.md](ASSISTANT_GUIDE.md) | How an assistant animates in PinglyMotion: Second Life rules, words to use, recipes (served by the `read_guide` tool) | AI client | current guidance |
 | [RENDERING.md](RENDERING.md) | How the 3D view is drawn (OpenGL 3.3 shaders) | developer | reference |
+| [TRANSLATION.md](TRANSLATION.md) | How the program's texts are translated: add a language, the checks, what is not translated | developer, AI session | current guidance |
 | [DECISIONS.md](DECISIONS.md) | Decision log with reasons and what was turned down | developer, AI session | reference |
 | [MIGRATION.md](MIGRATION.md) | The move to this repository, and old issue numbers mapped to new ones | developer, AI session | reference |
 | [SCRIPT_LAB.md](SCRIPT_LAB.md) | What the Script Lab (RLV and LSL sandbox) does today, with limits | user, developer, AI client | current guidance |

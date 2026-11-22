@@ -22,6 +22,7 @@
 
 #include <QElapsedTimer>
 #include <QString>
+#include <QStringList>
 
 #include "ast.h"
 #include "world.h"
@@ -94,6 +95,9 @@ class Interpreter
     void linksetDataEvent(int action, const QString& name, const QString& value);
     // Step 9b-2: queues changed (the CHANGED_* flags, added together)
     void changedEvent(int flags);
+    // Step 9b-6: queues control(avatar, levels, edges) when this script took controls with permission from that avatar and
+    // the input touches a control it took (the values are cut to the controls taken)
+    void controlEvent(const QString& id, int levels, int edges);
     // the current state has a handler for this event
     bool handles(const QString& event) const;
 
@@ -125,6 +129,7 @@ class Interpreter
       std::vector<Value> args;
       QString detectedKey;
       QString detectedName;
+      std::vector<Detected> detected;   // step 9b-7: what a sensor found
     };
     struct Listen
     {
@@ -163,8 +168,23 @@ class Interpreter
     double m_nextTimer = 0.0;
     int m_permissions = 0;
     QString m_permissionKey;
+    int m_controls = 0;              // step 9b-6: the controls llTakeControls took (0 = none)
+    bool m_controlsAccept = false;
+    bool m_controlsPassOn = false;
+    QStringList m_playing;           // step 9b-5: animations this script started and has not stopped (llGetAnimationList)
     QString m_detectedKey;
     QString m_detectedName;
+    std::vector<Detected> m_detected;   // the detected list of the event being handled (a touch has one)
+    // step 9b-7: llSensorRepeat
+    bool m_sensorActive = false;
+    QString m_sensorName;
+    QString m_sensorId;
+    int m_sensorType = 0;
+    double m_sensorRange = 0.0;
+    double m_sensorArc = 0.0;
+    double m_sensorRate = 0.0;
+    double m_sensorNext = 0.0;
+    void sense(const QString& name, const QString& id, int type, double range, double arc);
     bool m_inEvent = false;
     bool m_started = false;
 

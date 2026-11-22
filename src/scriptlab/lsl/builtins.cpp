@@ -59,7 +59,13 @@ enum class Fn
   ParticleSystem, LinkParticleSystem, TriggerSound, PlaySound, LoopSound, StopSound, PreloadSound, TargetOmega, LoadURL,
   // step 9b-4: simulated inventory, notecards, rezzing
   GetInventoryNumber, GetInventoryName, GetInventoryType, GetInventoryKey, GiveInventory, RemoveInventory,
-  GetNotecardLine, GetNumberOfNotecardLines, RezObject, RezAtRoot
+  GetNotecardLine, GetNumberOfNotecardLines, RezObject, RezAtRoot,
+  // step 9b-5: sitting and pose balls
+  SitTarget, LinkSitTarget, AvatarOnSitTarget, AvatarOnLinkSitTarget, UnSit, GetAnimationList, GetAnimation, GetAgentInfo,
+  // step 9b-6: controls
+  TakeControls, ReleaseControls,
+  // step 9b-7: sensors and the detected data
+  Sensor, SensorRepeat, SensorRemove, DetectedPos, DetectedRot, DetectedVel, DetectedType, DetectedGroup, DetectedOwner
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -119,6 +125,13 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llGetInventoryKey", Fn::GetInventoryKey}, {"llGiveInventory", Fn::GiveInventory}, {"llRemoveInventory", Fn::RemoveInventory},
   {"llGetNotecardLine", Fn::GetNotecardLine}, {"llGetNumberOfNotecardLines", Fn::GetNumberOfNotecardLines},
   {"llRezObject", Fn::RezObject}, {"llRezAtRoot", Fn::RezAtRoot},
+  {"llSitTarget", Fn::SitTarget}, {"llLinkSitTarget", Fn::LinkSitTarget}, {"llAvatarOnSitTarget", Fn::AvatarOnSitTarget},
+  {"llAvatarOnLinkSitTarget", Fn::AvatarOnLinkSitTarget}, {"llUnSit", Fn::UnSit}, {"llGetAnimationList", Fn::GetAnimationList},
+  {"llGetAnimation", Fn::GetAnimation}, {"llGetAgentInfo", Fn::GetAgentInfo},
+  {"llTakeControls", Fn::TakeControls}, {"llReleaseControls", Fn::ReleaseControls},
+  {"llSensor", Fn::Sensor}, {"llSensorRepeat", Fn::SensorRepeat}, {"llSensorRemove", Fn::SensorRemove},
+  {"llDetectedPos", Fn::DetectedPos}, {"llDetectedRot", Fn::DetectedRot}, {"llDetectedVel", Fn::DetectedVel}, {"llDetectedType", Fn::DetectedType},
+  {"llDetectedGroup", Fn::DetectedGroup}, {"llDetectedOwner", Fn::DetectedOwner},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1168,13 +1181,19 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::RequestPermissions:
     {
       const bool owner = a[0].s == m_world.ownerKey();
-      m_world.log(m_now, QJsonObject{{"type", "permissions"}, {"mask", a[1].i}, {"granted", owner},
-                                     {"note", owner ? "The sandbox grants the owner's permissions at once." : "The sandbox has no avatar with that key; nothing was granted."}});
-      if (owner)
+      // step 9b-5: an avatar sitting on the object gets PERMISSION_TRIGGER_ANIMATION and PERMISSION_TAKE_CONTROLS at once
+      // (Second Life asks the avatar for other permissions; the sandbox grants none of them)
+      const bool seated = !owner && m_world.sitsOnObject(a[0].s);
+      const int granted = owner ? a[1].i : (seated ? (a[1].i & (0x10 | 0x4)) : 0);
+      const QString note = owner ? "The sandbox grants the owner's permissions at once."
+                                 : (seated ? "The sandbox grants an avatar sitting on the object PERMISSION_TRIGGER_ANIMATION and PERMISSION_TAKE_CONTROLS at once, and no other permission."
+                                           : "The sandbox has no avatar with that key; nothing was granted.");
+      m_world.log(m_now, QJsonObject{{"type", "permissions"}, {"mask", a[1].i}, {"granted", owner || (seated && granted != 0)}, {"note", note}});
+      if (owner || (seated && granted != 0))
       {
-        m_permissions = a[1].i;
+        m_permissions = granted;
         m_permissionKey = a[0].s;
-        queueEvent(Event{"run_time_permissions", {Value::integer(a[1].i)}, QString(), QString()});
+        queueEvent(Event{"run_time_permissions", {Value::integer(granted)}, QString(), QString()});
       }
       return Value();
     }
@@ -1189,9 +1208,62 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
         return Value();
       }
       m_world.animation(m_now, *it == Fn::StartAnimation, a[0].s);
+      if (*it == Fn::StartAnimation)
+      {
+        if (!m_playing.contains(a[0].s) && m_playing.size() < 64) m_playing << a[0].s;
+      }
+      else m_playing.removeAll(a[0].s);
       return Value();
-    case Fn::DetectedKey: return Value::key(a[0].i == 0 && !m_detectedKey.isEmpty() ? m_detectedKey : NULL_KEY);
-    case Fn::DetectedName: return Value::string(a[0].i == 0 ? m_detectedName : QString());
+    case Fn::DetectedKey: return Value::key(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].key : QString(NULL_KEY));
+    case Fn::DetectedName: return Value::string(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].name : QString());
+    case Fn::DetectedOwner:
+      return Value::key(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].owner : QString(NULL_KEY));
+    case Fn::DetectedType: return Value::integer(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].type : 0);
+    case Fn::DetectedGroup: return Value::integer(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].group : 0);
+    case Fn::DetectedPos:
+    case Fn::DetectedVel:
+    {
+      if (!(a[0].i >= 0 && a[0].i < qint32(m_detected.size()))) return Value::vector(0.0f, 0.0f, 0.0f);
+      const Detected& d = m_detected[size_t(a[0].i)];
+      const float* v = *it == Fn::DetectedPos ? d.position : d.velocity;
+      return Value::vector(v[0], v[1], v[2]);
+    }
+    case Fn::DetectedRot:
+    {
+      if (!(a[0].i >= 0 && a[0].i < qint32(m_detected.size()))) return Value::rotation(0.0f, 0.0f, 0.0f, 1.0f);
+      const Detected& d = m_detected[size_t(a[0].i)];
+      return Value::rotation(d.rotation[0], d.rotation[1], d.rotation[2], d.rotation[3]);
+    }
+    case Fn::Sensor:
+      sense(a[0].s, a[1].s, a[2].i, double(a[3].f[0]), double(a[4].f[0]));
+      return Value();
+    case Fn::SensorRepeat:
+    {
+      const double rate = double(a[5].f[0]);
+      if (!(rate > 0.0) || !std::isfinite(rate))
+      {
+        // a rate of 0 or less removes the repeat (sandbox choice)
+        if (m_sensorActive && !m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "sensor_remove"}});
+        m_sensorActive = false;
+        return Value();
+      }
+      m_sensorActive = true;
+      m_sensorName = a[0].s;
+      m_sensorId = a[1].s;
+      m_sensorType = a[2].i;
+      m_sensorRange = double(a[3].f[0]);
+      m_sensorArc = double(a[4].f[0]);
+      m_sensorRate = qMax(rate, 0.01);
+      m_sensorNext = m_now + m_sensorRate;   // the first scan comes one rate after the call (sandbox choice)
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "sensor_set"}, {"name", World::clip(m_sensorName)}, {"id", m_sensorId}, {"sense", m_sensorType},
+                                       {"range", rnd5(a[3].f[0])}, {"arc", rnd5(a[4].f[0])}, {"rate", rnd5(float(m_sensorRate))}});
+      return Value();
+    }
+    case Fn::SensorRemove:
+      if (m_sensorActive && !m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "sensor_remove"}});
+      m_sensorActive = false;
+      return Value();
 
     // -------------------------------------------- lists
     case Fn::GetListLength: return Value::integer(qint32(a[0].list.size()));
@@ -1619,7 +1691,7 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       m_world.scale(s);
       return Value::vector(s[0], s[1], s[2]);
     }
-    case Fn::GetNumberOfPrims: return Value::integer(m_world.numberOfPrims());
+    case Fn::GetNumberOfPrims: return Value::integer(m_world.numberOfPrims() + m_world.sitterCount());   // avatars sitting on the object count as prims
 
     // -------------------------------------------- prim state without effects (step 9b-3)
     case Fn::SetText:
@@ -1894,6 +1966,89 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       queueEvent(Event{"object_rez", {Value::key(id)}, QString(), QString()});
       return Value();
     }
+
+    // -------------------------------------------- sitting and pose balls (step 9b-5)
+    case Fn::SitTarget:
+    case Fn::LinkSitTarget:
+    {
+      const bool one = *it == Fn::SitTarget;
+      const Value& offset = a[one ? 0 : 1];
+      const Value& rotation = a[one ? 1 : 2];
+      const std::vector<int> links = one ? std::vector<int>{qMax(1, m_world.linkNumber())} : primLinks(m_world, a[0].i);
+      for (int link : links)
+      {
+        PrimState& prim = primOf(m_world, link);
+        // an offset and a rotation that are both zero remove the sit target
+        prim.sitTargetSet = !(offset.f[0] == 0.0f && offset.f[1] == 0.0f && offset.f[2] == 0.0f &&
+                              rotation.f[0] == 0.0f && rotation.f[1] == 0.0f && rotation.f[2] == 0.0f);
+        for (int k = 0; k < 3; ++k) prim.sitOffset[k] = offset.f[k];
+        for (int k = 0; k < 4; ++k) prim.sitRotation[k] = rotation.f[k];
+        logPrim(m_world, m_now, "sit_target", link, QJsonObject{{"set", prim.sitTargetSet}, {"offset", vecJson(offset.f)}, {"rotation", vecJson(rotation.f, 4)}});
+      }
+      return Value();
+    }
+    case Fn::AvatarOnSitTarget:
+    {
+      const QString who = m_world.sitterOnTarget(qMax(1, m_world.linkNumber()));
+      return Value::key(who.isEmpty() ? NULL_KEY : who);
+    }
+    case Fn::AvatarOnLinkSitTarget:
+    {
+      const std::vector<int> links = primLinks(m_world, a[0].i);
+      const QString who = links.size() == 1 ? m_world.sitterOnTarget(links.front()) : QString();
+      return Value::key(who.isEmpty() ? NULL_KEY : who);
+    }
+    case Fn::UnSit:
+      if (keyIsValid(a[0].s)) m_world.unSit(m_now, a[0].s);
+      return Value();
+    case Fn::GetAnimationList:
+    {
+      // the animations this script started with permission for that avatar and has not stopped; the avatar's own
+      // (standing, sitting) are not listed
+      std::vector<Value> keys;
+      if (!m_permissionKey.isEmpty() && a[0].s == m_permissionKey)
+        for (const QString& animation : m_playing)
+        {
+          const InventoryItem* item = m_world.inventory().find(animation);
+          keys.push_back(Value::key(item && item->type == 20 ? item->key : Inventory::derivedKey(m_world.objectKey(), "animation/" + animation)));
+        }
+      return Value::makeList(keys);
+    }
+    case Fn::GetAnimation:
+    {
+      if (a[0].s != m_world.ownerKey() && !m_world.isSitting(a[0].s)) return Value::string(QString());
+      return Value::string(m_world.isSitting(a[0].s) ? "Sitting" : "Standing");
+    }
+    case Fn::GetAgentInfo:
+    {
+      int flags = 0;
+      if (m_world.isSitting(a[0].s)) flags |= 0x10 | 0x20;                          // AGENT_SITTING | AGENT_ON_OBJECT
+      if (a[0].s == m_world.ownerKey() && m_world.hasAttachments()) flags |= 0x2;   // AGENT_ATTACHMENTS
+      return Value::integer(flags);
+    }
+
+    // -------------------------------------------- controls (step 9b-6)
+    case Fn::TakeControls:
+    {
+      if (!(m_permissions & 0x4))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to take controls but PERMISSION_TAKE_CONTROLS permission not set"}});
+        return Value();
+      }
+      m_controls = a[0].i;
+      m_controlsAccept = a[1].i != 0;
+      m_controlsPassOn = a[2].i != 0;
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "controls"}, {"op", "take"}, {"controls", a[0].i}, {"accept", m_controlsAccept}, {"pass_on", m_controlsPassOn}, {"avatar", m_permissionKey}});
+      return Value();
+    }
+    case Fn::ReleaseControls:
+      if (m_controls != 0 && !m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "controls"}, {"op", "release"}, {"avatar", m_permissionKey}});
+      m_controls = 0;
+      m_controlsAccept = m_controlsPassOn = false;
+      return Value();
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);

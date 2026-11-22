@@ -99,10 +99,15 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   thing.type = 6;
   worn.inventory = {card, thing};
   near.inventory = {card};
+  AvatarSpec stranger;   // step 9b-7: someone for the sensors to find
+  stranger.name = "s";
+  stranger.position[1] = 140.0f;
+  stranger.velocity[0] = 1.0f;
+  check(sandbox.addAvatar(stranger).isEmpty());
   check(sandbox.addObject(worn, script, limits).isEmpty());
   check(sandbox.addObject(near, script, limits).isEmpty());
-  const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed"};
-  for (int i = 0; i < 6; ++i)
+  const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed", "sit", "stand", "control"};
+  for (int i = 0; i < 9; ++i)
   {
     SandboxInput in;
     in.at = 0.5 * (i + 1);
@@ -112,6 +117,8 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
     in.text = "x";
     in.kind = i == 0 ? "whisper" : "say";
     in.change = 1 << (i % 13);   // changed: one CHANGED_* flag
+    in.levels = 1 << (i % 6);    // control
+    in.edges = 1 << (i % 6);
     check(sandbox.addInput(in));
   }
   sandbox.start();

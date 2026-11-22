@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 157 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 176 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -239,6 +239,25 @@ a script run through the control commands), the one the Objects part shows.
   `llGetNotecardLine`, `llGetNumberOfNotecardLines`, `llRezObject` and `llRezAtRoot` run; the events `dataserver` and `object_rez` are raised, and giving or removing an item raises `changed` with `CHANGED_INVENTORY`.
 - A rezzed object is only a key and a log entry: it does not run. Nothing is drawn and the 3D view is not touched. Details: [CONTROL.md](CONTROL.md), "Inventory, notecards and rezzing".
 - Tests: `tests/tst_lslinventory.cpp`. Limits unchanged; an item list holds at most 224 items, a notecard 2000 lines and 65536 characters.
+
+## What exists now (step 9b-5): sitting and pose balls
+
+- New inputs `sit` and `stand` (also for `lsl_event`) put an avatar on a prim of an object and take it off; every script of the object gets `changed` with `CHANGED_LINK`.
+- `llSitTarget`, `llLinkSitTarget`, `llAvatarOnSitTarget`, `llAvatarOnLinkSitTarget`, `llUnSit`, `llGetAnimationList`, `llGetAnimation` and `llGetAgentInfo` run. An avatar sitting on the object gets the animation permission
+  at once, so the usual pose ball (sit, `changed`, `llRequestPermissions`, `llStartAnimation`) runs. `llGetNumberOfPrims` counts sitting avatars.
+- Nothing about the avatar's place on the sit target is simulated, and standing up does not stop an animation by itself. Details: [CONTROL.md](CONTROL.md), "Sitting and pose balls".
+- Tests: `tests/tst_lslsitting.cpp`.
+
+## What exists now (step 9b-6): controls
+
+- `llTakeControls` and `llReleaseControls` run (with `PERMISSION_TAKE_CONTROLS`, which an avatar sitting on the object gets at once). The new input type `control` (`levels`, `edges`; also for `lsl_event`) raises the `control` event in scripts that took those controls.
+- Nothing moves and a held key is not repeated: one input is one change. Details: [CONTROL.md](CONTROL.md), "Controls". Tests: `tests/tst_lslcontrols.cpp`.
+
+## What exists now (step 9b-7): sensors
+
+- `llSensor`, `llSensorRepeat` and `llSensorRemove` scan for the avatars of the new `avatars` option of `lsl_run` (positions given in the input; the owner stands at the avatar's place) and for the other objects of the world,
+  by name, key, type, range (96 m at most) and arc; the events `sensor` and `no_sensor` follow, and `llDetectedPos`, `Rot`, `Vel`, `Type`, `Group` and `Owner` join `llDetectedKey` and `llDetectedName`.
+- Avatars never move and nothing is drawn. Details: [CONTROL.md](CONTROL.md), "Sensors". Tests: `tests/tst_lslsensors.cpp`.
 
 ## Camera limits in the 3D view (job 7b)
 
@@ -492,7 +511,7 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-  `link_message`, `linkset_data`, `on_rez` and `changed`, and 157 built-in functions; hard limits on
+  `link_message`, `linkset_data`, `on_rez` and `changed`, and 176 built-in functions; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

@@ -69,6 +69,18 @@ struct ObjectSpec
   std::vector<InventoryItem> inventory;   // step 9b-4: what the object holds besides its scripts (the scripts are in it too)
 };
 
+// step 9b-7: an avatar the sensors can find, standing where the input says (the owner is always there, at the
+// avatar's place, unless an avatar with the owner's key is given)
+struct AvatarSpec
+{
+  QString name;
+  QString key;                    // empty: made from the avatar's place in the list
+  float position[3] = {128.0f, 128.0f, 20.0f};
+  float velocity[3] = {0.0f, 0.0f, 0.0f};
+  float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+  bool inGroup = false;           // llDetectedGroup
+};
+
 // step 9a: one script of an object
 struct ScriptEntry
 {
@@ -81,7 +93,7 @@ struct ScriptEntry
 struct SandboxInput
 {
   double at = 0.0;
-  QString type = "chat";          // chat, touch, dialog, attach, detach, changed
+  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -89,8 +101,10 @@ struct SandboxInput
   QString id;                     // avatar key (empty: the owner)
   QString text;                   // chat text, or the dialog button
   int point = 0;                  // attach: the point (0: keep the object's point, or 1 when it has none)
-  int link = 0;                   // touch (step 9a): the prim touched (0: the root)
+  int link = 0;                   // touch (step 9a): the prim touched; sit (step 9b-5): the prim sat on (0: the root)
   int change = 0;                 // changed (step 9b-2): the CHANGED_* flags, added together
+  int levels = 0;                 // control (step 9b-6): the CONTROL_* flags held now
+  int edges = 0;                  // control: the CONTROL_* flags that changed
 };
 
 class Sandbox
@@ -101,6 +115,10 @@ class Sandbox
     static constexpr int MAX_SCRIPTS = 64;          // all objects together
     static constexpr int MAX_PRIMS = 256;           // as a Second Life linkset
     static constexpr int MAX_PENDING_INPUTS = 1000;
+    static constexpr int MAX_SITTERS = 16;
+    static constexpr int MAX_AVATARS = 64;          // avatars given for sensors
+    static constexpr int MAX_DETECTED = 16;         // what one sensor scan returns, as in Second Life
+    static constexpr double MAX_SENSOR_RANGE = 96.0;          // avatars sitting on one object
     static constexpr double WHISPER_RANGE = 10.0;
     static constexpr double SAY_RANGE = 20.0;
     static constexpr double SHOUT_RANGE = 100.0;
@@ -120,6 +138,8 @@ class Sandbox
     // Step 9a: an object with several scripts (1 to MAX_SCRIPTS_PER_OBJECT); log entries of its scripts
     // have "script" (the script's name)
     QString addObject(const ObjectSpec& spec, const std::vector<ScriptEntry>& scripts, const Limits& limits = Limits());
+    // Step 9b-7: an avatar for the sensors to find. Before start() only; returns why it was refused, or an empty string.
+    QString addAvatar(const AvatarSpec& avatar);
     // state_entry of every object (in order), then attach for the attached ones
     void start();
     // an input; refused (false) when MAX_PENDING_INPUTS are waiting
@@ -156,6 +176,14 @@ class Sandbox
 
   private:
     friend class ObjectWorld;
+    // step 9b-5: an avatar sitting on an object: on a prim's sit target, or just on the prim
+    struct Sitter
+    {
+      QString key;
+      QString name;
+      int link = 1;
+      bool onTarget = false;
+    };
     struct Object
     {
       ObjectSpec spec;
@@ -163,6 +191,7 @@ class Sandbox
       LinksetData data;            // step 9a: belongs to the object, not to a script
       PrimStore prims;             // step 9b-3: the simulated prims and the status flags of the object
       Inventory inventory;         // step 9b-4: the items and the object's scripts
+      std::vector<Sitter> sitters; // step 9b-5
       QString name;                // step 9b-1: the name now (llSetObjectName); spec.name stays the object's handle in logs and inputs
       QString description;         // the description now (llSetObjectDesc)
       bool tagScripts = false;     // given with "scripts": log entries name the script
@@ -191,6 +220,11 @@ class Sandbox
     // step 9b-4: the object's inventory changed (changed with CHANGED_INVENTORY to its scripts); llGiveInventory to a key
     void inventoryChanged(int from, double time);
     QString giveInventory(int from, double time, const QString& to, const InventoryItem& item);
+    // step 9b-5: llUnSit on an avatar sitting on the script's own object; an avatar sitting anywhere in the world
+    bool unSit(int from, double time, const QString& key);
+    std::vector<Detected> sense(int from, const QString& name, const QString& id, int type, double range, double arc);
+    bool isSitting(const QString& key) const;
+    bool hasAttachments() const;
     int linkNumber(int slot) const;
     void where(int index, float out[3]) const;
     QString nameOf(const QString& key) const;
@@ -208,6 +242,7 @@ class Sandbox
     World m_log;                   // the shared log
     std::vector<Object> m_objects;
     std::vector<Slot> m_slots;
+    std::vector<AvatarSpec> m_avatars;
     std::vector<SandboxInput> m_inputs;   // sorted by time, stable
     double m_now = 0.0;
     QJsonObject m_lastDialog;

@@ -66,6 +66,7 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   outer->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   outer->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   outer->setFrameShape(QFrame::NoFrame);
+  outerView_=outer;
 
   QWidget* content=new QWidget(outer);
   QHBoxLayout* contentLayout=new QHBoxLayout(content);
@@ -165,6 +166,21 @@ void TimelineView::selectTrack(int track)
   selectedTrack_=track;
   timeline->selectTrack(track);
   timelineTracks->selectTrack(track);
+
+  // scroll the row into view; a joint without a row (hidden group) is left alone
+  const int row=(track<0) ? -1 : JointGroups::rowOfTrack(track);
+  if(row>=0 && outerView_)
+  {
+    // scroll by the least amount that shows the whole row; a row already
+    // in view does not move the timeline
+    const int top=row*Constants::lineHeight()+2;
+    const int bottom=top+Constants::lineHeight();
+    QScrollBar* bar=outerView_->verticalScrollBar();
+    if(top<bar->value())
+      bar->setValue(row==0 ? 0 : top);
+    else if(bottom>bar->value()+bar->pageStep())
+      bar->setValue(bottom-bar->pageStep());
+  }
 }
 
 void TimelineView::layoutChanged()

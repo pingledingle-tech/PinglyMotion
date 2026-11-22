@@ -20,6 +20,8 @@ PinglyMotion is under active development. Automated checks validate exported BVH
 
 There are no releases in this repository yet (the project moved on 18 November 2026); see [Releases](https://github.com/pingledingle-tech/PinglyMotion/releases) for packages when they appear. For the latest development build on Windows, open [Actions](https://github.com/pingledingle-tech/PinglyMotion/actions), choose a successful **Build** run and download `PinglyMotion-windows`. Extract the archive and run `PinglyMotion.exe`, keeping its `data` folder alongside it.
 
+The website has a [download page](https://pingledingle-tech.github.io/PinglyMotion/download.html) (an early preview, with how to uninstall), a [privacy policy](https://pingledingle-tech.github.io/PinglyMotion/privacy.html) (PinglyMotion collects no personal data and sends no telemetry) and a [code signing policy](https://pingledingle-tech.github.io/PinglyMotion/code-signing.html). To report a bug or send a suggestion, use [Issues](https://github.com/pingledingle-tech/PinglyMotion/issues/new/choose).
+
 New to animating? Read [Your first animation](docs/FIRST_ANIMATION.md).
 
 All documents in one overview: [docs/README.md](docs/README.md).

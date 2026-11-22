@@ -139,6 +139,45 @@ namespace
     return QString();
   }
 
+  // the "levels" or "edges" of a control input (step 9b-6): a name (forward, back, left, right, up, down, rot_left,
+  // rot_right, lbutton, ml_lbutton; also CONTROL_FWD and so on), a list of names, or the flags as a whole number
+  QString readControls(const QJsonValue& v, const QString& field, int& flags)
+  {
+    static const QString names = "forward, back, left, right, up, down, rot_left, rot_right, lbutton or ml_lbutton";
+    const QString message = "\"" + field + "\" must be a name (" + names + "; also CONTROL_FWD and so on), a list of names, or the flags as a whole number.";
+    static const QStringList list = {"FWD", "BACK", "LEFT", "RIGHT", "UP", "DOWN", "ROT_LEFT", "ROT_RIGHT", "LBUTTON", "ML_LBUTTON"};
+    auto flagOf = [](const QString& text) -> int
+    {
+      QString name = text.trimmed().toUpper();
+      if (name.startsWith("CONTROL_")) name = name.mid(8);
+      if (name == "FORWARD") name = "FWD";
+      if (!list.contains(name)) return 0;
+      return Builtins::constant("CONTROL_" + name)->value.i;
+    };
+    int all = 0;
+    for (const QString& n : list) all |= flagOf(n);
+    flags = 0;
+    if (v.isString())
+    {
+      flags = flagOf(v.toString());
+      return flags != 0 ? QString() : message;
+    }
+    if (v.isArray())
+    {
+      const QJsonArray items = v.toArray();
+      if (items.isEmpty() || items.size() > 16) return message;
+      for (const QJsonValue& item : items)
+      {
+        const int f = item.isString() ? flagOf(item.toString()) : 0;
+        if (f == 0) return message;
+        flags |= f;
+      }
+      return QString();
+    }
+    if (!wholeNumber(v, 0, all, flags) || (flags & ~all) != 0) { flags = 0; return message; }
+    return QString();
+  }
+
   // one input of lsl_run or the event of lsl_event; empty when fine
   QString readInput(const QJsonObject& o, const QStringList& known, const QString& where, SandboxInput& in)
   {
@@ -153,8 +192,8 @@ namespace
     }
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
-    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed"};
-    if (!types.contains(in.type)) return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\" or \"changed\".";
+    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control"};
+    if (!types.contains(in.type)) return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -177,7 +216,7 @@ namespace
     else if (o.contains("button")) return where + "\"button\" is only for a dialog answer.";
     if (o.contains("link"))
     {
-      if (in.type != "touch") return where + "\"link\" is only for touch (the prim touched).";
+      if (in.type != "touch" && in.type != "sit") return where + "\"link\" is only for touch (the prim touched) and sit (the prim sat on).";
       if (!wholeNumber(o.value("link"), 1, Sandbox::MAX_PRIMS, in.link))
         return where + QString("\"link\" must be a whole number from 1 to %1 (the prim touched; 1 is the root).").arg(Sandbox::MAX_PRIMS);
     }
@@ -188,6 +227,18 @@ namespace
       if (!problem.isEmpty()) return where + problem;
     }
     else if (o.contains("change")) return where + "\"change\" is only for changed.";
+    if (in.type == "control")
+    {
+      for (const char* field : {"levels", "edges"})
+        if (o.contains(field))
+        {
+          const QString problem = readControls(o.value(field), field, field[0] == 'l' ? in.levels : in.edges);
+          if (!problem.isEmpty()) return where + problem;
+        }
+      if (in.levels == 0 && in.edges == 0)
+        return where + "a control input needs \"levels\" (the controls held now) or \"edges\" (the controls that changed), such as \"forward\".";
+    }
+    else if (o.contains("levels") || o.contains("edges")) return where + "\"levels\" and \"edges\" are only for control.";
     if (o.contains("point"))
     {
       if (in.type != "attach") return where + "\"point\" is only for attach.";
@@ -251,6 +302,67 @@ namespace
       for (const InventoryItem& other : out)
         if (other.name == item.name) return at + "two items are named \"" + clip(item.name, 63) + "\"; each needs its own name.";
       out.push_back(item);
+    }
+    return QString();
+  }
+
+  bool readNumbers(const QJsonValue& v, int count, double low, double high, float* out)
+  {
+    const QJsonArray p = v.toArray();
+    if (!v.isArray() || p.size() != count) return false;
+    for (int i = 0; i < count; ++i)
+    {
+      const double d = p[i].toDouble(std::nan(""));
+      if (!p[i].isDouble() || !std::isfinite(d) || d < low || d > high) return false;
+      out[i] = float(d);
+    }
+    return true;
+  }
+
+  // step 9b-7: "avatars" of lsl_run: [{name, key, position, velocity, rotation, in_group}]; empty when fine
+  QString readAvatars(const QJsonValue& v, std::vector<AvatarSpec>& out)
+  {
+    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\"}.";
+    const QJsonArray list = v.toArray();
+    if (list.size() > Sandbox::MAX_AVATARS) return QString("\"avatars\" holds at most %1 avatars.").arg(Sandbox::MAX_AVATARS);
+    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group"};
+    for (int i = 0; i < list.size(); ++i)
+    {
+      const QString where = QString("Avatar %1: ").arg(i + 1);
+      if (!list[i].isObject()) return where + "must be an object with a name.";
+      const QJsonObject o = list[i].toObject();
+      for (auto it = o.begin(); it != o.end(); ++it)
+        if (!fields.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+      AvatarSpec a;
+      if (!o.value("name").isString() || !validName(o.value("name").toString())) return where + "\"name\" must be text of 1 to 63 characters.";
+      a.name = o.value("name").toString();
+      if (o.contains("key"))
+      {
+        if (!o.value("key").isString() || !validKey(o.value("key").toString())) return where + "\"key\" must be a key: 1 to 36 letters, digits or \"-\".";
+        a.key = o.value("key").toString();
+      }
+      if (o.contains("position"))
+      {
+        const QJsonArray p = o.value("position").toArray();
+        bool ok = o.value("position").isArray() && p.size() == 3;
+        for (int k = 0; ok && k < 3; ++k)
+        {
+          const double d = p[k].toDouble(std::nan(""));
+          ok = p[k].isDouble() && std::isfinite(d) && d >= 0.0 && d <= (k < 2 ? 256.0 : 4096.0);
+          if (ok) a.position[k] = float(d);
+        }
+        if (!ok) return where + "\"position\" must be [x, y, z] in metres: x and y 0 to 256, z 0 to 4096.";
+      }
+      if (o.contains("velocity") && !readNumbers(o.value("velocity"), 3, -1000.0, 1000.0, a.velocity))
+        return where + "\"velocity\" must be [x, y, z] in metres per second, each -1000 to 1000.";
+      if (o.contains("rotation") && !readNumbers(o.value("rotation"), 4, -1000.0, 1000.0, a.rotation))
+        return where + "\"rotation\" must be [x, y, z, s], four numbers.";
+      if (o.contains("in_group"))
+      {
+        if (!o.value("in_group").isBool()) return where + "\"in_group\" must be true or false.";
+        a.inGroup = o.value("in_group").toBool();
+      }
+      out.push_back(a);
     }
     return QString();
   }
@@ -387,7 +499,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter", "inventory"};
+                                       "description", "scale", "start_parameter", "inventory", "avatars"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -461,13 +573,20 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     severalScripts.push_back(false);
   }
 
+  std::vector<AvatarSpec> avatars;
+  if (request.contains("avatars"))
+  {
+    const QString problem = readAvatars(request.value("avatars"), avatars);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
   std::vector<SandboxInput> inputs;
   if (request.contains("inputs"))
   {
     if (!request.value("inputs").isArray()) return fail("\"inputs\" must be a list of objects.");
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
-    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change"};
+    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change", "levels", "edges"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -533,6 +652,11 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     const QString problem = severalScripts[i] ? sandbox->addObject(specs[i], scripts[i]) : sandbox->addObject(specs[i], scripts[i].front().script);
     if (!problem.isEmpty()) return fail(QString("Object %1: ").arg(i + 1) + problem);
   }
+  for (size_t i = 0; i < avatars.size(); ++i)
+  {
+    const QString problem = sandbox->addAvatar(avatars[i]);
+    if (!problem.isEmpty()) return fail(QString("Avatar %1: ").arg(i + 1) + problem);
+  }
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
   sandbox->start();
   sandbox->runUntil(seconds);
@@ -567,7 +691,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
-  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change", "seconds"};
+  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change", "levels", "edges", "seconds"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -577,7 +701,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
     message[0] = message[0].toUpper();
     return fail(message);
   }
-  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach or changed.");
+  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand or control.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {

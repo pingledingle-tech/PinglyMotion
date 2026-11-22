@@ -90,6 +90,9 @@ struct PrimState
   float textColor[3] = {1.0f, 1.0f, 1.0f};
   float textAlpha = 1.0f;
   QString sitText;
+  bool sitTargetSet = false;        // step 9b-5: llSitTarget (an offset or rotation that is not zero)
+  float sitOffset[3] = {0.0f, 0.0f, 0.0f};
+  float sitRotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
   int physics = 0, phantom = 0, tempOnRez = 0;
   FaceState faces[FACES];
 };
@@ -127,6 +130,8 @@ class Inventory
     static constexpr int MAX_ITEMS = 256;
     static constexpr int MAX_NOTECARD_LINES = 2000;
     static constexpr int MAX_NOTECARD_CHARS = 65536;   // one notecard, all lines together
+    // the key an item gets when none is given (also used for animation names that are not in the inventory)
+    static QString derivedKey(const QString& seed, const QString& name);
     // INVENTORY_* name to number ("notecard", "object", "INVENTORY_SCRIPT", any case); -2 when unknown
     static int typeFromName(const QString& name);
     static bool knownType(int type);
@@ -140,6 +145,20 @@ class Inventory
 
   private:
     std::vector<InventoryItem> m_items;
+};
+
+// Step 9b-7: something a sensor found or a touch came from: an avatar or an object
+struct Detected
+{
+  QString key;
+  QString name;
+  QString owner;                    // an avatar is its own owner
+  float position[3] = {0.0f, 0.0f, 0.0f};
+  float velocity[3] = {0.0f, 0.0f, 0.0f};
+  float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+  int type = 1;                     // AGENT (1) for an avatar, SCRIPTED (8) for an object
+  int group = 0;                    // llDetectedGroup: 1 when it shares the active group of the sensing object
+  int link = 0;
 };
 
 class World
@@ -208,6 +227,23 @@ class World
     virtual Inventory& inventory() { return m_inventory; }
     virtual void inventoryChanged(double) {}
     virtual QString giveInventory(double time, const QString& to, const InventoryItem& item);
+    // Step 9b-5: avatars sitting on the object. The key of the avatar on the sit target of a prim (link 1 is the root;
+    // empty when none), how many avatars sit on the object (llGetNumberOfPrims counts them), llUnSit, and the avatars
+    // the sandbox knows: the owner and the avatars sitting on this object (for permissions and llGetAgentInfo).
+    virtual QString sitterOnTarget(int link) const { Q_UNUSED(link); return QString(); }
+    virtual int sitterCount() const { return 0; }
+    virtual bool unSit(double time, const QString& key) { Q_UNUSED(time); Q_UNUSED(key); return false; }
+    virtual bool isSitting(const QString& key) const { Q_UNUSED(key); return false; }       // on any object of the world
+    virtual bool sitsOnObject(const QString& key) const { Q_UNUSED(key); return false; }   // on this object
+    virtual bool hasAttachments() const { return false; }
+    // Step 9b-7: llSensor and llSensorRepeat look for avatars and other objects of the world: name and id filters
+    // (empty and null key: any), type mask (AGENT 1, ACTIVE 2, PASSIVE 4, SCRIPTED 8), range in metres (at most 96) and
+    // arc in radians around the object's forward direction; the nearest first, at most 16. A plain World knows no one.
+    virtual std::vector<Detected> sense(const QString& name, const QString& id, int type, double range, double arc)
+    {
+      Q_UNUSED(name); Q_UNUSED(id); Q_UNUSED(type); Q_UNUSED(range); Q_UNUSED(arc);
+      return std::vector<Detected>();
+    }
     // llKey2Name and llGetOwnerKey: the name and owner of a key in the sandbox (empty when unknown)
     virtual QString nameOf(const QString& key) const;
     virtual QString ownerOf(const QString& key) const;

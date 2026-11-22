@@ -377,12 +377,17 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `limit` | a limit stopped the script | `message`, `line`, `column` |
 | `message_linked` | `llMessageLinked` (step 9a) | `link` (as given, for example -1 for `LINK_SET`), `num`, `text`, `id`, `scripts` (how many scripts are in the prims it reaches) |
 | `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
-| `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
+| `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`sit_target` (step 9b-5: `set`, `offset`, `rotation`), `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
 | `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
 | `give_inventory` | `llGiveInventory` (step 9b-4) | `to`, `item`, `result` (`given`, `not_found`, `unknown_target` or `name_exists`) |
 | `inventory` | a script removed an item with `llRemoveInventory` (step 9b-4) | `op` (`remove`), `item` |
 | `dataserver_request` | `llGetNotecardLine` or `llGetNumberOfNotecardLines` found the notecard; the `dataserver` event follows (step 9b-4) | `function`, `notecard`, `line` (not for the line count), `query` (the key the call returned) |
 | `rez` | `llRezObject` or `llRezAtRoot` (step 9b-4) | `item`, `position`, `velocity`, `rotation`, `param`, `at_root`, `result` (`ok` or `too_far`), `object` (the new object's key, with `ok`) |
+| `sensor_set` | `llSensorRepeat` started a repeating scan (step 9b-7) | `name`, `id`, `sense` (the type mask), `range`, `arc`, `rate` |
+| `sensor_remove` | `llSensorRemove`, or a rate of 0 or less, ended the repeat (only when one was running) | |
+| `sensor` | a scan ran (`llSensor` or a repeat), and the `sensor` or `no_sensor` event follows | `found` (how many), `names` |
+| `controls` | `llTakeControls` took controls or `llReleaseControls` gave them back (step 9b-6) | `op` (`take`, `release`), `avatar`, and for `take` `controls`, `accept`, `pass_on` |
+| `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
 | `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
@@ -532,6 +537,62 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
+#### Sensors (Script Lab step 9b-7)
+
+`lsl_run` takes `avatars` (at most 64), the people the sensors can find: `[{"name": "Ann", "position": [128, 133, 20], "velocity": [1, 0, 0], "rotation": [0, 0, 0, 1], "in_group": true, "key": "..."}]`. Only `name` is needed;
+`position` is region metres as for objects (default `[128, 128, 20]`), `key` defaults to `a0000000-0000-4000-8000-000000000001` and so on in list order. The owner always stands at `[128, 128, 20]`, unless an avatar
+with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`.
+
+- `llSensor(name, id, type, range, arc)` scans once, now, and queues `sensor(integer num_detected)` (or `no_sensor()` when nothing is found) at once. It finds the avatars (type `AGENT`, 1) and the other objects of the
+  world (type `SCRIPTED`, 8; the sensing object itself is never found) that match: `name` exact and case-sensitive (empty: any), `id` (empty or `NULL_KEY`: any), a `type` mask that has the type's bit (a mask of 0, or `ACTIVE` and
+  `PASSIVE` alone, finds nothing: the sandbox has no passive or moving objects), within `range` metres (a range of 0 or less finds nothing; more than 96 counts as 96) of the sensing object's position, and inside `arc` radians
+  (more than PI counts as PI) of its forward direction (its x axis turned by the root prim's rotation, as set with `llSetRot`; something at distance 0 is always inside). The nearest come first, ties in list order (avatars,
+  then objects), and at most 16 are returned. A worn object is where the avatar is, and the wearer is found like anyone else (Second Life may leave the wearer out). Each scan is a `sensor` log entry.
+- `llSensorRepeat(name, id, type, range, arc, rate)` does the same every `rate` seconds, the first scan one `rate` after the call (a sandbox choice), at least 0.01 s apart. A new call replaces the earlier repeat; a `rate`
+  of 0 or less (or `NaN`) removes it (sandbox choice); `llSensorRemove` removes it; a state change removes it. They write `sensor_set` and `sensor_remove` entries.
+- `llDetectedName`, `llDetectedKey`, `llDetectedOwner` (an avatar is its own owner), `llDetectedType` (1 or 8, not the combinations Second Life reports for moving or physical objects), `llDetectedPos`, `llDetectedRot`
+  (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
+  gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated).
+- Not done: `llDetectedLinkNumber`, the touch data (`llDetectedTouch*`), `llDetectedGrab`, `llGetAgentList`, `llGetObjectDetails`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
+
+#### Controls (Script Lab step 9b-6)
+
+A new input type `control`, for `inputs` of `lsl_run` and for `lsl_event`: `{"at": 2, "type": "control", "levels": ["forward", "left"], "edges": "forward", "id": "<avatar key>"}` says which keys the avatar
+holds now (`levels`) and which just changed (`edges`). Each is a name (`forward` or `fwd`, `back`, `left`, `right`, `up`, `down`, `rot_left`, `rot_right`, `lbutton`, `ml_lbutton`; also written `CONTROL_FWD`), a list of names,
+or the `CONTROL_*` flags as a whole number; at least one must not be empty. `id` and `name` default to the owner. The log has an `input` entry (`input`: `control`, `id`, `levels`, `edges`).
+
+- `llTakeControls(controls, accept, pass_on)` needs `PERMISSION_TAKE_CONTROLS` (an avatar sitting on the object gets it at once, the owner as for every permission); without it a `debug` line
+  `Script trying to take controls but PERMISSION_TAKE_CONTROLS permission not set` is logged (the wording is the sandbox's) and nothing is taken. A taken set replaces the earlier one; `llReleaseControls` clears it.
+  Each is a `controls` log entry (`take` with `controls`, `accept`, `pass_on`; `release` only when something was held).
+- The `control(key id, integer level, integer edge)` event goes to a script that holds controls, has the permission from that avatar, and whose taken controls the input touches; `level` and `edge` are cut to the
+  controls the script took (Second Life's exact filtering with `accept` false is not simulated: `accept` and `pass_on` are only recorded). A script that did not take the control, or holds the permission from another avatar, gets nothing.
+- Not done: the avatar's movement itself (nothing moves), the repeat of `control` while a key is held (send one input for each change), and `llTakeCamera`/camera permissions.
+
+#### Sitting and pose balls (Script Lab step 9b-5)
+
+Two input types, for `inputs` of `lsl_run` and for `lsl_event`: `sit` (`{"at": 1, "type": "sit", "object": "chair", "link": 2, "id": "<avatar key>", "name": "<avatar name>"}`) puts an avatar on a prim
+of an object (`link` 1 to the prim count, default the root; `id` and `name` default to the owner), and `stand` (`{"type": "stand", "id": ...}`; `object` is optional: without it the avatar's object is used)
+takes it off. Each is an `input` entry (`input`: `sit` or `stand`, `id`, `name`; for `sit` also `on_target`, true when the avatar took the prim's sit target) and every script of the object gets `changed`
+with `CHANGED_LINK` (32). An avatar that is already sitting, a `stand` of an avatar that does not sit on the object, a link the object does not have and a 17th avatar on one object (16 at most) are an `input`
+entry with an `error`. The answer's `objects` entries have `sitters` (`key`, `name`, `link`, `on_target`) while someone sits.
+
+- **Sit targets:** `llSitTarget(offset, rotation)` sets the sit target of the script's prim and `llLinkSitTarget(link, offset, rotation)` that of a prim by link number (the `LINK_*` values reach the prims they name);
+  an offset and rotation that are both zero (rotation with x, y and z zero) remove it. Each call is a `prim` entry with `op` `sit_target` (`set`, `offset`, `rotation`). An avatar takes a prim's sit target when it has one and
+  no one else sits on it; otherwise it sits on the prim without a target (as in Second Life) and `llAvatarOnSitTarget` does not name it. `llAvatarOnSitTarget` is the avatar on the script's prim's target (`NULL_KEY` when none),
+  `llAvatarOnLinkSitTarget(link)` that of one link (`NULL_KEY` for a link the object does not have or a set of links). The sit position and the avatar's real place are not simulated, and the 3D view is not touched.
+- **`llGetNumberOfPrims`** counts the avatars that sit on the object, as Second Life does. `llGetLinkNumber` of a one-prim object stays 0 (Second Life gives 1 while an avatar sits on it).
+- **`llUnSit(key)`** takes an avatar off the script's own object (no other object; a key that does not sit there does nothing) and writes an `unsit` entry; every script of the object gets `changed` with `CHANGED_LINK`.
+  Second Life also asks for the right to do it (object owner or land owner); the sandbox does not.
+- **Permissions of a sitter:** `llRequestPermissions` on an avatar that sits on the object grants `PERMISSION_TRIGGER_ANIMATION` and `PERMISSION_TAKE_CONTROLS` at once (as Second Life does for sitters); the other bits
+  are not granted, and when none is left nothing is granted and no `run_time_permissions` comes. The `permissions` entry says so. The owner still gets everything at once, any other key nothing. So the usual pose ball works:
+  `changed` with `CHANGED_LINK`, `llAvatarOnSitTarget`, `llRequestPermissions`, `run_time_permissions`, `llStartAnimation`. Standing up does not stop the animation or take the permission away here: the script
+  must stop it itself (in Second Life the animation stops when the avatar stands).
+- **`llGetAnimationList(key)`** lists the keys of the animations this script started for that avatar (the avatar it holds permissions for) and has not stopped; an animation in the inventory (type `animation`) gives its
+  key, any other name a key made from the object's key and the name. The avatar's own animations (standing, sitting) are not in the list. **`llGetAnimation(key)`** answers `Sitting` for an avatar sitting on any object of the
+  world, `Standing` for the owner, and an empty string for any other key. **`llGetAgentInfo(key)`** answers `AGENT_SITTING | AGENT_ON_OBJECT` (0x30) for a sitting avatar, plus `AGENT_ATTACHMENTS` (2) for the owner
+  while any object of the world is worn, and 0 for everyone else (walking, flying, typing and the other flags are never set).
+- Not done: the avatar's position and rotation on the sit target, `llSitOnLink`, `llGetObjectPrimCount` and the link keys of sitting avatars, touch-to-sit (`llSetClickAction`), sit-text display, stand-up stopping animations, and the `control` event (the next step).
+
 #### Inventory, notecards and rezzing (Script Lab step 9b-4)
 
 An object holds the inventory the request gives it, and nothing else: no file is read. Give `inventory` inside an object of `objects`, or at the top of the
@@ -612,9 +673,9 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver` and `object_rez`; 157 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor` and `no_sensor`; 176 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, and functions that are only recorded). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

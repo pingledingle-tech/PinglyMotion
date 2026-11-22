@@ -1,6 +1,6 @@
 # Script Lab plan
 
-Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b is in progress (9b-1 to 9b-3 merged on 22 Nov 2026 in pull requests 311, 315 and 318, 9b-4 is an open pull request); 9c is planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
+Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b is in progress (9b-1 to 9b-6 merged on 22 Nov 2026 in pull requests 311, 315, 318, 334, 339 and 340, 9b-7 is an open pull request); 9c is planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
 
 ## 1. Goal
 
@@ -32,7 +32,7 @@ In order. Each step is small and testable. "Technical" means nothing changes on 
 | 8 | [#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294) | technical | Separate repository for the owner's RLV tools (description only; description written, repository not created) | 1, 6 | light |
 | 9 | [#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297) | technical | RLVa-only behaviours and a plain RLV / RLVa mode switch (done) | 1 | strong |
 | 9a | [#305](https://github.com/pingledingle-tech/PinglyMotion/issues/305) | technical | Several scripts in one object, link messages and Linkset Data (done) | 3, 5 | strong |
-| 9b | none yet | technical | More common LSL functions (9b-1 to 9b-4 done; sitting, controls, sensors, more stubs and canned HTTP follow) | 3 | strong |
+| 9b | none yet | technical | More common LSL functions (9b-1 to 9b-7 done; more stubs and canned HTTP follow) | 3 | strong |
 | 9c | none yet | technical | Gap list: what scripts use that the sandbox does not run yet (planned) | 9a, 9b | light |
 
 ### Step 1: RLV core (technical, done)
@@ -103,7 +103,10 @@ More LSL functions that real scripts use. The order comes from a gap list made f
 - 9b-1 (issue 310, done, pull request 311, merged 22 Nov 2026): the signature table from Second Life's lsl-definitions, and the pure functions that need no world (rotation maths, strided lists, `llReplaceSubString`, Base64, hashes, URL escaping, start parameter, object name, description, scale, prim count).
 - 9b-2 (issue 314, done, pull request 315, merged 22 Nov 2026): the events `on_rez` (at the start, with the start parameter) and `changed` (from an input of type `changed`), using the existing `inputs`.
 - 9b-3 (issue 317, done, pull request 318, merged 22 Nov 2026): prim state recorded in the event log without effects (`llSetText`, `llSetAlpha`, `llSetColor`, `llSetPrimitiveParams`, `llSetPos`, `llSetStatus`, `llSetSitText`, `llTextBox`, `llTransferLindenDollars` as logic only), and record-only stubs for particles and sounds.
-- 9b-4 (done in pull request 334): simulated inventory and notecards given in the `lsl_run` input (`llGetInventoryName`, `llGetInventoryNumber`, `llGetInventoryType`, `llGetInventoryKey`, `llGiveInventory`, `llRemoveInventory`, `llGetNotecardLine`, `llGetNumberOfNotecardLines`, `llRezObject`, `llRezAtRoot`, the events `dataserver` and `object_rez`).
+- 9b-4 (done, pull request 334, merged 22 Nov 2026): simulated inventory and notecards given in the `lsl_run` input (`llGetInventoryName`, `llGetInventoryNumber`, `llGetInventoryType`, `llGetInventoryKey`, `llGiveInventory`, `llRemoveInventory`, `llGetNotecardLine`, `llGetNumberOfNotecardLines`, `llRezObject`, `llRezAtRoot`, the events `dataserver` and `object_rez`).
+- 9b-5 (done, pull request 339, merged 22 Nov 2026): sitting and pose balls: `llSitTarget`, `llLinkSitTarget`, `llAvatarOnSitTarget`, `llAvatarOnLinkSitTarget`, `llUnSit`, `llGetAnimationList`, `llGetAnimation`, `llGetAgentInfo`, the inputs `sit` and `stand`, and `changed` with `CHANGED_LINK`.
+- 9b-6 (done, pull request 340, merged 22 Nov 2026): controls: `llTakeControls`, `llReleaseControls`, the input `control` (levels and edges) and the `control` event.
+- 9b-7 (done in pull request 343): sensors: `llSensor`, `llSensorRepeat`, `llSensorRemove`, the events `sensor` and `no_sensor`, and `llDetectedPos`, `Rot`, `Vel`, `Type`, `Group`, `Owner`, against avatars given in the input.
 
 ### Step 9c: gap list (technical, planned)
 

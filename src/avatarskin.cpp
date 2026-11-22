@@ -4,6 +4,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QCoreApplication>
 #include <QFile>
 #include <QTextStream>
 
@@ -124,7 +125,7 @@ QString AvatarSkin::loadJoints(const QString& fileName)
 {
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    return QString("Could not open %1: %2").arg(fileName, file.errorString());
+    return QCoreApplication::translate("AvatarSkin","Could not open %1: %2").arg(fileName, file.errorString());
 
   QTextStream in(&file);
   while (!in.atEnd())

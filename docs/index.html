@@ -8,97 +8,7 @@
 <title>PinglyMotion — From “I’ll just make one animation” to full-blown motion madness.</title>
 <meta name="description" content="From “I’ll just make one animation” to full-blown motion madness. PinglyMotion is a project in development for working with poses and animations for Second Life.">
 <script>(function(){var d=document.documentElement;d.className="js";try{var t=localStorage.getItem("pinglymotion-theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);}catch(e){}})();</script>
-<style>
-/* Colours, shapes, spacing and type: docs/DESIGN_SYSTEM.md and docs/design_tokens.json.
-   Light theme first, dark theme from the system setting or the theme switch. */
-:root{
-  color-scheme:light;
-  --background:#F3F4F6;--surface:#FFFFFF;--surface-raised:#E9EBEF;--border:#7A808A;
-  --text:#1C1E22;--text-muted:#535963;--accent:#1F63C9;--on-accent:#FFFFFF;
-  --accent-text:#1A56B0;--focus-ring:#1F63C9;--selection:#1F63C9;
-  /* radius, spacing, control height (px tokens) */
-  --r-small:4px;--r-control:6px;--r-panel:8px;--r-round:999px;--bw:1px;
-  --xs:4px;--s:8px;--m:12px;--l:16px;--xl:24px;--xxl:32px;
-  --h-default:32px;--h-large:40px;
-  /* type tokens at the 125 percent page scale (allowed range 100 to 200 percent), in rem so the page follows the browser text size */
-  --scale:1.25;
-  --caption:calc(11rem / 16 * var(--scale));--body:calc(13rem / 16 * var(--scale));
-  --title:calc(16rem / 16 * var(--scale));--heading:calc(20rem / 16 * var(--scale));
-  --short:120ms;--medium:200ms;
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    color-scheme:dark;
-    --background:#1E1F22;--surface:#2A2B2F;--surface-raised:#35373C;--border:#767B85;
-    --text:#E6E7EA;--text-muted:#AEB2BA;--accent:#3272DD;--on-accent:#FFFFFF;
-    --accent-text:#7FB0FF;--focus-ring:#9CC2FF;--selection:#3272DD;
-  }
-}
-:root[data-theme="dark"]{
-  color-scheme:dark;
-  --background:#1E1F22;--surface:#2A2B2F;--surface-raised:#35373C;--border:#767B85;
-  --text:#E6E7EA;--text-muted:#AEB2BA;--accent:#3272DD;--on-accent:#FFFFFF;
-  --accent-text:#7FB0FF;--focus-ring:#9CC2FF;--selection:#3272DD;
-}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--background);color:var(--text);
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  font-size:var(--body);font-weight:400;line-height:1.6}
-a{color:var(--accent-text);text-decoration:underline;text-underline-offset:.18em}
-a:hover{text-decoration-thickness:2px}
-:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
-.skip{z-index:2;position:absolute;left:-999px;top:0;background:var(--surface);color:var(--text);
-  padding:var(--s) var(--l);border:var(--bw) solid var(--border);border-radius:var(--r-control);font-weight:600}
-.skip:focus{left:var(--l);top:var(--l)}
-.wrap{max-width:46rem;margin:0 auto;padding:0 var(--l)}
-.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:var(--s) var(--l);padding:var(--l) 0}
-.langs,.themes ul{display:flex;gap:var(--s);flex-wrap:wrap;margin:0;padding:0;list-style:none}
-.themes{display:none;align-items:center;gap:var(--s)}
-html.js .themes{display:flex}
-.themes-label{font-size:var(--body);font-weight:600;color:var(--text-muted)}
-/* Normal buttons: surface_raised fill, border, radius.control, default height; the chosen one has the selection fill AND a filled dot (no meaning by colour alone) */
-.langs a,.themes button{display:inline-flex;align-items:center;justify-content:center;gap:var(--s);
-  min-height:var(--h-default);min-width:var(--h-default);padding:0 var(--m);
-  background:var(--surface-raised);color:var(--text);border:var(--bw) solid var(--border);border-radius:var(--r-control);
-  font:inherit;font-size:var(--body);font-weight:600;line-height:1.2;text-decoration:none;cursor:pointer;
-  transition:background-color var(--short)}
-.langs a:hover,.themes button:hover{background:color-mix(in srgb,var(--text) 8%,var(--surface-raised))}
-.langs a:active,.themes button:active{background:color-mix(in srgb,var(--text) 16%,var(--surface-raised))}
-.langs a[aria-current="true"],.themes button[aria-pressed="true"]{background:var(--selection);border-color:var(--selection);color:var(--on-accent)}
-.langs a[aria-current="true"]:hover,.themes button[aria-pressed="true"]:hover{background:color-mix(in srgb,var(--on-accent) 12%,var(--selection))}
-.langs a[aria-current="true"]::before,.themes button[aria-pressed="true"]::before{content:"";width:.5em;height:.5em;border-radius:var(--r-round);background:currentColor}
-header.hero{padding:var(--xl) 0 var(--s)}
-h1{font-size:calc(20rem / 16 * 2); /* heading token at the 200 percent scale */ font-weight:600;line-height:1.1;letter-spacing:-.01em;margin:0}
-main{padding:0 0 var(--xxl)}
-.tagline{font-size:var(--title);font-weight:600;color:var(--text-muted);line-height:1.4;margin:0 0 var(--xl)}
-section{background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r-panel);
-  padding:var(--xl);margin:0 0 var(--l)}
-h2{font-size:var(--heading);font-weight:600;line-height:1.3;color:var(--text);margin:0 0 var(--m)}
-p{margin:0 0 var(--m)}
-section>:last-child{margin-bottom:0}
-.welcome{font-weight:600;font-size:var(--title)}
-ul.list{margin:0 0 var(--m);padding-left:var(--xl)}
-ul.list li{margin:var(--xs) 0}
-.quotes{display:flex;flex-direction:column;gap:var(--s);margin:0 0 var(--m)}
-.quotes p{margin:0;padding:var(--s) var(--m);background:var(--surface-raised);border-radius:var(--r-control);font-style:italic}
-.dialog{background:var(--surface-raised);border-radius:var(--r-panel);padding:var(--l);margin:0 0 var(--m)}
-.dialog p{margin:var(--xs) 0}
-.dialog b{display:inline-block;min-width:4.5em;font-weight:600}
-blockquote{margin:0 0 var(--m);padding:var(--m) var(--l);background:var(--surface-raised);border:var(--bw) solid var(--border);border-radius:var(--r-panel);font-weight:600;font-size:var(--title)}
-blockquote p{margin:0}
-.closing{font-size:var(--title);font-weight:600}
-footer{padding:var(--l) 0 var(--xxl);color:var(--text-muted)}
-footer p{margin:0 0 var(--s)}
-article{display:none}
-article:target{display:block}
-body:not(:has(article:target)) #en{display:block}
-html.js article{display:none}
-html.js article.on{display:block}
-@media (max-width:30rem){section{padding:var(--l)}h1{font-size:calc(20rem / 16 * 1.6)}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media print{.skip,.themes{display:none}a{color:inherit}section{border:0;padding:0}}
-</style>
+<link rel="stylesheet" href="site.css">
 </head>
 <body>
 <a class="skip" href="#en">Skip to content</a>
@@ -128,6 +38,7 @@ html.js article.on{display:block}
 
 <main>
 <article id="en" lang="en">
+<nav class="site" aria-label="Site"><ul><li><a href="index.html#en" aria-current="page">Home</a></li><li><a href="download.html#en">Download</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Report a bug</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Suggestions</a></li></ul></nav>
 <p class="tagline lead">From “I’ll just make one animation” to full-blown motion madness.</p>
 <section aria-label="Introduction">
   <p>Some people go into Second Life to dance, meet people or find a place to live.</p>
@@ -255,13 +166,27 @@ html.js article.on{display:block}
   <p class="closing">PinglyMotion — big ideas, small keyframes and an elbow we still need to talk about.</p>
 </section>
 
+<section aria-labelledby="en-hdl">
+  <h2 id="en-hdl">Download and get involved</h2>
+  <p>A first early preview (version 0.1) for Windows and Linux is on its way. It is free and open source, and it will be rough in places. That is what feedback is for.</p>
+  <p><a class="btn" href="download.html#en">Download (early preview)</a></p>
+  <ul class="list">
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Found a bug? Report it</a></li>
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Have an idea or a wish? Send a suggestion</a></li>
+    <li><a href="code-signing.html#en" lang="en">Code signing policy</a></li>
+    <li><a href="privacy.html#en">Privacy</a></li>
+  </ul>
+</section>
+
 <footer>
   <p>The project on GitHub: <a href="https://github.com/pingledingle-tech/PinglyMotion">github.com/pingledingle-tech/PinglyMotion</a></p>
   <p>PinglyMotion builds on the work of many others. Thank you to all of them: <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">see who in CREDITS.md</a>.</p>
+<nav aria-label="Site"><ul class="foot"><li><a href="download.html#en">Download</a></li><li><a href="code-signing.html#en" lang="en">Code signing policy</a></li><li><a href="privacy.html#en">Privacy</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Report a bug</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Suggestions</a></li></ul></nav>
 </footer>
 </article>
 
 <article id="no" lang="nb">
+<nav class="site" aria-label="Nettsted"><ul><li><a href="index.html#no" aria-current="page">Hjem</a></li><li><a href="download.html#no">Last ned</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Meld en feil</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Forslag</a></li></ul></nav>
 <p class="tagline lead">Fra «jeg skal bare lage en animasjon» til full bevegelse i galskapen.</p>
 <section aria-label="Innledning">
   <p>Noen går inn i Second Life for å danse, treffe folk eller finne et sted å bo.</p>
@@ -389,13 +314,27 @@ html.js article.on{display:block}
   <p class="closing">PinglyMotion — store ideer, små nøkkelbilder og en albue vi fortsatt må snakke om.</p>
 </section>
 
+<section aria-labelledby="no-hdl">
+  <h2 id="no-hdl">Last ned og bli med</h2>
+  <p>En første tidlig forhåndsversjon (versjon 0.1) for Windows og Linux er på vei. Den er gratis og har åpen kildekode, og den vil være røff noen steder. Det er det tilbakemeldinger er til for.</p>
+  <p><a class="btn" href="download.html#no">Last ned (tidlig forhåndsversjon)</a></p>
+  <ul class="list">
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Funnet en feil? Meld fra</a></li>
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Har du en idé eller et ønske? Send et forslag</a></li>
+    <li><a href="code-signing.html#no" lang="en">Code signing policy</a></li>
+    <li><a href="privacy.html#no">Personvern</a></li>
+  </ul>
+</section>
+
 <footer>
   <p>Prosjektet på GitHub: <a href="https://github.com/pingledingle-tech/PinglyMotion">github.com/pingledingle-tech/PinglyMotion</a></p>
   <p>PinglyMotion bygger på arbeidet til mange andre. Takk til alle sammen: <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">se hvem i CREDITS.md</a>.</p>
+<nav aria-label="Nettsted"><ul class="foot"><li><a href="download.html#no">Last ned</a></li><li><a href="code-signing.html#no" lang="en">Code signing policy</a></li><li><a href="privacy.html#no">Personvern</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Meld en feil</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Forslag</a></li></ul></nav>
 </footer>
 </article>
 
 <article id="de" lang="de">
+<nav class="site" aria-label="Website"><ul><li><a href="index.html#de" aria-current="page">Start</a></li><li><a href="download.html#de">Download</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Fehler melden</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Vorschläge</a></li></ul></nav>
 <p class="tagline lead">Von „Ich mach nur schnell eine Animation“ bis zum ausgewachsenen Bewegungswahnsinn.</p>
 <section aria-label="Einleitung">
   <p>Manche gehen in Second Life, um zu tanzen, Leute zu treffen oder einen Ort zum Wohnen zu finden.</p>
@@ -523,13 +462,27 @@ html.js article.on{display:block}
   <p class="closing">PinglyMotion — große Ideen, kleine Keyframes und ein Ellbogen, über den wir noch reden müssen.</p>
 </section>
 
+<section aria-labelledby="de-hdl">
+  <h2 id="de-hdl">Herunterladen und mitmachen</h2>
+  <p>Eine erste frühe Vorabversion (Version 0.1) für Windows und Linux ist unterwegs. Sie ist kostenlos und Open Source und wird stellenweise noch holprig sein. Dafür gibt es Rückmeldungen.</p>
+  <p><a class="btn" href="download.html#de">Herunterladen (frühe Vorabversion)</a></p>
+  <ul class="list">
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Einen Fehler gefunden? Melden</a></li>
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Eine Idee oder ein Wunsch? Vorschlag senden</a></li>
+    <li><a href="code-signing.html#de" lang="en">Code signing policy</a></li>
+    <li><a href="privacy.html#de">Datenschutz</a></li>
+  </ul>
+</section>
+
 <footer>
   <p>Das Projekt auf GitHub: <a href="https://github.com/pingledingle-tech/PinglyMotion">github.com/pingledingle-tech/PinglyMotion</a></p>
   <p>PinglyMotion baut auf der Arbeit vieler anderer auf. Danke an alle: <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">wer genau, steht in CREDITS.md</a>.</p>
+<nav aria-label="Website"><ul class="foot"><li><a href="download.html#de">Download</a></li><li><a href="code-signing.html#de" lang="en">Code signing policy</a></li><li><a href="privacy.html#de">Datenschutz</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Fehler melden</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Vorschläge</a></li></ul></nav>
 </footer>
 </article>
 
 <article id="pl" lang="pl">
+<nav class="site" aria-label="Strona"><ul><li><a href="index.html#pl" aria-current="page">Start</a></li><li><a href="download.html#pl">Pobierz</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Zgłoś błąd</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Propozycje</a></li></ul></nav>
 <p class="tagline lead">Od „zrobię tylko jedną animację” do pełnego ruchowego szaleństwa.</p>
 <section aria-label="Wstęp">
   <p>Niektórzy wchodzą do Second Life, żeby potańczyć, poznać ludzi albo znaleźć miejsce do zamieszkania.</p>
@@ -657,13 +610,27 @@ html.js article.on{display:block}
   <p class="closing">PinglyMotion — wielkie pomysły, małe klatki kluczowe i łokieć, o którym wciąż musimy porozmawiać.</p>
 </section>
 
+<section aria-labelledby="pl-hdl">
+  <h2 id="pl-hdl">Pobierz i dołącz</h2>
+  <p>Pierwsza wczesna wersja zapoznawcza (wersja 0.1) dla Windows i Linuksa jest w drodze. Jest darmowa i open source, a miejscami będzie jeszcze szorstka. Po to są opinie użytkowników.</p>
+  <p><a class="btn" href="download.html#pl">Pobierz (wczesna wersja zapoznawcza)</a></p>
+  <ul class="list">
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Znalazłeś błąd? Zgłoś go</a></li>
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Masz pomysł lub życzenie? Wyślij propozycję</a></li>
+    <li><a href="code-signing.html#pl" lang="en">Code signing policy</a></li>
+    <li><a href="privacy.html#pl">Prywatność</a></li>
+  </ul>
+</section>
+
 <footer>
   <p>Projekt na GitHubie: <a href="https://github.com/pingledingle-tech/PinglyMotion">github.com/pingledingle-tech/PinglyMotion</a></p>
   <p>PinglyMotion opiera się na pracy wielu innych osób. Dziękujemy wszystkim: <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">kto dokładnie, znajdziesz w CREDITS.md</a>.</p>
+<nav aria-label="Strona"><ul class="foot"><li><a href="download.html#pl">Pobierz</a></li><li><a href="code-signing.html#pl" lang="en">Code signing policy</a></li><li><a href="privacy.html#pl">Prywatność</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Zgłoś błąd</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Propozycje</a></li></ul></nav>
 </footer>
 </article>
 
 <article id="nl" lang="nl">
+<nav class="site" aria-label="Website"><ul><li><a href="index.html#nl" aria-current="page">Home</a></li><li><a href="download.html#nl">Download</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Fout melden</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Suggesties</a></li></ul></nav>
 <p class="tagline lead">Van „ik maak even één animatie” tot complete bewegingswaanzin.</p>
 <section aria-label="Inleiding">
   <p>Sommige mensen gaan Second Life in om te dansen, mensen te ontmoeten of een plek te vinden om te wonen.</p>
@@ -791,51 +758,27 @@ html.js article.on{display:block}
   <p class="closing">PinglyMotion — grote ideeën, kleine keyframes en een elleboog waar we het nog over moeten hebben.</p>
 </section>
 
+<section aria-labelledby="nl-hdl">
+  <h2 id="nl-hdl">Downloaden en meedoen</h2>
+  <p>Een eerste vroege previewversie (versie 0.1) voor Windows en Linux is onderweg. Gratis en open source, en op sommige plekken nog ruw. Daar is feedback voor.</p>
+  <p><a class="btn" href="download.html#nl">Downloaden (vroege preview)</a></p>
+  <ul class="list">
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Een fout gevonden? Meld het</a></li>
+    <li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Een idee of wens? Stuur een suggestie</a></li>
+    <li><a href="code-signing.html#nl" lang="en">Code signing policy</a></li>
+    <li><a href="privacy.html#nl">Privacy</a></li>
+  </ul>
+</section>
+
 <footer>
   <p>Het project op GitHub: <a href="https://github.com/pingledingle-tech/PinglyMotion">github.com/pingledingle-tech/PinglyMotion</a></p>
   <p>PinglyMotion bouwt voort op het werk van vele anderen. Dank aan iedereen: <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">wie precies, staat in CREDITS.md</a>.</p>
+<nav aria-label="Website"><ul class="foot"><li><a href="download.html#nl">Download</a></li><li><a href="code-signing.html#nl" lang="en">Code signing policy</a></li><li><a href="privacy.html#nl">Privacy</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Fout melden</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Suggesties</a></li></ul></nav>
 </footer>
 </article>
 </main>
 </div>
-<script>
-(function(){
-var M={"en": {"lang": "en", "title": "PinglyMotion — From “I’ll just make one animation” to full-blown motion madness.", "desc": "From “I’ll just make one animation” to full-blown motion madness. PinglyMotion is a project in development for working with poses and animations for Second Life.", "skip": "Skip to content", "theme": "Theme", "light": "Light", "dark": "Dark"}, "no": {"lang": "nb", "title": "PinglyMotion — Fra «jeg skal bare lage en animasjon» til full bevegelse i galskapen.", "desc": "Fra «jeg skal bare lage en animasjon» til full bevegelse i galskapen. PinglyMotion er et prosjekt under utvikling for arbeid med positurer og animasjoner til Second Life.", "skip": "Gå til innholdet", "theme": "Tema", "light": "Lys", "dark": "Mørk"}, "de": {"lang": "de", "title": "PinglyMotion — Von „Ich mach nur schnell eine Animation“ bis zum ausgewachsenen Bewegungswahnsinn.", "desc": "Von „Ich mach nur schnell eine Animation“ bis zum ausgewachsenen Bewegungswahnsinn. PinglyMotion ist ein Projekt in Entwicklung für die Arbeit mit Posen und Animationen für Second Life.", "skip": "Zum Inhalt springen", "theme": "Farbschema", "light": "Hell", "dark": "Dunkel"}, "pl": {"lang": "pl", "title": "PinglyMotion — Od „zrobię tylko jedną animację” do pełnego ruchowego szaleństwa.", "desc": "Od „zrobię tylko jedną animację” do pełnego ruchowego szaleństwa. PinglyMotion to rozwijany projekt do pracy z pozami i animacjami do Second Life.", "skip": "Przejdź do treści", "theme": "Motyw", "light": "Jasny", "dark": "Ciemny"}, "nl": {"lang": "nl", "title": "PinglyMotion — Van „ik maak even één animatie” tot complete bewegingswaanzin.", "desc": "Van „ik maak even één animatie” tot complete bewegingswaanzin. PinglyMotion is een project in ontwikkeling om met poses en animaties voor Second Life te werken.", "skip": "Naar de inhoud", "theme": "Thema", "light": "Licht", "dark": "Donker"}},L=["en","no","de","pl","nl"];
-function ok(c){return L.indexOf(c)>=0;}
-function pick(){
-  var h=location.hash.slice(1);if(ok(h))return h;
-  try{var s=localStorage.getItem("pinglymotion-lang");if(ok(s))return s;}catch(e){}
-  var n=navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||""];
-  for(var i=0;i<n.length;i++){var c=String(n[i]).toLowerCase().split("-")[0];if(c==="nb"||c==="nn")c="no";if(ok(c))return c;}
-  return "en";
-}
-function show(c,store){
-  var m=M[c],a=document.getElementsByTagName("article");
-  for(var i=0;i<a.length;i++){a[i].className=a[i].id===c?"on":"";}
-  document.documentElement.lang=m.lang;document.title=m.title;
-  var d=document.querySelector('meta[name="description"]');if(d)d.setAttribute("content",m.desc);
-  var k=document.querySelectorAll(".langs a");
-  for(var j=0;j<k.length;j++){if(k[j].getAttribute("href")==="#"+c)k[j].setAttribute("aria-current","true");else k[j].removeAttribute("aria-current");}
-  var s=document.querySelector(".skip");s.textContent=m.skip;s.setAttribute("href","#"+c);s.setAttribute("lang",m.lang);
-  document.getElementById("theme-label").textContent=m.theme;
-  var b=document.querySelectorAll("[data-theme-choice]");
-  for(var t=0;t<b.length;t++){b[t].textContent=m[b[t].getAttribute("data-theme-choice")];}
-  if(store){try{localStorage.setItem("pinglymotion-lang",c);}catch(e){}}
-}
-var dark=window.matchMedia?window.matchMedia("(prefers-color-scheme: dark)"):null;
-function theme(){var t=document.documentElement.getAttribute("data-theme");return t||(dark&&dark.matches?"dark":"light");}
-function marks(){var t=theme(),b=document.querySelectorAll("[data-theme-choice]");
-  for(var i=0;i<b.length;i++){b[i].setAttribute("aria-pressed",b[i].getAttribute("data-theme-choice")===t?"true":"false");}}
-function setTheme(t){document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("pinglymotion-theme",t);}catch(e){}marks();}
-var tb=document.querySelectorAll("[data-theme-choice]");
-for(var q=0;q<tb.length;q++){tb[q].addEventListener("click",function(){setTheme(this.getAttribute("data-theme-choice"));});}
-if(dark){var f=function(){marks();};if(dark.addEventListener)dark.addEventListener("change",f);else if(dark.addListener)dark.addListener(f);}
-marks();
-var c=pick();show(c,false);
-if(location.hash){window.addEventListener("load",function(){setTimeout(function(){window.scrollTo(0,0);},0);});}
-if(location.hash.slice(1)!==c&&history.replaceState){try{history.replaceState(null,"","#"+c);}catch(e){}}
-window.addEventListener("hashchange",function(){var h=location.hash.slice(1);if(ok(h)){show(h,true);window.scrollTo(0,0);}});
-})();
-</script>
+<script type="application/json" id="i18n">{"en": {"lang": "en", "title": "PinglyMotion — From “I’ll just make one animation” to full-blown motion madness.", "desc": "From “I’ll just make one animation” to full-blown motion madness. PinglyMotion is a project in development for working with poses and animations for Second Life.", "skip": "Skip to content", "theme": "Theme", "light": "Light", "dark": "Dark"}, "no": {"lang": "nb", "title": "PinglyMotion — Fra «jeg skal bare lage en animasjon» til full bevegelse i galskapen.", "desc": "Fra «jeg skal bare lage en animasjon» til full bevegelse i galskapen. PinglyMotion er et prosjekt under utvikling for arbeid med positurer og animasjoner til Second Life.", "skip": "Gå til innholdet", "theme": "Tema", "light": "Lys", "dark": "Mørk"}, "de": {"lang": "de", "title": "PinglyMotion — Von „Ich mach nur schnell eine Animation“ bis zum ausgewachsenen Bewegungswahnsinn.", "desc": "Von „Ich mach nur schnell eine Animation“ bis zum ausgewachsenen Bewegungswahnsinn. PinglyMotion ist ein Projekt in Entwicklung für die Arbeit mit Posen und Animationen für Second Life.", "skip": "Zum Inhalt springen", "theme": "Farbschema", "light": "Hell", "dark": "Dunkel"}, "pl": {"lang": "pl", "title": "PinglyMotion — Od „zrobię tylko jedną animację” do pełnego ruchowego szaleństwa.", "desc": "Od „zrobię tylko jedną animację” do pełnego ruchowego szaleństwa. PinglyMotion to rozwijany projekt do pracy z pozami i animacjami do Second Life.", "skip": "Przejdź do treści", "theme": "Motyw", "light": "Jasny", "dark": "Ciemny"}, "nl": {"lang": "nl", "title": "PinglyMotion — Van „ik maak even één animatie” tot complete bewegingswaanzin.", "desc": "Van „ik maak even één animatie” tot complete bewegingswaanzin. PinglyMotion is een project in ontwikkeling om met poses en animaties voor Second Life te werken.", "skip": "Naar de inhoud", "theme": "Thema", "light": "Licht", "dark": "Donker"}}</script>
+<script src="site.js"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -88,6 +89,26 @@ class ObjectWorld : public RlvWorld
     void setPosition(const float p[3]) override { for (int i = 0; i < 3; ++i) state().spec.position[i] = p[i]; }
     PrimStore& primStore() override { return state().prims; }
     Inventory& inventory() override { return state().inventory; }
+    QString sitterOnTarget(int link) const override
+    {
+      for (const Sandbox::Sitter& sitter : state().sitters)
+        if (sitter.onTarget && sitter.link == link) return sitter.key;
+      return QString();
+    }
+    int sitterCount() const override { return int(state().sitters.size()); }
+    bool unSit(double time, const QString& key) override { return m_sandbox.unSit(m_slot, time, key); }
+    bool isSitting(const QString& key) const override { return m_sandbox.isSitting(key); }
+    bool sitsOnObject(const QString& key) const override
+    {
+      for (const Sandbox::Sitter& sitter : state().sitters)
+        if (sitter.key == key) return true;
+      return false;
+    }
+    bool hasAttachments() const override { return m_sandbox.hasAttachments(); }
+    std::vector<Detected> sense(const QString& name, const QString& id, int type, double range, double arc) override
+    {
+      return m_sandbox.sense(m_slot, name, id, type, range, arc);
+    }
     void inventoryChanged(double time) override { m_sandbox.inventoryChanged(m_slot, time); }
     QString giveInventory(double time, const QString& to, const InventoryItem& item) override { return m_sandbox.giveInventory(m_slot, time, to, item); }
     int attachPoint() const override { return spec().attached; }
@@ -339,8 +360,18 @@ void Sandbox::deliver(const SandboxInput& input)
   if (m_objects.empty()) return;
   const bool single = m_slots.size() == 1;
 
-  if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed")
+  if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
+      input.type == "sit" || input.type == "stand" || input.type == "control")
   {
+    // a stand input without an object finds the object the avatar sits on
+    if (input.type == "stand" && input.object.isEmpty())
+    {
+      target = -1;
+      for (size_t i = 0; i < m_objects.size() && target < 0; ++i)
+        for (const Sitter& sitter : m_objects[i].sitters)
+          if (sitter.key == key) target = int(i);
+      if (target < 0) target = 0;   // not sitting anywhere: the first object says so
+    }
     QJsonObject entry{{"type", "input"}, {"input", input.type}, {"name", name}};
     if (target < 0)
     {
@@ -375,6 +406,72 @@ void Sandbox::deliver(const SandboxInput& input)
         for (int i = 0; i < o.slotCount; ++i)
           if (m_slots[size_t(o.firstSlot + i)].link == 1) hit.push_back(o.firstSlot + i);
       for (int i : hit) m_slots[size_t(i)].interp->touch(key, name);
+      return;
+    }
+    if (input.type == "control")
+    {
+      // the avatar presses or lets go of controls: scripts that took them with permission from this avatar get control()
+      entry["id"] = key;
+      entry["levels"] = input.levels;
+      entry["edges"] = input.edges;
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->controlEvent(key, input.levels, input.edges);
+      return;
+    }
+    if (input.type == "sit")
+    {
+      // an avatar sits on a prim: on its sit target when the prim has one that is free, else just on the prim
+      const int link = input.link > 0 ? input.link : 1;
+      entry["id"] = key;
+      if (input.link > 0) entry["link"] = input.link;
+      if (link > o.spec.prims)
+      {
+        entry["error"] = QString("The object has %1 prim(s); there is no link %2.").arg(o.spec.prims).arg(link);
+        m_log.log(t, entry);
+        return;
+      }
+      if (isSitting(key))
+      {
+        entry["error"] = "The avatar is already sitting.";
+        m_log.log(t, entry);
+        return;
+      }
+      if (int(o.sitters.size()) >= MAX_SITTERS)
+      {
+        entry["error"] = QString("At most %1 avatars sit on one object.").arg(MAX_SITTERS);
+        m_log.log(t, entry);
+        return;
+      }
+      Sitter sitter;
+      sitter.key = key;
+      sitter.name = name;
+      sitter.link = link;
+      bool taken = false;
+      for (const Sitter& other : o.sitters)
+        if (other.onTarget && other.link == link) taken = true;
+      sitter.onTarget = o.prims.prim(link, o.spec.prims).sitTargetSet && !taken;
+      entry["on_target"] = sitter.onTarget;
+      m_log.log(t, entry);
+      o.sitters.push_back(sitter);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->changedEvent(0x20);   // CHANGED_LINK
+      return;
+    }
+    if (input.type == "stand")
+    {
+      entry["id"] = key;
+      size_t found = o.sitters.size();
+      for (size_t i = 0; i < o.sitters.size(); ++i)
+        if (o.sitters[i].key == key) found = i;
+      if (found == o.sitters.size())
+      {
+        entry["error"] = "The avatar is not sitting on the object.";
+        m_log.log(t, entry);
+        return;
+      }
+      if (input.name.isEmpty()) entry["name"] = o.sitters[found].name;   // the avatar's name from when it sat down
+      o.sitters.erase(o.sitters.begin() + std::ptrdiff_t(found));
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->changedEvent(0x20);
       return;
     }
     if (input.type == "changed")
@@ -580,9 +677,145 @@ QString Sandbox::giveInventory(int, double time, const QString& to, const Invent
   return "unknown_target";
 }
 
+QString Sandbox::addAvatar(const AvatarSpec& avatar)
+{
+  if (m_started) return "Avatars can only be added before the run starts.";
+  if (int(m_avatars.size()) >= MAX_AVATARS) return QString("At most %1 avatars.").arg(MAX_AVATARS);
+  if (avatar.name.isEmpty()) return "Every avatar needs a name.";
+  AvatarSpec a = avatar;
+  if (a.key.isEmpty()) a.key = QString("a0000000-0000-4000-8000-%1").arg(qint64(m_avatars.size()) + 1, 12, 10, QChar('0'));
+  for (const AvatarSpec& other : m_avatars)
+    if (other.key == a.key) return "Two avatars have the key " + a.key + ".";
+  for (const Object& o : m_objects)
+    if (o.spec.key == a.key) return "An avatar has the key of an object: " + a.key + ".";
+  if (a.key == NULL_KEY) return "An avatar cannot have NULL_KEY.";
+  m_avatars.push_back(a);
+  return QString();
+}
+
+std::vector<Detected> Sandbox::sense(int from, const QString& name, const QString& id, int type, double range, double arc)
+{
+  std::vector<Detected> out;
+  Object& self = m_objects[size_t(m_slots[size_t(from)].object)];
+  const double reach = qMin(range, MAX_SENSOR_RANGE);
+  if (!(reach > 0.0) || !std::isfinite(reach)) return out;
+  const double cone = std::isfinite(arc) ? qMin(arc, 3.14159265358979) : 0.0;
+  float origin[3];
+  where(m_slots[size_t(from)].object, origin);
+  // the direction the sensing object faces: its x axis turned by the root prim's rotation
+  const PrimState& root = self.prims.prim(1, self.spec.prims);
+  const double qx = root.rotation[0], qy = root.rotation[1], qz = root.rotation[2], qs = root.rotation[3];
+  const double qn = std::sqrt(qx * qx + qy * qy + qz * qz + qs * qs);
+  double fwd[3] = {1.0, 0.0, 0.0};
+  if (qn > 1.0e-7)
+  {
+    const double x = qx / qn, y = qy / qn, z = qz / qn, s = qs / qn;
+    fwd[0] = 1.0 - 2.0 * (y * y + z * z);
+    fwd[1] = 2.0 * (x * y + s * z);
+    fwd[2] = 2.0 * (x * z - s * y);
+  }
+  std::vector<std::pair<double, Detected>> hits;
+  auto consider = [&](const Detected& d)
+  {
+    if (!(type & d.type)) return;
+    if (!name.isEmpty() && d.name != name) return;
+    if (!id.isEmpty() && id != NULL_KEY && d.key != id) return;
+    const double dx = double(d.position[0]) - origin[0], dy = double(d.position[1]) - origin[1], dz = double(d.position[2]) - origin[2];
+    const double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+    if (dist > reach) return;
+    if (cone < 3.14159265358979 && dist > 0.0)
+    {
+      double c = (dx * fwd[0] + dy * fwd[1] + dz * fwd[2]) / dist;
+      c = qBound(-1.0, c, 1.0);
+      if (std::acos(c) > cone) return;
+    }
+    hits.push_back({dist, d});
+  };
+  bool ownerListed = false;
+  for (const AvatarSpec& a : m_avatars)
+  {
+    if (a.key == OWNER_KEY) ownerListed = true;
+    Detected d;
+    d.key = d.owner = a.key;
+    d.name = a.name;
+    d.type = 1;
+    d.group = a.inGroup ? 1 : 0;
+    for (int i = 0; i < 3; ++i) { d.position[i] = a.position[i]; d.velocity[i] = a.velocity[i]; }
+    for (int i = 0; i < 4; ++i) d.rotation[i] = a.rotation[i];
+    consider(d);
+  }
+  if (!ownerListed)
+  {
+    Detected d;
+    d.key = d.owner = OWNER_KEY;
+    d.name = OWNER_NAME;
+    for (int i = 0; i < 3; ++i) d.position[i] = AVATAR_POSITION[i];
+    consider(d);
+  }
+  for (size_t i = 0; i < m_objects.size(); ++i)
+  {
+    Object& o = m_objects[i];
+    if (&o == &self) continue;
+    Detected d;
+    d.key = o.spec.key;
+    d.name = o.name;
+    d.owner = o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+    d.type = 8;   // SCRIPTED
+    float p[3];
+    where(int(i), p);
+    for (int k = 0; k < 3; ++k) d.position[k] = p[k];
+    const PrimState& r = o.prims.prim(1, o.spec.prims);
+    for (int k = 0; k < 4; ++k) d.rotation[k] = r.rotation[k];
+    consider(d);
+  }
+  std::stable_sort(hits.begin(), hits.end(), [](const std::pair<double, Detected>& a, const std::pair<double, Detected>& b) { return a.first < b.first; });
+  for (size_t i = 0; i < hits.size() && int(i) < MAX_DETECTED; ++i) out.push_back(hits[i].second);
+  return out;
+}
+
+bool Sandbox::unSit(int from, double time, const QString& key)
+{
+  Object& o = m_objects[size_t(m_slots[size_t(from)].object)];
+  for (size_t i = 0; i < o.sitters.size(); ++i)
+  {
+    if (o.sitters[i].key != key) continue;
+    o.sitters.erase(o.sitters.begin() + std::ptrdiff_t(i));
+    if (!m_log.logFull())
+      m_slots[size_t(from)].world->log(time, QJsonObject{{"type", "unsit"}, {"avatar", key}, {"by", "llUnSit"}});
+    for (int k = 0; k < o.slotCount; ++k)
+    {
+      Slot& slot = m_slots[size_t(o.firstSlot + k)];
+      slot.interp->syncTo(time);
+      slot.interp->changedEvent(0x20);   // CHANGED_LINK
+    }
+    return true;
+  }
+  return false;
+}
+
+bool Sandbox::isSitting(const QString& key) const
+{
+  for (const Object& o : m_objects)
+    for (const Sitter& sitter : o.sitters)
+      if (sitter.key == key) return true;
+  return false;
+}
+
+bool Sandbox::hasAttachments() const
+{
+  for (const Object& o : m_objects)
+    if (o.spec.attached > 0) return true;
+  return false;
+}
+
 QString Sandbox::nameOf(const QString& key) const
 {
   if (key == OWNER_KEY) return OWNER_NAME;
+  for (const AvatarSpec& a : m_avatars)
+    if (a.key == key) return a.name;
+  for (const Object& o : m_objects)
+    for (const Sitter& sitter : o.sitters)
+      if (sitter.key == key) return sitter.name;
   for (const Object& o : m_objects)
   {
     if (o.spec.key == key) return o.name;
@@ -637,6 +870,13 @@ QJsonArray Sandbox::objectsJson() const
                       {"steps", steps}};
     if (stopped) entry["stop_reason"] = reasons.join(" ");
     entry["restrictions"] = QJsonArray::fromStringList(m_rlv.objects().value(o.spec.key));
+    if (!o.sitters.empty())
+    {
+      QJsonArray sitters;   // step 9b-5
+      for (const Sitter& sitter : o.sitters)
+        sitters.append(QJsonObject{{"key", sitter.key}, {"name", sitter.name}, {"link", sitter.link}, {"on_target", sitter.onTarget}});
+      entry["sitters"] = sitters;
+    }
     {
       // step 9b-4: what the inventory holds now (the scripts too), in the order they were added
       QJsonArray items;

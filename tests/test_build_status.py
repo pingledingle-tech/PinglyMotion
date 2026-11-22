@@ -93,5 +93,38 @@ class Tests(unittest.TestCase):
         self.assertIn("</html>", out)
         self.assertLessEqual(out.count(b.MARK_START), 1)
 
+    def test_site_pages(self):
+        import re
+        import tempfile
+        docs = os.path.join(HERE, "..", "docs")
+        sign = "Free code signing provided by SignPath.io, certificate by SignPath Foundation."
+        for name in ["index.html"] + b.EXTRA_FILES:
+            self.assertTrue(os.path.exists(os.path.join(docs, name)), name)
+        def read(name):
+            with open(os.path.join(docs, name), encoding="utf-8") as f:
+                return f.read()
+        for name in ["index.html", "download.html", "code-signing.html", "privacy.html"]:
+            page = read(name)
+            # five languages, each with the footer links to the policy pages
+            self.assertEqual(len(re.findall(r"<article id=", page)), 5, name)
+            self.assertEqual(page.count("privacy.html#") >= 5, True, name)
+            # nothing is loaded from another site
+            self.assertIsNone(re.search(r'(src|href)="https?://(?!github\.com/pingledingle-tech|docs\.github\.com|huggingface)[^"]*"[^>]*rel="stylesheet"', page))
+            self.assertNotIn("<script src=\"http", page)
+        for name in ["download.html", "code-signing.html"]:
+            page = read(name)
+            self.assertEqual(page.count(sign), 5, name)
+            self.assertGreaterEqual(page.count(">Code signing policy<"), 10, name)
+        self.assertIn(">Code signing policy<", read("index.html"))
+        with tempfile.TemporaryDirectory() as out:
+            old = b.fetch
+            b.fetch = lambda repo, token: None
+            try:
+                self.assertEqual(b.main(["build_status.py", out]), 0)
+            finally:
+                b.fetch = old
+            for name in ["index.html"] + b.EXTRA_FILES:
+                self.assertTrue(os.path.exists(os.path.join(out, name)), name)
+
 if __name__ == "__main__":
     unittest.main()

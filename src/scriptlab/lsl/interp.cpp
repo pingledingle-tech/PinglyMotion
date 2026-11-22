@@ -213,6 +213,7 @@ void Interpreter::enterState(int index)
   m_state = index;
   m_listens.clear();
   m_queue.clear();
+  m_sensorActive = false;   // a state change removes the sensor
   queueEvent(Event{"state_entry", {}, QString(), QString()});
 }
 
@@ -247,6 +248,10 @@ void Interpreter::resetScript()
   m_timerInterval = 0.0;
   m_permissions = 0;
   m_permissionKey.clear();
+  m_playing.clear();
+  m_sensorActive = false;
+  m_controls = 0;
+  m_controlsAccept = m_controlsPassOn = false;
   m_timeBase = m_now;
   m_inEvent = false;
   try
@@ -345,11 +350,20 @@ void Interpreter::dispatch(const Event& event)
     declare(handler->params[i].name, handler->params[i].type, coerce(event.args[i], handler->params[i].type));
   m_detectedKey = event.detectedKey;
   m_detectedName = event.detectedName;
+  m_detected = event.detected;
+  if (m_detected.empty() && !event.detectedKey.isEmpty())
+  {
+    Detected d;   // a touch: the toucher (its position is not simulated)
+    d.key = d.owner = event.detectedKey;
+    d.name = event.detectedName;
+    m_detected.push_back(d);
+  }
   m_inEvent = true;
   const Flow flow = execBlock(*handler->body);
   m_inEvent = false;
   m_detectedKey.clear();
   m_detectedName.clear();
+  m_detected.clear();
   while (!m_frames.back().scopes.empty()) popScope();
   m_frames.pop_back();
 
@@ -444,6 +458,14 @@ void Interpreter::changedEvent(int flags)
   queueEvent(Event{"changed", {Value::integer(flags)}, QString(), QString()});
 }
 
+void Interpreter::controlEvent(const QString& id, int levels, int edges)
+{
+  if (m_controls == 0 || !(m_permissions & 0x4) || m_permissionKey.isEmpty() || id != m_permissionKey) return;
+  const int l = levels & m_controls, e = edges & m_controls;
+  if (l == 0 && e == 0) return;
+  queueEvent(Event{"control", {Value::key(id), Value::integer(l), Value::integer(e)}, QString(), QString()});
+}
+
 bool Interpreter::handles(const QString& event) const
 {
   if (m_stopped || m_state < 0 || m_state >= int(m_script.states.size())) return false;
@@ -454,8 +476,10 @@ bool Interpreter::handles(const QString& event) const
 
 double Interpreter::nextWake() const
 {
-  if (m_stopped || m_timerInterval <= 0.0) return std::numeric_limits<double>::infinity();
-  return m_nextTimer;
+  if (m_stopped) return std::numeric_limits<double>::infinity();
+  double next = m_timerInterval > 0.0 ? m_nextTimer : std::numeric_limits<double>::infinity();
+  if (m_sensorActive) next = qMin(next, m_sensorNext);
+  return next;
 }
 
 void Interpreter::syncTo(double t)
@@ -472,6 +496,24 @@ void Interpreter::advanceTo(double t)
     m_nextTimer = qMax(m_nextTimer + m_timerInterval, m_now + MIN_TIMER);
     queueEvent(Event{"timer", {}, QString(), QString()});
   }
+  if (m_sensorActive && m_sensorNext <= m_now)
+  {
+    m_sensorNext = qMax(m_sensorNext + m_sensorRate, m_now + MIN_TIMER);
+    sense(m_sensorName, m_sensorId, m_sensorType, m_sensorRange, m_sensorArc);
+  }
+}
+
+void Interpreter::sense(const QString& name, const QString& id, int type, double range, double arc)
+{
+  const std::vector<Detected> found = m_world.sense(name, id, type, range, arc);
+  if (!m_world.logFull())
+  {
+    QJsonArray names;
+    for (const Detected& d : found) names.append(World::clip(d.name));
+    m_world.log(m_now, QJsonObject{{"type", "sensor"}, {"found", int(found.size())}, {"names", names}});
+  }
+  if (found.empty()) queueEvent(Event{"no_sensor", {}, QString(), QString()});
+  else queueEvent(Event{"sensor", {Value::integer(qint32(found.size()))}, QString(), QString(), found});
 }
 
 bool Interpreter::checkRealTime()
@@ -503,6 +545,7 @@ void Interpreter::runUntil(double seconds)
     }
     double next = std::numeric_limits<double>::infinity();
     if (m_timerInterval > 0.0) next = m_nextTimer;
+    if (m_sensorActive) next = qMin(next, m_sensorNext);
     if (!m_inputs.empty()) next = qMin(next, m_inputs.front().at);
     if (!(next <= end))
     {
@@ -514,6 +557,11 @@ void Interpreter::runUntil(double seconds)
     {
       m_nextTimer = qMax(m_nextTimer + m_timerInterval, m_now + MIN_TIMER);
       queueEvent(Event{"timer", {}, QString(), QString()});
+    }
+    if (m_sensorActive && m_sensorNext <= m_now)
+    {
+      m_sensorNext = qMax(m_sensorNext + m_sensorRate, m_now + MIN_TIMER);
+      sense(m_sensorName, m_sensorId, m_sensorType, m_sensorRange, m_sensorArc);
     }
     while (!m_inputs.empty() && m_inputs.front().at <= m_now)
     {

@@ -14,11 +14,9 @@
         <file>icons/filesaveas.png</file>
         <file>icons/key.png</file>
         <file>icons/loop.png</file>
-        <file>icons/play.png</file>
         <file>icons/redo.png</file>
         <file>icons/resetcamera.png</file>
         <file>icons/sphere.png</file>
-        <file>icons/stop.png</file>
         <file>icons/torus.png</file>
         <file>icons/undo.png</file>
     </qresource>

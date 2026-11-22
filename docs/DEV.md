@@ -51,6 +51,10 @@ The assistant guide `docs/ASSISTANT_GUIDE.md` (issue #129) holds a calibration t
 
 After changing the control commands: `PINGLYMOTION_UPDATE_COMMANDS=1` and run `pinglymotion_control_tests` from `bin/` to regenerate `tools/mcp/commands.json`.
 
+## Translations
+
+Every text the user reads is in `tr()`; the English source file is `translations/pinglymotion_en.ts`. After adding or changing a text: `cmake --build /tmp/build --target update_translations` and commit the file. `python3 tools/check_tr.py` lists texts without `tr()`. Everything about adding a language: `docs/TRANSLATION.md`. Needs `qt6-tools-dev qt6-l10n-tools` (`tools/dev_setup.sh` installs them).
+
 ## Reporting errors in code
 
 Parsers, readers and converters return a result struct, not `bool` with an error out-parameter: the value as `std::optional`, a plain `QString error` for the user (empty when it worked), and `bool ok() const`. Examples: `AnimFile::Result`, `Dingle::Result`, `Retarget::Result`, `MotionCleanup::Result`, `PMMesh::Result`. Model code never shows a message box; the window shows `error`. Older functions with a `QString*` or `QString&` error parameter are converted one file at a time (issue 207); do not add new ones.

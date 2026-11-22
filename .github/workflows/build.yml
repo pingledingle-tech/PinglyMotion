@@ -161,7 +161,7 @@ jobs:
         run: |
           mkdir -p /home/runner/apt-archives/partial
           sudo apt-get update
-          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev xvfb
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-l10n-tools libqt6opengl6-dev libgl-dev xvfb
           sudo chown -R "$USER" /home/runner/apt-archives
       - name: Cache compiler output (ccache)
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -192,6 +192,12 @@ jobs:
         env:
           PINGLYMOTION_EXPECT_BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
         run: ctest --test-dir build --output-on-failure
+      - name: Translations (warning only; docs/TRANSLATION.md)
+        # texts without tr() in the source, and translations/pinglymotion_en.ts out of date: reported, never failed
+        continue-on-error: true
+        run: |
+          python3 tests/test_check_tr.py
+          python3 tools/check_tr.py --ts-sync build
       - name: MCP server (Node) connects safely (issue 7)
         run: node --version && python3 tests/test_mcp_node.py node
       - name: Claude Desktop extension (.mcpb) is correct
@@ -275,7 +281,7 @@ jobs:
         run: |
           mkdir -p /home/runner/apt-archives/partial
           sudo apt-get update
-          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev xvfb
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-l10n-tools libqt6opengl6-dev libgl-dev xvfb
           sudo chown -R "$USER" /home/runner/apt-archives
       - name: Cache compiler output (ccache)
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0

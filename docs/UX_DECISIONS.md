@@ -21,6 +21,7 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - Step 2 (built and merged, pull request 271): **Frame back** and **Frame forward** buttons right of Replay from start, with the same look as the other transport buttons. Each goes one frame and stops at the ends, never wrapping around: Frame back cannot be clicked on the first frame, Frame forward not on the last. While playing, a click stops playing first. The left / right arrow keys do the same when no field, list or slider has the keyboard focus. Clicking a transport button does not take the keyboard focus, so the arrow keys keep working afterwards. A modern button look (Start green, Stop red, a replay icon) is a separate later item.
 - Speed control: not now. Add it later if it is missed.
 - Colours (the project owner, 22 November 2026): Start green (`go_fill`), Replay from start violet (`replay_fill`), Stop red (`danger_fill`), each with its icon and word. Shown in the clickable mockup; the built transport bar still has the older look until a job changes it ([DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), "Shape").
+- Look (built, waiting for the owner's test; redone in the design system of 21 November 2026): Start is the main button (accent colour) with a play icon, Stop a danger button (danger colour) with a square icon, Replay from start a normal button with a round arrow, all with the same shape and Lucide icons in the colour of their text, from the theme tokens in the dark and the light theme. A button that cannot be clicked is pale and says why in its tip and the status line ("It is already playing. Click Stop to stop it."). Keyboard focus shows a ring; when Start or Stop can no longer be clicked, the focus moves to the other one, so Space starts and stops. The buttons are drawn by the program (`src/transportlook.*`, icons `src/lucideicons.*`), grow with the text size and need no picture files. Texts, order and behaviour are unchanged.
 
 ## 2. Easing tiles
 
@@ -103,7 +104,7 @@ This is the one numbered list of interface steps ("UX step N" in issues and pull
 
 1. Transport: Start / Stop / Replay from start + Loop (on by default). Owner test: play, stop, replay, loop on/off.
 2. Frame step back / forward. Owner test: step through the example wave.
-3. Easing tiles as text, preview animates on hover only.
+3. Easing tiles as text, preview animates on hover only. Built: only the tile under the mouse moves its figure; the names are unchanged.
 4. Timeline: rows only for changed joints, diamond keys. Owner test: edit two joints, only those two rows appear.
 5. Timeline rows coloured by body area. Owner test: colours match the Joints tabs.
 6. Selected joint panel in the new order; limits as a warning with an off switch.
@@ -144,7 +145,7 @@ Old step numbers, so older issues and pull requests stay readable:
 
 ## Homepage
 
-- Language: English, like the program.
+- Language: English for now, like the program; translatable later ([TRANSLATION.md](TRANSLATION.md)).
 - Feeling: warm, cozy, welcoming, modern, and funny or a bit crazy. Animation should feel less scary.
 - No green. It must not look template-like or machine-made (the earlier status section draft looked that way and is not approved).
 - Base text: the project owner's own text, translated to English. Keep the jokes and self-irony.

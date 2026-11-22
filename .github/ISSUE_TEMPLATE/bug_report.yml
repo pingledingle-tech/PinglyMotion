@@ -1,0 +1,49 @@
+name: Bug report
+description: Something in PinglyMotion does not work as it should.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting it.
+
+        **Privacy:** do not write names, Second Life account names, email addresses or other personal details, in the text or in pictures. Crop or blur them first.
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to repeat it
+      description: One step per line, if you know them.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: PinglyMotion version
+      description: Shown in Help > About, for example 0.1.
+    validations:
+      required: false
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      options:
+        - Windows
+        - Linux
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: attachment
+    attributes:
+      label: Screenshot, log or animation file (optional)
+      description: Drag a screenshot into this box. A log can be copied from Help > Open log (it hides your home folder, but read it before posting). For a .dingle file, put it in a .zip first.
+    validations:
+      required: false

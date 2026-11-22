@@ -18,6 +18,7 @@ SET (PINGLYMOTION_CORE_SRC animation.cpp
               scriptlab/rlvcommand.cpp
               scriptlab/rlvstate.cpp
               settings.cpp
+              translation.cpp
               usersettings.cpp
               versionnumber.cpp)
 ADD_LIBRARY (pinglymotion_core STATIC ${PINGLYMOTION_CORE_SRC})
@@ -76,6 +77,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp
               transportbar.cpp
+              transportlook.cpp
+              lucideicons.cpp
               scene.cpp
               screenshotsheet.cpp
               scriptlab/scriptlabpanel.cpp
@@ -108,6 +111,20 @@ ENDIF (WIN32)
 # Compile and link (ui files and resources are handled by AUTOUIC/AUTORCC)
 ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
 TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+# Translations (docs/TRANSLATION.md): the English source file is made by lupdate from the code
+# (cmake --build <dir> --target update_translations); the program carries the compiled files
+# (:/i18n/pinglymotion_<language>.qm). Add a language by adding its .ts file to the list.
+IF (Qt6LinguistTools_FOUND)
+  SET (PINGLYMOTION_TS_FILES ${CMAKE_SOURCE_DIR}/translations/pinglymotion_en.ts)
+  # lupdate reads every source and .ui file of the program, the core library included
+  FILE (GLOB_RECURSE PINGLYMOTION_TR_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.ui)
+  QT_ADD_TRANSLATIONS (pinglymotion
+                       TS_FILES ${PINGLYMOTION_TS_FILES}
+                       SOURCES ${PINGLYMOTION_TR_SOURCES}
+                       RESOURCE_PREFIX /i18n
+                       LUPDATE_OPTIONS -locations none -no-obsolete)
+ENDIF ()
 # The program file keeps its old name for now (a later rename job changes it)
 SET_TARGET_PROPERTIES (pinglymotion PROPERTIES OUTPUT_NAME PinglyMotion)
 

@@ -1,9 +1,11 @@
 // The easing tile row (issue #53 step 5): six small tiles on the timeline, one
 // per easing choice, for the pose change that ends at the selected key frame.
-// Each tile shows a tiny moving figure that runs from left to right with the
-// speed of its choice and leaves a trail of dots at equal time steps, so the
-// spacing of the dots shows where the movement is fast and where it is slow.
-// No curves, numbers or handles on screen (docs/EASING.md).
+// Each tile shows its name as text under a small picture: a tiny figure and a
+// trail of dots at equal time steps, so the spacing of the dots shows where the
+// movement is fast and where it is slow. The figure runs from left to right
+// with the speed of its choice only while the mouse is over that tile (UX step
+// 3, docs/UX_DECISIONS.md); otherwise the row is still. No curves, numbers or
+// handles on screen (docs/EASING.md).
 //
 // The row knows nothing about the window: the window tells it which choice is
 // current (setChoice / setNoKey) and listens to choiceClicked. The helpers in
@@ -77,6 +79,7 @@ class EasingTile : public QAbstractButton
 
     // Where the figure is on its way, 0 (start) to 1 (end), set by the row.
     void setPhase(double phase);
+    double phase() const { return m_phase; }
 
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override { return sizeHint(); }
@@ -96,6 +99,7 @@ class EasingTile : public QAbstractButton
 };
 
 // The row: six tiles, one marked as current, and a one-line hint below.
+// Only the tile under the mouse moves its figure; the others stand at the start.
 class EasingTiles : public QWidget
 {
   Q_OBJECT
@@ -127,7 +131,11 @@ class EasingTiles : public QWidget
     Easing::Preset choice() const { return m_choice; }
     EasingTile* tile(Easing::Preset preset) const;
     QString hintText() const;
+    // The preview runs only on the tile under the mouse, and only while the row
+    // is on screen and a key is selected.
     bool isAnimating() const;
+    // The tile whose figure moves now, if any.
+    std::optional<Easing::Preset> animatingTile() const;
 
     // Length of one run of the figure, with the pause at the end, in ms.
     static int cycleMs() { return 2400; }

@@ -66,7 +66,7 @@ void AboutDialog::updateCheckFinished()
 void AboutDialog::on_checkUpdatesButton_clicked()
 {
   ui->checkUpdatesButton->setDisabled(true);
-  ui->lastUpdateCheckLabel->setText("Checking for updates...");
+  ui->lastUpdateCheckLabel->setText(tr("Checking for updates..."));
   emit checkUpdates();
 }
 
@@ -77,5 +77,5 @@ void AboutDialog::on_autoUpdatesCheckBox_stateChanged(int state)
 
 void AboutDialog::setLastUpdateCheckLabel(const QString& lastChecked)
 {
-  ui->lastUpdateCheckLabel->setText("Last Checked: " + lastChecked);
+  ui->lastUpdateCheckLabel->setText(tr("Last Checked: %1").arg(lastChecked));
 }
