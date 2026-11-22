@@ -384,7 +384,7 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   `getcommand` (it lists the table, not the prefixes).
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
-  the 3D view with the "Show camera limits in 3D view" box (below, "Camera limits in the 3D view"). A force command of that kind is `retained`
+  the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view"). A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
   answers `0`). `getcommand` lists the behaviours known in the current mode.
