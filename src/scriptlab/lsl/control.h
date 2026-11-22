@@ -1,5 +1,5 @@
 /*
- * PinglyMotion Script Lab - the control commands lsl_check, lsl_run and lsl_event
+ * PinglyMotion Script Lab - the control commands lsl_check, lsl_lint, lsl_run and lsl_event
  *
  * Kept here, not in controlapi.cpp, so the Script Lab code stays in one
  * folder; controlapi.cpp only forwards the two commands (docs/CONTROL.md).
@@ -31,6 +31,9 @@ namespace Control
 
   // {"command":"lsl_check","source":"..."}: errors and warnings with line and column
   QJsonObject check(const QJsonObject& request);
+  // {"command":"lsl_lint","source":"..."}: static warnings (line, column, id, message) without running
+  // the script; a script that does not compile gets its errors (as lsl_check) and no warnings
+  QJsonObject lint(const QJsonObject& request);
   // {"command":"lsl_run","source":"...","seconds":10,"inputs":[...],"keep_rlv":false}: the event log.
   // Instead of "source", "objects" runs several scripts in one world (step 5):
   // [{"name":"hud","source":"...","position":[128,128,20],"attached":35}, ...].

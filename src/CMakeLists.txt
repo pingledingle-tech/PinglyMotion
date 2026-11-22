@@ -32,7 +32,7 @@ TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/cameraoverride.cpp scriptlab
                 scriptlab/viewmodesoverride.cpp)
 
 # Script Lab: the LSL interpreter (issue 289), QtCore only; the control commands lsl_check and lsl_run
-TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp scriptlab/lsl/lint.cpp
                 scriptlab/lsl/builtins.cpp scriptlab/lsl/interp.cpp scriptlab/lsl/world.cpp scriptlab/lsl/rlvworld.cpp scriptlab/lsl/control.cpp
                 scriptlab/lsl/sandbox.cpp scriptlab/lsl/session.cpp)
 
