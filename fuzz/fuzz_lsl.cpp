@@ -101,8 +101,8 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   near.inventory = {card};
   check(sandbox.addObject(worn, script, limits).isEmpty());
   check(sandbox.addObject(near, script, limits).isEmpty());
-  const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed"};
-  for (int i = 0; i < 6; ++i)
+  const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed", "sit", "stand"};
+  for (int i = 0; i < 8; ++i)
   {
     SandboxInput in;
     in.at = 0.5 * (i + 1);

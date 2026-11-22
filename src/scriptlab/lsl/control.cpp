@@ -153,8 +153,8 @@ namespace
     }
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
-    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed"};
-    if (!types.contains(in.type)) return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\" or \"changed\".";
+    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand"};
+    if (!types.contains(in.type)) return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\" or \"stand\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -177,7 +177,7 @@ namespace
     else if (o.contains("button")) return where + "\"button\" is only for a dialog answer.";
     if (o.contains("link"))
     {
-      if (in.type != "touch") return where + "\"link\" is only for touch (the prim touched).";
+      if (in.type != "touch" && in.type != "sit") return where + "\"link\" is only for touch (the prim touched) and sit (the prim sat on).";
       if (!wholeNumber(o.value("link"), 1, Sandbox::MAX_PRIMS, in.link))
         return where + QString("\"link\" must be a whole number from 1 to %1 (the prim touched; 1 is the root).").arg(Sandbox::MAX_PRIMS);
     }
@@ -577,7 +577,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
     message[0] = message[0].toUpper();
     return fail(message);
   }
-  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach or changed.");
+  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit or stand.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {
