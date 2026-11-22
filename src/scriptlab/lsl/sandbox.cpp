@@ -322,7 +322,7 @@ void Sandbox::deliver(const SandboxInput& input)
   if (m_objects.empty()) return;
   const bool single = m_slots.size() == 1;
 
-  if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog")
+  if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed")
   {
     QJsonObject entry{{"type", "input"}, {"input", input.type}, {"name", name}};
     if (target < 0)
@@ -358,6 +358,14 @@ void Sandbox::deliver(const SandboxInput& input)
         for (int i = 0; i < o.slotCount; ++i)
           if (m_slots[size_t(o.firstSlot + i)].link == 1) hit.push_back(o.firstSlot + i);
       for (int i : hit) m_slots[size_t(i)].interp->touch(key, name);
+      return;
+    }
+    if (input.type == "changed")
+    {
+      // every script of the object gets changed(flags), as in Second Life
+      entry["change"] = input.change;
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->changedEvent(input.change);
       return;
     }
     if (input.type == "attach")

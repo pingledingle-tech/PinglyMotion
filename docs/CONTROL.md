@@ -400,9 +400,9 @@ together are at most 524 288 characters; nothing runs unless every script compil
 - Each object's `llOwnerSay("@...")` goes to the shared RLV state under the object's own key: two objects can hold
   the same restriction (the count is 2), and `@clear` from one removes only its own. The cap of 100 `@` lines is per object (per script since step 9a).
 - More inputs (in `inputs` and in `lsl_event`): `object` names the object (default the first); `type` is also
-  `dialog` (`button`: the text of a button of that object's last `llDialog`; the avatar says it on the dialog's
+  `changed` (see below), `dialog` (`button`: the text of a button of that object's last `llDialog`; the avatar says it on the dialog's
   channel; in the sandbox the object that showed the dialog always hears it, other objects within 20 m of the avatar
-  too), `attach` (`point`, default the object's point or 1) or `detach` (the object is dropped where the avatar stands
+  too), `changed` (`change`: what changed; step 9b-2, below), `attach` (`point`, default the object's point or 1) or `detach` (the object is dropped where the avatar stands
   and gets `attach` with `NULL_KEY`). Chat from an avatar is heard by the objects within `kind`'s range of the avatar
   (`say`, the default, 20 m; `whisper` 10 m; `shout` 100 m).
 - New functions: `llDialog` (Second Life's checks: a message, at most 12 buttons of at most 24 bytes; an empty list
@@ -494,6 +494,22 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
 {"command": "lsl_event", "type": "touch", "object": "box", "link": 2}
 ```
 
+#### The events on_rez and changed (Script Lab step 9b-2, issue 314)
+
+- `on_rez(integer start_param)` is raised once when an object starts, after its `state_entry` and before `attach` (for a worn object).
+  The parameter is the object's `start_parameter` (default 0; per object in `objects`, or at the top of the request with `source`).
+  The log has an `event` entry named `on_rez`. Not as in Second Life: there, a script saved or reset in an object gets `state_entry` only,
+  and a rezzed object gets `on_rez`; the sandbox always starts a fresh script, so it gives both, in that order. `llResetScript` runs
+  `state_entry` again and does **not** raise `on_rez` again (as in Second Life). A `state` change in `state_entry` empties the event queue,
+  so an `on_rez` still waiting is dropped (as with any waiting event).
+- `changed(integer change)` comes from an input of type `changed` (in `inputs` and in `lsl_event`): `{"at": 1, "type": "changed", "object": "box", "change": "inventory"}`.
+  `change` is a name (`inventory`, `allowed_drop`, `color`, `shape`, `scale`, `texture`, `link`, `owner`, `region`, `teleport`,
+  `region_start`, `media`, `render_material`; also written `CHANGED_OWNER`, in any case), a list of names (the flags are added: `["link", "region_start"]` gives 1056), or
+  the flags as a whole number (1 to 8191, only known flags). Every script of the object gets the event, in any prim; other objects do not.
+  The log has an `input` entry (`input`: `changed`, `change`: the flags) and then the scripts' `event` entries. The event is only the event:
+  `llGetOwner`, the prim count and the inventory do not change with it (`owner` does not give the object a new owner). This is a new input type
+  for the existing `inputs`; no new control command.
+
 #### Pure functions and object state (Script Lab step 9b-1, issue 310)
 
 These run without any world: rotation maths (`llEuler2Rot`, `llRot2Euler`, `llRot2Fwd`, `llRot2Left`, `llRot2Up`,
@@ -528,7 +544,7 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message` and `linkset_data`; 111 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez` and `changed`; 111 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
 maths, Base64, MD5 and SHA-1, URL escaping, and a few object-state getters and setters). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list

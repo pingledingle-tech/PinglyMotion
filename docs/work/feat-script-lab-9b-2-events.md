@@ -1,11 +1,12 @@
 Branch: feat/script-lab-9b-2-events
-Status: active
-Pull request: pending
+Status: done
+Pull request: #315
 Files:
 - src/scriptlab/lsl/interp.*
 - src/scriptlab/lsl/sandbox.*
 - src/scriptlab/lsl/control.cpp
 - src/scriptlab/lsl/parser.cpp
+- tests/tst_labwatcher.cpp
 - src/controlapi.cpp
 - tools/mcp/commands.json
 - tests/tst_lslevents.cpp

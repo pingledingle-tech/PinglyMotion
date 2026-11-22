@@ -232,6 +232,8 @@ void Interpreter::start(bool run)
   }
   m_world.log(m_now, QJsonObject{{"type", "state"}, {"name", currentState()}});
   enterState(0);
+  // the object was rezzed (or worn): on_rez follows state_entry with the start parameter (step 9b-2)
+  queueEvent(Event{"on_rez", {Value::integer(m_world.startParameter())}, QString(), QString()});
   if (run) processQueue();
 }
 
@@ -435,6 +437,11 @@ void Interpreter::linkMessage(int sender, int num, const QString& str, const QSt
 void Interpreter::linksetDataEvent(int action, const QString& name, const QString& value)
 {
   queueEvent(Event{"linkset_data", {Value::integer(action), Value::string(name), Value::string(value)}, QString(), QString()});
+}
+
+void Interpreter::changedEvent(int flags)
+{
+  queueEvent(Event{"changed", {Value::integer(flags)}, QString(), QString()});
 }
 
 bool Interpreter::handles(const QString& event) const
