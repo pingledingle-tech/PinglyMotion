@@ -44,6 +44,12 @@ namespace
     {"area_face",QColor(QRgb(0xF4A261u)),QColor(QRgb(0xB4570Fu))},
     {"area_hands",QColor(QRgb(0xC792EAu)),QColor(QRgb(0x8241B8u))},
     {"area_other",QColor(QRgb(0x5CC8C8u)),QColor(QRgb(0x0F7C7Cu))},
+    {"axis_x",QColor(QRgb(0xFF7A7Au)),QColor(QRgb(0xC42B1Cu))},
+    {"axis_y",QColor(QRgb(0x5FD068u)),QColor(QRgb(0x1B7530u))},
+    {"axis_z",QColor(QRgb(0x6A9EFFu)),QColor(QRgb(0x1F5FD1u))},
+    {"on_axis",QColor(QRgb(0x1E1F22u)),QColor(QRgb(0xFFFFFFu))},
+    {"go_fill",QColor(QRgb(0x1D7F45u)),QColor(QRgb(0x18794Eu))},
+    {"replay_fill",QColor(QRgb(0x7048C8u)),QColor(QRgb(0x6A3DBFu))},
   };
 }
 
