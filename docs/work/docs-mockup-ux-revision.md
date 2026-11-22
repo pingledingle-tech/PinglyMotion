@@ -1,6 +1,6 @@
 Branch: docs/mockup-ux-revision
 Status: active
-Pull request: pending
+Pull request: #337
 Files:
 - docs/mockup/**
 - docs/DESIGN_SYSTEM.md
