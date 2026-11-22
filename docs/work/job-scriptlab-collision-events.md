@@ -1,6 +1,6 @@
 Branch: job/scriptlab-collision-events
 Status: active
-Pull request: pending
+Pull request: #378
 Files:
 - src/scriptlab/lsl/interp.*
 - src/scriptlab/lsl/sandbox.*
