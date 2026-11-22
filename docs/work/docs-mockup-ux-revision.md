@@ -9,6 +9,7 @@ Files:
 - docs/UX_DECISIONS.md
 - docs/POSING_UX.md
 - docs/images/mockup-ux-revision/**
+- docs/images/mockup-joint-drag/**
 - docs/work/docs-mockup-joint-drag.md
 
 ## What

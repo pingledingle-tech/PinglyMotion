@@ -19,11 +19,13 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - Loop on/off switch, on by default.
 - Step 1 (built, waiting for the owner's test): Start, Stop and Replay from start buttons and a Loop check box under the timeline (`src/transportbar.*`). Start can be clicked only while stopped, Stop only while playing, Replay from start always. The Loop check box and Options > Loop are the same setting, remembered between sessions. Frame step buttons follow in step 2.
 - Speed control: not now. Add it later if it is missed.
+- Colours (the project owner, 22 November 2026): Start green (`go_fill`), Replay from start violet (`replay_fill`), Stop red (`danger_fill`), each with its icon and word. Shown in the clickable mockup; the built transport bar still has the older look until a job changes it ([DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), "Shape").
 
 ## 2. Easing tiles
 
 - Text names by default.
 - The small preview picture animates only while the mouse hovers over a tile. No constant motion.
+- In the clickable mockup each tile draws its curve: time to the right, the pose from a dashed Start line to a dashed End line. The part of a curve that goes past End is drawn thicker, shaded, three times taller and marked "past End", so an overshoot can be seen at once (the project owner saw only the figures and not the overshoot in his test). On hover a dot runs along the curve and a small bar on the right shows how far the pose has come.
 
 ## 3. Curve editor
 
@@ -47,6 +49,7 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - Order from the top: joint name (and SL name), Reset, rotation sliders X/Y/Z showing the allowed range, limit warning.
 - Advanced things (IK, lock, move) further down.
 - Joint limits are a helper, not a wall: they warn, and can be switched off. SL has no limits, so strange poses on purpose must be possible.
+- Self-explaining for beginners, as shown in the clickable mockup: the joint name with its body-area chip and key count; one plain line that says how to turn it (sliders or rings, then Set key); each slider has its axis badge (X red, Y green, Z blue) and a plain name ("Tilt forward or back", "Turn left or right", "Lean to the side"), the allowed range under it and the number in degrees; near a limit the slider says so and a warning card names the axis and offers "Turn limits off". "When you drag this joint in the 3D view" is a plain choice between "Pull the limb" (IK, explained in one line) and "Turn only this joint". Lock, Move and "Turn around the axes of: Joint / Avatar / Screen" fold away under **More options**, in both modes.
 
 ## 6a. Dragging a joint in the 3D view
 
@@ -59,6 +62,27 @@ Shown in the clickable mockup (`docs/mockup/index.html`); waits for the project 
 - **Keyboard alternative:** with a joint picked and the 3D view focused, **Enter** (or G) picks the joint up, the **arrow keys** move it (Shift: small steps), **Enter** sets the key, **Esc** cancels. The "Pull with keys" button in the Selected joint panel does the same. Shift + Enter picks it up in the other mode.
 - First-run hint "Pull a limb" (after "Pick a joint"); it is also in the Camera and keys card and the Keys and mouse list.
 - The ring and the sliders still turn a joint without keys being set until Set key, as before.
+
+## 6b. Rotation rings and the view-direction widget
+
+Shown in the clickable mockup (`docs/mockup/index.html`); waits for the project owner's yes before it is built.
+
+- Three rings, red X, green Y and blue Z, are drawn around the **picked** joint (never around another joint), in the frame of its parent. Dragging a ring turns the joint on that axis only; Shift gives fine steps. Each ring carries its letter. The back half of a ring is drawn faint. Hovering a ring thickens it and the hint bar says "Drag the red X ring to turn the joint: tilt forward or back".
+- Top left of the 3D view: a round **view-direction widget** like Blender's navigation gizmo, with coloured X, Y, Z ends that turn with the camera. Clicking an end looks from there (front, back, left or right side, top, below); dragging the widget turns the view. With the keyboard the ends are reached with Tab and arrow keys and chosen with Enter. The current view's name is under it.
+- Under it a vertical **view toolbar** with names and keys (names can be switched off in its Show menu; a short 3D view gets a two-column icon toolbar): what the left mouse button does (Pick and pull V, Look around O, Move the view M, Zoom Z, the active one marked with a bar and a frame), framing (Picked joint F, Whole figure Shift+F, Home view 0), **Look from** (Front, Side, Top, Back; also in the View menu and on Numpad 1, 3, 7) and **Show** (floor grid, rotation rings, joint dots, tool names).
+
+## 6c. Panels: pop out, move, resize, dock back; Setup
+
+Shown in the clickable mockup.
+
+- Every panel title has a pop-out button. A popped-out panel floats over the window with a "Floating" tag; it moves by its title (or with the arrow keys on its grip button) and resizes by its corner (or Shift + arrow keys); the same button docks it back. The thin lines between panels change their width or height by dragging or with the arrow keys. **View > Reset layout** docks everything back in its first place and closes Script Lab.
+- Script Lab (View > Script Lab, Ctrl+Shift+L, or the Script Lab button in the top bar) docks on the right next to Selected joint; tabs switch between them, and picking a joint in the 3D view brings Selected joint to the front.
+- At large text or in a small window the panels rearrange instead of scrolling sideways: with less room the Joints panel joins the right side as a tab; with very little room everything stacks in one column and the page scrolls down only. Floating needs room, so pop-out is greyed out there with the reason.
+- **Setup** (gear button in the top bar, View > Setup, Help > Setup): beginner or experienced, mouse and keys habits, theme, text size and hints in one dialog, so the welcome choices can be found and changed at any time (the project owner could not find them before). Help > Show the welcome card again stays.
+
+## 6d. Script Lab panel in the new design
+
+Shown in the clickable mockup, following what the program's panel holds ([SCRIPT_LAB.md](SCRIPT_LAB.md)): a one-line explanation, the RLV / RLVa switch (switching removes every restriction, as after a relog), two pages **Live scripts** and **Type commands**. Live: an empty state with "Watch folder...", then the folder with Stop watching, an OK or Error status line that starts with the word, Open in editor, Show effects in 3D view, and folding parts with counts: the script read only with line numbers (an error line in bold red and underlined), errors and warnings, the event log (owner-say lines and RLV lines marked), the RLV restrictions now, objects and the newest dialog, Send input (Touch, Say, dialog buttons) and the simulated inventory and notecards. Commands: Object, Command with Run (Enter), example lines to try, Reset all, the restrictions, what the avatar may do (Allowed or Blocked as words with icons), the camera and environment boxes, and replies and messages. A "Run again" button is drawn as a proposal; the program runs a script when it is saved.
 
 ## 7. Mirror and whole pose
 
