@@ -1,5 +1,5 @@
 Branch: ci/codeql-skip-unchanged
-Status: active
+Status: done
 Pull request: #356
 Files:
 - .github/workflows/codeql.yml
