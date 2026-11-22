@@ -1,6 +1,6 @@
 # Roadmap proposal (19 November 2026)
 
-Status: **proposal for the project owner to confirm.** It sets an order for the open issues after the Aurora comparison (`docs/AURORA_STUDIO.md`) and the open-source check (`docs/OPEN_SOURCE_CHECK.md`). It does not replace `docs/PRODUCT.md` or `docs/DECISIONS.md`; where they disagree on goals or decisions, those win until the owner decides. This file is the one place for progress status; `docs/PRODUCT.md` does not repeat it, and running pull requests and the owner's tests are in the jobs list (#74) and the test list (#47).
+Status: **proposal for the project owner to confirm.** It sets an order for the open issues after the Aurora comparison (`docs/archive/AURORA_STUDIO.md`) and the open-source check (`docs/archive/OPEN_SOURCE_CHECK.md`). It does not replace `docs/PRODUCT.md` or `docs/DECISIONS.md`; where they disagree on goals or decisions, those win until the owner decides. This file is the one place for progress status; `docs/PRODUCT.md` does not repeat it, and running pull requests and the owner's tests are in the jobs list (#74) and the test list (#47).
 
 ## Current state (20 November 2026)
 
@@ -74,8 +74,8 @@ Out of scope: full LSL, all functions and all RLV behaviours; a slow ring or col
 
 ## Aurora track (separate repository, owner decides)
 
-1. **Option C first:** try Aurora's editor offline with the environment variables from `docs/AURORA_STUDIO.md`, on the owner's Windows PC. No code, a few minutes. Result decides whether an own-named "studio mode" fork (option B) is worth it.
-2. **Before any pull request to Aurora:** comment on the matching issue or feedback post and wait; follow their template and rules (section 5 of `docs/AURORA_STUDIO.md`). First candidate: joint limits in Rust (about a night to three days including learning the code).
+1. **Option C first:** try Aurora's editor offline with the environment variables from `docs/archive/AURORA_STUDIO.md`, on the owner's Windows PC. No code, a few minutes. Result decides whether an own-named "studio mode" fork (option B) is worth it.
+2. **Before any pull request to Aurora:** comment on the matching issue or feedback post and wait; follow their template and rules (section 5 of `docs/archive/AURORA_STUDIO.md`). First candidate: joint limits in Rust (about a night to three days including learning the code).
 3. Nothing in PinglyMotion's code is blocked by this track.
 
 ## Open decisions (owner)

@@ -1,3 +1,5 @@
+Archived 22 November 2026: Carried over from the predecessor repository; PinglyMotion has no releases yet.
+
 # PinglyMotion 0.4.0 beta – release notes (draft)
 
 > Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026), up to 22 November 2026.

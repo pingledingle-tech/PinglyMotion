@@ -92,7 +92,7 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 
 **Done in step 3, jobs P1 to P6** (`src/panellayout.h`, `src/panelwindow.h`, `src/pinglymotionwindow.*`, `src/paneltitlebar.*`):
 
-- Three panels around the 3D view: **Joints** (left: Avatar / Props switch, joint tabs, search and list, or the prop list), **Selected joint** (right: the rotation and position boxes of the joint, or the prop position, scale and rotation boxes) and **Timeline** (bottom: tracks, the Start, Stop and Replay from start buttons with the Loop switch, key, loop in / out, frame count and FPS). They are Qt dock widgets, not overlays (the choice is explained in [PANELS_PLAN.md](PANELS_PLAN.md)); each goes only where its shape fits, panels on one side can be tabbed together, and each can float as its own window.
+- Three panels around the 3D view: **Joints** (left: Avatar / Props switch, joint tabs, search and list, or the prop list), **Selected joint** (right: the rotation and position boxes of the joint, or the prop position, scale and rotation boxes) and **Timeline** (bottom: tracks, the Start, Stop and Replay from start buttons with the Loop switch, key, loop in / out, frame count and FPS). They are Qt dock widgets, not overlays (the choice is explained in [PANELS_PLAN.md](archive/PANELS_PLAN.md)); each goes only where its shape fits, panels on one side can be tabbed together, and each can float as its own window.
 - The **View** menu: Joints, Selected joint, Timeline (ticks), Reset layout. The old Options items for the panels are gone.
 - The layout is saved as `panel_layout` with `panel_layout_version`; a layout of another version (for example the old `window_state` with the Properties panel) is not loaded. The window's place, size, maximised state and screen are saved as `main_window_geometry` (Qt's `saveGeometry`); the old width and height are read once and never written again. A floating panel whose saved place is on no screen is pulled back. **View > Reset layout** applies a default built in code (`src/panelwindow.h`).
 - **Tab** hides all open panels (docked and floating) and Tab again shows the same ones; also **View > Hide panels** (Tab shown as its shortcut). Tab is taken only while the 3D view has the keys, so it still moves between fields in the panels and in the search box. The hidden state is not saved: the program starts with the panels shown.
@@ -109,7 +109,7 @@ One pull request per step, tested on Windows before it is merged. Steps that cha
 
 1. Camera and keys (new scheme, old joint modifiers removed) – `src/animationview.*` (done)
 2. Friendly names, section headings and search in the joint list (done)
-3. Floating, movable panels; Tab to hide; reset layout (plan: [PANELS_PLAN.md](PANELS_PLAN.md); P1 to P6 done: three panels, View menu, versioned layout, window and layout remembered, Tab, figure in the free area, two screens)
+3. Floating, movable panels; Tab to hide; reset layout (plan: [PANELS_PLAN.md](archive/PANELS_PLAN.md); P1 to P6 done: three panels, View menu, versioned layout, window and layout remembered, Tab, figure in the free area, two screens)
 4. Selected-joint card: trackball, sliders, limit warning, turn-around frame
 5. Left / Right / Mirror and the whole-pose buttons (shared left/right mapping)
 6. Hands tab: presets and finger grid

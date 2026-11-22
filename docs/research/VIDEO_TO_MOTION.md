@@ -105,8 +105,8 @@ own terms.
 | Tool | What it is | Licence | Output use |
 |---|---|---|---|
 | **XR Animator** | Webcam or video mocap in the browser or as a desktop app, built on MediaPipe; records and exports BVH, glTF or VMD; body, hands and face; 20+ fps on an entry-level PC ([project](https://github.com/ButzYung/SystemAnimatorOnline)) | Source CC BY-NC-SA 4.0 when adapted | The project states it claims no rights over content made with it |
-| **Mocapy** | Video or webcam to BVH with MediaPipe | MIT (see [OPEN_SOURCE_CHECK.md](../OPEN_SOURCE_CHECK.md)) | External tool, BVH goes through our import |
-| **FreeMoCap** | Multi-webcam capture | AGPL-3.0; already rejected for code ([OPEN_SOURCE_CHECK.md](../OPEN_SOURCE_CHECK.md)) | External tool only |
+| **Mocapy** | Video or webcam to BVH with MediaPipe | MIT (see [OPEN_SOURCE_CHECK.md](../archive/OPEN_SOURCE_CHECK.md)) | External tool, BVH goes through our import |
+| **FreeMoCap** | Multi-webcam capture | AGPL-3.0; already rejected for code ([OPEN_SOURCE_CHECK.md](../archive/OPEN_SOURCE_CHECK.md)) | External tool only |
 | **QtMeshEditor** | Qt desktop editor whose "Performance Capture" downloads a MediaPipe pose model as ONNX on first use and solves body pose with IK ([model page](https://huggingface.co/fernandotonon/QtMeshEditor-poselandmarks-onnx)) | Not checked | A useful precedent: a Qt app that loads the model as a separate data file at run time |
 
 ## 4. Commercial services

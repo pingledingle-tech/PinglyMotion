@@ -147,7 +147,7 @@ If **Root Translation Only** is off, every bone gets position channels. Second L
 
 ### 2.9 Licence of the motion (Mixamo and others)
 
-The file format does not care where the motion comes from, but you should. Mixamo's terms allow using its animations in your own projects but not passing the raw files on, so selling an almost unchanged Mixamo clip in Second Life may break its terms. PinglyMotion does not block this; it is your responsibility. Motion from sources with a clear free licence (for example the CC0 animations from Mesh2Motion, see [OPEN_SOURCE_CHECK.md](OPEN_SOURCE_CHECK.md)) has no such problem.
+The file format does not care where the motion comes from, but you should. Mixamo's terms allow using its animations in your own projects but not passing the raw files on, so selling an almost unchanged Mixamo clip in Second Life may break its terms. PinglyMotion does not block this; it is your responsibility. Motion from sources with a clear free licence (for example the CC0 animations from Mesh2Motion, see [OPEN_SOURCE_CHECK.md](archive/OPEN_SOURCE_CHECK.md)) has no such problem.
 
 ## 3. What a real round trip needs later
 
@@ -197,7 +197,7 @@ PinglyMotion source (checked 19 November 2026, `main`):
 
 - `src/bvh.cpp` (`loadBentoJoints`, `findLoadedNode`, `copySkeletonNode`, `removeNoSLNodes`), `src/animfile.h` (limits), `src/animation.cpp` (FPS), `bin/data/bento_joints.txt`, `bin/data/TPose.bvh`
 - [ANIM_FORMAT.md](ANIM_FORMAT.md), §7: how the SL viewer turns BVH into `.anim` (axes, inches, first frame, key reduction)
-- [DECISIONS.md](DECISIONS.md), [PRODUCT.md](PRODUCT.md), [OPEN_SOURCE_CHECK.md](OPEN_SOURCE_CHECK.md), [ROADMAP.md](ROADMAP.md)
+- [DECISIONS.md](DECISIONS.md), [PRODUCT.md](PRODUCT.md), [OPEN_SOURCE_CHECK.md](archive/OPEN_SOURCE_CHECK.md), [ROADMAP.md](ROADMAP.md)
 
 Web (read 19 November 2026):
 

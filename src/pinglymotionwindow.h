@@ -334,13 +334,13 @@ class PinglyMotionWindow : public QMainWindow
     void buildDocks();
     void resetPanelLayout();
     // Tab, or View > Hide panels: hides every open panel, or shows again the
-    // ones Tab hid (docs/PANELS_PLAN.md, job P4)
+    // ones Tab hid (docs/archive/PANELS_PLAN.md, job P4)
     void togglePanelsHidden();
     QList<QDockWidget*> panelDocks() const;
     void fitPanelWidths();
     void showLightDialog();
     void saveUserSettings();
-    // the three panels (docs/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
+    // the three panels (docs/archive/PANELS_PLAN.md, job P2): Joints, Selected joint, Timeline
     QDockWidget* m_timelineDock=nullptr;
     QDockWidget* m_jointsDock=nullptr;
     QDockWidget* m_jointCardDock=nullptr;

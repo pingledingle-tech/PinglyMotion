@@ -1,4 +1,4 @@
-# Test of the panel layout rules (src/panellayout.h, docs/PANELS_PLAN.md job P1).
+# Test of the panel layout rules (src/panellayout.h, docs/archive/PANELS_PLAN.md job P1).
 # A folder of its own, added from the top CMakeLists.txt.
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 

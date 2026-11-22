@@ -1,4 +1,4 @@
-# Round trip of the three-panel layout with real dock widgets (docs/PANELS_PLAN.md,
+# Round trip of the three-panel layout with real dock widgets (docs/archive/PANELS_PLAN.md,
 # job P2, section 6). A folder of its own, added from the top CMakeLists.txt.
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test Widgets)
 

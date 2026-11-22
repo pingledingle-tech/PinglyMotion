@@ -1,8 +1,10 @@
+Archived 22 November 2026: all six panel jobs (P1 to P6) are built and merged; the layout is described in POSING_UX.md and the design charter.
+
 > The design charter (docs/DESIGN_CHARTER.md) wins if this document disagrees.
 
 # Panels plan (posing UX step 3)
 
-This page is the plan for step 3 of [POSING_UX.md](POSING_UX.md): panels that can be moved, docked and popped out; **Tab** hides all panels; **Reset layout**; the layout is remembered; the camera keeps the figure in the middle of the free area; two screens work. Issue #14 tracks the posing work.
+This page is the plan for step 3 of [POSING_UX.md](../POSING_UX.md): panels that can be moved, docked and popped out; **Tab** hides all panels; **Reset layout**; the layout is remembered; the camera keeps the figure in the middle of the free area; two screens work. Issue #14 tracks the posing work.
 
 It is a plan only. No code is changed by it. Each job below is its own pull request.
 
@@ -88,7 +90,7 @@ Each job is one pull request. The first is technical (nothing changes on screen)
 
 **Order and what can run beside other work.** P1 can run at any time, beside anything. P2, P3, P4 and P6 all change `src/pinglymotionwindow.*` and must run one after another. P5 changes `src/animationview.*` and `src/camera.*`; it can run beside P3 or P6, but not beside another job on the 3D view. Today the job `feat/dingle-save-open` (pull request 113) claims `src/pinglymotionwindow.*`; P2 must wait until it is merged (the work board decides).
 
-Before the user-facing jobs: every new text (menu items, tips on the title-bar buttons) is checked against the teaching rules in [TEACHING.md](TEACHING.md) and goes through `tr()`.
+Before the user-facing jobs: every new text (menu items, tips on the title-bar buttons) is checked against the teaching rules in [TEACHING.md](../TEACHING.md) and goes through `tr()`.
 
 ### P1 – Layout logic as plain code, with tests (technical)
 
@@ -168,7 +170,7 @@ Before the user-facing jobs: every new text (menu items, tips on the title-bar b
   3. Close the program, unplug the second screen, start again. The timeline is on the main screen.
   4. Click its button to put it back. It docks at the bottom.
 - **Estimate:** 2 hours.
-- **Done:** most of "remembered on the second screen" and "pulled back onto the main screen when that screen is gone" were already in place from P1 and P3 (`Qt::saveState`/`saveGeometry` save a floating panel's real place, including which screen, and `PanelWindow::pullFloatingPanelsOntoScreen` runs at start-up). P6 adds the two pieces that were still missing: `QMainWindow::GroupedDragging` in `buildDocks()`'s `setDockOptions()`, so panels docked or tabbed together move as one when one of them is dragged; and a double click on `PanelTitleBar` (away from its buttons) that floats a docked panel or docks a floating one, matching the float button. The toggle on double click is deferred one pass through the event loop (`QTimer::singleShot(0, ...)`), because `QDockWidget` watches mouse presses and releases on its own title bar, even a custom one, to detect a drag; a double click with no real drag makes it decide, right after, that the panel was just dropped back where it was and redocks it, which would otherwise undo an immediate toggle. Different screen scaling needs no code change (docs/PANELS_PLAN.md, section 3(a), notes Qt already handles per-window high-DPI scaling for dock widgets); it is the owner's Windows test to confirm, together with the real second-monitor steps above, which need real hardware the automated tests cannot have. Round-trip tests (`tests/paneldocks/`): `GroupedDragging` is set; a floating panel's exact place and size survive a save/restore round trip and are left alone by `pullFloatingPanelsOntoScreen` while its screen is still known (the already-existing test covers the case where it is not); a double click on the title bar floats and then docks a panel again.
+- **Done:** most of "remembered on the second screen" and "pulled back onto the main screen when that screen is gone" were already in place from P1 and P3 (`Qt::saveState`/`saveGeometry` save a floating panel's real place, including which screen, and `PanelWindow::pullFloatingPanelsOntoScreen` runs at start-up). P6 adds the two pieces that were still missing: `QMainWindow::GroupedDragging` in `buildDocks()`'s `setDockOptions()`, so panels docked or tabbed together move as one when one of them is dragged; and a double click on `PanelTitleBar` (away from its buttons) that floats a docked panel or docks a floating one, matching the float button. The toggle on double click is deferred one pass through the event loop (`QTimer::singleShot(0, ...)`), because `QDockWidget` watches mouse presses and releases on its own title bar, even a custom one, to detect a drag; a double click with no real drag makes it decide, right after, that the panel was just dropped back where it was and redocks it, which would otherwise undo an immediate toggle. Different screen scaling needs no code change (docs/archive/PANELS_PLAN.md, section 3(a), notes Qt already handles per-window high-DPI scaling for dock widgets); it is the owner's Windows test to confirm, together with the real second-monitor steps above, which need real hardware the automated tests cannot have. Round-trip tests (`tests/paneldocks/`): `GroupedDragging` is set; a floating panel's exact place and size survive a save/restore round trip and are left alone by `pullFloatingPanelsOntoScreen` while its screen is still known (the already-existing test covers the case where it is not); a double click on the title bar floats and then docks a panel again.
 
 **Total:** about 15 hours of session time, plus the project owner's Windows tests (five rounds, P2 to P6). P3 and P4 are small enough to be tested in one round if the project owner prefers (done so: one pull request, test AH).
 
@@ -180,7 +182,7 @@ Before the user-facing jobs: every new text (menu items, tips on the title-bar b
 - **Tab.** Qt uses Tab to move focus; a window-wide Tab shortcut would break typing in fields. That is why P4 catches Tab only in the 3D view.
 - **Settings migration.** An old `window_state` names `propertiesDock`, which no longer exists. Loading it would put the new panels in odd places. P2 therefore uses a new setting with a version number and ignores the old one. Users who moved panels in the old version get the default layout once.
 - **Floating panels off-screen.** A layout saved with two screens and loaded with one can leave a window out of sight. P1 and P6 pull it back.
-- **Qt versions.** Windows uses Qt 6.12 from CI; Linux builds may use the distribution's older Qt 6. Only use dock options and calls that exist in the oldest Qt in the build (see [DEV.md](DEV.md)). `saveState()`, `restoreState()`, `AllowTabbedDocks`, `GroupedDragging` and `saveGeometry()` all exist since Qt 5 and are safe.
+- **Qt versions.** Windows uses Qt 6.12 from CI; Linux builds may use the distribution's older Qt 6. Only use dock options and calls that exist in the oldest Qt in the build (see [DEV.md](../DEV.md)). `saveState()`, `restoreState()`, `AllowTabbedDocks`, `GroupedDragging` and `saveGeometry()` all exist since Qt 5 and are safe.
 - **Linux and Wayland.** On Wayland a program cannot place its own windows, so floating panels may not come back at their saved place. Windows is the main target; on Linux this is a known limit, not a bug to chase.
 - **Smoke tests.** `tests/smoke_gui.sh` starts the window; it must still pass after P2 (it does not name the docks today).
 

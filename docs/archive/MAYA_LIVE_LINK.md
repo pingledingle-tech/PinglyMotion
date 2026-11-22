@@ -1,13 +1,15 @@
+Archived 22 November 2026: research finished; direct Maya support is out of scope (DECISIONS.md).
+
 # Maya and the Aurora live link
 
 Research note for [#62](https://github.com/pingledingle-tech/PinglyMotion/issues/62),
 written 19 November 2026. **Documentation only. Nothing is built, nothing is
 planned.** Direct Maya support stays out of scope, as decided (see
-[DECISIONS.md](DECISIONS.md), 18 November 2026, and section 7 of
-`docs/AURORA_STUDIO.md` on pull request #58).
+[DECISIONS.md](../DECISIONS.md), 18 November 2026, and section 7 of
+`docs/archive/AURORA_STUDIO.md` on pull request #58).
 
 Background reading: [LIVE_LINK_RESEARCH.md](LIVE_LINK_RESEARCH.md) (why we use
-Aurora's link) and [AURORA_LINK.md](AURORA_LINK.md) (how PinglyMotion talks to
+Aurora's link) and [AURORA_LINK.md](../AURORA_LINK.md) (how PinglyMotion talks to
 Aurora today).
 
 ## 1. The question
@@ -62,7 +64,7 @@ branch of `Aurora-Viewer/Aurora-Viewer`, **commit `cc9c980`** (full hash
 
 ### 2b. Our fork (what PinglyMotion uses)
 
-PinglyMotion's link is described in [AURORA_LINK.md](AURORA_LINK.md), which is
+PinglyMotion's link is described in [AURORA_LINK.md](../AURORA_LINK.md), which is
 the up-to-date description; read it for the details. In short: for live poses
 it needs Aurora built from our fork (`pingledingle-tech/Aurora-Viewer-Fork`,
 branch `feat/livemesh-pose-on-main`). The fork adds pose features that upstream
@@ -189,9 +191,9 @@ depend on Aurora's protocol.
   [Aurora-Viewer/Aurora-Viewer](https://github.com/Aurora-Viewer/Aurora-Viewer),
   commit `cc9c98097e3bd3078d830ddd3e1e7f0a2b4e97e2`, section "Wire protocol v1"
   and "Hand/foot IK" (poses not streamed).
-- PinglyMotion: [AURORA_LINK.md](AURORA_LINK.md),
-  [LIVE_LINK_RESEARCH.md](LIVE_LINK_RESEARCH.md), [DECISIONS.md](DECISIONS.md);
-  `docs/AURORA_STUDIO.md` section 7 (pull request #58).
+- PinglyMotion: [AURORA_LINK.md](../AURORA_LINK.md),
+  [LIVE_LINK_RESEARCH.md](LIVE_LINK_RESEARCH.md), [DECISIONS.md](../DECISIONS.md);
+  `docs/archive/AURORA_STUDIO.md` section 7 (pull request #58).
 - Python in Maya and threads (scene access from the main thread only):
   [Python in Maya](https://help.autodesk.com/cloudhelp/2020/ENU/Maya-Scripting/files/GUID-C0F27A50-3DD6-454C-A4D1-9E3C44B3C990.htm),
   [Using Python (Maya 2025)](https://help.autodesk.com/cloudhelp/2025/ENU/Maya-Scripting/files/GUID-55B63946-CDC9-42E5-9B6E-45EE45CFC7FC.htm),

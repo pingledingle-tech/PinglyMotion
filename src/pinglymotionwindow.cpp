@@ -314,7 +314,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   fillJointTable();
 
   // the window's place, size, maximised state and screen from last time
-  // (docs/PANELS_PLAN.md, job P3). Qt puts a window back onto a screen when
+  // (docs/archive/PANELS_PLAN.md, job P3). Qt puts a window back onto a screen when
   // its saved place is gone. The old width and height are used only while
   // no geometry has been saved yet.
   {
@@ -438,7 +438,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
 
   // panel layout from last time (size, place, floating panels). Only a layout
-  // saved by this version of the panels is loaded (docs/PANELS_PLAN.md, 7);
+  // saved by this version of the panels is loaded (docs/archive/PANELS_PLAN.md, 7);
   // the old window_state with the Properties panel is left alone, so the
   // default layout is used once after the move to three panels.
   const PanelLayout::StartupChoice startup=PanelLayout::chooseStartup(
@@ -865,7 +865,7 @@ void PinglyMotionWindow::backgroundClicked()
 }
 
 // The 3D view fills the window. Three panels (dock widgets) stand around it
-// (docs/PANELS_PLAN.md, job P2): Joints on the left, Selected joint on the
+// (docs/archive/PANELS_PLAN.md, job P2): Joints on the left, Selected joint on the
 // right, Timeline at the bottom. Each can be resized, moved to another side,
 // put as a tab on another panel, or torn off into its own window. A panel
 // only goes where its shape fits: the timeline is wide (top or bottom), the
