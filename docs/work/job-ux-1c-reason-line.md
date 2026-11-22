@@ -1,6 +1,6 @@
 Branch: job/ux-1c-reason-line
 Status: active
-Pull request: pending
+Pull request: #375
 Files:
 - src/reasonline.*
 - src/lucideicons.cpp
