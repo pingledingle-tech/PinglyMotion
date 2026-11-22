@@ -1,6 +1,6 @@
 Branch: job/ux-2a-mirror-whole-pose
 Status: active
-Pull request: pending
+Pull request: #380
 Files:
 - src/jointinfo.*
 - src/jointlist.*
