@@ -335,10 +335,10 @@ namespace
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
     static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email",
-                                       "collision", "land_collision", "moving", "at_target", "not_at_target"};
+                                       "collision", "land_collision", "moving", "at_target", "not_at_target", "step"};
     if (!types.contains(in.type))
       return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                      "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\" or \"not_at_target\".";
+                      "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\" or \"step\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -377,6 +377,15 @@ namespace
       if (!o.value("hold").isDouble() || !std::isfinite(in.hold) || in.hold < 0.0 || in.hold > Sandbox::MAX_TOUCH_HOLD)
         return where + QString("\"hold\" must be a number of seconds from 0 to %1 (how long the touch is held; 0 is a click).").arg(Sandbox::MAX_TOUCH_HOLD);
     }
+    // second gap list, step 6, part 3: the simple motion model's own step
+    if (o.contains("dt"))
+    {
+      if (in.type != "step") return where + "\"dt\" is only for step (the seconds the motion model advances).";
+      in.dt = o.value("dt").toDouble(-1.0);
+      if (!o.value("dt").isDouble() || !std::isfinite(in.dt) || in.dt < 0.0 || in.dt > Sandbox::MAX_STEP_SECONDS)
+        return where + QString("\"dt\" must be a number of seconds from 0 to %1.").arg(Sandbox::MAX_STEP_SECONDS);
+    }
+    else if (in.type == "step") return where + "a step input needs \"dt\": the seconds the motion model advances.";
     if (in.type == "changed")
     {
       if (!o.contains("change")) return where + "a changed input needs \"change\": what changed, such as \"inventory\", \"owner\", \"link\" or \"region_start\".";
@@ -855,7 +864,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
     static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                       "amount", "url", "method", "body", "headers", "address", "subject", "phase", "pos", "tnum", "targetpos", "ourpos"};
+                                       "amount", "url", "method", "body", "headers", "address", "subject", "phase", "pos", "tnum", "targetpos", "ourpos", "dt"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -963,7 +972,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
   static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos"};
+                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos", "dt"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -975,7 +984,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
   }
   if (!request.contains("type"))
     return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, collision, land_collision, "
-                "moving, at_target or not_at_target.");
+                "moving, at_target, not_at_target or step.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {

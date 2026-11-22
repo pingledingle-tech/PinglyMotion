@@ -256,7 +256,7 @@ a script run through the control commands), the one the Objects part shows.
 
 ## What exists now (second gap list, step 6, part 1): movement and physics stubs
 
-- Seven more functions run: `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llApplyImpulse`, `llSetBuoyancy`, `llRotLookAt` and `llVolumeDetect`. Record only, the same pattern as the step 9b-8 stubs: each call writes a `recorded_only` entry with its exact arguments, nothing moves and no physics runs.
+- Seven more functions run: `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llApplyImpulse`, `llSetBuoyancy`, `llRotLookAt` and `llVolumeDetect`. Record only, the same pattern as the step 9b-8 stubs: each call writes a `recorded_only` entry with its exact arguments, nothing moves and no physics runs. `llApplyImpulse` and `llSetBuoyancy` became real functions in part 3, below.
 - Collision events need a motion model and are not part of this step (part 2, below); neither are the vehicle functions (step 7). Details: [CONTROL.md](CONTROL.md), "Recorded only". Tests: `tests/tst_lslmovement.cpp`.
 
 ## What exists now (second gap list, step 6, part 2): collision-family events
@@ -264,6 +264,18 @@ a script run through the control commands), the one the Objects part shows.
 - Still no motion model, so nine more events never happen on their own; new `inputs` types raise them for testing, with given data, not simulated collisions: `collision` (`phase` `"start"`/`"end"`, optional `link`, `name`/`id` of the other object or avatar, as a touch) raises `collision_start`/`collision_end`; `land_collision` (`phase` `"start"`, `"end"` or left out for the continuous `land_collision`, and `pos`) and `moving` (`phase` only, `moving_start`/`moving_end` take no arguments) go to every script of the object; `at_target` (`tnum`, `targetpos`, `ourpos`) and `not_at_target` likewise.
 - `touch_end` was already raised since step 1 of the second gap list; nothing changed there. The checker's "never raised" warning no longer applies to the nine events above: 32 of the 43 LSL events are raised now.
 - The one-line gap-list fix for `transaction_result` (missing from `Parser::eventIsRaised`) was already in place; nothing to do there.
+- Part 3, below, gives `moving_start`/`moving_end` a second, automatic source (the motion model); the manual `moving` input above still works the same way. `collision`, `land_collision`, `at_target` and `not_at_target` are unchanged: still manual only.
+
+## What exists now (second gap list, step 6, part 3): a simple motion model
+
+A deliberately small slice, not a physics engine: one more `inputs` type and two functions that are real now, so `llGetVel` and `moving_start`/`moving_end` can change on their own, without a manual input, for the first time.
+
+- `llApplyImpulse` and `llSetBuoyancy` are real now (no longer record only). `llApplyImpulse(vector impulse, integer local)` changes the object's velocity **at once** by `impulse / mass` (the same mass as `llGetMass`); `local` turns the impulse by the object's rotation first, as `llSetPos`'s local flag does. `llSetBuoyancy(float buoyancy)` stores the value, clamped to 0 (full gravity) .. 1 (floats); Second Life allows other values, the sandbox does not.
+- The new `inputs` type `step` (`dt`: seconds, 0 to 60) advances the model by that many seconds for one object: velocity changes by simple gravity (-9.8 m/s² along z, scaled by `(1 - buoyancy)`), then position changes by velocity. Not continuous physics: call `step` as many times as the test needs, with whatever `dt` it needs; nothing advances between calls on its own.
+- `llGetVel` now answers the model's velocity (it always answered `ZERO_VECTOR` before).
+- `step` also fires `moving_start`/`moving_end` on its own when the object's speed crosses 0.1 m/s (the sandbox's own choice), in addition to the manual `moving` input from part 2. A worn object's `step` input does nothing but note that the model does not apply to an attachment (nothing about an attachment's motion is simulated).
+- Left out on purpose, for a later job: `llMoveToTarget`/`llStopMoveToTarget` stay record only (the model does not seek a target yet), so `at_target`/`not_at_target` still only come from the manual inputs; `llPushObject`, `llRotLookAt` and `llVolumeDetect` stay record only too; real collisions from motion (two objects actually touching) and the vehicle functions (step 7) are untouched.
+- Details: [CONTROL.md](CONTROL.md), "A simple motion model". Tests: `tests/tst_lslmotion.cpp`.
 - Details: [CONTROL.md](CONTROL.md), "Movement and physics stubs" and "Collision-family events". Tests: `tests/tst_lslcollision.cpp`.
 
 ## What exists now (step 9b-9): HTTP requests with canned replies

@@ -10,6 +10,11 @@ Files:
 - src/scriptlab/lsl/control.cpp
 - tests/tst_lslmovement.cpp
 - tests/tst_lslmotion.cpp
+- tests/tst_lslworld.cpp
+- tests/tst_lslevents.cpp
+- tests/tst_lslmoney.cpp
+- tests/tst_labwatcher.cpp
+- tests/data/scriptlab/scenarios.json
 - tests/CMakeLists.txt
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md

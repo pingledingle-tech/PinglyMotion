@@ -2,9 +2,11 @@
  * PinglyMotion - tests for the own-object movement and physics stubs
  * (second gap list, step 6, part 1)
  *
- * llMoveToTarget, llStopMoveToTarget, llPushObject, llApplyImpulse, llSetBuoyancy, llRotLookAt and
- * llVolumeDetect only write a recorded_only entry with their arguments, the same pattern as the
- * step 9b-8 stubs: no motion model runs and nothing moves. Every expected value is exact.
+ * llMoveToTarget, llStopMoveToTarget, llPushObject, llRotLookAt and llVolumeDetect only write a
+ * recorded_only entry with their arguments, the same pattern as the step 9b-8 stubs: no motion model
+ * runs and nothing moves. llApplyImpulse and llSetBuoyancy are real now (second gap list, step 6, part
+ * 3, tst_lslmotion.cpp); they stay in checkerHasNoWarnings() below, which only checks that lsl_check
+ * finds them supported, not their behaviour. Every expected value is exact.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -58,8 +60,6 @@ void LslMovementTest::recordedOnly()
   const QJsonObject a = run(R"lsl(
     llMoveToTarget(<1, 2, 3>, 0.5); llStopMoveToTarget();
     llPushObject(NULL_KEY, <1, 0, 0>, ZERO_VECTOR, TRUE);
-    llApplyImpulse(<0, 1, 0>, FALSE);
-    llSetBuoyancy(0.75);
     llRotLookAt(ZERO_ROTATION, 1.0, 0.5);
     llVolumeDetect(TRUE);
   )lsl");
@@ -68,8 +68,6 @@ void LslMovementTest::recordedOnly()
     rec("llMoveToTarget", "[[1,2,3],0.5]"),
     rec("llStopMoveToTarget", "[]"),
     rec("llPushObject", "[\"00000000-0000-0000-0000-000000000000\",[1,0,0],[0,0,0],1]"),
-    rec("llApplyImpulse", "[[0,1,0],0]"),
-    rec("llSetBuoyancy", "[0.75]"),
     rec("llRotLookAt", "[[0,0,0,1],1,0.5]"),
     rec("llVolumeDetect", "[1]")});
   QCOMPARE(entries(a, "recorded_only"), expected);

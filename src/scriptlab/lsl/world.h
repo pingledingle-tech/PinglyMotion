@@ -328,6 +328,13 @@ class World
     virtual void position(float out[3]) const { for (int i = 0; i < 3; ++i) out[i] = m_position[i]; }
     // llSetPos on a rezzed object (step 9b-3)
     virtual void setPosition(const float p[3]) { for (int i = 0; i < 3; ++i) m_position[i] = p[i]; }
+    // Second gap list, step 6, part 3: llGetVel (and the Sandbox's simple motion model, which neither this
+    // plain World nor a worn object ever runs); llApplyImpulse and the model's "step" change the velocity.
+    virtual void velocity(float out[3]) const { for (int i = 0; i < 3; ++i) out[i] = m_velocity[i]; }
+    virtual void setVelocity(const float v[3]) { for (int i = 0; i < 3; ++i) m_velocity[i] = v[i]; }
+    // llSetBuoyancy: 0 (full gravity) to 1 (floats); the model's "step" scales gravity by (1 - buoyancy)
+    virtual float buoyancy() const { return m_buoyancy; }
+    virtual void setBuoyancy(float b) { m_buoyancy = b; }
     // the simulated prims of the object (step 9b-3)
     virtual PrimStore& primStore() { return m_prims; }
     // a text box (llTextBox, or llDialog with the button "!!llTextBox!!"): the avatar answers by chat on the channel
@@ -445,6 +452,8 @@ class World
     QString m_scriptTag;
     LinksetData m_linksetData;
     float m_position[3] = {128.0f, 128.0f, 20.0f};
+    float m_velocity[3] = {0.0f, 0.0f, 0.0f};
+    float m_buoyancy = 0.0f;
     float m_scale[3] = {0.5f, 0.5f, 0.5f};
     PrimStore m_prims;
     Inventory m_inventory;
