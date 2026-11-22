@@ -99,6 +99,11 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   thing.type = 6;
   worn.inventory = {card, thing};
   near.inventory = {card};
+  AvatarSpec stranger;   // step 9b-7: someone for the sensors to find
+  stranger.name = "s";
+  stranger.position[1] = 140.0f;
+  stranger.velocity[0] = 1.0f;
+  check(sandbox.addAvatar(stranger).isEmpty());
   check(sandbox.addObject(worn, script, limits).isEmpty());
   check(sandbox.addObject(near, script, limits).isEmpty());
   const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed", "sit", "stand", "control"};

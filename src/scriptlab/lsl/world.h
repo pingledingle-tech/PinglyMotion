@@ -147,6 +147,20 @@ class Inventory
     std::vector<InventoryItem> m_items;
 };
 
+// Step 9b-7: something a sensor found or a touch came from: an avatar or an object
+struct Detected
+{
+  QString key;
+  QString name;
+  QString owner;                    // an avatar is its own owner
+  float position[3] = {0.0f, 0.0f, 0.0f};
+  float velocity[3] = {0.0f, 0.0f, 0.0f};
+  float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+  int type = 1;                     // AGENT (1) for an avatar, SCRIPTED (8) for an object
+  int group = 0;                    // llDetectedGroup: 1 when it shares the active group of the sensing object
+  int link = 0;
+};
+
 class World
 {
   public:
@@ -222,6 +236,14 @@ class World
     virtual bool isSitting(const QString& key) const { Q_UNUSED(key); return false; }       // on any object of the world
     virtual bool sitsOnObject(const QString& key) const { Q_UNUSED(key); return false; }   // on this object
     virtual bool hasAttachments() const { return false; }
+    // Step 9b-7: llSensor and llSensorRepeat look for avatars and other objects of the world: name and id filters
+    // (empty and null key: any), type mask (AGENT 1, ACTIVE 2, PASSIVE 4, SCRIPTED 8), range in metres (at most 96) and
+    // arc in radians around the object's forward direction; the nearest first, at most 16. A plain World knows no one.
+    virtual std::vector<Detected> sense(const QString& name, const QString& id, int type, double range, double arc)
+    {
+      Q_UNUSED(name); Q_UNUSED(id); Q_UNUSED(type); Q_UNUSED(range); Q_UNUSED(arc);
+      return std::vector<Detected>();
+    }
     // llKey2Name and llGetOwnerKey: the name and owner of a key in the sandbox (empty when unknown)
     virtual QString nameOf(const QString& key) const;
     virtual QString ownerOf(const QString& key) const;
