@@ -100,7 +100,7 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
       if (m_objects.contains(objectId))
       {
         for (const Entry& held : m_objects.value(objectId))
-          if (held.key() == entry.key()) { outcome.result = Rlv::Result::Duplicate; return outcome; }
+          if (held.stateKey() == entry.stateKey()) { outcome.result = Rlv::Result::Duplicate; return outcome; }
         if (m_objects.value(objectId).size() >= MAX_RESTRICTIONS_PER_OBJECT)
         {
           outcome.result = Rlv::Result::Failed;
@@ -115,7 +115,7 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
         return outcome;
       }
       m_objects[objectId].append(entry);
-      m_counts[entry.key()] += 1;
+      m_counts[entry.stateKey()] += 1;
       anyChange = true;
       outcome.result = Rlv::Result::Success;
       outcome.reason = outsideNote(command.behaviour);
@@ -124,13 +124,13 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
 
     case Rlv::ParamType::Remove:
     {
-      const QString key = command.option.isEmpty() ? command.behaviour : command.behaviour + ":" + command.option;
+      const QString key = Entry{command.behaviour, command.option}.stateKey();
       if (m_objects.contains(objectId))
       {
         const QVector<Entry>& list = m_objects[objectId];
         for (int i = 0; i < list.size(); i++)
         {
-          if (list.at(i).key() == key)
+          if (list.at(i).stateKey() == key)
           {
             removeEntry(objectId, i);
             anyChange = true;
@@ -153,7 +153,7 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
         // acts outside the sandbox: remember it and say so in the log, change nothing real
         QString option = command.option;
         option.truncate(MAX_RECORDED_LENGTH);
-        m_recorded.insert(behaviour->name, option);
+        m_recorded.insert(Rlv::canonicalName(behaviour->name), option);
         outcome.reason = QStringLiteral("accepted; ") + behaviour->note;
       }
       return outcome;
@@ -236,7 +236,7 @@ QString RlvState::status(const QString& objectId, const QString& option, bool al
 void RlvState::removeEntry(const QString& objectId, int index)
 {
   QVector<Entry>& list = m_objects[objectId];
-  const QString key = list.at(index).key();
+  const QString key = list.at(index).stateKey();
   list.removeAt(index);
   if (--m_counts[key] <= 0) m_counts.remove(key);
   if (list.isEmpty()) m_objects.remove(objectId);
@@ -249,7 +249,7 @@ bool RlvState::has(const QString& behaviour, const QString& option) const
 
 int RlvState::count(const QString& behaviour, const QString& option) const
 {
-  return m_counts.value(option.isEmpty() ? behaviour : behaviour + ":" + option, 0);
+  return m_counts.value(Entry{behaviour, option}.stateKey(), 0);
 }
 
 QVector<RlvState::Restriction> RlvState::restrictions() const

@@ -44,6 +44,7 @@ namespace Rlv
       {"edit", "Edit objects"},
       {"rez", "Rez objects"},
       {"touch", "Touch objects"},
+      {"touchfar", "Touch objects farther away"},
       {"showinv", "Open the inventory"},
       {"showloc", "See the location"},
       {"showminimap", "Open the minimap"},
@@ -116,6 +117,18 @@ namespace Rlv
       {"setcam_mouselook", AllowAddRemove, OptionUse::None, {"setcam_mouselook"}, "Prevents mouselook", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
       {"setcam_textures", AllowAddRemove, OptionUse::Optional, {}, "Replaces every texture with one texture (option: UUID)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
       {"setcam_unlock", AllowAddRemove, OptionUse::None, {}, "Forces the camera focus back to the avatar", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
+      // ---- old camera names: the same state as the new name; getstatus shows the name that was used ----
+      {"camdistmax", AllowAddRemove, OptionUse::Required, {}, "Old name of setcam_avdistmax: maximum camera distance from the avatar (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_avdistmax"},
+      {"camdistmin", AllowAddRemove, OptionUse::Required, {}, "Old name of setcam_avdistmin: minimum camera distance from the avatar (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_avdistmin"},
+      {"camavdist", AllowAddRemove, OptionUse::Required, {}, "Old name of setcam_avdist: distance at which nearby avatars turn into silhouettes (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_avdist"},
+      {"camtextures", AllowAddRemove, OptionUse::Optional, {}, "Old name of setcam_textures: replaces every texture with one texture (option: UUID)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change", "setcam_textures"},
+      {"camunlock", AllowAddRemove, OptionUse::None, {}, "Old name of setcam_unlock: forces the camera focus back to the avatar", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_unlock"},
+      // the old zoom limits are a multiplier, not an angle, so they are their own entries and no alias of the field of view limits
+      {"camzoommax", AllowAddRemove, OptionUse::Required, {}, "Old limit on how far the camera may zoom in (option: zoom multiplier)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
+      {"camzoommin", AllowAddRemove, OptionUse::Required, {}, "Old limit on how far the camera may zoom out (option: zoom multiplier)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
+      // ---- touching far away ----
+      {"touchfar", AllowAddRemove, OptionUse::Optional, {"touchfar"}, "Cannot touch objects farther away than 1.5 m (or the distance given as option, in metres)", Dialect::Rlv, Group::Interaction},
+      {"fartouch", AllowAddRemove, OptionUse::Optional, {}, "Old name of touchfar", Dialect::Rlv, Group::Interaction, false, QString(), "touchfar"},
       // ---- newer behaviours: marked RLV where the RLV wiki lists them (RLVa flags some of them extended), RLVa only otherwise ----
       // interaction and teleport
       {"accepttprequest", AllowAddRemove, OptionUse::Optional, {"accepttprequest"}, "Teleport requests are accepted automatically; with a UUID as option: only from that avatar", Dialect::Rlv, Group::Core},
@@ -161,6 +174,12 @@ namespace Rlv
       {"getcam_textures", AllowReply, OptionUse::None, {}, "Answers the UUID of the forced texture, if any", Dialect::RlvaOnly, Group::Reply, false, "the sandbox has no camera: answers empty"},
     };
     return table;
+  }
+
+  QString canonicalName(const QString& name)
+  {
+    const Behaviour* behaviour = findBehaviour(name);
+    return (behaviour && !behaviour->alias.isEmpty()) ? behaviour->alias : name;
   }
 
   const Behaviour* findBehaviour(const QString& name)
