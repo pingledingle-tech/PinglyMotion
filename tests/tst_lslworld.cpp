@@ -355,7 +355,7 @@ void LslWorldTest::refusesBadInput()
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"key", "not a key!"}})}}}),
            QString("Object 1: \"key\" must be a key: 1 to 36 letters, digits or \"-\"."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"colour", 1}})}}}),
-           QString("Object 1: unknown field \"colour\". Fields: name, source, scripts, prims, key, owner, owner_name, position, attached, description, scale, start_parameter."));
+           QString("Object 1: unknown field \"colour\". Fields: name, source, scripts, prims, key, owner, owner_name, position, attached, description, scale, start_parameter, inventory."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok)}},
                              {"inputs", QJsonArray{QJsonObject{{"type", "touch"}, {"object", "b"}}}}}),
            QString("Input 1: there is no object named \"b\"."));

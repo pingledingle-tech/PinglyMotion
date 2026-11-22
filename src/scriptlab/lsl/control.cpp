@@ -197,7 +197,65 @@ namespace
     return QString();
   }
 
-  // step 9b-1: "description", "scale" and "start_parameter" of an object; empty when fine
+  // step 9b-4: "inventory" of an object: [{name, type, key, lines}]; empty when fine
+  QString readInventory(const QJsonValue& v, const QString& where, std::vector<InventoryItem>& out)
+  {
+    static const int MAX_GIVEN = Inventory::MAX_ITEMS - Sandbox::MAX_SCRIPTS_PER_OBJECT;
+    static const int MAX_OBJECT_CHARS = 131072;   // all notecard lines of one object together
+    const QString shape = where + "\"inventory\" must be a list of items, each {\"name\", \"type\" (texture, sound, landmark, clothing, object, notecard, script, "
+                                   "bodypart, animation, gesture, setting or material), \"key\" (optional), \"lines\" (a notecard's lines)}.";
+    if (!v.isArray()) return shape;
+    const QJsonArray list = v.toArray();
+    if (list.size() > MAX_GIVEN) return where + QString("\"inventory\" holds at most %1 items (an object holds %2 with its scripts).").arg(MAX_GIVEN).arg(Inventory::MAX_ITEMS);
+    qint64 chars = 0;
+    for (int i = 0; i < list.size(); ++i)
+    {
+      const QString at = where + QString("inventory item %1: ").arg(i + 1);
+      if (!list[i].isObject()) return shape;
+      const QJsonObject e = list[i].toObject();
+      static const QStringList fields = {"name", "type", "key", "lines"};
+      for (auto it = e.begin(); it != e.end(); ++it)
+        if (!fields.contains(it.key())) return at + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+      InventoryItem item;
+      if (!e.value("name").isString() || !validName(e.value("name").toString()))
+        return at + "\"name\" must be text of 1 to 63 characters.";
+      item.name = e.value("name").toString();
+      if (!e.contains("type") && !e.contains("lines")) return at + "missing \"type\" (texture, sound, landmark, clothing, object, notecard, script, bodypart, animation, gesture, setting or material).";
+      if (e.contains("type"))
+      {
+        item.type = e.value("type").isString() ? Inventory::typeFromName(e.value("type").toString()) : -2;
+        if (item.type == -2) return at + "\"type\" must be one of texture, sound, landmark, clothing, object, notecard, script, bodypart, animation, gesture, setting, material.";
+      }
+      if (e.contains("key"))
+      {
+        if (!e.value("key").isString() || !validKey(e.value("key").toString())) return at + "\"key\" must be a key: 1 to 36 letters, digits or \"-\".";
+        item.key = e.value("key").toString();
+      }
+      if (e.contains("lines"))
+      {
+        if (item.type != 7) return at + "\"lines\" is only for a notecard.";
+        if (!e.value("lines").isArray()) return at + "\"lines\" must be a list of text lines.";
+        const QJsonArray lines = e.value("lines").toArray();
+        if (lines.size() > Inventory::MAX_NOTECARD_LINES) return at + QString("a notecard has at most %1 lines.").arg(Inventory::MAX_NOTECARD_LINES);
+        qint64 own = 0;
+        for (const QJsonValue& line : lines)
+        {
+          if (!line.isString()) return at + "\"lines\" must be a list of text lines.";
+          own += line.toString().size();
+          item.lines << line.toString();
+        }
+        if (own > Inventory::MAX_NOTECARD_CHARS) return at + QString("a notecard has at most %1 characters in all.").arg(Inventory::MAX_NOTECARD_CHARS);
+        chars += own;
+        if (chars > MAX_OBJECT_CHARS) return where + QString("the notecards of one object have at most %1 characters in all.").arg(MAX_OBJECT_CHARS);
+      }
+      for (const InventoryItem& other : out)
+        if (other.name == item.name) return at + "two items are named \"" + clip(item.name, 63) + "\"; each needs its own name.";
+      out.push_back(item);
+    }
+    return QString();
+  }
+
+  // step 9b-1: "description", "scale" and "start_parameter" of an object (and, step 9b-4, "inventory"); empty when fine
   QString readObjectState(const QJsonObject& o, const QString& where, ObjectSpec& spec)
   {
     if (o.contains("description"))
@@ -220,6 +278,7 @@ namespace
     }
     if (o.contains("start_parameter") && !wholeNumber(o.value("start_parameter"), -2147483648.0, 2147483647.0, spec.startParameter))
       return where + "\"start_parameter\" must be a whole number (what llGetStartParameter answers; 0 when rezzed by an avatar).";
+    if (o.contains("inventory")) return readInventory(o.value("inventory"), where, spec.inventory);
     return QString();
   }
 
@@ -235,7 +294,7 @@ namespace
   QString readObject(const QJsonObject& o, const QString& where, ObjectSpec& spec, std::vector<ScriptSource>& scripts)
   {
     static const QStringList known = {"name", "source", "scripts", "prims", "key", "owner", "owner_name", "position", "attached",
-                                       "description", "scale", "start_parameter"};
+                                       "description", "scale", "start_parameter", "inventory"};
     for (auto it = o.begin(); it != o.end(); ++it)
       if (!known.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + known.join(", ") + ".";
     if (!o.value("name").isString() || !validName(o.value("name").toString()))
@@ -328,7 +387,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter"};
+                                       "description", "scale", "start_parameter", "inventory"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -336,7 +395,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   if (several && request.contains("source"))
     return fail("Give either \"source\" (one script) or \"objects\" (several scripts), not both.");
   if (several)
-    for (const char* field : {"description", "scale", "start_parameter"})
+    for (const char* field : {"description", "scale", "start_parameter", "inventory"})
       if (request.contains(field)) return fail(QString("With \"objects\", give \"%1\" inside each object, not at the top.").arg(field));
   if (!several)
   {
