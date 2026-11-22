@@ -1,6 +1,6 @@
 Branch: ci/codeql-skip-unchanged
 Status: active
-Pull request: pending
+Pull request: #356
 Files:
 - .github/workflows/codeql.yml
 - tools/ci/changes.py
