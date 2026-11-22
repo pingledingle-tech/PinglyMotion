@@ -2,7 +2,7 @@
 
 Step 5 is done and merged: the easing choice is picked on a row of six tiles under the timeline (see "Tile row (step 5)"); the project owner tested it on Windows and approved it. In the program before it: step 2, playback computes the four old-style choices through the easing module with exactly the old results (see "Playback (step 2)"), and step 3, a key can carry any of the six choices, stored as `curve` in `.dingle` and used by playback and export (see "Stored choice (step 3)"). This page fixes the **names, the small pictures and the descriptions** of the six easing choices proposed in [#53](https://github.com/pingledingle-tech/PinglyMotion/issues/53), so all the jobs (the maths, the file format, the tile row on the timeline) use the same words. The wording of the hint under each tile lives in [TEACHING.md](TEACHING.md) (IDs `EASE-01` to `EASE-06`); this page does not repeat it, so there is one place to change.
 
-The six choices, their order and "Slow both ends" as the default are proposals in #53. They are not decisions yet; if the project owner changes one, change it here and in `TEACHING.md`.
+The project owner approved the six names and descriptions unchanged on 19 November 2026 (issue 53; the wording is in `TEACHING.md`). The order and "Slow both ends" as the default (proposals in #53) are in the program, and the owner approved the tile row on Windows (step 5), but no separate decision on them is recorded; if the project owner changes one, change it here and in `TEACHING.md`.
 
 ## Words
 

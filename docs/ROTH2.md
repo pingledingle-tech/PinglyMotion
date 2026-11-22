@@ -1,6 +1,6 @@
 # Roth2 v2 (male body): plan
 
-Status: done in code (19 Nov 2026), for issue 15, waiting for the project owner's Windows test. The project owner decided the open question below: the male body is chosen automatically from the figure type, with no new menu entry (see `docs/DECISIONS.md`). The rest of this page is the plan the job followed.
+Status: done. Merged on 19 Nov 2026 in pull request 112 ("Roth2 v2 male body: the male figure shows it automatically"); issue 15 was closed the same day. The project owner decided the open question below: the male body is chosen automatically from the figure type, with no new menu entry (see `docs/DECISIONS.md`). The rest of this page is the plan the job followed.
 
 Checked against the upstream repository https://github.com/RuthAndRoth/Roth2, branch `master`, commit `8dfb8b200dd6fdeb40358ac4753b01cc2de15bee`. The README there says "Roth2 v2 prepared on 2020-05-24 is the current release". The Collada files are in the repository, so no Blender export is needed (the older note in issue 15 said otherwise; that is outdated).
 
@@ -104,6 +104,6 @@ For Help > About and `README.md`, one sentence added after the Ruth2 sentence:
 8. **Upstream is quiet.** The current release is from 2020. We work from the `.dae` files at a fixed commit, so this does not matter.
 9. **Upstream was readable only partly.** From this environment `raw.githubusercontent.com` and `git clone` work; the GitHub API does not for this repository. The last commit date and open issues were not checked.
 
-## Open question for the project owner
+## Open question for the project owner (decided 19 Nov 2026, see above)
 
 How should the male body be chosen? Proposal: automatically. A male figure type shows Roth2, a female figure type shows Ruth2, and Max stays the optional second female body. That needs no new menu entry. The alternative is a normal entry in Options > Body.

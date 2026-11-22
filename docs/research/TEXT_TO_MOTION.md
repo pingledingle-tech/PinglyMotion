@@ -1,6 +1,6 @@
 # Text-to-motion AI and Second Life: research report (issue 18)
 
-Status: **research, nothing built.** Written 20 November 2026 for [issue 18](https://github.com/pingledingle-tech/PinglyMotion/issues/18). Sources were read on that date; prices and licences change, so check them again before acting. **The licence notes are a reading of public texts, not legal advice.**
+Status: **research report; parts of it are built since (22 November 2026 check): the two ready joint mappings (pull requests 174 and 216), the import clean-up core (pull requests 179 and 182) and its import-dialog options (pull request 183), and the optional Kimodo helper outside the program (pull request 175). No model is bundled.** Written 20 November 2026 for [issue 18](https://github.com/pingledingle-tech/PinglyMotion/issues/18). Sources were read on that date; prices and licences change, so check them again before acting. **The licence notes are a reading of public texts, not legal advice.**
 
 Builds on the study in [issue 129](https://github.com/pingledingle-tech/PinglyMotion/issues/129) (an assistant needs the animation as computed text; language models plan movement well in words but judge it badly from pictures) and on [AI_HELP_PLAN.md](../AI_HELP_PLAN.md). That study ended with "a licence-checked text-to-motion trial" as a later step; this report is that licence check plus the integration choice. The earlier private project note on AI animation help could not be read from this session, so this report relies on the issue 129 study, which summarises it.
 
@@ -129,6 +129,8 @@ Second Life users run Windows and often laptops without a large NVIDIA card. Any
 - **Files:** `src/retarget.*` or `bin/data/` mapping files, `tests/retarget*/`, `tools/` fixture generator, `docs/RETARGET_MAPPING.md`.
 
 ### Job 2: import clean-up for generated motion (technical core; menu later as a visible job)
+
+- **Status: done.** The core in `src/motioncleanup.*` (pull request 179, merged 20 Nov 2026), foot lock in `src/footlock.*` (pull request 182) and the import window's "Clean up the movement" box with tick boxes (pull request 183, merged 20 Nov 2026). Control commands for the clean-up are not built.
 
 - **What:** functions, then an import option: resample to 30 fps, put the start pose at frame 1, remove forward hip travel ("in place"), and blend the loop seam.
 - **Acceptance tests:**

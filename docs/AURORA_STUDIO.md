@@ -1,6 +1,6 @@
 # Aurora Viewer: what its animation studio has, what it lacks, and our options
 
-Status: **analysis, nothing decided, nothing started.** Written 19 November 2026 from a read of the Aurora Viewer source (a fork of it was cloned and read; nothing was built or run). Numbers are measured line counts of the Rust source at one commit and will drift.
+Status: **analysis.** The product direction was decided on 19 November 2026: PinglyMotion continues as its own program (`docs/DECISIONS.md`, issue 59); the Aurora options below (offline trial, a studio fork, contributions) are not started. Written 19 November 2026 from a read of the Aurora Viewer source (a fork of it was cloned and read; nothing was built or run). Numbers are measured line counts of the Rust source at one commit and will drift.
 
 Aurora Viewer is a Second Life viewer written in Rust (Vulkan, egui), licence GPLv3. PinglyMotion is GPLv2-or-later, which is compatible, but any code moved over must be rewritten from C++ to Rust.
 
@@ -55,6 +55,6 @@ Their `TRADEMARKS.md`: a modified version needs its **own name and icon**, must 
 
 ## 8. Open questions for the project owner
 
-1. Which product: our features as contributions to Aurora, an own-named studio fork, PinglyMotion as the stand-alone and AI-drivable editor, or a mix?
-2. What happens to the open PinglyMotion jobs if the answer is not "PinglyMotion"?
+1. (Decided 19 Nov 2026: PinglyMotion continues as its own program, see `docs/DECISIONS.md`.) Which product: our features as contributions to Aurora, an own-named studio fork, PinglyMotion as the stand-alone and AI-drivable editor, or a mix?
+2. (Moot after the decision of 19 Nov 2026.) What happens to the open PinglyMotion jobs if the answer is not "PinglyMotion"?
 3. Ask the Aurora developers first (their Discord or feedback board), or try option C alone?
