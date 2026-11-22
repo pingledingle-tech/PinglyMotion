@@ -38,6 +38,14 @@ class TestRlvTable : public QObject
     void notifyOnlyForItsOwnObject();
     void notifyIsBounded();
     void permissiveIsState();
+    void everyActionOnce();
+    void rowsOfThisPart_data();
+    void rowsOfThisPart();
+    void rlvOnlyMark();
+    void forceCommandsAreRetained_data();
+    void forceCommandsAreRetained();
+    void exceptionsAreHeldPerFolder();
+    void touchRowsBlockTheirOwnAction();
 
   private:
     static RlvState::Outcome one(RlvState& state, const QString& line, const QString& object = "obj")
@@ -422,6 +430,204 @@ void TestRlvTable::permissiveIsState()
   QVERIFY(state.has("permissive"));
   for (bool allowed : state.actions()) QVERIFY(allowed);   // blocks nothing
   QCOMPARE(state.apply("obj", "@getstatus=3").replies.value(0).text, QString("/permissive"));
+}
+
+// every behaviour added with the outfit, touch and view families: name, parameter types, option use, actions it blocks, mark
+struct Spec { const char* name; int params; Rlv::OptionUse option; const char* blocks; Rlv::Dialect dialect; };
+static const int AR = Rlv::AllowAddRemove;
+static const int FO = Rlv::AllowForce;
+static const Rlv::OptionUse NO = Rlv::OptionUse::None;
+static const Rlv::OptionUse OP = Rlv::OptionUse::Optional;
+static const Rlv::OptionUse RQ = Rlv::OptionUse::Required;
+static const Rlv::Dialect PLAIN = Rlv::Dialect::Rlv;
+static const Spec specs[] = {
+  {"addattach", AR, OP, "addattach", PLAIN}, {"remattach", AR | FO, OP, "remattach", PLAIN},
+  {"addoutfit", AR, OP, "addoutfit", PLAIN}, {"remoutfit", AR | FO, OP, "remoutfit", PLAIN},
+  {"detachme", FO, NO, "", PLAIN}, {"defaultwear", AR, NO, "", Rlv::Dialect::RlvOnly},
+  {"unsharedwear", AR, NO, "unsharedwear", PLAIN}, {"unsharedunwear", AR, NO, "unsharedunwear", PLAIN},
+  {"attach", FO, RQ, "", PLAIN}, {"attachover", FO, RQ, "", PLAIN}, {"attachoverorreplace", FO, RQ, "", PLAIN},
+  {"attachall", FO, RQ, "", PLAIN}, {"attachallover", FO, RQ, "", PLAIN}, {"attachalloverorreplace", FO, RQ, "", PLAIN},
+  {"detachall", FO, RQ, "", PLAIN},
+  {"attachthis", AR | FO, OP, "attachthis", PLAIN}, {"attachthisover", FO, OP, "", PLAIN},
+  {"attachthisoverorreplace", FO, OP, "", PLAIN}, {"attachallthis", AR | FO, OP, "attachallthis", PLAIN},
+  {"attachallthisover", FO, OP, "", PLAIN}, {"attachallthisoverorreplace", FO, OP, "", PLAIN},
+  {"detachthis", AR | FO, OP, "detachthis", PLAIN}, {"detachallthis", AR | FO, OP, "detachallthis", PLAIN},
+  {"attachthis_except", AR, RQ, "", PLAIN}, {"attachallthis_except", AR, RQ, "", PLAIN},
+  {"detachthis_except", AR, RQ, "", PLAIN}, {"detachallthis_except", AR, RQ, "", PLAIN},
+  {"touchworld", AR, OP, "touchworld", PLAIN}, {"touchthis", AR, RQ, "", PLAIN}, {"touchme", AR, NO, "", PLAIN},
+  {"touchattach", AR, NO, "touchattach", PLAIN}, {"touchattachself", AR, NO, "touchattachself", PLAIN},
+  {"touchattachother", AR, OP, "touchattachother", PLAIN},
+  {"showhovertextall", AR, NO, "showhovertextall", PLAIN}, {"showhovertext", AR, RQ, "", PLAIN},
+  {"showhovertexthud", AR, NO, "showhovertexthud", PLAIN}, {"showhovertextworld", AR, NO, "showhovertextworld", PLAIN},
+  {"shownames", AR, OP, "shownames", PLAIN}, {"shownametags", AR, OP, "shownametags", PLAIN},
+  {"viewnote", AR, OP, "viewnote", PLAIN}, {"viewscript", AR, OP, "viewscript", PLAIN},
+  {"viewtexture", AR, OP, "viewtexture", PLAIN},
+  {"editobj", AR, RQ, "", PLAIN}, {"editworld", AR, NO, "editworld", PLAIN}, {"editattach", AR, NO, "editattach", PLAIN},
+  {"buy", AR, NO, "buy", PLAIN}, {"pay", AR, OP, "pay", PLAIN},
+  {"acceptpermission", AR, NO, "", PLAIN}, {"denypermission", AR, NO, "", Rlv::Dialect::RlvOnly}};
+
+void TestRlvTable::everyActionOnce()
+{
+  QSet<QString> seen;
+  for (const Rlv::Action& action : Rlv::actions())
+  {
+    QVERIFY2(!seen.contains(action.id), qPrintable(action.id));
+    QVERIFY(!action.label.isEmpty());
+    seen.insert(action.id);
+  }
+  // every action a behaviour blocks exists
+  for (const Rlv::Behaviour& behaviour : Rlv::behaviours())
+    for (const QString& id : behaviour.blocks) QVERIFY2(seen.contains(id), qPrintable(behaviour.name + " blocks " + id));
+}
+
+void TestRlvTable::rowsOfThisPart_data()
+{
+  QTest::addColumn<int>("index");
+  for (size_t i = 0; i < sizeof(specs) / sizeof(specs[0]); i++) QTest::newRow(specs[i].name) << static_cast<int>(i);
+}
+
+static QString argumentFor(const QString& name)
+{
+  if (name.startsWith("attach") || name.startsWith("detach") || name.startsWith("addattach") || name.startsWith("remattach")) return "clothes/hat";
+  return "c2d4ef12-3a45-4b67-89ab-0123456789ab";
+}
+
+void TestRlvTable::rowsOfThisPart()
+{
+  QFETCH(int, index);
+  const Spec& spec = specs[index];
+  const QString name = spec.name;
+  const Rlv::Behaviour* b = Rlv::findBehaviour(name);
+  QVERIFY(b);
+  QCOMPARE(b->params, spec.params);
+  QCOMPARE(static_cast<int>(b->option), static_cast<int>(spec.option));
+  QCOMPARE(b->blocks.join(","), QString(spec.blocks));
+  QCOMPARE(b->dialect, spec.dialect);
+  QVERIFY(!b->description.isEmpty());
+  QVERIFY(!b->external);
+
+  // the mark decides in which mode it is known
+  const Rlv::Mode home = spec.dialect == Rlv::Dialect::RlvOnly ? Rlv::Mode::Rlv : Rlv::Mode::Rlva;
+  QVERIFY(Rlv::findBehaviour(name, Rlv::Mode::Rlv));
+  QCOMPARE(Rlv::findBehaviour(name, Rlv::Mode::Rlva) != nullptr, spec.dialect != Rlv::Dialect::RlvOnly);
+  Q_UNUSED(home)
+
+  RlvState state;
+  const QString arg = argumentFor(name);
+  const QString withOption = ":" + arg;
+  if (spec.params & Rlv::AllowAddRemove)
+  {
+    const QString opt = spec.option == NO ? QString() : withOption;
+    if (spec.option == RQ) QCOMPARE(one(state, "@" + name + "=n").reason, QString("@%1 needs an option").arg(name));
+    if (spec.option == NO) QCOMPARE(one(state, "@" + name + withOption + "=n").reason, QString("@%1 takes no option").arg(name));
+    QCOMPARE(one(state, "@" + name + opt + "=n").result, Rlv::Result::Success);
+    QCOMPARE(one(state, "@" + name + opt + "=n").result, Rlv::Result::Duplicate);
+    QVERIFY(state.has(name, spec.option == NO ? QString() : arg));
+    // with an option it never blocks; without one it blocks exactly its own actions
+    int blockedNow = 0;
+    for (bool allowed : state.actions()) blockedNow += allowed ? 0 : 1;
+    QCOMPARE(blockedNow, (spec.option == NO && !b->blocks.isEmpty()) ? static_cast<int>(b->blocks.size()) : 0);
+    QCOMPARE(one(state, "@" + name + opt + "=y").result, Rlv::Result::Success);
+    QVERIFY(state.restrictions().isEmpty());
+    if (spec.option == OP)
+    {
+      one(state, "@" + name + "=n");
+      QCOMPARE(state.actions().value(b->blocks.value(0)), b->blocks.isEmpty());
+      QVERIFY(!state.has(name, arg));
+    }
+  }
+  else
+  {
+    QVERIFY(one(state, "@" + name + (spec.option == NO ? QString() : withOption) + "=n").reason.contains("does not take"));
+  }
+  if (!(spec.params & FO))
+    QVERIFY(one(state, "@" + name + withOption + "=force").reason.contains("does not take"));
+}
+
+void TestRlvTable::rlvOnlyMark()
+{
+  QCOMPARE(Rlv::findBehaviour("defaultwear")->dialect, Rlv::Dialect::RlvOnly);
+  RlvState state;
+  QCOMPARE(one(state, "@defaultwear=n").result, Rlv::Result::Success);
+  QCOMPARE(one(state, "@denypermission=n").result, Rlv::Result::Success);
+  QVERIFY(state.has("defaultwear"));
+  QVERIFY(Rlv::behaviourNames(Rlv::Mode::Rlv).contains("defaultwear"));
+  QVERIFY(!Rlv::behaviourNames(Rlv::Mode::Rlva).contains("defaultwear"));
+  QVERIFY(!Rlv::behaviourNames(Rlv::Mode::Rlva).contains("denypermission"));
+  QVERIFY(Rlv::behaviourNames(Rlv::Mode::Rlva).contains("interact"));
+  QVERIFY(!Rlv::behaviourNames(Rlv::Mode::Rlv).contains("showself"));
+  // in RLVa mode it is unknown, and switching the mode clears what was held
+  state.setMode(Rlv::Mode::Rlva);
+  QVERIFY(state.restrictions().isEmpty());
+  const RlvState::Outcome outcome = one(state, "@defaultwear=n");
+  QCOMPARE(outcome.result, Rlv::Result::Failed);
+  QCOMPARE(outcome.reason, QString("unknown behaviour \"defaultwear\""));
+  QCOMPARE(Rlv::checkCommand(Rlv::parseLine("@denypermission=n").commands.value(0), Rlv::Mode::Rlva), QString("unknown behaviour \"denypermission\""));
+  QVERIFY(Rlv::checkCommand(Rlv::parseLine("@denypermission=n").commands.value(0), Rlv::Mode::Rlv).isEmpty());
+  // getcommand follows the mode
+  QCOMPARE(state.apply("obj", "@getcommand:permission=9").replies.value(0).text, QString("/acceptpermission"));
+}
+
+void TestRlvTable::forceCommandsAreRetained_data()
+{
+  QTest::addColumn<QString>("line");
+  QTest::newRow("detachme") << "@detachme=force";
+  QTest::newRow("remattach") << "@remattach:chest=force";
+  QTest::newRow("remoutfit") << "@remoutfit:shirt=force";
+  QTest::newRow("attach") << "@attach:Clothes/Hat=force";
+  QTest::newRow("attachover") << "@attachover:Clothes/Hat=force";
+  QTest::newRow("attachoverorreplace") << "@attachoverorreplace:Clothes/Hat=force";
+  QTest::newRow("attachall") << "@attachall:Clothes=force";
+  QTest::newRow("attachallover") << "@attachallover:Clothes=force";
+  QTest::newRow("attachalloverorreplace") << "@attachalloverorreplace:Clothes=force";
+  QTest::newRow("attachthis") << "@attachthis=force";
+  QTest::newRow("attachthis folder") << "@attachthis:Clothes/Hat=force";
+  QTest::newRow("attachthisover") << "@attachthisover=force";
+  QTest::newRow("attachthisoverorreplace") << "@attachthisoverorreplace=force";
+  QTest::newRow("attachallthis") << "@attachallthis=force";
+  QTest::newRow("attachallthisover") << "@attachallthisover=force";
+  QTest::newRow("attachallthisoverorreplace") << "@attachallthisoverorreplace=force";
+  QTest::newRow("detachall") << "@detachall:Clothes=force";
+  QTest::newRow("detachthis") << "@detachthis=force";
+  QTest::newRow("detachallthis") << "@detachallthis=force";
+}
+
+void TestRlvTable::forceCommandsAreRetained()
+{
+  QFETCH(QString, line);
+  RlvState state;
+  const RlvState::Outcome outcome = one(state, line);
+  QCOMPARE(outcome.result, Rlv::Result::Retained);
+  QCOMPARE(outcome.reason, QString("accepted; force commands are not carried out in the sandbox"));
+  QVERIFY(state.restrictions().isEmpty());   // nothing is held, nothing was done
+  QVERIFY(state.recorded().isEmpty());
+}
+
+void TestRlvTable::exceptionsAreHeldPerFolder()
+{
+  RlvState state;
+  one(state, "@attachthis=n");
+  QCOMPARE(state.actions().value("attachthis"), false);
+  QCOMPARE(one(state, "@attachthis_except:Clothes/Hat=add").result, Rlv::Result::Success);
+  QCOMPARE(one(state, "@attachthis_except:Clothes/Hat=add").result, Rlv::Result::Duplicate);
+  QCOMPARE(one(state, "@attachthis_except:Shoes=add").result, Rlv::Result::Success);
+  QCOMPARE(state.apply("obj", "@getstatus:except=7").replies.value(0).text, QString("/attachthis_except:clothes/hat/attachthis_except:shoes"));
+  QCOMPARE(one(state, "@attachthis_except:clothes/hat=rem").result, Rlv::Result::Success);
+  QCOMPARE(state.restrictions().size(), 2);
+}
+
+void TestRlvTable::touchRowsBlockTheirOwnAction()
+{
+  RlvState state;
+  one(state, "@touchall=n");
+  QCOMPARE(state.actions().value("touch"), false);
+  QCOMPARE(state.actions().value("touchworld"), true);   // separate actions
+  one(state, "@touchworld=n,touchattachself=n,touchme=add,touchthis:c2d4ef12-3a45-4b67-89ab-0123456789ab=add");
+  QCOMPARE(state.actions().value("touchworld"), false);
+  QCOMPARE(state.actions().value("touchattachself"), false);
+  QCOMPARE(state.actions().value("touchattach"), true);
+  QCOMPARE(state.actions().value("touchattachother"), true);
+  QCOMPARE(state.restrictions().size(), 5);
 }
 
 QTEST_GUILESS_MAIN(TestRlvTable)
