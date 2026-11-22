@@ -80,7 +80,7 @@ struct ScriptEntry
 struct SandboxInput
 {
   double at = 0.0;
-  QString type = "chat";          // chat, touch, dialog, attach, detach
+  QString type = "chat";          // chat, touch, dialog, attach, detach, changed
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -89,6 +89,7 @@ struct SandboxInput
   QString text;                   // chat text, or the dialog button
   int point = 0;                  // attach: the point (0: keep the object's point, or 1 when it has none)
   int link = 0;                   // touch (step 9a): the prim touched (0: the root)
+  int change = 0;                 // changed (step 9b-2): the CHANGED_* flags, added together
 };
 
 class Sandbox

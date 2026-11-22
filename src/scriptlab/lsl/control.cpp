@@ -8,6 +8,7 @@
 
 #include <QJsonArray>
 
+#include "builtins.h"
 #include "control.h"
 #include "interp.h"
 #include "lexer.h"
@@ -97,6 +98,47 @@ namespace
     return true;
   }
 
+  // the "change" of a changed input (step 9b-2): a name ("inventory", "CHANGED_OWNER", any case), a list of
+  // names, or the flags as a whole number; gives the CHANGED_* flags added together
+  QString readChange(const QJsonValue& v, int& flags)
+  {
+    static const QString message = "\"change\" must be a name such as \"inventory\", \"allowed_drop\", \"color\", \"shape\", \"scale\", \"texture\", \"link\", "
+                                   "\"owner\", \"region\", \"teleport\", \"region_start\", \"media\" or \"render_material\" (or \"CHANGED_OWNER\" and so on), "
+                                   "a list of names, or the flags as a whole number.";
+    static const QStringList names = {"INVENTORY", "ALLOWED_DROP", "COLOR", "SHAPE", "SCALE", "TEXTURE", "LINK", "OWNER", "REGION",
+                                      "TELEPORT", "REGION_START", "MEDIA", "RENDER_MATERIAL"};
+    auto flagOf = [](const QString& text) -> int
+    {
+      QString name = text.trimmed().toUpper();
+      if (name.startsWith("CHANGED_")) name = name.mid(8);
+      if (!names.contains(name)) return 0;
+      const BuiltinConstant* c = Builtins::constant("CHANGED_" + name);
+      return c ? c->value.i : 0;
+    };
+    int all = 0;
+    for (const QString& n : names) all |= flagOf(n);
+    flags = 0;
+    if (v.isString())
+    {
+      flags = flagOf(v.toString());
+      return flags != 0 ? QString() : message;
+    }
+    if (v.isArray())
+    {
+      const QJsonArray list = v.toArray();
+      if (list.isEmpty() || list.size() > 16) return message;
+      for (const QJsonValue& item : list)
+      {
+        const int f = item.isString() ? flagOf(item.toString()) : 0;
+        if (f == 0) return message;
+        flags |= f;
+      }
+      return QString();
+    }
+    if (!wholeNumber(v, 1, all, flags) || (flags & ~all) != 0) { flags = 0; return message; }
+    return QString();
+  }
+
   // one input of lsl_run or the event of lsl_event; empty when fine
   QString readInput(const QJsonObject& o, const QStringList& known, const QString& where, SandboxInput& in)
   {
@@ -111,8 +153,8 @@ namespace
     }
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
-    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach"};
-    if (!types.contains(in.type)) return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\" or \"detach\".";
+    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed"};
+    if (!types.contains(in.type)) return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\" or \"changed\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -139,6 +181,13 @@ namespace
       if (!wholeNumber(o.value("link"), 1, Sandbox::MAX_PRIMS, in.link))
         return where + QString("\"link\" must be a whole number from 1 to %1 (the prim touched; 1 is the root).").arg(Sandbox::MAX_PRIMS);
     }
+    if (in.type == "changed")
+    {
+      if (!o.contains("change")) return where + "a changed input needs \"change\": what changed, such as \"inventory\", \"owner\", \"link\" or \"region_start\".";
+      const QString problem = readChange(o.value("change"), in.change);
+      if (!problem.isEmpty()) return where + problem;
+    }
+    else if (o.contains("change")) return where + "\"change\" is only for changed.";
     if (o.contains("point"))
     {
       if (in.type != "attach") return where + "\"point\" is only for attach.";
@@ -359,7 +408,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!request.value("inputs").isArray()) return fail("\"inputs\" must be a list of objects.");
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
-    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link"};
+    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -459,7 +508,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
-  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "seconds"};
+  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change", "seconds"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -469,7 +518,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
     message[0] = message[0].toUpper();
     return fail(message);
   }
-  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach or detach.");
+  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach or changed.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {

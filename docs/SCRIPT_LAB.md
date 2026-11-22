@@ -216,6 +216,13 @@ a script run through the control commands), the one the Objects part shows.
   and the assistant reads what changed (restrictions, dialog, time). The log lines have the same shape as `lsl_event`'s,
   so an expected answer can be written once and checked in both places.
 
+## What exists now (step 9b-2, issue 314): on_rez and changed
+
+- `on_rez` is raised at the start of every object with its `start_parameter` (default 0), after `state_entry`; `llResetScript` does not raise it again.
+- `changed` comes from the new input type `changed` (`change`: a name such as `inventory`, `owner`, `link`, `region_start`, a list, or the flags as a number)
+  and reaches every script of the object. No new control command; details in [CONTROL.md](CONTROL.md), "The events on_rez and changed".
+- Tests: `tests/tst_lslevents.cpp`. Fuzz: `fuzz_lsl` also sends a `changed` input and a start parameter.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -290,7 +297,7 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-  `link_message` and `linkset_data`, and 111 built-in functions; hard limits on
+  `link_message`, `linkset_data`, `on_rez` and `changed`, and 111 built-in functions; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.
