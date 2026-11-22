@@ -72,7 +72,10 @@ enum class Fn
   HTTPRequest,
   // gap list 2, step 2: cheap reads and state of the object itself
   Die, GetVel, GetMass, SetScale, SetLocalRot, GetLinkName, GetLinkKey, DetectedLinkNumber, GetObjectPermMask,
-  GetInventoryPermMask, GetObjectDetails, SameGroup, SetScriptState, GetScriptState, ResetOtherScript, GetCreator, GetUsername
+  GetInventoryPermMask, GetObjectDetails, SameGroup, SetScriptState, GetScriptState, ResetOtherScript, GetCreator, GetUsername,
+  // gap list 2, step 3: region and avatar reads
+  GetRegionName, GetRegionCorner, Ground, Water, GetAgentSize, GetAgentList, RequestAgentData, GetSunDirection, GetTimeOfDay,
+  GetTimestamp, GetWallclock, GetDate
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -148,6 +151,11 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llGetInventoryPermMask", Fn::GetInventoryPermMask}, {"llGetObjectDetails", Fn::GetObjectDetails},
   {"llSameGroup", Fn::SameGroup}, {"llSetScriptState", Fn::SetScriptState}, {"llGetScriptState", Fn::GetScriptState},
   {"llResetOtherScript", Fn::ResetOtherScript}, {"llGetCreator", Fn::GetCreator}, {"llGetUsername", Fn::GetUsername},
+  {"llGetRegionName", Fn::GetRegionName}, {"llGetRegionCorner", Fn::GetRegionCorner}, {"llGround", Fn::Ground},
+  {"llWater", Fn::Water}, {"llGetAgentSize", Fn::GetAgentSize}, {"llGetAgentList", Fn::GetAgentList},
+  {"llRequestAgentData", Fn::RequestAgentData}, {"llGetSunDirection", Fn::GetSunDirection},
+  {"llGetTimeOfDay", Fn::GetTimeOfDay}, {"llGetTimestamp", Fn::GetTimestamp}, {"llGetWallclock", Fn::GetWallclock},
+  {"llGetDate", Fn::GetDate},
   {"llTriggerSoundLimited", Fn::RecordOnly},
   {"llLoopSoundMaster", Fn::RecordOnly},
   {"llLoopSoundSlave", Fn::RecordOnly},
@@ -914,11 +922,11 @@ QString usernameOf(const QString& name)
   return parts.join('.').toLower();
 }
 
-const char* const SANDBOX_TIME_STAMP = "2026-01-01T00:00:00.000000Z";   // when every sandbox object was made (llGetUnixTime 0)
 
 // one value of llGetObjectDetails for an object or an avatar; OBJECT_UNKNOWN_DETAIL (-1) for a flag the sandbox does
 // not know (also 50 to 56: health, damage, the permission lists, locked, volume detect are not simulated yet)
-Value objectDetail(const ObjectDetails& d, int flag)
+// made: when every sandbox object was made, the start of the run (gap list 2, step 3: the region's start time)
+Value objectDetail(const ObjectDetails& d, int flag, const QString& made)
 {
   const QString NULL_KEY = "00000000-0000-0000-0000-000000000000";
   const bool av = d.avatar;
@@ -958,7 +966,7 @@ Value objectDetail(const ObjectDetails& d, int flag)
     case 33: return Value::string(QString());                                        // OBJECT_GROUP_TAG
     case 34: return Value::integer(0);                                               // OBJECT_TEMP_ATTACHED
     case 35: return Value::integer(av ? qMax(0, 38 - d.attached) : 0);               // OBJECT_ATTACHED_SLOTS_AVAILABLE (38 slots)
-    case 36: return Value::string(av ? QString() : QString(SANDBOX_TIME_STAMP));     // OBJECT_CREATION_TIME
+    case 36: return Value::string(av ? QString() : made);     // OBJECT_CREATION_TIME
     case 37: return Value::integer(0);                                               // OBJECT_SELECT_COUNT
     case 38: return Value::integer(av ? 0 : d.sitters);                              // OBJECT_SIT_COUNT
     case 39: return Value::integer(0);                                               // OBJECT_ANIMATED_COUNT
@@ -967,7 +975,7 @@ Value objectDetail(const ObjectDetails& d, int flag)
     case 42: return Value::integer(3);                                               // OBJECT_MATERIAL: PRIM_MATERIAL_WOOD
     case 43: return Value::number(av ? 0.0f : d.mass);                               // OBJECT_MASS
     case 44: return Value::string(d.text);                                           // OBJECT_TEXT
-    case 45: return Value::string(av ? QString() : QString(SANDBOX_TIME_STAMP));     // OBJECT_REZ_TIME
+    case 45: return Value::string(av ? QString() : made);     // OBJECT_REZ_TIME
     case 46: return Value::integer(av ? 0 : (d.prims > 1 || d.sitters > 0 ? 1 : 0)); // OBJECT_LINK_NUMBER of the root prim
     case 47: return av ? Value::vector(0.0f, 0.0f, 0.0f) : vec(d.scale);             // OBJECT_SCALE
     case 48: return av ? Value::vector(0.0f, 0.0f, 0.0f) : vec(d.textColor);         // OBJECT_TEXT_COLOR
@@ -1391,7 +1399,70 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       m_timeBase = m_now;
       return Value::number(t);
     }
-    case Fn::GetUnixTime: return Value::integer(qint32(1767225600.0 + std::floor(m_now)));   // 1 January 2026, simulated
+    // the region's start time (default 1 January 2026, 00:00 UTC) plus the simulated seconds; never the real clock
+    case Fn::GetUnixTime: return Value::integer(qint32(double(m_world.region().unixStart) + std::floor(m_now)));
+    case Fn::GetTimestamp: return Value::string(m_world.region().timestamp(m_now));
+    case Fn::GetDate: return Value::string(m_world.region().date(m_now));
+    case Fn::GetWallclock: return Value::number(float(m_world.region().wallclock(m_now)));
+    case Fn::GetTimeOfDay: return Value::number(float(m_world.region().timeOfDayAt(m_now)));
+    case Fn::GetSunDirection:
+    {
+      float v[3];
+      m_world.region().sunDirection(m_now, v);
+      return Value::vector(v[0], v[1], v[2]);
+    }
+
+    // -------------------------------------------- the region and the avatars in it (gap list 2, step 3)
+    case Fn::GetRegionName: return Value::string(m_world.region().name);
+    case Fn::GetRegionCorner:
+    {
+      const float* c = m_world.region().corner;
+      return Value::vector(c[0], c[1], c[2]);
+    }
+    case Fn::Ground: return Value::number(m_world.region().ground);   // flat ground: the same height at every offset
+    case Fn::Water: return Value::number(m_world.region().water);
+    case Fn::GetAgentSize:
+    {
+      // ZERO_VECTOR for a key that is not an avatar in the region (an object, an unknown key)
+      ObjectDetails d;
+      if (!m_world.details(a[0].s, d) || !d.avatar) return Value::vector(0.0f, 0.0f, 0.0f);
+      return Value::vector(RegionSettings::AVATAR_WIDTH, RegionSettings::AVATAR_DEPTH, d.height);
+    }
+    case Fn::GetAgentList:
+    {
+      // the sandbox is one region with one parcel, owned by the objects' owner: AGENT_LIST_PARCEL (1),
+      // AGENT_LIST_PARCEL_OWNER (2) and AGENT_LIST_REGION (4) give the same avatars; any other scope gives
+      // ["INVALID_SCOPE"]; the options are not used (there are no NPCs)
+      std::vector<Value> out;
+      const int scope = a[0].i;
+      if (scope != 1 && scope != 2 && scope != 4) out.push_back(Value::string("INVALID_SCOPE"));
+      else for (const QString& key : m_world.agents()) out.push_back(Value::key(key));
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
+    case Fn::RequestAgentData:
+    {
+      // answered at once through dataserver for an avatar the sandbox knows; for any other key, or a DATA_* value
+      // it does not know, no dataserver event comes (the query key is still returned)
+      const QString id = nextKey();
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"avatar", World::clip(a[0].s)}, {"data", a[1].i}, {"query", id}});
+      ObjectDetails d;
+      if (!m_world.details(a[0].s, d) || !d.avatar) return Value::key(id);
+      QString data;
+      switch (a[1].i)
+      {
+        case 1: data = "1"; break;                                     // DATA_ONLINE: every avatar of the sandbox is online
+        case 2: data = d.name; break;                                  // DATA_NAME: the legacy name
+        case 3: data = m_world.region().date(0.0); break;              // DATA_BORN: the day the run starts
+        case 4: data = "0,0,0,0,0,0"; break;                           // DATA_RATING: ratings no longer exist
+        case 8: data = "0"; break;                                     // DATA_PAYINFO: no payment information on file
+        default: return Value::key(id);
+      }
+      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      return Value::key(id);
+    }
 
     // -------------------------------------------- object and owner
     case Fn::GetOwner: return Value::key(m_world.ownerKey());
@@ -2448,9 +2519,10 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     {
       ObjectDetails d;
       std::vector<Value> out;
+      const QString made = m_world.region().timestamp(0.0);
       if (m_world.details(a[0].s, d))
         for (const Value& p : a[1].list)
-          if (p.type == Type::Integer) out.push_back(objectDetail(d, p.i));   // other types are skipped, as in Second Life
+          if (p.type == Type::Integer) out.push_back(objectDetail(d, p.i, made));   // other types are skipped, as in Second Life
       m_steps += qint64(a[1].list.size());
       Value result = Value::makeList(std::move(out));
       checkSize(result);

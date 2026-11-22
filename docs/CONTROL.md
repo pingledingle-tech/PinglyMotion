@@ -591,7 +591,7 @@ A request gets the first reply in list order that matches its method and URL. Th
 
 `lsl_run` takes `avatars` (at most 64), the people the sensors can find: `[{"name": "Ann", "position": [128, 133, 20], "velocity": [1, 0, 0], "rotation": [0, 0, 0, 1], "in_group": true, "key": "..."}]`. Only `name` is needed;
 `position` is region metres as for objects (default `[128, 128, 20]`), `key` defaults to `a0000000-0000-4000-8000-000000000001` and so on in list order. The owner always stands at `[128, 128, 20]`, unless an avatar
-with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`.
+with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`. `height` (metres, default 1.8) is for `llGetAgentSize` (second gap list, step 3).
 
 - `llSensor(name, id, type, range, arc)` scans once, now, and queues `sensor(integer num_detected)` (or `no_sensor()` when nothing is found) at once. It finds the avatars (type `AGENT`, 1) and the other objects of the
   world (type `SCRIPTED`, 8; the sensing object itself is never found) that match: `name` exact and case-sensitive (empty: any), `id` (empty or `NULL_KEY`: any), a `type` mask that has the type's bit (a mask of 0, or `ACTIVE` and
@@ -603,7 +603,7 @@ with the owner's key is listed. Avatars do not move: a scan always sees them whe
 - `llDetectedName`, `llDetectedKey`, `llDetectedOwner` (an avatar is its own owner), `llDetectedType` (1 or 8, not the combinations Second Life reports for moving or physical objects), `llDetectedPos`, `llDetectedRot`
   (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
   gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated).
-- Not done: the touch data (`llDetectedTouch*`), `llDetectedGrab`, `llGetAgentList`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
+- Not done: the touch data (`llDetectedTouch*`), `llDetectedGrab`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
 
 #### Controls (Script Lab step 9b-6)
 
@@ -768,13 +768,58 @@ sandbox chooses, and [SCRIPT_LAB.md](SCRIPT_LAB.md) lists those doubts.
   key), attachment point, pathfinding type `OPT_LEGACY_LINKSET` (`OPT_OTHER` when worn), physics and phantom (from
   `llSetStatus`; 0 when worn), temp on rez, render weight 0, hover height 0.0, body shape -1.0, last owner `NULL_KEY`,
   click action 0, inventory count (the scripts too), group tag `""`, temp attached 0, attached slots 0, creation and
-  rez time `2026-01-01T00:00:00.000000Z`, select count 0, sit count, animated count 0, animated slots 0, account level
+  rez time the start of the run (`2026-01-01T00:00:00.000000Z` unless `region` gives another `unix_start`), select count 0, sit count, animated count 0, animated slots 0, account level
   -1, material `PRIM_MATERIAL_WOOD`, mass (as `llGetMass`), hover text, its colour and alpha, link number (0 for a single
   prim nobody sits on, else 1), scale. For an avatar (per the wiki where it says): its name, `""` description, where it
   stands, its own key as owner and as root (or the object it sits on), `NULL_KEY` group, creator, last owner and rezzer,
   the scripts in the objects it wears, attachment point 0, `OPT_AVATAR`, render weight -1 (unknown), body shape 0.0,
   attached slots 38 minus the objects it wears, animated slots 1, account level 0, scale, mass, text colour and text alpha zero, and 0 or empty
   for the object-only flags (all canned).
+
+#### The region and the avatars in it (Script Lab, second gap list, step 3)
+
+Twelve functions that read the region and the avatars in it: `llGetRegionName`, `llGetRegionCorner`, `llGround`,
+`llWater`, `llGetAgentSize`, `llGetAgentList`, `llRequestAgentData`, `llGetSunDirection`, `llGetTimeOfDay`,
+`llGetTimestamp`, `llGetWallclock` and `llGetDate`. Every value is canned: the same in every run, from the region's
+settings and the sandbox's simulated clock (seconds since the start of the run), never the computer's clock.
+
+`lsl_run` takes `region` (optional), the settings of the one region every object stands in; each field is optional:
+
+| Field | Default | Meaning |
+|---|---|---|
+| `name` | `Sandbox` | `llGetRegionName`; 1 to 35 characters |
+| `corner` | `[256000, 256000, 0]` | `llGetRegionCorner`: the region's south-west corner in whole metres on the grid (z is 0) |
+| `ground` | `20` | `llGround`: the ground is flat, so every offset gives this height (0 to 4096 m) |
+| `water` | `20` | `llWater` at every offset (0 to 4096 m; 20 is Second Life's usual water height) |
+| `day_length` | `14400` | seconds of one day of the region's sun (60 to 2592000; 14400 is Second Life's default 4 hours) |
+| `time_of_day` | `7200` | `llGetTimeOfDay` at the start: seconds since the region's midnight (0 up to `day_length`; 7200 is noon) |
+| `unix_start` | `1767225600` | `llGetUnixTime` at the start: UTC seconds since 1970 (2026-01-01 00:00:00 UTC; at most 2000000000) |
+
+The world is kept for `lsl_event`, the region too. An avatar in `avatars` can also give `height` (0.5 to 3 m, default 1.8).
+
+- **`llGetTimestamp()`** is the UTC time `unix_start` plus the simulated seconds, `YYYY-MM-DDThh:mm:ss.ffffffZ` with
+  microseconds (`2026-01-01T00:00:01.250000Z` after 1.25 s). **`llGetDate()`** is its date, `YYYY-MM-DD`.
+  **`llGetUnixTime()`** is `unix_start` plus the whole simulated seconds.
+- **`llGetWallclock()`** is the seconds since midnight in Second Life time, US Pacific time: UTC-8, and UTC-7 in summer
+  time from the second Sunday of March at 2:00 to the first Sunday of November at 2:00 (the US rule since 2007). The
+  default start is 16:00 on 31 December, so it gives 57600.0.
+- **`llGetTimeOfDay()`** is `time_of_day` plus the simulated seconds, modulo `day_length`. **`llGetSunDirection()`** is
+  the unit vector `<sin a, 0, -cos a>` with `a = 2 PI * time of day / day_length`: straight down at midnight, east
+  (`<1, 0, 0>`) at a quarter of the day, straight up at noon, west at three quarters. A part within 0.000001 of a whole
+  number is made whole. Second Life's sun also leans to one side and its sky can be set per parcel; the sandbox's
+  sun does not.
+- **`llGetAgentSize(id)`** is `<0.45, 0.6, height>` for an avatar in the region (the owner, the `avatars` of the request,
+  avatars sitting on an object), and `ZERO_VECTOR` for any other key (objects too). Width and depth are the sandbox's
+  choice; Second Life works the size out from the avatar's shape.
+- **`llGetAgentList(scope, options)`**: the sandbox is one region with one parcel, so `AGENT_LIST_PARCEL`,
+  `AGENT_LIST_PARCEL_OWNER` and `AGENT_LIST_REGION` give the same keys: the owner first (unless `avatars` lists the
+  owner, then in that place), the `avatars` of the request in their order, then avatars sitting on an object that are
+  not listed, in the order they sat. Any other scope gives `["INVALID_SCOPE"]`. `options` is not used.
+- **`llRequestAgentData(id, data)`** returns a query key and writes a `dataserver_request` entry
+  (`{"function": "llRequestAgentData", "avatar", "data", "query"}`); for an avatar in the region the `dataserver` event
+  comes at once with: `DATA_ONLINE` `"1"` (every avatar of the sandbox is online), `DATA_NAME` the avatar's name,
+  `DATA_BORN` the date of the start of the run (`2026-01-01`), `DATA_RATING` `"0,0,0,0,0,0"`, `DATA_PAYINFO` `"0"`. Any
+  other key, or another `data` number, gets no `dataserver` event. The forced delay (0.1 s) is not simulated.
 
 #### Pure functions and object state (Script Lab step 9b-1, issue 310)
 

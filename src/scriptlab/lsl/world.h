@@ -205,6 +205,32 @@ struct ObjectDetails
   float textColor[3] = {1.0f, 1.0f, 1.0f};
   float textAlpha = 1.0f;
   QString sitRoot;                  // an avatar sitting on an object: that object's key
+  float height = 0.0f;              // gap list 2, step 3: an avatar's height in metres (llGetAgentSize)
+};
+
+// Gap list 2, step 3: the region every object of the sandbox stands in, with canned settings, so every run gives the
+// same answers (lsl_run can give other values with "region"). The ground and the water are flat; the clock is the
+// sandbox's simulated clock (seconds since the start), never the computer's clock.
+struct RegionSettings
+{
+  static constexpr qint64 DEFAULT_UNIX_START = 1767225600;   // 2026-01-01T00:00:00Z
+  static constexpr float DEFAULT_AVATAR_HEIGHT = 1.8f;
+  static constexpr float AVATAR_WIDTH = 0.45f;               // llGetAgentSize x (and y: AVATAR_DEPTH), the sandbox's choice
+  static constexpr float AVATAR_DEPTH = 0.6f;
+  QString name = "Sandbox";                                  // llGetRegionName
+  float corner[3] = {256000.0f, 256000.0f, 0.0f};            // llGetRegionCorner: the region at grid position 1000, 1000
+  float ground = 20.0f;                                      // llGround everywhere
+  float water = 20.0f;                                       // llWater everywhere (Second Life's default water height)
+  double dayLength = 14400.0;                                // seconds of one day of the region's sun (Second Life's default 4 hours)
+  double timeOfDay = 7200.0;                                 // llGetTimeOfDay at the start: noon of that day
+  qint64 unixStart = DEFAULT_UNIX_START;                     // llGetUnixTime at the start (UTC seconds since 1970)
+
+  // the date, a time stamp and the Second Life time (US Pacific, with summer time) at simulated time now
+  QString date(double now) const;                            // llGetDate: "YYYY-MM-DD" (UTC)
+  QString timestamp(double now) const;                       // llGetTimestamp: "YYYY-MM-DDThh:mm:ss.ffffffZ" (UTC)
+  double wallclock(double now) const;                        // llGetWallclock: seconds since midnight in Second Life time
+  double timeOfDayAt(double now) const;                      // llGetTimeOfDay
+  void sunDirection(double now, float out[3]) const;         // llGetSunDirection
 };
 
 class World
@@ -322,6 +348,12 @@ class World
     // A plain World knows its own object and the owner.
     virtual bool details(const QString& key, ObjectDetails& out);
 
+    // Gap list 2, step 3: the region (llGetRegionName, llGround, the clock functions) and the avatars in it
+    // (llGetAgentList; a plain World has only the owner)
+    virtual const RegionSettings& region() const { return m_region; }
+    void setRegion(const RegionSettings& region) { m_region = region; }
+    virtual QStringList agents() const { return QStringList{ownerKey()}; }
+
     // Step 5: entries go to another World's log instead (the shared log of several objects), each with
     // "object" set to tag when tag is not empty, and "script" set to scriptTag when that is not empty
     // (step 9a). The target must outlive this World.
@@ -360,6 +392,7 @@ class World
     std::deque<double> m_httpTimes;
     QString m_objectName = "Object";
     QString m_objectDesc;
+    RegionSettings m_region;
 };
 
 } // namespace lsl
