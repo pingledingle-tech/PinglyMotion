@@ -80,6 +80,7 @@ struct AvatarSpec
   float velocity[3] = {0.0f, 0.0f, 0.0f};
   float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
   bool inGroup = false;           // llDetectedGroup
+  float height = RegionSettings::DEFAULT_AVATAR_HEIGHT;   // gap list 2, step 3: llGetAgentSize z, metres
 };
 
 // step 9a: one script of an object
@@ -154,6 +155,9 @@ class Sandbox
     QString addAvatar(const AvatarSpec& avatar);
     // Step 9b-9: the canned replies to llHTTPRequest for every object (at most MAX_HTTP_REPLIES). Before start() only.
     QString setHttpReplies(const std::vector<HttpReply>& replies);
+    // Gap list 2, step 3: the region's settings (name, corner, ground, water, day, start time). Before start() only.
+    QString setRegion(const RegionSettings& region);
+    const RegionSettings& region() const { return m_region; }
     // state_entry of every object (in order), then attach for the attached ones
     void start();
     // an input; refused (false) when MAX_PENDING_INPUTS are waiting
@@ -246,6 +250,9 @@ class Sandbox
     void die(int from, double time);
     int scriptInPrim(int from, const QString& name) const;
     bool details(int from, const QString& key, ObjectDetails& out) const;
+    // gap list 2, step 3: the avatars in the region (llGetAgentList): the owner unless listed, the listed avatars in
+    // their order, then avatars sitting on an object that are not listed
+    QStringList agents() const;
     bool isSitting(const QString& key) const;
     bool hasAttachments() const;
     int linkNumber(int slot) const;
@@ -270,6 +277,7 @@ class Sandbox
     std::vector<Slot> m_slots;
     std::vector<AvatarSpec> m_avatars;
     std::vector<HttpReply> m_http;
+    RegionSettings m_region;
     std::vector<SandboxInput> m_inputs;   // sorted by time, stable
     double m_now = 0.0;
     QJsonObject m_lastDialog;

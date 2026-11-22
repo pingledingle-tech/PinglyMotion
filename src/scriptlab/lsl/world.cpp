@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include <QCryptographicHash>
+#include <QDate>
 
 #include "world.h"
 
@@ -327,9 +328,91 @@ bool World::details(const QString& key, ObjectDetails& out)
     out.owner = key;
     const float avatar[3] = {128.0f, 128.0f, 20.0f};   // where the owner stands
     for (int i = 0; i < 3; ++i) out.position[i] = avatar[i];
+    out.height = RegionSettings::DEFAULT_AVATAR_HEIGHT;
     return true;
   }
   return false;
+}
+
+// ---------------------------------------------------------------- the region (gap list 2, step 3)
+
+namespace
+{
+const double DAY = 86400.0;
+
+// UTC seconds since 1970 at simulated time now, in whole microseconds (so the answers do not depend on rounding)
+qint64 microsecondsAt(qint64 unixStart, double now)
+{
+  return unixStart * 1000000 + qint64(std::llround(now * 1.0e6));
+}
+
+QDate dateOf(qint64 seconds)
+{
+  qint64 days = seconds / 86400;
+  if (seconds % 86400 < 0) --days;
+  return QDate(1970, 1, 1).addDays(days);
+}
+
+// the n-th Sunday (n >= 1) of a month, as days since 1970
+qint64 nthSunday(int year, int month, int n)
+{
+  const QDate first(year, month, 1);
+  const int firstSunday = 1 + (7 - first.dayOfWeek()) % 7;   // dayOfWeek: 1 Monday to 7 Sunday
+  return QDate(1970, 1, 1).daysTo(QDate(year, month, firstSunday + 7 * (n - 1)));
+}
+}
+
+QString RegionSettings::date(double now) const
+{
+  return dateOf(microsecondsAt(unixStart, now) / 1000000).toString("yyyy-MM-dd");
+}
+
+QString RegionSettings::timestamp(double now) const
+{
+  const qint64 us = microsecondsAt(unixStart, now);
+  qint64 seconds = us / 1000000, micro = us % 1000000;
+  if (micro < 0) { micro += 1000000; --seconds; }
+  qint64 inDay = seconds % 86400;
+  if (inDay < 0) inDay += 86400;
+  return QString("%1T%2:%3:%4.%5Z")
+      .arg(dateOf(seconds).toString("yyyy-MM-dd"))
+      .arg(inDay / 3600, 2, 10, QChar('0'))
+      .arg(inDay / 60 % 60, 2, 10, QChar('0'))
+      .arg(inDay % 60, 2, 10, QChar('0'))
+      .arg(micro, 6, 10, QChar('0'));
+}
+
+double RegionSettings::wallclock(double now) const
+{
+  // Second Life time is US Pacific time: UTC-8, and UTC-7 in summer time, from the second Sunday of March at 2:00
+  // standard time (10:00 UTC) to the first Sunday of November at 2:00 summer time (9:00 UTC), the US rule since 2007
+  const double utc = double(microsecondsAt(unixStart, now)) / 1.0e6;
+  const int year = dateOf(qint64(std::floor(utc))).year();
+  const double summerStart = double(nthSunday(year, 3, 2)) * DAY + 10.0 * 3600.0;
+  const double summerEnd = double(nthSunday(year, 11, 1)) * DAY + 9.0 * 3600.0;
+  const double local = utc + (utc >= summerStart && utc < summerEnd ? -7.0 : -8.0) * 3600.0;
+  return local - std::floor(local / DAY) * DAY;
+}
+
+double RegionSettings::timeOfDayAt(double now) const
+{
+  const double t = timeOfDay + now;
+  return t - std::floor(t / dayLength) * dayLength;
+}
+
+void RegionSettings::sunDirection(double now, float out[3]) const
+{
+  // a sun that rises in the east (+x) at a quarter of the day, stands straight up at half and sets in the west (-x) at
+  // three quarters (the sandbox's simple model: Second Life's sun also leans to one side); values within 1e-6 of a
+  // whole number are made whole, so noon is exactly <0, 0, 1>
+  const double angle = 2.0 * 3.14159265358979323846 * timeOfDayAt(now) / dayLength;
+  const double v[3] = {std::sin(angle), 0.0, -std::cos(angle)};
+  for (int i = 0; i < 3; ++i)
+  {
+    const double r = std::round(v[i]);
+    out[i] = float(std::fabs(v[i] - r) < 1.0e-6 ? r : v[i]);
+    if (out[i] == 0.0f) out[i] = 0.0f;   // no negative zero
+  }
 }
 
 } // namespace lsl
