@@ -12,6 +12,11 @@ Files:
 - tests/tst_lslmoney.cpp
 - tests/tst_lslpure.cpp
 - tests/tst_lslparser.cpp
+- tests/tst_lslworld.cpp
+- tests/tst_lsllink.cpp
+- tests/tst_lslsitting.cpp
+- tests/tst_lslevents.cpp
+- tests/tst_labwatcher.cpp
 - tests/CMakeLists.txt
 - tests/data/scriptlab/scenarios.json
 - docs/SCRIPT_LAB.md

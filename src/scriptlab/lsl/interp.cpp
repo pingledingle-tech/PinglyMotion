@@ -10,6 +10,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -271,7 +272,12 @@ void Interpreter::start(bool run)
 
 void Interpreter::resetScript()
 {
-  m_world.log(m_now, QJsonObject{{"type", "reset"}});
+  // a reset frees the script's URLs and forgets the requests waiting for an answer (gap list 2, step 4)
+  const int released = m_world.releaseAllUrls();
+  m_incoming.clear();
+  QJsonObject entry{{"type", "reset"}};
+  if (released > 0) entry["urls_released"] = released;
+  m_world.log(m_now, entry);
   m_frames.clear();
   m_callDepth = 0;
   m_listens.clear();
@@ -499,6 +505,30 @@ void Interpreter::httpResponseEvent(const QString& id, int status, int truncated
   std::vector<Value> metadata;
   if (truncatedAt >= 0) metadata = {Value::integer(HTTP_BODY_TRUNCATED), Value::integer(truncatedAt)};
   queueEvent(Event{"http_response", {Value::key(id), Value::integer(status), Value::makeList(metadata), Value::string(body)}, QString(), QString()});
+}
+
+void Interpreter::dropExpiredRequests()
+{
+  m_incoming.erase(std::remove_if(m_incoming.begin(), m_incoming.end(),
+                                  [this](const IncomingRequest& r) { return m_now - r.at > HTTP_HEADER_TIMEOUT; }),
+                   m_incoming.end());
+}
+
+bool Interpreter::httpRequestEvent(const IncomingRequest& request)
+{
+  dropExpiredRequests();
+  int waiting = 0;
+  for (const IncomingRequest& r : m_incoming)
+    if (m_now - r.at <= HTTP_RESPONSE_TIMEOUT) ++waiting;
+  if (waiting >= MAX_PENDING_HTTP) return false;
+  m_incoming.push_back(request);
+  queueEvent(Event{"http_request", {Value::key(request.id), Value::string(request.method), Value::string(request.body)}, QString(), QString()});
+  return true;
+}
+
+void Interpreter::moneyEvent(const QString& id, int amount)
+{
+  queueEvent(Event{"money", {Value::key(id), Value::integer(amount)}, QString(), QString()});
 }
 
 void Interpreter::linksetDataEvent(int action, const QString& name, const QString& value)

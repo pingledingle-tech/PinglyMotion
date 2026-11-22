@@ -75,7 +75,9 @@ enum class Fn
   GetInventoryPermMask, GetObjectDetails, SameGroup, SetScriptState, GetScriptState, ResetOtherScript, GetCreator, GetUsername,
   // gap list 2, step 3: region and avatar reads
   GetRegionName, GetRegionCorner, Ground, Water, GetAgentSize, GetAgentList, RequestAgentData, GetSunDirection, GetTimeOfDay,
-  GetTimestamp, GetWallclock, GetDate
+  GetTimestamp, GetWallclock, GetDate,
+  // gap list 2, step 4: money, web server and mail stubs (no L$, no network, no mail)
+  GiveMoney, Email, GetNextEmail, RequestURL, RequestSecureURL, ReleaseURL, GetFreeURLs, HTTPResponse, GetHTTPHeader
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -156,6 +158,9 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llRequestAgentData", Fn::RequestAgentData}, {"llGetSunDirection", Fn::GetSunDirection},
   {"llGetTimeOfDay", Fn::GetTimeOfDay}, {"llGetTimestamp", Fn::GetTimestamp}, {"llGetWallclock", Fn::GetWallclock},
   {"llGetDate", Fn::GetDate},
+  {"llGiveMoney", Fn::GiveMoney}, {"llEmail", Fn::Email}, {"llGetNextEmail", Fn::GetNextEmail},
+  {"llRequestURL", Fn::RequestURL}, {"llRequestSecureURL", Fn::RequestSecureURL}, {"llReleaseURL", Fn::ReleaseURL},
+  {"llGetFreeURLs", Fn::GetFreeURLs}, {"llHTTPResponse", Fn::HTTPResponse}, {"llGetHTTPHeader", Fn::GetHTTPHeader},
   {"llTriggerSoundLimited", Fn::RecordOnly},
   {"llLoopSoundMaster", Fn::RecordOnly},
   {"llLoopSoundSlave", Fn::RecordOnly},
@@ -661,6 +666,9 @@ const int HTTP_DEFAULT_BODY_LENGTH = 2048;
 const int HTTP_MAX_HEADER_CHARS = 4096;       // all custom headers together
 const int HTTP_THROTTLE_REQUESTS = 25;        // per object ...
 const double HTTP_THROTTLE_SECONDS = 20.0;    // ... in this many seconds
+// llEmail (gap list 2, step 4): the bytes of address, subject, header and message together, and the script's sleep
+const qint64 EMAIL_MAX_BYTES = 4096;
+const double EMAIL_DELAY = 20.0;
 
 const char* httpFlagName(int flag)
 {
@@ -2463,6 +2471,107 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       if (!m_world.logFull()) m_world.log(m_now, entry);
       if (!m_world.httpResponse(m_now, id, status, truncatedAt, body)) httpResponseEvent(id, status, truncatedAt, body);
       return Value::key(id);
+    }
+
+    // -------------------------------------------- money, web server and mail stubs (gap list 2, step 4)
+    case Fn::GiveMoney:
+    {
+      // logic and messages only: no L$ ever moves. llGiveMoney always answers 0 (Second Life wiki).
+      QString result = "ok";
+      if (!(m_permissions & 0x2))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to pay L$ but PERMISSION_DEBIT permission not set"}});
+        result = "MISSING_PERMISSION_DEBIT";
+      }
+      else if (!keyIsValid(a[0].s)) result = "INVALID_DESTINATION";
+      else if (a[1].i <= 0) result = "INVALID_AMOUNT";
+      else if (a[0].s != m_world.ownerKey() && !m_world.ownerOf(a[0].s).isEmpty()) result = "LINDENDOLLAR_ENTITYDOESNOTEXIST";   // an object, not an avatar
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "give_money"}, {"to", a[0].s}, {"amount", a[1].i}, {"result", result},
+                                       {"note", "Simulated: no L$ moved. The sandbox owner always has enough L$."}});
+      return Value::integer(0);
+    }
+    case Fn::Email:
+    {
+      // record-only: no mail is sent. Second Life puts the object's name, region and position in front of the message,
+      // allows 4096 bytes for all of it together, and makes the script sleep 20 seconds.
+      const RegionSettings& region = m_world.region();
+      float p[3];
+      m_world.position(p);
+      const QString header = QString("Object-Name: %1\nRegion: %2 (%3, %4)\nLocal-Position: (%5, %6, %7)\n\n")
+                               .arg(m_world.objectName(), region.name).arg(qint64(region.corner[0])).arg(qint64(region.corner[1]))
+                               .arg(qint64(std::floor(p[0]))).arg(qint64(std::floor(p[1]))).arg(qint64(std::floor(p[2])));
+      const qint64 bytes = qint64(a[0].s.toUtf8().size() + a[1].s.toUtf8().size() + header.toUtf8().size() + a[2].s.toUtf8().size());
+      const bool tooLong = bytes > EMAIL_MAX_BYTES;
+      if (tooLong)
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", QString("llEmail: the address, subject and message are %1 bytes with the header, more than %2, so the email was not sent.").arg(bytes).arg(EMAIL_MAX_BYTES)}});
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "email_sent"}, {"address", World::clip(a[0].s)}, {"subject", World::clip(a[1].s)},
+                                       {"message", World::clip(a[2].s)}, {"bytes", double(bytes)}, {"result", tooLong ? "too_long" : "recorded"},
+                                       {"note", "Simulated: no email was sent."}});
+      m_now = qMin(m_now + EMAIL_DELAY, 1.0e7);
+      return Value();
+    }
+    case Fn::GetNextEmail:
+    {
+      Email mail;
+      int left = 0;
+      const bool found = m_world.nextEmail(a[0].s, a[1].s, mail, left);
+      QJsonObject entry{{"type", "email_check"}, {"address", World::clip(a[0].s)}, {"subject", World::clip(a[1].s)}, {"found", found}};
+      if (found) entry["left"] = left;
+      if (!m_world.logFull()) m_world.log(m_now, entry);
+      if (found)
+        queueEvent(Event{"email", {Value::string(mail.time), Value::string(mail.address), Value::string(mail.subject),
+                                   Value::string(mail.message), Value::integer(left)}, QString(), QString()});
+      return Value();
+    }
+    case Fn::RequestURL:
+    case Fn::RequestSecureURL:
+    {
+      // a URL of the sandbox's fake web server, never a real one; the answer comes as http_request
+      const bool secure = *it == Fn::RequestSecureURL;
+      const QString id = nextKey();
+      const QString url = m_world.grantUrl(secure);
+      QJsonObject entry{{"type", "url_request"}, {"secure", secure}, {"request", id}, {"result", url.isEmpty() ? "denied" : "granted"}};
+      if (!url.isEmpty()) entry["url"] = url;
+      if (!m_world.logFull()) m_world.log(m_now, entry);
+      queueEvent(Event{"http_request", {Value::key(id), Value::string(url.isEmpty() ? "URL_REQUEST_DENIED" : "URL_REQUEST_GRANTED"),
+                                        Value::string(url)}, QString(), QString()});
+      return Value::key(id);
+    }
+    case Fn::ReleaseURL:
+    {
+      const bool released = m_world.releaseUrl(a[0].s);
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "url_release"}, {"url", World::clip(a[0].s)}, {"result", released ? "released" : "not_found"}});
+      return Value();
+    }
+    case Fn::GetFreeURLs: return Value::integer(m_world.freeUrls());
+    case Fn::HTTPResponse:
+    {
+      // the answer to a request from outside: recorded, never sent anywhere
+      dropExpiredRequests();
+      QString result = "unknown_request";
+      for (auto r = m_incoming.begin(); r != m_incoming.end(); ++r)
+        if (r->id == a[0].s)
+        {
+          result = m_now - r->at <= HTTP_RESPONSE_TIMEOUT ? "sent" : "timed_out";
+          m_incoming.erase(r);
+          break;
+        }
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "http_server_response"}, {"request", a[0].s}, {"status", a[1].i}, {"body", World::clip(a[2].s)}, {"result", result}});
+      return Value();
+    }
+    case Fn::GetHTTPHeader:
+    {
+      // the header names must be lower case, as in Second Life; "" once answered or after HTTP_HEADER_TIMEOUT seconds
+      dropExpiredRequests();
+      for (const IncomingRequest& r : m_incoming)
+        if (r.id == a[0].s) return Value::string(r.headers.value(a[1].s));
+      return Value::string(QString());
     }
 
     // -------------------------------------------- cheap reads and state of the object itself (gap list 2, step 2)

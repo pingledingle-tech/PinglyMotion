@@ -391,7 +391,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `sleep` | `llSleep` (moves the simulated clock) | `seconds` |
 | `permissions` | `llRequestPermissions`; the owner's are granted at once, then `run_time_permissions` follows | `mask`, `granted`, `note` |
 | `animation_start`, `animation_stop` | `llStartAnimation`, `llStopAnimation` (the 3D view plays them while the Script Lab's "Show effects in 3D view" box is ticked; [SCRIPT_LAB.md](SCRIPT_LAB.md)) | `name` |
-| `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text`; a held touch `hold` |
+| `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text`; a held touch `hold`; `money`, `http_request` and `email`: "Money, web server and mail" |
 | `debug` | what Second Life says on the debug channel without stopping the script (an animation without permission, `llRegionSay` on channel 0) | `channel`, `text` |
 | `event_dropped` | more than 64 events were waiting, as in Second Life | `name`, `message` |
 | `reset` | `llResetScript`, or `llResetOtherScript` from another script (then the reset script's entry) | |
@@ -416,6 +416,12 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
 | `animation_override` | `llSetAnimationOverride` or `llResetAnimationOverride` succeeded (step 9b-8) | `op` (`set` or `reset`), `state`, `animation` |
 | `http_request` | `llHTTPRequest` passed its checks (step 9b-9; nothing goes on the network) | `method`, `url`, `mimetype`, `body` (when not empty), `headers` (the custom headers as `[name, value]` pairs, when given), `result` (`canned`, `no_reply` or `throttled`), and except for `throttled` `request` (the key the call returned), `status` and `truncated_at` (when the reply body was cut) |
+| `give_money` | `llGiveMoney` (second gap list, step 4; simulated, no L$ ever moves) | `to`, `amount`, `result` (`ok` or the failure tag), `note` |
+| `email_sent` | `llEmail` (second gap list, step 4; no mail is sent) | `address`, `subject`, `message`, `bytes` (with the header), `result` (`recorded` or `too_long`), `note` |
+| `email_check` | `llGetNextEmail` (second gap list, step 4) | `address`, `subject` (the filters), `found`, `left` (when found) |
+| `url_request` | `llRequestURL` or `llRequestSecureURL` (second gap list, step 4) | `secure`, `request` (the key the call returned), `result` (`granted` or `denied`), `url` (when granted) |
+| `url_release` | `llReleaseURL` (second gap list, step 4) | `url`, `result` (`released` or `not_found`) |
+| `http_server_response` | `llHTTPResponse` (second gap list, step 4; nothing is sent) | `request`, `status`, `body`, `result` (`sent`, `timed_out` or `unknown_request`) |
 | `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, and the 37 stubs of step 9b-8 (see "Recorded only") | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
@@ -444,7 +450,8 @@ together are at most 524 288 characters; nothing runs unless every script compil
   channel; in the sandbox the object that showed the dialog always hears it, other objects within 20 m of the avatar
   too), `changed` (`change`: what changed; step 9b-2, below), `attach` (`point`, default the object's point or 1) or `detach` (the object is dropped where the avatar stands
   and gets `attach` with `NULL_KEY`). Chat from an avatar is heard by the objects within `kind`'s range of the avatar
-  (`say`, the default, 20 m; `whisper` 10 m; `shout` 100 m).
+  (`say`, the default, 20 m; `whisper` 10 m; `shout` 100 m). `money`, `http_request` and `email` (second gap list,
+  step 4): "Money, web server and mail" below.
 - New functions: `llDialog` (Second Life's checks: a message, at most 12 buttons of at most 24 bytes; an empty list
   gives `OK`; a refused dialog is a `debug` line), `llRegionSayTo`, `llGetPos`, `llGetAttached`, `llGetOwnerKey` (the
   key itself when the sandbox does not know it); `llKey2Name` knows every object. New event: `attach`.
@@ -457,7 +464,7 @@ together are at most 524 288 characters; nothing runs unless every script compil
   `object`), `rlv` and `log`. A limit stops only the script that hit it; the others run on. The answer of a single
   script (`source`) is as before, plus `objects` and `dialog`.
 
-`lsl_event {type, object, channel, text, kind, name, id, button, point, link, seconds}` sends one event to the world of the
+`lsl_event {type, object, channel, text, kind, name, id, button, point, link, amount, url, method, body, headers, address, subject, seconds}` sends one event to the world of the
 last `lsl_run` (with `source` or `objects`; each `lsl_run` starts a new world) at the moment that run or the last event
 ended, then runs the world on for `seconds` (default 1, at most 3600) of simulated time. The fields are those of an
 input, without `at`. The answer has the `log` of this command only, `objects`, `dialog`, `rlv`, `stopped` and `time`.
@@ -584,7 +591,8 @@ A request gets the first reply in list order that matches its method and URL. Th
   times out after 60 seconds). A reply body longer than `HTTP_BODY_MAXLENGTH` UTF-8 bytes is cut there (never inside a character) and `metadata` is `[HTTP_BODY_TRUNCATED, <the limit>]`; otherwise `metadata` is empty.
 - The throttle of Second Life: at most 25 requests per object in 20 seconds (counted over the last 20 simulated seconds). A request over it returns `NULL_KEY`, writes an `http_request` entry with `result: throttled`
   and, unless `HTTP_VERBOSE_THROTTLE` is `FALSE`, a `debug` line.
-- Not done: incoming HTTP (`llRequestURL`, `llRequestSecureURL`, `llHTTPResponse`, `llGetHTTPHeader`, `llReleaseURL` and the `http_request` event), the RFC 7807 answers of `HTTP_EXTENDED_ERROR`, status 415 for `HTTP_ACCEPT`,
+- Incoming HTTP (`llRequestURL` and the `http_request` event): "Money, web server and mail" below.
+- Not done: the RFC 7807 answers of `HTTP_EXTENDED_ERROR`, status 415 for `HTTP_ACCEPT`,
   the per-owner throttle, a reply that comes later or never, and response headers.
 
 #### Sensors (Script Lab step 9b-7)
@@ -820,6 +828,70 @@ The world is kept for `lsl_event`, the region too. An avatar in `avatars` can al
   comes at once with: `DATA_ONLINE` `"1"` (every avatar of the sandbox is online), `DATA_NAME` the avatar's name,
   `DATA_BORN` the date of the start of the run (`2026-01-01`), `DATA_RATING` `"0,0,0,0,0,0"`, `DATA_PAYINFO` `"0"`. Any
   other key, or another `data` number, gets no `dataserver` event. The forced delay (0.1 s) is not simulated.
+
+#### Money, web server and mail (Script Lab, second gap list, step 4)
+
+Nine functions and three events, all simulated: no L$ moves, nothing goes on the network (no socket is opened), and no
+mail is sent. Every value is the same in every run.
+
+- **`llGiveMoney(destination, amount)`** always returns 0, as in Second Life. It writes a `give_money` entry with
+  `result`: `ok`; `MISSING_PERMISSION_DEBIT` without `PERMISSION_DEBIT` (also a `debug` line "Script trying to pay L$
+  but PERMISSION_DEBIT permission not set", the sandbox's wording); `INVALID_DESTINATION` (not a key);
+  `INVALID_AMOUNT` (0 or less); `LINDENDOLLAR_ENTITYDOESNOTEXIST` (an object of the world, not an avatar). The same
+  checks as `llTransferLindenDollars`; the sandbox owner always has enough L$.
+- **`llEmail(address, subject, message)`** writes an `email_sent` entry and makes the script sleep 20 simulated seconds,
+  as Second Life does. Second Life puts a header in front of the message (`Object-Name: <name>`, `Region: <region>
+  (<corner x>, <corner y>)`, `Local-Position: (<x>, <y>, <z>)` and an empty line); address, subject, header and
+  message together may be at most 4096 bytes. Longer: `result: too_long` and a `debug` line, nothing would be sent
+  (the sleep still happens). `bytes` is the count with the header.
+- **`llGetNextEmail(address, subject)`** takes the first email in the object's mailbox whose sender and subject match
+  (an empty filter matches anything; upper and lower case alike) and raises `email(string time, string address, string
+  subject, string message, integer num_left)` in the calling script: `time` is the UTC time the email arrived as text
+  (`unix_start` plus the whole simulated seconds, "The region" above), `num_left` the emails still waiting. No match:
+  no event. Each call writes an `email_check` entry. Emails come only from `email` inputs; the mailbox holds at most
+  100.
+- **`llRequestURL()`** and **`llRequestSecureURL()`** return a request key and raise `http_request(request, method,
+  body)` in the calling script with `method` `URL_REQUEST_GRANTED` and the URL as `body`: `http://sandbox.invalid:12046/cap/<key>`
+  (`https://...:12043/...` for a secure one), without a trailing slash. `.invalid` never resolves (RFC 2606), so the
+  URL cannot reach anything. `<key>` is the MD5 of `<object key>/<script name>/url <n>` written as a key, `n` counting
+  the URLs that script was given, so a URL is never given twice and is the same in every run. The whole world has 38
+  URLs (Second Life's cap per resident; Second Life also counts them per parcel); when they are used the method is
+  `URL_REQUEST_DENIED` and the body empty. A `url_request` entry is written.
+- **`llReleaseURL(url)`** frees a URL of the calling script (`url_release` entry, `result` `released` or
+  `not_found`). **`llGetFreeURLs()`** is 38 minus the URLs held in the whole world. A script reset (`reset` entry with
+  `urls_released`), `llDie`, and a `changed` input with `region`, `teleport` or `region_start` (its `input` entry has
+  `urls_released`) free the URLs too, as Second Life does on a reset, a region change and a region restart.
+- **`llHTTPResponse(request, status, body)`** answers a request from outside: an `http_server_response` entry with
+  `result` `sent`, `timed_out` (more than 25 simulated seconds after the request came; Second Life has then answered
+  the caller itself) or `unknown_request` (not a waiting request of this script, or already answered). Nothing is sent.
+- **`llGetHTTPHeader(request, name)`** reads a header of a waiting request, up to 30 seconds after it came and until it
+  is answered; `""` otherwise. Names are lower case (a name with upper case letters finds nothing, as in Second Life):
+  `x-script-url` (the URL), `x-path-info` (the path after the URL, before `?`), `x-query-string` (after the first
+  `?`), `x-remote-ip` (always `192.0.2.10`, a documentation address, RFC 5737) and the input's `headers` (names made
+  lower case; `user-agent` only when the input gives one). Values are cut to 255 bytes.
+
+New input types, in `inputs` of `lsl_run` and in `lsl_event`:
+
+| type | Fields | What happens |
+|---|---|---|
+| `money` | `amount` (needed: the L$ paid, 1 to 2147483647), `id` and `name` (the payer; default the owner), `object`, `link` (the prim paid, default the root) | the scripts of that prim that have a `money` event get `money(id, amount)`; when none has one, the root's scripts that have one; when no script of the object has one, the `input` entry has `error` (the object cannot be paid). The `input` entry has `id`, `amount`, `name` and `note` |
+| `http_request` | `url` (a URL a script got, with any path and query; default the newest URL of `object`), `method` (`GET`, `POST`, `PUT` or `DELETE`, any case; default `GET`), `body` (only for `POST` and `PUT`; cut to 2048 bytes), `headers` (an object of at most 32 names, letters, digits and `-`, with text values) | the script that holds the URL gets `http_request(request, method, body)`; `request` is `c0de0000-0000-4000-8000-<n>`, counted in the world. The `input` entry has `method`, `url`, `body`, `body_truncated_at` (when cut), `request`, and `object` and `script` when the world names them. No script holds the URL: `status` 404 and `error`; a query without a slash after the URL (`<url>?a=1` instead of `<url>/?a=1`): `status` 500, as in Second Life; the script already has 64 requests waiting for `llHTTPResponse`: `status` 503, no event |
+| `email` | `address` (the sender, default `sender@sandbox`), `subject`, `body` (the message, at most 4096 characters), `object` | the email waits in the object's mailbox for `llGetNextEmail`; the sandbox raises no event when it arrives. The `input` entry has `address`, `subject` and `waiting` (emails in the mailbox), or `error` when the mailbox is full |
+
+```
+{"command": "lsl_run", "source": "...", "inputs": [
+   {"at": 1, "type": "http_request", "method": "POST", "url": "http://sandbox.invalid:12046/cap/<key>/items?x=1", "body": "hello"},
+   {"at": 2, "type": "money", "amount": 50},
+   {"at": 3, "type": "email", "address": "mail1@sandbox", "subject": "Order", "body": "two apples"}]}
+{"command": "lsl_event", "type": "http_request"}
+```
+
+- Doubts, written down instead of guessed (the sandbox chose): the wording of the `debug` lines, the order of an
+  email's header lines, the 100 emails a mailbox holds, that every script of the prim with a `money` event gets a
+  payment, and that an email arrives without an event (the `email` event comes only from `llGetNextEmail`).
+- Not done: `llSetContentType` and the content type of the answer, emails between objects of the world (an `llEmail`
+  to `<object key>@lsl.secondlife.com` is only recorded), the pay price dialog (`llSetPayPrice` stays recorded only),
+  the URLs lost when an object is taken and rezzed again, and the forced delays of other functions.
 
 #### Pure functions and object state (Script Lab step 9b-1, issue 310)
 

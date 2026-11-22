@@ -285,3 +285,10 @@ ADD_EXECUTABLE (pinglymotion_lslregion_tests tst_lslregion.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslregion_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_lslregion_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslregion COMMAND pinglymotion_lslregion_tests)
+
+# Script Lab: money, web server and mail stubs (gap list 2, step 4): llGiveMoney, llEmail, llGetNextEmail, the URLs of
+# the fake web server, llHTTPResponse and llGetHTTPHeader, and the money, http_request and email inputs
+ADD_EXECUTABLE (pinglymotion_lslmoney_tests tst_lslmoney.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslmoney_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslmoney_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslmoney COMMAND pinglymotion_lslmoney_tests)
