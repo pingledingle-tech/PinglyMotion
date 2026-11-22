@@ -375,6 +375,8 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `error` | a runtime error stopped the script (division by zero, too many listens) | `message`, `line`, `column` |
 | `unsupported` | the script called a function the sandbox does not run yet, and was stopped there | `message`, `line`, `column` |
 | `limit` | a limit stopped the script | `message`, `line`, `column` |
+| `message_linked` | `llMessageLinked` (step 9a) | `link` (as given, for example -1 for `LINK_SET`), `num`, `text`, `id`, `scripts` (how many scripts are in the prims it reaches) |
+| `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
 
@@ -396,7 +398,7 @@ together are at most 524 288 characters; nothing runs unless every script compil
   `llRegionSay` the whole region, `llRegionSayTo` only the object with that key, at any distance. An object never
   hears itself. The speaker's name and key are the object's, so `llListen` filters on name, key and message work.
 - Each object's `llOwnerSay("@...")` goes to the shared RLV state under the object's own key: two objects can hold
-  the same restriction (the count is 2), and `@clear` from one removes only its own. The cap of 100 `@` lines is per object.
+  the same restriction (the count is 2), and `@clear` from one removes only its own. The cap of 100 `@` lines is per object (per script since step 9a).
 - More inputs (in `inputs` and in `lsl_event`): `object` names the object (default the first); `type` is also
   `dialog` (`button`: the text of a button of that object's last `llDialog`; the avatar says it on the dialog's
   channel; in the sandbox the object that showed the dialog always hears it, other objects within 20 m of the avatar
@@ -415,7 +417,7 @@ together are at most 524 288 characters; nothing runs unless every script compil
   `object`), `rlv` and `log`. A limit stops only the script that hit it; the others run on. The answer of a single
   script (`source`) is as before, plus `objects` and `dialog`.
 
-`lsl_event {type, object, channel, text, kind, name, id, button, point, seconds}` sends one event to the world of the
+`lsl_event {type, object, channel, text, kind, name, id, button, point, link, seconds}` sends one event to the world of the
 last `lsl_run` (with `source` or `objects`; each `lsl_run` starts a new world) at the moment that run or the last event
 ended, then runs the world on for `seconds` (default 1, at most 3600) of simulated time. The fields are those of an
 input, without `at`. The answer has the `log` of this command only, `objects`, `dialog`, `rlv`, `stopped` and `time`.
@@ -433,20 +435,83 @@ the objects and the newest dialog after each `lsl_run` and `lsl_event` ([SCRIPT_
 
 Examples: `examples/scriptlab/hud_cuffs_hud.lsl` and `hud_cuffs_cuffs.lsl`.
 
+#### Several scripts in one object: link messages and Linkset Data (Script Lab step 9a, issue 305)
+
+An entry of `objects` can give `scripts` instead of `source`: a list of 1 to 32 entries `{name, source, link}`
+(`name` 1 to 63 characters, each script of the object its own, as `llGetScriptName` gives it; `link` the prim the
+script is in, 1 the root, default 1), and `prims`, how many prims the object has (1 to 256; default the highest
+`link`). Each script has its own interpreter: its own variables and memory, its own queue of 64 waiting events, its
+own listens and timer. At most 64 scripts in all objects together. An entry with `source` is one script named
+`Script` in a single prim, as before.
+
+- `llMessageLinked(link, num, str, id)` queues `link_message(sender, num, str, id)` in every script of the prims the
+  link reaches, the sending script too when its prim is reached; `sender` is the sender's link number. In an object
+  of several prims the root is link 1 and the children 2 and up; `LINK_SET` reaches every prim, `LINK_ROOT` the root,
+  `LINK_ALL_OTHERS` every prim but the sender's, `LINK_ALL_CHILDREN` every prim but the root, `LINK_THIS` the
+  sender's prim, a number that prim. A single prim is link 0: there `0`, `LINK_THIS` and `LINK_SET` reach it and
+  `LINK_ROOT`, `LINK_ALL_OTHERS` and `LINK_ALL_CHILDREN` reach nothing (Second Life wiki). A link number the object
+  does not have reaches nothing, without an error. `llGetLinkNumber` answers 0 in a single prim.
+- Linkset Data belongs to the object, not to a script: every script of the object reads and writes the same pairs,
+  and they survive `llResetScript` and stay for `lsl_event`. `llLinksetDataWrite` answers `LINKSETDATA_OK`,
+  `LINKSETDATA_EMEMORY` (more than 131 072 bytes, 128 KiB, in all; a pair costs the UTF-8 bytes of its name plus its
+  value), `LINKSETDATA_ENOKEY` (empty name), `LINKSETDATA_NOTFOUND` (empty value for a name that is not there) or
+  `LINKSETDATA_NOUPDATE` (the same value again); an empty value deletes the pair. `llLinksetDataRead` answers `""`
+  for a missing name, `llLinksetDataDelete` `LINKSETDATA_OK` or `LINKSETDATA_NOTFOUND`; `llLinksetDataListKeys(start,
+  count)` lists the names in alphabetical order (`count` below 1: all from `start`; a `start` below 0 counts as 0);
+  `llLinksetDataAvailable`, `llLinksetDataCountKeys` and `llLinksetDataReset` as in Second Life. Every change sends
+  `linkset_data(action, name, value)` to every script of the object, the writer too: `LINKSETDATA_UPDATE` (1) with
+  the new value, `LINKSETDATA_DELETE` (2) with an empty value, `LINKSETDATA_RESET` (0) with an empty name and value.
+  Not supported yet (known to `lsl_check`, which warns; the script stops there with `unsupported`): the protected
+  functions (`llLinksetDataWriteProtected`, `llLinksetDataReadProtected`, `llLinksetDataDeleteProtected`) and
+  `llLinksetDataFindKeys`, `llLinksetDataCountFound`, `llLinksetDataDeleteFound`.
+- A `link_message` or `linkset_data` event whose arguments do not fit in the receiving script's free memory crashes
+  that script with a Stack-Heap Collision (an `error` entry), as in Second Life; the other scripts run on.
+- Chat: a prim never hears its own chat (no script in the same prim hears it); the other prims of the same object
+  do, at distance 0 (Second Life wiki, `llListen`). Every prim has the object's key and name in the sandbox (in
+  Second Life each prim has its own key), so a script's RLV lines are held under the object's key, whichever prim
+  it is in. The cap of 100 `@` lines is per script.
+- A touch (an input or `lsl_event` with `type` touch) can name `link`, the prim touched (default the root): the
+  scripts of that prim that handle `touch_start` get it; when none does, the root's scripts get it, as Second Life
+  passes touches on.
+- Order: Second Life runs scripts at the same time, in no set order. The sandbox runs them one after the other in a
+  fixed order (objects in list order, each object's scripts in list order; a script runs every event waiting for it
+  before the next script runs), so the same request always gives the same log. A set of scripts that only works in
+  one order may still fail in Second Life.
+- When more than 64 events wait for a script, Second Life drops the rest without a word; the sandbox drops them too
+  and writes an `event_dropped` entry for each. An endless exchange of link messages at one moment ends when a script
+  reaches its limit of events or steps (the other scripts run on), never in a hang.
+- Log entries of an object given with `scripts` have `script` (the script's name). The answer's `objects` entry of
+  such an object has `prims` and `scripts` (per script: `name`, `link`, `state`, `stopped`, `stop_reason`,
+  `open_listens`, `timer`, `steps` and `memory`, the rough byte count below); its `stopped` is true only when all its
+  scripts stopped (then `stop_reason` names each script), and `steps` and `open_listens` add up its scripts.
+  `linkset_data` (`count`, `used`, `available` and `pairs`, at most 200 pairs, each name and value cut at 1 024
+  characters) is in every entry given with `scripts` and in any entry whose store is not empty.
+
+```
+{"command": "lsl_run", "seconds": 2, "objects": [{"name": "box", "prims": 2, "scripts": [
+   {"name": "main", "source": "...", "link": 1},
+   {"name": "door", "source": "...", "link": 2}]}]}
+{"command": "lsl_event", "type": "touch", "object": "box", "link": 2}
+```
+
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
-the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions` and `attach`; 77
-built-in functions (chat, listen, timer, time, owner and object keys, permissions, animations, dialogs, position, list,
-string and maths functions). All 426 function names and signatures, 39 events and the constants come
-from the viewer's LSL keyword list (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`),
-so the checker knows every LSL function. LSL quirks are kept: the right side of an operator is evaluated
+the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
+`link_message` and `linkset_data`; 86 built-in functions (chat, listen, timer, time, owner and object keys,
+permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions). All 426
+function names and signatures, 39 events and the constants of the viewer's LSL keyword list
+(`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) are known, plus the 13 Linkset Data
+functions, the `linkset_data` event and the `LINKSETDATA_*` constants, which are newer than that list and are listed
+in `src/scriptlab/lsl/builtins.cpp`; so the checker knows every LSL function. LSL quirks are kept: the right side of an operator is evaluated
 first, `&&` and `||` do not short-circuit and have the same precedence, integers wrap around, `(string)`
 of a float has 6 decimals and of a vector 5, and `NULL_KEY` (a string) is true in an `if`.
 
 Limits (the input is untrusted, an AI tool writes it): the script at most 262 144 characters and 100 000
 tokens, nesting at most 100 levels; while running at most 500 000 steps, 64 nested function calls, 10 000
 events, 65 open listens, 64 waiting events, strings of 65 536 characters, lists of 4 096 entries, about
-256 KB for all variables together (Second Life gives a script 64 KB) and 2 seconds of real time; the log
+256 KB for all variables together per script (Second Life gives a script 64 KB, code included; the sandbox's
+count is rough, 16 bytes per value plus 2 per character, so it keeps the larger limit, and `llGetFreeMemory` answers
+against 64 KB) and 2 seconds of real time; the log
 keeps 2 000 entries, each text at most 1 024 characters. A limit stops the script; the last log entry and
 `stop_reason` say which.
 

@@ -1,5 +1,5 @@
 Branch: feat/script-lab-multiscript
-Status: active
+Status: done
 Pull request: #306
 Files:
 - src/scriptlab/lsl/*
@@ -23,5 +23,5 @@ Script Lab step 9a (issue 305): several scripts in one object in the LSL sandbox
 (`llMessageLinked`, `link_message`, `llGetLinkNumber`) and Linkset Data (`llLinksetData*` and the
 `linkset_data` event). `lsl_run`'s `objects` entries take `scripts`; the old shape keeps working.
 Technical, no owner test. The edits to docs/SCRIPT_LAB.md, docs/ROADMAP.md, docs/SCRIPT_LAB_PLAN.md,
-src/controlapi.cpp and tools/mcp/commands.json wait until the Script Lab 3D job (which also changes
-them) is merged.
+src/controlapi.cpp and tools/mcp/commands.json (the lsl_run tool text and schema) were left for a
+follow-up job, because the Script Lab 3D pull request, still open, changes the same lines.
