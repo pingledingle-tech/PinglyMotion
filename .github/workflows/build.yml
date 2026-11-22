@@ -83,6 +83,13 @@ jobs:
     # not after a merge to main (the quick check there is the Linux job)
     if: needs.changes.outputs.code == 'true' && !(github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: windows-latest
+    env:
+      # compiler cache (see "Compile faster" in docs/DEV.md): an object is reused only when compiler,
+      # flags and source text are identical. The build number and time go into a generated header that
+      # only constants.cpp includes, so the real run number can stay in the zip and the cache still hits.
+      CCACHE_DIR: ${{ runner.temp }}\ccache
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 500M
     steps:
       # the files exactly as in the repository (LF line ends, as on Linux): the tests compare
       # generated files byte for byte with the checked-in ones
@@ -100,6 +107,21 @@ jobs:
           tools: 'tools_mingw1310'
           # keeps the Qt and MinGW installation between runs (the cache is scoped to the branch)
           cache: true
+      - name: Install ccache
+        # the Chocolatey package is pinned to one version; Ninja is part of the runner image
+        shell: bash
+        run: |
+          choco install ccache --version=4.10.2 --no-progress -y
+          ccache --version | head -1
+          ninja --version
+      - name: Cache compiler output (ccache)
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}\ccache
+          key: ccache-windows-${{ hashFiles('**/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-windows-${{ hashFiles('**/CMakeLists.txt') }}-
+            ccache-windows-
       - name: Build
         shell: bash
         env:
@@ -108,8 +130,13 @@ jobs:
           BUILD_COMMIT: "${{ github.event.pull_request.head.sha || github.sha }}"
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
-          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGLYMOTION_COMMIT=$BUILD_COMMIT" -DPINGLYMOTION_TESTS=ON
-          cmake --build build -j 4
+          ccache --zero-stats
+          # Ninja instead of MinGW Makefiles; the compilers are named so that CMake never picks a Visual Studio one from the runner's PATH
+          cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGLYMOTION_COMMIT=$BUILD_COMMIT" -DPINGLYMOTION_TESTS=ON
+          # no -j: Ninja runs as many jobs as the runner has CPUs plus two (4 CPUs, 16 GB RAM)
+          cmake --build build
+          ccache --show-stats
+          { echo '### Windows ccache'; echo '```'; ccache --show-stats; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Automatic tests
         # the same ctest run as in the Linux job: each test sets QT_QPA_PLATFORM=offscreen itself
         # (tests/CMakeLists.txt), so no display is needed; Qt's DLLs are on PATH from install-qt-action

@@ -32,23 +32,19 @@ ADD_TEST (NAME animfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingly
 SET_TESTS_PROPERTIES (animfile PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # The generated edge-case files (tests/data/generated, tools/gen_edge_bvh.py; issue #27).
-ADD_EXECUTABLE (pinglymotion_generated_tests tst_generated.cpp
-                ${CMAKE_SOURCE_DIR}/src/animexport.cpp
-                ${CMAKE_SOURCE_DIR}/src/retarget.cpp)
+ADD_EXECUTABLE (pinglymotion_generated_tests tst_generated.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_generated_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_DEFINITIONS (pinglymotion_generated_tests PRIVATE
   PINGLYMOTION_GENERATED="${CMAKE_SOURCE_DIR}/tests/data/generated")
-TARGET_LINK_LIBRARIES (pinglymotion_generated_tests pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_generated_tests pinglymotion_shared pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
 ADD_TEST (NAME generated COMMAND pinglymotion_generated_tests)
 SET_TESTS_PROPERTIES (generated PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # The generated .dingle and .anim edge-case files (tools/gen_edge_motion.py; issue #27).
-ADD_EXECUTABLE (pinglymotion_generated_motion_tests tst_generated_motion.cpp
-                ${CMAKE_SOURCE_DIR}/src/animimport.cpp
-                ${CMAKE_SOURCE_DIR}/src/animexport.cpp)
+ADD_EXECUTABLE (pinglymotion_generated_motion_tests tst_generated_motion.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_generated_motion_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_DEFINITIONS (pinglymotion_generated_motion_tests PRIVATE
   PINGLYMOTION_GENERATED="${CMAKE_SOURCE_DIR}/tests/data/generated")
-TARGET_LINK_LIBRARIES (pinglymotion_generated_motion_tests pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_generated_motion_tests pinglymotion_shared pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
 ADD_TEST (NAME generated_motion COMMAND pinglymotion_generated_motion_tests)
 SET_TESTS_PROPERTIES (generated_motion PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

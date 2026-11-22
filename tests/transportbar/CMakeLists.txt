@@ -4,9 +4,9 @@
 # A folder of its own, added from the top CMakeLists.txt.
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 
-ADD_EXECUTABLE (pinglymotion_transportbar_tests tst_transportbar.cpp ${CMAKE_SOURCE_DIR}/src/transportbar.cpp ${CMAKE_SOURCE_DIR}/src/transportlook.cpp ${CMAKE_SOURCE_DIR}/src/lucideicons.cpp ${CMAKE_SOURCE_DIR}/src/theme.cpp)
+ADD_EXECUTABLE (pinglymotion_transportbar_tests tst_transportbar.cpp)
 TARGET_COMPILE_DEFINITIONS (pinglymotion_transportbar_tests PRIVATE PINGLYMOTION_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_transportbar_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_transportbar_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_transportbar_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME transportbar WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_transportbar_tests)
 SET_TESTS_PROPERTIES (transportbar PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
