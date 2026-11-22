@@ -8,7 +8,11 @@
  * text that starts with @ goes to the RLV core (Script Lab step 4). Then the
  * same script runs as two objects in one Sandbox (step 5), one worn and one
  * 15 m away, with chat, a touch, a dialog answer, detach and attach as input,
- * and is sent one more event the way lsl_event does. Nothing may crash, and a
+ * and is sent one more event the way lsl_event does. Then (step 9a) the same
+ * script runs three times in one object of two prims, so link messages and
+ * Linkset Data go between copies of it, with touches on both prims; and the
+ * input bytes drive the Linkset Data store directly (write, delete, list,
+ * reset), which must keep its byte count and limit. Nothing may crash, and a
  * run must stay inside its limits.
  *
  * Licensed under the GNU General Public License version 2 or later.
@@ -114,5 +118,61 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   sandbox.runUntil(sandbox.now() + 1.0);
   check(sandbox.log().size() <= World::MAX_LOG_ENTRIES + 2);
   check(shared.restrictions().size() <= RlvState::MAX_OBJECTS * RlvState::MAX_RESTRICTIONS_PER_OBJECT);
+
+  // several scripts in one object (step 9a): three copies, two in the root and one in prim 2
+  RlvState linked;
+  Sandbox multi(linked, true);
+  ObjectSpec object;
+  object.name = "o";
+  object.prims = 2;
+  std::vector<ScriptEntry> entries(3);
+  for (int i = 0; i < 3; ++i)
+  {
+    entries[size_t(i)].name = QString("s%1").arg(i);
+    entries[size_t(i)].link = i == 2 ? 2 : 1;
+    entries[size_t(i)].script = script;
+  }
+  check(multi.addObject(object, entries, limits).isEmpty());
+  for (int i = 0; i < 3; ++i)
+  {
+    SandboxInput in;
+    in.at = 0.5 * (i + 1);
+    in.type = i == 1 ? "chat" : "touch";
+    in.link = i;
+    in.channel = 0;
+    in.text = "x";
+    check(multi.addInput(in));
+  }
+  multi.start();
+  multi.runUntil(3.0);
+  check(multi.scriptCount() == 3);
+  check(multi.log().size() <= World::MAX_LOG_ENTRIES + 3);
+  check(multi.linksetData(0).used() >= 0 && multi.linksetData(0).used() <= LinksetData::MAX_BYTES);
+  check(multi.linksetData(0).available() == LinksetData::MAX_BYTES - multi.linksetData(0).used());
+  for (int i = 0; i < 3; ++i) check(multi.scriptInterpreter(i).steps() <= limits.maxSteps + limits.maxListLength + 1);
+  check(multi.objectsJson().size() == 1);
+
+  // the Linkset Data store on its own, driven by the input: name and value lengths from the bytes
+  LinksetData store;
+  qint64 expected = 0;
+  for (size_t i = 0; i + 2 < size && i < 3000; i += 3)
+  {
+    const QString name = source.mid(int(i % 50), data[i + 1] % 8);
+    const QString value = data[i] % 4 == 0 ? QString() : QString(int(data[i + 2]) * 300, QChar('a' + data[i] % 26));
+    switch (data[i] % 5)
+    {
+      case 0: case 1: store.write(name, value); break;
+      case 2: store.remove(name); break;
+      case 3: check(store.keys(data[i + 1] - 128, data[i + 2] - 128).size() <= store.count()); break;
+      default: if (data[i + 1] == 0) store.reset(); break;
+    }
+    expected = 0;
+    for (auto it = store.pairs().constBegin(); it != store.pairs().constEnd(); ++it)
+    {
+      check(!it.key().isEmpty() && !it.value().isEmpty());
+      expected += LinksetData::cost(it.key(), it.value());
+    }
+    check(expected == store.used() && store.used() <= LinksetData::MAX_BYTES);
+  }
   return 0;
 }

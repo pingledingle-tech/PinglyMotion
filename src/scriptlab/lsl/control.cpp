@@ -133,6 +133,12 @@ namespace
       if (in.text.isEmpty()) return where + "a dialog answer needs \"button\": the text of the button pressed.";
     }
     else if (o.contains("button")) return where + "\"button\" is only for a dialog answer.";
+    if (o.contains("link"))
+    {
+      if (in.type != "touch") return where + "\"link\" is only for touch (the prim touched).";
+      if (!wholeNumber(o.value("link"), 1, Sandbox::MAX_PRIMS, in.link))
+        return where + QString("\"link\" must be a whole number from 1 to %1 (the prim touched; 1 is the root).").arg(Sandbox::MAX_PRIMS);
+    }
     if (o.contains("point"))
     {
       if (in.type != "attach") return where + "\"point\" is only for attach.";
@@ -142,18 +148,68 @@ namespace
     return QString();
   }
 
-  // one entry of "objects"; empty when fine
-  QString readObject(const QJsonObject& o, const QString& where, ObjectSpec& spec, QString& source)
+  // one entry of "objects"; empty when fine. Either "source" (one script, named "Script", in the root prim)
+  // or "scripts" (step 9a: [{name, source, link}], each with its own memory and event queue)
+  struct ScriptSource
   {
-    static const QStringList known = {"name", "source", "key", "owner", "owner_name", "position", "attached"};
+    QString name = "Script";
+    int link = 1;
+    QString source;
+  };
+
+  QString readObject(const QJsonObject& o, const QString& where, ObjectSpec& spec, std::vector<ScriptSource>& scripts)
+  {
+    static const QStringList known = {"name", "source", "scripts", "prims", "key", "owner", "owner_name", "position", "attached"};
     for (auto it = o.begin(); it != o.end(); ++it)
       if (!known.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + known.join(", ") + ".";
     if (!o.value("name").isString() || !validName(o.value("name").toString()))
       return where + "\"name\" must be text of 1 to 63 characters (the object's name, as llGetObjectName gives it).";
     spec.name = o.value("name").toString();
-    if (!o.value("source").isString()) return where + "missing \"source\": the object's LSL script as text.";
-    source = o.value("source").toString();
-    if (source.size() > Lexer::MAX_SOURCE_CHARS) return where + QString("\"source\" is too long (at most %1 characters).").arg(Lexer::MAX_SOURCE_CHARS);
+    if (o.contains("prims") && !wholeNumber(o.value("prims"), 1, Sandbox::MAX_PRIMS, spec.prims))
+      return where + QString("\"prims\" must be a whole number from 1 to %1 (how many prims the object has).").arg(Sandbox::MAX_PRIMS);
+    if (o.contains("source") && o.contains("scripts"))
+      return where + "give either \"source\" (one script) or \"scripts\" (several scripts), not both.";
+    if (o.contains("scripts"))
+    {
+      if (!o.value("scripts").isArray()) return where + "\"scripts\" must be a list of scripts, each with name and source.";
+      const QJsonArray list = o.value("scripts").toArray();
+      if (list.isEmpty() || list.size() > Sandbox::MAX_SCRIPTS_PER_OBJECT)
+        return where + QString("\"scripts\" must hold 1 to %1 scripts.").arg(Sandbox::MAX_SCRIPTS_PER_OBJECT);
+      int highest = 1;
+      for (int i = 0; i < list.size(); ++i)
+      {
+        const QString at = where + QString("script %1: ").arg(i + 1);
+        if (!list[i].isObject()) return at + "must be an object with name and source.";
+        const QJsonObject e = list[i].toObject();
+        static const QStringList fields = {"name", "source", "link"};
+        for (auto it = e.begin(); it != e.end(); ++it)
+          if (!fields.contains(it.key())) return at + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+        ScriptSource script;
+        if (!e.value("name").isString() || !validName(e.value("name").toString()))
+          return at + "\"name\" must be text of 1 to 63 characters (the script's name, as llGetScriptName gives it).";
+        script.name = e.value("name").toString();
+        if (!e.value("source").isString()) return at + "missing \"source\": the script as text.";
+        script.source = e.value("source").toString();
+        if (script.source.size() > Lexer::MAX_SOURCE_CHARS) return at + QString("\"source\" is too long (at most %1 characters).").arg(Lexer::MAX_SOURCE_CHARS);
+        if (e.contains("link") && !wholeNumber(e.value("link"), 1, Sandbox::MAX_PRIMS, script.link))
+          return at + QString("\"link\" must be a whole number from 1 to %1 (the prim the script is in; 1 is the root).").arg(Sandbox::MAX_PRIMS);
+        for (const ScriptSource& other : scripts)
+          if (other.name == script.name) return at + "two scripts are named \"" + clip(script.name, 63) + "\"; each script of an object needs its own name.";
+        highest = qMax(highest, script.link);
+        scripts.push_back(script);
+      }
+      if (!o.contains("prims")) spec.prims = highest;
+      else if (highest > spec.prims)
+        return where + QString("a script is in link %1, but \"prims\" is %2.").arg(highest).arg(spec.prims);
+    }
+    else
+    {
+      if (!o.value("source").isString()) return where + "missing \"source\": the object's LSL script as text (or \"scripts\" for several).";
+      ScriptSource script;
+      script.source = o.value("source").toString();
+      if (script.source.size() > Lexer::MAX_SOURCE_CHARS) return where + QString("\"source\" is too long (at most %1 characters).").arg(Lexer::MAX_SOURCE_CHARS);
+      scripts.push_back(script);
+    }
     for (const char* field : {"key", "owner"})
       if (o.contains(field) && (!o.value(field).isString() || !validKey(o.value(field).toString())))
         return where + "\"" + field + "\" must be a key: 1 to 36 letters, digits or \"-\".";
@@ -223,19 +279,21 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 
   // the objects and their scripts
   std::vector<ObjectSpec> specs;
-  QStringList sources;
+  std::vector<std::vector<ScriptSource>> sources;
+  std::vector<bool> severalScripts;
   if (several)
   {
     if (!request.value("objects").isArray()) return fail("\"objects\" must be a list of objects, each with name and source.");
     const QJsonArray list = request.value("objects").toArray();
     if (list.isEmpty() || list.size() > Sandbox::MAX_OBJECTS) return fail(QString("\"objects\" must hold 1 to %1 objects.").arg(Sandbox::MAX_OBJECTS));
     qint64 total = 0;
+    int scriptCount = 0;
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Object %1: ").arg(i + 1);
       if (!list[i].isObject()) return fail(where + "must be an object with name and source.");
       ObjectSpec spec;
-      QString source;
+      std::vector<ScriptSource> source;
       const QString problem = readObject(list[i].toObject(), where, spec, source);
       if (!problem.isEmpty()) return fail(problem);
       for (const ObjectSpec& other : specs)
@@ -243,16 +301,22 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
         if (other.name == spec.name) return fail(where + "two objects are named \"" + clip(spec.name, 63) + "\"; each needs its own name.");
         if (!spec.key.isEmpty() && other.key == spec.key) return fail(where + "two objects have the key " + spec.key + "; each needs its own key.");
       }
-      total += source.size();
+      for (const ScriptSource& script : source) total += script.source.size();
       if (total > MAX_TOTAL_SOURCE_CHARS) return fail(QString("The scripts together are too long (at most %1 characters).").arg(MAX_TOTAL_SOURCE_CHARS));
+      scriptCount += int(source.size());
+      if (scriptCount > Sandbox::MAX_SCRIPTS) return fail(QString("At most %1 scripts in all objects together.").arg(Sandbox::MAX_SCRIPTS));
       specs.push_back(spec);
-      sources << source;
+      severalScripts.push_back(list[i].toObject().contains("scripts"));
+      sources.push_back(source);
     }
   }
   else
   {
     specs.push_back(ObjectSpec());
-    sources << request.value("source").toString();
+    ScriptSource script;
+    script.source = request.value("source").toString();
+    sources.push_back({script});
+    severalScripts.push_back(false);
   }
 
   std::vector<SandboxInput> inputs;
@@ -261,7 +325,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!request.value("inputs").isArray()) return fail("\"inputs\" must be a list of objects.");
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
-    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point"};
+    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -269,35 +333,52 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
       SandboxInput in;
       const QString problem = readInput(list[i].toObject(), known, where, in);
       if (!problem.isEmpty()) return fail(problem);
-      bool found = in.object.isEmpty();
-      for (const ObjectSpec& spec : specs) found = found || spec.name == in.object;
-      if (!found) return fail(where + "there is no object named \"" + clip(in.object, 63) + "\".");
+      const ObjectSpec* touched = in.object.isEmpty() ? &specs.front() : nullptr;
+      for (const ObjectSpec& spec : specs)
+        if (spec.name == in.object) touched = &spec;
+      if (!touched) return fail(where + "there is no object named \"" + clip(in.object, 63) + "\".");
+      if (in.link > touched->prims)
+        return fail(where + QString("the object \"%1\" has %2 prim(s); there is no link %3.").arg(clip(touched->name, 63)).arg(touched->prims).arg(in.link));
       inputs.push_back(in);
     }
   }
 
   // compile every script first: nothing runs unless all compile
-  std::vector<std::shared_ptr<const Script>> scripts;
+  std::vector<std::vector<ScriptEntry>> scripts;
   QJsonArray warnings;
-  for (int i = 0; i < sources.size(); ++i)
+  for (size_t i = 0; i < sources.size(); ++i)
   {
-    Parser::Result parsed = Parser::parse(sources[i]);
-    if (!parsed.ok())
+    std::vector<ScriptEntry> entries;
+    for (const ScriptSource& source : sources[i])
     {
-      QJsonObject answer = several
-        ? fail("The script of object \"" + specs[size_t(i)].name + "\" does not compile, so nothing was run. The errors are listed (the same as lsl_check).")
-        : fail("The script does not compile, so it was not run. The errors are listed (the same as lsl_check).");
-      if (several) answer["object"] = specs[size_t(i)].name;
-      answer["errors"] = diagnostics(parsed.errors);
-      return answer;
+      Parser::Result parsed = Parser::parse(source.source);
+      if (!parsed.ok())
+      {
+        QJsonObject answer;
+        if (!several) answer = fail("The script does not compile, so it was not run. The errors are listed (the same as lsl_check).");
+        else if (severalScripts[i])
+          answer = fail("The script \"" + source.name + "\" of object \"" + specs[i].name + "\" does not compile, so nothing was run. The errors are listed (the same as lsl_check).");
+        else
+          answer = fail("The script of object \"" + specs[i].name + "\" does not compile, so nothing was run. The errors are listed (the same as lsl_check).");
+        if (several) answer["object"] = specs[i].name;
+        if (severalScripts[i]) answer["script"] = source.name;
+        answer["errors"] = diagnostics(parsed.errors);
+        return answer;
+      }
+      for (const Diagnostic& d : parsed.warnings)
+      {
+        QJsonObject w{{"line", d.line}, {"column", d.column}, {"message", d.message}};
+        if (several) w["object"] = specs[i].name;
+        if (severalScripts[i]) w["script"] = source.name;
+        warnings.append(w);
+      }
+      ScriptEntry entry;
+      entry.name = source.name;
+      entry.link = source.link;
+      entry.script = std::shared_ptr<const Script>(std::move(parsed.script));
+      entries.push_back(entry);
     }
-    for (const Diagnostic& d : parsed.warnings)
-    {
-      QJsonObject w{{"line", d.line}, {"column", d.column}, {"message", d.message}};
-      if (several) w["object"] = specs[size_t(i)].name;
-      warnings.append(w);
-    }
-    scripts.push_back(std::shared_ptr<const Script>(std::move(parsed.script)));
+    scripts.push_back(entries);
   }
 
   std::unique_ptr<RlvState> ownState;
@@ -307,7 +388,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   std::unique_ptr<Sandbox> sandbox(new Sandbox(state, several));
   for (size_t i = 0; i < specs.size(); ++i)
   {
-    const QString problem = sandbox->addObject(specs[i], scripts[i]);
+    const QString problem = severalScripts[i] ? sandbox->addObject(specs[i], scripts[i]) : sandbox->addObject(specs[i], scripts[i].front().script);
     if (!problem.isEmpty()) return fail(QString("Object %1: ").arg(i + 1) + problem);
   }
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
@@ -344,7 +425,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
-  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "seconds"};
+  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "seconds"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -366,6 +447,11 @@ QJsonObject event(const QJsonObject& request, Session* session)
   if (!sandbox) return fail("There is no running world to send the event to. Start one with lsl_run first (with \"source\" or \"objects\").");
   if (!in.object.isEmpty() && sandbox->indexOf(in.object) < 0)
     return fail("There is no object named \"" + clip(in.object, 63) + "\" in the world of the last lsl_run.");
+  if (in.link > 0)
+  {
+    const int prims = sandbox->prims(in.object.isEmpty() ? 0 : sandbox->indexOf(in.object));
+    if (in.link > prims) return fail(QString("The object has %1 prim(s); there is no link %2.").arg(prims).arg(in.link));
+  }
   if (sandbox->allStopped()) return fail("Every script in the world of the last lsl_run has stopped; run lsl_run again.");
 
   sandbox->newCommand();

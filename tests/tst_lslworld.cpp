@@ -333,7 +333,7 @@ void LslWorldTest::refusesBadInput()
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok), object("a", ok)}}}),
            QString("Object 2: two objects are named \"a\"; each needs its own name."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{QJsonObject{{"name", "a"}}}}}),
-           QString("Object 1: missing \"source\": the object's LSL script as text."));
+           QString("Object 1: missing \"source\": the object's LSL script as text (or \"scripts\" for several)."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"position", QJsonArray{1, 2}}})}}}),
            QString("Object 1: \"position\" must be [x, y, z] in metres: x and y 0 to 256, z 0 to 4096."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"attached", 56}})}}}),
@@ -341,7 +341,7 @@ void LslWorldTest::refusesBadInput()
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"key", "not a key!"}})}}}),
            QString("Object 1: \"key\" must be a key: 1 to 36 letters, digits or \"-\"."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"colour", 1}})}}}),
-           QString("Object 1: unknown field \"colour\". Fields: name, source, key, owner, owner_name, position, attached."));
+           QString("Object 1: unknown field \"colour\". Fields: name, source, scripts, prims, key, owner, owner_name, position, attached."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok)}},
                              {"inputs", QJsonArray{QJsonObject{{"type", "touch"}, {"object", "b"}}}}}),
            QString("Input 1: there is no object named \"b\"."));
@@ -367,7 +367,7 @@ void LslWorldTest::eventNeedsAWorld()
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "fly"}}, &session)["error"].toString(),
            QString("\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\" or \"detach\"."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"at", 1}}, &session)["error"].toString(),
-           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, seconds."));
+           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, seconds."));
   RlvState rlv;
   run({object("a", "default { touch_start(integer n) { } }")}, 1, rlv, &session);
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"object", "zz"}}, &session)["error"].toString(),

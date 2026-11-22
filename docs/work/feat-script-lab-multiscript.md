@@ -4,11 +4,15 @@ Pull request: #306
 Files:
 - src/scriptlab/lsl/*
 - tests/tst_lslworld.cpp
+- tests/tst_lsllink.cpp
+- tests/CMakeLists.txt (only the LSL test list line)
 - tests/tst_lslinterp.cpp
 - tests/tst_control.cpp
 - fuzz/fuzz_lsl.cpp
 - fuzz/lsl.dict
+- fuzz/control.dict
 - fuzz/corpus/lsl/**
+- fuzz/corpus/control/26.json
 - docs/CONTROL.md
 - docs/DECISIONS.md
 - docs/work/feat-script-lab-multiscript.md

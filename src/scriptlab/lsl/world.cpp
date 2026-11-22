@@ -21,6 +21,7 @@ void World::log(double time, QJsonObject entry, bool force)
   if (m_target)
   {
     if (!m_tag.isEmpty()) entry["object"] = m_tag;
+    if (!m_scriptTag.isEmpty()) entry["script"] = m_scriptTag;
     m_target->log(time, entry, force);
     return;
   }
@@ -65,6 +66,72 @@ void World::dialog(double time, const QString& avatar, const QString& message, c
   QJsonArray list;
   for (const QString& b : buttons) list.append(b);
   log(time, QJsonObject{{"type", "dialog"}, {"to", avatar}, {"message", clip(message)}, {"buttons", list}, {"channel", channel}});
+}
+
+void World::messageLinked(double time, int link, int num, const QString& str, const QString& id)
+{
+  log(time, QJsonObject{{"type", "message_linked"}, {"link", link}, {"num", num}, {"text", clip(str)}, {"id", clip(id)}, {"scripts", 0}});
+}
+
+void World::linksetDataChanged(double, int, const QString&, const QString&)
+{
+}
+
+// ---------------------------------------------------------------- Linkset Data
+
+int LinksetData::cost(const QString& name, const QString& value)
+{
+  return int(name.toUtf8().size() + value.toUtf8().size());
+}
+
+int LinksetData::write(const QString& name, const QString& value)
+{
+  if (name.isEmpty()) return ENoKey;
+  auto it = m_pairs.find(name);
+  if (value.isEmpty())
+  {
+    if (it == m_pairs.end()) return NotFound;
+    m_used -= cost(name, *it);
+    m_pairs.erase(it);
+    return Ok;
+  }
+  if (it != m_pairs.end() && *it == value) return NoUpdate;
+  const qint64 old = it == m_pairs.end() ? 0 : cost(name, *it);
+  const qint64 now = qint64(name.toUtf8().size()) + value.toUtf8().size();
+  if (m_used - old + now > MAX_BYTES) return EMemory;
+  m_used = int(m_used - old + now);
+  m_pairs.insert(name, value);
+  return Ok;
+}
+
+int LinksetData::remove(const QString& name)
+{
+  auto it = m_pairs.find(name);
+  if (it == m_pairs.end()) return NotFound;
+  m_used -= cost(name, *it);
+  m_pairs.erase(it);
+  return Ok;
+}
+
+QStringList LinksetData::keys(qint64 start, qint64 count) const
+{
+  QStringList out;
+  if (start < 0) start = 0;
+  qint64 i = 0;
+  for (auto it = m_pairs.constBegin(); it != m_pairs.constEnd(); ++it, ++i)
+  {
+    if (i < start) continue;
+    if (count >= 1 && qint64(out.size()) >= count) break;
+    out << it.key();
+  }
+  return out;
+}
+
+QString LinksetData::resultName(int result)
+{
+  static const char* const names[] = {"LINKSETDATA_OK", "LINKSETDATA_EMEMORY", "LINKSETDATA_ENOKEY",
+                                      "LINKSETDATA_EPROTECTED", "LINKSETDATA_NOTFOUND", "LINKSETDATA_NOUPDATE"};
+  return result >= 0 && result <= 5 ? QString(names[result]) : QString::number(result);
 }
 
 QString World::nameOf(const QString& key) const

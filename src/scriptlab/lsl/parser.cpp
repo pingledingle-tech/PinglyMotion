@@ -1218,7 +1218,8 @@ class Checker
 
 bool Parser::eventIsRaised(const QString& name)
 {
-  static const QSet<QString> raised = {"state_entry", "state_exit", "timer", "listen", "touch_start", "run_time_permissions", "attach"};
+  static const QSet<QString> raised = {"state_entry", "state_exit", "timer", "listen", "touch_start", "run_time_permissions", "attach",
+                                         "link_message", "linkset_data"};
   return raised.contains(name);
 }
 

@@ -39,7 +39,10 @@ enum class Fn
   List2List, DeleteSubList, ListInsertList, ListFindList, ListSort, DumpList2String,
   ParseString2List, ParseStringKeepNulls, CSV2List, List2CSV, GetListEntryType,
   StringLength, SubStringIndex, GetSubString, DeleteSubString, InsertString, ToUpper, ToLower, StringTrim,
-  Abs, Fabs, Round, Floor, Ceil, Sqrt, Pow, Sin, Cos, Tan, Atan2, Frand, VecMag, VecNorm, VecDist
+  Abs, Fabs, Round, Floor, Ceil, Sqrt, Pow, Sin, Cos, Tan, Atan2, Frand, VecMag, VecNorm, VecDist,
+  MessageLinked, GetLinkNumber,
+  LinksetDataWrite, LinksetDataRead, LinksetDataDelete, LinksetDataReset, LinksetDataListKeys,
+  LinksetDataAvailable, LinksetDataCountKeys
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -68,6 +71,11 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llAbs", Fn::Abs}, {"llFabs", Fn::Fabs}, {"llRound", Fn::Round}, {"llFloor", Fn::Floor}, {"llCeil", Fn::Ceil},
   {"llSqrt", Fn::Sqrt}, {"llPow", Fn::Pow}, {"llSin", Fn::Sin}, {"llCos", Fn::Cos}, {"llTan", Fn::Tan}, {"llAtan2", Fn::Atan2},
   {"llFrand", Fn::Frand}, {"llVecMag", Fn::VecMag}, {"llVecNorm", Fn::VecNorm}, {"llVecDist", Fn::VecDist},
+  {"llMessageLinked", Fn::MessageLinked}, {"llGetLinkNumber", Fn::GetLinkNumber},
+  {"llLinksetDataWrite", Fn::LinksetDataWrite}, {"llLinksetDataRead", Fn::LinksetDataRead},
+  {"llLinksetDataDelete", Fn::LinksetDataDelete}, {"llLinksetDataReset", Fn::LinksetDataReset},
+  {"llLinksetDataListKeys", Fn::LinksetDataListKeys}, {"llLinksetDataAvailable", Fn::LinksetDataAvailable},
+  {"llLinksetDataCountKeys", Fn::LinksetDataCountKeys},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -105,6 +113,40 @@ const RawConstant RAW_CONSTANTS[] =
 #undef LSL_FUNCTION
 #undef LSL_EVENT
 #undef LSL_CONSTANT
+};
+
+// Linkset Data (Second Life, 2022) is newer than the keyword list the generated file was made from, so
+// its names, signatures and constants are listed here, from the Second Life wiki. An entry the generated
+// file has as well is taken from the generated file.
+const RawFunction EXTRA_FUNCTIONS[] =
+{
+  {"llLinksetDataAvailable", "integer", "", "", 0},
+  {"llLinksetDataCountFound", "integer", "string", "Pattern", 0},
+  {"llLinksetDataCountKeys", "integer", "", "", 0},
+  {"llLinksetDataDelete", "integer", "string", "Name", 0},
+  {"llLinksetDataDeleteFound", "list", "string,string", "Pattern,Pass", 0},
+  {"llLinksetDataDeleteProtected", "integer", "string,string", "Name,Pass", 0},
+  {"llLinksetDataFindKeys", "list", "string,integer,integer", "Pattern,Start,Count", 0},
+  {"llLinksetDataListKeys", "list", "integer,integer", "Start,Count", 0},
+  {"llLinksetDataRead", "string", "string", "Name", 0},
+  {"llLinksetDataReadProtected", "string", "string,string", "Name,Pass", 0},
+  {"llLinksetDataReset", "void", "", "", 0},
+  {"llLinksetDataWrite", "integer", "string,string", "Name,Value", 0},
+  {"llLinksetDataWriteProtected", "integer", "string,string,string", "Name,Value,Pass", 0},
+};
+
+const RawEvent EXTRA_EVENTS[] =
+{
+  {"linkset_data", "integer,string,string"},
+};
+
+const RawConstant EXTRA_CONSTANTS[] =
+{
+  {"LINKSETDATA_RESET", "integer", "0"}, {"LINKSETDATA_UPDATE", "integer", "1"},
+  {"LINKSETDATA_DELETE", "integer", "2"}, {"LINKSETDATA_MULTIDELETE", "integer", "3"},
+  {"LINKSETDATA_OK", "integer", "0"}, {"LINKSETDATA_EMEMORY", "integer", "1"},
+  {"LINKSETDATA_ENOKEY", "integer", "2"}, {"LINKSETDATA_EPROTECTED", "integer", "3"},
+  {"LINKSETDATA_NOTFOUND", "integer", "4"}, {"LINKSETDATA_NOUPDATE", "integer", "5"},
 };
 
 std::vector<Type> parseTypes(const char* text)
@@ -162,8 +204,19 @@ struct Tables
   Tables()
   {
     for (const auto& s : SUPPORTED) supported.insert(QString::fromLatin1(s.name), s.fn);
-    for (const RawFunction& raw : RAW_FUNCTIONS)
-    {
+    for (const RawFunction& raw : RAW_FUNCTIONS) addFunction(raw);
+    for (const RawFunction& raw : EXTRA_FUNCTIONS)
+      if (!functions.contains(QString::fromLatin1(raw.name))) addFunction(raw);
+    for (const RawEvent& raw : RAW_EVENTS) addEvent(raw);
+    for (const RawEvent& raw : EXTRA_EVENTS)
+      if (!events.contains(QString::fromLatin1(raw.name))) addEvent(raw);
+    for (const RawConstant& raw : RAW_CONSTANTS) addConstant(raw);
+    for (const RawConstant& raw : EXTRA_CONSTANTS)
+      if (!constants.contains(QString::fromLatin1(raw.name))) addConstant(raw);
+  }
+
+  void addFunction(const RawFunction& raw)
+  {
       BuiltinFunction f;
       f.name = QString::fromLatin1(raw.name);
       typeFromName(QString::fromLatin1(raw.ret), f.returnType);
@@ -173,21 +226,22 @@ struct Tables
       f.deprecated = raw.deprecated != 0;
       f.supported = supported.contains(f.name);
       functions.insert(f.name, f);
-    }
-    for (const RawEvent& raw : RAW_EVENTS)
-    {
-      BuiltinEvent e;
-      e.name = QString::fromLatin1(raw.name);
-      e.args = parseTypes(raw.args);
-      events.insert(e.name, e);
-    }
-    for (const RawConstant& raw : RAW_CONSTANTS)
-    {
-      BuiltinConstant c;
-      c.name = QString::fromLatin1(raw.name);
-      c.value = constantValue(raw);
-      constants.insert(c.name, c);
-    }
+  }
+
+  void addEvent(const RawEvent& raw)
+  {
+    BuiltinEvent e;
+    e.name = QString::fromLatin1(raw.name);
+    e.args = parseTypes(raw.args);
+    events.insert(e.name, e);
+  }
+
+  void addConstant(const RawConstant& raw)
+  {
+    BuiltinConstant c;
+    c.name = QString::fromLatin1(raw.name);
+    c.value = constantValue(raw);
+    constants.insert(c.name, c);
   }
 };
 
@@ -448,7 +502,7 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::GetKey: return Value::key(m_world.objectKey());
     case Fn::Key2Name: return Value::string(m_world.nameOf(a[0].s));
     case Fn::GetObjectName: return Value::string(m_world.objectName());
-    case Fn::GetScriptName: return Value::string("Script");
+    case Fn::GetScriptName: return Value::string(m_world.scriptName());
     case Fn::GenerateKey: return Value::key(nextKey());
     case Fn::ResetScript: throw Reset();
     case Fn::GetFreeMemory: return Value::integer(qint32(qMax<qint64>(0, 65536 - m_memory)));
@@ -694,6 +748,57 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::ToUpper: return Value::string(a[0].s.toUpper());
     case Fn::ToLower: return Value::string(a[0].s.toLower());
     case Fn::StringTrim: return Value::string(trim(a[0].s, (a[1].i & 1) != 0, (a[1].i & 2) != 0));
+
+    // -------------------------------------------- link messages and Linkset Data (step 9a)
+    case Fn::MessageLinked:
+      m_world.messageLinked(m_now, a[0].i, a[1].i, a[2].s, a[3].s);
+      return Value();
+    case Fn::GetLinkNumber: return Value::integer(m_world.linkNumber());
+    case Fn::LinksetDataWrite:
+    {
+      LinksetData& data = m_world.linksetData();
+      const bool existed = data.pairs().contains(a[0].s);
+      const int result = data.write(a[0].s, a[1].s);
+      const bool deleted = a[1].s.isEmpty();
+      QJsonObject entry{{"type", "linkset_data"}, {"op", deleted ? "delete" : "write"}, {"name", World::clip(a[0].s)},
+                        {"result", LinksetData::resultName(result)}, {"used", data.used()}};
+      if (!deleted) entry["value"] = World::clip(a[1].s);
+      m_world.log(m_now, entry);
+      if (result == LinksetData::Ok)
+      {
+        if (deleted && existed) m_world.linksetDataChanged(m_now, LinksetData::ActionDelete, a[0].s, QString());
+        else if (!deleted) m_world.linksetDataChanged(m_now, LinksetData::ActionUpdate, a[0].s, a[1].s);
+      }
+      return Value::integer(result);
+    }
+    case Fn::LinksetDataRead: return Value::string(m_world.linksetData().read(a[0].s));
+    case Fn::LinksetDataDelete:
+    {
+      LinksetData& data = m_world.linksetData();
+      const int result = data.remove(a[0].s);
+      m_world.log(m_now, QJsonObject{{"type", "linkset_data"}, {"op", "delete"}, {"name", World::clip(a[0].s)},
+                                     {"result", LinksetData::resultName(result)}, {"used", data.used()}});
+      if (result == LinksetData::Ok) m_world.linksetDataChanged(m_now, LinksetData::ActionDelete, a[0].s, QString());
+      return Value::integer(result);
+    }
+    case Fn::LinksetDataReset:
+      m_world.linksetData().reset();
+      m_world.log(m_now, QJsonObject{{"type", "linkset_data"}, {"op", "reset"}, {"used", 0}});
+      m_world.linksetDataChanged(m_now, LinksetData::ActionReset, QString(), QString());
+      return Value();
+    case Fn::LinksetDataListKeys:
+    {
+      const QStringList names = m_world.linksetData().keys(a[0].i, a[1].i);
+      if (names.size() > m_limits.maxListLength)
+        fail(QString("llLinksetDataListKeys would return %1 keys, more than a list can hold in the sandbox (%2); ask for fewer with count.")
+               .arg(names.size()).arg(m_limits.maxListLength));
+      Value out = Value::defaultFor(Type::List);
+      for (const QString& n : names) out.list.push_back(Value::string(n));
+      checkSize(out);
+      return out;
+    }
+    case Fn::LinksetDataAvailable: return Value::integer(m_world.linksetData().available());
+    case Fn::LinksetDataCountKeys: return Value::integer(m_world.linksetData().count());
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);
