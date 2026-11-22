@@ -1,6 +1,6 @@
 Branch: feat/script-lab-lint
 Status: active
-Pull request: pending
+Pull request: #352
 Files:
 - src/scriptlab/lsl/lint.*
 - src/scriptlab/lsl/control.cpp
