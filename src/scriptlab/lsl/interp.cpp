@@ -247,6 +247,7 @@ void Interpreter::resetScript()
   m_timerInterval = 0.0;
   m_permissions = 0;
   m_permissionKey.clear();
+  m_playing.clear();
   m_timeBase = m_now;
   m_inEvent = false;
   try

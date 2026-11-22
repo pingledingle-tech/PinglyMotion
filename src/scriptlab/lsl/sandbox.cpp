@@ -88,6 +88,22 @@ class ObjectWorld : public RlvWorld
     void setPosition(const float p[3]) override { for (int i = 0; i < 3; ++i) state().spec.position[i] = p[i]; }
     PrimStore& primStore() override { return state().prims; }
     Inventory& inventory() override { return state().inventory; }
+    QString sitterOnTarget(int link) const override
+    {
+      for (const Sandbox::Sitter& sitter : state().sitters)
+        if (sitter.onTarget && sitter.link == link) return sitter.key;
+      return QString();
+    }
+    int sitterCount() const override { return int(state().sitters.size()); }
+    bool unSit(double time, const QString& key) override { return m_sandbox.unSit(m_slot, time, key); }
+    bool isSitting(const QString& key) const override { return m_sandbox.isSitting(key); }
+    bool sitsOnObject(const QString& key) const override
+    {
+      for (const Sandbox::Sitter& sitter : state().sitters)
+        if (sitter.key == key) return true;
+      return false;
+    }
+    bool hasAttachments() const override { return m_sandbox.hasAttachments(); }
     void inventoryChanged(double time) override { m_sandbox.inventoryChanged(m_slot, time); }
     QString giveInventory(double time, const QString& to, const InventoryItem& item) override { return m_sandbox.giveInventory(m_slot, time, to, item); }
     int attachPoint() const override { return spec().attached; }
@@ -339,8 +355,18 @@ void Sandbox::deliver(const SandboxInput& input)
   if (m_objects.empty()) return;
   const bool single = m_slots.size() == 1;
 
-  if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed")
+  if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
+      input.type == "sit" || input.type == "stand")
   {
+    // a stand input without an object finds the object the avatar sits on
+    if (input.type == "stand" && input.object.isEmpty())
+    {
+      target = -1;
+      for (size_t i = 0; i < m_objects.size() && target < 0; ++i)
+        for (const Sitter& sitter : m_objects[i].sitters)
+          if (sitter.key == key) target = int(i);
+      if (target < 0) target = 0;   // not sitting anywhere: the first object says so
+    }
     QJsonObject entry{{"type", "input"}, {"input", input.type}, {"name", name}};
     if (target < 0)
     {
@@ -375,6 +401,62 @@ void Sandbox::deliver(const SandboxInput& input)
         for (int i = 0; i < o.slotCount; ++i)
           if (m_slots[size_t(o.firstSlot + i)].link == 1) hit.push_back(o.firstSlot + i);
       for (int i : hit) m_slots[size_t(i)].interp->touch(key, name);
+      return;
+    }
+    if (input.type == "sit")
+    {
+      // an avatar sits on a prim: on its sit target when the prim has one that is free, else just on the prim
+      const int link = input.link > 0 ? input.link : 1;
+      entry["id"] = key;
+      if (input.link > 0) entry["link"] = input.link;
+      if (link > o.spec.prims)
+      {
+        entry["error"] = QString("The object has %1 prim(s); there is no link %2.").arg(o.spec.prims).arg(link);
+        m_log.log(t, entry);
+        return;
+      }
+      if (isSitting(key))
+      {
+        entry["error"] = "The avatar is already sitting.";
+        m_log.log(t, entry);
+        return;
+      }
+      if (int(o.sitters.size()) >= MAX_SITTERS)
+      {
+        entry["error"] = QString("At most %1 avatars sit on one object.").arg(MAX_SITTERS);
+        m_log.log(t, entry);
+        return;
+      }
+      Sitter sitter;
+      sitter.key = key;
+      sitter.name = name;
+      sitter.link = link;
+      bool taken = false;
+      for (const Sitter& other : o.sitters)
+        if (other.onTarget && other.link == link) taken = true;
+      sitter.onTarget = o.prims.prim(link, o.spec.prims).sitTargetSet && !taken;
+      entry["on_target"] = sitter.onTarget;
+      m_log.log(t, entry);
+      o.sitters.push_back(sitter);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->changedEvent(0x20);   // CHANGED_LINK
+      return;
+    }
+    if (input.type == "stand")
+    {
+      entry["id"] = key;
+      size_t found = o.sitters.size();
+      for (size_t i = 0; i < o.sitters.size(); ++i)
+        if (o.sitters[i].key == key) found = i;
+      if (found == o.sitters.size())
+      {
+        entry["error"] = "The avatar is not sitting on the object.";
+        m_log.log(t, entry);
+        return;
+      }
+      if (input.name.isEmpty()) entry["name"] = o.sitters[found].name;   // the avatar's name from when it sat down
+      o.sitters.erase(o.sitters.begin() + std::ptrdiff_t(found));
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->changedEvent(0x20);
       return;
     }
     if (input.type == "changed")
@@ -580,9 +662,47 @@ QString Sandbox::giveInventory(int, double time, const QString& to, const Invent
   return "unknown_target";
 }
 
+bool Sandbox::unSit(int from, double time, const QString& key)
+{
+  Object& o = m_objects[size_t(m_slots[size_t(from)].object)];
+  for (size_t i = 0; i < o.sitters.size(); ++i)
+  {
+    if (o.sitters[i].key != key) continue;
+    o.sitters.erase(o.sitters.begin() + std::ptrdiff_t(i));
+    if (!m_log.logFull())
+      m_slots[size_t(from)].world->log(time, QJsonObject{{"type", "unsit"}, {"avatar", key}, {"by", "llUnSit"}});
+    for (int k = 0; k < o.slotCount; ++k)
+    {
+      Slot& slot = m_slots[size_t(o.firstSlot + k)];
+      slot.interp->syncTo(time);
+      slot.interp->changedEvent(0x20);   // CHANGED_LINK
+    }
+    return true;
+  }
+  return false;
+}
+
+bool Sandbox::isSitting(const QString& key) const
+{
+  for (const Object& o : m_objects)
+    for (const Sitter& sitter : o.sitters)
+      if (sitter.key == key) return true;
+  return false;
+}
+
+bool Sandbox::hasAttachments() const
+{
+  for (const Object& o : m_objects)
+    if (o.spec.attached > 0) return true;
+  return false;
+}
+
 QString Sandbox::nameOf(const QString& key) const
 {
   if (key == OWNER_KEY) return OWNER_NAME;
+  for (const Object& o : m_objects)
+    for (const Sitter& sitter : o.sitters)
+      if (sitter.key == key) return sitter.name;
   for (const Object& o : m_objects)
   {
     if (o.spec.key == key) return o.name;
@@ -637,6 +757,13 @@ QJsonArray Sandbox::objectsJson() const
                       {"steps", steps}};
     if (stopped) entry["stop_reason"] = reasons.join(" ");
     entry["restrictions"] = QJsonArray::fromStringList(m_rlv.objects().value(o.spec.key));
+    if (!o.sitters.empty())
+    {
+      QJsonArray sitters;   // step 9b-5
+      for (const Sitter& sitter : o.sitters)
+        sitters.append(QJsonObject{{"key", sitter.key}, {"name", sitter.name}, {"link", sitter.link}, {"on_target", sitter.onTarget}});
+      entry["sitters"] = sitters;
+    }
     {
       // step 9b-4: what the inventory holds now (the scripts too), in the order they were added
       QJsonArray items;
