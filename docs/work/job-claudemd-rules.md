@@ -1,6 +1,6 @@
 Branch: job/claudemd-rules
 Status: active
-Pull request: pending
+Pull request: #369
 Files:
 - CLAUDE.md
 
