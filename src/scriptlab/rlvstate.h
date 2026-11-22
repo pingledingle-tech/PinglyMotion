@@ -38,6 +38,8 @@ class RlvState : public QObject
     static constexpr int MAX_RECORDED_LENGTH = 128;
     // one line never makes more answers than this (notify messages included)
     static constexpr int MAX_REPLIES_PER_LINE = 256;
+    // at most this many effects outside the sandbox are recorded (setdebug_<name> and setenv_<name> take any name)
+    static constexpr int MAX_RECORDED_ENTRIES = 256;
 
     struct Reply
     {

@@ -171,7 +171,14 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
         // acts outside the sandbox: remember it and say so in the log, change nothing real
         QString option = command.option;
         option.truncate(MAX_RECORDED_LENGTH);
-        m_recorded.insert(Rlv::canonicalName(behaviour->name), option);
+        const QString recordKey = Rlv::canonicalName(command.behaviour);
+        if (!m_recorded.contains(recordKey) && m_recorded.size() >= MAX_RECORDED_ENTRIES)
+        {
+          outcome.result = Rlv::Result::Failed;
+          outcome.reason = QString("%1 outside effects are already recorded (the most allowed)").arg(MAX_RECORDED_ENTRIES);
+          return outcome;
+        }
+        m_recorded.insert(recordKey, option);
         outcome.reason = QStringLiteral("accepted; ") + behaviour->note;
       }
       return outcome;
@@ -193,6 +200,14 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
           if (command.option.isEmpty() || name.contains(command.option)) reply.text += QStringLiteral("/") + name;
       }
       else if (command.behaviour == QLatin1String("getheightoffset")) reply.text = QStringLiteral("0");
+      else if (command.behaviour == QLatin1String("getsitid")) reply.text = QStringLiteral("00000000-0000-0000-0000-000000000000");
+      else if (command.behaviour == QLatin1String("getgroup")) reply.text = QStringLiteral("none");
+      else if (command.behaviour == QLatin1String("getoutfit")) reply.text = Rlv::wornString(Rlv::clothingLayers(), command.option);
+      else if (command.behaviour == QLatin1String("getattach")) reply.text = Rlv::wornString(Rlv::attachmentPoints(), command.option);
+      else if (command.behaviour.startsWith(QLatin1String("getdebug_")))
+        reply.text = m_recorded.value(QStringLiteral("setdebug_") + command.behaviour.mid(9));
+      else if (command.behaviour.startsWith(QLatin1String("getenv_")))
+        reply.text = m_recorded.value(QStringLiteral("setenv_") + command.behaviour.mid(7));
       else if (Rlv::findBehaviour(command.behaviour, m_mode) &&
                Rlv::findBehaviour(command.behaviour, m_mode)->group == Rlv::Group::Reply)
       {

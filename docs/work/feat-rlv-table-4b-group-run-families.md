@@ -1,6 +1,6 @@
 Branch: feat/rlv-table-4b-group-run-families
-Status: active
-Pull request: pending
+Status: done
+Pull request: #324
 Files:
 - src/scriptlab/rlvbehaviours.*
 - src/scriptlab/rlvstate.*

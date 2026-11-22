@@ -57,6 +57,10 @@ namespace Rlv
       {"showworldmap", "Open the world map"},
       {"share", "Give inventory to others"},
       // newer behaviours (some plain RLV, some RLVa only)
+      {"setgroup", "Change the active group"},
+      {"temprun", "Run temporarily"},
+      {"alwaysrun", "Switch always run on"},
+      {"jump", "Jump"},
       {"addattach", "Wear attachments"},
       {"remattach", "Take off attachments"},
       {"addoutfit", "Wear clothing"},
@@ -226,6 +230,27 @@ namespace Rlv
       {"pay", AllowAddRemove, OptionUse::Optional, {"pay"}, "Cannot pay; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
       {"acceptpermission", AllowAddRemove, OptionUse::None, {}, "Permission requests of attached objects are accepted without asking; held as state, the sandbox grants permissions to scripts anyway", Dialect::Rlv, Group::Core},
       {"denypermission", AllowAddRemove, OptionUse::None, {}, "Permission requests of objects are refused without asking (in the RLV wiki, not in RLVa; the wiki lists it as deprecated)", Dialect::RlvOnly, Group::Core},
+      // ---- group, movement and teleport (force commands are retained, not carried out) ----
+      {"setgroup", AllowAddRemove | AllowForce, OptionUse::Optional, {"setgroup"}, "The active group cannot be changed; =force sets it (option: group name or UUID, or none)", Dialect::Rlv, Group::Core},
+      {"temprun", AllowAddRemove, OptionUse::None, {"temprun"}, "Cannot run for a moment (double-tap or run key)", Dialect::Rlv, Group::Interaction},
+      {"alwaysrun", AllowAddRemove, OptionUse::None, {"alwaysrun"}, "Cannot switch always run on", Dialect::Rlv, Group::Interaction},
+      {"jump", AllowAddRemove, OptionUse::None, {"jump"}, "Cannot jump", Dialect::Rlv, Group::Interaction},
+      {"setrot", AllowForce, OptionUse::Required, {}, "=force turns the avatar to an angle (option: radians); held nowhere, the sandbox has no avatar. In the RLV wiki, not in RLVa", Dialect::RlvOnly, Group::Interaction},
+      {"adjustheight", AllowForce, OptionUse::Required, {}, "=force changes the avatar height offset (option: offset[;factor[;delta]])", Dialect::Rlv, Group::Interaction},
+      {"tpto", AllowForce, OptionUse::Required, {}, "=force teleports to a place (option: x/y/z or region/x/y/z, then an optional look-at)", Dialect::Rlv, Group::Core},
+      {"standtp", AllowAddRemove, OptionUse::None, {}, "Changes where the avatar ends up after it stands up; held as state, the sandbox has no avatar position", Dialect::Rlv, Group::Core},
+      {"accepttp", AllowAddRemove, OptionUse::Optional, {}, "Teleport offers are accepted automatically (option: only from this avatar's UUID); held as state, the sandbox has no teleports", Dialect::Rlv, Group::Core},
+      {"sitground", AllowForce, OptionUse::None, {}, "=force sits the avatar on the ground", Dialect::Rlv, Group::Interaction},
+      // ---- questions with fixed sandbox answers (no avatar, group or inventory model yet) ----
+      {"getsitid", AllowReply, OptionUse::None, {}, "Answers the UUID of the object sat on; the sandbox answers the null key (nobody sits)", Dialect::Rlv, Group::Reply},
+      {"getgroup", AllowReply, OptionUse::None, {}, "Answers the name of the active group; the sandbox answers none", Dialect::Rlv, Group::Reply},
+      {"getoutfit", AllowReply, OptionUse::Optional, {}, "Answers 0 or 1 for each clothing layer worn (option: one layer name for a single digit); the sandbox wears nothing and answers zeros", Dialect::Rlv, Group::Reply},
+      {"getattach", AllowReply, OptionUse::Optional, {}, "Answers 0 or 1 for each attachment point (option: one point name for a single digit); the sandbox wears nothing and answers zeros", Dialect::Rlv, Group::Reply},
+      {"getinv", AllowReply, OptionUse::Optional, {}, "Answers the sub-folders of a shared folder (option: folder path); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"getinvworn", AllowReply, OptionUse::Optional, {}, "Answers what is worn from a shared folder (option: folder path); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"findfolder", AllowReply, OptionUse::Optional, {}, "Answers the path of the first shared folder whose name contains the option; the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"getpath", AllowReply, OptionUse::Optional, {}, "Answers the folder path of the object or of an attachment point (option: point or layer); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"getpathnew", AllowReply, OptionUse::Optional, {}, "Answers the folder paths of the object, an attachment point or a layer (option); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
       // ---- old camera names: the same state as the new name; getstatus shows the name that was used ----
       {"camdistmax", AllowAddRemove, OptionUse::Required, {}, "Old name of setcam_avdistmax: maximum camera distance from the avatar (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_avdistmax"},
       {"camdistmin", AllowAddRemove, OptionUse::Required, {}, "Old name of setcam_avdistmin: minimum camera distance from the avatar (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_avdistmin"},
@@ -285,6 +310,43 @@ namespace Rlv
     return table;
   }
 
+  const QStringList& clothingLayers()
+  {
+    static const QStringList list = {"gloves", "jacket", "pants", "shirt", "shoes", "skirt", "socks", "underpants",
+                                     "undershirt", "skin", "eyes", "hair", "shape", "alpha", "tattoo", "physics"};
+    return list;
+  }
+
+  const QStringList& attachmentPoints()
+  {
+    static const QStringList list = {"none", "chest", "skull", "left shoulder", "right shoulder", "left hand", "right hand",
+                                     "left foot", "right foot", "spine", "pelvis", "mouth", "chin", "left ear", "right ear",
+                                     "left eyeball", "right eyeball", "nose", "r upper arm", "r forearm", "l upper arm",
+                                     "l forearm", "right hip", "r upper leg", "r lower leg", "left hip", "l upper leg",
+                                     "l lower leg", "stomach", "left pec", "right pec", "center 2", "top right", "top",
+                                     "top left", "center", "bottom left", "bottom", "bottom right", "neck", "root"};
+    return list;
+  }
+
+  QString wornString(const QStringList& names, const QString& option)
+  {
+    if (option.isEmpty()) return QString(names.size(), QLatin1Char('0'));
+    return names.contains(option) ? QStringLiteral("0") : QString();
+  }
+
+  // setdebug_<name>, setenv_<name>, getdebug_<name>, getenv_<name>: any name after the prefix
+  static const QVector<Behaviour>& families()
+  {
+    static const QVector<Behaviour> list =
+    {
+      {"setdebug_", AllowForce, OptionUse::Required, {}, "Sets one debug setting (setdebug_<name>:<value>=force)", Dialect::Rlv, Group::Environment, true, "recorded only: no debug setting changes"},
+      {"setenv_", AllowForce, OptionUse::Required, {}, "Sets one sky or water setting (setenv_<name>:<value>=force)", Dialect::Rlv, Group::Environment, true, "recorded only: the real sky and water do not change"},
+      {"getdebug_", AllowReply, OptionUse::None, {}, "Answers one debug setting (getdebug_<name>=<channel>); the sandbox answers the value last set with setdebug_<name>, or empty", Dialect::Rlv, Group::Reply},
+      {"getenv_", AllowReply, OptionUse::None, {}, "Answers one sky or water setting (getenv_<name>=<channel>); the sandbox answers the value last set with setenv_<name>, or empty", Dialect::Rlv, Group::Reply},
+    };
+    return list;
+  }
+
   QString canonicalName(const QString& name)
   {
     const Behaviour* behaviour = findBehaviour(name);
@@ -295,6 +357,8 @@ namespace Rlv
   {
     for (const Behaviour& behaviour : behaviours())
       if (behaviour.name == name) return &behaviour;
+    for (const Behaviour& family : families())
+      if (name.length() > family.name.length() && name.startsWith(family.name)) return &family;
     return nullptr;
   }
 

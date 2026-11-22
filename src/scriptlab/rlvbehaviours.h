@@ -96,6 +96,13 @@ namespace Rlv
   QString versionNumber();            // @versionnum: "3040300"
 
   const QVector<Behaviour>& behaviours();
+  // The clothing layers (as @getoutfit lists them, 16 of them) and the attachment points
+  // (@getattach: index 0 is "none", then 40 points).
+  const QStringList& clothingLayers();
+  const QStringList& attachmentPoints();
+  // The sandbox wears nothing: one "0" per entry of the list, or a single "0" when the
+  // option names an entry of the list; empty when the option names none.
+  QString wornString(const QStringList& names, const QString& option);
   // the name the state is kept under: the target of an alias, else the name itself
   QString canonicalName(const QString& name);
   // nullptr when the behaviour is not in the table (either dialect)
