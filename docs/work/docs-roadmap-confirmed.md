@@ -1,6 +1,6 @@
 Branch: docs/roadmap-confirmed
-Status: active
-Pull request: pending
+Status: done
+Pull request: #350
 Files:
 - docs/ROADMAP.md
 - docs/work/docs-roadmap-confirmed.md
