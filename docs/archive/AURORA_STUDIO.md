@@ -1,3 +1,5 @@
+Archived 22 November 2026: analysis finished; the product direction was decided on 19 November 2026 (DECISIONS.md, issue 59).
+
 # Aurora Viewer: what its animation studio has, what it lacks, and our options
 
 Status: **analysis.** The product direction was decided on 19 November 2026: PinglyMotion continues as its own program (`docs/DECISIONS.md`, issue 59); the Aurora options below (offline trial, a studio fork, contributions) are not started. Written 19 November 2026 from a read of the Aurora Viewer source (a fork of it was cloned and read; nothing was built or run). Numbers are measured line counts of the Rust source at one commit and will drift.

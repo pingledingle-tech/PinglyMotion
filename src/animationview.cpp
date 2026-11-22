@@ -211,7 +211,7 @@ void AnimationView::drawProps()
 // a floating panel that lies over the view, in widget-local pixels, found by
 // looking at the dock widgets of the top-level window (not by a method on
 // it, so this view needs no change there, and other panel jobs can run
-// beside this one without touching the same file; docs/PANELS_PLAN.md, P5)
+// beside this one without touching the same file; docs/archive/PANELS_PLAN.md, P5)
 QList<QRect> AnimationView::coveringPanelRects() const
 {
   QList<QRect> panels;
@@ -230,7 +230,7 @@ QList<QRect> AnimationView::coveringPanelRects() const
 
 // keeps the figure about the same size on screen when the view's height
 // changes: the vertical field of view is fixed, so a shorter (or taller)
-// view would otherwise shrink (or grow) the figure (docs/PANELS_PLAN.md, P5,
+// view would otherwise shrink (or grow) the figure (docs/archive/PANELS_PLAN.md, P5,
 // section 5 "Camera centring")
 void AnimationView::keepFigureSizeOnHeightChange(int newHeight)
 {
@@ -1019,7 +1019,7 @@ void AnimationView::wheelEvent(QWheelEvent* event)
   update();
 }
 
-// Tab hides and shows the panels (docs/PANELS_PLAN.md, job P4). Qt's own
+// Tab hides and shows the panels (docs/archive/PANELS_PLAN.md, job P4). Qt's own
 // handling in QWidget::event would move the keyboard focus to the next
 // field instead, so Tab is taken here first. Only a plain Tab: Shift+Tab
 // and the others go on as before. Tab in a panel's field or in the search

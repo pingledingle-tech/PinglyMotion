@@ -1,3 +1,5 @@
+Archived 22 November 2026: all three planned jobs (A, B and C) are built and merged; the assistant guide and CONTROL.md describe the result.
+
 # AI help plan: the next three jobs (issue 129)
 
 Status 21 Nov 2026. Done and merged: the assistant guide, the calibration test, `read_guide`, `describe_pose`, `describe_motion`, `check_animation`, and jobs A, B and C below.

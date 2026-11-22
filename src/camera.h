@@ -31,7 +31,7 @@
 // A perspective projection, shifted so a point straight ahead of the camera
 // projects to "center" instead of the middle of "view" (the lens shift used
 // to keep the figure in the middle of the free area when a floating panel
-// covers part of the 3D view, docs/PANELS_PLAN.md, job P5). With
+// covers part of the 3D view, docs/archive/PANELS_PLAN.md, job P5). With
 // center == view.center() this is the same matrix as plain
 // QMatrix4x4::perspective(fovYDegrees, aspect, nearPlane, farPlane).
 QMatrix4x4 shiftedPerspective(float fovYDegrees,const QRectF& view,const QPointF& center,

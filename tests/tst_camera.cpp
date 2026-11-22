@@ -303,7 +303,7 @@ QPointF TestCamera::onScreen(const QMatrix4x4& projection,const QVector3D& point
 }
 
 // with the centre at the view's own middle, shiftedPerspective() is the
-// plain perspective matrix (P5, docs/PANELS_PLAN.md)
+// plain perspective matrix (P5, docs/archive/PANELS_PLAN.md)
 void TestCamera::shiftedPerspectiveNoShift()
 {
   const QRectF view(0,0,800,600);
@@ -319,7 +319,7 @@ void TestCamera::shiftedPerspectiveNoShift()
 
 // a floating panel covers the left half of the view: the free area is the
 // right half, and the figure (straight ahead of the camera) should land in
-// its middle, not the view's (P5, docs/PANELS_PLAN.md)
+// its middle, not the view's (P5, docs/archive/PANELS_PLAN.md)
 void TestCamera::shiftedPerspectiveCentresFreeArea()
 {
   const QRect view(0,0,800,600);

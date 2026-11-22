@@ -109,7 +109,7 @@ class AnimationView : public QOpenGLWidget
     void restoreCameraPosition(int num);
 
     // Tab was pressed while the 3D view had the keys: the window hides or
-    // shows the panels (docs/PANELS_PLAN.md, job P4)
+    // shows the panels (docs/archive/PANELS_PLAN.md, job P4)
     void tabPressed();
 
   public slots:
@@ -228,7 +228,7 @@ class AnimationView : public QOpenGLWidget
     void setProjection();
     // the free (uncovered) area of the view, in widget-local pixels: the
     // view itself cut by any floating panel that lies over it (P1's
-    // PanelLayout::freeArea(), docs/PANELS_PLAN.md, job P5)
+    // PanelLayout::freeArea(), docs/archive/PANELS_PLAN.md, job P5)
     QList<QRect> coveringPanelRects() const;
     // moves the camera's pivot nearer or further so the figure keeps about
     // the same size on screen when the view's height changes (a panel is

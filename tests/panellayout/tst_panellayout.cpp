@@ -1,4 +1,4 @@
-// Panel layout rules (docs/PANELS_PLAN.md, job P1). No screen needed.
+// Panel layout rules (docs/archive/PANELS_PLAN.md, job P1). No screen needed.
 #include <QTest>
 
 #include "panellayout.h"

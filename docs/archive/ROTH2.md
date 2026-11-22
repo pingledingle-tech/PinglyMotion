@@ -1,3 +1,5 @@
+Archived 22 November 2026: done, merged in pull request 112 (the male figure shows Roth2 v2).
+
 # Roth2 v2 (male body): plan
 
 Status: done. Merged on 19 Nov 2026 in pull request 112 ("Roth2 v2 male body: the male figure shows it automatically"); issue 15 was closed the same day. The project owner decided the open question below: the male body is chosen automatically from the figure type, with no new menu entry (see `docs/DECISIONS.md`). The rest of this page is the plan the job followed.
@@ -71,7 +73,7 @@ The "second body" is really a male variant, not a third menu choice, so the firs
 6. Settings: allow the new value in `UserSettings::setBody` if it becomes a menu choice.
 7. Tests: a `tst_roth2` like `tst_ruth2` (vertex and triangle counts above, joints, load), plus the setting and fallback tests.
 8. Credits: About text, `README.md`, `bin/data/character/README.md` (see below).
-9. Docs in the same pull request: `docs/DECISIONS.md`, `docs/PRODUCT.md`, release notes, `docs/OPEN_SOURCE_CHECK.md`, and the test list.
+9. Docs in the same pull request: `docs/DECISIONS.md`, `docs/PRODUCT.md`, release notes, `docs/archive/OPEN_SOURCE_CHECK.md`, and the test list.
 
 ## Credits text proposal
 

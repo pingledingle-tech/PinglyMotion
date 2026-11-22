@@ -1,5 +1,5 @@
 Branch: docs/archive-obsolete-docs
-Status: active
+Status: done
 Pull request: #326
 Files:
 - docs/archive/**
@@ -16,6 +16,12 @@ Files:
 - docs/work/archive/**
 - docs/work/README.md
 - tools/check_old_name.py
+- tests/test_check_old_name.py
+- src/*.cpp
+- src/*.h
+- tests/**
+- CREDITS.md
+- docs/*.md
 
 ## What
 
