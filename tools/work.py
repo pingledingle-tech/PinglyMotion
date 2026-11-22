@@ -9,6 +9,11 @@
                             of the jobs list (issue 74) from the job files and
                             the open pull requests. Never writes to GitHub.
                             Option: --since YYYY-MM-DD (merged since; default today, UTC)
+    work.py archive         git mv every job file with "Status: done" whose pull
+                            request is merged (asked from GitHub) into
+                            docs/work/archive/. Skips "Pull request: pending"
+                            and numbers GitHub does not know. Option: --dry-run
+                            (only print what would move)
     work.py check-lists     compare issue 74 with reality and print findings
                             (a pull request listed as active that is merged or
                             closed, an open pull request that is not mentioned,
@@ -54,6 +59,7 @@ WORK_DIR = "docs/work"
 NOT_JOBS = {"README.md", "HISTORY.md"}
 STATUSES = ("active", "done")
 JOBS_LIST_ISSUE = 74
+ARCHIVE_DIR = WORK_DIR + "/archive"
 
 
 def run(*cmd):
@@ -396,6 +402,74 @@ def cmd_check(no_remote, mine_only):
     return status
 
 
+# ---------------------------------------------------------------- archive
+
+
+def archive_plan(jobs, states):
+    """(moves, skipped): what `archive` moves and what it leaves, with a reason.
+
+    jobs    Job objects read from local files (source is "local <file name>")
+    states  {pull request number: "open" | "merged" | "closed"}; unknown numbers are absent
+    moves   [file name] of done jobs whose pull request is merged
+    skipped [(file name, reason)] for done jobs that stay
+    """
+    moves, skipped = [], []
+    for job in sorted(jobs, key=lambda j: j.source):
+        name = job.source.split(" ", 1)[-1]
+        if job.status != "done":
+            continue
+        n = pr_number(job.pull_request)
+        if n is None:
+            skipped.append((name, "no pull request number (%s)" % (job.pull_request or "empty")))
+        elif states.get(n) == "merged":
+            moves.append(name)
+        elif n in states:
+            skipped.append((name, "pull request %d is %s" % (n, states[n])))
+        else:
+            skipped.append((name, "pull request %d not found on GitHub" % n))
+    return moves, skipped
+
+
+def cmd_archive(dry_run):
+    jobs = local_jobs()
+    done = [j for j in jobs if j.status == "done"]
+    numbers = sorted({pr_number(j.pull_request) for j in done if pr_number(j.pull_request) is not None})
+    states = {}
+    try:
+        slug = repo_slug()
+    except (RuntimeError, subprocess.CalledProcessError, FileNotFoundError) as error:
+        print("cannot read owner/repo (%s): nothing moved" % error)
+        return 1
+    for n in numbers:
+        try:
+            info = json.loads(gh_api("repos/%s/pulls/%d" % (slug, n), "--jq",
+                                     "{state, merged: (.merged_at != null)}"))
+        except FileNotFoundError:
+            print("gh is not installed: nothing moved")
+            return 1
+        except subprocess.CalledProcessError as error:
+            text = (error.stderr or "").lower()
+            if "404" in text or "not found" in text:
+                continue  # not a pull request: reported as not found
+            print("GitHub call for pull request %d failed: nothing moved" % n)
+            return 1
+        states[n] = "merged" if info.get("merged") else info.get("state", "closed")
+    moves, skipped = archive_plan(jobs, states)
+    for name, reason in skipped:
+        print("skipped %s: %s" % (name, reason))
+    if moves:
+        os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    for name in moves:
+        if dry_run:
+            print("would move %s/%s to %s/" % (WORK_DIR, name, ARCHIVE_DIR))
+        else:
+            git("mv", "%s/%s" % (WORK_DIR, name), "%s/%s" % (ARCHIVE_DIR, name))
+            print("moved %s/%s to %s/" % (WORK_DIR, name, ARCHIVE_DIR))
+    if not moves:
+        print("Nothing to archive.")
+    return 0
+
+
 # ------------------------------------------------------ jobs list (issue 74)
 
 _PR_LIST = re.compile(r"pull requests?\s+#?(\d+(?:(?:,\s*and\s+|,\s*|\s+and\s+)#?\d+)*)", re.I)
@@ -611,10 +685,13 @@ def main(argv):
             i = args.index(opt)
             values[opt] = args[i + 1] if i + 1 < len(args) else None
             del args[i:i + 2]
+    dry_run = "--dry-run" in args
     args = [a for a in args if not a.startswith("--")]
-    if len(args) != 1 or args[0] not in ("list", "check", "jobs-draft", "check-lists"):
+    if len(args) != 1 or args[0] not in ("list", "check", "jobs-draft", "check-lists", "archive"):
         print(__doc__)
         return 2
+    if args[0] == "archive":
+        return cmd_archive(dry_run)
     if args[0] == "jobs-draft":
         return cmd_jobs_draft(values.get("--since"))
     if args[0] == "check-lists":

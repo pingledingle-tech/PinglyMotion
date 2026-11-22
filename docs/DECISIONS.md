@@ -1,6 +1,6 @@
 # Decision log
 
-Decisions taken while the project lived in the old repository, and the decisions of the move on 18 November 2026. Each entry says what was decided, why, what was turned down, and where it was written down. `old-repo item N` is an issue or pull request in the old repository (see [MIGRATION.md](MIGRATION.md)); where the issue was moved, its new number is given too.
+The project's decisions, in groups: Script Lab, the move on 18 November 2026, files and formats, technology, bodies, and working method and repository. It holds decisions taken while the project lived in the old repository, the decisions of the move, and later ones in this repository (for example Script Lab, 21 and 22 November 2026). Each entry says what was decided, why, what was turned down, and where it was written down. `old-repo item N` is an issue or pull request in the old repository (see [MIGRATION.md](MIGRATION.md)); where the issue was moved, its new number is given too.
 
 "Reason: not written down" means the source records the decision but no reason. Newest first within each group.
 
