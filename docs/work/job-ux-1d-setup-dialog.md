@@ -1,5 +1,5 @@
 Branch: job/ux-1d-setup-dialog
-Status: active
+Status: done
 Pull request: #379
 Files:
 - src/setupdialog.*
