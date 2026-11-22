@@ -241,7 +241,13 @@ Commands page now scrolls when the panel is small, as the Live page does.
   degrees: `camzoommax:2` keeps it at 30 degrees or more (no zooming in past 2x), `camzoommin:2` at 30 degrees or less.
   The view shows its own 60 degrees moved into the limits (strictest wins, a maximum below the minimum wins over it,
   1 to 170 degrees). A field of view limit alone does not move the camera.
-- While a distance limit or `setcam_unlock` holds, the camera turns around the avatar's middle (its hip at rest; it does not follow the
+- Offsets (part 3): `setcam_focusoffset:x/y/z` makes the camera look at the avatar's middle moved by this many metres
+  (Second Life axes: x forward, y left, z up); `setcam_eyeoffset:x/y/z` (times `setcam_eyeoffsetscale`) holds the
+  camera at the avatar's middle moved by this offset, looking at the focus: turning and zooming then do nothing, only
+  the distance limits still hold along that line. With several objects holding an offset, the first one in the
+  restriction list is used. An offset that is not three numbers of at most 100 m, or a scale that is not a number
+  above 0, is named as not used; a scale without an eye offset changes nothing and the text says so.
+- While a distance limit, an offset or `setcam_unlock` holds, the camera turns around the avatar's middle (its hip at rest; it does not follow the
   animation) and panning cannot move it away; turning, zooming within the limits, the number pad views, `set_camera`
   and the AI's `screenshot` keep to the limits.
 - The text under the box says in words what limits the camera, for example "Camera limited by the script: max
@@ -250,11 +256,12 @@ Commands page now scrolls when the panel is small, as the Live page does.
 - The user's camera is never changed for good: when the limits come on, the camera is kept as it was; unticking
   the box, `@clear`, Reset, a mode switch or the last limit going away puts exactly that camera back. Moves made
   while the limits were on are not kept. Nothing is saved.
-- Not yet: the forced field of view `setcam_fov`, forced focus and offsets (`setcam_focus`, `setcam_eyeoffset`,
-  `setcam_focusoffset`), mouselook. They are still recorded only.
+- Not yet: the force commands `setcam_fov`, `setcam_focus`, `setcam_mode` and the force forms of the offsets
+  (`=force`), and mouselook (`setcam_mouselook`). They are still recorded only: the RLV state keeps a force command
+  without telling the 3D view that it changed.
 - Code: `src/scriptlab/cameraoverride.*` (the limits read from the RLV state and the words), the constraint in
   `src/camera.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`. Tests:
-  `tests/tst_cameraoverride.cpp`, `tests/tst_scriptlabcamera.cpp` and the constraint and field of view part of
+  `tests/tst_cameraoverride.cpp`, `tests/tst_scriptlabcamera.cpp` and the constraint, field of view and eye part of
   `tests/tst_camera.cpp`.
 
 ## How an AI assistant uses it
@@ -387,7 +394,7 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   no camera).
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
-  the 3D view with the "Show camera limits in 3D view" box (below, "Camera limits in the 3D view"). A force command of that kind is `retained`
+  the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view"). A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
   answers `0`). `getcommand` lists the behaviours known in the current mode.

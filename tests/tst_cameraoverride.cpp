@@ -39,6 +39,9 @@ class TestCameraOverride : public QObject
     void viewMaxBelowMin();
     void viewWithDistance();
     void badViewOptions();
+    void focusOffset();
+    void eyeOffset();
+    void badOffsets();
 
   private:
     static void compareState(const CameraPosition& a, const CameraPosition& b);
@@ -380,6 +383,85 @@ void TestCameraOverride::badViewOptions()
     "Not used: setcam_fovmin:4 is not an angle in radians.",
     "Not used: setcam_fovmax: is not an angle in radians.",
     "Not used: camzoommax:0 is not a zoom multiplier."}));
+}
+
+void TestCameraOverride::focusOffset()
+{
+  RlvState state;
+  QVERIFY(state.apply("collar", "@setcam_focusoffset:0/0/0.5=n").ok());
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  QVERIFY(o.active());
+  const CameraConstraint c = o.constraint();
+  QVERIFY(c.turnAroundPoint);
+  QVERIFY(!c.fixedEye);
+  QCOMPARE(c.point, QVector3D(0.0f, 43.528519f + 19.6850394f, 0.0f));
+  QCOMPARE(o.lines(), (QStringList{
+    "Camera limited by the script: focus offset 0/0/0.5 m.",
+    "The camera turns around the avatar. Held by: collar.",
+    "Untick the box to get your own camera back."}));
+  // x forward is the figure's front (+Z), y left its left (+X)
+  QCOMPARE(CameraOverride::toWorld(QVector3D(1.0f, 2.0f, 3.0f)), QVector3D(78.7401574f, 118.110236f, 39.3700787f));
+}
+
+void TestCameraOverride::eyeOffset()
+{
+  RlvState state;
+  QVERIFY(state.apply("collar", "@setcam_eyeoffset:-2/0/1=n").ok());
+  CameraOverride o;
+  o.setState(&state);
+  Camera camera;
+  const CameraPosition before = camera.state();
+  connect(&o, &CameraOverride::changed, this, [&]() { apply(o, camera); });
+  o.setEnabled(true);
+  CameraConstraint c = o.constraint();
+  QVERIFY(c.fixedEye);
+  QCOMPARE(c.point, CameraOverride::avatarPoint());
+  QCOMPARE(c.eye, CameraOverride::avatarPoint() + QVector3D(0.0f, 39.3700787f, -78.7401574f));
+  // behind the figure (2 m back, 1 m up): 2.236 m away, looking down at 26.6 degrees from behind
+  QCOMPARE(camera.distance(), 88.0342635f);
+  QCOMPARE(camera.xRotation(), 26.5650512f);
+  QCOMPARE(camera.yRotation(), 180.0f);
+  QCOMPARE(o.lines(), (QStringList{
+    "Camera limited by the script: eye offset -2/0/1 m.",
+    "The camera is held at the eye offset, looking at the avatar: turning and zooming do nothing.",
+    "The camera turns around the avatar. Held by: collar.",
+    "Untick the box to get your own camera back."}));
+
+  // a scale and a focus offset from another object
+  QVERIFY(state.apply("hud", "@setcam_eyeoffsetscale:0.5=n,setcam_focusoffset:0/0/1=n").ok());
+  c = o.constraint();
+  QCOMPARE(c.point, CameraOverride::avatarPoint() + QVector3D(0.0f, 39.3700787f, 0.0f));
+  QCOMPARE(c.eye, CameraOverride::avatarPoint() + QVector3D(0.0f, 19.6850394f, -39.3700787f));
+  QCOMPARE(camera.xRotation(), -26.5650512f);   // the focus is above the eye now: looking up
+  QCOMPARE(o.lines().first(), QString("Camera limited by the script: focus offset 0/0/1 m, eye offset -2/0/1 m, eye offset scale 0.5."));
+  QCOMPARE(o.lines().at(1), QString("The camera is held at the eye offset, looking at the focus offset: turning and zooming do nothing."));
+
+  // every object lets go: exactly the camera from before
+  state.reset();
+  compareState(camera.state(), before);
+}
+
+void TestCameraOverride::badOffsets()
+{
+  RlvState state;
+  QVERIFY(state.apply("collar", "@setcam_eyeoffset:1/2=n,setcam_focusoffset:0/0/500=n,setcam_eyeoffsetscale:0=n").ok());
+  CameraOverride o;
+  o.setState(&state);
+  o.setEnabled(true);
+  QVERIFY(!o.active());
+  QCOMPARE(o.lines(), (QStringList{
+    "The script does not limit the camera now.",
+    "Not used: setcam_eyeoffset:1/2 is not an offset x/y/z in metres.",
+    "Not used: setcam_focusoffset:0/0/500 is not an offset x/y/z in metres.",
+    "Not used: setcam_eyeoffsetscale:0 is not a scale."}));
+  QVERIFY(state.apply("collar", "@clear").ok());
+  QVERIFY(state.apply("collar", "@setcam_eyeoffsetscale:2=n").ok());
+  QVERIFY(!o.active());
+  QCOMPARE(o.lines(), (QStringList{
+    "The script does not limit the camera now.",
+    "Not used: setcam_eyeoffsetscale changes nothing without setcam_eyeoffset."}));
 }
 
 QTEST_GUILESS_MAIN(TestCameraOverride)
