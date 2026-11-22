@@ -1,6 +1,6 @@
 Branch: feat/rlv-environment-7c-2
 Status: active
-Pull request: pending
+Pull request: #330
 Files:
 - src/scriptlab/environmentoverride.*
 - src/scriptlab/scriptlabpanel.*
