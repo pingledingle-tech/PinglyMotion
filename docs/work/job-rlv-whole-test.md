@@ -1,6 +1,6 @@
 Branch: job/rlv-whole-test
 Status: active
-Pull request: pending
+Pull request: #364
 Files:
 - tests/tst_scriptlabwhole.cpp
 - tests/CMakeLists.txt
