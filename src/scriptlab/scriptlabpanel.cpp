@@ -332,6 +332,25 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
     refreshCamera();
   });
 
+  // --- sky and draw distance in the 3D view (job 7c), off at start
+  m_environmentBox = new QCheckBox(tr("Show environment in 3D view"), commandsPage);
+  m_environmentBox->setObjectName("scriptLabShowEnvironment");
+  m_environmentBox->setChecked(false);
+  m_environmentBox->setToolTip(tr("Show the sky colour and the draw distance the script asks for as the 3D view's background "
+                                  "and fog (a rough hint). Untick to get the 3D view's own look back exactly as it was."));
+  layout->addWidget(m_environmentBox);
+  m_environmentStatus = new QLabel(commandsPage);
+  m_environmentStatus->setObjectName("scriptLabEnvironmentStatus");
+  m_environmentStatus->setWordWrap(true);
+  m_environmentStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_environmentStatus->hide();
+  layout->addWidget(m_environmentStatus);
+  connect(m_environmentBox, &QCheckBox::toggled, this, [this](bool on)
+  {
+    if (m_environment) m_environment->setEnabled(on);
+    refreshEnvironment();
+  });
+
   // --- replies and messages
   layout->addSpacing(SpacingL - SpacingS);
   layout->addWidget(sectionLabel(tr("Replies and messages"), this));
@@ -368,7 +387,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_reset, m_restrictions);
   setTabOrder(m_restrictions, m_actions);
   setTabOrder(m_actions, m_cameraBox);
-  setTabOrder(m_cameraBox, m_log);
+  setTabOrder(m_cameraBox, m_environmentBox);
+  setTabOrder(m_environmentBox, m_log);
   setTabOrder(m_log, m_objectsView->list());
 
   applyStyle();
@@ -452,6 +472,7 @@ void ScriptLabPanel::changeEvent(QEvent* event)
     refreshEffects();
     refreshInput();
     refreshCamera();
+    refreshEnvironment();
   }
 }
 
@@ -1034,6 +1055,32 @@ void ScriptLabPanel::refreshCamera()
   QPalette p = m_cameraStatus->palette();
   p.setColor(QPalette::WindowText, mutedColour(isDark(palette())));
   m_cameraStatus->setPalette(p);
+}
+
+// --- Job 7c: sky and draw distance in the 3D view
+
+void ScriptLabPanel::setEnvironmentOverride(EnvironmentOverride* environmentOverride)
+{
+  if (m_environmentConnection) disconnect(m_environmentConnection);
+  m_environment = environmentOverride;
+  if (environmentOverride)
+  {
+    environmentOverride->setEnabled(m_environmentBox->isChecked());
+    m_environmentConnection = connect(environmentOverride, &EnvironmentOverride::changed, this, &ScriptLabPanel::refreshEnvironment);
+  }
+  refreshEnvironment();
+}
+
+void ScriptLabPanel::refreshEnvironment()
+{
+  if (!m_environmentStatus) return;
+  const QStringList lines = m_environment ? m_environment->lines() : QStringList();
+  m_environmentStatus->setText(lines.join(QLatin1Char('\n')));
+  m_environmentStatus->setVisible(!lines.isEmpty());
+  // muted text; the words say everything, no colour carries meaning here (P10)
+  QPalette p = m_environmentStatus->palette();
+  p.setColor(QPalette::WindowText, mutedColour(isDark(palette())));
+  m_environmentStatus->setPalette(p);
 }
 
 // --- Input buttons (issue 308): touch, chat and dialog answers for the world of the last run

@@ -95,6 +95,7 @@
 #include "playback.h"
 #include "scriptlab/scriptlabpanel.h"
 #include "scriptlab/cameraoverride.h"
+#include "scriptlab/environmentoverride.h"
 #include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "transportbar.h"
@@ -546,6 +547,11 @@ PinglyMotionWindow::PinglyMotionWindow() :
   cameraOverride->setState(&m_controlApi->rlv());
   ui->animationView->setCameraOverride(cameraOverride);
   m_scriptLabPanel->setCameraOverride(cameraOverride);
+  // and shows the sky and draw distance a script asks for as the background and fog, off until its box is ticked (job 7c)
+  EnvironmentOverride* environmentOverride=new EnvironmentOverride(this);
+  environmentOverride->setState(&m_controlApi->rlv());
+  ui->animationView->setEnvironmentOverride(environmentOverride);
+  m_scriptLabPanel->setEnvironmentOverride(environmentOverride);
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
   m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));

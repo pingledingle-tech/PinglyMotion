@@ -195,6 +195,13 @@ TARGET_LINK_LIBRARIES (pinglymotion_cameraoverride_tests pinglymotion_core ${PIN
 ADD_TEST (NAME cameraoverride COMMAND pinglymotion_cameraoverride_tests)
 SET_TESTS_PROPERTIES (cameraoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Script Lab job 7c: the RLV sky and draw distance shown as the 3D view's background and fog
+ADD_EXECUTABLE (pinglymotion_environmentoverride_tests tst_environmentoverride.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_environmentoverride_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_environmentoverride_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME environmentoverride COMMAND pinglymotion_environmentoverride_tests)
+SET_TESTS_PROPERTIES (environmentoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # ... and the panel's "Show camera limits in 3D view" box
 ADD_EXECUTABLE (pinglymotion_scriptlabcamera_tests tst_scriptlabcamera.cpp
                 ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/objectsview.cpp
