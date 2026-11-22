@@ -1,5 +1,5 @@
 Branch: job/scriptlab-own-object-reads
-Status: active
+Status: done
 Pull request: #365
 Files:
 - src/scriptlab/lsl/builtins.*

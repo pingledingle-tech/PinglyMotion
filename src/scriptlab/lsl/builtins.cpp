@@ -965,13 +965,13 @@ Value objectDetail(const ObjectDetails& d, int flag)
     case 40: return Value::integer(av ? 1 : 0);                                      // OBJECT_ANIMATED_SLOTS_AVAILABLE
     case 41: return Value::integer(av ? 0 : -1);                                     // OBJECT_ACCOUNT_LEVEL
     case 42: return Value::integer(3);                                               // OBJECT_MATERIAL: PRIM_MATERIAL_WOOD
-    case 43: return Value::number(d.mass);                                           // OBJECT_MASS
+    case 43: return Value::number(av ? 0.0f : d.mass);                               // OBJECT_MASS
     case 44: return Value::string(d.text);                                           // OBJECT_TEXT
     case 45: return Value::string(av ? QString() : QString(SANDBOX_TIME_STAMP));     // OBJECT_REZ_TIME
     case 46: return Value::integer(av ? 0 : (d.prims > 1 || d.sitters > 0 ? 1 : 0)); // OBJECT_LINK_NUMBER of the root prim
-    case 47: return vec(d.scale);                                                    // OBJECT_SCALE
-    case 48: return vec(d.textColor);                                                // OBJECT_TEXT_COLOR
-    case 49: return Value::number(d.textAlpha);                                      // OBJECT_TEXT_ALPHA
+    case 47: return av ? Value::vector(0.0f, 0.0f, 0.0f) : vec(d.scale);             // OBJECT_SCALE
+    case 48: return av ? Value::vector(0.0f, 0.0f, 0.0f) : vec(d.textColor);         // OBJECT_TEXT_COLOR
+    case 49: return Value::number(av ? 0.0f : d.textAlpha);                          // OBJECT_TEXT_ALPHA
     default: return Value::integer(-1);                                              // OBJECT_UNKNOWN_DETAIL
   }
 }
