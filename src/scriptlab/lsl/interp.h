@@ -99,6 +99,9 @@ class Interpreter
     // Step 9b-6: queues control(avatar, levels, edges) when this script took controls with permission from that avatar and
     // the input touches a control it took (the values are cut to the controls taken)
     void controlEvent(const QString& id, int levels, int edges);
+    // Step 9b-9: queues http_response(request, status, metadata, body); metadata is [HTTP_BODY_TRUNCATED, truncatedAt]
+    // when the body was cut (truncatedAt >= 0), else empty
+    void httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body);
     // the current state has a handler for this event
     bool handles(const QString& event) const;
 

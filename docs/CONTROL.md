@@ -393,6 +393,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `controls` | `llTakeControls` took controls or `llReleaseControls` gave them back (step 9b-6) | `op` (`take`, `release`), `avatar`, and for `take` `controls`, `accept`, `pass_on` |
 | `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
 | `animation_override` | `llSetAnimationOverride` or `llResetAnimationOverride` succeeded (step 9b-8) | `op` (`set` or `reset`), `state`, `animation` |
+| `http_request` | `llHTTPRequest` passed its checks (step 9b-9; nothing goes on the network) | `method`, `url`, `mimetype`, `body` (when not empty), `headers` (the custom headers as `[name, value]` pairs, when given), `result` (`canned`, `no_reply` or `throttled`), and except for `throttled` `request` (the key the call returned), `status` and `truncated_at` (when the reply body was cut) |
 | `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, and the 37 stubs of step 9b-8 (see "Recorded only") | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
@@ -544,6 +545,26 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
 - **Animation overrides (step 9b-8):** `llSetAnimationOverride(state, animation)`, `llResetAnimationOverride(state)` (also `"ALL"`) and `llGetAnimationOverride(state)` need `PERMISSION_OVERRIDE_ANIMATIONS`; without it a debug line says so. An unknown state name gives a debug line. A successful set or reset writes an `animation_override` entry (`op`, `state`, `animation`), and the get answers the stored name, or an empty string.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
+#### HTTP requests with canned replies (Script Lab step 9b-9)
+
+The sandbox never goes on the network: no request leaves the program. `lsl_run` takes `http` (at most 64), the replies to give:
+`[{"url": "https://example.com/api", "method": "GET", "status": 200, "body": "{\"ok\":true}"}]`. Only `url` is needed: the exact URL (case-sensitive), or a prefix that ends in `*`
+(`"*"` alone answers every URL); `method` is `GET`, `POST`, `PUT` or `DELETE` (any case; omitted: every method); `status` is 100 to 599 (default 200); `body` is text of at most 65 536 characters (default empty).
+A request gets the first reply in list order that matches its method and URL. The same list is used for a single script and for `objects`, and it is kept for `lsl_event`.
+
+- `llHTTPRequest(url, parameters, body)` checks the URL (it must start with `http://` or `https://`, any case, name a host and have no spaces or control characters) and the parameter list:
+  `HTTP_METHOD` (`"GET"`, `"POST"`, `"PUT"` or `"DELETE"`, upper case; default `GET`), `HTTP_MIMETYPE` (default `text/plain;charset=utf-8`), `HTTP_BODY_MAXLENGTH` (0 to 16 384; default 2 048),
+  `HTTP_CUSTOM_HEADER` (a name and a value; not `Content-Type`; all custom headers together at most 4 096 characters), `HTTP_USER_AGENT` (no spaces), `HTTP_VERBOSE_THROTTLE`, and `HTTP_VERIFY_CERT`, `HTTP_PRAGMA_NO_CACHE`,
+  `HTTP_ACCEPT` and `HTTP_EXTENDED_ERROR`, which are accepted and change nothing here. A request that fails a check writes a `debug` line that starts with `llHTTPRequest:` and says what is wrong, returns `NULL_KEY`
+  and raises no event (the sandbox's own wording; Second Life's messages are not documented in full).
+- A request that passes returns a request key (`5c11ab00-...`, numbered in the script like the notecard query keys), writes an `http_request` entry and queues `http_response(key request_id, integer status, list metadata, string body)`
+  at once (Second Life answers later) in every script of the prim that made the request, as Second Life does. With no matching reply the status is 499 and the body is empty (Second Life gives 499 for a request that
+  times out after 60 seconds). A reply body longer than `HTTP_BODY_MAXLENGTH` UTF-8 bytes is cut there (never inside a character) and `metadata` is `[HTTP_BODY_TRUNCATED, <the limit>]`; otherwise `metadata` is empty.
+- The throttle of Second Life: at most 25 requests per object in 20 seconds (counted over the last 20 simulated seconds). A request over it returns `NULL_KEY`, writes an `http_request` entry with `result: throttled`
+  and, unless `HTTP_VERBOSE_THROTTLE` is `FALSE`, a `debug` line.
+- Not done: incoming HTTP (`llRequestURL`, `llRequestSecureURL`, `llHTTPResponse`, `llGetHTTPHeader`, `llReleaseURL` and the `http_request` event), the RFC 7807 answers of `HTTP_EXTENDED_ERROR`, status 415 for `HTTP_ACCEPT`,
+  the per-owner throttle, a reply that comes later or never, and response headers.
+
 #### Sensors (Script Lab step 9b-7)
 
 `lsl_run` takes `avatars` (at most 64), the people the sensors can find: `[{"name": "Ann", "position": [128, 133, 20], "velocity": [1, 0, 0], "rotation": [0, 0, 0, 1], "in_group": true, "key": "..."}]`. Only `name` is needed;
@@ -680,9 +701,9 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor` and `no_sensor`; 216 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor`, `no_sensor` and `http_response`; 217 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, and functions that are only recorded). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, HTTP requests with canned replies, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

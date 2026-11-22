@@ -110,6 +110,13 @@ class ObjectWorld : public RlvWorld
       return m_sandbox.sense(m_slot, name, id, type, range, arc);
     }
     void inventoryChanged(double time) override { m_sandbox.inventoryChanged(m_slot, time); }
+    const HttpReply* httpReply(const QString& method, const QString& url) const override { return HttpReply::find(m_sandbox.m_http, method, url); }
+    std::deque<double>& httpTimes() override { return state().httpTimes; }
+    bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body) override
+    {
+      m_sandbox.httpResponse(m_slot, time, id, status, truncatedAt, body);
+      return true;
+    }
     QString giveInventory(double time, const QString& to, const InventoryItem& item) override { return m_sandbox.giveInventory(m_slot, time, to, item); }
     int attachPoint() const override { return spec().attached; }
     QString nameOf(const QString& key) const override { return m_sandbox.nameOf(key); }
@@ -691,6 +698,28 @@ QString Sandbox::addAvatar(const AvatarSpec& avatar)
   if (a.key == NULL_KEY) return "An avatar cannot have NULL_KEY.";
   m_avatars.push_back(a);
   return QString();
+}
+
+QString Sandbox::setHttpReplies(const std::vector<HttpReply>& replies)
+{
+  if (m_started) return "The world has started already.";
+  if (int(replies.size()) > MAX_HTTP_REPLIES) return QString("At most %1 canned HTTP replies.").arg(MAX_HTTP_REPLIES);
+  m_http = replies;
+  return QString();
+}
+
+void Sandbox::httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body)
+{
+  // every script in the prim that made the request gets the event (Second Life wiki, http_response)
+  const Slot& sender = m_slots[size_t(from)];
+  const Object& o = m_objects[size_t(sender.object)];
+  for (int i = 0; i < o.slotCount; ++i)
+  {
+    Slot& slot = m_slots[size_t(o.firstSlot + i)];
+    if (slot.link != sender.link) continue;
+    slot.interp->syncTo(time);
+    slot.interp->httpResponseEvent(id, status, truncatedAt, body);
+  }
 }
 
 std::vector<Detected> Sandbox::sense(int from, const QString& name, const QString& id, int type, double range, double arc)
