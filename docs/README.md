@@ -33,7 +33,6 @@ Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running wo
 | [AURORA_LINK.md](AURORA_LINK.md) | Live link that shows your pose on your avatar in the Aurora viewer | user | current guidance |
 | [index.html](index.html) | The project website (homepage) | user | current |
 | [download.html](download.html) | Website page: download (early preview), uninstall and system changes | user | current |
-| [code-signing.html](code-signing.html) | Website page: code signing policy (SignPath Foundation) | user, developer | current guidance |
 | [privacy.html](privacy.html) | Website page: privacy policy (what the program, the helper and the website do with data) | user | current guidance |
 | [site.css](site.css), [site.js](site.js) | Shared style, language picker and light/dark switch of the website pages | developer | current |
 
