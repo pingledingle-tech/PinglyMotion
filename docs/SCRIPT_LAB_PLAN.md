@@ -1,6 +1,6 @@
 # Script Lab plan
 
-Status: steps 1 to 7 and 9 are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9a is an open pull request (not merged); 9b and 9c are planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
+Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b and 9c are planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
 
 ## 1. Goal
 
@@ -31,7 +31,7 @@ In order. Each step is small and testable. "Technical" means nothing changes on 
 | 7 | [#293](https://github.com/pingledingle-tech/PinglyMotion/issues/293) | visible | Effects in the 3D view | 2, 4, 5 | medium |
 | 8 | [#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294) | technical | Separate repository for the owner's RLV tools (description only; description written, repository not created) | 1, 6 | light |
 | 9 | [#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297) | technical | RLVa-only behaviours and a plain RLV / RLVa mode switch (done) | 1 | strong |
-| 9a | [#305](https://github.com/pingledingle-tech/PinglyMotion/issues/305) | technical | Several scripts in one object, link messages and Linkset Data (in progress: open pull request, not merged) | 3, 5 | strong |
+| 9a | [#305](https://github.com/pingledingle-tech/PinglyMotion/issues/305) | technical | Several scripts in one object, link messages and Linkset Data (done) | 3, 5 | strong |
 | 9b | none yet | technical | More common LSL functions (planned) | 3 | strong |
 | 9c | none yet | technical | Gap list: what scripts use that the sandbox does not run yet (planned) | 9a, 9b | light |
 
@@ -92,9 +92,9 @@ A template, examples and scenario files (`.rlvtest`: a command, then the expecte
 
 Done (issue 297): every behaviour is marked `RLV` or `RLVa only`; plain RLV is the start mode, RLVa mode accepts the RLVa-only behaviours; `rlv_reset` has a `mode` field ([SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV and RLVa mode").
 
-### Step 9a: several scripts in one object and link messages (technical, in progress)
+### Step 9a: several scripts in one object and link messages (technical, done)
 
-`llMessageLinked`, the `link_message` event and Linkset Data, with several scripts in one object, so a main script and helper scripts (menu, relay, storage) can be tested together. An open pull request; not merged, so it is not described as built anywhere else yet.
+`llMessageLinked`, the `link_message` event and Linkset Data, with several scripts in one object, so a main script and helper scripts (menu, relay, storage) can be tested together. Done (issue 305): `scripts` and `prims` in `lsl_run`'s objects and `link` for touches ([CONTROL.md](CONTROL.md), "Several scripts in one object"); the choices where the sandbox cannot be Second Life (fixed run order, memory count, one key per object) are in [DECISIONS.md](DECISIONS.md).
 
 ### Step 9b: more common functions (technical, planned)
 

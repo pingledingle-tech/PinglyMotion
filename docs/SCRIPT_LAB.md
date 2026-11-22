@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 77 functions run (72 from step 3, five more from step 5); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 86 functions run (72 from step 3, five more from step 5, nine from step 9a); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -154,6 +154,30 @@ An animation started in one command keeps playing through the `lsl_event` comman
   with the box ticked the control command `screenshot` shows the waving figure. The box itself is ticked by the user in
   the panel.
 
+## What exists now (step 9a, issue 305): several scripts in one object
+
+An object can hold several scripts in one or more prims, as Second Life objects usually do (a main script, a menu,
+an RLV relay, a store), and they talk to each other.
+
+- `lsl_run`'s `objects` entries take `scripts` (`[{name, source, link}]`, 1 to 32) and `prims` instead of `source`;
+  at most 64 scripts in all. Each script has its own interpreter: its own memory, its own queue of 64 events, its own
+  listens and timer. Log entries name the `script`; the object entry in the answer has `prims`, `scripts` and
+  `linkset_data`. The old shape is unchanged.
+- `llMessageLinked`, `link_message` and `llGetLinkNumber` with `LINK_SET`, `LINK_ROOT`, `LINK_ALL_OTHERS`,
+  `LINK_ALL_CHILDREN`, `LINK_THIS` and link numbers (a single prim is link 0, the root is 1 otherwise).
+- Linkset Data: `llLinksetDataWrite`, `Read`, `Delete`, `Reset`, `ListKeys`, `Available`, `CountKeys` and the
+  `linkset_data` event for every script. The data belongs to the object, survives a script reset and stays for
+  `lsl_event`; 128 KiB counted in UTF-8. The protected and pattern functions say "not supported yet".
+- As in Second Life: a link message or `linkset_data` value too big for the receiver's free memory crashes it with a
+  Stack-Heap Collision; more than 64 waiting events are dropped (the log shows each); a prim does not hear its own
+  chat. Not as in Second Life: scripts run one after the other in a fixed order, not in parallel; memory is a rough
+  count with 256 KB per script; every prim has the object's key. Details: [CONTROL.md](CONTROL.md), "Several scripts
+  in one object"; reasons: [DECISIONS.md](DECISIONS.md).
+- A touch can name the prim (`link`); a prim without a touch handler passes it to the root.
+- Code: `src/scriptlab/lsl/sandbox.*` (scripts, prims, link messages), `world.*` (the Linkset Data store),
+  `builtins.cpp`. Tests: `tests/tst_lsllink.cpp`. Fuzz: `fuzz_lsl` also runs every script as three scripts in one
+  object of two prims and drives the Linkset Data store from the input.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -192,6 +216,7 @@ A script-driven HUD is developed in two parts that the sandbox treats differentl
 
 1. **One script at a time, live.** Keep the HUD script in the folder that Script Lab watches (Live page, or `lab_watch`). Each save checks and runs it again; the Live page and `lab_result` show errors with line and column, the log (what it said, its dialogs, listens and timers) and the RLV state at the end. The `inputs` option of `lab_watch` gives every run the chat lines and touches to test with; each run starts fresh. Claude edits the file with its own file tools and reads `lab_result`.
 2. **HUD and the thing it controls together.** For a HUD that talks to cuffs or a collar on a channel, send both scripts in one `lsl_run` with `objects` (the HUD as worn, the other object rezzed). Then `lsl_event` sends a touch or a dialog button to that world and runs it on, and `rlv_state` or the panel's Objects part shows who holds which restriction. Example: `examples/scriptlab/hud_cuffs_hud.lsl` with `hud_cuffs_cuffs.lsl`. The folder watch runs each `.lsl` file on its own, so it does not do this part.
+3. **A HUD of several scripts.** When the HUD itself has several scripts (for example a menu script and a main script that talk with `llMessageLinked`, or settings kept in Linkset Data), give that object `scripts` instead of `source` in `lsl_run` (step 9a, above); each log line names the script.
 
 What it checks: that the buttons (touch, dialog buttons, chat on a channel) cause the right messages and RLV commands. What it does not do: show how the HUD looks (textures, layout, buttons on screen are not previewed), or reproduce Second Life exactly. The texture is uploaded in Second Life by the project owner, and the final test is in Second Life. The panel has no buttons for sending a touch or chat yet; inputs go through `inputs`, `lsl_run` and `lsl_event` (an idea in "Script Lab: later", [ROADMAP.md](ROADMAP.md)).
 
@@ -226,8 +251,9 @@ command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cp
 
 - Only the behaviours in the table; others parse but are reported as unknown.
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
-- LSL: up to 16 objects in one run, at most 100 RLV lines per object and run, the events `state_entry`, `state_exit`,
-  `timer`, `listen`, `touch_start`, `run_time_permissions` and `attach`, and 77 built-in functions; hard limits on
+- LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
+  events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
+  `link_message` and `linkset_data`, and 86 built-in functions; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.
