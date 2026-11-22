@@ -1705,6 +1705,97 @@
       ]
     },
     {
+      "about": "touch_start, touch while held and touch_end: a click, a held touch, a child prim with only touch_end, and a refused hold (gap list 2, step 1)",
+      "name": "lsl_touch_phases",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","object":"button","script":"root","t":0,"type":"state"},
+              {"name":"default","object":"button","script":"child","t":0,"type":"state"},
+              {"input":"touch","name":"Owner","object":"button","t":0.5,"type":"input"},
+              {"args":["1"],"name":"touch_start","object":"button","script":"root","t":0.5,"type":"event"},
+              {"object":"button","script":"root","t":0.5,"text":"start Owner","type":"owner_say"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":0.5,"type":"event"},
+              {"args":["1"],"name":"touch_end","object":"button","script":"root","t":0.5,"type":"event"},
+              {"object":"button","script":"root","t":0.5,"text":"end after 1 touch events, link 1","type":"owner_say"},
+              {"hold":0.25,"input":"touch","name":"Owner","object":"button","t":1,"type":"input"},
+              {"args":["1"],"name":"touch_start","object":"button","script":"root","t":1,"type":"event"},
+              {"object":"button","script":"root","t":1,"text":"start Owner","type":"owner_say"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":1,"type":"event"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":1.1,"type":"event"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":1.2,"type":"event"},
+              {"args":["1"],"name":"touch_end","object":"button","script":"root","t":1.25,"type":"event"},
+              {"object":"button","script":"root","t":1.25,"text":"end after 3 touch events, link 1","type":"owner_say"}
+            ],
+            "ok": true
+          },
+          "request": {
+            "command": "lsl_run",
+            "inputs": [{"at":0.5,"type":"touch"},{"at":1,"hold":0.25,"type":"touch"}],
+            "objects": [
+              {
+                "name": "button",
+                "prims": 2,
+                "scripts": [
+                  {
+                    "name": "root",
+                    "source": "integer touches;\ndefault {\n  touch_start(integer n) { touches = 0; llOwnerSay(\"start \" + llDetectedName(0)); }\n  touch(integer n) { ++touches; }\n  touch_end(integer n) { llOwnerSay(\"end after \" + (string)touches + \" touch events, link \" + (string)llDetectedLinkNumber(0)); }\n}\n"
+                  },
+                  {
+                    "link": 2,
+                    "name": "child",
+                    "source": "default {\n  touch_end(integer n) { llOwnerSay(\"child let go \" + (string)n + \" \" + llDetectedName(0)); }\n}\n"
+                  }
+                ]
+              }
+            ],
+            "seconds": 2
+          }
+        },
+        {
+          "expect": {
+            "log": [
+              {"hold":0.3,"input":"touch","link":2,"name":"Guest Resident","object":"button","t":2,"type":"input"},
+              {"args":["1"],"name":"touch_end","object":"button","script":"child","t":2.3,"type":"event"},
+              {"object":"button","script":"child","t":2.3,"text":"child let go 1 Guest Resident","type":"owner_say"}
+            ],
+            "time": 3
+          },
+          "request": {
+            "command": "lsl_event",
+            "hold": 0.3,
+            "id": "11111111-2222-3333-4444-555555555555",
+            "link": 2,
+            "name": "Guest Resident",
+            "object": "button",
+            "type": "touch"
+          }
+        },
+        {
+          "expect": {
+            "log": [
+              {"hold":0.35,"input":"touch","name":"Owner","object":"button","t":3,"type":"input"},
+              {"args":["1"],"name":"touch_start","object":"button","script":"root","t":3,"type":"event"},
+              {"object":"button","script":"root","t":3,"text":"start Owner","type":"owner_say"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":3,"type":"event"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":3.1,"type":"event"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":3.2,"type":"event"},
+              {"args":["1"],"name":"touch","object":"button","script":"root","t":3.3,"type":"event"},
+              {"args":["1"],"name":"touch_end","object":"button","script":"root","t":3.35,"type":"event"},
+              {"object":"button","script":"root","t":3.35,"text":"end after 4 touch events, link 1","type":"owner_say"}
+            ],
+            "time": 4
+          },
+          "request": {"command":"lsl_event","hold":0.35,"object":"button","type":"touch"}
+        },
+        {
+          "expect": {"error":"\"hold\" is only for touch (the seconds the touch is held).","ok":false},
+          "request": {"command":"lsl_event","hold":1,"text":"hi","type":"chat"}
+        }
+      ]
+    },
+    {
       "about": "a script that does not compile, an unknown function, a function not supported yet, an endless loop, bad lsl_event input",
       "name": "errors",
       "steps": [

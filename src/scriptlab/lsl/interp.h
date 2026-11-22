@@ -3,7 +3,7 @@
  *
  * Runs a checked Script (parser.h) in a sandbox with a simulated clock: the
  * default state's state_entry first, then the events in order (timer, listen
- * for chat given as input, touch_start, run_time_permissions). Nothing waits
+ * for chat given as input, touch_start, touch, touch_end, run_time_permissions). Nothing waits
  * for real time; llSleep and timers move the simulated clock.
  *
  * Hard limits keep a bad or hostile script from hanging the program or using
@@ -88,8 +88,11 @@ class Interpreter
     void newBudget();
     // chat heard now on a channel from name/id: queues a listen event for every matching listen, logs nothing
     void receive(int channel, const QString& name, const QString& id, const QString& text);
-    // queues touch_start (detected key and name), attach (with the key, NULL_KEY on detach)
-    void touch(const QString& id, const QString& name, int link = 0);   // link: llDetectedLinkNumber (0 in a single prim)
+    // queues a phase of a touch (detected key and name): touch_start, touch (while held) or touch_end;
+    // link: llDetectedLinkNumber (0 in a single prim)
+    enum class TouchPhase { Start, Held, End };
+    void touch(const QString& id, const QString& name, int link = 0, TouchPhase phase = TouchPhase::Start);
+    // queues attach (with the key, NULL_KEY on detach)
     void attachEvent(const QString& id);
     // Step 9a: queues link_message (sender's link number, num, str, id) and linkset_data (action, name, value)
     void linkMessage(int sender, int num, const QString& str, const QString& id);

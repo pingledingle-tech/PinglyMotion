@@ -441,7 +441,10 @@ void Interpreter::deliverInput(const Input& input)
   if (input.type == "touch")
   {
     m_world.log(m_now, QJsonObject{{"type", "input"}, {"input", "touch"}, {"name", name}});
-    queueEvent(Event{"touch_start", {Value::integer(1)}, id, name});
+    // a click: touch_start, touch and touch_end at once (holding a touch is a Sandbox input)
+    touch(id, name, 0, TouchPhase::Start);
+    touch(id, name, 0, TouchPhase::Held);
+    touch(id, name, 0, TouchPhase::End);
     return;
   }
   const QString text = World::clip(input.text);
@@ -465,13 +468,19 @@ void Interpreter::receive(int channel, const QString& name, const QString& id, c
   }
 }
 
-void Interpreter::touch(const QString& id, const QString& name, int link)
+void Interpreter::touch(const QString& id, const QString& name, int link, TouchPhase phase)
 {
   Detected d;   // the toucher (its position is not simulated) and the prim touched
   d.key = d.owner = id;
   d.name = name;
   d.link = link;
-  queueEvent(Event{"touch_start", {Value::integer(1)}, id, name, {d}});
+  // one toucher at a time, so num_detected is 1
+  switch (phase)
+  {
+    case TouchPhase::Start: queueEvent(Event{"touch_start", {Value::integer(1)}, id, name, {d}}); break;
+    case TouchPhase::Held: queueEvent(Event{"touch", {Value::integer(1)}, id, name, {d}}); break;
+    case TouchPhase::End: queueEvent(Event{"touch_end", {Value::integer(1)}, id, name, {d}}); break;
+  }
 }
 
 void Interpreter::attachEvent(const QString& id)
