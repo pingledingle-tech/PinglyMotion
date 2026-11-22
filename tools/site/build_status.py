@@ -14,6 +14,7 @@ import html
 import json
 import os
 import re
+import shutil
 import sys
 import urllib.request
 
@@ -23,6 +24,8 @@ MARK_START = "<!--STATUS-->"
 MARK_END = "<!--/STATUS-->"
 MAX_MILESTONES = 3
 MAX_BUILDING = 6
+# files next to docs/index.html that are published with it
+EXTRA_FILES = ["download.html", "code-signing.html", "privacy.html", "site.css", "site.js"]
 
 
 def api(path, repo, token):
@@ -156,6 +159,9 @@ def main(argv):
     else:
         out = page  # the page has no status section: publish it unchanged
     os.makedirs(argv[1], exist_ok=True)
+    # the other pages and the shared style and script of the website
+    for name in EXTRA_FILES:
+        shutil.copyfile(os.path.join(here, "..", "..", "docs", name), os.path.join(argv[1], name))
     with open(os.path.join(argv[1], "index.html"), "w", encoding="utf-8") as f:
         f.write(out)
     return 0

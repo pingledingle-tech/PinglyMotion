@@ -1,5 +1,5 @@
 Branch: docs/homepage-download-privacy
-Status: active
+Status: done
 Pull request: #342
 Files:
 - docs/index.html
