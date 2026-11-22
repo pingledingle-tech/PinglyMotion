@@ -72,11 +72,16 @@ struct CameraConstraint
   bool turnAroundPoint = false;   // the camera turns around `point` (the avatar), panning does not move it away
   QVector3D point;
   float fieldOfView = 0;          // vertical field of view in degrees; 0: the camera's own (Camera::DefaultFieldOfView)
+  // with turnAroundPoint: the camera is held at `eye`, looking at `point` (it cannot be turned;
+  // the distance limits still hold along that line)
+  bool fixedEye = false;
+  QVector3D eye;
 
   bool operator==(const CameraConstraint& o) const
   {
     return minDistance == o.minDistance && maxDistance == o.maxDistance &&
-           turnAroundPoint == o.turnAroundPoint && point == o.point && fieldOfView == o.fieldOfView;
+           turnAroundPoint == o.turnAroundPoint && point == o.point && fieldOfView == o.fieldOfView &&
+           fixedEye == o.fixedEye && eye == o.eye;
   }
   bool operator!=(const CameraConstraint& o) const { return !(*this == o); }
 };

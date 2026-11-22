@@ -18,7 +18,14 @@
  *   - camzoommax / camzoommin: the old zoom limits, a multiplier of the
  *     default 60 degrees (zoom 2 = 30 degrees): camzoommax:2 keeps the field
  *     of view at 30 degrees or more, camzoommin:2 at 30 degrees or less.
- * While a distance limit or setcam_unlock holds, the camera turns around the
+ *   - setcam_focusoffset:x/y/z: the camera looks at the avatar's middle
+ *     moved by this many metres (Second Life axes: x forward, y left, z up);
+ *   - setcam_eyeoffset:x/y/z (times setcam_eyeoffsetscale): the camera is
+ *     held at the avatar's middle moved by this offset, looking at the focus;
+ *     it cannot be turned or zoomed, only the distance limits still hold.
+ *   With several objects holding an offset, the first one in the restriction
+ *   list is used.
+ * While a distance limit, an offset or setcam_unlock holds, the camera turns around the
  * avatar's middle (its hip at rest, avatarPoint()) and panning cannot move it
  * away. With several objects the strictest limit wins; a maximum below the
  * minimum wins over it.
@@ -66,6 +73,12 @@ class CameraOverride : public QObject
       bool focusOnAvatar = false; // setcam_unlock held
       double minView = 0;         // field of view in degrees; 0: none
       double maxView = 0;         // degrees; 0: none
+      bool hasFocusOffset = false;
+      QVector3D focusOffset;      // metres, Second Life axes (x forward, y left, z up)
+      bool hasEyeOffset = false;
+      QVector3D eyeOffset;        // metres, Second Life axes
+      bool hasEyeScale = false;
+      double eyeScale = 1;        // setcam_eyeoffsetscale
       QStringList objects;        // the objects that hold a camera limit, sorted
       QStringList ignored;        // held restrictions whose option cannot be used, as "behaviour:option"
 
@@ -73,14 +86,16 @@ class CameraOverride : public QObject
       bool hasMax() const { return maxDistance >= 0; }
       bool hasViewLimit() const { return minView > 0 || maxView > 0; }
       // the camera turns around the avatar (a distance limit or setcam_unlock)
-      bool aroundAvatar() const { return hasMin() || hasMax() || focusOnAvatar; }
+      bool aroundAvatar() const { return hasMin() || hasMax() || focusOnAvatar || hasFocusOffset || hasEyeOffset; }
       bool any() const { return aroundAvatar() || hasViewLimit(); }
       // the field of view the limits leave of the view's own 60 degrees
       double fieldOfView() const;
       bool operator==(const Limits& o) const
       {
         return minDistance == o.minDistance && maxDistance == o.maxDistance && focusOnAvatar == o.focusOnAvatar &&
-               minView == o.minView && maxView == o.maxView && objects == o.objects && ignored == o.ignored;
+               minView == o.minView && maxView == o.maxView && hasFocusOffset == o.hasFocusOffset &&
+               focusOffset == o.focusOffset && hasEyeOffset == o.hasEyeOffset && eyeOffset == o.eyeOffset &&
+               hasEyeScale == o.hasEyeScale && eyeScale == o.eyeScale && objects == o.objects && ignored == o.ignored;
       }
     };
 
@@ -92,6 +107,9 @@ class CameraOverride : public QObject
     static QString metres(double value);
     // "30", "28.6": degrees for the text, at most one decimal
     static QString degrees(double value);
+    // an offset in Second Life axes (metres) as a point in the 3D view's world (inches): x forward is
+    // the figure's front (+Z), y left is the figure's left (+X), z up is +Y
+    static QVector3D toWorld(const QVector3D& secondLife);
 
     explicit CameraOverride(QObject* parent = nullptr);
 

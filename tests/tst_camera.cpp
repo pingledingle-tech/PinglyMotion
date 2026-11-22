@@ -42,6 +42,7 @@ class TestCamera : public QObject
     void clearConstraintRestoresExactly();
     void secondConstraintKeepsFirstCamera();
     void fieldOfViewFromConstraint();
+    void fixedEyeHoldsCamera();
 
   private:
     static void compareState(const CameraPosition& a, const CameraPosition& b);
@@ -471,6 +472,44 @@ void TestCamera::fieldOfViewFromConstraint()
   QCOMPARE(camera.fieldOfView(), 90.0f);
   camera.clearConstraint();
   QCOMPARE(camera.fieldOfView(), 60.0f);
+  compareState(camera.state(), before);
+}
+
+// Script Lab eye offset (job 7b, part 3): the camera sits at the eye and looks at the point
+void TestCamera::fixedEyeHoldsCamera()
+{
+  Camera camera;
+  const CameraPosition before = camera.state();
+  CameraConstraint c;
+  c.turnAroundPoint = true;
+  c.point = QVector3D(0.0f, 43.528519f, 0.0f);
+  c.fixedEye = true;
+  c.eye = c.point + QVector3D(30.0f, 40.0f, -50.0f);   // behind the figure, to its left, above
+  camera.setConstraint(c);
+  const float length = (c.eye - c.point).length();
+  QCOMPARE(camera.distance(), length);
+  compare(seen(camera, c.eye), QVector3D(0, 0, 0));
+  compare(seen(camera, c.point), QVector3D(0, 0, -length));
+  // turning, zooming and panning do nothing
+  camera.rotate(20.0f, 70.0f);
+  camera.zoom(3.0f);
+  camera.panBy(10.0f, 10.0f);
+  camera.setView(90.0f, 0.0f);
+  compare(seen(camera, c.eye), QVector3D(0, 0, 0));
+  compare(seen(camera, c.point), QVector3D(0, 0, -length));
+  // a distance limit still holds along the same line
+  c.maxDistance = 20.0f;
+  camera.setConstraint(c);
+  compare(seen(camera, c.point), QVector3D(0, 0, -20.0f));
+  compare(seen(camera, c.point + (c.eye - c.point).normalized() * 20.0f), QVector3D(0, 0, 0));
+  // straight in front of the figure
+  c.maxDistance = 0;
+  c.eye = c.point + QVector3D(0.0f, 0.0f, 80.0f);
+  camera.setConstraint(c);
+  QCOMPARE(camera.xRotation(), 0.0f);
+  QCOMPARE(camera.yRotation(), 0.0f);
+  compare(seen(camera, c.eye), QVector3D(0, 0, 0));
+  camera.clearConstraint();
   compareState(camera.state(), before);
 }
 

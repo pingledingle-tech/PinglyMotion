@@ -305,7 +305,24 @@ void Camera::applyConstraint()
   float d = pivotDistance;
   if (m_constraint.maxDistance > 0) d = qMin(d, m_constraint.maxDistance);
   if (m_constraint.minDistance > 0) d = qMax(d, m_constraint.minDistance);
-  if (m_constraint.turnAroundPoint)
+  if (m_constraint.turnAroundPoint && m_constraint.fixedEye)
+  {
+    // look from the eye at the point: the turn that puts the camera there
+    // (the camera sits at pivot + (-d cos x sin y, d sin x, d cos x cos y))
+    const QVector3D v = m_constraint.eye - m_constraint.point;
+    const float length = v.length();
+    if (length > 0.001f)
+    {
+      rotX = qBound(-89.0f, float(qRadiansToDegrees(std::asin(qBound(-1.0f, v.y() / length, 1.0f)))), 89.0f);
+      rotY = float(qRadiansToDegrees(std::atan2(-v.x(), v.z())));
+      if (rotY < 0) rotY += 360;
+      d = length;
+      if (m_constraint.maxDistance > 0) d = qMin(d, m_constraint.maxDistance);
+      if (m_constraint.minDistance > 0) d = qMax(d, m_constraint.minDistance);
+    }
+    place(m_constraint.point, d);
+  }
+  else if (m_constraint.turnAroundPoint)
     place(m_constraint.point, d);
   else if (d != pivotDistance)
   {
