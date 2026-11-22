@@ -27,6 +27,7 @@
 #include "jointgroups.h"
 
 #include "timeline.h"
+#include "timelinelook.h"
 
 Timeline::Timeline(QWidget* parent, Qt::WindowFlags)
   : QFrame(parent)
@@ -73,7 +74,7 @@ static int timelineRows()
 // the set of shown rows changed: draw everything again from a clean pixmap
 void Timeline::layoutChanged()
 {
-  if(offscreen) offscreen->fill(palette().color(QPalette::Active,QPalette::Window));
+  if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
   fullRepaint=true;
   update();
 }
@@ -120,8 +121,15 @@ void Timeline::paintEvent(QPaintEvent* /* e */)
   p.drawPixmap(0,0,*offscreen);
 
   // draw current frame marker
-  p.fillRect(xpos + Constants::keyWidth() / 2 - 1, 0, 2, height(), QColor("#ff0000"));
+  p.fillRect(xpos + Constants::keyWidth() / 2 - 1, 0, 2, height(), TimelineLook::currentFrame(Theme::isDark()));
 
+}
+
+// the theme was switched: the rows are kept in a pixmap, so draw them all again
+void Timeline::changeEvent(QEvent* event)
+{
+  QFrame::changeEvent(event);
+  if(event->type()==QEvent::ApplicationPaletteChange || event->type()==QEvent::PaletteChange) layoutChanged();
 }
 
 void Timeline::setNumberOfFrames(int frames)
@@ -130,6 +138,7 @@ void Timeline::setNumberOfFrames(int frames)
   numOfFrames=frames;
 
   QPixmap* newOffscreen = new QPixmap(numOfFrames * Constants::keyWidth(), Constants::lineHeight() * (Constants::numParts() + 1));
+  newOffscreen->fill(TimelineLook::row(false,Theme::isDark()));
 
   // copy old offscreen pixmap to new pixmap, if there is one
   if(offscreen)
@@ -204,15 +213,9 @@ void Timeline::drawKeyframe(int track,int frame)
   // calculate x position
   int xpos = frame * Constants::keyWidth();
 
-  QPalette::ColorRole keyColor=QPalette::WindowText;
-
-#ifdef Q_OS_WIN32
-  // on windows systems use text highlight color to contrast with track highlight
-  if(trackSelected==track)
-    keyColor=QPalette::HighlightedText;
-#endif
-
-  QColor color(palette().color(QPalette::Active,keyColor));
+  // text colour, on_accent on the selected row (the token pair that has contrast)
+  const bool dark=Theme::isDark();
+  QColor color(TimelineLook::key(trackSelected==track && animation->getPartName(track)!="Site",dark));
   // draw the key frame
   if(frame==0)
   {
@@ -227,7 +230,7 @@ void Timeline::drawKeyframe(int track,int frame)
   else
   {
     // find out if we should paint in highlight or normal color
-    if(frame && dragging==frame && trackSelected==track) color=Qt::red;
+    if(frame && dragging==frame && trackSelected==track) color=TimelineLook::keyDragged(dark);
 
     // get the list of key frames
     const BVHNode* joint=animation->getNode(track);
@@ -280,20 +283,11 @@ void Timeline::drawTrack(int track)
   if(track==-1) return;
   if(!offscreen) return;
 
-  // normal tracks get default background color
-  QPalette::ColorRole baseColor=QPalette::Window;
-  // normal tracks get default foreground colors for keyframe transition lines
-  QPalette::ColorRole lineColor=QPalette::WindowText;
-  // selected tracks get other color, unless it's a "Site" track (end of limbs group)
+  // selected tracks get the selection colour, unless it's a "Site" track (end of limbs group);
+  // every colour comes from the design tokens (src/timelinelook.h)
+  const bool dark=Theme::isDark();
   QString trackName=animation->getPartName(track);
-  if(track==trackSelected && trackName!="Site")
-  {
-    baseColor=QPalette::Highlight;
-#ifdef Q_OS_WIN32
-    // additionally, set inverse highlight color for transition lines on windows for contrast
-    lineColor=QPalette::HighlightedText;
-#endif
-  }
+  const bool selected=(track==trackSelected && trackName!="Site");
 
   const int row=JointGroups::rowOfTrack(track);
   if(row<0) return;
@@ -313,8 +307,8 @@ void Timeline::drawTrack(int track)
   // draw alternatingly light / dark background
   for(int x = firstGreyShade; x < (firstGreyShade + visibleKeysX + 10) * Constants::keyWidth(); x += 10 * Constants::keyWidth())
   {
-    // draw a filled rectangle in background color, alternatingly darkened by 5 %
-    p->fillRect(x, y, x + 10 * Constants::keyWidth(), Constants::lineHeight(), palette().color(QPalette::Active, baseColor).darker(100 + 5 * light));
+    // draw a filled rectangle in the row colour, every other block toward the background
+    p->fillRect(x, y, x + 10 * Constants::keyWidth(), Constants::lineHeight(), light ? TimelineLook::rowAlternate(selected,dark) : TimelineLook::row(selected,dark));
     light=1-light;
   }
 
@@ -326,8 +320,8 @@ void Timeline::drawTrack(int track)
   }
 
   // draw straight line as track marker within "dirty" redraw region
-  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2, (visibleKeysX + 1) * Constants::keyWidth(), 1, palette().color(QPalette::Active, baseColor).darker(115));
-  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2 + 1, (visibleKeysX + 1) * Constants::keyWidth(), 1, palette().color(QPalette::Active, baseColor).lighter(115));
+  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2, (visibleKeysX + 1) * Constants::keyWidth(), 1, TimelineLook::midLine(selected,dark));
+  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2 + 1, (visibleKeysX + 1) * Constants::keyWidth(), 1, TimelineLook::midLineShade(selected,dark));
 
   delete p;
 
@@ -363,8 +357,8 @@ void Timeline::drawTrack(int track)
             const FrameData& oldFrameData=joint->keyframeDataByIndex(key-1);
             int frameDiff = (frameNum - oldFrame + 1) * Constants::keyWidth() / 2;
 
-            QColor pen1(palette().color(QPalette::Active,lineColor));
-            QColor pen2(palette().color(QPalette::Active,baseColor).lighter(115));
+            QColor pen1(TimelineLook::key(selected,dark));
+            QColor pen2(TimelineLook::midLineShade(selected,dark));
 
             if(oldFrameData.easeOut())
             {

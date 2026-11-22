@@ -83,6 +83,25 @@ every X, Y or Z label. The colours are `axis_x`, `axis_y` and `axis_z`.
 - The axis colours mean axes only. They are not used for anything else, and no
   other colour is used for an axis.
 
+## Colours in the timeline and the 3D view
+
+Built in UX phase 0a (22 November 2026): these parts ask the theme for a
+token and write no colour by hand, and the window palette is made from the
+tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
+(`tests/uxcolours`).
+
+- **Timeline** (`src/timelinelook.h`): rows `surface`, the selected row
+  `selection`, every other block of ten frames 35 percent toward `background`,
+  keys and the lines between them `text` (`on_accent` on the selected row), a
+  key being dragged and the line at the current frame `danger`, track names
+  `text` (`text_disabled` for a hidden group, `on_accent` when selected).
+- **3D view** (`src/viewcolours.h`): rotation rings and prop axis lines in the
+  axis tokens (a ring that is not in use is 20 percent toward `background`, a
+  highlighted prop handle 20 percent toward `text`), joint balls `danger_fill`
+  (selected), `accent` (highlighted) and `success` (others), bones `area_other`,
+  effect markers `accent` (box, object) and `danger_fill` (ball, lock). The 3D
+  view's background and the avatar's own body shading do not follow the theme yet.
+
 ## Shape
 
 | Token | Value | Used for |

@@ -144,14 +144,14 @@ ADD_TEST (NAME scene WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymot
 SET_TESTS_PROPERTIES (scene PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the timeline: clicks, drags, wheel, Delete and Insert (#202)
-ADD_EXECUTABLE (pinglymotion_timeline_tests tst_timeline.cpp  ${CMAKE_SOURCE_DIR}/src/timeline.cpp)
+ADD_EXECUTABLE (pinglymotion_timeline_tests tst_timeline.cpp ${CMAKE_SOURCE_DIR}/src/theme.cpp  ${CMAKE_SOURCE_DIR}/src/timeline.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_timeline_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_timeline_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME timeline WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timeline_tests)
 SET_TESTS_PROPERTIES (timeline PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the timeline panel scrolls to the row of the selected joint
-ADD_EXECUTABLE (pinglymotion_timelineview_tests tst_timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timeline.cpp ${CMAKE_SOURCE_DIR}/src/easingtiles.cpp ${CMAKE_SOURCE_DIR}/src/easing.cpp)
+ADD_EXECUTABLE (pinglymotion_timelineview_tests tst_timelineview.cpp ${CMAKE_SOURCE_DIR}/src/theme.cpp ${CMAKE_SOURCE_DIR}/src/timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timeline.cpp ${CMAKE_SOURCE_DIR}/src/easingtiles.cpp ${CMAKE_SOURCE_DIR}/src/easing.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_timelineview_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_timelineview_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME timelineview WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timelineview_tests)

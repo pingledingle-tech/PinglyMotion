@@ -57,6 +57,7 @@
 #include "scriptlab/environmentoverride.h"
 #include "scriptlab/viewmodesoverride.h"
 #include "scriptlab/effectspreview.h"
+#include "viewcolours.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
  : QOpenGLWidget(parent),
@@ -505,10 +506,10 @@ void AnimationView::drawAnimations()
 void AnimationView::drawEffectMarkers()
 {
   if(!m_effects || m_effects->markers().isEmpty() || isPicking() || !m_cubeMeshModel || !m_sphereMeshModel) return;
-  // colour tokens accent and danger_fill (docs/design_tokens.json, dark theme: the 3D view's background
-  // does not follow the theme); the shape tells them apart too: a box for an object, a ball for a lock
-  const QVector4D objectColour(0x32/255.0f,0x72/255.0f,0xDD/255.0f,1.0f);
-  const QVector4D lockColour(0xC9/255.0f,0x3A/255.0f,0x32/255.0f,1.0f);
+  // colour tokens accent and danger_fill in the current theme (src/viewcolours.h); the shape
+  // tells them apart too: a box for an object, a ball for a lock
+  const QVector4D objectColour=ViewColours::vector(ViewColours::objectMarker());
+  const QVector4D lockColour=ViewColours::vector(ViewColours::lockMarker());
   QHash<QString,int> used;   // markers already drawn at a joint, so the next one sits beside them
   // on top of the body, like the Bento balls, so a marker inside the body can be seen
   const GLboolean depthWasOn=glIsEnabled(GL_DEPTH_TEST);
@@ -1272,21 +1273,19 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
     if(mode==MODE_SKELETON && UserSettings::skeleton() && !selecting)
     {
       SceneState::setLineWidth(1);
-      drawWithShader(GL_LINES,{-offset,QVector3D(0,0,0)},QVector4D(0,1,1,1));
+      drawWithShader(GL_LINES,{-offset,QVector3D(0,0,0)},ViewColours::vector(ViewColours::bone()));
 
       // face bones only get a ball while the head or a face bone is selected,
       // otherwise the many face balls cover the whole head
       if(jointRoot->type!=BVH_ROOT && JointGroups::shown(motion->name()) &&
          (!isFaceBone(motion->name()) || faceFocus()))
       {
-        // draw joint spheres in skeleton mode, red for selected parts,
-        // blue for hightlighted and green for all others
-        if(partSelected==selectName)
-          SceneState::setColor(1,0,0,1);
-        else if(partHighlighted==selectName)
-          SceneState::setColor(0,0,1,1);
-        else
-          SceneState::setColor(0,1,0,1);
+        // draw joint spheres in skeleton mode, danger_fill for selected parts,
+        // accent for highlighted and success for all others (tokens, src/viewcolours.h)
+        const ViewColours::Joint ballKind=(partSelected==selectName) ? ViewColours::Joint::Selected :
+                                          (partHighlighted==selectName) ? ViewColours::Joint::Highlighted : ViewColours::Joint::Other;
+        const QVector4D ball=ViewColours::vector(ViewColours::jointBall(ballKind));
+        SceneState::setColor(ball.x(),ball.y(),ball.z(),ball.w());
 
         if(isBentoBone(motion->name()) && !m_hideMarkers)
         {
@@ -1495,9 +1494,9 @@ void AnimationView::drawDragHandles(const Prop* prop) const
   double ys=prop->yScale() / 2.0;
   double zs=prop->zScale() / 2.0;
 
-  QColor xRGB("#ff0000");
-  QColor yRGB("#00ff00");
-  QColor zRGB("#0000ff");
+  QColor xRGB=ViewColours::axis(0);
+  QColor yRGB=ViewColours::axis(1);
+  QColor zRGB=ViewColours::axis(2);
 
   int xLineWidth=1;
   int yLineWidth=1;
@@ -1508,19 +1507,19 @@ void AnimationView::drawDragHandles(const Prop* prop) const
     case static_cast<int>(OpenGlIds::ScaleHandleX):
     case static_cast<int>(OpenGlIds::RotateHandleX):
     case static_cast<int>(OpenGlIds::DragHandleX):
-      xRGB=xRGB.lighter(120);
+      xRGB=Theme::mix(xRGB,Theme::color(Theme::Token::Text),0.2);
       xLineWidth=3;
       break;
     case static_cast<int>(OpenGlIds::ScaleHandleY):
     case static_cast<int>(OpenGlIds::RotateHandleY):
     case static_cast<int>(OpenGlIds::DragHandleY):
-      yRGB=yRGB.lighter(120);
+      yRGB=Theme::mix(yRGB,Theme::color(Theme::Token::Text),0.2);
       yLineWidth=3;
       break;
     case static_cast<int>(OpenGlIds::ScaleHandleZ):
     case static_cast<int>(OpenGlIds::RotateHandleZ):
     case static_cast<int>(OpenGlIds::DragHandleZ):
-      zRGB=zRGB.lighter(120);
+      zRGB=Theme::mix(zRGB,Theme::color(Theme::Token::Text),0.2);
       zLineWidth=3;
       break;
     default:
@@ -1666,8 +1665,7 @@ void AnimationView::drawCircle(int axis,float radius,bool strong)
   const float tube=picking ? 0.5f : (strong ? 0.32f : 0.18f);
   QVector3D axisDirection(axis==0,axis==1,axis==2);
 
-  const float bright=strong ? 1.0f : 0.8f;
-  const QVector4D ringColor(axis==0 ? bright : 0,axis==1 ? bright : 0,axis==2 ? bright : 0,1);
+  const QVector4D ringColor=ViewColours::vector(ViewColours::ring(axis,strong));
   if(picking) pickName(static_cast<int>(OpenGlIds::RotateRingX)+axis);
   else
   {

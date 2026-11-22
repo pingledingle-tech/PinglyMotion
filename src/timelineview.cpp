@@ -32,6 +32,7 @@
 #include "timeline.h"
 
 #include "timelineview.h"
+#include "timelinelook.h"
 
 // rows shown in the timeline: joints of hidden groups may be left out
 static int timelineRows()
@@ -76,7 +77,7 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   timeline=new Timeline(0);
   view=new QScrollArea(content);
 
-  view->setBackgroundRole(QPalette::Dark);
+  view->setBackgroundRole(QPalette::Base);
 
   view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -221,7 +222,7 @@ void TimelineTracks::paintEvent(QPaintEvent*)
   if(!animation) return;
   {
     QPainter p(this);
-    p.eraseRect(rect());
+    p.fillRect(rect(),TimelineLook::row(false,Theme::isDark()));
   }
 
   for (int part = 0; part < Constants::numParts(); part++)
@@ -240,25 +241,16 @@ void TimelineTracks::drawTrack(int track)
     const int row=JointGroups::rowOfTrack(track);
     if(row<0) return;
     QPainter p(this);
-    QPalette::ColorRole textColor=QPalette::WindowText;
-    // joints of hidden groups are listed in a dimmed colour
-    const QPalette::ColorGroup colorGroup=JointGroups::trackDimmed(track) ? QPalette::Disabled : QPalette::Active;
+    // colours from the design tokens (src/timelinelook.h); joints of hidden groups are dimmed
+    const bool dark=Theme::isDark();
+    const bool selected=(track==selectedTrack);
 
     int y = row * Constants::lineHeight() + 2;
 
-    if(track==selectedTrack)
-    {
-      p.fillRect(0, y, width(), Constants::lineHeight(), palette().color(QPalette::Active, QPalette::Highlight));
-#ifdef Q_OS_WIN32
-      // on windows systems use contrast color to track highlight color
-      textColor=QPalette::HighlightedText;
-#endif
-    }
-    else
-      p.eraseRect(0, y, width(), Constants::lineHeight());
+    p.fillRect(0, y, width(), Constants::lineHeight(), TimelineLook::row(selected,dark));
 
     // draw track name
-    p.setPen(palette().color(colorGroup,textColor));
+    p.setPen(TimelineLook::name(selected,JointGroups::trackDimmed(track),dark));
     p.drawText(0, y + Constants::keyHeight(), trackName);
   }
 }

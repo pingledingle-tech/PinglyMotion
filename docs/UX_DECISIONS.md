@@ -44,6 +44,7 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - One row per joint, diamond keys where a pose is set.
 - Shows only joints that have been changed, so it stays short.
 - Rows are coloured by body area, with the same groups and colours as the Joints panel tabs (Body / Face / Hands / Other).
+- Colours (built, UX phase 0a, 22 November 2026): the timeline and the track names take every colour from the design tokens and follow the dark and the light theme, also when the theme is switched while the program runs; details in [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), "Colours in the timeline and the 3D view". The rows are not yet coloured by body area.
 - New: select a stretch of the timeline, copy it, and Paste mirrored further along (a left step becomes a right step).
 
 ## 6. Selected joint panel

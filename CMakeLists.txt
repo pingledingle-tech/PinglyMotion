@@ -151,6 +151,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/transportbar)
   # test helper that draws panels offscreen in the program's theme, used on the transport bar
   ADD_SUBDIRECTORY (tests/uirender)
+  # colours of the timeline, window palette and 3D view drawing come from the design tokens (UX phase 0a)
+  ADD_SUBDIRECTORY (tests/uxcolours)
   # slider steps to values and back without losing the decimals (#192)
   ADD_SUBDIRECTORY (tests/sliderscale)
   # easing maths for the six easing choices (#53 step 1)

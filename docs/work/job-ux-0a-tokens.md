@@ -1,5 +1,5 @@
 Branch: job/ux-0a-tokens
-Status: active
+Status: done
 Pull request: #361
 Files:
 - src/theme.*
@@ -10,6 +10,10 @@ Files:
 - src/CMakeLists.txt
 - CMakeLists.txt
 - tests/uxcolours/**
+- tests/CMakeLists.txt
+- src/timelinelook.h
+- src/viewcolours.h
+- docs/DECISIONS.md
 - docs/UX_DECISIONS.md
 - docs/DESIGN_SYSTEM.md
 
