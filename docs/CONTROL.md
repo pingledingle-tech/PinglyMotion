@@ -466,7 +466,7 @@ together are at most 524 288 characters; nothing runs unless every script compil
   `object`), `rlv` and `log`. A limit stops only the script that hit it; the others run on. The answer of a single
   script (`source`) is as before, plus `objects` and `dialog`.
 
-`lsl_event {type, object, channel, text, kind, name, id, button, point, link, amount, url, method, body, headers, address, subject, seconds}` sends one event to the world of the
+`lsl_event {type, object, channel, text, kind, name, id, button, point, link, amount, url, method, body, headers, address, subject, phase, pos, tnum, targetpos, ourpos, seconds}` sends one event to the world of the
 last `lsl_run` (with `source` or `objects`; each `lsl_run` starts a new world) at the moment that run or the last event
 ended, then runs the world on for `seconds` (default 1, at most 3600) of simulated time. The fields are those of an
 input, without `at`. The answer has the `log` of this command only, `objects`, `dialog`, `rlv`, `stopped` and `time`.
@@ -576,8 +576,13 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
 - **Animation overrides (step 9b-8):** `llSetAnimationOverride(state, animation)`, `llResetAnimationOverride(state)` (also `"ALL"`) and `llGetAnimationOverride(state)` need `PERMISSION_OVERRIDE_ANIMATIONS`; without it a debug line says so. An unknown state name gives a debug line. A successful set or reset writes an `animation_override` entry (`op`, `state`, `animation`), and the get answers the stored name, or an empty string.
 - **Movement and physics stubs (second gap list, step 6, part 1):** `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llApplyImpulse`, `llSetBuoyancy`, `llRotLookAt` and `llVolumeDetect` do nothing but
   write a `recorded_only` entry with the function and its exact arguments, the same way as the step 9b-8 stubs above: no motion model runs, the object never moves or turns, and nothing is simulated of
-  physics, buoyancy or volume detection. A test script's intent (target, impulse, buoyancy, look-at rotation, detect flag) can still be read back from the log. Collision events
-  (`collision_start`, `collision_end`, `land_collision*`, `moving_start`, `moving_end`, `at_target`, `not_at_target`) and the vehicle functions are not part of this step.
+  physics, buoyancy or volume detection. A test script's intent (target, impulse, buoyancy, look-at rotation, detect flag) can still be read back from the log. The vehicle functions are not part of this step.
+- **Collision-family events (second gap list, step 6, part 2):** there is still no motion model, so these events never happen on their own; new `inputs` types raise them for testing, with exactly the
+  llDetected* data or vector arguments given. `collision` (`phase`: `"start"` or `"end"`; `link`: the prim hit, default the root; `name`/`id`: the other object or avatar, as for `touch`) raises
+  `collision_start` or `collision_end(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). `land_collision`
+  (`phase`: `"start"`, `"end"` or left out for the continuous `land_collision`; `pos`: `[x, y, z]`, the event's own vector argument) and `moving` (`phase`: `"start"` or `"end"`, no detected data: `moving_start`
+  and `moving_end` take no arguments) go to every script of the object, as `changed` does. `at_target` (`tnum`, `targetpos`, `ourpos`: the event's own arguments; `llTarget`'s target number is not tracked)
+  and `not_at_target` (no fields) likewise go to every script. None of this simulates collisions, gravity or `llTarget`; it only lets a script's handler be tested against given data.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
 #### HTTP requests with canned replies (Script Lab step 9b-9)

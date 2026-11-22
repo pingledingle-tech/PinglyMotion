@@ -527,7 +527,8 @@ void Sandbox::deliver(const SandboxInput& input)
   }
 
   if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
-      input.type == "sit" || input.type == "stand" || input.type == "control" || input.type == "money" || input.type == "email")
+      input.type == "sit" || input.type == "stand" || input.type == "control" || input.type == "money" || input.type == "email" ||
+      input.type == "collision" || input.type == "land_collision" || input.type == "moving" || input.type == "at_target" || input.type == "not_at_target")
   {
     // a stand input without an object finds the object the avatar sits on
     if (input.type == "stand" && input.object.isEmpty())
@@ -672,6 +673,72 @@ void Sandbox::deliver(const SandboxInput& input)
       entry["note"] = "Simulated: no L$ moved.";
       m_log.log(t, entry);
       for (int i : hit) m_slots[size_t(i)].interp->moneyEvent(key, input.amount);
+      return;
+    }
+    if (input.type == "collision")
+    {
+      // second gap list, step 6, part 2: a synthetic collision, the other object/avatar given by name/id (as a
+      // touch); no motion model, so this never happens on its own. The scripts of the prim hit that have a
+      // collision_start or collision_end handler get it; when none does, the root's (as touches are passed on).
+      const int link = input.link > 0 ? input.link : 1;
+      entry["id"] = key;
+      entry["phase"] = input.stage;
+      if (input.link > 0) entry["link"] = input.link;
+      if (link > o.spec.prims)
+      {
+        entry["error"] = QString("The object has %1 prim(s); there is no link %2.").arg(o.spec.prims).arg(link);
+        m_log.log(t, entry);
+        return;
+      }
+      const bool end = input.stage == "end";
+      const QString eventName = end ? "collision_end" : "collision_start";
+      std::vector<int> hit;
+      for (int pass = 0; pass < 2 && hit.empty(); ++pass)
+        for (int i = 0; i < o.slotCount; ++i)
+        {
+          const Slot& slot = m_slots[size_t(o.firstSlot + i)];
+          if (slot.link == (pass == 0 ? link : 1) && slot.interp->handles(eventName)) hit.push_back(o.firstSlot + i);
+        }
+      m_log.log(t, entry);
+      const int hitLink = o.spec.prims == 1 ? 0 : link;
+      for (int i : hit) m_slots[size_t(i)].interp->collisionEvent(key, name, hitLink, end);
+      return;
+    }
+    if (input.type == "land_collision")
+    {
+      // every script of the object (ground collisions are not tied to one prim); the event name follows "phase"
+      const QString eventName = input.stage == "start" ? "land_collision_start" : (input.stage == "end" ? "land_collision_end" : "land_collision");
+      entry.remove("name");
+      entry["event"] = eventName;
+      entry["pos"] = QJsonArray{input.pos[0], input.pos[1], input.pos[2]};
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->landCollisionEvent(eventName, input.pos);
+      return;
+    }
+    if (input.type == "moving")
+    {
+      const bool end = input.stage == "end";
+      entry.remove("name");
+      entry["phase"] = input.stage;
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->movingEvent(end);
+      return;
+    }
+    if (input.type == "at_target")
+    {
+      entry.remove("name");
+      entry["tnum"] = input.tnum;
+      entry["targetpos"] = QJsonArray{input.targetpos[0], input.targetpos[1], input.targetpos[2]};
+      entry["ourpos"] = QJsonArray{input.ourpos[0], input.ourpos[1], input.ourpos[2]};
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->atTargetEvent(input.tnum, input.targetpos, input.ourpos);
+      return;
+    }
+    if (input.type == "not_at_target")
+    {
+      entry.remove("name");
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->notAtTargetEvent();
       return;
     }
     if (input.type == "email")

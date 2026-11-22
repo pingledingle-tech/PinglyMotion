@@ -265,14 +265,16 @@ void LslParserTest::checkErrors()
 
 void LslParserTest::warnings()
 {
+  // not_at_target and collision_start used to be examples of events never raised; they are raised now (second gap
+  // list, step 6, part 2), so remote_data (deprecated, out of scope) and the still-unraised plain collision stand in
   const Parser::Result r = Parser::parse(
-    "default {\n state_entry() {\n  llGetEnergy();\n }\n not_at_target() { }\n collision(integer n) { }\n}");
+    "default {\n state_entry() {\n  llGetEnergy();\n }\n remote_data(integer e, key i, key c, string n, integer d, string v) { }\n collision(integer n) { }\n}");
   QVERIFY(r.ok());   // valid LSL: warnings only
   QCOMPARE(int(r.warnings.size()), 3);
   QCOMPARE(r.warnings[0].line, 3);
   QCOMPARE(r.warnings[0].column, 3);
   QVERIFY(r.warnings[0].message.contains("llGetEnergy is not supported yet"));
-  QVERIFY(r.warnings[1].message.contains("not_at_target"));
+  QVERIFY(r.warnings[1].message.contains("remote_data"));
   QVERIFY(r.warnings[1].message.contains("does not raise it yet"));
 }
 

@@ -531,6 +531,36 @@ void Interpreter::moneyEvent(const QString& id, int amount)
   queueEvent(Event{"money", {Value::key(id), Value::integer(amount)}, QString(), QString()});
 }
 
+void Interpreter::collisionEvent(const QString& id, const QString& name, int link, bool end)
+{
+  Detected d;   // the other object or avatar in the collision (its position is not simulated); one at a time
+  d.key = d.owner = id;
+  d.name = name;
+  d.link = link;
+  queueEvent(Event{end ? "collision_end" : "collision_start", {Value::integer(1)}, id, name, {d}});
+}
+
+void Interpreter::landCollisionEvent(const QString& eventName, const float pos[3])
+{
+  queueEvent(Event{eventName, {Value::vector(pos[0], pos[1], pos[2])}, QString(), QString()});
+}
+
+void Interpreter::movingEvent(bool end)
+{
+  queueEvent(Event{end ? "moving_end" : "moving_start", {}, QString(), QString()});
+}
+
+void Interpreter::atTargetEvent(int tnum, const float targetpos[3], const float ourpos[3])
+{
+  queueEvent(Event{"at_target", {Value::integer(tnum), Value::vector(targetpos[0], targetpos[1], targetpos[2]),
+                                  Value::vector(ourpos[0], ourpos[1], ourpos[2])}, QString(), QString()});
+}
+
+void Interpreter::notAtTargetEvent()
+{
+  queueEvent(Event{"not_at_target", {}, QString(), QString()});
+}
+
 void Interpreter::linksetDataEvent(int action, const QString& name, const QString& value)
 {
   queueEvent(Event{"linkset_data", {Value::integer(action), Value::string(name), Value::string(value)}, QString(), QString()});

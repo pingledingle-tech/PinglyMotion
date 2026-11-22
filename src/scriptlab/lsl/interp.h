@@ -114,6 +114,19 @@ class Interpreter
     bool httpRequestEvent(const IncomingRequest& request);
     // queues money(payer, amount)
     void moneyEvent(const QString& id, int amount);
+    // Second gap list, step 6, part 2: synthetic collision-family events for testing. There is no motion model, so
+    // num_detected is 1 and the llDetected* data (collisionEvent) and the vector arguments (landCollisionEvent,
+    // atTargetEvent) are exactly what was given; nothing moves and nothing is simulated.
+    // queues collision_start(num_detected) or collision_end(num_detected), with the other object/avatar as the one detected
+    void collisionEvent(const QString& id, const QString& name, int link, bool end);
+    // queues land_collision_start(pos), land_collision_end(pos) or land_collision(pos)
+    void landCollisionEvent(const QString& eventName, const float pos[3]);
+    // queues moving_start() or moving_end()
+    void movingEvent(bool end);
+    // queues at_target(tnum, targetpos, ourpos)
+    void atTargetEvent(int tnum, const float targetpos[3], const float ourpos[3]);
+    // queues not_at_target()
+    void notAtTargetEvent();
     // the current state has a handler for this event
     bool handles(const QString& event) const;
     // Gap list 2, step 2. llSetScriptState from another script: a script that is not running keeps its variables, state,

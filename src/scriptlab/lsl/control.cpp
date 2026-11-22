@@ -190,6 +190,60 @@ namespace
     return QString();
   }
 
+  // a vector field [x, y, z]: three finite numbers, each within low..high; false when not
+  bool readVector3(const QJsonValue& v, double low, double high, float out[3])
+  {
+    if (!v.isArray()) return false;
+    const QJsonArray p = v.toArray();
+    if (p.size() != 3) return false;
+    for (int i = 0; i < 3; ++i)
+    {
+      const double d = p[i].toDouble(std::nan(""));
+      if (!p[i].isDouble() || !std::isfinite(d) || d < low || d > high) return false;
+      out[i] = float(d);
+    }
+    return true;
+  }
+
+  // second gap list, step 6, part 2: the fields of the collision-family inputs (collision, land_collision, moving,
+  // at_target, not_at_target); empty when fine
+  QString readCollisionFamily(const QJsonObject& o, const QString& where, SandboxInput& in)
+  {
+    static const double MAX_COORD = 65536.0;
+    const bool family = in.type == "collision" || in.type == "land_collision" || in.type == "moving";
+    if (o.contains("phase"))
+    {
+      if (!family) return where + "\"phase\" is only for collision, land_collision and moving.";
+      if (!o.value("phase").isString()) return where + "\"phase\" must be text.";
+      in.stage = o.value("phase").toString();
+      if (in.stage != "start" && in.stage != "end")
+        return where + "\"phase\" must be \"start\" or \"end\"" + (in.type == "land_collision" ? " (leave it out for the continuous land_collision)." : ".");
+    }
+    else if (in.type == "collision" || in.type == "moving")
+      return where + QString("a %1 input needs \"phase\": \"start\" or \"end\".").arg(in.type);
+    if (o.contains("pos"))
+    {
+      if (in.type != "land_collision") return where + "\"pos\" is only for land_collision (the event's own vector argument).";
+      if (!readVector3(o.value("pos"), -MAX_COORD, MAX_COORD, in.pos))
+        return where + "\"pos\" must be [x, y, z], three numbers (the land_collision event's own vector argument).";
+    }
+    else if (in.type == "land_collision")
+      return where + "a land_collision input needs \"pos\": [x, y, z] (the event's own vector argument).";
+    if (in.type == "at_target")
+    {
+      if (!o.contains("tnum") || !wholeNumber(o.value("tnum"), 0, 2147483647.0, in.tnum))
+        return where + "an at_target input needs \"tnum\": the target number, a whole number from 0 (llTarget's return value).";
+      if (!o.contains("targetpos") || !readVector3(o.value("targetpos"), -MAX_COORD, MAX_COORD, in.targetpos))
+        return where + "an at_target input needs \"targetpos\": [x, y, z] (the target position given to llTarget).";
+      if (!o.contains("ourpos") || !readVector3(o.value("ourpos"), -MAX_COORD, MAX_COORD, in.ourpos))
+        return where + "an at_target input needs \"ourpos\": [x, y, z] (where the object is now).";
+    }
+    else
+      for (const char* field : {"tnum", "targetpos", "ourpos"})
+        if (o.contains(field)) return where + "\"" + field + "\" is only for at_target.";
+    return QString();
+  }
+
   // gap list 2, step 4: the fields of money (amount), http_request (url, method, body, headers) and email (address,
   // subject, body); empty when fine
   QString readMoneyWebMail(const QJsonObject& o, const QString& where, SandboxInput& in)
@@ -280,9 +334,11 @@ namespace
     }
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
-    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email"};
+    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email",
+                                       "collision", "land_collision", "moving", "at_target", "not_at_target"};
     if (!types.contains(in.type))
-      return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\" or \"email\".";
+      return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
+                      "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\" or \"not_at_target\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -305,13 +361,15 @@ namespace
     else if (o.contains("button")) return where + "\"button\" is only for a dialog answer.";
     if (o.contains("link"))
     {
-      if (in.type != "touch" && in.type != "sit" && in.type != "money")
-        return where + "\"link\" is only for touch (the prim touched), sit (the prim sat on) and money (the prim paid).";
+      if (in.type != "touch" && in.type != "sit" && in.type != "money" && in.type != "collision")
+        return where + "\"link\" is only for touch (the prim touched), sit (the prim sat on), money (the prim paid) and collision (the prim hit).";
       if (!wholeNumber(o.value("link"), 1, Sandbox::MAX_PRIMS, in.link))
         return where + QString("\"link\" must be a whole number from 1 to %1 (the prim touched; 1 is the root).").arg(Sandbox::MAX_PRIMS);
     }
     const QString moneyWebMail = readMoneyWebMail(o, where, in);
     if (!moneyWebMail.isEmpty()) return moneyWebMail;
+    const QString collisionFamily = readCollisionFamily(o, where, in);
+    if (!collisionFamily.isEmpty()) return collisionFamily;
     if (o.contains("hold"))
     {
       if (in.type != "touch") return where + "\"hold\" is only for touch (the seconds the touch is held).";
@@ -797,7 +855,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
     static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                       "amount", "url", "method", "body", "headers", "address", "subject"};
+                                       "amount", "url", "method", "body", "headers", "address", "subject", "phase", "pos", "tnum", "targetpos", "ourpos"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -905,7 +963,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
   static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds"};
+                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -915,7 +973,9 @@ QJsonObject event(const QJsonObject& request, Session* session)
     message[0] = message[0].toUpper();
     return fail(message);
   }
-  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request or email.");
+  if (!request.contains("type"))
+    return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, collision, land_collision, "
+                "moving, at_target or not_at_target.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {
