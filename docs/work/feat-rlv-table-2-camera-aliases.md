@@ -1,6 +1,6 @@
 Branch: feat/rlv-table-2-camera-aliases
-Status: active
-Pull request: pending
+Status: done
+Pull request: #316
 Files:
 - src/scriptlab/rlvbehaviours.*
 - src/scriptlab/rlvstate.*
