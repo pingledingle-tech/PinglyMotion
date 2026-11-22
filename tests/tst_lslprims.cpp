@@ -288,7 +288,8 @@ void LslPrimsTest::childPrimPositionAndRotation()
   QCOMPARE(got[0], QString("<1.00000, 0.00000, 0.00000> <128.00000, 129.00000, 20.00000> <128.00000, 128.00000, 20.00000>"));
   QCOMPARE(got[1], QString("<0.00000, 0.00000, -0.70711, 0.70711> <0.00000, 0.00000, 0.70711, 0.70711>"));
   QVERIFY2(got[2].startsWith("0.00000"), qPrintable(got[2]));
-  QCOMPARE(got[3], QString("<0.00000, 0.00000, 0.00000, 1.00000>"));
+  // the z component may print as -0.00000 on some platforms
+  QVERIFY2(got[3] == "<0.00000, 0.00000, 0.00000, 1.00000>" || got[3] == "<0.00000, 0.00000, -0.00000, 1.00000>", qPrintable(got[3]));
 }
 
 void LslPrimsTest::statusFlags()
