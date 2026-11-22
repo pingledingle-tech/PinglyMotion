@@ -724,6 +724,129 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>MenuSpec</name>
+    <message>
+        <source>New animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export for Second Life (.anim)...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close animation is not built yet. Use New animation to start again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Front</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Panels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide panels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next area</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next area is not built yet. For now use Tab to move between the fields.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expert mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size: %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup is not built yet. For now use Options &gt; Settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup: beginner or experienced, mouse and keys...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the welcome card again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The welcome card is not built yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show hints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keys and mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The keys and mouse page is not built yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Camera and keys...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Camera and keys is not built yet. It comes with Setup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show charter principles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The charter overlay is not built yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PMMesh</name>
     <message>
         <source>Could not open %1: %2</source>
@@ -1008,10 +1131,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Ctrl+N</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1209,10 +1328,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Props (*.prp)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dark theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1610,6 +1725,30 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source>A file with the name &quot;%1&quot; does already exist. Do you want to overwrite it?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+E</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+W</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expert mode is on. The extra controls come in later updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Beginner mode is on.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4226,6 +4365,14 @@ Click to turn them on or off.</source>
     </message>
     <message>
         <source>Play the animation again and again between the loop points</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It is already playing. Click Stop to stop it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It is not playing. Click Start to play it.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

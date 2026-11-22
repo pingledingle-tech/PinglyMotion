@@ -198,7 +198,7 @@ class PinglyMotionWindow : public QMainWindow
   public:
     // the text size, 100 to 200 percent (src/textsize.h): saved, applied to the
     // whole window at once, and the panels rearranged if they no longer fit.
-    // No menu calls this yet; the Setup dialog will.
+    // View > Text size calls this; the Setup dialog will too.
     void setTextSizePercent(int percent);
 
   protected:
@@ -352,6 +352,7 @@ class PinglyMotionWindow : public QMainWindow
     void buildPartLists();
     void jointGroupsChanged();
     void buildDocks();
+    void buildMenus();
     void resetPanelLayout();
     // Tab, or View > Hide panels: hides every open panel, or shows again the
     // ones Tab hid (docs/archive/PANELS_PLAN.md, job P4)
@@ -386,6 +387,8 @@ class PinglyMotionWindow : public QMainWindow
     QScopedPointer<MainPanels> m_panels;
     bool m_reflowPending=false;
     QAction* m_hidePanelsAction=nullptr;
+    QAction* m_textSizeAction=nullptr;
+    QAction* m_hintsAction=nullptr;
 
     BVHNode* currentPart;
 

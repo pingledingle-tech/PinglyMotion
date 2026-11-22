@@ -1324,6 +1324,7 @@
     <addaction name="fileLoadPropsAction"/>
     <addaction name="fileSavePropsAction"/>
     <addaction name="separator"/>
+    <addaction name="fileCloseAction"/>
     <addaction name="fileExitAction"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -1411,7 +1412,7 @@
      <normaloff>:/icons/icons/filenew.png</normaloff>:/icons/icons/filenew.png</iconset>
    </property>
    <property name="text">
-    <string>New</string>
+    <string>New animation</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
@@ -1667,6 +1668,20 @@
   <action name="fileExportAnimAction">
    <property name="text">
     <string>Export for Second Life (.anim)...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+E</string>
+   </property>
+  </action>
+  <action name="fileCloseAction">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Close animation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
    </property>
   </action>
   <action name="toolsMirrorAction">

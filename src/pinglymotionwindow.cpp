@@ -103,6 +103,7 @@
 #include "scriptlab/viewmodesoverride.h"
 #include "scriptlab/effectspreview.h"
 #include "theme.h"
+#include "menuspec.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
@@ -336,19 +337,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   ui->optionsSkeletonAction->setChecked(UserSettings::skeleton());
   ui->optionsJointLimitsAction->setChecked(UserSettings::jointLimits());
 
-  // Options > Dark theme
-  QAction* darkThemeAction=new QAction(tr("Dark theme"),this);
-  darkThemeAction->setCheckable(true);
-  darkThemeAction->setChecked(UserSettings::darkTheme());
-  ui->menuOptions->addAction(darkThemeAction);
-  connect(darkThemeAction,&QAction::toggled,this,[this](bool dark)
-  {
-    UserSettings::setDarkTheme(dark);
-    Theme::apply(dark);
-    fitPanelWidths();
-    fillJointTable();
-    ui->animationView->update();
-  });
   ui->optionsProtectFirstFrameAction->setChecked(UserSettings::protectFirstFrame());
 
   // Options > Body: which avatar the 3D view shows (only what you see, not the animation)
@@ -583,7 +571,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
   {
     UserSettings::setTipsOn(on);
     ui->timelineView->easingTiles()->setTipsOn(on);
+    if(m_hintsAction) m_hintsAction->setChecked(on);   // Help > Show hints follows the switch
   });
+  buildMenus();
 
   // is remote control on, who is connected, what it did last (issue #43)
   m_controlIndicator=new ControlIndicator(this);
@@ -977,6 +967,151 @@ void PinglyMotionWindow::buildDocks()
   connect(resetLayoutAction,&QAction::triggered,this,&PinglyMotionWindow::resetPanelLayout);
 }
 
+namespace
+{
+  // an item from tests/menutexts' table: its name, text and, when it is not
+  // built yet, the reason it is greyed (tip and status line). keyAsLabel puts
+  // the key after a tab, so the menu shows it but no shortcut is made (the
+  // 3D view already takes the number pad itself, and the rest has no action yet).
+  QAction* specAction(QObject* parent,const MenuSpec::Item& item,bool keyAsLabel,const QString& shownText=QString())
+  {
+    QAction* action=new QAction(parent);
+    action->setObjectName(QLatin1String(item.id));
+    const QString text=shownText.isEmpty() ? MenuSpec::text(item) : shownText;
+    action->setText(keyAsLabel ? MenuSpec::label(item,text) : text);
+    if(!keyAsLabel && item.key[0]) action->setShortcut(QKeySequence(QLatin1String(item.key)));
+    if(item.reason[0])
+    {
+      const QString reason=MenuSpec::reason(item);
+      action->setEnabled(false);
+      action->setToolTip(reason);
+      action->setStatusTip(reason);
+    }
+    return action;
+  }
+
+  // a key that works while the 3D view has the keys, like Tab for Hide panels,
+  // so it never takes a letter typed into a field
+  void keyInView(QAction* action,AnimationView* view)
+  {
+    action->setShortcutContext(Qt::WidgetShortcut);
+    view->addAction(action);
+  }
+}
+
+// UX phase 1a: File, View and Help as in the mockup (docs/mockup/index.html).
+// The texts, keys and reasons are in src/menuspec.h; tests/menutexts checks them.
+void PinglyMotionWindow::buildMenus()
+{
+  using namespace MenuSpec;
+  AnimationView* view=ui->animationView;
+
+  // File: the items that come from the designer file get their tip here
+  ui->menuFile->setToolTipsVisible(true);
+  ui->fileCloseAction->setToolTip(reason(fileClose));
+  ui->fileCloseAction->setStatusTip(reason(fileClose));
+
+  // View, rebuilt in the mockup's order
+  QAction* showJointsAction=m_jointsDock->toggleViewAction();
+  QAction* showJointCardAction=m_jointCardDock->toggleViewAction();
+  QAction* scriptLabAction=m_scriptLabDock->toggleViewAction();
+  scriptLabAction->setObjectName(QLatin1String(viewScriptLab.id));
+  scriptLabAction->setShortcut(QKeySequence(QLatin1String(viewScriptLab.key)));
+  QAction* resetLayoutAction=findChild<QAction*>(QLatin1String(viewResetLayout.id));
+  ui->menuView->clear();
+  ui->menuView->setToolTipsVisible(true);
+
+  ui->menuView->addSection(QCoreApplication::translate("MenuSpec",lookFromHeading));
+  struct Look { const Item* item; float height; float angle; };
+  for(const Look& look : {Look{&viewFront,0.0f,0.0f},Look{&viewSide,0.0f,90.0f},Look{&viewTop,90.0f,0.0f}})
+  {
+    QAction* action=specAction(this,*look.item,true);
+    const float height=look.height,angle=look.angle;
+    connect(action,&QAction::triggered,this,[this,height,angle]()
+    {
+      ui->animationView->camera()->setView(height,angle);
+      ui->animationView->update();
+    });
+    ui->menuView->addAction(action);
+  }
+  QAction* homeAction=specAction(this,viewHome,false);
+  keyInView(homeAction,view);
+  connect(homeAction,&QAction::triggered,this,&PinglyMotionWindow::on_resetCameraAction_triggered);
+  ui->menuView->addAction(homeAction);
+
+  ui->menuView->addSection(QCoreApplication::translate("MenuSpec",panelsHeading));
+  ui->menuView->addAction(showJointsAction);
+  ui->menuView->addAction(showJointCardAction);
+  ui->menuView->addAction(ui->optionsShowTimelineAction);
+  ui->menuView->addAction(scriptLabAction);
+  ui->menuView->addAction(m_hidePanelsAction);
+  if(resetLayoutAction) ui->menuView->addAction(resetLayoutAction);
+  ui->menuView->addAction(specAction(this,viewNextArea,true));
+
+  ui->menuView->addSeparator();
+  QAction* lightAction=specAction(this,viewLightTheme,false);
+  lightAction->setCheckable(true);
+  lightAction->setChecked(!UserSettings::darkTheme());
+  keyInView(lightAction,view);
+  connect(lightAction,&QAction::toggled,this,[this](bool light)
+  {
+    UserSettings::setDarkTheme(!light);
+    Theme::apply(!light);
+    fitPanelWidths();
+    fillJointTable();
+    ui->animationView->update();
+  });
+  ui->menuView->addAction(lightAction);
+
+  QAction* expertAction=specAction(this,viewExpertMode,false);
+  expertAction->setCheckable(true);
+  expertAction->setChecked(UserSettings::expertMode());
+  keyInView(expertAction,view);
+  connect(expertAction,&QAction::toggled,this,[this](bool on)
+  {
+    UserSettings::setExpertMode(on);
+    statusBar()->showMessage(on ? tr("Expert mode is on. The extra controls come in later updates.")
+                                : tr("Beginner mode is on."),5000);
+  });
+  ui->menuView->addAction(expertAction);
+
+  m_textSizeAction=specAction(this,viewTextSize,false,text(viewTextSize).arg(UserSettings::textSizePercent()));
+  connect(m_textSizeAction,&QAction::triggered,this,[this]()
+  {
+    const int now=UserSettings::textSizePercent();
+    setTextSizePercent(now>=200 ? 100 : now+25);
+  });
+  ui->menuView->addAction(m_textSizeAction);
+  ui->menuView->addAction(specAction(this,viewSetup,false));
+
+  // Help
+  ui->menuHelp->setToolTipsVisible(true);
+  QAction* whatsNew=ui->helpWhatsNewAction;
+  ui->menuHelp->clear();
+  ui->menuHelp->addAction(specAction(this,helpSetup,false));
+  ui->menuHelp->addAction(specAction(this,helpWelcome,false));
+  m_hintsAction=specAction(this,helpHints,false);
+  m_hintsAction->setCheckable(true);
+  m_hintsAction->setChecked(UserSettings::tipsOn());
+  keyInView(m_hintsAction,view);
+  connect(m_hintsAction,&QAction::toggled,this,[this](bool on)
+  {
+    UserSettings::setTipsOn(on);
+    ui->timelineView->easingTiles()->setTipsOn(on);
+    m_tipsSwitch->setOn(on);
+  });
+  ui->menuHelp->addAction(m_hintsAction);
+  ui->menuHelp->addSeparator();
+  ui->menuHelp->addAction(specAction(this,helpKeys,true));
+  ui->menuHelp->addAction(specAction(this,helpCamera,false));
+  ui->menuHelp->addAction(specAction(this,helpCharter,true));
+  ui->menuHelp->addSeparator();
+  ui->menuHelp->addAction(whatsNew);
+  ui->menuHelp->addAction(ui->helpOpenLogAction);
+  ui->menuHelp->addAction(ui->helpClearLogAction);
+  ui->menuHelp->addAction(ui->helpAboutAction);
+}
+
 QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
 {
   return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock};
@@ -1171,6 +1306,8 @@ void PinglyMotionWindow::setTextSizePercent(int percent)
   UserSettings::setTextSizePercent(percent);
   // every widget gets a font change event; this window's changeEvent fits the panels
   TextSize::apply(UserSettings::textSizePercent());
+  if(m_textSizeAction)
+    m_textSizeAction->setText(MenuSpec::text(MenuSpec::viewTextSize).arg(UserSettings::textSizePercent()));
   // rearranged at once, before the window is laid out for the new size, so a
   // layout that no longer fits never makes the window grow
   updateReflow();
