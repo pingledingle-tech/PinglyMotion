@@ -4,7 +4,9 @@
 //   pose change that ends at the selected key frame.
 // - A .dingle file with a stored curve shows the right tile as current.
 // - The row is greyed out with the "select a key frame" line when no pose
-//   change is selected, and the figures move only while a choice is shown.
+//   change is selected.
+// - The six names are on the tiles as text, and only the tile under the mouse
+//   moves its figure (UX step 3); without a hover the row is still.
 #include <QtTest>
 #include <QTemporaryDir>
 #include <QLabel>
@@ -52,6 +54,8 @@ class EasingTilesTest : public QObject
     void segmentEndingAtKey();
     void hintFollowsTips();
     void animatesOnlyWhileShown();
+    void namesAreTextOnTheTiles();
+    void previewMovesOnlyOnHoveredTile();
     void customButtonFollowsTheKey();
     void customStateMarksButtonNotTiles();
     void customCheckRunsOnSetChoice();
@@ -320,20 +324,122 @@ void EasingTilesTest::hintFollowsTips()
   QCOMPARE(row.hintText(), EasingChoice::hint(Easing::Preset::HoldThenSnap));
 }
 
-// the figures move only while the row is on screen and a choice is shown
+// show the row with the mouse far away, so no tile is under it by chance
+static bool showAwayFromMouse(EasingTiles& row)
+{
+  QCursor::setPos(QPoint(-10000, -10000));
+  row.move(200, 200);
+  row.show();
+  if (!QTest::qWaitForWindowExposed(&row)) return false;
+  for (int i = 0; i < Easing::PresetCount; i++)
+  {
+    QEvent leave(QEvent::Leave);
+    QApplication::sendEvent(row.tile(static_cast<Easing::Preset>(i)), &leave);
+  }
+  return true;
+}
+
+static void hoverTile(EasingTile* tile)
+{
+  const QPointF centre(tile->width() / 2.0, tile->height() / 2.0);
+  QEnterEvent enter(centre, tile->mapTo(tile->window(), centre), tile->mapToGlobal(centre));
+  QApplication::sendEvent(tile, &enter);
+}
+
+static void leaveTile(EasingTile* tile)
+{
+  QEvent leave(QEvent::Leave);
+  QApplication::sendEvent(tile, &leave);
+}
+
+// the figure moves only while the row is on screen, a choice is shown and the
+// mouse is over a tile; with no hover the row is still
 void EasingTilesTest::animatesOnlyWhileShown()
 {
   EasingTiles row;
   row.setChoice(Easing::Preset::Even);
   QVERIFY(!row.isAnimating());
-  row.show();
-  QVERIFY(QTest::qWaitForWindowExposed(&row));
+  QVERIFY(showAwayFromMouse(row));
+  // shown with a choice, but no hover: nothing moves
+  QVERIFY(!row.isAnimating());
+  hoverTile(row.tile(Easing::Preset::Even));
   QVERIFY(row.isAnimating());
   row.setNoKey();
   QVERIFY(!row.isAnimating());
   row.setChoice(Easing::Preset::Even);
   QVERIFY(row.isAnimating());
   row.hide();
+  QVERIFY(!row.isAnimating());
+  // hiding forgets the hover: shown again, the row is still
+  QVERIFY(showAwayFromMouse(row));
+  QVERIFY(!row.isAnimating());
+}
+
+// the six names (docs/EASING.md, unchanged) are the text of the tiles, in order
+void EasingTilesTest::namesAreTextOnTheTiles()
+{
+  EasingTiles row;
+  const QStringList expected = {
+    QStringLiteral("Even"),
+    QStringLiteral("Slow start"),
+    QStringLiteral("Slow finish"),
+    QStringLiteral("Slow both ends"),
+    QStringLiteral("Overshoot, then settle"),
+    QStringLiteral("Hold, then snap"),
+  };
+  QCOMPARE(int(Easing::PresetCount), expected.size());
+  for (int i = 0; i < Easing::PresetCount; i++)
+  {
+    EasingTile* tile = row.findChild<EasingTile*>(QStringLiteral("easingTile%1").arg(i));
+    QVERIFY(tile);
+    QCOMPARE(tile->text(), expected.at(i));
+  }
+}
+
+// only the hovered tile moves its figure; the others stay at the start, and
+// leaving the tile stops it and puts the figure back at the start
+void EasingTilesTest::previewMovesOnlyOnHoveredTile()
+{
+  EasingTiles row;
+  row.setChoice(Easing::Preset::SlowBothEnds);
+  QVERIFY(showAwayFromMouse(row));
+
+  // still: no timer, every figure at the start
+  QVERIFY(!row.isAnimating());
+  QVERIFY(!row.animatingTile().has_value());
+  QTest::qWait(200);
+  for (int i = 0; i < Easing::PresetCount; i++)
+    QCOMPARE(row.tile(static_cast<Easing::Preset>(i))->phase(), 0.0);
+
+  EasingTile* hovered = row.tile(Easing::Preset::OvershootThenSettle);
+  hoverTile(hovered);
+  QVERIFY(row.isAnimating());
+  QCOMPARE(row.animatingTile(), std::optional<Easing::Preset>(Easing::Preset::OvershootThenSettle));
+  QTRY_VERIFY(hovered->phase() > 0.0);
+  for (int i = 0; i < Easing::PresetCount; i++)
+  {
+    const Easing::Preset preset = static_cast<Easing::Preset>(i);
+    if (preset != Easing::Preset::OvershootThenSettle) QCOMPARE(row.tile(preset)->phase(), 0.0);
+  }
+
+  // moving to the next tile: the new one moves, the old one is back at the start,
+  // even when the enter of the new tile comes before the leave of the old one
+  EasingTile* next = row.tile(Easing::Preset::HoldThenSnap);
+  hoverTile(next);
+  leaveTile(hovered);
+  QCOMPARE(row.animatingTile(), std::optional<Easing::Preset>(Easing::Preset::HoldThenSnap));
+  QCOMPARE(hovered->phase(), 0.0);
+  QTRY_VERIFY(next->phase() > 0.0);
+
+  leaveTile(next);
+  QVERIFY(!row.isAnimating());
+  QVERIFY(!row.animatingTile().has_value());
+  for (int i = 0; i < Easing::PresetCount; i++)
+    QCOMPARE(row.tile(static_cast<Easing::Preset>(i))->phase(), 0.0);
+
+  // a greyed-out row does not move under the mouse
+  row.setNoKey();
+  hoverTile(row.tile(Easing::Preset::Even));
   QVERIFY(!row.isAnimating());
 }
 

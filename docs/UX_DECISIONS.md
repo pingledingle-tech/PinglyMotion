@@ -67,7 +67,7 @@ This is the one numbered list of interface steps ("UX step N" in issues and pull
 
 1. Transport: Start / Stop / Replay from start + Loop (on by default). Owner test: play, stop, replay, loop on/off.
 2. Frame step back / forward. Owner test: step through the example wave.
-3. Easing tiles as text, preview animates on hover only.
+3. Easing tiles as text, preview animates on hover only. Built: only the tile under the mouse moves its figure; the names are unchanged.
 4. Timeline: rows only for changed joints, diamond keys. Owner test: edit two joints, only those two rows appear.
 5. Timeline rows coloured by body area. Owner test: colours match the Joints tabs.
 6. Selected joint panel in the new order; limits as a warning with an off switch.
