@@ -100,9 +100,9 @@ Done (issue 297): every behaviour is marked `RLV`, `RLVa only` or `RLV only` (th
 
 More LSL functions that real scripts use. The order comes from a gap list made from 1 949 real scripts (how many scripts use each name). Three small parts, each its own pull request, each merged before the next starts:
 
-- 9b-1 (issue 310, done, pull request 311, merged 22 Nov 2026): the signature table from Second Life's lsl-definitions, and the pure functions that need no world (rotation maths, strided lists, `llReplaceSubString`, Base64, hashes, URL escaping, start parameter, object name, description, scale, prim count).
-- 9b-2 (issue 314, done, pull request 315, merged 22 Nov 2026): the events `on_rez` (at the start, with the start parameter) and `changed` (from an input of type `changed`), using the existing `inputs`.
-- 9b-3 (in progress, open pull request 318): prim state recorded in the event log without effects (`llSetText`, `llSetAlpha`, `llSetColor`, `llSetPrimitiveParams`, `llSetPos`, `llSetStatus`, `llSetSitText`, `llTextBox`, `llTransferLindenDollars` as logic only), and record-only stubs for particles and sounds.
+- 9b-1 (issue 310, done): the signature table from Second Life's lsl-definitions, and the pure functions that need no world (rotation maths, strided lists, `llReplaceSubString`, Base64, hashes, URL escaping, start parameter, object name, description, scale, prim count).
+- 9b-2 (issue 314, done): the events `on_rez` (at the start, with the start parameter) and `changed` (from an input of type `changed`), using the existing `inputs`.
+- 9b-3 (issue 317, done, pull request 318, merged 22 Nov 2026): prim state recorded in the event log without effects (`llSetText`, `llSetAlpha`, `llSetColor`, `llSetPrimitiveParams`, `llSetPos`, `llSetStatus`, `llSetSitText`, `llTextBox`, `llTransferLindenDollars` as logic only), and record-only stubs for particles and sounds.
 
 ### Step 9c: gap list (technical, planned)
 

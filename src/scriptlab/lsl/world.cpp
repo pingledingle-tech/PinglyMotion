@@ -73,8 +73,19 @@ void World::chatTo(double time, const QString& target, int channel, const QStrin
 void World::dialog(double time, const QString& avatar, const QString& message, const QStringList& buttons, int channel)
 {
   QJsonArray list;
-  for (const QString& b : buttons) list.append(b);
-  log(time, QJsonObject{{"type", "dialog"}, {"to", avatar}, {"message", clip(message)}, {"buttons", list}, {"channel", channel}});
+  const bool textBox = isTextBox(buttons);
+  if (!textBox)
+    for (const QString& b : buttons) list.append(b);
+  QJsonObject entry{{"type", "dialog"}, {"to", avatar}, {"message", clip(message)}, {"buttons", list}, {"channel", channel}};
+  if (textBox) entry["text_box"] = true;
+  log(time, entry);
+}
+
+void World::recordOnly(double time, const QString& function, const QJsonArray& args)
+{
+  if (logFull()) return;
+  log(time, QJsonObject{{"type", "recorded_only"}, {"function", function}, {"args", args},
+                        {"note", "Recorded only: the sandbox plays and shows nothing for this."}});
 }
 
 void World::messageLinked(double time, int link, int num, const QString& str, const QString& id)
