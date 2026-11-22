@@ -29,6 +29,8 @@
 #include "applog.h"
 #include "pinglymotionwindow.h"
 #include "constants.h"
+#include "translation.h"
+#include "usersettings.h"
 
 #ifndef Q_OS_WIN
 // Ending the program from outside (kill, system shutdown) should end it properly,
@@ -59,6 +61,11 @@ int main( int argc, char ** argv )
 
     QApplication application(argc, argv);
     qInfo("PinglyMotion %s", qUtf8Printable(Constants::buildLabel()));
+    // the language of the texts (docs/TRANSLATION.md), before any window makes a text: the
+    // setting "language" (default: the computer's language), English when no file matches
+    UserSettings::readSettings();
+    const QString language = Translation::install(application, UserSettings::language());
+    qInfo("Language: %s", language.isEmpty() ? "English" : qUtf8Printable(language));
     PinglyMotionWindow* pinglyMotionWindow = new PinglyMotionWindow();
     // Queue an event to show the main window
     pinglyMotionWindow->show();

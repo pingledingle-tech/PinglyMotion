@@ -8,7 +8,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 if command -v apt-get >/dev/null; then
   sudo apt-get update -qq
-  sudo apt-get install -y -qq qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev \
+  sudo apt-get install -y -qq qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-l10n-tools libqt6opengl6-dev libgl-dev \
     cmake g++ xvfb xdotool imagemagick x11-apps python3
 else
   echo "No apt-get here: install Qt 6 (Core, Gui, Widgets, OpenGL, OpenGLWidgets, Network, Test), CMake and a C++17 compiler yourself."
