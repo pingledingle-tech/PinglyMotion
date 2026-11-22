@@ -897,11 +897,14 @@ void PinglyMotionWindow::buildDocks()
   playLayout->addWidget(ui->keyframeButton);
   timelineLayout->addLayout(playLayout);
 
-  // Start, Stop, Replay from start and Loop (docs/UX_DECISIONS.md section 1)
+  // Start, Stop, Replay from start, Frame back, Frame forward and Loop
+  // (docs/UX_DECISIONS.md section 1)
   m_transport=new TransportBar(timelinePanel);
   connect(m_transport,&TransportBar::startClicked,this,&PinglyMotionWindow::startPlaying);
   connect(m_transport,&TransportBar::stopClicked,this,&PinglyMotionWindow::stopPlaying);
   connect(m_transport,&TransportBar::replayClicked,this,&PinglyMotionWindow::replayFromStart);
+  connect(m_transport,&TransportBar::backClicked,this,[this]() { stepFrame(-1); });
+  connect(m_transport,&TransportBar::forwardClicked,this,[this]() { stepFrame(1); });
   connect(m_transport,&TransportBar::loopToggled,ui->optionsLoopAction,&QAction::setChecked);
   QHBoxLayout* transportLayout=new QHBoxLayout;
   transportLayout->addWidget(m_transport);
@@ -1602,6 +1605,8 @@ void PinglyMotionWindow::updateInputs()
 
     ui->framesSpin->setValue(anim->getNumberOfFrames());
     ui->currentFrameSlider->setMaximum(anim->getNumberOfFrames()-1);
+    // Frame back / Frame forward: not past the first or the last frame
+    if(m_transport) m_transport->setFrame(anim->getFrame(),anim->getNumberOfFrames());
     ui->fpsSpin->setValue(anim->fps());
 
     // prevent feedback loop
