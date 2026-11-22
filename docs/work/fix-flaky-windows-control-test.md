@@ -1,6 +1,6 @@
 Branch: fix/flaky-windows-control-test
 Status: active
-Pull request: pending
+Pull request: #346
 Files:
 - tests/tst_control.cpp
 - src/controlserver.*
