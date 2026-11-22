@@ -366,6 +366,25 @@ program starts), the view restrictions a script holds change the 3D view where t
   `src/animationview.cpp` (`drawAnimations()`, the floor hook, `drawOverlay()`). Tests:
   `tests/tst_viewmodesoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
 
+## Static warnings (lint)
+
+The control command `lsl_lint` looks at a script without running it and warns about valid LSL that is most likely a
+mistake: variables and parameters that are never read, functions that are never called, a variable that hides
+another, code after `return`, `jump` or `state`, `if (a = b)`, `if (a);`, `a = a;`, `==` between two lists (it only
+compares lengths), division by a literal 0, deprecated functions, and RLV commands in `llOwnerSay("@...")` that the
+sandbox's RLV parser refuses or does not know (also the constant start of text built with `+`). Every warning has a
+line, a column, a stable id and a short message; the ids and the exact rules are in [CONTROL.md](CONTROL.md),
+"Script Lab: lsl_check and lsl_run". A script that does not compile gets its errors (as `lsl_check`) and no warnings.
+The example scripts and the fuzz corpus give no warnings (the test `tests/tst_lsllint.cpp` checks it). Code:
+`src/scriptlab/lsl/lint.*`. The panel does not show the warnings yet; that is a later job.
+
+An assistant can run `lsl_lint` after `lsl_check` passes and before `lsl_run`:
+
+```
+{"command": "lsl_lint", "source": "default { state_entry() { integer a; } }"}
+                                  -> warnings: [{"line": 1, "column": 35, "id": "unused-local", "message": "The local variable a is never used."}]
+```
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the

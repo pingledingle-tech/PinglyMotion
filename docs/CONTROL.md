@@ -76,7 +76,7 @@ differs. The MCP server does this before every request.
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
-`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_run`,
+`export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_lint`, `lsl_run`,
 `lab_watch`, `lab_unwatch`, `lab_result`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
@@ -338,6 +338,21 @@ Life: test the final script there too.
   events or states, a missing `return`, `state` in a function, and LSL's own rules (a declaration alone
   as the body of an `if`, a global that starts with a calculation, a list in a list). Warnings are valid
   LSL that the sandbox does not run yet: a function that is not supported yet, or an event it never raises.
+- `lsl_lint {source}` gives static warnings without running the script: valid LSL that is most likely a
+  mistake (`src/scriptlab/lsl/lint.*`). The answer has `valid`, `errors` (a script that does not compile gets the
+  `errors` of `lsl_check` and no warnings) and `warnings`, each `{line, column, id, message}`, sorted by place, at
+  most 200. The ids stay the same between versions: `unused-local`, `unused-param`, `unused-global` (never read;
+  "set but never read" when it is only assigned), `unused-function` (never called, or only by itself; unused event
+  parameters are fine), `shadowed` (a local or parameter hides a variable of the same name), `unreachable` (code
+  after `return`, `jump` or `state`, up to the next label), `assign-in-condition` (`if (a = b)`, also in `while`,
+  `do` and `for`), `empty-body` (`if (a);`, also `while` and `for`), `self-assign` (`a = a;`), `list-compare`
+  (`==` and `!=` between lists only compare their lengths; comparing with `[]` is fine), `divide-by-zero` (`/` or
+  `%` by a literal 0), `deprecated` (once per function), and for `llOwnerSay` text that starts with `@`, checked
+  with the sandbox's RLV parser and behaviour table (as `rlv_command` does): `rlv-syntax` (bad syntax),
+  `rlv-unknown` (a behaviour unknown in both RLV and RLVa) and `rlv-param` (a parameter or option the behaviour
+  does not take; RLVa-only behaviours are judged as RLVa). Text built with `+` is checked as far as its constant
+  start goes: the complete commands, and the behaviour name of the last one when it ends before the changing part
+  (`"@sit:" + (string)id + "=force"` checks `sit`).
 - `lsl_run {source, seconds, inputs, keep_rlv}` runs the script with a simulated clock: `state_entry` of the default
   state first, then events until `seconds` (0 to 3600, default 10) have passed. Nothing waits for real
   time. `inputs` (at most 200) are chat or touches at given times:

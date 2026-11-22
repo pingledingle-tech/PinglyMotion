@@ -12,8 +12,10 @@
  * script runs three times in one object of two prims, so link messages and
  * Linkset Data go between copies of it, with touches on both prims; and the
  * input bytes drive the Linkset Data store directly (write, delete, list,
- * reset), which must keep its byte count and limit. Nothing may crash, and a
- * run must stay inside its limits.
+ * reset), which must keep its byte count and limit. The static checker
+ * (Lint::lint, what lsl_lint does) looks at every input too: its warnings need a
+ * place, a known id and a message. Nothing may crash, and a run must stay
+ * inside its limits.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -23,6 +25,7 @@
 #include <QString>
 
 #include "scriptlab/lsl/interp.h"
+#include "scriptlab/lsl/lint.h"
 #include "scriptlab/lsl/parser.h"
 #include "scriptlab/lsl/rlvworld.h"
 #include "scriptlab/lsl/sandbox.h"
@@ -46,6 +49,15 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
     check(!d.message.isEmpty());
   }
   for (const Diagnostic& d : parsed.warnings) check(d.line >= 1 && d.column >= 1 && !d.message.isEmpty());
+  // lsl_lint: the same errors, and warnings only for a script that compiles
+  const Lint::Result linted = Lint::lint(source);
+  check(linted.valid() == parsed.ok());
+  check(linted.errors.size() == parsed.errors.size());
+  check(linted.valid() || linted.warnings.empty());
+  check(int(linted.warnings.size()) <= Lint::MAX_WARNINGS);
+  static const QStringList lintIds = Lint::ids();
+  for (const LintWarning& w : linted.warnings)
+    check(w.line >= 1 && w.column >= 1 && !w.message.isEmpty() && lintIds.contains(w.id));
   if (!parsed.ok()) return 0;
   check(!parsed.script->states.empty());
   check(parsed.script->states.front().name == "default");

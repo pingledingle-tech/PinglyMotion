@@ -1,5 +1,5 @@
 /*
- * PinglyMotion Script Lab - the control commands lsl_check, lsl_run and lsl_event
+ * PinglyMotion Script Lab - the control commands lsl_check, lsl_lint, lsl_run and lsl_event
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -12,6 +12,7 @@
 #include "control.h"
 #include "interp.h"
 #include "lexer.h"
+#include "lint.h"
 #include "parser.h"
 #include "rlvworld.h"
 #include "sandbox.h"
@@ -69,6 +70,17 @@ QJsonObject check(const QJsonObject& request)
     answer["states"] = states;
   }
   return answer;
+}
+
+QJsonObject lint(const QJsonObject& request)
+{
+  const QString problem = checkRequest(request, {"command", "source"});
+  if (!problem.isEmpty()) return fail(problem);
+  const Lint::Result result = Lint::lint(request.value("source").toString());
+  QJsonArray warnings;
+  for (const LintWarning& w : result.warnings)
+    warnings.append(QJsonObject{{"line", w.line}, {"column", w.column}, {"id", w.id}, {"message", w.message}});
+  return QJsonObject{{"ok", true}, {"valid", result.valid()}, {"errors", diagnostics(result.errors)}, {"warnings", warnings}};
 }
 
 namespace

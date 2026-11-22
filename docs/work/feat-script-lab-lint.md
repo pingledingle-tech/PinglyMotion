@@ -1,17 +1,16 @@
 Branch: feat/script-lab-lint
-Status: active
+Status: done
 Pull request: #352
 Files:
 - src/scriptlab/lsl/lint.*
-- src/scriptlab/lsl/control.cpp
+- src/scriptlab/lsl/control.*
 - src/controlapi.cpp
 - src/CMakeLists.txt
 - tests/tst_lsllint.cpp
 - tests/CMakeLists.txt
-- fuzz/fuzz_lsllint.cpp
+- fuzz/fuzz_lsl.cpp
 - fuzz/CMakeLists.txt
 - fuzz/README.md
-- .github/workflows/fuzz.yml
 - tools/mcp/commands.json
 - docs/CONTROL.md
 - docs/SCRIPT_LAB.md
