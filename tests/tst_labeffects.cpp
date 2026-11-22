@@ -19,6 +19,7 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLoggingCategory>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
@@ -71,6 +72,8 @@ class TestLabEffects : public QObject
   Q_OBJECT
 
   private slots:
+    // the examples lack the Bento joints, and the joint-limit warnings for them would hide a failure in the CI log
+    void initTestCase() { QLoggingCategory::setFilterRules(QStringLiteral("pinglymotion.file.warning=false")); }
     void pointsAndJoints();
     void playingFromALog();
     void startTwiceAndStop();
@@ -266,7 +269,9 @@ void TestLabEffects::lookupIgnoresLinksAndDepth()
                       QFile::link(outside.path() + "/secret.bvh", dir.path() + "/secret.bvh");
   QVERIFY(!LabEffects::findAnimation("hid", {dir.path()}).ok());
   QVERIFY(!LabEffects::findAnimation(".dot", {dir.path()}).ok());
-  if (!linked) QSKIP("links cannot be made here");
+  // on Windows QFile::link() makes a shortcut file, which is not a link to the file system (and reading
+  // one as an animation only fails to parse); only real symbolic links are tested
+  if (!linked || !QFileInfo(dir.path() + "/secret.bvh").isSymbolicLink()) QSKIP("symbolic links cannot be made here");
   QVERIFY(!LabEffects::findAnimation("secret", {dir.path()}).ok());
 }
 
