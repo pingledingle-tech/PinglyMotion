@@ -55,6 +55,7 @@
 #include "screenshotsheet.h"
 #include "scriptlab/cameraoverride.h"
 #include "scriptlab/environmentoverride.h"
+#include "scriptlab/viewmodesoverride.h"
 #include "scriptlab/effectspreview.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
@@ -184,6 +185,29 @@ void AnimationView::setEnvironmentOverride(EnvironmentOverride* environmentOverr
   m_environmentOverride=environmentOverride;
   if(environmentOverride) connect(environmentOverride,&EnvironmentOverride::changed,this,[this]() { update(); });
   update();
+}
+
+void AnimationView::setViewModesOverride(ViewModesOverride* viewModesOverride)
+{
+  if(m_viewModesOverride) disconnect(m_viewModesOverride,nullptr,this,nullptr);
+  m_viewModesOverride=viewModesOverride;
+  if(viewModesOverride) connect(viewModesOverride,&ViewModesOverride::changed,this,[this]() { update(); });
+  update();
+}
+
+void AnimationView::drawOverlay()
+{
+  if(!m_viewModesOverride || !m_viewModesOverride->overlay() || isPicking() || !m_skinRenderer.isReady()) return;
+  // two triangles over the whole view in clip space, no depth, no fog, blended over the picture
+  const QVector<QVector3D> quad{QVector3D(-1,-1,0),QVector3D(1,-1,0),QVector3D(1,1,0),
+                                QVector3D(-1,-1,0),QVector3D(1,1,0),QVector3D(-1,1,0)};
+  const QVector4D colour=m_viewModesOverride->modes().overlayColour();
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+  m_skinRenderer.drawGeometry(GL_TRIANGLES,quad,QVector<QVector3D>(),QVector<QVector4D>(quad.size(),colour),
+                              QMatrix4x4(),QMatrix4x4(),SceneState::Fog(),1.0f);
+  glEnable(GL_DEPTH_TEST);
 }
 
 void AnimationView::applyCameraOverride()
@@ -375,6 +399,13 @@ void AnimationView::initializeGL()
   Floor::setDrawHook([this](const QVector<QVector3D>& positions,const QVector<QVector3D>& normals,
                             const QVector<QVector4D>& colors)
   {
+    // Script Lab setcam_textures (job 7c): the checkerboard in one plain colour
+    if(m_viewModesOverride && m_viewModesOverride->plainFloor())
+    {
+      QVector<QVector4D> plain(colors.size());
+      for(int i=0;i<colors.size();i++) plain[i]=ViewModesOverride::plainFloorColour(colors.at(i));
+      return drawWithShader(GL_TRIANGLES,positions,normals,plain);
+    }
     return drawWithShader(GL_TRIANGLES,positions,normals,colors);
   });
   m_pickBuffer.reset();
@@ -430,6 +461,7 @@ void AnimationView::draw()
   m_scene->drawFloor();
   drawShadows();
   drawProps();
+  drawOverlay();
 }
 
 // the shadows of the bodies drawn in this frame, on top of the floor
@@ -448,6 +480,8 @@ void AnimationView::drawShadows()
 
 void AnimationView::drawAnimations()
 {
+  // Script Lab showself (job 7c): the figure, its shadow and its picking are left out
+  if(m_viewModesOverride && m_viewModesOverride->hideFigure()) return;
   // Script Lab effects (issue 293): the preview figure takes the place of the user's animations,
   // which stay as they are; it is never picked, so a click cannot select or change anything in it
   Animation* effect=m_effects ? m_effects->animation() : nullptr;

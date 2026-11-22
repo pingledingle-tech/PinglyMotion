@@ -202,6 +202,13 @@ TARGET_LINK_LIBRARIES (pinglymotion_environmentoverride_tests pinglymotion_core 
 ADD_TEST (NAME environmentoverride COMMAND pinglymotion_environmentoverride_tests)
 SET_TESTS_PROPERTIES (environmentoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Script Lab job 7c: the RLV view modes (hidden avatar, plain floor, overlay) in the 3D view
+ADD_EXECUTABLE (pinglymotion_viewmodesoverride_tests tst_viewmodesoverride.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_viewmodesoverride_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_viewmodesoverride_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME viewmodesoverride COMMAND pinglymotion_viewmodesoverride_tests)
+SET_TESTS_PROPERTIES (viewmodesoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # ... and the panel's "Show camera limits in 3D view" box
 ADD_EXECUTABLE (pinglymotion_scriptlabcamera_tests tst_scriptlabcamera.cpp
                 ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/objectsview.cpp

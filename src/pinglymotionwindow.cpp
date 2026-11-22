@@ -96,6 +96,7 @@
 #include "scriptlab/scriptlabpanel.h"
 #include "scriptlab/cameraoverride.h"
 #include "scriptlab/environmentoverride.h"
+#include "scriptlab/viewmodesoverride.h"
 #include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "transportbar.h"
@@ -552,6 +553,11 @@ PinglyMotionWindow::PinglyMotionWindow() :
   environmentOverride->setState(&m_controlApi->rlv());
   ui->animationView->setEnvironmentOverride(environmentOverride);
   m_scriptLabPanel->setEnvironmentOverride(environmentOverride);
+  // and the view modes a script holds (hidden avatar, plain textures, overlay), off until its box is ticked (job 7c)
+  ViewModesOverride* viewModesOverride=new ViewModesOverride(this);
+  viewModesOverride->setState(&m_controlApi->rlv());
+  ui->animationView->setViewModesOverride(viewModesOverride);
+  m_scriptLabPanel->setViewModesOverride(viewModesOverride);
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
   m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));

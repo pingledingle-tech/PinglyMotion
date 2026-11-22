@@ -304,6 +304,32 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
 - Code: `src/scriptlab/environmentoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
   `src/animationview.cpp` (`draw()`). Tests: `tests/tst_environmentoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
 
+## View modes in the 3D view (job 7c)
+
+With the Commands page's **Show view modes in 3D view** box ticked (under the environment box; off each time the
+program starts), the view restrictions a script holds change the 3D view where that takes little drawing work:
+
+- `showself` (RLVa only): your own avatar is hidden: the figure, its shadow and the Script Lab markers are not drawn
+  (and cannot be clicked).
+- `setcam_textures` / `camtextures` (option: a texture UUID): the floor's checkerboard, the only texture-like pattern
+  in the view, is drawn in one plain colour (the middle of its two tile colours, red while the first frame is
+  protected); the figure has no textures. A texture cannot be loaded here; its UUID is named.
+- `setoverlay` with `setoverlay_texture`, `setoverlay_alpha` and `setoverlay_tint` (held, or sent as `=force`; a held
+  value wins; defaults tint 1/1/1 and alpha 1): the picture cannot be loaded here, so the whole 3D view is covered by
+  the tint at the alpha. Without `setoverlay_texture` nothing is shown (as an overlay without a picture), and the text
+  says so; `setoverlay_tween` is named (the overlay changes at once).
+- Named as not shown: `showselfhead` (the figure's head cannot be hidden on its own), `viewwireframe` and
+  `viewtransparent` (they block switching to a wireframe view or a transparent-object highlight, which the 3D view
+  does not have, so blocking them changes nothing).
+- The text under the box says what is changed, which objects hold it and what is not shown; with the box off it says
+  what the script changes and that ticking the box shows it.
+- Nothing is changed for good: the view asks for the modes for every picture, so unticking the box, `@clear`, Reset
+  or a mode switch gives exactly the picture from before (checked pixel by pixel in the self-test). The control
+  command `screenshot` shows the same picture as the window.
+- Code: `src/scriptlab/viewmodesoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
+  `src/animationview.cpp` (`drawAnimations()`, the floor hook, `drawOverlay()`). Tests:
+  `tests/tst_viewmodesoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -435,7 +461,8 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
   the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view") and the sky and
-  draw distance hint of the "Show environment in 3D view" box (above, "Environment in the 3D view"). A force command of that kind is `retained`
+  draw distance hint of the "Show environment in 3D view" box (above, "Environment in the 3D view") and the view
+  modes of the "Show view modes in 3D view" box (above, "View modes in the 3D view"). A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`; a new or changed value is a change of the state (the panel
   and the 3D view follow it), and the object's `@clear` forgets its recorded values.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
