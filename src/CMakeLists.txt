@@ -77,6 +77,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp
               transportbar.cpp
+              transportlook.cpp
+              lucideicons.cpp
               scene.cpp
               screenshotsheet.cpp
               scriptlab/scriptlabpanel.cpp
