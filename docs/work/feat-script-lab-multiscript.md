@@ -1,6 +1,6 @@
 Branch: feat/script-lab-multiscript
 Status: active
-Pull request: pending
+Pull request: #306
 Files:
 - src/scriptlab/lsl/*
 - tests/tst_lslworld.cpp
