@@ -1,6 +1,6 @@
 Branch: job/ux-0c-text-size
 Status: active
-Pull request: pending
+Pull request: #363
 Files:
 - src/panellayout.h
 - src/panelwindow.h
