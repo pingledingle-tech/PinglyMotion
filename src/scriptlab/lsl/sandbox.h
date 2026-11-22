@@ -160,6 +160,7 @@ class Sandbox
       ObjectSpec spec;
       QJsonObject dialog;          // the object's newest dialog
       LinksetData data;            // step 9a: belongs to the object, not to a script
+      PrimStore prims;             // step 9b-3: the simulated prims and the status flags of the object
       QString name;                // step 9b-1: the name now (llSetObjectName); spec.name stays the object's handle in logs and inputs
       QString description;         // the description now (llSetObjectDesc)
       bool tagScripts = false;     // given with "scripts": log entries name the script

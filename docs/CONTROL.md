@@ -377,6 +377,9 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `limit` | a limit stopped the script | `message`, `line`, `column` |
 | `message_linked` | `llMessageLinked` (step 9a) | `link` (as given, for example -1 for `LINK_SET`), `num`, `text`, `id`, `scripts` (how many scripts are in the prims it reaches) |
 | `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
+| `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
+| `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
+| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
 
@@ -494,6 +497,37 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
 {"command": "lsl_event", "type": "touch", "object": "box", "link": 2}
 ```
 
+#### Prim state, L$ and recorded-only functions (Script Lab step 9b-3, issue 317)
+
+The sandbox keeps a simulated state for every prim of an object (shared by all its scripts) and records each change as a `prim` log
+entry. Nothing is drawn, played or sent; the 3D view is not touched. A prim is a box with 6 faces; `ALL_SIDES` is every face, a face number
+outside 0 to 5 changes nothing (as in Second Life, silently).
+
+- **Set:** `llSetText` (at most 254 characters, colour and alpha clamped to 0..1), `llSetAlpha`, `llSetColor`, `llSetTexture`, the link forms
+  `llSetLinkAlpha`, `llSetLinkColor`, `llSetLinkTexture`, `llSetPos`, `llSetRot`, `llSetStatus`, `llSetSitText`, and
+  `llSetPrimitiveParams`, `llSetLinkPrimitiveParams`, `llSetLinkPrimitiveParamsFast` with the rules `PRIM_LINK_TARGET`, `PRIM_POSITION`, `PRIM_POS_LOCAL`,
+  `PRIM_SIZE`, `PRIM_ROTATION`, `PRIM_ROT_LOCAL`, `PRIM_COLOR`, `PRIM_TEXTURE`, `PRIM_TEXT`, `PRIM_NAME`, `PRIM_DESC`, `PRIM_FULLBRIGHT`, `PRIM_GLOW`,
+  `PRIM_PHYSICS`, `PRIM_PHANTOM` and `PRIM_TEMP_ON_REZ`. Any other rule (for example `PRIM_TYPE`, `PRIM_FLEXIBLE`, `PRIM_POINT_LIGHT`) stops the script with
+  "... is not supported yet". A malformed rule (a wrong type or a missing value) is a `debug` line on the debug channel; the rules before it are kept and the rest of the list is skipped.
+- **Read:** `llGetColor`, `llGetAlpha` (for `ALL_SIDES` the average of the faces), `llGetTexture`, `llGetPos`, `llGetLocalPos`, `llGetRootPosition`, `llGetRot`,
+  `llGetLocalRot`, `llGetRootRotation`, `llGetStatus`, and `llGetPrimitiveParams` / `llGetLinkPrimitiveParams` with `PRIM_NAME`, `PRIM_DESC`, `PRIM_POSITION`,
+  `PRIM_POS_LOCAL`, `PRIM_SIZE`, `PRIM_ROTATION`, `PRIM_ROT_LOCAL`, `PRIM_TEXT`, `PRIM_COLOR`, `PRIM_TEXTURE`, `PRIM_FULLBRIGHT`, `PRIM_GLOW`, `PRIM_PHYSICS`, `PRIM_PHANTOM`,
+  `PRIM_TEMP_ON_REZ`. A set of links (`LINK_SET` and so on) or a link the object does not have gives an empty list.
+- **Where the sandbox simplifies:** a new prim starts white, opaque, with Second Life's default plywood texture, size 0.5 m, and `STATUS_ROTATE_X`, `_Y` and `_Z` set. `llSetPos`
+  moves a rezzed object at most 10 m per call and not at all when the target is outside the region (0 to 256 in x and y, 0 to 4096 in z); in a child prim it sets the offset from the root,
+  and `PRIM_POSITION` in a child prim takes region coordinates. A worn object's `llSetPos` only records the offset (`llGetPos` stays at the avatar). Rotations multiply as in LSL
+  (a child's region rotation is its local rotation times the root's). `llSetObjectName` and the root prim's `PRIM_NAME` are the object's name. The root prim's `PRIM_SIZE` is `llGetScale`.
+- **Text boxes:** `llTextBox` is `llDialog` with the single button `!!llTextBox!!`, and so is `llDialog` with that button first. The log entry is a `dialog` entry with `buttons` empty and `text_box: true`
+  (the newest dialog in the answer has it too). The avatar's typed text is answered with the existing `dialog` input: `{"type": "dialog", "button": "the text typed"}` is said on the dialog's channel.
+- **`llTransferLindenDollars` and `PERMISSION_DEBIT`:** logic and messages only; no L$ ever moves and the sandbox has no balance (the owner always has enough). The function returns a key and a
+  `transaction_result(key id, integer success, string data)` event follows with that key. Without `PERMISSION_DEBIT` (the sandbox grants the owner's permissions at once, as for every permission) the
+  call logs a `debug` line and fails with `MISSING_PERMISSION_DEBIT` (the debug wording is the sandbox's). Other failures: `INVALID_AMOUNT` (0 or less), `INVALID_DESTINATION` (not a key),
+  `LINDENDOLLAR_ENTITYDOESNOTEXIST` (the key of an object; objects cannot be paid). Success gives `data` as `<avatar key>,<amount>`. The failure tags and the success format follow the Second Life wiki
+  (page "transaction_result"); `INSUFFICIENTFUNDS`, `THROTTLED` and the like never happen here. Each call is a `linden_dollars` log entry.
+- **Recorded only:** `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` do nothing but write a
+  `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
+- Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
+
 #### The events on_rez and changed (Script Lab step 9b-2, issue 314)
 
 - `on_rez(integer start_param)` is raised once when an object starts, after its `state_entry` and before `attach` (for a worn object).
@@ -544,9 +578,9 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez` and `changed`; 111 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez` and `changed`; 147 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, and a few object-state getters and setters). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

@@ -53,6 +53,7 @@ class ObjectWorld : public RlvWorld
     QString objectDesc() const override { return state().description; }
     void setObjectDesc(const QString& desc) override { state().description = desc; }
     void scale(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = spec().scale[i]; }
+    void setScale(const float s[3]) override { for (int i = 0; i < 3; ++i) state().spec.scale[i] = s[i]; }
     int numberOfPrims() const override { return spec().prims; }
     int startParameter() const override { return spec().startParameter; }
     QString scriptName() const override { return m_sandbox.m_slots[size_t(m_slot)].name; }
@@ -84,6 +85,8 @@ class ObjectWorld : public RlvWorld
       m_sandbox.linksetDataChanged(m_slot, time, action, name, value);
     }
     void position(float out[3]) const override { m_sandbox.where(object(), out); }
+    void setPosition(const float p[3]) override { for (int i = 0; i < 3; ++i) state().spec.position[i] = p[i]; }
+    PrimStore& primStore() override { return state().prims; }
     int attachPoint() const override { return spec().attached; }
     QString nameOf(const QString& key) const override { return m_sandbox.nameOf(key); }
     QString ownerOf(const QString& key) const override { return m_sandbox.ownerOf(key); }
@@ -479,9 +482,12 @@ void Sandbox::dialog(int from, double time, const QString& avatar, const QString
 {
   Object& o = m_objects[size_t(m_slots[size_t(from)].object)];
   QJsonArray list;
-  for (const QString& b : buttons) list.append(b);
+  const bool textBox = World::isTextBox(buttons);
+  if (!textBox)
+    for (const QString& b : buttons) list.append(b);
   o.dialog = QJsonObject{{"t", std::round(time * 1000.0) / 1000.0}, {"object", o.spec.name}, {"to", avatar},
                          {"message", World::clip(message)}, {"buttons", list}, {"channel", channel}};
+  if (textBox) o.dialog["text_box"] = true;
   m_lastDialog = o.dialog;
 }
 

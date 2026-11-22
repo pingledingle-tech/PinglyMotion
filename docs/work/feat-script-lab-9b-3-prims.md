@@ -1,6 +1,6 @@
 Branch: feat/script-lab-9b-3-prims
-Status: active
-Pull request: pending
+Status: done
+Pull request: #318
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/world.*
@@ -10,6 +10,8 @@ Files:
 - tools/mcp/commands.json
 - tests/tst_lslprims.cpp
 - tests/tst_lslpure.cpp
+- tests/tst_lslparser.cpp
+- tests/tst_lslinterp.cpp
 - tests/CMakeLists.txt
 - fuzz/corpus/lsl/prim_state.lsl
 - docs/SCRIPT_LAB.md

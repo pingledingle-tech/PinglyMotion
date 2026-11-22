@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 111 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 147 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -223,6 +223,15 @@ a script run through the control commands), the one the Objects part shows.
   and reaches every script of the object. No new control command; details in [CONTROL.md](CONTROL.md), "The events on_rez and changed".
 - Tests: `tests/tst_lslevents.cpp`. Fuzz: `fuzz_lsl` also sends a `changed` input and a start parameter.
 
+## What exists now (step 9b-3, issue 317): prim state, L$ logic and record-only functions
+
+- The sandbox keeps simulated prim state (hover text, colour, alpha and texture per face, position, rotation, size, status, sit text) and records each change as a `prim` log entry; scripts can read it
+  back with `llGetColor`, `llGetPos`, `llGetLinkPrimitiveParams` and the like. `llSetPrimitiveParams`, `llSetLinkPrimitiveParams` and `llSetLinkPrimitiveParamsFast` run 15 rules; other rules say "not supported yet".
+- `llTextBox` and `llDialog` with `!!llTextBox!!` give a text-box `dialog` entry; `llTransferLindenDollars` with `PERMISSION_DEBIT` runs its logic and `transaction_result` without moving any L$.
+- `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega` and `llLoadURL` are recorded only.
+- Nothing is drawn or played and the 3D view is not touched. Details and the places where the sandbox simplifies: [CONTROL.md](CONTROL.md), "Prim state, L$ and recorded-only functions".
+- Tests: `tests/tst_lslprims.cpp`. Limits unchanged (256 KB of variables per script; Second Life gives 64 KB).
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -297,7 +306,7 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-  `link_message`, `linkset_data`, `on_rez` and `changed`, and 111 built-in functions; hard limits on
+  `link_message`, `linkset_data`, `on_rez` and `changed`, and 147 built-in functions; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

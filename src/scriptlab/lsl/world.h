@@ -15,6 +15,8 @@
 #ifndef LSL_WORLD_H
 #define LSL_WORLD_H
 
+#include <vector>
+
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMap>
@@ -62,6 +64,52 @@ class LinksetData
     int m_used = 0;
 };
 
+// Step 9b-3: simulated state of the prims of an object. Nothing here is drawn; scripts read it back and every
+// change is recorded in the event log (type "prim"). A prim is a box with FACES faces.
+struct FaceState
+{
+  float color[3] = {1.0f, 1.0f, 1.0f};
+  float alpha = 1.0f;
+  QString texture = "89556747-24cb-43ed-920b-47caed15465f";   // the default plywood texture
+  float repeats[2] = {1.0f, 1.0f};
+  float offsets[2] = {0.0f, 0.0f};
+  float rotation = 0.0f;
+  int fullbright = 0;
+  float glow = 0.0f;
+};
+
+struct PrimState
+{
+  static constexpr int FACES = 6;
+  QString name = "Object";          // a child prim's name; the root prim's is the object's name
+  QString description;              // a child prim's description; the root's is the object's
+  float position[3] = {0.0f, 0.0f, 0.0f};   // local to the root (for the root: the offset of an attachment)
+  float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};   // local to the root (for the root: its rotation in the region)
+  float size[3] = {0.5f, 0.5f, 0.5f};
+  QString text;                     // hover text
+  float textColor[3] = {1.0f, 1.0f, 1.0f};
+  float textAlpha = 1.0f;
+  QString sitText;
+  int physics = 0, phantom = 0, tempOnRez = 0;
+  FaceState faces[FACES];
+};
+
+class PrimStore
+{
+  public:
+    static constexpr int STATUS_ROTATE_XYZ = 0xE;
+    // prims of the object, link 1 (the root) first; made on first use for the object's prim count
+    PrimState& prim(int link, int count)
+    {
+      if (int(m_prims.size()) < count) m_prims.resize(size_t(count));
+      return m_prims[size_t(link < 1 ? 0 : link - 1)];
+    }
+    int status = STATUS_ROTATE_XYZ;   // the STATUS_* flags of the object (llSetStatus)
+
+  private:
+    std::vector<PrimState> m_prims;
+};
+
 class World
 {
   public:
@@ -106,12 +154,21 @@ class World
     virtual QString objectDesc() const { return m_objectDesc; }
     virtual void setObjectDesc(const QString& desc) { m_objectDesc = desc; }
     // llGetScale (the object's size in metres; one size for every prim), llGetNumberOfPrims, llGetStartParameter
-    virtual void scale(float out[3]) const { out[0] = out[1] = out[2] = 0.5f; }
+    virtual void scale(float out[3]) const { for (int i = 0; i < 3; ++i) out[i] = m_scale[i]; }
+    virtual void setScale(const float s[3]) { for (int i = 0; i < 3; ++i) m_scale[i] = s[i]; }
     virtual int numberOfPrims() const { return 1; }
     virtual int startParameter() const { return 0; }
 
     // where the object is (llGetPos) and its attachment point (llGetAttached, 0 = not attached)
-    virtual void position(float out[3]) const { out[0] = 128.0f; out[1] = 128.0f; out[2] = 20.0f; }
+    virtual void position(float out[3]) const { for (int i = 0; i < 3; ++i) out[i] = m_position[i]; }
+    // llSetPos on a rezzed object (step 9b-3)
+    virtual void setPosition(const float p[3]) { for (int i = 0; i < 3; ++i) m_position[i] = p[i]; }
+    // the simulated prims of the object (step 9b-3)
+    virtual PrimStore& primStore() { return m_prims; }
+    // a text box (llTextBox, or llDialog with the button "!!llTextBox!!"): the avatar answers by chat on the channel
+    static bool isTextBox(const QStringList& buttons) { return !buttons.isEmpty() && buttons.first() == "!!llTextBox!!"; }
+    // an effect the sandbox does not play (particles, sounds, URLs): one log entry with the function and its arguments
+    void recordOnly(double time, const QString& function, const QJsonArray& args);
     virtual int attachPoint() const { return 0; }
     // llKey2Name and llGetOwnerKey: the name and owner of a key in the sandbox (empty when unknown)
     virtual QString nameOf(const QString& key) const;
@@ -147,6 +204,9 @@ class World
     QString m_tag;
     QString m_scriptTag;
     LinksetData m_linksetData;
+    float m_position[3] = {128.0f, 128.0f, 20.0f};
+    float m_scale[3] = {0.5f, 0.5f, 0.5f};
+    PrimStore m_prims;
     QString m_objectName = "Object";
     QString m_objectDesc;
 };
