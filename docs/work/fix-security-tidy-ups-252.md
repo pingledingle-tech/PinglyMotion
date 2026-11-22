@@ -1,6 +1,6 @@
 Branch: fix/security-tidy-ups-252
-Status: active
-Pull request: pending
+Status: done
+Pull request: #328
 Files:
 - src/auroralink.cpp
 - src/auroralink.h

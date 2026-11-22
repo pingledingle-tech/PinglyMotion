@@ -71,7 +71,7 @@ Earlier findings (docs/SECURITY_AUDIT.md): spot-checked on current main, still f
 ### I-01 Info - Aurora link: HMAC answer sent before the server proves itself; server text shown unclipped
 - src/auroralink.cpp:340-350 sends HMAC(key, challenge) to a not-yet-verified peer (a squatter on the port gets one HMAC per connect; key is per port file, so no practical use found). src/auroralink.cpp:378 shows `error` text from the peer without a length cap.
 - Fix (optional): clip shown text to ~200 printable characters.
-- Status: not done: pull request 263 left the Aurora link items for a job with an owner test (issue 252 is open).
+- Status: partly fixed (22 Nov 2026, pull request 328, issue 252): text from the peer is clipped (control characters removed, at most 200 characters plus "...") before it is shown, with exact-string tests. The HMAC answer sent before the server has proved itself is left as it is (optional, no practical use found).
 
 ### I-02 Info - fuzz coverage gaps
 - Fuzzed: AnimFile parse (BVH/AVM), Dingle, .anim parse, glTF read+import, props, retarget mapping, ControlApi::execute.
