@@ -25,6 +25,19 @@ class TestRlvTable : public QObject
     void aliasClearAndRemove();
     void zoomLimitsAreRecordedOnly();
     void touchFar();
+    void chatImRows_data();
+    void chatImRows();
+    void chatImBlocks_data();
+    void chatImBlocks();
+    void secureFormsAreSeparateRestrictions();
+    void notifyAddAndLift();
+    void notifyFilter();
+    void notifyRefusesBadChannels_data();
+    void notifyRefusesBadChannels();
+    void notifyOnClear();
+    void notifyOnlyForItsOwnObject();
+    void notifyIsBounded();
+    void permissiveIsState();
 
   private:
     static RlvState::Outcome one(RlvState& state, const QString& line, const QString& object = "obj")
@@ -181,6 +194,234 @@ void TestRlvTable::touchFar()
   QCOMPARE(state.actions().value("touchfar"), false);
   QCOMPARE(one(state, "@touchfar=force").result, Rlv::Result::Failed);
   QVERIFY(one(state, "@touchfar=force").reason.contains("does not take"));
+}
+
+struct ChatRow { const char* name; Rlv::OptionUse option; const char* blocks; };
+static const ChatRow chatRows[] = {
+  {"chatshout", Rlv::OptionUse::None, "chatshout"}, {"chatnormal", Rlv::OptionUse::None, "chatnormal"},
+  {"chatwhisper", Rlv::OptionUse::None, "chatwhisper"}, {"redirchat", Rlv::OptionUse::Required, ""},
+  {"rediremote", Rlv::OptionUse::Required, ""}, {"emote", Rlv::OptionUse::None, ""},
+  {"recvchat_sec", Rlv::OptionUse::Optional, "recvchat"}, {"recvchatfrom", Rlv::OptionUse::Required, ""},
+  {"recvemote", Rlv::OptionUse::Optional, "recvemote"}, {"recvemote_sec", Rlv::OptionUse::Optional, "recvemote"},
+  {"recvemotefrom", Rlv::OptionUse::Required, ""}, {"sendchannel_sec", Rlv::OptionUse::Optional, "sendchannel"},
+  {"sendim_sec", Rlv::OptionUse::Optional, "sendim"}, {"sendimto", Rlv::OptionUse::Required, ""},
+  {"startim", Rlv::OptionUse::Optional, "startim"}, {"startimto", Rlv::OptionUse::Required, ""},
+  {"recvim_sec", Rlv::OptionUse::Optional, "recvim"}, {"recvimfrom", Rlv::OptionUse::Required, ""},
+  {"share_sec", Rlv::OptionUse::Optional, "share"}, {"tplure_sec", Rlv::OptionUse::Optional, "tplure"},
+  {"tprequest_sec", Rlv::OptionUse::Optional, "tprequest"}, {"shownames_sec", Rlv::OptionUse::Optional, "shownames"},
+  {"permissive", Rlv::OptionUse::None, ""}, {"notify", Rlv::OptionUse::Required, ""}};
+
+void TestRlvTable::chatImRows_data()
+{
+  QTest::addColumn<QString>("name");
+  QTest::addColumn<int>("option");
+  QTest::addColumn<QString>("blocks");
+  for (const ChatRow& row : chatRows) QTest::newRow(row.name) << row.name << static_cast<int>(row.option) << row.blocks;
+}
+
+void TestRlvTable::chatImRows()
+{
+  QFETCH(QString, name);
+  QFETCH(int, option);
+  QFETCH(QString, blocks);
+  const Rlv::Behaviour* b = Rlv::findBehaviour(name);
+  QVERIFY(b);
+  QCOMPARE(b->dialect, Rlv::Dialect::Rlv);
+  QCOMPARE(b->params, static_cast<int>(Rlv::AllowAddRemove));
+  QCOMPARE(static_cast<int>(b->option), option);
+  QCOMPARE(b->blocks.join(","), blocks);
+  QVERIFY(!b->description.isEmpty());
+  QVERIFY(Rlv::findBehaviour(name, Rlv::Mode::Rlv));   // plain RLV knows it
+  RlvState state;
+  const QString arg = name == "notify" ? "5" : (name.startsWith("redir") ? "7" : "c2d4ef12-3a45-4b67-89ab-0123456789ab");
+  if (option == static_cast<int>(Rlv::OptionUse::None))
+  {
+    QCOMPARE(one(state, "@" + name + "=n").result, Rlv::Result::Success);
+    QCOMPARE(one(state, "@" + name + "=n").result, Rlv::Result::Duplicate);
+    QVERIFY(state.has(name));
+    QCOMPARE(one(state, "@" + name + ":" + arg + "=n").reason, QString("@%1 takes no option").arg(name));
+    QCOMPARE(one(state, "@" + name + "=y").result, Rlv::Result::Success);
+    QVERIFY(!state.has(name));
+  }
+  else
+  {
+    if (option == static_cast<int>(Rlv::OptionUse::Required))
+      QCOMPARE(one(state, "@" + name + "=n").reason, QString("@%1 needs an option").arg(name));
+    else
+      QCOMPARE(one(state, "@" + name + "=n").result, Rlv::Result::Success);
+    state.reset();
+    QCOMPARE(one(state, "@" + name + ":" + arg + "=add").result, Rlv::Result::Success);
+    QVERIFY(state.has(name, arg));
+    QCOMPARE(one(state, "@" + name + ":" + arg + "=rem").result, Rlv::Result::Success);
+    QVERIFY(!state.has(name, arg));
+  }
+  QVERIFY(one(state, "@" + name + "=force").reason.contains("does not take"));
+}
+
+void TestRlvTable::chatImBlocks_data()
+{
+  QTest::addColumn<QString>("name");
+  QTest::addColumn<QString>("action");
+  QTest::newRow("chatshout") << "chatshout" << "chatshout";
+  QTest::newRow("chatnormal") << "chatnormal" << "chatnormal";
+  QTest::newRow("chatwhisper") << "chatwhisper" << "chatwhisper";
+  QTest::newRow("recvchat_sec") << "recvchat_sec" << "recvchat";
+  QTest::newRow("recvemote") << "recvemote" << "recvemote";
+  QTest::newRow("recvemote_sec") << "recvemote_sec" << "recvemote";
+  QTest::newRow("sendchannel_sec") << "sendchannel_sec" << "sendchannel";
+  QTest::newRow("sendim_sec") << "sendim_sec" << "sendim";
+  QTest::newRow("startim") << "startim" << "startim";
+  QTest::newRow("recvim_sec") << "recvim_sec" << "recvim";
+  QTest::newRow("share_sec") << "share_sec" << "share";
+  QTest::newRow("tplure_sec") << "tplure_sec" << "tplure";
+  QTest::newRow("tprequest_sec") << "tprequest_sec" << "tprequest";
+  QTest::newRow("shownames_sec") << "shownames_sec" << "shownames";
+}
+
+void TestRlvTable::chatImBlocks()
+{
+  QFETCH(QString, name);
+  QFETCH(QString, action);
+  RlvState state;
+  QVERIFY(Rlv::actions().size() > 0);
+  QCOMPARE(state.actions().value(action), true);
+  one(state, "@" + name + "=n");
+  const QMap<QString, bool> blocked = state.actions();
+  QCOMPARE(blocked.value(action), false);
+  int falseCount = 0;
+  for (bool allowed : blocked) falseCount += allowed ? 0 : 1;
+  QCOMPARE(falseCount, 1);   // exactly this one action
+  // with an option it is an exception, not a block
+  state.reset();
+  one(state, "@" + name + ":c2d4ef12-3a45-4b67-89ab-0123456789ab=add");
+  QCOMPARE(state.actions().value(action), true);
+}
+
+void TestRlvTable::secureFormsAreSeparateRestrictions()
+{
+  RlvState state;
+  one(state, "@sendim=n");
+  QCOMPARE(one(state, "@sendim_sec=n").result, Rlv::Result::Success);   // another restriction, not a duplicate
+  QCOMPARE(state.apply("obj", "@getstatus=7").replies.value(0).text, QString("/sendim/sendim_sec"));
+  one(state, "@sendim=y");
+  QCOMPARE(state.actions().value("sendim"), false);   // the secure form still blocks
+  one(state, "@sendim_sec=y");
+  QCOMPARE(state.actions().value("sendim"), true);
+}
+
+void TestRlvTable::notifyAddAndLift()
+{
+  RlvState state;
+  RlvState::ApplyResult r = state.apply("obj", "@notify:2222=add");
+  QCOMPARE(r.outcomes.value(0).result, Rlv::Result::Success);
+  QVERIFY(r.replies.isEmpty());   // setting up a notification says nothing
+  r = state.apply("obj", "@sendim=n,fly=n");
+  QCOMPARE(r.replies.size(), 2);
+  QCOMPARE(r.replies[0].channel, 2222);
+  QCOMPARE(r.replies[0].text, QString("/sendim=n"));
+  QCOMPARE(r.replies[1].text, QString("/fly=n"));
+  // a duplicate changes nothing and says nothing
+  QVERIFY(state.apply("obj", "@fly=n").replies.isEmpty());
+  r = state.apply("obj", "@fly=y");
+  QCOMPARE(r.replies.size(), 1);
+  QCOMPARE(r.replies[0].text, QString("/fly=y"));
+  // a restriction that was not held says nothing
+  QVERIFY(state.apply("obj", "@fly=y").replies.isEmpty());
+  // an option is part of the rule, the name used is the one shown
+  r = state.apply("obj", "@camdistmax:5=n");
+  QCOMPARE(r.replies.value(0).text, QString("/camdistmax:5=n"));
+  // removing the notification stops the messages
+  QCOMPARE(state.apply("obj", "@notify:2222=rem").outcomes.value(0).result, Rlv::Result::Success);
+  QVERIFY(state.apply("obj", "@sit=n").replies.isEmpty());
+  // two notifications on two channels both answer
+  state.apply("obj", "@notify:11=add,notify:12=add");
+  r = state.apply("obj", "@rez=n");
+  QCOMPARE(r.replies.size(), 2);
+  QCOMPARE(r.replies[0].channel, 11);
+  QCOMPARE(r.replies[1].channel, 12);
+}
+
+void TestRlvTable::notifyFilter()
+{
+  RlvState state;
+  state.apply("obj", "@notify:77;send=add");
+  RlvState::ApplyResult r = state.apply("obj", "@sendim=n,recvim=n,sendchat=n,fly=n");
+  QStringList texts;
+  for (const RlvState::Reply& reply : r.replies) texts << QString::number(reply.channel) + " " + reply.text;
+  QCOMPARE(texts, QStringList({"77 /sendim=n", "77 /sendchat=n"}));
+  // an empty filter after the semicolon means every rule
+  state.apply("obj", "@clear");
+  state.apply("obj", "@notify:78;=add");
+  QCOMPARE(state.apply("obj", "@fly=n").replies.value(0).text, QString("/fly=n"));
+}
+
+void TestRlvTable::notifyRefusesBadChannels_data()
+{
+  QTest::addColumn<QString>("line");
+  QTest::newRow("channel 0") << "@notify:0=add";
+  QTest::newRow("channel 0 filter") << "@notify:0;fly=add";
+  QTest::newRow("negative") << "@notify:-5=add";
+  QTest::newRow("text") << "@notify:abc=add";
+  QTest::newRow("empty channel") << "@notify:;fly=add";
+  QTest::newRow("too big") << "@notify:2147483648=add";
+  QTest::newRow("decimal") << "@notify:1.5=add";
+  QTest::newRow("no option") << "@notify=add";
+}
+
+void TestRlvTable::notifyRefusesBadChannels()
+{
+  QFETCH(QString, line);
+  RlvState state;
+  const RlvState::Outcome outcome = one(state, line);
+  QCOMPARE(outcome.result, Rlv::Result::Failed);
+  QVERIFY2(!outcome.reason.isEmpty(), qPrintable(line));
+  QVERIFY(state.restrictions().isEmpty());
+  QCOMPARE(one(state, "@notify:2147483647=add").result, Rlv::Result::Success);   // the highest channel is fine
+}
+
+void TestRlvTable::notifyOnClear()
+{
+  RlvState state;
+  state.apply("obj", "@fly=n,sendim=n,notify:5=add");
+  RlvState::ApplyResult r = state.apply("obj", "@clear=send");
+  QCOMPARE(r.replies.size(), 1);
+  QCOMPARE(r.replies[0].text, QString("/sendim=y"));
+  // a full clear removes the notification too, so nobody hears about the rest
+  r = state.apply("obj", "@clear");
+  QVERIFY(r.replies.isEmpty());
+  QVERIFY(state.restrictions().isEmpty());
+}
+
+void TestRlvTable::notifyOnlyForItsOwnObject()
+{
+  RlvState state;
+  state.apply("a", "@notify:5=add");
+  // another object's change is not announced to a, and a's change is not announced to b
+  QVERIFY(state.apply("b", "@fly=n").replies.isEmpty());
+  QCOMPARE(state.apply("a", "@sit=n").replies.size(), 1);
+  QVERIFY(state.apply("b", "@rez=n").replies.isEmpty());
+}
+
+void TestRlvTable::notifyIsBounded()
+{
+  RlvState state;
+  for (int i = 1; i <= 100; i++) state.apply("obj", QString("@notify:%1=add").arg(i));
+  QCOMPARE(state.restrictions().size(), 100);
+  // one change tells every notification, but never more than the limit of answers per line
+  const RlvState::ApplyResult r = state.apply("obj", "@fly=n,sit=n,rez=n,sendim=n");
+  QCOMPARE(r.replies.size(), 256);
+  QCOMPARE(r.replies[0].channel, 1);
+  QCOMPARE(r.replies[99].channel, 100);
+  QCOMPARE(r.replies[100].channel, 1);
+}
+
+void TestRlvTable::permissiveIsState()
+{
+  RlvState state;
+  QCOMPARE(one(state, "@permissive=n").result, Rlv::Result::Success);
+  QVERIFY(state.has("permissive"));
+  for (bool allowed : state.actions()) QVERIFY(allowed);   // blocks nothing
+  QCOMPARE(state.apply("obj", "@getstatus=3").replies.value(0).text, QString("/permissive"));
 }
 
 QTEST_GUILESS_MAIN(TestRlvTable)
