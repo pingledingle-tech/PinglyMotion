@@ -34,7 +34,16 @@ EffectsPreview::~EffectsPreview()
 QString EffectsPreview::examplesFolder() const
 {
   if (!m_examples.isEmpty()) return m_examples;
-  return QDir::cleanPath(Constants::pinglyMotionDataPath() + QStringLiteral("/../examples"));
+  // next to the data folder (the Windows zip: data/ and examples/ next to the program); in the
+  // source tree the data folder is bin/data and the examples are at the top
+  const QString data = Constants::pinglyMotionDataPath();
+  const QString beside = QDir::cleanPath(data + QStringLiteral("/../examples"));
+  if (QDir(beside).exists()) return beside;
+  const QString sourceTree = QDir::cleanPath(data + QStringLiteral("/../../examples"));
+  if (QFileInfo(data).fileName() == QLatin1String("data") && QFileInfo(QDir::cleanPath(data + "/..")).fileName() == QLatin1String("bin") &&
+      QDir(sourceTree).exists())
+    return sourceTree;
+  return beside;
 }
 
 void EffectsPreview::setEnabled(bool on)

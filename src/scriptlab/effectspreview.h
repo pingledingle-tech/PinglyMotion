@@ -50,7 +50,8 @@ class EffectsPreview : public QObject
     bool enabled() const { return m_enabled; }
 
     // the examples folder searched after the script's folders; by default the folder
-    // "examples" next to the program's data folder (the Windows zip and the source tree)
+    // "examples" next to the program's data folder (the Windows zip), or at the top of the source tree
+    // when the data folder is its bin/data
     void setExamplesFolder(const QString& folder) { m_examples = folder; }
     QString examplesFolder() const;
 

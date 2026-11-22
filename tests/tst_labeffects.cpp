@@ -273,6 +273,8 @@ void TestLabEffects::previewOffByDefault()
 {
   EffectsPreview preview;
   QVERIFY(!preview.enabled());
+  // by default the examples folder of the source tree (the data folder is bin/data here)
+  QCOMPARE(preview.examplesFolder(), QDir::cleanPath(examples()));
   preview.setExamplesFolder(examples());
   preview.showRun(run(startScript("wave"), 2.5), {});
   QVERIFY(preview.animation() == nullptr);
