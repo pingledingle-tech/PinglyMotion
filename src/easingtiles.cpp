@@ -1,5 +1,6 @@
 // The easing tile row (issue #53 step 5). See easingtiles.h.
 #include "easingtiles.h"
+#include "wraprow.h"
 
 #include <QButtonGroup>
 #include <QDialogButtonBox>
@@ -143,9 +144,28 @@ EasingTile::EasingTile(Easing::Preset preset,QWidget* parent) :
   setAttribute(Qt::WA_Hover);
 }
 
+// the name is drawn one point smaller than the text around it
+QFont EasingTile::nameFont() const
+{
+  QFont small=font();
+  if(small.pointSize()>0) small.setPointSize(small.pointSize()-1);
+  return small;
+}
+
+// at least the first size; wider and taller when the text size makes the
+// name bigger, so its longest word and two lines always fit (charter P9)
+int EasingTile::nameHeight() const
+{
+  return qMax(NameHeight,2*QFontMetrics(nameFont()).height()+4);
+}
+
 QSize EasingTile::sizeHint() const
 {
-  return QSize(TileWidth,PictureHeight+NameHeight);
+  const QFontMetrics metrics(nameFont());
+  int widest=0;
+  for(const QString& word : text().split(QLatin1Char(' '),Qt::SkipEmptyParts))
+    widest=qMax(widest,metrics.horizontalAdvance(word));
+  return QSize(qMax(TileWidth,widest+16),PictureHeight+nameHeight());
 }
 
 void EasingTile::setPhase(double phase)
@@ -231,12 +251,10 @@ void EasingTile::paintEvent(QPaintEvent*)
   drawFigure(painter,x0+s*(x1-x0),y,on ? mark : text);
 
   // the name under the picture
-  QFont font=painter.font();
-  if(font.pointSize()>0) font.setPointSize(font.pointSize()-1);
-  painter.setFont(font);
+  painter.setFont(nameFont());
   painter.setPen(text);
   painter.setBrush(Qt::NoBrush);
-  const QRect nameRect(4,PictureHeight,width()-8,NameHeight-4);
+  const QRect nameRect(4,PictureHeight,width()-8,nameHeight()-4);
   painter.drawText(nameRect,Qt::AlignHCenter|Qt::AlignTop|Qt::TextWordWrap,this->text());
 }
 
@@ -249,9 +267,14 @@ EasingTiles::EasingTiles(QWidget* parent) :
   layout->setContentsMargins(4,2,4,2);
   layout->setSpacing(2);
 
-  QHBoxLayout* row=new QHBoxLayout();
-  row->setContentsMargins(0,0,0,0);
-  row->setSpacing(4);
+  // the six tiles and Custom curve in two parts: side by side, or one under
+  // the other when they do not fit on one line (docs/UX_DECISIONS.md, 6c)
+  QHBoxLayout* firstPart=new QHBoxLayout();
+  firstPart->setContentsMargins(0,0,0,0);
+  firstPart->setSpacing(4);
+  QHBoxLayout* secondPart=new QHBoxLayout();
+  secondPart->setContentsMargins(0,0,0,0);
+  secondPart->setSpacing(4);
 
   QButtonGroup* group=new QButtonGroup(this);
   group->setExclusive(true);
@@ -261,7 +284,7 @@ EasingTiles::EasingTiles(QWidget* parent) :
     EasingTile* tile=new EasingTile(preset,this);
     tile->setObjectName(QStringLiteral("easingTile%1").arg(i));
     group->addButton(tile,i);
-    row->addWidget(tile,0);
+    (i<Easing::PresetCount/2 ? firstPart : secondPart)->addWidget(tile,0);
     connect(tile,&EasingTile::clicked,this,&EasingTiles::tileClicked);
     connect(tile,&EasingTile::hovered,this,&EasingTiles::tileHovered);
     connect(tile,&EasingTile::left,this,&EasingTiles::tileLeft);
@@ -279,10 +302,13 @@ EasingTiles::EasingTiles(QWidget* parent) :
     m_customButton->setChecked(m_custom);
     if(m_hasChoice) emit customCurveRequested();
   });
-  row->addWidget(m_customButton,0,Qt::AlignVCenter);
+  secondPart->addWidget(m_customButton,0,Qt::AlignVCenter);
 
-  row->addStretch(1);
-  layout->addLayout(row);
+  firstPart->addStretch(1);
+  secondPart->addStretch(1);
+  m_rows=WrapRow::make({firstPart,secondPart});
+  m_rows->setSpacing(4);
+  layout->addLayout(m_rows);
 
   m_hint=new QLabel(this);
   m_hint->setObjectName(QStringLiteral("easingHint"));
@@ -294,6 +320,33 @@ EasingTiles::EasingTiles(QWidget* parent) :
   connect(m_timer,&QTimer::timeout,this,&EasingTiles::tick);
 
   setNoKey();
+}
+
+void EasingTiles::setWrapped(bool wrapped)
+{
+  WrapRow::setWrapped(m_rows,wrapped);
+}
+
+bool EasingTiles::isWrapped() const
+{
+  return WrapRow::isWrapped(m_rows);
+}
+
+// the widest of the tile row and the hint line, with the margins around them
+int EasingTiles::widthWith(int rowWidth) const
+{
+  const QMargins m=layout()->contentsMargins();
+  return qMax(rowWidth,m_hint->minimumSizeHint().width())+m.left()+m.right();
+}
+
+int EasingTiles::oneLineWidth() const
+{
+  return widthWith(WrapRow::oneLineWidth(m_rows));
+}
+
+int EasingTiles::wrappedWidth() const
+{
+  return widthWith(WrapRow::wrappedWidth(m_rows));
 }
 
 EasingTile* EasingTiles::tile(Easing::Preset preset) const

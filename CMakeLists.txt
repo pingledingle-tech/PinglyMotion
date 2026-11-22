@@ -151,8 +151,10 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/wheelguard)
   # Start, Stop, Replay from start and Loop under the timeline (#14, UX step 1)
   ADD_SUBDIRECTORY (tests/transportbar)
-  # test helper that draws panels offscreen in the program's theme, used on the transport bar
+  # test helper that draws panels offscreen in the program's theme, at 100, 150 and 200 percent text
   ADD_SUBDIRECTORY (tests/uirender)
+  # the text size, 100 to 200 percent, applied to the whole program (UX phase 0c)
+  ADD_SUBDIRECTORY (tests/textsize)
   # colours of the timeline, window palette and 3D view drawing come from the design tokens (UX phase 0a)
   ADD_SUBDIRECTORY (tests/uxcolours)
   # slider steps to values and back without losing the decimals (#192)

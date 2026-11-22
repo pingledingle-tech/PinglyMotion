@@ -92,7 +92,8 @@ class UserSettings
     static void setCameraHabit(const QString& value);
     static QString cameraHabit();
     static QStringList cameraHabits();   // "pinglymotion", "maya", "blender", "sl"
-    // text size in percent, 100 (default) to 200; stored only, not applied yet.
+    // text size in percent, 100 (default) to 200; applied to the whole program
+    // by src/textsize.* (main() at start, PinglyMotionWindow::setTextSizePercent).
     // A value outside the range is cut to the nearest end.
     static void setTextSizePercent(int value);
     static int textSizePercent();

@@ -31,6 +31,7 @@ SET (FUZZ_CORE_FILES ${CMAKE_SOURCE_DIR}/src/animation.cpp
                     ${CMAKE_SOURCE_DIR}/src/scriptlab/rlvcommand.cpp
                     ${CMAKE_SOURCE_DIR}/src/scriptlab/rlvstate.cpp
                     ${CMAKE_SOURCE_DIR}/src/settings.cpp
+                    ${CMAKE_SOURCE_DIR}/src/textsize.cpp
                     ${CMAKE_SOURCE_DIR}/src/usersettings.cpp
                     ${CMAKE_SOURCE_DIR}/src/versionnumber.cpp)
 ADD_LIBRARY (fuzz_core STATIC ${FUZZ_CORE_FILES})

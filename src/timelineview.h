@@ -52,10 +52,11 @@ class TimelineTracks : public QWidget
     int selectedTrackNumber() const { return selectedTrack; }
 
   protected:
-    Animation* animation;
+    // nothing until the window sets an animation (setAnimation)
+    Animation* animation=nullptr;
     virtual void paintEvent(QPaintEvent* event);
 
-    int selectedTrack;
+    int selectedTrack=-1;
 };
 
 class TimelineView : public QFrame
@@ -89,6 +90,9 @@ class TimelineView : public QFrame
     void editCustomCurve();
 
   protected:
+    // the text size changed: the rows follow it (Constants::lineHeight)
+    void changeEvent(QEvent* event) override;
+
     QScrollArea* view;
     // the outer area that scrolls the track rows up and down
     QScrollArea* outerView_=nullptr;

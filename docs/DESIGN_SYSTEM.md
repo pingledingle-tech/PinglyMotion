@@ -158,7 +158,10 @@ The system UI font, so the program follows the system's font and size.
 
 Sizes are at 100 percent. Everything scales with the system text size and
 the program's scale setting from 100 to 200 percent; layouts grow instead of
-clipping (charter P9). Numbers that change while playing use tabular digits.
+clipping (charter P9). In the program the scale setting is
+`src/textsize.*`: the application font is the system font times the percent,
+and a size written as a number is scaled with `TextSize::scaled()`; how the
+panels rearrange is in [UX_DECISIONS.md](UX_DECISIONS.md), 6c. Numbers that change while playing use tabular digits.
 
 ## Icons
 

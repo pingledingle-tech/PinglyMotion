@@ -208,6 +208,108 @@ private slots:
     QVERIFY(!v.timelineVisible());
     QCOMPARE(v.openPanels(),(QStringList{JointsDock,JointCardDock}));
   }
+
+  // ---- 7. Rearranging at large text or in a small window (UX_DECISIONS 6c) ----
+  // The needs are the program's own widths on Linux at 100, 150 and 200
+  // percent text (Joints, Selected joint, timeline on one line, timeline
+  // wrapped, the line between panels); the answers are exact.
+
+  static ReflowNeeds needs(int joints,int card,int timeline,int wrapped)
+  {
+    ReflowNeeds n;
+    n.joints=joints;
+    n.jointCard=card;
+    n.timeline=timeline;
+    n.timelineWrapped=wrapped;
+    n.separator=6;
+    return n;
+  }
+
+  void reflow_needs()
+  {
+    const ReflowNeeds n100=needs(300,264,810,458);
+    QCOMPARE(middleNeed(n100),458);
+    QCOMPARE(wideNeed(n100),1034);
+    QCOMPARE(mediumNeed(n100),764);
+    const ReflowNeeds n150=needs(393,336,1027,570);
+    QCOMPARE(wideNeed(n150),1311);
+    QCOMPARE(mediumNeed(n150),969);
+    const ReflowNeeds n200=needs(497,419,1244,682);
+    QCOMPARE(wideNeed(n200),1610);
+    QCOMPARE(mediumNeed(n200),1185);
+    // the one column is as wide as its widest panel
+    QCOMPARE(narrowNeed(n100),458);
+    QCOMPARE(narrowNeed(n200),682);
+    QCOMPARE(narrowNeed(needs(497,419,600,300)),497);
+    QCOMPARE(narrowNeed(needs(300,520,600,300)),520);
+    // the 3D view keeps at least 240 pixels when the timeline is narrower
+    const ReflowNeeds small=needs(200,180,300,150);
+    QCOMPARE(ViewMinWidth,240);
+    QCOMPARE(middleNeed(small),240);
+    QCOMPARE(wideNeed(small),200+6+240+6+180);
+    QCOMPARE(mediumNeed(small),200+6+240);
+    // the wider side panel decides the side column in the medium layout
+    QCOMPARE(mediumNeed(needs(180,300,300,150)),300+6+240);
+  }
+
+  void reflow_choice_data()
+  {
+    QTest::addColumn<int>("joints");
+    QTest::addColumn<int>("card");
+    QTest::addColumn<int>("timeline");
+    QTest::addColumn<int>("wrapped");
+    QTest::addColumn<int>("width");
+    QTest::addColumn<QString>("layout");
+    QTest::addColumn<int>("timelineWidth");
+    QTest::addColumn<bool>("wrap");
+    // 100 percent
+    QTest::newRow("100%, 1900 wide") << 300 << 264 << 810 << 458 << 1900 << "wide" << 1324 << false;
+    QTest::newRow("100%, 1366 wide") << 300 << 264 << 810 << 458 << 1366 << "wide" << 790 << true;
+    QTest::newRow("100%, just wide") << 300 << 264 << 810 << 458 << 1034 << "wide" << 458 << true;
+    QTest::newRow("100%, one less") << 300 << 264 << 810 << 458 << 1033 << "medium" << 727 << true;
+    QTest::newRow("100%, 850 medium") << 300 << 264 << 810 << 458 << 850 << "medium" << 544 << true;
+    QTest::newRow("100%, just medium") << 300 << 264 << 810 << 458 << 764 << "medium" << 458 << true;
+    QTest::newRow("100%, 763 narrow") << 300 << 264 << 810 << 458 << 763 << "narrow" << 763 << true;
+    QTest::newRow("100%, 640 narrow") << 300 << 264 << 810 << 458 << 640 << "narrow" << 640 << true;
+    // 150 percent
+    QTest::newRow("150%, 1900 wide") << 393 << 336 << 1027 << 570 << 1900 << "wide" << 1159 << false;
+    QTest::newRow("150%, 1366 wide") << 393 << 336 << 1027 << 570 << 1366 << "wide" << 625 << true;
+    QTest::newRow("150%, 1000 medium") << 393 << 336 << 1027 << 570 << 1000 << "medium" << 601 << true;
+    QTest::newRow("150%, 850 narrow") << 393 << 336 << 1027 << 570 << 850 << "narrow" << 850 << true;
+    // 200 percent
+    QTest::newRow("200%, 1920 wide") << 497 << 419 << 1244 << 682 << 1920 << "wide" << 992 << true;
+    QTest::newRow("200%, 1366 medium") << 497 << 419 << 1244 << 682 << 1366 << "medium" << 863 << true;
+    QTest::newRow("200%, 850 narrow") << 497 << 419 << 1244 << 682 << 850 << "narrow" << 850 << true;
+    QTest::newRow("200%, 2500 wide, one line") << 497 << 419 << 1244 << 682 << 2500 << "wide" << 1572 << false;
+    QTest::newRow("200%, one less than medium") << 497 << 419 << 1244 << 682 << 1184 << "narrow" << 1184 << true;
+  }
+
+  void reflow_choice()
+  {
+    QFETCH(int,joints);
+    QFETCH(int,card);
+    QFETCH(int,timeline);
+    QFETCH(int,wrapped);
+    QFETCH(int,width);
+    QFETCH(QString,layout);
+    QFETCH(int,timelineWidth);
+    QFETCH(bool,wrap);
+    const ReflowNeeds n=needs(joints,card,timeline,wrapped);
+    const Reflow r=chooseReflow(width,n);
+    QCOMPARE(QString::fromLatin1(reflowName(r)),layout);
+    QCOMPARE(PanelLayout::timelineWidth(r,width,n),timelineWidth);
+    QCOMPARE(wrapTimeline(r,width,n),wrap);
+  }
+
+  void reflow_floating()
+  {
+    QCOMPARE(canFloat(Reflow::Wide),true);
+    QCOMPARE(canFloat(Reflow::Medium),true);
+    QCOMPARE(canFloat(Reflow::Narrow),false);
+    QCOMPARE(QString::fromLatin1(reflowName(Reflow::Wide)),QStringLiteral("wide"));
+    QCOMPARE(QString::fromLatin1(reflowName(Reflow::Medium)),QStringLiteral("medium"));
+    QCOMPARE(QString::fromLatin1(reflowName(Reflow::Narrow)),QStringLiteral("narrow"));
+  }
 };
 
 QTEST_MAIN(TstPanelLayout)

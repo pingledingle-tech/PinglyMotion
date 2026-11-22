@@ -14,11 +14,17 @@
 
 #include "playback.h"
 #include "transportlook.h"
+#include "wraprow.h"
 
 TransportBar::TransportBar(QWidget* parent) : QWidget(parent)
 {
-  QHBoxLayout* layout=new QHBoxLayout(this);
-  layout->setContentsMargins(0,0,0,0);
+  // two parts: playing (Start, Stop, Replay from start) and stepping (Frame
+  // back, Frame forward, Loop); side by side, or one under the other when the
+  // panels stand in one column (setWrapped, docs/UX_DECISIONS.md 6c)
+  QHBoxLayout* playPart=new QHBoxLayout;
+  QHBoxLayout* stepPart=new QHBoxLayout;
+  m_rows=WrapRow::make({playPart,stepPart});
+  setLayout(m_rows);
 
   m_start=new QPushButton(tr("Start"),this);
   m_start->setObjectName("transportStartButton");
@@ -52,12 +58,14 @@ TransportBar::TransportBar(QWidget* parent) : QWidget(parent)
   // button, Lucide icons, theme colours, focus ring (transportlook.h)
   TransportLook::apply(this);
 
-  layout->addWidget(m_start);
-  layout->addWidget(m_stop);
-  layout->addWidget(m_replay);
-  layout->addWidget(m_back);
-  layout->addWidget(m_forward);
-  layout->addWidget(m_loop);
+  playPart->addWidget(m_start);
+  playPart->addWidget(m_stop);
+  playPart->addWidget(m_replay);
+  playPart->addStretch(1);
+  stepPart->addWidget(m_back);
+  stepPart->addWidget(m_forward);
+  stepPart->addWidget(m_loop);
+  stepPart->addStretch(1);
 
   connect(m_start,&QPushButton::clicked,this,&TransportBar::startClicked);
   connect(m_stop,&QPushButton::clicked,this,&TransportBar::stopClicked);
@@ -127,4 +135,24 @@ void TransportBar::setLoop(bool on)
 bool TransportBar::loop() const
 {
   return m_loop->isChecked();
+}
+
+void TransportBar::setWrapped(bool wrapped)
+{
+  WrapRow::setWrapped(m_rows,wrapped);
+}
+
+bool TransportBar::isWrapped() const
+{
+  return WrapRow::isWrapped(m_rows);
+}
+
+int TransportBar::oneLineWidth() const
+{
+  return WrapRow::oneLineWidth(m_rows);
+}
+
+int TransportBar::wrappedWidth() const
+{
+  return WrapRow::wrappedWidth(m_rows);
 }

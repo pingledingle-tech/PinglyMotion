@@ -30,6 +30,7 @@
 #include "versionnumber.h"
 
 #include "constants.h"
+#include "textsize.h"
 
 #ifdef BUILD_TIMESTAMP_Z
   const QString Constants::m_buildDateTime = BUILD_TIMESTAMP_Z;
@@ -209,17 +210,20 @@ int Constants::keyWidth()
 
 int Constants::keyHeight()
 {
-  return 10;
+  // grows with the text size (src/textsize.h), so the joint names fit their rows
+  return TextSize::scaled(10);
 }
 
 int Constants::lineHeight()
 {
-  return 11;
+  // grows with the text size (src/textsize.h), so the joint names fit their rows
+  return TextSize::scaled(11);
 }
 
 int Constants::leftStrut()
 {
-  return 120;
+  // grows with the text size (src/textsize.h), so the joint names fit their rows
+  return TextSize::scaled(120);
 }
 
 int Constants::m_numParts = 25;

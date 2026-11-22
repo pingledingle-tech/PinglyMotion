@@ -41,6 +41,21 @@
 #include "transportlook.h"
 #include "usersettings.h"
 
+// the widgets of a layout and of the layouts inside it, in reading order
+static QList<QWidget*> widgetsInOrder(QLayout* layout)
+{
+  QList<QWidget*> widgets;
+  for (int i = 0; i < layout->count(); ++i)
+  {
+    QLayoutItem* item = layout->itemAt(i);
+    if (item->widget())
+      widgets << item->widget();
+    else if (item->layout())
+      widgets << widgetsInOrder(item->layout());
+  }
+  return widgets;
+}
+
 class TestTransportBar : public QObject
 {
   Q_OBJECT
@@ -217,16 +232,19 @@ void TestTransportBar::stepButtonOrder()
 {
   // next to the other transport buttons: Start, Stop, Replay from start,
   // Frame back, Frame forward, then the Loop switch
+  // (in two parts since UX phase 0c, so they can break into two lines)
   TransportBar bar;
-  QLayout* layout = bar.layout();
-  QVERIFY(layout);
-  QCOMPARE(layout->count(), 6);
-  QCOMPARE(layout->itemAt(0)->widget(), bar.startButton());
-  QCOMPARE(layout->itemAt(1)->widget(), bar.stopButton());
-  QCOMPARE(layout->itemAt(2)->widget(), bar.replayButton());
-  QCOMPARE(layout->itemAt(3)->widget(), bar.backButton());
-  QCOMPARE(layout->itemAt(4)->widget(), bar.forwardButton());
-  QCOMPARE(layout->itemAt(5)->widget(), bar.loopCheckBox());
+  QVERIFY(bar.layout());
+  const QList<QWidget*> order = widgetsInOrder(bar.layout());
+  QCOMPARE(order, QList<QWidget*>({bar.startButton(), bar.stopButton(), bar.replayButton(), bar.backButton(),
+                                   bar.forwardButton(), bar.loopCheckBox()}));
+  // on one line unless asked otherwise, in that order from left to right
+  QVERIFY(!bar.isWrapped());
+  bar.resize(bar.sizeHint());
+  bar.layout()->activate();
+  for (int i = 1; i < order.size(); ++i)
+    QVERIFY(order.at(i)->x() > order.at(i - 1)->x());
+  QCOMPARE(bar.oneLineWidth(), bar.minimumSizeHint().width());
 }
 
 void TestTransportBar::stepButtonsAtFirstMiddleAndLast()
@@ -765,11 +783,11 @@ void TestTransportBar::lookKeepsTextsAndOrder()
   QCOMPARE(bar.stopButton()->text(), QStringLiteral("Stop"));
   QCOMPARE(bar.replayButton()->text(), QStringLiteral("Replay from start"));
   QCOMPARE(bar.replayButton()->toolTip(), QStringLiteral("Go back to the first frame and play"));
-  QLayout* layout = bar.layout();
-  QVERIFY(layout);
-  QCOMPARE(layout->itemAt(0)->widget(), bar.startButton());
-  QCOMPARE(layout->itemAt(1)->widget(), bar.stopButton());
-  QCOMPARE(layout->itemAt(2)->widget(), bar.replayButton());
+  QVERIFY(bar.layout());
+  const QList<QWidget*> order = widgetsInOrder(bar.layout());
+  QCOMPARE(order.value(0), bar.startButton());
+  QCOMPARE(order.value(1), bar.stopButton());
+  QCOMPARE(order.value(2), bar.replayButton());
 }
 
 QTEST_MAIN(TestTransportBar)

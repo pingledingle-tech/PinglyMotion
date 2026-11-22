@@ -286,6 +286,111 @@ namespace PanelLayout
       return v;
     }
   };
+
+  // ---- 7. Rearranging at large text or in a small window --------------------
+
+  // docs/UX_DECISIONS.md, 6c: at large text or in a small window the panels
+  // rearrange instead of scrolling sideways. With less room the Joints panel
+  // joins the right side as a tab; with very little room everything stacks
+  // in one column and only scrolls down. Floating needs room, so pop-out is
+  // greyed out in one column.
+  enum class Reflow
+  {
+    Wide,     // the first layout: Joints left, Selected joint right, Timeline below
+    Medium,   // Joints is a tab next to Selected joint on the right
+    Narrow    // one column under the 3D view: nothing floats
+  };
+
+  // The widths the layouts need, in logical pixels at the current text size:
+  // the width each tall panel needs to show its widest control (the same
+  // width the window gives it), the timeline panel with its rows on one line
+  // and with its rows broken into shorter lines, and the line between two
+  // docked panels.
+  struct ReflowNeeds
+  {
+    int joints=0;
+    int jointCard=0;
+    int timeline=0;          // rows on one line
+    int timelineWrapped=0;   // rows broken into shorter lines
+    int separator=0;
+  };
+
+  // The narrowest 3D view next to the panels, in logical pixels. It does not
+  // grow with the text size: the figure needs no more room when the text is
+  // bigger. 240 keeps the first window (850 pixels wide) in the wide layout
+  // at 100 percent, as it always was.
+  const int ViewMinWidth=240;
+
+  // The timeline stands under the 3D view, between the side columns, so the
+  // middle column is as wide as the wider of the two.
+  inline int middleNeed(const ReflowNeeds& n)
+  {
+    return std::max(ViewMinWidth,n.timelineWrapped);
+  }
+
+  // The width the window needs for each layout.
+  inline int wideNeed(const ReflowNeeds& n)
+  {
+    return n.joints+n.separator+middleNeed(n)+n.separator+n.jointCard;
+  }
+
+  inline int mediumNeed(const ReflowNeeds& n)
+  {
+    return std::max(n.joints,n.jointCard)+n.separator+middleNeed(n);
+  }
+
+  // The least width of the one column: the widest panel, with the timeline's
+  // rows broken into shorter lines. A narrower window cannot show the panels
+  // without clipping; the window is then kept this wide.
+  inline int narrowNeed(const ReflowNeeds& n)
+  {
+    return std::max(std::max(n.joints,n.jointCard),n.timelineWrapped);
+  }
+
+  // The layout for a window `width` logical pixels wide (the width inside
+  // the frame): the first one that fits, Wide before Medium before Narrow.
+  inline Reflow chooseReflow(int width,const ReflowNeeds& n)
+  {
+    if (width>=wideNeed(n)) return Reflow::Wide;
+    if (width>=mediumNeed(n)) return Reflow::Medium;
+    return Reflow::Narrow;
+  }
+
+  // The width the timeline panel gets in a window `width` pixels wide.
+  inline int timelineWidth(Reflow r,int width,const ReflowNeeds& n)
+  {
+    switch (r)
+    {
+      case Reflow::Wide: return width-n.joints-n.jointCard-2*n.separator;
+      case Reflow::Medium: return width-std::max(n.joints,n.jointCard)-n.separator;
+      case Reflow::Narrow: return width;
+    }
+    return width;
+  }
+
+  // The timeline's rows break into shorter lines when they do not fit on one.
+  inline bool wrapTimeline(Reflow r,int width,const ReflowNeeds& n)
+  {
+    return timelineWidth(r,width,n)<n.timeline;
+  }
+
+  // Pop-out (floating) needs room: not in one column.
+  inline bool canFloat(Reflow r)
+  {
+    return r!=Reflow::Narrow;
+  }
+
+  // for messages and tests
+  inline const char* reflowName(Reflow r)
+  {
+    switch (r)
+    {
+      case Reflow::Wide: return "wide";
+      case Reflow::Medium: return "medium";
+      case Reflow::Narrow: return "narrow";
+    }
+    return "wide";
+  }
 }
 
 #endif
