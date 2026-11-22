@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 76 behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 85 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -284,6 +284,13 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - Plain RLV behaviours (all marked `RLV`, among them the 20 above) are known in both modes. Those with effects
   outside the sandbox: `setenv`, `setdebug`, `setcam`, `setcam_avdist`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_fovmin`,
   `setcam_fovmax`, `setcam_mouselook`, `setcam_textures`, `setcam_unlock`.
+- Old names (aliases) share the state of the new name: `camdistmax` (`setcam_avdistmax`), `camdistmin`
+  (`setcam_avdistmin`), `camavdist` (`setcam_avdist`), `camtextures` (`setcam_textures`), `camunlock`
+  (`setcam_unlock`) and `fartouch` (`touchfar`). Holding one is holding the other (the same restriction under both
+  names is a duplicate, `=y` under either name lifts it, the action it blocks is blocked), and `@getstatus` shows the
+  name that was used. `camzoommax` and `camzoommin` (the old zoom limits, option: a zoom multiplier) are separate
+  entries, recorded only, because a multiplier is not a field of view angle. `touchfar` (option: distance in metres)
+  blocks the action "Touch objects farther away".
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes. A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`.

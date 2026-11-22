@@ -81,6 +81,10 @@ namespace Rlv
     bool external = false;
     // free-form note on what the sandbox does with it (empty for most)
     QString note;
+    // An old name for another behaviour: the name of that behaviour. Both names
+    // share one state (holding one counts as holding the other); getstatus shows
+    // the name that was used. Empty for ordinary behaviours.
+    QString alias;
   };
 
   // The RLV version the sandbox answers with: 3.4.3.
@@ -91,6 +95,8 @@ namespace Rlv
   QString versionNumber();            // @versionnum: "3040300"
 
   const QVector<Behaviour>& behaviours();
+  // the name the state is kept under: the target of an alias, else the name itself
+  QString canonicalName(const QString& name);
   // nullptr when the behaviour is not in the table (either dialect)
   const Behaviour* findBehaviour(const QString& name);
   // nullptr when the behaviour is not in the table or not known in this mode

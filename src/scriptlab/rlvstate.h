@@ -110,7 +110,14 @@ class RlvState : public QObject
     {
       QString behaviour;
       QString option;
+      // as written (the name that was used); shown by getstatus and in the lists
       QString key() const { return option.isEmpty() ? behaviour : behaviour + ":" + option; }
+      // the key the counters use: an old name counts as the new one
+      QString stateKey() const
+      {
+        const QString name = Rlv::canonicalName(behaviour);
+        return option.isEmpty() ? name : name + ":" + option;
+      }
     };
 
     Outcome run(const QString& objectId, const Rlv::Command& command, QVector<Reply>& replies, bool& changed);
