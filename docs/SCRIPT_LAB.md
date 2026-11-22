@@ -173,7 +173,7 @@ an RLV relay, a store), and they talk to each other.
   chat. Not as in Second Life: scripts run one after the other in a fixed order, not in parallel; memory is a rough
   count with 256 KB per script; every prim has the object's key. Details: [CONTROL.md](CONTROL.md), "Several scripts
   in one object"; reasons: [DECISIONS.md](DECISIONS.md).
-- A touch can name the prim (`link`); a prim without a touch handler passes it to the root.
+- A touch can name the prim (`link`); a prim without a touch handler (`touch_start`, `touch` or `touch_end`) passes it to the root.
 - Code: `src/scriptlab/lsl/sandbox.*` (scripts, prims, link messages), `world.*` (the Linkset Data store),
   `builtins.cpp`. Tests: `tests/tst_lsllink.cpp`. Fuzz: `fuzz_lsl` also runs every script as three scripts in one
   object of two prims and drives the Linkset Data store from the input.
@@ -199,7 +199,8 @@ control command `lsl_event`, so the log lines are exactly the ones `lsl_event` a
 The Live folder watch keeps no world between runs, so the buttons work on a world made by `lsl_run` (an AI assistant, or
 a script run through the control commands), the one the Objects part shows.
 
-- **To object** (the objects of the world) and **Touch**: sends a touch to that object.
+- **To object** (the objects of the world) and **Touch**: sends a click to that object (`touch_start`, `touch` and
+  `touch_end` at once). Holding a touch longer is only possible through `hold` in the control commands for now.
 - **Channel**, **Name** and **Text** with **Say** (or Enter in Text): the avatar says the line on the channel. Name empty
   means the owner's avatar. Every object within range hears it; the object chosen above is not used for chat.
 - **Dialog from ...**: the newest dialog, with one button for each of its buttons. A button answers it, as the avatar
@@ -307,6 +308,20 @@ a script run through the control commands), the one the Objects part shows.
 - Tests: `tests/tst_lslownobject.cpp` (exact answers for every function) and the scenarios `lsl_own_object_reads` and
   `lsl_own_object_state`. The tests that used `llGetMass` as the example of a function that does not run yet now use
   `llGetEnergy`.
+
+## What exists now (second gap list, step 1): touch and touch_end
+
+- A touch now raises all three touch events of Second Life: `touch_start`, then `touch` while the touch is held (once
+  for a click, then every 0.1 simulated seconds), then `touch_end` when it is let go. `num_detected` is 1, and
+  `llDetectedName`, `llDetectedKey`, `llDetectedOwner` and `llDetectedLinkNumber` work in all three.
+- New input option `hold` (seconds, 0 to 60, default 0, a click) for a touch, in the `inputs` of `lsl_run` and
+  `lab_watch` and in `lsl_event`. A touch held past the end of a run goes on in the next `lsl_event`. The checker no
+  longer warns that `touch` and `touch_end` are never raised: 20 of the 43 events are raised now.
+- A prim with any touch handler keeps its touches; only a prim with none passes them to the root.
+- Choices and what is not done (the touch data `llDetectedTouch*`, several avatars touching at once, holding a touch
+  from the Live page): [CONTROL.md](CONTROL.md), "Touches". Tests: `tests/tst_lsltouch.cpp` (exact event times for a
+  click, a held touch and a release on a repeat, routing to the prim, `lsl_event`, a state change while held, refused
+  values) and the scenario `lsl_touch_phases`.
 
 ## Camera limits in the 3D view (job 7b)
 
@@ -609,7 +624,7 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   `tst_lsllint`), and one test per step: several objects (`tst_lslworld`), linked scripts (`tst_lsllink`), pure
   functions (`tst_lslpure`), `on_rez` and `changed` (`tst_lslevents`), prim state and L$ (`tst_lslprims`), inventory
   (`tst_lslinventory`), sitting (`tst_lslsitting`), controls (`tst_lslcontrols`), sensors (`tst_lslsensors`), stubs
-  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
+  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`), touches (`tst_lsltouch`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
   `fuzz_control`.
 - **Live:** `tst_labwatcher.cpp` and the Live part of `tst_control.cpp`.
 - **Effects in the 3D view:** `tst_labeffects`, `tst_scriptlabeffects`, `tst_cameraoverride`,
@@ -623,7 +638,7 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   exceptions, `@notify`, the RLVa and RLV modes, unknown behaviours and refused values, refused requests), RLV from a
   script, several objects with chat ranges, linked scripts with Linkset Data, a notecard from canned inventory, a pose
   ball (sit and stand), controls, sensors, canned HTTP replies, `transaction_result`, reads and state of the object
-  itself (`llGetObjectDetails`, `llSetScriptState`, `llResetOtherScript`, `llDie`), and error cases (a script that
+  itself (`llGetObjectDetails`, `llSetScriptState`, `llResetOtherScript`, `llDie`), the touch phases (a click and a held touch), and error cases (a script that
   does not compile, an unknown function, a function not supported yet, a runaway list, wrong `lsl_event` and `lsl_run`
   input). Each request lists the exact values some fields of its answer must have (whole event logs, RLV results and
   replies, the state). `tests/tst_scriptlabwhole.cpp` sends them to the control interface in a unit test (ctest
@@ -652,7 +667,7 @@ Not tested automatically (gaps):
 - Only the behaviours in the table; others parse but are reported as unknown.
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
-  events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
+  events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `touch`, `touch_end`, `run_time_permissions`, `attach`,
   `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
   `http_response`, `transaction_result`), and 234 built-in functions; HTTP only with canned replies, never on the network; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names

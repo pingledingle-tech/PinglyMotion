@@ -1,6 +1,6 @@
 Branch: job/scriptlab-touch-events
 Status: active
-Pull request: pending
+Pull request: #367
 Files:
 - src/scriptlab/lsl/**
 - src/controlapi.cpp
