@@ -77,7 +77,9 @@ enum class Fn
   GetRegionName, GetRegionCorner, Ground, Water, GetAgentSize, GetAgentList, RequestAgentData, GetSunDirection, GetTimeOfDay,
   GetTimestamp, GetWallclock, GetDate,
   // gap list 2, step 4: money, web server and mail stubs (no L$, no network, no mail)
-  GiveMoney, Email, GetNextEmail, RequestURL, RequestSecureURL, ReleaseURL, GetFreeURLs, HTTPResponse, GetHTTPHeader
+  GiveMoney, Email, GetNextEmail, RequestURL, RequestSecureURL, ReleaseURL, GetFreeURLs, HTTPResponse, GetHTTPHeader,
+  // gap list 2, step 5: prim media (record only: nothing is fetched or played)
+  SetPrimMediaParams, GetPrimMediaParams, ClearPrimMedia
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -161,6 +163,8 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llGiveMoney", Fn::GiveMoney}, {"llEmail", Fn::Email}, {"llGetNextEmail", Fn::GetNextEmail},
   {"llRequestURL", Fn::RequestURL}, {"llRequestSecureURL", Fn::RequestSecureURL}, {"llReleaseURL", Fn::ReleaseURL},
   {"llGetFreeURLs", Fn::GetFreeURLs}, {"llHTTPResponse", Fn::HTTPResponse}, {"llGetHTTPHeader", Fn::GetHTTPHeader},
+  {"llSetPrimMediaParams", Fn::SetPrimMediaParams}, {"llGetPrimMediaParams", Fn::GetPrimMediaParams},
+  {"llClearPrimMedia", Fn::ClearPrimMedia},
   {"llTriggerSoundLimited", Fn::RecordOnly},
   {"llLoopSoundMaster", Fn::RecordOnly},
   {"llLoopSoundSlave", Fn::RecordOnly},
@@ -652,6 +656,157 @@ QJsonArray recordArgs(const std::vector<Value>& a)
     }
   }
   return out;
+}
+
+// ---- prim media (gap list 2, step 5): record only, nothing is fetched or played
+// the PRIM_MEDIA_* parameter numbers and the STATUS_* answers of Second Life
+enum
+{
+  PRIM_MEDIA_ALT_IMAGE_ENABLE = 0, PRIM_MEDIA_CONTROLS = 1, PRIM_MEDIA_CURRENT_URL = 2, PRIM_MEDIA_HOME_URL = 3,
+  PRIM_MEDIA_AUTO_LOOP = 4, PRIM_MEDIA_AUTO_PLAY = 5, PRIM_MEDIA_AUTO_SCALE = 6, PRIM_MEDIA_AUTO_ZOOM = 7,
+  PRIM_MEDIA_FIRST_CLICK_INTERACT = 8, PRIM_MEDIA_WIDTH_PIXELS = 9, PRIM_MEDIA_HEIGHT_PIXELS = 10,
+  PRIM_MEDIA_WHITELIST_ENABLE = 11, PRIM_MEDIA_WHITELIST = 12, PRIM_MEDIA_PERMS_INTERACT = 13, PRIM_MEDIA_PERMS_CONTROL = 14
+};
+enum
+{
+  STATUS_OK = 0, STATUS_MALFORMED_PARAMS = 1000, STATUS_TYPE_MISMATCH = 1001, STATUS_BOUNDS_ERROR = 1002,
+  STATUS_WHITELIST_FAILED = 2001
+};
+const int MEDIA_MAX_URL = 1024, MEDIA_MAX_PIXELS = 2048, MEDIA_MAX_WHITELIST_COUNT = 64, MEDIA_MAX_WHITELIST_SIZE = 1024;
+
+const char* mediaStatusName(int code)
+{
+  switch (code)
+  {
+    case STATUS_OK: return "STATUS_OK";
+    case STATUS_MALFORMED_PARAMS: return "STATUS_MALFORMED_PARAMS";
+    case STATUS_TYPE_MISMATCH: return "STATUS_TYPE_MISMATCH";
+    case STATUS_BOUNDS_ERROR: return "STATUS_BOUNDS_ERROR";
+    case STATUS_WHITELIST_FAILED: return "STATUS_WHITELIST_FAILED";
+    default: return "STATUS_ERROR";
+  }
+}
+
+// the host of an address: no scheme, no user, no port, no path, lower case
+QString mediaHost(const QString& url)
+{
+  QString h = url.trimmed();
+  const int scheme = h.indexOf("://");
+  if (scheme >= 0) h = h.mid(scheme + 3);
+  for (const char c : {'/', '?', '#'}) { const int k = h.indexOf(QChar(c)); if (k >= 0) h = h.left(k); }
+  const int at = h.lastIndexOf('@');
+  if (at >= 0) h = h.mid(at + 1);
+  const int colon = h.indexOf(':');
+  if (colon >= 0) h = h.left(colon);
+  return h.toLower();
+}
+
+// true when the address passes the whitelist: its host is a listed host or a sub-domain of one (sandbox rule: the host
+// is compared, not the path)
+bool mediaWhitelistAllows(const QString& whitelist, const QString& url)
+{
+  const QString host = mediaHost(url);
+  for (const QString& entry : whitelist.split(',', Qt::SkipEmptyParts))
+  {
+    QString e = mediaHost(entry);
+    if (e.startsWith("*.")) e = e.mid(2);
+    if (!e.isEmpty() && (host == e || host.endsWith("." + e))) return true;
+  }
+  return false;
+}
+
+// the first problem in a list of PRIM_MEDIA_* rules, as a STATUS_* number; STATUS_OK when every rule is fine
+int checkMediaRules(const std::vector<Value>& rules)
+{
+  if (rules.size() % 2 != 0) return STATUS_MALFORMED_PARAMS;
+  for (size_t i = 0; i < rules.size(); i += 2)
+  {
+    if (rules[i].type != Type::Integer) return STATUS_TYPE_MISMATCH;
+    const int id = rules[i].i;
+    const Value& v = rules[i + 1];
+    switch (id)
+    {
+      case PRIM_MEDIA_CURRENT_URL:
+      case PRIM_MEDIA_HOME_URL:
+        if (v.type != Type::String) return STATUS_TYPE_MISMATCH;
+        if (v.s.toUtf8().size() > MEDIA_MAX_URL) return STATUS_BOUNDS_ERROR;
+        break;
+      case PRIM_MEDIA_WHITELIST:
+        if (v.type != Type::String) return STATUS_TYPE_MISMATCH;
+        if (v.s.toUtf8().size() > MEDIA_MAX_WHITELIST_SIZE || v.s.split(',', Qt::SkipEmptyParts).size() > MEDIA_MAX_WHITELIST_COUNT)
+          return STATUS_BOUNDS_ERROR;
+        break;
+      case PRIM_MEDIA_ALT_IMAGE_ENABLE: case PRIM_MEDIA_AUTO_LOOP: case PRIM_MEDIA_AUTO_PLAY: case PRIM_MEDIA_AUTO_SCALE:
+      case PRIM_MEDIA_AUTO_ZOOM: case PRIM_MEDIA_FIRST_CLICK_INTERACT: case PRIM_MEDIA_WHITELIST_ENABLE:
+        if (v.type != Type::Integer) return STATUS_TYPE_MISMATCH;
+        break;
+      case PRIM_MEDIA_CONTROLS:
+        if (v.type != Type::Integer) return STATUS_TYPE_MISMATCH;
+        if (v.i < 0 || v.i > 1) return STATUS_BOUNDS_ERROR;
+        break;
+      case PRIM_MEDIA_WIDTH_PIXELS:
+      case PRIM_MEDIA_HEIGHT_PIXELS:
+        if (v.type != Type::Integer) return STATUS_TYPE_MISMATCH;
+        if (v.i < 0 || v.i > MEDIA_MAX_PIXELS) return STATUS_BOUNDS_ERROR;
+        break;
+      case PRIM_MEDIA_PERMS_INTERACT:
+      case PRIM_MEDIA_PERMS_CONTROL:
+        if (v.type != Type::Integer) return STATUS_TYPE_MISMATCH;
+        if (v.i < 0 || v.i > 7) return STATUS_BOUNDS_ERROR;
+        break;
+      default: return STATUS_MALFORMED_PARAMS;
+    }
+  }
+  return STATUS_OK;
+}
+
+void applyMediaRules(MediaState& m, const std::vector<Value>& rules)
+{
+  for (size_t i = 0; i + 1 < rules.size(); i += 2)
+  {
+    const Value& v = rules[i + 1];
+    switch (rules[i].i)
+    {
+      case PRIM_MEDIA_ALT_IMAGE_ENABLE: m.altImageEnable = v.i != 0; break;
+      case PRIM_MEDIA_CONTROLS: m.controls = v.i; break;
+      case PRIM_MEDIA_CURRENT_URL: m.currentUrl = v.s; break;
+      case PRIM_MEDIA_HOME_URL: m.homeUrl = v.s; break;
+      case PRIM_MEDIA_AUTO_LOOP: m.autoLoop = v.i != 0; break;
+      case PRIM_MEDIA_AUTO_PLAY: m.autoPlay = v.i != 0; break;
+      case PRIM_MEDIA_AUTO_SCALE: m.autoScale = v.i != 0; break;
+      case PRIM_MEDIA_AUTO_ZOOM: m.autoZoom = v.i != 0; break;
+      case PRIM_MEDIA_FIRST_CLICK_INTERACT: m.firstClickInteract = v.i != 0; break;
+      case PRIM_MEDIA_WIDTH_PIXELS: m.widthPixels = v.i; break;
+      case PRIM_MEDIA_HEIGHT_PIXELS: m.heightPixels = v.i; break;
+      case PRIM_MEDIA_WHITELIST_ENABLE: m.whitelistEnable = v.i != 0; break;
+      case PRIM_MEDIA_WHITELIST: m.whitelist = v.s; break;
+      case PRIM_MEDIA_PERMS_INTERACT: m.permsInteract = v.i; break;
+      case PRIM_MEDIA_PERMS_CONTROL: m.permsControl = v.i; break;
+      default: break;
+    }
+  }
+}
+
+Value mediaValue(const MediaState& m, int id)
+{
+  switch (id)
+  {
+    case PRIM_MEDIA_ALT_IMAGE_ENABLE: return Value::integer(m.altImageEnable);
+    case PRIM_MEDIA_CONTROLS: return Value::integer(m.controls);
+    case PRIM_MEDIA_CURRENT_URL: return Value::string(m.currentUrl);
+    case PRIM_MEDIA_HOME_URL: return Value::string(m.homeUrl);
+    case PRIM_MEDIA_AUTO_LOOP: return Value::integer(m.autoLoop);
+    case PRIM_MEDIA_AUTO_PLAY: return Value::integer(m.autoPlay);
+    case PRIM_MEDIA_AUTO_SCALE: return Value::integer(m.autoScale);
+    case PRIM_MEDIA_AUTO_ZOOM: return Value::integer(m.autoZoom);
+    case PRIM_MEDIA_FIRST_CLICK_INTERACT: return Value::integer(m.firstClickInteract);
+    case PRIM_MEDIA_WIDTH_PIXELS: return Value::integer(m.widthPixels);
+    case PRIM_MEDIA_HEIGHT_PIXELS: return Value::integer(m.heightPixels);
+    case PRIM_MEDIA_WHITELIST_ENABLE: return Value::integer(m.whitelistEnable);
+    case PRIM_MEDIA_WHITELIST: return Value::string(m.whitelist);
+    case PRIM_MEDIA_PERMS_INTERACT: return Value::integer(m.permsInteract);
+    default: return Value::integer(m.permsControl);
+  }
 }
 
 // ---- llHTTPRequest (step 9b-9)
@@ -2572,6 +2727,53 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       for (const IncomingRequest& r : m_incoming)
         if (r.id == a[0].s) return Value::string(r.headers.value(a[1].s));
       return Value::string(QString());
+    }
+
+    // -------------------------------------------- prim media, record only (gap list 2, step 5)
+    case Fn::SetPrimMediaParams:
+    case Fn::GetPrimMediaParams:
+    case Fn::ClearPrimMedia:
+    {
+      const int link = qMax(1, m_world.linkNumber());
+      const int face = a[0].i;
+      const bool faceOk = face >= 0 && face < PrimState::FACES;
+      auto note = [&](QJsonObject e) { if (!m_world.logFull()) { e["type"] = "prim_media"; e["link"] = shownLink(m_world, link); e["face"] = face; m_world.log(m_now, e); } };
+      auto status = [&](int code) { return QJsonValue(mediaStatusName(code)); };
+      if (*it == Fn::ClearPrimMedia)
+      {
+        const int code = faceOk ? STATUS_OK : STATUS_BOUNDS_ERROR;
+        if (faceOk) primOf(m_world, link).faces[face].media = MediaState();
+        note(QJsonObject{{"op", "clear"}, {"result", status(code)}, {"note", "Simulated: no media was ever loaded."}});
+        return Value::integer(code);
+      }
+      if (*it == Fn::SetPrimMediaParams)
+      {
+        int code = faceOk ? checkMediaRules(a[1].list) : STATUS_BOUNDS_ERROR;
+        if (code == STATUS_OK)
+        {
+          MediaState m = primOf(m_world, link).faces[face].media;
+          applyMediaRules(m, a[1].list);
+          if (m.whitelistEnable && !m.currentUrl.isEmpty() && !mediaWhitelistAllows(m.whitelist, m.currentUrl)) code = STATUS_WHITELIST_FAILED;
+          else { m.present = true; primOf(m_world, link).faces[face].media = m; }
+        }
+        note(QJsonObject{{"op", "set"}, {"params", recordArgs(a[1].list)}, {"result", status(code)},
+                         {"note", "Simulated: nothing is fetched or played."}});
+        return Value::integer(code);
+      }
+      // llGetPrimMediaParams: the values in the order asked; a single error code in the list when the call is wrong; empty without media
+      std::vector<Value> out;
+      int code = faceOk ? STATUS_OK : STATUS_BOUNDS_ERROR;
+      const MediaState media = faceOk ? primOf(m_world, link).faces[face].media : MediaState();
+      if (code == STATUS_OK && media.present)
+        for (const Value& id : a[1].list)
+        {
+          if (id.type != Type::Integer) { code = STATUS_TYPE_MISMATCH; break; }
+          if (id.i < 0 || id.i > PRIM_MEDIA_PERMS_CONTROL) { code = STATUS_MALFORMED_PARAMS; break; }
+          out.push_back(mediaValue(media, id.i));
+        }
+      if (code != STATUS_OK) out = {Value::integer(code)};
+      note(QJsonObject{{"op", "get"}, {"params", recordArgs(a[1].list)}, {"result", code != STATUS_OK ? status(code) : QJsonValue(media.present ? "ok" : "no_media")}});
+      return Value::makeList(out);
     }
 
     // -------------------------------------------- cheap reads and state of the object itself (gap list 2, step 2)

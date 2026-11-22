@@ -1,11 +1,9 @@
 Branch: job/scriptlab-prim-media
-Status: active
+Status: done
 Pull request: #374
 Files:
 - src/scriptlab/lsl/builtins.cpp
-- src/scriptlab/lsl/world.*
-- src/scriptlab/lsl/sandbox.*
-- src/scriptlab/lsl/control.cpp
+- src/scriptlab/lsl/world.h
 - tests/tst_lslmedia.cpp
 - tests/tst_lslpure.cpp
 - tests/CMakeLists.txt

@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 255 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3 and nine from step 4 of the second gap list); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 258 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4 and three from step 5 of the second gap list); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -289,6 +289,20 @@ a script run through the control commands), the one the Objects part shows.
 - Doubts and what is not done: [CONTROL.md](CONTROL.md), the end of "Money, web server and mail".
 - Tests: `tests/tst_lslmoney.cpp` (exact answers for every function, input and error) and the scenario
   `lsl_money_web_mail`. The test of the number of functions that run now expects 255.
+
+## What exists now (second gap list, step 5): prim media
+
+- Three more functions run: `llSetPrimMediaParams`, `llGetPrimMediaParams` and `llClearPrimMedia`. Record only:
+  nothing is fetched or played, no connection is opened, and the media never "loads". The media of a face is kept in
+  the world state of the prim the script is in (faces 0 to 5), so a script reads back what it set; every call is a
+  `prim_media` log entry with its exact arguments. No forced delay is simulated (Second Life makes the script sleep 1
+  second in each).
+- Second Life rules kept: the 15 `PRIM_MEDIA_*` rules, a wrong face, odd rule list, unknown rule, wrong value type
+  or value out of range answered with `STATUS_BOUNDS_ERROR`, `STATUS_MALFORMED_PARAMS` or `STATUS_TYPE_MISMATCH`
+  (nothing is stored then), `STATUS_WHITELIST_FAILED` for an address the whitelist does not allow, and an empty list
+  from `llGetPrimMediaParams` for a face without media. Details and the doubts: [CONTROL.md](CONTROL.md), "Prim media".
+- Tests: `tests/tst_lslmedia.cpp` (exact answers) and the scenario `lsl_prim_media`. The test of the number of
+  functions that run now expects 258.
 
 ## What exists now (second gap list, step 3): region and avatar reads
 
@@ -668,7 +682,7 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   `tst_lsllint`), and one test per step: several objects (`tst_lslworld`), linked scripts (`tst_lsllink`), pure
   functions (`tst_lslpure`), `on_rez` and `changed` (`tst_lslevents`), prim state and L$ (`tst_lslprims`), inventory
   (`tst_lslinventory`), sitting (`tst_lslsitting`), controls (`tst_lslcontrols`), sensors (`tst_lslsensors`), stubs
-  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`), touches (`tst_lsltouch`), region and avatar reads (`tst_lslregion`), money, web server and mail (`tst_lslmoney`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
+  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`), touches (`tst_lsltouch`), region and avatar reads (`tst_lslregion`), money, web server and mail (`tst_lslmoney`), prim media (`tst_lslmedia`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
   `fuzz_control`.
 - **Live:** `tst_labwatcher.cpp` and the Live part of `tst_control.cpp`.
 - **Effects in the 3D view:** `tst_labeffects`, `tst_scriptlabeffects`, `tst_cameraoverride`,
@@ -676,13 +690,13 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   (animation and frame, camera limits, sky colour and fog distance, view modes), not the picture.
 - **The panel:** `tests/scriptlabpanel/` (the Commands page's rows, words and colour tokens, the Objects and Dialog
   part, the input buttons, the panel's place after saving the layout), offscreen.
-- **The whole tool through the control commands:** `tests/data/scriptlab/scenarios.json` holds 33 scenarios (107
+- **The whole tool through the control commands:** `tests/data/scriptlab/scenarios.json` holds 34 scenarios (108
   requests): each of the eight example scripts in `examples/scriptlab`, each kind of RLV command (restriction on and
   off, duplicates, two objects and `@clear`, force commands and recorded values, questions answered on a channel,
   exceptions, `@notify`, the RLVa and RLV modes, unknown behaviours and refused values, refused requests), RLV from a
   script, several objects with chat ranges, linked scripts with Linkset Data, a notecard from canned inventory, a pose
   ball (sit and stand), controls, sensors, canned HTTP replies, `transaction_result`, reads and state of the object
-  itself (`llGetObjectDetails`, `llSetScriptState`, `llResetOtherScript`, `llDie`), the touch phases (a click and a held touch), region and avatar reads (a given region, the clock, the sun, `llGetAgentList`, `llRequestAgentData`), money, web server and mail (a URL, an incoming request and its answer, a payment, an email), and error cases (a script that
+  itself (`llGetObjectDetails`, `llSetScriptState`, `llResetOtherScript`, `llDie`), the touch phases (a click and a held touch), region and avatar reads (a given region, the clock, the sun, `llGetAgentList`, `llRequestAgentData`), money, web server and mail (a URL, an incoming request and its answer, a payment, an email), prim media (media set, read back, wrong values and cleared), and error cases (a script that
   does not compile, an unknown function, a function not supported yet, a runaway list, wrong `lsl_event` and `lsl_run`
   input). Each request lists the exact values some fields of its answer must have (whole event logs, RLV results and
   replies, the state). `tests/tst_scriptlabwhole.cpp` sends them to the control interface in a unit test (ctest
@@ -713,7 +727,7 @@ Not tested automatically (gaps):
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `touch`, `touch_end`, `run_time_permissions`, `attach`,
   `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
-  `http_response`, `transaction_result`), `money`, `http_request` and `email` (second gap list, step 4), and 255 built-in functions; HTTP
+  `http_response`, `transaction_result`), `money`, `http_request` and `email` (second gap list, step 4), and 258 built-in functions; HTTP
   only with canned replies and a fake web server, never on the network; no L$ and no mail; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;

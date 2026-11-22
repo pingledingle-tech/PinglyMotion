@@ -417,6 +417,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `animation_override` | `llSetAnimationOverride` or `llResetAnimationOverride` succeeded (step 9b-8) | `op` (`set` or `reset`), `state`, `animation` |
 | `http_request` | `llHTTPRequest` passed its checks (step 9b-9; nothing goes on the network) | `method`, `url`, `mimetype`, `body` (when not empty), `headers` (the custom headers as `[name, value]` pairs, when given), `result` (`canned`, `no_reply` or `throttled`), and except for `throttled` `request` (the key the call returned), `status` and `truncated_at` (when the reply body was cut) |
 | `give_money` | `llGiveMoney` (second gap list, step 4; simulated, no L$ ever moves) | `to`, `amount`, `result` (`ok` or the failure tag), `note` |
+| `prim_media` | `llSetPrimMediaParams`, `llGetPrimMediaParams`, `llClearPrimMedia` (second gap list, step 5; record only) | `link`, `face`, `op` (`set`, `get` or `clear`), `params` (the rule list as its elements; not for `clear`), `result` (a `STATUS_*` name for `set` and `clear`; `ok`, `no_media` or a `STATUS_*` name for `get`), `note` (`set` and `clear`) |
 | `email_sent` | `llEmail` (second gap list, step 4; no mail is sent) | `address`, `subject`, `message`, `bytes` (with the header), `result` (`recorded` or `too_long`), `note` |
 | `email_check` | `llGetNextEmail` (second gap list, step 4) | `address`, `subject` (the filters), `found`, `left` (when found) |
 | `url_request` | `llRequestURL` or `llRequestSecureURL` (second gap list, step 4) | `secure`, `request` (the key the call returned), `result` (`granted` or `denied`), `url` (when granted) |
@@ -892,6 +893,36 @@ New input types, in `inputs` of `lsl_run` and in `lsl_event`:
 - Not done: `llSetContentType` and the content type of the answer, emails between objects of the world (an `llEmail`
   to `<object key>@lsl.secondlife.com` is only recorded), the pay price dialog (`llSetPayPrice` stays recorded only),
   the URLs lost when an object is taken and rezzed again, and the forced delays of other functions.
+
+#### Prim media (Script Lab, second gap list, step 5)
+
+`llSetPrimMediaParams`, `llGetPrimMediaParams` and `llClearPrimMedia` are record only: nothing is fetched or played
+and no connection is opened. The media of each face (0 to 5) of the prim the script is in is kept, so a script reads
+back what it set. Every call writes a `prim_media` entry. No forced delay is simulated.
+
+- **`llSetPrimMediaParams(face, rules)`** returns a `STATUS_*` number. `rules` is `[PRIM_MEDIA_..., value, ...]`. A face
+  with no media starts from these defaults: `ALT_IMAGE_ENABLE` 0, `CONTROLS` 0 (standard), `CURRENT_URL` and `HOME_URL`
+  empty, `AUTO_LOOP` 0, `AUTO_PLAY` 0, `AUTO_SCALE` 1, `AUTO_ZOOM` 0, `FIRST_CLICK_INTERACT` 0, `WIDTH_PIXELS` and
+  `HEIGHT_PIXELS` 0, `WHITELIST_ENABLE` 0, `WHITELIST` empty, `PERMS_INTERACT` 7 and `PERMS_CONTROL` 0. Rules given
+  later change only their own values; the yes/no rules store 0 or 1. Answers: `STATUS_OK` (0);
+  `STATUS_BOUNDS_ERROR` (1002) for a face outside 0 to 5 (`ALL_SIDES` too), `CONTROLS` other than 0 or 1, a width or
+  height outside 0 to 2048, `PERMS_*` outside 0 to 7, a URL over 1024 bytes, a whitelist over 1024 bytes or 64
+  entries; `STATUS_MALFORMED_PARAMS` (1000) for an odd number of list elements or an unknown rule number;
+  `STATUS_TYPE_MISMATCH` (1001) for a rule number that is not an integer or a value of the wrong type;
+  `STATUS_WHITELIST_FAILED` (2001) when `WHITELIST_ENABLE` is on and the host of `CURRENT_URL` is not a listed host or
+  a sub-domain of one (the sandbox compares the host only, ignores scheme, port and path, and takes `*.` as the
+  host itself). The first problem found (in list order) is answered, and nothing is stored when there is one.
+- **`llGetPrimMediaParams(face, rules)`** returns the values in the order asked: integers (yes/no rules 0 or 1) and
+  strings. An empty list when the face has no media (also for a wrong list of rules). When the face is wrong or the
+  list holds a rule number that is not an integer or not known, the list holds one element, the `STATUS_*` number
+  (1002, 1001, 1000). The `get` entry has `result` `ok`, `no_media` or the `STATUS_*` name.
+- **`llClearPrimMedia(face)`** removes the media of a face (the next `llSetPrimMediaParams` starts from the defaults)
+  and returns `STATUS_OK`, also when the face had none; `STATUS_BOUNDS_ERROR` for a face outside 0 to 5.
+- Doubts, written down instead of guessed (the sandbox chose): the defaults (`AUTO_SCALE` 1, `PERMS_INTERACT` 7), that
+  the answers for a wrong `llGetPrimMediaParams` call are a one-element list, that clearing a face without media is
+  `STATUS_OK`, that the whitelist compares hosts only, and that a prim has exactly 6 faces.
+- Not done: `llSetLinkMedia`, `llGetLinkMedia`, `llClearLinkMedia` (they stay "not supported yet"), permission
+  checks of the media (who may set it), and the 1 second sleep.
 
 #### Pure functions and object state (Script Lab step 9b-1, issue 310)
 

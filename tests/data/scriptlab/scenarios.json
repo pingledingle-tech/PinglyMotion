@@ -1971,6 +1971,74 @@
       ]
     },
     {
+      "about": "prim media (gap list 2, step 5): llSetPrimMediaParams, llGetPrimMediaParams and llClearPrimMedia, record only; the status codes for a wrong face, size and rule",
+      "name": "lsl_prim_media",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {
+                "face": 1,
+                "link": 0,
+                "note": "Simulated: nothing is fetched or played.",
+                "op": "set",
+                "params": [2,"https://example.com/a",9,640,10,480,5,1],
+                "result": "STATUS_OK",
+                "t": 0,
+                "type": "prim_media"
+              },
+              {"t":0,"text":"0","type":"owner_say"},
+              {"face":1,"link":0,"op":"get","params":[10,2,5,1],"result":"ok","t":0,"type":"prim_media"},
+              {"t":0,"text":"480|https://example.com/a|1|0","type":"owner_say"},
+              {
+                "face": 1,
+                "link": 0,
+                "note": "Simulated: nothing is fetched or played.",
+                "op": "set",
+                "params": [99,1],
+                "result": "STATUS_MALFORMED_PARAMS",
+                "t": 0,
+                "type": "prim_media"
+              },
+              {
+                "face": 1,
+                "link": 0,
+                "note": "Simulated: nothing is fetched or played.",
+                "op": "set",
+                "params": [9,4096],
+                "result": "STATUS_BOUNDS_ERROR",
+                "t": 0,
+                "type": "prim_media"
+              },
+              {
+                "face": 9,
+                "link": 0,
+                "note": "Simulated: nothing is fetched or played.",
+                "op": "set",
+                "params": [9,10],
+                "result": "STATUS_BOUNDS_ERROR",
+                "t": 0,
+                "type": "prim_media"
+              },
+              {"t":0,"text":"1002 1002 1000","type":"owner_say"},
+              {"face":1,"link":0,"note":"Simulated: no media was ever loaded.","op":"clear","result":"STATUS_OK","t":0,"type":"prim_media"},
+              {"face":1,"link":0,"op":"get","params":[2],"result":"no_media","t":0,"type":"prim_media"},
+              {"t":0,"text":"0 0","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "seconds": 2,
+            "source": "default {\n  state_entry() {\n    llOwnerSay((string)llSetPrimMediaParams(1, [PRIM_MEDIA_CURRENT_URL, \"https://example.com/a\", PRIM_MEDIA_WIDTH_PIXELS, 640, PRIM_MEDIA_HEIGHT_PIXELS, 480, PRIM_MEDIA_AUTO_PLAY, TRUE]));\n    llOwnerSay(llDumpList2String(llGetPrimMediaParams(1, [PRIM_MEDIA_HEIGHT_PIXELS, PRIM_MEDIA_CURRENT_URL, PRIM_MEDIA_AUTO_PLAY, PRIM_MEDIA_CONTROLS]), \"|\"));\n    llOwnerSay((string)llSetPrimMediaParams(9, [PRIM_MEDIA_WIDTH_PIXELS, 10]) + \" \" + (string)llSetPrimMediaParams(1, [PRIM_MEDIA_WIDTH_PIXELS, 4096]) + \" \" + (string)llSetPrimMediaParams(1, [99, 1]));\n    integer c = llClearPrimMedia(1);\n    llOwnerSay((string)c + \" \" + (string)llGetListLength(llGetPrimMediaParams(1, [PRIM_MEDIA_CURRENT_URL])));\n  }\n}"
+          }
+        }
+      ]
+    },
+    {
       "about": "a script that does not compile, an unknown function, a function not supported yet, an endless loop, bad lsl_event input",
       "name": "errors",
       "steps": [

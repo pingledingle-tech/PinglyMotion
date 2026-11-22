@@ -67,8 +67,24 @@ class LinksetData
 
 // Step 9b-3: simulated state of the prims of an object. Nothing here is drawn; scripts read it back and every
 // change is recorded in the event log (type "prim"). A prim is a box with FACES faces.
+// Gap list 2, step 5: the media of one face (llSetPrimMediaParams and friends). Record only: nothing is ever fetched
+// or played. "present" is false until a script sets media on the face; llClearPrimMedia makes it false again.
+struct MediaState
+{
+  bool present = false;
+  int altImageEnable = 0;           // PRIM_MEDIA_ALT_IMAGE_ENABLE
+  int controls = 0;                 // PRIM_MEDIA_CONTROLS: 0 standard, 1 mini
+  QString currentUrl, homeUrl;
+  int autoLoop = 0, autoPlay = 0, autoScale = 1, autoZoom = 0, firstClickInteract = 0;
+  int widthPixels = 0, heightPixels = 0;
+  int whitelistEnable = 0;
+  QString whitelist;                // the comma separated list as given
+  int permsInteract = 7, permsControl = 0;   // PRIM_MEDIA_PERM_* flags
+};
+
 struct FaceState
 {
+  MediaState media;
   float color[3] = {1.0f, 1.0f, 1.0f};
   float alpha = 1.0f;
   QString texture = "89556747-24cb-43ed-920b-47caed15465f";   // the default plywood texture
