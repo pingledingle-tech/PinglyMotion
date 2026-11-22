@@ -52,6 +52,8 @@ class QMouseEvent;
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
 class Animation;
+class CameraOverride;
+class EnvironmentOverride;
 class EffectsPreview;
 class PropManager;
 class Scene;
@@ -74,6 +76,11 @@ class AnimationView : public QOpenGLWidget
     // Script Lab effects (issue 293): while the preview has an animation it is drawn instead of the
     // scene's animations (and cannot be clicked); its markers are drawn on the figure. Not owned.
     void setEffectsPreview(EffectsPreview* preview);
+    // Script Lab camera limits (job 7b): while the override is active the camera keeps to its
+    // constraint; when it stops, the camera from before is put back exactly. Not owned.
+    void setCameraOverride(CameraOverride* cameraOverride);
+    // Script Lab sky and draw distance (job 7c): the background and fog while its box is ticked
+    void setEnvironmentOverride(EnvironmentOverride* environmentOverride);
 
     void selectPart(BVHNode* node);
     void selectProp();
@@ -105,7 +112,7 @@ class AnimationView : public QOpenGLWidget
     void restoreCameraPosition(int num);
 
     // Tab was pressed while the 3D view had the keys: the window hides or
-    // shows the panels (docs/PANELS_PLAN.md, job P4)
+    // shows the panels (docs/archive/PANELS_PLAN.md, job P4)
     void tabPressed();
 
   public slots:
@@ -224,7 +231,7 @@ class AnimationView : public QOpenGLWidget
     void setProjection();
     // the free (uncovered) area of the view, in widget-local pixels: the
     // view itself cut by any floating panel that lies over it (P1's
-    // PanelLayout::freeArea(), docs/PANELS_PLAN.md, job P5)
+    // PanelLayout::freeArea(), docs/archive/PANELS_PLAN.md, job P5)
     QList<QRect> coveringPanelRects() const;
     // moves the camera's pivot nearer or further so the figure keeps about
     // the same size on screen when the view's height changes (a panel is
@@ -287,6 +294,11 @@ class AnimationView : public QOpenGLWidget
     Scene* m_scene=nullptr;
     // the Script Lab effects preview (issue 293); owned by the window
     QPointer<EffectsPreview> m_effects;
+    // the Script Lab camera override (job 7b); owned by the window
+    QPointer<CameraOverride> m_cameraOverride;
+    QPointer<EnvironmentOverride> m_environmentOverride;
+    // puts the override's constraint on the camera, or takes it off
+    void applyCameraOverride();
 
     // the handle shapes
     QScopedPointer<MeshModel> m_cubeMeshModel;

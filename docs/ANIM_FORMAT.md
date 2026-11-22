@@ -2,7 +2,7 @@
 
 A precise description of Second Life's internal animation format (`.anim`, asset type `AT_ANIMATION`), written as the basis for `.anim` export ([#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10)) and import ([#22](https://github.com/pingledingle-tech/PinglyMotion/issues/22)). File formats were decided in old #118; see the combined plan in [PRODUCT.md](PRODUCT.md).
 
-**Source.** Second Life viewer, https://github.com/secondlife/viewer, branch `develop` at commit `f221e05` (checked 18 November 2026). The code is © Linden Research, Inc., LGPL 2.1. Every rule below names the file and function it comes from; paths are relative to `indra/` unless they start with `scripts/`. Short excerpts are quoted with that source named. PinglyMotion is GPLv2; the plan in [REUSE_REFERENCES.md](REUSE_REFERENCES.md) is to write our own reader and writer in Qt with this code as the reference, not to copy it.
+**Source.** Second Life viewer, https://github.com/secondlife/viewer, branch `develop` at commit `f221e05` (checked 18 November 2026). The code is © Linden Research, Inc., LGPL 2.1. Every rule below names the file and function it comes from; paths are relative to `indra/` unless they start with `scripts/`. Short excerpts are quoted with that source named. PinglyMotion is GPLv2; the plan in [REUSE_REFERENCES.md](archive/REUSE_REFERENCES.md) is to write our own reader and writer in Qt with this code as the reference, not to copy it.
 
 The main files:
 

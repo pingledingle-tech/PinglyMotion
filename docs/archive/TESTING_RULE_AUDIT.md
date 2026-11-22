@@ -1,3 +1,5 @@
+Archived 22 November 2026: retrospective finished; the rule it looked at is now in CLAUDE.md.
+
 # Testing rule audit: visible jobs that could have been mechanical
 
 Written when `CLAUDE.md` split "visible" merges into mechanically checkable

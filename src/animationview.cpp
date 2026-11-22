@@ -53,6 +53,8 @@
 #include "usersettings.h"
 #include "scenestate.h"
 #include "screenshotsheet.h"
+#include "scriptlab/cameraoverride.h"
+#include "scriptlab/environmentoverride.h"
 #include "scriptlab/effectspreview.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
@@ -168,6 +170,32 @@ void AnimationView::setEffectsPreview(EffectsPreview* preview)
   update();
 }
 
+void AnimationView::setCameraOverride(CameraOverride* cameraOverride)
+{
+  if(m_cameraOverride) disconnect(m_cameraOverride,nullptr,this,nullptr);
+  m_cameraOverride=cameraOverride;
+  if(cameraOverride) connect(cameraOverride,&CameraOverride::changed,this,&AnimationView::applyCameraOverride);
+  applyCameraOverride();
+}
+
+void AnimationView::setEnvironmentOverride(EnvironmentOverride* environmentOverride)
+{
+  if(m_environmentOverride) disconnect(m_environmentOverride,nullptr,this,nullptr);
+  m_environmentOverride=environmentOverride;
+  if(environmentOverride) connect(environmentOverride,&EnvironmentOverride::changed,this,[this]() { update(); });
+  update();
+}
+
+void AnimationView::applyCameraOverride()
+{
+  if(!m_scene) return;
+  if(m_cameraOverride && m_cameraOverride->active())
+    camera()->setConstraint(m_cameraOverride->constraint());
+  else
+    camera()->clearConstraint();
+  update();
+}
+
 void AnimationView::drawProp(const Prop* prop) const
 {
   Prop::State state=Prop::Normal;
@@ -192,7 +220,7 @@ void AnimationView::drawProps()
 // a floating panel that lies over the view, in widget-local pixels, found by
 // looking at the dock widgets of the top-level window (not by a method on
 // it, so this view needs no change there, and other panel jobs can run
-// beside this one without touching the same file; docs/PANELS_PLAN.md, P5)
+// beside this one without touching the same file; docs/archive/PANELS_PLAN.md, P5)
 QList<QRect> AnimationView::coveringPanelRects() const
 {
   QList<QRect> panels;
@@ -211,7 +239,7 @@ QList<QRect> AnimationView::coveringPanelRects() const
 
 // keeps the figure about the same size on screen when the view's height
 // changes: the vertical field of view is fixed, so a shorter (or taller)
-// view would otherwise shrink (or grow) the figure (docs/PANELS_PLAN.md, P5,
+// view would otherwise shrink (or grow) the figure (docs/archive/PANELS_PLAN.md, P5,
 // section 5 "Camera centring")
 void AnimationView::keepFigureSizeOnHeightChange(int newHeight)
 {
@@ -234,7 +262,8 @@ void AnimationView::setProjection()
     if(!panels.isEmpty())
       center=PanelLayout::freeArea(viewRect,panels).center();
   }
-  const QMatrix4x4 perspective=shiftedPerspective(60.0f,QRectF(viewRect),center,1.0f,2000.0f);
+  // 60 degrees, or what the Script Lab camera limits set (job 7b)
+  const QMatrix4x4 perspective=shiftedPerspective(camera()->fieldOfView(),QRectF(viewRect),center,1.0f,2000.0f);
   SceneState::setProjection(perspective);
 }
 
@@ -372,13 +401,21 @@ void AnimationView::draw()
   }
 
   // fog towards the background colour, the shaders use it (exponential)
+  EnvironmentOverride::Scene look;
+  look.background=QVector3D(clearValue,clearValue,clearValue);
+  look.fogOn=UserSettings::fog();
+  look.fogDensity=0.005f;
+  look.fogColour=look.background;
+  // Script Lab sky and draw distance (job 7c): only while its box is ticked; worked out for every picture,
+  // so the view's own look comes back exactly when it is switched off
+  if(m_environmentOverride) look=m_environmentOverride->scene(look);
   SceneState::Fog fog;
-  fog.on=UserSettings::fog();
-  fog.density=0.005f;
-  fog.color=QVector3D(clearValue,clearValue,clearValue);
+  fog.on=look.fogOn;
+  fog.density=look.fogDensity;
+  fog.color=look.fogColour;
   SceneState::setFog(fog);
 
-  glClearColor(clearValue,clearValue,clearValue,0.3f);
+  glClearColor(look.background.x(),look.background.y(),look.background.z(),0.3f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   SceneState::setLighting(false);
   glEnable(GL_DEPTH_TEST);
@@ -775,7 +812,7 @@ void AnimationView::moveCamera(CameraDrag how,int dx,int dy)
   // zoom: 1% per pixel, down = further away
   const float zoom=std::pow(1.01f,(float) dy);
   // pan: the point the camera turns around follows the mouse
-  const float perPixel=2.0f*std::tan(30.0f*M_PI/180.0f)*camera()->distance()/qMax(1,height());
+  const float perPixel=2.0f*std::tan(camera()->fieldOfView()*0.5f*M_PI/180.0f)*camera()->distance()/qMax(1,height());
 
   switch(how)
   {
@@ -999,7 +1036,7 @@ void AnimationView::wheelEvent(QWheelEvent* event)
   update();
 }
 
-// Tab hides and shows the panels (docs/PANELS_PLAN.md, job P4). Qt's own
+// Tab hides and shows the panels (docs/archive/PANELS_PLAN.md, job P4). Qt's own
 // handling in QWidget::event would move the keyboard focus to the next
 // field instead, so Tab is taken here first. Only a plain Tab: Shift+Tab
 // and the others go on as before. Tab in a panel's field or in the search

@@ -23,6 +23,8 @@
 #include <QPointer>
 #include <QWidget>
 
+#include "cameraoverride.h"
+#include "environmentoverride.h"
 #include "effectspreview.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
@@ -88,6 +90,16 @@ class ScriptLabPanel : public QWidget
     EffectsPreview* effects() const { return m_effects; }
     QCheckBox* effectsBox() const { return m_effectsBox; }
     QLabel* effectsStatus() const { return m_effectsStatus; }
+    // --- Camera limits in the 3D view (job 7b): the override the Commands page's "Show camera limits
+    // in 3D view" box turns on and off (off at start). Not owned (the window owns it and gives it to the 3D view).
+    void setCameraOverride(CameraOverride* cameraOverride);
+    CameraOverride* cameraOverride() const { return m_camera; }
+    QCheckBox* cameraBox() const { return m_cameraBox; }
+    QLabel* cameraStatus() const { return m_cameraStatus; }
+    // the sky and draw distance shown in the 3D view (job 7c), off at start
+    void setEnvironmentOverride(EnvironmentOverride* environmentOverride);
+    QCheckBox* environmentBox() const { return m_environmentBox; }
+    QLabel* environmentStatus() const { return m_environmentStatus; }
     // --- Input buttons (issue 308): send a simulated touch, a chat line or a dialog answer to the world of
     // the last lsl_run (the one the Objects part shows), as the control command lsl_event does (same code).
     // Each returns false when nothing was sent (no world, every script stopped, empty chat text, unknown
@@ -154,6 +166,10 @@ class ScriptLabPanel : public QWidget
     // reads the world again: which buttons work and why not, the objects, the newest dialog
     // (connected to lsl::Session::changed)
     void refreshInput();
+    // shows the camera override's lines under its box (connected to CameraOverride::changed)
+    void refreshCamera();
+    // shows the environment override's lines under its box (connected to EnvironmentOverride::changed)
+    void refreshEnvironment();
 
   protected:
     void changeEvent(QEvent* event) override;
@@ -226,6 +242,14 @@ class ScriptLabPanel : public QWidget
     QString m_shownDialogKey;          // the dialog the buttons were made for
     int m_inputTone = 0;
     bool m_effectsFromSession = false;   // the newest run came from lsl_run or lsl_event, not Live
+    QPointer<CameraOverride> m_camera;
+    QMetaObject::Connection m_cameraConnection;
+    QCheckBox* m_cameraBox = nullptr;
+    QLabel* m_cameraStatus = nullptr;
+    QPointer<EnvironmentOverride> m_environment;
+    QMetaObject::Connection m_environmentConnection;
+    QCheckBox* m_environmentBox = nullptr;
+    QLabel* m_environmentStatus = nullptr;
 };
 
 #endif

@@ -36,6 +36,10 @@ class RlvState : public QObject
     static constexpr int MAX_RESTRICTIONS_PER_OBJECT = 128;
     static constexpr int MAX_OBJECT_ID_LENGTH = 64;
     static constexpr int MAX_RECORDED_LENGTH = 128;
+    // one line never makes more answers than this (notify messages included)
+    static constexpr int MAX_REPLIES_PER_LINE = 256;
+    // at most this many effects outside the sandbox are recorded (setdebug_<name> and setenv_<name> take any name)
+    static constexpr int MAX_RECORDED_ENTRIES = 256;
 
     struct Reply
     {
@@ -96,11 +100,17 @@ class RlvState : public QObject
 
     // Effects outside the sandbox (camera, sky, debug settings and so on) that a
     // force command asked for: behaviour -> the option of the last command. They
-    // are only recorded; the real program never changes.
+    // are only recorded; the real program never changes, except where the user
+    // lets the 3D view show them (src/scriptlab/cameraoverride.h). A force command
+    // that adds or changes a value emits changed(), as a restriction does.
     QMap<QString, QString> recorded() const { return m_recorded; }
+    // behaviour -> the object whose force command set the recorded value. A forced
+    // value belongs to that object: its @clear (with no filter, or a filter that
+    // "behaviour:option" contains) forgets it, so the 3D view goes back to how it was.
+    QMap<QString, QString> recordedBy() const { return m_recordedBy; }
 
   signals:
-    // the set of restrictions changed
+    // the set of restrictions or a recorded (forced) value changed
     void changed();
     // the mode was switched
     void modeChanged();
@@ -122,6 +132,10 @@ class RlvState : public QObject
 
     Outcome run(const QString& objectId, const Rlv::Command& command, QVector<Reply>& replies, bool& changed);
     QString outsideNote(const QString& behaviour) const;
+    // tells the object's notify entries that a restriction was added (n) or lifted (y)
+    void notifyChange(const QString& objectId, const Entry& changed, bool added, QVector<Reply>& replies) const;
+    // true and the channel and filter when the option is <channel>[;filter] with a channel from 1
+    static bool parseNotifyOption(const QString& option, int& channel, QString& filter);
     QString status(const QString& objectId, const QString& option, bool all) const;
     void removeEntry(const QString& objectId, int index);
 
@@ -132,6 +146,8 @@ class RlvState : public QObject
     Rlv::Mode m_mode = Rlv::Mode::Rlv;
     // behaviour -> option of the last force command that acts outside the sandbox (at most one per known behaviour)
     QMap<QString, QString> m_recorded;
+    // behaviour -> the object that set the recorded value
+    QMap<QString, QString> m_recordedBy;
 };
 
 #endif

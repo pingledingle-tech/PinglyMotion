@@ -1,3 +1,5 @@
+Archived 22 November 2026: parked notes, not planned work; extended by OPEN_SOURCE_CHECK.md.
+
 # Reuse references (parked)
 
 Status: **parked, not planned work.** Notes from a check on 16 November 2026 of other pose tools and viewer code that may be useful later. Nothing here changes the work order in `docs/PRODUCT.md`. Open an issue before building anything from this list.

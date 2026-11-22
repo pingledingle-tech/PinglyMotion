@@ -510,7 +510,7 @@ void ControlTest::deleteKeyAndKeys()
   QVERIFY(!run(R"({"command":"delete_key","joint":"lForeArm","frame":8})")["ok"].toBool());
 }
 
-// Job A of docs/AI_HELP_PLAN.md: easing on set_pose, read back with keys
+// Job A of docs/archive/AI_HELP_PLAN.md: easing on set_pose, read back with keys
 void ControlTest::easingIsSetAndRead()
 {
   QVERIFY(run(R"({"command":"set_frame_count","frames":61})")["ok"].toBool());
@@ -979,7 +979,7 @@ void ControlTest::screenshotIsPng()
   QVERIFY(!run(R"({"command":"screenshot","width":99999})")["ok"].toBool());
 }
 
-// readable screenshots (job C of docs/AI_HELP_PLAN.md)
+// readable screenshots (job C of docs/archive/AI_HELP_PLAN.md)
 static QImage decodePng(const QJsonObject& answer)
 {
   return QImage::fromData(QByteArray::fromBase64(answer["png_base64"].toString().toLatin1()), "PNG");

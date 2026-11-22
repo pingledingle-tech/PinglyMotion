@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 85 behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 206 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -232,6 +232,87 @@ a script run through the control commands), the one the Objects part shows.
 - Nothing is drawn or played and the 3D view is not touched. Details and the places where the sandbox simplifies: [CONTROL.md](CONTROL.md), "Prim state, L$ and recorded-only functions".
 - Tests: `tests/tst_lslprims.cpp`. Limits unchanged (256 KB of variables per script; Second Life gives 64 KB).
 
+## Camera limits in the 3D view (job 7b)
+
+The camera restrictions a script holds can limit the main 3D view's camera, only while the Commands page's **Show
+camera limits in 3D view** box is ticked (under the Actions list). The box is off each time the program starts. The
+Commands page now scrolls when the panel is small, as the Live page does.
+
+- What is shown: `setcam_avdistmin` (and the older name `camdistmin`): the camera stays at least this many metres
+  from the avatar; `setcam_avdistmax` (`camdistmax`): at most this far; `setcam_unlock` (`camunlock`): the camera
+  focus stays on the avatar. With several objects the strictest limit wins (the largest minimum, the smallest
+  maximum); a maximum below the minimum wins over it. A maximum smaller than the 3D view can come (3 inches) is shown
+  as close as it goes. An option that is not a distance in metres is named in the text as not used.
+  `setcam_avdistmin` and `setcam_avdistmax` are RLVa only, so they need RLVa mode (`rlv_reset` with `mode`); the old
+  names `camdistmin` and `camdistmax` work in plain RLV mode too.
+- Field of view (part 2): `setcam_fovmin` and `setcam_fovmax` keep the 3D view's vertical field of view at least or at
+  most this many radians (the view's own is 60 degrees); the old zoom limits are a multiplier of the default 60
+  degrees: `camzoommax:2` keeps it at 30 degrees or more (no zooming in past 2x), `camzoommin:2` at 30 degrees or less.
+  The view shows its own 60 degrees moved into the limits (strictest wins, a maximum below the minimum wins over it,
+  1 to 170 degrees). A field of view limit alone does not move the camera.
+- Offsets (part 3): `setcam_focusoffset:x/y/z` makes the camera look at the avatar's middle moved by this many metres
+  (Second Life axes: x forward, y left, z up); `setcam_eyeoffset:x/y/z` (times `setcam_eyeoffsetscale`) holds the
+  camera at the avatar's middle moved by this offset, looking at the focus: turning and zooming then do nothing, only
+  the distance limits still hold along that line. With several objects holding an offset, the first one in the
+  restriction list is used. An offset that is not three numbers of at most 100 m, or a scale that is not a number
+  above 0, is named as not used; a scale without an eye offset changes nothing and the text says so.
+- While a distance limit, an offset or `setcam_unlock` holds, the camera turns around the avatar's middle (its hip at rest; it does not follow the
+  animation) and panning cannot move it away; turning, zooming within the limits, the number pad views, `set_camera`
+  and the AI's `screenshot` keep to the limits.
+- The text under the box says in words what limits the camera, for example "Camera limited by the script: max
+  distance 3 m." and which objects hold it; with the box off it says that the script limits the camera and that
+  ticking the box shows it.
+- The user's camera is never changed for good: when the limits come on, the camera is kept as it was; unticking
+  the box, `@clear`, Reset, a mode switch or the last limit going away puts exactly that camera back. Moves made
+  while the limits were on are not kept. Nothing is saved.
+- Force commands (job 7c, part 1): a force command that changes a recorded value now tells the 3D view (the RLV
+  state sends the same change signal as for a restriction). With the box ticked, `setcam_fov:<radians>=force` is
+  the field of view the view starts from instead of its own 60 degrees (the min and max limits still hold over it);
+  `setcam_focus:<avatar key>=force` (the sandbox avatar's key is the one `llGetOwner` gives; an optional
+  `;distance;direction` is ignored) keeps the camera focus on the avatar; the offsets sent as `=force`
+  (`setcam_focusoffset`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`) are used as above when no object holds that
+  offset as a restriction, and the text marks them "(forced)". Another focus target is named as not shown (the 3D
+  view has only the avatar); `setcam_mode=force` (for example mouselook) is named as not shown, because the 3D view
+  always looks from outside the avatar; mouselook (`setcam_mouselook`) stays recorded only. A forced value belongs
+  to the object that sent it: another force command changes it, and that object's `@clear` (no filter, or a filter
+  that `behaviour:option` contains), Reset or a mode switch forgets it, so the camera from before comes back
+  (decision in [DECISIONS.md](DECISIONS.md)).
+- Code: `src/scriptlab/cameraoverride.*` (the limits read from the RLV state and the words), the constraint in
+  `src/camera.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`. Tests:
+  `tests/tst_cameraoverride.cpp` (with the force commands), `tests/tst_scriptlabcamera.cpp` and the constraint, field of view and eye part of
+  `tests/tst_camera.cpp`.
+
+## Environment in the 3D view (job 7c)
+
+The 3D view has no sky and no water: a plain background and fog towards the background colour. With the Commands
+page's **Show environment in 3D view** box ticked (under the camera box; off each time the program starts), what a
+script asks of the sky and the draw distance is shown as a rough hint in that background and fog:
+
+- `setenv_daytime:<0..1>=force`: the background takes a sky colour for the time of day (the RLV API's points:
+  midnight 0, sunrise 0.25, midday 0.567, sunset 0.75; four fixed colours with straight blends between them, not
+  Second Life's sky). `-1` is the region's own sky and changes nothing.
+- `setenv_bluehorizon:<r/g/b>=force` (or the old one-part names `setenv_bluehorizonr`, `_g`, `_b`; a part not given is
+  0): the background takes that colour (each part 0 to 1); it wins over the time of day. The fog follows the
+  background, as in the view's own look, and keeps the user's fog switch and density.
+- `camdrawmax:<metres>` with `camdrawalphamax` (default 1) and `camdrawcolor` (default black) held as restrictions
+  (RLV only): fog of that colour that reaches the alpha at that distance from the camera (exponential, as the view's
+  own fog; an alpha of 1 is shown as 0.99); the background beyond takes the colour at that alpha. With several
+  objects the smallest distance and the largest alpha win, the colour of the first one. `camdrawmin` and
+  `camdrawalphamin` are named as not shown (the fog starts at the camera).
+- `setsphere` (held) with `setsphere_distmax`, `setsphere_valuemax` and `setsphere_color` (held, or sent as `=force`;
+  a held value wins), mode 0 only: the same kind of fog. Another mode, or no `setsphere_distmax`, is named as not
+  shown; with camdraw fog the sphere is named as not shown (one fog at a time). The origin is always the camera.
+- Any other `setenv_<name>` (presets, sun, moon, clouds, haze, water) is named as not shown; an option that is not
+  a usable number or `r/g/b` colour is named as not used.
+- The text under the box says what is shown ("Environment set by the script: sky colour 0.8/0.55/0.45 from daytime
+  0.25."), that it is a rough hint, which objects set it, and what is not shown. With the box off it says what the
+  script changes and that ticking the box shows a hint.
+- The view's own look is never changed: the background and fog are worked out again for every picture, so unticking
+  the box, `@clear` (forced values belong to their object), Reset or a mode switch gives exactly the picture from
+  before (checked pixel by pixel in the self-test).
+- Code: `src/scriptlab/environmentoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
+  `src/animationview.cpp` (`draw()`). Tests: `tests/tst_environmentoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
+
 ## How an AI assistant uses it
 
 Claude (or any client) writes an RLV line or a script, sends the line with `rlv_command`, reads `rlv_state`, fixes the
@@ -276,7 +357,7 @@ What it checks: that the buttons (touch, dialog buttons, chat on a channel) caus
 
 ## RLV and RLVa mode (step 9, issue 297)
 
-Every behaviour in the table is marked `RLV` (listed as plain RLV in the RLV wiki) or `RLVa only` (not listed there).
+Every behaviour in the table is marked `RLV` (listed as plain RLV in the RLV wiki, and in RLVa), `RLVa only` (not listed in the wiki) or `RLV only` (in the wiki, but RLVa does not have it).
 The marks follow the wiki. RLVa's own flags (`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL` in `rlvhelper.cpp`) differ from the
 wiki for some names: 20 names that RLVa flags as extended are plain RLV in the wiki and are marked `RLV` here
 (`accepttprequest`, `allowidle`, `findfolders`, `getcam_avdistmax`, `getcam_avdistmin`, `getcam_fov`, `getcam_fovmax`,
@@ -284,7 +365,11 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 `sharedunwear`, `sharedwear`, `shownearby`, `touchhud`, `tplocal`, `tprequest`).
 
 - The mode is plain RLV at start. In plain RLV mode a RLVa-only behaviour answers as unknown, like any name the table
-  does not have. In RLVa mode it is accepted. Switching the mode removes every restriction and recorded effect (as
+  does not have. In RLVa mode it is accepted. The third mark works the other way round: an `RLV only` behaviour
+  (`camdrawmin`, `camdrawmax`, `camdrawalphamin`, `camdrawalphamax`, `camdrawcolor`, `defaultwear`, `denypermission`,
+  `versionnumbl`, `getblacklist`, `getcam_zoommin`, `setrot`) is accepted in plain RLV mode and unknown in RLVa mode (it is also left out of
+  `getcommand` there). `rlv_state` lists `rlva_only` only; the `RLV only` names are the ones in `behaviours` of plain mode
+  that are missing in RLVa mode. Switching the mode removes every restriction and recorded effect (as
   after a relog). Set it with the control command `rlv_reset` and its `mode` field ([CONTROL.md](CONTROL.md)).
 - Behaviours marked RLVa only (19): interaction and view (`showself`, `showselfhead`, `viewtransparent`,
   `viewwireframe`), camera (`setcam_origindistmin`, `setcam_origindistmax`, and the force commands `setcam_focus` and
@@ -300,9 +385,68 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   name that was used. `camzoommax` and `camzoommin` (the old zoom limits, option: a zoom multiplier) are separate
   entries, recorded only, because a multiplier is not a field of view angle. `touchfar` (option: distance in metres)
   blocks the action "Touch objects farther away".
+- Chat and instant messages (all marked `RLV`). Restrictions are `n` or `y`, exceptions `add` or `rem`; a restriction
+  with an option (a UUID or a channel) is an exception or a limited form and blocks nothing in the Allowed / Blocked list.
+  Chat: `chatshout`, `chatnormal`, `chatwhisper` (the voice is changed, not blocked), `redirchat` and `rediremote`
+  (option: channel), `emote` (the exception form: emotes stay allowed), `recvchat_sec`, `recvchatfrom`, `recvemote`,
+  `recvemote_sec`, `recvemotefrom`, `sendchannel_sec`. Instant messages: `sendim_sec`, `sendimto`, `startim`,
+  `startimto`, `recvim_sec`, `recvimfrom`. Other secure forms: `share_sec`, `tplure_sec`, `tprequest_sec`,
+  `shownames_sec`. The `_sec` form blocks the same action as the plain one, but it is a separate restriction (it is not
+  a duplicate of the plain one) and the sandbox does not model how exceptions of different objects combine with it;
+  the same goes for `permissive`, which is only held as state.
+- `@notify:<channel>[;filter]=add` (`rem` removes it): from then on the object hears `/<rule>=n` on that channel each
+  time it adds a restriction and `/<rule>=y` each time it lifts one (also for each restriction `@clear` removes; the
+  rule is written with the name that was used, and the option if there is one). A duplicate or an unheld `=y` says
+  nothing, and changes of `notify` itself are not announced. The filter must be part of the rule name. Channel 0, a
+  negative number, a decimal or text as channel are refused. A full `@clear` removes the notification too, so it hears
+  nothing about the rest. In the sandbox a notification only tells about changes made by the object that holds it (a
+  limit of the sandbox: answers go to the object that ran the line). One line makes at most 256 answers.
+- Outfits and attachments (marked `RLV` unless stated). The sandbox has no avatar and no inventory, so a `=force`
+  command is accepted and answered `retained` (it is not carried out and nothing is held): `detachme`, `remattach`,
+  `remoutfit`, the shared-folder commands `attach`, `attachover`, `attachoverorreplace`, `attachall`, `attachallover`,
+  `attachalloverorreplace`, `detachall`, and the "this" family `attachthis`, `attachthisover`,
+  `attachthisoverorreplace`, `attachallthis`, `attachallthisover`, `attachallthisoverorreplace`, `detachthis`,
+  `detachallthis`. Restrictions (with an option they are an exception or a limited form and block nothing):
+  `addattach`, `remattach` (option: attachment point), `addoutfit`, `remoutfit` (option: layer), `unsharedwear`,
+  `unsharedunwear`, and `attachthis`, `attachallthis`, `detachthis`, `detachallthis` (option: folder). Their
+  `_except` forms (`attachthis_except` and the other three; option: folder) only hold the exception. `defaultwear`
+  (`RLV only`) is held as state and blocks nothing.
+- Touch, view and money (all `RLV`): `touchworld`, `touchattach`, `touchattachself`, `touchattachother` and `touchfar`
+  block their own action in the Allowed / Blocked list; `touchthis` and `touchme` only hold the exception;
+  `showhovertextall`, `showhovertexthud`, `showhovertextworld` (and `showhovertext:<uuid>` for one object), `shownames`,
+  `shownametags`, `viewnote`, `viewscript`, `viewtexture`, `editworld`, `editattach` (and `editobj:<uuid>`), `buy`
+  and `pay`. `acceptpermission` and `denypermission` (`RLV only`) are held as state: the sandbox grants every
+  permission to a script anyway.
+- Group, movement and teleport (all marked `RLV` except `setrot`): `setgroup` (restriction; `=force` with a group
+  name or `none` is retained), `temprun`, `alwaysrun` and `jump` block their own action, `standtp` and `accepttp` are
+  held as state (the sandbox has no avatar position and no teleports), and `adjustheight`, `tpto`, `sitground` and
+  `setrot` are force commands, answered `retained` and not carried out. `setrot` is marked `RLV only`.
+- Questions with fixed sandbox answers. The sandbox has no avatar, group or inventory model yet:
+  `getsitid` answers the null key (`00000000-0000-0000-0000-000000000000`), `getgroup` answers `none`, `getoutfit`
+  answers 16 zeros (one per clothing layer, gloves to physics; with a layer name as option, one `0`, and empty for a
+  name that is none of them) and `getattach` answers 41 zeros (index 0 is "none", then 40 attachment points from
+  chest to root; one `0` for a point name as option). `getinv`, `getinvworn`, `findfolder`, `getpath` and
+  `getpathnew` answer empty because there is no folder model yet; the same is true of `findfolders` and the
+  `getadd*`, `getrem*` and `get*names` questions.
+- Families by prefix: `setdebug_<name>:<value>=force` and `setenv_<name>:<value>=force` (any name) are retained and the
+  value is recorded (`recorded` in `rlv_state`, at most 256 entries, a known name can still change); `getdebug_<name>`
+  and `getenv_<name>` answer the recorded value of the same name, or empty. They are marked `RLV` and left out of
+  `getcommand` (it lists the table, not the prefixes).
+- More effects that are only recorded (camera group): `camdrawmin`, `camdrawmax`, `camdrawalphamin`,
+  `camdrawalphamax`, `camdrawcolor` (`RLV only`; option required), the sphere effect `setsphere` with
+  `setsphere_mode`, `_origin`, `_color`, `_distmin`, `_distmax`, `_distextend`, `_param`, `_tween`, `_valuemin`,
+  `_valuemax`, and the overlay `setoverlay` with `setoverlay_alpha`, `_texture`, `_tint`, `_tween`, `_touch`. They are
+  held as restrictions (`n`/`y`), the `_<name>` ones also take `=force` (retained, the value is recorded), and they
+  block nothing; the real view never changes.
+- Three more questions (`RLV only`): `versionnumbl` answers `3040300,` (the version number, a comma, then the
+  blacklist, which is empty), `getblacklist` answers empty, and `getcam_zoommin` always answers `1` (the sandbox has
+  no camera).
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
-  shown in the log ("recorded only"); the real program never changes. A force command of that kind is `retained`
-  and its option is kept in `rlv_state` under `recorded`.
+  shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
+  the 3D view with the "Show camera limits in 3D view" box (above, "Camera limits in the 3D view") and the sky and
+  draw distance hint of the "Show environment in 3D view" box (above, "Environment in the 3D view"). A force command of that kind is `retained`
+  and its option is kept in `rlv_state` under `recorded`; a new or changed value is a change of the state (the panel
+  and the 3D view follow it), and the object's `@clear` forgets its recorded values.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
   answers `0`). `getcommand` lists the behaviours known in the current mode.
 - `setcam_*` behaviours with a distance need it as option (`@setcam_avdistmin:2=n`); without it the command fails.

@@ -1,6 +1,6 @@
 /*
  * PinglyMotion - readable screenshots for AI assistants (issue #129, job C of
- * docs/AI_HELP_PLAN.md)
+ * docs/archive/AI_HELP_PLAN.md)
  *
  * The control command "screenshot" can return more than one picture of the
  * 3D view in one image: several views side by side, a strip of frames, the

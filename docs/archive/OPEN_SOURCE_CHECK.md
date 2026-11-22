@@ -1,6 +1,8 @@
+Archived 22 November 2026: research finished; the licences that matter are carried in CREDITS.md.
+
 # Open-source check: tools we could learn from or use
 
-Status: **research notes, nothing built.** Written 19 November 2026. Shallow clones of each project were read; nothing was built or run. "Licence" means what the project's own files say. This extends `docs/REUSE_REFERENCES.md`.
+Status: **research notes, nothing built.** Written 19 November 2026. Shallow clones of each project were read; nothing was built or run. "Licence" means what the project's own files say. This extends `docs/archive/REUSE_REFERENCES.md`.
 
 ## Summary
 

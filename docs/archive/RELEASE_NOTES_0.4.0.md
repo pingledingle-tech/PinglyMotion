@@ -1,6 +1,8 @@
+Archived 22 November 2026: Carried over from the predecessor repository; PinglyMotion has no releases yet.
+
 # PinglyMotion 0.4.0 beta – release notes (draft)
 
-> Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026), up to 19 November 2026.
+> Draft. Not released yet. Covers everything merged after 0.3.0-beta.1 (15 November 2026), up to 22 November 2026.
 
 ## Before you update
 
@@ -27,7 +29,7 @@
 ## What's changed and fixed
 
 - **Unsaved changes:** the question now offers **Save / Don't Save / Cancel**, and Save is the default. Pressing Enter no longer throws your work away.
-- **Save As** lets you choose between *Second Life animation (.bvh)* and *PinglyMotion animation (.avm)*, and adds the right file ending for you.
+- **Save As** saves PinglyMotion animations as `.dingle` and adds the file ending for you. For a Second Life `.bvh` use **File > Export BVH**, and for a Second Life `.anim` use **File > Export for Second Life (.anim)...**. An old `.avm` file still opens; saving it writes a `.dingle` with the same name and moves the old file to the recycle bin.
 - **Skeleton mode:** the small face joint balls only show when the head or a face joint is selected, so the face is no longer cluttered.
 - **Loop points** are kept when you open a file and save it again. A file without loop points no longer picks up the loop points from the file you had open before.
 - **IK** (keeping a hand or foot in place while you move the body) has a new solver. Locked hands and feet follow the 3D view closely, an unreachable goal no longer throws an arm or leg around, and a value you type is solved at once.
@@ -42,6 +44,16 @@
 - **Timeline** is visible at every start. Before, closing the program with the window's close button switched the timeline off for the next start. Hiding it now lasts until you close the program.
 - **Links inside the program** (About, update notice, release info) point to the PinglyMotion repository.
 - The Windows zip and the Linux AppImage are built with the newer Qt 6.12 (long-term support), which includes security fixes.
+
+## Also added 19 to 22 November
+
+- **The `.dingle` file.** PinglyMotion now opens and saves its own `.dingle` format; older `.avm` files still open.
+- **Import and export of Second Life animations.** *File > Import Second Life .anim...*, *File > Export for Second Life (.anim)...* (with *Slow start* and *Slow finish* fade times), *File > Import glTF animation...* and *File > Import BVH from another skeleton...*.
+- **Start, Stop and Replay from start** buttons for the timeline, and a **Loop** switch that is on by default.
+- **Help > Open log** and **Help > Clear log** for the local error log.
+- **Script Lab.** *View > Script Lab* opens a panel for trying RLV commands and LSL scripts in a sandbox, with no Second Life connection.
+- **Claude Desktop extension.** The remote control server for AI assistants is packaged as a Claude Desktop extension and runs on Node, so no Python is needed.
+- **Everything the user sees says PinglyMotion.** The old name is gone from menus, texts and file names.
 
 ## Known problems
 

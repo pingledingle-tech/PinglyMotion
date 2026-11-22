@@ -45,12 +45,47 @@ namespace Rlv
       {"rez", "Rez objects"},
       {"touch", "Touch objects"},
       {"touchfar", "Touch objects farther away"},
+      {"chatshout", "Shout (shouts become normal chat)"},
+      {"chatnormal", "Say in the normal voice (it becomes a whisper)"},
+      {"chatwhisper", "Whisper (whispers become normal chat)"},
+      {"recvemote", "See emotes"},
+      {"startim", "Start a new instant message conversation"},
+      {"shownames", "See the names of other avatars"},
       {"showinv", "Open the inventory"},
       {"showloc", "See the location"},
       {"showminimap", "Open the minimap"},
       {"showworldmap", "Open the world map"},
       {"share", "Give inventory to others"},
       // newer behaviours (some plain RLV, some RLVa only)
+      {"setgroup", "Change the active group"},
+      {"temprun", "Run temporarily"},
+      {"alwaysrun", "Switch always run on"},
+      {"jump", "Jump"},
+      {"addattach", "Wear attachments"},
+      {"remattach", "Take off attachments"},
+      {"addoutfit", "Wear clothing"},
+      {"remoutfit", "Take off clothing"},
+      {"unsharedwear", "Wear items from outside the shared folder"},
+      {"unsharedunwear", "Take off items from outside the shared folder"},
+      {"attachthis", "Wear the items of a folder"},
+      {"detachthis", "Take off the items of a folder"},
+      {"attachallthis", "Wear a folder and its sub-folders"},
+      {"detachallthis", "Take off a folder and its sub-folders"},
+      {"touchworld", "Touch objects in the world"},
+      {"touchattach", "Touch attachments of other avatars"},
+      {"touchattachself", "Touch your own attachments"},
+      {"touchattachother", "Touch attachments of one other avatar"},
+      {"showhovertextall", "See hover text"},
+      {"showhovertexthud", "See hover text on HUDs"},
+      {"showhovertextworld", "See hover text in the world"},
+      {"shownametags", "See name tags"},
+      {"viewnote", "Open notecards"},
+      {"viewscript", "Open scripts"},
+      {"viewtexture", "Open textures"},
+      {"editworld", "Edit objects in the world"},
+      {"editattach", "Edit attachments"},
+      {"buy", "Buy objects"},
+      {"pay", "Pay"},
       {"accepttprequest", "Decline teleport requests"},
       {"tprequest", "Send teleport requests"},
       {"tplocal", "Teleport within the region"},
@@ -117,6 +152,132 @@ namespace Rlv
       {"setcam_mouselook", AllowAddRemove, OptionUse::None, {"setcam_mouselook"}, "Prevents mouselook", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
       {"setcam_textures", AllowAddRemove, OptionUse::Optional, {}, "Replaces every texture with one texture (option: UUID)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
       {"setcam_unlock", AllowAddRemove, OptionUse::None, {}, "Forces the camera focus back to the avatar", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
+      // ---- public chat and emotes: restrictions (n/y) and exceptions (add/rem), secure forms (_sec) ignore exceptions of other objects ----
+      {"chatshout", AllowAddRemove, OptionUse::None, {"chatshout"}, "Shouting is turned into normal chat", Dialect::Rlv, Group::Core},
+      {"chatnormal", AllowAddRemove, OptionUse::None, {"chatnormal"}, "Normal chat is turned into a whisper", Dialect::Rlv, Group::Core},
+      {"chatwhisper", AllowAddRemove, OptionUse::None, {"chatwhisper"}, "Whispering is turned into normal chat", Dialect::Rlv, Group::Core},
+      {"redirchat", AllowAddRemove, OptionUse::Required, {}, "Public chat is sent to a private channel instead (option: channel, 1 or higher)", Dialect::Rlv, Group::Core},
+      {"rediremote", AllowAddRemove, OptionUse::Required, {}, "Emotes are sent to a private channel instead (option: channel, 1 or higher)", Dialect::Rlv, Group::Core},
+      {"emote", AllowAddRemove, OptionUse::None, {}, "Exception: emotes (lines that start with /me) are still allowed while public chat is blocked; blocks nothing itself", Dialect::Rlv, Group::Core},
+      {"recvchat_sec", AllowAddRemove, OptionUse::Optional, {"recvchat"}, "Cannot hear public chat, and exceptions of other objects do not count; with a UUID as option: an exception for that avatar", Dialect::Rlv, Group::Core},
+      {"recvchatfrom", AllowAddRemove, OptionUse::Required, {}, "Cannot hear public chat from one avatar (option: that avatar's UUID)", Dialect::Rlv, Group::Core},
+      {"recvemote", AllowAddRemove, OptionUse::Optional, {"recvemote"}, "Cannot see emotes; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"recvemote_sec", AllowAddRemove, OptionUse::Optional, {"recvemote"}, "Cannot see emotes, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"recvemotefrom", AllowAddRemove, OptionUse::Required, {}, "Cannot see emotes from one avatar (option: that avatar's UUID)", Dialect::Rlv, Group::Core},
+      {"sendchannel_sec", AllowAddRemove, OptionUse::Optional, {"sendchannel"}, "No chat on channels other than 0, and exceptions of other objects do not count; with a channel as option: an exception", Dialect::Rlv, Group::Core},
+      // ---- instant messages and other secure forms ----
+      {"sendim_sec", AllowAddRemove, OptionUse::Optional, {"sendim"}, "No instant messages out, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"sendimto", AllowAddRemove, OptionUse::Required, {}, "Cannot send instant messages to one avatar (option: that avatar's UUID)", Dialect::Rlv, Group::Core},
+      {"startim", AllowAddRemove, OptionUse::Optional, {"startim"}, "Cannot start a new instant message conversation; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"startimto", AllowAddRemove, OptionUse::Required, {}, "Cannot start a conversation with one avatar (option: that avatar's UUID)", Dialect::Rlv, Group::Core},
+      {"recvim_sec", AllowAddRemove, OptionUse::Optional, {"recvim"}, "No instant messages in, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"recvimfrom", AllowAddRemove, OptionUse::Required, {}, "Cannot receive instant messages from one avatar (option: that avatar's UUID)", Dialect::Rlv, Group::Core},
+      {"share_sec", AllowAddRemove, OptionUse::Optional, {"share"}, "Cannot give inventory, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"tplure_sec", AllowAddRemove, OptionUse::Optional, {"tplure"}, "Cannot accept teleport offers, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"tprequest_sec", AllowAddRemove, OptionUse::Optional, {"tprequest"}, "No teleport requests, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
+      {"shownames_sec", AllowAddRemove, OptionUse::Optional, {"shownames"}, "Names of other avatars are hidden, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      // ---- notifications and permissive ----
+      {"notify", AllowAddRemove, OptionUse::Required, {}, "Tells the object on a channel whenever it adds or lifts a restriction: \"/<rule>=n\" or \"/<rule>=y\" (option: <channel>[;filter], channel 1 or higher, the filter must be part of the rule name)", Dialect::Rlv, Group::Core, false, "the sandbox sends these messages only for changes made by the object that holds the notification"},
+      {"permissive", AllowAddRemove, OptionUse::None, {}, "Marks the object as permissive; the sandbox keeps it as state and does not model how _sec restrictions and exceptions of different objects combine", Dialect::Rlv, Group::Core},
+      // ---- outfits and attachments (the sandbox has no avatar or inventory: force commands are retained, not carried out) ----
+      {"addattach", AllowAddRemove, OptionUse::Optional, {"addattach"}, "Nothing can be worn (on an attachment point given as option)", Dialect::Rlv, Group::Inventory},
+      {"remattach", AllowAddRemove | AllowForce, OptionUse::Optional, {"remattach"}, "Nothing can be taken off (from an attachment point given as option); =force takes off what is worn there", Dialect::Rlv, Group::Inventory},
+      {"addoutfit", AllowAddRemove, OptionUse::Optional, {"addoutfit"}, "No clothing can be worn (on a layer given as option)", Dialect::Rlv, Group::Inventory},
+      {"remoutfit", AllowAddRemove | AllowForce, OptionUse::Optional, {"remoutfit"}, "No clothing can be taken off (from a layer given as option); =force takes off what is worn there", Dialect::Rlv, Group::Inventory},
+      {"detachme", AllowForce, OptionUse::None, {}, "=force takes off the object that sent the command", Dialect::Rlv, Group::Inventory},
+      {"defaultwear", AllowAddRemove, OptionUse::None, {}, "Held as state only: the sandbox has no inventory, so it blocks nothing (in the RLV wiki, not in RLVa)", Dialect::RlvOnly, Group::Inventory},
+      {"unsharedwear", AllowAddRemove, OptionUse::None, {"unsharedwear"}, "Items from outside the shared folder cannot be worn", Dialect::Rlv, Group::Inventory},
+      {"unsharedunwear", AllowAddRemove, OptionUse::None, {"unsharedunwear"}, "Items from outside the shared folder cannot be taken off", Dialect::Rlv, Group::Inventory},
+      {"attach", AllowForce, OptionUse::Required, {}, "=force wears a shared folder, replacing what is worn on the same points (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"attachover", AllowForce, OptionUse::Required, {}, "=force wears a shared folder without replacing anything (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"attachoverorreplace", AllowForce, OptionUse::Required, {}, "=force wears a shared folder, adding or replacing as the folder name says (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"attachall", AllowForce, OptionUse::Required, {}, "=force wears a shared folder and its sub-folders, replacing (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"attachallover", AllowForce, OptionUse::Required, {}, "=force wears a shared folder and its sub-folders without replacing (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"attachalloverorreplace", AllowForce, OptionUse::Required, {}, "=force wears a shared folder and its sub-folders, adding or replacing as the names say (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"detachall", AllowForce, OptionUse::Required, {}, "=force takes off a shared folder and its sub-folders (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"attachthis", AllowAddRemove | AllowForce, OptionUse::Optional, {"attachthis"}, "Items of the folder cannot be worn (option: folder path or a point or layer name); =force wears the folder of this object, or the one given as option", Dialect::Rlv, Group::Inventory},
+      {"attachthisover", AllowForce, OptionUse::Optional, {}, "=force wears the folder of this object, or the one given as option, without replacing anything", Dialect::Rlv, Group::Inventory},
+      {"attachthisoverorreplace", AllowForce, OptionUse::Optional, {}, "=force wears the folder of this object, or the one given as option, adding or replacing as the names say", Dialect::Rlv, Group::Inventory},
+      {"attachallthis", AllowAddRemove | AllowForce, OptionUse::Optional, {"attachallthis"}, "The folder and its sub-folders cannot be worn (option as for attachthis); =force wears them", Dialect::Rlv, Group::Inventory},
+      {"attachallthisover", AllowForce, OptionUse::Optional, {}, "=force wears the folder and its sub-folders of this object (or the option) without replacing", Dialect::Rlv, Group::Inventory},
+      {"attachallthisoverorreplace", AllowForce, OptionUse::Optional, {}, "=force wears the folder and its sub-folders of this object (or the option), adding or replacing as the names say", Dialect::Rlv, Group::Inventory},
+      {"detachthis", AllowAddRemove | AllowForce, OptionUse::Optional, {"detachthis"}, "Items of the folder cannot be taken off (option as for attachthis); =force takes the folder off", Dialect::Rlv, Group::Inventory},
+      {"detachallthis", AllowAddRemove | AllowForce, OptionUse::Optional, {"detachallthis"}, "The folder and its sub-folders cannot be taken off (option as for attachthis); =force takes them off", Dialect::Rlv, Group::Inventory},
+      {"attachthis_except", AllowAddRemove, OptionUse::Required, {}, "Exception to attachthis: this folder stays allowed (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"attachallthis_except", AllowAddRemove, OptionUse::Required, {}, "Exception to attachallthis: this folder stays allowed (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"detachthis_except", AllowAddRemove, OptionUse::Required, {}, "Exception to detachthis: this folder stays allowed (option: folder path)", Dialect::Rlv, Group::Inventory},
+      {"detachallthis_except", AllowAddRemove, OptionUse::Required, {}, "Exception to detachallthis: this folder stays allowed (option: folder path)", Dialect::Rlv, Group::Inventory},
+      // ---- touching, hover text, names, viewing, editing, money ----
+      {"touchworld", AllowAddRemove, OptionUse::Optional, {"touchworld"}, "Cannot touch objects in the world; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"touchthis", AllowAddRemove, OptionUse::Required, {}, "Cannot touch one object (option: that object's UUID)", Dialect::Rlv, Group::Interaction},
+      {"touchme", AllowAddRemove, OptionUse::None, {}, "Exception: the object that sent it can be touched even when touching is blocked", Dialect::Rlv, Group::Interaction},
+      {"touchattach", AllowAddRemove, OptionUse::None, {"touchattach"}, "Cannot touch attachments of other avatars", Dialect::Rlv, Group::Interaction},
+      {"touchattachself", AllowAddRemove, OptionUse::None, {"touchattachself"}, "Cannot touch your own attachments", Dialect::Rlv, Group::Interaction},
+      {"touchattachother", AllowAddRemove, OptionUse::Optional, {"touchattachother"}, "Cannot touch attachments of other avatars (option: only that avatar's UUID)", Dialect::Rlv, Group::Interaction},
+      {"showhovertextall", AllowAddRemove, OptionUse::None, {"showhovertextall"}, "No hover text is shown", Dialect::Rlv, Group::Interaction},
+      {"showhovertext", AllowAddRemove, OptionUse::Required, {}, "The hover text of one object is hidden (option: that object's UUID)", Dialect::Rlv, Group::Interaction},
+      {"showhovertexthud", AllowAddRemove, OptionUse::None, {"showhovertexthud"}, "No hover text is shown on HUDs", Dialect::Rlv, Group::Interaction},
+      {"showhovertextworld", AllowAddRemove, OptionUse::None, {"showhovertextworld"}, "No hover text is shown in the world", Dialect::Rlv, Group::Interaction},
+      {"shownames", AllowAddRemove, OptionUse::Optional, {"shownames"}, "Names of other avatars are hidden; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"shownametags", AllowAddRemove, OptionUse::Optional, {"shownametags"}, "Name tags above avatars are hidden; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"viewnote", AllowAddRemove, OptionUse::Optional, {"viewnote"}, "Notecards cannot be opened; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"viewscript", AllowAddRemove, OptionUse::Optional, {"viewscript"}, "Scripts cannot be opened; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"viewtexture", AllowAddRemove, OptionUse::Optional, {"viewtexture"}, "Textures cannot be opened; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"editobj", AllowAddRemove, OptionUse::Required, {}, "Cannot edit one object (option: that object's UUID)", Dialect::Rlv, Group::Interaction},
+      {"editworld", AllowAddRemove, OptionUse::None, {"editworld"}, "Cannot edit objects in the world", Dialect::Rlv, Group::Interaction},
+      {"editattach", AllowAddRemove, OptionUse::None, {"editattach"}, "Cannot edit attachments", Dialect::Rlv, Group::Interaction},
+      {"buy", AllowAddRemove, OptionUse::None, {"buy"}, "Cannot buy objects", Dialect::Rlv, Group::Interaction},
+      {"pay", AllowAddRemove, OptionUse::Optional, {"pay"}, "Cannot pay; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"acceptpermission", AllowAddRemove, OptionUse::None, {}, "Permission requests of attached objects are accepted without asking; held as state, the sandbox grants permissions to scripts anyway", Dialect::Rlv, Group::Core},
+      {"denypermission", AllowAddRemove, OptionUse::None, {}, "Permission requests of objects are refused without asking (in the RLV wiki, not in RLVa; the wiki lists it as deprecated)", Dialect::RlvOnly, Group::Core},
+      // ---- group, movement and teleport (force commands are retained, not carried out) ----
+      {"setgroup", AllowAddRemove | AllowForce, OptionUse::Optional, {"setgroup"}, "The active group cannot be changed; =force sets it (option: group name or UUID, or none)", Dialect::Rlv, Group::Core},
+      {"temprun", AllowAddRemove, OptionUse::None, {"temprun"}, "Cannot run for a moment (double-tap or run key)", Dialect::Rlv, Group::Interaction},
+      {"alwaysrun", AllowAddRemove, OptionUse::None, {"alwaysrun"}, "Cannot switch always run on", Dialect::Rlv, Group::Interaction},
+      {"jump", AllowAddRemove, OptionUse::None, {"jump"}, "Cannot jump", Dialect::Rlv, Group::Interaction},
+      {"setrot", AllowForce, OptionUse::Required, {}, "=force turns the avatar to an angle (option: radians); held nowhere, the sandbox has no avatar. In the RLV wiki, not in RLVa", Dialect::RlvOnly, Group::Interaction},
+      {"adjustheight", AllowForce, OptionUse::Required, {}, "=force changes the avatar height offset (option: offset[;factor[;delta]])", Dialect::Rlv, Group::Interaction},
+      {"tpto", AllowForce, OptionUse::Required, {}, "=force teleports to a place (option: x/y/z or region/x/y/z, then an optional look-at)", Dialect::Rlv, Group::Core},
+      {"standtp", AllowAddRemove, OptionUse::None, {}, "Changes where the avatar ends up after it stands up; held as state, the sandbox has no avatar position", Dialect::Rlv, Group::Core},
+      {"accepttp", AllowAddRemove, OptionUse::Optional, {}, "Teleport offers are accepted automatically (option: only from this avatar's UUID); held as state, the sandbox has no teleports", Dialect::Rlv, Group::Core},
+      {"sitground", AllowForce, OptionUse::None, {}, "=force sits the avatar on the ground", Dialect::Rlv, Group::Interaction},
+      // ---- questions with fixed sandbox answers (no avatar, group or inventory model yet) ----
+      {"getsitid", AllowReply, OptionUse::None, {}, "Answers the UUID of the object sat on; the sandbox answers the null key (nobody sits)", Dialect::Rlv, Group::Reply},
+      {"getgroup", AllowReply, OptionUse::None, {}, "Answers the name of the active group; the sandbox answers none", Dialect::Rlv, Group::Reply},
+      {"getoutfit", AllowReply, OptionUse::Optional, {}, "Answers 0 or 1 for each clothing layer worn (option: one layer name for a single digit); the sandbox wears nothing and answers zeros", Dialect::Rlv, Group::Reply},
+      {"getattach", AllowReply, OptionUse::Optional, {}, "Answers 0 or 1 for each attachment point (option: one point name for a single digit); the sandbox wears nothing and answers zeros", Dialect::Rlv, Group::Reply},
+      {"getinv", AllowReply, OptionUse::Optional, {}, "Answers the sub-folders of a shared folder (option: folder path); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"getinvworn", AllowReply, OptionUse::Optional, {}, "Answers what is worn from a shared folder (option: folder path); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"findfolder", AllowReply, OptionUse::Optional, {}, "Answers the path of the first shared folder whose name contains the option; the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"getpath", AllowReply, OptionUse::Optional, {}, "Answers the folder path of the object or of an attachment point (option: point or layer); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      {"getpathnew", AllowReply, OptionUse::Optional, {}, "Answers the folder paths of the object, an attachment point or a layer (option); the sandbox has no inventory and answers empty", Dialect::Rlv, Group::Reply},
+      // ---- more camera, sphere and overlay effects: recorded as state, nothing real changes ----
+      {"camdrawmin", AllowAddRemove, OptionUse::Required, {}, "Distance in front of the camera where the draw distance fade starts (option: metres)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"camdrawmax", AllowAddRemove, OptionUse::Required, {}, "Distance where everything is hidden (option: metres)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"camdrawalphamin", AllowAddRemove, OptionUse::Required, {}, "Fade alpha at the near distance (option: 0 to 1)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"camdrawalphamax", AllowAddRemove, OptionUse::Required, {}, "Fade alpha at the far distance (option: 0 to 1)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"camdrawcolor", AllowAddRemove, OptionUse::Required, {}, "Colour of the fade (option: red/green/blue, each 0 to 1)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere", AllowAddRemove, OptionUse::None, {}, "Turns on the vision sphere effect that hides or blurs what is far from the camera or an origin", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_mode", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "How the sphere acts (option: mode number)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_origin", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Where the sphere is centred (option: origin number)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_color", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Colour of the sphere (option: red/green/blue)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_distmin", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Distance where the effect starts (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_distmax", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Distance where the effect is at full strength (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_distextend", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "How far the distances are stretched (option: factor)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_param", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Strength of the effect (option: value)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_tween", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Seconds the effect takes to change (option: seconds)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_valuemin", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Strength at the near distance (option: value)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_valuemax", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Strength at the far distance (option: value)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay", AllowAddRemove, OptionUse::None, {}, "Turns on a full screen overlay picture", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_alpha", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "How see-through the overlay is (option: 0 to 1)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_texture", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Picture of the overlay (option: texture UUID)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_tint", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Colour of the overlay (option: red/green/blue)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_tween", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Seconds the overlay takes to change (option: seconds)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_touch", AllowAddRemove, OptionUse::None, {}, "Touches go through the overlay to the world", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      // ---- questions: the sandbox answers fixed values ----
+      {"versionnumbl", AllowReply, OptionUse::None, {}, "Answers the version number, a comma, then the list of blacklisted behaviours; the sandbox blacklists nothing, so the list is empty (in the RLV wiki, not in RLVa)", Dialect::RlvOnly, Group::Reply},
+      {"getblacklist", AllowReply, OptionUse::Optional, {}, "Answers the blacklisted behaviours (option: part of a name); the sandbox blacklists nothing and answers empty (in the RLV wiki, not in RLVa)", Dialect::RlvOnly, Group::Reply},
+      {"getcam_zoommin", AllowReply, OptionUse::None, {}, "Answers the smallest zoom multiplier now allowed; the sandbox has no camera and always answers 1 (in the RLV wiki, not in RLVa)", Dialect::RlvOnly, Group::Reply},
       // ---- old camera names: the same state as the new name; getstatus shows the name that was used ----
       {"camdistmax", AllowAddRemove, OptionUse::Required, {}, "Old name of setcam_avdistmax: maximum camera distance from the avatar (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_avdistmax"},
       {"camdistmin", AllowAddRemove, OptionUse::Required, {}, "Old name of setcam_avdistmin: minimum camera distance from the avatar (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change", "setcam_avdistmin"},
@@ -176,6 +337,43 @@ namespace Rlv
     return table;
   }
 
+  const QStringList& clothingLayers()
+  {
+    static const QStringList list = {"gloves", "jacket", "pants", "shirt", "shoes", "skirt", "socks", "underpants",
+                                     "undershirt", "skin", "eyes", "hair", "shape", "alpha", "tattoo", "physics"};
+    return list;
+  }
+
+  const QStringList& attachmentPoints()
+  {
+    static const QStringList list = {"none", "chest", "skull", "left shoulder", "right shoulder", "left hand", "right hand",
+                                     "left foot", "right foot", "spine", "pelvis", "mouth", "chin", "left ear", "right ear",
+                                     "left eyeball", "right eyeball", "nose", "r upper arm", "r forearm", "l upper arm",
+                                     "l forearm", "right hip", "r upper leg", "r lower leg", "left hip", "l upper leg",
+                                     "l lower leg", "stomach", "left pec", "right pec", "center 2", "top right", "top",
+                                     "top left", "center", "bottom left", "bottom", "bottom right", "neck", "root"};
+    return list;
+  }
+
+  QString wornString(const QStringList& names, const QString& option)
+  {
+    if (option.isEmpty()) return QString(names.size(), QLatin1Char('0'));
+    return names.contains(option) ? QStringLiteral("0") : QString();
+  }
+
+  // setdebug_<name>, setenv_<name>, getdebug_<name>, getenv_<name>: any name after the prefix
+  static const QVector<Behaviour>& families()
+  {
+    static const QVector<Behaviour> list =
+    {
+      {"setdebug_", AllowForce, OptionUse::Required, {}, "Sets one debug setting (setdebug_<name>:<value>=force)", Dialect::Rlv, Group::Environment, true, "recorded only: no debug setting changes"},
+      {"setenv_", AllowForce, OptionUse::Required, {}, "Sets one sky or water setting (setenv_<name>:<value>=force)", Dialect::Rlv, Group::Environment, true, "recorded only: the real sky and water do not change"},
+      {"getdebug_", AllowReply, OptionUse::None, {}, "Answers one debug setting (getdebug_<name>=<channel>); the sandbox answers the value last set with setdebug_<name>, or empty", Dialect::Rlv, Group::Reply},
+      {"getenv_", AllowReply, OptionUse::None, {}, "Answers one sky or water setting (getenv_<name>=<channel>); the sandbox answers the value last set with setenv_<name>, or empty", Dialect::Rlv, Group::Reply},
+    };
+    return list;
+  }
+
   QString canonicalName(const QString& name)
   {
     const Behaviour* behaviour = findBehaviour(name);
@@ -186,6 +384,8 @@ namespace Rlv
   {
     for (const Behaviour& behaviour : behaviours())
       if (behaviour.name == name) return &behaviour;
+    for (const Behaviour& family : families())
+      if (name.length() > family.name.length() && name.startsWith(family.name)) return &family;
     return nullptr;
   }
 
@@ -193,6 +393,7 @@ namespace Rlv
   {
     const Behaviour* behaviour = findBehaviour(name);
     if (behaviour && behaviour->dialect == Dialect::RlvaOnly && mode == Mode::Rlv) return nullptr;
+    if (behaviour && behaviour->dialect == Dialect::RlvOnly && mode == Mode::Rlva) return nullptr;
     return behaviour;
   }
 
@@ -200,7 +401,7 @@ namespace Rlv
   {
     QStringList names;
     for (const Behaviour& behaviour : behaviours())
-      if (mode == Mode::Rlva || behaviour.dialect == Dialect::Rlv) names << behaviour.name;
+      if (findBehaviour(behaviour.name, mode)) names << behaviour.name;
     return names;
   }
 

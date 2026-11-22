@@ -38,12 +38,13 @@ namespace Rlv
   enum class OptionUse { None, Optional, Required };
 
   // which viewer family answers to a behaviour: "RLV" is in the plain RLV
-  // API as the RLV wiki lists it, "RLVa only" is not listed there (RLVa's own
-  // extended and experimental flags differ from the wiki for some names)
-  enum class Dialect { Rlv, RlvaOnly };
+  // API as the RLV wiki lists it and in RLVa, "RLVa only" is not listed in the
+  // wiki (RLVa's own extended and experimental flags differ from the wiki for
+  // some names), "RLV only" is in the wiki but RLVa does not have it
+  enum class Dialect { Rlv, RlvaOnly, RlvOnly };
 
   // The mode the sandbox answers in. In plain RLV mode the RLVa-only
-  // behaviours are unknown.
+  // behaviours are unknown; in RLVa mode the RLV-only ones are.
   enum class Mode { Rlv, Rlva };
   QString modeName(Mode mode);                 // "rlv" or "rlva"
   bool parseMode(const QString& text, Mode& mode);   // accepts "rlv" and "rlva", any case
@@ -95,11 +96,19 @@ namespace Rlv
   QString versionNumber();            // @versionnum: "3040300"
 
   const QVector<Behaviour>& behaviours();
+  // The clothing layers (as @getoutfit lists them, 16 of them) and the attachment points
+  // (@getattach: index 0 is "none", then 40 points).
+  const QStringList& clothingLayers();
+  const QStringList& attachmentPoints();
+  // The sandbox wears nothing: one "0" per entry of the list, or a single "0" when the
+  // option names an entry of the list; empty when the option names none.
+  QString wornString(const QStringList& names, const QString& option);
   // the name the state is kept under: the target of an alias, else the name itself
   QString canonicalName(const QString& name);
   // nullptr when the behaviour is not in the table (either dialect)
   const Behaviour* findBehaviour(const QString& name);
-  // nullptr when the behaviour is not in the table or not known in this mode
+  // nullptr when the behaviour is not in the table or not known in this mode (RLVa only: unknown in plain RLV
+  // mode; RLV only: unknown in RLVa mode)
   const Behaviour* findBehaviour(const QString& name, Mode mode);
   // the behaviour names known in this mode, in table order
   QStringList behaviourNames(Mode mode);

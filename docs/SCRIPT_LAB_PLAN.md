@@ -1,6 +1,6 @@
 # Script Lab plan
 
-Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b and 9c are planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
+Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b is in progress (9b-1 and 9b-2 merged on 22 Nov 2026 in pull requests 311 and 315, 9b-3 is an open pull request); 9c is planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
 
 ## 1. Goal
 
@@ -32,7 +32,7 @@ In order. Each step is small and testable. "Technical" means nothing changes on 
 | 8 | [#294](https://github.com/pingledingle-tech/PinglyMotion/issues/294) | technical | Separate repository for the owner's RLV tools (description only; description written, repository not created) | 1, 6 | light |
 | 9 | [#297](https://github.com/pingledingle-tech/PinglyMotion/issues/297) | technical | RLVa-only behaviours and a plain RLV / RLVa mode switch (done) | 1 | strong |
 | 9a | [#305](https://github.com/pingledingle-tech/PinglyMotion/issues/305) | technical | Several scripts in one object, link messages and Linkset Data (done) | 3, 5 | strong |
-| 9b | none yet | technical | More common LSL functions (planned) | 3 | strong |
+| 9b | none yet | technical | More common LSL functions (9b-1 and 9b-2 done, 9b-3 in progress) | 3 | strong |
 | 9c | none yet | technical | Gap list: what scripts use that the sandbox does not run yet (planned) | 9a, 9b | light |
 
 ### Step 1: RLV core (technical, done)
@@ -90,19 +90,19 @@ A template, examples and scenario files (`.rlvtest`: a command, then the expecte
 
 ### Step 9: RLVa-only behaviours and a mode switch (technical, done)
 
-Done (issue 297): every behaviour is marked `RLV` or `RLVa only`; plain RLV is the start mode, RLVa mode accepts the RLVa-only behaviours; `rlv_reset` has a `mode` field ([SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV and RLVa mode").
+Done (issue 297): every behaviour is marked `RLV`, `RLVa only` or `RLV only` (the third mark was added with the table work of issue 294); plain RLV is the start mode, RLVa mode accepts the RLVa-only behaviours; `rlv_reset` has a `mode` field ([SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV and RLVa mode").
 
 ### Step 9a: several scripts in one object and link messages (technical, done)
 
 `llMessageLinked`, the `link_message` event and Linkset Data, with several scripts in one object, so a main script and helper scripts (menu, relay, storage) can be tested together. Done (issue 305): `scripts` and `prims` in `lsl_run`'s objects and `link` for touches ([CONTROL.md](CONTROL.md), "Several scripts in one object"); the choices where the sandbox cannot be Second Life (fixed run order, memory count, one key per object) are in [DECISIONS.md](DECISIONS.md).
 
-### Step 9b: more common functions (technical, planned)
+### Step 9b: more common functions (technical, in progress)
 
 More LSL functions that real scripts use. The order comes from a gap list made from 1 949 real scripts (how many scripts use each name). Three small parts, each its own pull request, each merged before the next starts:
 
 - 9b-1 (issue 310, done): the signature table from Second Life's lsl-definitions, and the pure functions that need no world (rotation maths, strided lists, `llReplaceSubString`, Base64, hashes, URL escaping, start parameter, object name, description, scale, prim count).
 - 9b-2 (issue 314, done): the events `on_rez` (at the start, with the start parameter) and `changed` (from an input of type `changed`), using the existing `inputs`.
-- 9b-3 (issue 317, done): prim state recorded in the event log without effects (`llSetText`, `llSetAlpha`, `llSetColor`, `llSetPrimitiveParams`, `llSetPos`, `llSetStatus`, `llSetSitText`, `llTextBox`, `llTransferLindenDollars` as logic only), and record-only stubs for particles and sounds.
+- 9b-3 (issue 317, done, pull request 318, merged 22 Nov 2026): prim state recorded in the event log without effects (`llSetText`, `llSetAlpha`, `llSetColor`, `llSetPrimitiveParams`, `llSetPos`, `llSetStatus`, `llSetSitText`, `llTextBox`, `llTransferLindenDollars` as logic only), and record-only stubs for particles and sounds.
 
 ### Step 9c: gap list (technical, planned)
 

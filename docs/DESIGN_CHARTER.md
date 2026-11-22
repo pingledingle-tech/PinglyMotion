@@ -25,7 +25,7 @@ layout for everybody. All old icons and old styles are removed everywhere.
   [DECISIONS.md](DECISIONS.md).
 - Order of authority: this charter, then [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md),
   then [UX_DECISIONS.md](UX_DECISIONS.md), then older plans
-  ([POSING_UX.md](POSING_UX.md), [PANELS_PLAN.md](PANELS_PLAN.md)) and their
+  ([POSING_UX.md](POSING_UX.md), [PANELS_PLAN.md](archive/PANELS_PLAN.md)) and their
   mockup pictures.
 
 ## Principles

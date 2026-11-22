@@ -184,11 +184,11 @@ RLV 3.4.3; it is never identical to Second Life.
   starts from a clean state; the answer has `mode`. Any other `mode` value fails and changes nothing. Camera, sky and
   debug behaviours are only recorded and shown in the `reason` of the result ("recorded only"); the real program
   never changes.
-- Known behaviours of the RLV core (others parse but fail as unknown; the camera, sky and debug behaviours of plain
-  RLV and the `rlva_only` names are listed in [SCRIPT_LAB.md](SCRIPT_LAB.md)): `detach`, `sendim`, `recvim`, `sendchat`, `recvchat`,
-  `sendchannel`, `tplm`, `tploc`, `tplure`, `fly`, `sit`, `unsit`, `sittp`, `edit`, `rez`, `touchall`, `showinv`,
-  `showloc`, `showminimap`, `showworldmap`, `share` (restrictions; `detach`, `sit` and `unsit` also take `force`) and
-  `version`, `versionnew`, `versionnum`, `getstatus`, `getstatusall` (questions answered on a channel).
+- Known behaviours of the RLV core: the table in `src/scriptlab/rlvbehaviours.cpp` holds 158 behaviours (restrictions,
+  questions answered on a channel such as `version` and `getstatus`, and force commands where they exist; each is marked
+  `RLV`, `RLVa only` or `RLV only`). The names known in the current mode are in `behaviours` of `rlv_state`; the
+  groups and the camera, sky and debug behaviours that are only recorded are described in
+  [SCRIPT_LAB.md](SCRIPT_LAB.md). Other names parse but fail as unknown.
 - Limits: at most 64 objects hold restrictions at a time, and each at most 128. An object without restrictions is
   dropped. The text comes from scripts and AI clients, so it is treated as data: it is checked, never run.
 

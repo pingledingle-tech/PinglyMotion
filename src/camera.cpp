@@ -190,6 +190,7 @@ void Camera::rotate(float x, float y)
   panX = c.x();
   panY = c.y();
   panZ = c.z() + pivotDistance;
+  applyConstraint();
 }
 
 void Camera::pan(float x, float y, float z)
@@ -202,12 +203,14 @@ void Camera::pan(float x, float y, float z)
     panZ += newDistance - pivotDistance;
     pivotDistance = newDistance;
   }
+  applyConstraint();
 }
 
 void Camera::panBy(float x, float y)
 {
   panX = qBound(-1000.0f, panX + x, 1000.0f);
   panY = qBound(-1000.0f, panY + y, 1000.0f);
+  applyConstraint();
 }
 
 void Camera::zoom(float factor)
@@ -226,6 +229,7 @@ void Camera::setView(float height, float angle)
   panX = c.x();
   panY = c.y();
   panZ = c.z() + pivotDistance;
+  applyConstraint();
 }
 
 void Camera::setModelView()
@@ -246,12 +250,20 @@ void Camera::reset()
   panY = 40;
   panZ = 100;
   pivotDistance = panZ;
+  applyConstraint();
 }
 
 void Camera::lookAt(float x, float y, float z, float distance)
 {
+  place(QVector3D(x, y, z), distance);
+  applyConstraint();
+}
+
+void Camera::place(const QVector3D& point, float distance)
+{
   // the scene is rotated by rotY (around Y) and then rotX (around X) after
   // the camera is placed, so turn the point the same way first
+  const float x = point.x(), y = point.y(), z = point.z();
   const float ry = rotY * 3.14159265f / 180.0f;
   const float rx = rotX * 3.14159265f / 180.0f;
   const float x1 = x * std::cos(ry) + z * std::sin(ry);
@@ -265,6 +277,61 @@ void Camera::lookAt(float x, float y, float z, float distance)
   pivotDistance = distance;
 }
 
+void Camera::setConstraint(const CameraConstraint& constraint)
+{
+  if (!m_constrained)
+  {
+    // keep the user's camera to put it back exactly in clearConstraint()
+    m_savedPanX = panX; m_savedPanY = panY; m_savedPanZ = panZ;
+    m_savedRotX = rotX; m_savedRotY = rotY; m_savedPivot = pivotDistance;
+  }
+  m_constrained = true;
+  m_constraint = constraint;
+  applyConstraint();
+}
+
+void Camera::clearConstraint()
+{
+  if (!m_constrained) return;
+  m_constrained = false;
+  m_constraint = CameraConstraint();
+  panX = m_savedPanX; panY = m_savedPanY; panZ = m_savedPanZ;
+  rotX = m_savedRotX; rotY = m_savedRotY; pivotDistance = m_savedPivot;
+}
+
+void Camera::applyConstraint()
+{
+  if (!m_constrained) return;
+  float d = pivotDistance;
+  if (m_constraint.maxDistance > 0) d = qMin(d, m_constraint.maxDistance);
+  if (m_constraint.minDistance > 0) d = qMax(d, m_constraint.minDistance);
+  if (m_constraint.turnAroundPoint && m_constraint.fixedEye)
+  {
+    // look from the eye at the point: the turn that puts the camera there
+    // (the camera sits at pivot + (-d cos x sin y, d sin x, d cos x cos y))
+    const QVector3D v = m_constraint.eye - m_constraint.point;
+    const float length = v.length();
+    if (length > 0.001f)
+    {
+      rotX = qBound(-89.0f, float(qRadiansToDegrees(std::asin(qBound(-1.0f, v.y() / length, 1.0f)))), 89.0f);
+      rotY = float(qRadiansToDegrees(std::atan2(-v.x(), v.z())));
+      if (rotY < 0) rotY += 360;
+      d = length;
+      if (m_constraint.maxDistance > 0) d = qMin(d, m_constraint.maxDistance);
+      if (m_constraint.minDistance > 0) d = qMax(d, m_constraint.minDistance);
+    }
+    place(m_constraint.point, d);
+  }
+  else if (m_constraint.turnAroundPoint)
+    place(m_constraint.point, d);
+  else if (d != pivotDistance)
+  {
+    // closer or further along the line of sight; the pivot stays where it is
+    panZ += d - pivotDistance;
+    pivotDistance = d;
+  }
+}
+
 void Camera::orbit(float height, float angle, float distance)
 {
   reset();
@@ -274,6 +341,7 @@ void Camera::orbit(float height, float angle, float distance)
   rotY = angle;
   panZ = qBound(10.0f, distance, 1000.0f);
   pivotDistance = panZ;
+  applyConstraint();
 }
 
 float Camera::distance() const
@@ -296,6 +364,7 @@ void Camera::setState(const CameraPosition& position)
   rotX = position.rotX;
   rotY = position.rotY;
   pivotDistance = position.pivotDistance;
+  applyConstraint();
 }
 
 float Camera::xRotation() const
@@ -328,4 +397,5 @@ void Camera::restoreCameraPosition(int num)
   rotX=pos->rotX;
   rotY=pos->rotY;
   pivotDistance=pos->pivotDistance;
+  applyConstraint();
 }
