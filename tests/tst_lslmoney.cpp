@@ -397,7 +397,7 @@ void LslMoneyTest::bodyIsTruncated()
     state_entry() { llRequestURL(); }
     http_request(key id, string method, string body) { if (method == "PUT") llOwnerSay((string)llStringLength(body)); }
   })lsl";
-  const QJsonObject a = run(script, QJsonArray{QJsonObject{{"at", 1}, {"type", "http_request"}, {"method", "PUT"}, {"body", QString(2100, 'a')}},
+  const QJsonObject a = run(script, QJsonArray{QJsonObject{{"at", 1}, {"type", "http_request"}, {"method", "PUT"}, {"body", QString(2100, QChar('a'))}},
                                                QJsonObject{{"at", 2}, {"type", "http_request"}, {"method", "PUT"}, {"body", QString(1100, QChar(0xE9))}}}, 3);
   QCOMPARE(said(a), QStringList({"2048", "1024"}));
   const QStringList e = entries(a, "input", "http_request");
