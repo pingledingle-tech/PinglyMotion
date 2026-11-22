@@ -1,6 +1,6 @@
 Branch: feat/describe-pose-129
 Status: done
-Pull request: pending
+Pull request: #136
 Files:
 - src/controlapi.*
 - src/posedescribe.*

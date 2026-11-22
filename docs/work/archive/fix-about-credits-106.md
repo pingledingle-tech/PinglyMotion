@@ -1,6 +1,6 @@
 Branch: fix/about-credits-106
 Status: done
-Pull request: pending
+Pull request: #121
 Files:
 - docs/work/fix-about-credits-106.md
 - src/aboutdialog.*

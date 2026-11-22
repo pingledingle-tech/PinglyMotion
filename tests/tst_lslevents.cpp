@@ -215,7 +215,7 @@ void LslEventsTest::changedIsRefusedWhenWrong()
   QVERIFY(error(QJsonObject{{"type", "changed"}, {"change", "owner"}, {"object", "ghost"}}).contains("there is no object named \"ghost\""));
   QCOMPARE(error(QJsonObject{{"type", "changed"}, {"change", "owner"}}), QString());
   // the type list in the message
-  QVERIFY(error(QJsonObject{{"type", "weather"}}).contains("\"detach\" or \"changed\""));
+  QVERIFY(error(QJsonObject{{"type", "weather"}}).contains("\"sit\" or \"stand\""));
 }
 
 void LslEventsTest::checkerKnowsBothEvents()

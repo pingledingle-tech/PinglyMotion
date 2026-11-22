@@ -190,15 +190,20 @@ bool Inventory::knownType(int type)
   return false;
 }
 
+QString Inventory::derivedKey(const QString& seed, const QString& name)
+{
+  // a fixed key from the seed and the name, so runs are repeatable
+  const QByteArray h = QCryptographicHash::hash((seed + "/" + name).toUtf8(), QCryptographicHash::Md5).toHex();
+  return QString("%1-%2-%3-%4-%5").arg(QString::fromLatin1(h.mid(0, 8)), QString::fromLatin1(h.mid(8, 4)),
+                                         QString::fromLatin1(h.mid(12, 4)), QString::fromLatin1(h.mid(16, 4)), QString::fromLatin1(h.mid(20, 12)));
+}
+
 bool Inventory::add(InventoryItem item, const QString& seed)
 {
   if (item.name.isEmpty() || int(m_items.size()) >= MAX_ITEMS || find(item.name)) return false;
   if (item.key.isEmpty())
   {
-    // a fixed key from the object's key and the item's name, so runs are repeatable
-    const QByteArray h = QCryptographicHash::hash((seed + "/" + item.name).toUtf8(), QCryptographicHash::Md5).toHex();
-    item.key = QString("%1-%2-%3-%4-%5").arg(QString::fromLatin1(h.mid(0, 8)), QString::fromLatin1(h.mid(8, 4)),
-                                                QString::fromLatin1(h.mid(12, 4)), QString::fromLatin1(h.mid(16, 4)), QString::fromLatin1(h.mid(20, 12)));
+    item.key = derivedKey(seed, item.name);
   }
   m_items.push_back(std::move(item));
   return true;

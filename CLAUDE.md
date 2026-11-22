@@ -54,6 +54,7 @@ Every job registers itself with ONE small file of its own in `docs/work/`. There
      3. Update the jobs list (issue #74).
      4. Report the merge in one line (number, what, checks green).
      5. Last step of every job that merges or opens a visible pull request: run `python3 tools/work.py check-lists` (needs `gh`; `jobs-draft` prints a draft of the list) and fix what it reports in #74 and #47. The same check runs in CI as a warning only.
+     5a. After the merge, run `python3 tools/work.py archive` (moves done job files with a merged pull request to `docs/work/archive/`) and commit the result in your next pull request.
      6. When a job builds `test/combined`, update the Windows link in BOTH issue #47 and the test page in that same step.
      7. When a job puts out a test, the test is in the test page store's `active` collection and in issue #47 in the same step (Test page rules, 1b); after "Godkjenn og arkiver" on the page, finish the merge steps above (Test page rules, 3b).
    - **When the project owner says ok or approved** for something, update #47 at once. Never ask him to test or approve the same thing twice. Before asking him anything about a test, read #47 and the latest comments first.
