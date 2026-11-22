@@ -111,6 +111,10 @@ ENDIF (WIN32)
 # Compile and link (ui files and resources are handled by AUTOUIC/AUTORCC)
 ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
 TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+# the control server shuts down a socket's sending side itself (controlserver.cpp, endAfterAnswer)
+IF (WIN32)
+  TARGET_LINK_LIBRARIES (pinglymotion ws2_32)
+ENDIF (WIN32)
 # Translations (docs/TRANSLATION.md): the English source file is made by lupdate from the code
 # (cmake --build <dir> --target update_translations); the program carries the compiled files
 # (:/i18n/pinglymotion_<language>.qm). Add a language by adding its .ts file to the list.

@@ -23,7 +23,14 @@
 #include "controlserver.h"
 
 #ifdef Q_OS_UNIX
+#include <sys/socket.h>
 #include <sys/stat.h>
+#endif
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <winsock2.h>
 #endif
 
 namespace
@@ -62,6 +69,38 @@ namespace
     return difference == 0;
   }
 
+  // Ends a connection after its answer is sent. Closing a socket that still holds unread data
+  // from the client sends a reset instead of an orderly end, and on Windows a reset throws away
+  // the answer the client has already received (the client sees no answer at all). This happened
+  // whenever the client's request, or the rest of it, arrived before the server closed: always
+  // possible for "Too many connections", which is answered before anything is read. So only the
+  // sending side is shut down once the answer is out (the client sees the end of the answer),
+  // whatever the client still sends is read and dropped, and the socket closes when the client
+  // closes, or after LINGER_MS for a client that never does.
+  const int LINGER_MS = 2000;
+
+  void shutDownSending(QTcpSocket* socket)
+  {
+    if (socket->state() != QAbstractSocket::ConnectedState || socket->bytesToWrite() > 0) return;
+    const qintptr descriptor = socket->socketDescriptor();
+    if (descriptor == -1) return;
+#ifdef Q_OS_WIN
+    ::shutdown(static_cast<SOCKET>(descriptor), SD_SEND);
+#else
+    ::shutdown(static_cast<int>(descriptor), SHUT_WR);
+#endif
+  }
+
+  void endAfterAnswer(QTcpSocket* socket)
+  {
+    QObject::connect(socket, &QTcpSocket::readyRead, socket, [socket]() { socket->readAll(); });
+    QObject::connect(socket, &QTcpSocket::bytesWritten, socket, [socket]() { shutDownSending(socket); });
+    QTimer::singleShot(LINGER_MS, socket, [socket]() { socket->abort(); });
+    socket->readAll();
+    socket->flush();
+    shutDownSending(socket);
+  }
+
   QByteArray header(const QByteArray& headers, const QByteArray& name)
   {
     for (const QByteArray& line : headers.split('\n'))
@@ -84,6 +123,10 @@ ControlServer::ControlServer(ControlApi* api, QObject* parent) :
 ControlServer::~ControlServer()
 {
   stop();
+  // connections still ending after their answer (endAfterAnswer) are deleted with m_server after
+  // this object's members are gone, so they must not call back into it
+  for (QTcpSocket* socket : m_server.findChildren<QTcpSocket*>())
+    socket->disconnect(this);
 }
 
 bool ControlServer::start(quint16 preferredPort, QString* error)
@@ -275,7 +318,7 @@ void ControlServer::respond(QTcpSocket* socket, int status, const QByteArray& bo
   response += "Connection: close\r\n\r\n";
   response += body;
   socket->write(response);
-  socket->disconnectFromHost();
+  endAfterAnswer(socket);
   m_buffers.remove(socket);
   m_admitted.remove(socket);
 }
