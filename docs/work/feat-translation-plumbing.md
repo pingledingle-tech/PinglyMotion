@@ -1,5 +1,5 @@
 Branch: feat/translation-plumbing
-Status: active
+Status: done
 Pull request: #338
 Files:
 - CMakeLists.txt
@@ -12,7 +12,8 @@ Files:
 - tests/translation/**
 - tests/CMakeLists.txt
 - tools/check_tr.py
-- tools/check_translations.sh
+- tools/dev_setup.sh
+- tests/test_check_tr.py
 - .github/workflows/build.yml
 - docs/TRANSLATION.md
 - docs/DECISIONS.md

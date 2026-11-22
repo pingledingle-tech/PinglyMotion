@@ -275,9 +275,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
   sphereMesh(new Mesh(QString(), Mesh::Shape::SPHERE)),  // built in code, no file
   coneMesh(new Mesh(QString(), Mesh::Shape::CONE)),      // built in code, no file
   torusMesh(new Mesh(Constants::torusMeshFilePath(), Mesh::Shape::TORUS)),
-  m_animFilter("Animation Files (*.dingle *.avm *.bvh)"),
-  m_dingleFilter(QObject::tr("PinglyMotion animation (*.dingle)")),
-  m_propFilter("Props (*.prp)"),
+  m_animFilter(PinglyMotionWindow::tr("Animation Files (*.dingle *.avm *.bvh)")),
+  m_dingleFilter(PinglyMotionWindow::tr("PinglyMotion animation (*.dingle)")),
+  m_propFilter(PinglyMotionWindow::tr("Props (*.prp)")),
   m_untitledName(DingleSave::defaultName()),
   m_precision(SliderScale::precision),
   m_controlAction(nullptr),
@@ -1387,7 +1387,7 @@ void PinglyMotionWindow::buildPartLists()
   ui->attachToComboBox->addItem(tr("(not attached)"));
   // attachment point number equals the track number
   for(int track=1;track<names.count();track++)
-    ui->attachToComboBox->addItem(names[track]=="Site" ? "-" : names[track]);
+    ui->attachToComboBox->addItem(names[track]=="Site" ? "-" : names[track]);  // tr-ok: "Site" is the BVH end-site name, not a text
 
   fillJointTable();
 }

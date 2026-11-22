@@ -108,7 +108,7 @@ Old step numbers, so older issues and pull requests stay readable:
 
 ## Homepage
 
-- Language: English, like the program.
+- Language: English for now, like the program; translatable later ([TRANSLATION.md](TRANSLATION.md)).
 - Feeling: warm, cozy, welcoming, modern, and funny or a bit crazy. Animation should feel less scary.
 - No green. It must not look template-like or machine-made (the earlier status section draft looked that way and is not approved).
 - Base text: the project owner's own text, translated to English. Keep the jokes and self-irony.

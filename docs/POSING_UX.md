@@ -101,7 +101,7 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 
 ## Language
 
-English only for now. All interface text goes through `tr()`, so translations can be added later without code changes. Help texts are written in simple English.
+English for now, translatable. All interface text goes through `tr()`, and the program can load a translation file (the plumbing is done, see [TRANSLATION.md](TRANSLATION.md)); the translations themselves come when the texts are stable. Help texts are written in simple English.
 
 ## Order of work
 

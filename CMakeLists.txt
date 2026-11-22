@@ -86,6 +86,14 @@ SET (INSTALL_DATA "." CACHE PATH "Data install path")
 # Qt 6
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGL OpenGLWidgets Network)
 SET (PINGLYMOTION_QT_LIBS Qt6::Core Qt6::Gui Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Network)
+# Translations (docs/TRANSLATION.md): lupdate and lrelease. Without them the program still builds,
+# English only, and the translation test is not built (CI installs them).
+FIND_PACKAGE (Qt6 QUIET OPTIONAL_COMPONENTS LinguistTools)
+IF (Qt6LinguistTools_FOUND)
+  MESSAGE (STATUS "Translations: lupdate and lrelease found")
+ELSE ()
+  MESSAGE (WARNING "Qt6 LinguistTools not found: building without translation files (see docs/TRANSLATION.md)")
+ENDIF ()
 MESSAGE (STATUS "Building with Qt ${Qt6_VERSION}")
 
 # Search for OpenGL
@@ -132,6 +140,8 @@ IF (PINGLYMOTION_TESTS)
   # status bar items and the "Tips on" setting (#88 step 8)
   ADD_SUBDIRECTORY (tests/statusbar)
   ADD_SUBDIRECTORY (tests/bodysetting)
+  # loading of translation files (docs/TRANSLATION.md)
+  ADD_SUBDIRECTORY (tests/translation)
   ADD_SUBDIRECTORY (tests/buildinfo)
   # the Timeline panel at start and when the window closes
   ADD_SUBDIRECTORY (tests/panelvisibility)

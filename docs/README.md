@@ -44,6 +44,7 @@ Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running wo
 | [CONTROL.md](CONTROL.md) | Remote control interface (HTTP, JSON, MCP): every command | AI client, developer | reference |
 | [ASSISTANT_GUIDE.md](ASSISTANT_GUIDE.md) | How an assistant animates in PinglyMotion: Second Life rules, words to use, recipes (served by the `read_guide` tool) | AI client | current guidance |
 | [RENDERING.md](RENDERING.md) | How the 3D view is drawn (OpenGL 3.3 shaders) | developer | reference |
+| [TRANSLATION.md](TRANSLATION.md) | How the program's texts are translated: add a language, the checks, what is not translated | developer, AI session | current guidance |
 | [DECISIONS.md](DECISIONS.md) | Decision log with reasons and what was turned down | developer, AI session | reference |
 | [MIGRATION.md](MIGRATION.md) | The move to this repository, and old issue numbers mapped to new ones | developer, AI session | reference |
 | [SCRIPT_LAB.md](SCRIPT_LAB.md) | What the Script Lab (RLV and LSL sandbox) does today, with limits | user, developer, AI client | current guidance |

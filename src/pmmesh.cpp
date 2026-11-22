@@ -4,6 +4,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QCoreApplication>
 #include <QFile>
 
 #include <cmath>
@@ -116,9 +117,9 @@ QString PMMesh::load(const QString& fileName)
 
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly))
-    return fail(QString("Could not open %1: %2").arg(fileName, file.errorString()));
+    return fail(QCoreApplication::translate("PMMesh","Could not open %1: %2").arg(fileName, file.errorString()));
   if (file.size() > MAX_FILE_SIZE)
-    return fail(QString("%1 is too big").arg(fileName));
+    return fail(QCoreApplication::translate("PMMesh","%1 is too big").arg(fileName));
   const QByteArray data = file.readAll();
   const QString bad = QString("%1 is not a valid PinglyMotion mesh file: %2").arg(fileName);
 

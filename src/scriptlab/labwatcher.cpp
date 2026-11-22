@@ -4,12 +4,15 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 
 #include "lsl/control.h"
 #include "labwatcher.h"
+
+#include <QCoreApplication>
 
 namespace
 {
@@ -48,16 +51,16 @@ LabWatcher::LabWatcher(QObject* parent) :
 
 LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& runOptions)
 {
-  if (folder.trimmed().isEmpty()) return {"Give the folder to watch."};
-  if (folder.size() > MAX_PATH_CHARS) return {QString("The folder path is too long (at most %1 characters).").arg(MAX_PATH_CHARS)};
+  if (folder.trimmed().isEmpty()) return {tr("Give the folder to watch.")};
+  if (folder.size() > MAX_PATH_CHARS) return {tr("The folder path is too long (at most %1 characters).").arg(MAX_PATH_CHARS)};
   if (folder.startsWith("\\\\") || folder.startsWith("//"))
-    return {"Network folders cannot be watched. Use a folder on this computer."};
-  if (!QDir::isAbsolutePath(folder)) return {"Give the whole path of the folder, not a relative one."};
+    return {tr("Network folders cannot be watched. Use a folder on this computer.")};
+  if (!QDir::isAbsolutePath(folder)) return {tr("Give the whole path of the folder, not a relative one.")};
   const QFileInfo info(folder);
-  if (!info.exists()) return {"The folder does not exist."};
-  if (!info.isDir()) return {"That is a file, not a folder. Give the folder that holds the .lsl scripts."};
+  if (!info.exists()) return {tr("The folder does not exist.")};
+  if (!info.isDir()) return {tr("That is a file, not a folder. Give the folder that holds the .lsl scripts.")};
   const QString canonical = info.canonicalFilePath();
-  if (canonical.isEmpty()) return {"The folder cannot be read."};
+  if (canonical.isEmpty()) return {tr("The folder cannot be read.")};
 
   // seconds and inputs are checked the way lsl_run checks them: an empty
   // script never compiles, so an answer with "errors" means the options are fine
@@ -226,14 +229,14 @@ void LabWatcher::runScript(const QString& relative)
   QString source;
   QFile file(path);
   if (QFileInfo(path).size() > MAX_FILE_BYTES)
-    problem = QString("The file is larger than %1 bytes, so it was not read.").arg(MAX_FILE_BYTES);
+    problem = QCoreApplication::translate("LabWatcher","The file is larger than %1 bytes, so it was not read.").arg(MAX_FILE_BYTES);
   else if (!file.open(QIODevice::ReadOnly))
-    problem = "The file cannot be read: " + file.errorString();
+    problem = QCoreApplication::translate("LabWatcher","The file cannot be read: %1").arg(file.errorString());
   else
   {
     const QByteArray bytes = file.read(MAX_FILE_BYTES + 1);
     if (bytes.size() > MAX_FILE_BYTES)
-      problem = QString("The file is larger than %1 bytes, so it was not read.").arg(MAX_FILE_BYTES);
+      problem = QCoreApplication::translate("LabWatcher","The file is larger than %1 bytes, so it was not read.").arg(MAX_FILE_BYTES);
     else
       source = QString::fromUtf8(bytes);
   }

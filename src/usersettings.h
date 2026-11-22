@@ -60,6 +60,10 @@ class UserSettings
     // Anything else, such as "system" from older versions, becomes "ruth2".
     static void setBody(const QString& value);
     static QString body();
+    // the language of the program's texts: "system" (default, follow the computer) or a
+    // language code such as "nb" (docs/TRANSLATION.md); not in any menu until a second language exists
+    static void setLanguage(const QString& value);
+    static QString language();
     // Options > Light...: 0-100, 50 is the standard look
     static void setLightBrightness(int value);
     static int lightBrightness();
@@ -122,6 +126,8 @@ private:
     static const QString m_darkThemeKey;
     static QString m_body;
     static const QString m_bodyKey;
+    static QString m_language;
+    static const QString m_languageKey;
     static const QString m_bentoBodyKey;   // read from files of older versions
     static int m_lightBrightness;
     static const QString m_lightBrightnessKey;
