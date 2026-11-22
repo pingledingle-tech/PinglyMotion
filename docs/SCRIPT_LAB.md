@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 26 common behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 76 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -260,23 +260,22 @@ What it checks: that the buttons (touch, dialog buttons, chat on a channel) caus
 
 ## RLV and RLVa mode (step 9, issue 297)
 
-Every behaviour in the table is marked `RLV` (in the plain RLV API) or `RLVa only` (RLVa's extended and experimental
-command set). The marks come from RLVa's own behaviour dictionary (`rlvhelper.cpp`: the entries flagged
-`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL`), not from memory.
+Every behaviour in the table is marked `RLV` (listed as plain RLV in the RLV wiki) or `RLVa only` (not listed there).
+The marks follow the wiki. RLVa's own flags (`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL` in `rlvhelper.cpp`) differ from the
+wiki for some names: 20 names that RLVa flags as extended are plain RLV in the wiki and are marked `RLV` here
+(`accepttprequest`, `allowidle`, `findfolders`, `getcam_avdistmax`, `getcam_avdistmin`, `getcam_fov`, `getcam_fovmax`,
+`getcam_fovmin`, `interact`, `sendchannel_except`, `sendgesture`, `setcam_avdistmax`, `setcam_avdistmin`, `setcam_fov`,
+`sharedunwear`, `sharedwear`, `shownearby`, `touchhud`, `tplocal`, `tprequest`).
 
 - The mode is plain RLV at start. In plain RLV mode a RLVa-only behaviour answers as unknown, like any name the table
   does not have. In RLVa mode it is accepted. Switching the mode removes every restriction and recorded effect (as
   after a relog). Set it with the control command `rlv_reset` and its `mode` field ([CONTROL.md](CONTROL.md)).
-- RLVa-only behaviours by group: teleport and chat (`accepttprequest`, `tprequest`, `tplocal`, `sendchannel_except`),
-  interaction and view (`interact`, `touchhud`, `sendgesture`, `showself`, `showselfhead`, `shownearby`,
-  `viewtransparent`, `viewwireframe`, `allowidle`), shared folder (`sharedwear`, `sharedunwear`), camera
-  (`setcam_avdistmin`, `setcam_avdistmax`, `setcam_origindistmin`, `setcam_origindistmax`, and the force commands
-  `setcam_focus`, `setcam_fov`, `setcam_mode`) and questions (`findfolders`, `getcommand`, `getheightoffset`,
-  `getaddattachnames`, `getaddoutfitnames`, `getattachnames`, `getoutfitnames`, `getremattachnames`,
-  `getremoutfitnames`, `getcam_avdist`, `getcam_avdistmin`, `getcam_avdistmax`, `getcam_fov`, `getcam_fovmin`,
-  `getcam_fovmax`, `getcam_textures`).
-- Plain RLV behaviours with effects outside the sandbox are known in both modes: `setenv`, `setdebug`, `setcam`,
-  `setcam_avdist`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_fovmin`,
+- Behaviours marked RLVa only (19): interaction and view (`showself`, `showselfhead`, `viewtransparent`,
+  `viewwireframe`), camera (`setcam_origindistmin`, `setcam_origindistmax`, and the force commands `setcam_focus` and
+  `setcam_mode`) and questions (`getcommand`, `getheightoffset`, `getaddattachnames`, `getaddoutfitnames`,
+  `getattachnames`, `getoutfitnames`, `getremattachnames`, `getremoutfitnames`, `getcam_avdist`, `getcam_textures`).
+- Plain RLV behaviours (all marked `RLV`, among them the 20 above) are known in both modes. Those with effects
+  outside the sandbox: `setenv`, `setdebug`, `setcam`, `setcam_avdist`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_fovmin`,
   `setcam_fovmax`, `setcam_mouselook`, `setcam_textures`, `setcam_unlock`.
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes. A force command of that kind is `retained`

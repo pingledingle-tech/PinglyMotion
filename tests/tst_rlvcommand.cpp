@@ -178,10 +178,10 @@ void TestRlvCommand::table()
   for (const QString& name : needed) QVERIFY2(Rlv::findBehaviour(name), qPrintable(name));
   QVERIFY(!Rlv::findBehaviour("clear"));   // a special case, not a behaviour
   // checkCommand answers in plain RLV mode unless told otherwise
-  Rlv::Command interact = Rlv::parseLine("@interact=n").commands.value(0);
-  QVERIFY(Rlv::checkCommand(interact).contains("unknown behaviour"));
-  QVERIFY(Rlv::checkCommand(interact, Rlv::Mode::Rlv).contains("unknown behaviour"));
-  QVERIFY(Rlv::checkCommand(interact, Rlv::Mode::Rlva).isEmpty());
+  Rlv::Command showselfhead = Rlv::parseLine("@showselfhead=n").commands.value(0);
+  QVERIFY(Rlv::checkCommand(showselfhead).contains("unknown behaviour"));
+  QVERIFY(Rlv::checkCommand(showselfhead, Rlv::Mode::Rlv).contains("unknown behaviour"));
+  QVERIFY(Rlv::checkCommand(showselfhead, Rlv::Mode::Rlva).isEmpty());
 
   // every action a behaviour blocks is in the action list, and every action is blocked by something
   QSet<QString> ids;
