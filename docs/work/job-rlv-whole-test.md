@@ -1,5 +1,5 @@
 Branch: job/rlv-whole-test
-Status: active
+Status: done
 Pull request: #364
 Files:
 - tests/tst_scriptlabwhole.cpp
