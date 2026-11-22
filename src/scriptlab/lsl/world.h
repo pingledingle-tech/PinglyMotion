@@ -110,6 +110,38 @@ class PrimStore
     std::vector<PrimState> m_prims;
 };
 
+// Step 9b-4: the simulated inventory of an object. Nothing is read from disk: the items come from the lsl_run input
+// (and the object's scripts are in it too). llGetInventoryName lists them sorted by name (upper and lower case alike),
+// as Second Life does. A notecard is a list of lines.
+struct InventoryItem
+{
+  QString name;
+  int type = 7;                     // the INVENTORY_* number (7 = notecard)
+  QString key;                      // the asset key; empty: made from the name when the item is added
+  QStringList lines;                // a notecard's lines
+};
+
+class Inventory
+{
+  public:
+    static constexpr int MAX_ITEMS = 256;
+    static constexpr int MAX_NOTECARD_LINES = 2000;
+    static constexpr int MAX_NOTECARD_CHARS = 65536;   // one notecard, all lines together
+    // INVENTORY_* name to number ("notecard", "object", "INVENTORY_SCRIPT", any case); -2 when unknown
+    static int typeFromName(const QString& name);
+    static bool knownType(int type);
+    // adds an item: false when the name is empty or taken, or MAX_ITEMS are there. An empty key is made from seed and name.
+    bool add(InventoryItem item, const QString& seed);
+    bool remove(const QString& name);
+    const InventoryItem* find(const QString& name) const;
+    int count(int type) const;                          // type -1 (INVENTORY_ALL): every item
+    const InventoryItem* at(int type, int index) const; // sorted by name; null when index is out of range
+    const std::vector<InventoryItem>& items() const { return m_items; }
+
+  private:
+    std::vector<InventoryItem> m_items;
+};
+
 class World
 {
   public:
@@ -170,6 +202,12 @@ class World
     // an effect the sandbox does not play (particles, sounds, URLs): one log entry with the function and its arguments
     void recordOnly(double time, const QString& function, const QJsonArray& args);
     virtual int attachPoint() const { return 0; }
+    // Step 9b-4: the object's inventory; inventoryChanged is called after a script changed it (the Sandbox sends
+    // the changed event to the scripts of the object); giveInventory (llGiveInventory) answers "given",
+    // "unknown_target" or "name_exists" (the receiving object already has an item of that name)
+    virtual Inventory& inventory() { return m_inventory; }
+    virtual void inventoryChanged(double) {}
+    virtual QString giveInventory(double time, const QString& to, const InventoryItem& item);
     // llKey2Name and llGetOwnerKey: the name and owner of a key in the sandbox (empty when unknown)
     virtual QString nameOf(const QString& key) const;
     virtual QString ownerOf(const QString& key) const;
@@ -207,6 +245,7 @@ class World
     float m_position[3] = {128.0f, 128.0f, 20.0f};
     float m_scale[3] = {0.5f, 0.5f, 0.5f};
     PrimStore m_prims;
+    Inventory m_inventory;
     QString m_objectName = "Object";
     QString m_objectDesc;
 };

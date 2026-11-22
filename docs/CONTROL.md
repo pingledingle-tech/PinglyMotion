@@ -379,6 +379,10 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
 | `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
 | `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
+| `give_inventory` | `llGiveInventory` (step 9b-4) | `to`, `item`, `result` (`given`, `not_found`, `unknown_target` or `name_exists`) |
+| `inventory` | a script removed an item with `llRemoveInventory` (step 9b-4) | `op` (`remove`), `item` |
+| `dataserver_request` | `llGetNotecardLine` or `llGetNumberOfNotecardLines` found the notecard; the `dataserver` event follows (step 9b-4) | `function`, `notecard`, `line` (not for the line count), `query` (the key the call returned) |
+| `rez` | `llRezObject` or `llRezAtRoot` (step 9b-4) | `item`, `position`, `velocity`, `rotation`, `param`, `at_root`, `result` (`ok` or `too_far`), `object` (the new object's key, with `ok`) |
 | `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
@@ -528,6 +532,36 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
+#### Inventory, notecards and rezzing (Script Lab step 9b-4)
+
+An object holds the inventory the request gives it, and nothing else: no file is read. Give `inventory` inside an object of `objects`, or at the top of the
+request with `source`: a list of at most 224 items `{name, type, key, lines}`. `name` is 1 to 63 characters (each item its own); `type` is `texture`, `sound`,
+`landmark`, `clothing`, `object`, `notecard`, `script`, `bodypart`, `animation`, `gesture`, `setting` or `material` (also written `INVENTORY_NOTECARD`, any case;
+omitted when `lines` is given, which means a notecard); `key` is the asset key (default: the MD5 of the object's key, `/` and the name, written as a key, so it is
+the same in every run); `lines` is a notecard's list of text lines (at most 2000 lines and 65536 characters per notecard, 131072 per object). The object's scripts
+are in the inventory too, as type `script` (an item may not have a script's name). The answer's `objects` entries list the inventory as it is at the end (`name`, `type`).
+
+- `llGetInventoryNumber(type)` counts the items of that type (`INVENTORY_ALL`, -1, counts every item; a type with no items, or an unknown number, gives 0).
+  `llGetInventoryName(type, index)` lists them sorted by name, upper and lower case alike, and gives an empty string for an index out of range (also a negative one).
+  `llGetInventoryType(name)` gives the type or `INVENTORY_NONE` (-1; the name must match exactly). `llGetInventoryKey(name)` gives the item's key or `NULL_KEY`.
+  Every item counts as full permission here: Second Life gives `NULL_KEY` for an item the script may not read.
+- `llGiveInventory(destination, name)` writes a `give_inventory` entry: `given` to the owner's avatar (or the owner of any object of the world) and to another object of
+  the world (the item is copied into that object's inventory and every script there gets `changed` with `CHANGED_INVENTORY`), `not_found` when this object has no such item,
+  `unknown_target` for a key the sandbox does not know (including `NULL_KEY`), `name_exists` when the receiving object already has an item of that name (Second Life would rename
+  the item). The item stays in the giver (Second Life keeps a copy-permission item, too). `llGiveInventory` does not sleep here (Second Life sleeps 2 seconds).
+- `llRemoveInventory(name)` removes the item (a missing name does nothing, as in Second Life) and every script of the object gets `changed` with `CHANGED_INVENTORY`;
+  an `inventory` entry is logged. Removing the running script itself stops the script as "not supported yet". Removing another script only removes the item: that script keeps running here.
+- `llGetNotecardLine(name, line)` and `llGetNumberOfNotecardLines(name)` return a query key (`5c11ab00-...` numbered in the script, like every `llGenerateKey` and
+  `llTransferLindenDollars` key) and queue `dataserver(key query, string data)` at once (Second Life answers some time later): the line (cut at 255 bytes, never in the middle of a
+  character), `EOF` (`"\n\n\n"`) for a line past the end or a negative one, or the line count as text. A name that is missing or is not a notecard gives a `debug` line
+  `Couldn't find notecard <name>` and `NULL_KEY`, and no event. The queue holds 64 events, so asking for more than 64 lines at once drops the rest (`event_dropped`), as Second Life does.
+- `llRezObject(name, position, velocity, rotation, param)` and `llRezAtRoot` need an item of type `object` (else a `debug` line `Couldn't find object '<name>'`) and a position
+  within 10 m of the rezzing object (exactly 10 m is fine; farther gives a `rez` entry with `result: too_far` and nothing else). On success the entry has the new object's key and
+  the rezzing script gets `object_rez(key)`. The rezzed object is only a key: it does not run, has no `on_rez` and does not appear in the world (a copy-permission item stays in the
+  inventory). The sandbox does not check the other limits of Second Life (the region's object limit, the rez throttle, no-copy items disappearing).
+- Not done: `llGetInventoryPermMask`, `llGetInventoryCreator`, `llGiveInventoryList`, `llGetNotecardLineSync`, `llGetInventoryAcquireTime`, `llSetRemoteScriptAccessPin` and
+  `llRemoteLoadScriptPin`; the `allowed_drop` flag; the `changed` event for an avatar dropping an item (use the `changed` input).
+
 #### The events on_rez and changed (Script Lab step 9b-2, issue 314)
 
 - `on_rez(integer start_param)` is raised once when an object starts, after its `state_entry` and before `attach` (for a worn object).
@@ -571,16 +605,16 @@ to choose:
 - Object state: `llSetObjectName` (at most 63 characters) changes the name that `llGetObjectName`, `llKey2Name` and chat from the object use;
   the object stays addressable by the name it was given in `lsl_run` (`inputs`, log entries). `llSetObjectDesc` keeps at most 127 characters.
   The values at the start come from the object's entry in `lsl_run`: `description` (text, at most 127 characters), `scale` (`[x, y, z]` metres,
-  each 0.001 to 64; default `[0.5, 0.5, 0.5]`; one size for the whole object), `start_parameter` (a whole number, default 0).
+  each 0.001 to 64; default `[0.5, 0.5, 0.5]`; one size for the whole object), `start_parameter` (a whole number, default 0), and (step 9b-4) `inventory`.
   For a single script (`source`) the same three options go at the top of the request; with `objects`, inside each object (at the top they are refused).
   `llGetNumberOfPrims` answers the object's `prims`.
 
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez` and `changed`; 147 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver` and `object_rez`; 157 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, and functions that are only recorded). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

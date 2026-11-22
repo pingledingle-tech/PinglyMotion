@@ -56,7 +56,10 @@ enum class Fn
   SetPrimitiveParams, SetLinkPrimitiveParams, SetLinkPrimitiveParamsFast, GetPrimitiveParams, GetLinkPrimitiveParams,
   SetPos, SetRot, GetRot, GetLocalRot, GetLocalPos, GetRootPosition, GetRootRotation, SetStatus, GetStatus, SetSitText,
   TextBox, TransferLindenDollars,
-  ParticleSystem, LinkParticleSystem, TriggerSound, PlaySound, LoopSound, StopSound, PreloadSound, TargetOmega, LoadURL
+  ParticleSystem, LinkParticleSystem, TriggerSound, PlaySound, LoopSound, StopSound, PreloadSound, TargetOmega, LoadURL,
+  // step 9b-4: simulated inventory, notecards, rezzing
+  GetInventoryNumber, GetInventoryName, GetInventoryType, GetInventoryKey, GiveInventory, RemoveInventory,
+  GetNotecardLine, GetNumberOfNotecardLines, RezObject, RezAtRoot
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -112,6 +115,10 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llParticleSystem", Fn::ParticleSystem}, {"llLinkParticleSystem", Fn::LinkParticleSystem}, {"llTriggerSound", Fn::TriggerSound},
   {"llPlaySound", Fn::PlaySound}, {"llLoopSound", Fn::LoopSound}, {"llStopSound", Fn::StopSound}, {"llPreloadSound", Fn::PreloadSound},
   {"llTargetOmega", Fn::TargetOmega}, {"llLoadURL", Fn::LoadURL},
+  {"llGetInventoryNumber", Fn::GetInventoryNumber}, {"llGetInventoryName", Fn::GetInventoryName}, {"llGetInventoryType", Fn::GetInventoryType},
+  {"llGetInventoryKey", Fn::GetInventoryKey}, {"llGiveInventory", Fn::GiveInventory}, {"llRemoveInventory", Fn::RemoveInventory},
+  {"llGetNotecardLine", Fn::GetNotecardLine}, {"llGetNumberOfNotecardLines", Fn::GetNumberOfNotecardLines},
+  {"llRezObject", Fn::RezObject}, {"llRezAtRoot", Fn::RezAtRoot},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1781,6 +1788,112 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::LoadURL:
       m_world.recordOnly(m_now, "llLoadURL", QJsonArray{a[0].s, World::clip(a[1].s), World::clip(a[2].s)});
       return Value();
+
+    // -------------------------------------------- inventory, notecards and rezzing (step 9b-4)
+    case Fn::GetInventoryNumber: return Value::integer(m_world.inventory().count(a[0].i));
+    case Fn::GetInventoryName:
+    {
+      const InventoryItem* item = m_world.inventory().at(a[0].i, a[1].i);
+      return Value::string(item ? item->name : QString());
+    }
+    case Fn::GetInventoryType:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      return Value::integer(item ? item->type : -1);
+    }
+    case Fn::GetInventoryKey:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      return Value::key(item ? item->key : NULL_KEY);
+    }
+    case Fn::GiveInventory:
+    {
+      const InventoryItem* found = m_world.inventory().find(a[1].s);
+      QString result = "not_found";
+      if (found)
+      {
+        const InventoryItem item = *found;
+        result = keyIsValid(a[0].s) ? m_world.giveInventory(m_now, a[0].s, item) : QString("unknown_target");
+      }
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "give_inventory"}, {"to", a[0].s}, {"item", World::clip(a[1].s)}, {"result", result}});
+      return Value();
+    }
+    case Fn::RemoveInventory:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      if (!item) return Value();   // Second Life says nothing about a missing item
+      if (item->type == 10 && item->name == m_world.scriptName())
+        failAt("unsupported", "llRemoveInventory on the script itself is not supported yet in the Script Lab sandbox, so the script was stopped here.");
+      const QString name = item->name;
+      m_world.inventory().remove(name);
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "inventory"}, {"op", "remove"}, {"item", World::clip(name)}});
+      m_world.inventoryChanged(m_now);
+      return Value();
+    }
+    case Fn::GetNotecardLine:
+    case Fn::GetNumberOfNotecardLines:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      if (!item || item->type != 7)
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "Couldn't find notecard " + World::clip(a[0].s)}});
+        return Value::key(NULL_KEY);
+      }
+      const QString id = nextKey();
+      QString data;
+      QJsonObject entry{{"type", "dataserver_request"}, {"function", name}, {"notecard", World::clip(item->name)}, {"query", id}};
+      if (*it == Fn::GetNotecardLine)
+      {
+        entry["line"] = a[1].i;
+        if (a[1].i >= 0 && a[1].i < item->lines.size())
+        {
+          // Second Life gives the first 255 bytes of a line
+          QByteArray bytes = item->lines[a[1].i].toUtf8();
+          if (bytes.size() > 255)
+          {
+            bytes.truncate(255);
+            data = QString::fromUtf8(bytes);
+            while (data.endsWith(QChar(0xFFFD))) data.chop(1);
+          }
+          else data = item->lines[a[1].i];
+        }
+        else data = "\n\n\n";   // EOF
+      }
+      else data = QString::number(item->lines.size());
+      if (!m_world.logFull()) m_world.log(m_now, entry);
+      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      return Value::key(id);
+    }
+    case Fn::RezObject:
+    case Fn::RezAtRoot:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      if (!item || item->type != 6)
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "Couldn't find object '" + World::clip(a[0].s) + "'"}});
+        return Value();
+      }
+      float here[3];
+      m_world.position(here);
+      const double dx = double(a[1].f[0]) - here[0], dy = double(a[1].f[1]) - here[1], dz = double(a[1].f[2]) - here[2];
+      const bool near = std::sqrt(dx * dx + dy * dy + dz * dz) <= 10.0;   // Second Life rezzes within 10 m of the rezzing object
+      QJsonObject entry{{"type", "rez"}, {"item", World::clip(item->name)}, {"position", vecJson(a[1].f)}, {"velocity", vecJson(a[2].f)},
+                        {"rotation", vecJson(a[3].f, 4)}, {"param", a[4].i}, {"at_root", *it == Fn::RezAtRoot}};
+      if (!near)
+      {
+        entry["result"] = "too_far";
+        if (!m_world.logFull()) m_world.log(m_now, entry);
+        return Value();
+      }
+      const QString id = nextKey();
+      entry["result"] = "ok";
+      entry["object"] = id;
+      if (!m_world.logFull()) m_world.log(m_now, entry);
+      queueEvent(Event{"object_rez", {Value::key(id)}, QString(), QString()});
+      return Value();
+    }
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);

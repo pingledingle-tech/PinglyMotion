@@ -90,6 +90,15 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   near.position[1] = 143.0f;
   worn.startParameter = 7;
   near.description = "d";
+  // step 9b-4: a notecard and an object to read, give, remove and rez
+  InventoryItem card;
+  card.name = "n";
+  card.lines = QStringList{"a", QString(300, 'b')};
+  InventoryItem thing;
+  thing.name = "o";
+  thing.type = 6;
+  worn.inventory = {card, thing};
+  near.inventory = {card};
   check(sandbox.addObject(worn, script, limits).isEmpty());
   check(sandbox.addObject(near, script, limits).isEmpty());
   const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed"};
@@ -111,6 +120,7 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   check(sandbox.now() <= 1.0e7);
   check(sandbox.rlvLines() <= 2 * RlvWorld::MAX_RLV_LINES);
   check(sandbox.objectsJson().size() == 2);
+  for (const QJsonValue& o : sandbox.objectsJson()) check(o.toObject().value("inventory").toArray().size() <= Inventory::MAX_ITEMS);
   for (int i = 0; i < 2; ++i) check(sandbox.interpreter(i).steps() <= limits.maxSteps + limits.maxListLength + 1);
   // lsl_event: a fresh budget, one more event, run on
   sandbox.newCommand();

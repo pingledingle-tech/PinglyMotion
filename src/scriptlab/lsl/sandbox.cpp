@@ -87,6 +87,9 @@ class ObjectWorld : public RlvWorld
     void position(float out[3]) const override { m_sandbox.where(object(), out); }
     void setPosition(const float p[3]) override { for (int i = 0; i < 3; ++i) state().spec.position[i] = p[i]; }
     PrimStore& primStore() override { return state().prims; }
+    Inventory& inventory() override { return state().inventory; }
+    void inventoryChanged(double time) override { m_sandbox.inventoryChanged(m_slot, time); }
+    QString giveInventory(double time, const QString& to, const InventoryItem& item) override { return m_sandbox.giveInventory(m_slot, time, to, item); }
     int attachPoint() const override { return spec().attached; }
     QString nameOf(const QString& key) const override { return m_sandbox.nameOf(key); }
     QString ownerOf(const QString& key) const override { return m_sandbox.ownerOf(key); }
@@ -149,6 +152,9 @@ QString Sandbox::add(const ObjectSpec& spec, const std::vector<ScriptEntry>& scr
     if (o.spec.name == s.name) return "Two objects are named \"" + s.name + "\"; each needs its own name.";
     if (o.spec.key == s.key) return "Two objects have the key " + s.key + "; each needs its own key.";
   }
+  for (const InventoryItem& item : s.inventory)
+    for (const ScriptEntry& entry : scripts)
+      if (item.name == entry.name) return "The inventory item \"" + item.name + "\" has the name of a script of the object; the scripts are in the inventory already.";
   if (s.key == OWNER_KEY || s.key == NULL_KEY) return "An object cannot have the owner's key or NULL_KEY.";
 
   Object o;
@@ -156,6 +162,14 @@ QString Sandbox::add(const ObjectSpec& spec, const std::vector<ScriptEntry>& scr
   o.name = s.name;
   o.description = s.description.left(127);
   o.tagScripts = tagScripts;
+  for (const InventoryItem& item : s.inventory) o.inventory.add(item, s.key);
+  for (const ScriptEntry& entry : scripts)
+  {
+    InventoryItem script;
+    script.name = entry.name;
+    script.type = 10;
+    o.inventory.add(script, s.key);   // a script with the name of a listed item is not added twice
+  }
   o.firstSlot = int(m_slots.size());
   o.slotCount = int(scripts.size());
   m_objects.push_back(std::move(o));
@@ -534,6 +548,38 @@ void Sandbox::linksetDataChanged(int from, double time, int action, const QStrin
   }
 }
 
+void Sandbox::inventoryChanged(int from, double time)
+{
+  const Object& o = m_objects[size_t(m_slots[size_t(from)].object)];
+  for (int i = 0; i < o.slotCount; ++i)
+  {
+    Slot& slot = m_slots[size_t(o.firstSlot + i)];
+    slot.interp->syncTo(time);
+    slot.interp->changedEvent(1);   // CHANGED_INVENTORY
+  }
+}
+
+QString Sandbox::giveInventory(int, double time, const QString& to, const InventoryItem& item)
+{
+  for (Object& o : m_objects)
+  {
+    if (o.spec.key != to) continue;
+    // an object: the item goes into its inventory (a name it already has is refused: Second Life would rename)
+    if (!o.inventory.add(item, o.spec.key)) return "name_exists";
+    for (int i = 0; i < o.slotCount; ++i)
+    {
+      Slot& slot = m_slots[size_t(o.firstSlot + i)];
+      slot.interp->syncTo(time);
+      slot.interp->changedEvent(1);
+    }
+    return "given";
+  }
+  if (to == OWNER_KEY) return "given";
+  for (const Object& o : m_objects)
+    if (!o.spec.ownerKey.isEmpty() && o.spec.ownerKey == to) return "given";
+  return "unknown_target";
+}
+
 QString Sandbox::nameOf(const QString& key) const
 {
   if (key == OWNER_KEY) return OWNER_NAME;
@@ -591,6 +637,12 @@ QJsonArray Sandbox::objectsJson() const
                       {"steps", steps}};
     if (stopped) entry["stop_reason"] = reasons.join(" ");
     entry["restrictions"] = QJsonArray::fromStringList(m_rlv.objects().value(o.spec.key));
+    {
+      // step 9b-4: what the inventory holds now (the scripts too), in the order they were added
+      QJsonArray items;
+      for (const InventoryItem& item : o.inventory.items()) items.append(QJsonObject{{"name", item.name}, {"type", item.type}});
+      entry["inventory"] = items;
+    }
     if (!o.dialog.isEmpty()) entry["dialog"] = o.dialog;
     if (o.tagScripts)
     {
