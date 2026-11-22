@@ -127,6 +127,37 @@ void Interpreter::stopWith(const Stop& stop)
   m_world.log(m_now, entry, true);
   m_queue.clear();
   m_frames.clear();
+  // llDie: the script's own stop entry comes first, then the object goes (and its other scripts stop)
+  if (m_dieRequested)
+  {
+    m_dieRequested = false;
+    m_world.die(m_now);
+  }
+}
+
+void Interpreter::halt(const QString& kind, const QString& message)
+{
+  if (!m_stopped) stopWith(Stop{kind, message, 0, 0});
+}
+
+void Interpreter::setRunning(bool running)
+{
+  if (m_stopped || running == m_running) return;
+  m_running = running;
+  if (!running)
+  {
+    m_queue.clear();
+    return;
+  }
+  // running again: the timer and a repeating sensor count their interval from now
+  if (m_timerInterval > 0.0) m_nextTimer = m_now + m_timerInterval;
+  if (m_sensorActive) m_sensorNext = m_now + m_sensorRate;
+}
+
+void Interpreter::resetFromOtherScript()
+{
+  if (m_stopped || !m_running) return;
+  resetScript();
 }
 
 // ---------------------------------------------------------------- variables
@@ -270,7 +301,7 @@ void Interpreter::resetScript()
 
 void Interpreter::queueEvent(const Event& event)
 {
-  if (m_stopped || m_state < 0 || m_state >= int(m_script.states.size())) return;
+  if (m_stopped || !m_running || m_state < 0 || m_state >= int(m_script.states.size())) return;
   const State& state = m_script.states[size_t(m_state)];
   bool handled = false;
   for (const EventHandler& h : state.events) if (h.name == event.name) handled = true;
@@ -288,7 +319,7 @@ void Interpreter::queueEvent(const Event& event)
 
 void Interpreter::processQueue()
 {
-  while (!m_queue.empty() && !m_stopped)
+  while (!m_queue.empty() && !m_stopped && m_running)
   {
     const Event event = m_queue.front();
     m_queue.pop_front();
@@ -434,9 +465,13 @@ void Interpreter::receive(int channel, const QString& name, const QString& id, c
   }
 }
 
-void Interpreter::touch(const QString& id, const QString& name)
+void Interpreter::touch(const QString& id, const QString& name, int link)
 {
-  queueEvent(Event{"touch_start", {Value::integer(1)}, id, name});
+  Detected d;   // the toucher (its position is not simulated) and the prim touched
+  d.key = d.owner = id;
+  d.name = name;
+  d.link = link;
+  queueEvent(Event{"touch_start", {Value::integer(1)}, id, name, {d}});
 }
 
 void Interpreter::attachEvent(const QString& id)
@@ -477,7 +512,7 @@ void Interpreter::controlEvent(const QString& id, int levels, int edges)
 
 bool Interpreter::handles(const QString& event) const
 {
-  if (m_stopped || m_state < 0 || m_state >= int(m_script.states.size())) return false;
+  if (m_stopped || !m_running || m_state < 0 || m_state >= int(m_script.states.size())) return false;
   for (const EventHandler& h : m_script.states[size_t(m_state)].events)
     if (h.name == event) return true;
   return false;
@@ -485,7 +520,7 @@ bool Interpreter::handles(const QString& event) const
 
 double Interpreter::nextWake() const
 {
-  if (m_stopped) return std::numeric_limits<double>::infinity();
+  if (m_stopped || !m_running) return std::numeric_limits<double>::infinity();
   double next = m_timerInterval > 0.0 ? m_nextTimer : std::numeric_limits<double>::infinity();
   if (m_sensorActive) next = qMin(next, m_sensorNext);
   return next;
@@ -500,6 +535,7 @@ void Interpreter::advanceTo(double t)
 {
   if (m_stopped) return;
   syncTo(t);
+  if (!m_running) return;
   if (m_timerInterval > 0.0 && m_nextTimer <= m_now)
   {
     m_nextTimer = qMax(m_nextTimer + m_timerInterval, m_now + MIN_TIMER);
@@ -552,9 +588,7 @@ void Interpreter::runUntil(double seconds)
       stopWith(Stop{"limit", QString("The script ran longer than %1 ms of real time and was stopped.").arg(m_limits.maxWallMs), 0, 0});
       break;
     }
-    double next = std::numeric_limits<double>::infinity();
-    if (m_timerInterval > 0.0) next = m_nextTimer;
-    if (m_sensorActive) next = qMin(next, m_sensorNext);
+    double next = nextWake();   // a script that is not running waits for no timer or sensor
     if (!m_inputs.empty()) next = qMin(next, m_inputs.front().at);
     if (!(next <= end))
     {
@@ -562,12 +596,12 @@ void Interpreter::runUntil(double seconds)
       break;
     }
     m_now = qMax(m_now, next);
-    if (m_timerInterval > 0.0 && m_nextTimer <= m_now)
+    if (m_running && m_timerInterval > 0.0 && m_nextTimer <= m_now)
     {
       m_nextTimer = qMax(m_nextTimer + m_timerInterval, m_now + MIN_TIMER);
       queueEvent(Event{"timer", {}, QString(), QString()});
     }
-    if (m_sensorActive && m_sensorNext <= m_now)
+    if (m_running && m_sensorActive && m_sensorNext <= m_now)
     {
       m_sensorNext = qMax(m_sensorNext + m_sensorRate, m_now + MIN_TIMER);
       sense(m_sensorName, m_sensorId, m_sensorType, m_sensorRange, m_sensorArc);

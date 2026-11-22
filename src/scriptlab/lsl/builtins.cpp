@@ -69,7 +69,10 @@ enum class Fn
   // step 9b-8: more record-only functions, and the animation override
   RecordOnly, SetAnimationOverride, ResetAnimationOverride, GetAnimationOverride,
   // step 9b-9: HTTP requests with canned replies (never on the network)
-  HTTPRequest
+  HTTPRequest,
+  // gap list 2, step 2: cheap reads and state of the object itself
+  Die, GetVel, GetMass, SetScale, SetLocalRot, GetLinkName, GetLinkKey, DetectedLinkNumber, GetObjectPermMask,
+  GetInventoryPermMask, GetObjectDetails, SameGroup, SetScriptState, GetScriptState, ResetOtherScript, GetCreator, GetUsername
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -139,6 +142,12 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llSetAnimationOverride", Fn::SetAnimationOverride}, {"llResetAnimationOverride", Fn::ResetAnimationOverride},
   {"llGetAnimationOverride", Fn::GetAnimationOverride},
   {"llHTTPRequest", Fn::HTTPRequest},
+  {"llDie", Fn::Die}, {"llGetVel", Fn::GetVel}, {"llGetMass", Fn::GetMass}, {"llSetScale", Fn::SetScale},
+  {"llSetLocalRot", Fn::SetLocalRot}, {"llGetLinkName", Fn::GetLinkName}, {"llGetLinkKey", Fn::GetLinkKey},
+  {"llDetectedLinkNumber", Fn::DetectedLinkNumber}, {"llGetObjectPermMask", Fn::GetObjectPermMask},
+  {"llGetInventoryPermMask", Fn::GetInventoryPermMask}, {"llGetObjectDetails", Fn::GetObjectDetails},
+  {"llSameGroup", Fn::SameGroup}, {"llSetScriptState", Fn::SetScriptState}, {"llGetScriptState", Fn::GetScriptState},
+  {"llResetOtherScript", Fn::ResetOtherScript}, {"llGetCreator", Fn::GetCreator}, {"llGetUsername", Fn::GetUsername},
   {"llTriggerSoundLimited", Fn::RecordOnly},
   {"llLoopSoundMaster", Fn::RecordOnly},
   {"llLoopSoundSlave", Fn::RecordOnly},
@@ -865,6 +874,106 @@ void rotatePrim(World& w, double now, int link, const Quat& worldOrLocal, bool l
   p.rotation[0] = store.x; p.rotation[1] = store.y; p.rotation[2] = store.z; p.rotation[3] = store.s;
   const float shown[4] = {store.x, store.y, store.z, store.s};
   logPrim(w, now, "rotation", link, QJsonObject{{"rotation", vecJson(shown, 4)}});
+}
+
+// ---- cheap reads and state of the object itself (gap list 2, step 2)
+
+// the permission masks of every object and item in the sandbox: what Second Life gives a new object to the owner who
+// made it (MASK_BASE and MASK_OWNER PERM_ALL, MASK_GROUP and MASK_EVERYONE nothing, MASK_NEXT PERM_MOVE | PERM_TRANSFER);
+// MASK_COMBINED (16) changes nothing, because the inventory is full permission too; an unknown mask gives 0 (sandbox choice)
+int permMask(int mask)
+{
+  switch (mask & ~0x10)
+  {
+    case 0: case 1: return 0x7FFFFFFF;
+    case 4: return 0x82000;
+    default: return 0;
+  }
+}
+
+// a link number as llGetLinkKey and llGetLinkName read it: a prim (prim > 0; LINK_THIS, 1 the root, 0 only in a
+// single prim nobody sits on) or an avatar sitting on the object (sitter >= 0; numbered after the prims, in the order
+// they sat, as in Second Life); neither: an invalid link
+struct LinkTarget { int prim = 0; int sitter = -1; };
+LinkTarget linkTarget(World& w, int link)
+{
+  LinkTarget t;
+  const int count = qMax(1, w.numberOfPrims());
+  if (link == LINK_THIS) t.prim = qMax(1, w.linkNumber());
+  else if (link == 0) { if (count == 1 && w.sitterCount() == 0) t.prim = 1; }
+  else if (link >= 1 && link <= count) t.prim = link;
+  else if (link > count && link <= count + w.sitterCount()) t.sitter = link - count - 1;
+  return t;
+}
+
+// llGetUsername: the legacy name in lower case with a dot ("Ann Smith" gives "ann.smith"), without the last name Resident
+QString usernameOf(const QString& name)
+{
+  QStringList parts = name.trimmed().split(' ', Qt::SkipEmptyParts);
+  if (parts.size() >= 2 && parts.last().compare("Resident", Qt::CaseInsensitive) == 0) parts.removeLast();
+  return parts.join('.').toLower();
+}
+
+const char* const SANDBOX_TIME_STAMP = "2026-01-01T00:00:00.000000Z";   // when every sandbox object was made (llGetUnixTime 0)
+
+// one value of llGetObjectDetails for an object or an avatar; OBJECT_UNKNOWN_DETAIL (-1) for a flag the sandbox does
+// not know (also 50 to 56: health, damage, the permission lists, locked, volume detect are not simulated yet)
+Value objectDetail(const ObjectDetails& d, int flag)
+{
+  const QString NULL_KEY = "00000000-0000-0000-0000-000000000000";
+  const bool av = d.avatar;
+  auto vec = [](const float* v) { return Value::vector(v[0], v[1], v[2]); };
+  switch (flag)
+  {
+    case 1: return Value::string(d.name);                                            // OBJECT_NAME
+    case 2: return Value::string(av ? QString() : d.description);                    // OBJECT_DESC
+    case 3: return vec(d.position);                                                  // OBJECT_POS
+    case 4: return Value::rotation(d.rotation[0], d.rotation[1], d.rotation[2], d.rotation[3]);   // OBJECT_ROT
+    case 5: return vec(d.velocity);                                                  // OBJECT_VELOCITY
+    case 6: return Value::key(av ? d.key : d.owner);                                 // OBJECT_OWNER
+    case 7: return Value::key(av ? NULL_KEY : QString(World::GROUP_KEY));            // OBJECT_GROUP
+    case 8: return Value::key(av ? NULL_KEY : d.owner);                              // OBJECT_CREATOR: the owner made it
+    case 9: return Value::integer(d.runningScripts);                                 // OBJECT_RUNNING_SCRIPT_COUNT
+    case 10: return Value::integer(d.totalScripts);                                  // OBJECT_TOTAL_SCRIPT_COUNT
+    case 11: return Value::integer(d.runningScripts * 65536);                        // OBJECT_SCRIPT_MEMORY: 64 KB per running Mono script
+    case 12: return Value::number(0.0f);                                             // OBJECT_SCRIPT_TIME
+    case 13: return Value::integer(av ? 0 : d.prims);                                // OBJECT_PRIM_EQUIVALENCE
+    case 14: case 15: case 16: return Value::number(av ? 0.0f : float(d.prims));     // OBJECT_SERVER_COST, _STREAMING_COST, _PHYSICS_COST
+    case 17: return Value::number(0.0f);                                             // OBJECT_CHARACTER_TIME
+    case 18: return Value::key(av && !d.sitRoot.isEmpty() ? d.sitRoot : d.key);      // OBJECT_ROOT
+    case 19: return Value::integer(av ? 0 : d.attached);                             // OBJECT_ATTACHED_POINT
+    case 20: return Value::integer(av ? 1 : (d.attached > 0 ? -1 : 0));              // OBJECT_PATHFINDING_TYPE: OPT_AVATAR, OPT_OTHER, OPT_LEGACY_LINKSET
+    case 21: return Value::integer(av || d.attached > 0 ? 0 : d.physics);            // OBJECT_PHYSICS
+    case 22: return Value::integer(av || d.attached > 0 ? 0 : d.phantom);            // OBJECT_PHANTOM
+    case 23: return Value::integer(av ? 0 : d.tempOnRez);                            // OBJECT_TEMP_ON_REZ
+    case 24: return Value::integer(av ? -1 : 0);                                     // OBJECT_RENDER_WEIGHT: an avatar's is unknown
+    case 25: return Value::number(0.0f);                                             // OBJECT_HOVER_HEIGHT
+    case 26: return Value::number(av ? 0.0f : -1.0f);                                // OBJECT_BODY_SHAPE_TYPE
+    case 27: return Value::key(NULL_KEY);                                            // OBJECT_LAST_OWNER_ID: never transferred
+    case 28: return Value::integer(0);                                               // OBJECT_CLICK_ACTION: CLICK_ACTION_NONE
+    case 29: return Value::vector(0.0f, 0.0f, 0.0f);                                 // OBJECT_OMEGA
+    case 30: return Value::integer(av ? 0 : d.prims);                                // OBJECT_PRIM_COUNT
+    case 31: return Value::integer(av ? 0 : d.inventoryItems);                       // OBJECT_TOTAL_INVENTORY_COUNT
+    case 32: return Value::key(av ? NULL_KEY : d.owner);                             // OBJECT_REZZER_KEY: the owner rezzed it
+    case 33: return Value::string(QString());                                        // OBJECT_GROUP_TAG
+    case 34: return Value::integer(0);                                               // OBJECT_TEMP_ATTACHED
+    case 35: return Value::integer(av ? qMax(0, 38 - d.attached) : 0);               // OBJECT_ATTACHED_SLOTS_AVAILABLE (38 slots)
+    case 36: return Value::string(av ? QString() : QString(SANDBOX_TIME_STAMP));     // OBJECT_CREATION_TIME
+    case 37: return Value::integer(0);                                               // OBJECT_SELECT_COUNT
+    case 38: return Value::integer(av ? 0 : d.sitters);                              // OBJECT_SIT_COUNT
+    case 39: return Value::integer(0);                                               // OBJECT_ANIMATED_COUNT
+    case 40: return Value::integer(av ? 1 : 0);                                      // OBJECT_ANIMATED_SLOTS_AVAILABLE
+    case 41: return Value::integer(av ? 0 : -1);                                     // OBJECT_ACCOUNT_LEVEL
+    case 42: return Value::integer(3);                                               // OBJECT_MATERIAL: PRIM_MATERIAL_WOOD
+    case 43: return Value::number(d.mass);                                           // OBJECT_MASS
+    case 44: return Value::string(d.text);                                           // OBJECT_TEXT
+    case 45: return Value::string(av ? QString() : QString(SANDBOX_TIME_STAMP));     // OBJECT_REZ_TIME
+    case 46: return Value::integer(av ? 0 : (d.prims > 1 || d.sitters > 0 ? 1 : 0)); // OBJECT_LINK_NUMBER of the root prim
+    case 47: return vec(d.scale);                                                    // OBJECT_SCALE
+    case 48: return vec(d.textColor);                                                // OBJECT_TEXT_COLOR
+    case 49: return Value::number(d.textAlpha);                                      // OBJECT_TEXT_ALPHA
+    default: return Value::integer(-1);                                              // OBJECT_UNKNOWN_DETAIL
+  }
 }
 
 const char* ruleName(int rule)
@@ -2283,6 +2392,132 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       if (!m_world.logFull()) m_world.log(m_now, entry);
       if (!m_world.httpResponse(m_now, id, status, truncatedAt, body)) httpResponseEvent(id, status, truncatedAt, body);
       return Value::key(id);
+    }
+
+    // -------------------------------------------- cheap reads and state of the object itself (gap list 2, step 2)
+    case Fn::Die:
+      // no effect in an attachment, as in Second Life; otherwise the script stops here (nothing after the call runs)
+      // and, once its stop entry is written, the object is deleted and its other scripts stop
+      if (m_world.attachPoint() > 0) return Value();
+      m_dieRequested = true;
+      failAt("die", "The object was deleted with llDie.");
+    case Fn::GetVel: return Value::vector(0.0f, 0.0f, 0.0f);   // nothing moves in the sandbox (a worn object: the avatar stands still)
+    case Fn::GetMass:
+    {
+      float s[3];
+      m_world.scale(s);
+      return Value::number(m_world.primStore().mass(s, qMax(1, m_world.numberOfPrims())));
+    }
+    case Fn::SetScale:
+    {
+      if (m_world.primStore().status & 0x1) return Value();   // STATUS_PHYSICS: does not work on physical prims
+      const int link = qMax(1, m_world.linkNumber());
+      PrimState& p = primOf(m_world, link);
+      for (int k = 0; k < 3; ++k) p.size[k] = qBound(0.01f, a[0].f[k], 64.0f);
+      if (link <= 1) m_world.setScale(p.size);
+      logPrim(m_world, m_now, "size", link, QJsonObject{{"size", vecJson(p.size)}});
+      return Value();
+    }
+    case Fn::SetLocalRot:
+      // a child prim's rotation relative to the root; in the root prim the object's rotation, as llSetRot
+      rotatePrim(m_world, m_now, qMax(1, m_world.linkNumber()), quatOf(a[0]), true);
+      return Value();
+    case Fn::GetLinkName:
+    case Fn::GetLinkKey:
+    {
+      const bool wantName = *it == Fn::GetLinkName;
+      const LinkTarget t = linkTarget(m_world, a[0].i);
+      // an invalid link gives NULL_KEY, for llGetLinkName too (Second Life wiki)
+      if (t.sitter >= 0) return wantName ? Value::string(m_world.sitterName(t.sitter)) : Value::key(m_world.sitterKey(t.sitter));
+      if (t.prim <= 0) return wantName ? Value::string(NULL_KEY) : Value::key(NULL_KEY);
+      if (wantName) return Value::string(t.prim == 1 ? m_world.objectName() : primOf(m_world, t.prim).name);
+      // the root prim has the object's key; a child prim a key made from the object's key and its link number
+      return Value::key(t.prim == 1 ? m_world.objectKey() : Inventory::derivedKey(m_world.objectKey(), "link/" + QString::number(t.prim)));
+    }
+    case Fn::DetectedLinkNumber:
+      return Value::integer(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].link : 0);
+    case Fn::GetObjectPermMask: return Value::integer(permMask(a[0].i));
+    case Fn::GetInventoryPermMask:
+      if (!m_world.inventory().find(a[0].s))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "No item named '" + World::clip(a[0].s) + "'"}});
+        return Value::integer(0);
+      }
+      return Value::integer(permMask(a[1].i));
+    case Fn::GetObjectDetails:
+    {
+      ObjectDetails d;
+      std::vector<Value> out;
+      if (m_world.details(a[0].s, d))
+        for (const Value& p : a[1].list)
+          if (p.type == Type::Integer) out.push_back(objectDetail(d, p.i));   // other types are skipped, as in Second Life
+      m_steps += qint64(a[1].list.size());
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
+    case Fn::SameGroup:
+    {
+      // every object of the sandbox is set to one group (World::GROUP_KEY); an avatar shares it when it has in_group;
+      // any other key counts as a group key, so NULL_KEY gives FALSE (the objects have a group)
+      if (a[0].s == World::GROUP_KEY) return Value::integer(1);
+      ObjectDetails d;
+      if (m_world.details(a[0].s, d)) return Value::integer(!d.avatar || d.inGroup ? 1 : 0);
+      return Value::integer(0);
+    }
+    case Fn::SetScriptState:
+    case Fn::GetScriptState:
+    case Fn::ResetOtherScript:
+    {
+      const QString& target = a[0].s;
+      const bool self = target == m_world.scriptName();
+      auto missing = [&]()
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", name + ": there is no script named \"" + World::clip(target) + "\" in this prim."}});
+      };
+      if (*it == Fn::GetScriptState)
+      {
+        if (self) return Value::integer(m_running ? 1 : 0);   // 0 after it stopped itself, while the event ends
+        const int state = m_world.scriptState(target);
+        if (state < 0) missing();
+        return Value::integer(state > 0 ? 1 : 0);
+      }
+      if (*it == Fn::ResetOtherScript)
+      {
+        if (self) throw Reset();   // a script can reset itself with it, as with llResetScript
+        // a script that is not running (or stopped) is not reset, as in Second Life; the caller's entry comes before the target's reset
+        const int state = m_world.scriptState(target);
+        if (state < 0) missing();
+        else if (state > 0)
+        {
+          if (!m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "reset_other"}, {"target", World::clip(target)}});
+          m_world.resetOtherScript(m_now, target);
+        }
+        return Value();
+      }
+      const bool run = a[1].i != 0;
+      if (self)
+      {
+        // a script can stop itself: the rest of this event still runs, then it gets no more events; it cannot start itself
+        if (!run && m_running)
+        {
+          if (!m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "script_state"}, {"target", World::clip(target)}, {"running", false}});
+          setRunning(false);
+        }
+        return Value();
+      }
+      const int result = m_world.setScriptState(m_now, target, run);
+      if (result < 0) missing();
+      else if (result > 0 && !m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "script_state"}, {"target", World::clip(target)}, {"running", run}});
+      return Value();
+    }
+    case Fn::GetCreator: return Value::key(m_world.ownerKey());   // the sandbox owner made every object
+    case Fn::GetUsername:
+    {
+      ObjectDetails d;
+      return Value::string(m_world.details(a[0].s, d) && d.avatar ? usernameOf(d.name) : QString());
     }
 
     // -------------------------------------------- maths

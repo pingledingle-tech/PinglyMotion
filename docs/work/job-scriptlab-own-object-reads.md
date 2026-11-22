@@ -5,13 +5,13 @@ Files:
 - src/scriptlab/lsl/builtins.*
 - src/scriptlab/lsl/interp.*
 - src/scriptlab/lsl/world.*
-- src/scriptlab/lsl/session.*
-- src/scriptlab/lslbuiltins_extra.inc
-- tests/tst_scriptlab*.cpp
+- src/scriptlab/lsl/sandbox.*
+- tests/tst_lsl*.cpp
 - tests/data/scriptlab/**
 - tests/CMakeLists.txt
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md
+- docs/CONTROL.md
 
 ## What
 

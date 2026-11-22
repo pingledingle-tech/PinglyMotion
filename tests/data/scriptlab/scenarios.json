@@ -1595,6 +1595,116 @@
       ]
     },
     {
+      "about": "cheap reads of the object itself (gap list 2, step 2): mass, velocity, scale, link names and keys, permission masks, creator, username, group and llGetObjectDetails",
+      "name": "lsl_own_object_reads",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"link":0,"op":"size","size":[1,2,0.5],"t":0,"type":"prim"},
+              {"t":0,"text":"10.000000 <0.00000, 0.00000, 0.00000>","type":"owner_say"},
+              {"t":0,"text":"Object 00000000-0000-0000-0000-000000000000","type":"owner_say"},
+              {"t":0,"text":"2147483647, 532480, 0","type":"owner_say"},
+              {"t":0,"text":"a2e76fcd-9360-4f6d-a924-000000000001, owner, 0, 1","type":"owner_say"},
+              {"t":0,"text":"Object, a2e76fcd-9360-4f6d-a924-000000000001, 1, 1, 3, -1, -1","type":"owner_say"},
+              {"t":0,"text":"0","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "seconds": 1,
+            "source": "default { state_entry() {\n  llSetScale(<1, 2, 0.5>);\n  llOwnerSay((string)llGetMass() + \" \" + (string)llGetVel());\n  llOwnerSay(llGetLinkName(LINK_THIS) + \" \" + (string)llGetLinkKey(2));\n  llOwnerSay(llList2CSV([llGetObjectPermMask(MASK_OWNER), llGetObjectPermMask(MASK_NEXT), llGetInventoryPermMask(\"Script\", MASK_GROUP)]));\n  llOwnerSay(llList2CSV([llGetCreator(), llGetUsername(llGetOwner()), llSameGroup(NULL_KEY), llSameGroup(llGetKey())]));\n  llOwnerSay(llList2CSV(llGetObjectDetails(llGetKey(), [OBJECT_NAME, OBJECT_OWNER, OBJECT_PRIM_COUNT, OBJECT_TOTAL_INVENTORY_COUNT, OBJECT_MATERIAL, OBJECT_HEALTH, 999])));\n  llOwnerSay((string)llGetListLength(llGetObjectDetails(NULL_KEY, [OBJECT_NAME])));\n} }\n"
+          }
+        }
+      ]
+    },
+    {
+      "about": "llDetectedLinkNumber, llSetScriptState, llGetScriptState, llResetOtherScript and llDie in an object of two prims (gap list 2, step 2)",
+      "name": "lsl_own_object_state",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","object":"box","script":"main","t":0,"type":"state"},
+              {"name":"default","object":"box","script":"helper","t":0,"type":"state"},
+              {"name":"state_entry","object":"box","script":"helper","t":0,"type":"event"},
+              {"object":"box","script":"helper","t":0,"text":"helper starts","type":"owner_say"}
+            ],
+            "ok": true
+          },
+          "request": {
+            "command": "lsl_run",
+            "objects": [
+              {
+                "name": "box",
+                "prims": 2,
+                "scripts": [
+                  {
+                    "name": "main",
+                    "source": "default {\n  touch_start(integer n) {\n    integer link = llDetectedLinkNumber(0);\n    llOwnerSay(\"touched link \" + (string)link);\n    if (link == 2) { llSetScriptState(\"helper\", FALSE); llOwnerSay(\"helper \" + (string)llGetScriptState(\"helper\")); }\n    else { llSetScriptState(\"helper\", TRUE); llResetOtherScript(\"helper\"); }\n  }\n  changed(integer c) { llDie(); }\n}\n"
+                  },
+                  {"name":"helper","source":"default { state_entry() { llOwnerSay(\"helper starts\"); } }\n"}
+                ]
+              }
+            ],
+            "seconds": 1
+          }
+        },
+        {
+          "expect": {
+            "log": [
+              {"input":"touch","link":2,"name":"Owner","object":"box","t":1,"type":"input"},
+              {"args":["1"],"name":"touch_start","object":"box","script":"main","t":1,"type":"event"},
+              {"object":"box","script":"main","t":1,"text":"touched link 2","type":"owner_say"},
+              {"object":"box","running":false,"script":"main","t":1,"target":"helper","type":"script_state"},
+              {"object":"box","script":"main","t":1,"text":"helper 0","type":"owner_say"}
+            ],
+            "objects.0.scripts.1.running": false
+          },
+          "request": {"command":"lsl_event","link":2,"object":"box","type":"touch"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"input":"touch","name":"Owner","object":"box","t":2,"type":"input"},
+              {"args":["1"],"name":"touch_start","object":"box","script":"main","t":2,"type":"event"},
+              {"object":"box","script":"main","t":2,"text":"touched link 1","type":"owner_say"},
+              {"object":"box","running":true,"script":"main","t":2,"target":"helper","type":"script_state"},
+              {"object":"box","script":"main","t":2,"target":"helper","type":"reset_other"},
+              {"object":"box","script":"helper","t":2,"type":"reset"},
+              {"name":"default","object":"box","script":"helper","t":2,"type":"state"},
+              {"name":"state_entry","object":"box","script":"helper","t":2,"type":"event"},
+              {"object":"box","script":"helper","t":2,"text":"helper starts","type":"owner_say"}
+            ]
+          },
+          "request": {"command":"lsl_event","object":"box","type":"touch"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"change":1,"input":"changed","name":"Owner","object":"box","t":3,"type":"input"},
+              {"args":["1"],"name":"changed","object":"box","script":"main","t":3,"type":"event"},
+              {"column":24,"line":8,"message":"The object was deleted with llDie.","object":"box","script":"main","t":3,"type":"die"},
+              {
+                "message": "Another script of the object called llDie, so the object was deleted.",
+                "object": "box",
+                "script": "helper",
+                "t": 3,
+                "type": "die"
+              }
+            ],
+            "objects.0.deleted": true,
+            "stopped": true
+          },
+          "request": {"change":"inventory","command":"lsl_event","object":"box","type":"changed"}
+        }
+      ]
+    },
+    {
       "about": "a script that does not compile, an unknown function, a function not supported yet, an endless loop, bad lsl_event input",
       "name": "errors",
       "steps": [
@@ -1626,19 +1736,19 @@
               {
                 "column": 49,
                 "line": 1,
-                "message": "llGetMass is not supported yet in the Script Lab sandbox, so the script was stopped here.",
+                "message": "llGetEnergy is not supported yet in the Script Lab sandbox, so the script was stopped here.",
                 "t": 0,
                 "type": "unsupported"
               }
             ],
             "ok": true,
-            "stop_reason": "llGetMass is not supported yet in the Script Lab sandbox, so the script was stopped here.",
+            "stop_reason": "llGetEnergy is not supported yet in the Script Lab sandbox, so the script was stopped here.",
             "stopped": true
           },
           "request": {
             "command": "lsl_run",
             "seconds": 1,
-            "source": "default { state_entry() { llOwnerSay(\"before\"); llGetMass(); llOwnerSay(\"after\"); } }"
+            "source": "default { state_entry() { llOwnerSay(\"before\"); llGetEnergy(); llOwnerSay(\"after\"); } }"
           }
         },
         {

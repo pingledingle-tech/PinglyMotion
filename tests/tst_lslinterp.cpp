@@ -132,13 +132,13 @@ state report
 
 void LslInterpTest::unsupportedFunctionStops()
 {
-  const QJsonObject a = run("default {\n state_entry() {\n  llOwnerSay(\"before\");\n  llGetMass();\n  llOwnerSay(\"after\");\n }\n}");
+  const QJsonObject a = run("default {\n state_entry() {\n  llOwnerSay(\"before\");\n  llGetEnergy();\n  llOwnerSay(\"after\");\n }\n}");
   QVERIFY(a["ok"].toBool());
   QCOMPARE(said(a), QStringList({"before"}));
   QCOMPARE(a["stopped"].toBool(), true);
   const QJsonObject entry = last(a);
   QCOMPARE(entry["type"].toString(), QString("unsupported"));
-  QVERIFY(entry["message"].toString().contains("llGetMass is not supported yet"));
+  QVERIFY(entry["message"].toString().contains("llGetEnergy is not supported yet"));
   QCOMPARE(entry["line"].toInt(), 4);
   QCOMPARE(entry["column"].toInt(), 3);
   QVERIFY(a["warnings"].toArray().first().toObject()["message"].toString().contains("not supported yet"));

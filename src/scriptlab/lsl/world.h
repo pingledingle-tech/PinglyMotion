@@ -109,6 +109,9 @@ class PrimStore
       return m_prims[size_t(link < 1 ? 0 : link - 1)];
     }
     int status = STATUS_ROTATE_XYZ;   // the STATUS_* flags of the object (llSetStatus)
+    // llGetMass (gap list 2, step 2): every prim a box of density 10 lindograms per cubic metre (1000 kg/m3), the root
+    // with rootSize (the object's scale), the children with their own size
+    float mass(const float rootSize[3], int count);
 
   private:
     std::vector<PrimState> m_prims;
@@ -176,10 +179,40 @@ struct HttpReply
   static const HttpReply* find(const std::vector<HttpReply>& replies, const QString& method, const QString& url);
 };
 
+// Gap list 2, step 2: what llGetObjectDetails (and llSameGroup) know about a key: an object of the world (its root
+// prim) or an avatar. Values the sandbox does not simulate keep these defaults.
+struct ObjectDetails
+{
+  bool avatar = false;
+  bool inGroup = false;             // an avatar: shares the objects' group (the avatar's in_group)
+  QString key;
+  QString name;
+  QString description;
+  QString owner;
+  float position[3] = {0.0f, 0.0f, 0.0f};
+  float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+  float velocity[3] = {0.0f, 0.0f, 0.0f};
+  float scale[3] = {0.5f, 0.5f, 0.5f};
+  int prims = 1;
+  int sitters = 0;
+  int attached = 0;
+  int runningScripts = 0;
+  int totalScripts = 0;
+  int inventoryItems = 0;
+  int physics = 0, phantom = 0, tempOnRez = 0;
+  float mass = 0.0f;
+  QString text;
+  float textColor[3] = {1.0f, 1.0f, 1.0f};
+  float textAlpha = 1.0f;
+  QString sitRoot;                  // an avatar sitting on an object: that object's key
+};
+
 class World
 {
   public:
     static constexpr int MAX_LOG_ENTRIES = 2000;
+    // the group every object of the sandbox is set to (llSameGroup, OBJECT_GROUP)
+    static const char* const GROUP_KEY;
     static constexpr int MAX_TEXT_CHARS = 1024;   // Second Life cuts chat messages here too
 
     virtual ~World() {}
@@ -272,6 +305,22 @@ class World
       Q_UNUSED(time); Q_UNUSED(id); Q_UNUSED(status); Q_UNUSED(truncatedAt); Q_UNUSED(body);
       return false;
     }
+
+    // Gap list 2, step 2: reads and state of the object itself.
+    // llDie: the object is deleted (false: nothing happens, as for a worn object). A Sandbox stops the object's other scripts.
+    virtual bool die(double time) { Q_UNUSED(time); return attachPoint() == 0; }
+    // the avatars sitting on the object, in the order they sat (llGetLinkKey and llGetLinkName number them after the prims)
+    virtual QString sitterKey(int index) const { Q_UNUSED(index); return QString(); }
+    virtual QString sitterName(int index) const { Q_UNUSED(index); return QString(); }
+    // another script in the same prim, by name: -1 when there is none, else 1 running or 0 not running (llGetScriptState)
+    virtual int scriptState(const QString& name) const { Q_UNUSED(name); return -1; }
+    // llSetScriptState on another script of the prim: -1 when there is none, 0 when nothing changed, 1 when it changed
+    virtual int setScriptState(double time, const QString& name, bool running) { Q_UNUSED(time); Q_UNUSED(name); Q_UNUSED(running); return -1; }
+    // llResetOtherScript on another script of the prim: -1 when there is none, 0 when it is not running (no effect), 1 when reset
+    virtual int resetOtherScript(double time, const QString& name) { Q_UNUSED(time); Q_UNUSED(name); return -1; }
+    // llGetObjectDetails: the object (its root prim) or avatar with this key; false when the sandbox does not know it.
+    // A plain World knows its own object and the owner.
+    virtual bool details(const QString& key, ObjectDetails& out);
 
     // Step 5: entries go to another World's log instead (the shared log of several objects), each with
     // "object" set to tag when tag is not empty, and "script" set to scriptTag when that is not empty

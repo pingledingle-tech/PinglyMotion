@@ -81,7 +81,7 @@ class Interpreter
     // runs the waiting events
     void runQueue() { processQueue(); }
     // events are waiting
-    bool hasQueued() const { return !m_stopped && !m_queue.empty(); }
+    bool hasQueued() const { return !m_stopped && m_running && !m_queue.empty(); }
     // stops the script when the real time limit is over; true when stopped
     bool checkRealTime();
     // a fresh real-time, step and event budget for the next command (lsl_event)
@@ -89,7 +89,7 @@ class Interpreter
     // chat heard now on a channel from name/id: queues a listen event for every matching listen, logs nothing
     void receive(int channel, const QString& name, const QString& id, const QString& text);
     // queues touch_start (detected key and name), attach (with the key, NULL_KEY on detach)
-    void touch(const QString& id, const QString& name);
+    void touch(const QString& id, const QString& name, int link = 0);   // link: llDetectedLinkNumber (0 in a single prim)
     void attachEvent(const QString& id);
     // Step 9a: queues link_message (sender's link number, num, str, id) and linkset_data (action, name, value)
     void linkMessage(int sender, int num, const QString& str, const QString& id);
@@ -104,6 +104,15 @@ class Interpreter
     void httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body);
     // the current state has a handler for this event
     bool handles(const QString& event) const;
+    // Gap list 2, step 2. llSetScriptState from another script: a script that is not running keeps its variables, state,
+    // listens and timer, but gets no events (they are dropped, the waiting ones too) and its timer and sensor wait
+    // until it runs again. No effect on a script that stopped (an error or a limit), as in Second Life.
+    bool running() const { return m_running; }
+    void setRunning(bool running);
+    // llResetOtherScript from another script: no effect on a script that is not running or stopped, as in Second Life
+    void resetFromOtherScript();
+    // stops the script from outside (llDie from another script of the object); logs an entry of that type
+    void halt(const QString& kind, const QString& message);
 
     bool stopped() const { return m_stopped; }
     QString stopReason() const { return m_stopReason; }
@@ -204,6 +213,8 @@ class Interpreter
 
     bool m_stopped = false;
     QString m_stopReason;
+    bool m_running = true;           // llSetScriptState (gap list 2, step 2)
+    bool m_dieRequested = false;     // llDie: once the script has stopped, the world deletes the object
 
     Value m_returnValue;
     QString m_jumpLabel;
