@@ -10,7 +10,8 @@
  * (PinglyMotionWindow::updateReflow): choose the layout, rearrange the
  * panels, break the timeline rows. Then it checks, exactly:
  *  - the layout that the rule gives for that width and text size;
- *  - the window can really be that narrow (no panel forces it wider);
+ *  - the window can really be that narrow (no panel forces it wider), or,
+ *    below the one column's least width, no wider than that;
  *  - no panel is wider than the room it is shown in (nothing to scroll
  *    sideways), and no control in a panel is smaller than its size hint
  *    or sticks out of its parent sideways (UiRender::clipping; a panel
@@ -147,11 +148,15 @@ void TestMainPanels::panelsRearrangeAndNothingIsClipped()
   if (!UiRender::outDir().isEmpty())
     UiRender::save(w.window.grab().toImage(), QStringLiteral("mainpanels_%1").arg(width), variant);
 
-  // the window can be this narrow: no panel forces it wider
-  QVERIFY2(w.window.width() == width,
-           qPrintable(QStringLiteral("asked %1 wide, the window is %2 (%3 layout; wide needs %4, medium %5)")
+  // the window can be this narrow: no panel forces it wider. Only below the
+  // one column's least width (large text in a very small window) is it kept
+  // that wide, never wider.
+  const int expectedWidth = std::max(width, PanelLayout::narrowNeed(needs));
+  QVERIFY2(w.window.width() <= expectedWidth && w.window.width() >= width,
+           qPrintable(QStringLiteral("asked %1 wide, the window is %2 (%3 layout; wide needs %4, medium %5, one column %6)")
                           .arg(width).arg(w.window.width()).arg(PanelLayout::reflowName(got))
-                          .arg(PanelLayout::wideNeed(needs)).arg(PanelLayout::mediumNeed(needs))));
+                          .arg(PanelLayout::wideNeed(needs)).arg(PanelLayout::mediumNeed(needs))
+                          .arg(PanelLayout::narrowNeed(needs))));
 
   // the layout of each kind
   QMainWindow& win = w.window;

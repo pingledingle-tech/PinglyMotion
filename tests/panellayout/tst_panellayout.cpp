@@ -237,6 +237,11 @@ private slots:
     const ReflowNeeds n200=needs(497,419,1244,682);
     QCOMPARE(wideNeed(n200),1610);
     QCOMPARE(mediumNeed(n200),1185);
+    // the one column is as wide as its widest panel
+    QCOMPARE(narrowNeed(n100),458);
+    QCOMPARE(narrowNeed(n200),682);
+    QCOMPARE(narrowNeed(needs(497,419,600,300)),497);
+    QCOMPARE(narrowNeed(needs(300,520,600,300)),520);
     // the 3D view keeps at least 240 pixels when the timeline is narrower
     const ReflowNeeds small=needs(200,180,300,150);
     QCOMPARE(ViewMinWidth,240);

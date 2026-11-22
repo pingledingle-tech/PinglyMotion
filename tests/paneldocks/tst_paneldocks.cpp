@@ -28,7 +28,6 @@
 #include <QDockWidget>
 #include <QLabel>
 #include <QMainWindow>
-#include <QTabBar>
 #include <QToolButton>
 
 #include "panellayout.h"
@@ -135,16 +134,10 @@ struct ReflowWindow
     return dock->titleBarWidget()->findChildren<QToolButton*>().value(1);
   }
 
-  // the text of the front tab of the tab bar that shows `title`, empty when none
-  QString frontTabWith(const QString& title) const
+  // a panel shows on screen: in a tab group only the front one does
+  static bool showsOnScreen(QDockWidget* dock)
   {
-    for (QTabBar* bar : window.findChildren<QTabBar*>())
-    {
-      if (!bar->isVisible()) continue;
-      for (int i=0;i<bar->count();++i)
-        if (bar->tabText(i)==title) return bar->tabText(bar->currentIndex());
-    }
-    return QString();
+    return dock->isVisible() && !dock->visibleRegion().isEmpty();
   }
 };
 
@@ -656,7 +649,8 @@ void TestPanelDocks::mediumMakesJointsATabNextToSelectedJoint()
   QCOMPARE(w.window.tabifiedDockWidgets(w.jointCard),QList<QDockWidget*>({w.joints}));
   // the tabs stand above the panels, Selected joint in front
   QCOMPARE(w.window.tabPosition(Qt::RightDockWidgetArea),QTabWidget::North);
-  QCOMPARE(w.frontTabWith("Joints"),QStringLiteral("Selected joint"));
+  QTRY_VERIFY(ReflowWindow::showsOnScreen(w.jointCard));
+  QVERIFY(!ReflowWindow::showsOnScreen(w.joints));
   // nothing floats, and floating is still allowed
   for (QDockWidget* dock : {w.joints,w.jointCard,w.timeline})
   {
@@ -688,7 +682,8 @@ void TestPanelDocks::mediumUsesScriptLabWhenSelectedJointIsClosed()
   QCOMPARE(w.window.dockWidgetArea(w.joints),Qt::RightDockWidgetArea);
   QCOMPARE(w.window.tabifiedDockWidgets(w.scriptLab),QList<QDockWidget*>({w.joints}));
   QVERIFY(w.jointCard->isHidden());
-  QCOMPARE(w.frontTabWith("Joints"),QStringLiteral("Script Lab"));
+  QTRY_VERIFY(ReflowWindow::showsOnScreen(w.scriptLab));
+  QVERIFY(!ReflowWindow::showsOnScreen(w.joints));
 }
 
 void TestPanelDocks::narrowStacksEveryPanelInOneColumn()

@@ -339,6 +339,14 @@ namespace PanelLayout
     return std::max(n.joints,n.jointCard)+n.separator+middleNeed(n);
   }
 
+  // The least width of the one column: the widest panel, with the timeline's
+  // rows broken into shorter lines. A narrower window cannot show the panels
+  // without clipping; the window is then kept this wide.
+  inline int narrowNeed(const ReflowNeeds& n)
+  {
+    return std::max(std::max(n.joints,n.jointCard),n.timelineWrapped);
+  }
+
   // The layout for a window `width` logical pixels wide (the width inside
   // the frame): the first one that fits, Wide before Medium before Narrow.
   inline Reflow chooseReflow(int width,const ReflowNeeds& n)
