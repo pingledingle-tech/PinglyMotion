@@ -1,5 +1,5 @@
 Branch: feat/rlv-view-modes-7c-3
-Status: active
+Status: done
 Pull request: #331
 Files:
 - src/scriptlab/viewmodesoverride.*
