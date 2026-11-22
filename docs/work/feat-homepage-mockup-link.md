@@ -1,8 +1,10 @@
 Branch: feat/homepage-mockup-link
-Status: active
-Pull request: pending
+Status: done
+Pull request: #357
 Files:
 - docs/index.html
+- docs/download.html
+- docs/privacy.html
 - docs/site.css
 - tests/test_site_mockup_link.py
 - docs/work/feat-homepage-mockup-link.md
