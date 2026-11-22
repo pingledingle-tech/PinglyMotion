@@ -1,6 +1,6 @@
 Branch: job/scriptlab-region-reads
 Status: active
-Pull request: pending
+Pull request: #370
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/world.*
