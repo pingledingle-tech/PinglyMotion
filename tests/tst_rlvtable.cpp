@@ -55,6 +55,14 @@ class TestRlvTable : public QObject
     void familiesAreBounded();
     void movementRestrictions();
     void setrotIsRlvOnly();
+    void recordedRows_data();
+    void recordedRows();
+    void sphereAndOverlayForce();
+    void versionWithBlacklist();
+    void blacklistAndZoomAnswers();
+    void rlvOnlyNamesInRlvaMode_data();
+    void rlvOnlyNamesInRlvaMode();
+    void tableHasNoDuplicatesAndIsMarked();
 
   private:
     static RlvState::Outcome one(RlvState& state, const QString& line, const QString& object = "obj")
@@ -785,6 +793,158 @@ void TestRlvTable::setrotIsRlvOnly()
   QCOMPARE(one(state, "@setrot:3.14=force").result, Rlv::Result::Retained);
   state.setMode(Rlv::Mode::Rlva);
   QCOMPARE(one(state, "@setrot:3.14=force").reason, QString("unknown behaviour \"setrot\""));
+}
+
+// the camera, sphere and overlay behaviours that are only recorded: name, parameter types, option use, mark
+struct RecSpec { const char* name; int params; Rlv::OptionUse option; Rlv::Dialect dialect; };
+static const Rlv::Dialect RLVONLY = Rlv::Dialect::RlvOnly;
+static const RecSpec recSpecs[] = {
+  {"camdrawmin", AR, RQ, RLVONLY}, {"camdrawmax", AR, RQ, RLVONLY}, {"camdrawalphamin", AR, RQ, RLVONLY},
+  {"camdrawalphamax", AR, RQ, RLVONLY}, {"camdrawcolor", AR, RQ, RLVONLY},
+  {"setsphere", AR, NO, PLAIN}, {"setsphere_mode", AR | FO, OP, PLAIN}, {"setsphere_origin", AR | FO, OP, PLAIN},
+  {"setsphere_color", AR | FO, OP, PLAIN}, {"setsphere_distmin", AR | FO, OP, PLAIN},
+  {"setsphere_distmax", AR | FO, OP, PLAIN}, {"setsphere_distextend", AR | FO, OP, PLAIN},
+  {"setsphere_param", AR | FO, OP, PLAIN}, {"setsphere_tween", AR | FO, OP, PLAIN},
+  {"setsphere_valuemin", AR | FO, OP, PLAIN}, {"setsphere_valuemax", AR | FO, OP, PLAIN},
+  {"setoverlay", AR, NO, PLAIN}, {"setoverlay_alpha", AR | FO, OP, PLAIN}, {"setoverlay_texture", AR | FO, OP, PLAIN},
+  {"setoverlay_tint", AR | FO, OP, PLAIN}, {"setoverlay_tween", AR | FO, OP, PLAIN}, {"setoverlay_touch", AR, NO, PLAIN}};
+
+void TestRlvTable::recordedRows_data()
+{
+  QTest::addColumn<int>("index");
+  for (size_t i = 0; i < sizeof(recSpecs) / sizeof(recSpecs[0]); i++) QTest::newRow(recSpecs[i].name) << static_cast<int>(i);
+}
+
+void TestRlvTable::recordedRows()
+{
+  QFETCH(int, index);
+  const RecSpec& spec = recSpecs[index];
+  const QString name = spec.name;
+  const Rlv::Behaviour* b = Rlv::findBehaviour(name);
+  QVERIFY(b);
+  QCOMPARE(b->params, spec.params);
+  QCOMPARE(static_cast<int>(b->option), static_cast<int>(spec.option));
+  QCOMPARE(b->dialect, spec.dialect);
+  QCOMPARE(b->group, Rlv::Group::Camera);
+  QVERIFY(b->external);
+  QVERIFY(b->blocks.isEmpty());
+  QVERIFY(b->note.startsWith("recorded only"));
+  QVERIFY(Rlv::findBehaviour(name, Rlv::Mode::Rlv));
+  QCOMPARE(Rlv::findBehaviour(name, Rlv::Mode::Rlva) != nullptr, spec.dialect != RLVONLY);
+
+  RlvState state;
+  const QString opt = spec.option == NO ? QString() : ":1/0.5/0";
+  const RlvState::Outcome added = one(state, "@" + name + opt + "=n");
+  QCOMPARE(added.result, Rlv::Result::Success);
+  QVERIFY2(added.reason.contains("recorded only"), qPrintable(added.reason));
+  QVERIFY(state.has(name, spec.option == NO ? QString() : "1/0.5/0"));
+  QCOMPARE(one(state, "@" + name + opt + "=n").result, Rlv::Result::Duplicate);
+  for (bool allowed : state.actions()) QVERIFY(allowed);   // nothing in the sandbox is blocked
+  if (spec.option == RQ) QCOMPARE(one(state, "@" + name + "=n").reason, QString("@%1 needs an option").arg(name));
+  if (spec.option == NO) QCOMPARE(one(state, "@" + name + ":1=n").reason, QString("@%1 takes no option").arg(name));
+  QCOMPARE(one(state, "@" + name + opt + "=y").result, Rlv::Result::Success);
+  QVERIFY(state.restrictions().isEmpty());
+  if (spec.params & FO)
+  {
+    const RlvState::Outcome forced = one(state, "@" + name + ":2=force");
+    QCOMPARE(forced.result, Rlv::Result::Retained);
+    QVERIFY(forced.reason.contains("recorded only"));
+    QCOMPARE(state.recorded().value(name), QString("2"));
+    QVERIFY(state.restrictions().isEmpty());
+  }
+  else
+  {
+    QVERIFY(one(state, "@" + name + opt + "=force").reason.contains("does not take"));
+    QVERIFY(state.recorded().isEmpty());
+  }
+}
+
+void TestRlvTable::sphereAndOverlayForce()
+{
+  RlvState state;
+  one(state, "@setsphere_distmin:2=force");
+  one(state, "@setoverlay_alpha:0.5=force");
+  QCOMPARE(state.recorded().size(), 2);
+  QCOMPARE(state.recorded().value("setsphere_distmin"), QString("2"));
+  QCOMPARE(state.recorded().value("setoverlay_alpha"), QString("0.5"));
+  // the last value wins and the record stays one entry per name
+  one(state, "@setsphere_distmin:9=force");
+  QCOMPARE(state.recorded().value("setsphere_distmin"), QString("9"));
+  QCOMPARE(state.recorded().size(), 2);
+}
+
+void TestRlvTable::versionWithBlacklist()
+{
+  RlvState state;
+  const RlvState::ApplyResult r = state.apply("obj", "@versionnumbl=1234");
+  QCOMPARE(r.outcomes.value(0).result, Rlv::Result::Success);
+  QCOMPARE(r.replies.size(), 1);
+  QCOMPARE(r.replies[0].channel, 1234);
+  QCOMPARE(r.replies[0].text, QString("3040300,"));
+  // the plain version number is unchanged
+  QCOMPARE(state.apply("obj", "@versionnum=1234").replies.value(0).text, QString("3040300"));
+}
+
+void TestRlvTable::blacklistAndZoomAnswers()
+{
+  RlvState state;
+  RlvState::ApplyResult r = state.apply("obj", "@getblacklist=77");
+  QCOMPARE(r.replies.size(), 1);
+  QCOMPARE(r.replies[0].text, QString());
+  r = state.apply("obj", "@getblacklist:sit=77");
+  QCOMPARE(r.replies.value(0).text, QString());
+  r = state.apply("obj", "@getcam_zoommin=77");
+  QCOMPARE(r.replies.size(), 1);
+  QCOMPARE(r.replies[0].channel, 77);
+  QCOMPARE(r.replies[0].text, QString("1"));
+  // the camera limit that was set does not change the sandbox answer
+  one(state, "@camzoommin:3=n");
+  QCOMPARE(state.apply("obj", "@getcam_zoommin=77").replies.value(0).text, QString("1"));
+}
+
+void TestRlvTable::rlvOnlyNamesInRlvaMode_data()
+{
+  QTest::addColumn<QString>("line");
+  for (const QString line : {"@camdrawmin:5=n", "@camdrawmax:5=n", "@camdrawalphamin:1=n", "@camdrawalphamax:1=n",
+                             "@camdrawcolor:1/0/0=n", "@versionnumbl=5", "@getblacklist=5", "@getcam_zoommin=5",
+                             "@defaultwear=n", "@denypermission=n", "@setrot:1=force"})
+    QTest::newRow(qPrintable(line)) << line;
+}
+
+void TestRlvTable::rlvOnlyNamesInRlvaMode()
+{
+  QFETCH(QString, line);
+  RlvState state;
+  const RlvState::Outcome known = one(state, line);
+  QVERIFY2(known.result != Rlv::Result::Failed, qPrintable(line));   // known in plain RLV
+  QVERIFY(!known.reason.contains("unknown behaviour"));
+  state.setMode(Rlv::Mode::Rlva);
+  const RlvState::Outcome outcome = one(state, line);
+  QCOMPARE(outcome.result, Rlv::Result::Failed);
+  QVERIFY2(outcome.reason.startsWith("unknown behaviour"), qPrintable(outcome.reason));
+  QVERIFY(state.restrictions().isEmpty());
+  QVERIFY(state.apply("obj", line).replies.isEmpty());
+}
+
+void TestRlvTable::tableHasNoDuplicatesAndIsMarked()
+{
+  QSet<QString> seen;
+  int rlvOnly = 0;
+  for (const Rlv::Behaviour& b : Rlv::behaviours())
+  {
+    QVERIFY2(!seen.contains(b.name), qPrintable(b.name));
+    seen.insert(b.name);
+    if (b.dialect == Rlv::Dialect::RlvOnly) rlvOnly++;
+    if (!b.alias.isEmpty()) QVERIFY2(Rlv::findBehaviour(b.alias), qPrintable(b.name));   // an alias points at a real entry
+  }
+  // exactly the names that RLVa does not have
+  QStringList names;
+  for (const Rlv::Behaviour& b : Rlv::behaviours())
+    if (b.dialect == Rlv::Dialect::RlvOnly) names << b.name;
+  names.sort();
+  QCOMPARE(names, QStringList({"camdrawalphamax", "camdrawalphamin", "camdrawcolor", "camdrawmax", "camdrawmin",
+                               "defaultwear", "denypermission", "getblacklist", "getcam_zoommin", "setrot", "versionnumbl"}));
+  QCOMPARE(rlvOnly, 11);
 }
 
 QTEST_GUILESS_MAIN(TestRlvTable)

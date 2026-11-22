@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 181 behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 206 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -310,7 +310,8 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 
 - The mode is plain RLV at start. In plain RLV mode a RLVa-only behaviour answers as unknown, like any name the table
   does not have. In RLVa mode it is accepted. The third mark works the other way round: an `RLV only` behaviour
-  (`defaultwear`, `denypermission`) is accepted in plain RLV mode and unknown in RLVa mode (it is also left out of
+  (`camdrawmin`, `camdrawmax`, `camdrawalphamin`, `camdrawalphamax`, `camdrawcolor`, `defaultwear`, `denypermission`,
+  `versionnumbl`, `getblacklist`, `getcam_zoommin`, `setrot`) is accepted in plain RLV mode and unknown in RLVa mode (it is also left out of
   `getcommand` there). `rlv_state` lists `rlva_only` only; the `RLV only` names are the ones in `behaviours` of plain mode
   that are missing in RLVa mode. Switching the mode removes every restriction and recorded effect (as
   after a relog). Set it with the control command `rlv_reset` and its `mode` field ([CONTROL.md](CONTROL.md)).
@@ -375,6 +376,15 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   value is recorded (`recorded` in `rlv_state`, at most 256 entries, a known name can still change); `getdebug_<name>`
   and `getenv_<name>` answer the recorded value of the same name, or empty. They are marked `RLV` and left out of
   `getcommand` (it lists the table, not the prefixes).
+- More effects that are only recorded (camera group): `camdrawmin`, `camdrawmax`, `camdrawalphamin`,
+  `camdrawalphamax`, `camdrawcolor` (`RLV only`; option required), the sphere effect `setsphere` with
+  `setsphere_mode`, `_origin`, `_color`, `_distmin`, `_distmax`, `_distextend`, `_param`, `_tween`, `_valuemin`,
+  `_valuemax`, and the overlay `setoverlay` with `setoverlay_alpha`, `_texture`, `_tint`, `_tween`, `_touch`. They are
+  held as restrictions (`n`/`y`), the `_<name>` ones also take `=force` (retained, the value is recorded), and they
+  block nothing; the real view never changes.
+- Three more questions (`RLV only`): `versionnumbl` answers `3040300,` (the version number, a comma, then the
+  blacklist, which is empty), `getblacklist` answers empty, and `getcam_zoommin` always answers `1` (the sandbox has
+  no camera).
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes, except the camera limits the user lets limit
   the 3D view with the "Show camera limits in 3D view" box (below, "Camera limits in the 3D view"). A force command of that kind is `retained`
