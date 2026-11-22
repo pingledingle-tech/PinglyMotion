@@ -149,6 +149,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/wheelguard)
   # Start, Stop, Replay from start and Loop under the timeline (#14, UX step 1)
   ADD_SUBDIRECTORY (tests/transportbar)
+  # test helper that draws panels offscreen in the program's theme, used on the transport bar
+  ADD_SUBDIRECTORY (tests/uirender)
   # slider steps to values and back without losing the decimals (#192)
   ADD_SUBDIRECTORY (tests/sliderscale)
   # easing maths for the six easing choices (#53 step 1)
