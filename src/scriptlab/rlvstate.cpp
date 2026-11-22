@@ -78,18 +78,22 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
       // @clear removes all of this object's restrictions, @clear=<filter> those whose
       // "behaviour[:option]" contains the filter
       const QString filter = command.param;
+      QVector<Entry> removed;
       if (m_objects.contains(objectId))
       {
         for (int i = m_objects[objectId].size() - 1; i >= 0; i--)
         {
           if (filter.isEmpty() || m_objects[objectId].at(i).key().contains(filter))
           {
+            removed << m_objects[objectId].at(i);
             removeEntry(objectId, i);
             anyChange = true;
             if (!m_objects.contains(objectId)) break;
           }
         }
       }
+      // the notify entries that are still there hear about what was lifted (oldest first)
+      for (int i = removed.size() - 1; i >= 0; i--) notifyChange(objectId, removed.at(i), false, replies);
       outcome.result = Rlv::Result::Success;
       return outcome;
     }
@@ -97,6 +101,17 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
     case Rlv::ParamType::Add:
     {
       const Entry entry{command.behaviour, command.option};
+      if (command.behaviour == QLatin1String("notify"))
+      {
+        int channel = 0;
+        QString filter;
+        if (!parseNotifyOption(command.option, channel, filter))
+        {
+          outcome.result = Rlv::Result::Failed;
+          outcome.reason = QStringLiteral("@notify needs a channel from 1 to 2147483647 as option (channel 0 is refused), then an optional \";<filter>\"");
+          return outcome;
+        }
+      }
       if (m_objects.contains(objectId))
       {
         for (const Entry& held : m_objects.value(objectId))
@@ -119,6 +134,7 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
       anyChange = true;
       outcome.result = Rlv::Result::Success;
       outcome.reason = outsideNote(command.behaviour);
+      notifyChange(objectId, entry, true, replies);
       return outcome;
     }
 
@@ -132,9 +148,11 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
         {
           if (list.at(i).stateKey() == key)
           {
+            const Entry lifted = list.at(i);
             removeEntry(objectId, i);
             anyChange = true;
             outcome.result = Rlv::Result::Success;
+            notifyChange(objectId, lifted, false, replies);
             return outcome;
           }
         }
@@ -198,6 +216,43 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
   outcome.result = Rlv::Result::Failed;
   outcome.reason = QStringLiteral("bad syntax");
   return outcome;
+}
+
+bool RlvState::parseNotifyOption(const QString& option, int& channel, QString& filter)
+{
+  const int semicolon = option.indexOf(QLatin1Char(';'));
+  const QString number = semicolon < 0 ? option : option.left(semicolon);
+  if (number.isEmpty() || number.length() > 10) return false;
+  qint64 value = 0;
+  for (const QChar c : number)
+  {
+    if (c < QLatin1Char('0') || c > QLatin1Char('9')) return false;
+    value = value * 10 + (c.unicode() - '0');
+  }
+  if (value < 1 || value > 2147483647LL) return false;
+  channel = static_cast<int>(value);
+  filter = semicolon < 0 ? QString() : option.mid(semicolon + 1);
+  return true;
+}
+
+void RlvState::notifyChange(const QString& objectId, const Entry& changed, bool added, QVector<Reply>& replies) const
+{
+  // a change of a notification itself is not announced
+  if (changed.behaviour == QLatin1String("notify") || !m_objects.contains(objectId)) return;
+  for (const Entry& entry : m_objects.value(objectId))
+  {
+    if (entry.behaviour != QLatin1String("notify")) continue;
+    int channel = 0;
+    QString filter;
+    if (!parseNotifyOption(entry.option, channel, filter)) continue;
+    if (!filter.isEmpty() && !changed.behaviour.contains(filter)) continue;
+    if (replies.size() >= MAX_REPLIES_PER_LINE) return;
+    Reply reply;
+    reply.channel = channel;
+    reply.text = QStringLiteral("/") + changed.key() + (added ? QStringLiteral("=n") : QStringLiteral("=y"));
+    if (reply.text.length() > MAX_REPLY_LENGTH) reply.text.truncate(MAX_REPLY_LENGTH);
+    replies << reply;
+  }
 }
 
 QString RlvState::outsideNote(const QString& behaviour) const

@@ -36,6 +36,8 @@ class RlvState : public QObject
     static constexpr int MAX_RESTRICTIONS_PER_OBJECT = 128;
     static constexpr int MAX_OBJECT_ID_LENGTH = 64;
     static constexpr int MAX_RECORDED_LENGTH = 128;
+    // one line never makes more answers than this (notify messages included)
+    static constexpr int MAX_REPLIES_PER_LINE = 256;
 
     struct Reply
     {
@@ -122,6 +124,10 @@ class RlvState : public QObject
 
     Outcome run(const QString& objectId, const Rlv::Command& command, QVector<Reply>& replies, bool& changed);
     QString outsideNote(const QString& behaviour) const;
+    // tells the object's notify entries that a restriction was added (n) or lifted (y)
+    void notifyChange(const QString& objectId, const Entry& changed, bool added, QVector<Reply>& replies) const;
+    // true and the channel and filter when the option is <channel>[;filter] with a channel from 1
+    static bool parseNotifyOption(const QString& option, int& channel, QString& filter);
     QString status(const QString& objectId, const QString& option, bool all) const;
     void removeEntry(const QString& objectId, int index);
 

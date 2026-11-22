@@ -9,7 +9,7 @@ the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the tr
 The RLV core (step 1) and the Script Lab panel (step 2).
 
 - `src/scriptlab/rlvcommand.*`: the parser for owner-say lines such as `@detach=n,sendim=n`.
-- `src/scriptlab/rlvbehaviours.*`: a table of 85 behaviours (which parameters each takes, whether it takes an
+- `src/scriptlab/rlvbehaviours.*`: a table of 109 behaviours (which parameters each takes, whether it takes an
   option, which actions it blocks) and the RLV version the sandbox answers with, 3.4.3.
 - `src/scriptlab/rlvstate.*`: the restrictions each object holds, how many objects hold each one, `@clear`, and the
   answers to `@version*` and `@getstatus*` on a channel.
@@ -291,6 +291,22 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   name that was used. `camzoommax` and `camzoommin` (the old zoom limits, option: a zoom multiplier) are separate
   entries, recorded only, because a multiplier is not a field of view angle. `touchfar` (option: distance in metres)
   blocks the action "Touch objects farther away".
+- Chat and instant messages (all marked `RLV`). Restrictions are `n` or `y`, exceptions `add` or `rem`; a restriction
+  with an option (a UUID or a channel) is an exception or a limited form and blocks nothing in the Allowed / Blocked list.
+  Chat: `chatshout`, `chatnormal`, `chatwhisper` (the voice is changed, not blocked), `redirchat` and `rediremote`
+  (option: channel), `emote` (the exception form: emotes stay allowed), `recvchat_sec`, `recvchatfrom`, `recvemote`,
+  `recvemote_sec`, `recvemotefrom`, `sendchannel_sec`. Instant messages: `sendim_sec`, `sendimto`, `startim`,
+  `startimto`, `recvim_sec`, `recvimfrom`. Other secure forms: `share_sec`, `tplure_sec`, `tprequest_sec`,
+  `shownames_sec`. The `_sec` form blocks the same action as the plain one, but it is a separate restriction (it is not
+  a duplicate of the plain one) and the sandbox does not model how exceptions of different objects combine with it;
+  the same goes for `permissive`, which is only held as state.
+- `@notify:<channel>[;filter]=add` (`rem` removes it): from then on the object hears `/<rule>=n` on that channel each
+  time it adds a restriction and `/<rule>=y` each time it lifts one (also for each restriction `@clear` removes; the
+  rule is written with the name that was used, and the option if there is one). A duplicate or an unheld `=y` says
+  nothing, and changes of `notify` itself are not announced. The filter must be part of the rule name. Channel 0, a
+  negative number, a decimal or text as channel are refused. A full `@clear` removes the notification too, so it hears
+  nothing about the rest. In the sandbox a notification only tells about changes made by the object that holds it (a
+  limit of the sandbox: answers go to the object that ran the line). One line makes at most 256 answers.
 - Effects outside the sandbox (camera, sky and water, debug settings, view modes) are only recorded as state and
   shown in the log ("recorded only"); the real program never changes. A force command of that kind is `retained`
   and its option is kept in `rlv_state` under `recorded`.

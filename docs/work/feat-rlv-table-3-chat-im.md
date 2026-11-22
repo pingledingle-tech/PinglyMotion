@@ -1,6 +1,6 @@
 Branch: feat/rlv-table-3-chat-im
-Status: active
-Pull request: pending
+Status: done
+Pull request: #319
 Files:
 - src/scriptlab/rlvbehaviours.*
 - src/scriptlab/rlvstate.*
