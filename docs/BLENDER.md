@@ -20,7 +20,7 @@ You make animations for Second Life, and you want to use Blender for part of the
 
 ### 1.1 What PinglyMotion writes
 
-When you use **File > Export for Second Life** (or save as `.bvh`), PinglyMotion writes:
+When you use **File > Export BVH**, PinglyMotion writes:
 
 | Thing | What PinglyMotion writes |
 |---|---|

@@ -248,7 +248,7 @@ The user may never have animated. Use these words, not the left column.
 | key frame, keyframe | key (a saved pose) |
 | rotate, rotation | turn |
 | interpolation | the movement between two keys |
-| ease in, ease out | slow finish, slow start |
+| ease in, ease out | slow start, slow finish |
 | IK, inverse kinematics | drag the hand and the arm follows |
 | joint limit | the furthest this joint can turn |
 | quaternion, Euler | never say these |

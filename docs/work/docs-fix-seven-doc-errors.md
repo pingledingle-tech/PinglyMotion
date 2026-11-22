@@ -1,6 +1,6 @@
 Branch: docs/fix-seven-doc-errors
-Status: active
-Pull request: pending
+Status: done
+Pull request: #323
 Files:
 - docs/FIRST_ANIMATION.md
 - docs/RELEASE_NOTES_0.4.0.md
