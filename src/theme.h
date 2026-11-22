@@ -46,7 +46,13 @@ namespace Theme
     AreaBody,
     AreaFace,
     AreaHands,
-    AreaOther
+    AreaOther,
+    AxisX,
+    AxisY,
+    AxisZ,
+    OnAxis,
+    GoFill,
+    ReplayFill
   };
 
   QList<Token> tokens();
