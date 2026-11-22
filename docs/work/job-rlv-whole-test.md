@@ -3,10 +3,14 @@ Status: active
 Pull request: #364
 Files:
 - tests/tst_scriptlabwhole.cpp
+- tests/data/scriptlab/**
+- tests/smoke_scriptlab.py
+- tests/smoke_control.py
 - tests/CMakeLists.txt
 - src/scriptlab/lsl/parser.cpp
 - tests/tst_lslparser.cpp
 - docs/SCRIPT_LAB.md
+- docs/ROADMAP.md
 
 ## What
 

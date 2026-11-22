@@ -1,0 +1,1704 @@
+{
+  "about": "Script Lab (RLV tool) scenarios: control requests and the exact values of chosen answer fields. Run by tests/tst_scriptlabwhole.cpp (ControlApi) and tests/smoke_scriptlab.py (the real program). \"source_file\" is a file in examples/scriptlab. Each scenario starts with rlv_reset in its mode (default rlva). Expected values: PINGLYMOTION_UPDATE_SCENARIOS=1 writes them again; read the difference before committing.",
+  "scenarios": [
+    {
+      "about": "hello.lsl: checks clean, lints clean, says two lines",
+      "name": "example_hello",
+      "steps": [
+        {
+          "expect": {"errors":[],"ok":true,"states":["default"],"valid":true,"warnings":[]},
+          "request": {"command":"lsl_check","source_file":"hello.lsl"}
+        },
+        {"expect":{"ok":true,"valid":true,"warnings":[]},"request":{"command":"lsl_lint","source_file":"hello.lsl"}},
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"t":0,"text":"Hello, Avatar!","type":"owner_say"},
+              {"channel":0,"t":0,"text":"Touch me or say hello.","type":"say"}
+            ],
+            "ok": true,
+            "rlv.lines": 0,
+            "rlv.state.restrictions": [],
+            "state": "default",
+            "stopped": false,
+            "time": 1
+          },
+          "request": {"command":"lsl_run","seconds":1,"source_file":"hello.lsl"}
+        }
+      ]
+    },
+    {
+      "about": "states_timer.lsl: three ticks, then state done",
+      "name": "example_states_timer",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"t":0,"text":"Starting, 3 colours.","type":"owner_say"},
+              {"seconds":1,"t":0,"type":"timer_set"},
+              {"name":"timer","t":1,"type":"event"},
+              {"t":1,"text":"Tick 0: red","type":"owner_say"},
+              {"name":"timer","t":2,"type":"event"},
+              {"t":2,"text":"Tick 1: green","type":"owner_say"},
+              {"name":"timer","t":3,"type":"event"},
+              {"t":3,"text":"Tick 2: blue","type":"owner_say"},
+              {"name":"done","t":3,"type":"state"},
+              {"name":"state_entry","t":3,"type":"event"},
+              {"seconds":0,"t":3,"type":"timer_set"},
+              {"t":3,"text":"Done after 3 ticks.","type":"owner_say"}
+            ],
+            "ok": true,
+            "state": "done",
+            "stopped": false,
+            "time": 10
+          },
+          "request": {"command":"lsl_run","seconds":10,"source_file":"states_timer.lsl"}
+        }
+      ]
+    },
+    {
+      "about": "listen_animate.lsl: dance, an unknown word, stop on channel 7; chat from another avatar is not heard",
+      "name": "example_listen_animate",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"channel":7,"handle":1,"id":"a2e76fcd-9360-4f6d-a924-000000000001","message":"","name":"","t":0,"type":"listen"},
+              {"granted":true,"mask":16,"note":"The sandbox grants the owner's permissions at once.","t":0,"type":"permissions"},
+              {"args":["16"],"name":"run_time_permissions","t":0,"type":"event"},
+              {"t":0,"text":"Ready. Say dance or stop on channel 7.","type":"owner_say"},
+              {"channel":7,"input":"chat","name":"Owner","t":1,"text":"dance","type":"input"},
+              {"args":["7","Owner","a2e76fcd-9360-4f6d-a924-000000000001","dance"],"name":"listen","t":1,"type":"event"},
+              {"name":"dance1","t":1,"type":"animation_start"},
+              {"channel":7,"input":"chat","name":"Guest","t":2,"text":"jump","type":"input"},
+              {"channel":7,"input":"chat","name":"Owner","t":3,"text":"Wave","type":"input"},
+              {"args":["7","Owner","a2e76fcd-9360-4f6d-a924-000000000001","Wave"],"name":"listen","t":3,"type":"event"},
+              {"t":3,"text":"Unknown command: wave","type":"owner_say"},
+              {"channel":7,"input":"chat","name":"Owner","t":4,"text":" Stop ","type":"input"},
+              {"args":["7","Owner","a2e76fcd-9360-4f6d-a924-000000000001"," Stop "],"name":"listen","t":4,"type":"event"},
+              {"name":"dance1","t":4,"type":"animation_stop"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "inputs": [
+              {"at":1,"channel":7,"text":"dance"},
+              {"at":2,"channel":7,"id":"11111111-2222-3333-4444-555555555555","name":"Guest","text":"jump"},
+              {"at":3,"channel":7,"text":"Wave"},
+              {"at":4,"channel":7,"text":" Stop "}
+            ],
+            "seconds": 5,
+            "source_file": "listen_animate.lsl"
+          }
+        }
+      ]
+    },
+    {
+      "about": "anim_wave.lsl: waves after one second, a touch through lsl_event stops it",
+      "name": "example_anim_wave",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"granted":true,"mask":16,"note":"The sandbox grants the owner's permissions at once.","t":0,"type":"permissions"},
+              {"args":["16"],"name":"run_time_permissions","t":0,"type":"event"},
+              {"seconds":1,"t":0,"type":"timer_set"},
+              {"name":"timer","t":1,"type":"event"},
+              {"seconds":0,"t":1,"type":"timer_set"},
+              {"name":"wave","t":1,"type":"animation_start"},
+              {"t":1,"text":"Waving. Touch me to stop.","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {"command":"lsl_run","seconds":3,"source_file":"anim_wave.lsl"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"input":"touch","name":"Owner","t":3,"type":"input"},
+              {"args":["1"],"name":"touch_start","t":3,"type":"event"},
+              {"name":"wave","t":3,"type":"animation_stop"},
+              {"t":3,"text":"Stopped.","type":"owner_say"}
+            ],
+            "ok": true,
+            "time": 4
+          },
+          "request": {"command":"lsl_event","type":"touch"}
+        }
+      ]
+    },
+    {
+      "about": "rlv_lock.lsl: locks detach and sendim, reads the RLVa version on 2222; rlv_state agrees",
+      "name": "example_rlv_lock",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"channel":2222,"handle":1,"id":"a2e76fcd-9360-4f6d-a924-000000000001","message":"","name":"","t":0,"type":"listen"},
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [],
+                "restrictions": 2,
+                "results": [
+                  {"behaviour":"detach","command":"detach=n","param":"n","result":"success","type":"add"},
+                  {"behaviour":"sendim","command":"sendim=n","param":"n","result":"success","type":"add"}
+                ],
+                "t": 0,
+                "text": "@detach=n,sendim=n",
+                "type": "rlv_command"
+              },
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [{"channel":2222,"text":"RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)"}],
+                "restrictions": 2,
+                "results": [{"behaviour":"version","command":"version=2222","param":"2222","result":"success","type":"reply"}],
+                "t": 0,
+                "text": "@version=2222",
+                "type": "rlv_command"
+              },
+              {
+                "channel": 2222,
+                "input": "chat",
+                "name": "Owner",
+                "t": 0,
+                "text": "RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)",
+                "type": "input"
+              },
+              {
+                "args": ["2222","Owner","a2e76fcd-9360-4f6d-a924-000000000001","RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)"],
+                "name": "listen",
+                "t": 0,
+                "type": "event"
+              },
+              {"t":0,"text":"RLV says: RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)","type":"owner_say"}
+            ],
+            "ok": true,
+            "rlv.lines": 2,
+            "rlv.refused": 0,
+            "rlv.state.blocked": ["detach","sendim"],
+            "rlv.state.objects": {"c0ffee00-0000-4000-8000-000000000002":["detach","sendim"]},
+            "stopped": false
+          },
+          "request": {"command":"lsl_run","seconds":1,"source_file":"rlv_lock.lsl"}
+        },
+        {
+          "expect": {
+            "blocked": ["detach","sendim"],
+            "counts": {"detach":1,"sendim":1},
+            "mode": "rlva",
+            "objects": {"c0ffee00-0000-4000-8000-000000000002":["detach","sendim"]}
+          },
+          "request": {"command":"rlv_state"}
+        }
+      ]
+    },
+    {
+      "about": "rlv_lock.lsl in plain RLV mode: the same locks and version reply",
+      "mode": "rlv",
+      "name": "example_rlv_lock_plain_rlv",
+      "steps": [
+        {
+          "expect": {
+            "log.6": {
+              "args": ["2222","Owner","a2e76fcd-9360-4f6d-a924-000000000001","RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)"],
+              "name": "listen",
+              "t": 0,
+              "type": "event"
+            },
+            "ok": true,
+            "rlv.state.blocked": ["detach","sendim"],
+            "rlv.state.mode": "rlv"
+          },
+          "request": {"command":"lsl_run","seconds":1,"source_file":"rlv_lock.lsl"}
+        }
+      ]
+    },
+    {
+      "about": "rlv_status.lsl: empty status alone; after rlv_lock.lsl with keep_rlv it lists the locks",
+      "name": "example_rlv_status",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"channel":3333,"handle":1,"id":"a2e76fcd-9360-4f6d-a924-000000000001","message":"","name":"","t":0,"type":"listen"},
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [{"channel":3333,"text":""}],
+                "restrictions": 0,
+                "results": [{"behaviour":"getstatus","command":"getstatus=3333","param":"3333","result":"success","type":"reply"}],
+                "t": 0,
+                "text": "@getstatus=3333",
+                "type": "rlv_command"
+              },
+              {"channel":3333,"input":"chat","name":"Owner","t":0,"text":"","type":"input"},
+              {"args":["3333","Owner","a2e76fcd-9360-4f6d-a924-000000000001",""],"name":"listen","t":0,"type":"event"},
+              {"t":0,"text":"Status: ","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {"command":"lsl_run","seconds":1,"source_file":"rlv_status.lsl"}
+        },
+        {
+          "expect": {"ok":true,"rlv.state.blocked":["detach","sendim"]},
+          "request": {"command":"lsl_run","seconds":1,"source_file":"rlv_lock.lsl"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"channel":3333,"handle":1,"id":"a2e76fcd-9360-4f6d-a924-000000000001","message":"","name":"","t":0,"type":"listen"},
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [{"channel":3333,"text":"/detach/sendim"}],
+                "restrictions": 2,
+                "results": [{"behaviour":"getstatus","command":"getstatus=3333","param":"3333","result":"success","type":"reply"}],
+                "t": 0,
+                "text": "@getstatus=3333",
+                "type": "rlv_command"
+              },
+              {"channel":3333,"input":"chat","name":"Owner","t":0,"text":"/detach/sendim","type":"input"},
+              {"args":["3333","Owner","a2e76fcd-9360-4f6d-a924-000000000001","/detach/sendim"],"name":"listen","t":0,"type":"event"},
+              {"t":0,"text":"Status: /detach/sendim","type":"owner_say"}
+            ],
+            "ok": true,
+            "rlv.state.blocked": ["detach","sendim"],
+            "stopped": false
+          },
+          "request": {"command":"lsl_run","keep_rlv":true,"seconds":1,"source_file":"rlv_status.lsl"}
+        },
+        {"expect":{"ok":true,"rlv.state.blocked":[]},"request":{"command":"lsl_run","seconds":1,"source_file":"rlv_status.lsl"}}
+      ]
+    },
+    {
+      "about": "hud_cuffs_hud.lsl and hud_cuffs_cuffs.lsl: touch the HUD, answer Lock, then Unlock; a button text the dialog does not have is still said on its channel (the sandbox does not check it)",
+      "name": "example_hud_cuffs",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","object":"hud","t":0,"type":"state"},
+              {"name":"default","object":"cuffs","t":0,"type":"state"},
+              {"name":"state_entry","object":"hud","t":0,"type":"event"},
+              {
+                "channel": -7001,
+                "handle": 1,
+                "id": "a2e76fcd-9360-4f6d-a924-000000000001",
+                "message": "",
+                "name": "",
+                "object": "hud",
+                "t": 0,
+                "type": "listen"
+              },
+              {
+                "channel": -7002,
+                "handle": 2,
+                "id": "00000000-0000-0000-0000-000000000000",
+                "message": "",
+                "name": "",
+                "object": "hud",
+                "t": 0,
+                "type": "listen"
+              },
+              {"name":"state_entry","object":"cuffs","t":0,"type":"event"},
+              {
+                "channel": -7002,
+                "handle": 1,
+                "id": "00000000-0000-0000-0000-000000000000",
+                "message": "",
+                "name": "",
+                "object": "cuffs",
+                "t": 0,
+                "type": "listen"
+              },
+              {"args":["a2e76fcd-9360-4f6d-a924-000000000001"],"name":"attach","object":"cuffs","t":0,"type":"event"},
+              {"object":"cuffs","t":0,"text":"Cuffs worn.","type":"owner_say"}
+            ],
+            "objects.0.attached": 35,
+            "objects.0.open_listens": 2,
+            "objects.1.attached": 30,
+            "objects.1.open_listens": 1,
+            "objects.1.restrictions": [],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "objects": [
+              {"attached":35,"name":"hud","source_file":"hud_cuffs_hud.lsl"},
+              {"attached":30,"name":"cuffs","source_file":"hud_cuffs_cuffs.lsl"}
+            ],
+            "seconds": 1
+          }
+        },
+        {
+          "expect": {
+            "dialog": {"buttons":["Lock","Unlock"],"channel":-7001,"message":"Cuffs","object":"hud","t":1,"to":"a2e76fcd-9360-4f6d-a924-000000000001"},
+            "log": [
+              {"input":"touch","name":"Owner","object":"hud","t":1,"type":"input"},
+              {"args":["1"],"name":"touch_start","object":"hud","t":1,"type":"event"},
+              {
+                "buttons": ["Lock","Unlock"],
+                "channel": -7001,
+                "message": "Cuffs",
+                "object": "hud",
+                "t": 1,
+                "to": "a2e76fcd-9360-4f6d-a924-000000000001",
+                "type": "dialog"
+              }
+            ],
+            "ok": true
+          },
+          "request": {"command":"lsl_event","object":"hud","type":"touch"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"channel":-7001,"input":"dialog","name":"Owner","object":"hud","t":2,"text":"Lock","type":"input"},
+              {"args":["-7001","Owner","a2e76fcd-9360-4f6d-a924-000000000001","Lock"],"name":"listen","object":"hud","t":2,"type":"event"},
+              {"channel":-7002,"object":"hud","t":2,"text":"lock","type":"region_say"},
+              {"args":["-7002","hud","c0ffee00-0000-4000-8000-000000000002","lock"],"name":"listen","object":"cuffs","t":2,"type":"event"},
+              {
+                "object": "cuffs",
+                "replies": [],
+                "restrictions": 1,
+                "results": [{"behaviour":"detach","command":"detach=n","param":"n","result":"success","type":"add"}],
+                "t": 2,
+                "text": "@detach=n",
+                "type": "rlv_command"
+              },
+              {"channel":-7002,"object":"cuffs","t":2,"text":"locked","type":"region_say"},
+              {"args":["-7002","cuffs","c0ffee00-0000-4000-8000-000000000003","locked"],"name":"listen","object":"hud","t":2,"type":"event"},
+              {"object":"hud","t":2,"text":"Cuffs: locked","type":"owner_say"}
+            ],
+            "ok": true,
+            "rlv.state.blocked": ["detach"],
+            "rlv.state.objects": {"c0ffee00-0000-4000-8000-000000000003":["detach"]}
+          },
+          "request": {"button":"Lock","command":"lsl_event","object":"hud","type":"dialog"}
+        },
+        {"expect":{"blocked":["detach"],"objects":{"c0ffee00-0000-4000-8000-000000000003":["detach"]}},"request":{"command":"rlv_state"}},
+        {"expect":{"ok":true},"request":{"command":"lsl_event","object":"hud","type":"touch"}},
+        {
+          "expect": {
+            "log": [
+              {"channel":-7001,"input":"dialog","name":"Owner","object":"hud","t":4,"text":"Unlock","type":"input"},
+              {"args":["-7001","Owner","a2e76fcd-9360-4f6d-a924-000000000001","Unlock"],"name":"listen","object":"hud","t":4,"type":"event"},
+              {"channel":-7002,"object":"hud","t":4,"text":"unlock","type":"region_say"},
+              {"args":["-7002","hud","c0ffee00-0000-4000-8000-000000000002","unlock"],"name":"listen","object":"cuffs","t":4,"type":"event"},
+              {
+                "object": "cuffs",
+                "replies": [],
+                "restrictions": 0,
+                "results": [{"behaviour":"detach","command":"detach=y","param":"y","result":"success","type":"remove"}],
+                "t": 4,
+                "text": "@detach=y",
+                "type": "rlv_command"
+              },
+              {"channel":-7002,"object":"cuffs","t":4,"text":"unlocked","type":"region_say"},
+              {
+                "args": ["-7002","cuffs","c0ffee00-0000-4000-8000-000000000003","unlocked"],
+                "name": "listen",
+                "object": "hud",
+                "t": 4,
+                "type": "event"
+              },
+              {"object":"hud","t":4,"text":"Cuffs: unlocked","type":"owner_say"}
+            ],
+            "ok": true,
+            "rlv.state.blocked": []
+          },
+          "request": {"button":"Unlock","command":"lsl_event","object":"hud","type":"dialog"}
+        },
+        {
+          "expect": {
+            "error": null,
+            "log": [
+              {"channel":-7001,"input":"dialog","name":"Owner","object":"hud","t":5,"text":"Maybe","type":"input"},
+              {"args":["-7001","Owner","a2e76fcd-9360-4f6d-a924-000000000001","Maybe"],"name":"listen","object":"hud","t":5,"type":"event"},
+              {"channel":-7002,"object":"hud","t":5,"text":"maybe","type":"region_say"},
+              {"args":["-7002","hud","c0ffee00-0000-4000-8000-000000000002","maybe"],"name":"listen","object":"cuffs","t":5,"type":"event"}
+            ],
+            "ok": true
+          },
+          "request": {"button":"Maybe","command":"lsl_event","object":"hud","type":"dialog"}
+        }
+      ]
+    },
+    {
+      "about": "restrictions: add, duplicate, lift, lift one not held; the actions follow",
+      "name": "rlv_restriction_on_off",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 2,
+            "results": [
+              {"behaviour":"detach","command":"detach=n","param":"n","result":"success","type":"add"},
+              {"behaviour":"sendim","command":"sendim=n","param":"n","result":"success","type":"add"},
+              {"behaviour":"detach","command":"detach=n","param":"n","result":"duplicate","type":"add"}
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@detach=n,sendim=n,detach=n"}
+        },
+        {
+          "expect": {"blocked":["detach","sendim"],"counts":{"detach":1,"sendim":1},"objects":{"collar":["detach","sendim"]}},
+          "request": {"command":"rlv_state"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 1,
+            "results": [
+              {"behaviour":"detach","command":"detach=y","param":"y","result":"success","type":"remove"},
+              {"behaviour":"fly","command":"fly=y","param":"y","result":"unset","type":"remove"}
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@detach=y,fly=y"}
+        },
+        {"expect":{"blocked":["sendim"]},"request":{"command":"rlv_state"}},
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 0,
+            "results": [{"behaviour":"sendim","command":"sendim=y","param":"y","result":"success","type":"remove"}]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@sendim=y"}
+        },
+        {"expect":{"blocked":[],"objects":{},"restrictions":[]},"request":{"command":"rlv_state"}}
+      ]
+    },
+    {
+      "about": "two objects hold the same restriction; @clear removes only the sender's, rlv_reset all",
+      "name": "rlv_two_objects_clear",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 2,
+            "results": [
+              {"behaviour":"fly","command":"fly=n","param":"n","result":"success","type":"add"},
+              {"behaviour":"tplm","command":"tplm=n","param":"n","result":"success","type":"add"}
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@fly=n,tplm=n"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 3,
+            "results": [{"behaviour":"fly","command":"fly=n","param":"n","result":"success","type":"add"}]
+          },
+          "request": {"command":"rlv_command","object":"cuffs","text":"@fly=n"}
+        },
+        {"expect":{"counts":{"fly":2,"tplm":1},"objects":{"collar":["fly","tplm"],"cuffs":["fly"]}},"request":{"command":"rlv_state"}},
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 1,
+            "results": [{"behaviour":"clear","command":"clear","param":"","result":"success","type":"clear"}]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@clear"}
+        },
+        {"expect":{"blocked":["fly"],"counts":{"fly":1},"objects":{"cuffs":["fly"]}},"request":{"command":"rlv_state"}},
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 0,
+            "results": [{"behaviour":"clear","command":"clear=fl","param":"fl","result":"success","type":"clear"}]
+          },
+          "request": {"command":"rlv_command","object":"cuffs","text":"@clear=fl"}
+        },
+        {"expect":{"mode":"rlva","ok":true,"removed":0},"request":{"command":"rlv_reset"}}
+      ]
+    },
+    {
+      "about": "force commands are retained, not carried out; outside effects are recorded",
+      "name": "rlv_force",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 0,
+            "results": [
+              {
+                "behaviour": "remoutfit",
+                "command": "remoutfit:shirt=force",
+                "option": "shirt",
+                "param": "force",
+                "reason": "accepted; force commands are not carried out in the sandbox",
+                "result": "retained",
+                "type": "force"
+              },
+              {
+                "behaviour": "detachme",
+                "command": "detachme=force",
+                "param": "force",
+                "reason": "accepted; force commands are not carried out in the sandbox",
+                "result": "retained",
+                "type": "force"
+              },
+              {
+                "behaviour": "unsit",
+                "command": "unsit=force",
+                "param": "force",
+                "reason": "accepted; force commands are not carried out in the sandbox",
+                "result": "retained",
+                "type": "force"
+              },
+              {
+                "behaviour": "tpto",
+                "command": "tpto:1/2/3=force",
+                "option": "1/2/3",
+                "param": "force",
+                "reason": "accepted; force commands are not carried out in the sandbox",
+                "result": "retained",
+                "type": "force"
+              },
+              {
+                "behaviour": "setenv_daytime",
+                "command": "setenv_daytime:0.5=force",
+                "option": "0.5",
+                "param": "force",
+                "reason": "accepted; recorded only: the real sky and water do not change",
+                "result": "retained",
+                "type": "force"
+              },
+              {
+                "behaviour": "setdebug_avatarsex",
+                "command": "setdebug_avatarsex:1=force",
+                "option": "1",
+                "param": "force",
+                "reason": "accepted; recorded only: no debug setting changes",
+                "result": "retained",
+                "type": "force"
+              }
+            ]
+          },
+          "request": {
+            "command": "rlv_command",
+            "object": "collar",
+            "text": "@remoutfit:shirt=force,detachme=force,unsit=force,tpto:1/2/3=force,setenv_daytime:0.5=force,setdebug_avatarsex:1=force"
+          }
+        },
+        {"expect":{"recorded":{"setdebug_avatarsex":"1","setenv_daytime":"0.5"},"restrictions":[]},"request":{"command":"rlv_state"}},
+        {
+          "expect": {
+            "ok": true,
+            "replies": [{"channel":5555,"text":"0.5"},{"channel":5556,"text":"1"}],
+            "restrictions": 0,
+            "results": [
+              {"behaviour":"getenv_daytime","command":"getenv_daytime=5555","param":"5555","result":"success","type":"reply"},
+              {"behaviour":"getdebug_avatarsex","command":"getdebug_avatarsex=5556","param":"5556","result":"success","type":"reply"}
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@getenv_daytime=5555,getdebug_avatarsex=5556"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 0,
+            "results": [{"behaviour":"clear","command":"clear","param":"","result":"success","type":"clear"}]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@clear"}
+        },
+        {"expect":{"recorded":{}},"request":{"command":"rlv_state"}}
+      ]
+    },
+    {
+      "about": "questions answer on the chat channel after =",
+      "name": "rlv_queries",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 2,
+            "results": [
+              {"behaviour":"detach","command":"detach=n","param":"n","result":"success","type":"add"},
+              {
+                "behaviour": "sendim",
+                "command": "sendim:11111111-2222-3333-4444-555555555555=add",
+                "option": "11111111-2222-3333-4444-555555555555",
+                "param": "add",
+                "result": "success",
+                "type": "add"
+              }
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@detach=n,sendim:11111111-2222-3333-4444-555555555555=add"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [
+              {"channel":2222,"text":"RestrainedLife viewer v3.4.3 (PinglyMotion Script Lab)"},
+              {"channel":2223,"text":"RestrainedLove viewer v3.4.3 (PinglyMotion Script Lab)"},
+              {"channel":2224,"text":"3040300"},
+              {"channel":2225,"text":"/detach/sendim:11111111-2222-3333-4444-555555555555"},
+              {"channel":2226,"text":"/sendim:11111111-2222-3333-4444-555555555555"},
+              {"channel":2227,"text":"/detach/sendim:11111111-2222-3333-4444-555555555555"}
+            ]
+          },
+          "request": {
+            "command": "rlv_command",
+            "object": "collar",
+            "text": "@version=2222,versionnew=2223,versionnum=2224,getstatus=2225,getstatus:send=2226,getstatusall=2227"
+          }
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [
+              {"channel":2228,"text":"/detach/detachme/detachall/detachthis/detachallthis/detachthis_except/detachallthis_except"},
+              {"channel":2229,"text":"00000000-0000-0000-0000-000000000000"},
+              {"channel":2230,"text":"none"},
+              {"channel":2231,"text":"0"},
+              {"channel":2232,"text":"0"},
+              {"channel":2233,"text":"0"}
+            ]
+          },
+          "request": {
+            "command": "rlv_command",
+            "object": "collar",
+            "text": "@getcommand:detach=2228,getsitid=2229,getgroup=2230,getoutfit:shirt=2231,getattach:chest=2232,getheightoffset=2233"
+          }
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [{"channel":2234,"text":""},{"channel":2235,"text":""}],
+            "results": [
+              {"behaviour":"getinv","command":"getinv=2234","param":"2234","result":"success","type":"reply"},
+              {"behaviour":"findfolder","command":"findfolder:x=2235","option":"x","param":"2235","result":"success","type":"reply"},
+              {
+                "behaviour": "getblacklist",
+                "command": "getblacklist=2236",
+                "param": "2236",
+                "reason": "unknown behaviour \"getblacklist\"",
+                "result": "failed",
+                "type": "reply"
+              }
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@getinv=2234,findfolder:x=2235,getblacklist=2236"}
+        }
+      ]
+    },
+    {
+      "about": "exceptions (add/rem) with an option do not block by themselves and keep the action blocked",
+      "name": "rlv_exceptions",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 3,
+            "results": [
+              {"behaviour":"sendim","command":"sendim=n","param":"n","result":"success","type":"add"},
+              {
+                "behaviour": "sendim",
+                "command": "sendim:11111111-2222-3333-4444-555555555555=add",
+                "option": "11111111-2222-3333-4444-555555555555",
+                "param": "add",
+                "result": "success",
+                "type": "add"
+              },
+              {
+                "behaviour": "recvchat",
+                "command": "recvchat:22222222-3333-4444-5555-666666666666=add",
+                "option": "22222222-3333-4444-5555-666666666666",
+                "param": "add",
+                "result": "success",
+                "type": "add"
+              }
+            ]
+          },
+          "request": {
+            "command": "rlv_command",
+            "object": "collar",
+            "text": "@sendim=n,sendim:11111111-2222-3333-4444-555555555555=add,recvchat:22222222-3333-4444-5555-666666666666=add"
+          }
+        },
+        {
+          "expect": {
+            "blocked": ["sendim"],
+            "objects": {"collar":["sendim","sendim:11111111-2222-3333-4444-555555555555","recvchat:22222222-3333-4444-5555-666666666666"]},
+            "restrictions": [
+              {"behaviour":"sendim","object":"collar"},
+              {"behaviour":"sendim","object":"collar","option":"11111111-2222-3333-4444-555555555555"},
+              {"behaviour":"recvchat","object":"collar","option":"22222222-3333-4444-5555-666666666666"}
+            ]
+          },
+          "request": {"command":"rlv_state"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 1,
+            "results": [
+              {
+                "behaviour": "sendim",
+                "command": "sendim:11111111-2222-3333-4444-555555555555=rem",
+                "option": "11111111-2222-3333-4444-555555555555",
+                "param": "rem",
+                "result": "success",
+                "type": "remove"
+              },
+              {
+                "behaviour": "recvchat",
+                "command": "recvchat:22222222-3333-4444-5555-666666666666=rem",
+                "option": "22222222-3333-4444-5555-666666666666",
+                "param": "rem",
+                "result": "success",
+                "type": "remove"
+              }
+            ]
+          },
+          "request": {
+            "command": "rlv_command",
+            "object": "collar",
+            "text": "@sendim:11111111-2222-3333-4444-555555555555=rem,recvchat:22222222-3333-4444-5555-666666666666=rem"
+          }
+        },
+        {"expect":{"blocked":["sendim"],"objects":{"collar":["sendim"]}},"request":{"command":"rlv_state"}}
+      ]
+    },
+    {
+      "about": "@notify tells the holder about each change on its channel; channel 0 is refused",
+      "name": "rlv_notify",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 1,
+            "results": [{"behaviour":"notify","command":"notify:4444=add","option":"4444","param":"add","result":"success","type":"add"}]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@notify:4444=add"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [{"channel":4444,"text":"/fly=n"},{"channel":4444,"text":"/tplm=n"},{"channel":4444,"text":"/fly=y"}],
+            "restrictions": 2,
+            "results": [
+              {"behaviour":"fly","command":"fly=n","param":"n","result":"success","type":"add"},
+              {"behaviour":"fly","command":"fly=n","param":"n","result":"duplicate","type":"add"},
+              {"behaviour":"tplm","command":"tplm=n","param":"n","result":"success","type":"add"},
+              {"behaviour":"fly","command":"fly=y","param":"y","result":"success","type":"remove"},
+              {"behaviour":"sit","command":"sit=y","param":"y","result":"unset","type":"remove"}
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@fly=n,fly=n,tplm=n,fly=y,sit=y"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 3,
+            "results": [{"behaviour":"notify","command":"notify:4444;tp=add","option":"4444;tp","param":"add","result":"success","type":"add"}]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@notify:4444;tp=add"}
+        },
+        {
+          "expect": {
+            "ok": true,
+            "results": [
+              {
+                "behaviour": "notify",
+                "command": "notify:0=add",
+                "option": "0",
+                "param": "add",
+                "reason": "@notify needs a channel from 1 to 2147483647 as option (channel 0 is refused), then an optional \";<filter>\"",
+                "result": "failed",
+                "type": "add"
+              },
+              {
+                "behaviour": "notify",
+                "command": "notify:-5=add",
+                "option": "-5",
+                "param": "add",
+                "reason": "@notify needs a channel from 1 to 2147483647 as option (channel 0 is refused), then an optional \";<filter>\"",
+                "result": "failed",
+                "type": "add"
+              },
+              {
+                "behaviour": "notify",
+                "command": "notify:abc=add",
+                "option": "abc",
+                "param": "add",
+                "reason": "@notify needs a channel from 1 to 2147483647 as option (channel 0 is refused), then an optional \";<filter>\"",
+                "result": "failed",
+                "type": "add"
+              }
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@notify:0=add,notify:-5=add,notify:abc=add"}
+        },
+        {"expect":{"ok":true,"replies":[],"restrictions":0},"request":{"command":"rlv_command","object":"collar","text":"@clear"}}
+      ]
+    },
+    {
+      "about": "RLVa and plain RLV: RLV-only and RLVa-only names, the switch empties the state",
+      "name": "rlv_mode_switch",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 1,
+            "results": [
+              {
+                "behaviour": "camdrawmax",
+                "command": "camdrawmax:20=n",
+                "option": "20",
+                "param": "n",
+                "reason": "unknown behaviour \"camdrawmax\"",
+                "result": "failed",
+                "type": "add"
+              },
+              {"behaviour":"showselfhead","command":"showselfhead=n","param":"n","result":"success","type":"add"},
+              {
+                "behaviour": "fly",
+                "command": "fly=force",
+                "param": "force",
+                "reason": "accepted; force commands are not carried out in the sandbox",
+                "result": "retained",
+                "type": "force"
+              }
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@camdrawmax:20=n,showselfhead=n,fly=force"}
+        },
+        {"expect":{"mode":"rlv","ok":true,"removed":1},"request":{"command":"rlv_reset","mode":"rlv"}},
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 1,
+            "results": [
+              {
+                "behaviour": "camdrawmax",
+                "command": "camdrawmax:20=n",
+                "option": "20",
+                "param": "n",
+                "reason": "recorded only: the real view does not change",
+                "result": "success",
+                "type": "add"
+              },
+              {
+                "behaviour": "showselfhead",
+                "command": "showselfhead=n",
+                "param": "n",
+                "reason": "unknown behaviour \"showselfhead\"",
+                "result": "failed",
+                "type": "add"
+              },
+              {
+                "behaviour": "fly",
+                "command": "fly=force",
+                "param": "force",
+                "reason": "@fly does not take =force",
+                "result": "failed",
+                "type": "force"
+              }
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@camdrawmax:20=n,showselfhead=n,fly=force"}
+        },
+        {"expect":{"mode":"rlv","objects":{"collar":["camdrawmax:20"]}},"request":{"command":"rlv_state"}},
+        {"expect":{"mode":"rlva","ok":true,"removed":1},"request":{"command":"rlv_reset","mode":"rlva"}},
+        {"expect":{"mode":"rlva","objects":{}},"request":{"command":"rlv_state"}}
+      ]
+    },
+    {
+      "about": "unknown behaviours, wrong parameters and refused values fail with a reason and hold nothing",
+      "name": "rlv_blocked_and_refused",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 1,
+            "results": [
+              {"behaviour":"dance","command":"dance=n","param":"n","reason":"unknown behaviour \"dance\"","result":"failed","type":"add"},
+              {
+                "behaviour": "fly",
+                "command": "fly=maybe",
+                "param": "maybe",
+                "reason": "parameter must be n, add, y, rem, force or a channel number from 1 to 2147483647",
+                "result": "failed",
+                "type": "invalid"
+              },
+              {
+                "behaviour": "setcam_avdistmin",
+                "command": "setcam_avdistmin=n",
+                "param": "n",
+                "reason": "@setcam_avdistmin needs an option",
+                "result": "failed",
+                "type": "add"
+              },
+              {
+                "behaviour": "setsphere_distmin",
+                "command": "setsphere_distmin:2=n",
+                "option": "2",
+                "param": "n",
+                "reason": "@setsphere_distmin does not take =n",
+                "result": "failed",
+                "type": "add"
+              },
+              {"behaviour":"detach","command":"detach:=n","param":"n","result":"success","type":"add"},
+              {"behaviour":"","command":"=n","param":"n","reason":"no behaviour name","result":"failed","type":"invalid"},
+              {
+                "behaviour": "getstatus",
+                "command": "getstatus=abc",
+                "param": "abc",
+                "reason": "parameter must be n, add, y, rem, force or a channel number from 1 to 2147483647",
+                "result": "failed",
+                "type": "invalid"
+              }
+            ]
+          },
+          "request": {
+            "command": "rlv_command",
+            "object": "collar",
+            "text": "@dance=n,fly=maybe,setcam_avdistmin=n,setsphere_distmin:2=n,detach:=n,=n,getstatus=abc"
+          }
+        },
+        {"expect":{"blocked":["detach"],"restrictions":[{"behaviour":"detach","object":"collar"}]},"request":{"command":"rlv_state"}}
+      ]
+    },
+    {
+      "about": "KNOWN GAP: the sandbox does not check the type of an option yet (a channel, a UUID, a number), so these are accepted; RLVa refuses at least sendchannel:abc. When option types are checked, this scenario changes",
+      "name": "rlv_option_types_not_checked",
+      "steps": [
+        {
+          "expect": {
+            "ok": true,
+            "replies": [],
+            "restrictions": 3,
+            "results": [
+              {"behaviour":"sendchannel","command":"sendchannel:abc=n","option":"abc","param":"n","result":"success","type":"add"},
+              {"behaviour":"recvim","command":"recvim:not-a-key=add","option":"not-a-key","param":"add","result":"success","type":"add"},
+              {
+                "behaviour": "setcam_avdistmin",
+                "command": "setcam_avdistmin:-1=n",
+                "option": "-1",
+                "param": "n",
+                "reason": "recorded only: the real camera does not change",
+                "result": "success",
+                "type": "add"
+              }
+            ]
+          },
+          "request": {"command":"rlv_command","object":"collar","text":"@sendchannel:abc=n,recvim:not-a-key=add,setcam_avdistmin:-1=n"}
+        },
+        {
+          "expect": {
+            "restrictions": [
+              {"behaviour":"sendchannel","object":"collar","option":"abc"},
+              {"behaviour":"recvim","object":"collar","option":"not-a-key"},
+              {"behaviour":"setcam_avdistmin","object":"collar","option":"-1"}
+            ]
+          },
+          "request": {"command":"rlv_state"}
+        }
+      ]
+    },
+    {
+      "about": "requests the control commands refuse",
+      "name": "rlv_bad_requests",
+      "steps": [
+        {
+          "expect": {"error":"rlv_command needs \"text\": the owner-say line, e.g. \"@detach=n\".","ok":false},
+          "request": {"command":"rlv_command","object":"collar"}
+        },
+        {
+          "expect": {"error":"RLV text must start with \"@\".","ok":false},
+          "request": {"command":"rlv_command","object":"collar","text":"detach=n"}
+        },
+        {
+          "expect": {"error":"Object id must be 1 to 64 characters: letters, digits, \"-\", \"_\", \".\" or space.","ok":false},
+          "request": {"command":"rlv_command","object":"../x","text":"@detach=n"}
+        },
+        {
+          "expect": {"error":"rlv_reset: \"mode\" must be \"rlv\" or \"rlva\".","ok":false},
+          "request": {"command":"rlv_reset","mode":"firestorm"}
+        },
+        {"expect":{"mode":"rlva","restrictions":[]},"request":{"command":"rlv_state"}}
+      ]
+    },
+    {
+      "about": "a script's RLV lines: restriction, question, refused line, @clear; the replies reach listen",
+      "name": "lsl_rlv_in_script",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"channel":9000,"handle":1,"id":"00000000-0000-0000-0000-000000000000","message":"","name":"","t":0,"type":"listen"},
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [],
+                "restrictions": 1,
+                "results": [
+                  {"behaviour":"tplm","command":"tplm=n","param":"n","result":"success","type":"add"},
+                  {
+                    "behaviour": "dance",
+                    "command": "dance=n",
+                    "param": "n",
+                    "reason": "unknown behaviour \"dance\"",
+                    "result": "failed",
+                    "type": "add"
+                  }
+                ],
+                "t": 0,
+                "text": "@tplm=n,dance=n",
+                "type": "rlv_command"
+              },
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [{"channel":9000,"text":"/tplm"}],
+                "restrictions": 1,
+                "results": [{"behaviour":"getstatus","command":"getstatus=9000","param":"9000","result":"success","type":"reply"}],
+                "t": 0,
+                "text": "@getstatus=9000",
+                "type": "rlv_command"
+              },
+              {"channel":9000,"input":"chat","name":"Owner","t":0,"text":"/tplm","type":"input"},
+              {"seconds":1,"t":0,"type":"timer_set"},
+              {"args":["9000","Owner","a2e76fcd-9360-4f6d-a924-000000000001","/tplm"],"name":"listen","t":0,"type":"event"},
+              {"t":0,"text":"heard [/tplm] from Owner","type":"owner_say"},
+              {"name":"timer","t":1,"type":"event"},
+              {"seconds":0,"t":1,"type":"timer_set"},
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [],
+                "restrictions": 0,
+                "results": [{"behaviour":"clear","command":"clear","param":"","result":"success","type":"clear"}],
+                "t": 1,
+                "text": "@clear",
+                "type": "rlv_command"
+              },
+              {
+                "object": "c0ffee00-0000-4000-8000-000000000002",
+                "replies": [{"channel":9000,"text":""}],
+                "restrictions": 0,
+                "results": [{"behaviour":"getstatus","command":"getstatus=9000","param":"9000","result":"success","type":"reply"}],
+                "t": 1,
+                "text": "@getstatus=9000",
+                "type": "rlv_command"
+              },
+              {"channel":9000,"input":"chat","name":"Owner","t":1,"text":"","type":"input"},
+              {"args":["9000","Owner","a2e76fcd-9360-4f6d-a924-000000000001",""],"name":"listen","t":1,"type":"event"},
+              {"t":1,"text":"heard [] from Owner","type":"owner_say"}
+            ],
+            "ok": true,
+            "rlv.lines": 4,
+            "rlv.refused": 0,
+            "rlv.state.blocked": [],
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "seconds": 2,
+            "source": "default { state_entry() { llListen(9000, \"\", NULL_KEY, \"\"); llOwnerSay(\"@tplm=n,dance=n\"); llOwnerSay(\"@getstatus=9000\"); llSetTimerEvent(1); } timer() { llSetTimerEvent(0); llOwnerSay(\"@clear\"); llOwnerSay(\"@getstatus=9000\"); } listen(integer c, string n, key id, string m) { llOwnerSay(\"heard [\" + m + \"] from \" + n); } }"
+          }
+        }
+      ]
+    },
+    {
+      "about": "four objects at 0, 5, 15 and 60 m: whisper reaches 5 m, say 15 m, shout 60 m, region say all; the speaker never hears itself",
+      "name": "lsl_several_objects_ranges",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","object":"speaker","t":0,"type":"state"},
+              {"name":"default","object":"near","t":0,"type":"state"},
+              {"name":"default","object":"mid","t":0,"type":"state"},
+              {"name":"default","object":"far","t":0,"type":"state"},
+              {"name":"state_entry","object":"speaker","t":0,"type":"event"},
+              {"object":"speaker","seconds":1,"t":0,"type":"timer_set"},
+              {"name":"state_entry","object":"near","t":0,"type":"event"},
+              {
+                "channel": 1,
+                "handle": 1,
+                "id": "00000000-0000-0000-0000-000000000000",
+                "message": "",
+                "name": "",
+                "object": "near",
+                "t": 0,
+                "type": "listen"
+              },
+              {"name":"state_entry","object":"mid","t":0,"type":"event"},
+              {
+                "channel": 1,
+                "handle": 1,
+                "id": "00000000-0000-0000-0000-000000000000",
+                "message": "",
+                "name": "",
+                "object": "mid",
+                "t": 0,
+                "type": "listen"
+              },
+              {"name":"state_entry","object":"far","t":0,"type":"event"},
+              {
+                "channel": 1,
+                "handle": 1,
+                "id": "00000000-0000-0000-0000-000000000000",
+                "message": "",
+                "name": "",
+                "object": "far",
+                "t": 0,
+                "type": "listen"
+              },
+              {"name":"timer","object":"speaker","t":1,"type":"event"},
+              {"object":"speaker","seconds":0,"t":1,"type":"timer_set"},
+              {"channel":1,"object":"speaker","t":1,"text":"w","type":"whisper"},
+              {"channel":1,"object":"speaker","t":1,"text":"s","type":"say"},
+              {"channel":1,"object":"speaker","t":1,"text":"sh","type":"shout"},
+              {"channel":1,"object":"speaker","t":1,"text":"r","type":"region_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","w"],"name":"listen","object":"near","t":1,"type":"event"},
+              {"object":"near","t":1,"text":"near w","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","s"],"name":"listen","object":"near","t":1,"type":"event"},
+              {"object":"near","t":1,"text":"near s","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","sh"],"name":"listen","object":"near","t":1,"type":"event"},
+              {"object":"near","t":1,"text":"near sh","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","r"],"name":"listen","object":"near","t":1,"type":"event"},
+              {"object":"near","t":1,"text":"near r","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","s"],"name":"listen","object":"mid","t":1,"type":"event"},
+              {"object":"mid","t":1,"text":"mid s","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","sh"],"name":"listen","object":"mid","t":1,"type":"event"},
+              {"object":"mid","t":1,"text":"mid sh","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","r"],"name":"listen","object":"mid","t":1,"type":"event"},
+              {"object":"mid","t":1,"text":"mid r","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","sh"],"name":"listen","object":"far","t":1,"type":"event"},
+              {"object":"far","t":1,"text":"far sh","type":"owner_say"},
+              {"args":["1","speaker","c0ffee00-0000-4000-8000-000000000002","r"],"name":"listen","object":"far","t":1,"type":"event"},
+              {"object":"far","t":1,"text":"far r","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "objects": [
+              {
+                "name": "speaker",
+                "position": [128,128,20],
+                "source": "default { state_entry() { llSetTimerEvent(1); } timer() { llSetTimerEvent(0); llWhisper(1, \"w\"); llSay(1, \"s\"); llShout(1, \"sh\"); llRegionSay(1, \"r\"); } }"
+              },
+              {
+                "name": "near",
+                "position": [133,128,20],
+                "source": "default { state_entry() { llListen(1, \"\", NULL_KEY, \"\"); } listen(integer c, string n, key id, string m) { llOwnerSay(\"near \" + m); } }"
+              },
+              {
+                "name": "mid",
+                "position": [143,128,20],
+                "source": "default { state_entry() { llListen(1, \"\", NULL_KEY, \"\"); } listen(integer c, string n, key id, string m) { llOwnerSay(\"mid \" + m); } }"
+              },
+              {
+                "name": "far",
+                "position": [188,128,20],
+                "source": "default { state_entry() { llListen(1, \"\", NULL_KEY, \"\"); } listen(integer c, string n, key id, string m) { llOwnerSay(\"far \" + m); } }"
+              }
+            ],
+            "seconds": 2
+          }
+        }
+      ]
+    },
+    {
+      "about": "two scripts in one object talk with llMessageLinked and share Linkset Data",
+      "name": "lsl_linked_scripts",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","object":"hud","script":"menu","t":0,"type":"state"},
+              {"name":"default","object":"hud","script":"main","t":0,"type":"state"},
+              {"name":"state_entry","object":"hud","script":"menu","t":0,"type":"event"},
+              {
+                "name": "mode",
+                "object": "hud",
+                "op": "write",
+                "result": "LINKSETDATA_OK",
+                "script": "menu",
+                "t": 0,
+                "type": "linkset_data",
+                "used": 10,
+                "value": "strict"
+              },
+              {
+                "id": "00000000-0000-0000-0000-000000000000",
+                "link": -2,
+                "num": 7,
+                "object": "hud",
+                "script": "menu",
+                "scripts": 1,
+                "t": 0,
+                "text": "lock",
+                "type": "message_linked"
+              },
+              {
+                "args": ["1","7","lock","00000000-0000-0000-0000-000000000000"],
+                "name": "link_message",
+                "object": "hud",
+                "script": "main",
+                "t": 0,
+                "type": "event"
+              },
+              {"object":"hud","script":"main","t":0,"text":"main got lock 7 from 1, mode strict","type":"owner_say"}
+            ],
+            "objects.0.linkset_data": {"available":131062,"count":1,"pairs":{"mode":"strict"},"used":10},
+            "ok": true
+          },
+          "request": {
+            "command": "lsl_run",
+            "objects": [
+              {
+                "name": "hud",
+                "prims": 2,
+                "scripts": [
+                  {
+                    "link": 1,
+                    "name": "menu",
+                    "source": "default { state_entry() { llLinksetDataWrite(\"mode\", \"strict\"); llMessageLinked(LINK_ALL_OTHERS, 7, \"lock\", NULL_KEY); } }"
+                  },
+                  {
+                    "link": 2,
+                    "name": "main",
+                    "source": "default { link_message(integer s, integer n, string m, key id) { llOwnerSay(\"main got \" + m + \" \" + (string)n + \" from \" + (string)s + \", mode \" + llLinksetDataRead(\"mode\")); } }"
+                  }
+                ]
+              }
+            ],
+            "seconds": 1
+          }
+        }
+      ]
+    },
+    {
+      "about": "canned inventory: count, names, a notecard read line by line through dataserver",
+      "name": "lsl_inventory_notecard",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"t":0,"text":"3 items, first config","type":"owner_say"},
+              {
+                "function": "llGetNotecardLine",
+                "line": 0,
+                "notecard": "config",
+                "query": "5c11ab00-0000-4000-8000-000000000001",
+                "t": 0,
+                "type": "dataserver_request"
+              },
+              {"args":["5c11ab00-0000-4000-8000-000000000001","channel=5"],"name":"dataserver","t":0,"type":"event"},
+              {"t":0,"text":"line channel=5","type":"owner_say"},
+              {
+                "function": "llGetNotecardLine",
+                "line": 1,
+                "notecard": "config",
+                "query": "5c11ab00-0000-4000-8000-000000000002",
+                "t": 0,
+                "type": "dataserver_request"
+              },
+              {"args":["5c11ab00-0000-4000-8000-000000000002","name=cuffs"],"name":"dataserver","t":0,"type":"event"},
+              {"t":0,"text":"line name=cuffs","type":"owner_say"},
+              {
+                "function": "llGetNotecardLine",
+                "line": 2,
+                "notecard": "config",
+                "query": "5c11ab00-0000-4000-8000-000000000003",
+                "t": 0,
+                "type": "dataserver_request"
+              },
+              {"args":["5c11ab00-0000-4000-8000-000000000003","\n\n\n"],"name":"dataserver","t":0,"type":"event"},
+              {"t":0,"text":"end","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "inventory": [{"lines":["channel=5","name=cuffs"],"name":"config","type":"notecard"},{"name":"wave","type":"animation"}],
+            "seconds": 2,
+            "source": "key q; integer line = 0;\ndefault { state_entry() { llOwnerSay((string)llGetInventoryNumber(INVENTORY_ALL) + \" items, first \" + llGetInventoryName(INVENTORY_NOTECARD, 0)); q = llGetNotecardLine(\"config\", line); }\n dataserver(key id, string data) { if (id != q) return; if (data == EOF) { llOwnerSay(\"end\"); return; } llOwnerSay(\"line \" + data); q = llGetNotecardLine(\"config\", ++line); } }"
+          }
+        }
+      ]
+    },
+    {
+      "about": "a pose ball: sit target, an avatar sits, the animation starts; stand stops it",
+      "name": "lsl_sitting_pose_ball",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"link":0,"offset":[0,0,0.5],"op":"sit_target","rotation":[0,0,0,1],"set":true,"t":0,"type":"prim"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "seconds": 1,
+            "source": "default { state_entry() { llSitTarget(<0, 0, 0.5>, ZERO_ROTATION); } changed(integer c) { if (c & CHANGED_LINK) { key av = llAvatarOnSitTarget(); if (av) llRequestPermissions(av, PERMISSION_TRIGGER_ANIMATION); else llOwnerSay(\"empty\"); } } run_time_permissions(integer p) { if (p & PERMISSION_TRIGGER_ANIMATION) { llStopAnimation(\"sit\"); llStartAnimation(\"wave\"); llOwnerSay(\"posed\"); } } }"
+          }
+        },
+        {
+          "expect": {
+            "log": [
+              {"id":"11111111-2222-3333-4444-555555555555","input":"sit","name":"Guest","on_target":true,"t":1,"type":"input"},
+              {"args":["32"],"name":"changed","t":1,"type":"event"},
+              {
+                "granted": true,
+                "mask": 16,
+                "note": "The sandbox grants an avatar sitting on the object PERMISSION_TRIGGER_ANIMATION and PERMISSION_TAKE_CONTROLS at once, and no other permission.",
+                "t": 1,
+                "type": "permissions"
+              },
+              {"args":["16"],"name":"run_time_permissions","t":1,"type":"event"},
+              {"name":"sit","t":1,"type":"animation_stop"},
+              {"name":"wave","t":1,"type":"animation_start"},
+              {"t":1,"text":"posed","type":"owner_say"}
+            ],
+            "ok": true
+          },
+          "request": {"command":"lsl_event","id":"11111111-2222-3333-4444-555555555555","name":"Guest","type":"sit"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"id":"11111111-2222-3333-4444-555555555555","input":"stand","name":"Guest","t":2,"type":"input"},
+              {"args":["32"],"name":"changed","t":2,"type":"event"},
+              {"t":2,"text":"empty","type":"owner_say"}
+            ],
+            "ok": true
+          },
+          "request": {"command":"lsl_event","id":"11111111-2222-3333-4444-555555555555","type":"stand"}
+        }
+      ]
+    },
+    {
+      "about": "a vehicle-like seat takes the controls of the sitting avatar and hears forward",
+      "name": "lsl_controls",
+      "steps": [
+        {
+          "expect": {"ok":true,"stopped":false},
+          "request": {
+            "command": "lsl_run",
+            "seconds": 1,
+            "source": "default { state_entry() { llSitTarget(<0, 0, 0.5>, ZERO_ROTATION); } changed(integer c) { if (c & CHANGED_LINK) { key av = llAvatarOnSitTarget(); if (av) llRequestPermissions(av, PERMISSION_TAKE_CONTROLS); } } run_time_permissions(integer p) { if (p & PERMISSION_TAKE_CONTROLS) llTakeControls(CONTROL_FWD | CONTROL_BACK, TRUE, FALSE); } control(key id, integer level, integer edge) { llOwnerSay(\"level \" + (string)level + \" edge \" + (string)edge); } }"
+          }
+        },
+        {
+          "expect": {
+            "log": [
+              {"id":"a2e76fcd-9360-4f6d-a924-000000000001","input":"sit","name":"Owner","on_target":true,"t":1,"type":"input"},
+              {"args":["32"],"name":"changed","t":1,"type":"event"},
+              {"granted":true,"mask":4,"note":"The sandbox grants the owner's permissions at once.","t":1,"type":"permissions"},
+              {"args":["4"],"name":"run_time_permissions","t":1,"type":"event"},
+              {
+                "accept": true,
+                "avatar": "a2e76fcd-9360-4f6d-a924-000000000001",
+                "controls": 3,
+                "op": "take",
+                "pass_on": false,
+                "t": 1,
+                "type": "controls"
+              }
+            ],
+            "ok": true
+          },
+          "request": {"command":"lsl_event","type":"sit"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"edges":1,"id":"a2e76fcd-9360-4f6d-a924-000000000001","input":"control","levels":1,"name":"Owner","t":2,"type":"input"},
+              {"args":["a2e76fcd-9360-4f6d-a924-000000000001","1","1"],"name":"control","t":2,"type":"event"},
+              {"t":2,"text":"level 1 edge 1","type":"owner_say"}
+            ],
+            "ok": true
+          },
+          "request": {"command":"lsl_event","edges":"forward","levels":"forward","type":"control"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"edges":5,"id":"a2e76fcd-9360-4f6d-a924-000000000001","input":"control","levels":4,"name":"Owner","t":3,"type":"input"},
+              {"args":["a2e76fcd-9360-4f6d-a924-000000000001","0","1"],"name":"control","t":3,"type":"event"},
+              {"t":3,"text":"level 0 edge 1","type":"owner_say"}
+            ],
+            "ok": true
+          },
+          "request": {"command":"lsl_event","edges":["forward","left"],"levels":["left"],"type":"control"}
+        }
+      ]
+    },
+    {
+      "about": "a sensor finds the listed avatars in range, nearest first; no_sensor when nobody is there",
+      "name": "lsl_sensors",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"found":2,"names":["Owner","Near One"],"t":0,"type":"sensor"},
+              {"found":0,"names":[],"t":0,"type":"sensor"},
+              {"args":["2"],"name":"sensor","t":0,"type":"event"},
+              {"t":0,"text":"found Owner","type":"owner_say"},
+              {"t":0,"text":"found Near One","type":"owner_say"},
+              {"name":"no_sensor","t":0,"type":"event"},
+              {"t":0,"text":"nobody","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "avatars": [
+              {"key":"11111111-2222-3333-4444-555555555555","name":"Near One","position":[130,128,20]},
+              {"key":"66666666-7777-8888-9999-000000000000","name":"Far One","position":[128,200,20]}
+            ],
+            "command": "lsl_run",
+            "seconds": 1,
+            "source": "default { state_entry() { llSensor(\"\", NULL_KEY, AGENT, 20.0, PI); llSensor(\"Nobody\", NULL_KEY, AGENT, 20.0, PI); } sensor(integer n) { integer i; for (i = 0; i < n; ++i) llOwnerSay(\"found \" + llDetectedName(i)); } no_sensor() { llOwnerSay(\"nobody\"); } }"
+          }
+        }
+      ]
+    },
+    {
+      "about": "llHTTPRequest gets the canned reply; an unknown URL gets 499",
+      "name": "lsl_http",
+      "steps": [
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {
+                "method": "GET",
+                "mimetype": "text/plain;charset=utf-8",
+                "request": "5c11ab00-0000-4000-8000-000000000001",
+                "result": "canned",
+                "status": 200,
+                "t": 0,
+                "type": "http_request",
+                "url": "https://example.com/api/state"
+              },
+              {
+                "body": "hi",
+                "method": "POST",
+                "mimetype": "text/plain;charset=utf-8",
+                "request": "5c11ab00-0000-4000-8000-000000000002",
+                "result": "no_reply",
+                "status": 499,
+                "t": 0,
+                "type": "http_request",
+                "url": "https://other.example/x"
+              },
+              {"args":["5c11ab00-0000-4000-8000-000000000001","200","","{\"locked\":true}"],"name":"http_response","t":0,"type":"event"},
+              {"t":0,"text":"1 200 {\"locked\":true}","type":"owner_say"},
+              {"args":["5c11ab00-0000-4000-8000-000000000002","499","",""],"name":"http_response","t":0,"type":"event"},
+              {"t":0,"text":"0 499 ","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "http": [{"body":"{\"locked\":true}","method":"GET","status":200,"url":"https://example.com/api/*"}],
+            "seconds": 1,
+            "source": "key a; key b;\ndefault { state_entry() { a = llHTTPRequest(\"https://example.com/api/state\", [], \"\"); b = llHTTPRequest(\"https://other.example/x\", [HTTP_METHOD, \"POST\"], \"hi\"); } http_response(key id, integer status, list meta, string body) { llOwnerSay((string)(id == a) + \" \" + (string)status + \" \" + body); } }"
+          }
+        }
+      ]
+    },
+    {
+      "about": "llTransferLindenDollars with PERMISSION_DEBIT is logic only; transaction_result arrives and the parser knows it",
+      "name": "lsl_transaction_result",
+      "steps": [
+        {
+          "expect": {"errors":[],"ok":true,"valid":true,"warnings":[]},
+          "request": {"command":"lsl_check","source":"default { transaction_result(key id, integer ok, string data) { } }"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"granted":true,"mask":2,"note":"The sandbox grants the owner's permissions at once.","t":0,"type":"permissions"},
+              {"args":["2"],"name":"run_time_permissions","t":0,"type":"event"},
+              {
+                "amount": 10,
+                "note": "Simulated: no L$ moved. The sandbox owner always has enough L$.",
+                "result": "ok",
+                "t": 0,
+                "to": "11111111-2222-3333-4444-555555555555",
+                "transaction": "5c11ab00-0000-4000-8000-000000000001",
+                "type": "linden_dollars"
+              },
+              {
+                "args": ["5c11ab00-0000-4000-8000-000000000001","1","11111111-2222-3333-4444-555555555555,10"],
+                "name": "transaction_result",
+                "t": 0,
+                "type": "event"
+              },
+              {"t":0,"text":"result 1 11111111-2222-3333-4444-555555555555,10","type":"owner_say"}
+            ],
+            "ok": true,
+            "stopped": false
+          },
+          "request": {
+            "command": "lsl_run",
+            "seconds": 1,
+            "source": "default { state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_DEBIT); } run_time_permissions(integer p) { if (p & PERMISSION_DEBIT) llTransferLindenDollars(\"11111111-2222-3333-4444-555555555555\", 10); } transaction_result(key id, integer ok, string data) { llOwnerSay(\"result \" + (string)ok + \" \" + data); } }"
+          }
+        }
+      ]
+    },
+    {
+      "about": "a script that does not compile, an unknown function, a function not supported yet, an endless loop, bad lsl_event input",
+      "name": "errors",
+      "steps": [
+        {
+          "expect": {
+            "error": "The script does not compile, so it was not run. The errors are listed (the same as lsl_check).",
+            "errors": [{"column":44,"line":1,"message":"Expected \";\" at the end of the statement, found \"}\"."}],
+            "ok": false
+          },
+          "request": {"command":"lsl_run","source":"default { state_entry() { llOwnerSay(\"hi\") } }"}
+        },
+        {
+          "expect": {
+            "errors": [
+              {"column":27,"line":1,"message":"There is no function named llFlyAway."},
+              {"column":52,"line":1,"message":"Cannot set the integer x to a string."}
+            ],
+            "ok": true,
+            "valid": false
+          },
+          "request": {"command":"lsl_check","source":"default { state_entry() { llFlyAway(); integer x = \"a\"; } }"}
+        },
+        {
+          "expect": {
+            "log": [
+              {"name":"default","t":0,"type":"state"},
+              {"name":"state_entry","t":0,"type":"event"},
+              {"t":0,"text":"before","type":"owner_say"},
+              {
+                "column": 49,
+                "line": 1,
+                "message": "llGetMass is not supported yet in the Script Lab sandbox, so the script was stopped here.",
+                "t": 0,
+                "type": "unsupported"
+              }
+            ],
+            "ok": true,
+            "stop_reason": "llGetMass is not supported yet in the Script Lab sandbox, so the script was stopped here.",
+            "stopped": true
+          },
+          "request": {
+            "command": "lsl_run",
+            "seconds": 1,
+            "source": "default { state_entry() { llOwnerSay(\"before\"); llGetMass(); llOwnerSay(\"after\"); } }"
+          }
+        },
+        {
+          "expect": {"ok":true,"stop_reason":"A list grew longer than 4096 entries; the script was stopped.","stopped":true},
+          "request": {"command":"lsl_run","seconds":1,"source":"default { state_entry() { list l = [1]; while (TRUE) l += l; } }"}
+        },
+        {
+          "expect": {"ok":true},
+          "request": {
+            "command": "lsl_run",
+            "seconds": 1,
+            "source": "default { state_entry() { llListen(1, \"\", NULL_KEY, \"\"); } listen(integer c, string n, key id, string m) { } }"
+          }
+        },
+        {
+          "expect": {
+            "error": "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\".",
+            "ok": false
+          },
+          "request": {"command":"lsl_event","type":"fly"}
+        },
+        {
+          "expect": {"error":"\"channel\" must be a whole number.","ok":false},
+          "request": {"channel":"one","command":"lsl_event","text":"x","type":"chat"}
+        },
+        {
+          "expect": {"error":"\"seconds\" must be between 0 and 3600 (simulated seconds).","ok":false},
+          "request": {"channel":1,"command":"lsl_event","seconds":99999,"text":"x","type":"chat"}
+        },
+        {
+          "expect": {
+            "error": null,
+            "log": [
+              {
+                "error": "The object has not shown a dialog, so there is no button to press.",
+                "input": "dialog",
+                "name": "Owner",
+                "t": 1,
+                "type": "input"
+              }
+            ],
+            "ok": true
+          },
+          "request": {"button":"Yes","command":"lsl_event","type":"dialog"}
+        },
+        {
+          "expect": {
+            "error": "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\".",
+            "ok": false
+          },
+          "request": {"command":"lsl_run","inputs":[{"at":1,"type":"fly"}],"source":"default { }"}
+        },
+        {
+          "expect": {
+            "error": "Unknown option \"colour\". Options: source, objects, seconds, inputs, keep_rlv, description, scale, start_parameter, inventory, avatars, http.",
+            "ok": false
+          },
+          "request": {"colour":1,"command":"lsl_run","source":"default { }"}
+        }
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ End-to-end test of the remote control: starts the real PinglyMotion program with
 plain HTTP, and checks the answers. Needs a display: run with xvfb-run.
 
 Usage: tests/smoke_control.py path/to/pinglymotion
+The Script Lab part is in tests/smoke_scriptlab.py (also runnable alone).
 """
 
 import base64
@@ -17,6 +18,9 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import smoke_scriptlab  # noqa: E402  (Script Lab scenarios, run while the program is up)
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MCP_NODE = os.path.join(ROOT, "tools", "mcp", "pinglymotion_mcp.js")
@@ -72,7 +76,12 @@ class Mcp:
         self.process.wait(timeout=10)
 
 
-def main():
+def report():
+    print("\n%s" % ("ALL OK" if not failed else "FAILED: " + ", ".join(failed)))
+    return 1 if failed else 0
+
+
+def main(only_scriptlab=False):
     app_path = os.path.abspath(sys.argv[1])
     work = tempfile.mkdtemp(prefix="pinglymotion-control-")
     control_file = os.path.join(work, "control.json")
@@ -144,6 +153,16 @@ def main():
         mcp.send("notifications/initialized", notification=True)
         live = mcp.send("tools/list")["result"]["tools"]
         check("live tool list matches the bundled one", [t["name"] for t in live] == [t["name"] for t in listed])
+
+        def post(request):
+            return http("/api", request, key)[1]
+
+        if only_scriptlab:
+            smoke_scriptlab.run(post, mcp, check)
+            mcp.close()
+            app.terminate()
+            app.wait(timeout=15)
+            return report()
 
         is_error, text = mcp.text("state")
         state = json.loads(text)
@@ -225,6 +244,9 @@ def main():
         is_error, text = mcp.text("state")
         check("the program still answers after an invalid file", not is_error and json.loads(text)["file"].endswith("pose.bvh"), text)
 
+        # Script Lab (the RLV tool): every scenario, then a script through MCP (tests/smoke_scriptlab.py)
+        smoke_scriptlab.run(post, mcp, check)
+
         app.terminate()
         code = app.wait(timeout=15)
         print("      (PinglyMotion exit code %s)" % code)
@@ -236,8 +258,7 @@ def main():
         if app.poll() is None:
             app.kill()
 
-    print("\n%s" % ("ALL OK" if not failed else "FAILED: " + ", ".join(failed)))
-    return 1 if failed else 0
+    return report()
 
 
 if __name__ == "__main__":

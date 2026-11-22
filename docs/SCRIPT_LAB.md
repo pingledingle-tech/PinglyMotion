@@ -557,6 +557,56 @@ run the test and fix the table where it fails.
   answers `0`). `getcommand` lists the behaviours known in the current mode.
 - `setcam_*` behaviours with a distance need it as option (`@setcam_avdistmin:2=n`); without it the command fails.
 
+## Tests: what is covered and what is not (22 November 2026)
+
+Everything below runs by itself on every pull request (the C++ tests on Linux, Windows and under the sanitizers; the
+smoke run on Linux and under the sanitizers) unless it says otherwise.
+
+- **RLV core:** the parser (`tests/tst_rlvcommand.cpp`), the state with `@clear` and `@getstatus`
+  (`tst_rlvstate.cpp`), the behaviour table (`tst_rlvtable.cpp`), the RLVa and RLV modes (`tst_rlva.cpp`) and the
+  table checked against RLVa's source and the RLV wiki (`tst_rlvsources.cpp`, `test_rlv_sources.py`). Fuzz target
+  `fuzz_rlv`.
+- **LSL:** lexer, parser and checker, interpreter and lint (`tst_lsllexer`, `tst_lslparser`, `tst_lslinterp`,
+  `tst_lsllint`), and one test per step: several objects (`tst_lslworld`), linked scripts (`tst_lsllink`), pure
+  functions (`tst_lslpure`), `on_rez` and `changed` (`tst_lslevents`), prim state and L$ (`tst_lslprims`), inventory
+  (`tst_lslinventory`), sitting (`tst_lslsitting`), controls (`tst_lslcontrols`), sensors (`tst_lslsensors`), stubs
+  (`tst_lslstubs`), HTTP (`tst_lslhttp`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
+  `fuzz_control`.
+- **Live:** `tst_labwatcher.cpp` and the Live part of `tst_control.cpp`.
+- **Effects in the 3D view:** `tst_labeffects`, `tst_scriptlabeffects`, `tst_cameraoverride`,
+  `tst_environmentoverride`, `tst_viewmodesoverride` and `tst_scriptlabcamera` check the values the 3D view is given
+  (animation and frame, camera limits, sky colour and fog distance, view modes), not the picture.
+- **The panel:** `tests/scriptlabpanel/` (the Commands page's rows, words and colour tokens, the Objects and Dialog
+  part, the input buttons, the panel's place after saving the layout), offscreen.
+- **The whole tool through the control commands:** `tests/data/scriptlab/scenarios.json` holds 28 scenarios (93
+  requests): each of the eight example scripts in `examples/scriptlab`, each kind of RLV command (restriction on and
+  off, duplicates, two objects and `@clear`, force commands and recorded values, questions answered on a channel,
+  exceptions, `@notify`, the RLVa and RLV modes, unknown behaviours and refused values, refused requests), RLV from a
+  script, several objects with chat ranges, linked scripts with Linkset Data, a notecard from canned inventory, a pose
+  ball (sit and stand), controls, sensors, canned HTTP replies, `transaction_result`, and error cases (a script that
+  does not compile, an unknown function, a function not supported yet, a runaway list, wrong `lsl_event` and `lsl_run`
+  input). Each request lists the exact values some fields of its answer must have (whole event logs, RLV results and
+  replies, the state). `tests/tst_scriptlabwhole.cpp` sends them to the control interface in a unit test (ctest
+  `scriptlabwhole`, all three builds); `tests/smoke_scriptlab.py`, run by `tests/smoke_control.py`, sends the same
+  file to the real program under Xvfb over its HTTP interface and then runs a script, `rlv_state`, `lsl_check` and
+  `rlv_reset` through the Node MCP server, as an AI tool does. A new example script must be added to a scenario (both
+  tests fail otherwise). After an intended change of an answer:
+  `cd bin && PINGLYMOTION_UPDATE_SCENARIOS=1 <build>/tests/pinglymotion_scriptlabwhole_tests` writes the expected
+  values again; read the difference before committing it.
+
+Not tested automatically (gaps):
+
+- How the effects look in the 3D view (the figure playing the animation, the camera limits, the fog and the view
+  modes) and how the panel looks and feels: a person has to look, on the Windows build.
+- The Live page in the real program with a real folder (the watch is tested offscreen and through `lab_watch` in
+  `tst_control.cpp`, not in the smoke run), and `lsl_event` before any `lsl_run` in the real program (the scenarios
+  share one running program).
+- Second Life itself: the sandbox is never identical to it; the final test is always in Second Life.
+- Known differences, pinned by the scenarios so that a change shows: the type of an RLV option (a channel, a UUID, a
+  number) is not checked yet, so `@sendchannel:abc=n` is accepted where RLVa refuses it (scenario
+  `rlv_option_types_not_checked`); a dialog answer sent with `lsl_event` may be any text, not only a button the dialog
+  showed (it is said on the dialog's channel, scenario `example_hud_cuffs`).
+
 ## Limits
 
 - Only the behaviours in the table; others parse but are reported as unknown.
@@ -564,7 +614,7 @@ run the test and fix the table where it fails.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
   `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
-  `http_response`), and 217 built-in functions; HTTP only with canned replies, never on the network; hard limits on
+  `http_response`, `transaction_result`), and 217 built-in functions; HTTP only with canned replies, never on the network; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.
