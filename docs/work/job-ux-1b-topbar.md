@@ -1,6 +1,6 @@
 Branch: job/ux-1b-topbar
 Status: active
-Pull request: pending
+Pull request: #371
 Files:
 - src/menuspec.h
 - src/emptystate.*
