@@ -241,7 +241,7 @@ The guide is shipped with the Windows zip and the Claude Desktop extension, so a
 
 ## 6. Talking to a beginner
 
-The user may never have animated. Use these words, not the left column.
+The user may never have animated. Use these words, not the left column. (Copy of the beginner rows of the glossary in `docs/TEACHING_TEXTS.md`, "Glossary: the words to use"; keep in sync. It stays here because AI clients read this guide on its own.)
 
 | Not this | Say this |
 |---|---|
