@@ -383,6 +383,9 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `inventory` | a script removed an item with `llRemoveInventory` (step 9b-4) | `op` (`remove`), `item` |
 | `dataserver_request` | `llGetNotecardLine` or `llGetNumberOfNotecardLines` found the notecard; the `dataserver` event follows (step 9b-4) | `function`, `notecard`, `line` (not for the line count), `query` (the key the call returned) |
 | `rez` | `llRezObject` or `llRezAtRoot` (step 9b-4) | `item`, `position`, `velocity`, `rotation`, `param`, `at_root`, `result` (`ok` or `too_far`), `object` (the new object's key, with `ok`) |
+| `sensor_set` | `llSensorRepeat` started a repeating scan (step 9b-7) | `name`, `id`, `sense` (the type mask), `range`, `arc`, `rate` |
+| `sensor_remove` | `llSensorRemove`, or a rate of 0 or less, ended the repeat (only when one was running) | |
+| `sensor` | a scan ran (`llSensor` or a repeat), and the `sensor` or `no_sensor` event follows | `found` (how many), `names` |
 | `controls` | `llTakeControls` took controls or `llReleaseControls` gave them back (step 9b-6) | `op` (`take`, `release`), `avatar`, and for `take` `controls`, `accept`, `pass_on` |
 | `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
 | `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
@@ -534,6 +537,24 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
+#### Sensors (Script Lab step 9b-7)
+
+`lsl_run` takes `avatars` (at most 64), the people the sensors can find: `[{"name": "Ann", "position": [128, 133, 20], "velocity": [1, 0, 0], "rotation": [0, 0, 0, 1], "in_group": true, "key": "..."}]`. Only `name` is needed;
+`position` is region metres as for objects (default `[128, 128, 20]`), `key` defaults to `a0000000-0000-4000-8000-000000000001` and so on in list order. The owner always stands at `[128, 128, 20]`, unless an avatar
+with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`.
+
+- `llSensor(name, id, type, range, arc)` scans once, now, and queues `sensor(integer num_detected)` (or `no_sensor()` when nothing is found) at once. It finds the avatars (type `AGENT`, 1) and the other objects of the
+  world (type `SCRIPTED`, 8; the sensing object itself is never found) that match: `name` exact and case-sensitive (empty: any), `id` (empty or `NULL_KEY`: any), a `type` mask that has the type's bit (a mask of 0, or `ACTIVE` and
+  `PASSIVE` alone, finds nothing: the sandbox has no passive or moving objects), within `range` metres (a range of 0 or less finds nothing; more than 96 counts as 96) of the sensing object's position, and inside `arc` radians
+  (more than PI counts as PI) of its forward direction (its x axis turned by the root prim's rotation, as set with `llSetRot`; something at distance 0 is always inside). The nearest come first, ties in list order (avatars,
+  then objects), and at most 16 are returned. A worn object is where the avatar is, and the wearer is found like anyone else (Second Life may leave the wearer out). Each scan is a `sensor` log entry.
+- `llSensorRepeat(name, id, type, range, arc, rate)` does the same every `rate` seconds, the first scan one `rate` after the call (a sandbox choice), at least 0.01 s apart. A new call replaces the earlier repeat; a `rate`
+  of 0 or less (or `NaN`) removes it (sandbox choice); `llSensorRemove` removes it; a state change removes it. They write `sensor_set` and `sensor_remove` entries.
+- `llDetectedName`, `llDetectedKey`, `llDetectedOwner` (an avatar is its own owner), `llDetectedType` (1 or 8, not the combinations Second Life reports for moving or physical objects), `llDetectedPos`, `llDetectedRot`
+  (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
+  gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated).
+- Not done: `llDetectedLinkNumber`, the touch data (`llDetectedTouch*`), `llDetectedGrab`, `llGetAgentList`, `llGetObjectDetails`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
+
 #### Controls (Script Lab step 9b-6)
 
 A new input type `control`, for `inputs` of `lsl_run` and for `lsl_event`: `{"at": 2, "type": "control", "levels": ["forward", "left"], "edges": "forward", "id": "<avatar key>"}` says which keys the avatar
@@ -652,9 +673,9 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez` and `control`; 167 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor` and `no_sensor`; 176 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, and functions that are only recorded). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

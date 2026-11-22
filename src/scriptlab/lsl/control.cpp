@@ -306,6 +306,67 @@ namespace
     return QString();
   }
 
+  bool readNumbers(const QJsonValue& v, int count, double low, double high, float* out)
+  {
+    const QJsonArray p = v.toArray();
+    if (!v.isArray() || p.size() != count) return false;
+    for (int i = 0; i < count; ++i)
+    {
+      const double d = p[i].toDouble(std::nan(""));
+      if (!p[i].isDouble() || !std::isfinite(d) || d < low || d > high) return false;
+      out[i] = float(d);
+    }
+    return true;
+  }
+
+  // step 9b-7: "avatars" of lsl_run: [{name, key, position, velocity, rotation, in_group}]; empty when fine
+  QString readAvatars(const QJsonValue& v, std::vector<AvatarSpec>& out)
+  {
+    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\"}.";
+    const QJsonArray list = v.toArray();
+    if (list.size() > Sandbox::MAX_AVATARS) return QString("\"avatars\" holds at most %1 avatars.").arg(Sandbox::MAX_AVATARS);
+    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group"};
+    for (int i = 0; i < list.size(); ++i)
+    {
+      const QString where = QString("Avatar %1: ").arg(i + 1);
+      if (!list[i].isObject()) return where + "must be an object with a name.";
+      const QJsonObject o = list[i].toObject();
+      for (auto it = o.begin(); it != o.end(); ++it)
+        if (!fields.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+      AvatarSpec a;
+      if (!o.value("name").isString() || !validName(o.value("name").toString())) return where + "\"name\" must be text of 1 to 63 characters.";
+      a.name = o.value("name").toString();
+      if (o.contains("key"))
+      {
+        if (!o.value("key").isString() || !validKey(o.value("key").toString())) return where + "\"key\" must be a key: 1 to 36 letters, digits or \"-\".";
+        a.key = o.value("key").toString();
+      }
+      if (o.contains("position"))
+      {
+        const QJsonArray p = o.value("position").toArray();
+        bool ok = o.value("position").isArray() && p.size() == 3;
+        for (int k = 0; ok && k < 3; ++k)
+        {
+          const double d = p[k].toDouble(std::nan(""));
+          ok = p[k].isDouble() && std::isfinite(d) && d >= 0.0 && d <= (k < 2 ? 256.0 : 4096.0);
+          if (ok) a.position[k] = float(d);
+        }
+        if (!ok) return where + "\"position\" must be [x, y, z] in metres: x and y 0 to 256, z 0 to 4096.";
+      }
+      if (o.contains("velocity") && !readNumbers(o.value("velocity"), 3, -1000.0, 1000.0, a.velocity))
+        return where + "\"velocity\" must be [x, y, z] in metres per second, each -1000 to 1000.";
+      if (o.contains("rotation") && !readNumbers(o.value("rotation"), 4, -1000.0, 1000.0, a.rotation))
+        return where + "\"rotation\" must be [x, y, z, s], four numbers.";
+      if (o.contains("in_group"))
+      {
+        if (!o.value("in_group").isBool()) return where + "\"in_group\" must be true or false.";
+        a.inGroup = o.value("in_group").toBool();
+      }
+      out.push_back(a);
+    }
+    return QString();
+  }
+
   // step 9b-1: "description", "scale" and "start_parameter" of an object (and, step 9b-4, "inventory"); empty when fine
   QString readObjectState(const QJsonObject& o, const QString& where, ObjectSpec& spec)
   {
@@ -438,7 +499,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter", "inventory"};
+                                       "description", "scale", "start_parameter", "inventory", "avatars"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -512,6 +573,13 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     severalScripts.push_back(false);
   }
 
+  std::vector<AvatarSpec> avatars;
+  if (request.contains("avatars"))
+  {
+    const QString problem = readAvatars(request.value("avatars"), avatars);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
   std::vector<SandboxInput> inputs;
   if (request.contains("inputs"))
   {
@@ -583,6 +651,11 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   {
     const QString problem = severalScripts[i] ? sandbox->addObject(specs[i], scripts[i]) : sandbox->addObject(specs[i], scripts[i].front().script);
     if (!problem.isEmpty()) return fail(QString("Object %1: ").arg(i + 1) + problem);
+  }
+  for (size_t i = 0; i < avatars.size(); ++i)
+  {
+    const QString problem = sandbox->addAvatar(avatars[i]);
+    if (!problem.isEmpty()) return fail(QString("Avatar %1: ").arg(i + 1) + problem);
   }
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
   sandbox->start();

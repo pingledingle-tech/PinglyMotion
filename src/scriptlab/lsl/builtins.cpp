@@ -63,7 +63,9 @@ enum class Fn
   // step 9b-5: sitting and pose balls
   SitTarget, LinkSitTarget, AvatarOnSitTarget, AvatarOnLinkSitTarget, UnSit, GetAnimationList, GetAnimation, GetAgentInfo,
   // step 9b-6: controls
-  TakeControls, ReleaseControls
+  TakeControls, ReleaseControls,
+  // step 9b-7: sensors and the detected data
+  Sensor, SensorRepeat, SensorRemove, DetectedPos, DetectedRot, DetectedVel, DetectedType, DetectedGroup, DetectedOwner
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -127,6 +129,9 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llAvatarOnLinkSitTarget", Fn::AvatarOnLinkSitTarget}, {"llUnSit", Fn::UnSit}, {"llGetAnimationList", Fn::GetAnimationList},
   {"llGetAnimation", Fn::GetAnimation}, {"llGetAgentInfo", Fn::GetAgentInfo},
   {"llTakeControls", Fn::TakeControls}, {"llReleaseControls", Fn::ReleaseControls},
+  {"llSensor", Fn::Sensor}, {"llSensorRepeat", Fn::SensorRepeat}, {"llSensorRemove", Fn::SensorRemove},
+  {"llDetectedPos", Fn::DetectedPos}, {"llDetectedRot", Fn::DetectedRot}, {"llDetectedVel", Fn::DetectedVel}, {"llDetectedType", Fn::DetectedType},
+  {"llDetectedGroup", Fn::DetectedGroup}, {"llDetectedOwner", Fn::DetectedOwner},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1209,8 +1214,56 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       }
       else m_playing.removeAll(a[0].s);
       return Value();
-    case Fn::DetectedKey: return Value::key(a[0].i == 0 && !m_detectedKey.isEmpty() ? m_detectedKey : NULL_KEY);
-    case Fn::DetectedName: return Value::string(a[0].i == 0 ? m_detectedName : QString());
+    case Fn::DetectedKey: return Value::key(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].key : QString(NULL_KEY));
+    case Fn::DetectedName: return Value::string(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].name : QString());
+    case Fn::DetectedOwner:
+      return Value::key(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].owner : QString(NULL_KEY));
+    case Fn::DetectedType: return Value::integer(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].type : 0);
+    case Fn::DetectedGroup: return Value::integer(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].group : 0);
+    case Fn::DetectedPos:
+    case Fn::DetectedVel:
+    {
+      if (!(a[0].i >= 0 && a[0].i < qint32(m_detected.size()))) return Value::vector(0.0f, 0.0f, 0.0f);
+      const Detected& d = m_detected[size_t(a[0].i)];
+      const float* v = *it == Fn::DetectedPos ? d.position : d.velocity;
+      return Value::vector(v[0], v[1], v[2]);
+    }
+    case Fn::DetectedRot:
+    {
+      if (!(a[0].i >= 0 && a[0].i < qint32(m_detected.size()))) return Value::rotation(0.0f, 0.0f, 0.0f, 1.0f);
+      const Detected& d = m_detected[size_t(a[0].i)];
+      return Value::rotation(d.rotation[0], d.rotation[1], d.rotation[2], d.rotation[3]);
+    }
+    case Fn::Sensor:
+      sense(a[0].s, a[1].s, a[2].i, double(a[3].f[0]), double(a[4].f[0]));
+      return Value();
+    case Fn::SensorRepeat:
+    {
+      const double rate = double(a[5].f[0]);
+      if (!(rate > 0.0) || !std::isfinite(rate))
+      {
+        // a rate of 0 or less removes the repeat (sandbox choice)
+        if (m_sensorActive && !m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "sensor_remove"}});
+        m_sensorActive = false;
+        return Value();
+      }
+      m_sensorActive = true;
+      m_sensorName = a[0].s;
+      m_sensorId = a[1].s;
+      m_sensorType = a[2].i;
+      m_sensorRange = double(a[3].f[0]);
+      m_sensorArc = double(a[4].f[0]);
+      m_sensorRate = qMax(rate, 0.01);
+      m_sensorNext = m_now + m_sensorRate;   // the first scan comes one rate after the call (sandbox choice)
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "sensor_set"}, {"name", World::clip(m_sensorName)}, {"id", m_sensorId}, {"sense", m_sensorType},
+                                       {"range", rnd5(a[3].f[0])}, {"arc", rnd5(a[4].f[0])}, {"rate", rnd5(float(m_sensorRate))}});
+      return Value();
+    }
+    case Fn::SensorRemove:
+      if (m_sensorActive && !m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "sensor_remove"}});
+      m_sensorActive = false;
+      return Value();
 
     // -------------------------------------------- lists
     case Fn::GetListLength: return Value::integer(qint32(a[0].list.size()));

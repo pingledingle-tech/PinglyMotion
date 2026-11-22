@@ -8,6 +8,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -104,6 +105,10 @@ class ObjectWorld : public RlvWorld
       return false;
     }
     bool hasAttachments() const override { return m_sandbox.hasAttachments(); }
+    std::vector<Detected> sense(const QString& name, const QString& id, int type, double range, double arc) override
+    {
+      return m_sandbox.sense(m_slot, name, id, type, range, arc);
+    }
     void inventoryChanged(double time) override { m_sandbox.inventoryChanged(m_slot, time); }
     QString giveInventory(double time, const QString& to, const InventoryItem& item) override { return m_sandbox.giveInventory(m_slot, time, to, item); }
     int attachPoint() const override { return spec().attached; }
@@ -672,6 +677,102 @@ QString Sandbox::giveInventory(int, double time, const QString& to, const Invent
   return "unknown_target";
 }
 
+QString Sandbox::addAvatar(const AvatarSpec& avatar)
+{
+  if (m_started) return "Avatars can only be added before the run starts.";
+  if (int(m_avatars.size()) >= MAX_AVATARS) return QString("At most %1 avatars.").arg(MAX_AVATARS);
+  if (avatar.name.isEmpty()) return "Every avatar needs a name.";
+  AvatarSpec a = avatar;
+  if (a.key.isEmpty()) a.key = QString("a0000000-0000-4000-8000-%1").arg(qint64(m_avatars.size()) + 1, 12, 10, QChar('0'));
+  for (const AvatarSpec& other : m_avatars)
+    if (other.key == a.key) return "Two avatars have the key " + a.key + ".";
+  for (const Object& o : m_objects)
+    if (o.spec.key == a.key) return "An avatar has the key of an object: " + a.key + ".";
+  if (a.key == NULL_KEY) return "An avatar cannot have NULL_KEY.";
+  m_avatars.push_back(a);
+  return QString();
+}
+
+std::vector<Detected> Sandbox::sense(int from, const QString& name, const QString& id, int type, double range, double arc)
+{
+  std::vector<Detected> out;
+  Object& self = m_objects[size_t(m_slots[size_t(from)].object)];
+  const double reach = qMin(range, MAX_SENSOR_RANGE);
+  if (!(reach > 0.0) || !std::isfinite(reach)) return out;
+  const double cone = std::isfinite(arc) ? qMin(arc, 3.14159265358979) : 0.0;
+  float origin[3];
+  where(m_slots[size_t(from)].object, origin);
+  // the direction the sensing object faces: its x axis turned by the root prim's rotation
+  const PrimState& root = self.prims.prim(1, self.spec.prims);
+  const double qx = root.rotation[0], qy = root.rotation[1], qz = root.rotation[2], qs = root.rotation[3];
+  const double qn = std::sqrt(qx * qx + qy * qy + qz * qz + qs * qs);
+  double fwd[3] = {1.0, 0.0, 0.0};
+  if (qn > 1.0e-7)
+  {
+    const double x = qx / qn, y = qy / qn, z = qz / qn, s = qs / qn;
+    fwd[0] = 1.0 - 2.0 * (y * y + z * z);
+    fwd[1] = 2.0 * (x * y + s * z);
+    fwd[2] = 2.0 * (x * z - s * y);
+  }
+  std::vector<std::pair<double, Detected>> hits;
+  auto consider = [&](const Detected& d)
+  {
+    if (!(type & d.type)) return;
+    if (!name.isEmpty() && d.name != name) return;
+    if (!id.isEmpty() && id != NULL_KEY && d.key != id) return;
+    const double dx = double(d.position[0]) - origin[0], dy = double(d.position[1]) - origin[1], dz = double(d.position[2]) - origin[2];
+    const double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+    if (dist > reach) return;
+    if (cone < 3.14159265358979 && dist > 0.0)
+    {
+      double c = (dx * fwd[0] + dy * fwd[1] + dz * fwd[2]) / dist;
+      c = qBound(-1.0, c, 1.0);
+      if (std::acos(c) > cone) return;
+    }
+    hits.push_back({dist, d});
+  };
+  bool ownerListed = false;
+  for (const AvatarSpec& a : m_avatars)
+  {
+    if (a.key == OWNER_KEY) ownerListed = true;
+    Detected d;
+    d.key = d.owner = a.key;
+    d.name = a.name;
+    d.type = 1;
+    d.group = a.inGroup ? 1 : 0;
+    for (int i = 0; i < 3; ++i) { d.position[i] = a.position[i]; d.velocity[i] = a.velocity[i]; }
+    for (int i = 0; i < 4; ++i) d.rotation[i] = a.rotation[i];
+    consider(d);
+  }
+  if (!ownerListed)
+  {
+    Detected d;
+    d.key = d.owner = OWNER_KEY;
+    d.name = OWNER_NAME;
+    for (int i = 0; i < 3; ++i) d.position[i] = AVATAR_POSITION[i];
+    consider(d);
+  }
+  for (size_t i = 0; i < m_objects.size(); ++i)
+  {
+    Object& o = m_objects[i];
+    if (&o == &self) continue;
+    Detected d;
+    d.key = o.spec.key;
+    d.name = o.name;
+    d.owner = o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+    d.type = 8;   // SCRIPTED
+    float p[3];
+    where(int(i), p);
+    for (int k = 0; k < 3; ++k) d.position[k] = p[k];
+    const PrimState& r = o.prims.prim(1, o.spec.prims);
+    for (int k = 0; k < 4; ++k) d.rotation[k] = r.rotation[k];
+    consider(d);
+  }
+  std::stable_sort(hits.begin(), hits.end(), [](const std::pair<double, Detected>& a, const std::pair<double, Detected>& b) { return a.first < b.first; });
+  for (size_t i = 0; i < hits.size() && int(i) < MAX_DETECTED; ++i) out.push_back(hits[i].second);
+  return out;
+}
+
 bool Sandbox::unSit(int from, double time, const QString& key)
 {
   Object& o = m_objects[size_t(m_slots[size_t(from)].object)];
@@ -710,6 +811,8 @@ bool Sandbox::hasAttachments() const
 QString Sandbox::nameOf(const QString& key) const
 {
   if (key == OWNER_KEY) return OWNER_NAME;
+  for (const AvatarSpec& a : m_avatars)
+    if (a.key == key) return a.name;
   for (const Object& o : m_objects)
     for (const Sitter& sitter : o.sitters)
       if (sitter.key == key) return sitter.name;

@@ -69,6 +69,18 @@ struct ObjectSpec
   std::vector<InventoryItem> inventory;   // step 9b-4: what the object holds besides its scripts (the scripts are in it too)
 };
 
+// step 9b-7: an avatar the sensors can find, standing where the input says (the owner is always there, at the
+// avatar's place, unless an avatar with the owner's key is given)
+struct AvatarSpec
+{
+  QString name;
+  QString key;                    // empty: made from the avatar's place in the list
+  float position[3] = {128.0f, 128.0f, 20.0f};
+  float velocity[3] = {0.0f, 0.0f, 0.0f};
+  float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+  bool inGroup = false;           // llDetectedGroup
+};
+
 // step 9a: one script of an object
 struct ScriptEntry
 {
@@ -103,7 +115,10 @@ class Sandbox
     static constexpr int MAX_SCRIPTS = 64;          // all objects together
     static constexpr int MAX_PRIMS = 256;           // as a Second Life linkset
     static constexpr int MAX_PENDING_INPUTS = 1000;
-    static constexpr int MAX_SITTERS = 16;          // avatars sitting on one object
+    static constexpr int MAX_SITTERS = 16;
+    static constexpr int MAX_AVATARS = 64;          // avatars given for sensors
+    static constexpr int MAX_DETECTED = 16;         // what one sensor scan returns, as in Second Life
+    static constexpr double MAX_SENSOR_RANGE = 96.0;          // avatars sitting on one object
     static constexpr double WHISPER_RANGE = 10.0;
     static constexpr double SAY_RANGE = 20.0;
     static constexpr double SHOUT_RANGE = 100.0;
@@ -123,6 +138,8 @@ class Sandbox
     // Step 9a: an object with several scripts (1 to MAX_SCRIPTS_PER_OBJECT); log entries of its scripts
     // have "script" (the script's name)
     QString addObject(const ObjectSpec& spec, const std::vector<ScriptEntry>& scripts, const Limits& limits = Limits());
+    // Step 9b-7: an avatar for the sensors to find. Before start() only; returns why it was refused, or an empty string.
+    QString addAvatar(const AvatarSpec& avatar);
     // state_entry of every object (in order), then attach for the attached ones
     void start();
     // an input; refused (false) when MAX_PENDING_INPUTS are waiting
@@ -205,6 +222,7 @@ class Sandbox
     QString giveInventory(int from, double time, const QString& to, const InventoryItem& item);
     // step 9b-5: llUnSit on an avatar sitting on the script's own object; an avatar sitting anywhere in the world
     bool unSit(int from, double time, const QString& key);
+    std::vector<Detected> sense(int from, const QString& name, const QString& id, int type, double range, double arc);
     bool isSitting(const QString& key) const;
     bool hasAttachments() const;
     int linkNumber(int slot) const;
@@ -224,6 +242,7 @@ class Sandbox
     World m_log;                   // the shared log
     std::vector<Object> m_objects;
     std::vector<Slot> m_slots;
+    std::vector<AvatarSpec> m_avatars;
     std::vector<SandboxInput> m_inputs;   // sorted by time, stable
     double m_now = 0.0;
     QJsonObject m_lastDialog;
