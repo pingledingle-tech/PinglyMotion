@@ -140,6 +140,10 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 - Which jobs a pull request starts is decided by `tools/ci/changes.py` (text-only and website-only changes skip the program builds; anything it does not know runs everything). A new kind of file that never affects the program goes into its lists, with a case in `tests/test_ci_changes.py`.
 - Some source files have CRLF line endings: edit them without changing the endings (in Python open with `newline=''`).
 
+## Status of open pull requests
+
+`python3 tools/work.py status` (needs `gh`, read-only, REST only) prints for every open pull request: draft or ready, merge conflict state (`unknown` if GitHub has not computed it after a few tries, never read as fine), the latest run of each check by start time (older cancelled duplicates are ignored), and minutes since the last push (`stopped?` over 40). Parsing is tested with canned data in `tests/test_work.py`.
+
 ## Compile faster (Windows job, 22 Nov 2026)
 
 The Windows compile took 8 to 16.5 minutes, 80 percent of the job (ctest about 1 minute). Now:
