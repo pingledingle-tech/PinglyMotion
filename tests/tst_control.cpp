@@ -19,6 +19,14 @@
 
 #include <cmath>
 
+#ifdef Q_OS_UNIX
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #include "animation.h"
 #include "animexport.h"
 #include "animexportdialog.h"
@@ -224,6 +232,7 @@ class ControlTest : public QObject
     void serverRefusesBadRequests();
     void serverChecksKeyBeforeBody();
     void serverLimitsConnections();
+    void serverRefusalReachesAClientThatSentFirst();
     void serverClosesConnectionsWithoutKeyQuickly();
     void serverRefusesLargeHeaders();
     void serverListensOnLoopbackOnly();
@@ -1340,6 +1349,74 @@ void ControlTest::serverLimitsConnections()
     delete socket;
   }
   QTRY_COMPARE_WITH_TIMEOUT(statusOf(post(R"({"command":"state"})")), 200, 3000);
+}
+
+// The refusal must reach a client whose request is already waiting when the server accepts it.
+// The server used to answer and close without reading that request; closing a socket with
+// unread data sends a reset, and on Windows a reset throws away the answer the client had
+// already received, so the client saw no answer at all (the Windows `control` test failed
+// now and then in serverLimitsConnections with status 0 instead of 503).
+void ControlTest::serverRefusalReachesAClientThatSentFirst()
+{
+  // the test does not return to the event loop until the request is sent, so the server
+  // accepts all nine connections only after the ninth one's request has arrived
+  QList<QTcpSocket*> idle;
+  auto closeIdle = qScopeGuard([&]() { qDeleteAll(idle); });
+  for (int i = 0; i < 8; i++)
+  {
+    QTcpSocket* socket = new QTcpSocket();
+    idle.append(socket);
+    socket->connectToHost(QHostAddress::LocalHost, m_server->port());
+    QVERIFY(socket->waitForConnected(2000));
+  }
+  const QByteArray body = R"({"command":"state"})";
+  QTcpSocket socket;
+  socket.connectToHost(QHostAddress::LocalHost, m_server->port());
+  QVERIFY(socket.waitForConnected(2000));
+  socket.write("POST /api HTTP/1.1\r\nHost: 127.0.0.1:" + QByteArray::number(m_server->port()) + "\r\nAuthorization: Bearer " +
+               m_server->token().toLatin1() + "\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\n\r\n" + body);
+  QVERIFY(socket.waitForBytesWritten(2000));
+
+  QByteArray answer;
+  connect(&socket, &QTcpSocket::readyRead, this, [&]() { answer += socket.readAll(); });
+  QTRY_COMPARE_WITH_TIMEOUT(socket.state(), QAbstractSocket::UnconnectedState, 5000);
+  answer += socket.readAll();
+  QCOMPARE(statusOf(answer), 503);
+  QCOMPARE(socket.error(), QAbstractSocket::RemoteHostClosedError);
+
+#ifdef Q_OS_UNIX
+  // Linux keeps an answer that arrived before a reset, so the check above passes there even with
+  // the bug; a plain socket shows how the connection ended: an orderly end reads as 0 bytes, a
+  // reset as ECONNRESET
+  const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+  QVERIFY(fd >= 0);
+  auto closeFd = qScopeGuard([fd]() { ::close(fd); });
+  sockaddr_in address {};
+  address.sin_family = AF_INET;
+  address.sin_port = htons(m_server->port());
+  address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  QCOMPARE(::connect(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)), 0);
+  const QByteArray request = "POST /api HTTP/1.1\r\nHost: 127.0.0.1:" + QByteArray::number(m_server->port()) + "\r\nAuthorization: Bearer " +
+                             m_server->token().toLatin1() + "\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\n\r\n" + body;
+  QCOMPARE(::send(fd, request.constData(), request.size(), 0), ssize_t(request.size()));
+
+  QByteArray rawAnswer;
+  int endErrno = -1;   // stays -1 while the connection is open, 0 for an orderly end
+  QElapsedTimer timer;
+  timer.start();
+  while (endErrno < 0 && timer.elapsed() < 5000)
+  {
+    QCoreApplication::processEvents();
+    pollfd waiting { fd, POLLIN, 0 };
+    if (::poll(&waiting, 1, 10) <= 0) continue;
+    char chunk[4096];
+    const ssize_t got = ::recv(fd, chunk, sizeof(chunk), 0);
+    if (got > 0) rawAnswer.append(chunk, got);
+    else endErrno = got == 0 ? 0 : errno;
+  }
+  QCOMPARE(statusOf(rawAnswer), 503);
+  QVERIFY2(endErrno == 0, endErrno == ECONNRESET ? "the server reset the connection" : qPrintable(QString::number(endErrno)));
+#endif
 }
 
 // issue 249: a connection must send its whole request header within 2 seconds; the key then
