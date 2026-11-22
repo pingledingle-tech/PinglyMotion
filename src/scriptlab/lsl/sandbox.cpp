@@ -356,7 +356,7 @@ void Sandbox::deliver(const SandboxInput& input)
   const bool single = m_slots.size() == 1;
 
   if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
-      input.type == "sit" || input.type == "stand")
+      input.type == "sit" || input.type == "stand" || input.type == "control")
   {
     // a stand input without an object finds the object the avatar sits on
     if (input.type == "stand" && input.object.isEmpty())
@@ -401,6 +401,16 @@ void Sandbox::deliver(const SandboxInput& input)
         for (int i = 0; i < o.slotCount; ++i)
           if (m_slots[size_t(o.firstSlot + i)].link == 1) hit.push_back(o.firstSlot + i);
       for (int i : hit) m_slots[size_t(i)].interp->touch(key, name);
+      return;
+    }
+    if (input.type == "control")
+    {
+      // the avatar presses or lets go of controls: scripts that took them with permission from this avatar get control()
+      entry["id"] = key;
+      entry["levels"] = input.levels;
+      entry["edges"] = input.edges;
+      m_log.log(t, entry);
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->controlEvent(key, input.levels, input.edges);
       return;
     }
     if (input.type == "sit")

@@ -377,11 +377,11 @@ void LslWorldTest::eventNeedsAWorld()
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}}, &session)["error"].toString(),
            QString("There is no running world to send the event to. Start one with lsl_run first (with \"source\" or \"objects\")."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}}, &session)["error"].toString(),
-           QString("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit or stand."));
+           QString("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand or control."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "fly"}}, &session)["error"].toString(),
-           QString("\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\" or \"stand\"."));
+           QString("\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\"."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"at", 1}}, &session)["error"].toString(),
-           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, change, seconds."));
+           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, change, levels, edges, seconds."));
   RlvState rlv;
   run({object("a", "default { touch_start(integer n) { } }")}, 1, rlv, &session);
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"object", "zz"}}, &session)["error"].toString(),

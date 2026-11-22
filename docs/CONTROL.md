@@ -383,6 +383,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `inventory` | a script removed an item with `llRemoveInventory` (step 9b-4) | `op` (`remove`), `item` |
 | `dataserver_request` | `llGetNotecardLine` or `llGetNumberOfNotecardLines` found the notecard; the `dataserver` event follows (step 9b-4) | `function`, `notecard`, `line` (not for the line count), `query` (the key the call returned) |
 | `rez` | `llRezObject` or `llRezAtRoot` (step 9b-4) | `item`, `position`, `velocity`, `rotation`, `param`, `at_root`, `result` (`ok` or `too_far`), `object` (the new object's key, with `ok`) |
+| `controls` | `llTakeControls` took controls or `llReleaseControls` gave them back (step 9b-6) | `op` (`take`, `release`), `avatar`, and for `take` `controls`, `accept`, `pass_on` |
 | `unsit` | `llUnSit` took an avatar off the object (step 9b-5; a `stand` input is an `input` entry instead) | `avatar`, `by` (`llUnSit`) |
 | `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` | `function`, `args`, `note` |
 
@@ -533,9 +534,22 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
+#### Controls (Script Lab step 9b-6)
+
+A new input type `control`, for `inputs` of `lsl_run` and for `lsl_event`: `{"at": 2, "type": "control", "levels": ["forward", "left"], "edges": "forward", "id": "<avatar key>"}` says which keys the avatar
+holds now (`levels`) and which just changed (`edges`). Each is a name (`forward` or `fwd`, `back`, `left`, `right`, `up`, `down`, `rot_left`, `rot_right`, `lbutton`, `ml_lbutton`; also written `CONTROL_FWD`), a list of names,
+or the `CONTROL_*` flags as a whole number; at least one must not be empty. `id` and `name` default to the owner. The log has an `input` entry (`input`: `control`, `id`, `levels`, `edges`).
+
+- `llTakeControls(controls, accept, pass_on)` needs `PERMISSION_TAKE_CONTROLS` (an avatar sitting on the object gets it at once, the owner as for every permission); without it a `debug` line
+  `Script trying to take controls but PERMISSION_TAKE_CONTROLS permission not set` is logged (the wording is the sandbox's) and nothing is taken. A taken set replaces the earlier one; `llReleaseControls` clears it.
+  Each is a `controls` log entry (`take` with `controls`, `accept`, `pass_on`; `release` only when something was held).
+- The `control(key id, integer level, integer edge)` event goes to a script that holds controls, has the permission from that avatar, and whose taken controls the input touches; `level` and `edge` are cut to the
+  controls the script took (Second Life's exact filtering with `accept` false is not simulated: `accept` and `pass_on` are only recorded). A script that did not take the control, or holds the permission from another avatar, gets nothing.
+- Not done: the avatar's movement itself (nothing moves), the repeat of `control` while a key is held (send one input for each change), and `llTakeCamera`/camera permissions.
+
 #### Sitting and pose balls (Script Lab step 9b-5)
 
-Two new input types, for `inputs` of `lsl_run` and for `lsl_event`: `sit` (`{"at": 1, "type": "sit", "object": "chair", "link": 2, "id": "<avatar key>", "name": "<avatar name>"}`) puts an avatar on a prim
+Two input types, for `inputs` of `lsl_run` and for `lsl_event`: `sit` (`{"at": 1, "type": "sit", "object": "chair", "link": 2, "id": "<avatar key>", "name": "<avatar name>"}`) puts an avatar on a prim
 of an object (`link` 1 to the prim count, default the root; `id` and `name` default to the owner), and `stand` (`{"type": "stand", "id": ...}`; `object` is optional: without it the avatar's object is used)
 takes it off. Each is an `input` entry (`input`: `sit` or `stand`, `id`, `name`; for `sit` also `on_target`, true when the avatar took the prim's sit target) and every script of the object gets `changed`
 with `CHANGED_LINK` (32). An avatar that is already sitting, a `stand` of an avatar that does not sit on the object, a link the object does not have and a 17th avatar on one object (16 at most) are an `input`
@@ -638,9 +652,9 @@ to choose:
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
 the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver` and `object_rez`; 165 built-in functions (chat, listen, timer, time, owner and object keys,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez` and `control`; 167 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
-maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, and functions that are only recorded). All 526
+maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list
 (`src/scriptlab/lslbuiltins_data.inc`, made by `tools/gen_lsl_builtins.py`) plus what that list lacks (Linkset Data,
 `llReplaceSubString`, `llListSortStrided`, `llName2Key`, `llStartObjectAnimation` and others; the events

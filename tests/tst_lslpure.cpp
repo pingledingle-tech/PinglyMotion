@@ -100,7 +100,7 @@ void LslPureTest::tableHasTheNewNames()
 
 void LslPureTest::supportedCount()
 {
-  QCOMPARE(Builtins::supportedFunctions().size(), 165);
+  QCOMPARE(Builtins::supportedFunctions().size(), 167);
 }
 
 void LslPureTest::rotations()
