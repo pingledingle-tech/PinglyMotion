@@ -22,6 +22,8 @@ There are no releases in this repository yet (the project moved on 18 November 2
 
 New to animating? Read [Your first animation](docs/FIRST_ANIMATION.md).
 
+All documents in one overview: [docs/README.md](docs/README.md).
+
 ## Where PinglyMotion is going
 
 The vision is an approachable path from an idea or existing movement to an animation for Second Life: create or import, adjust, preview, export and reuse.
