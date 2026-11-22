@@ -96,7 +96,7 @@ Choose **Help > About...** to see who made the avatar bodies and under which lic
 
 - **The figure does not move.** You are on frame 0. Drag the time marker to a later frame.
 - **A joint will not turn further.** It is at the furthest it can turn. Turn it back.
-- **You do not like a key.** Press **Ctrl+Z** to undo. Or click the key button to remove the key.
+- **You do not like a key.** Click the key button to remove the key.
 - **The view is lost.** Press **Esc** to reset the camera.
 - **You cannot see the face balls.** Click the head. They only show then.
 - **Nothing moves when you play.** Set a second key at another frame.
