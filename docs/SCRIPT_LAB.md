@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 234 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2 of the second gap list); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 246 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2 and 12 from step 3 of the second gap list); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -269,6 +269,30 @@ a script run through the control commands), the one the Objects part shows.
 - `llSensor`, `llSensorRepeat` and `llSensorRemove` scan for the avatars of the new `avatars` option of `lsl_run` (positions given in the input; the owner stands at the avatar's place) and for the other objects of the world,
   by name, key, type, range (96 m at most) and arc; the events `sensor` and `no_sensor` follow, and `llDetectedPos`, `Rot`, `Vel`, `Type`, `Group` and `Owner` join `llDetectedKey` and `llDetectedName`.
 - Avatars never move and nothing is drawn. Details: [CONTROL.md](CONTROL.md), "Sensors". Tests: `tests/tst_lslsensors.cpp`.
+
+## What exists now (second gap list, step 3): region and avatar reads
+
+- 12 more functions run: `llGetRegionName`, `llGetRegionCorner`, `llGround`, `llWater`, `llGetAgentSize`,
+  `llGetAgentList`, `llRequestAgentData`, `llGetSunDirection`, `llGetTimeOfDay`, `llGetTimestamp`, `llGetWallclock`
+  and `llGetDate`.
+- **Canned region:** the sandbox has one region with settings: name `Sandbox`, corner `<256000, 256000, 0>`, flat
+  ground and water at 20 m, a day of 4 hours that starts at noon, and the start time 2026-01-01 00:00:00 UTC. `lsl_run`
+  can give other values with `region` (`name`, `corner`, `ground`, `water`, `day_length`, `time_of_day`, `unix_start`),
+  and an avatar can give `height`. Details: [CONTROL.md](CONTROL.md), "The region and the avatars in it".
+- **Time is never real:** every clock function (also `llGetUnixTime` and the creation time in `llGetObjectDetails`)
+  reads the start time plus the simulated seconds, so every run gives the same answers and the tests never depend on
+  the computer's clock. `llGetWallclock` is Second Life time (US Pacific, with the US summer-time rule).
+- Doubts, written down instead of guessed (the sandbox chose): the sun's path (a simple circle from east to west
+  through the top; Second Life's sun leans to one side and the sky can be set per parcel), the avatar width and depth
+  of `llGetAgentSize` (0.45 and 0.6 m), `DATA_BORN` (the start date of the run), `DATA_PAYINFO` (`"0"`), no answer for
+  an unknown `DATA_*` number, the order of `llGetAgentList` (the owner, the listed avatars, then sitters), and that the
+  three scopes give the same list because the sandbox is one parcel.
+- Not done here: `llGetGMTclock`, `llGetEnv`, `llGetRegionFPS`, `llGetRegionTimeDilation`, `llGetSimulatorHostname`,
+  ground that is not flat (`llGroundNormal`, `llGroundSlope`), the forced delay of `llRequestAgentData` (0.1 s).
+- Already in place: the checker knows that the sandbox raises `transaction_result` (`Parser::eventIsRaised`); this step
+  adds a test for it.
+- Tests: `tests/tst_lslregion.cpp` (exact answers for every function, also the summer-time changes and a day that
+  wraps round) and the scenario `lsl_region_reads`. The test of the number of functions that run now expects 246.
 
 ## What exists now (second gap list, step 2): reads and state of the object itself
 
@@ -624,7 +648,7 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   `tst_lsllint`), and one test per step: several objects (`tst_lslworld`), linked scripts (`tst_lsllink`), pure
   functions (`tst_lslpure`), `on_rez` and `changed` (`tst_lslevents`), prim state and L$ (`tst_lslprims`), inventory
   (`tst_lslinventory`), sitting (`tst_lslsitting`), controls (`tst_lslcontrols`), sensors (`tst_lslsensors`), stubs
-  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`), touches (`tst_lsltouch`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
+  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`), touches (`tst_lsltouch`), region and avatar reads (`tst_lslregion`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
   `fuzz_control`.
 - **Live:** `tst_labwatcher.cpp` and the Live part of `tst_control.cpp`.
 - **Effects in the 3D view:** `tst_labeffects`, `tst_scriptlabeffects`, `tst_cameraoverride`,
@@ -632,13 +656,13 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   (animation and frame, camera limits, sky colour and fog distance, view modes), not the picture.
 - **The panel:** `tests/scriptlabpanel/` (the Commands page's rows, words and colour tokens, the Objects and Dialog
   part, the input buttons, the panel's place after saving the layout), offscreen.
-- **The whole tool through the control commands:** `tests/data/scriptlab/scenarios.json` holds 30 scenarios (98
+- **The whole tool through the control commands:** `tests/data/scriptlab/scenarios.json` holds 32 scenarios (104
   requests): each of the eight example scripts in `examples/scriptlab`, each kind of RLV command (restriction on and
   off, duplicates, two objects and `@clear`, force commands and recorded values, questions answered on a channel,
   exceptions, `@notify`, the RLVa and RLV modes, unknown behaviours and refused values, refused requests), RLV from a
   script, several objects with chat ranges, linked scripts with Linkset Data, a notecard from canned inventory, a pose
   ball (sit and stand), controls, sensors, canned HTTP replies, `transaction_result`, reads and state of the object
-  itself (`llGetObjectDetails`, `llSetScriptState`, `llResetOtherScript`, `llDie`), the touch phases (a click and a held touch), and error cases (a script that
+  itself (`llGetObjectDetails`, `llSetScriptState`, `llResetOtherScript`, `llDie`), the touch phases (a click and a held touch), region and avatar reads (a given region, the clock, the sun, `llGetAgentList`, `llRequestAgentData`), and error cases (a script that
   does not compile, an unknown function, a function not supported yet, a runaway list, wrong `lsl_event` and `lsl_run`
   input). Each request lists the exact values some fields of its answer must have (whole event logs, RLV results and
   replies, the state). `tests/tst_scriptlabwhole.cpp` sends them to the control interface in a unit test (ctest
@@ -669,7 +693,7 @@ Not tested automatically (gaps):
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `touch`, `touch_end`, `run_time_permissions`, `attach`,
   `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
-  `http_response`, `transaction_result`), and 234 built-in functions; HTTP only with canned replies, never on the network; hard limits on
+  `http_response`, `transaction_result`), and 246 built-in functions; HTTP only with canned replies, never on the network; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

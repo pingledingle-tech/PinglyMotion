@@ -6,8 +6,9 @@ Files:
 - src/scriptlab/lsl/world.*
 - src/scriptlab/lsl/sandbox.*
 - src/scriptlab/lsl/control.cpp
-- src/scriptlab/lsl/interp.*
 - tests/tst_lslregion.cpp
+- tests/tst_lslpure.cpp
+- src/controlapi.cpp
 - tests/CMakeLists.txt
 - tests/data/scriptlab/scenarios.json
 - docs/SCRIPT_LAB.md
