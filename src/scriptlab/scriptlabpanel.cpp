@@ -17,6 +17,7 @@
 #include <QJsonArray>
 #include <QListWidget>
 #include <QPainter>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QSet>
 #include <QTabWidget>
@@ -638,7 +639,14 @@ void ScriptLabPanel::buildLivePage()
 
   buildInputSection(page, layout);
 
-  m_tabs->addTab(page, tr("Live"));
+  // the page is taller than a small docked panel: it scrolls instead of forcing the panel's height up
+  QScrollArea* scroll = new QScrollArea(m_tabs);
+  scroll->setObjectName("scriptLabLiveScroll");
+  scroll->setWidgetResizable(true);
+  scroll->setFrameShape(QFrame::NoFrame);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scroll->setWidget(page);
+  m_tabs->addTab(scroll, tr("Live"));
   m_tabs->setTabToolTip(1, tr("Watch a folder of .lsl scripts: each saved change is checked and run again here"));
 
   connect(m_watch, &QPushButton::clicked, this, &ScriptLabPanel::chooseFolder);
