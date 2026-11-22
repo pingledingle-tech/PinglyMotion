@@ -1,6 +1,6 @@
 Branch: docs/process-review
 Status: active
-Pull request: pending
+Pull request: #351
 Files:
 - CLAUDE.md
 - docs/DEV.md
