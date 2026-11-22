@@ -31,7 +31,7 @@ New users first: people who want to pose their avatar without knowing animation 
 - Panels can be dragged, docked, collapsed or popped out as own windows (useful with two screens). The layout is remembered; **View › Reset layout** brings back the default.
 - **Tab** hides and shows all panels. The camera centres the figure in the free area, not behind a panel. On a small screen (1440×900) this matters: with all panels open the free area is about 780×560 pixels.
 - Top bar: menu, file name with unsaved mark, figure and size, **command search (Ctrl + K)**, undo / redo, Export, Save.
-- **Joints panel:** Avatar / Props switch; tabs Body / Face / Hands / Other (done in #126); Left / Right / Mirror; search; friendly names under section headings; violet dot on edited joints; key marker; tick for "include in export".
+- **Joints panel:** Avatar / Props switch; tabs Body / Face / Hands / Other (done in #126); Left / Right / Mirror; search; friendly names under section headings; a dot in the body-area colour on edited joints; key marker; tick for "include in export".
 - **Selected joint:** friendly name and SL name; IK switch; lock; reset; Rotate / Move (Move only for the pelvis and the avatar position); trackball plus X / Y / Z sliders with value fields; the allowed range is shown on each slider and a warning appears near a joint limit (#59, #129); "Turn around: Joint / Avatar / Screen"; whole pose: Flip, Left → Right, Right → Left, T-pose, Poses…, Reset all.
 - **Timeline:** full width; only edited joints by default; loop range; the easing of the selected key's pose change as a row of six tiles (done: the Easing tile row, [EASING.md](EASING.md); replaces the ease in / out check boxes); Set key.
 - **Status bar:** the remote-control indicator from #43 (Claude), the Aurora link status and a "Tips on" switch, all in one place.
@@ -60,9 +60,12 @@ One scheme for everyone. The first column is all a new user needs; the other two
 | Focus on a joint | Double-click it, or F | Numpad . | Alt + click |
 | Front / side / top | Click the view gizmo | Numpad 1 / 3 / 7 | – |
 | Select a joint | Click it, or its row | Click | Click |
+| Pull a limb (IK) | Press a joint and drag; release sets a key, Esc cancels | G (later) | – |
+| Turn only that joint | Hold Shift when you press the joint, or switch IK off | – | – |
+| Pull with the keyboard | Enter on the picked joint, arrow keys, Enter sets a key | G, arrow keys (later) | – |
 | Turn a joint | Drag a ring | R, then X / Y / Z (later) | – |
 | Turn freely | Drag the ball on the joint | R R (later) | Trackball |
-| Finer control | Hold Shift while dragging | Shift | Shift |
+| Finer control | Hold Shift while dragging a ring (arrow keys while pulling with keys) | Shift | Shift |
 | Undo / redo | Ctrl + Z / Ctrl + Shift + Z | Same | Same |
 | Set a key | Set key button, or K | I | – |
 | Play / stop | Space | Space | – |
@@ -75,7 +78,7 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 **Done: Camera and keys** (old step 1; `src/animationview.*`, `src/camera.*`):
 
 - The camera turns around the point in the middle of the view. Focus (double-click, F, number pad `.`, Alt + click) puts the joint there, so the camera then turns around that joint.
-- A left click selects; a left drag that starts on the body turns the camera too (the joint is not selected then). Rings and prop handles keep the left drag.
+- A left click selects; a left drag that starts on the body turns the camera too (the joint is not selected then). Rings and prop handles keep the left drag. Pressing on a joint and dragging pulls the limb (decided in the mockup, not built yet: [UX_DECISIONS.md](UX_DECISIONS.md#6a-dragging-a-joint-in-the-3d-view)); Shift when you press turns only that joint.
 - Number pad: 1 front, 3 side (from the figure's right), 7 top; Ctrl + 1 back, Ctrl + 3 the other side. With Num Lock off the same keys work. Number pad `,` (decimal comma keyboards) also focuses.
 - Wheel and drag zoom move a share of the distance (closer = smaller steps). Page Up / Page Down still zoom; F9–F12 still restore stored cameras (Shift + F9–F12 store).
 - Until the selected-joint card has an IK switch (UX step 6, Selected joint panel, in [UX_DECISIONS.md](UX_DECISIONS.md#9-build-order)), **Ctrl + double-click** a hand or foot switches IK on or off (it used to be a plain double-click). **Shift + double-click** still selects the mirrored joint too.
@@ -88,7 +91,7 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 - When the mouse rests on a joint, its Second Life name (and the name in the animation file, if different) is shown. The selected-joint card will show the SL name later (Selected joint panel, [UX_DECISIONS.md](UX_DECISIONS.md#9-build-order)).
 - A search box under the tabs finds joints on all tabs. Every word typed must be found in the friendly name, the heading, the SL name or the file name ("left wrist", "mElbowLeft"). Enter picks the first joint found. Clicking a tab clears the search. Clicking a joint in the 3D view keeps the search if the joint is among the results, otherwise the search is cleared and the list switches to the joint's tab.
 - Joints the data does not know (a file with another skeleton) are listed by their file name under "Other joints". If the data file is missing, the list falls back to file names.
-- Not yet: the violet dot on edited joints, the key marker and the export tick (later steps).
+- Not yet: the body-area dot on edited joints, the key marker and the export tick (later steps).
 
 **Done: Panels, jobs P1 to P6** (old step 3; `src/panellayout.h`, `src/panelwindow.h`, `src/pinglymotionwindow.*`, `src/paneltitlebar.*`):
 

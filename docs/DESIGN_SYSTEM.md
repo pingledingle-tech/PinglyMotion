@@ -39,13 +39,26 @@ replacing the token values.
 | `area_face` | `#F4A261` | `#B4570F` | Body area colour: Face |
 | `area_hands` | `#C792EA` | `#8241B8` | Body area colour: Hands |
 | `area_other` | `#5CC8C8` | `#0F7C7C` | Body area colour: Other |
+| `axis_x` | `#FF7A7A` | `#C42B1C` | Axis colour X (red): rings, sliders, the view-direction widget, X labels |
+| `axis_y` | `#5FD068` | `#1B7530` | Axis colour Y (green) |
+| `axis_z` | `#6A9EFF` | `#1F5FD1` | Axis colour Z (blue) |
+| `on_axis` | `#1E1F22` | `#FFFFFF` | The letter on an axis-coloured badge or widget end |
+| `go_fill` | `#1D7F45` | `#18794E` | Start button fill (transport only) |
+| `replay_fill` | `#7048C8` | `#6A3DBF` | Replay from start button fill (transport only) |
 
 Contrast (WCAG 2.2, charter P9), checked for these values:
 
 - `text`, `text_muted`, `accent_text`, `danger`, `success` and `warning` are
   at least 4.5:1 on `background`, `surface` and `surface_raised` in both
   themes.
-- `on_accent` is at least 4.5:1 on `accent` and `danger_fill`.
+- `on_accent` is at least 4.5:1 on `accent`, `danger_fill`, `go_fill` and
+  `replay_fill` (white on `go_fill` 5.0:1 dark, 5.4:1 light; on `replay_fill`
+  6.1:1 dark, 6.9:1 light).
+- `axis_x`, `axis_y` and `axis_z` are at least 4.5:1 on `background`,
+  `surface` and `surface_raised` in both themes (lowest: `axis_z` dark on
+  `surface_raised` 4.5:1, `axis_y` light on `surface_raised` 4.8:1), so they
+  work as text, rings and slider fills. `on_axis` is at least 5.3:1 on all
+  three axis colours.
 - `border`, `focus_ring`, `accent` and the four area colours are at least
   3:1 on `surface` and `background`.
 - `text_disabled` is at least 3:1 on every surface, so the reason a control is
@@ -53,6 +66,22 @@ Contrast (WCAG 2.2, charter P9), checked for these values:
 
 A new colour token must meet the same numbers in both themes before it is
 added.
+
+## Axis colours
+
+Decided by the project owner on 22 November 2026 ([DECISIONS.md](DECISIONS.md)).
+Everywhere in the program, **X is red, Y is green and Z is blue**: the rotation
+rings around the picked joint, the X / Y / Z sliders of the Selected joint
+panel, the view-direction widget in the 3D view, the floor's centre lines and
+every X, Y or Z label. The colours are `axis_x`, `axis_y` and `axis_z`.
+
+- The letter is always shown next to or on the colour (a small badge with
+  `radius.small`, the axis colour as fill and the letter in `on_axis`, or the
+  letter on the ring or widget end). Red and green look alike for many people
+  with colour blindness, so the letter carries the meaning and the colour backs
+  it up (charter P10).
+- The axis colours mean axes only. They are not used for anything else, and no
+  other colour is used for an axis.
 
 ## Shape
 
@@ -65,13 +94,23 @@ added.
 | `border_width` | 1 px | All borders |
 
 Every button has the same shape: `radius.control`, `border_width`, height
-from `control_height`. There are three kinds and no others:
+from `control_height`. There are three kinds, plus the two transport colours
+below, and no others:
 
 - **Main button** (one per screen or dialog at most): `accent` fill,
   `on_accent` text.
 - **Normal button**: `surface_raised` fill, `border`, `text`.
 - **Danger button** (delete, stop, remove): `danger_fill` fill, `on_accent`
   text, and always an icon or word that says what it does (charter P10).
+
+- **Transport buttons** (only in the playback row under the timeline, decided
+  by the project owner on 22 November 2026): **Start** has a `go_fill` fill,
+  **Replay from start** a `replay_fill` fill (violet, because yellow means a
+  warning), both with `on_accent` text; **Stop** is a danger button. Each has
+  its icon and its word (play triangle, circular arrow, square), so the colour
+  only backs them up (charter P10). A disabled transport button looks like any
+  disabled button. Green and violet fills are used nowhere else; the main
+  button of the timeline stays Set key in `accent`.
 
 Icon-only buttons are square (width = height) with the same radius and a
 tooltip that names the action and its shortcut (charter P3, P8).
