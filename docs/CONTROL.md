@@ -363,7 +363,8 @@ Life: test the final script there too.
 - `lsl_run {source, seconds, inputs, keep_rlv}` runs the script with a simulated clock: `state_entry` of the default
   state first, then events until `seconds` (0 to 3600, default 10) have passed. Nothing waits for real
   time. `inputs` (at most 200) are chat or touches at given times:
-  `[{"at":1,"channel":7,"text":"dance"},{"at":2,"type":"touch"}]`; `name` and `id` default to the owner.
+  `[{"at":1,"channel":7,"text":"dance"},{"at":2,"type":"touch"}]`; `name` and `id` default to the owner. A touch
+  raises `touch_start`, `touch` and `touch_end`; `hold` is how long it is held ("Touches" below).
   A script that does not compile is not run: the answer has `ok: false` and the `errors` of `lsl_check`.
   `llOwnerSay` text that starts with `@` is run as an RLV command (Script Lab step 4, issue 290): the sandbox's
   RLV state (the one `rlv_state` shows) gets it from the script's object (its key, as `llGetKey` returns), and
@@ -390,7 +391,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `sleep` | `llSleep` (moves the simulated clock) | `seconds` |
 | `permissions` | `llRequestPermissions`; the owner's are granted at once, then `run_time_permissions` follows | `mask`, `granted`, `note` |
 | `animation_start`, `animation_stop` | `llStartAnimation`, `llStopAnimation` (the 3D view plays them while the Script Lab's "Show effects in 3D view" box is ticked; [SCRIPT_LAB.md](SCRIPT_LAB.md)) | `name` |
-| `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text` |
+| `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text`; a held touch `hold` |
 | `debug` | what Second Life says on the debug channel without stopping the script (an animation without permission, `llRegionSay` on channel 0) | `channel`, `text` |
 | `event_dropped` | more than 64 events were waiting, as in Second Life | `name`, `message` |
 | `reset` | `llResetScript`, or `llResetOtherScript` from another script (then the reset script's entry) | |
@@ -510,8 +511,8 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
   Second Life each prim has its own key), so a script's RLV lines are held under the object's key, whichever prim
   it is in. The cap of 100 `@` lines is per script.
 - A touch (an input or `lsl_event` with `type` touch) can name `link`, the prim touched (default the root): the
-  scripts of that prim that handle `touch_start` get it; when none does, the root's scripts get it, as Second Life
-  passes touches on.
+  scripts of that prim that handle `touch_start`, `touch` or `touch_end` get it; when none does, the root's scripts
+  get it, as Second Life passes touches on. Each script gets only the touch events it has a handler for.
 - Order: Second Life runs scripts at the same time, in no set order. The sandbox runs them one after the other in a
   fixed order (objects in list order, each object's scripts in list order; a script runs every event waiting for it
   before the next script runs), so the same request always gives the same log. A set of scripts that only works in
@@ -688,6 +689,28 @@ are in the inventory too, as type `script` (an item may not have a script's name
   `llGetOwner`, the prim count and the inventory do not change with it (`owner` does not give the object a new owner). This is a new input type
   for the existing `inputs`; no new control command.
 
+#### Touches (Script Lab, second gap list, step 1)
+
+- A touch input (`inputs` of `lsl_run` and `lab_watch`, or `lsl_event` with `type` touch) raises the three touch events of
+  Second Life in order: `touch_start` when the avatar presses the mouse button, `touch` while it is held, and `touch_end`
+  when it is let go (Second Life wiki, `touch`, `touch_start`, `touch_end`). `num_detected` is 1: one avatar touches at a time.
+- `hold` (seconds, 0 to 60, default 0) is how long the touch is held. A touch at `t` gives `touch_start` and `touch` at `t`,
+  then `touch` at `t + 0.1`, `t + 0.2`, ... while that is before `t + hold`, and `touch_end` at `t + hold`. So a click
+  (`hold` 0) gives `touch_start`, `touch` and `touch_end` at the same time. Second Life raises `touch` about once per
+  minimum event delay while the button is held; the fixed 0.1 simulated seconds is a sandbox choice.
+- `llDetectedName`, `llDetectedKey`, `llDetectedOwner` (the avatar) and `llDetectedLinkNumber` (the prim touched) work in
+  all three events. The log has one `input` entry for the touch (with `hold` when it is more than 0); the later phases
+  show as the scripts' `event` entries only.
+- The events go to the prim's scripts as described under "Several scripts in one object". The prim and the scripts are
+  chosen again for each phase, so a script that changes state while the touch is held gets the events its new state
+  handles.
+- A touch held past the end of `lsl_run` (or of `lsl_event` with `seconds`) goes on in the next `lsl_event`. `lsl_event`
+  with `hold` and without `seconds` runs on at least until the touch is let go.
+- `{"command": "lsl_event", "type": "touch", "hold": 1.5}` holds the touch 1.5 seconds: `touch_start`, 15 `touch` events and `touch_end`.
+- Not done: the touch data (`llDetectedTouchFace`, `llDetectedTouchPos`, `llDetectedTouchUV`, `llDetectedTouchST`,
+  `llDetectedTouchNormal`, `llDetectedTouchBinormal`; not supported yet), several avatars touching at once, and the Live
+  page's Touch button holding a touch (it sends a click).
+
 #### Reads and state of the object itself (Script Lab, second gap list, step 2)
 
 Seventeen functions that read or change the script's own object. Where Second Life's behaviour is not documented the
@@ -711,7 +734,7 @@ sandbox chooses, and [SCRIPT_LAB.md](SCRIPT_LAB.md) lists those doubts.
   object's key and its link number (the MD5 of `<object key>/link/<n>`, written as a key, the same in every run); avatars
   sitting on the object are the links after the prims, in the order they sat, with their name and key. Any other
   number (also `LINK_SET` and the like) gives `NULL_KEY`, for `llGetLinkName` too (Second Life wiki).
-- **`llDetectedLinkNumber(i)`**: in `touch_start`, the prim touched (a touch input's `link`; 0 in a single prim). A touch on
+- **`llDetectedLinkNumber(i)`**: in `touch_start`, `touch` and `touch_end`, the prim touched (a touch input's `link`; 0 in a single prim). A touch on
   a prim without a touch script goes to the root's scripts with the number of the prim touched. Out of range, or in
   an event that is not a touch (such as `sensor`), it is 0.
 - **Permission masks:** every object and item counts as made by its owner: `llGetObjectPermMask` and
@@ -786,8 +809,8 @@ to choose:
 
 What runs: the types `integer`, `float`, `string`, `key`, `vector`, `rotation` and `list`; global variables
 and functions; states with `state_entry` and `state_exit`; `if`, `while`, `do`, `for`, `jump`, `return`;
-the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor`, `no_sensor` and `http_response`; 234 built-in functions (chat, listen, timer, time, owner and object keys,
+the events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `touch`, `touch_end`, `run_time_permissions`, `attach`,
+`link_message`, `linkset_data`, `on_rez`, `changed`, `dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`, `http_response` and `transaction_result`; 234 built-in functions (chat, listen, timer, time, owner and object keys,
 permissions, animations, dialogs, position, link messages, Linkset Data, list, string and maths functions, rotation
 maths, Base64, MD5 and SHA-1, URL escaping, object-state getters and setters, simulated prim state, a simulated inventory with notecards and rezzing, sitting and pose balls, controls, sensors, HTTP requests with canned replies, reads and state of the object itself (`llGetObjectDetails`, `llDie`, `llSetScriptState` and others), and functions that are only recorded). All 526
 function names and signatures, 43 events and 1 082 constants are known: those of the viewer's LSL keyword list

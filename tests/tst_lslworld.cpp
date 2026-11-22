@@ -381,7 +381,7 @@ void LslWorldTest::eventNeedsAWorld()
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "fly"}}, &session)["error"].toString(),
            QString("\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\"."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"at", 1}}, &session)["error"].toString(),
-           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, change, levels, edges, seconds."));
+           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, hold, change, levels, edges, seconds."));
   RlvState rlv;
   run({object("a", "default { touch_start(integer n) { } }")}, 1, rlv, &session);
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"object", "zz"}}, &session)["error"].toString(),
