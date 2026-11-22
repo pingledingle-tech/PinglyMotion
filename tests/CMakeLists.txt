@@ -274,3 +274,9 @@ ADD_EXECUTABLE (pinglymotion_lslmoney_tests tst_lslmoney.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslmoney_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_lslmoney_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslmoney COMMAND pinglymotion_lslmoney_tests)
+
+# Script Lab: prim media (gap list 2, step 5): llSetPrimMediaParams, llGetPrimMediaParams and llClearPrimMedia, record only
+ADD_EXECUTABLE (pinglymotion_lslmedia_tests tst_lslmedia.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslmedia_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslmedia_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslmedia COMMAND pinglymotion_lslmedia_tests)
