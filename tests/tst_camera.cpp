@@ -36,8 +36,14 @@ class TestCamera : public QObject
     void storedPositionKeepsDistance();
     void shiftedPerspectiveNoShift();
     void shiftedPerspectiveCentresFreeArea();
+    void constraintClampsDistance();
+    void constraintTurnsAroundPoint();
+    void constraintHoldsAfterMoves();
+    void clearConstraintRestoresExactly();
+    void secondConstraintKeepsFirstCamera();
 
   private:
+    static void compareState(const CameraPosition& a, const CameraPosition& b);
     // where a point in front of the camera (world space) ends up on screen
     // (widget pixels), through this projection matrix and an otherwise
     // plain view looking straight down -Z
@@ -322,6 +328,126 @@ void TestCamera::shiftedPerspectiveCentresFreeArea()
   const QMatrix4x4 shifted=shiftedPerspective(60.0f,QRectF(view),free.center(),1.0f,2000.0f);
   compare(QVector3D(onScreen(shifted,QVector3D(0,0,-100),QSizeF(view.size()))),
           QVector3D(float(free.center().x()),float(free.center().y()),0),0.5f);
+}
+
+void TestCamera::compareState(const CameraPosition& a, const CameraPosition& b)
+{
+  QCOMPARE(a.panX, b.panX);
+  QCOMPARE(a.panY, b.panY);
+  QCOMPARE(a.panZ, b.panZ);
+  QCOMPARE(a.rotX, b.rotX);
+  QCOMPARE(a.rotY, b.rotY);
+  QCOMPARE(a.pivotDistance, b.pivotDistance);
+}
+
+// Script Lab camera limits (job 7b): distance limits without a fixed point keep the pivot
+void TestCamera::constraintClampsDistance()
+{
+  Camera camera;
+  QCOMPARE(camera.distance(), 100.0f);
+  const QVector3D pivot = camera.pivot();
+  CameraConstraint c;
+  c.maxDistance = 50.0f;
+  camera.setConstraint(c);
+  QVERIFY(camera.constrained());
+  QCOMPARE(camera.distance(), 50.0f);
+  compare(camera.pivot(), pivot);
+  c.maxDistance = 0;
+  c.minDistance = 150.0f;
+  camera.setConstraint(c);
+  QCOMPARE(camera.distance(), 150.0f);
+  compare(camera.pivot(), pivot);
+}
+
+void TestCamera::constraintTurnsAroundPoint()
+{
+  Camera camera;
+  camera.panBy(30.0f, -10.0f);
+  const float rotX = camera.xRotation();
+  const float rotY = camera.yRotation();
+  CameraConstraint c;
+  c.maxDistance = 118.110236f;
+  c.turnAroundPoint = true;
+  c.point = QVector3D(0.0f, 43.528519f, 0.0f);
+  camera.setConstraint(c);
+  compare(camera.pivot(), c.point);
+  QCOMPARE(camera.distance(), 100.0f);   // already within 3 m
+  QCOMPARE(camera.xRotation(), rotX);    // the direction is kept
+  QCOMPARE(camera.yRotation(), rotY);
+}
+
+void TestCamera::constraintHoldsAfterMoves()
+{
+  Camera camera;
+  CameraConstraint c;
+  c.minDistance = 40.0f;
+  c.maxDistance = 80.0f;
+  c.turnAroundPoint = true;
+  c.point = QVector3D(0.0f, 43.528519f, 0.0f);
+  camera.setConstraint(c);
+  QCOMPARE(camera.distance(), 80.0f);
+  camera.zoom(10.0f);
+  QCOMPARE(camera.distance(), 80.0f);
+  camera.zoom(0.01f);
+  QCOMPARE(camera.distance(), 40.0f);
+  camera.panBy(200.0f, 50.0f);
+  compare(camera.pivot(), c.point);
+  camera.lookAt(100.0f, 0.0f, 100.0f, 500.0f);
+  compare(camera.pivot(), c.point);
+  QCOMPARE(camera.distance(), 80.0f);
+  camera.rotate(20.0f, 45.0f);
+  compare(camera.pivot(), c.point);
+  camera.orbit(30.0f, 90.0f, 300.0f);
+  compare(camera.pivot(), c.point);
+  QCOMPARE(camera.distance(), 80.0f);
+  camera.reset();
+  compare(camera.pivot(), c.point);
+  QCOMPARE(camera.distance(), 80.0f);
+  camera.setView(90.0f, 0.0f);
+  compare(camera.pivot(), c.point);
+}
+
+void TestCamera::clearConstraintRestoresExactly()
+{
+  Camera camera;
+  camera.rotate(12.5f, 33.0f);
+  camera.panBy(7.0f, -3.0f);
+  camera.zoom(1.7f);
+  const CameraPosition before = camera.state();
+  CameraConstraint c;
+  c.maxDistance = 20.0f;
+  c.turnAroundPoint = true;
+  c.point = QVector3D(0.0f, 43.528519f, 0.0f);
+  camera.setConstraint(c);
+  camera.rotate(-30.0f, 100.0f);
+  camera.zoom(0.5f);
+  camera.clearConstraint();
+  QVERIFY(!camera.constrained());
+  compareState(camera.state(), before);
+  // without a constraint the camera moves freely again
+  camera.zoom(2.0f);
+  QVERIFY(camera.distance() > 20.0f);
+  // a second clear changes nothing
+  const CameraPosition after = camera.state();
+  camera.clearConstraint();
+  compareState(camera.state(), after);
+}
+
+void TestCamera::secondConstraintKeepsFirstCamera()
+{
+  Camera camera;
+  const CameraPosition before = camera.state();
+  CameraConstraint c;
+  c.maxDistance = 50.0f;
+  camera.setConstraint(c);
+  c.maxDistance = 30.0f;
+  camera.setConstraint(c);
+  QCOMPARE(camera.distance(), 30.0f);
+  c.maxDistance = 0;
+  camera.setConstraint(c);   // the limit was lifted, the moved camera stays until cleared
+  QCOMPARE(camera.distance(), 30.0f);
+  camera.clearConstraint();
+  compareState(camera.state(), before);
 }
 
 QTEST_GUILESS_MAIN(TestCamera)

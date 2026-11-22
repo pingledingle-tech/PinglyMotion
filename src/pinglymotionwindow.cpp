@@ -94,6 +94,7 @@
 #include "pinglymotionwindow.h"
 #include "playback.h"
 #include "scriptlab/scriptlabpanel.h"
+#include "scriptlab/cameraoverride.h"
 #include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "transportbar.h"
@@ -540,6 +541,11 @@ PinglyMotionWindow::PinglyMotionWindow() :
   EffectsPreview* effects=new EffectsPreview(this);
   ui->animationView->setEffectsPreview(effects);
   m_scriptLabPanel->setEffects(effects);
+  // and lets the RLV camera limits limit the 3D view's camera, off until its box is ticked (job 7b)
+  CameraOverride* cameraOverride=new CameraOverride(this);
+  cameraOverride->setState(&m_controlApi->rlv());
+  ui->animationView->setCameraOverride(cameraOverride);
+  m_scriptLabPanel->setCameraOverride(cameraOverride);
   m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
   m_controlAction->setCheckable(true);
   m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));

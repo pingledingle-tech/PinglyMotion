@@ -53,6 +53,7 @@
 #include "usersettings.h"
 #include "scenestate.h"
 #include "screenshotsheet.h"
+#include "scriptlab/cameraoverride.h"
 #include "scriptlab/effectspreview.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
@@ -165,6 +166,24 @@ void AnimationView::setEffectsPreview(EffectsPreview* preview)
   if(m_effects) disconnect(m_effects,nullptr,this,nullptr);
   m_effects=preview;
   if(preview) connect(preview,&EffectsPreview::changed,this,[this]() { update(); });
+  update();
+}
+
+void AnimationView::setCameraOverride(CameraOverride* cameraOverride)
+{
+  if(m_cameraOverride) disconnect(m_cameraOverride,nullptr,this,nullptr);
+  m_cameraOverride=cameraOverride;
+  if(cameraOverride) connect(cameraOverride,&CameraOverride::changed,this,&AnimationView::applyCameraOverride);
+  applyCameraOverride();
+}
+
+void AnimationView::applyCameraOverride()
+{
+  if(!m_scene) return;
+  if(m_cameraOverride && m_cameraOverride->active())
+    camera()->setConstraint(m_cameraOverride->constraint());
+  else
+    camera()->clearConstraint();
   update();
 }
 
