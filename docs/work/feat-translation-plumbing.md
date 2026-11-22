@@ -1,6 +1,6 @@
 Branch: feat/translation-plumbing
 Status: active
-Pull request: pending
+Pull request: #338
 Files:
 - CMakeLists.txt
 - src/main.cpp
