@@ -232,6 +232,13 @@ namespace
       if (!wholeNumber(o.value("link"), 1, Sandbox::MAX_PRIMS, in.link))
         return where + QString("\"link\" must be a whole number from 1 to %1 (the prim touched; 1 is the root).").arg(Sandbox::MAX_PRIMS);
     }
+    if (o.contains("hold"))
+    {
+      if (in.type != "touch") return where + "\"hold\" is only for touch (the seconds the touch is held).";
+      in.hold = o.value("hold").toDouble(-1.0);
+      if (!o.value("hold").isDouble() || !std::isfinite(in.hold) || in.hold < 0.0 || in.hold > Sandbox::MAX_TOUCH_HOLD)
+        return where + QString("\"hold\" must be a number of seconds from 0 to %1 (how long the touch is held; 0 is a click).").arg(Sandbox::MAX_TOUCH_HOLD);
+    }
     if (in.type == "changed")
     {
       if (!o.contains("change")) return where + "a changed input needs \"change\": what changed, such as \"inventory\", \"owner\", \"link\" or \"region_start\".";
@@ -645,7 +652,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!request.value("inputs").isArray()) return fail("\"inputs\" must be a list of objects.");
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
-    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change", "levels", "edges"};
+    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -751,7 +758,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
-  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "change", "levels", "edges", "seconds"};
+  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges", "seconds"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -770,6 +777,8 @@ QJsonObject event(const QJsonObject& request, Session* session)
     if (!std::isfinite(seconds) || seconds < 0 || seconds > MAX_SECONDS)
       return fail(QString("\"seconds\" must be between 0 and %1 (simulated seconds).").arg(MAX_SECONDS));
   }
+  // a held touch without "seconds" runs on until it is let go, so its touch_end is in this answer
+  else if (in.hold > seconds) seconds = in.hold;
   if (!sandbox) return fail("There is no running world to send the event to. Start one with lsl_run first (with \"source\" or \"objects\").");
   if (!in.object.isEmpty() && sandbox->indexOf(in.object) < 0)
     return fail("There is no object named \"" + clip(in.object, 63) + "\" in the world of the last lsl_run.");

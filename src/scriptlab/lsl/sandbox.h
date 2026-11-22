@@ -94,7 +94,7 @@ struct ScriptEntry
 struct SandboxInput
 {
   double at = 0.0;
-  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand
+  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -106,6 +106,12 @@ struct SandboxInput
   int change = 0;                 // changed (step 9b-2): the CHANGED_* flags, added together
   int levels = 0;                 // control (step 9b-6): the CONTROL_* flags held now
   int edges = 0;                  // control: the CONTROL_* flags that changed
+  double hold = 0.0;              // touch (gap list 2, step 1): seconds the touch is held (0: a click)
+  // touch: the phases after touch_start are scheduled by the Sandbox itself as inputs: 0 the touch from outside,
+  // 1 a touch event while held (at start + step * TOUCH_REPEAT), 2 touch_end (at start + hold)
+  int phase = 0;
+  double start = 0.0;
+  int step = 0;
 };
 
 class Sandbox
@@ -125,6 +131,10 @@ class Sandbox
     static constexpr double SAY_RANGE = 20.0;
     static constexpr double SHOUT_RANGE = 100.0;
     static constexpr int MAX_ATTACH_POINT = 55;
+    // gap list 2, step 1: a held touch raises touch every TOUCH_REPEAT simulated seconds (Second Life raises it about
+    // once per minimum event delay while the mouse button is held); a touch is held at most MAX_TOUCH_HOLD seconds
+    static constexpr double TOUCH_REPEAT = 0.1;
+    static constexpr double MAX_TOUCH_HOLD = 60.0;
     static const char* const OWNER_KEY;
     static const char* const OWNER_NAME;
     static const char* const NULL_KEY;
@@ -244,6 +254,9 @@ class Sandbox
     QString ownerOf(const QString& key) const;
 
     void deliver(const SandboxInput& input);
+    // gap list 2, step 1: one phase of a touch to the scripts that get it, and the next phase scheduled as an input
+    void touchPhase(const SandboxInput& input, double t);
+    void schedule(const SandboxInput& input);
     void runQueues();
     // the avatar that sends an input: name and key
     void avatar(const SandboxInput& input, QString& name, QString& key) const;

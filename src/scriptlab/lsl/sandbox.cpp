@@ -404,10 +404,75 @@ void Sandbox::where(int index, float out[3]) const
   out[2] = p[2];
 }
 
+void Sandbox::schedule(const SandboxInput& input)
+{
+  // the Sandbox's own inputs (the phases of a held touch) are not counted against MAX_PENDING_INPUTS
+  auto it = m_inputs.begin();
+  while (it != m_inputs.end() && it->at <= input.at) ++it;
+  m_inputs.insert(it, input);
+}
+
+void Sandbox::touchPhase(const SandboxInput& input, double t)
+{
+  // Second Life: touch_start, then touch while the mouse button is held (also once for a click), then touch_end.
+  // The scripts of the touched prim that handle a touch event (touch_start, touch or touch_end) get it; when none
+  // does, the root's scripts get it (Second Life passes touches on to the root prim). Each script gets only the
+  // events it has a handler for.
+  const int index = indexOf(input.object);
+  if (index < 0) return;
+  const Object& o = m_objects[size_t(index)];
+  if (o.dead) return;
+  QString name, key;
+  avatar(input, name, key);
+  std::vector<int> hit;
+  for (int i = 0; i < o.slotCount; ++i)
+  {
+    const Slot& slot = m_slots[size_t(o.firstSlot + i)];
+    if (slot.link == input.link && (slot.interp->handles("touch_start") || slot.interp->handles("touch") || slot.interp->handles("touch_end")))
+      hit.push_back(o.firstSlot + i);
+  }
+  if (hit.empty())
+    for (int i = 0; i < o.slotCount; ++i)
+      if (m_slots[size_t(o.firstSlot + i)].link == 1) hit.push_back(o.firstSlot + i);
+  const int link = o.spec.prims == 1 ? 0 : input.link;
+  for (int i : hit)
+  {
+    Interpreter& interp = *m_slots[size_t(i)].interp;
+    interp.syncTo(t);
+    if (input.phase == 0) interp.touch(key, name, link, Interpreter::TouchPhase::Start);
+    if (input.phase <= 1) interp.touch(key, name, link, Interpreter::TouchPhase::Held);
+    if (input.phase == 2 || (input.phase == 0 && input.hold <= 0.0)) interp.touch(key, name, link, Interpreter::TouchPhase::End);
+  }
+  if (input.phase == 2 || (input.phase == 0 && input.hold <= 0.0)) return;
+  // the next phase: another touch while still held, else touch_end when the touch is let go
+  SandboxInput next = input;
+  next.step = input.step + 1;
+  const double release = input.start + input.hold;
+  const double repeat = input.start + next.step * TOUCH_REPEAT;
+  if (repeat < release - 1e-9)
+  {
+    next.phase = 1;
+    next.at = repeat;
+  }
+  else
+  {
+    next.phase = 2;
+    next.at = release;
+  }
+  schedule(next);
+}
+
 void Sandbox::deliver(const SandboxInput& input)
 {
   QString name, key;
   avatar(input, name, key);
+  if (input.type == "touch" && input.phase > 0)
+  {
+    // a later phase of a touch: no input entry in the log, the event entries show it
+    const double t = m_slots.size() == 1 ? qMax(m_now, m_slots[0].interp->now()) : m_now;
+    touchPhase(input, t);
+    return;
+  }
   int target = input.object.isEmpty() ? 0 : indexOf(input.object);
   if (m_objects.empty()) return;
   const bool single = m_slots.size() == 1;
@@ -453,17 +518,13 @@ void Sandbox::deliver(const SandboxInput& input)
         m_log.log(t, entry);
         return;
       }
+      if (input.hold > 0.0) entry["hold"] = input.hold;
       m_log.log(t, entry);
-      std::vector<int> hit;
-      for (int i = 0; i < o.slotCount; ++i)
-      {
-        const Slot& slot = m_slots[size_t(o.firstSlot + i)];
-        if (slot.link == link && slot.interp->handles("touch_start")) hit.push_back(o.firstSlot + i);
-      }
-      if (hit.empty())
-        for (int i = 0; i < o.slotCount; ++i)
-          if (m_slots[size_t(o.firstSlot + i)].link == 1) hit.push_back(o.firstSlot + i);
-      for (int i : hit) m_slots[size_t(i)].interp->touch(key, name, o.spec.prims == 1 ? 0 : link);
+      SandboxInput first = input;
+      first.object = o.spec.name;
+      first.link = link;
+      first.start = t;
+      touchPhase(first, t);
       return;
     }
     if (input.type == "control")
