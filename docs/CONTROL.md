@@ -424,7 +424,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `url_request` | `llRequestURL` or `llRequestSecureURL` (second gap list, step 4) | `secure`, `request` (the key the call returned), `result` (`granted` or `denied`), `url` (when granted) |
 | `url_release` | `llReleaseURL` (second gap list, step 4) | `url`, `result` (`released` or `not_found`) |
 | `http_server_response` | `llHTTPResponse` (second gap list, step 4; nothing is sent) | `request`, `status`, `body`, `result` (`sent`, `timed_out` or `unknown_request`) |
-| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, and the 37 stubs of step 9b-8 (see "Recorded only") | `function`, `args`, `note` |
+| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, the 37 stubs of step 9b-8 and the seven movement stubs of the second gap list, step 6 (see "Recorded only") | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
 
@@ -574,6 +574,10 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
   Step 9b-8 adds 37 more with the same behaviour: `llTriggerSoundLimited`, `llLoopSoundMaster`, `llLoopSoundSlave`, `llPlaySoundSlave`, `llSoundPreload`, `llAdjustSoundVolume`, `llSetSoundQueueing`, `llSetSoundRadius`, `llCollisionSound`, `llSetTextureAnim`, `llSetLinkTextureAnim`, `llOffsetTexture`, `llScaleTexture`, `llRotateTexture`, `llSetCameraEyeOffset`, `llSetCameraAtOffset`, `llSetCameraParams`, `llClearCameraParams`, `llSetLinkCamera`, `llSetPayPrice`, `llSetClickAction`, `llSetTouchText`, `llPointAt`, `llStopPointAt`, `llLookAt`, `llStopLookAt`, `llMakeExplosion`, `llMakeFountain`, `llMakeSmoke`, `llMakeFire`, `llCollisionFilter`, `llPassTouches`, `llPassCollisions`, `llSetRemoteScriptAccessPin`, `llSetParcelMusicURL`, `llRefreshPrimURL`, `llSetPrimURL`.
 - **Animation overrides (step 9b-8):** `llSetAnimationOverride(state, animation)`, `llResetAnimationOverride(state)` (also `"ALL"`) and `llGetAnimationOverride(state)` need `PERMISSION_OVERRIDE_ANIMATIONS`; without it a debug line says so. An unknown state name gives a debug line. A successful set or reset writes an `animation_override` entry (`op`, `state`, `animation`), and the get answers the stored name, or an empty string.
+- **Movement and physics stubs (second gap list, step 6, part 1):** `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llApplyImpulse`, `llSetBuoyancy`, `llRotLookAt` and `llVolumeDetect` do nothing but
+  write a `recorded_only` entry with the function and its exact arguments, the same way as the step 9b-8 stubs above: no motion model runs, the object never moves or turns, and nothing is simulated of
+  physics, buoyancy or volume detection. A test script's intent (target, impulse, buoyancy, look-at rotation, detect flag) can still be read back from the log. Collision events
+  (`collision_start`, `collision_end`, `land_collision*`, `moving_start`, `moving_end`, `at_target`, `not_at_target`) and the vehicle functions are not part of this step.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
 #### HTTP requests with canned replies (Script Lab step 9b-9)

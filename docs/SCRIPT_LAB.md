@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 258 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4 and three from step 5 of the second gap list); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 265 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5 and seven from step 6 of the second gap list); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -253,6 +253,11 @@ a script run through the control commands), the one the Objects part shows.
 
 - `llTakeControls` and `llReleaseControls` run (with `PERMISSION_TAKE_CONTROLS`, which an avatar sitting on the object gets at once). The new input type `control` (`levels`, `edges`; also for `lsl_event`) raises the `control` event in scripts that took those controls.
 - Nothing moves and a held key is not repeated: one input is one change. Details: [CONTROL.md](CONTROL.md), "Controls". Tests: `tests/tst_lslcontrols.cpp`.
+
+## What exists now (second gap list, step 6, part 1): movement and physics stubs
+
+- Seven more functions run: `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llApplyImpulse`, `llSetBuoyancy`, `llRotLookAt` and `llVolumeDetect`. Record only, the same pattern as the step 9b-8 stubs: each call writes a `recorded_only` entry with its exact arguments, nothing moves and no physics runs.
+- Collision events (`collision_start`, `collision_end`, `land_collision*`, `moving_start`, `moving_end`, `at_target`, `not_at_target`) need a motion model and are not part of this step; neither are the vehicle functions. Details: [CONTROL.md](CONTROL.md), "Recorded only". Tests: `tests/tst_lslmovement.cpp`.
 
 ## What exists now (step 9b-9): HTTP requests with canned replies
 
@@ -727,7 +732,7 @@ Not tested automatically (gaps):
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `touch`, `touch_end`, `run_time_permissions`, `attach`,
   `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
-  `http_response`, `transaction_result`), `money`, `http_request` and `email` (second gap list, step 4), and 258 built-in functions; HTTP
+  `http_response`, `transaction_result`), `money`, `http_request` and `email` (second gap list, step 4), and 265 built-in functions; HTTP
   only with canned replies and a fake web server, never on the network; no L$ and no mail; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
