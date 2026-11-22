@@ -100,6 +100,11 @@ class OverlapTests(unittest.TestCase):
         changed = ["src/foo.cpp", "src/bar.cpp", "docs/work/feat-x.md"]
         self.assertEqual(work.unlisted_changes(j, changed), ["src/bar.cpp"])
 
+    def test_archived_job_files_need_no_listing(self):
+        j = job("feat/x", ["src/foo.*"])
+        changed = ["docs/work/archive/feat-old.md", "docs/work/feat-other.md", "src/foo.h"]
+        self.assertEqual(work.unlisted_changes(j, changed), ["docs/work/feat-other.md"])
+
 
 class LocalFilesTests(unittest.TestCase):
     def test_reads_directory_and_checks_names(self):
