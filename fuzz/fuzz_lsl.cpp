@@ -69,6 +69,18 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   // llOwnerSay("@...") reaches the RLV core (step 4, issue 290)
   RlvState rlv;
   RlvWorld world(rlv);
+  // step 9b-9: canned HTTP replies (an exact URL, a prefix and the catch-all); never the network
+  HttpReply exact;
+  exact.url = "https://example.com/";
+  exact.body = QString(3000, QChar(0xe6));
+  HttpReply prefix;
+  prefix.url = "http://*";
+  prefix.method = "POST";
+  prefix.status = 500;
+  HttpReply any;
+  any.url = "*";
+  any.body = "x";
+  world.setHttpReplies({exact, prefix, any});
   Interpreter interp(*parsed.script, world, limits);
   world.attach(&interp);
   Input chat;
@@ -116,6 +128,7 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   stranger.position[1] = 140.0f;
   stranger.velocity[0] = 1.0f;
   check(sandbox.addAvatar(stranger).isEmpty());
+  check(sandbox.setHttpReplies({exact, prefix, any}).isEmpty());
   check(sandbox.addObject(worn, script, limits).isEmpty());
   check(sandbox.addObject(near, script, limits).isEmpty());
   const char* types[] = {"chat", "touch", "dialog", "detach", "attach", "changed", "sit", "stand", "control"};

@@ -379,6 +379,46 @@ namespace
     return QString();
   }
 
+  // step 9b-9: "http" of lsl_run: canned replies to llHTTPRequest, [{url, method, status, body}]; empty when fine
+  QString readHttp(const QJsonValue& v, std::vector<HttpReply>& out)
+  {
+    static const int MAX_URL_CHARS = 2048;
+    static const int MAX_BODY_CHARS = 65536;
+    if (!v.isArray()) return "\"http\" must be a list of canned replies, each {\"url\", \"method\", \"status\", \"body\"}.";
+    const QJsonArray list = v.toArray();
+    if (list.size() > Sandbox::MAX_HTTP_REPLIES) return QString("\"http\" holds at most %1 canned replies.").arg(Sandbox::MAX_HTTP_REPLIES);
+    static const QStringList fields = {"url", "method", "status", "body"};
+    for (int i = 0; i < list.size(); ++i)
+    {
+      const QString where = QString("HTTP reply %1: ").arg(i + 1);
+      if (!list[i].isObject()) return where + "must be an object with a url.";
+      const QJsonObject o = list[i].toObject();
+      for (auto it = o.begin(); it != o.end(); ++it)
+        if (!fields.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+      HttpReply r;
+      if (!o.value("url").isString() || o.value("url").toString().isEmpty() || o.value("url").toString().size() > MAX_URL_CHARS)
+        return where + QString("\"url\" must be text of 1 to %1 characters: the exact URL, or a prefix ending in * (\"*\" alone answers every URL).").arg(MAX_URL_CHARS);
+      r.url = o.value("url").toString();
+      if (o.contains("method"))
+      {
+        const QString method = o.value("method").toString().toUpper();
+        if (!o.value("method").isString() || (method != "GET" && method != "POST" && method != "PUT" && method != "DELETE"))
+          return where + "\"method\" must be GET, POST, PUT or DELETE (omit it to answer every method).";
+        r.method = method;
+      }
+      if (o.contains("status") && !wholeNumber(o.value("status"), 100, 599, r.status))
+        return where + "\"status\" must be a whole number from 100 to 599 (default 200).";
+      if (o.contains("body"))
+      {
+        if (!o.value("body").isString() || o.value("body").toString().size() > MAX_BODY_CHARS)
+          return where + QString("\"body\" must be text of at most %1 characters.").arg(MAX_BODY_CHARS);
+        r.body = o.value("body").toString();
+      }
+      out.push_back(r);
+    }
+    return QString();
+  }
+
   // step 9b-1: "description", "scale" and "start_parameter" of an object (and, step 9b-4, "inventory"); empty when fine
   QString readObjectState(const QJsonObject& o, const QString& where, ObjectSpec& spec)
   {
@@ -511,7 +551,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter", "inventory", "avatars"};
+                                       "description", "scale", "start_parameter", "inventory", "avatars", "http"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -592,6 +632,13 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!problem.isEmpty()) return fail(problem);
   }
 
+  std::vector<HttpReply> http;
+  if (request.contains("http"))
+  {
+    const QString problem = readHttp(request.value("http"), http);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
   std::vector<SandboxInput> inputs;
   if (request.contains("inputs"))
   {
@@ -669,6 +716,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     const QString problem = sandbox->addAvatar(avatars[i]);
     if (!problem.isEmpty()) return fail(QString("Avatar %1: ").arg(i + 1) + problem);
   }
+  sandbox->setHttpReplies(http);
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
   sandbox->start();
   sandbox->runUntil(seconds);

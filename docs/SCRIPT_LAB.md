@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 216 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 217 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -252,6 +252,11 @@ a script run through the control commands), the one the Objects part shows.
 
 - `llTakeControls` and `llReleaseControls` run (with `PERMISSION_TAKE_CONTROLS`, which an avatar sitting on the object gets at once). The new input type `control` (`levels`, `edges`; also for `lsl_event`) raises the `control` event in scripts that took those controls.
 - Nothing moves and a held key is not repeated: one input is one change. Details: [CONTROL.md](CONTROL.md), "Controls". Tests: `tests/tst_lslcontrols.cpp`.
+
+## What exists now (step 9b-9): HTTP requests with canned replies
+
+- `llHTTPRequest` runs against replies given in the new `http` option of `lsl_run` (URL, method, status, body); the sandbox never goes on the network. A request without a matching reply gets status 499.
+- The `http_response` event comes at once in every script of the requesting prim; long bodies are cut at `HTTP_BODY_MAXLENGTH` with `HTTP_BODY_TRUNCATED` in the metadata, and the throttle of 25 requests per object in 20 seconds applies. Each request is an `http_request` log entry. Details: [CONTROL.md](CONTROL.md), "HTTP requests with canned replies". Tests: `tests/tst_lslhttp.cpp`.
 
 ## What exists now (step 9b-8): record-only stubs and animation overrides
 
@@ -535,7 +540,8 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - `force` commands are accepted (`retained`) but not carried out: there is no world to teleport in or sit on.
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `run_time_permissions`, `attach`,
-  `link_message`, `linkset_data`, `on_rez` and `changed`, and 216 built-in functions; hard limits on
+  `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
+  `http_response`), and 217 built-in functions; HTTP only with canned replies, never on the network; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.

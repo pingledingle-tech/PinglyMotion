@@ -41,7 +41,7 @@ cmake -S . -B /tmp/asan -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS=ON \
 ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/asan --output-on-failure
 ```
 
-Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch (see `CLAUDE.md`). On a branch it fuzzes every target for 2 minutes, all targets at the same time; a longer run: `-f inputs[seconds]=600`.
+Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch and tell the user the result (rule: `CLAUDE.md`, "While you work"): `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/fuzz.yml/dispatches -f ref=<branch>`. All fuzz targets run at the same time, 2 minutes each on a branch (about 10 minutes in all), 10 minutes each at night and before a release; a longer run on a branch: add `-f inputs[seconds]=600`.
 
 The Claude Desktop extension: `python3 tools/mcp/build_mcpb.py` writes `PinglyMotion.mcpb` (the script uses only the Python standard library; the bundle holds the Node server, so users need no Python; the Windows zip and releases get it). `python3 tests/test_mcpb.py` builds it, unpacks it and starts the server with Node and a PATH without Python (initialize and tools/list over stdio). It also starts it the ways Claude Desktop may (through a launcher script that `require()`s the file, with extra arguments, and with `node -e`) and checks that `initialize` with id 0 is answered: the server starts whenever the file is loaded, not only when it is the main module, because Claude Desktop's launcher made `require.main === module` false and `initialize` timed out. A test that only wants the server's functions sets `PINGLYMOTION_MCP_LIBRARY=1` before `require()`; only `--version` and `--help` make the server print a line and stop. The manifest is `tools/mcp/mcpb/manifest.json`; its `version` must equal the version in `CMakeLists.txt` (`tests/test_mcpb.py` checks this, so change both at a release). To check it with Anthropic's own tool: `npx @anthropic-ai/mcpb validate tools/mcp/mcpb/manifest.json`.
 
@@ -97,7 +97,7 @@ Locally (Linux): `xvfb-run -a python3 tools/ci/smoke_screenshots.py --app /tmp/b
 
 ## How a session tests a visible change itself
 
-Before a visible pull request goes to the project owner's test, the session tests the feature itself and writes in the pull request what it did and saw (CLAUDE.md, "Test page rules"). Tried on 21 Nov 2026 on the timeline-scroll and transport-button pull requests, in an AI sandbox with Qt 6 from the distribution:
+Before a visible pull request goes to the project owner's test, the session tests the feature itself and writes in the pull request what it did and saw (CLAUDE.md, "Testing by the project owner"). Tried on 21 Nov 2026 on the timeline-scroll and transport-button pull requests, in an AI sandbox with Qt 6 from the distribution:
 
 1. **Build the branch** (program plus the one test, about 75 s with 2 CPUs; the target is lower case):
    `cmake -S . -B /tmp/build -DPINGLYMOTION_TESTS=ON && cmake --build /tmp/build -j2 --target pinglymotion pinglymotion_<name>_tests`
@@ -117,7 +117,7 @@ What does not work: the control commands cannot click a menu, select a joint in 
 
 ## The combined test build
 
-The rules for `test/combined` (what goes in, when it is rebuilt, that it is the only branch that may be force-pushed) are in `CLAUDE.md`, "When you are done", step 5. The commands:
+The rules for `test/combined` (what goes in, when it is rebuilt, that it is the only branch that may be force-pushed) are in `CLAUDE.md`, "Testing by the project owner". The commands:
 
 `tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file.
 
@@ -129,12 +129,16 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 
 - The rules (who starts jobs, job file and draft pull request first, when to merge) are in `CLAUDE.md`; this list is only the how-to.
 - A shallow clone is fine. Fetch another branch with an explicit refspec: `git fetch --depth=50 origin +refs/heads/X:refs/remotes/origin/X`. Push with `git -c push.negotiate=true push`.
-- If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. Update a branch (instead of a rebase, so no force-push is needed): `PUT .../pulls/N/update-branch`, then `git pull`. Squash merge: `PUT .../pulls/N/merge -f merge_method=squash`.
+- If `gh` GraphQL is blocked (also `gh issue view`), use the REST API: `gh api repos/pingledingle-tech/PinglyMotion/...`. The REST commands for a draft pull request, "Update branch", ready for review and the squash merge are in the steps of `CLAUDE.md`.
 - Label merge for technical pull requests (rules in `CLAUDE.md`): `gh api -X POST repos/pingledingle-tech/PinglyMotion/issues/N/labels -f 'labels[]=auto-merge'` on a ready pull request. `.github/workflows/auto-merge.yml` (rules and reasons in `tools/ci/auto_merge.py`, test `tests/test_ci_auto_merge.py`) runs when the label is added, when a check workflow ends and every 30 minutes, and merges only when the label was added by an account with write permission, the pull request is not a draft, not from a fork, does not change `.github/workflows/`, and every required check is green or skipped with nothing else failing or running. Its log says why a pull request waits or is skipped. After a merge it starts Build (and Pages for website files) on `main` with `workflow_dispatch`, because a merge made with the workflow's own token starts no workflow; that Build run is the full build, not only the quick Linux check. It never checks out the pull request's code, and it does not update the jobs list (#74) or the owner test list (#47): the session that added the label does that after the merge.
 - A check that fails with no log and no steps usually means the Actions account is out of minutes: read the check run annotations (`.../check-runs/<id>/annotations`).
 - After "Update branch", wait for the new checks. A required check that is still "expected" blocks the merge; a skipped one does not.
 - Which jobs a pull request starts is decided by `tools/ci/changes.py` (text-only and website-only changes skip the program builds; anything it does not know runs everything). A new kind of file that never affects the program goes into its lists, with a case in `tests/test_ci_changes.py`.
 - Some source files have CRLF line endings: edit them without changing the endings (in Python open with `newline=''`).
+
+## What runs where
+
+A pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. A draft runs only the quick checks; the rest starts when it is marked ready. Changes that only touch Markdown, `docs/`, licence files or the website (issue templates, `pages.yml`, `tools/site/` and its test) skip the builds and the C++ CodeQL analysis; the required checks then report as skipped, which counts as passed (the rule and its test: `tools/ci/changes.py`, `tests/test_ci_changes.py`). After a merge, `main` gets a quick Linux build with the tests. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, and fuzzing. A release runs all of it first and is only published when everything passes.
 
 ## Reference library download (issue 19)
 

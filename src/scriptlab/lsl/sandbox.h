@@ -36,6 +36,7 @@
 #ifndef LSL_SANDBOX_H
 #define LSL_SANDBOX_H
 
+#include <deque>
 #include <memory>
 #include <vector>
 
@@ -117,6 +118,7 @@ class Sandbox
     static constexpr int MAX_PENDING_INPUTS = 1000;
     static constexpr int MAX_SITTERS = 16;
     static constexpr int MAX_AVATARS = 64;          // avatars given for sensors
+    static constexpr int MAX_HTTP_REPLIES = 64;     // canned replies to llHTTPRequest (step 9b-9)
     static constexpr int MAX_DETECTED = 16;         // what one sensor scan returns, as in Second Life
     static constexpr double MAX_SENSOR_RANGE = 96.0;          // avatars sitting on one object
     static constexpr double WHISPER_RANGE = 10.0;
@@ -140,6 +142,8 @@ class Sandbox
     QString addObject(const ObjectSpec& spec, const std::vector<ScriptEntry>& scripts, const Limits& limits = Limits());
     // Step 9b-7: an avatar for the sensors to find. Before start() only; returns why it was refused, or an empty string.
     QString addAvatar(const AvatarSpec& avatar);
+    // Step 9b-9: the canned replies to llHTTPRequest for every object (at most MAX_HTTP_REPLIES). Before start() only.
+    QString setHttpReplies(const std::vector<HttpReply>& replies);
     // state_entry of every object (in order), then attach for the attached ones
     void start();
     // an input; refused (false) when MAX_PENDING_INPUTS are waiting
@@ -192,6 +196,7 @@ class Sandbox
       PrimStore prims;             // step 9b-3: the simulated prims and the status flags of the object
       Inventory inventory;         // step 9b-4: the items and the object's scripts
       std::vector<Sitter> sitters; // step 9b-5
+      std::deque<double> httpTimes;  // step 9b-9: when its recent llHTTPRequest calls were made (the throttle)
       QString name;                // step 9b-1: the name now (llSetObjectName); spec.name stays the object's handle in logs and inputs
       QString description;         // the description now (llSetObjectDesc)
       bool tagScripts = false;     // given with "scripts": log entries name the script
@@ -222,6 +227,8 @@ class Sandbox
     QString giveInventory(int from, double time, const QString& to, const InventoryItem& item);
     // step 9b-5: llUnSit on an avatar sitting on the script's own object; an avatar sitting anywhere in the world
     bool unSit(int from, double time, const QString& key);
+    // step 9b-9: http_response to every script in the prim of the requesting script
+    void httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body);
     std::vector<Detected> sense(int from, const QString& name, const QString& id, int type, double range, double arc);
     bool isSitting(const QString& key) const;
     bool hasAttachments() const;
@@ -243,6 +250,7 @@ class Sandbox
     std::vector<Object> m_objects;
     std::vector<Slot> m_slots;
     std::vector<AvatarSpec> m_avatars;
+    std::vector<HttpReply> m_http;
     std::vector<SandboxInput> m_inputs;   // sorted by time, stable
     double m_now = 0.0;
     QJsonObject m_lastDialog;

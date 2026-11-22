@@ -67,7 +67,9 @@ enum class Fn
   // step 9b-7: sensors and the detected data
   Sensor, SensorRepeat, SensorRemove, DetectedPos, DetectedRot, DetectedVel, DetectedType, DetectedGroup, DetectedOwner,
   // step 9b-8: more record-only functions, and the animation override
-  RecordOnly, SetAnimationOverride, ResetAnimationOverride, GetAnimationOverride
+  RecordOnly, SetAnimationOverride, ResetAnimationOverride, GetAnimationOverride,
+  // step 9b-9: HTTP requests with canned replies (never on the network)
+  HTTPRequest
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -136,6 +138,7 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llDetectedGroup", Fn::DetectedGroup}, {"llDetectedOwner", Fn::DetectedOwner},
   {"llSetAnimationOverride", Fn::SetAnimationOverride}, {"llResetAnimationOverride", Fn::ResetAnimationOverride},
   {"llGetAnimationOverride", Fn::GetAnimationOverride},
+  {"llHTTPRequest", Fn::HTTPRequest},
   {"llTriggerSoundLimited", Fn::RecordOnly},
   {"llLoopSoundMaster", Fn::RecordOnly},
   {"llLoopSoundSlave", Fn::RecordOnly},
@@ -626,6 +629,50 @@ QJsonArray recordArgs(const std::vector<Value>& a)
       default: out.append(QJsonValue()); break;
     }
   }
+  return out;
+}
+
+// ---- llHTTPRequest (step 9b-9)
+// the HTTP_* parameter flags of Second Life
+enum
+{
+  HTTP_METHOD = 0, HTTP_MIMETYPE = 1, HTTP_BODY_MAXLENGTH = 2, HTTP_VERIFY_CERT = 3, HTTP_VERBOSE_THROTTLE = 4, HTTP_CUSTOM_HEADER = 5,
+  HTTP_PRAGMA_NO_CACHE = 6, HTTP_USER_AGENT = 7, HTTP_ACCEPT = 8, HTTP_EXTENDED_ERROR = 9
+};
+const int HTTP_MAX_BODY_LENGTH = 16384;       // the largest HTTP_BODY_MAXLENGTH (Mono)
+const int HTTP_DEFAULT_BODY_LENGTH = 2048;
+const int HTTP_MAX_HEADER_CHARS = 4096;       // all custom headers together
+const int HTTP_THROTTLE_REQUESTS = 25;        // per object ...
+const double HTTP_THROTTLE_SECONDS = 20.0;    // ... in this many seconds
+
+const char* httpFlagName(int flag)
+{
+  static const char* names[] = {"HTTP_METHOD", "HTTP_MIMETYPE", "HTTP_BODY_MAXLENGTH", "HTTP_VERIFY_CERT", "HTTP_VERBOSE_THROTTLE",
+                                "HTTP_CUSTOM_HEADER", "HTTP_PRAGMA_NO_CACHE", "HTTP_USER_AGENT", "HTTP_ACCEPT", "HTTP_EXTENDED_ERROR"};
+  return flag >= 0 && flag <= HTTP_EXTENDED_ERROR ? names[flag] : "";
+}
+
+// a URL llHTTPRequest takes: http:// or https://, a host, and no spaces or control characters
+bool httpUrlValid(const QString& url)
+{
+  int rest = 0;
+  if (url.startsWith("http://", Qt::CaseInsensitive)) rest = 7;
+  else if (url.startsWith("https://", Qt::CaseInsensitive)) rest = 8;
+  else return false;
+  if (url.size() <= rest || url[rest] == '/') return false;
+  for (const QChar c : url)
+    if (c.isSpace() || c.category() == QChar::Other_Control) return false;
+  return true;
+}
+
+// at most max UTF-8 bytes of text, never cut inside a character
+QString utf8Prefix(const QString& text, int max)
+{
+  QByteArray bytes = text.toUtf8();
+  if (bytes.size() <= max) return text;
+  bytes.truncate(max);
+  QString out = QString::fromUtf8(bytes);
+  while (out.endsWith(QChar(0xFFFD))) out.chop(1);
   return out;
 }
 
@@ -2149,6 +2196,94 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::GetAnimationOverride:
       // the animation set for the state; the default animation Second Life answers for a state with none is not simulated
       return Value::string((m_permissions & 0x8000) ? m_overrides.value(a[0].s) : QString());
+
+    // -------------------------------------------- HTTP with canned replies (step 9b-9); the sandbox never goes on the network
+    case Fn::HTTPRequest:
+    {
+      const QString url = a[0].s;
+      auto refuse = [&](const QString& text)
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "llHTTPRequest: " + text}});
+        return Value::key(NULL_KEY);
+      };
+      if (!httpUrlValid(url)) return refuse("the URL must start with http:// or https://, name a host and have no spaces or control characters.");
+      QString method = "GET", mimetype = "text/plain;charset=utf-8";
+      int maxLength = HTTP_DEFAULT_BODY_LENGTH, headerChars = 0;
+      bool verbose = true;
+      QJsonArray headers;
+      const std::vector<Value>& p = a[1].list;
+      for (size_t i = 0; i < p.size();)
+      {
+        if (p[i].type != Type::Integer || p[i].i < HTTP_METHOD || p[i].i > HTTP_EXTENDED_ERROR)
+          return refuse(QString("parameter %1 of the list is not one of the HTTP_* flags.").arg(i + 1));
+        const int flag = p[i].i;
+        const QString flagName = httpFlagName(flag);
+        const bool text = flag == HTTP_METHOD || flag == HTTP_MIMETYPE || flag == HTTP_CUSTOM_HEADER || flag == HTTP_USER_AGENT || flag == HTTP_ACCEPT;
+        const size_t count = flag == HTTP_CUSTOM_HEADER ? 2 : 1;
+        if (i + count >= p.size()) return refuse(flagName + " is missing its value.");
+        for (size_t k = 1; k <= count; ++k)
+          if (p[i + k].type != (text ? Type::String : Type::Integer)) return refuse(flagName + (text ? " needs a string." : " needs an integer."));
+        const Value& v = p[i + 1];
+        switch (flag)
+        {
+          case HTTP_METHOD:
+            if (v.s != "GET" && v.s != "POST" && v.s != "PUT" && v.s != "DELETE")
+              return refuse("HTTP_METHOD must be \"GET\", \"POST\", \"PUT\" or \"DELETE\".");
+            method = v.s;
+            break;
+          case HTTP_MIMETYPE: mimetype = v.s; break;
+          case HTTP_BODY_MAXLENGTH:
+            if (v.i < 0 || v.i > HTTP_MAX_BODY_LENGTH) return refuse(QString("HTTP_BODY_MAXLENGTH must be 0 to %1.").arg(HTTP_MAX_BODY_LENGTH));
+            maxLength = v.i;
+            break;
+          case HTTP_VERBOSE_THROTTLE: verbose = v.i != 0; break;
+          case HTTP_CUSTOM_HEADER:
+          {
+            const QString& header = v.s;
+            if (header.isEmpty()) return refuse("HTTP_CUSTOM_HEADER needs a header name.");
+            if (header.compare("Content-Type", Qt::CaseInsensitive) == 0) return refuse("set Content-Type with HTTP_MIMETYPE, not HTTP_CUSTOM_HEADER.");
+            headerChars += int(header.size() + p[i + 2].s.size());
+            if (headerChars > HTTP_MAX_HEADER_CHARS) return refuse(QString("the custom headers together have more than %1 characters.").arg(HTTP_MAX_HEADER_CHARS));
+            headers.append(QJsonArray{World::clip(header), World::clip(p[i + 2].s)});
+            break;
+          }
+          case HTTP_USER_AGENT:
+            if (v.s.contains(' ')) return refuse("HTTP_USER_AGENT may not have spaces.");
+            break;
+          default: break;   // HTTP_VERIFY_CERT, HTTP_PRAGMA_NO_CACHE, HTTP_ACCEPT, HTTP_EXTENDED_ERROR: accepted, nothing to simulate
+        }
+        i += count + 1;
+      }
+      QJsonObject entry{{"type", "http_request"}, {"method", method}, {"url", World::clip(url)}, {"mimetype", World::clip(mimetype)}};
+      if (!a[2].s.isEmpty()) entry["body"] = World::clip(a[2].s);
+      if (!headers.isEmpty()) entry["headers"] = headers;
+      // the throttle: at most 25 requests per object in 20 seconds
+      std::deque<double>& times = m_world.httpTimes();
+      while (!times.empty() && times.front() <= m_now - HTTP_THROTTLE_SECONDS) times.pop_front();
+      if (int(times.size()) >= HTTP_THROTTLE_REQUESTS)
+      {
+        entry["result"] = "throttled";
+        if (!m_world.logFull()) m_world.log(m_now, entry);
+        if (verbose)
+          m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                         {"text", QString("llHTTPRequest: too many requests (more than %1 in %2 seconds from this object), so this one was refused.").arg(HTTP_THROTTLE_REQUESTS).arg(HTTP_THROTTLE_SECONDS)}});
+        return Value::key(NULL_KEY);
+      }
+      times.push_back(m_now);
+      const HttpReply* reply = m_world.httpReply(method, url);
+      const QString id = nextKey();
+      const int status = reply ? reply->status : 499;
+      const QString full = reply ? reply->body : QString();
+      const QString body = utf8Prefix(full, maxLength);
+      const int truncatedAt = body.size() < full.size() ? maxLength : -1;
+      entry["request"] = id;
+      entry["result"] = reply ? "canned" : "no_reply";
+      entry["status"] = status;
+      if (truncatedAt >= 0) entry["truncated_at"] = truncatedAt;
+      if (!m_world.logFull()) m_world.log(m_now, entry);
+      if (!m_world.httpResponse(m_now, id, status, truncatedAt, body)) httpResponseEvent(id, status, truncatedAt, body);
+      return Value::key(id);
+    }
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);
