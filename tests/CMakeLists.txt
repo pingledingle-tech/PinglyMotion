@@ -166,6 +166,19 @@ FOREACH (RLV_TEST rlvcommand rlvstate rlva rlvtable)
   SET_TESTS_PROPERTIES (${RLV_TEST} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 ENDFOREACH ()
 
+# the RLV table checked against data files made from RLVa's source and the RLV wiki (tools/rlv_sources.py)
+ADD_EXECUTABLE (pinglymotion_rlvsources_tests tst_rlvsources.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_rlvsources_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_rlvsources_tests PRIVATE PINGLYMOTION_RLV_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data/rlv")
+TARGET_LINK_LIBRARIES (pinglymotion_rlvsources_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME rlvsources COMMAND pinglymotion_rlvsources_tests)
+SET_TESTS_PROPERTIES (rlvsources PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+# ... and the generator itself (standard-library Python; skipped where no Python 3 is found)
+FIND_PACKAGE (Python3 COMPONENTS Interpreter QUIET)
+IF (Python3_Interpreter_FOUND)
+  ADD_TEST (NAME rlvsources_tool COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_rlv_sources.py)
+ENDIF ()
+
 # Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
 FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv lslworld lsllink lslpure lslevents lslprims lslinventory lslsitting lslcontrols lslsensors lslstubs lslhttp)
   ADD_EXECUTABLE (pinglymotion_${LSL_TEST}_tests tst_${LSL_TEST}.cpp)
@@ -234,3 +247,21 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabcamera_tests PRIVATE ${CMAKE_S
 TARGET_LINK_LIBRARIES (pinglymotion_scriptlabcamera_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME scriptlabcamera COMMAND pinglymotion_scriptlabcamera_tests)
 SET_TESTS_PROPERTIES (scriptlabcamera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Script Lab as a whole: the scenarios in tests/data/scriptlab/scenarios.json (every example script,
+# each class of RLV command, several objects, inventory, sitting, controls, sensors, HTTP, errors)
+# through ControlApi; tests/smoke_scriptlab.py sends the same scenarios to the real program
+ADD_EXECUTABLE (pinglymotion_scriptlabwhole_tests tst_scriptlabwhole.cpp
+                ${CMAKE_SOURCE_DIR}/src/controlapi.cpp ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
+                ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
+                ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
+                ${CMAKE_SOURCE_DIR}/src/animexport.cpp ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
+                ${CMAKE_SOURCE_DIR}/src/animimport.cpp
+                ${CMAKE_SOURCE_DIR}/src/screenshotsheet.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabwhole_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabwhole_tests PRIVATE
+  PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples"
+  PINGLYMOTION_SCENARIOS="${CMAKE_CURRENT_SOURCE_DIR}/data/scriptlab/scenarios.json")
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabwhole_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME scriptlabwhole WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scriptlabwhole_tests)
+SET_TESTS_PROPERTIES (scriptlabwhole PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

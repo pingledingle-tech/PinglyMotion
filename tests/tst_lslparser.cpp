@@ -10,6 +10,9 @@
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
+#include <QDirIterator>
+#include <QRegularExpression>
+#include <QSet>
 #include <QTest>
 
 #include "scriptlab/lsl/builtins.h"
@@ -33,6 +36,7 @@ class LslParserTest : public QObject
     void checkErrors_data();
     void checkErrors();
     void warnings();
+    void everyRaisedEventIsKnown();
     void nestingLimit();
     void lslCheckCommand();
 
@@ -270,6 +274,34 @@ void LslParserTest::warnings()
   QVERIFY(r.warnings[0].message.contains("llGetMass is not supported yet"));
   QVERIFY(r.warnings[1].message.contains("touch_end"));
   QVERIFY(r.warnings[1].message.contains("does not raise it yet"));
+}
+
+// Every event the interpreter queues (Event{"name", ...} in src/scriptlab) must be in
+// Parser::eventIsRaised, or lsl_check warns wrongly that the sandbox never raises it.
+// transaction_result was missing (raised by llTransferLindenDollars since step 9b-3).
+void LslParserTest::everyRaisedEventIsKnown()
+{
+  const QDir src(QString(PINGLYMOTION_EXAMPLES) + "/../src/scriptlab");
+  QVERIFY(src.exists());
+  const QRegularExpression queued(QStringLiteral("Event\\{\"([a-z_]+)\""));
+  QSet<QString> found;
+  QDirIterator it(src.path(), {"*.cpp", "*.h"}, QDir::Files, QDirIterator::Subdirectories);
+  while (it.hasNext())
+  {
+    QFile file(it.next());
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    const QString text = QString::fromUtf8(file.readAll());
+    for (auto m = queued.globalMatch(text); m.hasNext();) found.insert(m.next().captured(1));
+  }
+  QVERIFY2(found.size() >= 18, qPrintable(QString::number(found.size())));
+  QVERIFY(found.contains("transaction_result"));
+  for (const QString& name : found) QVERIFY2(Parser::eventIsRaised(name), qPrintable(name));
+
+  // the handler gets no warning
+  const Parser::Result r = Parser::parse(
+    "default { transaction_result(key id, integer success, string data) { llOwnerSay(data); } }");
+  QVERIFY(r.ok());
+  QCOMPARE(int(r.warnings.size()), 0);
 }
 
 void LslParserTest::nestingLimit()

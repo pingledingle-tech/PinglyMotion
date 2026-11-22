@@ -100,7 +100,7 @@ namespace Rlv
       {"sharedwear", "Wear items from the shared folder"},
       {"sharedunwear", "Take off items from the shared folder"},
       {"allowidle", "Go idle (away) after the normal time"},
-      // plain RLV, effects outside the sandbox
+      // effects outside the sandbox
       {"setenv", "Change the sky and water"},
       {"setdebug", "Change debug settings"},
       {"setcam", "Control the camera"},
@@ -122,7 +122,7 @@ namespace Rlv
       {"tplm", AllowAddRemove, OptionUse::None, {"tplm"}, "No teleport by landmark"},
       {"tploc", AllowAddRemove, OptionUse::None, {"tploc"}, "No teleport by map location"},
       {"tplure", AllowAddRemove, OptionUse::Optional, {"tplure"}, "Cannot accept teleport offers; with a UUID as option: an exception"},
-      {"fly", AllowAddRemove, OptionUse::None, {"fly"}, "Cannot fly"},
+      {"fly", AllowAddRemove | AllowForce, OptionUse::None, {"fly"}, "Cannot fly; =force starts flying (RLVa only)", Dialect::Rlv, Group::Core, false, QString(), QString(), AllowForce},
       {"sit", AllowAddRemove | AllowForce, OptionUse::Optional, {"sit"}, "Cannot sit; sit:<uuid>=force sits on that object"},
       {"unsit", AllowAddRemove | AllowForce, OptionUse::None, {"unsit"}, "Cannot stand up; =force stands up"},
       {"sittp", AllowAddRemove, OptionUse::Optional, {"sittp"}, "Cannot sit on objects farther away than 1.5 m (or the distance given as option)"},
@@ -139,17 +139,17 @@ namespace Rlv
       {"versionnum", AllowReply, OptionUse::None, {}, "Answers the version number on the channel, e.g. 3040300", Dialect::Rlv, Group::Reply},
       {"getstatus", AllowReply, OptionUse::Optional, {}, "Answers this object's restrictions on the channel; option: <filter>[;<separator>]", Dialect::Rlv, Group::Reply},
       {"getstatusall", AllowReply, OptionUse::Optional, {}, "Answers all objects' restrictions on the channel; option: <filter>[;<separator>]", Dialect::Rlv, Group::Reply},
-      // ---- plain RLV with effects outside the sandbox: recorded as state, shown in the log ----
+      // ---- effects outside the sandbox: recorded as state, shown in the log ----
       {"setenv", AllowAddRemove, OptionUse::None, {"setenv"}, "Locks the sky and water settings", Dialect::Rlv, Group::Environment, true, "recorded only: the real sky and water do not change"},
       {"setdebug", AllowAddRemove, OptionUse::None, {"setdebug"}, "Locks the debug settings", Dialect::Rlv, Group::Environment, true, "recorded only: no debug setting changes"},
-      {"setcam", AllowAddRemove, OptionUse::None, {"setcam"}, "Gives the object exclusive control of the camera", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
-      {"setcam_avdist", AllowAddRemove, OptionUse::Required, {}, "Distance at which nearby avatars turn into silhouettes (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
-      {"setcam_eyeoffset", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Default camera offset (option: x/y/z)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
-      {"setcam_eyeoffsetscale", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Default camera offset scale (option: multiplier)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
-      {"setcam_focusoffset", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Default camera focus offset (option: x/y/z)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
+      {"setcam", AllowAddRemove, OptionUse::None, {"setcam"}, "Gives the object exclusive control of the camera", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real camera does not change"},
+      {"setcam_avdist", AllowAddRemove, OptionUse::Required, {}, "Distance at which nearby avatars turn into silhouettes (option: metres)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real camera does not change"},
+      {"setcam_eyeoffset", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Default camera offset (option: x/y/z)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real camera does not change"},
+      {"setcam_eyeoffsetscale", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Default camera offset scale (option: multiplier)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real camera does not change"},
+      {"setcam_focusoffset", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Default camera focus offset (option: x/y/z)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real camera does not change"},
       {"setcam_fovmin", AllowAddRemove, OptionUse::Optional, {}, "Minimum field of view (option: angle)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
       {"setcam_fovmax", AllowAddRemove, OptionUse::Optional, {}, "Maximum field of view (option: angle)", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
-      {"setcam_mouselook", AllowAddRemove, OptionUse::None, {"setcam_mouselook"}, "Prevents mouselook", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
+      {"setcam_mouselook", AllowAddRemove, OptionUse::None, {"setcam_mouselook"}, "Prevents mouselook", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real camera does not change"},
       {"setcam_textures", AllowAddRemove, OptionUse::Optional, {}, "Replaces every texture with one texture (option: UUID)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
       {"setcam_unlock", AllowAddRemove, OptionUse::None, {}, "Forces the camera focus back to the avatar", Dialect::Rlv, Group::Camera, true, "recorded only: the real camera does not change"},
       // ---- public chat and emotes: restrictions (n/y) and exceptions (add/rem), secure forms (_sec) ignore exceptions of other objects ----
@@ -182,7 +182,7 @@ namespace Rlv
       // ---- outfits and attachments (the sandbox has no avatar or inventory: force commands are retained, not carried out) ----
       {"addattach", AllowAddRemove, OptionUse::Optional, {"addattach"}, "Nothing can be worn (on an attachment point given as option)", Dialect::Rlv, Group::Inventory},
       {"remattach", AllowAddRemove | AllowForce, OptionUse::Optional, {"remattach"}, "Nothing can be taken off (from an attachment point given as option); =force takes off what is worn there", Dialect::Rlv, Group::Inventory},
-      {"addoutfit", AllowAddRemove, OptionUse::Optional, {"addoutfit"}, "No clothing can be worn (on a layer given as option)", Dialect::Rlv, Group::Inventory},
+      {"addoutfit", AllowAddRemove | AllowForce, OptionUse::Optional, {"addoutfit"}, "No clothing can be worn (on a layer given as option); =force is another name of attach (RLVa only)", Dialect::Rlv, Group::Inventory, false, QString(), QString(), AllowForce},
       {"remoutfit", AllowAddRemove | AllowForce, OptionUse::Optional, {"remoutfit"}, "No clothing can be taken off (from a layer given as option); =force takes off what is worn there", Dialect::Rlv, Group::Inventory},
       {"detachme", AllowForce, OptionUse::None, {}, "=force takes off the object that sent the command", Dialect::Rlv, Group::Inventory},
       {"defaultwear", AllowAddRemove, OptionUse::None, {}, "Held as state only: the sandbox has no inventory, so it blocks nothing (in the RLV wiki, not in RLVa)", Dialect::RlvOnly, Group::Inventory},
@@ -226,15 +226,15 @@ namespace Rlv
       {"editobj", AllowAddRemove, OptionUse::Required, {}, "Cannot edit one object (option: that object's UUID)", Dialect::Rlv, Group::Interaction},
       {"editworld", AllowAddRemove, OptionUse::None, {"editworld"}, "Cannot edit objects in the world", Dialect::Rlv, Group::Interaction},
       {"editattach", AllowAddRemove, OptionUse::None, {"editattach"}, "Cannot edit attachments", Dialect::Rlv, Group::Interaction},
-      {"buy", AllowAddRemove, OptionUse::None, {"buy"}, "Cannot buy objects", Dialect::Rlv, Group::Interaction},
-      {"pay", AllowAddRemove, OptionUse::Optional, {"pay"}, "Cannot pay; with a UUID as option: an exception", Dialect::Rlv, Group::Interaction},
+      {"buy", AllowAddRemove, OptionUse::None, {"buy"}, "Cannot buy objects", Dialect::RlvaOnly, Group::Interaction},
+      {"pay", AllowAddRemove, OptionUse::Optional, {"pay"}, "Cannot pay; with a UUID as option: an exception", Dialect::RlvaOnly, Group::Interaction},
       {"acceptpermission", AllowAddRemove, OptionUse::None, {}, "Permission requests of attached objects are accepted without asking; held as state, the sandbox grants permissions to scripts anyway", Dialect::Rlv, Group::Core},
       {"denypermission", AllowAddRemove, OptionUse::None, {}, "Permission requests of objects are refused without asking (in the RLV wiki, not in RLVa; the wiki lists it as deprecated)", Dialect::RlvOnly, Group::Core},
       // ---- group, movement and teleport (force commands are retained, not carried out) ----
       {"setgroup", AllowAddRemove | AllowForce, OptionUse::Optional, {"setgroup"}, "The active group cannot be changed; =force sets it (option: group name or UUID, or none)", Dialect::Rlv, Group::Core},
       {"temprun", AllowAddRemove, OptionUse::None, {"temprun"}, "Cannot run for a moment (double-tap or run key)", Dialect::Rlv, Group::Interaction},
       {"alwaysrun", AllowAddRemove, OptionUse::None, {"alwaysrun"}, "Cannot switch always run on", Dialect::Rlv, Group::Interaction},
-      {"jump", AllowAddRemove, OptionUse::None, {"jump"}, "Cannot jump", Dialect::Rlv, Group::Interaction},
+      {"jump", AllowAddRemove, OptionUse::None, {"jump"}, "Cannot jump", Dialect::RlvaOnly, Group::Interaction},
       {"setrot", AllowForce, OptionUse::Required, {}, "=force turns the avatar to an angle (option: radians); held nowhere, the sandbox has no avatar. In the RLV wiki, not in RLVa", Dialect::RlvOnly, Group::Interaction},
       {"adjustheight", AllowForce, OptionUse::Required, {}, "=force changes the avatar height offset (option: offset[;factor[;delta]])", Dialect::Rlv, Group::Interaction},
       {"tpto", AllowForce, OptionUse::Required, {}, "=force teleports to a place (option: x/y/z or region/x/y/z, then an optional look-at)", Dialect::Rlv, Group::Core},
@@ -257,23 +257,23 @@ namespace Rlv
       {"camdrawalphamin", AllowAddRemove, OptionUse::Required, {}, "Fade alpha at the near distance (option: 0 to 1)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
       {"camdrawalphamax", AllowAddRemove, OptionUse::Required, {}, "Fade alpha at the far distance (option: 0 to 1)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
       {"camdrawcolor", AllowAddRemove, OptionUse::Required, {}, "Colour of the fade (option: red/green/blue, each 0 to 1)", Dialect::RlvOnly, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere", AllowAddRemove, OptionUse::None, {}, "Turns on the vision sphere effect that hides or blurs what is far from the camera or an origin", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_mode", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "How the sphere acts (option: mode number)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_origin", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Where the sphere is centred (option: origin number)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_color", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Colour of the sphere (option: red/green/blue)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_distmin", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Distance where the effect starts (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_distmax", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Distance where the effect is at full strength (option: metres)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_distextend", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "How far the distances are stretched (option: factor)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_param", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Strength of the effect (option: value)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_tween", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Seconds the effect takes to change (option: seconds)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_valuemin", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Strength at the near distance (option: value)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setsphere_valuemax", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Strength at the far distance (option: value)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setoverlay", AllowAddRemove, OptionUse::None, {}, "Turns on a full screen overlay picture", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setoverlay_alpha", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "How see-through the overlay is (option: 0 to 1)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setoverlay_texture", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Picture of the overlay (option: texture UUID)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setoverlay_tint", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Colour of the overlay (option: red/green/blue)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setoverlay_tween", AllowAddRemove | AllowForce, OptionUse::Optional, {}, "Seconds the overlay takes to change (option: seconds)", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
-      {"setoverlay_touch", AllowAddRemove, OptionUse::None, {}, "Touches go through the overlay to the world", Dialect::Rlv, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere", AllowAddRemove, OptionUse::None, {}, "Turns on the vision sphere effect that hides or blurs what is far from the camera or an origin", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_mode", AllowForce, OptionUse::Optional, {}, "How the sphere acts (option: mode number)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_origin", AllowForce, OptionUse::Optional, {}, "Where the sphere is centred (option: origin number)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_color", AllowForce, OptionUse::Optional, {}, "Colour of the sphere (option: red/green/blue)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_distmin", AllowForce, OptionUse::Optional, {}, "Distance where the effect starts (option: metres)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_distmax", AllowForce, OptionUse::Optional, {}, "Distance where the effect is at full strength (option: metres)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_distextend", AllowForce, OptionUse::Optional, {}, "How far the distances are stretched (option: factor)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_param", AllowForce, OptionUse::Optional, {}, "Strength of the effect (option: value)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_tween", AllowForce, OptionUse::Optional, {}, "Seconds the effect takes to change (option: seconds)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_valuemin", AllowForce, OptionUse::Optional, {}, "Strength at the near distance (option: value)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setsphere_valuemax", AllowForce, OptionUse::Optional, {}, "Strength at the far distance (option: value)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay", AllowAddRemove, OptionUse::None, {}, "Turns on a full screen overlay picture", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_alpha", AllowForce, OptionUse::Optional, {}, "How see-through the overlay is (option: 0 to 1)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_texture", AllowForce, OptionUse::Optional, {}, "Picture of the overlay (option: texture UUID)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_tint", AllowForce, OptionUse::Optional, {}, "Colour of the overlay (option: red/green/blue)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_tween", AllowForce, OptionUse::Optional, {}, "Seconds the overlay takes to change (option: seconds)", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
+      {"setoverlay_touch", AllowAddRemove, OptionUse::None, {}, "Touches go through the overlay to the world", Dialect::RlvaOnly, Group::Camera, true, "recorded only: the real view does not change"},
       // ---- questions: the sandbox answers fixed values ----
       {"versionnumbl", AllowReply, OptionUse::None, {}, "Answers the version number, a comma, then the list of blacklisted behaviours; the sandbox blacklists nothing, so the list is empty (in the RLV wiki, not in RLVa)", Dialect::RlvOnly, Group::Reply},
       {"getblacklist", AllowReply, OptionUse::Optional, {}, "Answers the blacklisted behaviours (option: part of a name); the sandbox blacklists nothing and answers empty (in the RLV wiki, not in RLVa)", Dialect::RlvOnly, Group::Reply},
@@ -290,7 +290,7 @@ namespace Rlv
       // ---- touching far away ----
       {"touchfar", AllowAddRemove, OptionUse::Optional, {"touchfar"}, "Cannot touch objects farther away than 1.5 m (or the distance given as option, in metres)", Dialect::Rlv, Group::Interaction},
       {"fartouch", AllowAddRemove, OptionUse::Optional, {}, "Old name of touchfar", Dialect::Rlv, Group::Interaction, false, QString(), "touchfar"},
-      // ---- newer behaviours: marked RLV where the RLV wiki lists them (RLVa flags some of them extended), RLVa only otherwise ----
+      // ---- newer behaviours: marked RLV where the RLV wiki lists them (RLVa flags some of them extended), RLVa only otherwise; tests/tst_rlvsources.cpp checks every mark ----
       // interaction and teleport
       {"accepttprequest", AllowAddRemove, OptionUse::Optional, {"accepttprequest"}, "Teleport requests are accepted automatically; with a UUID as option: only from that avatar", Dialect::Rlv, Group::Core},
       {"tprequest", AllowAddRemove, OptionUse::Optional, {"tprequest"}, "No teleport requests; with a UUID as option: an exception", Dialect::Rlv, Group::Core},
@@ -303,7 +303,7 @@ namespace Rlv
       {"shownearby", AllowAddRemove, OptionUse::None, {"shownearby"}, "The list of people nearby is hidden", Dialect::Rlv, Group::Interaction},
       {"viewtransparent", AllowAddRemove, OptionUse::None, {"viewtransparent"}, "Transparent objects cannot be highlighted", Dialect::RlvaOnly, Group::Interaction, true, "recorded only: the real view does not change"},
       {"viewwireframe", AllowAddRemove, OptionUse::None, {"viewwireframe"}, "The wireframe view is locked", Dialect::RlvaOnly, Group::Interaction, true, "recorded only: the real view does not change"},
-      {"allowidle", AllowAddRemove, OptionUse::None, {"allowidle"}, "The idle (away) timeout is lengthened to 30 minutes", Dialect::Rlv, Group::Interaction},
+      {"allowidle", AllowAddRemove, OptionUse::None, {"allowidle"}, "The idle (away) timeout is lengthened to 30 minutes", Dialect::RlvaOnly, Group::Interaction},
       {"sendchannel_except", AllowAddRemove, OptionUse::Optional, {}, "Chat only on the listed channel (option: channel); blocks every other channel", Dialect::Rlv, Group::Core},
       // shared folder
       {"sharedwear", AllowAddRemove, OptionUse::None, {"sharedwear"}, "Items from the shared folder cannot be worn", Dialect::Rlv, Group::Inventory},
@@ -333,6 +333,25 @@ namespace Rlv
       {"getcam_fovmin", AllowReply, OptionUse::None, {}, "Answers the active minimum field of view (radians)", Dialect::Rlv, Group::Reply, false, "the sandbox has no camera: answers empty"},
       {"getcam_fovmax", AllowReply, OptionUse::None, {}, "Answers the active maximum field of view (radians)", Dialect::Rlv, Group::Reply, false, "the sandbox has no camera: answers empty"},
       {"getcam_textures", AllowReply, OptionUse::None, {}, "Answers the UUID of the forced texture, if any", Dialect::RlvaOnly, Group::Reply, false, "the sandbox has no camera: answers empty"},
+      // ---- RLVa only: more secure forms (RLVa makes a _sec form of every behaviour it flags strict) ----
+      {"accepttp_sec", AllowAddRemove, OptionUse::Optional, {}, "Teleport offers are accepted automatically, and exceptions of other objects do not count; held as state", Dialect::RlvaOnly, Group::Core},
+      {"accepttprequest_sec", AllowAddRemove, OptionUse::Optional, {}, "Teleport requests are accepted automatically, and exceptions of other objects do not count; held as state", Dialect::RlvaOnly, Group::Core},
+      {"recvchatfrom_sec", AllowAddRemove, OptionUse::Required, {}, "Cannot hear public chat from one avatar, and exceptions of other objects do not count (option: that avatar's UUID)", Dialect::RlvaOnly, Group::Core},
+      {"recvemotefrom_sec", AllowAddRemove, OptionUse::Required, {}, "Cannot see emotes from one avatar, and exceptions of other objects do not count (option: that avatar's UUID)", Dialect::RlvaOnly, Group::Core},
+      {"recvimfrom_sec", AllowAddRemove, OptionUse::Required, {}, "Cannot receive instant messages from one avatar, and exceptions of other objects do not count (option: that avatar's UUID)", Dialect::RlvaOnly, Group::Core},
+      {"sendimto_sec", AllowAddRemove, OptionUse::Required, {}, "Cannot send instant messages to one avatar, and exceptions of other objects do not count (option: that avatar's UUID)", Dialect::RlvaOnly, Group::Core},
+      {"startim_sec", AllowAddRemove, OptionUse::Optional, {"startim"}, "Cannot start a new instant message conversation, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::RlvaOnly, Group::Core},
+      {"startimto_sec", AllowAddRemove, OptionUse::Required, {}, "Cannot start a conversation with one avatar, and exceptions of other objects do not count (option: that avatar's UUID)", Dialect::RlvaOnly, Group::Core},
+      {"sendchannel_except_sec", AllowAddRemove, OptionUse::Optional, {}, "Chat only on the listed channel, and exceptions of other objects do not count (option: channel)", Dialect::RlvaOnly, Group::Core},
+      {"shownametags_sec", AllowAddRemove, OptionUse::Optional, {"shownametags"}, "Name tags above avatars are hidden, and exceptions of other objects do not count; with a UUID as option: an exception", Dialect::RlvaOnly, Group::Interaction},
+      // ---- RLVa only: other names of the shared folder force commands (addoutfit... = attach...) ----
+      {"addoutfitall", AllowForce, OptionUse::Required, {}, "Another name of attachall", Dialect::RlvaOnly, Group::Inventory},
+      {"addoutfitover", AllowForce, OptionUse::Required, {}, "Another name of attachover", Dialect::RlvaOnly, Group::Inventory},
+      {"addoutfitallover", AllowForce, OptionUse::Required, {}, "Another name of attachallover", Dialect::RlvaOnly, Group::Inventory},
+      {"addoutfitthis", AllowForce, OptionUse::Optional, {}, "Another name of attachthis (=force)", Dialect::RlvaOnly, Group::Inventory},
+      {"addoutfitallthis", AllowForce, OptionUse::Optional, {}, "Another name of attachallthis (=force)", Dialect::RlvaOnly, Group::Inventory},
+      {"addoutfitthisover", AllowForce, OptionUse::Optional, {}, "Another name of attachthisover", Dialect::RlvaOnly, Group::Inventory},
+      {"addoutfitallthisover", AllowForce, OptionUse::Optional, {}, "Another name of attachallthisover", Dialect::RlvaOnly, Group::Inventory},
     };
     return table;
   }
@@ -449,7 +468,9 @@ namespace Rlv
       case ParamType::Reply: needed = AllowReply; break;
       default: return QStringLiteral("bad syntax");
     }
-    if (!(behaviour->params & needed))
+    // in plain RLV mode a parameter type only RLVa has (the "does not work in Kokua" mark) is missing too
+    const int params = mode == Mode::Rlv ? (behaviour->params & ~behaviour->rlvaOnlyParams) : behaviour->params;
+    if (!(params & needed))
       return QString("@%1 does not take =%2").arg(command.behaviour, command.param);
     if (behaviour->option == OptionUse::None && !command.option.isEmpty())
       return QString("@%1 takes no option").arg(command.behaviour);
