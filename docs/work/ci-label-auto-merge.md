@@ -1,6 +1,6 @@
 Branch: ci/label-auto-merge
 Status: active
-Pull request: pending
+Pull request: #348
 Files:
 - .github/workflows/auto-merge.yml
 - .github/workflows/build.yml
