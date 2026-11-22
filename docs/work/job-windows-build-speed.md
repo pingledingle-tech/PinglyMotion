@@ -1,6 +1,6 @@
 Branch: job/windows-build-speed
 Status: active
-Pull request: pending
+Pull request: #372
 Files:
 - .github/workflows/build.yml
 - CMakeLists.txt
