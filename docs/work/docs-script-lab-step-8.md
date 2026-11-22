@@ -1,6 +1,6 @@
 Branch: docs/script-lab-step-8
 Status: active
-Pull request: pending
+Pull request: #307
 Files:
 - docs/RLV_TOOLS_REPO.md
 - docs/SCRIPT_LAB.md
