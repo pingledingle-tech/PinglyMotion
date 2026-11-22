@@ -215,7 +215,8 @@ void LslEventsTest::changedIsRefusedWhenWrong()
   QVERIFY(error(QJsonObject{{"type", "changed"}, {"change", "owner"}, {"object", "ghost"}}).contains("there is no object named \"ghost\""));
   QCOMPARE(error(QJsonObject{{"type", "changed"}, {"change", "owner"}}), QString());
   // the type list in the message
-  QVERIFY(error(QJsonObject{{"type", "weather"}}).contains("\"sit\", \"stand\", \"control\", \"money\", \"http_request\" or \"email\""));
+  QVERIFY(error(QJsonObject{{"type", "weather"}}).contains("\"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
+                                                            "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\" or \"not_at_target\""));
 }
 
 void LslEventsTest::checkerKnowsBothEvents()
@@ -224,8 +225,9 @@ void LslEventsTest::checkerKnowsBothEvents()
     "default { on_rez(integer p) { } changed(integer c) { } }"}});
   QVERIFY(a["valid"].toBool());
   QCOMPARE(a["warnings"].toArray().size(), 0);
-  // an event that is still never raised keeps its warning
-  const QJsonObject b = Control::check(QJsonObject{{"command", "lsl_check"}, {"source", "default { moving_start() { } }"}});
+  // an event that is still never raised keeps its warning (remote_data: deprecated, not part of the second gap list)
+  const QJsonObject b = Control::check(QJsonObject{{"command", "lsl_check"},
+    {"source", "default { remote_data(integer e, key i, key c, string n, integer d, string v) { } }"}});
   QCOMPARE(b["warnings"].toArray().size(), 1);
 }
 

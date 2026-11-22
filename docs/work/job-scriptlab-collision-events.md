@@ -6,8 +6,15 @@ Files:
 - src/scriptlab/lsl/sandbox.*
 - src/scriptlab/lsl/control.cpp
 - src/scriptlab/lsl/parser.cpp
-- tests/tst_lslmovement.cpp
-- tests/tst_lsltouch.cpp
+- tests/tst_lslcollision.cpp
+- tests/tst_lslevents.cpp
+- tests/tst_lsllink.cpp
+- tests/tst_lslmoney.cpp
+- tests/tst_lslparser.cpp
+- tests/tst_lslsitting.cpp
+- tests/tst_lslworld.cpp
+- tests/tst_labwatcher.cpp
+- tests/data/scriptlab/scenarios.json
 - tests/CMakeLists.txt
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md

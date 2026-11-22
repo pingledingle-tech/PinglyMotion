@@ -1220,7 +1220,10 @@ bool Parser::eventIsRaised(const QString& name)
 {
   static const QSet<QString> raised = {"state_entry", "state_exit", "timer", "listen", "touch_start", "touch", "touch_end", "run_time_permissions", "attach",
                                          "link_message", "linkset_data", "on_rez", "changed", "dataserver", "object_rez", "control", "sensor", "no_sensor",
-                                         "http_response", "transaction_result", "http_request", "money", "email"};
+                                         "http_response", "transaction_result", "http_request", "money", "email",
+                                         // second gap list, step 6, part 2: collision-family events (synthetic input, no motion model)
+                                         "collision_start", "collision_end", "land_collision_start", "land_collision_end", "land_collision",
+                                         "moving_start", "moving_end", "at_target", "not_at_target"};
   return raised.contains(name);
 }
 

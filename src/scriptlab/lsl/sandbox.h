@@ -95,7 +95,8 @@ struct ScriptEntry
 struct SandboxInput
 {
   double at = 0.0;
-  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email
+  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email,
+                                   // collision, land_collision, moving, at_target, not_at_target
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -123,6 +124,15 @@ struct SandboxInput
   int phase = 0;
   double start = 0.0;
   int step = 0;
+  // second gap list, step 6, part 2: a synthetic collision-family event for testing (there is no motion model, so
+  // llDetected* data and the vector arguments are exactly as given here, nothing is simulated). "stage" is "start"
+  // or "end" for collision and moving, or "start", "end" or empty (the continuous land_collision) for land_collision.
+  QString stage;
+  float pos[3] = {0.0f, 0.0f, 0.0f};        // land_collision*: the event's own vector argument
+  // at_target: the event's own arguments (llTarget's target number is not tracked by the sandbox)
+  int tnum = 0;
+  float targetpos[3] = {0.0f, 0.0f, 0.0f};
+  float ourpos[3] = {0.0f, 0.0f, 0.0f};
 };
 
 class Sandbox
