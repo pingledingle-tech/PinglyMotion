@@ -57,7 +57,7 @@ command; without it only local files are shown).
   file does not list. Fix it by adding the file to `Files:`, and run `check`
   again: another job may already have claimed it.
 
-`python3 tools/work.py archive` moves (with `git mv`) every job file in this folder that says `Status: done` and whose pull request is merged (asked from GitHub) into `docs/work/archive/`. It leaves files with `Pull request: pending` or a number GitHub does not know, and says why. `--dry-run` only prints what would move. Run it after every merge and commit the result.
+`python3 tools/work.py archive` moves (with `git mv`) every job file in this folder that says `Status: done` and whose pull request is merged (asked from GitHub) into `docs/work/archive/`. It leaves files with `Pull request: pending` or a number GitHub does not know, and says why. `--dry-run` only prints what would move. Every job runs it in its first commit (`CLAUDE.md`, "Before you start", step 6); the moved files need no line in `Files:`, because `check` does not ask for files in `docs/work/archive/`.
 
 Options: `--no-remote` (do not ask GitHub), `--mine` (only fail for overlaps
 with the current branch's job; the pull request check uses this).
@@ -69,4 +69,4 @@ required check: it shows red as a warning, it does not block a merge.
 
 `HISTORY.md` lists the jobs from before this format. It is not edited any
 more. Merged pull requests are the history from now on. Job files of finished
-jobs whose pull request is merged are moved to `docs/work/archive/` (22 November 2026); `tools/work.py` only reads this folder, not the archive. Move them there with `python3 tools/work.py archive` once they are done and merged.
+jobs whose pull request is merged are moved to `docs/work/archive/` (since 22 November 2026, with `archive` above); `tools/work.py` only reads this folder, not the archive.

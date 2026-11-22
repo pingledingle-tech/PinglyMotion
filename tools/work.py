@@ -321,8 +321,11 @@ def all_overlaps(jobs, repo_files, mine=None):
 
 
 def unlisted_changes(job, changed):
+    """Changed paths the job file does not list. The job's own file and job files
+    moved into docs/work/archive/ by `archive` never need listing."""
     own = WORK_DIR + "/" + job_file_name(job.branch) if job.branch else None
-    return [p for p in changed if p != own and not any(matches(pat, p) for pat in job.files)]
+    return [p for p in changed if p != own and not p.startswith(ARCHIVE_DIR + "/")
+            and not any(matches(pat, p) for pat in job.files)]
 
 
 # --------------------------------------------------------------- commands
