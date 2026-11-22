@@ -176,9 +176,9 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
       }
       else if (command.behaviour == QLatin1String("getheightoffset")) reply.text = QStringLiteral("0");
       else if (Rlv::findBehaviour(command.behaviour, m_mode) &&
-               Rlv::findBehaviour(command.behaviour, m_mode)->dialect == Rlv::Dialect::RlvaOnly)
+               Rlv::findBehaviour(command.behaviour, m_mode)->group == Rlv::Group::Reply)
       {
-        // RLVa questions about the avatar, inventory and camera: the sandbox has none, so the answer is empty
+        // questions about the avatar, inventory and camera: the sandbox has none, so the answer is empty
       }
       else
       {

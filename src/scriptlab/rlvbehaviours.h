@@ -7,10 +7,10 @@
  *
  * Licence note: names, parameter types and meanings follow RLVa's behaviour
  * dictionary (Firestorm viewer, rlvdefines.h and rlvhelper.cpp; LGPL 2.1,
- * copyright Kitty Barnett) and the public RLV API. The "RLVa only" marks come
- * from the dictionary's own extended and experimental flags. Modified port:
- * the table is new, smaller and has no viewer types, and no handler is
- * copied. See CREDITS.md.
+ * copyright Kitty Barnett) and the public RLV API. The marks follow the RLV
+ * wiki's list of plain RLV commands; RLVa's own extended and experimental
+ * flags differ from it for some names. Modified port: the table is new,
+ * smaller and has no viewer types, and no handler is copied. See CREDITS.md.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -38,8 +38,8 @@ namespace Rlv
   enum class OptionUse { None, Optional, Required };
 
   // which viewer family answers to a behaviour: "RLV" is in the plain RLV
-  // API, "RLVa only" is part of RLVa's extended or experimental command set
-  // (BHVR_EXTENDED and BHVR_EXPERIMENTAL in RLVa's behaviour dictionary)
+  // API as the RLV wiki lists it, "RLVa only" is not listed there (RLVa's own
+  // extended and experimental flags differ from the wiki for some names)
   enum class Dialect { Rlv, RlvaOnly };
 
   // The mode the sandbox answers in. In plain RLV mode the RLVa-only
