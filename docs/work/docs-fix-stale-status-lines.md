@@ -1,6 +1,6 @@
 Branch: docs/fix-stale-status-lines
 Status: active
-Pull request: pending
+Pull request: #325
 Files:
 - docs/work/docs-fix-stale-status-lines.md
 - docs/ROADMAP.md
