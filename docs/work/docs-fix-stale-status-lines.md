@@ -1,9 +1,10 @@
 Branch: docs/fix-stale-status-lines
-Status: active
+Status: done
 Pull request: #325
 Files:
 - docs/work/docs-fix-stale-status-lines.md
 - docs/ROADMAP.md
+- docs/BLENDER.md
 - docs/EASING.md
 - docs/TEACHING.md
 - docs/SCRIPT_LAB_PLAN.md
@@ -21,4 +22,4 @@ Files:
 
 ## What
 
-Status lines in these documents that say planned, pending or waiting while the work is merged are checked against the code, merged pull requests and git log, and corrected. Only status lines and markers change; no content, archiving or restructuring. docs/BLENDER.md section 3.1 follows only after pull request 323 is merged.
+Status lines in these documents that say planned, pending or waiting while the work is merged are checked against the code, merged pull requests and git log, and corrected. Only status lines and markers change; no content, archiving or restructuring. docs/BLENDER.md section 3.1 was done after pull request 323 was merged.
