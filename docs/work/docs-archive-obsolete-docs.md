@@ -1,6 +1,6 @@
 Branch: docs/archive-obsolete-docs
 Status: active
-Pull request: pending
+Pull request: #326
 Files:
 - docs/archive/**
 - docs/PANELS_PLAN.md
