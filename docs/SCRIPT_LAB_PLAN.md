@@ -78,6 +78,8 @@ The original plan:
 
 `llStartAnimation` plays an animation. Attached objects and locks are shown on the avatar.
 
+- Done (issue 293): the Live page's "Show effects in 3D view" box, off by default. The newest animation still playing at the end of a run plays on a preview figure in place of the user's animation (which is never changed); worn objects are boxes and `@detach` locks are balls at their attachment points ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Effects in the 3D view").
+
 ### Step 8: Separate repository for the owner's RLV tools (technical)
 
 A template, examples and scenario files (`.rlvtest`: a command, then the expected state) that run headless in CI. Creating that repository needs the project owner's go-ahead; this step only describes it.

@@ -23,10 +23,12 @@
 #include <QPointer>
 #include <QWidget>
 
+#include "effectspreview.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
 
+class QCheckBox;
 class QDockWidget;
 class ScriptLabObjectsView;
 namespace lsl { class Session; }
@@ -76,6 +78,12 @@ class ScriptLabPanel : public QWidget
     bool watchFolder(const QString& folder);
     // stops watching, as Stop watching does
     void stopWatching();
+    // --- Effects in the 3D view (issue 293): the preview the "Show effects in 3D view" box turns
+    // on and off (off at start). Not owned (the window owns it and gives it to the 3D view).
+    void setEffects(EffectsPreview* preview);
+    EffectsPreview* effects() const { return m_effects; }
+    QCheckBox* effectsBox() const { return m_effectsBox; }
+    QLabel* effectsStatus() const { return m_effectsStatus; }
     // the text of a run's event log entry, as the Live page shows it
     static QString logLine(const QJsonObject& entry);
 
@@ -116,6 +124,8 @@ class ScriptLabPanel : public QWidget
     void refresh();
     // reads the watch and its newest result again (connected to LabWatcher)
     void refreshLive();
+    // shows the effects preview's lines under the box (connected to EffectsPreview::changed)
+    void refreshEffects();
 
   protected:
     void changeEvent(QEvent* event) override;
@@ -159,6 +169,16 @@ class ScriptLabPanel : public QWidget
     QString m_shownFile;               // the script shown in the view (relative to the folder)
     QList<QJsonObject> m_shownProblems;
     QList<QMetaObject::Connection> m_watcherConnections;
+
+    void effectsToggled(bool on);
+    void connectEffectsToWatcher();
+    QPointer<EffectsPreview> m_effects;
+    QCheckBox* m_effectsBox = nullptr;
+    QLabel* m_effectsStatus = nullptr;
+    QList<QMetaObject::Connection> m_effectsConnections;
+    QList<QMetaObject::Connection> m_effectsWatcherConnections;
+    QPointer<lsl::Session> m_session;
+    bool m_effectsFromSession = false;   // the newest run came from lsl_run or lsl_event, not Live
 };
 
 #endif
