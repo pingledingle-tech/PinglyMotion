@@ -61,7 +61,9 @@ enum class Fn
   GetInventoryNumber, GetInventoryName, GetInventoryType, GetInventoryKey, GiveInventory, RemoveInventory,
   GetNotecardLine, GetNumberOfNotecardLines, RezObject, RezAtRoot,
   // step 9b-5: sitting and pose balls
-  SitTarget, LinkSitTarget, AvatarOnSitTarget, AvatarOnLinkSitTarget, UnSit, GetAnimationList, GetAnimation, GetAgentInfo
+  SitTarget, LinkSitTarget, AvatarOnSitTarget, AvatarOnLinkSitTarget, UnSit, GetAnimationList, GetAnimation, GetAgentInfo,
+  // step 9b-6: controls
+  TakeControls, ReleaseControls
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -124,6 +126,7 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llSitTarget", Fn::SitTarget}, {"llLinkSitTarget", Fn::LinkSitTarget}, {"llAvatarOnSitTarget", Fn::AvatarOnSitTarget},
   {"llAvatarOnLinkSitTarget", Fn::AvatarOnLinkSitTarget}, {"llUnSit", Fn::UnSit}, {"llGetAnimationList", Fn::GetAnimationList},
   {"llGetAnimation", Fn::GetAnimation}, {"llGetAgentInfo", Fn::GetAgentInfo},
+  {"llTakeControls", Fn::TakeControls}, {"llReleaseControls", Fn::ReleaseControls},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1970,6 +1973,29 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       if (a[0].s == m_world.ownerKey() && m_world.hasAttachments()) flags |= 0x2;   // AGENT_ATTACHMENTS
       return Value::integer(flags);
     }
+
+    // -------------------------------------------- controls (step 9b-6)
+    case Fn::TakeControls:
+    {
+      if (!(m_permissions & 0x4))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to take controls but PERMISSION_TAKE_CONTROLS permission not set"}});
+        return Value();
+      }
+      m_controls = a[0].i;
+      m_controlsAccept = a[1].i != 0;
+      m_controlsPassOn = a[2].i != 0;
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "controls"}, {"op", "take"}, {"controls", a[0].i}, {"accept", m_controlsAccept}, {"pass_on", m_controlsPassOn}, {"avatar", m_permissionKey}});
+      return Value();
+    }
+    case Fn::ReleaseControls:
+      if (m_controls != 0 && !m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "controls"}, {"op", "release"}, {"avatar", m_permissionKey}});
+      m_controls = 0;
+      m_controlsAccept = m_controlsPassOn = false;
+      return Value();
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);

@@ -91,6 +91,8 @@ struct SandboxInput
   int point = 0;                  // attach: the point (0: keep the object's point, or 1 when it has none)
   int link = 0;                   // touch (step 9a): the prim touched; sit (step 9b-5): the prim sat on (0: the root)
   int change = 0;                 // changed (step 9b-2): the CHANGED_* flags, added together
+  int levels = 0;                 // control (step 9b-6): the CONTROL_* flags held now
+  int edges = 0;                  // control: the CONTROL_* flags that changed
 };
 
 class Sandbox

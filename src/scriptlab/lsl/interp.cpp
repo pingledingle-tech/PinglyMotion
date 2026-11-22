@@ -248,6 +248,8 @@ void Interpreter::resetScript()
   m_permissions = 0;
   m_permissionKey.clear();
   m_playing.clear();
+  m_controls = 0;
+  m_controlsAccept = m_controlsPassOn = false;
   m_timeBase = m_now;
   m_inEvent = false;
   try
@@ -443,6 +445,14 @@ void Interpreter::linksetDataEvent(int action, const QString& name, const QStrin
 void Interpreter::changedEvent(int flags)
 {
   queueEvent(Event{"changed", {Value::integer(flags)}, QString(), QString()});
+}
+
+void Interpreter::controlEvent(const QString& id, int levels, int edges)
+{
+  if (m_controls == 0 || !(m_permissions & 0x4) || m_permissionKey.isEmpty() || id != m_permissionKey) return;
+  const int l = levels & m_controls, e = edges & m_controls;
+  if (l == 0 && e == 0) return;
+  queueEvent(Event{"control", {Value::key(id), Value::integer(l), Value::integer(e)}, QString(), QString()});
 }
 
 bool Interpreter::handles(const QString& event) const

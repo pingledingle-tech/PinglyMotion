@@ -95,6 +95,9 @@ class Interpreter
     void linksetDataEvent(int action, const QString& name, const QString& value);
     // Step 9b-2: queues changed (the CHANGED_* flags, added together)
     void changedEvent(int flags);
+    // Step 9b-6: queues control(avatar, levels, edges) when this script took controls with permission from that avatar and
+    // the input touches a control it took (the values are cut to the controls taken)
+    void controlEvent(const QString& id, int levels, int edges);
     // the current state has a handler for this event
     bool handles(const QString& event) const;
 
@@ -164,6 +167,9 @@ class Interpreter
     double m_nextTimer = 0.0;
     int m_permissions = 0;
     QString m_permissionKey;
+    int m_controls = 0;              // step 9b-6: the controls llTakeControls took (0 = none)
+    bool m_controlsAccept = false;
+    bool m_controlsPassOn = false;
     QStringList m_playing;           // step 9b-5: animations this script started and has not stopped (llGetAnimationList)
     QString m_detectedKey;
     QString m_detectedName;

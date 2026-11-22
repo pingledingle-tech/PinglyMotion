@@ -1,6 +1,6 @@
 Branch: feat/script-lab-9b-6-controls
-Status: active
-Pull request:
+Status: done
+Pull request: #340
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/sandbox.*
