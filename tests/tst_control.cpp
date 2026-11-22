@@ -38,6 +38,7 @@
 #include "controlapi.h"
 #include "controlindicator.h"
 #include "controlserver.h"
+#include "emptystate.h"
 #include "posedescribe.h"
 #include "scenestate.h"
 #include "screenshotsheet.h"
@@ -218,6 +219,8 @@ class ControlTest : public QObject
     void findReferenceSearchesTheLibrary();
     void findReferenceRefusesBadOptions();
     void loadReferenceOpensALibraryClip();
+    void emptyStateStartChoicesOpenTheRightClip();
+    void commandsThatStartAnAnimationWorkWithNoneOpen();
     void loadReferenceRefusesChangedAndOutsideFiles();
     void scriptLabLslCommands();
     void scriptLabLslRlv();
@@ -2594,6 +2597,101 @@ void ControlTest::loadReferenceOpensALibraryClip()
   QVERIFY(!answer["ok"].toBool());
   QVERIFY(answer["error"].toString().startsWith("There are unsaved changes."));
   QVERIFY(m_host->opened.isEmpty());
+}
+
+// UX phase 1b: the start choices of the empty state (Standing, Sitting, Dance example) open
+// these library clips by the same route as load_reference; each file has the 19 joints
+void ControlTest::emptyStateStartChoicesOpenTheRightClip()
+{
+  QTemporaryDir nothing;
+  const QString library = QDir::cleanPath(QString(PINGLYMOTION_TOOLS) + "/../library");
+  m_api->setLibraryFolder(library);
+  m_api->setReferenceFolder(nothing.path());
+
+  struct Expected { const EmptySpec::Choice* choice; const char* id; const char* file; const char* name; int frames; };
+  const Expected expected[] = {
+    {&EmptySpec::standing, "m2m-idle-a", "m2m_idle-a.bvh", "Stand, idle", 94},
+    {&EmptySpec::sitting, "m2m-sitting-idle", "m2m_sitting-idle.bvh", "Sit, idle", 63},
+    {&EmptySpec::dance, "m2m-dance-simple", "m2m_dance-simple.bvh", "Dance, simple", 38},
+  };
+  QCOMPARE(int(sizeof(EmptySpec::choices) / sizeof(EmptySpec::choices[0])), 3);
+  for (int i = 0; i < 3; i++)
+  {
+    const Expected& e = expected[i];
+    QCOMPARE(EmptySpec::choices[i], e.choice);
+    QCOMPARE(QString::fromLatin1(e.choice->clip), QString::fromLatin1(e.id));
+    m_animation->setDirty(false);
+    m_host->opened.clear();
+    const QJsonObject answer = run((QString(R"({"command":"load_reference","id":")") + e.choice->clip + "\"}").toUtf8().constData());
+    QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+    QCOMPARE(QFileInfo(m_host->opened).fileName(), QString::fromLatin1(e.file));
+    QCOMPARE(answer["reference"].toObject()["name"].toString(), QString::fromLatin1(e.name));
+    QVERIFY(answer["reference"].toObject()["credit"].toString().contains("Mesh2Motion"));
+
+    // the bytes that were opened are a clip with the 19 joints of the classic Second Life
+    // skeleton (one ROOT and 18 JOINT lines), and the program's reader takes them
+    int joints = 0;
+    for (const QByteArray& line : m_host->openedData.split('\n'))
+    {
+      const QByteArray trimmed = line.trimmed();
+      if (trimmed.startsWith("ROOT ") || trimmed.startsWith("JOINT ")) joints++;
+    }
+    QCOMPARE(joints, 19);
+    BVH bvh;
+    Animation opened(&bvh, m_host->opened, &m_host->openedData);
+    FakeHost host(&opened);
+    ControlApi api(&host);
+    QCOMPARE(api.execute(QJsonObject{{"command", "state"}})["frames"].toInt(), e.frames);
+  }
+}
+
+// the host of the empty state: no animation until one is started or opened
+class EmptyHost : public FakeHost
+{
+  public:
+    explicit EmptyHost(Animation* later) : FakeHost(later), m_later(later) {}
+    Animation* animation() override { return m_started ? m_later : nullptr; }
+    bool unsavedChanges() override { return false; }
+    bool newAnimation(QString&) override { m_started = true; newCalled = true; return true; }
+    bool openFileData(const QString& path, const QByteArray& data, QString& error) override
+    {
+      m_started = true;
+      return FakeHost::openFileData(path, data, error);
+    }
+    bool newCalled = false;
+
+  private:
+    Animation* m_later;
+    bool m_started = false;
+};
+
+// while the empty state shows (UX phase 1b) no animation is open: the commands that work on one
+// say so, the ones that start one or look in the library do not
+void ControlTest::commandsThatStartAnAnimationWorkWithNoneOpen()
+{
+  QTemporaryDir nothing;
+  EmptyHost host(m_animation);
+  ControlApi api(&host);
+  api.setLibraryFolder(QDir::cleanPath(QString(PINGLYMOTION_TOOLS) + "/../library"));
+  api.setReferenceFolder(nothing.path());
+  for (const char* command : {"state", "joints", "get_pose", "keys", "play", "set_frame", "screenshot", "check_animation"})
+  {
+    const QJsonObject answer = api.execute(QJsonObject{{"command", command}});
+    QVERIFY2(!answer["ok"].toBool(), command);
+    QCOMPARE(answer["error"].toString(), QString("No animation is open."));
+  }
+  QVERIFY(api.execute(QJsonObject{{"command", "find_reference"}, {"text", "sit"}})["ok"].toBool());
+  QVERIFY(host.animation() == nullptr);
+  // the clip of the Standing choice opens and the answer is the state of the new animation
+  const QJsonObject answer = api.execute(QJsonObject{{"command", "load_reference"}, {"id", "m2m-idle-a"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(QFileInfo(host.opened).fileName(), QString("m2m_idle-a.bvh"));
+  QVERIFY(host.animation() != nullptr);
+
+  EmptyHost second(m_animation);
+  ControlApi again(&second);
+  QVERIFY(again.execute(QJsonObject{{"command", "new_animation"}})["ok"].toBool());
+  QVERIFY(second.newCalled);
 }
 
 void ControlTest::loadReferenceRefusesChangedAndOutsideFiles()

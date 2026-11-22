@@ -58,6 +58,8 @@ class ControlIndicator;
 class AuroraIndicator;
 class TipsSwitch;
 class TransportBar;
+class TopBar;
+class EmptyState;
 class ScriptLabPanel;
 class AuroraLink;
 class WindowControlHost;
@@ -117,6 +119,7 @@ class PinglyMotionWindow : public QMainWindow
 
     // ------- Menu Action Slots --------
     void on_fileNewAction_triggered();
+    void on_fileCloseAction_triggered();
     void on_fileOpenAction_triggered();
     void on_fileAddAction_triggered();
     void on_fileSaveAction_triggered();
@@ -212,7 +215,10 @@ class PinglyMotionWindow : public QMainWindow
     // the text size changed: panel widths and the rearranging follow it
     void changeEvent(QEvent* event) override;
 
-    void fileNew();
+    // true when the animation was made (false: the user cancelled the question about unsaved changes)
+    bool fileNew();
+    // File > Close animation: closes everything and shows the empty state (UX phase 1b)
+    void fileClose();
     void fileOpen();
     void fileOpen(const QString& fileName);
     // opens fileName from these bytes instead of reading the file (load_reference
@@ -306,6 +312,8 @@ class PinglyMotionWindow : public QMainWindow
 
     void updateFps();
     void updateKeyBtn();
+    // Edit > Set key: enabled, tip and reason follow the state of the window
+    void updateEditActions();
     void updateInputs();
 
     // calculates the longest running time of all loaded animations, returns it
@@ -419,6 +427,15 @@ class PinglyMotionWindow : public QMainWindow
 
 
   private:
+    // UX phase 1b: the top bar and the empty state
+    void buildEditMenu();
+    void buildTopBar();
+    void setEmptyMode(bool empty);
+    // the start choice with this library clip id was clicked in the empty state
+    void startFromLibrary(const QString& clipId);
+    bool emptyMode() const { return m_empty; }
+    void setKeyFromMenu();
+
     // remote control (Options > Allow remote control), see controlapi.h
     friend class WindowControlHost;
     void setRemoteControl(bool on, bool showInfo);
@@ -463,6 +480,21 @@ class PinglyMotionWindow : public QMainWindow
     // status bar (#88): Aurora link status and the "Tips on" switch
     AuroraIndicator* m_auroraIndicator = nullptr;
     TipsSwitch* m_tipsSwitch = nullptr;
+
+    // UX phase 1b
+    TopBar* m_topBar = nullptr;
+    EmptyState* m_emptyState = nullptr;
+    // true while no animation is open: a clean untitled animation stays behind the empty state
+    // so the old code never meets "no animation"; the commands see none (see WindowControlHost)
+    bool m_empty = false;
+    QAction* m_undoAction = nullptr;
+    QAction* m_redoAction = nullptr;
+    QAction* m_setKeyAction = nullptr;
+    QAction* m_pasteMirroredAction = nullptr;
+    QAction* m_lightThemeAction = nullptr;
+    // what the actions that need an animation were before the empty state greyed them
+    struct ActionState { bool enabled; QString tip; QString status; };
+    QMap<QAction*,ActionState> m_beforeEmpty;
 };
 
 #endif

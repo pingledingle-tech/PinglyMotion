@@ -17,7 +17,8 @@
 namespace
 {
   // Lucide 1.77.0, icons/<name>.svg, the d attribute of each <path> (and the
-  // one <rect> of "square", as the same rounded square)
+  // one <rect> of "square" and the <circle> of "settings" and "sun", as the same
+  // shapes written as paths)
   struct Shape
   {
     const char* name;
@@ -30,6 +31,17 @@ namespace
     // <rect width="18" height="18" x="3" y="3" rx="2" />
     {"square",{"M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-14a2 2 0 0 1 2-2z"}},
     {"rotate-ccw",{"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8","M3 3v5h5"}},
+    {"undo-2",{"M9 14 4 9l5-5","M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"}},
+    {"redo-2",{"m15 14 5-5-5-5","M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13"}},
+    {"save",{"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z","M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7","M7 3v4a1 1 0 0 0 1 1h7"}},
+    {"upload",{"M12 3v12","m17 8-5-5-5 5","M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"}},
+    {"flask-conical",{"M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2","M8.5 2h7","M7 16h10"}},
+    // <circle cx="12" cy="12" r="3" />
+    {"settings",{"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z","M15 12a3 3 0 1 0-6 0a3 3 0 1 0 6 0z"}},
+    // <circle cx="12" cy="12" r="4" />
+    {"sun",{"M16 12a4 4 0 1 0-8 0a4 4 0 1 0 8 0z","M12 2v2","M12 20v2","m4.93 4.93 1.41 1.41","m17.66 17.66 1.41 1.41","M2 12h2","M20 12h2","m6.34 17.66-1.41 1.41","m19.07 4.93-1.41 1.41"}},
+    {"moon",{"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"}},
+    {"sparkles",{"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z","M20 3v4","M22 5h-4","M4 17v2","M5 18H3"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix
@@ -91,7 +103,7 @@ namespace LucideIcons
 
   QPainterPath fromSvgPath(const QString& data)
   {
-    static const QRegularExpression token(QStringLiteral("([MmLlHhVvAaZz])|([-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][-+]?\\d+)?)"));
+    static const QRegularExpression token(QStringLiteral("([MmLlHhVvAaCcZz])|([-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][-+]?\\d+)?)"));
     QPainterPath path;
     QPointF current,start;
     QChar command;
@@ -106,6 +118,7 @@ namespace LucideIcons
         case 'M': case 'L': return 2;
         case 'H': case 'V': return 1;
         case 'A': return 7;
+        case 'C': return 6;
         default: return 0;
       }
     };
@@ -134,6 +147,13 @@ namespace LucideIcons
           current.setY((relative ? current.y() : 0.0)+numbers[0]);
           path.lineTo(current);
           break;
+        case 'C':
+        {
+          const QPointF end=base+QPointF(numbers[4],numbers[5]);
+          path.cubicTo(base+QPointF(numbers[0],numbers[1]),base+QPointF(numbers[2],numbers[3]),end);
+          current=end;
+          break;
+        }
         case 'A':
         {
           const QPointF end=base+QPointF(numbers[5],numbers[6]);

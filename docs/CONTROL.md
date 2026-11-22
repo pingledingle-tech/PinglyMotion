@@ -99,6 +99,7 @@ letters, `:` anywhere, `..`, empty parts, a trailing dot or space, and device na
 - `save_file` never replaces another file. Saving again to the file that is open is fine.
 - `export_anim` writes only a new file ending in `.anim`; it never replaces any file.
 - `new_animation` and `open_file` refuse while there are unsaved changes; save first.
+- After File > Close animation no animation is open. Then every command that works on an animation answers "No animation is open."; `new_animation`, `open_file`, `find_reference` and `load_reference` still work and start one.
 - `PINGLYMOTION_CONTROL_FOLDER` sets another folder (used by the tests).
 
 ### Easing and loop points

@@ -291,7 +291,10 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
   if (command == QLatin1String("lsl_lint")) return lsl::Control::lint(request);
   if (command == QLatin1String("lsl_run")) return lsl::Control::run(request, &m_rlv, &m_lslSession);
   if (command == QLatin1String("lsl_event")) return lsl::Control::event(request, &m_lslSession);
-  if (!m_host->animation()) return fail("No animation is open.");
+  // starting an animation and looking in the library work with none open (the empty state, UX phase 1b)
+  const bool startsOne = command == QLatin1String("new_animation") || command == QLatin1String("open_file") ||
+                         command == QLatin1String("find_reference") || command == QLatin1String("load_reference");
+  if (!m_host->animation() && !startsOne) return fail("No animation is open.");
 
   for (const auto& entry : table)
     if (command == QLatin1String(entry.name))

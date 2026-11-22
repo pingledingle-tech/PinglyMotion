@@ -51,6 +51,7 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QToolButton>
 #include <QSlider>
 #include <QCheckBox>
 #include <QHeaderView>
@@ -104,6 +105,8 @@
 #include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "menuspec.h"
+#include "emptystate.h"
+#include "topbar.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
@@ -115,7 +118,8 @@ class WindowControlHost : public ControlHost
   public:
     explicit WindowControlHost(PinglyMotionWindow* window) : w(window) {}
 
-    Animation* animation() override { return w->scene->getAnimation(); }
+    // while the empty state shows, the commands see no animation (a clean placeholder stays behind it)
+    Animation* animation() override { return w->m_empty ? nullptr : w->scene->getAnimation(); }
 
     void goToFrame(int frame) override
     {
@@ -574,6 +578,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
     if(m_hintsAction) m_hintsAction->setChecked(on);   // Help > Show hints follows the switch
   });
   buildMenus();
+  buildEditMenu();
+  buildTopBar();
 
   // is remote control on, who is connected, what it did last (issue #43)
   m_controlIndicator=new ControlIndicator(this);
@@ -681,7 +687,7 @@ void PinglyMotionWindow::setRemoteControl(bool on,bool showInfo)
 // the title says so while other programs can control PinglyMotion
 void PinglyMotionWindow::updateWindowTitle()
 {
-  QString title=Constants::windowTitle(currentFile);
+  QString title=Constants::windowTitle(m_empty ? QString() : currentFile);
   if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink)
@@ -1008,8 +1014,6 @@ void PinglyMotionWindow::buildMenus()
 
   // File: the items that come from the designer file get their tip here
   ui->menuFile->setToolTipsVisible(true);
-  ui->fileCloseAction->setToolTip(reason(fileClose));
-  ui->fileCloseAction->setStatusTip(reason(fileClose));
 
   // View, rebuilt in the mockup's order
   QAction* showJointsAction=m_jointsDock->toggleViewAction();
@@ -1053,10 +1057,13 @@ void PinglyMotionWindow::buildMenus()
   lightAction->setCheckable(true);
   lightAction->setChecked(!UserSettings::darkTheme());
   keyInView(lightAction,view);
+  m_lightThemeAction=lightAction;
   connect(lightAction,&QAction::toggled,this,[this](bool light)
   {
     UserSettings::setDarkTheme(!light);
     Theme::apply(!light);
+    if(m_topBar) m_topBar->setDark(!light);
+    if(m_emptyState) m_emptyState->applyLook();
     fitPanelWidths();
     fillJointTable();
     ui->animationView->update();
@@ -1110,6 +1117,135 @@ void PinglyMotionWindow::buildMenus()
   ui->menuHelp->addAction(ui->helpOpenLogAction);
   ui->menuHelp->addAction(ui->helpClearLogAction);
   ui->menuHelp->addAction(ui->helpAboutAction);
+}
+
+// UX phase 1b: Edit as in the mockup: Undo, Redo, Set key, Paste mirrored. Undo, Redo and Paste
+// mirrored are not built yet and are greyed with a reason; Set key presses the key button. Cut,
+// Copy and Paste (the timeline's frames) stay below them: the mockup has no such items yet.
+void PinglyMotionWindow::buildEditMenu()
+{
+  using namespace MenuSpec;
+  ui->menuEdit->setToolTipsVisible(true);
+  ui->menuEdit->clear();
+
+  m_undoAction=specAction(this,editUndo,true);
+  m_redoAction=specAction(this,editRedo,true);
+  m_setKeyAction=specAction(this,editSetKey,false);
+  keyInView(m_setKeyAction,ui->animationView);
+  connect(m_setKeyAction,&QAction::triggered,this,&PinglyMotionWindow::setKeyFromMenu);
+  m_pasteMirroredAction=specAction(this,editPasteMirrored,true);
+
+  ui->menuEdit->addAction(m_undoAction);
+  ui->menuEdit->addAction(m_redoAction);
+  ui->menuEdit->addSeparator();
+  ui->menuEdit->addAction(m_setKeyAction);
+  ui->menuEdit->addAction(m_pasteMirroredAction);
+  ui->menuEdit->addSeparator();
+  ui->menuEdit->addAction(ui->editCutAction);
+  ui->menuEdit->addAction(ui->editCopyAction);
+  ui->menuEdit->addAction(ui->editPasteAction);
+  updateEditActions();
+}
+
+// Set key: the same as the key button, but it never takes a key away
+void PinglyMotionWindow::setKeyFromMenu()
+{
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim || currentPart==nullptr || !ui->keyframeButton->isEnabled()) return;
+  if(anim->isKeyFrame(ui->animationView->getSelectedPartIndex(),anim->getFrame())) return;
+  ui->keyframeButton->click();
+}
+
+// Set key is greyed with the reason when it cannot work right now
+void PinglyMotionWindow::updateEditActions()
+{
+  if(!m_setKeyAction) return;
+  QString why;
+  if(m_empty) why=QCoreApplication::translate("MenuSpec",MenuSpec::openFirst);
+  else if(currentPart==nullptr) why=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyPickJoint);
+  else if(playstate!=PLAYSTATE_STOPPED) why=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyStopPlaying);
+  else if(protect) why=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyLocked);
+  m_setKeyAction->setEnabled(why.isEmpty());
+  m_setKeyAction->setToolTip(why);
+  m_setKeyAction->setStatusTip(why);
+}
+
+// UX phase 1b: the top bar (src/topbar.h) and the empty state (src/emptystate.h)
+void PinglyMotionWindow::buildTopBar()
+{
+  TopBar::Sources sources;
+  sources.undo=m_undoAction;
+  sources.redo=m_redoAction;
+  sources.save=ui->fileSaveAction;
+  sources.exportAnim=ui->fileExportAnimAction;
+  sources.scriptLab=m_scriptLabDock->toggleViewAction();
+  m_topBar=new TopBar(ui->toolBar,sources,this);
+  m_topBar->setDark(UserSettings::darkTheme());
+  connect(m_topBar,&TopBar::themeRequested,this,[this]()
+  {
+    if(m_lightThemeAction) m_lightThemeAction->toggle();
+  });
+
+  m_emptyState=new EmptyState(ui->animationView);
+  m_emptyState->hide();
+  connect(m_emptyState,&EmptyState::startChosen,this,&PinglyMotionWindow::startFromLibrary);
+  connect(m_emptyState,&EmptyState::newChosen,this,[this](){ fileNew(); });
+}
+
+// a start choice of the empty state: the clip of the reference library, by the same route as
+// the control command load_reference (checked against the index, then opened)
+void PinglyMotionWindow::startFromLibrary(const QString& clipId)
+{
+  const QJsonObject answer=m_controlApi->execute(QJsonObject{{"command",QStringLiteral("load_reference")},{"id",clipId}});
+  if(!answer.value(QStringLiteral("ok")).toBool())
+  {
+    statusBar()->showMessage(answer.value(QStringLiteral("error")).toString(),10000);
+    return;
+  }
+  // the clip's credit stays visible, as its licence asks
+  statusBar()->showMessage(answer.value(QStringLiteral("reference")).toObject().value(QStringLiteral("credit")).toString(),10000);
+}
+
+// no animation open: the empty state covers the 3D view, the panels and the actions that need an
+// animation are greyed with "Open an animation first."
+void PinglyMotionWindow::setEmptyMode(bool empty)
+{
+  if(empty==m_empty) return;
+  m_empty=empty;
+
+  const QList<QAction*> needing={ui->fileSaveAction,ui->fileSaveAsAction,ui->fileExportAnimAction,
+    ui->fileExportForSecondLifeAction,ui->fileCloseAction,ui->fileAddAction,ui->editCutAction,
+    ui->editCopyAction,ui->editPasteAction,ui->toolsMirrorAction,ui->toolsOptimizeBVHAction};
+  const QString why=QCoreApplication::translate("MenuSpec",MenuSpec::openFirst);
+  for(QAction* action : needing)
+  {
+    if(empty)
+    {
+      m_beforeEmpty.insert(action,{action->isEnabled(),action->toolTip(),action->statusTip()});
+      action->setEnabled(false);
+      action->setToolTip(why);
+      action->setStatusTip(why);
+    }
+    else if(m_beforeEmpty.contains(action))
+    {
+      const ActionState before=m_beforeEmpty.take(action);
+      action->setEnabled(before.enabled);
+      action->setToolTip(before.tip);
+      action->setStatusTip(before.status);
+    }
+  }
+  for(QDockWidget* dock : {m_jointsDock,m_jointCardDock,m_timelineDock})
+    if(dock && dock->widget()) dock->widget()->setEnabled(!empty);
+
+  if(m_emptyState)
+  {
+    m_emptyState->setVisible(empty);
+    m_emptyState->raise();
+    if(empty) m_emptyState->choiceButtons().last()->setFocus();
+  }
+  if(m_topBar) m_topBar->setAnimationOpen(!empty);
+  updateEditActions();
+  updateWindowTitle();
 }
 
 QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
@@ -1784,6 +1920,7 @@ void PinglyMotionWindow::updateKeyBtn()
   else
     tiles->setNoKey();
 
+  updateEditActions();
 }
 
 void PinglyMotionWindow::enableInputs(bool state)
@@ -1795,6 +1932,7 @@ void PinglyMotionWindow::enableInputs(bool state)
   // do not enable rotation if we have no part selected
   if(currentPart == NULL) state=false;
   enableAvatarRotation(state);
+  updateEditActions();
 }
 
 
@@ -2205,7 +2343,7 @@ void PinglyMotionWindow::selectAnimation(Animation* animation)
   updateInputs();
 
   // enable export to second life if current file name is not the default untitled name
-  ui->fileExportForSecondLifeAction->setEnabled(currentFile != m_untitledName);
+  if(!m_empty) ui->fileExportForSecondLifeAction->setEnabled(currentFile != m_untitledName);
 }
 
 

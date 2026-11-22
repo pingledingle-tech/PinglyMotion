@@ -1,22 +1,27 @@
 Branch: job/ux-1b-topbar
-Status: active
+Status: done
 Pull request: #371
 Files:
 - src/menuspec.h
 - src/emptystate.*
 - src/topbar.*
+- src/lucideicons.*
+- src/controlapi.cpp
 - src/CMakeLists.txt
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindow.h
 - src/pinglymotionwindow.ui
 - src/pinglymotionwindowfile.cpp
-- tests/menutexts/**
+- src/pinglymotionwindowplayback.cpp
+- tests/menutexts/tst_menutexts.cpp
 - tests/emptystate/**
-- tests/CMakeLists.txt
+- tests/tst_control.cpp
+- tests/transportbar/tst_transportbar.cpp
 - CMakeLists.txt
-- docs/TEACHING_TEXTS.md
+- CREDITS.md
+- docs/TEACHING.md
+- docs/CONTROL.md
 - docs/UX_DECISIONS.md
-- docs/ROADMAP.md
 
 ## What
 

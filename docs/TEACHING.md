@@ -91,6 +91,29 @@ The wave is a short loop with five keys, one saved pose each. Each pose change u
 | WAVE-05 | 6 Wave note | Key 5: arm down again, change uses "Slow finish" | The arm slows down as it lands.<br>It matches the first key, so the loop has no jump. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
 | WAVE-06 | 6 Wave note | After the last key: a small task | Your turn: make the arm stop more softly. | reviewed by the owner (19 Nov 2026); in `examples/wave.dingle` (pull request 162) | #53 step 6 |
 
+### Top bar, Edit menu and empty state (UX phase 1b)
+
+Built in pull request 371 (22 Nov 2026). The texts are in `src/menuspec.h` and `src/emptystate.h`; `tests/emptystate` and `tests/menutexts` check them letter for letter.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| EMPTY-01 | 4 Empty state | Title when no animation is open | No animation open | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EMPTY-02 | 4 Empty state | The one line under the title | Pick a pose to start. You can change it later. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EMPTY-03 | 4 Empty state | Line under the choice Standing | A calm standing pose. A good start for most moves. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EMPTY-04 | 4 Empty state | Line under the choice Sitting | A calm seated pose. Good for a quiet scene. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EMPTY-05 | 4 Empty state | Line under the choice Dance example | A short, simple dance. Change it to learn. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EMPTY-06 | 4 Empty state | Reason: a control needs an animation | Open an animation first. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-01 | 3 Edit menu | Undo is greyed | Undo is not built yet. Save a copy before big changes. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-02 | 3 Edit menu | Redo is greyed | Redo is not built yet. It comes with Undo. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-03 | 3 Edit menu | Paste mirrored is greyed | Paste mirrored is not built yet. Use Tools > Mirror to swap left and right. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-04 | 3 Edit menu | Set key: no joint is picked | Pick a joint first. Click it on the figure or in the list. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-05 | 3 Edit menu | Set key: the animation is playing | Stop playing first. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-06 | 3 Edit menu | Set key: the first frame is locked | The first frame is locked. Turn off Lock the first frame to set a key. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| TOPBAR-01 | 2 Tip on hover | Mouse rests on Script Lab in the top bar | Script Lab: test RLV and LSL scripts | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| TOPBAR-02 | 2 Tip on hover | Mouse rests on Setup in the top bar | Beginner or experienced, mouse and keys habits, theme, text size and hints. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| TOPBAR-03 | 2 Tip on hover | Mouse rests on the theme button in the dark theme | Switch to the light theme | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| TOPBAR-04 | 2 Tip on hover | Mouse rests on the theme button in the light theme | Switch to the dark theme | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+
 ### Places 1 to 4, 7 to 9
 
 These texts were first drafts for the places that had no text. The owner reviewed them on 19 November 2026 (see "Review order" below). Control names such as "Set key" and "Play" are placeholders: the job that builds the screen checks them against the real labels before the status changes. Tips and hints get more rows when the tips and hint jobs start.

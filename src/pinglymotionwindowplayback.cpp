@@ -311,6 +311,7 @@ void PinglyMotionWindow::setPlaystate(PlayState state)
 
   // Start only while stopped, Stop only while playing
   if(m_transport) m_transport->setPlaystate(state);
+  updateEditActions();
 }
 
 void PinglyMotionWindow::on_currentFrameSlider_valueChanged(int newValue)

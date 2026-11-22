@@ -32,7 +32,7 @@ namespace LucideIcons
   QPainterPath path(const QString& name);
 
   // an SVG path ("M3 12a9 9 0 1 0 9-9 ...") as a painter path; knows the
-  // commands Lucide uses: M L H V A Z and their lower-case forms
+  // commands Lucide uses: M L H V A C Z and their lower-case forms
   QPainterPath fromSvgPath(const QString& data);
 
   // the icon drawn in colour (Normal and Active) and in disabledColour
