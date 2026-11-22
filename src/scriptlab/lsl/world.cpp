@@ -415,4 +415,42 @@ void RegionSettings::sunDirection(double now, float out[3]) const
   }
 }
 
+// ---------------------------------------------------------------- gap list 2, step 4: fake web server and mailbox
+
+const char* const World::URL_HOST = "sandbox.invalid";   // ".invalid" never resolves (RFC 2606)
+
+QString World::makeUrl(bool secure)
+{
+  ++m_urlCounter;
+  const QString cap = Inventory::derivedKey(objectKey() + "/" + scriptName(), QString("url %1").arg(m_urlCounter));
+  return QString(secure ? "https://%1:12043/cap/%2" : "http://%1:12046/cap/%2").arg(URL_HOST, cap);
+}
+
+QString World::grantUrl(bool secure)
+{
+  if (int(m_urls.size()) >= MAX_URLS) return QString();
+  const QString url = makeUrl(secure);
+  m_urls.append(url);
+  return url;
+}
+
+bool emailMatches(const Email& email, const QString& address, const QString& subject)
+{
+  return (address.isEmpty() || email.address.compare(address, Qt::CaseInsensitive) == 0) &&
+         (subject.isEmpty() || email.subject.compare(subject, Qt::CaseInsensitive) == 0);
+}
+
+bool World::nextEmail(const QString& address, const QString& subject, Email& out, int& left)
+{
+  for (auto it = m_mail.begin(); it != m_mail.end(); ++it)
+    if (emailMatches(*it, address, subject))
+    {
+      out = *it;
+      m_mail.erase(it);
+      left = int(m_mail.size());
+      return true;
+    }
+  return false;
+}
+
 } // namespace lsl

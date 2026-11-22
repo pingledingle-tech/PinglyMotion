@@ -190,6 +190,82 @@ namespace
     return QString();
   }
 
+  // gap list 2, step 4: the fields of money (amount), http_request (url, method, body, headers) and email (address,
+  // subject, body); empty when fine
+  QString readMoneyWebMail(const QJsonObject& o, const QString& where, SandboxInput& in)
+  {
+    static const int MAX_URL_CHARS = 2048;
+    static const int MAX_HTTP_BODY_CHARS = 16384;
+    static const int MAX_EMAIL_CHARS = 4096;
+    static const int MAX_HEADERS = 32;
+    for (const char* field : {"url", "method", "body", "address", "subject"})
+      if (o.contains(field) && !o.value(field).isString()) return where + "\"" + field + "\" must be text.";
+    if (in.type == "money")
+    {
+      if (!o.contains("amount") || !wholeNumber(o.value("amount"), 1, 2147483647.0, in.amount))
+        return where + "a money input needs \"amount\": the L$ paid, a whole number from 1 to 2147483647.";
+    }
+    else if (o.contains("amount")) return where + "\"amount\" is only for money.";
+    if (in.type == "http_request")
+    {
+      if (o.contains("url"))
+      {
+        in.url = o.value("url").toString();
+        if (in.url.isEmpty() || in.url.size() > MAX_URL_CHARS)
+          return where + QString("\"url\" must be text of 1 to %1 characters: a URL a script got, with any path and query (leave it out for the object's newest URL).").arg(MAX_URL_CHARS);
+      }
+      if (o.contains("method"))
+      {
+        in.method = o.value("method").toString().toUpper();
+        if (in.method != "GET" && in.method != "POST" && in.method != "PUT" && in.method != "DELETE")
+          return where + "\"method\" must be GET, POST, PUT or DELETE (default GET).";
+      }
+      if (o.contains("body"))
+      {
+        if (in.method != "POST" && in.method != "PUT") return where + "\"body\" is only for POST and PUT requests, as in Second Life.";
+        in.body = o.value("body").toString();
+        if (in.body.size() > MAX_HTTP_BODY_CHARS) return where + QString("\"body\" must be text of at most %1 characters (the script gets the first 2048 bytes).").arg(MAX_HTTP_BODY_CHARS);
+      }
+      if (o.contains("headers"))
+      {
+        const QString message = where + QString("\"headers\" must be an object of at most %1 headers, each name (letters, digits and \"-\", 1 to 64) with a text value of at most 1024 characters.").arg(MAX_HEADERS);
+        if (!o.value("headers").isObject()) return message;
+        const QJsonObject headers = o.value("headers").toObject();
+        if (headers.size() > MAX_HEADERS) return message;
+        for (auto it = headers.begin(); it != headers.end(); ++it)
+        {
+          const QString name = it.key();
+          bool ok = !name.isEmpty() && name.size() <= 64 && it.value().isString() && it.value().toString().size() <= 1024;
+          for (const QChar c : name)
+            if (!(c.isDigit() || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-')) ok = false;
+          if (!ok) return message;
+          in.headers.insert(name.toLower(), it.value().toString());
+        }
+      }
+    }
+    else
+    {
+      for (const char* field : {"url", "method", "headers"})
+        if (o.contains(field)) return where + "\"" + field + "\" is only for http_request.";
+    }
+    if (in.type == "email")
+    {
+      in.address = o.value("address").toString();
+      in.subject = o.value("subject").toString();
+      in.body = o.value("body").toString();
+      if (in.address.size() > 255) return where + "\"address\" must be text of at most 255 characters (the sender).";
+      if (in.subject.size() > 255) return where + "\"subject\" must be text of at most 255 characters.";
+      if (in.body.size() > MAX_EMAIL_CHARS) return where + QString("\"body\" (the message) must be text of at most %1 characters.").arg(MAX_EMAIL_CHARS);
+    }
+    else
+    {
+      for (const char* field : {"address", "subject"})
+        if (o.contains(field)) return where + "\"" + field + "\" is only for email.";
+      if (o.contains("body") && in.type != "http_request") return where + "\"body\" is only for http_request and email.";
+    }
+    return QString();
+  }
+
   // one input of lsl_run or the event of lsl_event; empty when fine
   QString readInput(const QJsonObject& o, const QStringList& known, const QString& where, SandboxInput& in)
   {
@@ -204,8 +280,9 @@ namespace
     }
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
-    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control"};
-    if (!types.contains(in.type)) return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\" or \"control\".";
+    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email"};
+    if (!types.contains(in.type))
+      return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\" or \"email\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -228,10 +305,13 @@ namespace
     else if (o.contains("button")) return where + "\"button\" is only for a dialog answer.";
     if (o.contains("link"))
     {
-      if (in.type != "touch" && in.type != "sit") return where + "\"link\" is only for touch (the prim touched) and sit (the prim sat on).";
+      if (in.type != "touch" && in.type != "sit" && in.type != "money")
+        return where + "\"link\" is only for touch (the prim touched), sit (the prim sat on) and money (the prim paid).";
       if (!wholeNumber(o.value("link"), 1, Sandbox::MAX_PRIMS, in.link))
         return where + QString("\"link\" must be a whole number from 1 to %1 (the prim touched; 1 is the root).").arg(Sandbox::MAX_PRIMS);
     }
+    const QString moneyWebMail = readMoneyWebMail(o, where, in);
+    if (!moneyWebMail.isEmpty()) return moneyWebMail;
     if (o.contains("hold"))
     {
       if (in.type != "touch") return where + "\"hold\" is only for touch (the seconds the touch is held).";
@@ -716,7 +796,8 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!request.value("inputs").isArray()) return fail("\"inputs\" must be a list of objects.");
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
-    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges"};
+    static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
+                                       "amount", "url", "method", "body", "headers", "address", "subject"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -823,7 +904,8 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
-  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges", "seconds"};
+  static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
+                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -833,7 +915,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
     message[0] = message[0].toUpper();
     return fail(message);
   }
-  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand or control.");
+  if (!request.contains("type")) return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request or email.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {

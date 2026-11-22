@@ -4,3 +4,12 @@
 
 #define PINGLYMOTION_BUILD_SOURCE "@PINGLYMOTION_BUILD_SOURCE@"
 #define PINGLYMOTION_COMMIT "@PINGLYMOTION_COMMIT@"
+
+// Only constants.cpp includes this header, so a new build number or time rebuilds that one file.
+// A -D on the command line still wins.
+#ifndef BUILD_TIMESTAMP_Z
+#define BUILD_TIMESTAMP_Z "@BUILD_TIMESTAMP_Z@"
+#endif
+#ifndef BUILD_NUMBER
+#define BUILD_NUMBER "@BUILD_NUMBER@"
+#endif

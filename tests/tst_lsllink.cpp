@@ -424,7 +424,7 @@ void LslLinkTest::refusesBadScripts()
   QCOMPARE(run({QJsonObject{{"name", "a"}, {"source", ok}}}, 1, rlv, nullptr, QJsonArray{QJsonObject{{"type", "touch"}, {"link", 2}}})["error"].toString(),
            QString("Input 1: the object \"a\" has 1 prim(s); there is no link 2."));
   QCOMPARE(run({QJsonObject{{"name", "a"}, {"source", ok}}}, 1, rlv, nullptr, QJsonArray{QJsonObject{{"type", "chat"}, {"link", 1}}})["error"].toString(),
-           QString("Input 1: \"link\" is only for touch (the prim touched) and sit (the prim sat on)."));
+           QString("Input 1: \"link\" is only for touch (the prim touched), sit (the prim sat on) and money (the prim paid)."));
 }
 
 void LslLinkTest::touchGoesToThePrim()

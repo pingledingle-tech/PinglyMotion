@@ -273,7 +273,7 @@ void LslSittingTest::inputIsChecked()
   QCOMPARE(errors(QJsonArray{stand(1, GUEST)}), QStringList({"The avatar is not sitting on the object."}));
   QCOMPARE(errors(QJsonArray{QJsonObject{{"type", "sit"}, {"link", 3}}}), QStringList({"Input 1: the object \"Object\" has 1 prim(s); there is no link 3."}));
   QCOMPARE(errors(QJsonArray{QJsonObject{{"type", "chat"}, {"link", 1}}}),
-           QStringList({"Input 1: \"link\" is only for touch (the prim touched) and sit (the prim sat on)."}));
+           QStringList({"Input 1: \"link\" is only for touch (the prim touched), sit (the prim sat on) and money (the prim paid)."}));
   // the owner can sit too (no id: the owner), and cannot sit twice
   QCOMPARE(errors(QJsonArray{QJsonObject{{"type", "sit"}}, QJsonObject{{"type", "sit"}}}), QStringList({"The avatar is already sitting."}));
 }

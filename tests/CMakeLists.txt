@@ -11,17 +11,10 @@ TARGET_COMPILE_DEFINITIONS (pinglymotion_tests PRIVATE
   PINGLYMOTION_TOOLS="${CMAKE_SOURCE_DIR}/tools")
 TARGET_LINK_LIBRARIES (pinglymotion_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 
-ADD_EXECUTABLE (pinglymotion_control_tests tst_control.cpp
-                ${CMAKE_SOURCE_DIR}/src/controlapi.cpp ${CMAKE_SOURCE_DIR}/src/controlserver.cpp
-                ${CMAKE_SOURCE_DIR}/src/controlindicator.cpp ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
-                ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
-                ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
-                ${CMAKE_SOURCE_DIR}/src/animexport.cpp ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
-                ${CMAKE_SOURCE_DIR}/src/animimport.cpp
-                ${CMAKE_SOURCE_DIR}/src/screenshotsheet.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+ADD_EXECUTABLE (pinglymotion_control_tests tst_control.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_control_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_DEFINITIONS (pinglymotion_control_tests PRIVATE PINGLYMOTION_TOOLS="${CMAKE_SOURCE_DIR}/tools")
-TARGET_LINK_LIBRARIES (pinglymotion_control_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_control_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 IF (WIN32)
   TARGET_LINK_LIBRARIES (pinglymotion_control_tests ws2_32)
 ENDIF (WIN32)
@@ -32,10 +25,9 @@ SET_TESTS_PROPERTIES (control PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 ADD_TEST (NAME bento WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_tests)
 SET_TESTS_PROPERTIES (bento PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
-ADD_EXECUTABLE (pinglymotion_auroralink_tests tst_auroralink.cpp  ${CMAKE_SOURCE_DIR}/src/auroralink.cpp
-                ${CMAKE_SOURCE_DIR}/src/animexport.cpp)
+ADD_EXECUTABLE (pinglymotion_auroralink_tests tst_auroralink.cpp  ${CMAKE_SOURCE_DIR}/src/auroralink.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_auroralink_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_auroralink_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_auroralink_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME auroralink WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_auroralink_tests)
 SET_TESTS_PROPERTIES (auroralink PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -67,16 +59,16 @@ ADD_TEST (NAME jointtabs WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingl
 SET_TESTS_PROPERTIES (jointtabs PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # joint names, mirror partners and hand presets from Firestorm (#88)
-ADD_EXECUTABLE (pinglymotion_jointinfo_tests tst_jointinfo.cpp  ${CMAKE_SOURCE_DIR}/src/jointinfo.cpp)
+ADD_EXECUTABLE (pinglymotion_jointinfo_tests tst_jointinfo.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_jointinfo_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_jointinfo_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_jointinfo_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME jointinfo WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_jointinfo_tests)
 SET_TESTS_PROPERTIES (jointinfo PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # rows of the joint list: friendly names, headings, search (#14, step 2)
-ADD_EXECUTABLE (pinglymotion_jointlist_tests tst_jointlist.cpp  ${CMAKE_SOURCE_DIR}/src/jointinfo.cpp ${CMAKE_SOURCE_DIR}/src/jointlist.cpp)
+ADD_EXECUTABLE (pinglymotion_jointlist_tests tst_jointlist.cpp ${CMAKE_SOURCE_DIR}/src/jointlist.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_jointlist_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_jointlist_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_jointlist_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME jointlist WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_jointlist_tests)
 SET_TESTS_PROPERTIES (jointlist PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -95,9 +87,9 @@ ADD_TEST (NAME roth2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymot
 SET_TESTS_PROPERTIES (roth2 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # camera: mouse buttons and keys, turning around the pivot (#88)
-ADD_EXECUTABLE (pinglymotion_camera_tests tst_camera.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+ADD_EXECUTABLE (pinglymotion_camera_tests tst_camera.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_camera_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_camera_tests ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_camera_tests pinglymotion_shared ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME camera COMMAND pinglymotion_camera_tests)
 SET_TESTS_PROPERTIES (camera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -126,9 +118,9 @@ ADD_TEST (NAME playback WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pingly
 SET_TESTS_PROPERTIES (playback PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the .obj reader for the prop meshes (#204)
-ADD_EXECUTABLE (pinglymotion_mesh_tests tst_mesh.cpp ${CMAKE_SOURCE_DIR}/src/mesh.cpp)
+ADD_EXECUTABLE (pinglymotion_mesh_tests tst_mesh.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_mesh_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_mesh_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_mesh_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME mesh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_mesh_tests)
 SET_TESTS_PROPERTIES (mesh PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -136,24 +128,24 @@ SET_TESTS_PROPERTIES (mesh PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 ADD_EXECUTABLE (pinglymotion_scene_tests tst_scene.cpp
                 ${CMAKE_SOURCE_DIR}/src/scene.cpp ${CMAKE_SOURCE_DIR}/src/animationmanager.cpp
                 ${CMAKE_SOURCE_DIR}/src/prop.cpp ${CMAKE_SOURCE_DIR}/src/propmanager.cpp
-                ${CMAKE_SOURCE_DIR}/src/meshmodel.cpp ${CMAKE_SOURCE_DIR}/src/mesh.cpp
-                ${CMAKE_SOURCE_DIR}/src/floor.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+                ${CMAKE_SOURCE_DIR}/src/meshmodel.cpp
+                ${CMAKE_SOURCE_DIR}/src/floor.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_scene_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_scene_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_scene_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL Qt6::Test)
 ADD_TEST (NAME scene WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scene_tests)
 SET_TESTS_PROPERTIES (scene PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the timeline: clicks, drags, wheel, Delete and Insert (#202)
-ADD_EXECUTABLE (pinglymotion_timeline_tests tst_timeline.cpp ${CMAKE_SOURCE_DIR}/src/theme.cpp  ${CMAKE_SOURCE_DIR}/src/timeline.cpp)
+ADD_EXECUTABLE (pinglymotion_timeline_tests tst_timeline.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_timeline_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_timeline_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_timeline_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME timeline WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timeline_tests)
 SET_TESTS_PROPERTIES (timeline PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # the timeline panel scrolls to the row of the selected joint
-ADD_EXECUTABLE (pinglymotion_timelineview_tests tst_timelineview.cpp ${CMAKE_SOURCE_DIR}/src/theme.cpp ${CMAKE_SOURCE_DIR}/src/timelineview.cpp ${CMAKE_SOURCE_DIR}/src/timeline.cpp ${CMAKE_SOURCE_DIR}/src/easingtiles.cpp ${CMAKE_SOURCE_DIR}/src/easing.cpp)
+ADD_EXECUTABLE (pinglymotion_timelineview_tests tst_timelineview.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_timelineview_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_timelineview_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_timelineview_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME timelineview WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timelineview_tests)
 SET_TESTS_PROPERTIES (timelineview PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -209,19 +201,17 @@ TARGET_LINK_LIBRARIES (pinglymotion_labeffects_tests pinglymotion_core Qt6::Core
 ADD_TEST (NAME labeffects WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_labeffects_tests)
 
 # ... and the panel's "Show effects in 3D view" box with a watched folder
-ADD_EXECUTABLE (pinglymotion_scriptlabeffects_tests tst_scriptlabeffects.cpp
-                ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/objectsview.cpp
-                ${CMAKE_SOURCE_DIR}/src/paneltitlebar.cpp)
+ADD_EXECUTABLE (pinglymotion_scriptlabeffects_tests tst_scriptlabeffects.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabeffects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabeffects_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
-TARGET_LINK_LIBRARIES (pinglymotion_scriptlabeffects_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabeffects_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME scriptlabeffects WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scriptlabeffects_tests)
 SET_TESTS_PROPERTIES (scriptlabeffects PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # Script Lab job 7b: the RLV camera limits the 3D view keeps to, with a real camera
-ADD_EXECUTABLE (pinglymotion_cameraoverride_tests tst_cameraoverride.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+ADD_EXECUTABLE (pinglymotion_cameraoverride_tests tst_cameraoverride.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_cameraoverride_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_cameraoverride_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_cameraoverride_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME cameraoverride COMMAND pinglymotion_cameraoverride_tests)
 SET_TESTS_PROPERTIES (cameraoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -240,29 +230,21 @@ ADD_TEST (NAME viewmodesoverride COMMAND pinglymotion_viewmodesoverride_tests)
 SET_TESTS_PROPERTIES (viewmodesoverride PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # ... and the panel's "Show camera limits in 3D view" box
-ADD_EXECUTABLE (pinglymotion_scriptlabcamera_tests tst_scriptlabcamera.cpp
-                ${CMAKE_SOURCE_DIR}/src/scriptlab/scriptlabpanel.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/objectsview.cpp
-                ${CMAKE_SOURCE_DIR}/src/paneltitlebar.cpp)
+ADD_EXECUTABLE (pinglymotion_scriptlabcamera_tests tst_scriptlabcamera.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabcamera_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES (pinglymotion_scriptlabcamera_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabcamera_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME scriptlabcamera COMMAND pinglymotion_scriptlabcamera_tests)
 SET_TESTS_PROPERTIES (scriptlabcamera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # Script Lab as a whole: the scenarios in tests/data/scriptlab/scenarios.json (every example script,
 # each class of RLV command, several objects, inventory, sitting, controls, sensors, HTTP, errors)
 # through ControlApi; tests/smoke_scriptlab.py sends the same scenarios to the real program
-ADD_EXECUTABLE (pinglymotion_scriptlabwhole_tests tst_scriptlabwhole.cpp
-                ${CMAKE_SOURCE_DIR}/src/controlapi.cpp ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
-                ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
-                ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
-                ${CMAKE_SOURCE_DIR}/src/animexport.cpp ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
-                ${CMAKE_SOURCE_DIR}/src/animimport.cpp
-                ${CMAKE_SOURCE_DIR}/src/screenshotsheet.cpp ${CMAKE_SOURCE_DIR}/src/camera.cpp)
+ADD_EXECUTABLE (pinglymotion_scriptlabwhole_tests tst_scriptlabwhole.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabwhole_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabwhole_tests PRIVATE
   PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples"
   PINGLYMOTION_SCENARIOS="${CMAKE_CURRENT_SOURCE_DIR}/data/scriptlab/scenarios.json")
-TARGET_LINK_LIBRARIES (pinglymotion_scriptlabwhole_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabwhole_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME scriptlabwhole WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scriptlabwhole_tests)
 SET_TESTS_PROPERTIES (scriptlabwhole PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -285,3 +267,10 @@ ADD_EXECUTABLE (pinglymotion_lslregion_tests tst_lslregion.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslregion_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_lslregion_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslregion COMMAND pinglymotion_lslregion_tests)
+
+# Script Lab: money, web server and mail stubs (gap list 2, step 4): llGiveMoney, llEmail, llGetNextEmail, the URLs of
+# the fake web server, llHTTPResponse and llGetHTTPHeader, and the money, http_request and email inputs
+ADD_EXECUTABLE (pinglymotion_lslmoney_tests tst_lslmoney.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslmoney_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslmoney_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslmoney COMMAND pinglymotion_lslmoney_tests)
