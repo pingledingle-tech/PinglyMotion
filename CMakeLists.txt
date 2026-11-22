@@ -19,7 +19,7 @@ IF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
 ENDIF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
 
 # The version number. Also change it in src/pinglymotion.rc and bin/NEWS.
-PROJECT (pinglymotion VERSION 0.3.0)
+PROJECT (pinglymotion VERSION 0.1.0)
 
 # Timestamp when program was built; pass the current timestamp to the compiler
 STRING (TIMESTAMP BUILD_TIMESTAMP_Z "%Y-%m-%d %H:%M:%S UTC" UTC)
