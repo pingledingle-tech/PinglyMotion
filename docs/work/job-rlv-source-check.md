@@ -1,6 +1,6 @@
 Branch: job/rlv-source-check
 Status: active
-Pull request: pending
+Pull request: #360
 Files:
 - src/scriptlab/rlvbehaviours.*
 - tools/rlv_sources.py
