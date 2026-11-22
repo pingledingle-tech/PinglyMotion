@@ -1,5 +1,5 @@
 Branch: feat/script-lab-9b-4-inventory
-Status: active
+Status: done
 Pull request: #334
 Files:
 - src/scriptlab/lsl/builtins.cpp
@@ -11,6 +11,9 @@ Files:
 - src/controlapi.cpp
 - tools/mcp/commands.json
 - tests/tst_lslinventory.cpp
+- tests/tst_lslworld.cpp
+- tests/tst_lslpure.cpp
+- fuzz/fuzz_lsl.cpp
 - tests/CMakeLists.txt
 - fuzz/corpus/lsl/inventory.lsl
 - docs/SCRIPT_LAB.md

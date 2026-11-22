@@ -4,7 +4,10 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <algorithm>
 #include <cmath>
+
+#include <QCryptographicHash>
 
 #include "world.h"
 
@@ -153,6 +156,95 @@ QString LinksetData::resultName(int result)
   static const char* const names[] = {"LINKSETDATA_OK", "LINKSETDATA_EMEMORY", "LINKSETDATA_ENOKEY",
                                       "LINKSETDATA_EPROTECTED", "LINKSETDATA_NOTFOUND", "LINKSETDATA_NOUPDATE"};
   return result >= 0 && result <= 5 ? QString(names[result]) : QString::number(result);
+}
+
+// ---------------------------------------------------------------- inventory (step 9b-4)
+
+namespace
+{
+  struct TypeName { const char* name; int number; };
+  const TypeName TYPE_NAMES[] = {{"texture", 0}, {"sound", 1}, {"landmark", 3}, {"clothing", 5}, {"object", 6}, {"notecard", 7},
+                                 {"script", 10}, {"bodypart", 13}, {"animation", 20}, {"gesture", 21}, {"setting", 56}, {"material", 57}};
+
+  // sorted by name: upper and lower case alike, then the plain text order
+  bool nameLess(const InventoryItem* a, const InventoryItem* b)
+  {
+    const int c = QString::compare(a->name, b->name, Qt::CaseInsensitive);
+    return c != 0 ? c < 0 : a->name < b->name;
+  }
+}
+
+int Inventory::typeFromName(const QString& name)
+{
+  QString n = name.trimmed().toLower();
+  if (n.startsWith("inventory_")) n = n.mid(10);
+  for (const TypeName& t : TYPE_NAMES)
+    if (n == t.name) return t.number;
+  return -2;
+}
+
+bool Inventory::knownType(int type)
+{
+  for (const TypeName& t : TYPE_NAMES)
+    if (t.number == type) return true;
+  return false;
+}
+
+bool Inventory::add(InventoryItem item, const QString& seed)
+{
+  if (item.name.isEmpty() || int(m_items.size()) >= MAX_ITEMS || find(item.name)) return false;
+  if (item.key.isEmpty())
+  {
+    // a fixed key from the object's key and the item's name, so runs are repeatable
+    const QByteArray h = QCryptographicHash::hash((seed + "/" + item.name).toUtf8(), QCryptographicHash::Md5).toHex();
+    item.key = QString("%1-%2-%3-%4-%5").arg(QString::fromLatin1(h.mid(0, 8)), QString::fromLatin1(h.mid(8, 4)),
+                                                QString::fromLatin1(h.mid(12, 4)), QString::fromLatin1(h.mid(16, 4)), QString::fromLatin1(h.mid(20, 12)));
+  }
+  m_items.push_back(std::move(item));
+  return true;
+}
+
+bool Inventory::remove(const QString& name)
+{
+  for (size_t i = 0; i < m_items.size(); ++i)
+    if (m_items[i].name == name)
+    {
+      m_items.erase(m_items.begin() + std::ptrdiff_t(i));
+      return true;
+    }
+  return false;
+}
+
+const InventoryItem* Inventory::find(const QString& name) const
+{
+  for (const InventoryItem& i : m_items)
+    if (i.name == name) return &i;
+  return nullptr;
+}
+
+int Inventory::count(int type) const
+{
+  if (type == -1) return int(m_items.size());
+  int n = 0;
+  for (const InventoryItem& i : m_items)
+    if (i.type == type) ++n;
+  return n;
+}
+
+const InventoryItem* Inventory::at(int type, int index) const
+{
+  if (index < 0) return nullptr;
+  std::vector<const InventoryItem*> list;
+  for (const InventoryItem& i : m_items)
+    if (type == -1 || i.type == type) list.push_back(&i);
+  if (index >= int(list.size())) return nullptr;
+  std::stable_sort(list.begin(), list.end(), nameLess);
+  return list[size_t(index)];
+}
+
+QString World::giveInventory(double, const QString& to, const InventoryItem&)
+{
+  return to == ownerKey() ? "given" : "unknown_target";
 }
 
 QString World::nameOf(const QString& key) const

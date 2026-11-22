@@ -66,6 +66,7 @@ struct ObjectSpec
   QString description;            // step 9b-1: what llGetObjectDesc answers at the start (at most 127 characters)
   float scale[3] = {0.5f, 0.5f, 0.5f};   // llGetScale, metres
   int startParameter = 0;         // llGetStartParameter
+  std::vector<InventoryItem> inventory;   // step 9b-4: what the object holds besides its scripts (the scripts are in it too)
 };
 
 // step 9a: one script of an object
@@ -161,6 +162,7 @@ class Sandbox
       QJsonObject dialog;          // the object's newest dialog
       LinksetData data;            // step 9a: belongs to the object, not to a script
       PrimStore prims;             // step 9b-3: the simulated prims and the status flags of the object
+      Inventory inventory;         // step 9b-4: the items and the object's scripts
       QString name;                // step 9b-1: the name now (llSetObjectName); spec.name stays the object's handle in logs and inputs
       QString description;         // the description now (llSetObjectDesc)
       bool tagScripts = false;     // given with "scripts": log entries name the script
@@ -186,6 +188,9 @@ class Sandbox
     // queues link_message in every script the link reaches; answers how many
     int messageLinked(int from, double time, int link, int num, const QString& str, const QString& id);
     void linksetDataChanged(int from, double time, int action, const QString& name, const QString& value);
+    // step 9b-4: the object's inventory changed (changed with CHANGED_INVENTORY to its scripts); llGiveInventory to a key
+    void inventoryChanged(int from, double time);
+    QString giveInventory(int from, double time, const QString& to, const InventoryItem& item);
     int linkNumber(int slot) const;
     void where(int index, float out[3]) const;
     QString nameOf(const QString& key) const;
