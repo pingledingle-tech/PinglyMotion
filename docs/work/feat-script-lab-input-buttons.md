@@ -8,6 +8,7 @@ Files:
 - docs/ROADMAP.md
 - docs/work/feat-script-lab-input-buttons.md
 - tests/scriptlabpanel/CMakeLists.txt
+- tests/tst_scriptlabeffects.cpp
 
 ## What
 

@@ -15,6 +15,7 @@
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QScrollArea>
 #include <QDir>
 #include <QFile>
 #include <QLabel>
@@ -85,7 +86,10 @@ void TestScriptLabEffects::boxAndPreview()
   QVERIFY(!preview.enabled());
   QCOMPARE(box->toolTip(), QString("Play the animation the script started on a preview figure and show worn objects and locks. "
                                    "Your animation is not changed; untick to see it again."));
-  QCOMPARE(panel.tabs()->indexOf(box->parentWidget()), 1);
+  // the Live page sits in a scroll area (so its height does not raise the panel's), which is tab 1
+  QScrollArea* livePage = qobject_cast<QScrollArea*>(panel.tabs()->widget(1));
+  QVERIFY(livePage);
+  QCOMPARE(livePage->widget(), box->parentWidget());
   QVERIFY(!panel.effectsStatus()->isVisibleTo(&panel));
 
   // a run while the box is off changes nothing in the preview
