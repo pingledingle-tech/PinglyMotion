@@ -1,5 +1,5 @@
 Branch: job/claudemd-rules
-Status: active
+Status: done
 Pull request: #369
 Files:
 - CLAUDE.md
