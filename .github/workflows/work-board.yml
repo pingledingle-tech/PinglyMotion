@@ -31,8 +31,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/work.py check --mine
 
-  # Warning only: compares the jobs list (issue 74) with the open pull requests
-  # and the job files. Read-only, never fails, never writes to GitHub.
+  # Warning only: checks that the queue in the jobs list (issue 74) names no
+  # merged or closed pull request. Read-only, never fails, never writes to GitHub.
   list-drift:
     runs-on: ubuntu-latest
     timeout-minutes: 5

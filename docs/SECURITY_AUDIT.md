@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | Date | 14 November 2026 |
-| Repository | the old repository of the project (now PinglyMotion, formerly called Pingmator) |
+| Repository | the old repository of the project (now PinglyMotion) |
 | Revisions | `main` @ `381bed1`, `aurora-link` @ `cc97e86` (2 commits ahead of / 2 behind `main`) |
-| Also reviewed | Receiving side of the live link: `pingledingle-tech/Aurora-Viewer-Fork`, branch `feat/pingmator-link` @ `58c4351` (`crates/aurora-viewer/src/pingmator_link/`) |
+| Also reviewed | Receiving side of the live link: `pingledingle-tech/Aurora-Viewer-Fork`, the fork's former live-link branch @ `58c4351` (`crates/aurora-viewer/src/<live-link module>/`) |
 | Scope | BVH/AVM/LIM/LLM/PRP parsers, HTTP control server, MCP server, Aurora live link, GitHub Actions, dependencies |
 | Code changed | None. No branches merged, nothing pushed, no releases. |
 
@@ -34,8 +34,8 @@ Every finding below was checked again against the code and workflows on `main` @
 | PM-11 | fixed | #31 (issue #14). Saving uses `QSaveFile`, `commit()` and stream status are checked, the error is passed on. Test `saveFailureIsReported`. (Not re-tested live: the audit sandbox runs as root, so a read-only folder does not fail.) |
 | PM-12 | fixed | #32 (issue #15). `control.json` still stays after a crash (checked), but the MCP server now sends the key only after the program on the port answers a nonce with HMAC-SHA256 of the key (`/api/hello`); the file is rewritten at the next start. |
 | PM-13 | fixed | #25, #33, #37 (issue #16). `ikOn[]` and `BVHNode` channel fields initialised, `Figure:` and weights range-checked before casting. No UBSan report in any test suite. |
-| AL-01 | not applicable (not verified) | #78 (issue #12). PinglyMotion no longer uses the fork's `pingmator_link` (port 17656); it uses Aurora's LiveMesh (port 17655) with a key file and HMAC challenge. Whether `pingmator_link` was removed from the fork, and how LiveMesh treats non-JSON or HTTP lines, could not be checked (no access to the fork in this run). |
-| AL-02 | not applicable (not verified) | #78 (issue #13). Same reason as AL-01: the finding is in the fork's `pingmator_link`. LiveMesh uses length-prefixed messages with size limits according to `docs/archive/LIVE_LINK_RESEARCH.md`, but Aurora's code was not read. |
+| AL-01 | not applicable (not verified) | #78 (issue #12). PinglyMotion no longer uses the fork's former live-link module (port 17656); it uses Aurora's LiveMesh (port 17655) with a key file and HMAC challenge. Whether that module was removed from the fork, and how LiveMesh treats non-JSON or HTTP lines, could not be checked (no access to the fork in this run). |
+| AL-02 | not applicable (not verified) | #78 (issue #13). Same reason as AL-01: the finding is in the fork's former live-link module. LiveMesh uses length-prefixed messages with size limits according to `docs/archive/LIVE_LINK_RESEARCH.md`, but Aurora's code was not read. |
 | AL-03 | partly on 18 Nov; fixed on 19 Nov 2026 by pull request 46 (issue 23 closed, the project owner tested it): the program now checks that the server is Aurora with Aurora's own LiveMesh key | Text of 18 Nov: #78 (issue #11). PinglyMotion now waits for Aurora's `hello` and proves itself with HMAC before sending a pose. It still does not check that the server is Aurora: any program on port 17655 can answer `{"ok":true}` and get the poses → [#23](https://github.com/pingledingle-tech/PinglyMotion/issues/23). |
 | SC-01 | fixed | #38 (issue #17). Every action pinned to a full commit SHA; release split into build jobs (`contents: read`) and a publish job (`contents: write`) that only downloads artifacts. Dependabot updates actions. |
 | SC-02 | fixed | #58 (issue #18). Windows builds and releases use Qt 6.12.0 (`QT_VERSION` in `release.yml`). |
@@ -319,8 +319,8 @@ Positive: Aurora's link is opt-in and off at every start, binds only to `127.0.0
 
 ### AL-01 – Aurora accepts poses from any web page and any local process — **Medium**
 
-- **Repository:** Aurora-Viewer-Fork `feat/pingmator-link`
-- **Files:** `crates/aurora-viewer/src/pingmator_link/mod.rs:143-159` (`parse`), `:173-210` (`serve`)
+- **Repository:** Aurora-Viewer-Fork, the fork's former live-link branch
+- **Files:** `crates/aurora-viewer/src/<live-link module>/mod.rs:143-159` (`parse`), `:173-210` (`serve`)
 - **Explanation:** No token and no required handshake: a `pose` line is accepted as the first message. Lines that are not JSON only produce an `error` reply; the connection stays open. A browser `fetch('http://127.0.0.1:17656/', {method:'POST', mode:'no-cors', body:'\n{"type":"pose","bvh":"…"}\n'})` sends HTTP header lines (rejected one by one) followed by the body line, which is accepted.
 - **Evidence:** On an isolated copy of `serve()`/`parse()` (verbatim; only `decode()` replaced by a print), the exact bytes a browser sends for that request, including `Origin: https://evil.example`:
   ```
@@ -332,7 +332,7 @@ Positive: Aurora's link is opt-in and off at every start, binds only to `127.0.0
 
 ### AL-02 – Aurora `MAX_LINE` is not enforced while data keeps arriving — **Medium**
 
-- **Files:** `crates/aurora-viewer/src/pingmator_link/mod.rs:184-207`
+- **Files:** `crates/aurora-viewer/src/<live-link module>/mod.rs:184-207`
 - **Explanation:** `reader.read_until(b'\n', &mut line)` only returns at a newline, EOF, or an error (read timeout of 200 ms). The `line.len() > MAX_LINE` check runs after it returns. A sender that streams without a newline and without a 200 ms pause makes `line` grow without limit.
 - **Evidence:** Isolated copy, client streaming 1 MB chunks with no newline:
   ```

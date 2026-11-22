@@ -1,6 +1,6 @@
 # PinglyMotion
 
-> PinglyMotion, formerly called Pingmator. Issue and pull request numbers in older texts belong to the old repository; see [docs/MIGRATION.md](docs/MIGRATION.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+> Issue and pull request numbers in older texts belong to the old repository of the project; see [docs/MIGRATION.md](docs/MIGRATION.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
 **Create, pose and refine animations for Second Life.**
 

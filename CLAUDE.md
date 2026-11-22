@@ -1,17 +1,26 @@
 # Rules for AI sessions working on PinglyMotion
 
-Several Claude sessions may work on this repository (`pingledingle-tech/PinglyMotion`, public; formerly called Pingmator) at the same time. These rules keep them from breaking each other's work. This file is the one place for process rules (jobs, pull requests, testing, merging, privacy); other documents point here. Commands and tricks are in `docs/DEV.md`, the job file format in `docs/work/README.md`, and which document wins in `docs/README.md`.
+Several Claude sessions may work on this repository (`pingledingle-tech/PinglyMotion`, public) at the same time. These rules keep them from breaking each other's work. This file is the one place for process rules (jobs, pull requests, testing, merging, privacy); other documents point here. Commands and tricks are in `docs/DEV.md`, the job file format in `docs/work/README.md`, and which document wins in `docs/README.md`.
 
-GitHub is the truth, not a chat: what is running is the open pull requests and their latest comments, the jobs list (issue 74) and the owner test list (issue 47).
+GitHub is the truth, not a chat: what is running is the open pull requests and their latest comments, what is done is the report comment on each merged pull request, what comes next is the queue in the jobs list (issue 74), and what the owner must test is the owner test list (issue 47). Where each kind of note goes: "Between chats" below.
 
 ## Before you start
 
-1. **Only one chat starts jobs.** The project owner works alone with several chats at the same time, and only the one he calls the job chat starts jobs: it creates branches, job files, pull requests and scheduled tasks. Every other chat only answers, discusses and reads. If the owner asks such a chat to start a job, it says which chat is the job chat, or asks the owner once. A job chat's helpers (subagents and background jobs) work inside that one job and never start further jobs of their own. A chat that is not the job chat and makes a plan for a job writes it as a private project note `claude/PLAN_<topic>.md`, never on GitHub; the job chat looks for these notes when it starts and when it gives status, and when the owner says start it moves the plan into the jobs list (issue 74) or a job file and marks the note as started.
-2. **A plan is not a start.** A job starts only when the project owner says "start" or names the job. Background jobs never ask the owner questions; if blocked, they stop and report (see "When you are done", step 7).
+1. **Only one chat starts jobs.** The project owner works alone with several chats at the same time, and only the one he calls the job chat starts jobs: it creates branches, job files, pull requests and scheduled tasks. Every other chat only answers, discusses and reads. If the owner asks such a chat to start a job, it says which chat is the job chat, or asks the owner once. A job chat's helpers (subagents and background jobs) work inside that one job and never start further jobs of their own. A chat that is not the job chat and makes a plan for a job writes it as a private project note `claude/PLAN_<topic>.md`, never on GitHub; the job chat looks for these notes when it starts and when it gives status, and when the owner says start it moves the plan into the jobs list (issue 74) or a job file and marks the note as started. A chat that only explores (not a job) writes its finding as a private project note `claude/FUNN_<topic>.md`, never on GitHub; it becomes public only when a job actually uses it.
+2. **A plan is not a start.** A job starts only when the project owner says "start", names the job, or has put it in the approved queue ("The job queue" below). Background jobs never ask the owner questions; if blocked, they stop and report (see "When you are done", step 7).
 3. **Your own clone.** Every job works in its own clone (for example in `/tmp`). One session runs at most two jobs at a time, because the git proxy allows only two git operations at once. After cloning, run `tools/setup_clone.sh` (commit author and a pre-push privacy check). Do not start long builds when a small test target or the pull request checks are enough (`docs/DEV.md`).
 4. **Read first.** Pull the newest `main`. Read `docs/DESIGN_CHARTER.md`: it is the top authority for how the program looks and behaves, and wins over every older UX document and mockup; a job with a visible change copies colours, shapes, icons and sizes from `docs/DESIGN_SYSTEM.md` (`docs/design_tokens.json`) and never invents its own. Then read what is running: `python3 tools/work.py list` (job files in your checkout and on open pull requests; needs `gh`), the open pull requests with their latest comments (`gh api repos/pingledingle-tech/PinglyMotion/pulls?state=open`) and the jobs list (issue 74).
 5. **No double jobs.** If another active job or draft pull request already covers the same issue or files, do not start. Comment what you found on that pull request, report it to the user, and wait. (Two chats once started the same job this way, the easing tile row.)
-6. **Job file and draft pull request first, within minutes.** Create your branch and the job file `docs/work/<branch with "/" replaced by "-">.md` (format and template: `docs/work/README.md`). In the same first commit, run `python3 tools/work.py archive`: it moves done job files whose pull request is merged to `docs/work/archive/`. Push, and open the pull request right away as a **draft** with `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls --input <file.json>` (`"draft": true`), then put its number in `Pull request:`. A draft runs only the quick checks; the builds, tests and CodeQL start when it is marked ready.
+6. **Job file and draft pull request first, within minutes.** Create your branch and the job file `docs/work/<branch with "/" replaced by "-">.md` (format and template: `docs/work/README.md`). In the same first commit, run `python3 tools/work.py archive`: it moves done job files whose pull request is merged to `docs/work/archive/`. Push, and open the pull request right away as a **draft** with `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls --input <file.json>` (`"draft": true`), then put its number in `Pull request:`. Take the job out of the queue in the jobs list (issue 74) as soon as its pull request is open: from then on the open pull request shows that it runs. A draft runs only the quick checks; the builds, tests and CodeQL start when it is marked ready.
+
+## The job queue
+
+- The project owner approves a numbered queue once; the job chat records it in the jobs list (issue 74) with his exact words and the time (Oslo time).
+- When one of the two job slots is free, the job chat starts the next job in the queue by itself and says so in one line.
+- A new item (from a `claude/PLAN_` note, another chat, or something forgotten) is proposed in one line with a place in the queue; the owner answers yes or no.
+- The owner can say "stopp køen" (stop the queue) or "fortsett køen" (resume it) at any time, in plain words.
+- Honest limit: a chat acts only when the owner writes in it or a background job reports back to it. So the queue moves at those moments (a job finishing, the owner saying "status"), not on its own while the job chat is closed.
+- Visible jobs still wait for the owner's test before they merge; the queue keeps moving meanwhile. Anything not in the approved queue still needs a start ("A plan is not a start").
 
 ## While you work
 
@@ -25,7 +34,7 @@ GitHub is the truth, not a chat: what is running is the open pull requests and t
 ## When you are done
 
 1. In your job file set `Status: done`, in your last commit. Do not touch other jobs' files.
-2. Bring your branch up to date with "Update branch": `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/update-branch`, then `git pull`. Never rebase: "Update branch" adds a merge commit on GitHub, so your own branch never needs a force-push. Build and run the tests; they must pass. Run `python3 tools/work.py check`. If another pull request is merged before yours, do this step again and wait for green checks.
+2. Bring your branch up to date with "Update branch": `gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/update-branch`, then `git pull`. Never rebase: "Update branch" adds a merge commit on GitHub, so your own branch never needs a force-push. Build and run the tests; they must pass. Run `python3 tools/work.py check`. Update the branch once, before marking it ready; after that, update it again only if GitHub reports a merge conflict. The build on `main` after every merge catches the rare case where two green pull requests break together; if `main` goes red, the job chat starts a fix job at the front of the queue.
 3. Mark the pull request ready: `gh pr ready <number>`, or where GraphQL is blocked `gh api -X POST repos/pingledingle-tech/PinglyMotion/pulls/<number>/ccr/ready_for_review`.
 4. Wait until all checks are green (`gh api repos/pingledingle-tech/PinglyMotion/commits/<sha>/check-runs`). Skipped checks count as passed.
 5. Merge with squash (`gh api -X PUT repos/pingledingle-tech/PinglyMotion/pulls/<number>/merge -f merge_method=squash`) when the kind of change allows it:
@@ -37,8 +46,8 @@ GitHub is the truth, not a chat: what is running is the open pull requests and t
 6. **With every merge, in the same step:**
    - Close the issue behind the pull request when it is fully done (`Closes #N` in the text). If only part is done, write `Part of #N` and add a short status comment on the issue.
    - Update the owner test list (issue 47): remove a test as soon as the project owner has said ok, and write "Nothing to test right now" when the list is empty.
-   - Update the jobs list (issue 74).
-   - Run `python3 tools/work.py check-lists` (needs `gh`; `jobs-draft` prints a draft of the list) and fix what it reports in issues 74 and 47.
+   - The jobs list (issue 74) gets no "merged" summary: the job left the queue when its pull request opened, and the report comment (step 7) is the record. If the job is somehow still in the queue, take it out.
+   - Run `python3 tools/work.py check-lists` (needs `gh`; it warns about queue entries whose pull request is already merged or closed) and fix what it reports in issue 74.
    - Clean up your checkout: `git switch main && git pull && git branch -D <branch>`. The squash commit on `main` is a different commit, so the session's stop check otherwise reports your old local commits as "unpushed" (a false alarm). Do not edit the stop hook.
 7. **Report on the pull request, last.** Every job's last step posts its final report as a comment on its own pull request (on its issue if it has no pull request), also when it stops blocked: what was done, merged or not, the checks, what is left or blocked, and any test that must go on the test page with its steps. Then report to the chat in one line (number, what, checks green). A new job chat reads the open pull requests and their latest comments and issue 74, not handover notes.
 
@@ -63,6 +72,25 @@ Only for visible changes needing taste or judgment (step 5 above).
 `main` is protected by a ruleset: changes only through a pull request, squash merge only, and the checks `linux`, `windows`, `asan-ubsan`, `privacy`, `analyze` and `dependency-review` must be green (skipped counts as passed). GitHub's own auto-merge needs GraphQL, so merging is done as in step 5, by hand or with the `auto-merge` label. The branch is deleted automatically after the merge. What runs on a pull request, after a merge, at night and before a release is in `docs/DEV.md`, "What runs where".
 
 The `work-board` check (`tools/work.py check`) is not a required check: if it is red, two active jobs claim the same files. Talk to the user; it does not block a merge by itself.
+
+## Between chats
+
+This applies to every chat working on this project, also chats that only discuss. One place per kind, nothing written in two places:
+
+| What | Where |
+|---|---|
+| What is running | Nowhere by hand: the open pull requests |
+| What is done | The report comment on the merged pull request |
+| Queue and "waiting for the owner" | Jobs list (issue 74) |
+| Tests for the owner | Test page and owner test list (issue 47) |
+| A plan for a job | Project note `claude/PLAN_<topic>.md`, with a one-line status: `PLAN`, `STARTED <date time>, pull request <n>` or `DONE` |
+| A finding from exploring | Project note `claude/FUNN_<topic>.md` |
+| A decision by the owner | Quoted with its time where it matters; lasting ones also go into `docs/DECISIONS.md` through a job |
+| Which chat is which, lessons, pages | The project's private status note |
+
+- **Chat tag:** every chat's answer starts with a short tag line: the chat's role and the clock time of the owner's message, for example `Jobb-chat · 15:22`. Role names are Norwegian (`Jobb-chat`, `Gjennomgang`, `UX-plan`, `Nettside`, `Uten rolle` for a chat without a role). Only one chat carries `Jobb-chat` at a time.
+- **Times:** always Oslo time, with the date when it is not today. Never guess a time: use the time the owner's own message carries.
+- The per-chat behaviour and the owner's standard sentences live in the private Claude project instructions, not in this repository; this section only states where things go.
 
 ## Commits
 

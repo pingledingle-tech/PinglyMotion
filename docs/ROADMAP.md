@@ -1,6 +1,6 @@
 # Roadmap (confirmed 22 November 2026)
 
-Status: **confirmed by the project owner on 22 November 2026.** It replaces the proposal of 19 November 2026 (in the git history). It sets the order of the work; `docs/PRODUCT.md` says what the program is for and `docs/DECISIONS.md` holds the decisions. Running pull requests and the owner's tests are in the jobs list (#74) and the test list (#47); this file does not repeat them.
+Status: **confirmed by the project owner on 22 November 2026.** It replaces the proposal of 19 November 2026 (in the git history). It sets the order of the work; `docs/PRODUCT.md` says what the program is for and `docs/DECISIONS.md` holds the decisions. Running work is the open pull requests, the job queue is in the jobs list (#74) and the owner's tests are in the test list (#47); this file does not repeat them.
 
 ## Order
 

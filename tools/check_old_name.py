@@ -5,10 +5,11 @@
     check_old_name.py BASE HEAD       also the commit messages in BASE..HEAD
 
 The old name is built from two pieces so this file does not contain it.
-Allowed: the sentence "formerly called <old name>" in a few files, the
-names of the external Aurora fork branch and module in the security audit,
-and the finished rename job files docs/work/refactor-rename-* (also after they
-moved to docs/work/archive/).
+The only files allowed to contain it are the finished rename job files
+docs/work/refactor-rename-* (also after they moved to docs/work/archive/).
+Since 22 November 2026 no other exception remains: the live documents no
+longer say "formerly called ..." and the security audit describes the Aurora
+fork's former live-link branch and module instead of naming them.
 """
 import fnmatch
 import re
@@ -16,15 +17,9 @@ import subprocess
 import sys
 
 OLD = re.compile("ping" + "mator", re.IGNORECASE)
-FORMERLY = re.compile("formerly called " + "ping" + "mator", re.IGNORECASE)
-FORK = re.compile(r"feat/ping" + "mator-link|ping" + "mator_link", re.IGNORECASE)
 
 # whole files that may contain the old name
 ALLOWED_FILES = ["docs/work/refactor-rename-*", "docs/work/archive/refactor-rename-*"]
-# files where the sentence "formerly called ..." is allowed
-FORMERLY_FILES = ["README.md", "CLAUDE.md", "docs/SECURITY_AUDIT.md", "docs/DECISIONS.md"]
-# files that may name the Aurora fork branch and module
-FORK_FILES = ["docs/SECURITY_AUDIT.md"]
 
 
 def match(path, patterns):
@@ -37,10 +32,6 @@ def bad_text(path, text):
         return []
     hits = []
     for number, line in enumerate(text.splitlines(), 1):
-        if match(path, FORMERLY_FILES):
-            line = FORMERLY.sub("", line)
-        if match(path, FORK_FILES):
-            line = FORK.sub("", line)
         if OLD.search(line):
             hits.append(number)
     return hits

@@ -11,14 +11,14 @@ When documents disagree, use this order:
 3. **Numbering of interface steps** ("UX step N"): [UX_DECISIONS.md, "Build order"](UX_DECISIONS.md#9-build-order).
 4. **Words shown to users:** the glossary in [TEACHING_TEXTS.md](TEACHING_TEXTS.md#glossary-the-words-to-use).
 
-Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running work is in the jobs list (issue 74) and the owner test list (issue 47) on GitHub, not in files.
+Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running work is the open pull requests, the job queue is the jobs list (issue 74) and the owner's tests are the owner test list (issue 47), on GitHub, not in files.
 
 ## Start here
 
 | Document | What it is | For | Status |
 |---|---|---|---|
 | [../README.md](../README.md) | What PinglyMotion is, what you can do, tests, credits | user, developer | current |
-| [../CLAUDE.md](../CLAUDE.md) | Rules for AI sessions: jobs, pull requests, merging, commits, privacy | AI session | current guidance |
+| [../CLAUDE.md](../CLAUDE.md) | Rules for AI sessions: jobs, the job queue, pull requests, merging, commits, privacy, where notes go between chats | AI session | current guidance |
 | [DEV.md](DEV.md) | Build and test commands, tricks for sessions, how to test a visible change | developer, AI session | current guidance |
 | [PRODUCT.md](PRODUCT.md) | Product vision, user value, use cases, proposed direction | developer, AI session | plan |
 

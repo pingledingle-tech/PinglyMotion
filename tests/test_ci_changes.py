@@ -49,6 +49,15 @@ class Classify(unittest.TestCase):
     def test_mixed_source_and_docs_runs_the_full_build(self):
         self.assertTrue(c.classify(["src/x.cpp", "docs/DEV.md", "README.md"])["code"])
 
+    def test_site_page_tests_are_website(self):
+        for path in ["tests/test_site_mockup_link.py", "tests/test_site_download.py"]:
+            self.assertEqual(c.kind(path), "website", path)
+        self.assertEqual(c.classify(["tests/test_site_mockup_link.py"]),
+                         {"code": False, "analyze": True, "site": True, "python": True, "actions": False})
+        for path in ["tests/test_site.py", "tests/test_site_x.cpp", "tests/sub/test_site_x.py",
+                     "tests/test_site_x.py.orig"]:
+            self.assertEqual(c.kind(path), "program", path)
+
     def test_mixed_source_and_website_runs_both(self):
         self.assertEqual(c.classify(["src/x.cpp"] + WEBSITE_342),
                          {"code": True, "analyze": True, "site": True, "python": True, "actions": True})
