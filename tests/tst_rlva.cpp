@@ -18,6 +18,8 @@ class TestRlva : public QObject
   private slots:
     void tableIsMarked();
     void rlvaNamesFromTheDictionary();
+    void wikiNamesAreMarkedPlainRlv_data();
+    void wikiNamesAreMarkedPlainRlv();
     void defaultModeIsPlainRlv();
     void plainModeAnswersUnknown_data();
     void plainModeAnswersUnknown();
@@ -45,21 +47,23 @@ class TestRlva : public QObject
     }
 };
 
-// RLVa-only names, read from RLVa's behaviour dictionary (BHVR_EXTENDED and BHVR_EXPERIMENTAL entries)
-static const QStringList interactionOnly = {"interact", "touchhud", "sendgesture", "showself", "showselfhead",
-                                            "shownearby", "viewtransparent", "viewwireframe", "allowidle"};
-static const QStringList teleportOnly = {"accepttprequest", "tprequest", "tplocal", "sendchannel_except"};
-static const QStringList sharedOnly = {"sharedwear", "sharedunwear"};
-static const QStringList cameraOnly = {"setcam_avdistmin", "setcam_avdistmax", "setcam_origindistmin",
-                                       "setcam_origindistmax", "setcam_focus", "setcam_fov", "setcam_mode"};
-static const QStringList replyOnly = {"findfolders", "getcommand", "getheightoffset", "getaddattachnames",
+// Names marked "RLVa only": not in the RLV wiki's list of plain RLV commands
+static const QStringList interactionOnly = {"showself", "showselfhead", "viewtransparent", "viewwireframe"};
+static const QStringList cameraOnly = {"setcam_origindistmin", "setcam_origindistmax", "setcam_focus", "setcam_mode"};
+static const QStringList replyOnly = {"getcommand", "getheightoffset", "getaddattachnames",
                                       "getaddoutfitnames", "getattachnames", "getoutfitnames", "getremattachnames",
-                                      "getremoutfitnames", "getcam_avdist", "getcam_avdistmin", "getcam_avdistmax",
-                                      "getcam_fov", "getcam_fovmin", "getcam_fovmax", "getcam_textures"};
+                                      "getremoutfitnames", "getcam_avdist", "getcam_textures"};
+
+// The 20 names RLVa flags as extended but the RLV wiki lists as plain RLV: plain RLV mode accepts them
+static const QStringList plainByWiki = {"accepttprequest", "allowidle", "findfolders", "getcam_avdistmax",
+                                        "getcam_avdistmin", "getcam_fov", "getcam_fovmax", "getcam_fovmin",
+                                        "interact", "sendchannel_except", "sendgesture", "setcam_avdistmax",
+                                        "setcam_avdistmin", "setcam_fov", "sharedunwear", "sharedwear",
+                                        "shownearby", "touchhud", "tplocal", "tprequest"};
 
 static QStringList allRlvaOnly()
 {
-  return interactionOnly + teleportOnly + sharedOnly + cameraOnly + replyOnly;
+  return interactionOnly + cameraOnly + replyOnly;
 }
 
 void TestRlva::tableIsMarked()
@@ -87,6 +91,33 @@ void TestRlva::rlvaNamesFromTheDictionary()
   found.sort();
   expected.sort();
   QCOMPARE(found, expected);
+}
+
+void TestRlva::wikiNamesAreMarkedPlainRlv_data()
+{
+  QTest::addColumn<QString>("name");
+  for (const QString& name : plainByWiki) QTest::newRow(qPrintable(name)) << name;
+}
+
+void TestRlva::wikiNamesAreMarkedPlainRlv()
+{
+  QFETCH(QString, name);
+  QCOMPARE(plainByWiki.size(), 20);
+  const Rlv::Behaviour* behaviour = Rlv::findBehaviour(name);
+  QVERIFY(behaviour);
+  QCOMPARE(behaviour->dialect, Rlv::Dialect::Rlv);
+  // plain RLV mode knows it, and a command with the right parameter type passes the check
+  QVERIFY(Rlv::findBehaviour(name, Rlv::Mode::Rlv));
+  QVERIFY(Rlv::behaviourNames(Rlv::Mode::Rlv).contains(name));
+  RlvState state;
+  QCOMPARE(state.mode(), Rlv::Mode::Rlv);
+  QString line;
+  if (behaviour->params & Rlv::AllowAddRemove) line = "@" + name + (behaviour->option == Rlv::OptionUse::Required ? ":1" : "") + "=n";
+  else line = "@" + name + "=2222";
+  const RlvState::ApplyResult r = state.apply("obj", line);
+  QVERIFY2(r.ok(), qPrintable(line));
+  QVERIFY2(!r.outcomes.value(0).reason.contains("unknown behaviour"), qPrintable(line));
+  QVERIFY2(r.outcomes.value(0).result == Rlv::Result::Success, qPrintable(line));
 }
 
 void TestRlva::defaultModeIsPlainRlv()
@@ -329,15 +360,15 @@ void TestRlva::switchingModeStartsClean()
   QCOMPARE(state.mode(), Rlv::Mode::Rlva);
   QVERIFY(state.restrictions().isEmpty());
   QVERIFY(state.objects().isEmpty());
-  state.apply("obj", "@interact=n,setcam_fov:1=force");
-  QVERIFY(state.has("interact"));
+  state.apply("obj", "@showself=n,setcam_fov:1=force");
+  QVERIFY(state.has("showself"));
   QVERIFY(!state.recorded().isEmpty());
   // back to plain RLV: nothing RLVa-only survives
   state.setMode(Rlv::Mode::Rlv);
   QVERIFY(state.restrictions().isEmpty());
   QVERIFY(state.recorded().isEmpty());
-  QVERIFY(!state.has("interact"));
-  QCOMPARE(one(state, "@interact=n").result, Rlv::Result::Failed);
+  QVERIFY(!state.has("showself"));
+  QCOMPARE(one(state, "@showself=n").result, Rlv::Result::Failed);
   // switching to the mode it is already in changes nothing
   state.apply("obj", "@fly=n");
   state.setMode(Rlv::Mode::Rlv);

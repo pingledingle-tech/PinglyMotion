@@ -177,7 +177,7 @@ void LslRlvTest::followsTheRlvMode()
 {
   // the script runs in the mode the sandbox is in: an RLVa-only behaviour is unknown in plain RLV
   RlvState rlv;
-  const QString source = "default { state_entry() { llOwnerSay(\"@interact=n\"); } }";
+  const QString source = "default { state_entry() { llOwnerSay(\"@showselfhead=n\"); } }";
   QJsonObject a = run(source, &rlv);
   QCOMPARE(entries(a, "rlv_command").first().toObject()["results"].toArray().first().toObject()["result"].toString(), QString("failed"));
   QCOMPARE(a["rlv"].toObject()["state"].toObject()["mode"].toString(), QString("rlv"));
