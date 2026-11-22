@@ -108,6 +108,9 @@
 #include "emptystate.h"
 #include "topbar.h"
 #include "reasonline.h"
+#include "setupdialog.h"
+#include "camerakeysdialog.h"
+#include "keysmousedialog.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
@@ -1076,17 +1079,17 @@ void PinglyMotionWindow::buildMenus()
   });
   ui->menuView->addAction(lightAction);
 
-  QAction* expertAction=specAction(this,viewExpertMode,false);
-  expertAction->setCheckable(true);
-  expertAction->setChecked(UserSettings::expertMode());
-  keyInView(expertAction,view);
-  connect(expertAction,&QAction::toggled,this,[this](bool on)
+  m_expertModeAction=specAction(this,viewExpertMode,false);
+  m_expertModeAction->setCheckable(true);
+  m_expertModeAction->setChecked(UserSettings::expertMode());
+  keyInView(m_expertModeAction,view);
+  connect(m_expertModeAction,&QAction::toggled,this,[this](bool on)
   {
     UserSettings::setExpertMode(on);
     statusBar()->showMessage(on ? tr("Expert mode is on. The extra controls come in later updates.")
                                 : tr("Beginner mode is on."),5000);
   });
-  ui->menuView->addAction(expertAction);
+  ui->menuView->addAction(m_expertModeAction);
 
   m_textSizeAction=specAction(this,viewTextSize,false,text(viewTextSize).arg(UserSettings::textSizePercent()));
   connect(m_textSizeAction,&QAction::triggered,this,[this]()
@@ -1095,13 +1098,17 @@ void PinglyMotionWindow::buildMenus()
     setTextSizePercent(now>=200 ? 100 : now+25);
   });
   ui->menuView->addAction(m_textSizeAction);
-  ui->menuView->addAction(specAction(this,viewSetup,false));
+  QAction* viewSetupAction=specAction(this,viewSetup,false);
+  connect(viewSetupAction,&QAction::triggered,this,&PinglyMotionWindow::openSetupDialog);
+  ui->menuView->addAction(viewSetupAction);
 
   // Help
   ui->menuHelp->setToolTipsVisible(true);
   QAction* whatsNew=ui->helpWhatsNewAction;
   ui->menuHelp->clear();
-  ui->menuHelp->addAction(specAction(this,helpSetup,false));
+  QAction* helpSetupAction=specAction(this,helpSetup,false);
+  connect(helpSetupAction,&QAction::triggered,this,&PinglyMotionWindow::openSetupDialog);
+  ui->menuHelp->addAction(helpSetupAction);
   ui->menuHelp->addAction(specAction(this,helpWelcome,false));
   m_hintsAction=specAction(this,helpHints,false);
   m_hintsAction->setCheckable(true);
@@ -1115,8 +1122,13 @@ void PinglyMotionWindow::buildMenus()
   });
   ui->menuHelp->addAction(m_hintsAction);
   ui->menuHelp->addSeparator();
-  ui->menuHelp->addAction(specAction(this,helpKeys,true));
-  ui->menuHelp->addAction(specAction(this,helpCamera,false));
+  QAction* helpKeysAction=specAction(this,helpKeys,false);
+  keyInView(helpKeysAction,view);
+  connect(helpKeysAction,&QAction::triggered,this,&PinglyMotionWindow::openKeysMouseDialog);
+  ui->menuHelp->addAction(helpKeysAction);
+  QAction* helpCameraAction=specAction(this,helpCamera,false);
+  connect(helpCameraAction,&QAction::triggered,this,&PinglyMotionWindow::openCameraKeysDialog);
+  ui->menuHelp->addAction(helpCameraAction);
   ui->menuHelp->addAction(specAction(this,helpCharter,true));
   ui->menuHelp->addSeparator();
   ui->menuHelp->addAction(whatsNew);
@@ -1191,6 +1203,7 @@ void PinglyMotionWindow::buildTopBar()
   {
     if(m_lightThemeAction) m_lightThemeAction->toggle();
   });
+  connect(m_topBar,&TopBar::setupRequested,this,&PinglyMotionWindow::openSetupDialog);
 
   m_emptyState=new EmptyState(ui->animationView);
   m_emptyState->hide();
@@ -1459,6 +1472,54 @@ void PinglyMotionWindow::setTextSizePercent(int percent)
   // rearranged at once, before the window is laid out for the new size, so a
   // layout that no longer fits never makes the window grow
   updateReflow();
+}
+
+// UX phase 1d: Setup, reachable from the gear button in the top bar, View > Setup and Help >
+// Setup. Every choice the dialog emits is applied through the same action or method the window's
+// own menu items use, so the window and the dialog never disagree (docs/UX_DECISIONS.md, 6c).
+void PinglyMotionWindow::openSetupDialog()
+{
+  SetupDialog dialog(this);
+  connect(&dialog,&SetupDialog::expertModeRequested,this,[this](bool expert)
+  {
+    if(m_expertModeAction) m_expertModeAction->setChecked(expert);
+  });
+  connect(&dialog,&SetupDialog::darkThemeRequested,this,[this](bool dark)
+  {
+    if(m_lightThemeAction) m_lightThemeAction->setChecked(!dark);
+  });
+  connect(&dialog,&SetupDialog::textSizeRequested,this,[this](int percent)
+  {
+    setTextSizePercent(percent);
+  });
+  connect(&dialog,&SetupDialog::hintsRequested,this,[this](bool on)
+  {
+    if(m_hintsAction) m_hintsAction->setChecked(on);
+  });
+  connect(&dialog,&SetupDialog::cameraHabitRequested,this,[](const QString& habit)
+  {
+    UserSettings::setCameraHabit(habit);
+  });
+  connect(&dialog,&SetupDialog::showCameraKeysRequested,this,&PinglyMotionWindow::openCameraKeysDialog);
+  dialog.exec();
+}
+
+// Help > Camera and keys..., and the Setup dialog's "Show all mouse and keys" button
+void PinglyMotionWindow::openCameraKeysDialog()
+{
+  CameraKeysDialog dialog(this);
+  connect(&dialog,&CameraKeysDialog::cameraHabitRequested,this,[](const QString& habit)
+  {
+    UserSettings::setCameraHabit(habit);
+  });
+  dialog.exec();
+}
+
+// Help > Keys and mouse (?)
+void PinglyMotionWindow::openKeysMouseDialog()
+{
+  KeysMouseDialog dialog(this);
+  dialog.exec();
 }
 
 // joint picker in the properties panel: tabs Body / Face / Hands / Other and

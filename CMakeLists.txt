@@ -181,6 +181,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/menutexts)
   # the Script Lab panel: RLV commands, restrictions, allowed and blocked actions (#288)
   ADD_SUBDIRECTORY (tests/scriptlabpanel)
+  # Setup, Camera and keys, and Keys and mouse dialogs (UX phase 1d)
+  ADD_SUBDIRECTORY (tests/setupdialog)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

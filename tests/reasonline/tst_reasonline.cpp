@@ -146,15 +146,13 @@ void TestReasonLine::greyedTopBarButtonsSayWhy()
   enter(w.button("topRedoAction"));
   QCOMPARE(w.line->text(), QStringLiteral("Redo: Redo is not built yet. It comes with Undo."));
   leave(w.button("topRedoAction"));
-  enter(w.button("topSetupAction"));
-  QCOMPARE(w.line->text(), QStringLiteral("Setup: Setup is not built yet. For now use Options > Settings."));
 }
 
 void TestReasonLine::workingButtonShowsNothing()
 {
   Window w;
   w.top->setAnimationOpen(true);
-  for (const char* id : {"topSaveAction", "topExportAction", "topScriptLabAction", "topThemeAction"})
+  for (const char* id : {"topSaveAction", "topExportAction", "topScriptLabAction", "topThemeAction", "topSetupAction"})
   {
     enter(w.button(id));
     QCOMPARE(w.line->text(), QString());

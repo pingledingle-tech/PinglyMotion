@@ -494,9 +494,16 @@ class PinglyMotionWindow : public QMainWindow
     QAction* m_setKeyAction = nullptr;
     QAction* m_pasteMirroredAction = nullptr;
     QAction* m_lightThemeAction = nullptr;
+    QAction* m_expertModeAction = nullptr;
     // what the actions that need an animation were before the empty state greyed them
     struct ActionState { bool enabled; QString tip; QString status; };
     QMap<QAction*,ActionState> m_beforeEmpty;
+
+    // UX phase 1d: Setup, Camera and keys, Keys and mouse (src/setupdialog.*, src/camerakeysdialog.*,
+    // src/keysmousedialog.*)
+    void openSetupDialog();
+    void openCameraKeysDialog();
+    void openKeysMouseDialog();
 };
 
 #endif
