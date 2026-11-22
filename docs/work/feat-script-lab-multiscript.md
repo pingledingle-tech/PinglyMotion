@@ -5,7 +5,7 @@ Files:
 - src/scriptlab/lsl/*
 - tests/tst_lslworld.cpp
 - tests/tst_lsllink.cpp
-- tests/CMakeLists.txt (only the LSL test list line)
+- tests/CMakeLists.txt
 - tests/tst_lslinterp.cpp
 - tests/tst_control.cpp
 - fuzz/fuzz_lsl.cpp
