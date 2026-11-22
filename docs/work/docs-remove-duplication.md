@@ -1,6 +1,6 @@
 Branch: docs/remove-duplication
 Status: active
-Pull request: pending
+Pull request: #332
 Files:
 - CLAUDE.md
 - docs/DEV.md
