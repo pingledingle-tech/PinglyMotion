@@ -3,7 +3,8 @@
  * and constants
  *
  * Names, signatures and constant values come from lslbuiltins_data.inc
- * (generated from the viewer's keyword list, LGPL 2.1). What each supported
+ * (generated from the viewer's keyword list, LGPL 2.1) and lslbuiltins_extra.inc
+ * (what that list lacks, from Second Life's lsl-definitions, MIT). What each supported
  * function does follows the Second Life wiki and OpenSimulator (BSD); written
  * from that description, no code copied.
  *
@@ -14,6 +15,8 @@
 #include <cmath>
 #include <limits>
 
+#include <QByteArray>
+#include <QCryptographicHash>
 #include <QHash>
 #include <QRegularExpression>
 
@@ -42,7 +45,12 @@ enum class Fn
   Abs, Fabs, Round, Floor, Ceil, Sqrt, Pow, Sin, Cos, Tan, Atan2, Frand, VecMag, VecNorm, VecDist,
   MessageLinked, GetLinkNumber,
   LinksetDataWrite, LinksetDataRead, LinksetDataDelete, LinksetDataReset, LinksetDataListKeys,
-  LinksetDataAvailable, LinksetDataCountKeys
+  LinksetDataAvailable, LinksetDataCountKeys,
+  // step 9b-1: pure functions and simple object state
+  Euler2Rot, Rot2Euler, Rot2Fwd, Rot2Left, Rot2Up, AxisAngle2Rot, RotBetween,
+  ListReplaceList, List2ListStrided, ListSortStrided, ReplaceSubString,
+  StringToBase64, Base64ToString, IntegerToBase64, Base64ToInteger, MD5String, SHA1String, EscapeURL, UnescapeURL,
+  GetStartParameter, GetObjectDesc, SetObjectDesc, SetObjectName, GetScale, GetNumberOfPrims
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -76,6 +84,15 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llLinksetDataDelete", Fn::LinksetDataDelete}, {"llLinksetDataReset", Fn::LinksetDataReset},
   {"llLinksetDataListKeys", Fn::LinksetDataListKeys}, {"llLinksetDataAvailable", Fn::LinksetDataAvailable},
   {"llLinksetDataCountKeys", Fn::LinksetDataCountKeys},
+  {"llEuler2Rot", Fn::Euler2Rot}, {"llRot2Euler", Fn::Rot2Euler}, {"llRot2Fwd", Fn::Rot2Fwd}, {"llRot2Left", Fn::Rot2Left},
+  {"llRot2Up", Fn::Rot2Up}, {"llAxisAngle2Rot", Fn::AxisAngle2Rot}, {"llRotBetween", Fn::RotBetween},
+  {"llListReplaceList", Fn::ListReplaceList}, {"llList2ListStrided", Fn::List2ListStrided},
+  {"llListSortStrided", Fn::ListSortStrided}, {"llReplaceSubString", Fn::ReplaceSubString},
+  {"llStringToBase64", Fn::StringToBase64}, {"llBase64ToString", Fn::Base64ToString},
+  {"llIntegerToBase64", Fn::IntegerToBase64}, {"llBase64ToInteger", Fn::Base64ToInteger},
+  {"llMD5String", Fn::MD5String}, {"llSHA1String", Fn::SHA1String}, {"llEscapeURL", Fn::EscapeURL}, {"llUnescapeURL", Fn::UnescapeURL},
+  {"llGetStartParameter", Fn::GetStartParameter}, {"llGetObjectDesc", Fn::GetObjectDesc}, {"llSetObjectDesc", Fn::SetObjectDesc},
+  {"llSetObjectName", Fn::SetObjectName}, {"llGetScale", Fn::GetScale}, {"llGetNumberOfPrims", Fn::GetNumberOfPrims},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -115,38 +132,40 @@ const RawConstant RAW_CONSTANTS[] =
 #undef LSL_CONSTANT
 };
 
-// Linkset Data (Second Life, 2022) is newer than the keyword list the generated file was made from, so
-// its names, signatures and constants are listed here, from the Second Life wiki. An entry the generated
-// file has as well is taken from the generated file.
+// The functions, events and constants that the viewer's keyword list lacks (Linkset Data, newer
+// functions, new events), made by tools/gen_lsl_extra.py from Second Life's lsl-definitions. An entry
+// the viewer's list has as well is taken from the viewer's list.
 const RawFunction EXTRA_FUNCTIONS[] =
 {
-  {"llLinksetDataAvailable", "integer", "", "", 0},
-  {"llLinksetDataCountFound", "integer", "string", "Pattern", 0},
-  {"llLinksetDataCountKeys", "integer", "", "", 0},
-  {"llLinksetDataDelete", "integer", "string", "Name", 0},
-  {"llLinksetDataDeleteFound", "list", "string,string", "Pattern,Pass", 0},
-  {"llLinksetDataDeleteProtected", "integer", "string,string", "Name,Pass", 0},
-  {"llLinksetDataFindKeys", "list", "string,integer,integer", "Pattern,Start,Count", 0},
-  {"llLinksetDataListKeys", "list", "integer,integer", "Start,Count", 0},
-  {"llLinksetDataRead", "string", "string", "Name", 0},
-  {"llLinksetDataReadProtected", "string", "string,string", "Name,Pass", 0},
-  {"llLinksetDataReset", "void", "", "", 0},
-  {"llLinksetDataWrite", "integer", "string,string", "Name,Value", 0},
-  {"llLinksetDataWriteProtected", "integer", "string,string,string", "Name,Value,Pass", 0},
+#define LSL_FUNCTION(name, ret, args, names, deprecated) {name, ret, args, names, deprecated},
+#define LSL_EVENT(name, args)
+#define LSL_CONSTANT(name, type, value)
+#include "../lslbuiltins_extra.inc"
+#undef LSL_FUNCTION
+#undef LSL_EVENT
+#undef LSL_CONSTANT
 };
 
 const RawEvent EXTRA_EVENTS[] =
 {
-  {"linkset_data", "integer,string,string"},
+#define LSL_FUNCTION(name, ret, args, names, deprecated)
+#define LSL_EVENT(name, args) {name, args},
+#define LSL_CONSTANT(name, type, value)
+#include "../lslbuiltins_extra.inc"
+#undef LSL_FUNCTION
+#undef LSL_EVENT
+#undef LSL_CONSTANT
 };
 
 const RawConstant EXTRA_CONSTANTS[] =
 {
-  {"LINKSETDATA_RESET", "integer", "0"}, {"LINKSETDATA_UPDATE", "integer", "1"},
-  {"LINKSETDATA_DELETE", "integer", "2"}, {"LINKSETDATA_MULTIDELETE", "integer", "3"},
-  {"LINKSETDATA_OK", "integer", "0"}, {"LINKSETDATA_EMEMORY", "integer", "1"},
-  {"LINKSETDATA_ENOKEY", "integer", "2"}, {"LINKSETDATA_EPROTECTED", "integer", "3"},
-  {"LINKSETDATA_NOTFOUND", "integer", "4"}, {"LINKSETDATA_NOUPDATE", "integer", "5"},
+#define LSL_FUNCTION(name, ret, args, names, deprecated)
+#define LSL_EVENT(name, args)
+#define LSL_CONSTANT(name, type, value) {name, type, value},
+#include "../lslbuiltins_extra.inc"
+#undef LSL_FUNCTION
+#undef LSL_EVENT
+#undef LSL_CONSTANT
 };
 
 std::vector<Type> parseTypes(const char* text)
@@ -323,6 +342,179 @@ QString trim(const QString& s, bool head, bool tail)
   if (head) while (a < b && space(s[a])) ++a;
   if (tail) while (b > a && space(s[b - 1])) --b;
   return s.mid(a, b - a);
+}
+
+
+// ---- rotations (step 9b-1). Quaternions as x y z s, in float like the Second Life servers.
+struct Quat { float x, y, z, s; };
+
+Quat quatOf(const Value& v) { return Quat{v.f[0], v.f[1], v.f[2], v.f[3]}; }
+Value rotationOf(const Quat& q) { return Value::rotation(q.x, q.y, q.z, q.s); }
+
+Quat normalized(Quat q)
+{
+  const float m = std::sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.s * q.s);
+  if (!(m > 1.0e-7f) || !std::isfinite(m)) return Quat{0.0f, 0.0f, 0.0f, 1.0f};
+  return Quat{q.x / m, q.y / m, q.z / m, q.s / m};
+}
+
+// llEuler2Rot: roll about x, pitch about y, yaw about z (the viewer's setEulerAngles)
+Quat eulerToQuat(float roll, float pitch, float yaw)
+{
+  roll *= 0.5f; pitch *= 0.5f; yaw *= 0.5f;
+  const float cx = std::cos(roll), cy = std::cos(pitch), cz = std::cos(yaw);
+  const float sx = std::sin(roll), sy = std::sin(pitch), sz = std::sin(yaw);
+  Quat q{sx * cy * cz - cx * sy * sz, cx * sy * cz + sx * cy * sz, cx * cy * sz - sx * sy * cz, cx * cy * cz + sx * sy * sz};
+  return normalized(q);
+}
+
+// llRot2Euler: roll, pitch, yaw of a rotation (the viewer's getEulerAngles)
+void quatToEuler(Quat q, float out[3])
+{
+  q = normalized(q);
+  const float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
+  const float xy = q.x * q.y, xz = q.x * q.z, yz = q.y * q.z;
+  const float sx = q.s * q.x, sy = q.s * q.y, sz = q.s * q.z;
+  const float m00 = 1.0f - 2.0f * (yy + zz), m01 = 2.0f * (xy + sz), m02 = 2.0f * (xz - sy);
+  const float m10 = 2.0f * (xy - sz), m11 = 1.0f - 2.0f * (xx + zz), m12 = 2.0f * (yz + sx);
+  const float m22 = 1.0f - 2.0f * (xx + yy);
+  const float cosY = std::sqrt(m00 * m00 + m01 * m01);
+  if (cosY > 0.00001f)
+  {
+    out[0] = std::atan2(m12, m22);
+    out[1] = std::atan2(-m02, cosY);
+    out[2] = std::atan2(m01, m00);
+  }
+  else
+  {
+    out[0] = 0.0f;
+    out[1] = std::atan2(-m02, cosY);
+    out[2] = std::atan2(-m10, m11);
+  }
+}
+
+// a unit vector turned by a rotation (v * q in LSL)
+Value rotatedAxis(Quat q, float vx, float vy, float vz)
+{
+  q = normalized(q);
+  // t = 2 * cross(q.xyz, v); v' = v + s * t + cross(q.xyz, t)
+  const float tx = 2.0f * (q.y * vz - q.z * vy), ty = 2.0f * (q.z * vx - q.x * vz), tz = 2.0f * (q.x * vy - q.y * vx);
+  float rx = vx + q.s * tx + (q.y * tz - q.z * ty);
+  float ry = vy + q.s * ty + (q.z * tx - q.x * tz);
+  float rz = vz + q.s * tz + (q.x * ty - q.y * tx);
+  const float m = std::sqrt(rx * rx + ry * ry + rz * rz);
+  if (m > 0.0f) { rx /= m; ry /= m; rz /= m; }
+  return Value::vector(rx, ry, rz);
+}
+
+Quat axisAngleToQuat(const float axis[3], float angle)
+{
+  float ax = axis[0], ay = axis[1], az = axis[2];
+  const float m = std::sqrt(ax * ax + ay * ay + az * az);
+  if (m > 0.0f) { ax /= m; ay /= m; az /= m; }
+  const float c = std::cos(angle * 0.5f), s = std::sin(angle * 0.5f);
+  return normalized(Quat{ax * s, ay * s, az * s, c});
+}
+
+// llRotBetween: the shortest rotation that turns vector a onto vector b
+Quat shortestArc(const float a[3], const float b[3])
+{
+  const float ab = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const float cx = a[1] * b[2] - a[2] * b[1], cy = a[2] * b[0] - a[0] * b[2], cz = a[0] * b[1] - a[1] * b[0];
+  const float cc = cx * cx + cy * cy + cz * cz;
+  if (ab * ab + cc > 0.0f)
+  {
+    if (cc > 0.0f)
+    {
+      const float s = std::sqrt(ab * ab + cc) + ab;
+      const float m = 1.0f / std::sqrt(cc + s * s);
+      return Quat{cx * m, cy * m, cz * m, s * m};
+    }
+    if (ab > 0.0f) return Quat{0.0f, 0.0f, 0.0f, 1.0f};
+    // opposite vectors: a half turn about an axis perpendicular to a
+    const float s = std::sqrt(a[0] * a[0] + a[1] * a[1]);
+    if (s > 0.0f) return Quat{-a[1] / s, a[0] / s, 0.0f, 0.0f};
+    return Quat{1.0f, 0.0f, 0.0f, 0.0f};
+  }
+  return Quat{0.0f, 0.0f, 0.0f, 1.0f};
+}
+
+// ---- text (step 9b-1)
+QByteArray utf8(const QString& s) { return s.toUtf8(); }
+
+// bytes read as UTF-8; a byte that is no valid text, or a control character other than tab and
+// line breaks, becomes "?" (Second Life says unprintable characters become question marks)
+QString printableUtf8(const QByteArray& bytes)
+{
+  QString out;
+  int i = 0;
+  const int n = int(bytes.size());
+  while (i < n)
+  {
+    const unsigned char c = static_cast<unsigned char>(bytes[i]);
+    int len = 1;
+    if (c >= 0xF0 && c <= 0xF4) len = 4;
+    else if (c >= 0xE0) len = c < 0xF0 ? 3 : 0;
+    else if (c >= 0xC2) len = c < 0xE0 ? 2 : 0;
+    else if (c >= 0x80) len = 0;
+    bool valid = len > 0 && i + len <= n;
+    for (int k = 1; valid && k < len; ++k) valid = (static_cast<unsigned char>(bytes[i + k]) & 0xC0) == 0x80;
+    if (valid && len > 1)
+    {
+      const QString piece = QString::fromUtf8(bytes.constData() + i, len);
+      if (piece.contains(QChar::ReplacementCharacter)) valid = false;
+      else out += piece;
+    }
+    else if (valid)
+    {
+      out += (c < 0x20 && c != '\t' && c != '\n' && c != '\r') || c == 0x7F ? QChar('?') : QChar(c);
+    }
+    if (!valid) { out += QChar('?'); len = 1; }
+    i += len;
+  }
+  return out;
+}
+
+QString escapeUrl(const QString& s)
+{
+  static const char* HEX = "0123456789ABCDEF";
+  QString out;
+  for (char byte : utf8(s))
+  {
+    const unsigned char c = static_cast<unsigned char>(byte);
+    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) out += QChar(c);
+    else { out += '%'; out += QChar(HEX[c >> 4]); out += QChar(HEX[c & 15]); }
+  }
+  return out;
+}
+
+int hexValue(QChar c)
+{
+  const ushort u = c.unicode();
+  if (u >= '0' && u <= '9') return u - '0';
+  if (u >= 'a' && u <= 'f') return u - 'a' + 10;
+  if (u >= 'A' && u <= 'F') return u - 'A' + 10;
+  return -1;
+}
+
+// a %xx that is not valid hex stays as it is
+QString unescapeUrl(const QString& s)
+{
+  QByteArray bytes;
+  QString literal;
+  auto flush = [&]() { bytes.append(utf8(literal)); literal.clear(); };
+  for (int i = 0; i < s.size(); ++i)
+  {
+    if (s[i] == '%' && i + 2 < s.size() && hexValue(s[i + 1]) >= 0 && hexValue(s[i + 2]) >= 0)
+    {
+      flush();
+      bytes.append(char(hexValue(s[i + 1]) * 16 + hexValue(s[i + 2])));
+      i += 2;
+    }
+    else literal += s[i];
+  }
+  flush();
+  return QString::fromUtf8(bytes);
 }
 
 } // namespace
@@ -799,6 +991,171 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     }
     case Fn::LinksetDataAvailable: return Value::integer(m_world.linksetData().available());
     case Fn::LinksetDataCountKeys: return Value::integer(m_world.linksetData().count());
+
+    // -------------------------------------------- rotations (step 9b-1)
+    case Fn::Euler2Rot: return rotationOf(eulerToQuat(a[0].f[0], a[0].f[1], a[0].f[2]));
+    case Fn::Rot2Euler:
+    {
+      float e[3];
+      quatToEuler(quatOf(a[0]), e);
+      return Value::vector(e[0], e[1], e[2]);
+    }
+    case Fn::Rot2Fwd: return rotatedAxis(quatOf(a[0]), 1.0f, 0.0f, 0.0f);
+    case Fn::Rot2Left: return rotatedAxis(quatOf(a[0]), 0.0f, 1.0f, 0.0f);
+    case Fn::Rot2Up: return rotatedAxis(quatOf(a[0]), 0.0f, 0.0f, 1.0f);
+    case Fn::AxisAngle2Rot: return rotationOf(axisAngleToQuat(a[0].f, a[1].f[0]));
+    case Fn::RotBetween: return rotationOf(shortestArc(a[0].f, a[1].f));
+
+    // -------------------------------------------- lists and strings (step 9b-1)
+    case Fn::ListReplaceList:
+    {
+      const qint64 n = qint64(a[0].list.size());
+      qint64 start = a[2].i, end = a[3].i;
+      if (start < 0) start += n;
+      if (end < 0) end += n;
+      if (n == 0) return Value::makeList(a[1].list);
+      if (start > end)
+        failAt("unsupported", "llListReplaceList with a start after the end (a range that wraps) is not supported yet in the Script Lab sandbox, so the script was stopped here.");
+      // start through end are removed (indices outside the list count as removed entries), src goes in at start
+      const qint64 insert = qBound<qint64>(0, start, n);
+      const qint64 after = end >= insert ? qMin(end + 1, n) : insert;
+      std::vector<Value> out(a[0].list.begin(), a[0].list.begin() + insert);
+      out.insert(out.end(), a[1].list.begin(), a[1].list.end());
+      out.insert(out.end(), a[0].list.begin() + after, a[0].list.end());
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
+    case Fn::List2ListStrided:
+    {
+      const qint64 n = qint64(a[0].list.size());
+      qint64 start = a[1].i, end = a[2].i;
+      const qint64 stride = a[3].i < 1 ? 1 : a[3].i;
+      if (start < 0) start += n;
+      if (end < 0) end += n;
+      if (n == 0) return Value::makeList({});
+      if (start > end)
+        failAt("unsupported", "llList2ListStrided with a start after the end (a range that wraps) is not supported yet in the Script Lab sandbox, so the script was stopped here.");
+      std::vector<Value> out;
+      // the stride counts from the start of the list, not from start (as in Second Life)
+      for (qint64 i = qMax<qint64>(start, 0); i <= end && i < n; ++i)
+        if (i % stride == 0) out.push_back(a[0].list[size_t(i)]);
+      m_steps += n;
+      return Value::makeList(std::move(out));
+    }
+    case Fn::ListSortStrided:
+    {
+      const size_t n = a[0].list.size();
+      const qint64 stride = a[1].i < 1 ? 1 : a[1].i;
+      qint64 index = a[2].i;
+      if (index < 0) index += stride;
+      if (index < 0 || index >= stride) return Value::makeList({});
+      if (qint64(n) % stride != 0) return a[0];
+      std::vector<size_t> groups;
+      for (size_t g = 0; g < n; g += size_t(stride)) groups.push_back(g);
+      const bool ascending = a[3].i == 1;
+      const std::vector<Value>& list = a[0].list;
+      std::stable_sort(groups.begin(), groups.end(), [&](size_t x, size_t y)
+      {
+        const int c = compareElements(list[x + size_t(index)], list[y + size_t(index)]);
+        return ascending ? c < 0 : c > 0;
+      });
+      m_steps += qint64(n);
+      std::vector<Value> out;
+      out.reserve(n);
+      for (size_t g : groups)
+        for (qint64 k = 0; k < stride; ++k) out.push_back(list[g + size_t(k)]);
+      return Value::makeList(std::move(out));
+    }
+    case Fn::ReplaceSubString:
+    {
+      const QString& src = a[0].s;
+      const QString& pattern = a[1].s;
+      const QString& replacement = a[2].s;
+      const qint32 count = a[3].i;
+      if (pattern.isEmpty()) return a[0];
+      // the matches that are replaced, left to right, no overlaps; a negative count looks from the end
+      QVector<int> found;
+      const qint64 want = count == 0 ? std::numeric_limits<qint64>::max() : qAbs(qint64(count));
+      if (count >= 0)
+      {
+        for (int pos = 0; qint64(found.size()) < want && (pos = src.indexOf(pattern, pos)) >= 0; pos += pattern.size())
+        {
+          if ((found.size() & 255) == 0) step(m_line, m_column);
+          found.push_back(pos);
+        }
+      }
+      else
+      {
+        for (int pos = int(src.size()); qint64(found.size()) < want && pos >= 0 && (pos = src.lastIndexOf(pattern, pos)) >= 0; pos -= pattern.size())
+        {
+          if ((found.size() & 255) == 0) step(m_line, m_column);
+          found.push_back(pos);
+        }
+        std::reverse(found.begin(), found.end());
+      }
+      QString out;
+      int from = 0;
+      for (int k = 0; k < int(found.size()); ++k)
+      {
+        out += QStringView(src).mid(from, found[k] - from);
+        out += replacement;
+        from = found[k] + pattern.size();
+        if (out.size() > m_limits.maxStringChars)
+          failAt("limit", QString("A string grew longer than %1 characters; the script was stopped.").arg(m_limits.maxStringChars));
+      }
+      out += QStringView(src).mid(from);
+      if (out.size() > m_limits.maxStringChars)
+        failAt("limit", QString("A string grew longer than %1 characters; the script was stopped.").arg(m_limits.maxStringChars));
+      return Value::string(out);
+    }
+    case Fn::StringToBase64: return Value::string(QString::fromLatin1(utf8(a[0].s).toBase64()));
+    case Fn::Base64ToString:
+    {
+      const auto decoded = QByteArray::fromBase64Encoding(a[0].s.toLatin1(), QByteArray::AbortOnBase64DecodingErrors);
+      if (decoded.decodingStatus != QByteArray::Base64DecodingStatus::Ok) return Value::string(QString());
+      return Value::string(printableUtf8(decoded.decoded));
+    }
+    case Fn::IntegerToBase64:
+    {
+      const quint32 v = quint32(a[0].i);
+      QByteArray bytes;
+      for (int shift = 24; shift >= 0; shift -= 8) bytes.append(char((v >> shift) & 0xFF));
+      return Value::string(QString::fromLatin1(bytes.toBase64()));
+    }
+    case Fn::Base64ToInteger:
+    {
+      if (a[0].s.size() > 8) return Value::integer(0);
+      const auto decoded = QByteArray::fromBase64Encoding(a[0].s.toLatin1(), QByteArray::IgnoreBase64DecodingErrors);
+      quint32 v = 0;
+      for (int i = 0; i < 4; ++i) v = (v << 8) | (i < decoded.decoded.size() ? static_cast<unsigned char>(decoded.decoded[i]) : 0u);
+      return Value::integer(qint32(v));
+    }
+    case Fn::MD5String:
+      return Value::string(QString::fromLatin1(QCryptographicHash::hash(utf8(a[0].s + ":" + QString::number(a[1].i)), QCryptographicHash::Md5).toHex()));
+    case Fn::SHA1String:
+      return Value::string(QString::fromLatin1(QCryptographicHash::hash(utf8(a[0].s), QCryptographicHash::Sha1).toHex()));
+    case Fn::EscapeURL:
+    {
+      const QString out = escapeUrl(a[0].s);
+      if (out.size() > m_limits.maxStringChars)
+        failAt("limit", QString("A string grew longer than %1 characters; the script was stopped.").arg(m_limits.maxStringChars));
+      return Value::string(out);
+    }
+    case Fn::UnescapeURL: return Value::string(unescapeUrl(a[0].s));
+
+    // -------------------------------------------- object state (step 9b-1)
+    case Fn::GetStartParameter: return Value::integer(m_world.startParameter());
+    case Fn::GetObjectDesc: return Value::string(m_world.objectDesc());
+    case Fn::SetObjectDesc: m_world.setObjectDesc(a[0].s.left(127)); return Value();
+    case Fn::SetObjectName: m_world.setObjectName(a[0].s.left(63)); return Value();
+    case Fn::GetScale:
+    {
+      float s[3];
+      m_world.scale(s);
+      return Value::vector(s[0], s[1], s[2]);
+    }
+    case Fn::GetNumberOfPrims: return Value::integer(m_world.numberOfPrims());
 
     // -------------------------------------------- maths
     case Fn::Abs: return Value::integer(a[0].i < 0 ? qint32(0u - quint32(a[0].i)) : a[0].i);

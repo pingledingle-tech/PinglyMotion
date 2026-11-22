@@ -148,6 +148,32 @@ namespace
     return QString();
   }
 
+  // step 9b-1: "description", "scale" and "start_parameter" of an object; empty when fine
+  QString readObjectState(const QJsonObject& o, const QString& where, ObjectSpec& spec)
+  {
+    if (o.contains("description"))
+    {
+      if (!o.value("description").isString() || o.value("description").toString().size() > 127)
+        return where + "\"description\" must be text of at most 127 characters (what llGetObjectDesc answers).";
+      spec.description = o.value("description").toString();
+    }
+    if (o.contains("scale"))
+    {
+      const QJsonArray p = o.value("scale").toArray();
+      bool ok = o.value("scale").isArray() && p.size() == 3;
+      for (int i = 0; ok && i < 3; ++i)
+      {
+        const double v = p[i].toDouble(std::nan(""));
+        ok = p[i].isDouble() && std::isfinite(v) && v >= 0.001 && v <= 64.0;
+        if (ok) spec.scale[i] = float(v);
+      }
+      if (!ok) return where + "\"scale\" must be [x, y, z] in metres, each 0.001 to 64 (what llGetScale answers).";
+    }
+    if (o.contains("start_parameter") && !wholeNumber(o.value("start_parameter"), -2147483648.0, 2147483647.0, spec.startParameter))
+      return where + "\"start_parameter\" must be a whole number (what llGetStartParameter answers; 0 when rezzed by an avatar).";
+    return QString();
+  }
+
   // one entry of "objects"; empty when fine. Either "source" (one script, named "Script", in the root prim)
   // or "scripts" (step 9a: [{name, source, link}], each with its own memory and event queue)
   struct ScriptSource
@@ -159,7 +185,8 @@ namespace
 
   QString readObject(const QJsonObject& o, const QString& where, ObjectSpec& spec, std::vector<ScriptSource>& scripts)
   {
-    static const QStringList known = {"name", "source", "scripts", "prims", "key", "owner", "owner_name", "position", "attached"};
+    static const QStringList known = {"name", "source", "scripts", "prims", "key", "owner", "owner_name", "position", "attached",
+                                       "description", "scale", "start_parameter"};
     for (auto it = o.begin(); it != o.end(); ++it)
       if (!known.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + known.join(", ") + ".";
     if (!o.value("name").isString() || !validName(o.value("name").toString()))
@@ -236,7 +263,7 @@ namespace
     }
     if (o.contains("attached") && !wholeNumber(o.value("attached"), 0, Sandbox::MAX_ATTACH_POINT, spec.attached))
       return where + QString("\"attached\" must be an attachment point from 1 to %1, or 0 (not attached).").arg(Sandbox::MAX_ATTACH_POINT);
-    return QString();
+    return readObjectState(o, where, spec);
   }
 
   double rounded(double t) { return std::round(t * 1000.0) / 1000.0; }
@@ -251,13 +278,17 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 {
   for (auto it = request.begin(); it != request.end(); ++it)
   {
-    static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv"};
+    static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
+                                       "description", "scale", "start_parameter"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
   const bool several = request.contains("objects");
   if (several && request.contains("source"))
     return fail("Give either \"source\" (one script) or \"objects\" (several scripts), not both.");
+  if (several)
+    for (const char* field : {"description", "scale", "start_parameter"})
+      if (request.contains(field)) return fail(QString("With \"objects\", give \"%1\" inside each object, not at the top.").arg(field));
   if (!several)
   {
     if (!request.value("source").isString()) return fail("Missing \"source\": the LSL script as text (or \"objects\" for several scripts).");
@@ -312,7 +343,10 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   }
   else
   {
-    specs.push_back(ObjectSpec());
+    ObjectSpec spec;
+    const QString problem = readObjectState(request, "", spec);
+    if (!problem.isEmpty()) return fail(problem);
+    specs.push_back(spec);
     ScriptSource script;
     script.source = request.value("source").toString();
     sources.push_back({script});

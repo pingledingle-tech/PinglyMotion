@@ -48,7 +48,13 @@ class ObjectWorld : public RlvWorld
       return s.ownerKey.isEmpty() || s.ownerKey == Sandbox::OWNER_KEY ? QString(Sandbox::OWNER_NAME) : QString();
     }
     QString objectKey() const override { return spec().key; }
-    QString objectName() const override { return spec().name; }
+    QString objectName() const override { return state().name; }
+    void setObjectName(const QString& name) override { state().name = name; }
+    QString objectDesc() const override { return state().description; }
+    void setObjectDesc(const QString& desc) override { state().description = desc; }
+    void scale(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = spec().scale[i]; }
+    int numberOfPrims() const override { return spec().prims; }
+    int startParameter() const override { return spec().startParameter; }
     QString scriptName() const override { return m_sandbox.m_slots[size_t(m_slot)].name; }
     int linkNumber() const override { return m_sandbox.linkNumber(m_slot); }
 
@@ -85,6 +91,7 @@ class ObjectWorld : public RlvWorld
   private:
     int object() const { return m_sandbox.m_slots[size_t(m_slot)].object; }
     const ObjectSpec& spec() const { return m_sandbox.m_objects[size_t(object())].spec; }
+    Sandbox::Object& state() const { return m_sandbox.m_objects[size_t(object())]; }
 
     Sandbox& m_sandbox;
     int m_slot;
@@ -143,6 +150,8 @@ QString Sandbox::add(const ObjectSpec& spec, const std::vector<ScriptEntry>& scr
 
   Object o;
   o.spec = s;
+  o.name = s.name;
+  o.description = s.description.left(127);
   o.tagScripts = tagScripts;
   o.firstSlot = int(m_slots.size());
   o.slotCount = int(scripts.size());
@@ -442,7 +451,7 @@ void Sandbox::chat(int from, double time, const QString& kind, int channel, cons
     where(slot.object, p);
     if (range >= 0.0 && distance(here, p) > range) continue;
     slot.interp->syncTo(time);
-    slot.interp->receive(channel, speaker.spec.name, speaker.spec.key, text);
+    slot.interp->receive(channel, speaker.name, speaker.spec.key, text);
   }
 }
 
@@ -454,7 +463,7 @@ void Sandbox::chatTo(int from, double time, const QString& target, int channel, 
   {
     if (slot.object == speakerSlot.object || m_objects[size_t(slot.object)].spec.key != target) continue;
     slot.interp->syncTo(time);
-    slot.interp->receive(channel, speaker.spec.name, speaker.spec.key, text);
+    slot.interp->receive(channel, speaker.name, speaker.spec.key, text);
   }
 }
 
@@ -516,7 +525,7 @@ QString Sandbox::nameOf(const QString& key) const
   if (key == OWNER_KEY) return OWNER_NAME;
   for (const Object& o : m_objects)
   {
-    if (o.spec.key == key) return o.spec.name;
+    if (o.spec.key == key) return o.name;
     if (!o.spec.ownerKey.isEmpty() && o.spec.ownerKey == key && !o.spec.ownerName.isEmpty()) return o.spec.ownerName;
   }
   return QString();
