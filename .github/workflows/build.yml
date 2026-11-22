@@ -231,6 +231,8 @@ jobs:
         run: python3 tests/test_kimodo_helper.py
       - name: CI path filter decides which jobs run
         run: python3 tests/test_ci_changes.py
+      - name: Auto-merge decides only on green required checks
+        run: python3 tests/test_ci_auto_merge.py
       - name: Combined test build script refuses foreign pull requests (issue 245)
         run: python3 tests/test_update_combined.py
       - name: Generated SMPL 22 test skeletons are up to date (issue 18)
