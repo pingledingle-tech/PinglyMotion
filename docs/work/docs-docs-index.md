@@ -1,6 +1,6 @@
 Branch: docs/docs-index
-Status: active
-Pull request: pending
+Status: done
+Pull request: #333
 Files:
 - docs/README.md
 - README.md
