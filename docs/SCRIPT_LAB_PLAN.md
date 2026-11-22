@@ -98,7 +98,11 @@ Done (issue 297): every behaviour is marked `RLV` or `RLVa only`; plain RLV is t
 
 ### Step 9b: more common functions (technical, planned)
 
-More LSL functions that real scripts use. Which ones come from the gap list (9c) and from the scripts the project owner brings. No issue yet.
+More LSL functions that real scripts use. The order comes from a gap list made from 1 949 real scripts (how many scripts use each name). Three small parts, each its own pull request, each merged before the next starts:
+
+- 9b-1 (issue 310, done): the signature table from Second Life's lsl-definitions, and the pure functions that need no world (rotation maths, strided lists, `llReplaceSubString`, Base64, hashes, URL escaping, start parameter, object name, description, scale, prim count).
+- 9b-2 (planned): the events `on_rez` and `changed`, driven by the existing `inputs`.
+- 9b-3 (planned): prim state recorded in the event log without effects (`llSetText`, `llSetAlpha`, `llSetColor`, `llSetPrimitiveParams`, `llSetPos`, `llSetStatus`, `llSetSitText`, `llTextBox`, `llTransferLindenDollars` as logic only), and record-only stubs for particles and sounds.
 
 ### Step 9c: gap list (technical, planned)
 

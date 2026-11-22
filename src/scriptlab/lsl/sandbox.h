@@ -63,6 +63,9 @@ struct ObjectSpec
   float position[3] = {128.0f, 128.0f, 20.0f};   // region metres; ignored while attached
   int attached = 0;               // attachment point (1 to 55), 0 = rezzed at position
   int prims = 1;                  // step 9a: prims in the object (link numbers 1 to prims; a single prim is link 0)
+  QString description;            // step 9b-1: what llGetObjectDesc answers at the start (at most 127 characters)
+  float scale[3] = {0.5f, 0.5f, 0.5f};   // llGetScale, metres
+  int startParameter = 0;         // llGetStartParameter
 };
 
 // step 9a: one script of an object
@@ -156,6 +159,8 @@ class Sandbox
       ObjectSpec spec;
       QJsonObject dialog;          // the object's newest dialog
       LinksetData data;            // step 9a: belongs to the object, not to a script
+      QString name;                // step 9b-1: the name now (llSetObjectName); spec.name stays the object's handle in logs and inputs
+      QString description;         // the description now (llSetObjectDesc)
       bool tagScripts = false;     // given with "scripts": log entries name the script
       int firstSlot = 0;
       int slotCount = 0;
