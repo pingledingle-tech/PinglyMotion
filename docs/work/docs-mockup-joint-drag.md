@@ -5,6 +5,7 @@ Files:
 - docs/mockup/index.html
 - docs/UX_DECISIONS.md
 - docs/POSING_UX.md
+- docs/images/mockup-joint-drag/**
 - docs/work/docs-mockup-joint-drag.md
 
 ## What

@@ -165,12 +165,21 @@ body:not(.expert) .expert-only { display:none !important; }
 .switch .st { font-size:var(--caption); color:var(--text_muted); min-width:2em; }
 
 /* ---- 3D view ---- */
-.view { grid-area:view; position:relative; min-width:0; min-height:0; overflow:hidden; cursor:grab; }
+.view { user-select:none; -webkit-user-select:none; grid-area:view; position:relative; min-width:0; min-height:0; overflow:hidden; cursor:grab; }
 .view svg.scene { width:100%; height:100%; display:block; }
 .view .floor line { stroke:var(--border); stroke-width:1; opacity:.5; }
 .view .bone { stroke:var(--text_muted); stroke-width:6; stroke-linecap:round; }
 .view .bone.sel { stroke:var(--accent_text); }
-.view .jt { fill:var(--surface); stroke:var(--text); stroke-width:2; cursor:pointer; }
+.view .jt { fill:var(--surface); stroke:var(--text); stroke-width:2; cursor:grab; }
+.view.pulling, .view.pulling * { cursor:grabbing !important; }
+.view .bone.pulled { stroke:var(--accent_text); stroke-width:8; }
+.view .pullline { stroke:var(--accent_text); stroke-width:2; stroke-dasharray:6 4; fill:none; }
+.view .pulltarget { fill:none; stroke:var(--accent_text); stroke-width:3; }
+.view .pulltarget.dot { fill:var(--accent_text); stroke:none; }
+.dragtip { position:fixed; z-index:92; display:none; pointer-events:none; max-width:300px; background:var(--surface_raised); color:var(--text);
+  border:var(--bw) solid var(--border); border-radius:var(--r-panel); padding:var(--s) var(--m); }
+.dragtip .tn { font-weight:600; display:flex; gap:var(--s); align-items:center; }
+.dragtip .tt { color:var(--text_muted); margin-top:var(--xs); }
 .view .jt.edited { fill:var(--area_body); }
 .view .jt.sel { fill:var(--selection); stroke:var(--on_accent); }
 .view .jt.hover { stroke-width:3; stroke:var(--accent_text); }
@@ -422,6 +431,7 @@ body.scaled { overflow:auto; }
 </div>
 
 <div class="tip" id="tip" role="tooltip"></div>
+<div class="dragtip" id="dragtip" aria-hidden="true"></div>
 <div class="hintcard" id="hintcard" role="dialog" aria-labelledby="hcT" data-p="P4">
   <button class="btn compact icon x" data-cmd="hcclose" data-name="Close this hint" data-key="Esc"><svg class="i" data-i="x"></svg></button>
   <h4 id="hcT"><svg class="i" data-i="lightbulb"></svg><span></span></h4>
@@ -505,7 +515,8 @@ const TXT = {
   "TIP-02": "Plays your animation from the start. Press it again to stop.",
   "TIP-03": "Drag it to pick a moment. Pose the figure there, then set a key.",
   "TIP-04": "Saves your animation to a file. You can open it again later.",
-  "HINT-01": "Click a joint to pick it.", "HINT-02": "Click to pick this joint.",
+  "HINT-01": "Click a joint to pick it. Press and drag it to pull the limb.", "HINT-02": "Click to pick this joint. Press and drag to pull the limb.",
+  "HINT-05": "Release to set a key. Esc cancels.", "HINT-06": "Arrow keys move the joint. Enter sets a key. Esc cancels.",
   "HINT-03": "Drag the ring to turn the joint.", "HINT-04": "Drag to look around the figure.",
   "NEXT-01": "Click a joint on the figure to pick it.", "NEXT-02": "Drag the ring to turn the joint.",
   "NEXT-03": "Like the pose? Set a key to save it.", "NEXT-04": "Set a key to save your first pose.",
@@ -652,7 +663,7 @@ const SCHEMES = {
   blender: { name: "Blender", rows: [["Look around (orbit)", "Middle-drag"], ["Move the view (pan)", "Shift + middle-drag"], ["Zoom", "Ctrl + middle-drag, or wheel"], ["Pick a joint", "Click"], ["Focus on the picked joint", "Numpad ."]] },
   sl: { name: "Second Life", rows: [["Look around (orbit)", "Alt + drag (sideways), Ctrl + Alt + drag"], ["Move the view (pan)", "Ctrl + Alt + Shift + drag"], ["Zoom", "Alt + drag up or down, or wheel"], ["Pick a joint", "Click"], ["Focus on the picked joint", "Alt + click"]] }
 };
-const KEYROWS_ALL = [["Front, side, top view", "Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)"], ["Look around with keys", "Alt + arrow keys in the 3D view"], ["Zoom with keys", "Page Up, Page Down"]];
+const KEYROWS_ALL = [["Pull a limb", "Press a joint and drag. Let go to set a key. Esc cancels."], ["Turn only that joint", "Hold Shift when you press the joint (or switch IK off)"], ["Pull with the keyboard", "Enter on the picked joint, arrow keys, Enter to set a key, Esc cancels"], ["Front, side, top view", "Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)"], ["Look around with keys", "Alt + arrow keys in the 3D view"], ["Zoom with keys", "Page Up, Page Down"]];
 let scheme = store.get("scheme", "default");
 
 function gestureFor(e, kind) { // kind: "down" returns orbit|pan|zoom|orbitzoom|null
@@ -690,14 +701,16 @@ function renderScene() {
   s += "</g>";
   const sc = Math.min($("#view").clientWidth, $("#view").clientHeight) / 2.4 * cam.zoom;
   const bones = BONES.map(([a, b]) => ({ a, b, z: (pr[a][2] + pr[b][2]) / 2 })).sort((m, n) => m.z - n.z);
-  for (const bn of bones) s += `<line class="bone${bn.b === sel ? " sel" : ""}" x1="${pr[bn.a][0]}" y1="${pr[bn.a][1]}" x2="${pr[bn.b][0]}" y2="${pr[bn.b][1]}"/>`;
+  const pulledSet = jd && jd.active ? new Set(jd.driven.concat([jd.id])) : null;
+  for (const bn of bones) s += `<line class="bone${bn.b === sel ? " sel" : ""}${pulledSet && pulledSet.has(bn.b) ? " pulled" : ""}" x1="${pr[bn.a][0]}" y1="${pr[bn.a][1]}" x2="${pr[bn.b][0]}" y2="${pr[bn.b][1]}"/>`;
   const hd = project([P.head[0] + (P.head[0] - P.neck[0]) * 0, P.head[1] + 0.1, P.head[2]]);
   s += `<circle class="head" cx="${hd[0]}" cy="${hd[1]}" r="${0.11 * sc}"/>`;
   for (const b of ["Lbrow", "Rbrow"]) {
     const p = pr[b], r = rotOf(b)[0] / 100 * sc * 0.25;
     s += `<line class="brow" x1="${p[0] - 0.025 * sc}" y1="${p[1] - r}" x2="${p[0] + 0.025 * sc}" y2="${p[1] - r}"/>`;
   }
-  if (sel && pr[sel] && CLICKABLE.includes(sel)) s += `<circle class="ring" data-ring="1" cx="${pr[sel][0]}" cy="${pr[sel][1]}" r="${Math.max(22, 0.09 * sc)}"/>`;
+  if (jd && jd.active) s += `<line class="pullline" x1="${jd.sx0}" y1="${jd.sy0}" x2="${jd.tx}" y2="${jd.ty}"/><circle class="pulltarget" cx="${jd.tx}" cy="${jd.ty}" r="12"/><circle class="pulltarget dot" cx="${jd.tx}" cy="${jd.ty}" r="3"/>`;
+  if (sel && pr[sel] && CLICKABLE.includes(sel) && !(jd && jd.active)) s += `<circle class="ring" data-ring="1" cx="${pr[sel][0]}" cy="${pr[sel][1]}" r="${Math.max(22, 0.09 * sc)}"/>`;
   for (const id of CLICKABLE) {
     const p = pr[id], cls = ["jt"]; if (isEdited(id)) cls.push("edited"); if (id === sel) cls.push("sel"); if (id === hoverJoint) cls.push("hover");
     s += `<circle class="${cls.join(" ")}" data-j="${id}" cx="${p[0]}" cy="${p[1]}" r="${Math.max(6, 0.022 * sc)}"><title>${esc(J[id].side ? (J[id].side === "L" ? "Left " : "Right ") + J[id].name : J[id].name)}</title></circle>`;
@@ -756,6 +769,7 @@ function renderSelected() {
   b.innerHTML = `
     <div><div class="jname">${esc(fullName(sel))}</div><div class="cap">Second Life name: ${esc(j.sl)} · Area: <span style="color:var(${area.c})">■</span> ${area.name}</div></div>
     <div class="row"><button class="btn compact" data-cmd="resetjoint" data-name="Reset this joint" ${isEdited(sel) ? "" : 'aria-disabled="true" data-why="This joint is not changed."'}><svg class="i" data-i="rotate-ccw"></svg>Reset</button>
+    <button class="btn compact" data-cmd="grab" data-name="Pull with the keyboard" data-key="Enter in the 3D view" data-tipline="Pick the joint up, move it with the arrow keys, press Enter to set a key. Esc cancels." ${playing ? 'aria-disabled="true" data-why="Stop playing first."' : ""}>${icon("move-3d")}Pull with keys</button>
     ${override[sel] ? '<span class="cap" style="color:var(--warning)">■ Not saved as a key yet</span>' : ""}</div>
     <div class="label">Turn</div>
     ${sl}
@@ -763,7 +777,7 @@ function renderSelected() {
     <button class="switch" role="switch" aria-checked="${limitsOn}" data-cmd="limits" data-name="Joint limits: warn near the furthest a joint can turn" data-tipline="Limits only warn. Second Life has no limits, so odd poses on purpose stay possible."><span class="track"></span>Joint limits<span class="st"></span></button>
     <div class="more expert-only" data-p="P5 P12">
       <div class="label">More (Expert mode)</div>
-      <button class="switch" role="switch" aria-checked="false" data-cmd="ik" data-name="IK: move a hand or foot and let the arm or leg follow" ${/wrist|ankle/.test(sel) ? "" : 'aria-disabled="true" data-why="IK works on hands and feet. Pick a hand or a foot first."'}><span class="track"></span>IK<span class="st"></span></button>
+      <button class="switch" role="switch" aria-checked="${ikOn}" data-cmd="ik" data-name="IK: dragging a joint pulls the limb" data-tipline="On: drag a joint and the limb follows. Off: dragging turns only that joint. Shift when you press does the other one."><span class="track"></span>IK<span class="st"></span></button>>
       <button class="switch" role="switch" aria-checked="false" data-cmd="lock" data-name="Lock this joint so it cannot be turned by mistake"><span class="track"></span>${icon("lock")}Lock<span class="st"></span></button>
       <div class="seg" role="radiogroup" aria-label="Rotate or move">
         <button class="btn compact" role="radio" aria-checked="true" data-name="Rotate">${icon("rotate-3d")}Rotate</button>
@@ -915,11 +929,13 @@ function syncSwitches(root) {
 // ---------- Hint cards (one at a time) ----------
 const CARDS = [
   { t: "Pick a joint", p: "Click a joint on the figure to pick it. You can also use the Joints list.", at: "#view", done: () => !!sel },
-  { t: "Turn it", p: "Drag the ring to turn the joint. Or use the X, Y and Z sliders on the right.", at: "#selected", done: () => Object.keys(override).length > 0 },
+  { t: "Pull a limb", p: "Press a joint and drag. The limb follows your pointer. Let go to set a key. Esc cancels. Hold Shift when you press to turn only that joint. No mouse? Press Enter on the picked joint and use the arrow keys.", at: "#view", done: () => pulledOnce },
+  { t: "Turn it", p: "Drag the ring to turn the joint. Or use the X, Y and Z sliders on the right.", at: "#selected", done: () => turnedOnce },
   { t: "Save the pose", p: "Saves the pose you see now as a key. A key is a saved pose.", at: "#bKey" },
   { t: "Watch it", p: "Plays your animation from the start. Press it again to stop.", at: "#bStart" },
   { t: "Change how it moves", p: "Pick a key on the timeline, then an easing choice. Rest the mouse on a tile to read what it does.", at: "#tiles" }
 ];
+let pulledOnce = false, turnedOnce = false;
 let cardIdx = store.get("card", 0);
 function showCard() {
   const hc = $("#hintcard");
@@ -929,6 +945,7 @@ function showCard() {
   const r = $(c.at).getBoundingClientRect(), w = hc.offsetWidth, h = hc.offsetHeight;
   let x = r.left + 16, y = r.top + 16;
   if (c.at === "#bKey" || c.at === "#bStart" || c.at === "#tiles") { x = r.left; y = r.top - h - 12; }
+  if (c.at === "#view") { x = r.left + 16; y = r.bottom - h - 48; } // bottom left, so it never covers the figure
   if (c.at === "#selected") { x = r.left - w - 12; y = r.top + 40; }
   hc.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, x)) + "px"; hc.style.top = Math.max(56, Math.min(window.innerHeight - h - 40, y)) + "px";
 }
@@ -984,6 +1001,7 @@ function run(cmd, el) {
     case "fwd": stop(); setFrame(frame + 1); return;
     case "loop": loopOn = !loopOn; store.set("loop", loopOn); feedback("Loop " + (loopOn ? "on: plays again and again." : "off: stops at the end.")); break;
     case "setkey": setKey(); return;
+    case "grab": startKeyGrab(false); return;
     case "pastemirror": break;
     case "theme": theme = theme === "dark" ? "light" : "dark"; store.set("theme", theme); feedback((theme === "dark" ? "Dark" : "Light") + " theme."); break;
     case "expert": expert = !expert; store.set("expert", expert); feedback(expert ? "Expert mode: more controls below, nothing moved." : "Beginner mode: expert controls hidden."); break;
@@ -1004,7 +1022,8 @@ function run(cmd, el) {
     case "tpose": pushUndo(); override.Lshoulder = [0, 0, 90]; override.Rshoulder = [0, 0, -90]; override.Lelbow = [0, 0, 0]; override.Relbow = [0, 0, 0]; feedback("T-pose. " + TXT["NEXT-03"], "hint"); break;
     case "flip": pushUndo(); { const o = {}; for (const id of ORDER) { const m = mirrorId(id); const r = rotOf(m); if (r.some(v => Math.abs(v) > 0.01)) o[id] = [r[0], -r[1], -r[2]]; } override = o; } feedback("Pose flipped left to right. " + TXT["NEXT-03"], "hint"); break;
     case "limits": limitsOn = !limitsOn; store.set("limits", limitsOn); feedback(limitsOn ? "Joint limits on: you get a warning near the furthest a joint can turn." : "Joint limits off: any pose is possible."); break;
-    case "ik": case "lock": if (el) el.setAttribute("aria-checked", el.getAttribute("aria-checked") !== "true"); syncSwitches(el.parentElement); feedback("Mockup only: " + el.dataset.name.split(":")[0] + " " + (el.getAttribute("aria-checked") === "true" ? "on." : "off.")); return;
+    case "ik": ikOn = !ikOn; store.set("ik", ikOn); feedback(ikOn ? "IK on: dragging a joint pulls the limb. Hold Shift when you press to turn only that joint." : "IK off: dragging a joint turns only that joint. Hold Shift when you press to pull the limb."); break;
+    case "lock": if (el) el.setAttribute("aria-checked", el.getAttribute("aria-checked") !== "true"); syncSwitches(el.parentElement); feedback("Mockup only: " + el.dataset.name.split(":")[0] + " " + (el.getAttribute("aria-checked") === "true" ? "on." : "off.")); return;
     case "curve": openInfo("Edit curve", "<p style='margin:0'>A small separate window with the speed curve of the selected move. It can be moved to a second screen. Not part of this mockup.</p>", [["Close", "dlgclose", "main"]]); return;
     case "hidenote": noteVisible = false; feedback("Notes hidden. Help > Show hints shows them again."); break;
     case "hcclose": advanceCard(); return;
@@ -1017,8 +1036,8 @@ function pushUndoClear() { undoStack = []; redoStack = []; }
 function restore(s) { const o = JSON.parse(s); doc = o.doc; override = o.override; }
 function mirrorId(id) { if (/^L/.test(id) && J["R" + id.slice(1)]) return "R" + id.slice(1); if (/^R/.test(id) && J["L" + id.slice(1)]) return "L" + id.slice(1); if (id === "wingL") return "wingR"; if (id === "wingR") return "wingL"; return id; }
 function advanceIf(sel) { const c = CARDS[cardIdx]; if (c && c.at === sel) advanceCard(); }
-function setKey() {
-  pushUndo(); const ids = Object.keys(override).length ? Object.keys(override) : [sel];
+function setKey(skipUndo) {
+  if (skipUndo !== true) pushUndo(); const ids = Object.keys(override).length ? Object.keys(override) : [sel];
   for (const id of ids) {
     const v = rotOf(id); const t = doc.tracks[id] || (doc.tracks[id] = []);
     const k = t.find(x => x.f === frame); if (k) k.v = v; else { t.push({ f: frame, v, e: "both" }); t.sort((a, b) => a.f - b.f); }
@@ -1036,7 +1055,7 @@ function selectJoint(id, from) {
 }
 function setRot(axis, val) {
   if (!doc || !sel) return; if (!override[sel]) { pushUndo(); override[sel] = rotOf(sel); }
-  val = ((val + 180) % 360 + 360) % 360 - 180;
+  val = ((val + 180) % 360 + 360) % 360 - 180; turnedOnce = true;
   override[sel][axis] = val;
   if (ui.side === "M") { const m = mirrorId(sel); if (m !== sel) { override[m] = override[m] || rotOf(m); override[m][axis] = axis === 0 ? val : -val; } }
   renderScene(); checkCards();
@@ -1188,6 +1207,102 @@ function nextRegion(d) {
   el.focus();
 }
 
+
+// ---------- Drag a joint: pull the limb (pretend IK) or turn only that joint ----------
+// Press a joint and drag. IK on (default): the joints above it bend so the limb follows the pointer.
+// IK off, or Shift held when pressing: only that joint turns, so its bone follows the pointer.
+const CHILD = {}; for (const [a, b] of BONES) if (!CHILD[a]) CHILD[a] = b;
+let ikOn = store.get("ik", true);
+let jd = null; // the drag in progress: { id, driven, turnOnly, via, snap, sx0, sy0, z2, tx, ty, active }
+function mouseLocal(e) { const v = $("#view"), r = v.getBoundingClientRect(); return [(e.clientX - r.left) * v.clientWidth / r.width, (e.clientY - r.top) * v.clientHeight / r.height]; }
+function limbAbove(id, n) { const a = []; let p = J[id].parent; while (p && a.length < n && p !== "pelvis" && p !== "pos") { a.push(p); p = J[p].parent; } return a; }
+function unproject(sx, sy, z2) { // inverse of project(), at the depth z2
+  const v = $("#view"), w = v.clientWidth, h = v.clientHeight, y = cam.yaw * Math.PI / 180, x = cam.pitch * Math.PI / 180;
+  const sc = Math.min(w, h) / 2.4 * cam.zoom, X = (sx - w / 2 - cam.panX) / sc, Y2 = -(sy - h / 2 - cam.panY) / sc;
+  const Y = Y2 * Math.cos(x) + z2 * Math.sin(x), Z = -Y2 * Math.sin(x) + z2 * Math.cos(x);
+  return [X * Math.cos(y) - Z * Math.sin(y), Y + 0.95, X * Math.sin(y) + Z * Math.cos(y)];
+}
+function tipOf(d) {
+  const { P, R } = worldPositions();
+  if (!d.turnOnly) return P[d.id];
+  const off = CHILD[d.id] ? J[CHILD[d.id]].off : [0, -0.1, 0], o = mv(R[d.id], off);
+  return [P[d.id][0] + o[0], P[d.id][1] + o[1], P[d.id][2] + o[2]];
+}
+function solveIK(d, target) { // coordinate descent: each joint takes a share of the move, the joint nearest the tip most
+  const W = [1, 0.6, 0.35];
+  for (let it = 0; it < 14; it++) for (let k = 0; k < d.driven.length; k++) {
+    const id = d.driven[k];
+    for (let ax = 0; ax < 3; ax++) {
+      const r = rotOf(id), t0 = tipOf(d); override[id] = r.slice(); override[id][ax] = r[ax] + 1;
+      const t1 = tipOf(d), g = [t1[0] - t0[0], t1[1] - t0[1], t1[2] - t0[2]], e = [target[0] - t0[0], target[1] - t0[1], target[2] - t0[2]];
+      let step = (g[0] * e[0] + g[1] * e[1] + g[2] * e[2]) / (g[0] * g[0] + g[1] * g[1] + g[2] * g[2] + 1e-7) * W[k];
+      let nv = r[ax] + Math.max(-20, Math.min(20, step));
+      if (limitsOn) nv = Math.max(J[id].lim[ax][0], Math.min(J[id].lim[ax][1], nv));
+      override[id] = r.slice(); override[id][ax] = nv;
+    }
+  }
+}
+function startJointDrag(id, turnOnly, via) {
+  if (!doc) return false;
+  if (playing) { say("Pull a joint: Stop playing first.", "reason"); return false; }
+  const above = limbAbove(id, 3); let held = false;
+  if (!turnOnly && !above.length) { turnOnly = true; held = true; } // pelvis and torso have no limb above them
+  jd = { id, turnOnly, held, via, snap: snapshot(), pre: JSON.stringify(override), driven: turnOnly ? [id] : above, active: true };
+  const p = project(tipOf(jd)); jd.sx0 = p[0]; jd.sy0 = p[1]; jd.z2 = p[2]; jd.tx = p[0]; jd.ty = p[1];
+  $("#view").classList.add("pulling"); $("#hintcard").style.display = "none"; hideTip(); updateHintbar(); renderScene(); showDragTip(); return true;
+}
+function moveDragTo(tx, ty, cx, cy) {
+  if (!jd) return; const v = $("#view");
+  jd.tx = Math.max(0, Math.min(v.clientWidth, tx)); jd.ty = Math.max(0, Math.min(v.clientHeight, ty));
+  solveIK(jd, unproject(jd.tx, jd.ty, jd.z2)); renderScene(); showDragTip(cx, cy);
+}
+function showDragTip(cx, cy) {
+  const t = $("#dragtip"); if (!jd) { t.style.display = "none"; return; }
+  const name = fullName(jd.id);
+  const head = jd.turnOnly ? (jd.held ? `Turning only ${name} (it holds the body)` : `Turning only ${name}`) : `Pulling ${name}`;
+  const how = jd.via === "key" ? "Arrow keys move it · Enter: set key · Esc: cancel" : "Release: set key · Esc: cancel";
+  const sw = jd.turnOnly ? "" : '<div class="tt">Shift when you press: turn only this joint</div>';
+  t.innerHTML = `<div class="tn">${icon(jd.turnOnly ? "rotate-3d" : "move-3d")}${esc(head)}</div><div class="tt">${how}</div>${jd.via === "key" ? "" : sw}`;
+  t.style.display = "block";
+  const r = $("#view").getBoundingClientRect(), k = r.width / $("#view").clientWidth;
+  if (cx === undefined) { cx = r.left + jd.tx * k + 24; cy = r.top + jd.ty * k + 24; } else { cx += 18; cy += 18; }
+  t.style.left = Math.max(8, Math.min(window.innerWidth - t.offsetWidth - 8, cx)) + "px"; t.style.top = Math.max(8, Math.min(window.innerHeight - t.offsetHeight - 8, cy)) + "px";
+}
+function endDragUi() { jd = null; $("#view").classList.remove("pulling"); $("#dragtip").style.display = "none"; }
+function finishJointDrag() {
+  if (!jd) return; const d = jd; endDragUi();
+  if (!d.turnOnly) override[d.id] = rotOf(d.id); // the picked joint gets a key too, so its row shows
+  undoStack.push(d.snap); if (undoStack.length > 100) undoStack.shift(); redoStack = [];
+  setKey(true); pulledOnce = true;
+  const names = d.driven.map(fullName).join(", ");
+  feedback((d.turnOnly ? "Turned " + fullName(d.id) : "Pulled " + fullName(d.id)) + ". Key set at frame " + frame + " for " + (d.turnOnly ? fullName(d.id) : names + " and " + fullName(d.id)) + ". Ctrl+Z undoes it.");
+  checkCards(); showCard();
+}
+function cancelJointDrag() {
+  if (!jd) return; const d = jd; endDragUi(); override = JSON.parse(d.pre);
+  renderAll(); showCard(); feedback("Pull cancelled. Nothing changed.", "hint");
+}
+function startKeyGrab(turnOnly) {
+  if (!doc) { say("Pull with keys: Open an animation first.", "reason"); return; }
+  if (!sel || !CLICKABLE.includes(sel)) { say("Pull with keys: Pick a joint first. Click it on the figure or in the Joints list.", "reason"); return; }
+  $("#view").focus(); if (startJointDrag(sel, turnOnly || !ikOn, "key")) { jd.via = "key"; updateHintbar(); showDragTip(); }
+}
+// Capture phase, so that arrow keys, Enter and Esc go to the drag and not to the frame step or the rest of the page.
+document.addEventListener("keydown", e => {
+  const k = e.key;
+  if (jd && jd.active) {
+    if (k === "Escape") { e.preventDefault(); e.stopPropagation(); cancelJointDrag(); return; }
+    if (jd.via === "key") {
+      const st = e.shiftKey ? 3 : 12, mv2 = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[k];
+      if (mv2) { e.preventDefault(); e.stopPropagation(); moveDragTo(jd.tx + mv2[0], jd.ty + mv2[1]); return; }
+      if (k === "Enter" || k === " ") { e.preventDefault(); e.stopPropagation(); finishJointDrag(); return; }
+    }
+    if (k !== "Shift" && k !== "Control" && k !== "Alt") { e.preventDefault(); e.stopPropagation(); if (e.ctrlKey || e.metaKey) say("Finish or cancel the pull first: Esc cancels.", "reason"); }
+    return;
+  }
+  if (e.target === $("#view") && doc && !e.ctrlKey && !e.metaKey && !e.altKey && (k === "Enter" || k === "g" || k === "G")) { e.preventDefault(); e.stopPropagation(); startKeyGrab(e.shiftKey && k === "Enter"); }
+}, true);
+
 // ---------- 3D view mouse ----------
 (function () {
   const v = $("#view"); let drag = null;
@@ -1196,10 +1311,13 @@ function nextRegion(d) {
     if (!doc || e.target.closest(".gizmo, .empty, .hintbar")) return;
     v.focus();
     const g = gestureFor(e); const jt = e.target.closest("[data-j]"); const ring = e.target.closest("[data-ring]");
-    if (e.button === 1) e.preventDefault();
+    if (e.button === 1 || e.button === 0) e.preventDefault(); // no text selection or native drag while dragging in the view
     if (ring && e.button === 0 && (g === "pick" || g === "pick-or-orbit")) { drag = { mode: "ring", x: e.clientX, y: e.clientY, a0: angleTo(e) }; return; }
     if (scheme === "sl" && e.altKey && e.button === 0 && jt && !e.ctrlKey) { selectJoint(jt.dataset.j); clickCmd("focus"); return; }
-    if ((g === "pick" || g === "pick-or-orbit") && jt) { selectJoint(jt.dataset.j); return; }
+    if ((g === "pick" || g === "pick-or-orbit") && jt) {
+      const id = jt.dataset.j; selectJoint(id);
+      drag = { mode: "joint", id, sx: e.clientX, sy: e.clientY, shift: e.shiftKey, started: false, m0: mouseLocal(e) }; return;
+    }
     if (g === "pick") return;
     drag = { mode: g === "pick-or-orbit" ? "orbit" : g, x: e.clientX, y: e.clientY, moved: false };
     v.style.cursor = "grabbing";
@@ -1207,7 +1325,11 @@ function nextRegion(d) {
   window.addEventListener("mousemove", e => {
     if (!doc) return;
     if (!drag) { const jt = e.target.closest && e.target.closest("#view [data-j]"); const ring = e.target.closest && e.target.closest("#view [data-ring]"); const nh = jt ? jt.dataset.j : null;
-      hoverState = ring ? "ring" : jt ? "joint" : e.target.closest && e.target.closest("#view") ? "empty" : null; if (nh !== hoverJoint) { hoverJoint = nh; renderScene(); } updateHintbar(); return; }
+      hoverState = ring ? "ring" : jt ? "joint" : e.target.closest && e.target.closest("#view") ? "empty" : null; if (nh !== hoverJoint) { $$("#scene .jt.hover").forEach(c => c.classList.remove("hover")); hoverJoint = nh; if (jt) jt.classList.add("hover"); } updateHintbar(); return; }
+    if (drag.mode === "joint") {
+      if (!drag.started) { if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 5) return; if (!startJointDrag(drag.id, ikOn === drag.shift, "mouse")) { drag = null; return; } drag.started = true; }
+      const m = mouseLocal(e); moveDragTo(jd.sx0 + m[0] - drag.m0[0], jd.sy0 + m[1] - drag.m0[1], e.clientX, e.clientY); return;
+    }
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; drag.moved = true;
     if (drag.mode === "ring") { const a = angleTo(e); let d = a - drag.a0; drag.a0 = a; if (d > 180) d -= 360; if (d < -180) d += 360; const r = rotOf(sel); setRot(2, Math.round((r[2] - d * (e.shiftKey ? 0.25 : 1)) * 10) / 10); return; }
     if (drag.mode === "orbit") { cam.yaw += dx * 0.5; cam.pitch = Math.max(-80, Math.min(80, cam.pitch + dy * 0.4)); cam.label = "Free"; }
@@ -1216,7 +1338,7 @@ function nextRegion(d) {
     if (drag.mode === "zoom") cam.zoom = Math.max(0.3, Math.min(4, cam.zoom * (1 + (dx - dy) * 0.005)));
     viewLabel(); renderScene();
   });
-  window.addEventListener("mouseup", () => { if (drag && drag.mode === "ring") renderAll(); drag = null; v.style.cursor = ""; });
+  window.addEventListener("mouseup", () => { if (drag && drag.mode === "joint" && drag.started) finishJointDrag(); if (drag && drag.mode === "ring") renderAll(); drag = null; v.style.cursor = ""; });
   v.addEventListener("wheel", e => { if (!doc) return; e.preventDefault(); cam.zoom = Math.max(0.3, Math.min(4, cam.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1))); renderScene(); }, { passive: false });
   v.addEventListener("dblclick", e => { const jt = e.target.closest("[data-j]"); if (jt && scheme === "default") { selectJoint(jt.dataset.j); clickCmd("focus"); } });
   v.addEventListener("mouseleave", () => { hoverState = null; hoverJoint = null; renderScene(); updateHintbar(); });
@@ -1226,7 +1348,7 @@ let hoverState = null;
 function updateHintbar() {
   const hb = $("#hintbar"); if (!doc || !hintsOn) { hb.hidden = true; return; } hb.hidden = false;
   const orbit = SCHEMES[scheme].rows[0][1];
-  const txt = hoverState === "ring" ? TXT["HINT-03"] : hoverState === "joint" ? TXT["HINT-02"] : hoverState === "empty" ? (scheme === "default" ? TXT["HINT-04"] : "Look around: " + orbit + ".") : TXT["HINT-01"];
+  const txt = jd && jd.active ? (jd.via === "key" ? TXT["HINT-06"] : TXT["HINT-05"]) : hoverState === "ring" ? TXT["HINT-03"] : hoverState === "joint" ? TXT["HINT-02"] : hoverState === "empty" ? (scheme === "default" ? TXT["HINT-04"] : "Look around: " + orbit + ".") : TXT["HINT-01"];
   hb.innerHTML = `<b>${esc(txt)}</b> · <kbd>?</kbd> all keys`;
 }
 
@@ -1247,7 +1369,7 @@ $("#camRadios").addEventListener("keydown", e => { if (!/Arrow/.test(e.key)) ret
 function openKeys() {
   const rows = [["Start or stop playing", "Space"], ["Frame back, frame forward", "Left arrow, Right arrow"], ["Replay from start", "Home"], ["Set key", "K"], ["Loop on or off", "L"],
     ["Undo, redo", "Ctrl+Z, Ctrl+Shift+Z"], ["Save, open, export", "Ctrl+S, Ctrl+O, Ctrl+Shift+E"], ["Open the menu", "F10, then arrow keys"], ["Next area (menu, joints, 3D view, selected joint, timeline)", "F6, Shift+F6"],
-    ["Hide or show panels", "Tab in the 3D view (Shift+Tab leaves the 3D view)"], ["Throw away a pose change", "Esc"], ["Close a menu, dialog or hint", "Esc"],
+    ["Hide or show panels", "Tab in the 3D view (Shift+Tab leaves the 3D view)"], ["Throw away a pose change, or cancel a pull", "Esc"], ["Close a menu, dialog or hint", "Esc"],
     ["Move between keys on the timeline", "Arrow keys on a key"], ["Pick an easing choice", "Arrow keys in the tile row"], ["Theme, Expert mode, hints", "T, Shift+E, Shift+H"], ["Charter overlay", "C"], ["Text size", "Ctrl+= (100 to 200 percent)"]];
   $("#keysTable").innerHTML = "<tr><th>Action</th><th>Keys</th></tr>" + rows.concat(SCHEMES[scheme].rows, KEYROWS_ALL).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("");
   openDialog("#dlgKeys");

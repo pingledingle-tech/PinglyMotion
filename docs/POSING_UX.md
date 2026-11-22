@@ -60,9 +60,12 @@ One scheme for everyone. The first column is all a new user needs; the other two
 | Focus on a joint | Double-click it, or F | Numpad . | Alt + click |
 | Front / side / top | Click the view gizmo | Numpad 1 / 3 / 7 | – |
 | Select a joint | Click it, or its row | Click | Click |
+| Pull a limb (IK) | Press a joint and drag; release sets a key, Esc cancels | G (later) | – |
+| Turn only that joint | Hold Shift when you press the joint, or switch IK off | – | – |
+| Pull with the keyboard | Enter on the picked joint, arrow keys, Enter sets a key | G, arrow keys (later) | – |
 | Turn a joint | Drag a ring | R, then X / Y / Z (later) | – |
 | Turn freely | Drag the ball on the joint | R R (later) | Trackball |
-| Finer control | Hold Shift while dragging | Shift | Shift |
+| Finer control | Hold Shift while dragging a ring (arrow keys while pulling with keys) | Shift | Shift |
 | Undo / redo | Ctrl + Z / Ctrl + Shift + Z | Same | Same |
 | Set a key | Set key button, or K | I | – |
 | Play / stop | Space | Space | – |
@@ -75,7 +78,7 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 **Done: Camera and keys** (old step 1; `src/animationview.*`, `src/camera.*`):
 
 - The camera turns around the point in the middle of the view. Focus (double-click, F, number pad `.`, Alt + click) puts the joint there, so the camera then turns around that joint.
-- A left click selects; a left drag that starts on the body turns the camera too (the joint is not selected then). Rings and prop handles keep the left drag.
+- A left click selects; a left drag that starts on the body turns the camera too (the joint is not selected then). Rings and prop handles keep the left drag. Pressing on a joint and dragging pulls the limb (decided in the mockup, not built yet: [UX_DECISIONS.md](UX_DECISIONS.md#6a-dragging-a-joint-in-the-3d-view)); Shift when you press turns only that joint.
 - Number pad: 1 front, 3 side (from the figure's right), 7 top; Ctrl + 1 back, Ctrl + 3 the other side. With Num Lock off the same keys work. Number pad `,` (decimal comma keyboards) also focuses.
 - Wheel and drag zoom move a share of the distance (closer = smaller steps). Page Up / Page Down still zoom; F9–F12 still restore stored cameras (Shift + F9–F12 store).
 - Until the selected-joint card has an IK switch (UX step 6, Selected joint panel, in [UX_DECISIONS.md](UX_DECISIONS.md#9-build-order)), **Ctrl + double-click** a hand or foot switches IK on or off (it used to be a plain double-click). **Shift + double-click** still selects the mirrored joint too.

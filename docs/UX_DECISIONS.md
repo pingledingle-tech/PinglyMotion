@@ -48,6 +48,18 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - Advanced things (IK, lock, move) further down.
 - Joint limits are a helper, not a wall: they warn, and can be switched off. SL has no limits, so strange poses on purpose must be possible.
 
+## 6a. Dragging a joint in the 3D view
+
+Shown in the clickable mockup (`docs/mockup/index.html`); waits for the project owner's yes before it is built in the program.
+
+- Click a joint to pick it. Press on a joint and drag to **pull the limb**: the joints above it bend so the limb follows the pointer (IK pull). One gesture does both: pressing an unpicked joint picks it and pulls it.
+- While dragging: a grabbing cursor, a dashed line from where the joint was to the pointer, the pulled limb highlighted, and a small label next to the pointer that says what is happening ("Pulling Right Hand", "Release: set key, Esc: cancel"). The hint bar says the same.
+- **Release** sets the key at the current frame for the pulled joints. **Esc** during the drag cancels, nothing changes. **Ctrl+Z** undoes the whole pull in one step.
+- **Pull or turn only:** the IK switch in the Selected joint panel (on by default) chooses what a plain drag does. Holding **Shift when you press** the joint does the other one. "Turn only this joint" swings that joint so its own bone follows the pointer. The pelvis and torso have no limb above them, so they only turn.
+- **Keyboard alternative:** with a joint picked and the 3D view focused, **Enter** (or G) picks the joint up, the **arrow keys** move it (Shift: small steps), **Enter** sets the key, **Esc** cancels. The "Pull with keys" button in the Selected joint panel does the same. Shift + Enter picks it up in the other mode.
+- First-run hint "Pull a limb" (after "Pick a joint"); it is also in the Camera and keys card and the Keys and mouse list.
+- The ring and the sliders still turn a joint without keys being set until Set key, as before.
+
 ## 7. Mirror and whole pose
 
 - Left / Right / Mirror switch at the top of the Joints panel.
