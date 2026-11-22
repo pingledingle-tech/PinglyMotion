@@ -1,6 +1,6 @@
 Branch: job/tooling-work-status
-Status: active
-Pull request: pending
+Status: done
+Pull request: #376
 Files:
 - tools/work.py
 - tests/test_work.py
