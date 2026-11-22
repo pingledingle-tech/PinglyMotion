@@ -89,6 +89,11 @@ class Interpreter
     // queues touch_start (detected key and name), attach (with the key, NULL_KEY on detach)
     void touch(const QString& id, const QString& name);
     void attachEvent(const QString& id);
+    // Step 9a: queues link_message (sender's link number, num, str, id) and linkset_data (action, name, value)
+    void linkMessage(int sender, int num, const QString& str, const QString& id);
+    void linksetDataEvent(int action, const QString& name, const QString& value);
+    // the current state has a handler for this event
+    bool handles(const QString& event) const;
 
     bool stopped() const { return m_stopped; }
     QString stopReason() const { return m_stopReason; }

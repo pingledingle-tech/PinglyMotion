@@ -14,6 +14,8 @@
 #include <QTest>
 
 #include "scriptlab/lsl/control.h"
+#include "scriptlab/lsl/parser.h"
+#include "scriptlab/lsl/sandbox.h"
 #include "scriptlab/lsl/session.h"
 #include "scriptlab/rlvstate.h"
 
@@ -272,18 +274,30 @@ void LslWorldTest::limitStopsOneObjectOthersRun()
            QStringList({"0 loop limit ", "1 clock owner_say tick", "2 clock owner_say tick", "3 clock owner_say tick"}));
   QCOMPARE(a["stopped"].toBool(), false);
 
-  // an endless ping-pong at one moment ends at the event limit of each script, not in a hang
-  RlvState rlv2;
+  // an endless ping-pong at one moment ends at the event limit of each script, not in a hang. Run with a
+  // smaller event limit and a long real-time limit, so the event limit ends it on a slow machine too
+  // (sanitizer builds); lsl_run uses the same Sandbox with the default limits
+  Limits limits;
+  limits.maxEvents = 2000;
+  limits.maxWallMs = 600000;
   const QString ping = "default { state_entry() { llListen(3, \"\", NULL_KEY, \"\"); llSay(3, \"x\"); } listen(integer c, string n, key id, string m) { llSay(3, m); } }";
-  const QJsonObject b = run({object("ping", ping), object("pong", ping)}, 1, rlv2);
-  QVERIFY2(b["ok"].toBool(), qPrintable(b["error"].toString()));
-  QCOMPARE(b["log_truncated"].toBool(), true);
+  std::shared_ptr<const Script> script(Parser::parse(ping).script.release());
+  QVERIFY(script);
+  RlvState rlv2;
+  Sandbox sandbox(rlv2, true);
+  ObjectSpec first, second;
+  first.name = "ping";
+  second.name = "pong";
+  QCOMPARE(sandbox.addObject(first, script, limits), QString());
+  QCOMPARE(sandbox.addObject(second, script, limits), QString());
+  sandbox.start();
+  sandbox.runUntil(1.0);
+  QCOMPARE(sandbox.truncated(), true);
   // ping reaches the limit first; pong then hears nothing more and keeps waiting
-  const QJsonArray pair = b["objects"].toArray();
-  QCOMPARE(pair[0].toObject()["stop_reason"].toString(), QString("The script handled more than 10000 events and was stopped."));
-  QCOMPARE(pair[1].toObject()["stopped"].toBool(), false);
-  QCOMPARE(b["stopped"].toBool(), false);
-  QCOMPARE(b["log"].toArray().last().toObject()["type"].toString(), QString("limit"));
+  QCOMPARE(sandbox.interpreter(0).stopReason(), QString("The script handled more than 2000 events and was stopped."));
+  QCOMPARE(sandbox.interpreter(1).stopped(), false);
+  QCOMPARE(sandbox.allStopped(), false);
+  QCOMPARE(sandbox.log().last().toObject()["type"].toString(), QString("limit"));
 
   // lsl_event refuses a world where every script stopped
   Session session;
@@ -333,7 +347,7 @@ void LslWorldTest::refusesBadInput()
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok), object("a", ok)}}}),
            QString("Object 2: two objects are named \"a\"; each needs its own name."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{QJsonObject{{"name", "a"}}}}}),
-           QString("Object 1: missing \"source\": the object's LSL script as text."));
+           QString("Object 1: missing \"source\": the object's LSL script as text (or \"scripts\" for several)."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"position", QJsonArray{1, 2}}})}}}),
            QString("Object 1: \"position\" must be [x, y, z] in metres: x and y 0 to 256, z 0 to 4096."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"attached", 56}})}}}),
@@ -341,7 +355,7 @@ void LslWorldTest::refusesBadInput()
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"key", "not a key!"}})}}}),
            QString("Object 1: \"key\" must be a key: 1 to 36 letters, digits or \"-\"."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok, {{"colour", 1}})}}}),
-           QString("Object 1: unknown field \"colour\". Fields: name, source, key, owner, owner_name, position, attached."));
+           QString("Object 1: unknown field \"colour\". Fields: name, source, scripts, prims, key, owner, owner_name, position, attached."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok)}},
                              {"inputs", QJsonArray{QJsonObject{{"type", "touch"}, {"object", "b"}}}}}),
            QString("Input 1: there is no object named \"b\"."));
@@ -367,7 +381,7 @@ void LslWorldTest::eventNeedsAWorld()
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "fly"}}, &session)["error"].toString(),
            QString("\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\" or \"detach\"."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"at", 1}}, &session)["error"].toString(),
-           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, seconds."));
+           QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, seconds."));
   RlvState rlv;
   run({object("a", "default { touch_start(integer n) { } }")}, 1, rlv, &session);
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"object", "zz"}}, &session)["error"].toString(),

@@ -310,15 +310,32 @@ void Interpreter::dispatch(const Event& event)
     failAt("limit", QString("The script handled more than %1 events and was stopped.").arg(m_limits.maxEvents));
   if (m_clock.elapsed() > m_limits.maxWallMs)
     failAt("limit", QString("The script ran longer than %1 ms of real time and was stopped.").arg(m_limits.maxWallMs));
-
-  QJsonObject entry{{"type", "event"}, {"name", event.name}};
-  if (!event.args.empty())
+  // Second Life: a link message or a linkset_data value that does not fit in the receiving script's
+  // free memory crashes that script with a Stack-Heap Collision (step 9a)
+  if (event.name == "link_message" || event.name == "linkset_data")
   {
-    QJsonArray args;
-    for (const Value& v : event.args) args.append(World::clip(toLslString(v)));
-    entry["args"] = args;
+    qint64 incoming = 0;
+    for (const Value& v : event.args) incoming += v.bytes();
+    if (m_memory + incoming > m_limits.maxMemoryBytes)
+    {
+      m_line = handler->line;
+      m_column = handler->column;
+      failAt("error", QString("Stack-Heap Collision: the %1 event brought %2 bytes, more than the script's free memory (%3 of %4 bytes used), so the script crashed, as in Second Life.")
+                        .arg(event.name).arg(incoming).arg(m_memory).arg(m_limits.maxMemoryBytes));
+    }
   }
-  m_world.log(m_now, entry);
+
+  if (!m_world.logFull())
+  {
+    QJsonObject entry{{"type", "event"}, {"name", event.name}};
+    if (!event.args.empty())
+    {
+      QJsonArray args;
+      for (const Value& v : event.args) args.append(World::clip(toLslString(v)));
+      entry["args"] = args;
+    }
+    m_world.log(m_now, entry);
+  }
 
   m_frames.push_back(Frame());
   m_frames.back().scopes.emplace_back();
@@ -408,6 +425,24 @@ void Interpreter::touch(const QString& id, const QString& name)
 void Interpreter::attachEvent(const QString& id)
 {
   queueEvent(Event{"attach", {Value::key(id)}, QString(), QString()});
+}
+
+void Interpreter::linkMessage(int sender, int num, const QString& str, const QString& id)
+{
+  queueEvent(Event{"link_message", {Value::integer(sender), Value::integer(num), Value::string(str), Value::key(id)}, QString(), QString()});
+}
+
+void Interpreter::linksetDataEvent(int action, const QString& name, const QString& value)
+{
+  queueEvent(Event{"linkset_data", {Value::integer(action), Value::string(name), Value::string(value)}, QString(), QString()});
+}
+
+bool Interpreter::handles(const QString& event) const
+{
+  if (m_stopped || m_state < 0 || m_state >= int(m_script.states.size())) return false;
+  for (const EventHandler& h : m_script.states[size_t(m_state)].events)
+    if (h.name == event) return true;
+  return false;
 }
 
 double Interpreter::nextWake() const
