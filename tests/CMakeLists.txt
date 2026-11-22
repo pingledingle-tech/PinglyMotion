@@ -278,3 +278,10 @@ ADD_EXECUTABLE (pinglymotion_lsltouch_tests tst_lsltouch.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsltouch_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_lsltouch_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lsltouch COMMAND pinglymotion_lsltouch_tests)
+
+# Script Lab: the region and avatar reads (gap list 2, step 3): region name and corner, ground and water, the agent
+# size and list, llRequestAgentData, the sun, the time of day and the clock functions, from the canned region
+ADD_EXECUTABLE (pinglymotion_lslregion_tests tst_lslregion.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslregion_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslregion_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslregion COMMAND pinglymotion_lslregion_tests)

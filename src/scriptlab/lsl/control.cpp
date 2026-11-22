@@ -341,10 +341,10 @@ namespace
   // step 9b-7: "avatars" of lsl_run: [{name, key, position, velocity, rotation, in_group}]; empty when fine
   QString readAvatars(const QJsonValue& v, std::vector<AvatarSpec>& out)
   {
-    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\"}.";
+    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\", \"height\"}.";
     const QJsonArray list = v.toArray();
     if (list.size() > Sandbox::MAX_AVATARS) return QString("\"avatars\" holds at most %1 avatars.").arg(Sandbox::MAX_AVATARS);
-    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group"};
+    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group", "height"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Avatar %1: ").arg(i + 1);
@@ -381,8 +381,65 @@ namespace
         if (!o.value("in_group").isBool()) return where + "\"in_group\" must be true or false.";
         a.inGroup = o.value("in_group").toBool();
       }
+      if (o.contains("height"))
+      {
+        const double h = o.value("height").toDouble(std::nan(""));
+        if (!o.value("height").isDouble() || !std::isfinite(h) || h < 0.5 || h > 3.0)
+          return where + "\"height\" must be the avatar's height in metres, 0.5 to 3 (default 1.8).";
+        a.height = float(h);
+      }
       out.push_back(a);
     }
+    return QString();
+  }
+
+  // gap list 2, step 3: "region" of lsl_run: {name, corner, ground, water, day_length, time_of_day, unix_start}; empty when fine
+  QString readRegion(const QJsonValue& v, RegionSettings& out)
+  {
+    static const QStringList fields = {"name", "corner", "ground", "water", "day_length", "time_of_day", "unix_start"};
+    if (!v.isObject()) return "\"region\" must be an object with any of " + fields.join(", ") + ".";
+    const QJsonObject o = v.toObject();
+    for (auto it = o.begin(); it != o.end(); ++it)
+      if (!fields.contains(it.key())) return "Region: unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+    auto number = [&](const char* field, double low, double high, double& value)
+    {
+      if (!o.contains(field)) return true;
+      const double d = o.value(field).toDouble(std::nan(""));
+      if (!o.value(field).isDouble() || !std::isfinite(d) || d < low || d > high) return false;
+      value = d;
+      return true;
+    };
+    if (o.contains("name"))
+    {
+      const QString name = o.value("name").toString();
+      if (!o.value("name").isString() || name.size() > 35 || !validName(name)) return "Region: \"name\" must be text of 1 to 35 characters.";
+      out.name = name;
+    }
+    if (o.contains("corner"))
+    {
+      const QJsonArray c = o.value("corner").toArray();
+      bool ok = o.value("corner").isArray() && c.size() == 3;
+      for (int k = 0; ok && k < 3; ++k)
+      {
+        const double d = c[k].toDouble(std::nan(""));
+        ok = c[k].isDouble() && std::isfinite(d) && d == std::floor(d) && d >= 0.0 && d <= (k < 2 ? 16777216.0 : 0.0);
+        if (ok) out.corner[k] = float(d);
+      }
+      if (!ok) return "Region: \"corner\" must be [x, y, 0] in whole metres, x and y 0 to 16777216.";
+    }
+    double ground = out.ground, water = out.water, day = out.dayLength, time = out.timeOfDay, start = double(out.unixStart);
+    if (!number("ground", 0.0, 4096.0, ground)) return "Region: \"ground\" must be the ground height in metres, 0 to 4096.";
+    if (!number("water", 0.0, 4096.0, water)) return "Region: \"water\" must be the water height in metres, 0 to 4096.";
+    if (!number("day_length", 60.0, 2592000.0, day)) return "Region: \"day_length\" must be the seconds of one day, 60 to 2592000.";
+    if (!number("time_of_day", 0.0, 2592000.0, time) || time >= day)
+      return "Region: \"time_of_day\" must be the seconds since the region's midnight at the start, 0 up to (not including) day_length.";
+    if (!number("unix_start", 0.0, 2000000000.0, start) || start != std::floor(start))
+      return "Region: \"unix_start\" must be the UTC time at the start in whole seconds since 1970, 0 to 2000000000.";
+    out.ground = float(ground);
+    out.water = float(water);
+    out.dayLength = day;
+    out.timeOfDay = time;
+    out.unixStart = qint64(start);
     return QString();
   }
 
@@ -558,7 +615,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter", "inventory", "avatars", "http"};
+                                       "description", "scale", "start_parameter", "inventory", "avatars", "http", "region"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -646,6 +703,13 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!problem.isEmpty()) return fail(problem);
   }
 
+  RegionSettings region;
+  if (request.contains("region"))
+  {
+    const QString problem = readRegion(request.value("region"), region);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
   std::vector<SandboxInput> inputs;
   if (request.contains("inputs"))
   {
@@ -724,6 +788,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!problem.isEmpty()) return fail(QString("Avatar %1: ").arg(i + 1) + problem);
   }
   sandbox->setHttpReplies(http);
+  sandbox->setRegion(region);
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
   sandbox->start();
   sandbox->runUntil(seconds);
