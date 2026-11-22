@@ -1,5 +1,5 @@
 Branch: job/rlv-source-check
-Status: active
+Status: done
 Pull request: #360
 Files:
 - src/scriptlab/rlvbehaviours.*
