@@ -280,8 +280,7 @@ Commands page now scrolls when the panel is small, as the Live page does.
   focus stays on the avatar. With several objects the strictest limit wins (the largest minimum, the smallest
   maximum); a maximum below the minimum wins over it. A maximum smaller than the 3D view can come (3 inches) is shown
   as close as it goes. An option that is not a distance in metres is named in the text as not used.
-  `setcam_avdistmin` and `setcam_avdistmax` are RLVa only, so they need RLVa mode (`rlv_reset` with `mode`); the old
-  names `camdistmin` and `camdistmax` work in plain RLV mode too.
+  `setcam_avdistmin`, `setcam_avdistmax` and the old names `camdistmin` and `camdistmax` work in both modes.
 - Field of view (part 2): `setcam_fovmin` and `setcam_fovmax` keep the 3D view's vertical field of view at least or at
   most this many radians (the view's own is 60 degrees); the old zoom limits are a multiplier of the default 60
   degrees: `camzoommax:2` keeps it at 30 degrees or more (no zooming in past 2x), `camzoommin:2` at 30 degrees or less.
@@ -332,13 +331,15 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
   0): the background takes that colour (each part 0 to 1); it wins over the time of day. The fog follows the
   background, as in the view's own look, and keeps the user's fog switch and density.
 - `camdrawmax:<metres>` with `camdrawalphamax` (default 1) and `camdrawcolor` (default black) held as restrictions
-  (RLV only): fog of that colour that reaches the alpha at that distance from the camera (exponential, as the view's
+  (RLV only, so plain RLV mode: `rlv_reset` with `mode` `rlv`): fog of that colour that reaches the alpha at that distance from the camera (exponential, as the view's
   own fog; an alpha of 1 is shown as 0.99); the background beyond takes the colour at that alpha. With several
   objects the smallest distance and the largest alpha win, the colour of the first one. `camdrawmin` and
   `camdrawalphamin` are named as not shown (the fog starts at the camera).
-- `setsphere` (held) with `setsphere_distmax`, `setsphere_valuemax` and `setsphere_color` (held, or sent as `=force`;
-  a held value wins), mode 0 only: the same kind of fog. Another mode, or no `setsphere_distmax`, is named as not
-  shown; with camdraw fog the sphere is named as not shown (one fog at a time). The origin is always the camera.
+- `setsphere` (held; RLVa only) with `setsphere_distmax`, `setsphere_valuemax` and `setsphere_color` (sent as
+  `=force`, the only way RLVa takes them; the last value wins), mode 0 only: the same kind of fog. Another mode, or no
+  `setsphere_distmax`, is named as not shown. camdraw (RLV only) and setsphere (RLVa only) are never known in the
+  same mode, so the rule "with camdraw fog the sphere is named as not shown (one fog at a time)" cannot be reached
+  from a script now. The origin is always the camera.
 - Any other `setenv_<name>` (presets, sun, moon, clouds, haze, water) is named as not shown; an option that is not
   a usable number or `r/g/b` colour is named as not used.
 - The text under the box says what is shown ("Environment set by the script: sky colour 0.8/0.55/0.45 from daytime
@@ -360,8 +361,8 @@ program starts), the view restrictions a script holds change the 3D view where t
 - `setcam_textures` / `camtextures` (option: a texture UUID): the floor's checkerboard, the only texture-like pattern
   in the view, is drawn in one plain colour (the middle of its two tile colours, red while the first frame is
   protected); the figure has no textures. A texture cannot be loaded here; its UUID is named.
-- `setoverlay` with `setoverlay_texture`, `setoverlay_alpha` and `setoverlay_tint` (held, or sent as `=force`; a held
-  value wins; defaults tint 1/1/1 and alpha 1): the picture cannot be loaded here, so the whole 3D view is covered by
+- `setoverlay` (RLVa only) with `setoverlay_texture`, `setoverlay_alpha` and `setoverlay_tint` (sent as `=force`, the
+  only way RLVa takes them; the last value wins; defaults tint 1/1/1 and alpha 1): the picture cannot be loaded here, so the whole 3D view is covered by
   the tint at the alpha. Without `setoverlay_texture` nothing is shown (as an overlay without a picture), and the text
   says so; `setoverlay_tween` is named (the overlay changes at once).
 - Named as not shown: `showselfhead` (the figure's head cannot be hidden on its own), `viewwireframe` and
@@ -437,29 +438,50 @@ A script-driven HUD is developed in two parts that the sandbox treats differentl
 
 What it checks: that the buttons (touch, dialog buttons, chat on a channel) cause the right messages and RLV commands. What it does not do: show how the HUD looks (textures, layout, buttons on screen are not previewed), or reproduce Second Life exactly. The texture is uploaded in Second Life by the project owner, and the final test is in Second Life. The Live page has buttons for sending a touch, a chat line and a dialog answer (below, "Input buttons"); the same inputs also go through `inputs`, `lsl_run` and `lsl_event`.
 
-## RLV and RLVa mode (step 9, issue 297)
+## RLV and RLVa mode (step 9, issue 297; source check 22 Nov 2026)
 
-Every behaviour in the table is marked `RLV` (listed as plain RLV in the RLV wiki, and in RLVa), `RLVa only` (not listed in the wiki) or `RLV only` (in the wiki, but RLVa does not have it).
-The marks follow the wiki. RLVa's own flags (`BHVR_EXTENDED` or `BHVR_EXPERIMENTAL` in `rlvhelper.cpp`) differ from the
-wiki for some names: 20 names that RLVa flags as extended are plain RLV in the wiki and are marked `RLV` here
-(`accepttprequest`, `allowidle`, `findfolders`, `getcam_avdistmax`, `getcam_avdistmin`, `getcam_fov`, `getcam_fovmax`,
-`getcam_fovmin`, `interact`, `sendchannel_except`, `sendgesture`, `setcam_avdistmax`, `setcam_avdistmin`, `setcam_fov`,
-`sharedunwear`, `sharedwear`, `shownearby`, `touchhud`, `tplocal`, `tprequest`).
+RLVa (the RLV of Firestorm) is the default standard. Every behaviour in the table is marked `RLV` (in RLVa and in the
+RLV wiki's specification, "Restrained Love viewer v2.9 Specification"), `RLVa only` (in RLVa, not in the wiki's
+specification: it does not work in Kokua or another plain RLV viewer) or `RLV only` (in the wiki, but RLVa does not
+have it). A behaviour both have can still have a parameter type only RLVa takes (the "does not work in Kokua" mark on
+a type): `fly=force` and `addoutfit:<folder>=force` (another name of `attach`).
 
-- The mode is plain RLV at start. In plain RLV mode a RLVa-only behaviour answers as unknown, like any name the table
-  does not have. In RLVa mode it is accepted. The third mark works the other way round: an `RLV only` behaviour
-  (`camdrawmin`, `camdrawmax`, `camdrawalphamin`, `camdrawalphamax`, `camdrawcolor`, `defaultwear`, `denypermission`,
-  `versionnumbl`, `getblacklist`, `getcam_zoommin`, `setrot`) is accepted in plain RLV mode and unknown in RLVa mode (it is also left out of
-  `getcommand` there). `rlv_state` lists `rlva_only` only; the `RLV only` names are the ones in `behaviours` of plain mode
-  that are missing in RLVa mode. Switching the mode removes every restriction and recorded effect (as
-  after a relog). Set it with the control command `rlv_reset` and its `mode` field ([CONTROL.md](CONTROL.md)).
-- Behaviours marked RLVa only (19): interaction and view (`showself`, `showselfhead`, `viewtransparent`,
-  `viewwireframe`), camera (`setcam_origindistmin`, `setcam_origindistmax`, and the force commands `setcam_focus` and
-  `setcam_mode`) and questions (`getcommand`, `getheightoffset`, `getaddattachnames`, `getaddoutfitnames`,
-  `getattachnames`, `getoutfitnames`, `getremattachnames`, `getremoutfitnames`, `getcam_avdist`, `getcam_textures`).
-- Plain RLV behaviours (all marked `RLV`, among them the 20 above) are known in both modes. Those with effects
-  outside the sandbox: `setenv`, `setdebug`, `setcam`, `setcam_avdist`, `setcam_eyeoffset`, `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_fovmin`,
-  `setcam_fovmax`, `setcam_mouselook`, `setcam_textures`, `setcam_unlock`.
+The marks are not set by hand. `tools/rlv_sources.py` makes two data files: `tests/data/rlv/rlva.tsv` from RLVa's
+behaviour dictionary (`indra/newview/rlvhelper.cpp` in a Firestorm checkout) and `tests/data/rlv/rlv_wiki.tsv` from
+the command syntax lines of the wiki page (`tests/data/rlv/rlv_wiki_capture.txt`). The test `rlvsources`
+(`tests/tst_rlvsources.cpp`) fails on any difference between them and the table: a name missing on either side, a
+parameter type (`n`/`y`, `=force`, `=<channel>`) that differs from RLVa's (or from the wiki's for an `RLV only` name),
+or a mark that does not follow from where the name is. RLVa makes a `_sec` form of every behaviour it flags strict,
+and the table has them all. Commands the wiki lists under "Unofficial Commands" (`allowidle`) do not count as RLV.
+Aurora, LibreMetaverse and other viewers are not checked. To check a newer RLVa:
+`python3 tools/rlv_sources.py rlva <firestorm>/indra/newview/rlvhelper.cpp --source "<where it came from>"`, then
+run the test and fix the table where it fails.
+
+- The mode is RLVa at start. In RLVa mode an `RLV only` behaviour (`camdrawmin`, `camdrawmax`, `camdrawalphamin`,
+  `camdrawalphamax`, `camdrawcolor`, `defaultwear`, `denypermission`, `versionnumbl`, `getblacklist`, `getcam_zoommin`,
+  `setrot`) answers as unknown, like any name the table does not have (it is also left out of `getcommand` there).
+  Plain RLV mode (the Kokua check) works the other way round: an `RLVa only` behaviour answers as unknown and an
+  RLVa-only parameter type answers "does not take". `rlv_state` lists `rlva_only`; the `RLV only` names are the ones
+  in `behaviours` of plain mode that are missing in RLVa mode. Switching the mode removes every restriction and
+  recorded effect (as after a relog). Set it with the control command `rlv_reset` and its `mode` field
+  ([CONTROL.md](CONTROL.md)).
+- Behaviours marked RLVa only (62): interaction and view (`showself`, `showselfhead`, `viewtransparent`,
+  `viewwireframe`, `allowidle`, `buy`, `pay`, `jump`), camera (`setcam`, `setcam_avdist`, `setcam_eyeoffset`,
+  `setcam_eyeoffsetscale`, `setcam_focusoffset`, `setcam_mouselook`, `setcam_origindistmin`, `setcam_origindistmax`,
+  and the force commands `setcam_focus` and `setcam_mode`), the vision sphere and the overlay (`setsphere` and its
+  ten `setsphere_<name>` values, `setoverlay`, `setoverlay_alpha`, `_texture`, `_tint`, `_tween`, `_touch`), more
+  secure forms (`accepttp_sec`, `accepttprequest_sec`, `recvchatfrom_sec`, `recvemotefrom_sec`, `recvimfrom_sec`,
+  `sendimto_sec`, `startim_sec`, `startimto_sec`, `sendchannel_except_sec`, `shownametags_sec`), the `addoutfit`
+  names of the shared folder force commands (`addoutfitall`, `addoutfitover`, `addoutfitallover`, `addoutfitthis`,
+  `addoutfitallthis`, `addoutfitthisover`, `addoutfitallthisover`) and questions (`getcommand`, `getheightoffset`,
+  `getaddattachnames`, `getaddoutfitnames`, `getattachnames`, `getoutfitnames`, `getremattachnames`,
+  `getremoutfitnames`, `getcam_avdist`, `getcam_textures`).
+- RLVa flags some names as extended or experimental that the wiki lists as plain RLV; they are marked `RLV`
+  (`accepttprequest`, `findfolders`, `getcam_avdistmax`, `getcam_avdistmin`, `getcam_fov`, `getcam_fovmax`,
+  `getcam_fovmin`, `interact`, `sendchannel_except`, `sendgesture`, `setcam_avdistmax`, `setcam_avdistmin`,
+  `setcam_fov`, `sharedunwear`, `sharedwear`, `shownearby`, `touchhud`, `tplocal`, `tprequest`).
+- Plain RLV behaviours (marked `RLV`) are known in both modes. Those with effects outside the sandbox: `setenv`,
+  `setdebug`, `setcam_fovmin`, `setcam_fovmax`, `setcam_textures`, `setcam_unlock`.
 - Old names (aliases) share the state of the new name: `camdistmax` (`setcam_avdistmax`), `camdistmin`
   (`setcam_avdistmin`), `camavdist` (`setcam_avdist`), `camtextures` (`setcam_textures`), `camunlock`
   (`setcam_unlock`) and `fartouch` (`touchfar`). Holding one is holding the other (the same restriction under both
@@ -497,10 +519,10 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
   block their own action in the Allowed / Blocked list; `touchthis` and `touchme` only hold the exception;
   `showhovertextall`, `showhovertexthud`, `showhovertextworld` (and `showhovertext:<uuid>` for one object), `shownames`,
   `shownametags`, `viewnote`, `viewscript`, `viewtexture`, `editworld`, `editattach` (and `editobj:<uuid>`), `buy`
-  and `pay`. `acceptpermission` and `denypermission` (`RLV only`) are held as state: the sandbox grants every
+  and `pay` (`buy` and `pay` are RLVa only). `acceptpermission` and `denypermission` (`RLV only`) are held as state: the sandbox grants every
   permission to a script anyway.
 - Group, movement and teleport (all marked `RLV` except `setrot`): `setgroup` (restriction; `=force` with a group
-  name or `none` is retained), `temprun`, `alwaysrun` and `jump` block their own action, `standtp` and `accepttp` are
+  name or `none` is retained), `temprun`, `alwaysrun` and `jump` (RLVa only) block their own action, `standtp` and `accepttp` are
   held as state (the sandbox has no avatar position and no teleports), and `adjustheight`, `tpto`, `sitground` and
   `setrot` are force commands, answered `retained` and not carried out. `setrot` is marked `RLV only`.
 - Questions with fixed sandbox answers. The sandbox has no avatar, group or inventory model yet:
@@ -517,9 +539,10 @@ wiki for some names: 20 names that RLVa flags as extended are plain RLV in the w
 - More effects that are only recorded (camera group): `camdrawmin`, `camdrawmax`, `camdrawalphamin`,
   `camdrawalphamax`, `camdrawcolor` (`RLV only`; option required), the sphere effect `setsphere` with
   `setsphere_mode`, `_origin`, `_color`, `_distmin`, `_distmax`, `_distextend`, `_param`, `_tween`, `_valuemin`,
-  `_valuemax`, and the overlay `setoverlay` with `setoverlay_alpha`, `_texture`, `_tint`, `_tween`, `_touch`. They are
-  held as restrictions (`n`/`y`), the `_<name>` ones also take `=force` (retained, the value is recorded), and they
-  block nothing; the real view never changes.
+  `_valuemax`, and the overlay `setoverlay` with `setoverlay_alpha`, `_texture`, `_tint`, `_tween`, `_touch` (all
+  `RLVa only`). `camdraw*`, `setsphere`, `setoverlay` and `setoverlay_touch` are held as restrictions (`n`/`y`); the
+  `setsphere_<name>` values, `setoverlay_alpha`, `_texture`, `_tint` and `_tween` take only `=force`, as in RLVa
+  (retained, the value is recorded). They block nothing; the real view never changes.
 - Three more questions (`RLV only`): `versionnumbl` answers `3040300,` (the version number, a comma, then the
   blacklist, which is empty), `getblacklist` answers empty, and `getcam_zoommin` always answers `1` (the sandbox has
   no camera).

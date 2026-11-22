@@ -230,8 +230,8 @@ void TestRlvState::twoObjectsSameRestriction()
 void TestRlvState::forceIsRetained()
 {
   RlvState state;
-  const RlvState::ApplyResult r = state.apply("collar", "@unsit=force,fly=force");
-  QCOMPARE(results(r), (QList<Rlv::Result>{Rlv::Result::Retained, Rlv::Result::Failed}));
+  const RlvState::ApplyResult r = state.apply("collar", "@unsit=force,fly=force,showinv=force");
+  QCOMPARE(results(r), (QList<Rlv::Result>{Rlv::Result::Retained, Rlv::Result::Retained, Rlv::Result::Failed}));
   QVERIFY(!r.outcomes[0].reason.isEmpty());
   QVERIFY(state.restrictions().isEmpty());
 }

@@ -128,6 +128,7 @@ void TestEnvironmentOverride::blueHorizon()
 void TestEnvironmentOverride::camdrawFog()
 {
   RlvState state;   // camdraw* are RLV only: plain RLV mode
+  state.setMode(Rlv::Mode::Rlv);
   EnvironmentOverride o;
   o.setState(&state);
   o.setEnabled(true);
@@ -181,13 +182,13 @@ void TestEnvironmentOverride::sphereFog()
   o.setState(&state);
   o.setEnabled(true);
   // setsphere without a far distance: named, nothing shown
-  QVERIFY(state.apply("visor", "@setsphere=n,setsphere_color:0/0/1=n").ok());
+  QVERIFY(state.apply("visor", "@setsphere=n,setsphere_color:0/0/1=force").ok());
   QVERIFY(!o.active());
   QCOMPARE(o.lines(), (QStringList{
     "The script asks nothing of the sky that the 3D view can show.",
     "Not shown: setsphere, because setsphere_distmax is not set."}));
-  // a far distance as a force command and a strength
-  QVERIFY(state.apply("visor", "@setsphere_distmax:10=force,setsphere_valuemax:0.8=n").ok());
+  // a far distance and a strength (RLVa sets the sphere values with =force only)
+  QVERIFY(state.apply("visor", "@setsphere_distmax:10=force,setsphere_valuemax:0.8=force").ok());
   QVERIFY(o.active());
   const EnvironmentOverride::Scene s = o.scene(own());
   QCOMPARE(s.fogColour, QVector3D(0.0f, 0.0f, 1.0f));
@@ -196,17 +197,15 @@ void TestEnvironmentOverride::sphereFog()
   QVERIFY(same(s.background, QVector3D(0.04f, 0.04f, 0.84f)));
   QCOMPARE(o.lines().first(), QString("Environment set by the script: setsphere fog of colour 0/0/1 reaching 0.8 at 10 m."));
   // another mode than the colour fade is not shown
-  QVERIFY(state.apply("visor", "@setsphere_mode:1=n").ok());
+  QVERIFY(state.apply("visor", "@setsphere_mode:1=force").ok());
   QVERIFY(!o.active());
   QCOMPARE(o.lines().last(), QString("Not shown: setsphere_mode:1 (only mode 0, the colour fade, is shown)."));
-  QVERIFY(state.apply("visor", "@setsphere_mode:1=y").ok());
+  QVERIFY(state.apply("visor", "@setsphere_mode:0=force").ok());
   QVERIFY(o.active());
-  // with camdraw, camdraw is shown
-  QVERIFY(state.apply("blind", "@camdrawmax:5=n").ok());
-  QCOMPARE(o.look().fogFrom, QString("camdraw"));
-  QCOMPARE(o.lines().last(), QString("Not shown: setsphere (the camdraw fog is shown; one fog at a time)."));
-  // the sphere lifted: its forced value no longer counts
-  QVERIFY(state.apply("blind", "@clear").ok());
+  // camdraw (RLV only) and setsphere (RLVa only) are never held together: no mode knows both
+  QCOMPARE(state.apply("blind", "@camdrawmax:5=n").outcomes.value(0).reason, QString("unknown behaviour \"camdrawmax\""));
+  QCOMPARE(o.look().fogFrom, QString("setsphere"));
+  // the sphere lifted: its forced values no longer count
   QVERIFY(state.apply("visor", "@setsphere=y").ok());
   QVERIFY(!o.active());
 }
@@ -214,6 +213,7 @@ void TestEnvironmentOverride::sphereFog()
 void TestEnvironmentOverride::restored()
 {
   RlvState state;
+  state.setMode(Rlv::Mode::Rlv);   // camdraw* are RLV only
   EnvironmentOverride o;
   o.setState(&state);
   QVERIFY(state.apply("hud", "@setenv_daytime:0.75=force,camdrawmax:3=n").ok());
@@ -237,6 +237,7 @@ void TestEnvironmentOverride::restored()
 void TestEnvironmentOverride::notShownAndBad()
 {
   RlvState state;
+  state.setMode(Rlv::Mode::Rlv);   // camdraw* are RLV only
   EnvironmentOverride o;
   o.setState(&state);
   QVERIFY(state.apply("hud", "@setenv_preset:Midday=force,setenv_daytime:noon=force,camdrawcolor:2/0/0=n").ok());

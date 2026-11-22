@@ -51,8 +51,11 @@ void TestRlvCommand::force()
   QVERIFY(c.valid);
   QCOMPARE(c.type, Rlv::ParamType::Force);
   QVERIFY(Rlv::checkCommand(c).isEmpty());
-  // fly cannot be forced
-  QVERIFY(!Rlv::checkCommand(Rlv::parseCommand("fly=force")).isEmpty());
+  // fly=force is RLVa only: plain RLV refuses it
+  QVERIFY(Rlv::checkCommand(Rlv::parseCommand("fly=force")).isEmpty());
+  QCOMPARE(Rlv::checkCommand(Rlv::parseCommand("fly=force"), Rlv::Mode::Rlv), QString("@fly does not take =force"));
+  // a plain restriction cannot be forced
+  QVERIFY(!Rlv::checkCommand(Rlv::parseCommand("showinv=force")).isEmpty());
 }
 
 void TestRlvCommand::replyOnChannel()
@@ -177,9 +180,9 @@ void TestRlvCommand::table()
                               "getstatus", "getstatusall"};
   for (const QString& name : needed) QVERIFY2(Rlv::findBehaviour(name), qPrintable(name));
   QVERIFY(!Rlv::findBehaviour("clear"));   // a special case, not a behaviour
-  // checkCommand answers in plain RLV mode unless told otherwise
+  // checkCommand answers in RLVa mode unless told otherwise
   Rlv::Command showselfhead = Rlv::parseLine("@showselfhead=n").commands.value(0);
-  QVERIFY(Rlv::checkCommand(showselfhead).contains("unknown behaviour"));
+  QVERIFY(Rlv::checkCommand(showselfhead).isEmpty());
   QVERIFY(Rlv::checkCommand(showselfhead, Rlv::Mode::Rlv).contains("unknown behaviour"));
   QVERIFY(Rlv::checkCommand(showselfhead, Rlv::Mode::Rlva).isEmpty());
 

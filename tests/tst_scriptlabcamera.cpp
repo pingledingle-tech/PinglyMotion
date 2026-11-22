@@ -175,7 +175,8 @@ void TestScriptLabCamera::environmentBox()
   QVERIFY(!environment.active());
   QVERIFY(status->isHidden());
 
-  // Reset
+  // Reset (camdraw* are RLV only: plain RLV mode)
+  rlv.setMode(Rlv::Mode::Rlv);
   QVERIFY(rlv.apply("blind", "@camdrawmax:5=n").ok());
   QCOMPARE(status->text().section('\n', 0, 0), QString("Environment set by the script: camdraw fog of colour 0/0/0 reaching 1 at 5 m."));
   panel.resetAll();

@@ -101,8 +101,8 @@ void TestViewModesOverride::overlay()
   QVERIFY(state.apply("visor", "@setoverlay_texture:aaaaaaaa-0000-0000-0000-000000000001=force").ok());
   QVERIFY(o.overlay());
   QCOMPARE(o.modes().overlayColour(), QVector4D(1, 1, 1, 1));
-  // tint and alpha held, a tween named
-  QVERIFY(state.apply("visor", "@setoverlay_tint:1/0/0=n,setoverlay_alpha:0.25=n,setoverlay_tween:2=n").ok());
+  // tint and alpha forced (RLVa sets the overlay values with =force only), a tween named
+  QVERIFY(state.apply("visor", "@setoverlay_tint:1/0/0=force,setoverlay_alpha:0.25=force,setoverlay_tween:2=force").ok());
   QCOMPARE(o.modes().overlayColour(), QVector4D(1, 0, 0, 0.25f));
   QCOMPARE(o.lines(), (QStringList{
     "View changed by the script: overlay aaaaaaaa-0000-0000-0000-000000000001 with tint 1/0/0 at alpha 0.25.",
@@ -110,17 +110,17 @@ void TestViewModesOverride::overlay()
     "Set by: visor.",
     "Untick the box to get the 3D view's own look back.",
     "Not shown: setoverlay_tween:2 (the overlay changes at once)."}));
-  // a held value wins over a forced one
+  // the last forced value wins, and a value held as =n is refused
   QVERIFY(state.apply("visor", "@setoverlay_alpha:0.75=force").ok());
-  QCOMPARE(o.modes().alpha, 0.25);
-  QVERIFY(state.apply("visor", "@setoverlay_alpha:0.25=y").ok());
+  QCOMPARE(o.modes().alpha, 0.75);
+  QCOMPARE(state.apply("visor", "@setoverlay_alpha:0.25=n").outcomes.value(0).reason, QString("@setoverlay_alpha does not take =n"));
   QCOMPARE(o.modes().alpha, 0.75);
   // a bad tint: not used, nothing drawn
-  QVERIFY(state.apply("visor", "@setoverlay_tint:1/0/0=y,setoverlay_tint:red=n").ok());
+  QVERIFY(state.apply("visor", "@setoverlay_tint:red=force").ok());
   QVERIFY(!o.overlay());
   QCOMPARE(o.lines().last(), QString("Not used: setoverlay_tint:red is not a value the 3D view can use."));
   // the overlay lifted
-  QVERIFY(state.apply("visor", "@setoverlay_tint:red=y,setoverlay=y").ok());
+  QVERIFY(state.apply("visor", "@setoverlay=y").ok());
   QVERIFY(!o.overlay());
   QVERIFY(o.lines().isEmpty());
 }
@@ -149,7 +149,7 @@ void TestViewModesOverride::restored()
   ViewModesOverride o;
   o.setState(&state);
   o.setEnabled(true);
-  QVERIFY(state.apply("hood", "@showself=n,setcam_textures=n,setoverlay=n,setoverlay_texture:abc=n").ok());
+  QVERIFY(state.apply("hood", "@showself=n,setcam_textures=n,setoverlay=n,setoverlay_texture:abc=force").ok());
   QVERIFY(o.hideFigure() && o.plainFloor() && o.overlay());
   QCOMPARE(o.modes().objects, QStringList{"hood"});
   o.setEnabled(false);

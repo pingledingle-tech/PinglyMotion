@@ -437,8 +437,8 @@ class Linter
         warn(line, column, "rlv-unknown", shown + "unknown behaviour \"" + shorten(c.behaviour) + "\".");
         return;
       }
-      // judge it in the viewer family that knows it (RLVa-only names are fine for RLVa viewers)
-      const Rlv::Mode mode = b->dialect == Rlv::Dialect::RlvaOnly ? Rlv::Mode::Rlva : Rlv::Mode::Rlv;
+      // judge it in the viewer family that knows it: RLVa (the default standard), RLV-only names in plain RLV
+      const Rlv::Mode mode = b->dialect == Rlv::Dialect::RlvOnly ? Rlv::Mode::Rlv : Rlv::Mode::Rlva;
       const QString problem = Rlv::checkCommand(c, mode);
       if (!problem.isEmpty()) warn(line, column, "rlv-param", shown + problem + ".");
     }
