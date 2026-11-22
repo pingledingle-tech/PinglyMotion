@@ -59,6 +59,7 @@ class AuroraIndicator;
 class TipsSwitch;
 class TransportBar;
 class TopBar;
+class ReasonLine;
 class EmptyState;
 class ScriptLabPanel;
 class AuroraLink;
@@ -483,6 +484,7 @@ class PinglyMotionWindow : public QMainWindow
 
     // UX phase 1b
     TopBar* m_topBar = nullptr;
+    ReasonLine* m_reasonLine = nullptr;
     EmptyState* m_emptyState = nullptr;
     // true while no animation is open: a clean untitled animation stays behind the empty state
     // so the old code never meets "no animation"; the commands see none (see WindowControlHost)

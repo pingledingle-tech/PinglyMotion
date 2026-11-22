@@ -107,6 +107,7 @@
 #include "menuspec.h"
 #include "emptystate.h"
 #include "topbar.h"
+#include "reasonline.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
@@ -618,6 +619,10 @@ PinglyMotionWindow::PinglyMotionWindow() :
   statusBar()->addPermanentWidget(m_auroraIndicator);
   connect(m_auroraIndicator,&AuroraIndicator::toggleRequested,m_auroraAction,&QAction::toggle);
 
+  // UX phase 1c: the status bar says why a greyed-out control is greyed out (charter P6)
+  m_reasonLine=new ReasonLine(statusBar(),this);
+  m_reasonLine->watchMenus();
+
   // command line: pinglymotion [--control] [animation file]
   QStringList args = QApplication::arguments();
   args.removeFirst();
@@ -1064,6 +1069,7 @@ void PinglyMotionWindow::buildMenus()
     Theme::apply(!light);
     if(m_topBar) m_topBar->setDark(!light);
     if(m_emptyState) m_emptyState->applyLook();
+    if(m_reasonLine) m_reasonLine->applyLook();
     fitPanelWidths();
     fillJointTable();
     ui->animationView->update();
@@ -1235,7 +1241,13 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
     }
   }
   for(QDockWidget* dock : {m_jointsDock,m_jointCardDock,m_timelineDock})
-    if(dock && dock->widget()) dock->widget()->setEnabled(!empty);
+    if(dock && dock->widget())
+    {
+      dock->widget()->setEnabled(!empty);
+      // the reason line names the panel and says why it is greyed out (src/reasonline.h)
+      dock->widget()->setProperty("reasonName",empty ? dock->windowTitle() : QString());
+      dock->widget()->setProperty("reasonWhy",empty ? why : QString());
+    }
 
   if(m_emptyState)
   {

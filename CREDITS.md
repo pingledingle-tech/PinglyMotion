@@ -14,7 +14,7 @@ Where a licence does not require a credit (CC0, ideas only), we give one anyway.
 | CMake | Build system | BSD 3-Clause | https://cmake.org |
 | Mesh2Motion (retargeting design) | The idea of the bone-name matching and swing-twist retargeting in `src/retarget.*`. No code copied; written from the idea | MIT | https://github.com/Mesh2Motion/mesh2motion-app |
 | Second Life viewer and Firestorm viewer (Linden Research, Inc. and the Firestorm project) | Reference for the `.anim` format and joint data; `src/` logic is written from their documented behaviour | LGPL 2.1 | https://github.com/secondlife/viewer, https://github.com/FirestormViewer/phoenix-firestorm |
-| Lucide (Lucide Icons and Contributors; portions from Feather by Cole Bemis) | The one icon set of the design system (`docs/DESIGN_SYSTEM.md`). The path data of each icon is copied unchanged from Lucide 1.77.0 and drawn by `src/lucideicons.*`; first used for the play, square and rotate-ccw icons of the transport buttons, then for the top bar (undo, redo, save, upload, flask-conical, settings, sun, moon, sparkles). Licence text in `src/icons/lucide/LICENSE` | ISC | https://lucide.dev, https://github.com/lucide-icons/lucide |
+| Lucide (Lucide Icons and Contributors; portions from Feather by Cole Bemis) | The one icon set of the design system (`docs/DESIGN_SYSTEM.md`). The path data of each icon is copied unchanged from Lucide 1.77.0 and drawn by `src/lucideicons.*`; first used for the play, square and rotate-ccw icons of the transport buttons, then for the top bar (undo, redo, save, upload, flask-conical, settings, sun, moon, sparkles, info). Licence text in `src/icons/lucide/LICENSE` | ISC | https://lucide.dev, https://github.com/lucide-icons/lucide |
 
 ## Data and assets
 
