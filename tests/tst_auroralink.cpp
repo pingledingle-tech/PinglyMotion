@@ -66,6 +66,7 @@ class AuroraLinkTest : public QObject
     void linkSendsOnlyChanges();
     void linkSendsHeartbeats();
     void linkReportsErrors();
+    void peerTextIsClipped();
     void linkReconnects();
     void noTokenFileMeansPreviewOff();
     void tokenFileOfAnotherPortIsUsed();
@@ -572,6 +573,26 @@ void AuroraLinkTest::linkReportsErrors()
   QTRY_COMPARE(errors.count(), 1);
   QCOMPARE(errors.first().first().toString(), QString("bad joint"));
   QVERIFY(link.connected());
+}
+
+void AuroraLinkTest::peerTextIsClipped()
+{
+  QCOMPARE(AuroraLink::clipPeerText("bad joint"), QString("bad joint"));
+  QCOMPARE(AuroraLink::clipPeerText("a\n\tb\x01 c"), QString("a b c"));
+  QCOMPARE(AuroraLink::clipPeerText(QString(200, 'x')), QString(200, 'x'));
+  QCOMPARE(AuroraLink::clipPeerText(QString(201, 'x')), QString(200, 'x') + QString("..."));
+  QCOMPARE(AuroraLink::clipPeerText(QString(5000, 'y')).size(), 203);
+  // through the link: a long error from the peer is shown clipped
+  AuroraLink link;
+  link.setPoseSource([this]() { return m_animation->poseBvhText(0); });
+  QSignalSpy errors(&link, &AuroraLink::errorReceived);
+  link.setEnabled(true, m_server->serverPort());
+  QVERIFY(accept());
+  QCOMPARE(answerAuth()["type"].toString(), QString("auth"));
+  QCOMPARE(nextRealMessage()["type"].toString(), QString("pose-bvh"));
+  reply(QJsonObject{{"ok", false}, {"error", QString(1000, 'z')}});
+  QTRY_COMPARE(errors.count(), 1);
+  QCOMPARE(errors.first().first().toString(), QString(200, 'z') + QString("..."));
 }
 
 void AuroraLinkTest::linkReconnects()
