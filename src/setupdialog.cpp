@@ -6,6 +6,7 @@
 #include "setupdialog.h"
 
 #include <QButtonGroup>
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -13,7 +14,6 @@
 #include <QVBoxLayout>
 
 #include "camerahabitspec.h"
-#include "controlindicator.h"
 #include "lucideicons.h"
 #include "theme.h"
 #include "usersettings.h"
@@ -44,7 +44,7 @@ namespace
 
 SetupDialog::SetupDialog(QWidget* parent) :
   QDialog(parent),
-  m_beginnerRadio(nullptr), m_expertRadio(nullptr), m_darkRadio(nullptr), m_lightRadio(nullptr), m_hintsSwitch(nullptr)
+  m_beginnerRadio(nullptr), m_expertRadio(nullptr), m_darkRadio(nullptr), m_lightRadio(nullptr), m_hintsCheck(nullptr)
 {
   setObjectName(QStringLiteral("setupDialog"));
   setWindowTitle(tr2(SetupText::title));
@@ -147,10 +147,10 @@ SetupDialog::SetupDialog(QWidget* parent) :
   // Guidance: show hints, tips and the next-step line (the same setting as Help > Show hints
   // and the status bar's Tips switch)
   outer->addWidget(sectionLabel(this, tr2(SetupText::guidanceLabel)));
-  m_hintsSwitch = new TipsSwitch(this);
-  m_hintsSwitch->setOn(UserSettings::tipsOn());
-  connect(m_hintsSwitch, &TipsSwitch::toggled, this, [this](bool on) { emit hintsRequested(on); });
-  outer->addWidget(m_hintsSwitch, 0, Qt::AlignLeft);
+  m_hintsCheck = new QCheckBox(tr2(SetupText::hintsChoice), this);
+  m_hintsCheck->setChecked(UserSettings::tipsOn());
+  connect(m_hintsCheck, &QCheckBox::toggled, this, [this](bool on) { emit hintsRequested(on); });
+  outer->addWidget(m_hintsCheck, 0, Qt::AlignLeft);
 
   QHBoxLayout* actions = new QHBoxLayout();
   actions->addStretch(1);
@@ -179,4 +179,4 @@ int SetupDialog::textSizeChecked() const
   return 100;
 }
 
-bool SetupDialog::hintsChecked() const { return m_hintsSwitch && m_hintsSwitch->isOn(); }
+bool SetupDialog::hintsChecked() const { return m_hintsCheck && m_hintsCheck->isChecked(); }

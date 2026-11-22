@@ -362,7 +362,7 @@ void TestEmptyState::topEnabledWithoutAnimation()
   f.top->setAnimationOpen(false);
   QVERIFY(!f.top->animationOpen());
   const QMap<QString, bool> enabled = {{"topUndoAction", false}, {"topRedoAction", false}, {"topSaveAction", false},
-    {"topExportAction", false}, {"topScriptLabAction", true}, {"topSetupAction", false}, {"topThemeAction", true}};
+    {"topExportAction", false}, {"topScriptLabAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
   for (auto it = enabled.cbegin(); it != enabled.cend(); ++it)
     QVERIFY2(f.top->button(it.key().toLatin1().constData())->isEnabled() == it.value(), qPrintable(it.key()));
   QCOMPARE(f.top->button("topSaveAction")->toolTip(),
@@ -410,10 +410,10 @@ void TestEmptyState::topClicksFollowTheActions()
   f.scriptLab.toggle();
   QVERIFY(lab->isChecked());
 
-  // Setup is greyed: a click does nothing
+  // Setup works: a click asks for the dialog
   QSignalSpy setup(f.top, &TopBar::setupRequested);
   f.top->button("topSetupAction")->trigger();
-  QCOMPARE(setup.size(), 0);
+  QCOMPARE(setup.size(), 1);
 }
 
 void TestEmptyState::topThemeButton()

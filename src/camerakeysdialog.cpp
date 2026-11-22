@@ -77,6 +77,8 @@ CameraKeysDialog::CameraKeysDialog(QWidget* parent) : QDialog(parent), m_table(n
   m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_table->setSelectionMode(QAbstractItemView::NoSelection);
   m_table->setFocusPolicy(Qt::NoFocus);
+  m_table->setWordWrap(true);
+  setMinimumWidth(520);
   outer->addWidget(m_table);
   fillTable(habit);
 
@@ -98,6 +100,7 @@ void CameraKeysDialog::fillTable(const QString& habitId)
     m_table->setItem(row, 1, new QTableWidgetItem(CameraHabitSpec::gesture(habit.rows[row])));
   }
   m_table->resizeColumnToContents(0);
+  m_table->resizeRowsToContents();
 }
 
 QString CameraKeysDialog::habitChecked() const

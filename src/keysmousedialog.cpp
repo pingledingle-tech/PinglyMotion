@@ -50,12 +50,15 @@ KeysMouseDialog::KeysMouseDialog(QWidget* parent) : QDialog(parent), m_table(nul
   m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_table->setSelectionMode(QAbstractItemView::NoSelection);
   m_table->setFocusPolicy(Qt::NoFocus);
+  m_table->setWordWrap(true);
+  setMinimumWidth(520);
   for (int row = 0; row < rowCount; ++row)
   {
     m_table->setItem(row, 0, new QTableWidgetItem(KeysMouseSpec::action(KeysMouseSpec::rows[row])));
     m_table->setItem(row, 1, new QTableWidgetItem(KeysMouseSpec::gesture(KeysMouseSpec::rows[row])));
   }
   m_table->resizeColumnToContents(0);
+  m_table->resizeRowsToContents();
   outer->addWidget(m_table);
 
   QHBoxLayout* actions = new QHBoxLayout();

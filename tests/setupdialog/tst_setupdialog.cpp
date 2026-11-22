@@ -4,13 +4,13 @@
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
+#include <QCheckBox>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTableWidget>
 #include <QTemporaryDir>
-#include <QToolButton>
 #include <QtTest>
 
 #include "camerahabitspec.h"
@@ -153,10 +153,9 @@ void TestSetupDialog::hintsSwitchEmits()
   SetupDialog dialog;
   QSignalSpy spy(&dialog, &SetupDialog::hintsRequested);
   QCOMPARE(dialog.hintsChecked(), true);
-  // the switch is a TipsSwitch (src/controlindicator.h); clicking its tool button toggles it
-  QToolButton* button = dialog.findChild<QToolButton*>();
-  QVERIFY(button);
-  button->click();
+  QCheckBox* box = dialog.findChild<QCheckBox*>();
+  QVERIFY(box);
+  box->click();
   QCOMPARE(spy.count(), 1);
   QCOMPARE(spy.at(0).at(0).toBool(), false);
 }

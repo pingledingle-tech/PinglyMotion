@@ -23,8 +23,8 @@
 #include <QCoreApplication>
 #include <QDialog>
 
+class QCheckBox;
 class QRadioButton;
-class TipsSwitch;
 
 namespace SetupText
 {
@@ -43,6 +43,7 @@ namespace SetupText
   inline constexpr const char* lightChoice = QT_TRANSLATE_NOOP("SetupDialog", "Light");
   inline constexpr const char* textSizeLabel = QT_TRANSLATE_NOOP("SetupDialog", "Text size");
   inline constexpr const char* guidanceLabel = QT_TRANSLATE_NOOP("SetupDialog", "Guidance");
+  inline constexpr const char* hintsChoice = QT_TRANSLATE_NOOP("SetupDialog", "Show hints, tips and the next-step line");
   inline constexpr const char* doneButton = QT_TRANSLATE_NOOP("SetupDialog", "Done");
 
   // the five text size choices (docs/UX_DECISIONS.md, section 8: 100 to 200, steps of 25)
@@ -80,7 +81,7 @@ class SetupDialog : public QDialog
     QRadioButton* m_darkRadio;
     QRadioButton* m_lightRadio;
     QList<QRadioButton*> m_textSizeRadios;
-    TipsSwitch* m_hintsSwitch;
+    QCheckBox* m_hintsCheck;
 };
 
 #endif
