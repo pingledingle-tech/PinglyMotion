@@ -9,9 +9,9 @@ Files:
 - src/pinglymotionwindow.h
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindow.ui
-- tests/jointinfo/**
-- tests/jointlist/**
-- tests/animation/**
+- tests/tst_jointinfo.cpp
+- tests/tst_jointlist.cpp
+- tests/tst_animation.cpp
 - tests/CMakeLists.txt
 - docs/UX_DECISIONS.md
 

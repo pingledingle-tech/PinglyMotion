@@ -44,15 +44,26 @@ class JointList
     // an empty search text matches every joint
     static bool matches(const JointInfo& info,const QString& name,const QString& search);
 
+    // 'L' or 'R' for a joint on that side of the body (its Second Life name
+    // ends "Left" or "Right"; for a joint the data does not know, its file
+    // name starts with "l" or "r" followed by an upper-case letter, the same
+    // convention as the BVH files); a null QChar for a joint with no side
+    // (the centre line, and the position track) - the Joints panel's Left /
+    // Right / Mirror control (posing UX phase 2a)
+    static QChar sideOf(const JointInfo& info,const QString& name);
+
     // rows for the table
     //   trackNames  AnimationView::partNames(): "position", the joints, "Site" for End Sites
     //   tab         JointGroups::Tab; ignored while there is a search text (search finds joints on all tabs)
     //   hidden      one entry per track: the joint's group is hidden (may be empty: nothing hidden)
     //   leaveOutHidden  true: joints of hidden groups are left out; false: listed dimmed
+    //   side        a null QChar (default): every joint; 'L' or 'R': only that
+    //               side and the joints with no side are listed (sideOf())
     // Headings come in the order of the joint data; joints the data does not know
     // come last under "Other joints". A heading without joints is left out.
     static QVector<Row> rows(const JointInfo& info,const QStringList& trackNames,int tab,
-                             const QString& search,const QVector<bool>& hidden,bool leaveOutHidden);
+                             const QString& search,const QVector<bool>& hidden,bool leaveOutHidden,
+                             QChar side=QChar());
 };
 
 #endif

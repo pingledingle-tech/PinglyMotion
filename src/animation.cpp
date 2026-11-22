@@ -24,6 +24,8 @@
 #endif
 
 
+#include <QHash>
+
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -1087,6 +1089,51 @@ void Animation::mirror(BVHNode* joint)
     if(joint->getMirror())
       emit redrawTrack(joint->getMirrorIndex());
   }
+  setDirty(true);
+}
+
+void Animation::forEachJoint(BVHNode* joint,const std::function<void(BVHNode*)>& fn)
+{
+  if(joint->type!=BVH_END) fn(joint);
+
+  for(int i=0;i<joint->numChildren();i++)
+    forEachJoint(joint->child(i),fn);
+}
+
+void Animation::flipPose()
+{
+  // read every joint's current rotation first: a joint's target can be its
+  // mirror partner's rotation, which must still be the one before any joint
+  // in this walk was changed
+  QHash<BVHNode*,QVector3D> rotations;
+  forEachJoint(frames,[&](BVHNode* joint) { rotations.insert(joint,getRotation(joint)); });
+
+  for(auto it=rotations.constBegin();it!=rotations.constEnd();++it)
+  {
+    BVHNode* joint=it.key();
+    BVHNode* mirrorNode=joint->getMirror();
+    const QVector3D source=mirrorNode ? rotations.value(mirrorNode) : it.value();
+    // a joint that never moved from the rest pose stays that way (#53-style
+    // "only what changed"), instead of a new keyframe on every joint
+    if(source.isNull()) continue;
+    setRotation(joint,source.x(),-source.y(),-source.z());
+  }
+  setDirty(true);
+}
+
+void Animation::tPose()
+{
+  forEachJoint(frames,[&](BVHNode* joint) { setRotation(joint,0.0,0.0,0.0); });
+  setDirty(true);
+}
+
+void Animation::resetAllToFrameZero()
+{
+  forEachJoint(frames,[&](BVHNode* joint)
+  {
+    const QVector3D rest=joint->frameData(0).rotation();
+    setRotation(joint,rest.x(),rest.y(),rest.z());
+  });
   setDirty(true);
 }
 

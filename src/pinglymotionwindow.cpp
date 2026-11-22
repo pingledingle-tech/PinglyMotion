@@ -20,6 +20,7 @@
 
 #include <QScopedValueRollback>
 #include <QActionGroup>
+#include <QButtonGroup>
 #include <QMap>
 #include <QMenu>
 #include <QRegularExpression>
@@ -82,6 +83,7 @@
 #include "jointgroups.h"
 #include "jointinfo.h"
 #include "jointlist.h"
+#include "lucideicons.h"
 #include "textsize.h"
 #include "panelcontent.h"
 #include "panellayout.h"
@@ -1533,6 +1535,51 @@ void PinglyMotionWindow::buildJointPicker()
   if(!m_jointInfo->load(Constants::pinglyMotionDataPath()+"/firestorm",&error))
     qWarning("joint names not loaded, the joint list shows file names: %s",qPrintable(error));
 
+  // Left / Right / Mirror (posing UX phase 2a, docs/mockup): which side of a
+  // mirror pair an edit also changes (Animation::setMirrored()), and which
+  // side the joint table below lists (JointList::sideOf()). Mirror (both
+  // sides) is the default, as in the mockup.
+  QWidget* sideRow=new QWidget(ui->jointPicker);
+  sideRow->setObjectName("jointSideRow");
+  QHBoxLayout* sideLayout=new QHBoxLayout(sideRow);
+  sideLayout->setContentsMargins(0,0,0,0);
+
+  m_leftSideButton=new QPushButton(tr("Left"),sideRow);
+  m_leftSideButton->setObjectName("jointSideLeftButton");
+  m_leftSideButton->setCheckable(true);
+  m_leftSideButton->setToolTip(tr("Left side only"));
+  m_leftSideButton->setStatusTip(m_leftSideButton->toolTip());
+
+  m_rightSideButton=new QPushButton(tr("Right"),sideRow);
+  m_rightSideButton->setObjectName("jointSideRightButton");
+  m_rightSideButton->setCheckable(true);
+  m_rightSideButton->setToolTip(tr("Right side only"));
+  m_rightSideButton->setStatusTip(m_rightSideButton->toolTip());
+
+  m_mirrorSideButton=new QPushButton(tr("Mirror"),sideRow);
+  m_mirrorSideButton->setObjectName("jointSideMirrorButton");
+  m_mirrorSideButton->setCheckable(true);
+  m_mirrorSideButton->setChecked(true);
+  m_mirrorSideButton->setIcon(LucideIcons::icon(QStringLiteral("flip-horizontal-2"),
+                                                 Theme::color(Theme::Token::Text),
+                                                 Theme::color(Theme::Token::TextDisabled)));
+  m_mirrorSideButton->setToolTip(tr("Mirror: turning one side turns the other side too"));
+  m_mirrorSideButton->setStatusTip(m_mirrorSideButton->toolTip());
+
+  m_sideGroup=new QButtonGroup(this);
+  m_sideGroup->setExclusive(true);
+  m_sideGroup->addButton(m_leftSideButton);
+  m_sideGroup->addButton(m_rightSideButton);
+  m_sideGroup->addButton(m_mirrorSideButton);
+
+  sideLayout->addWidget(m_leftSideButton);
+  sideLayout->addWidget(m_rightSideButton);
+  sideLayout->addWidget(m_mirrorSideButton);
+
+  connect(m_leftSideButton,&QPushButton::clicked,this,[this]() { setJointSide(QLatin1Char('L')); });
+  connect(m_rightSideButton,&QPushButton::clicked,this,[this]() { setJointSide(QLatin1Char('R')); });
+  connect(m_mirrorSideButton,&QPushButton::clicked,this,[this]() { setJointSide(QChar()); });
+
   m_jointTabs=new QTabBar(ui->jointPicker);
   m_jointTabs->setObjectName("jointTabs");
   m_jointTabs->setDocumentMode(true);
@@ -1566,12 +1613,60 @@ void PinglyMotionWindow::buildJointPicker()
   m_jointTable->setAlternatingRowColors(true);
   m_jointTable->setMinimumHeight(10*m_jointTable->verticalHeader()->defaultSectionSize());
 
+  // Whole pose: Flip, T-pose and Reset all, every joint of the current
+  // frame, not just the selected one (posing UX phase 2a, docs/mockup)
+  QWidget* wholePoseRow=new QWidget(ui->jointPicker);
+  wholePoseRow->setObjectName("wholePoseRow");
+  QHBoxLayout* wholePoseLayout=new QHBoxLayout(wholePoseRow);
+  wholePoseLayout->setContentsMargins(0,0,0,0);
+
+  m_flipPoseButton=new QPushButton(tr("Flip"),wholePoseRow);
+  m_flipPoseButton->setObjectName("flipPoseButton");
+  m_flipPoseButton->setIcon(LucideIcons::icon(QStringLiteral("flip-horizontal-2"),
+                                               Theme::color(Theme::Token::Text),
+                                               Theme::color(Theme::Token::TextDisabled)));
+  m_flipPoseButton->setToolTip(tr("Flip the whole pose left to right"));
+  m_flipPoseButton->setStatusTip(m_flipPoseButton->toolTip());
+
+  m_tPoseButton=new QPushButton(tr("T-pose"),wholePoseRow);
+  m_tPoseButton->setObjectName("tPoseButton");
+  m_tPoseButton->setToolTip(tr("T-pose: arms straight out to the sides"));
+  m_tPoseButton->setStatusTip(m_tPoseButton->toolTip());
+
+  m_resetAllButton=new QPushButton(tr("Reset all"),wholePoseRow);
+  m_resetAllButton->setObjectName("resetAllButton");
+  m_resetAllButton->setIcon(LucideIcons::icon(QStringLiteral("rotate-ccw"),
+                                               Theme::color(Theme::Token::Text),
+                                               Theme::color(Theme::Token::TextDisabled)));
+  m_resetAllButton->setToolTip(tr("Reset all joints of this frame"));
+  m_resetAllButton->setStatusTip(m_resetAllButton->toolTip());
+  // the danger button of docs/DESIGN_SYSTEM.md, set directly: this row is
+  // plain Qt widgets, not transportlook.cpp's custom-painted buttons (left
+  // for a later look pass, docs/UX_DECISIONS.md)
+  {
+    QPalette dangerPalette=m_resetAllButton->palette();
+    dangerPalette.setColor(QPalette::Button,Theme::color(Theme::Token::DangerFill));
+    dangerPalette.setColor(QPalette::ButtonText,Theme::color(Theme::Token::OnAccent));
+    m_resetAllButton->setPalette(dangerPalette);
+    m_resetAllButton->setAutoFillBackground(true);
+  }
+
+  wholePoseLayout->addWidget(m_flipPoseButton);
+  wholePoseLayout->addWidget(m_tPoseButton);
+  wholePoseLayout->addWidget(m_resetAllButton);
+
+  connect(m_flipPoseButton,&QPushButton::clicked,this,&PinglyMotionWindow::flipPoseClicked);
+  connect(m_tPoseButton,&QPushButton::clicked,this,&PinglyMotionWindow::tPoseClicked);
+  connect(m_resetAllButton,&QPushButton::clicked,this,&PinglyMotionWindow::resetAllClicked);
+
   QVBoxLayout* layout=new QVBoxLayout(ui->jointPicker);
   layout->setContentsMargins(0,0,0,0);
   layout->setSpacing(2);
+  layout->addWidget(sideRow);
   layout->addWidget(m_jointTabs);
   layout->addWidget(m_jointSearch);
   layout->addWidget(m_jointTable);
+  layout->addWidget(wholePoseRow);
 
   // a click on a tab shows that tab again, so the search is cleared
   connect(m_jointTabs,&QTabBar::currentChanged,this,[this](int)
@@ -1619,7 +1714,8 @@ void PinglyMotionWindow::fillJointTable()
   for(int track=0;track<names.count();track++)
     hidden[track]=JointGroups::trackHidden(track);
   const QVector<JointList::Row> rows=JointList::rows(*m_jointInfo,names,m_jointTabs->currentIndex(),
-                                                     m_jointSearch->text(),hidden,UserSettings::hideJointsInLists());
+                                                     m_jointSearch->text(),hidden,UserSettings::hideJointsInLists(),
+                                                     m_jointSide);
 
   QSignalBlocker block(m_jointTable);
   nodeMapping.clear();
@@ -1696,6 +1792,14 @@ void PinglyMotionWindow::selectTrackInTable(int track)
       QSignalBlocker block(m_jointTabs);
       m_jointTabs->setCurrentIndex(tab);
     }
+    // a joint of the side the Left / Right control is hiding (picked in the
+    // 3D view, or by a track number): Mirror shows both sides again
+    if(!listed && !m_jointSide.isNull() && JointList::sideOf(*m_jointInfo,names[track])==
+       (m_jointSide==QLatin1Char('L') ? QChar('R') : QChar('L')))
+    {
+      setJointSide(QChar());
+      return;
+    }
     if(!listed)
     {
       fillJointTable();
@@ -1703,6 +1807,41 @@ void PinglyMotionWindow::selectTrackInTable(int track)
     }
   }
   showSelectedTrack();
+}
+
+// Left / Right / Mirror (posing UX phase 2a): which side of a mirror pair an
+// edit also changes, and which side the joint table lists
+void PinglyMotionWindow::setJointSide(QChar side)
+{
+  if(m_jointSide==side) return;
+  m_jointSide=side;
+  if(Animation* anim=scene->getAnimation())
+    anim->setMirrored(side.isNull());
+  fillJointTable();
+}
+
+void PinglyMotionWindow::flipPoseClicked()
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim) return;
+  anim->flipPose();
+  updateInputs();
+}
+
+void PinglyMotionWindow::tPoseClicked()
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim) return;
+  anim->tPose();
+  updateInputs();
+}
+
+void PinglyMotionWindow::resetAllClicked()
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim) return;
+  anim->resetAllToFrameZero();
+  updateInputs();
 }
 
 // fill the joint table and "Attach To" from the skeleton
@@ -2405,6 +2544,10 @@ void PinglyMotionWindow::selectAnimation(Animation* animation)
       scene->blockSignals(false);
     }
   } // for
+
+  // the Joints panel's Left / Right / Mirror control (posing UX phase 2a)
+  // applies to every open animation, including one just opened or added
+  animation->setMirrored(m_jointSide.isNull());
 
   // update avatar figure combo box
   int figure=0;
