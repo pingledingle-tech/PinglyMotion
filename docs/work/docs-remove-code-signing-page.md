@@ -1,6 +1,6 @@
 Branch: docs/remove-code-signing-page
 Status: done
-Pull request: pending
+Pull request: #353
 Files:
 - docs/code-signing.html
 - docs/index.html
