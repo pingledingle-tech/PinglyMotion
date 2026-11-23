@@ -1304,7 +1304,6 @@
     </property>
     <addaction name="fileNewAction"/>
     <addaction name="fileOpenAction"/>
-    <addaction name="fileAddAction"/>
     <addaction name="fileImportAnimAction"/>
     <addaction name="fileImportBvhAction"/>
     <addaction name="fileImportGltfAction"/>
@@ -1313,6 +1312,7 @@
     <addaction name="fileSaveAsAction"/>
     <addaction name="fileExportForSecondLifeAction"/>
     <addaction name="fileExportAnimAction"/>
+    <addaction name="fileAddAction"/>
     <addaction name="separator"/>
     <addaction name="fileLoadPropsAction"/>
     <addaction name="fileSavePropsAction"/>
@@ -1408,7 +1408,7 @@
      <normaloff>:/icons/icons/fileadd.png</normaloff>:/icons/icons/fileadd.png</iconset>
    </property>
    <property name="text">
-    <string>Add...</string>
+    <string>Add a second figure...</string>
    </property>
   </action>
   <action name="fileSaveAction">

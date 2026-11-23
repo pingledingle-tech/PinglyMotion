@@ -1229,6 +1229,145 @@ Red: a request with a wrong key was refused</source>
     </message>
 </context>
 <context>
+    <name>FigureSpec</name>
+    <message>
+        <source>Add a second figure...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The scene has two figures. Remove one first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a second figure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The second figure plays next to the first, in the same scene.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>From the library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a ready-made move, then press Add as a second figure.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>From a file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A .dingle, BVH or .avm file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Figures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This figure is active. Its joints and keys show.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to make this figure active.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Figure %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Added figure %1: %2. Click a figure to make it active.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Figure %1 is active: %2. Its joints and keys show now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switching figures is in Expert mode. View &gt; Expert mode turns it on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Its file is not changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make figure %1 active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove figure %1 from the scene</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove figure %1?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 has changes that are not saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove without saving</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save, then remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Figure %1 removed from the scene. Its file is not changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is figure 1 now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Figure %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>figure %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a move, then press Add as a second figure.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to make figure %1 active and pick this joint.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add as a second figure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Puts this move on a second figure in the same scene.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>GltfImportDialog</name>
     <message>
         <source>Import glTF animation</source>
@@ -3234,10 +3373,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3860,6 +3995,10 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source> - AI Assistant on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a second figure...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

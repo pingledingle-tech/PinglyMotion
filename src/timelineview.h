@@ -39,6 +39,9 @@ class EasingTiles;
 class BVHNode;
 class TimelineRows;
 class NotesLine;
+class FigureHeader;
+class FigureRows;
+class QVBoxLayout;
 
 class TimelineTracks : public QWidget
 {
@@ -113,11 +116,31 @@ class TimelineView : public QFrame
     // the window plays or stops: stopped at the last frame the line shows the task
     void setPlaying(bool playing);
 
+    // Two figures in one scene (docs/UX_DECISIONS.md 6m): with two or more figures each one
+    // gets a header row (number, file name, Active or Make active, Remove); the active
+    // figure's rows work as before, the other figure's rows are greyed (FigureRows). With
+    // one figure the timeline looks exactly as before. expert: Beginner mode hides Make
+    // active and Remove without moving anything.
+    void setFigures(const QList<Animation*>& animations,const QStringList& paths,int active,bool expert);
+    void setFiguresExpert(bool expert);
+    int figureCount() const { return int(figureHeaders_.size()); }
+    // the header row of a figure (0-based), nullptr with one figure
+    FigureHeader* figureHeader(int index) const { return figureHeaders_.value(index); }
+    // the greyed rows of a figure that is not active, nullptr for the active one
+    FigureRows* figureRows(int index) const { return figureRows_.value(index); }
+    // the active figure's rows (names and keys)
+    QWidget* activeRowsArea() const { return rowsArea_; }
+
   signals:
     // "Set the first key" was clicked: the window sets a key like Set key
     void setKeyRequested();
     // Hide notes was clicked on the notes line
     void notesHidden();
+    // two figures: Make active or Remove was clicked on a figure's header row (0-based)
+    void makeActiveRequested(int figure);
+    void removeRequested(int figure);
+    // a greyed row of another figure was clicked: make it active and pick that joint
+    void otherJointClicked(int figure,int track);
 
   public slots:
     void selectTrack(int track);
@@ -171,6 +194,14 @@ class TimelineView : public QFrame
 
     Animation* animation_=nullptr;
     int selectedTrack_=-1;
+
+    // two figures (6m): the column the rows stand in, and the parts of each figure
+    QVBoxLayout* contentColumn_=nullptr;
+    QList<FigureHeader*> figureHeaders_;
+    QList<FigureRows*> figureRows_;
+    std::function<QString(const QString&)> nameOf_;
+    // the greyed rows follow the names' width and the sideways scroll
+    void syncFigureRows();
 };
 
 #endif

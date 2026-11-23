@@ -28,11 +28,13 @@
 #include <QVBoxLayout>
 
 #include "controlapi.h"
+#include "figures.h"
 #include "librarypreview.h"
 #include "lucideicons.h"
 #include "paneltitlebar.h"
 #include "textsize.h"
 #include "theme.h"
+#include "usersettings.h"
 
 const char* const LibraryPanel::DockName = "libraryDock";
 const char* const LibraryPanel::ViewActionName = "viewLibraryAction";
@@ -378,10 +380,22 @@ LibraryPanel::LibraryPanel(QWidget* parent) : QWidget(parent)
   m_use->setDefault(false);
   m_use->setAutoDefault(false);
   connect(m_use, &QPushButton::clicked, this, &LibraryPanel::useSelected);
-  QHBoxLayout* useRow = new QHBoxLayout;
-  useRow->addWidget(m_use);
-  useRow->addStretch(1);
-  details->addLayout(useRow);
+  // Add as a second figure (Expert mode only, docs/UX_DECISIONS.md 6m): beside Use this,
+  // under it when the panel is too narrow for both
+  m_addFigure = new QPushButton(FigureSpec::tr(FigureSpec::libraryAdd), m_details);
+  m_addFigure->setObjectName(QStringLiteral("libraryAddFigure"));
+  m_addFigure->setMinimumHeight(TextSize::scaled(Size::controlDefault));
+  m_addFigure->setAutoDefault(false);
+  connect(m_addFigure, &QPushButton::clicked, this, &LibraryPanel::addSelectedAsFigure);
+  m_useRow = new QBoxLayout(QBoxLayout::LeftToRight);
+  m_useRow->setContentsMargins(0, 0, 0, 0);
+  m_useRow->addWidget(m_use, 0, Qt::AlignLeft);
+  m_useRow->addWidget(m_addFigure, 0, Qt::AlignLeft);
+  m_useRow->addStretch(1);
+  details->addLayout(m_useRow);
+  refreshAddFigure();
+  setExpertMode(UserSettings::expertMode());
+  UserSettings::watchExpertMode(this, [this](bool on) { setExpertMode(on); });
   mainLayout->addWidget(m_details);
   m_pages->addWidget(main);
 
@@ -414,6 +428,7 @@ LibraryPanel::LibraryPanel(QWidget* parent) : QWidget(parent)
   setTabOrder(m_list, m_showAll);
   setTabOrder(m_showAll, m_previewButton);
   setTabOrder(m_previewButton, m_use);
+  setTabOrder(m_use, m_addFigure);
 
   connect(m_search, &QLineEdit::textChanged, this, [this]() { buildList(); });
 
@@ -477,6 +492,49 @@ void LibraryPanel::resizeEvent(QResizeEvent* event)
 {
   QWidget::resizeEvent(event);
   placeSizeGrip();
+  fitUseRow();
+}
+
+void LibraryPanel::fitUseRow()
+{
+  if (!m_useRow || !m_details) return;
+  const int both = m_use->sizeHint().width() + m_useRow->spacing() + m_addFigure->sizeHint().width();
+  const QMargins margins = m_details->layout() ? m_details->layout()->contentsMargins() : QMargins();
+  const bool wrap = m_addFigure->isVisibleTo(this) && both > m_details->width() - margins.left() - margins.right();
+  const QBoxLayout::Direction direction = wrap ? QBoxLayout::TopToBottom : QBoxLayout::LeftToRight;
+  if (m_useRow->direction() != direction) m_useRow->setDirection(direction);
+}
+
+bool LibraryPanel::useRowWrapped() const
+{
+  return m_useRow && m_useRow->direction() == QBoxLayout::TopToBottom;
+}
+
+void LibraryPanel::setExpertMode(bool expert)
+{
+  m_expert = expert;
+  m_addFigure->setVisible(expert);
+  fitUseRow();
+}
+
+void LibraryPanel::setSecondFigureBlocked(const QString& why)
+{
+  m_addFigureBlocked = why;
+  refreshAddFigure();
+}
+
+void LibraryPanel::refreshAddFigure()
+{
+  m_addFigure->setEnabled(m_addFigureBlocked.isEmpty());
+  m_addFigure->setToolTip(m_addFigureBlocked.isEmpty() ? FigureSpec::tr(FigureSpec::libraryAddTip) : m_addFigureBlocked);
+  m_addFigure->setStatusTip(m_addFigure->toolTip());
+}
+
+bool LibraryPanel::addSelectedAsFigure()
+{
+  if (!m_expert || !m_index.find(m_selected) || !m_addFigure->isEnabled() || m_details->isHidden()) return false;
+  emit addFigureRequested(m_selected);
+  return true;
 }
 
 bool LibraryPanel::setLibraryFolder(const QString& folder)
@@ -803,6 +861,8 @@ void LibraryPanel::applyStyle()
   m_searchIcon->setIcon(LucideIcons::icon(QStringLiteral("search"), Theme::color(Token::TextMuted), disabled));
   m_showAll->setIcon(LucideIcons::icon(QStringLiteral("library-big"), text, disabled));
   m_use->setIcon(LucideIcons::icon(QStringLiteral("import"), Theme::color(Token::OnAccent), disabled));
+  m_addFigure->setStyleSheet(normal);
+  m_addFigure->setIcon(LucideIcons::icon(QStringLiteral("user-plus"), text, disabled));
   m_previewButton->setIcon(LucideIcons::icon(m_preview->playing() ? QStringLiteral("square") : QStringLiteral("play"), text, disabled));
   const int icon = Size::iconSmall;
   m_explainIcon->setPixmap(LucideIcons::icon(QStringLiteral("info"), accentText, disabled).pixmap(icon, icon));

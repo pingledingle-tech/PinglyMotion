@@ -112,6 +112,14 @@ void AnimationManager::append(Animation* const animation)
   animationList.append(animation);
 }
 
+bool AnimationManager::remove(Animation* const animation)
+{
+  if (!animationList.removeOne(animation)) return false;
+  if (selectedAnimation == animation)
+    selectedAnimation = animationList.isEmpty() ? nullptr : animationList.first();
+  return true;
+}
+
 void AnimationManager::setAnimation(Animation* animation)
 {
   selectedAnimation = animation;

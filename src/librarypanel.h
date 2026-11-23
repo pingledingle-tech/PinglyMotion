@@ -17,7 +17,8 @@
  *
  * Colours come from the theme tokens only (docs/DESIGN_SYSTEM.md); the texts
  * are LibrarySpec (libraryindex.h). tests/librarypanel checks the behaviour.
- * "Add as a second figure" belongs to the two figures job (6m) and is not here.
+ * "Add as a second figure" (Expert mode only) asks the window to put the picked clip
+ * on a second figure in the same scene (6m); the window decides when it is greyed.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -30,6 +31,7 @@
 
 class ControlApi;
 class QAction;
+class QBoxLayout;
 class LibraryPreview;
 class QAbstractButton;
 class QButtonGroup;
@@ -98,6 +100,16 @@ class LibraryPanel : public QWidget
     // the keyboard goes to the search field (the panel was opened)
     void focusSearch();
 
+    // Add as a second figure (6m): shown only in Expert mode; greyed with this reason (empty: it works)
+    void setExpertMode(bool expert);
+    bool expertMode() const { return m_expert; }
+    void setSecondFigureBlocked(const QString& why);
+    // asks the window to add the picked clip as a second figure (nothing when it is greyed or hidden)
+    bool addSelectedAsFigure();
+    QPushButton* addFigureButton() const { return m_addFigure; }
+    // Use this and Add as a second figure stand one under the other (the panel is narrow)
+    bool useRowWrapped() const;
+
     // the parts, for the tests
     QLineEdit* searchField() const { return m_search; }
     QListWidget* list() const { return m_list; }
@@ -127,6 +139,7 @@ class LibraryPanel : public QWidget
 
   signals:
     void useRequested(const QString& id);
+    void addFigureRequested(const QString& id);
     void statusMessage(const QString& text);
 
   protected:
@@ -143,6 +156,8 @@ class LibraryPanel : public QWidget
     void applyStyle();
     void placeSizeGrip();
     void moveKind(int step, bool toEnd);
+    void fitUseRow();
+    void refreshAddFigure();
 
     LibraryIndex m_index;
     QString m_kind;
@@ -177,6 +192,10 @@ class LibraryPanel : public QWidget
     QList<QLabel*> m_factNames;
     QList<QLabel*> m_facts;
     QPushButton* m_use = nullptr;
+    QPushButton* m_addFigure = nullptr;
+    QBoxLayout* m_useRow = nullptr;
+    bool m_expert = false;
+    QString m_addFigureBlocked;
     QFrame* m_missing = nullptr;
     QLabel* m_missingIcon = nullptr;
     QLabel* m_missingTitle = nullptr;

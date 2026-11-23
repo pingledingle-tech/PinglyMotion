@@ -217,7 +217,9 @@ void Timeline::setAnimation(Animation* anim)
     connect(animation, &Animation::redrawTrack, this, &Timeline::redrawTrackImmediately);
     connect(this, &Timeline::deleteFrame, animation, &Animation::deleteFrame);
     connect(this, &Timeline::insertFrame, animation, &Animation::insertFrame);
-
+    // as long as this animation, also when another one was shown before (two figures,
+    // docs/UX_DECISIONS.md 6m): before, only the window's frame count field told it
+    setNumberOfFrames(animation->getNumberOfFrames());
   }
 
   rows_.update(animation,trackSelected);
