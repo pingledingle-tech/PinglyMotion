@@ -225,6 +225,7 @@ class Interpreter
     bool m_controlsAccept = false;
     bool m_controlsPassOn = false;
     QMap<QString, QString> m_overrides;   // step 9b-8: llSetAnimationOverride, by animation state
+    QStringList m_objectAnims;       // steps 13 to 15: llStartObjectAnimation (names, in the order started; llGetObjectAnimationNames)
     QStringList m_playing;           // step 9b-5: animations this script started and has not stopped (llGetAnimationList)
     QString m_detectedKey;
     QString m_detectedName;

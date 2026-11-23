@@ -6,10 +6,12 @@ Files:
 - src/scriptlab/lsl/world.h
 - src/scriptlab/lsl/world.cpp
 - src/scriptlab/lsl/sandbox.cpp
+- src/scriptlab/lsl/sandbox.h
 - src/scriptlab/lsl/interp.h
 - src/scriptlab/lsl/control.cpp
 - tests/tst_lslsteps131415.cpp
 - tests/tst_lslpure.cpp
+- tests/tst_lslprims.cpp
 - tests/CMakeLists.txt
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md

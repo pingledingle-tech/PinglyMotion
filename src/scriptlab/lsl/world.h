@@ -200,6 +200,8 @@ struct InventoryItem
   // several-objects job: llGetInventoryCreator (empty: the owner of the object that holds it) and llGetInventoryDesc
   QString creator;
   QString description;
+  // steps 13 to 15: a landmark's place, as an offset from the region's origin (llRequestInventoryData)
+  float landmark[3] = {0.0f, 0.0f, 0.0f};
 };
 
 class Inventory
@@ -532,6 +534,8 @@ class World
     virtual const RegionSettings& region() const { return m_region; }
     void setRegion(const RegionSettings& region) { m_region = region; }
     virtual QStringList agents() const { return QStringList{ownerKey()}; }
+    // steps 13 to 15: the keys of the objects llCastRay can hit (a plain World has only its own object)
+    virtual QStringList objectKeys() const { return QStringList{objectKey()}; }
     // llSetParcelMusicURL stores the address and llGetParcelMusicURL reads it back (the one parcel's music)
     const QString& parcelMusicUrl() const { return m_parcelMusicUrl; }
     void setParcelMusicUrl(const QString& url) { m_parcelMusicUrl = url; }
