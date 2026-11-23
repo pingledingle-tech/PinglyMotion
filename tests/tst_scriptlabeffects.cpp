@@ -86,8 +86,8 @@ void TestScriptLabEffects::boxAndPreview()
   QVERIFY(!preview.enabled());
   QCOMPARE(box->toolTip(), QString("Play the animation the script started on a preview figure and show worn objects and locks. "
                                    "Your animation is not changed; untick to see it again."));
-  // the Live page sits in a scroll area (so its height does not raise the panel's), which is tab 1
-  QScrollArea* livePage = qobject_cast<QScrollArea*>(panel.tabs()->widget(1));
+  // the Live page sits in a scroll area (so its height does not raise the panel's), which is the first tab
+  QScrollArea* livePage = qobject_cast<QScrollArea*>(panel.tabs()->widget(ScriptLabPanel::LivePage));
   QVERIFY(livePage);
   QCOMPARE(livePage->widget(), box->parentWidget());
   QVERIFY(!panel.effectsStatus()->isVisibleTo(&panel));

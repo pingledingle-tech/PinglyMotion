@@ -29,11 +29,11 @@ visibility are saved with the layout. View > Reset layout closes it again.
   A line that ran is cleared from the field; a refused line stays so it can be fixed.
 - **Restrictions**: every held restriction with its option and the object that holds it. With none, a line says what
   to type.
-- **Actions**: every action the sandbox knows, with the word Allowed or Blocked; the colour (success or danger token)
+- **What the avatar may do** (was "Actions"): every action the sandbox knows, with the word Allowed or Blocked; the colour (success or danger token)
   and a bold Blocked only back up the word.
 - **Replies and messages**: each line run from the panel, the result of each command, the reason for a refusal, and
   the replies a script would hear (`Reply on channel 2222: ...`).
-- **Reset**: removes every restriction of every object, like `rlv_reset`.
+- **Reset all** (was "Reset"): removes every restriction of every object, like `rlv_reset`.
 - `@clear` removes the restrictions of the object that sends it, as in Second Life: `@clear` from the panel leaves a
   `collar`'s restrictions in place; Reset removes all.
 - The panel follows the state's `changed` signal, so lines sent with `rlv_command` or `rlv_reset` by an AI client show
@@ -41,6 +41,30 @@ visibility are saved with the layout. View > Reset layout closes it again.
 - Code: `src/scriptlab/scriptlabpanel.*`; test: `tests/scriptlabpanel/` (menu entry, restrictions and actions after
   `@detach=n,sendim=n`, `@clear`, Reset, replies, a line through `rlv_command`, colour tokens, and the panel's place
   after saving and loading the layout).
+
+### The panel in the new design (slice 1)
+
+The panel follows the approved mockup (`docs/mockup/index.html`, the Script Lab page; [UX_DECISIONS.md](UX_DECISIONS.md), 6d):
+
+- **Viewer rules** at the top: **RLV** or **RLVa** (RLVa at start, as the RLV state). Switching calls the RLV state's mode
+  switch, so every restriction goes, as after a relog, and the log under Replies and messages says how many. `rlv_reset`
+  with a `mode` moves the switch too. Next to it a chip says how many restrictions are held now ("2 held").
+- Two pages, **Live scripts** (first) and **Type commands** (the old Live and Commands pages).
+- Live scripts with no folder watched shows an empty state: "No folder watched", one line, **Watch folder...** and
+  **Try the example scripts** (watches `examples/scriptlab` next to the program and runs `rlv_lock.lsl` at once;
+  greyed with a reason when that folder is missing).
+- Every part folds with its header (click, Space or Enter); the chevron points right or down, and a short count sits on
+  the right: Script ("read only"), Errors and warnings ("none", "1 error", "2 errors, 1 warning"), Event log ("3 lines",
+  "not run"), RLV restrictions now (a number), Objects (a number), Send input; on Type commands Restrictions (a number),
+  What the avatar may do and Replies and messages (a number of lines run, or "none"). Objects and Send input start
+  folded, as in the mockup. Objects, Send input and Show effects in 3D view also show without a folder once an
+  `lsl_run` world exists.
+- Errors and warnings also lists the static warnings (`lsl_lint`) of a script that compiled.
+- Not in this slice (later slices): the green OK summary line of the mockup, the "Try:" example chips, Run again
+  (a proposal in the mockup), the simulated inventory part, the one-line explanation and the remembered fold state.
+- Code: `src/scriptlab/scriptlabpanel.*`, `src/scriptlab/scriptlabsection.*` (a folding part); test:
+  `tests/scriptlabpanel/tst_scriptlabdesign.cpp` (exact texts, counts, the switch both ways, the empty state, folding
+  and keys, the tokens in both themes, and the mockup's texts looked up in the mockup file).
 
 ## What exists now (step 3, issue 289): the LSL interpreter
 
@@ -75,7 +99,7 @@ Several scripts run in one world, so a HUD and a restraint can talk on a channel
   one more event and run it on.
 - Control commands: `lsl_run` with `objects` instead of `source`, and `lsl_event` ([CONTROL.md](CONTROL.md),
   "Several objects and lsl_event"). The single-script form of `lsl_run` works as before.
-- The panel: below the replies, **Objects** lists the objects of the last run (name; where it is, or "Worn (point
+- The panel: on the Live scripts page, the folding part **Objects** lists the objects of the last run (name; where it is, or "Worn (point
   35)"; "Running" or "Stopped: <why>" in the danger colour and bold; the restrictions it holds) and **Dialog** shows the
   newest dialog (which object, the message, the buttons and the channel). The part is hidden until a script has run,
   and follows every `lsl_run` and `lsl_event` at once. Code: `src/scriptlab/objectsview.*`.
@@ -93,8 +117,8 @@ Several scripts run in one world, so a HUD and a restraint can talk on a channel
 The Script Lab watches a folder of scripts and runs a script again each time it is saved, so the user (or Claude
 Code) edits in their own editor and sees the result in PinglyMotion at once. There is no built-in editor.
 
-- The panel has two pages: **Commands** (the RLV lines of step 2) and **Live**. On Live, **Watch folder...** picks
-  the folder (a cloned repository, for example); **Stop watching** ends it. When a watch starts, here or through
+- The panel has two pages: **Type commands** (the RLV lines of step 2) and **Live scripts**. On Live scripts, **Watch folder...** (in the
+  empty state) picks the folder (a cloned repository, for example); **Stop watching** ends it. When a watch starts, here or through
   `lab_watch`, the Live page comes to the front.
 - About 0.3 seconds after a `.lsl` file in the folder is saved, it is checked and, when it compiles, run. The page
   shows a status line that starts with a word (`OK` or `Error`; the colour only backs it up), the script read-only
@@ -539,7 +563,7 @@ sandbox's RLV parser refuses or does not know (also the constant start of text b
 line, a column, a stable id and a short message; the ids and the exact rules are in [CONTROL.md](CONTROL.md),
 "Script Lab: lsl_check and lsl_run". A script that does not compile gets its errors (as `lsl_check`) and no warnings.
 The example scripts and the fuzz corpus give no warnings (the test `tests/tst_lsllint.cpp` checks it). Code:
-`src/scriptlab/lsl/lint.*`. The panel does not show the warnings yet; that is a later job.
+`src/scriptlab/lsl/lint.*`. The panel's Live scripts page shows them under Errors and warnings, after the checker's own.
 
 An assistant can run `lsl_lint` after `lsl_check` passes and before `lsl_run`:
 

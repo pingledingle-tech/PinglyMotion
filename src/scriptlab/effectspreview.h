@@ -54,6 +54,8 @@ class EffectsPreview : public QObject
     // when the data folder is its bin/data
     void setExamplesFolder(const QString& folder) { m_examples = folder; }
     QString examplesFolder() const;
+    // the default examples folder: "examples" next to the data folder, or at the top of the source tree
+    static QString defaultExamplesFolder();
 
     // Shows what one run answer did (does nothing while off). folders: where animations are
     // looked for, in order (the examples folder is added at the end).

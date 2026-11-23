@@ -8,6 +8,11 @@
  * hear. It follows the core's changed() signal, so lines sent through the
  * control commands (rlv_command, rlv_reset) show up here too.
  *
+ * In the new design (docs/mockup/index.html, docs/UX_DECISIONS.md 6d, slice 1):
+ * the "Viewer rules" RLV / RLVa switch with an "N held" chip on top, the pages
+ * "Live scripts" (with an empty state while no folder is watched) and "Type
+ * commands", and folding parts with counts (scriptlabsection.h).
+ *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
  *
@@ -18,6 +23,7 @@
 #define SCRIPTLABPANEL_H
 
 #include <QColor>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
 #include <QPointer>
@@ -36,7 +42,10 @@ class QComboBox;
 class QGridLayout;
 class QSpinBox;
 class QDockWidget;
+class QFrame;
 class ScriptLabObjectsView;
+class ScriptLabFrame;
+class ScriptLabSection;
 namespace lsl { class Session; }
 class QLabel;
 class QLineEdit;
@@ -58,6 +67,8 @@ class ScriptLabPanel : public QWidget
     static const char* const ViewActionName;  // "viewScriptLabAction"
     // the object id lines typed in the panel are sent from
     static const char* const DefaultObject;   // "panel"
+    // the two pages, in the mockup's order
+    enum Page { LivePage = 0, CommandsPage = 1 };
 
     explicit ScriptLabPanel(QWidget* parent = nullptr);
 
@@ -85,6 +96,16 @@ class ScriptLabPanel : public QWidget
     bool watchFolder(const QString& folder);
     // stops watching, as Stop watching does
     void stopWatching();
+    // watches the example scripts that come with the program (examples/scriptlab), as
+    // "Try the example scripts" does, and runs rlv_lock.lsl; false when refused
+    bool tryExampleScripts();
+    // the folder "Try the example scripts" watches; the tests may give another one
+    QString exampleScriptsFolder() const;
+    void setExampleScriptsFolder(const QString& folder) { m_examplesFolder = folder; refreshLive(); }
+
+    // --- Viewer rules (the panel in the new design): plain RLV or RLVa, as the RLV state answers.
+    // Switching removes every restriction, as after a relog (RlvState::setMode).
+    void setMode(Rlv::Mode mode);
     // --- Effects in the 3D view (issue 293): the preview the "Show effects in 3D view" box turns
     // on and off (off at start). Not owned (the window owns it and gives it to the 3D view).
     void setEffects(EffectsPreview* preview);
@@ -144,7 +165,25 @@ class ScriptLabPanel : public QWidget
     QPushButton* watchButton() const { return m_watch; }
     QPushButton* unwatchButton() const { return m_unwatch; }
     QLabel* liveStatus() const { return m_liveStatus; }
-    QLabel* liveScriptName() const { return m_liveScript; }
+    // the Script part: its title is "Script" or "Script: <file>"
+    ScriptLabSection* liveScriptName() const { return m_scriptSection; }
+    QPushButton* modeRlvButton() const { return m_modeRlv; }
+    QPushButton* modeRlvaButton() const { return m_modeRlva; }
+    QLabel* modeLabel() const { return m_modeLabel; }
+    // the text of the "N held" chip
+    QLabel* heldChip() const { return m_heldChip; }
+    ScriptLabFrame* heldChipFrame() const { return m_heldChipFrame; }
+    // the empty state of the Live page and its parts
+    ScriptLabFrame* liveEmpty() const { return m_liveEmpty; }
+    QLabel* liveEmptyHeading() const { return m_liveEmptyHeading; }
+    QLabel* liveEmptyText() const { return m_liveEmptyText; }
+    QPushButton* exampleButton() const { return m_example; }
+    QTreeWidget* liveRestrictionList() const { return m_liveRestrictions; }
+    QLabel* liveRestrictionsEmpty() const { return m_liveRestrictionsEmpty; }
+    // the folding parts, by key: "script", "problems", "log", "restrictionsNow", "objects", "input"
+    // (Live scripts) and "restrictions", "actions", "replies" (Type commands)
+    ScriptLabSection* section(const QString& key) const;
+    QList<ScriptLabSection*> sections() const { return m_sections; }
     QPushButton* openEditorButton() const { return m_openEditor; }
     QPlainTextEdit* scriptView() const { return m_scriptView; }
     QListWidget* problemList() const { return m_problems; }
@@ -164,6 +203,8 @@ class ScriptLabPanel : public QWidget
   public slots:
     // reads the state again (connected to RlvState::changed)
     void refresh();
+    // the Viewer rules switch follows the state's mode (connected to RlvState::modeChanged)
+    void refreshMode();
     // reads the watch and its newest result again (connected to LabWatcher)
     void refreshLive();
     // shows the effects preview's lines under the box (connected to EffectsPreview::changed)
@@ -194,18 +235,51 @@ class ScriptLabPanel : public QWidget
     bool sendInput(QJsonObject request, const QString& what);
     QString inputBlocker() const;      // why nothing can be sent now; empty when it can
     void setInputResult(const QString& text, int tone);
+    ScriptLabSection* addSection(const QString& key, const QString& title, bool expanded, QWidget* page, QVBoxLayout* layout);
+    QTreeWidget* makeRestrictionList(QWidget* parent);
+    void refreshCounts();
+    void updateWorldParts();
+    QJsonArray lintWarnings(const QString& source);
 
     QPointer<RlvState> m_state;
-    QLineEdit* m_object;
-    QLineEdit* m_command;
-    QPushButton* m_run;
-    QPushButton* m_reset;
-    QTreeWidget* m_restrictions;
-    QLabel* m_empty;
-    QTreeWidget* m_actions;
-    QPlainTextEdit* m_log;
+    QLineEdit* m_object = nullptr;
+    QLineEdit* m_command = nullptr;
+    QPushButton* m_run = nullptr;
+    QPushButton* m_reset = nullptr;
+    QTreeWidget* m_restrictions = nullptr;
+    QLabel* m_empty = nullptr;
+    QTreeWidget* m_actions = nullptr;
+    QPlainTextEdit* m_log = nullptr;
     QMetaObject::Connection m_changedConnection;
-    ScriptLabObjectsView* m_objectsView;
+    QMetaObject::Connection m_modeConnection;
+    QLabel* m_modeLabel = nullptr;
+    QPushButton* m_modeRlv = nullptr;
+    QPushButton* m_modeRlva = nullptr;
+    ScriptLabFrame* m_heldChipFrame = nullptr;
+    QLabel* m_heldIcon = nullptr;
+    QLabel* m_heldChip = nullptr;
+    QList<ScriptLabSection*> m_sections;
+    ScriptLabSection* m_restrictionsSection = nullptr;
+    ScriptLabSection* m_actionsSection = nullptr;
+    ScriptLabSection* m_repliesSection = nullptr;
+    ScriptLabSection* m_scriptSection = nullptr;
+    ScriptLabSection* m_problemsSection = nullptr;
+    ScriptLabSection* m_logSection = nullptr;
+    ScriptLabSection* m_liveRestrictionsSection = nullptr;
+    ScriptLabSection* m_objectsSection = nullptr;
+    ScriptLabSection* m_inputSection = nullptr;
+    ScriptLabFrame* m_liveEmpty = nullptr;
+    QLabel* m_liveEmptyIcon = nullptr;
+    QLabel* m_liveEmptyHeading = nullptr;
+    QLabel* m_liveEmptyText = nullptr;
+    QPushButton* m_example = nullptr;
+    QLabel* m_liveFolderLabel = nullptr;
+    QTreeWidget* m_liveRestrictions = nullptr;
+    QLabel* m_liveRestrictionsEmpty = nullptr;
+    QString m_examplesFolder;
+    QString m_lintSource;
+    QJsonArray m_lintWarnings;
+    ScriptLabObjectsView* m_objectsView = nullptr;
 
     QPointer<LabWatcher> m_watcher;
     QTabWidget* m_tabs = nullptr;
@@ -216,7 +290,6 @@ class ScriptLabPanel : public QWidget
     int m_liveTone = 0;
     bool m_wasWatching = false;
     QString m_refusal;                 // why the last Watch folder was refused, until the next change
-    QLabel* m_liveScript = nullptr;
     QPushButton* m_openEditor = nullptr;
     QPlainTextEdit* m_scriptView = nullptr;
     QListWidget* m_problems = nullptr;

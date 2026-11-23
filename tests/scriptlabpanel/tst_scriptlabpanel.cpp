@@ -44,6 +44,7 @@
 #include "scriptlab/rlvbehaviours.h"
 #include "scriptlab/rlvstate.h"
 #include "scriptlab/scriptlabpanel.h"
+#include "scriptlab/scriptlabsection.h"
 
 namespace
 {
@@ -430,21 +431,22 @@ namespace
   }
 }
 
-// two pages, Commands and Live; the Live page says what to do when no folder is watched
+// two pages, Live scripts and Type commands; the Live page says what to do when no folder is watched
 void TestScriptLabPanel::liveTabAndEmptyState()
 {
   ScriptLabPanel panel;
   LabWatcher watcher;
   panel.setWatcher(&watcher);
   QCOMPARE(panel.tabs()->count(), 2);
-  QCOMPARE(panel.tabs()->tabText(0), QString("Commands"));
-  QCOMPARE(panel.tabs()->tabText(1), QString("Live"));
+  QCOMPARE(panel.tabs()->tabText(0), QString("Live scripts"));
+  QCOMPARE(panel.tabs()->tabText(1), QString("Type commands"));
   QCOMPARE(panel.tabs()->currentIndex(), 0);
   QCOMPARE(panel.watchButton()->text(), QString("Watch folder..."));
   QCOMPARE(panel.unwatchButton()->text(), QString("Stop watching"));
   QCOMPARE(panel.openEditorButton()->text(), QString("Open in editor"));
-  QCOMPARE(panel.liveStatus()->text(),
-           QString("No folder is watched. Choose the folder with your .lsl scripts: each time you save one, it is checked and run again here."));
+  // the empty state says what to do; the status line is hidden until there is something to say
+  QVERIFY(!panel.liveEmpty()->isHidden());
+  QVERIFY(panel.liveStatus()->isHidden());
   QCOMPARE(panel.liveFolderField()->text(), QString());
   QCOMPARE(panel.liveFolderField()->placeholderText(), QString("No folder watched"));
   QVERIFY(panel.liveFolderField()->isReadOnly());
@@ -456,6 +458,7 @@ void TestScriptLabPanel::liveTabAndEmptyState()
   QCOMPARE(panel.openEditorButton()->toolTip(), QString("No script yet. Watch a folder and save a .lsl file in it first."));
   // a refused folder says why
   QVERIFY(!panel.watchFolder("relative"));
+  QVERIFY(!panel.liveStatus()->isHidden());
   QCOMPARE(panel.liveStatus()->text(), QString("Error: Give the whole path of the folder, not a relative one."));
   QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::dangerColour(ScriptLabPanel::isDark(panel.palette())));
 }
@@ -469,10 +472,11 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QTemporaryDir dir;
   QVERIFY(dir.isValid());
 
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::CommandsPage);
   QVERIFY(panel.watchFolder(dir.path()));
   QCOMPARE(panel.liveFolderField()->text(), QDir::toNativeSeparators(QFileInfo(dir.path()).canonicalFilePath()));
   QCOMPARE(panel.liveStatus()->text(), QString("Watching. No .lsl file in this folder yet: save one here and it runs at once."));
-  QCOMPARE(panel.tabs()->currentIndex(), 1);   // the Live page comes to the front
+  QCOMPARE(panel.tabs()->currentIndex(), int(ScriptLabPanel::LivePage));   // the Live page comes to the front
   QVERIFY(panel.unwatchButton()->isEnabled());
 
   QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
@@ -481,7 +485,7 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QCOMPARE(listTexts(panel.problemList()), QStringList{"Error, line 3, column 32: Argument 1 of llOwnerSay must be a string, not an integer."});
   const bool dark = ScriptLabPanel::isDark(panel.palette());
   QCOMPARE(panel.problemList()->item(0)->foreground().color(), ScriptLabPanel::dangerColour(dark));
-  QCOMPARE(panel.liveScriptName()->text(), QString("Script: collar.lsl"));
+  QCOMPARE(panel.liveScriptName()->title(), QString("Script: collar.lsl"));
   QCOMPARE(panel.scriptView()->toPlainText(), QString("default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
   // the line is marked, and Enter on the error moves the cursor there
   QCOMPARE(panel.scriptView()->extraSelections().size(), 1);
@@ -509,8 +513,8 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QCOMPARE(panel.scriptView()->toPlainText(), QString());
   QCOMPARE(panel.runLog()->toPlainText(), QString());
   QVERIFY(!panel.unwatchButton()->isEnabled());
-  QCOMPARE(panel.liveStatus()->text(),
-           QString("No folder is watched. Choose the folder with your .lsl scripts: each time you save one, it is checked and run again here."));
+  QVERIFY(panel.liveStatus()->isHidden());
+  QVERIFY(!panel.liveEmpty()->isHidden());
 }
 
 // lab_watch and lab_unwatch from an AI client show up in the panel at once
@@ -525,9 +529,9 @@ void TestScriptLabPanel::liveFollowsControlCommands()
   const QJsonObject answer = api.execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}});
   QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
   QCOMPARE(panel.liveFolderField()->text(), QDir::toNativeSeparators(QFileInfo(dir.path()).canonicalFilePath()));
-  QCOMPARE(panel.liveScriptName()->text(), QString("Script: hello.lsl"));
+  QCOMPARE(panel.liveScriptName()->title(), QString("Script: hello.lsl"));
   QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: hi"));
-  // a script with RLV lines: the restrictions show in the status line and on the Commands page
+  // a script with RLV lines: the restrictions show in the status line and on both pages
   panel.setState(&api.rlv());
   QTest::qWait(1100);   // a new file time
   QVERIFY(writeScript(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));

@@ -26,3 +26,14 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabinput_tests PRIVATE ${CMAKE_SO
 TARGET_LINK_LIBRARIES (pinglymotion_scriptlabinput_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME scriptlabinput COMMAND pinglymotion_scriptlabinput_tests)
 SET_TESTS_PROPERTIES (scriptlabinput PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The panel in the new design, slice 1: Viewer rules switch and held chip, the two pages, the empty state,
+# the folding parts with their counts, the keyboard and both themes
+ADD_EXECUTABLE (pinglymotion_scriptlabdesign_tests tst_scriptlabdesign.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabdesign_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabdesign_tests PRIVATE
+  PINGLYMOTION_DOCS_DIR="${CMAKE_SOURCE_DIR}/docs"
+  PINGLYMOTION_EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples")
+TARGET_LINK_LIBRARIES (pinglymotion_scriptlabdesign_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME scriptlabdesign COMMAND pinglymotion_scriptlabdesign_tests)
+SET_TESTS_PROPERTIES (scriptlabdesign PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

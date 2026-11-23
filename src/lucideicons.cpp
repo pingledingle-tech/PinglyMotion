@@ -54,6 +54,15 @@ namespace
     {"flip-horizontal-2",{"M10 12H8","M16 12h-2","M22 12h-2","M4 12H2",
       "M7.298 20.288A1 1 0 0 0 8 22h8a1 1 0 0 0 .703-1.712l-3.991-3.99a1 1 0 0 0-1.424-.001z",
       "M7.298 3.712A1 1 0 0 1 8 2h8a1 1 0 0 1 .703 1.712l-3.991 3.99a1 1 0 0 1-1.424.001z"}},
+    // the Script Lab panel in the new design (slice 1): folding parts, the "held" chip, the empty state, the pages
+    {"chevron-right",{"m9 18 6-6-6-6"}},
+    {"chevron-down",{"m6 9 6 6 6-6"}},
+    // <circle cx="12" cy="12" r="10" />
+    {"ban",{"M22 12a10 10 0 1 0-20 0a10 10 0 1 0 20 0z","M4.929 4.929 19.07 19.071"}},
+    {"folder-open",{"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"}},
+    {"file-code",{"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+      "M14 2v5a1 1 0 0 0 1 1h5","M10 12.5 8 15l2 2.5","m14 12.5 2 2.5-2 2.5"}},
+    {"terminal",{"M12 19h8","m4 17 6-6-6-6"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix
