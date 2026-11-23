@@ -19,6 +19,8 @@ Files:
 - tests/paneldocks/**
 - tests/emptystate/**
 - tests/setupdialog/**
+- tests/transportbar/**
+- tests/scriptlabpanel/tst_scriptlabpanel.cpp
 - CMakeLists.txt
 - translations/**
 - docs/UX_DECISIONS.md

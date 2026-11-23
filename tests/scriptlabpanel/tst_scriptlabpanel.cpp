@@ -174,7 +174,7 @@ void TestScriptLabPanel::menuEntry()
   QVERIFY(entry > timeline);
   QVERIFY(hide > entry);
   QVERIFY(window.contains("m_scriptLabPanel->setState(&m_controlApi->rlv());"));
-  QVERIFY(window.contains("return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock};"));
+  QVERIFY(window.contains("return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock,m_libraryDock};"));
   const QString ui = readFile(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.ui");
   QVERIFY(ui.contains("<widget class=\"QMenu\" name=\"menuView\">\n    <property name=\"title\">\n     <string>View</string>"));
 }
