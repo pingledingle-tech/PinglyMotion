@@ -1,0 +1,2 @@
+26:5 In SLua, link_message gives its last value (id) as a text, not a key. | Use touuid(id) where the script needs a key.
+34:20 SLua may write a vector or rotation as text with other decimals than LSL's (string) does. | Build the text from .x, .y and .z with string.format if the exact form matters.
