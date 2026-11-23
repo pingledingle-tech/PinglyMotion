@@ -81,7 +81,9 @@ enum class Fn
   // gap list 2, step 5: prim media (record only: nothing is fetched or played)
   SetPrimMediaParams, GetPrimMediaParams, ClearPrimMedia,
   // second gap list, step 6, part 3: a simple motion model (llMoveToTarget stays record-only, a later job)
-  ApplyImpulse, SetBuoyancy
+  ApplyImpulse, SetBuoyancy,
+  // second round of pure functions: JSON, llListRandomize, llLog, llAcos and three rotation helpers
+  JsonGetValue, JsonSetValue, JsonValueType, List2Json, Json2List, ListRandomize, Log, Acos, Axes2Rot, AngleBetween, Rot2Axis
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -220,6 +222,11 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llSetVehicleRotationParam", Fn::RecordOnly},
   {"llSetVehicleFlags", Fn::RecordOnly},
   {"llRemoveVehicleFlags", Fn::RecordOnly},
+  // second round of pure functions
+  {"llJsonGetValue", Fn::JsonGetValue}, {"llJsonSetValue", Fn::JsonSetValue}, {"llJsonValueType", Fn::JsonValueType},
+  {"llList2Json", Fn::List2Json}, {"llJson2List", Fn::Json2List}, {"llListRandomize", Fn::ListRandomize},
+  {"llLog", Fn::Log}, {"llAcos", Fn::Acos}, {"llAxes2Rot", Fn::Axes2Rot}, {"llAngleBetween", Fn::AngleBetween},
+  {"llRot2Axis", Fn::Rot2Axis},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -564,6 +571,414 @@ Quat shortestArc(const float a[3], const float b[3])
     return Quat{1.0f, 0.0f, 0.0f, 0.0f};
   }
   return Quat{0.0f, 0.0f, 0.0f, 1.0f};
+}
+
+// llAxes2Rot: the rotation whose rows are fwd, left and up (the viewer's LLMatrix3::quaternion)
+Quat axesToQuat(const float f[3], const float l[3], const float u[3])
+{
+  const float* m[3] = {f, l, u};
+  const float trace = m[0][0] + m[1][1] + m[2][2];
+  Quat q{0.0f, 0.0f, 0.0f, 1.0f};
+  if (trace > 0.0f)
+  {
+    float s = std::sqrt(trace + 1.0f);
+    q.s = s * 0.5f;
+    s = 0.5f / s;
+    q.x = (m[1][2] - m[2][1]) * s;
+    q.y = (m[2][0] - m[0][2]) * s;
+    q.z = (m[0][1] - m[1][0]) * s;
+  }
+  else
+  {
+    static const int next[3] = {1, 2, 0};
+    int i = 0;
+    if (m[1][1] > m[0][0]) i = 1;
+    if (m[2][2] > m[i][i]) i = 2;
+    const int j = next[i], k = next[j];
+    float v[3];
+    float s = std::sqrt((m[i][i] - (m[j][j] + m[k][k])) + 1.0f);
+    v[i] = s * 0.5f;
+    if (s != 0.0f) s = 0.5f / s;
+    q.s = (m[j][k] - m[k][j]) * s;
+    v[j] = (m[i][j] + m[j][i]) * s;
+    v[k] = (m[i][k] + m[k][i]) * s;
+    q.x = v[0]; q.y = v[1]; q.z = v[2];
+  }
+  return normalized(q);
+}
+
+// ---- JSON (second round of pure functions). Written from the Second Life wiki pages
+// "Json usage in LSL", llJsonGetValue, llJsonSetValue, llJson2List and llList2Json. Like Second
+// Life the reader is lenient: an empty value ([ , ] or {"a":,}) is null, and a scalar keeps
+// its text exactly as written (a number read back is the same text, "3.2" stays "3.2").
+const QChar JSON_INVALID_C(0xFDD0), JSON_OBJECT_C(0xFDD1), JSON_ARRAY_C(0xFDD2), JSON_NUMBER_C(0xFDD3),
+  JSON_STRING_C(0xFDD4), JSON_NULL_C(0xFDD5), JSON_TRUE_C(0xFDD6), JSON_FALSE_C(0xFDD7), JSON_DELETE_C(0xFDD8);
+const int JSON_MAX_DEPTH = 100;   // deeper nesting counts as invalid JSON (sandbox choice: no stack overflow)
+
+struct JsonNode
+{
+  enum Kind { Object, Array, String, Number, True, False, Null, Empty } kind = Null;
+  QString raw;                    // a scalar's text as written; a container's text as written while unchanged
+  std::vector<QString> keys;      // an object's keys, as written (with their quotes)
+  std::vector<JsonNode> items;    // an object's values or an array's items
+};
+
+bool jsonSpace(QChar c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
+
+bool jsonIsNumber(const QString& t)
+{
+  static const QRegularExpression number("^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$");
+  return number.match(t).hasMatch();
+}
+
+class JsonReader
+{
+  public:
+    explicit JsonReader(const QString& text) : m_s(text) {}
+
+    // the whole text as one value; false when it is not valid JSON
+    bool document(JsonNode& out)
+    {
+      skip();
+      if (!value(out, 0, true)) return false;
+      skip();
+      return m_p == m_s.size();
+    }
+
+  private:
+    const QString& m_s;
+    int m_p = 0;
+
+    void skip() { while (m_p < m_s.size() && jsonSpace(m_s[m_p])) ++m_p; }
+
+    bool string(QString& raw)
+    {
+      const int start = m_p++;
+      while (m_p < m_s.size())
+      {
+        const QChar c = m_s[m_p];
+        if (c == '\\') { m_p += 2; continue; }
+        ++m_p;
+        if (c == '"') { raw = m_s.mid(start, m_p - start); return true; }
+      }
+      return false;
+    }
+
+    // inside a container a value ends at , ] or }; topLevel: at the end of the text
+    bool value(JsonNode& out, int depth, bool topLevel)
+    {
+      if (depth > JSON_MAX_DEPTH) return false;
+      if (m_p >= m_s.size()) { out.kind = JsonNode::Empty; return true; }
+      const QChar c = m_s[m_p];
+      const int start = m_p;
+      if (c == '{' || c == '[')
+      {
+        const bool object = c == '{';
+        const QChar close = object ? '}' : ']';
+        out.kind = object ? JsonNode::Object : JsonNode::Array;
+        ++m_p;
+        skip();
+        if (m_p < m_s.size() && m_s[m_p] == close) { ++m_p; out.raw = m_s.mid(start, m_p - start); return true; }
+        for (;;)
+        {
+          skip();
+          if (object)
+          {
+            // {"a":1,} : a comma before the closing brace ends the object (Second Life reads it)
+            if (m_p < m_s.size() && m_s[m_p] == close && !out.keys.empty()) { ++m_p; break; }
+            QString key;
+            if (m_p >= m_s.size() || m_s[m_p] != '"' || !string(key)) return false;
+            skip();
+            if (m_p >= m_s.size() || m_s[m_p] != ':') return false;
+            ++m_p;
+            out.keys.push_back(key);
+          }
+          skip();
+          JsonNode item;
+          if (!value(item, depth + 1, false)) return false;
+          out.items.push_back(std::move(item));
+          skip();
+          if (m_p >= m_s.size()) return false;
+          if (m_s[m_p] == ',') { ++m_p; continue; }
+          if (m_s[m_p] == close) { ++m_p; break; }
+          return false;
+        }
+        out.raw = m_s.mid(start, m_p - start);
+        return true;
+      }
+      if (c == '"')
+      {
+        out.kind = JsonNode::String;
+        return string(out.raw);
+      }
+      // a bare token: a number, true, false, null, or nothing (an empty value is null)
+      while (m_p < m_s.size())
+      {
+        const QChar d = m_s[m_p];
+        if (!topLevel && (d == ',' || d == ']' || d == '}')) break;
+        ++m_p;
+      }
+      int end = m_p;
+      while (end > start && jsonSpace(m_s[end - 1])) --end;
+      out.raw = m_s.mid(start, end - start);
+      if (out.raw.isEmpty()) out.kind = JsonNode::Empty;
+      else if (out.raw == "true") out.kind = JsonNode::True;
+      else if (out.raw == "false") out.kind = JsonNode::False;
+      else if (out.raw == "null") out.kind = JsonNode::Null;
+      else if (jsonIsNumber(out.raw)) out.kind = JsonNode::Number;
+      else return false;
+      return true;
+    }
+};
+
+QString jsonUnescape(const QString& raw)
+{
+  QString out;
+  const int end = raw.size() - 1;   // without the closing quote
+  for (int i = 1; i < end; ++i)
+  {
+    const QChar c = raw[i];
+    if (c != '\\' || i + 1 >= end) { out += c; continue; }
+    const QChar e = raw[++i];
+    switch (e.unicode())
+    {
+      case 'n': out += '\n'; break;
+      case 't': out += '\t'; break;
+      case 'r': out += '\r'; break;
+      case 'b': out += QChar(8); break;
+      case 'f': out += QChar(12); break;
+      case 'u':
+      {
+        bool ok = false;
+        const ushort code = i + 4 < end ? raw.mid(i + 1, 4).toUShort(&ok, 16) : 0;
+        if (ok) { out += QChar(code); i += 4; }
+        else out += e;
+        break;
+      }
+      default: out += e;   // \" \\ \/ and any other character stand for themselves
+    }
+  }
+  return out;
+}
+
+QString jsonEscape(const QString& s)
+{
+  QString out = "\"";
+  for (QChar c : s)
+  {
+    switch (c.unicode())
+    {
+      case '"': out += "\\\""; break;
+      case '\\': out += "\\\\"; break;
+      case '\n': out += "\\n"; break;
+      case '\t': out += "\\t"; break;
+      case '\r': out += "\\r"; break;
+      case 8: out += "\\b"; break;
+      case 12: out += "\\f"; break;
+      default:
+        if (c.unicode() < 0x20) out += QString::asprintf("\\u%04x", unsigned(c.unicode()));
+        else out += c;
+    }
+  }
+  return out + "\"";
+}
+
+// a container is written again without spaces once something inside it changed
+QString jsonWrite(const JsonNode& n)
+{
+  if (n.kind == JsonNode::Empty) return QString();
+  if (!n.raw.isEmpty() || (n.kind != JsonNode::Object && n.kind != JsonNode::Array)) return n.raw;
+  QString out = n.kind == JsonNode::Object ? "{" : "[";
+  for (size_t i = 0; i < n.items.size(); ++i)
+  {
+    if (i > 0) out += ',';
+    if (n.kind == JsonNode::Object) out += n.keys[i] + ':';
+    out += jsonWrite(n.items[i]);
+  }
+  return out + (n.kind == JsonNode::Object ? "}" : "]");
+}
+
+// what llJsonGetValue gives for a node, and what llJsonValueType names it
+QString jsonGetText(const JsonNode& n)
+{
+  switch (n.kind)
+  {
+    case JsonNode::String: return jsonUnescape(n.raw);
+    case JsonNode::True: return QString(JSON_TRUE_C);
+    case JsonNode::False: return QString(JSON_FALSE_C);
+    case JsonNode::Null:
+    case JsonNode::Empty: return QString(JSON_NULL_C);
+    default: return jsonWrite(n);
+  }
+}
+
+QChar jsonTypeOf(const JsonNode& n)
+{
+  switch (n.kind)
+  {
+    case JsonNode::Object: return JSON_OBJECT_C;
+    case JsonNode::Array: return JSON_ARRAY_C;
+    case JsonNode::String: return JSON_STRING_C;
+    case JsonNode::Number: return JSON_NUMBER_C;
+    case JsonNode::True: return JSON_TRUE_C;
+    case JsonNode::False: return JSON_FALSE_C;
+    default: return JSON_NULL_C;
+  }
+}
+
+// the index of the member with this key; the last one wins when a key is there twice (as in Second Life)
+int jsonFindKey(const JsonNode& object, const QString& key)
+{
+  for (int i = int(object.keys.size()) - 1; i >= 0; --i)
+    if (jsonUnescape(object.keys[size_t(i)]) == key) return i;
+  return -1;
+}
+
+// follows the specifiers; nullptr when the path is not there. An empty value on the way ends
+// the walk as null, even when specifiers are left (the wiki's "empty node" rule).
+const JsonNode* jsonFind(const JsonNode& root, const std::vector<Value>& specifiers, bool& emptyOnTheWay)
+{
+  emptyOnTheWay = false;
+  const JsonNode* n = &root;
+  for (const Value& s : specifiers)
+  {
+    if (n->kind == JsonNode::Empty) { emptyOnTheWay = true; return n; }
+    if (s.type == Type::String || s.type == Type::Key)
+    {
+      if (n->kind != JsonNode::Object) return nullptr;
+      const int i = jsonFindKey(*n, s.s);
+      if (i < 0) return nullptr;
+      n = &n->items[size_t(i)];
+    }
+    else if (s.type == Type::Integer)
+    {
+      if (n->kind != JsonNode::Array || s.i < 0 || s.i >= qint32(n->items.size())) return nullptr;
+      n = &n->items[size_t(s.i)];
+    }
+    else return nullptr;
+  }
+  return n;
+}
+
+// a string from a script as a JSON value: JSON_TRUE/"true", JSON_FALSE/"false", JSON_NULL/"null",
+// a number, an object or array, or a text already in quotes go in as JSON; anything else becomes
+// a JSON string
+JsonNode jsonFromText(const QString& text)
+{
+  JsonNode n;
+  if (text == QString(JSON_TRUE_C) || text == "true") { n.kind = JsonNode::True; n.raw = "true"; return n; }
+  if (text == QString(JSON_FALSE_C) || text == "false") { n.kind = JsonNode::False; n.raw = "false"; return n; }
+  if (text == QString(JSON_NULL_C) || text == "null") { n.kind = JsonNode::Null; n.raw = "null"; return n; }
+  const QString t = trim(text, true, true);
+  if (jsonIsNumber(t)) { n.kind = JsonNode::Number; n.raw = t; return n; }
+  if (t.startsWith('{') || t.startsWith('[') || (t.size() >= 2 && t.startsWith('"') && t.endsWith('"')))
+  {
+    JsonNode parsed;
+    JsonReader reader(t);
+    if (reader.document(parsed) && parsed.kind != JsonNode::Empty) return parsed;
+  }
+  n.kind = JsonNode::String;
+  n.raw = jsonEscape(text);
+  return n;
+}
+
+// one list entry for llList2Json
+JsonNode jsonFromValue(const Value& v)
+{
+  JsonNode n;
+  switch (v.type)
+  {
+    case Type::Integer: n.kind = JsonNode::Number; n.raw = QString::number(v.i); return n;
+    case Type::Float:
+      // NaN and infinity have no JSON number; they go in as strings (sandbox choice, the wiki says convert them first)
+      if (!std::isfinite(v.f[0])) { n.kind = JsonNode::String; n.raw = jsonEscape(floatToString(v.f[0])); return n; }
+      n.kind = JsonNode::Number; n.raw = floatToString(v.f[0]); return n;
+    case Type::String: return jsonFromText(v.s);
+    default: n.kind = JsonNode::String; n.raw = jsonEscape(toLslString(v)); return n;   // key, vector, rotation
+  }
+}
+
+enum class JsonSet { Ok, Invalid, Unchanged };
+
+// llJsonSetValue's walk; node may be absent (Empty) and is made into what the path needs
+JsonSet jsonSet(JsonNode& n, const std::vector<Value>& specifiers, size_t at, const QString& text)
+{
+  const bool remove = text == QString(JSON_DELETE_C);
+  if (at == specifiers.size())
+  {
+    if (remove) return JsonSet::Invalid;   // handled one level up; deleting the whole text is not a path
+    n = jsonFromText(text);
+    return JsonSet::Ok;
+  }
+  const Value& s = specifiers[at];
+  const bool last = at + 1 == specifiers.size();
+  if (s.type == Type::String || s.type == Type::Key)
+  {
+    const int i = n.kind == JsonNode::Object ? jsonFindKey(n, s.s) : -1;
+    if (i < 0)
+    {
+      if (remove) return JsonSet::Unchanged;
+      if (n.kind != JsonNode::Object) { n = JsonNode(); n.kind = JsonNode::Object; }
+      JsonNode child;
+      child.kind = JsonNode::Empty;
+      const JsonSet r = jsonSet(child, specifiers, at + 1, text);
+      if (r != JsonSet::Ok) return r;
+      n.keys.push_back(jsonEscape(s.s));
+      n.items.push_back(std::move(child));
+      n.raw.clear();
+      return JsonSet::Ok;
+    }
+    if (remove && last)
+    {
+      n.keys.erase(n.keys.begin() + i);
+      n.items.erase(n.items.begin() + i);
+      n.raw.clear();
+      return JsonSet::Ok;
+    }
+    const JsonSet r = jsonSet(n.items[size_t(i)], specifiers, at + 1, text);
+    if (r == JsonSet::Ok) n.raw.clear();
+    return r;
+  }
+  if (s.type != Type::Integer) return JsonSet::Invalid;
+  const qint32 size = n.kind == JsonNode::Array ? qint32(n.items.size()) : 0;
+  const qint32 index = s.i == -1 ? size : s.i;   // JSON_APPEND is -1
+  if (index < 0 || index > size) return JsonSet::Invalid;
+  if (index == size)
+  {
+    if (remove) return JsonSet::Unchanged;
+    if (n.kind != JsonNode::Array) { n = JsonNode(); n.kind = JsonNode::Array; }
+    JsonNode child;
+    child.kind = JsonNode::Empty;
+    const JsonSet r = jsonSet(child, specifiers, at + 1, text);
+    if (r != JsonSet::Ok) return r;
+    n.items.push_back(std::move(child));
+    n.raw.clear();
+    return JsonSet::Ok;
+  }
+  if (remove && last)
+  {
+    n.items.erase(n.items.begin() + index);
+    n.raw.clear();
+    return JsonSet::Ok;
+  }
+  const JsonSet r = jsonSet(n.items[size_t(index)], specifiers, at + 1, text);
+  if (r == JsonSet::Ok) n.raw.clear();
+  return r;
+}
+
+// an entry of llJson2List: numbers as integer or float, true/false/null as the JSON_* strings,
+// strings without quotes, objects and arrays as their JSON text
+Value jsonToListEntry(const JsonNode& n)
+{
+  if (n.kind == JsonNode::Number)
+  {
+    if (n.raw.contains('.') || n.raw.contains('e') || n.raw.contains('E')) return Value::number(stringToFloat(n.raw));
+    bool ok = false;
+    const qint64 v = n.raw.toLongLong(&ok);
+    if (ok && v >= std::numeric_limits<qint32>::min() && v <= std::numeric_limits<qint32>::max()) return Value::integer(qint32(v));
+    return Value::number(stringToFloat(n.raw));   // too large for an integer (sandbox choice)
+  }
+  return Value::string(jsonGetText(n));
 }
 
 // ---- text (step 9b-1)
@@ -2052,6 +2467,123 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::Rot2Up: return rotatedAxis(quatOf(a[0]), 0.0f, 0.0f, 1.0f);
     case Fn::AxisAngle2Rot: return rotationOf(axisAngleToQuat(a[0].f, a[1].f[0]));
     case Fn::RotBetween: return rotationOf(shortestArc(a[0].f, a[1].f));
+    case Fn::Axes2Rot: return rotationOf(axesToQuat(a[0].f, a[1].f, a[2].f));
+    case Fn::Rot2Axis:
+    {
+      // the wiki's reference: llVecNorm(<x, y, z>), turned round when s is negative; ZERO_ROTATION gives <0, 0, 0>
+      const float x = a[0].f[0], y = a[0].f[1], z = a[0].f[2];
+      const float m = std::sqrt(x * x + y * y + z * z);
+      if (!(m > 0.0f) || !std::isfinite(m)) return Value::vector(0.0f, 0.0f, 0.0f);
+      const float sign = a[0].f[3] < 0.0f ? -1.0f : 1.0f;
+      return Value::vector(sign * x / m, sign * y / m, sign * z / m);
+    }
+    case Fn::AngleBetween:
+    {
+      // the wiki's reference: r = b / a, then the angle from r's scalar and vector parts, 0 to PI
+      const Quat r = lslMul(quatOf(a[1]), conj(quatOf(a[0])));
+      const float s2 = r.s * r.s, v2 = r.x * r.x + r.y * r.y + r.z * r.z;
+      if (!(s2 + v2 > 0.0f)) return Value::number(0.0f);
+      if (s2 < v2) return Value::number(2.0f * std::acos(std::sqrt(s2 / (s2 + v2))));
+      if (v2 > 0.0f) return Value::number(2.0f * std::asin(std::sqrt(v2 / (s2 + v2))));
+      return Value::number(0.0f);
+    }
+
+    // -------------------------------------------- JSON (second round of pure functions)
+    case Fn::JsonGetValue:
+    case Fn::JsonValueType:
+    {
+      m_steps += qint64(a[0].s.size()) / 64;
+      const bool type = *it == Fn::JsonValueType;
+      const QString invalid(JSON_INVALID_C);
+      JsonNode root;
+      JsonReader reader(a[0].s);
+      const bool blank = trim(a[0].s, true, true).isEmpty();
+      if (blank) return Value::string(invalid);
+      if (!reader.document(root))
+      {
+        // the wiki: llJsonValueType still says JSON_OBJECT (or JSON_ARRAY) for a malformed text that starts like one
+        const QString t = trim(a[0].s, true, false);
+        if (type && a[1].list.empty() && t.startsWith('{')) return Value::string(QString(JSON_OBJECT_C));
+        if (type && a[1].list.empty() && t.startsWith('[')) return Value::string(QString(JSON_ARRAY_C));
+        return Value::string(invalid);
+      }
+      bool empty = false;
+      const JsonNode* n = jsonFind(root, a[1].list, empty);
+      if (!n) return Value::string(invalid);
+      if (empty) return Value::string(QString(JSON_NULL_C));
+      return Value::string(type ? QString(jsonTypeOf(*n)) : jsonGetText(*n));
+    }
+    case Fn::JsonSetValue:
+    {
+      m_steps += qint64(a[0].s.size() + a[2].s.size()) / 64;
+      JsonNode root;
+      root.kind = JsonNode::Empty;
+      if (!trim(a[0].s, true, true).isEmpty())
+      {
+        JsonReader reader(a[0].s);
+        if (!reader.document(root)) return Value::string(QString(JSON_INVALID_C));
+      }
+      if (a[1].list.size() > size_t(JSON_MAX_DEPTH)) return Value::string(QString(JSON_INVALID_C));
+      const JsonSet r = jsonSet(root, a[1].list, 0, a[2].s);
+      if (r == JsonSet::Invalid) return Value::string(QString(JSON_INVALID_C));
+      if (r == JsonSet::Unchanged) return a[0];
+      const QString out = jsonWrite(root);
+      if (out.size() > m_limits.maxStringChars)
+        failAt("limit", QString("A string grew longer than %1 characters; the script was stopped.").arg(m_limits.maxStringChars));
+      return Value::string(out);
+    }
+    case Fn::List2Json:
+    {
+      const bool object = a[0].s == QString(JSON_OBJECT_C);
+      if (!object && a[0].s != QString(JSON_ARRAY_C)) return Value::string(QString(JSON_INVALID_C));
+      const std::vector<Value>& list = a[1].list;
+      if (object && list.size() % 2 != 0) return Value::string(QString(JSON_INVALID_C));
+      JsonNode n;
+      n.kind = object ? JsonNode::Object : JsonNode::Array;
+      for (size_t i = 0; i < list.size(); ++i)
+      {
+        if (object && i % 2 == 0)
+        {
+          if (list[i].type != Type::String && list[i].type != Type::Key) return Value::string(QString(JSON_INVALID_C));
+          n.keys.push_back(jsonEscape(list[i].s));
+          continue;
+        }
+        n.items.push_back(jsonFromValue(list[i]));
+      }
+      m_steps += qint64(list.size());
+      const QString out = jsonWrite(n);
+      if (out.size() > m_limits.maxStringChars)
+        failAt("limit", QString("A string grew longer than %1 characters; the script was stopped.").arg(m_limits.maxStringChars));
+      return Value::string(out);
+    }
+    case Fn::Json2List:
+    {
+      m_steps += qint64(a[0].s.size()) / 64;
+      std::vector<Value> out;
+      if (trim(a[0].s, true, true).isEmpty()) return Value::makeList(std::move(out));
+      JsonNode root;
+      JsonReader reader(a[0].s);
+      if (!reader.document(root))
+      {
+        // the wiki's example: a bare text that is no JSON (a key without quotes) comes back as one string;
+        // a malformed object or array gives JSON_INVALID (sandbox choice)
+        const QString t = trim(a[0].s, true, true);
+        out.push_back(Value::string(t.startsWith('{') || t.startsWith('[') ? QString(JSON_INVALID_C) : t));
+        return Value::makeList(std::move(out));
+      }
+      if (root.kind == JsonNode::Object)
+        for (size_t i = 0; i < root.items.size(); ++i)
+        {
+          out.push_back(Value::string(jsonUnescape(root.keys[i])));
+          out.push_back(jsonToListEntry(root.items[i]));
+        }
+      else if (root.kind == JsonNode::Array)
+        for (const JsonNode& item : root.items) out.push_back(jsonToListEntry(item));
+      else out.push_back(jsonToListEntry(root));
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
 
     // -------------------------------------------- lists and strings (step 9b-1)
     case Fn::ListReplaceList:
@@ -2112,6 +2644,29 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       out.reserve(n);
       for (size_t g : groups)
         for (qint64 k = 0; k < stride; ++k) out.push_back(list[g + size_t(k)]);
+      return Value::makeList(std::move(out));
+    }
+    case Fn::ListRandomize:
+    {
+      // the wiki: a stride under 1 counts as 1, and a list whose length is no multiple of the stride
+      // comes back unchanged. The shuffle uses the sandbox's random numbers, the same in every run.
+      const size_t n = a[0].list.size();
+      const size_t stride = a[1].i > 1 ? size_t(a[1].i) : 1;
+      if (n % stride != 0) return a[0];
+      const size_t groups = n / stride;
+      std::vector<size_t> order(groups);
+      for (size_t g = 0; g < groups; ++g) order[g] = g;
+      for (size_t g = groups; g > 1; --g)   // Fisher-Yates
+      {
+        size_t j = size_t(nextRandom() * float(g));
+        if (j >= g) j = g - 1;
+        std::swap(order[g - 1], order[j]);
+      }
+      m_steps += qint64(n);
+      std::vector<Value> out;
+      out.reserve(n);
+      for (size_t g : order)
+        for (size_t k = 0; k < stride; ++k) out.push_back(a[0].list[g * stride + k]);
       return Value::makeList(std::move(out));
     }
     case Fn::ReplaceSubString:
@@ -2979,6 +3534,8 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::Tan: return Value::number(std::tan(a[0].f[0]));
     case Fn::Atan2: return Value::number(std::atan2(a[0].f[0], a[1].f[0]));
     case Fn::Frand: return Value::number(nextRandom() * a[0].f[0]);
+    case Fn::Log: return Value::number(a[0].f[0] > 0.0f ? std::log(a[0].f[0]) : 0.0f);   // the wiki: 0 for a value of 0 or less
+    case Fn::Acos: return Value::number(std::acos(a[0].f[0]));   // outside -1..1 the answer is NaN, as in Second Life
     case Fn::VecMag: return Value::number(std::sqrt(a[0].f[0] * a[0].f[0] + a[0].f[1] * a[0].f[1] + a[0].f[2] * a[0].f[2]));
     case Fn::VecNorm:
     {
