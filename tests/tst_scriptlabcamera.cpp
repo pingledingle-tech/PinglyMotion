@@ -33,7 +33,70 @@ class TestScriptLabCamera : public QObject
     void boxAndText();
     void environmentBox();
     void viewModesBox();
+    void effectsStopWhenPanelHidden();
 };
+
+// the three view overrides work only while the panel is visible; hidden they are all off, and
+// shown again they come back as the boxes were ticked (a box left unticked stays off)
+void TestScriptLabCamera::effectsStopWhenPanelHidden()
+{
+  RlvState rlv;
+  rlv.setMode(Rlv::Mode::Rlva);
+  CameraOverride cameraOverride;
+  cameraOverride.setState(&rlv);
+  EnvironmentOverride environmentOverride;
+  environmentOverride.setState(&rlv);
+  ViewModesOverride viewModesOverride;
+  viewModesOverride.setState(&rlv);
+
+  ScriptLabPanel panel;
+  panel.setState(&rlv);
+  panel.setCameraOverride(&cameraOverride);
+  panel.setEnvironmentOverride(&environmentOverride);
+  panel.setViewModesOverride(&viewModesOverride);
+  panel.resize(420, 1000);
+  panel.show();
+  QVERIFY(panel.viewEffectsActive());
+
+  panel.cameraBox()->setChecked(true);
+  panel.environmentBox()->setChecked(true);
+  panel.viewModesBox()->setChecked(true);
+  QVERIFY(cameraOverride.enabled());
+  QVERIFY(environmentOverride.enabled());
+  QVERIFY(viewModesOverride.enabled());
+
+  panel.hide();
+  QVERIFY(!panel.viewEffectsActive());
+  QVERIFY(!cameraOverride.enabled());
+  QVERIFY(!environmentOverride.enabled());
+  QVERIFY(!viewModesOverride.enabled());
+  // the ticks are not touched
+  QVERIFY(panel.cameraBox()->isChecked());
+  QVERIFY(panel.environmentBox()->isChecked());
+  QVERIFY(panel.viewModesBox()->isChecked());
+
+  panel.show();
+  QVERIFY(panel.viewEffectsActive());
+  QVERIFY(cameraOverride.enabled());
+  QVERIFY(environmentOverride.enabled());
+  QVERIFY(viewModesOverride.enabled());
+
+  // one box unticked while hidden: it stays off when the panel comes back, the others return
+  panel.hide();
+  panel.environmentBox()->setChecked(false);
+  QVERIFY(!environmentOverride.enabled());
+  panel.show();
+  QVERIFY(cameraOverride.enabled());
+  QVERIFY(!environmentOverride.enabled());
+  QVERIFY(viewModesOverride.enabled());
+
+  // ticking a box while hidden (by the keys) does not switch anything on
+  panel.hide();
+  panel.environmentBox()->setChecked(true);
+  QVERIFY(!environmentOverride.enabled());
+  panel.show();
+  QVERIFY(environmentOverride.enabled());
+}
 
 void TestScriptLabCamera::boxAndText()
 {

@@ -25,6 +25,8 @@
 #include <QTextEdit>
 #include <QUrl>
 #include <QEvent>
+#include <QHideEvent>
+#include <QShowEvent>
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -473,7 +475,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   layout->addWidget(m_cameraStatus);
   connect(m_cameraBox, &QCheckBox::toggled, this, [this](bool on)
   {
-    if (m_camera) m_camera->setEnabled(on);
+    Q_UNUSED(on);
+    applyViewEffects();
     refreshCamera();
   });
 
@@ -492,7 +495,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   layout->addWidget(m_environmentStatus);
   connect(m_environmentBox, &QCheckBox::toggled, this, [this](bool on)
   {
-    if (m_environment) m_environment->setEnabled(on);
+    Q_UNUSED(on);
+    applyViewEffects();
     refreshEnvironment();
   });
 
@@ -511,7 +515,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   layout->addWidget(m_viewModesStatus);
   connect(m_viewModesBox, &QCheckBox::toggled, this, [this](bool on)
   {
-    if (m_viewModes) m_viewModes->setEnabled(on);
+    Q_UNUSED(on);
+    applyViewEffects();
     refreshViewModes();
   });
 
@@ -787,6 +792,30 @@ void ScriptLabPanel::applyStyle()
   m_inputDialogMessage->setPalette(muted);
   m_explainIcon->setPixmap(LucideIcons::icon(QStringLiteral("info"), Theme::color(Theme::Token::AccentText, dark),
                                              QColor(QLatin1String(t.textDisabled))).pixmap(16, 16));
+}
+
+void ScriptLabPanel::applyViewEffects()
+{
+  const bool shown = !m_hiddenByUser;
+  if (m_camera) m_camera->setEnabled(shown && m_cameraBox->isChecked());
+  if (m_environment) m_environment->setEnabled(shown && m_environmentBox->isChecked());
+  if (m_viewModes) m_viewModes->setEnabled(shown && m_viewModesBox->isChecked());
+}
+
+void ScriptLabPanel::showEvent(QShowEvent* event)
+{
+  QWidget::showEvent(event);
+  if (event->spontaneous()) return;   // the window came back from being minimised
+  m_hiddenByUser = false;
+  applyViewEffects();
+}
+
+void ScriptLabPanel::hideEvent(QHideEvent* event)
+{
+  QWidget::hideEvent(event);
+  if (event->spontaneous()) return;   // the window was minimised: the panel is still "shown"
+  m_hiddenByUser = true;
+  applyViewEffects();
 }
 
 void ScriptLabPanel::changeEvent(QEvent* event)
@@ -1628,7 +1657,7 @@ void ScriptLabPanel::setCameraOverride(CameraOverride* cameraOverride)
   m_camera = cameraOverride;
   if (cameraOverride)
   {
-    cameraOverride->setEnabled(m_cameraBox->isChecked());
+    cameraOverride->setEnabled(m_cameraBox->isChecked() && !m_hiddenByUser);
     m_cameraConnection = connect(cameraOverride, &CameraOverride::changed, this, &ScriptLabPanel::refreshCamera);
   }
   refreshCamera();
@@ -1654,7 +1683,7 @@ void ScriptLabPanel::setEnvironmentOverride(EnvironmentOverride* environmentOver
   m_environment = environmentOverride;
   if (environmentOverride)
   {
-    environmentOverride->setEnabled(m_environmentBox->isChecked());
+    environmentOverride->setEnabled(m_environmentBox->isChecked() && !m_hiddenByUser);
     m_environmentConnection = connect(environmentOverride, &EnvironmentOverride::changed, this, &ScriptLabPanel::refreshEnvironment);
   }
   refreshEnvironment();
@@ -1680,7 +1709,7 @@ void ScriptLabPanel::setViewModesOverride(ViewModesOverride* viewModesOverride)
   m_viewModes = viewModesOverride;
   if (viewModesOverride)
   {
-    viewModesOverride->setEnabled(m_viewModesBox->isChecked());
+    viewModesOverride->setEnabled(m_viewModesBox->isChecked() && !m_hiddenByUser);
     m_viewModesConnection = connect(viewModesOverride, &ViewModesOverride::changed, this, &ScriptLabPanel::refreshViewModes);
   }
   refreshViewModes();

@@ -595,6 +595,10 @@ Red: a request with a wrong key was refused</source>
         <source>other users could read it</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Programs on this computer can now pose and play the animation.&lt;/p&gt;&lt;p&gt;Address: %1&lt;br&gt;The secret key is in:&lt;br&gt;%2&lt;/p&gt;&lt;p&gt;Only programs running as you can read that file.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;%3&quot;&gt;How to connect an AI assistant&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CurveEditorDialog</name>
@@ -1036,10 +1040,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ctrl+=</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hide panels</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1117,6 +1117,10 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Enter on the picked joint, arrow keys, Enter to set a key, Esc cancels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1343,6 +1347,14 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Switch to the dark theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Smaller text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size back to 100%</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1905,10 +1917,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Remote control is on</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Programs on this computer can now pose and play the animation.&lt;/p&gt;&lt;p&gt;Address: %1&lt;br&gt;The secret key is in:&lt;br&gt;%2&lt;/p&gt;&lt;p&gt;Only programs running as you can read that file. Turn this off in the Options menu when you do not need it.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;%3&quot;&gt;How to connect an AI assistant&lt;/a&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

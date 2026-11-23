@@ -67,7 +67,7 @@ namespace KeysMouseSpec
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Switch theme"), QT_TRANSLATE_NOOP("KeysMouseDialog", "T")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Expert mode"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Shift+E")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Show hints"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Shift+H")},
-    {QT_TRANSLATE_NOOP("KeysMouseDialog", "Text size"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+=")},
+    {QT_TRANSLATE_NOOP("KeysMouseDialog", "Text size"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Hide panels"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Tab")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Script Lab"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+Shift+L")},
   };

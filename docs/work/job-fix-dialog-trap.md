@@ -18,7 +18,7 @@ Files:
 - src/pinglymotionwindow.*
 - src/pinglymotionwindowprops.cpp
 - src/scriptlab/**
-- src/controlindicator.*
+- src/controlserver.*
 - src/CMakeLists.txt
 - tests/**
 - translations/pinglymotion_en.ts

@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "gltfimportdialog.h"
+#include "dialogfit.h"
 
 namespace GltfUi
 {
@@ -61,7 +62,7 @@ GltfImportDialog::GltfImportDialog(const GltfImport::Document& document,QWidget*
 {
   setWindowTitle(tr("Import glTF animation"));
 
-  QVBoxLayout* layout=new QVBoxLayout(this);
+  QVBoxLayout* layout=DialogFit::contentLayout(this);
   layout->addWidget(new QLabel(tr("This file holds more than one choice.\nPick the ones you want."),this));
 
   QFormLayout* form=new QFormLayout();
@@ -79,7 +80,7 @@ GltfImportDialog::GltfImportDialog(const GltfImport::Document& document,QWidget*
   QDialogButtonBox* buttons=new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,this);
   connect(buttons,&QDialogButtonBox::accepted,this,&QDialog::accept);
   connect(buttons,&QDialogButtonBox::rejected,this,&QDialog::reject);
-  layout->addWidget(buttons);
+  DialogFit::finish(this,buttons);
 }
 
 int GltfImportDialog::animation() const

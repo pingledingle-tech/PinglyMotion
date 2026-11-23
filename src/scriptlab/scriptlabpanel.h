@@ -265,11 +265,20 @@ class ScriptLabPanel : public QWidget
     // reads the chosen object's inventory again (from refreshInput and when the object is changed)
     void refreshInventory();
 
+    // The three view overrides (camera limits, environment, view modes) change the 3D view
+    // only while this panel is visible; hidden, they are all off, and shown again they come
+    // back as the boxes were ticked. A minimised window does not count as hidden.
+    bool viewEffectsActive() const { return !m_hiddenByUser; }
+
   protected:
     void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
 
   private:
     void runCommandField();
+    // gives the three overrides their on/off: ticked and the panel not hidden
+    void applyViewEffects();
     void appendLog(const QString& line);
     void applyStyle();
     void buildLivePage();
@@ -394,6 +403,7 @@ class ScriptLabPanel : public QWidget
     QLabel* m_environmentStatus = nullptr;
     QPointer<ViewModesOverride> m_viewModes;
     QMetaObject::Connection m_viewModesConnection;
+    bool m_hiddenByUser = false;   // hidden for real (not just minimised)
     QCheckBox* m_viewModesBox = nullptr;
     QLabel* m_viewModesStatus = nullptr;
 };

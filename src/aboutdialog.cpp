@@ -23,6 +23,7 @@
 
 #include "aboutcredits.h"
 #include "aboutdialog.h"
+#include "dialogfit.h"
 #include "ui_aboutdialog.h"
 
 AboutDialog::AboutDialog(QWidget* parent) :
@@ -50,6 +51,7 @@ AboutDialog::AboutDialog(QWidget* parent) :
   ui->dateTimeLabel->setText(Constants::buildDateTime());
   setLastUpdateCheckLabel(UpdaterSettings::lastSuccessfulCheck());
   ui->autoUpdatesCheckBox->setChecked(UpdaterSettings::hasAutomaticUpdates());
+  DialogFit::install(this, ui->scrollArea, QSize(420, 520));
 }
 
 AboutDialog::~AboutDialog()

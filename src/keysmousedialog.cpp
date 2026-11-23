@@ -13,6 +13,7 @@
 #include <QVBoxLayout>
 
 #include "lucideicons.h"
+#include "dialogfit.h"
 #include "theme.h"
 #include "usersettings.h"
 
@@ -27,7 +28,7 @@ KeysMouseDialog::KeysMouseDialog(QWidget* parent) : QDialog(parent), m_table(nul
   setWindowTitle(tr2(KeysMouseText::title));
   setWindowIcon(LucideIcons::icon(QStringLiteral("keyboard"), Theme::color(Theme::Token::Text), Theme::color(Theme::Token::TextDisabled)));
 
-  QVBoxLayout* outer = new QVBoxLayout(this);
+  QVBoxLayout* outer = DialogFit::contentLayout(this);
 
   QHBoxLayout* header = new QHBoxLayout();
   QLabel* icon = new QLabel(this);
@@ -69,5 +70,5 @@ KeysMouseDialog::KeysMouseDialog(QWidget* parent) : QDialog(parent), m_table(nul
   close->setDefault(true);
   connect(close, &QPushButton::clicked, this, &QDialog::accept);
   actions->addWidget(close);
-  outer->addLayout(actions);
+  DialogFit::finish(this, actions);
 }

@@ -69,6 +69,9 @@ namespace MenuSpec
   inline constexpr Item viewLightTheme = {"viewLightThemeAction", QT_TRANSLATE_NOOP("MenuSpec", "Light theme"), "T", ""};
   inline constexpr Item viewExpertMode = {"viewExpertModeAction", QT_TRANSLATE_NOOP("MenuSpec", "Expert mode"), "Shift+E", ""};
   inline constexpr Item viewTextSize = {"viewTextSizeAction", QT_TRANSLATE_NOOP("MenuSpec", "Text size: %1%"), "Ctrl+=", ""};
+  // Ctrl+= stops at 200 percent; these two step back (UX decisions, section 8)
+  inline constexpr Item viewTextSmaller = {"viewTextSmallerAction", QT_TRANSLATE_NOOP("MenuSpec", "Smaller text"), "Ctrl+-", ""};
+  inline constexpr Item viewTextReset = {"viewTextResetAction", QT_TRANSLATE_NOOP("MenuSpec", "Text size back to 100%"), "Ctrl+0", ""};
   // built in UX phase 1d: the Setup dialog (src/setupdialog.*)
   inline constexpr Item viewSetup = {"viewSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup..."), "", ""};
 
@@ -89,7 +92,7 @@ namespace MenuSpec
     &editUndo, &editRedo, &editSetKey, &editPasteMirrored,
     &viewFront, &viewSide, &viewTop, &viewHome,
     &viewScriptLab, &viewHidePanels, &viewResetLayout, &viewNextArea,
-    &viewLightTheme, &viewExpertMode, &viewTextSize, &viewSetup,
+    &viewLightTheme, &viewExpertMode, &viewTextSize, &viewTextSmaller, &viewTextReset, &viewSetup,
     &helpSetup, &helpWelcome, &helpHints, &helpKeys, &helpCamera, &helpCharter};
 
   // The top bar (UX phase 1b), left to right as in the mockup: Undo, Redo | Save, Export | Script Lab,

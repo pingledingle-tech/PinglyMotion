@@ -545,6 +545,8 @@ body.charter #legend { display:flex; }
         <hr><button role="menuitemcheckbox" data-cmd="theme" aria-checked="false"><span class="chk"></span><span class="grow">Light theme</span><kbd>T</kbd></button>
         <button role="menuitemcheckbox" data-cmd="expert" aria-checked="false"><span class="chk"></span><span class="grow">Expert mode</span><kbd>Shift+E</kbd></button>
         <button role="menuitem" data-cmd="scale"><svg class="i" data-i="sliders-horizontal"></svg><span class="grow">Text size: <span id="scaleNow">100</span>%</span><kbd>Ctrl+=</kbd></button>
+        <button role="menuitem" data-cmd="scaledown"><span class="chk"></span><span class="grow">Smaller text</span><kbd>Ctrl+-</kbd></button>
+        <button role="menuitem" data-cmd="scalereset"><span class="chk"></span><span class="grow">Text size back to 100%</span><kbd>Ctrl+0</kbd></button>
         <button role="menuitem" data-cmd="setup"><svg class="i" data-i="settings"></svg><span class="grow">Setup...</span></button>
       </div></li>
     <li role="none"><button class="mtitle" role="menuitem" aria-haspopup="true" aria-expanded="false" data-menu="help">Help</button>
@@ -1823,7 +1825,9 @@ function run(cmd, el) {
     case "theme": theme = theme === "dark" ? "light" : "dark"; store.set("theme", theme); feedback((theme === "dark" ? "Dark" : "Light") + " theme."); break;
     case "expert": expert = !expert; store.set("expert", expert); feedback(expert ? "Expert mode: more controls below, nothing moved." : "Beginner mode: expert controls hidden."); break;
     case "hints": hintsOn = !hintsOn; store.set("hints", hintsOn); feedback(hintsOn ? "Hints on." : "Hints off. Turn them on again in Setup or Help > Show hints.", "ok"); break;
-    case "scale": scale = scale >= 200 ? 100 : scale + 25; store.set("scale", scale); feedback("Text size " + scale + "%."); break;
+    case "scale": scale = Math.min(200, scale + 25); store.set("scale", scale); feedback("Text size " + scale + "%."); break;
+    case "scaledown": scale = Math.max(100, scale - 25); store.set("scale", scale); feedback("Text size " + scale + "%."); break;
+    case "scalereset": scale = 100; store.set("scale", scale); feedback("Text size " + scale + "%."); break;
     case "setup": openSetup(); return;
     case "camera": openCamera(); return;
     case "keys": openKeys(); return;
@@ -2081,6 +2085,8 @@ document.addEventListener("keydown", e => {
   if (ctrl && (k === "E" || (k === "e" && e.shiftKey))) { e.preventDefault(); clickCmd("export"); return; }
   if (ctrl && e.shiftKey && (k === "L" || k === "l")) { e.preventDefault(); run("labtoggle"); return; }
   if (ctrl && (k === "=" || k === "+")) { e.preventDefault(); clickCmd("scale"); return; }
+  if (ctrl && k === "-") { e.preventDefault(); clickCmd("scaledown"); return; }
+  if (ctrl && k === "0") { e.preventDefault(); clickCmd("scalereset"); return; }
   if (ctrl && (k === "V" && e.shiftKey)) { e.preventDefault(); clickCmd("pastemirror"); return; }
   if (ctrl && k === "1" && t === $("#view")) { e.preventDefault(); run("vback"); return; }
   if (ctrl || e.altKey && !(t === $("#view"))) return;
@@ -2299,7 +2305,7 @@ function openKeys() {
     ["Undo, redo", "Ctrl+Z, Ctrl+Shift+Z"], ["Save, open, export", "Ctrl+S, Ctrl+O, Ctrl+Shift+E"], ["Open the menu", "F10, then arrow keys"], ["Next area (menu, joints, 3D view, selected joint, Script Lab, timeline)", "F6, Shift+F6"],
     ["Hide or show panels", "Tab after clicking in the 3D view, or View > Hide panels. Reached with the keyboard, Tab moves on"], ["Change a panel's width or height", "Arrow keys on the thin line between panels"], ["Move or resize a floating panel", "Arrow keys or Shift+arrow keys on its grip button"],
     ["Script Lab open or closed", "Ctrl+Shift+L"], ["Throw away a pose change, or cancel a pull", "Esc"], ["Close a menu, dialog or hint", "Esc"],
-    ["Move between keys on the timeline", "Arrow keys on a key"], ["Pick an easing choice", "Arrow keys in the tile row"], ["Theme, Expert mode, hints", "T, Shift+E, Shift+H"], ["Charter overlay", "C"], ["Text size", "Ctrl+= (100 to 200 percent)"]];
+    ["Move between keys on the timeline", "Arrow keys on a key"], ["Pick an easing choice", "Arrow keys in the tile row"], ["Theme, Expert mode, hints", "T, Shift+E, Shift+H"], ["Charter overlay", "C"], ["Text size", "Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%"]];
   $("#keysTable").innerHTML = "<tr><th>Action</th><th>Keys</th></tr>" + rows.concat(SCHEMES[scheme].rows, KEYROWS_ALL).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("");
   openDialog("#dlgKeys");
 }
