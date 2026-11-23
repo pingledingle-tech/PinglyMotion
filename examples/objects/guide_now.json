@@ -1,0 +1,145 @@
+{
+  "format": 1,
+  "title": "What the program can do now",
+  "guide": [
+    {
+      "id": "EXNOW-01",
+      "part": "what",
+      "text": "Props are simple 3D shapes in the scene. They stand in for prims."
+    },
+    {
+      "id": "EXNOW-02",
+      "part": "shape",
+      "text": "Box: good for a HUD, a board or a box.",
+      "name": "Box"
+    },
+    {
+      "id": "EXNOW-03",
+      "part": "shape",
+      "text": "Sphere: good for a ball, a gag or a button.",
+      "name": "Sphere"
+    },
+    {
+      "id": "EXNOW-04",
+      "part": "shape",
+      "text": "Cone: good for a hood, a hat or a bottle.",
+      "name": "Cone"
+    },
+    {
+      "id": "EXNOW-05",
+      "part": "shape",
+      "text": "Torus, a ring: good for a cuff, a collar or a blindfold.",
+      "name": "Torus"
+    },
+    {
+      "id": "EXNOW-06",
+      "part": "how",
+      "text": "To add a prop, pick Props in the Joints panel. Press a shape button."
+    },
+    {
+      "id": "EXNOW-07",
+      "part": "how",
+      "text": "The program names it, for example Box 0 or Torus 0."
+    },
+    {
+      "id": "EXNOW-08",
+      "part": "how",
+      "text": "The next box is Box 1. You cannot change the name yet."
+    },
+    {
+      "id": "EXNOW-09",
+      "part": "how",
+      "text": "Place it with Position, Size and Turn in the Selected joint panel."
+    },
+    {
+      "id": "EXNOW-10",
+      "part": "how",
+      "text": "Pick a joint in Attach to. The prop then moves with that joint."
+    },
+    {
+      "id": "EXNOW-11",
+      "part": "how",
+      "text": "File, Save props keeps shape, place, size and joint. It does not keep names."
+    },
+    {
+      "id": "EXNOW-12",
+      "part": "link",
+      "text": "An object is a folder. Each folder inside it is one prim."
+    },
+    {
+      "id": "EXNOW-13",
+      "part": "link",
+      "text": "A prop and a prim with the same name belong together."
+    },
+    {
+      "id": "EXNOW-14",
+      "part": "link",
+      "text": "So a folder Box 0 goes with the prop Box 0."
+    },
+    {
+      "id": "EXNOW-15",
+      "part": "link",
+      "text": "The folder Root, or the object folder itself, is the main prim."
+    },
+    {
+      "id": "EXNOW-16",
+      "part": "effects",
+      "text": "Show effects in 3D view is on the Live scripts page."
+    },
+    {
+      "id": "EXNOW-17",
+      "part": "effects",
+      "text": "Tick it while a folder is watched. Props then show the scripts' colours."
+    },
+    {
+      "id": "EXNOW-18",
+      "part": "effects",
+      "text": "They also show how clear a script made the prim."
+    },
+    {
+      "id": "EXNOW-19",
+      "part": "effects",
+      "text": "Untick it and the props get their own colour back."
+    },
+    {
+      "id": "EXNOW-20",
+      "part": "open",
+      "text": "First colour works now: add one box, then watch that folder."
+    },
+    {
+      "id": "EXNOW-21",
+      "part": "open",
+      "text": "The other examples need props with names like Wrist_left."
+    },
+    {
+      "id": "EXNOW-22",
+      "part": "open",
+      "text": "The program cannot make those yet, so their props do not appear."
+    },
+    {
+      "id": "EXNOW-23",
+      "part": "not",
+      "text": "Props are not made from the prim folders by themselves."
+    },
+    {
+      "id": "EXNOW-24",
+      "part": "not",
+      "text": "Clicking a prop in the 3D view is not a touch."
+    },
+    {
+      "id": "EXNOW-25",
+      "part": "not",
+      "text": "Props do not move when a script moves its prim."
+    },
+    {
+      "id": "EXNOW-26",
+      "part": "not",
+      "text": "Touch, Say and dialog buttons do not reach a watched folder yet."
+    },
+    {
+      "id": "EXNOW-27",
+      "part": "not",
+      "text": "They reach only scripts that an AI assistant started."
+    }
+  ]
+}

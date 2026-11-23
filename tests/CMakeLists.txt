@@ -295,6 +295,17 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_labtint_tests PRIVATE ${CMAKE_SOURCE_DI
 TARGET_LINK_LIBRARIES (pinglymotion_labtint_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME labtint COMMAND pinglymotion_labtint_tests)
 
+# Script Lab example folders (job E1, docs/EXAMPLES.md): each example opens, compiles and runs with exact answers
+ADD_EXECUTABLE (pinglymotion_examples_tests tst_examples.cpp ${CMAKE_SOURCE_DIR}/src/prop.cpp ${CMAKE_SOURCE_DIR}/src/meshmodel.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_examples_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_examples_tests PRIVATE EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples/objects")
+TARGET_LINK_LIBRARIES (pinglymotion_examples_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL Qt6::Test)
+ADD_TEST (NAME examples COMMAND pinglymotion_examples_tests)
+SET_TESTS_PROPERTIES (examples PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+IF (Python3_Interpreter_FOUND)
+  ADD_TEST (NAME examples_guides COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_examples.py)
+ENDIF ()
+
 # Script Lab step 7 (#293): what a run does to the avatar, the animation lookup and the 3D view's preview
 ADD_EXECUTABLE (pinglymotion_labeffects_tests tst_labeffects.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_labeffects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

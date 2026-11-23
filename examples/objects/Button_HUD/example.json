@@ -1,0 +1,90 @@
+{
+  "format": 1,
+  "order": 1,
+  "object": "Button_HUD",
+  "title": "Button HUD",
+  "works_now": false,
+  "props": [
+    {
+      "name": "Button_HUD",
+      "shape": "box",
+      "joint": "",
+      "position": [
+        -20,
+        45,
+        0
+      ],
+      "scale": [
+        8,
+        8,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "guide": [
+    {
+      "id": "EXBUTTON-01",
+      "part": "what",
+      "text": "A HUD is a panel of buttons on your Second Life screen."
+    },
+    {
+      "id": "EXBUTTON-02",
+      "part": "what",
+      "text": "This one has two buttons, Red and Green. It is one prim with one script."
+    },
+    {
+      "id": "EXBUTTON-03",
+      "part": "word",
+      "text": "Dialog: the small window of buttons a script shows you."
+    },
+    {
+      "id": "EXBUTTON-04",
+      "part": "word",
+      "text": "Channel: a number scripts use to talk, like a radio channel."
+    },
+    {
+      "id": "EXBUTTON-05",
+      "part": "step",
+      "text": "Press Watch folder. Pick examples, then objects, then Button_HUD.",
+      "control": "Watch folder..."
+    },
+    {
+      "id": "EXBUTTON-06",
+      "part": "step",
+      "text": "Tick Show effects in 3D view.",
+      "control": "Show effects in 3D view"
+    },
+    {
+      "id": "EXBUTTON-07",
+      "part": "step",
+      "text": "Press Touch under Send input. The dialog buttons appear there.",
+      "control": "Touch"
+    },
+    {
+      "id": "EXBUTTON-08",
+      "part": "step",
+      "text": "Press Red in the dialog.",
+      "control": "Red"
+    },
+    {
+      "id": "EXBUTTON-09",
+      "part": "see",
+      "text": "The flat box beside the figure turns red. The log says: Now red."
+    },
+    {
+      "id": "EXBUTTON-10",
+      "part": "next",
+      "text": "Add a third button, Blue, to the list in llDialog."
+    },
+    {
+      "id": "EXBUTTON-11",
+      "part": "next",
+      "text": "Then add a line that gives Blue the colour <0.0, 0.0, 1.0>."
+    }
+  ]
+}

@@ -122,6 +122,7 @@ Only ideas were taken from these papers and projects (no code copied); they were
 | BVH (Biovision Hierarchy) format | The main import and export format | https://research.cs.wisc.edu/graphics/Courses/cs-838-1999/Jeff/BVH.html |
 | glTF 2.0 (Khronos) | Animation import | https://www.khronos.org/gltf/ |
 | AAOS clinical range of motion | The basis of the finger joint limits | American Academy of Orthopaedic Surgeons |
+| RLV relay protocol (the open Restrained Love Relay specification, Second Life Wiki) | The message format, channel and meta commands of the simple relay example (`examples/objects/RLV_relay`, written in our own words) | https://wiki.secondlife.com/wiki/LSL_Protocol/Restrained_Love_Relay/Specification |
 | SHA-256, HMAC (NIST, IETF RFC 2104) | Challenge and session key of the Aurora live link; file checks | https://www.rfc-editor.org/rfc/rfc2104 |
 
 ## Licence of PinglyMotion
