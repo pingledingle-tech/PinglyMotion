@@ -13,6 +13,7 @@ Files:
 - tests/dialogfit/**
 - tests/usersettings/**
 - tests/transportbar/tst_transportbar.cpp
+- tests/timelinerows/tst_timelinerows.cpp
 - docs/EASING.md
 - docs/DINGLE_FORMAT.md
 - docs/TEACHING_TEXTS.md
