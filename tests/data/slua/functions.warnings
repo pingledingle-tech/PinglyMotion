@@ -1,0 +1,1 @@
+21:9 The name end is a word Lua or SLua uses itself; it is called end_lsl in the SLua text. | Give it another name in the LSL script if you want to keep the name.

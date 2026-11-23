@@ -14,8 +14,10 @@
  * input bytes drive the Linkset Data store directly (write, delete, list,
  * reset), which must keep its byte count and limit. The static checker
  * (Lint::lint, what lsl_lint does) looks at every input too: its warnings need a
- * place, a known id and a message. Nothing may crash, and a run must stay
- * inside its limits.
+ * place, a known id and a message. The LSL-to-SLua converter (lane 1, job G,
+ * Lsl2Slua::convert) also reads every input: it converts exactly the scripts
+ * that compile, and its errors and warnings need a place and a message (and
+ * warnings a fix). Nothing may crash, and a run must stay inside its limits.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -26,6 +28,7 @@
 
 #include "scriptlab/lsl/interp.h"
 #include "scriptlab/lsl/lint.h"
+#include "scriptlab/lsl/lsl2slua.h"
 #include "scriptlab/lsl/parser.h"
 #include "scriptlab/lsl/rlvworld.h"
 #include "scriptlab/lsl/sandbox.h"
@@ -58,6 +61,16 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   static const QStringList lintIds = Lint::ids();
   for (const LintWarning& w : linted.warnings)
     check(w.line >= 1 && w.column >= 1 && !w.message.isEmpty() && lintIds.contains(w.id));
+  // the LSL-to-SLua converter (job G): only a script that compiles is converted, the text and the
+  // warnings stay inside their limits, every note has a place and plain words
+  const Lsl2Slua::Result converted = Lsl2Slua::convert(source);
+  check(!converted.ok() || parsed.ok());
+  check(converted.ok() || !converted.errors.empty());
+  check(converted.text.size() <= Lsl2Slua::MAX_OUTPUT_CHARS);
+  check(converted.text.isEmpty() || converted.text.endsWith('\n'));
+  check(int(converted.warnings.size()) <= Lsl2Slua::MAX_WARNINGS);
+  for (const SluaWarning& w : converted.warnings) check(w.line >= 1 && w.column >= 1 && !w.message.isEmpty() && !w.fix.isEmpty());
+  for (const SluaWarning& w : converted.errors) check(w.line >= 1 && w.column >= 1 && !w.message.isEmpty());
   if (!parsed.ok()) return 0;
   check(!parsed.script->states.empty());
   check(parsed.script->states.front().name == "default");

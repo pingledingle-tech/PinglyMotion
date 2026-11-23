@@ -1,0 +1,1 @@
+10:9 llSetTimerEvent is removed from SLua's ll functions. It is written as llcompat.SetTimerEvent, which keeps the LSL way. | Use LLTimers when you rewrite it in SLua style.
