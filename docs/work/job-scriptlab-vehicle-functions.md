@@ -4,6 +4,7 @@ Pull request: #383
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - tests/tst_lslmovement.cpp
+- tests/tst_lslpure.cpp
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md
 
