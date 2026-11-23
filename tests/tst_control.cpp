@@ -16,6 +16,8 @@
 #include <QTcpSocket>
 #include <QScopeGuard>
 #include <QTemporaryDir>
+#include <QSettings>
+#include <QToolButton>
 
 #include <cmath>
 
@@ -36,6 +38,7 @@
 #include "constants.h"
 #include "camera.h"
 #include "controlapi.h"
+#include "aiassistant.h"
 #include "controlindicator.h"
 #include "controlserver.h"
 #include "emptystate.h"
@@ -274,6 +277,8 @@ void ControlTest::initTestCase()
   QVERIFY(m_controlDir.isValid());
   m_controlFile = m_controlDir.filePath("control.json");
   qputenv("PINGLYMOTION_CONTROL_FILE", m_controlFile.toUtf8());
+  // the AI Assistant remembers the names of AIs in the settings: never the real ones of the person running the tests
+  QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, m_controlDir.filePath("settings"));
 }
 
 void ControlTest::cleanupTestCase()
@@ -2412,27 +2417,28 @@ void ControlTest::indicatorShowsTheState()
   QCOMPARE(CI::stateFor(true, 1000, 5000), CI::Connected);    // a good request came after it
   QCOMPARE(CI::stateFor(true, -1, CI::CONTACT_TIMEOUT_MS + 1), CI::Waiting);
 
-  QCOMPARE(CI::textFor(CI::Connected, "Claude Code", "set_pose", 3400), QString::fromUtf8("Claude Code connected \u00B7 set_pose (3 s ago)"));
-  QCOMPARE(CI::textFor(CI::Connected, QString(), QString(), -1), QString("A program connected"));
-  QCOMPARE(CI::ago(125000), QString("2 min ago"));
-
+  QCOMPARE(CI::textFor(CI::Off, {}), QString("AI Assistant off"));
+  QCOMPARE(CI::textFor(CI::Connected, {"Claude Code"}), QString("AI Assistant: Claude Code"));
+  QCOMPARE(CI::textFor(CI::Connected, {}), QString("AI Assistant: A program"));
+  QCOMPARE(AiAssistant::ago(125000), QString("2 min ago"));
   // the widget follows the server's signals
   CI indicator;
   QCOMPARE(indicator.state(), CI::Off);
   indicator.setRunning(true);
   QCOMPARE(indicator.state(), CI::Waiting);
-  indicator.onContact("Claude Code", "set_pose", true);
+  indicator.onContact("claude-code", "set_pose", true);
   QCOMPARE(indicator.state(), CI::Connected);
-  QVERIFY(indicator.text().startsWith("Claude Code connected"));
-  QVERIFY(indicator.text().contains("set_pose"));
+  QCOMPARE(indicator.text(), QString("AI Assistant: Claude Code"));
+  QVERIFY(indicator.button()->toolTip().contains("set_pose"));
   indicator.onRefused();
   QCOMPARE(indicator.state(), CI::Problem);
-  indicator.onContact(QString(), QString(), true);   // heartbeat keeps the name and command
+  indicator.onContact(QString(), QString(), true);   // a program without a name
   QCOMPARE(indicator.state(), CI::Connected);
-  QVERIFY(indicator.text().contains("set_pose"));
+  QCOMPARE(indicator.text(), QString("AI Assistant: 2 AI connected"));
+  QVERIFY(indicator.button()->toolTip().contains("set_pose"));
   indicator.setRunning(false);
   QCOMPARE(indicator.state(), CI::Off);
-  QCOMPARE(indicator.text(), QString("Remote control off"));
+  QCOMPARE(indicator.text(), QString("AI Assistant off"));
 }
 
 // ------------------------------------------------------------ reference library (issue 19)

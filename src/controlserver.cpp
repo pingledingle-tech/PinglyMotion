@@ -198,49 +198,6 @@ QString ControlServer::connectionFilePath()
   return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/PinglyMotion/control.json";
 }
 
-QString ControlServer::displayPath(const QString& path, const QString& dataFolder, const QString& homeFolder, bool windows)
-{
-  const QString clean = QDir::cleanPath(path);
-  const Qt::CaseSensitivity cs = windows ? Qt::CaseInsensitive : Qt::CaseSensitive;
-  const auto under = [&clean, cs](const QString& folder) -> QString
-  {
-    const QString base = QDir::cleanPath(folder);
-    if (base.isEmpty() || base == QLatin1String("/")) return QString();
-    if (clean.size() > base.size() && clean.startsWith(base, cs) && clean.at(base.size()) == QLatin1Char('/'))
-      return clean.mid(base.size());
-    return QString();
-  };
-  QString shown = clean;
-  const QString inData = under(dataFolder);
-  const QString inHome = under(homeFolder);
-  if (windows && !inData.isEmpty()) shown = QStringLiteral("%LOCALAPPDATA%") + inData;
-  else if (!inHome.isEmpty()) shown = (windows ? QStringLiteral("%USERPROFILE%") : QStringLiteral("~")) + inHome;
-  if (windows) shown.replace(QLatin1Char('/'), QLatin1Char('\\'));
-  return shown;
-}
-
-QString ControlServer::displayConnectionFilePath()
-{
-#ifdef Q_OS_WIN
-  const bool windows = true;
-#else
-  const bool windows = false;
-#endif
-  return displayPath(connectionFilePath(), QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                     QDir::homePath(), windows);
-}
-
-QString ControlServer::infoHtml(const QString& url)
-{
-  return QCoreApplication::translate("ControlServer",
-    "<p>Programs on this computer can now pose and play the animation.</p>"
-    "<p>Address: %1<br>The secret key is in:<br>%2</p>"
-    "<p>Only programs running as you can read that file.</p>"
-    "<p><a href=\"%3\">How to connect an AI assistant</a></p>")
-    .arg(url.toHtmlEscaped(), displayConnectionFilePath().toHtmlEscaped(),
-         QStringLiteral("https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md#set-up-an-ai-assistant"));
-}
-
 // Issue #144: the key goes into a temporary file next to control.json that only the
 // owner can read from the moment it is created; it replaces control.json in one step
 // only when everything was written. A full disk or a failed permission change never

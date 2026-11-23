@@ -42,6 +42,8 @@ TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/le
 # (before this, each test compiled its own copy: about 170 repeated compiles, most of the
 # Windows build time). The program links it too. Add a file here when two or more tests list it.
 SET (PINGLYMOTION_SHARED_SRC
+              aiassistant.cpp
+              aiconnectdialog.cpp
               animcheck.cpp
               animexport.cpp
               animexportdialog.cpp

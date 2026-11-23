@@ -1,6 +1,6 @@
 /*
  * PinglyMotion - tests for dialogs that fit the screen (src/dialogfit.*), the text size steps
- * (src/textsize.*) and the remote control box (src/controlserver.*)
+ * (src/textsize.*), with the AI Assistant's "Connect an AI" dialog (src/aiconnectdialog.*) on each of its pages
  *
  * Every dialog, at 100 and 200 percent text size, dark and light, on a small screen (1366 x 768
  * with a 40 pixel taskbar) and on a tiny one: it lies inside the available area of the screen and
@@ -27,7 +27,7 @@
 #include "animexportdialog.h"
 #include "animfile.h"
 #include "camerakeysdialog.h"
-#include "controlserver.h"
+#include "aiconnectdialog.h"
 #include "dialogfit.h"
 #include "easing.h"
 #include "easingtiles.h"
@@ -85,6 +85,10 @@ namespace
       {"whatsnew", [news]() -> QDialog* { return new WhatsNewDialog(news); }},
       {"updatenotification", []() -> QDialog* { return new UpdateNotificationDialog; }},
       {"curveeditor", []() -> QDialog* { return new CurveEditorDialog(Easing::Bezier()); }},
+      {"aiconnect", []() -> QDialog* { return new AiConnectDialog(false); }},
+      {"aiconnect_claude", []() -> QDialog* { AiConnectDialog* d = new AiConnectDialog(false); d->showPage(AiConnectDialog::Claude); return d; }},
+      {"aiconnect_chatgpt", []() -> QDialog* { AiConnectDialog* d = new AiConnectDialog(false); d->showPage(AiConnectDialog::ChatGpt); return d; }},
+      {"aiconnect_other", []() -> QDialog* { AiConnectDialog* d = new AiConnectDialog(false); d->showPage(AiConnectDialog::Other); return d; }},
     };
   }
 
@@ -257,46 +261,6 @@ class TestDialogFit : public QObject
       // a number outside the range is cut first
       QCOMPARE(TextSize::stepUp(500), 200);
       QCOMPARE(TextSize::stepDown(0), 100);
-    }
-
-    // the remote control box shows the key file without the account folder
-    void remoteControlPathHasNoHomeFolder()
-    {
-      QCOMPARE(ControlServer::displayPath(QStringLiteral("C:/Users/anna/AppData/Local/PinglyMotion/control.json"),
-                                          QStringLiteral("C:/Users/anna/AppData/Local"), QStringLiteral("C:/Users/anna"), true),
-               QStringLiteral("%LOCALAPPDATA%\\PinglyMotion\\control.json"));
-      QCOMPARE(ControlServer::displayPath(QStringLiteral("c:/users/anna/documents/control.json"),
-                                          QStringLiteral("C:/Users/anna/AppData/Local"), QStringLiteral("C:/Users/anna"), true),
-               QStringLiteral("%USERPROFILE%\\documents\\control.json"));
-      QCOMPARE(ControlServer::displayPath(QStringLiteral("/Users/anna/Library/Application Support/PinglyMotion/control.json"),
-                                          QStringLiteral("/Users/anna/Library/Application Support"), QStringLiteral("/Users/anna"), false),
-               QStringLiteral("~/Library/Application Support/PinglyMotion/control.json"));
-      QCOMPARE(ControlServer::displayPath(QStringLiteral("/home/anna/.local/share/PinglyMotion/control.json"),
-                                          QStringLiteral("/home/anna/.local/share"), QStringLiteral("/home/anna"), false),
-               QStringLiteral("~/.local/share/PinglyMotion/control.json"));
-      // a folder whose name only starts like the home folder is not inside it
-      QCOMPARE(ControlServer::displayPath(QStringLiteral("/home/annabel/control.json"), QString(), QStringLiteral("/home/anna"), false),
-               QStringLiteral("/home/annabel/control.json"));
-    }
-
-    void remoteControlBoxHasNoHomePath()
-    {
-      const QString home = QDir::homePath();
-      for (const QString& file : {QString(), QDir(home).filePath(QStringLiteral("somewhere/control.json"))})
-      {
-        if (file.isEmpty()) qunsetenv("PINGLYMOTION_CONTROL_FILE");
-        else qputenv("PINGLYMOTION_CONTROL_FILE", file.toUtf8());
-        const QString html = ControlServer::infoHtml(QStringLiteral("http://127.0.0.1:47474"));
-        QVERIFY2(!html.contains(home), qPrintable(html));
-        QVERIFY2(!html.contains(QDir::toNativeSeparators(home)), qPrintable(html));
-        QVERIFY2(!html.contains(QStringLiteral("/home/")), qPrintable(html));
-        QVERIFY2(!html.contains(QStringLiteral("Users")) || html.contains(QStringLiteral("%")) || html.contains(QStringLiteral("~")), qPrintable(html));
-        QVERIFY(html.contains(QStringLiteral("control.json")));
-        QVERIFY(html.contains(QStringLiteral("http://127.0.0.1:47474")));
-        // Options is going away: the box must not send the user there
-        QVERIFY(!html.contains(QStringLiteral("Options")));
-      }
-      qunsetenv("PINGLYMOTION_CONTROL_FILE");
     }
 };
 

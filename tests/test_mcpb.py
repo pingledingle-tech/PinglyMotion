@@ -8,10 +8,15 @@
   letter, as in many Windows user names) answers initialize and tools/list over stdio. Python
   is not used to run it (the test also starts it with a PATH that has no Python).
   Skipped with a message when Node is missing.
+- The mcp folder of the Windows zip (tools/ci/package_mcp.sh, issue 7) holds PinglyMotion.mcpb,
+  pinglymotion_mcp.js (with commands.json and ASSISTANT_GUIDE.md, which it reads) and README.txt
+  with the three guides and "How it's kept safe"; both workflows build the zip with it, and the
+  server starts from that folder.
 """
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -24,7 +29,67 @@ sys.path.insert(0, os.path.join(HERE, "..", "tools", "mcp"))
 import build_mcpb  # noqa: E402
 
 
+def read(path):
+    with open(os.path.join(build_mcpb.ROOT, path), "rb") as handle:
+        return handle.read()
+
+
+def check_mcp_folder():
+    root = build_mcpb.ROOT
+    with tempfile.TemporaryDirectory(prefix="pkg æø ") as tmp:
+        subprocess.run(["bash", os.path.join(root, "tools", "ci", "package_mcp.sh"), tmp], cwd=root, check=True,
+                       capture_output=True)
+        folder = os.path.join(tmp, "mcp")
+        files = sorted(os.listdir(folder))
+        assert files == ["ASSISTANT_GUIDE.md", "PinglyMotion.mcpb", "README.txt", "commands.json", "pinglymotion_mcp.js"], files
+        for name, source in (("pinglymotion_mcp.js", "tools/mcp/pinglymotion_mcp.js"), ("commands.json", "tools/mcp/commands.json"),
+                             ("ASSISTANT_GUIDE.md", "docs/ASSISTANT_GUIDE.md"), ("README.txt", "tools/mcp/README.txt")):
+            with open(os.path.join(folder, name), "rb") as handle:
+                assert handle.read() == read(source), name
+        fresh = os.path.join(tmp, "fresh.mcpb")
+        build_mcpb.build(fresh)
+        with open(fresh, "rb") as a, open(os.path.join(folder, "PinglyMotion.mcpb"), "rb") as b:
+            assert a.read() == b.read()
+        # a second run refuses to mix into an existing folder
+        again = subprocess.run(["bash", os.path.join(root, "tools", "ci", "package_mcp.sh"), tmp], cwd=root, capture_output=True)
+        assert again.returncode != 0
+
+        node = shutil.which("node")
+        if node:
+            out = subprocess.run([node, os.path.join(folder, "pinglymotion_mcp.js"), "--version"], capture_output=True, text=True, timeout=30)
+            assert out.returncode == 0 and out.stdout.startswith("pinglymotion "), out
+
+    # the README: all three guides and the safety section, offline; the same links as the program
+    readme = read("tools/mcp/README.txt").decode("utf-8")
+    for heading in ("1. Claude", "2. ChatGPT (the ChatGPT desktop app) - NOT YET TESTED",
+                    "3. Other or local AI tools - NOT TESTED BY US", "How it's kept safe"):
+        assert heading in readme, heading
+    for line in ("Settings > Desktop app and click \"Manage\" next\n   to Extensions", "Install Extension...",
+                 "Settings > Plugins", "[mcp_servers.pinglymotion]", 'command = "node"',
+                 "It is off each time PinglyMotion starts.", "There is a new secret key each time you turn it on.",
+                 "Requests from web pages are refused.", "Turn off locks every AI out and deletes the key.",
+                 "It has been through a security review and is tested automatically on every\nchange"):
+        assert line in readme, line
+    assert "Options" not in readme
+    source = read("src/aiassistant.cpp").decode("utf-8")
+    urls = re.findall(r'QStringLiteral\("(https://[^"]+)"\)', source)
+    assert len(urls) == 4, urls
+    for url in urls:
+        assert url in readme, url
+        if "/blob/main/" in url:   # a link into the repository points at a file that exists
+            assert os.path.exists(os.path.join(root, url.split("/blob/main/")[1])), url
+
+    # both workflows make the zip's mcp folder with the script; the old loose files are gone
+    for workflow in (".github/workflows/build.yml", ".github/workflows/release.yml"):
+        text = read(workflow).decode("utf-8")
+        assert "tools/ci/package_mcp.sh" in text, workflow
+        assert "START_HERE" not in text, workflow
+    assert not os.path.exists(os.path.join(root, "tools", "mcp", "START_HERE_CLAUDE.txt"))
+    print("mcp folder ok")
+
+
 def main():
+    check_mcp_folder()
     with open(os.path.join(build_mcpb.ROOT, build_mcpb.FILES[0][0]), encoding="utf-8") as handle:
         manifest = json.load(handle)
     problems = build_mcpb.check_manifest(manifest)
