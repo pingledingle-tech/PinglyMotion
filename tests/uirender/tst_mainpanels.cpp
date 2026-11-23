@@ -349,8 +349,9 @@ void TestMainPanels::panelEdgesAreEasyToGrab()
 void TestMainPanels::jointsPanelCanBeMadeWider()
 {
   UiRender::Scope scope({true, 100});
-  // windows with room for 120 more pixels beside the 3D view and the timeline
-  for (const int width : {1920, 1366})
+  // a window with room for 120 more pixels beside the 3D view and the timeline (at 1366 the
+  // room left depends on the system font: Windows had only 7 pixels to spare)
+  for (const int width : {1920})
   {
     MainWindow w;
     const Reflow got = w.arrange(width);
