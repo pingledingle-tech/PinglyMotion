@@ -1012,7 +1012,7 @@ void ScriptLabPanel::buildLivePage()
   m_makeExample->setObjectName("scriptLabMakeExample");
   m_makeExample->setMinimumHeight(ControlLarge);
   m_makeExample->setIconSize(QSize(20, 20));
-  m_makeExample->setToolTip(tr("Copies a working example to your own folder and shows it in 3D."));
+  m_makeExample->setToolTip(tr("Copies a working example to your folder and shows it in 3D."));
   m_newFolder = new QPushButton(tr("New folder"), m_liveEmpty);
   m_newFolder->setObjectName("scriptLabNewFolder");
   m_newFolder->setMinimumHeight(ControlLarge);
@@ -1148,7 +1148,7 @@ void ScriptLabPanel::buildLivePage()
   m_treeSection->bodyLayout()->addWidget(m_treeLine);
   m_followBox = new QCheckBox(tr("Follow selection in 3D view"), m_treeSection->body());
   m_followBox->setObjectName("scriptLabFollowSelection");
-  m_followBox->setToolTip(tr("Click a piece here and its prop lights up in the 3D view. "
+  m_followBox->setToolTip(tr("Click a piece here to light up its prop in 3D view. "
                              "Click a prop and its row is picked here."));
   m_followBox->setChecked(UserSettings::scriptLabFollowSelection());
   m_treeSection->bodyLayout()->addWidget(m_followBox);

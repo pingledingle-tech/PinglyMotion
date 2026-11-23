@@ -258,7 +258,7 @@ void TestScriptLabBeginner::emptyStateTexts()
   ScriptLabPanel panel;
   QCOMPARE(panel.liveEmptyText()->text(), QString("Script Lab shows your scripts from a folder on your PC. Choose a folder to see them here."));
   QCOMPARE(panel.makeExampleButton()->text(), QString("Make example project"));
-  QCOMPARE(panel.makeExampleButton()->toolTip(), QString("Copies a working example to your own folder and shows it in 3D."));
+  QCOMPARE(panel.makeExampleButton()->toolTip(), QString("Copies a working example to your folder and shows it in 3D."));
   QCOMPARE(panel.newFolderButton()->text(), QString("New folder"));
   QVERIFY(panel.newFolderButton()->toolTip().startsWith("Makes an empty folder for your scripts and watches it. "));
   QCOMPARE(panel.treeLine()->text(), QString("This tree is your object. Each folder in it is one prim."));
@@ -750,10 +750,10 @@ void TestScriptLabBeginner::textsInRegister()
   QVERIFY(teaching.contains("### Script Lab for beginners (job U3)"));
   QStringList texts = {
     "Script Lab shows your scripts from a folder on your PC. Choose a folder to see them here.",
-    "Make example project", "Copies a working example to your own folder and shows it in 3D.",
+    "Make example project", "Copies a working example to your folder and shows it in 3D.",
     "New folder", "Makes an empty folder for your scripts and watches it.",
     "This tree is your object. Each folder in it is one prim.", "Follow selection in 3D view",
-    "Click a piece here and its prop lights up in the 3D view. Click a prop and its row is picked here.",
+    "Click a piece here to light up its prop in 3D view. Click a prop and its row is picked here.",
     "You should see", "Then try", "Close the steps. Help, Script Lab steps shows them again.",
     "Show Props", "Add the props", "Show Live scripts", "Watch the folder", "Show effects",
     "This step does not work in the program yet.", "Script Lab steps", "Show the steps of the example project again.",
