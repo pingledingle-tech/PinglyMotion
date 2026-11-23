@@ -430,6 +430,9 @@ class TestLibraryPanel : public QObject
       window.resize(400, 800);
       window.show();
       QVERIFY(QTest::qWaitForWindowExposed(&window));
+      // PINGLYMOTION_UI_OUT=<folder> keeps a picture of the panel for a session to look at
+      const QString out = qEnvironmentVariable("PINGLYMOTION_UI_OUT");
+      if (!out.isEmpty()) window.grab().save(QDir(out).filePath(QStringLiteral("librarypanel_dark.png")));
       // opening puts the keyboard in the search field
       panel->focusSearch();
       QTRY_VERIFY(panel->searchField()->hasFocus());
@@ -481,9 +484,8 @@ class TestLibraryPanel : public QObject
       QVERIFY(index.load(Library));
       LibraryPreview preview;
       QVERIFY(preview.setClip(clipPath(index.find("cmu-07-04")->file)));
-      // every frame of the clip (the program puts the reference pose in front of the file's frames)
-      QVERIFY(preview.frameCount() >= 114);
-      QVERIFY(preview.frameCount() <= 115);
+      // every frame of the clip, without the reference pose the program puts in front of it
+      QCOMPARE(preview.frameCount(), index.find("cmu-07-04")->frames - 1);
       QCOMPARE(preview.frame(), 0);
       QSignalSpy changed(&preview, &LibraryPreview::playingChanged);
       preview.setPlaying(true);

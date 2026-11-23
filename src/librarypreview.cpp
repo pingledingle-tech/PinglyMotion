@@ -97,14 +97,26 @@ bool LibraryPreview::setClip(const QString& path)
 
   const QStringList& names = PoseDescribe::classicJoints();
   const QSet<QString> classic(names.begin(), names.end());
-  BVHNode* head = PoseDescribe::findJoint(animation.get(), QStringLiteral("mHead"));
+  BVHNode* head = PoseDescribe::findJoint(animation.get(), QStringLiteral("head"));
   bool first = true;
-  for (int f = 0; f < frames; f++)
+  // frame 1 of an opened file is the reference pose the program puts in front of the clip
+  // (docs/ASSISTANT_GUIDE.md); the preview shows the clip's own frames
+  for (int f = frames > 1 ? 1 : 0; f < frames; f++)
   {
     const QHash<BVHNode*, QMatrix4x4> world = PoseDescribe::worldTransforms(animation.get(), f);
     Pose pose;
     bonesBelow(animation->getMotion(), nullptr, classic, world, pose.bones);
     if (head && world.contains(head)) pose.head = world.value(head).map(QVector3D());
+    else if (!pose.bones.isEmpty()) pose.head = pose.bones.last().second;
+    // the figure moves on the spot: the hip's way over the floor is taken out, so a walk
+    // stays in the box at a size the eye can follow (up and down stay)
+    if (BVHNode* hip = animation->getMotion(); hip && world.contains(hip))
+    {
+      const QVector3D at = world.value(hip).map(QVector3D());
+      const QVector3D shift(at.x(), 0.0f, at.z());
+      for (auto& bone : pose.bones) { bone.first -= shift; bone.second -= shift; }
+      pose.head -= shift;
+    }
     for (const auto& bone : pose.bones)
       for (const QVector3D& p : {bone.first, bone.second})
       {
@@ -164,6 +176,6 @@ void LibraryPreview::paintEvent(QPaintEvent*)
   {
     painter.setBrush(Theme::color(Theme::Token::Background));
     painter.setPen(QPen(Theme::color(Theme::Token::AccentText), Theme::Size::iconStroke / scale));
-    painter.drawEllipse(seen(pose.head) - QPointF(0, r * 0.6), r, r);
+    painter.drawEllipse(seen(pose.head) - QPointF(0, r), r, r);
   }
 }

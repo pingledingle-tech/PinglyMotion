@@ -367,10 +367,11 @@ LibraryPanel::LibraryPanel(QWidget* parent) : QWidget(parent)
     m_facts << value;
   }
   facts->setColumnStretch(1, 1);
-  column->addLayout(facts);
   column->addStretch(1);
   previewRow->addLayout(column, 1);
   details->addLayout(previewRow);
+  // the facts under the preview, so they keep their lines at the smallest docked width
+  details->addLayout(facts);
   m_use = new QPushButton(LibrarySpec::tr(LibrarySpec::use), m_details);
   m_use->setObjectName(QStringLiteral("libraryUse"));
   m_use->setMinimumHeight(TextSize::scaled(Size::controlDefault));

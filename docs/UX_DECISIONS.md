@@ -273,9 +273,19 @@ Drawn in the clickable mockup (`docs/mockup/index.html`, Joints panel, **Hands**
 - **Differences from the mockup, on purpose:** no "Changed, not a key yet" chip and no Set key step (a change is a key at once, see 6), and no Undo (not built yet, as for the other panels: save a copy before big changes). Reset hand's tip leaves out "Undo brings it back." for the same reason. The grid shows the program's angles, not the files' numbers (above). A grid row's name in the status line is the finger and the joint ("Index Finger Mid"). Typing something that is not a number says "Type a number, for example -40." in the status line and changes nothing.
 - **For the next combined review (look and feel, not blocking):** whether the nine poses look right on the figure and on a Second Life avatar (a picture test against Firestorm was not made), how the half-way bend looks, the tile pictures, the chip, the grid's cells, the spacing at 200 percent text, and the panel in a narrow Joints panel (two columns of tiles under 200 pixels).
 
-## 6l. Library panel (drawn in the mockup, 23 November 2026, not built)
+## 6l. Library panel (built, 23 November 2026)
 
-Roadmap item 6 ("Reference library browser", issue 19). The project owner said «Tegn nå» in the design review of 23 November 2026 (about 15:05 to 15:25): draw it first, look at it, then build. Drawn in `docs/mockup/index.html`; the texts are drafts `LIB-01` to `LIB-27` in [TEACHING.md](TEACHING.md). Nothing in the program changes until the owner says ok.
+Roadmap item 6 ("Reference library browser", issue 19). The project owner said «Tegn nå» in the design review of 23 November 2026 (about 15:05 to 15:25): draw it first, look at it, then build. Drawn in `docs/mockup/index.html`; the texts are `LIB-01` to `LIB-27` in [TEACHING.md](TEACHING.md). The owner approved the mockup on 23 November 2026, 17:05 («Det ser bra ut»).
+
+**Built (pull request 437):** `src/librarypanel.*` (the panel and its dock), `src/libraryindex.*` (reads `library/index.json`, the search rule of `find_reference`, the kinds and their counts, the facts in words; the texts in one table, `LibrarySpec`) and `src/librarypreview.*` (the preview). Tested exactly by `tests/librarypanel` (search hits for given words, the kind filter, every text, Use this opening the right file through `load_reference`, the unsaved-changes question, both empty states, the welcome card's three clips, the keyboard, the preview, and the panel's place, float and size after a restart). Differences from the drawing, all small:
+
+- The preview is the clip itself on a small stick figure of the 19 classic joints, turned a little as in the mockup; the walk moves on the spot (the hip's way over the floor is left out so the figure stays in the box). Stopped, it shows the clip's first frame (not the reference pose in front of it).
+- The facts stand under the preview and its button at every width (the mockup puts them beside it when there is room), so they keep their lines in the narrow docked column.
+- "Add as a second figure" is not built here: it comes with two figures (6m).
+- The search text, the kind and the picked clip are not kept between starts (the mockup keeps them in its own store); the panel's place, float, size and whether it is open are saved with the layout like the other panels.
+- F6 (Next area) is still not built for any panel.
+
+The look (sizes, the row and chip drawing, the preview figure) waits for the combined review.
 
 **What is shown**
 
