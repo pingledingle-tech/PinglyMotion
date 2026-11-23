@@ -55,6 +55,8 @@ class QTableWidget;
 class Animation;
 class BVHNode;
 class JointInfo;
+class HandsPanel;
+namespace HandPose { struct Write; }
 class PinglyMotion;
 struct RotationLimits;
 class ControlApi;
@@ -359,6 +361,12 @@ class PinglyMotionWindow : public QMainWindow
     QTabBar* m_jointTabs=nullptr;
     QLineEdit* m_jointSearch=nullptr;
     QTableWidget* m_jointTable=nullptr;
+    // the Hands tab (UX phase 2c, src/handstab.h): shown instead of the joint
+    // table while the Hands tab is chosen and the search box is empty
+    HandsPanel* m_handsPanel=nullptr;
+    void refreshHandsPanel();
+    void handsChangeRequested(const QVector<HandPose::Write>& writes,const QString& message);
+    void handsJointPicked(const QString& name);
     // friendly names and sections from data/firestorm (empty when not found)
     QSharedPointer<JointInfo> m_jointInfo;
     // track number of each row in the joint table, -1 for heading rows

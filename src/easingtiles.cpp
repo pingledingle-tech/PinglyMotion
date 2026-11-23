@@ -312,8 +312,8 @@ void EasingTile::paintEvent(QPaintEvent*)
     painter.setPen(Qt::NoPen);
     painter.setBrush(mark);
     painter.drawEllipse(badge);
-    // Lucide "check" (the mockup's icon), drawn from its path
-    static const QPainterPath check=LucideIcons::fromSvgPath(QStringLiteral("M20 6 9 17l-5-5"));
+    // Lucide "check", the mockup's icon
+    const QPainterPath check=LucideIcons::path(QStringLiteral("check"));
     painter.save();
     painter.translate(badge.topLeft()+QPointF(2,2));
     const double scale=(TickSize-4)/24.0;

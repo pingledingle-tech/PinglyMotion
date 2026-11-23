@@ -84,6 +84,8 @@
 #include "prop.h"
 #include "jointgroups.h"
 #include "jointinfo.h"
+#include "handpose.h"
+#include "handstab.h"
 #include "jointlist.h"
 #include "lucideicons.h"
 #include "textsize.h"
@@ -610,6 +612,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
     ui->timelineView->setHintsOn(on);
     m_scriptLabPanel->setHintsOn(on);   // the Script Lab panel's explanation line
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);   // the Selected joint panel's hint line
+    refreshHandsPanel();   // the Hands tab's hint lines
     if(m_hintsAction) m_hintsAction->setChecked(on);   // Help > Show hints follows the switch
   });
   buildMenus();
@@ -1151,6 +1154,7 @@ void PinglyMotionWindow::buildMenus()
     if(m_viewToolbar) m_viewToolbar->applyLook();
     if(m_reasonLine) m_reasonLine->applyLook();
     if(m_selectedJoint) m_selectedJoint->applyLook();
+    if(m_handsPanel) m_handsPanel->applyLook();
     fitPanelWidths();
     fillJointTable();
     ui->animationView->update();
@@ -1166,6 +1170,8 @@ void PinglyMotionWindow::buildMenus()
     UserSettings::setExpertMode(on);
     // the timeline's Paste mirrored button is an Expert mode control (UX phase 3b, the mockup)
     if(m_panels && m_panels->pasteMirrored) m_panels->pasteMirrored->setVisible(on);
+    // and the Hands tab's joint grid (UX phase 2c)
+    refreshHandsPanel();
     statusBar()->showMessage(on ? tr("Expert mode is on. Paste mirrored shows on the timeline; more controls come in later updates.")
                                 : tr("Beginner mode is on."),5000);
   });
@@ -1209,6 +1215,7 @@ void PinglyMotionWindow::buildMenus()
     ui->timelineView->setHintsOn(on);
     m_scriptLabPanel->setHintsOn(on);
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);
+    refreshHandsPanel();
     m_tipsSwitch->setOn(on);
   });
   ui->menuHelp->addAction(m_hintsAction);
@@ -1761,6 +1768,7 @@ void PinglyMotionWindow::changeEvent(QEvent* event)
     // rows and panels as big as the new text needs
     m_jointTable->verticalHeader()->setDefaultSectionSize(m_jointTable->fontMetrics().height()+6);
     m_jointTable->setMinimumHeight(10*m_jointTable->verticalHeader()->defaultSectionSize());
+
     fitPanelWidths();
     scheduleReflow();
   }
@@ -1918,6 +1926,14 @@ void PinglyMotionWindow::buildJointPicker()
   m_jointTable->setAlternatingRowColors(true);
   m_jointTable->setMinimumHeight(10*m_jointTable->verticalHeader()->defaultSectionSize());
 
+  // the Hands tab (UX phase 2c, docs/mockup): ready-made finger poses, Bend each
+  // finger and the joint grid, shown instead of the table on the Hands tab
+  m_handsPanel=new HandsPanel(HandPose::presets(*m_jointInfo),ui->jointPicker);
+  m_handsPanel->hide();
+  connect(m_handsPanel,&HandsPanel::changeRequested,this,&PinglyMotionWindow::handsChangeRequested);
+  connect(m_handsPanel,&HandsPanel::jointPicked,this,&PinglyMotionWindow::handsJointPicked);
+  connect(m_handsPanel,&HandsPanel::statusMessage,this,[this](const QString& text) { statusBar()->showMessage(text,5000); });
+
   // Whole pose: Flip, T-pose and Reset all, every joint of the current
   // frame, not just the selected one (posing UX phase 2a, docs/mockup)
   QWidget* wholePoseRow=new QWidget(ui->jointPicker);
@@ -1971,6 +1987,7 @@ void PinglyMotionWindow::buildJointPicker()
   layout->addWidget(m_jointTabs);
   layout->addWidget(m_jointSearch);
   layout->addWidget(m_jointTable);
+  layout->addWidget(m_handsPanel);
   layout->addWidget(wholePoseRow);
 
   // a click on a tab shows that tab again, so the search is cleared
@@ -2060,6 +2077,69 @@ void PinglyMotionWindow::fillJointTable()
     nodeMapping << r.track;
   }
   showSelectedTrack();
+
+  // the Hands tab shows the finger poses instead of the list; a search shows the list again
+  if(m_handsPanel)
+  {
+    const bool hands=m_jointTabs->currentIndex()==JointGroups::HandsTab && m_jointSearch->text().isEmpty();
+    m_jointTable->setVisible(!hands);
+    m_handsPanel->setVisible(hands);
+    if(hands) refreshHandsPanel();
+  }
+}
+
+// The Hands tab follows the window: an animation open, why nothing can change
+// now, the Left / Right / Mirror switch, the picked joint, both hands' angles at
+// this frame, Expert mode and hints (UX phase 2c)
+void PinglyMotionWindow::refreshHandsPanel()
+{
+  if(!m_handsPanel || !m_handsPanel->isVisibleTo(ui->jointPicker)) return;
+  Animation* anim=scene ? scene->getAnimation() : nullptr;
+  HandsPanel::State state;
+  state.open=!m_empty && anim;
+  if(state.open && playstate!=PLAYSTATE_STOPPED)
+    state.blocked=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyStopPlaying);
+  else if(state.open && protect)
+    state.blocked=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyLocked);
+  state.sideMode=m_jointSide;
+  state.pickedJoint=currentPart ? currentPart->name() : QString();
+  if(state.open)
+  {
+    state.left=HandPose::read(anim,HandPose::Side::Left);
+    state.right=HandPose::read(anim,HandPose::Side::Right);
+  }
+  state.expert=UserSettings::expertMode();
+  state.hints=UserSettings::tipsOn();
+  m_handsPanel->setState(state);
+}
+
+// a preset, a finger slider, a grid cell or Reset hand: each changed joint gets a key
+// at this frame (a turn is a key at once, as with the Selected joint panel's sliders)
+void PinglyMotionWindow::handsChangeRequested(const QVector<HandPose::Write>& writes,const QString& message)
+{
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim || protect || playstate!=PLAYSTATE_STOPPED) return;
+  const int changed=HandPose::apply(anim,writes);
+  if(currentPart)
+  {
+    const QVector3D rotation=anim->getRotation(currentPart);
+    setX(rotation.x());
+    setY(rotation.y());
+    setZ(rotation.z());
+  }
+  updateKeyBtn();
+  ui->animationView->update();
+  refreshHandsPanel();
+  // the frame as the frame counter shows it (from 1)
+  statusBar()->showMessage(message+QLatin1Char(' ')+HandsSpec::keySet(anim->getFrame()+1,changed),5000);
+}
+
+// a row of the joint grid was picked: pick that joint, as a click on the figure does
+void PinglyMotionWindow::handsJointPicked(const QString& name)
+{
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim) return;
+  if(BVHNode* node=HandPose::node(anim,name)) ui->animationView->selectPart(node);
 }
 
 // mark the selected joint in the table, if it is listed
@@ -2153,6 +2233,7 @@ void PinglyMotionWindow::resetAllClicked()
 // "Pick a joint" without a picked joint, else the picked joint (UX phase 2b)
 void PinglyMotionWindow::refreshJointPanel()
 {
+  refreshHandsPanel();
   if(!m_selectedJoint) return;
   Animation* anim=scene ? scene->getAnimation() : nullptr;
   if(m_empty || !anim)
@@ -2874,6 +2955,8 @@ bool PinglyMotionWindow::clearOpenFiles()
 // convenience function to set window title in a defined way
 void PinglyMotionWindow::setCurrentFile(const QString& fileName)
 {
+  // "Pose: changed from ..." on the Hands tab belongs to the file it was picked in
+  if(m_handsPanel && fileName!=currentFile) m_handsPanel->forgetPicks();
   currentFile=fileName;
   updateWindowTitle();
 }

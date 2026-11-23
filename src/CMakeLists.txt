@@ -56,6 +56,8 @@ SET (PINGLYMOTION_SHARED_SRC
               easing.cpp
               easingtiles.cpp
               gltfimport.cpp
+              handpose.cpp
+              handstab.cpp
               importoptions.cpp
               jointinfo.cpp
               lucideicons.cpp

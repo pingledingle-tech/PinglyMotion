@@ -13,8 +13,8 @@
  * (JointList, posing UX step 2).
  *
  * The hand presets are kept as Firestorm stores them: Euler angles in radians in
- * Firestorm's own axes. They are NOT in PinglyMotion's BVH rotation model; the
- * conversion is still open (see the README).
+ * Second Life's joint axes. HandPose::presets() (src/handpose.h) turns them into
+ * PinglyMotion's angles for the Hands tab (UX phase 2c; see the README).
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
