@@ -23,6 +23,8 @@
 
 #include <QFrame>
 
+#include "timelinerows.h"
+
 /**
   @author Zi Ree
 */
@@ -43,6 +45,8 @@ class Timeline : public QFrame
     int selectedTrack() const { return trackSelected; }
     // joint groups were shown or hidden (JointGroups)
     void layoutChanged();
+    // the joints that have a row (UX phase 3a: changed joints and the selected one)
+    const TimelineRows& rows() const { return rows_; }
 
   signals:
     void positionCenter(int pos);
@@ -51,6 +55,8 @@ class Timeline : public QFrame
     void animationChanged(Animation* anim);
     void deleteFrame(int track,int frame);
     void insertFrame(int track,int frame);
+    // other joints have a row now (a joint changed, or another one was selected)
+    void rowsChanged();
 
   public slots:
     void setCurrentFrame(int frame);
@@ -73,6 +79,14 @@ class Timeline : public QFrame
     void drawKeyframe(int track,int frame);
     void drawTrack(int track);
     bool isDirty(int frame);      // returns true if frame is inside "dirty" redraw region
+    // the rows moved: draw them all again and tell the panel
+    void rowsMoved();
+    // as wide as the frames and as high as the rows
+    void fitSize();
+    // the body area of a joint's row (TimelineRows::areaOfTrack)
+    int areaOf(int track) const { return rows_.areaOfTrack(track); }
+
+    TimelineRows rows_;
 
     Animation* animation;
 

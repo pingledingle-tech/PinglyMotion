@@ -58,10 +58,20 @@ struct Fixture
     JointGroups::setTracks(names);
     view.getTimeline()->setAnimation(&anim);
     anim.setNumberOfFrames(30);
+    // only changed joints have a row (UX phase 3a): every joint turned at frame 25
+    anim.setFrame(25);
+    for (int t = 1; t < Constants::numParts(); ++t)
+      if (anim.getPartName(t) != QLatin1String("Site") && JointGroups::rowOfTrack(t) >= 0)
+        anim.setRotation(anim.getNode(t), 10, 0, 0);
+    anim.setFrame(0);
   }
-  int track() { return JointGroups::trackOfRow(2); }
-  int otherTrack() { return JointGroups::trackOfRow(4); }
-  static int rowY(int track) { return JointGroups::rowOfTrack(track) * Constants::lineHeight() + 1; }
+  // two joints of the Body area
+  int track() { return view.rows().trackOfRow(2); }
+  int otherTrack() { return view.rows().trackOfRow(4); }
+  int rowY(int track) { return view.rows().rowOfTrack(track) * Constants::lineHeight() + 1; }
+  // a Body row: surface with 5 percent area_body, the name 9 percent (src/timelinelook.h)
+  static QColor bodyRow(bool dark) { return Theme::mix(Theme::color(Token::Surface, dark), Theme::color(Token::AreaBody, dark), 0.05); }
+  static QColor bodyName(bool dark) { return Theme::mix(Theme::color(Token::Surface, dark), Theme::color(Token::AreaBody, dark), 0.09); }
   // a point inside the first block of ten frames and one inside the second,
   // clear of the key frames at the first and the last frame and of the line
   // at the current frame
@@ -109,39 +119,40 @@ void UxColoursTest::timelineRowsAreTokenColours()
     Timeline* timeline = f.view.getTimeline();
     TimelineTracks* names = f.view.tracks();
     QString why;
-    // a normal row: surface; the next block of ten frames is mixed toward the background
-    why = check(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), Fixture::rowY(normal)),
-                Theme::color(Token::Surface, v.dark), v.name() + " normal row");
+    // a normal row: surface tinted with its area colour; the next block of ten frames is mixed toward the background
+    QCOMPARE(f.view.rows().areaOfTrack(normal), int(JointGroups::BodyTab));
+    why = check(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), f.rowY(normal)),
+                Fixture::bodyRow(v.dark), v.name() + " normal row");
     QVERIFY2(why.isEmpty(), qPrintable(why));
-    why = check(image, &f.view, timeline, QPoint(Fixture::blockOneX(), Fixture::rowY(normal)),
-                Theme::mix(Theme::color(Token::Surface, v.dark), Theme::color(Token::Background, v.dark), 0.35),
+    why = check(image, &f.view, timeline, QPoint(Fixture::blockOneX(), f.rowY(normal)),
+                Theme::mix(Fixture::bodyRow(v.dark), Theme::color(Token::Background, v.dark), 0.35),
                 v.name() + " normal row, second block");
     QVERIFY2(why.isEmpty(), qPrintable(why));
     // the selected row: selection, and its second block
-    why = check(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), Fixture::rowY(selected)),
+    why = check(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), f.rowY(selected)),
                 Theme::color(Token::Selection, v.dark), v.name() + " selected row");
     QVERIFY2(why.isEmpty(), qPrintable(why));
-    why = check(image, &f.view, timeline, QPoint(Fixture::blockOneX(), Fixture::rowY(selected)),
+    why = check(image, &f.view, timeline, QPoint(Fixture::blockOneX(), f.rowY(selected)),
                 Theme::mix(Theme::color(Token::Selection, v.dark), Theme::color(Token::Background, v.dark), 0.35),
                 v.name() + " selected row, second block");
     QVERIFY2(why.isEmpty(), qPrintable(why));
     // the line at the current frame (frame 0), in the row of a normal track
-    why = check(image, &f.view, timeline, QPoint(Constants::keyWidth() / 2, Fixture::rowY(normal)),
+    why = check(image, &f.view, timeline, QPoint(Constants::keyWidth() / 2, f.rowY(normal)),
                 Theme::color(Token::Danger, v.dark), v.name() + " current frame line");
     QVERIFY2(why.isEmpty(), qPrintable(why));
     // the track names: the right edge of the row is the row colour (names start 2 pixels lower)
-    const QPoint nameEdge(names->width() - 2, Fixture::rowY(normal));
-    why = check(image, &f.view, names, nameEdge, Theme::color(Token::Surface, v.dark), v.name() + " name row");
+    const QPoint nameEdge(names->width() - 2, f.rowY(normal));
+    why = check(image, &f.view, names, nameEdge, Fixture::bodyName(v.dark), v.name() + " name row");
     QVERIFY2(why.isEmpty(), qPrintable(why));
-    why = check(image, &f.view, names, QPoint(names->width() - 2, Fixture::rowY(selected) + 2),
+    why = check(image, &f.view, names, QPoint(names->width() - 2, f.rowY(selected) + 2),
                 Theme::color(Token::Selection, v.dark), v.name() + " selected name row");
     QVERIFY2(why.isEmpty(), qPrintable(why));
     // light is light and dark is dark: not the old dark timeline in the light theme
-    const QColor row = UiRender::colourAt(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), Fixture::rowY(normal)));
+    const QColor row = UiRender::colourAt(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), f.rowY(normal)));
     QVERIFY2(v.dark ? row.lightness() < 100 : row.lightness() > 200, qPrintable(v.name()));
     // a wrong expectation is reported
-    QVERIFY(!check(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), Fixture::rowY(normal)),
-                   Theme::color(Token::Surface, !v.dark), "wrong").isEmpty());
+    QVERIFY(!check(image, &f.view, timeline, QPoint(Fixture::blockZeroX(), f.rowY(normal)),
+                   Fixture::bodyRow(!v.dark), "wrong").isEmpty());
   }
 }
 
@@ -150,22 +161,22 @@ void UxColoursTest::themeSwitchRedrawsTimeline()
   UiRender::Scope scope({true, 100});
   Fixture f;
   const int normal = f.otherTrack();
-  const QPoint point(Fixture::blockZeroX(), Fixture::rowY(normal));
+  const QPoint point(Fixture::blockZeroX(), f.rowY(normal));
   const QImage darkImage = UiRender::render(&f.view);
-  QVERIFY2(check(darkImage, &f.view, f.view.getTimeline(), point, Theme::color(Token::Surface, true), "dark").isEmpty(), "dark first");
+  QVERIFY2(check(darkImage, &f.view, f.view.getTimeline(), point, Fixture::bodyRow(true), "dark").isEmpty(), "dark first");
   // the same open timeline, theme switched like Options > Dark theme does
   Theme::apply(false);
   QCoreApplication::processEvents();
   const QImage lightImage = f.view.grab().toImage();
-  const QString why = check(lightImage, &f.view, f.view.getTimeline(), point, Theme::color(Token::Surface, false), "light after switch");
+  const QString why = check(lightImage, &f.view, f.view.getTimeline(), point, Fixture::bodyRow(false), "light after switch");
   QVERIFY2(why.isEmpty(), qPrintable(why));
-  const QString namesWhy = check(lightImage, &f.view, f.view.tracks(), QPoint(f.view.tracks()->width() - 2, Fixture::rowY(normal)),
-                                 Theme::color(Token::Surface, false), "light names after switch");
+  const QString namesWhy = check(lightImage, &f.view, f.view.tracks(), QPoint(f.view.tracks()->width() - 2, f.rowY(normal)),
+                                 Fixture::bodyName(false), "light names after switch");
   QVERIFY2(namesWhy.isEmpty(), qPrintable(namesWhy));
   Theme::apply(true);
   QCoreApplication::processEvents();
   const QImage back = f.view.grab().toImage();
-  QVERIFY2(check(back, &f.view, f.view.getTimeline(), point, Theme::color(Token::Surface, true), "dark again").isEmpty(), "dark again");
+  QVERIFY2(check(back, &f.view, f.view.getTimeline(), point, Fixture::bodyRow(true), "dark again").isEmpty(), "dark again");
 }
 
 void UxColoursTest::timelineLookAnswers()

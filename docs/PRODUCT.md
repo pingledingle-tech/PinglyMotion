@@ -134,7 +134,8 @@ The work runs in **two tracks side by side**. They mostly change different files
 - Selected joint panel: X / Y / Z sliders with the allowed range, the near-limit warning with "Turn limits off", Turn / Move, and the empty cards (values and texts built in UX phase 2b, [UX_DECISIONS.md, 6](UX_DECISIONS.md#6-selected-joint-panel); its look and the rings and dragging in the 3D view come later).
 - Left / Right / Mirror and the whole-pose buttons.
 - **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL (validated in Firestorm on 21 November 2026, [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)).
-- The remaining posing steps: Hands tab, timeline, help tips and hint bar, command search, pose library and export selection, settings, visual polish and own icon, 3D view follows the tab.
+- Timeline: rows only for changed joints and the picked one, coloured and named by body area, Set key as the main button and "No keys yet" (behaviour built in UX phase 3a, [UX_DECISIONS.md, 5](UX_DECISIONS.md#5-timeline-look); range copy and Paste mirrored, and the notes line, come later).
+- The remaining posing steps: Hands tab, help tips and hint bar, command search, pose library and export selection, settings, visual polish and own icon, 3D view follows the tab.
 
 **Track 2 – file formats (old #118)**
 

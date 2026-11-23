@@ -2163,6 +2163,10 @@ Pick a smaller file, then try again.</source>
         <source>Reset all joints of this frame</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Set key</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -5221,6 +5225,53 @@ Error: %2</source>
     <name>Timeline</name>
     <message>
         <source>Timeline</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TimelineView</name>
+    <message>
+        <source>Body</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Face</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hands</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The timeline shows your keys over time. Open an animation first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No keys yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set a key to save your first pose.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set the first key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Key set at frame %1 for %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This frame has a key already. Turning the joint changes it.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

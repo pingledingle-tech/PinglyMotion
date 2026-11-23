@@ -7,6 +7,9 @@
  * (AnimationView::partClicked is connected to it). A click in the timeline
  * itself arrives through Timeline::trackClicked. The tests call that one
  * function and the signal, and check the exact result.
+ *
+ * Since UX phase 3a only changed joints have a row (tests/timelinerows), so
+ * the fixture turns every joint once to give the timeline a row for each.
  */
 #include <QtTest>
 #include <QScrollArea>
@@ -47,13 +50,20 @@ struct Fixture
     JointGroups::setTracks(names);
     view.getTimeline()->setAnimation(&anim);
     anim.setNumberOfFrames(20);
+    // every listed joint changed at frame 5, so each has a row
+    anim.setFrame(5);
+    for (int t = 1; t < Constants::numParts(); ++t)
+      if (anim.getPartName(t) != QLatin1String("Site") && JointGroups::rowOfTrack(t) >= 0)
+        anim.setRotation(anim.getNode(t), 10, 0, 0);
+    anim.setFrame(0);
     view.resize(600, 150);
     view.show();
     QTest::qWaitForWindowExposed(&view);
   }
   QScrollBar* bar() { return view.rowScroller()->verticalScrollBar(); }
+  const TimelineRows& rows() const { return view.rows(); }
   // the top of the row of a joint inside the scrolled content
-  static int rowTop(int track) { return JointGroups::rowOfTrack(track) * Constants::lineHeight() + 2; }
+  int rowTop(int track) const { return rows().rowOfTrack(track) * Constants::lineHeight() + 2; }
   // the whole row lies inside the visible part
   bool rowVisible(int track)
   {
@@ -67,9 +77,9 @@ struct Fixture
         && view.tracks()->selectedTrackNumber() == track;
   }
   // the tracks with the first and the last row
-  int firstTrack() { return JointGroups::trackOfRow(0); }
-  int lastTrack() { return JointGroups::trackOfRow(JointGroups::rowCount() - 1); }
-  int middleTrack() { return JointGroups::trackOfRow(JointGroups::rowCount() / 2); }
+  int firstTrack() { return rows().trackOfRow(0); }
+  int lastTrack() { return rows().trackOfRow(rows().rowCount() - 1); }
+  int middleTrack() { return rows().trackOfRow(rows().rowCount() / 2); }
 };
 
 void TimelineViewTest::listRouteShowsAndHighlightsRow()
@@ -78,16 +88,16 @@ void TimelineViewTest::listRouteShowsAndHighlightsRow()
   QVERIFY(f.bar()->maximum() > 0);
   QCOMPARE(f.bar()->value(), 0);
   // every row, top to bottom and back: shown and highlighted each time
-  for (int row = 0; row < JointGroups::rowCount(); ++row)
+  for (int row = 0; row < f.rows().rowCount(); ++row)
   {
-    const int track = JointGroups::trackOfRow(row);
+    const int track = f.rows().trackOfRow(row);
     f.view.selectTrack(track);
     QVERIFY2(f.rowVisible(track), qPrintable(QString("row %1 not visible").arg(row)));
     QVERIFY2(f.highlighted(track), qPrintable(QString("row %1 not highlighted").arg(row)));
   }
-  for (int row = JointGroups::rowCount() - 1; row >= 0; --row)
+  for (int row = f.rows().rowCount() - 1; row >= 0; --row)
   {
-    const int track = JointGroups::trackOfRow(row);
+    const int track = f.rows().trackOfRow(row);
     f.view.selectTrack(track);
     QVERIFY(f.rowVisible(track));
     QVERIFY(f.highlighted(track));
@@ -109,7 +119,7 @@ void TimelineViewTest::farJumpsScrollBack()
   Fixture f;
   const int first = f.firstTrack();
   const int last = f.lastTrack();
-  QVERIFY(JointGroups::rowOfTrack(last) > 20);
+  QVERIFY(f.rows().rowOfTrack(last) > 20);
   f.view.selectTrack(last);
   QVERIFY(f.bar()->value() > 0);
   f.view.selectTrack(first);
@@ -151,9 +161,9 @@ void TimelineViewTest::visibleRowDoesNotMove()
   f.view.selectTrack(track);
   QCOMPARE(f.bar()->value(), before);
   int visibleOther = -1;
-  for (int row = 0; row < JointGroups::rowCount(); ++row)
+  for (int row = 0; row < f.rows().rowCount(); ++row)
   {
-    const int t = JointGroups::trackOfRow(row);
+    const int t = f.rows().trackOfRow(row);
     if (t != track && f.rowVisible(t)) { visibleOther = t; break; }
   }
   QVERIFY(visibleOther >= 0);
