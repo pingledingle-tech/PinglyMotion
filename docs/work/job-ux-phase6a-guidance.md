@@ -1,6 +1,6 @@
 Branch: job/ux-phase6a-guidance
 Status: active
-Pull request: pending
+Pull request: #425
 Files:
 - src/welcomedialog.*
 - src/hintcard.*
