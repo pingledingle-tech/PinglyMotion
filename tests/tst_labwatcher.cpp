@@ -98,7 +98,7 @@ void TestLabWatcher::runOptionsAreChecked()
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"inputs", QJsonArray{QJsonObject{{"type", "wave"}}}}}).error,
            QString("Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                   "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\" or \"step\"."));
+                   "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\"."));
   QVERIFY(!w.watching());
   QVERIFY(w.watch(dir.path(), QJsonObject{{"seconds", 5}}).ok());
   QCOMPARE(w.runOptions().value("seconds").toInt(), 5);

@@ -83,7 +83,7 @@ void LslStubsTest::recordedOnly()
     llMakeExplosion(10, 1.0, 2.0, 3.0, 4.0, "tex", <0, 0, 1>); llMakeSmoke(1, 2.0, 3.0, 4.0, 5.0, "t", <1, 2, 3>);
     llMakeFire(2, 1.0, 1.0, 1.0, 1.0, "f", ZERO_VECTOR); llMakeFountain(3, 1.0, 1.0, 1.0, 1.0, 1, "f", ZERO_VECTOR, 0.5);
     llCollisionFilter("n", NULL_KEY, TRUE); llPassTouches(1); llPassCollisions(0);
-    llSetRemoteScriptAccessPin(1234); llSetParcelMusicURL("example.org/s"); llRefreshPrimURL(); llSetPrimURL("u");
+    llSetParcelMusicURL("example.org/s"); llRefreshPrimURL(); llSetPrimURL("u");
   )lsl");
   QVERIFY2(a["ok"].toBool(), qPrintable(a["error"].toString()));
   const QStringList expected({
@@ -100,7 +100,7 @@ void LslStubsTest::recordedOnly()
     rec("llMakeExplosion", "[10,1,2,3,4,\"tex\",[0,0,1]]"), rec("llMakeSmoke", "[1,2,3,4,5,\"t\",[1,2,3]]"),
     rec("llMakeFire", "[2,1,1,1,1,\"f\",[0,0,0]]"), rec("llMakeFountain", "[3,1,1,1,1,1,\"f\",[0,0,0],0.5]"),
     rec("llCollisionFilter", "[\"n\",\"00000000-0000-0000-0000-000000000000\",1]"), rec("llPassTouches", "[1]"), rec("llPassCollisions", "[0]"),
-    rec("llSetRemoteScriptAccessPin", "[1234]"), rec("llSetParcelMusicURL", "[\"example.org/s\"]"), rec("llRefreshPrimURL", "[]"), rec("llSetPrimURL", "[\"u\"]")});
+    rec("llSetParcelMusicURL", "[\"example.org/s\"]"), rec("llRefreshPrimURL", "[]"), rec("llSetPrimURL", "[\"u\"]")});
   QCOMPARE(entries(a, "recorded_only"), expected);
 }
 

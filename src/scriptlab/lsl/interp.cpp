@@ -270,8 +270,29 @@ void Interpreter::start(bool run)
   if (run) processQueue();
 }
 
+void Interpreter::startLoaded(bool running)
+{
+  if (m_started) return;
+  m_started = true;
+  if (m_script.states.empty()) { m_stopped = true; m_stopReason = "The script has no states."; return; }
+  try
+  {
+    initGlobals();
+  }
+  catch (const Stop& stop)
+  {
+    stopWith(stop);
+    return;
+  }
+  m_world.log(m_now, QJsonObject{{"type", "state"}, {"name", currentState()}});
+  enterState(0);
+  // not running: state_entry stays in the queue (nothing runs and new events are dropped) until llSetScriptState
+  if (!running) m_running = false;
+}
+
 void Interpreter::resetScript()
 {
+  m_world.scriptReset();
   // a reset frees the script's URLs and forgets the requests waiting for an answer (gap list 2, step 4)
   const int released = m_world.releaseAllUrls();
   m_incoming.clear();

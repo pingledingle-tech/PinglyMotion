@@ -95,7 +95,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 331 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list, eleven from the second round of pure functions, and 20 from the land and parcel job: 18 land and parcel functions plus `llAsin` and `llLog10`, and 16 from the leftover reads and media job, and 13 from the avatar and camera job); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 336 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list, eleven from the second round of pure functions, and 20 from the land and parcel job: 18 land and parcel functions plus `llAsin` and `llLog10`, and 16 from the leftover reads and media job, and 13 from the avatar and camera job, and five from the several-objects job: `llGiveInventoryList`, `llRemoteLoadScriptPin`, `llAllowInventoryDrop`, `llGetInventoryCreator` and `llGetInventoryDesc`, with `llSetRemoteScriptAccessPin` made real); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -772,7 +772,7 @@ smoke run on Linux and under the sanitizers) unless it says otherwise.
   `tst_lsllint`), and one test per step: several objects (`tst_lslworld`), linked scripts (`tst_lsllink`), pure
   functions (`tst_lslpure`), `on_rez` and `changed` (`tst_lslevents`), prim state and L$ (`tst_lslprims`), inventory
   (`tst_lslinventory`), sitting (`tst_lslsitting`), controls (`tst_lslcontrols`), sensors (`tst_lslsensors`), stubs
-  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`), touches (`tst_lsltouch`), region and avatar reads (`tst_lslregion`), money, web server and mail (`tst_lslmoney`), prim media (`tst_lslmedia`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
+  (`tst_lslstubs`), HTTP (`tst_lslhttp`), reads and state of the object itself (`tst_lslownobject`), touches (`tst_lsltouch`), region and avatar reads (`tst_lslregion`), money, web server and mail (`tst_lslmoney`), prim media (`tst_lslmedia`), several objects giving, loading scripts and inventory drop (`tst_lslobjects`) and RLV from a script (`tst_lslrlv`). Fuzz targets `fuzz_lsl` and
   `fuzz_control`.
 - **Live:** `tst_labwatcher.cpp` and the Live part of `tst_control.cpp`.
 - **Effects in the 3D view:** `tst_labeffects`, `tst_scriptlabeffects`, `tst_cameraoverride`,

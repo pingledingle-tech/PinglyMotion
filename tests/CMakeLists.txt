@@ -193,6 +193,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslrest_tests PRIVATE ${CMAKE_SOURCE_DI
 TARGET_LINK_LIBRARIES (pinglymotion_lslrest_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslrest COMMAND pinglymotion_lslrest_tests)
 
+# Script Lab: several objects (giving a list, remote script load, inventory drop)
+ADD_EXECUTABLE (pinglymotion_lslobjects_tests tst_lslobjects.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslobjects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslobjects_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslobjects COMMAND pinglymotion_lslobjects_tests)
+
 # Script Lab: avatar attach/detach, camera and teleport functions
 ADD_EXECUTABLE (pinglymotion_lslavatar_tests tst_lslavatar.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslavatar_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

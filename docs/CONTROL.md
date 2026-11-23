@@ -407,6 +407,10 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`sit_target` (step 9b-5: `set`, `offset`, `rotation`), `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
 | `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
 | `give_inventory` | `llGiveInventory` (step 9b-4) | `to`, `item`, `result` (`given`, `not_found`, `unknown_target` or `name_exists`) |
+| `give_inventory_list` | `llGiveInventoryList` (several-objects job) | `to`, `folder`, `items` (the names found and given), `result` (`given`, `not_found` when no item was found, `unknown_target`), `missing` and `name_exists` (names, only when there are any) |
+| `remote_pin` | `llSetRemoteScriptAccessPin` (several-objects job; the pin itself is not logged) | `enabled` |
+| `remote_load` | `llRemoteLoadScriptPin` (several-objects job) | `target`, `item` (the script's name), `running`, `param`, `result` (`loaded`, `replaced`, `wrong_pin`, `unknown_target`, `no_source`, `too_many_scripts` or `other_owner_attachment`) |
+| `allow_drop` | `llAllowInventoryDrop` (several-objects job) | `allow`, and `note` when a child prim's call was ignored |
 | `inventory` | a script removed an item with `llRemoveInventory` (step 9b-4) | `op` (`remove`), `item` |
 | `dataserver_request` | `llGetNotecardLine` or `llGetNumberOfNotecardLines` found the notecard; the `dataserver` event follows (step 9b-4) | `function`, `notecard`, `line` (not for the line count), `query` (the key the call returned) |
 | `rez` | `llRezObject` or `llRezAtRoot` (step 9b-4) | `item`, `position`, `velocity`, `rotation`, `param`, `at_root`, `result` (`ok` or `too_far`), `object` (the new object's key, with `ok`) |
@@ -572,7 +576,7 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   (page "transaction_result"); `INSUFFICIENTFUNDS`, `THROTTLED` and the like never happen here. Each call is a `linden_dollars` log entry.
 - **Recorded only:** `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` do nothing but write a
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
-  Step 9b-8 adds 37 more with the same behaviour: `llTriggerSoundLimited`, `llLoopSoundMaster`, `llLoopSoundSlave`, `llPlaySoundSlave`, `llSoundPreload`, `llAdjustSoundVolume`, `llSetSoundQueueing`, `llSetSoundRadius`, `llCollisionSound`, `llSetTextureAnim`, `llSetLinkTextureAnim`, `llOffsetTexture`, `llScaleTexture`, `llRotateTexture`, `llSetCameraEyeOffset`, `llSetCameraAtOffset`, `llSetCameraParams`, `llClearCameraParams`, `llSetLinkCamera`, `llSetPayPrice`, `llSetClickAction`, `llSetTouchText`, `llPointAt`, `llStopPointAt`, `llLookAt`, `llStopLookAt`, `llMakeExplosion`, `llMakeFountain`, `llMakeSmoke`, `llMakeFire`, `llCollisionFilter`, `llPassTouches`, `llPassCollisions`, `llSetRemoteScriptAccessPin`, `llSetParcelMusicURL`, `llRefreshPrimURL`, `llSetPrimURL`.
+  Step 9b-8 adds 37 more with the same behaviour: `llTriggerSoundLimited`, `llLoopSoundMaster`, `llLoopSoundSlave`, `llPlaySoundSlave`, `llSoundPreload`, `llAdjustSoundVolume`, `llSetSoundQueueing`, `llSetSoundRadius`, `llCollisionSound`, `llSetTextureAnim`, `llSetLinkTextureAnim`, `llOffsetTexture`, `llScaleTexture`, `llRotateTexture`, `llSetCameraEyeOffset`, `llSetCameraAtOffset`, `llSetCameraParams`, `llClearCameraParams`, `llSetLinkCamera`, `llSetPayPrice`, `llSetClickAction`, `llSetTouchText`, `llPointAt`, `llStopPointAt`, `llLookAt`, `llStopLookAt`, `llMakeExplosion`, `llMakeFountain`, `llMakeSmoke`, `llMakeFire`, `llCollisionFilter`, `llPassTouches`, `llPassCollisions`, `llSetRemoteScriptAccessPin` (real since the several-objects job: see "Several objects: giving, remote script load and inventory drop"), `llSetParcelMusicURL`, `llRefreshPrimURL`, `llSetPrimURL`.
 - **Land and parcel (second gap list):** the region is one parcel (x and y from 0 up to 256). Off the region: `llGetLandOwnerAt` gives NULL_KEY, `llGetParcelFlags` and `llGetParcelMaxPrims` 0, the list functions `[]`. `llOverMyLand` is 1 for a key the sandbox knows, 0 otherwise. `llGetParcelPrimCount` counts this object's prims for TOTAL and OWNER, 0 for other categories. `llGetParcelDetails` skips an unknown PARCEL_DETAILS_* number. Ban list, pass list, `llMapDestination`, `llEjectFromLand` write a `recorded_only` entry; `llReturnObjectsByOwner` and `llReturnObjectsByID` do too and answer 0. `llSetParcelMusicURL` records and stores the address for `llGetParcelMusicURL`. Canned values: name `Sandbox Parcel`, area 65536, 15000 prims, flags 134217803, TP routing 2.
 - **Animation overrides (step 9b-8):** `llSetAnimationOverride(state, animation)`, `llResetAnimationOverride(state)` (also `"ALL"`) and `llGetAnimationOverride(state)` need `PERMISSION_OVERRIDE_ANIMATIONS`; without it a debug line says so. An unknown state name gives a debug line. A successful set or reset writes an `animation_override` entry (`op`, `state`, `animation`), and the get answers the stored name, or an empty string.
 - **Movement and physics stubs (second gap list, step 6, part 1):** `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llRotLookAt` and `llVolumeDetect` do nothing but
@@ -705,8 +709,45 @@ are in the inventory too, as type `script` (an item may not have a script's name
   within 10 m of the rezzing object (exactly 10 m is fine; farther gives a `rez` entry with `result: too_far` and nothing else). On success the entry has the new object's key and
   the rezzing script gets `object_rez(key)`. The rezzed object is only a key: it does not run, has no `on_rez` and does not appear in the world (a copy-permission item stays in the
   inventory). The sandbox does not check the other limits of Second Life (the region's object limit, the rez throttle, no-copy items disappearing).
-- Not done: `llGetInventoryCreator`, `llGiveInventoryList`, `llGetNotecardLineSync`, `llGetInventoryAcquireTime`, `llSetRemoteScriptAccessPin` and
-  `llRemoteLoadScriptPin`; the `allowed_drop` flag; the `changed` event for an avatar dropping an item (use the `changed` input).
+- Not done: `llGetNotecardLineSync` and `llGetInventoryAcquireTime`. Giving a list, loading a script into another object and inventory drop: the next section.
+
+#### Several objects: giving, remote script load and inventory drop (Script Lab gap list)
+
+Between objects of the same `lsl_run` world these do what Second Life does; for anything else the sandbox only logs.
+No forced delay is simulated (Second Life sleeps 3 seconds in `llGiveInventoryList` and `llRemoteLoadScriptPin`, 0.2 in `llSetRemoteScriptAccessPin`).
+
+- An inventory item (in `inventory`, see above) may also have `creator` (a key) and `description` (at most 127 characters).
+  **`llGetInventoryCreator(name)`** gives `creator`, or the key of the owner of the object that holds it when none is given; an item given with
+  `llGiveInventory` or `llGiveInventoryList` keeps the giver's answer, so the receiver sees the giver's owner. **`llGetInventoryDesc(name)`** gives
+  `description` (empty by default). For a missing item both log the `debug` line `No item named '<name>'` and give `NULL_KEY` and an empty string
+  (the wiki says an error is shouted, but gives neither its text nor the return value).
+- **`llGiveInventoryList(target, folder, list)`** gives every item of the list this object has (other list entries than strings and keys are skipped, a
+  name twice counts once) and writes one `give_inventory_list` entry. To another object of the world: no folder is made, each item it does not have
+  yet goes into its inventory (names it has already are listed under `name_exists`; Second Life would rename them) and its scripts get one `changed`
+  with `CHANGED_INVENTORY` for the whole list. To the owner's avatar (or the owner of any object): `given` and nothing else (the folder is only logged).
+  Missing items are listed under `missing` (Second Life shouts an error whose text the wiki does not give); with no item found the result is `not_found`.
+- **`llSetRemoteScriptAccessPin(pin)`** sets the object's pin for remote loading; 0 (the start) turns remote loading off. The sandbox keeps one pin per
+  object, where Second Life keeps one per prim. A `remote_pin` entry says whether loading is on; the pin is not logged.
+- **`llRemoteLoadScriptPin(target, name, pin, running, start_param)`** copies a script of this object into another object of the world and writes a
+  `remote_load` entry. The sandbox has code only for the object's own scripts (the ones given with `source` or `scripts`), so a script that is only an
+  inventory item gives `no_source` and nothing is loaded. The target must have set the same pin, not 0 (else `wrong_pin` and the `debug` line
+  `Task <this object> trying to illegally load script onto task <target>!`, Second Life's text). A target worn by another owner gives
+  `other_owner_attachment` without a `debug` line (Second Life fails without a word there). The target's own key gives the `debug` line
+  `Unable to add item!` and a name that is missing or not a script `Couldn't find script '<name>'` (the sandbox's own text; the wiki gives none);
+  neither writes a `remote_load` entry. A key the sandbox does not know gives `unknown_target`. More than 32 scripts in the target or 64 in the
+  world give `too_many_scripts`. A loaded script goes into the target's root prim, after its other scripts, and appears in its inventory; a script
+  of the same name is replaced (`replaced`: it starts again with fresh memory). It is added once the scripts running at that moment have finished,
+  at the same simulated time. With `running` not 0 it gets `state_entry` (no `on_rez`); with 0 it waits until another script of the prim calls
+  `llSetScriptState(name, TRUE)`, then gets `state_entry`. `llGetStartParameter` in it gives `start_param` until the script resets, then 0. The
+  target's other scripts get `changed` with `CHANGED_INVENTORY`.
+- **`llAllowInventoryDrop(add)`** lets anyone drop items into the object (`allow_drop` entry). In a linkset only the root prim's call counts; a
+  child prim's call is ignored (with a `note`). A new input type `drop`, for `inputs` of `lsl_run` and for `lsl_event`, drops an item:
+  `{"at": 1, "type": "drop", "object": "box", "item": "Gift", "item_type": "texture", "name": "Ann", "id": "<avatar key>"}` (`item` is needed, 1 to 63
+  characters; `item_type` as an inventory `type`, default `notecard`; no `name` and `id`: the owner). The owner may always drop, and the scripts get
+  `changed` with `CHANGED_INVENTORY`. Anyone else only after `llAllowInventoryDrop(TRUE)`, and then the scripts get `changed` with
+  `CHANGED_ALLOWED_DROP` (64); a script from them is refused with `Not permitted to edit this!` (Second Life wiki). The dropped item's creator is
+  the avatar who dropped it. A name the object already has is refused (`name_exists`; Second Life would rename the new item). The `input` entry
+  has `item`, `item_type`, `id`, `result` (`dropped`, `refused` or `name_exists`), `change` when dropped, and `error` when not.
 
 #### The events on_rez and changed (Script Lab step 9b-2, issue 314)
 

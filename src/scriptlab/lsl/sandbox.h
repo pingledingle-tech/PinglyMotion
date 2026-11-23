@@ -96,7 +96,7 @@ struct SandboxInput
 {
   double at = 0.0;
   QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email,
-                                   // collision, land_collision, moving, at_target, not_at_target, step
+                                   // collision, land_collision, moving, at_target, not_at_target, step, drop
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -138,6 +138,10 @@ struct SandboxInput
   // moving_start/moving_end itself when the object's speed crosses MOVING_SPEED_THRESHOLD. No motion model yet
   // for llMoveToTarget, so at_target/not_at_target still only come from the manual inputs above (a later job).
   double dt = 0.0;
+  // several-objects job: "drop" puts an item into the object, as an avatar does by dragging it from their inventory
+  // (name and id: the avatar, empty: the owner). The owner may always; anyone else only after llAllowInventoryDrop(TRUE).
+  QString item;
+  int itemType = 7;
 };
 
 class Sandbox
@@ -259,6 +263,11 @@ class Sandbox
       float velocity[3] = {0.0f, 0.0f, 0.0f};
       float buoyancy = 0.0f;
       bool moving = false;
+      // several-objects job: llSetRemoteScriptAccessPin (0: remote loading off), llAllowInventoryDrop, and the limits
+      // its scripts were added with (a script loaded with llRemoteLoadScriptPin gets them too)
+      int remotePin = 0;
+      bool allowDrop = false;
+      Limits limits;
       int firstSlot = 0;
       int slotCount = 0;
     };
@@ -270,6 +279,20 @@ class Sandbox
       std::shared_ptr<const Script> script;
       std::unique_ptr<ObjectWorld> world;
       std::unique_ptr<Interpreter> interp;
+      // several-objects job: the start parameter llRemoteLoadScriptPin gave (until the script resets)
+      bool ownStartParameter = false;
+      int startParameter = 0;
+    };
+    // several-objects job: a script llRemoteLoadScriptPin puts into another object. It is added after the scripts have run
+    // (runQueues), because adding a script moves the others in m_slots.
+    struct PendingLoad
+    {
+      int object = 0;
+      QString name;
+      std::shared_ptr<const Script> script;
+      bool running = true;
+      int param = 0;
+      double time = 0.0;
     };
 
     QString add(const ObjectSpec& spec, const std::vector<ScriptEntry>& scripts, const Limits& limits, bool tagScripts);
@@ -284,6 +307,11 @@ class Sandbox
     // step 9b-4: the object's inventory changed (changed with CHANGED_INVENTORY to its scripts); llGiveInventory to a key
     void inventoryChanged(int from, double time);
     QString giveInventory(int from, double time, const QString& to, const InventoryItem& item);
+    // several-objects job: llGiveInventoryList, llRemoteLoadScriptPin (and the loads waiting to be done), llAllowInventoryDrop
+    QString giveInventoryList(int from, double time, const QString& to, const std::vector<InventoryItem>& items, QStringList& refused);
+    QString remoteLoadScript(int from, double time, const QString& target, const QString& name, int pin, bool running, int param);
+    bool applyLoads();
+    void dropInventory(const SandboxInput& input, int target, QJsonObject& entry, double t);
     // step 9b-5: llUnSit on an avatar sitting on the script's own object; an avatar sitting anywhere in the world
     bool unSit(int from, double time, const QString& key);
     // step 9b-9: http_response to every script in the prim of the requesting script
@@ -337,6 +365,7 @@ class Sandbox
     std::vector<SandboxInput> m_inputs;   // sorted by time, stable
     double m_now = 0.0;
     QJsonObject m_lastDialog;
+    std::vector<PendingLoad> m_loads;
 };
 
 } // namespace lsl
