@@ -57,7 +57,7 @@ void TestScriptLabCamera::boxAndText()
   QVERIFY(!box->isChecked());
   QVERIFY(!cameraOverride.enabled());
   // on the Commands page, right after the Actions list in the tab order (P8)
-  QScrollArea* commands = qobject_cast<QScrollArea*>(panel.tabs()->widget(0));
+  QScrollArea* commands = qobject_cast<QScrollArea*>(panel.tabs()->widget(ScriptLabPanel::CommandsPage));
   QVERIFY(commands);
   QCOMPARE(commands->widget(), box->parentWidget());
   QWidget* w = panel.actionList()->nextInFocusChain();

@@ -45,6 +45,10 @@
 #include "paneltitlebar.h"
 #include "rlvbehaviours.h"
 #include "rlvstate.h"
+#include "scriptlabsection.h"
+#include "lsl/lint.h"
+#include "lucideicons.h"
+#include "theme.h"
 
 #include "scriptlabpanel.h"
 
@@ -79,10 +83,14 @@ namespace
   const Tokens& tokens(bool dark) { return dark ? DarkTokens : LightTokens; }
 
   // design_tokens.json: spacing.s, spacing.m, spacing.l, control_height.default, radius.control
+  const int SpacingXs = 4;
   const int SpacingS = 8;
   const int SpacingM = 12;
   const int SpacingL = 16;
   const int ControlHeight = 32;
+  const int ControlCompact = 24;   // control_height.compact
+  const int ControlLarge = 40;     // control_height.large: empty-state actions
+  const int HeldChipHeight = 20;   // the mockup's .chip min-height
   const int RadiusControl = 6;
 
   const int LogLines = 500;
@@ -208,13 +216,63 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
 
   QVBoxLayout* outer = new QVBoxLayout(this);
   outer->setContentsMargins(0, 0, 0, 0);
-  outer->setSpacing(0);
+  outer->setSpacing(SpacingS);
+
+  // --- Viewer rules: RLV or RLVa, and how many restrictions are held (the mockup's top row)
+  QHBoxLayout* rules = new QHBoxLayout;
+  rules->setContentsMargins(SpacingM, SpacingS, SpacingM, 0);
+  rules->setSpacing(SpacingS);
+  m_modeLabel = sectionLabel(tr("Viewer rules"), this);
+  m_modeLabel->setObjectName("scriptLabModeLabel");
+  rules->addWidget(m_modeLabel);
+  QHBoxLayout* segment = new QHBoxLayout;
+  segment->setContentsMargins(0, 0, 0, 0);
+  segment->setSpacing(0);
+  const QString relog = tr("Switching removes every restriction, as after a relog.");
+  m_modeRlv = new QPushButton(QStringLiteral("RLV"), this);   // tr-ok: a product name
+  m_modeRlv->setObjectName("scriptLabModeRlv");
+  m_modeRlv->setToolTip(tr("Plain RLV, as the RLV wiki lists it.") + QLatin1Char(' ') + relog);
+  m_modeRlva = new QPushButton(QStringLiteral("RLVa"), this);   // tr-ok: a product name
+  m_modeRlva->setObjectName("scriptLabModeRlva");
+  m_modeRlva->setToolTip(tr("RLVa, as in Firestorm and other viewers.") + QLatin1Char(' ') + relog);
+  for (QPushButton* b : {m_modeRlv, m_modeRlva})
+  {
+    b->setCheckable(true);
+    b->setAutoExclusive(true);
+    b->setMinimumHeight(ControlCompact);
+    b->setAccessibleDescription(relog);
+    segment->addWidget(b);
+  }
+  m_modeRlva->setChecked(true);   // RLVa is the default (RlvState)
+  rules->addLayout(segment);
+  rules->addStretch(1);
+  m_heldChipFrame = new ScriptLabFrame(this);
+  m_heldChipFrame->setObjectName("scriptLabHeldChip");
+  m_heldChipFrame->setMinimumHeight(HeldChipHeight);
+  m_heldChipFrame->setToolTip(tr("How many RLV restrictions are held now, by every object together"));
+  QHBoxLayout* chip = new QHBoxLayout(m_heldChipFrame);
+  chip->setContentsMargins(SpacingS, 0, SpacingS, 0);
+  chip->setSpacing(SpacingXs);
+  m_heldIcon = new QLabel(m_heldChipFrame);
+  m_heldIcon->setObjectName("scriptLabHeldIcon");
+  chip->addWidget(m_heldIcon);
+  m_heldChip = new QLabel(m_heldChipFrame);
+  m_heldChip->setObjectName("scriptLabHeldText");
+  QFont caption = m_heldChip->font();   // the "caption" type token: 11 px next to the 13 px body
+  if (caption.pointSizeF() > 0) caption.setPointSizeF(caption.pointSizeF() * 11.0 / 13.0);
+  m_heldChip->setFont(caption);
+  chip->addWidget(m_heldChip);
+  rules->addWidget(m_heldChipFrame);
+  outer->addLayout(rules);
+  connect(m_modeRlv, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlv); });
+  connect(m_modeRlva, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlva); });
+
   m_tabs = new QTabWidget(this);
   m_tabs->setObjectName("scriptLabTabs");
   m_tabs->setDocumentMode(true);
-  outer->addWidget(m_tabs);
+  outer->addWidget(m_tabs, 1);
 
-  // --- page 1: RLV lines typed by hand (issue 288)
+  // --- the page "Type commands": RLV lines typed by hand (issue 288)
   QWidget* commandsPage = new QWidget(m_tabs);
   commandsPage->setObjectName("scriptLabCommandsPage");
   QVBoxLayout* layout = new QVBoxLayout(commandsPage);
@@ -251,10 +309,10 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_run->setMinimumHeight(ControlHeight);
   m_run->setToolTip(tr("Run the line (Enter)"));
 
-  m_reset = new QPushButton(tr("Reset"), this);
+  m_reset = new QPushButton(tr("Reset all"), this);
   m_reset->setObjectName("scriptLabReset");
   m_reset->setMinimumHeight(ControlHeight);
-  m_reset->setToolTip(tr("Remove every restriction of every object, as if all of them were taken off"));
+  m_reset->setToolTip(tr("Reset: remove every restriction of every object"));
 
   // the buttons get a row of their own, so the command field keeps its
   // width when the panel is docked narrow beside the others
@@ -274,29 +332,20 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
 
   // --- restrictions per object
   layout->addSpacing(SpacingL - SpacingS);
-  layout->addWidget(sectionLabel(tr("Restrictions"), this));
+  m_restrictionsSection = addSection(QStringLiteral("restrictions"), tr("Restrictions"), true, commandsPage, layout);
   m_empty = new QLabel(tr("No restrictions. Type a line above, for example @detach=n, and press Enter."), this);
   m_empty->setObjectName("scriptLabEmpty");
   m_empty->setWordWrap(true);
-  layout->addWidget(m_empty);
-  m_restrictions = new QTreeWidget(this);
+  m_restrictionsSection->bodyLayout()->addWidget(m_empty);
+  m_restrictions = makeRestrictionList(this);
   m_restrictions->setObjectName("scriptLabRestrictions");
-  m_restrictions->setHeaderLabels({tr("Behaviour"), tr("Option"), tr("Object")});
-  m_restrictions->setRootIsDecorated(false);
-  m_restrictions->setUniformRowHeights(true);
-  m_restrictions->setSelectionMode(QAbstractItemView::NoSelection);
-  m_restrictions->header()->setSectionResizeMode(QHeaderView::Stretch);
-  m_restrictions->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_restrictions->setToolTip(tr("Every restriction that is held, and which object holds it"));
-  m_restrictions->setMinimumHeight(4 * m_restrictions->fontMetrics().height() + 2 * SpacingS);
-  layout->addWidget(m_restrictions, 2);
+  m_restrictionsSection->bodyLayout()->addWidget(m_restrictions);
 
   // --- actions, allowed or blocked
-  layout->addSpacing(SpacingL - SpacingS);
-  layout->addWidget(sectionLabel(tr("Actions"), this));
+  m_actionsSection = addSection(QStringLiteral("actions"), tr("What the avatar may do"), true, commandsPage, layout);
   m_actions = new QTreeWidget(this);
   m_actions->setObjectName("scriptLabActions");
-  m_actions->setHeaderLabels({tr("Action"), tr("State")});
+  m_actions->setHeaderLabels({tr("Action"), tr("Now")});
   m_actions->setRootIsDecorated(false);
   m_actions->setUniformRowHeights(true);
   m_actions->setSelectionMode(QAbstractItemView::NoSelection);
@@ -311,7 +360,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
     item->setData(0, Qt::UserRole, action.id);
   }
   m_actions->setMinimumHeight(6 * m_actions->fontMetrics().height() + 2 * SpacingS);
-  layout->addWidget(m_actions, 3);
+  m_actionsSection->bodyLayout()->addWidget(m_actions);
 
   // --- camera limits in the 3D view (job 7b), off at start
   m_cameraBox = new QCheckBox(tr("Show camera limits in 3D view"), commandsPage);
@@ -372,57 +421,129 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
 
   // --- replies and messages
   layout->addSpacing(SpacingL - SpacingS);
-  layout->addWidget(sectionLabel(tr("Replies and messages"), this));
+  m_repliesSection = addSection(QStringLiteral("replies"), tr("Replies and messages"), true, commandsPage, layout);
   m_log = new QPlainTextEdit(this);
   m_log->setObjectName("scriptLabLog");
   m_log->setReadOnly(true);
   m_log->setMaximumBlockCount(LogLines);
   m_log->setToolTip(tr("The lines you ran, what happened, and the replies a script would hear on its channel"));
   m_log->setMinimumHeight(4 * m_log->fontMetrics().height() + 2 * SpacingS);
-  layout->addWidget(m_log, 2);
+  m_repliesSection->bodyLayout()->addWidget(m_log);
+  connect(m_log, &QPlainTextEdit::textChanged, this, &ScriptLabPanel::refreshCounts);
+  layout->addStretch(1);
 
-  // --- objects of the last LSL run and the newest dialog (step 5); hidden until a script has run
-  m_objectsView = new ScriptLabObjectsView(commandsPage);
-  layout->addWidget(m_objectsView, 2);
-  // with the camera box (job 7b) the page is taller than a small docked panel: it scrolls, as the Live page does
+  // the page is taller than a small docked panel: it scrolls, as the Live page does
   QScrollArea* commandsScroll = new QScrollArea(m_tabs);
   commandsScroll->setObjectName("scriptLabCommandsScroll");
   commandsScroll->setWidgetResizable(true);
   commandsScroll->setFrameShape(QFrame::NoFrame);
   commandsScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   commandsScroll->setWidget(commandsPage);
-  m_tabs->addTab(commandsScroll, tr("Commands"));
-  m_tabs->setTabToolTip(0, tr("Type RLV lines by hand and see what the avatar may still do"));
+
+  // the Live page first, as in the mockup
   buildLivePage();
+  m_tabs->insertTab(CommandsPage, commandsScroll, tr("Type commands"));
+  m_tabs->setTabToolTip(CommandsPage, tr("Commands: type RLV lines by hand"));
+  m_tabs->setCurrentIndex(LivePage);
 
   connect(m_command, &QLineEdit::returnPressed, this, &ScriptLabPanel::runCommandField);
   connect(m_run, &QPushButton::clicked, this, &ScriptLabPanel::runCommandField);
   connect(m_reset, &QPushButton::clicked, this, &ScriptLabPanel::resetAll);
 
   // tab order follows the screen (charter P8)
+  setTabOrder(m_modeRlv, m_modeRlva);
   setTabOrder(m_object, m_command);
   setTabOrder(m_command, m_run);
   setTabOrder(m_run, m_reset);
-  setTabOrder(m_reset, m_restrictions);
-  setTabOrder(m_restrictions, m_actions);
+  setTabOrder(m_reset, m_restrictionsSection->header());
+  setTabOrder(m_restrictionsSection->header(), m_restrictions);
+  setTabOrder(m_restrictions, m_actionsSection->header());
+  setTabOrder(m_actionsSection->header(), m_actions);
   setTabOrder(m_actions, m_cameraBox);
   setTabOrder(m_cameraBox, m_environmentBox);
   setTabOrder(m_environmentBox, m_viewModesBox);
-  setTabOrder(m_viewModesBox, m_log);
-  setTabOrder(m_log, m_objectsView->list());
+  setTabOrder(m_viewModesBox, m_repliesSection->header());
+  setTabOrder(m_repliesSection->header(), m_log);
 
   applyStyle();
   refresh();
+  refreshMode();
   refreshLive();
   refreshInput();
+}
+
+ScriptLabSection* ScriptLabPanel::addSection(const QString& key, const QString& title, bool expanded, QWidget* page, QVBoxLayout* layout)
+{
+  ScriptLabSection* section = new ScriptLabSection(key, title, expanded, page);
+  m_sections << section;
+  layout->addWidget(section);
+  return section;
+}
+
+QTreeWidget* ScriptLabPanel::makeRestrictionList(QWidget* parent)
+{
+  QTreeWidget* list = new QTreeWidget(parent);
+  list->setHeaderLabels({tr("Behaviour"), tr("Option"), tr("Object")});
+  list->setRootIsDecorated(false);
+  list->setUniformRowHeights(true);
+  list->setSelectionMode(QAbstractItemView::NoSelection);
+  list->header()->setSectionResizeMode(QHeaderView::Stretch);
+  list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  list->setToolTip(tr("Every restriction that is held, and which object holds it"));
+  list->setMinimumHeight(4 * list->fontMetrics().height() + 2 * SpacingS);
+  return list;
+}
+
+ScriptLabSection* ScriptLabPanel::section(const QString& key) const
+{
+  for (ScriptLabSection* s : m_sections)
+    if (s->key() == key) return s;
+  return nullptr;
+}
+
+void ScriptLabPanel::setMode(Rlv::Mode mode)
+{
+  if (!m_state)
+  {
+    refreshMode();
+    return;
+  }
+  if (m_state->mode() == mode) return;
+  const int removed = static_cast<int>(m_state->restrictions().size());
+  m_state->setMode(mode);   // removes every restriction, as after a relog
+  appendLog(tr("Viewer rules: %1. %n restriction(s) removed.", nullptr, removed)
+              .arg(mode == Rlv::Mode::Rlv ? QStringLiteral("RLV") : QStringLiteral("RLVa")));
+  refresh();
+}
+
+void ScriptLabPanel::refreshMode()
+{
+  const bool rlv = m_state && m_state->mode() == Rlv::Mode::Rlv;
+  m_modeRlv->setChecked(rlv);
+  m_modeRlva->setChecked(!rlv);
+  for (QPushButton* b : {m_modeRlv, m_modeRlva})
+  {
+    QFont font = b->font();
+    font.setWeight(b->isChecked() ? QFont::DemiBold : QFont::Normal);   // a shape besides the fill (P10)
+    b->setFont(font);
+  }
+  m_modeRlv->setAccessibleName(tr("Viewer rules: RLV"));
+  m_modeRlva->setAccessibleName(tr("Viewer rules: RLVa"));
 }
 
 void ScriptLabPanel::setState(RlvState* state)
 {
   if (m_changedConnection) disconnect(m_changedConnection);
+  if (m_modeConnection) disconnect(m_modeConnection);
   m_state = state;
-  if (state) m_changedConnection = connect(state, &RlvState::changed, this, &ScriptLabPanel::refresh);
+  if (state)
+  {
+    m_changedConnection = connect(state, &RlvState::changed, this, &ScriptLabPanel::refresh);
+    // rlv_reset with a mode switches it too: the switch follows
+    m_modeConnection = connect(state, &RlvState::modeChanged, this, [this]() { refreshMode(); refresh(); });
+  }
   refresh();
+  refreshMode();
 }
 
 void ScriptLabPanel::setSession(lsl::Session* session)
@@ -472,6 +593,45 @@ void ScriptLabPanel::applyStyle()
     .arg(QLatin1String(t.textDisabled), QLatin1String(t.focusRing));
   m_unwatch->setStyleSheet(normal);
   m_openEditor->setStyleSheet(normal);
+  m_example->setStyleSheet(normal);
+  m_watch->setIcon(LucideIcons::icon(QStringLiteral("folder-open"), QColor(QLatin1String(t.onAccent)), QColor(QLatin1String(t.textDisabled))));
+  m_example->setIcon(LucideIcons::icon(QStringLiteral("flask-conical"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
+
+  // Viewer rules: two normal buttons joined into one segment; the chosen one has the
+  // selection fill, on_accent text and semibold (refreshMode), as the mockup's .seg
+  const QString selection = Theme::color(Theme::Token::Selection, dark).name(QColor::HexRgb).toUpper();
+  const QString segment = QStringLiteral(
+    "QPushButton { background: %1; color: %2; border: 1px solid %3; padding: 0 %4px; %5 }"
+    "QPushButton:checked { background: %6; color: %7; border: 1px solid %6; }"
+    "QPushButton:focus { border: 2px solid %8; }");
+  m_modeRlv->setStyleSheet(segment.arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.border)).arg(SpacingM)
+                           .arg(QStringLiteral("border-top-left-radius: %1px; border-bottom-left-radius: %1px;").arg(RadiusControl))
+                           .arg(selection, QLatin1String(t.onAccent), QLatin1String(t.focusRing)));
+  m_modeRlva->setStyleSheet(segment.arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.border)).arg(SpacingM)
+                            .arg(QStringLiteral("border-top-right-radius: %1px; border-bottom-right-radius: %1px;").arg(RadiusControl))
+                            .arg(selection, QLatin1String(t.onAccent), QLatin1String(t.focusRing)));
+
+  // the "held" chip: caption text with the ban icon, a round border, the border token 14 percent on the surface
+  const QColor surface = Theme::color(Theme::Token::Surface, dark);
+  const QColor border(QLatin1String(t.border));
+  m_heldChipFrame->setLook(border, Theme::mix(surface, border, 0.14), HeldChipHeight / 2, false);
+  QPalette chipText = m_heldChip->palette();
+  chipText.setColor(QPalette::WindowText, QColor(QLatin1String(t.text)));
+  m_heldChip->setPalette(chipText);
+  m_heldIcon->setPixmap(LucideIcons::icon(QStringLiteral("ban"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))).pixmap(16, 16));
+
+  // the empty state: a dashed card (radius.panel), a heading, one muted line and two large buttons
+  m_liveEmpty->setLook(border, QColor(), Theme::Size::radiusPanel, true);
+  QPalette muted = m_liveEmptyText->palette();
+  muted.setColor(QPalette::WindowText, QColor(QLatin1String(t.textMuted)));
+  m_liveEmptyText->setPalette(muted);
+  m_liveEmptyIcon->setPixmap(LucideIcons::icon(QStringLiteral("folder-open"), Theme::color(Theme::Token::AccentText, dark),
+                                               QColor(QLatin1String(t.textDisabled))).pixmap(20, 20));
+  m_liveRestrictionsEmpty->setPalette(muted);
+  m_tabs->setTabIcon(LivePage, LucideIcons::icon(QStringLiteral("file-code"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
+  if (m_tabs->count() > CommandsPage)
+    m_tabs->setTabIcon(CommandsPage, LucideIcons::icon(QStringLiteral("terminal"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
+  for (ScriptLabSection* section : m_sections) section->applyStyle(dark);
   m_touch->setStyleSheet(normal);
   m_say->setStyleSheet(normal);
   for (QPushButton* b : dialogButtons()) b->setStyleSheet(normal);
@@ -501,17 +661,26 @@ void ScriptLabPanel::refresh()
 {
   const bool dark = isDark(palette());
 
-  m_restrictions->clear();
   QVector<RlvState::Restriction> held;
   if (m_state) held = m_state->restrictions();
-  for (const RlvState::Restriction& r : held)
+  // the same list on both pages: "Restrictions" (Type commands) and "RLV restrictions now" (Live)
+  for (QTreeWidget* list : {m_restrictions, m_liveRestrictions})
   {
-    QTreeWidgetItem* item = new QTreeWidgetItem(m_restrictions);
-    item->setText(0, r.behaviour);
-    item->setText(1, r.option);
-    item->setText(2, r.object);
+    list->clear();
+    for (const RlvState::Restriction& r : held)
+    {
+      QTreeWidgetItem* item = new QTreeWidgetItem(list);
+      item->setText(0, r.behaviour);
+      item->setText(1, r.option);
+      item->setText(2, r.object);
+    }
+    list->setVisible(!held.isEmpty());
   }
   m_empty->setVisible(held.isEmpty());
+  m_liveRestrictionsEmpty->setVisible(held.isEmpty());
+  m_heldChip->setText(tr("%n held", nullptr, int(held.size())));
+  m_heldChipFrame->setAccessibleName(m_heldChip->text());
+  refreshCounts();
 
   QMap<QString, bool> allowed;
   if (m_state) allowed = m_state->actions();
@@ -605,6 +774,19 @@ QDockWidget* ScriptLabPanel::makeDock(QMainWindow* window, ScriptLabPanel* panel
 
 // --- Live (issue 292) -------------------------------------------------------
 
+void ScriptLabPanel::refreshCounts()
+{
+  if (!m_restrictionsSection || !m_liveRestrictionsSection || !m_repliesSection) return;
+  const int held = m_state ? int(m_state->restrictions().size()) : 0;
+  m_restrictionsSection->setCount(QString::number(held));
+  m_liveRestrictionsSection->setCount(QString::number(held));
+  // one entry for each line run, Reset or switch; the indented lines under it belong to it
+  int entries = 0;
+  for (QTextBlock block = m_log->document()->begin(); block.isValid(); block = block.next())
+    if (!block.text().isEmpty() && !block.text().startsWith(QStringLiteral("  "))) ++entries;
+  m_repliesSection->setCount(entries ? QString::number(entries) : tr("none"));
+}
+
 void ScriptLabPanel::buildLivePage()
 {
   QWidget* page = new QWidget(m_tabs);
@@ -613,38 +795,68 @@ void ScriptLabPanel::buildLivePage()
   layout->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
   layout->setSpacing(SpacingS);
 
-  // folder and its buttons
-  QLabel* folderLabel = new QLabel(tr("Folder"), page);
+  // --- the empty state: no folder watched (charter P4)
+  m_liveEmpty = new ScriptLabFrame(page);
+  m_liveEmpty->setObjectName("scriptLabLiveEmpty");
+  QVBoxLayout* card = new QVBoxLayout(m_liveEmpty);
+  card->setContentsMargins(SpacingL, SpacingL, SpacingL, SpacingL);
+  card->setSpacing(SpacingS);
+  QHBoxLayout* headingRow = new QHBoxLayout;
+  headingRow->setSpacing(SpacingS);
+  m_liveEmptyIcon = new QLabel(m_liveEmpty);
+  m_liveEmptyIcon->setObjectName("scriptLabLiveEmptyIcon");
+  headingRow->addWidget(m_liveEmptyIcon);
+  m_liveEmptyHeading = new QLabel(tr("No folder watched"), m_liveEmpty);
+  m_liveEmptyHeading->setObjectName("scriptLabLiveEmptyHeading");
+  QFont heading = m_liveEmptyHeading->font();   // the "heading" type token: 20 px next to the 13 px body
+  heading.setWeight(QFont::DemiBold);
+  if (heading.pointSizeF() > 0) heading.setPointSizeF(heading.pointSizeF() * 20.0 / 13.0);
+  m_liveEmptyHeading->setFont(heading);
+  headingRow->addWidget(m_liveEmptyHeading);
+  headingRow->addStretch(1);
+  card->addLayout(headingRow);
+  m_liveEmptyText = new QLabel(tr("Pick the folder with your .lsl scripts. Each time you save one, it is checked and run here."), m_liveEmpty);
+  m_liveEmptyText->setObjectName("scriptLabLiveEmptyText");
+  m_liveEmptyText->setWordWrap(true);
+  card->addWidget(m_liveEmptyText);
+
+  m_watch = new QPushButton(tr("Watch folder..."), m_liveEmpty);
+  m_watch->setObjectName("scriptLabWatch");
+  m_watch->setMinimumHeight(ControlLarge);
+  m_watch->setIconSize(QSize(20, 20));
+  m_watch->setToolTip(tr("Choose the folder with your .lsl scripts. Each time you save one, it is checked and run again here."));
+  m_example = new QPushButton(tr("Try the example scripts"), m_liveEmpty);
+  m_example->setObjectName("scriptLabTryExamples");
+  m_example->setMinimumHeight(ControlLarge);
+  m_example->setIconSize(QSize(20, 20));
+  QHBoxLayout* emptyButtons = new QHBoxLayout;
+  emptyButtons->setSpacing(SpacingS);
+  emptyButtons->addWidget(m_watch);
+  emptyButtons->addWidget(m_example);
+  emptyButtons->addStretch(1);
+  card->addLayout(emptyButtons);
+  layout->addWidget(m_liveEmpty);
+
+  // --- the folder and Stop watching, while watching
+  m_liveFolderLabel = new QLabel(tr("Folder"), page);
   m_liveFolder = new QLineEdit(page);
   m_liveFolder->setObjectName("scriptLabLiveFolder");
   m_liveFolder->setReadOnly(true);
   m_liveFolder->setMinimumHeight(ControlHeight);
   m_liveFolder->setPlaceholderText(tr("No folder watched"));
   m_liveFolder->setToolTip(tr("The folder with your .lsl scripts. It is only read, never changed."));
-  folderLabel->setBuddy(m_liveFolder);
-
-  m_watch = new QPushButton(tr("Watch folder..."), page);
-  m_watch->setObjectName("scriptLabWatch");
-  m_watch->setMinimumHeight(ControlHeight);
-  m_watch->setToolTip(tr("Choose the folder with your .lsl scripts. Each time you save one, it is checked and run again here."));
+  m_liveFolderLabel->setBuddy(m_liveFolder);
 
   m_unwatch = new QPushButton(tr("Stop watching"), page);
   m_unwatch->setObjectName("scriptLabUnwatch");
   m_unwatch->setMinimumHeight(ControlHeight);
 
-  QGridLayout* folderGrid = new QGridLayout;
-  folderGrid->setHorizontalSpacing(SpacingS);
-  folderGrid->setVerticalSpacing(SpacingS);
-  folderGrid->addWidget(folderLabel, 0, 0);
-  folderGrid->addWidget(m_liveFolder, 0, 1);
-  QHBoxLayout* folderButtons = new QHBoxLayout;
-  folderButtons->setSpacing(SpacingS);
-  folderButtons->addWidget(m_watch);
-  folderButtons->addStretch(1);
-  folderButtons->addWidget(m_unwatch);
-  folderGrid->addLayout(folderButtons, 1, 1);
-  folderGrid->setColumnStretch(1, 1);
-  layout->addLayout(folderGrid);
+  QHBoxLayout* folderRow = new QHBoxLayout;
+  folderRow->setSpacing(SpacingS);
+  folderRow->addWidget(m_liveFolderLabel);
+  folderRow->addWidget(m_liveFolder, 1);
+  folderRow->addWidget(m_unwatch);
+  layout->addLayout(folderRow);
 
   // what happened last, in words (colour only backs it up)
   m_liveStatus = new QLabel(page);
@@ -652,6 +864,15 @@ void ScriptLabPanel::buildLivePage()
   m_liveStatus->setWordWrap(true);
   m_liveStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   layout->addWidget(m_liveStatus);
+
+  m_openEditor = new QPushButton(tr("Open in editor"), page);
+  m_openEditor->setObjectName("scriptLabOpenEditor");
+  m_openEditor->setMinimumHeight(ControlHeight);
+  QHBoxLayout* scriptButtons = new QHBoxLayout;
+  scriptButtons->setSpacing(SpacingS);
+  scriptButtons->addWidget(m_openEditor);
+  scriptButtons->addStretch(1);
+  layout->addLayout(scriptButtons);
 
   // Script Lab step 7 (issue 293): the run's effects in the 3D view, off until ticked
   m_effectsBox = new QCheckBox(tr("Show effects in 3D view"), page);
@@ -668,46 +889,52 @@ void ScriptLabPanel::buildLivePage()
   layout->addWidget(m_effectsStatus);
   connect(m_effectsBox, &QCheckBox::toggled, this, &ScriptLabPanel::effectsToggled);
 
-  // the script, read only, with line numbers
-  layout->addSpacing(SpacingL - SpacingS);
-  QHBoxLayout* scriptRow = new QHBoxLayout;
-  scriptRow->setSpacing(SpacingS);
-  m_liveScript = sectionLabel(tr("Script"), page);
-  m_liveScript->setObjectName("scriptLabLiveScript");
-  m_openEditor = new QPushButton(tr("Open in editor"), page);
-  m_openEditor->setObjectName("scriptLabOpenEditor");
-  m_openEditor->setMinimumHeight(ControlHeight);
-  scriptRow->addWidget(m_liveScript, 1);
-  scriptRow->addWidget(m_openEditor);
-  layout->addLayout(scriptRow);
-  m_scriptView = new ScriptView(page);
+  // --- the script, read only, with line numbers
+  m_scriptSection = addSection(QStringLiteral("script"), tr("Script"), true, page, layout);
+  m_scriptView = new ScriptView(m_scriptSection->body());
   m_scriptView->setObjectName("scriptLabScriptView");
   m_scriptView->setToolTip(tr("The script as it is on disk, read only. Change it in your own editor and save."));
-  m_scriptView->setMinimumHeight(4 * m_scriptView->fontMetrics().height() + 2 * SpacingS);
-  layout->addWidget(m_scriptView, 3);
+  m_scriptView->setMinimumHeight(8 * m_scriptView->fontMetrics().height() + 2 * SpacingS);
+  m_scriptSection->bodyLayout()->addWidget(m_scriptView);
 
-  // errors and warnings with line and column
-  layout->addSpacing(SpacingL - SpacingS);
-  layout->addWidget(sectionLabel(tr("Errors and warnings"), page));
-  m_problems = new QListWidget(page);
+  // --- errors and warnings with line and column (lint warnings too)
+  m_problemsSection = addSection(QStringLiteral("problems"), tr("Errors and warnings"), true, page, layout);
+  m_problems = new QListWidget(m_problemsSection->body());
   m_problems->setObjectName("scriptLabProblems");
   m_problems->setToolTip(tr("Press Enter or double-click a line to show it in the script"));
-  m_problems->setMinimumHeight(2 * m_problems->fontMetrics().height() + 2 * SpacingS);
+  m_problems->setMinimumHeight(3 * m_problems->fontMetrics().height() + 2 * SpacingS);
   m_problems->setWordWrap(true);
-  layout->addWidget(m_problems, 1);
+  m_problemsSection->bodyLayout()->addWidget(m_problems);
 
-  // what the run did
-  layout->addSpacing(SpacingL - SpacingS);
-  layout->addWidget(sectionLabel(tr("Event log"), page));
-  m_runLog = new QPlainTextEdit(page);
+  // --- what the run did
+  m_logSection = addSection(QStringLiteral("log"), tr("Event log"), true, page, layout);
+  m_runLog = new QPlainTextEdit(m_logSection->body());
   m_runLog->setObjectName("scriptLabRunLog");
   m_runLog->setReadOnly(true);
   m_runLog->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   m_runLog->setToolTip(tr("What the script did in the last run: what it said, its listens, timers and RLV commands. Times are simulated seconds."));
-  m_runLog->setMinimumHeight(3 * m_runLog->fontMetrics().height() + 2 * SpacingS);
-  layout->addWidget(m_runLog, 2);
+  m_runLog->setMinimumHeight(6 * m_runLog->fontMetrics().height() + 2 * SpacingS);
+  m_logSection->bodyLayout()->addWidget(m_runLog);
 
-  buildInputSection(page, layout);
+  // --- the RLV restrictions now (the same state as the Type commands page)
+  m_liveRestrictionsSection = addSection(QStringLiteral("restrictionsNow"), tr("RLV restrictions now"), true, page, layout);
+  m_liveRestrictionsEmpty = new QLabel(tr("No restrictions. A script that says @detach=n holds one."), m_liveRestrictionsSection->body());
+  m_liveRestrictionsEmpty->setObjectName("scriptLabLiveRestrictionsEmpty");
+  m_liveRestrictionsEmpty->setWordWrap(true);
+  m_liveRestrictionsSection->bodyLayout()->addWidget(m_liveRestrictionsEmpty);
+  m_liveRestrictions = makeRestrictionList(m_liveRestrictionsSection->body());
+  m_liveRestrictions->setObjectName("scriptLabLiveRestrictions");
+  m_liveRestrictionsSection->bodyLayout()->addWidget(m_liveRestrictions);
+
+  // --- the objects of the last LSL run and the newest dialog (step 5); folded at first, as in the mockup
+  m_objectsSection = addSection(QStringLiteral("objects"), tr("Objects"), false, page, layout);
+  m_objectsView = new ScriptLabObjectsView(m_objectsSection->body());
+  m_objectsSection->bodyLayout()->addWidget(m_objectsView);
+
+  // --- touch, chat and dialog answers (issue 308); folded at first, as in the mockup
+  m_inputSection = addSection(QStringLiteral("input"), tr("Send input"), false, page, layout);
+  buildInputSection(m_inputSection->body(), m_inputSection->bodyLayout());
+  layout->addStretch(1);
 
   // the page is taller than a small docked panel: it scrolls instead of forcing the panel's height up
   QScrollArea* scroll = new QScrollArea(m_tabs);
@@ -716,28 +943,82 @@ void ScriptLabPanel::buildLivePage()
   scroll->setFrameShape(QFrame::NoFrame);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   scroll->setWidget(page);
-  m_tabs->addTab(scroll, tr("Live"));
-  m_tabs->setTabToolTip(1, tr("Watch a folder of .lsl scripts: each saved change is checked and run again here"));
+  m_tabs->insertTab(LivePage, scroll, tr("Live scripts"));
+  m_tabs->setTabToolTip(LivePage, tr("Live: your .lsl scripts run each time you save them"));
 
   connect(m_watch, &QPushButton::clicked, this, &ScriptLabPanel::chooseFolder);
+  connect(m_example, &QPushButton::clicked, this, &ScriptLabPanel::tryExampleScripts);
   connect(m_unwatch, &QPushButton::clicked, this, &ScriptLabPanel::stopWatching);
   connect(m_openEditor, &QPushButton::clicked, this, &ScriptLabPanel::openInEditor);
   connect(m_problems, &QListWidget::itemActivated, this, [this](QListWidgetItem* item) { showProblem(m_problems->row(item)); });
 
-  setTabOrder(m_liveFolder, m_watch);
-  setTabOrder(m_watch, m_unwatch);
-  setTabOrder(m_unwatch, m_effectsBox);
-  setTabOrder(m_effectsBox, m_openEditor);
-  setTabOrder(m_openEditor, m_scriptView);
-  setTabOrder(m_scriptView, m_problems);
-  setTabOrder(m_problems, m_runLog);
-  setTabOrder(m_runLog, m_inputObject);
+  setTabOrder(m_watch, m_example);
+  setTabOrder(m_example, m_liveFolder);
+  setTabOrder(m_liveFolder, m_unwatch);
+  setTabOrder(m_unwatch, m_openEditor);
+  setTabOrder(m_openEditor, m_effectsBox);
+  setTabOrder(m_effectsBox, m_scriptSection->header());
+  setTabOrder(m_scriptSection->header(), m_scriptView);
+  setTabOrder(m_scriptView, m_problemsSection->header());
+  setTabOrder(m_problemsSection->header(), m_problems);
+  setTabOrder(m_problems, m_logSection->header());
+  setTabOrder(m_logSection->header(), m_runLog);
+  setTabOrder(m_runLog, m_liveRestrictionsSection->header());
+  setTabOrder(m_liveRestrictionsSection->header(), m_liveRestrictions);
+  setTabOrder(m_liveRestrictions, m_objectsSection->header());
+  setTabOrder(m_objectsSection->header(), m_objectsView->list());
+  setTabOrder(m_objectsView->list(), m_inputSection->header());
+  setTabOrder(m_inputSection->header(), m_inputObject);
   setTabOrder(m_inputObject, m_touch);
   setTabOrder(m_touch, m_chatChannel);
   setTabOrder(m_chatChannel, m_chatName);
   setTabOrder(m_chatName, m_chatText);
   setTabOrder(m_chatText, m_say);
   setTabOrder(m_say, m_inputLog);
+}
+
+void ScriptLabPanel::updateWorldParts()
+{
+  // the effects box, Objects and Send input belong to a run: a watched folder, or the
+  // world of an lsl_run (an AI assistant's), which needs no folder
+  const bool watching = m_watcher && m_watcher->watching();
+  const bool world = m_session && m_session->sandbox();
+  for (QWidget* w : QList<QWidget*>{m_effectsBox, m_objectsSection, m_inputSection})
+    w->setVisible(watching || world);
+}
+
+QJsonArray ScriptLabPanel::lintWarnings(const QString& source)
+{
+  if (source != m_lintSource)
+  {
+    m_lintSource = source;
+    m_lintWarnings = QJsonArray();
+    const lsl::Lint::Result result = lsl::Lint::lint(source);
+    for (const lsl::LintWarning& w : result.warnings)
+      m_lintWarnings.append(QJsonObject{{"line", w.line}, {"column", w.column}, {"id", w.id}, {"message", w.message}});
+  }
+  return m_lintWarnings;
+}
+
+QString ScriptLabPanel::exampleScriptsFolder() const
+{
+  if (!m_examplesFolder.isEmpty()) return m_examplesFolder;
+  return QDir::cleanPath(EffectsPreview::defaultExamplesFolder() + QStringLiteral("/scriptlab"));
+}
+
+bool ScriptLabPanel::tryExampleScripts()
+{
+  const QString folder = exampleScriptsFolder();
+  if (folder.isEmpty() || !QFileInfo(folder).isDir())
+  {
+    m_refusal = tr("Error: the example scripts are not next to the program.");
+    refreshLive();
+    return false;
+  }
+  if (!watchFolder(folder)) return false;
+  // the RLV example first, so the restrictions show at once
+  if (m_watcher->scripts().contains(QStringLiteral("rlv_lock.lsl"))) m_watcher->runScript(QStringLiteral("rlv_lock.lsl"));
+  return true;
 }
 
 void ScriptLabPanel::setWatcher(LabWatcher* watcher)
@@ -855,11 +1136,23 @@ void ScriptLabPanel::refreshLive()
 
   m_liveFolder->setText(watching ? QDir::toNativeSeparators(m_watcher->folder()) : QString());
   // a folder watch that just started (here or through lab_watch) brings the Live page to the front
-  if (watching && !m_wasWatching) m_tabs->setCurrentIndex(1);
+  if (watching && !m_wasWatching) m_tabs->setCurrentIndex(LivePage);
   m_wasWatching = watching;
   m_unwatch->setEnabled(watching);
   m_unwatch->setToolTip(watching ? tr("Stop running the scripts when they change")
                                  : tr("Not watching a folder. Choose one with Watch folder first."));
+  const QString examples = exampleScriptsFolder();
+  const bool haveExamples = !examples.isEmpty() && QFileInfo(examples).isDir();
+  m_example->setEnabled(haveExamples);
+  m_example->setToolTip(haveExamples ? tr("Watch the example scripts that come with the program. One runs at once.")
+                                     : tr("The example scripts are not next to the program."));
+
+  // the empty state while no folder is watched; the folder, status, script and its parts while watching
+  m_liveEmpty->setVisible(!watching);
+  for (QWidget* w : QList<QWidget*>{m_liveFolderLabel, m_liveFolder, m_unwatch, m_openEditor,
+                                    m_scriptSection, m_problemsSection, m_logSection, m_liveRestrictionsSection})
+    w->setVisible(watching);
+  updateWorldParts();
 
   const QJsonObject last = watching ? m_watcher->lastResult() : QJsonObject();
   const QString file = last.value("file").toString();
@@ -867,6 +1160,7 @@ void ScriptLabPanel::refreshLive()
   // the script view: read the file again only when another file is shown
   // or the file was run again
   ScriptView* view = static_cast<ScriptView*>(m_scriptView);
+  QString text;
   if (last.isEmpty())
   {
     m_shownFile.clear();
@@ -875,13 +1169,13 @@ void ScriptLabPanel::refreshLive()
   else
   {
     m_shownFile = file;
-    QString text;
     QFile in(m_watcher->absolutePath(file));
     if (QFileInfo(in.fileName()).size() <= LabWatcher::MAX_FILE_BYTES && in.open(QIODevice::ReadOnly))
       text = QString::fromUtf8(in.read(LabWatcher::MAX_FILE_BYTES));
     if (view->toPlainText() != text) view->setPlainText(text);
   }
-  m_liveScript->setText(file.isEmpty() ? tr("Script") : tr("Script: %1").arg(file));
+  m_scriptSection->setTitle(file.isEmpty() ? tr("Script") : tr("Script: %1").arg(file));
+  m_scriptSection->setCount(tr("read only"));
   m_openEditor->setEnabled(!m_shownFile.isEmpty());
   m_openEditor->setToolTip(m_shownFile.isEmpty() ? tr("No script yet. Watch a folder and save a .lsl file in it first.")
                                                  : tr("Open the script in the program your computer uses for .lsl files"));
@@ -890,6 +1184,9 @@ void ScriptLabPanel::refreshLive()
   m_problems->clear();
   m_shownProblems.clear();
   QSet<int> errorLines;
+  QSet<QString> seen;
+  int errorCount = 0;
+  int warningCount = 0;
   QList<QTextEdit::ExtraSelection> marks;
   const auto addProblems = [&](const QJsonArray& list, bool error)
   {
@@ -898,12 +1195,15 @@ void ScriptLabPanel::refreshLive()
       const QJsonObject p = value.toObject();
       const int line = p.value("line").toInt();
       const int column = p.value("column").toInt();
-      QListWidgetItem* item = new QListWidgetItem(
-        (error ? tr("Error, line %1, column %2: %3") : tr("Warning, line %1, column %2: %3")).arg(line).arg(column).arg(p.value("message").toString()),
-        m_problems);
+      const QString itemText = (error ? tr("Error, line %1, column %2: %3") : tr("Warning, line %1, column %2: %3"))
+                                 .arg(line).arg(column).arg(p.value("message").toString());
+      if (seen.contains(itemText)) continue;   // a lint warning the checker already gave
+      seen.insert(itemText);
+      QListWidgetItem* item = new QListWidgetItem(itemText, m_problems);
       item->setForeground(error ? dangerColour(dark) : QColor(QString::fromLatin1(tokens(dark).warning)));
       m_shownProblems << p;
-      if (error) errorLines.insert(line);
+      if (error) { errorLines.insert(line); ++errorCount; }
+      else ++warningCount;
       const QTextBlock block = view->document()->findBlockByNumber(line - 1);
       if (block.isValid())
       {
@@ -933,17 +1233,28 @@ void ScriptLabPanel::refreshLive()
     }
   }
   addProblems(last.value("warnings").toArray(), false);
+  // the static warnings (lsl_lint) of a script that compiled: valid LSL that is most likely a mistake
+  if (last.value("valid").toBool() && !text.isEmpty()) addProblems(lintWarnings(text), false);
   view->setExtraSelections(marks);
   view->setMarks(errorLines, dangerColour(dark), mutedColour(dark));
+  QStringList problemCount;
+  if (errorCount) problemCount << (errorCount == 1 ? tr("1 error") : tr("%1 errors").arg(errorCount));
+  if (warningCount) problemCount << (warningCount == 1 ? tr("1 warning") : tr("%1 warnings").arg(warningCount));
+  m_problemsSection->setCount(problemCount.isEmpty() ? tr("none") : problemCount.join(QStringLiteral(", ")));
 
   // the event log of the run
   QStringList lines;
-  for (const QJsonValue& value : run.value("log").toArray()) lines << logLine(value.toObject());
+  const QJsonArray runLog = run.value("log").toArray();
+  for (const QJsonValue& value : runLog) lines << logLine(value.toObject());
   if (run.value("log_truncated").toBool()) lines << tr("(the log was cut here: the run wrote more than it keeps)");
   const QString logText = lines.join(QLatin1Char('\n'));
   if (m_runLog->toPlainText() != logText) m_runLog->setPlainText(logText);
+  if (last.isEmpty()) m_logSection->setCount(tr("none"));
+  else if (!last.contains("result")) m_logSection->setCount(tr("not run"));
+  else m_logSection->setCount(runLog.size() == 1 ? tr("1 line") : tr("%1 lines").arg(runLog.size()));
 
-  // the status line, a word first
+  // the status line, a word first; with no folder the empty state says what to do
+  m_liveStatus->setVisible(watching || !m_refusal.isEmpty());
   if (!m_refusal.isEmpty()) { setLiveStatus(m_refusal, 2); return; }
   if (!watching)
   {
@@ -1146,9 +1457,7 @@ namespace
 
 void ScriptLabPanel::buildInputSection(QWidget* page, QVBoxLayout* layout)
 {
-  layout->addSpacing(SpacingL - SpacingS);
-  layout->addWidget(sectionLabel(tr("Send input"), page));
-
+  // the section's header says "Send input"
   m_inputHint = new QLabel(page);
   m_inputHint->setObjectName("scriptLabInputHint");
   m_inputHint->setWordWrap(true);
@@ -1284,6 +1593,8 @@ void ScriptLabPanel::refreshInput()
   QStringList names;
   if (sandbox)
     for (const QJsonValue& o : sandbox->objectsJson()) names << o.toObject().value("name").toString();
+  m_objectsSection->setCount(QString::number(names.size()));
+  updateWorldParts();
   bool same = m_inputObject->count() == names.size();
   for (int i = 0; same && i < names.size(); ++i) same = m_inputObject->itemText(i) == names[i];
   if (!same)
