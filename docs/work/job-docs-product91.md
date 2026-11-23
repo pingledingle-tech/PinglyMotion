@@ -1,6 +1,6 @@
 Branch: job/docs-product91
-Status: active
-Pull request: pending
+Status: done
+Pull request: #424
 Files:
 - docs/PRODUCT.md
 - docs/DECISIONS.md
