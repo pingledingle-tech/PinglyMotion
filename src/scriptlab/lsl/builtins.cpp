@@ -213,6 +213,13 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   // second gap list, step 6, part 3: the simple motion model (llApplyImpulse and llSetBuoyancy are real now)
   {"llApplyImpulse", Fn::ApplyImpulse},
   {"llSetBuoyancy", Fn::SetBuoyancy},
+  // second gap list, step 7: vehicle functions, record only (no vehicle physics simulated)
+  {"llSetVehicleType", Fn::RecordOnly},
+  {"llSetVehicleFloatParam", Fn::RecordOnly},
+  {"llSetVehicleVectorParam", Fn::RecordOnly},
+  {"llSetVehicleRotationParam", Fn::RecordOnly},
+  {"llSetVehicleFlags", Fn::RecordOnly},
+  {"llRemoveVehicleFlags", Fn::RecordOnly},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
