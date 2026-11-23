@@ -1,6 +1,6 @@
 Branch: job/ux-3a-timeline
 Status: active
-Pull request: pending
+Pull request: #397
 Files:
 - src/timeline.*
 - src/timelineview.*
