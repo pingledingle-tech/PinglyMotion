@@ -1,6 +1,6 @@
 Branch: job/ai-connection
 Status: active
-Pull request: pending
+Pull request: #413
 Files:
 - src/controlindicator.*
 - src/controlserver.*
