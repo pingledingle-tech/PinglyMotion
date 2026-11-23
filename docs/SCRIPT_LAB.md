@@ -1,7 +1,7 @@
 # Script Lab
 
 Script Lab is a sandbox, being built, inside PinglyMotion for testing RLV and LSL scripts for Second Life. It is not a full
-LSL IDE: there is no built-in script editor, and the scripts stay in the user's own folder or repository. The plan,
+LSL IDE: it gets a small editor and an LSL-to-Lua converter, but no debugger and no project building, and the scripts stay in the user's own folder or repository. The plan,
 the steps and the limits are in [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md); the track is in [ROADMAP.md](ROADMAP.md).
 
 ## What exists now (steps 1 and 2, issues 287 and 288)
@@ -134,7 +134,7 @@ Several scripts run in one world, so a HUD and a restraint can talk on a channel
 ## What exists now (step 6, issue 292): Live
 
 The Script Lab watches a folder of scripts and runs a script again each time it is saved, so the user (or Claude
-Code) edits in their own editor and sees the result in PinglyMotion at once. There is no built-in editor.
+Code) edits in their own editor and sees the result in PinglyMotion at once. There is no built-in editor yet (a small one is planned, see [ROADMAP.md](ROADMAP.md)).
 
 - The panel has two pages: **Type commands** (the RLV lines of step 2) and **Live scripts**. On Live scripts, **Watch folder...** (in the
   empty state) picks the folder (a cloned repository, for example); **Stop watching** ends it. When a watch starts, here or through
