@@ -922,6 +922,34 @@ Not tested automatically (gaps):
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.
 
+## The folder model and a short maker guide (planned; not in the program yet)
+
+Plan: [ROADMAP.md](ROADMAP.md), "Script Lab: folder, editor, converter".
+
+**What exists today:** Live watches one folder and runs each `.lsl` file in it on its own, as its own object (step 6 above). Several scripts in one object only run through the control commands (`lsl_run`, step 9a). Notecards and a prim tree are not read from the folder yet. The limits of Live (200 scripts, 262 144 bytes, 5 000 entries, 4 folder levels) are real today.
+
+**What is planned (step B of the plan):**
+
+- A top folder is one object (one linkset). A subfolder is one prim. A prim's scripts and notecards are in its folder. Live will run the whole top folder as one linkset, so `llMessageLinked` and `link_message` work between the scripts of different prims.
+- Import will check all scripts at once. The event log and the limits will show which script and which prim each line came from.
+- Limits for path length, size and endless loops will apply to the whole folder.
+
+**Maker guide (the layout to use once the folder model is built):**
+
+```
+MyObject/            one object
+  Root/              one prim (the root)
+    main.lsl
+    settings.txt     a notecard
+  Cuff_left/         another prim
+    cuff.lsl
+```
+
+- One top folder per object; one subfolder per prim; scripts (`.lsl`) and notecards (text files) in that prim's folder.
+- Copy scripts out of Second Life by hand: open the script in the viewer, select all, copy, paste into a file. The tool cannot read your inventory.
+- Warnings you can expect: a script that cannot be checked, a limit that was reached, and a script or prim that stopped. The panel will name the script and the prim.
+- The sandbox is never identical to Second Life; the final test is always in Second Life.
+
 ## Later
 
 A description of a separate repository for the owner's RLV tools (template, examples, `.rlvtest` scenarios in CI; not created, the scenario runner does not exist) is in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md). Ideas that come after the planned steps (not planned yet, nothing is being built): see "Script Lab: later" in [ROADMAP.md](ROADMAP.md).

@@ -13,6 +13,28 @@ Status: **confirmed by the project owner on 22 November 2026.** It replaces the 
 7. **Teaching texts** (issue 54): the beginner texts, once the texts are stable after the new design.
 8. **Translations** and the language choice in Settings. The plumbing is built (pull request 338, `docs/TRANSLATION.md`); no translation exists yet.
 
+## Script Lab: folder, editor, converter (planned, 23 November 2026)
+
+Status: plan, nothing of it is built. It is the next work of lane 1 (Script Lab). Order and wishes come from the project owner, 23 November 2026: "Lua er helt til slutt" (14:00); the plan goes into the goal picture with a docs job (14:11). The details of the folder model and the maker guide are in [SCRIPT_LAB.md](SCRIPT_LAB.md); the rules for the converter's output are in [SLUA_RULES.md](SLUA_RULES.md).
+
+Decided: the converter starts with "LSL style" (what Linden Lab's `llcompat` layer allows) and is planned so that a Lua style can come later; the editor is built on our own text box (no QScintilla); the script checker stays inside PinglyMotion.
+
+Order:
+
+- **A. Definition check.** Compare our function, constant and event lists with Linden Lab's definition files (`lsl-definitions`). It shows what we lack and replaces the hand-made gap lists.
+- **B. The folder is the object.** A top folder is one object (one linkset), a subfolder is one prim, and the scripts and notecards of a prim sit in its folder. Live runs the whole folder as one linkset (`llMessageLinked` and `link_message` already exist in the interpreter). Import checks all scripts at once. The event log and the limits show which script and which prim each line came from. Limits for path length, size and endless loops.
+- **C. RLV type check.** Approved by the project owner: an invalid value is rejected as RLVa does, the command has no effect, and a clear warning says why. First confirm the behaviour against the RLVa code.
+- **D. The panel (after B).** A tree with icons (a cube for the object, one shape per prim, a document for scripts, an LSL or Lua mark), colour dots and sums, memory per script, and the maker guide.
+- **E. Props as prims (after B).** Props have no colour or transparency today (`src/prop.h`); they are needed if scripts change them.
+- **F. The editor in our own text box, three jobs one after another.** F1: editable text, syntax colours, undo and save; Live must never overwrite what the owner types. F2: suggestions and help text from the definition file. F3: the language choice, LSL or Lua (only the choice).
+- **G. Convert LSL to SLua, level 1 "LSL style".** A shared middle step sits between the LSL tree and the output, and the SLua details live in their own layer, so level 2 can swap that layer later. `jump` gets a marker and a panel warning: "this jump cannot be converted automatically, rewrite it by hand".
+
+Last, not queued: a Luau trial build (MinGW is also not checked yet), convert level 2 (real Lua style) and Lua in the tool.
+
+Not confirmed: that RLV works the same in SLua (to be tested last, in a Lua Beta region, in a viewer that has both RLV and Lua saving), and that Luau builds with MinGW.
+
+Notes for the order: D, E and F touch the same file and run one after another. A change to a parser or the control commands needs a green fuzz run.
+
 ## Later (not planned)
 
 - **Face (Bento face joints): parked (23 November 2026).** The project owner's reason: the head HUD of the LeLUTKA head already covers everyday expressions. What a face in PinglyMotion would add is a face that follows the animation in time (gaze and smile on a given frame), and that is not a strong need now.
