@@ -142,6 +142,22 @@ Built in pull request 428 (23 Nov 2026). The texts are in `src/scriptlab/labedit
 | LABED-20 | 2 Tip on hover | Mouse rests on the text box | Type to change the script. Ctrl+S saves and runs it. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
 | LABED-21 | 2 Tip on hover | The part's count while there are unsaved edits (the mockup's words) | ● unsaved changes | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
 
+### Script Lab editor: suggestions and the language choice (lane 1, jobs F2 and F3)
+
+Built in pull request 431 (23 Nov 2026). The texts are in `src/scriptlab/labeditor.cpp`, `src/scriptlab/labsuggest.cpp` and `src/setupdialog.h`; `tests/scriptlabpanel/tst_labsuggest.cpp` and `tests/setupdialog/tst_setupdialog.cpp` check them letter for letter. The help sentences for single names ("Sends a chat line only the owner sees. RLV lines use it.") are not in this table: our own lines are in `src/scriptlab/lslhelp_plain.inc`, checked with the same rules (at most 12 words a sentence, no avoided word) by `tests/test_gen_lsl_help.py`; every other name shows the first sentence of Linden Lab's own description.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABSG-01 | 4 What to do next | Script Lab editor: the line under the suggestion list, while hints are on | Press Down to pick, then Enter or Tab. Esc closes the list. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F2 |
+| LABSG-02 | 2 Tip on hover | Help in the list for a name made in the script (a function) | A function made in this script. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F2 |
+| LABSG-03 | 2 Tip on hover | Help in the list for a name made in the script (a variable) | A variable made in this script. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F2 |
+| LABSG-04 | 1 Welcome card (Setup) | Setup, Script editor: the choice for experienced users | Show suggestions only when I press Ctrl+Space | in the program (pull request 431, 23 Nov 2026) | lane 1 job F2 |
+| LABSG-05 | 2 Tip on hover | Setup: the tip of that choice | Off: suggestions come up while you type. Enter never picks one by itself. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F2 |
+| LABSG-06 | 1 Welcome card (Setup) | Setup, Script editor: the Lua switch (off at start) | Lua (trial): show the language choice in the editor | in the program (pull request 431, 23 Nov 2026) | lane 1 job F3 |
+| LABSG-07 | 2 Tip on hover | Setup: the tip of the Lua switch | Lua is not checked or run yet. Scripts stay LSL. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F3 |
+| LABSG-08 | 2 Tip on hover | The language box in the editor's tool row, only while the Lua switch is on | The script language. Lua is a trial: no checks or suggestions yet. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F3 |
+| LABSG-09 | 4 What to do next | SLua was chosen in the language box | Lua is a trial. No Lua suggestions or checks yet. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F3 |
+
 ### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
 
 Drafts for the library panel (roadmap item 6, issue 19) and for two figures in one scene (Expert mode only), drawn in `docs/mockup/index.html` and described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6l and 6m. Nothing is built yet; the project owner looks at the mockup first. `<clip name>` and `<file name>` stand for the real name. The mockup's own helper texts (for example "Mockup: no library folder") are not program texts and are not listed.

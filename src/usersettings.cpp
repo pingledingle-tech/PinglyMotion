@@ -73,6 +73,12 @@ int UserSettings::m_hintCard = 0;
 const QString UserSettings::m_hintCardKey = "hint_card";
 bool UserSettings::m_expertMode = false;
 const QString UserSettings::m_expertModeKey = "expert_mode";
+bool UserSettings::m_suggestOnRequestOnly = false;
+const QString UserSettings::m_suggestOnRequestOnlyKey = "scriptlab_suggest_on_request";
+bool UserSettings::m_luaSwitch = false;
+const QString UserSettings::m_luaSwitchKey = "scriptlab_lua_switch";
+QString UserSettings::m_scriptLanguage = "lsl";
+const QString UserSettings::m_scriptLanguageKey = "scriptlab_language";
 QMap<QString, QRect> UserSettings::m_windowPlaces;
 const QString UserSettings::m_windowPlacesGroup = "window_places";
 QString UserSettings::m_cameraHabit = "pinglymotion";
@@ -183,6 +189,59 @@ void UserSettings::watchExpertMode(QObject* context, std::function<void(bool)> c
   expertWatchers().emplace_back(QPointer<QObject>(context), std::move(changed));
 }
 
+namespace
+{
+  std::vector<std::pair<QPointer<QObject>, std::function<void()>>>& scriptEditorWatchers()
+  {
+    static std::vector<std::pair<QPointer<QObject>, std::function<void()>>> watchers;
+    return watchers;
+  }
+
+  void tellScriptEditorWatchers()
+  {
+    auto& watchers = scriptEditorWatchers();
+    watchers.erase(std::remove_if(watchers.begin(), watchers.end(),
+                                  [](const auto& w) { return w.first.isNull(); }), watchers.end());
+    const auto now = watchers;
+    for (const auto& w : now)
+      if (w.first && w.second) w.second();
+  }
+}
+
+void UserSettings::setSuggestOnRequestOnly(bool on)
+{
+  if (m_suggestOnRequestOnly == on) return;
+  m_suggestOnRequestOnly = on;
+  tellScriptEditorWatchers();
+}
+
+bool UserSettings::suggestOnRequestOnly() { return m_suggestOnRequestOnly; }
+
+void UserSettings::setLuaSwitch(bool on)
+{
+  if (m_luaSwitch == on) return;
+  m_luaSwitch = on;
+  tellScriptEditorWatchers();
+}
+
+bool UserSettings::luaSwitch() { return m_luaSwitch; }
+
+void UserSettings::setScriptLanguage(const QString& language)
+{
+  const QString value = language == QLatin1String("slua") ? QStringLiteral("slua") : QStringLiteral("lsl");
+  if (m_scriptLanguage == value) return;
+  m_scriptLanguage = value;
+  tellScriptEditorWatchers();
+}
+
+QString UserSettings::scriptLanguage() { return m_scriptLanguage; }
+
+void UserSettings::watchScriptEditor(QObject* context, std::function<void()> changed)
+{
+  if (!context || !changed) return;
+  scriptEditorWatchers().emplace_back(QPointer<QObject>(context), std::move(changed));
+}
+
 void UserSettings::setWindowPlace(const QString& name, const QRect& place)
 {
   if (name.isEmpty()) return;
@@ -286,6 +345,9 @@ void UserSettings::readSettings()
     setExpertMode(settings.value(m_expertModeKey, false).toString().toLower() == "true"
                   || settings.value(m_expertModeKey, false).toString() == "1");
     setCameraHabit(settings.value(m_cameraHabitKey, "pinglymotion").toString());
+    setSuggestOnRequestOnly(settings.value(m_suggestOnRequestOnlyKey, false).toBool());
+    setLuaSwitch(settings.value(m_luaSwitchKey, false).toBool());
+    setScriptLanguage(settings.value(m_scriptLanguageKey, "lsl").toString());
     // true or 1 only; anything else means the welcome card was not answered yet
     setWelcomeSeen(settings.value(m_welcomeSeenKey, false).toString().toLower() == "true"
                    || settings.value(m_welcomeSeenKey, false).toString() == "1");
@@ -359,6 +421,9 @@ void UserSettings::writeSettings()
   settings.setValue(m_pullLimbOnDragKey, pullLimbOnDrag());
   settings.setValue(m_jointMoreOptionsKey, jointMoreOptions());
   settings.setValue(m_expertModeKey, expertMode());
+  settings.setValue(m_suggestOnRequestOnlyKey, suggestOnRequestOnly());
+  settings.setValue(m_luaSwitchKey, luaSwitch());
+  settings.setValue(m_scriptLanguageKey, scriptLanguage());
   settings.setValue(m_cameraHabitKey, cameraHabit());
   settings.setValue(m_welcomeSeenKey, welcomeSeen());
   settings.setValue(m_hintCardKey, hintCard());

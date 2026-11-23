@@ -158,6 +158,22 @@ SetupDialog::SetupDialog(QWidget* parent) :
   connect(m_welcomeButton, &QPushButton::clicked, this, [this]() { emit welcomeRequested(); });
   outer->addWidget(m_welcomeButton, 0, Qt::AlignLeft);
 
+  // Script editor (lane 1, jobs F2 and F3): added after everything else, so nothing above moves
+  // (charter P12); both apply at once and are remembered
+  outer->addWidget(sectionLabel(this, tr2(SetupText::scriptEditorLabel)));
+  m_suggestOnRequestCheck = new QCheckBox(tr2(SetupText::suggestOnRequestChoice), this);
+  m_suggestOnRequestCheck->setObjectName(QStringLiteral("setupSuggestOnRequest"));
+  m_suggestOnRequestCheck->setToolTip(tr2(SetupText::suggestOnRequestTip));
+  m_suggestOnRequestCheck->setChecked(UserSettings::suggestOnRequestOnly());
+  connect(m_suggestOnRequestCheck, &QCheckBox::toggled, this, [this](bool on) { emit suggestOnRequestRequested(on); });
+  outer->addWidget(m_suggestOnRequestCheck, 0, Qt::AlignLeft);
+  m_luaSwitchCheck = new QCheckBox(tr2(SetupText::luaSwitchChoice), this);
+  m_luaSwitchCheck->setObjectName(QStringLiteral("setupLuaSwitch"));
+  m_luaSwitchCheck->setToolTip(tr2(SetupText::luaSwitchTip));
+  m_luaSwitchCheck->setChecked(UserSettings::luaSwitch());
+  connect(m_luaSwitchCheck, &QCheckBox::toggled, this, [this](bool on) { emit luaSwitchRequested(on); });
+  outer->addWidget(m_luaSwitchCheck, 0, Qt::AlignLeft);
+
   QHBoxLayout* actions = new QHBoxLayout();
   actions->addStretch(1);
   QPushButton* done = new QPushButton(tr2(SetupText::doneButton), this);
@@ -186,3 +202,5 @@ int SetupDialog::textSizeChecked() const
 }
 
 bool SetupDialog::hintsChecked() const { return m_hintsCheck && m_hintsCheck->isChecked(); }
+bool SetupDialog::suggestOnRequestChecked() const { return m_suggestOnRequestCheck && m_suggestOnRequestCheck->isChecked(); }
+bool SetupDialog::luaSwitchChecked() const { return m_luaSwitchCheck && m_luaSwitchCheck->isChecked(); }

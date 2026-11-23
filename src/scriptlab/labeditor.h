@@ -24,10 +24,18 @@
  * scripts in examples/scriptlab, and a short card says what an RLV line is
  * (hidden when hints are off).
  *
- * Kept apart from scriptlabpanel.cpp so later jobs (suggestions, RLV help,
- * the language choice) change this file and little else. Places for them:
- * LabCodeEdit::keyPressEvent (a suggestion list takes Enter and Tab first)
- * and LabEditor::setProblems (warnings from the RLV table join the list).
+ * Suggestions (lane 1, job F2): while typing a name, a list of names from the
+ * suggestion engine (labsuggest.h) comes up under the cursor, with help for the
+ * highlighted one (a plain sentence; in Expert mode also a dense line). The list
+ * never takes Enter or Tab by itself: only after the user moved into it with an
+ * arrow key. Esc closes it until typing goes on; Ctrl+Space opens it. Setup can
+ * make it come only with Ctrl+Space. The RLV job (R3) adds a provider to
+ * suggestEngine(); its warnings join through LabCodeEdit::setProblems.
+ *
+ * Language choice (lane 1, job F3): behind the Lua switch in Setup (off at
+ * start) the tool row shows LSL or SLua at its right end. Only the choice: SLua
+ * gives no suggestions, no checks and does not run. With the switch off nothing
+ * says Lua anywhere and the language is LSL.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -42,8 +50,14 @@
 #include <QString>
 #include <QTime>
 #include <QWidget>
+#include <memory>
+
+#include "labsuggest.h"
 
 class LslHighlighter;
+class QComboBox;
+class QFrame;
+class QListWidget;
 class QLabel;
 class QLineEdit;
 class QMenu;
@@ -98,6 +112,33 @@ class LabCodeEdit : public QPlainTextEdit
     int numberWidth() const;
     void paintNumbers(QPaintEvent* event);
 
+    // --- suggestions (job F2)
+    // the engine: the RLV job adds its provider here, a Lua layer its language
+    LabSuggest::Engine& suggestEngine() { return m_engine; }
+    // opens the list for the cursor as if Ctrl+Space was pressed (false: nothing to suggest)
+    bool showSuggestions();
+    void hideSuggestions();
+    bool suggestionsVisible() const;
+    // true once the user moved into the list with an arrow key: only then Enter and Tab take it
+    bool inSuggestionList() const { return m_inList; }
+    // the highlighted row (its help is shown), and the names in the list
+    int suggestionRow() const { return m_row; }
+    QStringList suggestionNames() const;
+    // true after Esc closed the list, until typing goes on
+    bool suggestionsHeld() const { return m_held; }
+    // only with Ctrl+Space (Setup); Expert help adds the dense line; hints show the key line
+    void setSuggestOnRequestOnly(bool on);
+    bool suggestOnRequestOnly() const { return m_onRequestOnly; }
+    void setExpertHelp(bool on);
+    bool expertHelp() const { return m_expertHelp; }
+    void setSuggestHints(bool on);
+    // the parts, for the tests
+    QFrame* suggestionPopup() const { return m_popup; }
+    QListWidget* suggestionList() const { return m_list; }
+    QLabel* suggestionHelp() const { return m_help; }
+    QLabel* suggestionDetail() const { return m_detail; }
+    QLabel* suggestionHint() const { return m_hint; }
+
   signals:
     // the editor's own keys, given to LabEditor
     void saveRequested();
@@ -106,11 +147,15 @@ class LabCodeEdit : public QPlainTextEdit
     // Esc was pressed (armed) or the focus came in for the first time (the message line explains)
     void escapePressed();
     void firstFocus();
+    // a suggestion was taken into the text
+    void suggestionTaken(const QString& name);
 
   protected:
     bool event(QEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
     void changeEvent(QEvent* event) override;
@@ -122,6 +167,15 @@ class LabCodeEdit : public QPlainTextEdit
     void fontChanged();
     void indentSelection(bool back);
     QList<QTextEdit::ExtraSelection> makeMarks() const;
+    void editKey(QKeyEvent* event);              // F1's keys: indent, quotes, brackets
+    bool suggestionKey(QKeyEvent* event);        // true when the open list used the key
+    void afterKey(int key, Qt::KeyboardModifiers mods, const QString& typed);
+    void refreshSuggestions();
+    void fillSuggestions(const QList<LabSuggest::Item>& items);
+    void setSuggestionRow(int row);
+    void takeSuggestion();
+    void placePopup();
+    void stylePopup();
 
     class Numbers;
     Numbers* m_numbers;
@@ -132,6 +186,21 @@ class LabCodeEdit : public QPlainTextEdit
     bool m_hadFocus = false;
     bool m_dark = true;
     bool m_settingFont = false;
+
+    LabSuggest::Engine m_engine;
+    QList<LabSuggest::Item> m_items;
+    QFrame* m_popup = nullptr;
+    QListWidget* m_list = nullptr;
+    QLabel* m_help = nullptr;
+    QLabel* m_detail = nullptr;
+    QLabel* m_hint = nullptr;
+    int m_row = -1;
+    bool m_inList = false;
+    bool m_held = false;
+    bool m_requested = false;       // the open list came from Ctrl+Space
+    bool m_onRequestOnly = false;
+    bool m_expertHelp = false;
+    bool m_suggestHints = true;
 };
 
 // The whole editor: tool row, find and go-to-line rows, the changed-outside question, the text box,
@@ -173,7 +242,10 @@ class LabEditor : public QWidget
     bool outsideChangePending() const { return m_outsidePending; }
     void answerOutsideChange(OutsideChoice choice);
     // the difference shown by Show the difference: "- " your line, "+ " the new line, "  " the same
+    // Lines are compared one by one only while the comparison table stays at or under
+    // DifferenceTableLimit cells (about 16 MB); a bigger difference lists all of yours, then all of the new one.
     static QString differenceText(const QString& mine, const QString& theirs);
+    static constexpr qsizetype DifferenceTableLimit = 4000000;
 
     // --- go to line and find
     // moves the cursor to the start of the line (from 1); false and a message when there is no such line
@@ -195,6 +267,16 @@ class LabEditor : public QWidget
     bool newFromExample(const QString& exampleFile);
     void setHintsOn(bool on);
     bool hintsOn() const { return m_hintsOn; }
+
+    // --- the language choice (job F3): shown only while the Lua switch is on (Setup)
+    void setLuaSwitch(bool on);
+    bool luaSwitch() const { return m_luaSwitch; }
+    // "lsl" or "slua"; the language in use is "lsl" while the Lua switch is off
+    void setLanguageChoice(const QString& id);
+    QString languageChoice() const { return m_languageChoice; }
+    QString languageInUse() const;
+    QComboBox* languageBox() const { return m_languageBox; }
+    QLabel* languageLabel() const { return m_languageLabel; }
 
     // --- the parts, for the panel and the tests
     LabCodeEdit* codeEdit() const { return m_edit; }
@@ -274,6 +356,12 @@ class LabEditor : public QWidget
     QLabel* m_rlvIcon = nullptr;
     QLabel* m_rlvTitle = nullptr;
     QLabel* m_rlvText = nullptr;
+    QLabel* m_languageLabel = nullptr;
+    QComboBox* m_languageBox = nullptr;
+    bool m_luaSwitch = false;
+    QString m_languageChoice = QStringLiteral("lsl");
+    void applyLanguage();
+    void followSettings();
 
     QString m_path;
     QString m_name;

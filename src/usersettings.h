@@ -117,6 +117,18 @@ class UserSettings
     // calls `changed` with the new value whenever setExpertMode() changes it, as long as
     // `context` lives (UX phase 5: the Edit curve button shows in Expert mode only)
     static void watchExpertMode(QObject* context, std::function<void(bool)> changed);
+    // Script Lab editor (lane 1, jobs F2 and F3), all in Setup: suggestions only with Ctrl+Space
+    // (default off: they come up while typing); the Lua switch (default off: no Lua anywhere);
+    // the script language, "lsl" or "slua" (anything else gives "lsl"; used only while the Lua
+    // switch is on)
+    static void setSuggestOnRequestOnly(bool on);
+    static bool suggestOnRequestOnly();
+    static void setLuaSwitch(bool on);
+    static bool luaSwitch();
+    static void setScriptLanguage(const QString& language);
+    static QString scriptLanguage();
+    // calls `changed` whenever one of the three Script Lab editor settings changes, as long as `context` lives
+    static void watchScriptEditor(QObject* context, std::function<void()> changed);
     // where a separate window was and how big (frame top left and inner size), by name,
     // kept between sessions (UX phase 5, the Edit curve window); a null rect when unknown
     static void setWindowPlace(const QString& name, const QRect& place);
@@ -215,6 +227,12 @@ private:
     static const QString m_hintCardKey;
     static bool m_expertMode;
     static const QString m_expertModeKey;
+    static bool m_suggestOnRequestOnly;
+    static const QString m_suggestOnRequestOnlyKey;
+    static bool m_luaSwitch;
+    static const QString m_luaSwitchKey;
+    static QString m_scriptLanguage;
+    static const QString m_scriptLanguageKey;
     static QMap<QString, QRect> m_windowPlaces;
     static const QString m_windowPlacesGroup;
     static QString m_cameraHabit;
