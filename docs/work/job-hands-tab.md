@@ -1,5 +1,5 @@
 Branch: job/hands-tab
-Status: active
+Status: done
 Pull request: #420
 Files:
 - src/handstab.*
