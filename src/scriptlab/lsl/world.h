@@ -124,6 +124,30 @@ class PrimStore
       if (int(m_prims.size()) < count) m_prims.resize(size_t(count));
       return m_prims[size_t(link < 1 ? 0 : link - 1)];
     }
+    // third gap list run, step 9: prims joined into or taken out of the list (0-based place); count is the prims the list
+    // holds now. The prims of an object linked with llCreateLink are copied into the root's list while they are linked; the linked object's
+    // scripts then read and change that list, and the copy goes back when the links are broken.
+    void insertPrims(int at, const std::vector<PrimState>& added, int count)
+    {
+      if (int(m_prims.size()) < count) m_prims.resize(size_t(count));
+      m_prims.insert(m_prims.begin() + std::ptrdiff_t(qBound(0, at, int(m_prims.size()))), added.begin(), added.end());
+    }
+    std::vector<PrimState> copyPrims(int at, int n, int count)
+    {
+      if (int(m_prims.size()) < count) m_prims.resize(size_t(count));
+      at = qBound(0, at, int(m_prims.size()));
+      n = qBound(0, n, int(m_prims.size()) - at);
+      return std::vector<PrimState>(m_prims.begin() + std::ptrdiff_t(at), m_prims.begin() + std::ptrdiff_t(at + n));
+    }
+    std::vector<PrimState> removePrims(int at, int n, int count)
+    {
+      if (int(m_prims.size()) < count) m_prims.resize(size_t(count));
+      at = qBound(0, at, int(m_prims.size()));
+      n = qBound(0, n, int(m_prims.size()) - at);
+      std::vector<PrimState> out(m_prims.begin() + std::ptrdiff_t(at), m_prims.begin() + std::ptrdiff_t(at + n));
+      m_prims.erase(m_prims.begin() + std::ptrdiff_t(at), m_prims.begin() + std::ptrdiff_t(at + n));
+      return out;
+    }
     int status = STATUS_ROTATE_XYZ;   // the STATUS_* flags of the object (llSetStatus)
     // llGetMass (gap list 2, step 2): every prim a box of density 10 lindograms per cubic metre (1000 kg/m3), the root
     // with rootSize (the object's scale), the children with their own size
@@ -134,6 +158,34 @@ class PrimStore
 
   private:
     std::vector<PrimState> m_prims;
+};
+
+// Third gap list run, step 8: llSetKeyframedMotion. The frames are relative to the object's transform before them: a
+// translation in region axes and a rotation in the object's own axes (the Second Life wiki). The Sandbox's "step" input
+// advances it (advance); nothing here runs on its own.
+struct KeyframedMotion
+{
+  static constexpr int MODE_FORWARD = 0, MODE_LOOP = 1, MODE_PING_PONG = 2, MODE_REVERSE = 3;
+  static constexpr int DATA_ROTATION = 1, DATA_TRANSLATION = 2;
+  struct Frame
+  {
+    float move[3] = {0.0f, 0.0f, 0.0f};
+    float turn[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    double time = 1.0;
+  };
+  std::vector<Frame> frames;       // empty: no keyframed motion
+  int mode = MODE_FORWARD;
+  int data = DATA_ROTATION | DATA_TRANSLATION;
+  bool playing = false;
+  int index = 0;                   // the frame in progress
+  double into = 0.0;               // seconds already played of that frame
+  bool backwards = false;          // REVERSE, and the way back of PING_PONG: frames run last to first, undone
+  bool active() const { return !frames.empty(); }
+  // back to the start of the motion for its mode (STOP, and a motion that has ended)
+  void reset();
+  // plays dt seconds: moves pos, turns rot (x y z s), and gives the velocity (m/s) of the frame in progress, 0 when the
+  // motion is not playing any more
+  void advance(double dt, float pos[3], float rot[4], float velocity[3]);
 };
 
 // Step 9b-4: the simulated inventory of an object. Nothing is read from disk: the items come from the lsl_run input
@@ -368,6 +420,16 @@ class World
     // llSetBuoyancy: 0 (full gravity) to 1 (floats); the model's "step" scales gravity by (1 - buoyancy)
     virtual float buoyancy() const { return m_buoyancy; }
     virtual void setBuoyancy(float b) { m_buoyancy = b; }
+    // third gap list run, step 7: llSetDamage keeps the damage the object does on a collision (-100 to 100; nothing reads
+    // it in the sandbox, as nothing is damaged there)
+    virtual float damage() const { return m_damage; }
+    virtual void setDamage(float d) { m_damage = d; }
+    // step 8: llSetKeyframedMotion
+    virtual KeyframedMotion& keyframes() { return m_keyframes; }
+    // step 9: llCreateLink and llBreakAllLinks. The Sandbox joins and separates the objects of its world; the permission is
+    // checked by the function before. The plain World has no other object to link.
+    virtual bool createLink(double time, const QString& target, bool parent);
+    virtual int breakAllLinks(double time);
     // the simulated prims of the object (step 9b-3)
     virtual PrimStore& primStore() { return m_prims; }
     // a text box (llTextBox, or llDialog with the button "!!llTextBox!!"): the avatar answers by chat on the channel
@@ -510,6 +572,8 @@ class World
     float m_velocity[3] = {0.0f, 0.0f, 0.0f};
     float m_buoyancy = 0.0f;
     float m_force[3] = {0.0f, 0.0f, 0.0f};
+    float m_damage = 0.0f;
+    KeyframedMotion m_keyframes;
     float m_scale[3] = {0.5f, 0.5f, 0.5f};
     PrimStore m_prims;
     Inventory m_inventory;

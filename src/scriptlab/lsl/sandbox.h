@@ -151,6 +151,7 @@ class Sandbox
     static constexpr int MAX_SCRIPTS_PER_OBJECT = 32;
     static constexpr int MAX_SCRIPTS = 64;          // all objects together
     static constexpr int MAX_PRIMS = 256;           // as a Second Life linkset
+    static constexpr double MAX_LINK_DISTANCE = 64.0;   // metres between objects to link (the wiki: 54 m, 64 m since 27 June 2023)
     static constexpr int MAX_PENDING_INPUTS = 1000;
     static constexpr int MAX_SITTERS = 16;
     static constexpr int MAX_AVATARS = 64;          // avatars given for sensors
@@ -263,6 +264,14 @@ class Sandbox
       float velocity[3] = {0.0f, 0.0f, 0.0f};
       float buoyancy = 0.0f;
       float force[3] = {0.0f, 0.0f, 0.0f};   // third gap list run, step 6: llSetForce record
+      float damage = 0.0f;                   // step 7: llSetDamage
+      KeyframedMotion keyframes;             // step 8: llSetKeyframedMotion
+      // step 9: llCreateLink. A linked object stays in the list; linkedTo is its root's place (-1: not a child) and the
+      // root's linkChildren lists the objects linked to it, the newest first (each joins at link 2). ownPrims is what the
+      // object had before; spec.prims is the whole linkset's count while linked, so every script reads the same count.
+      int ownPrims = 1;
+      int linkedTo = -1;
+      std::vector<int> linkChildren;
       bool moving = false;
       // several-objects job: llSetRemoteScriptAccessPin (0: remote loading off), llAllowInventoryDrop, and the limits
       // its scripts were added with (a script loaded with llRemoteLoadScriptPin gets them too)
@@ -305,6 +314,13 @@ class Sandbox
     // queues link_message in every script the link reaches; answers how many
     int messageLinked(int from, double time, int link, int num, const QString& str, const QString& id);
     void linksetDataChanged(int from, double time, int action, const QString& name, const QString& value);
+    // step 9: llCreateLink (joins the object of script slot from with the object whose key is target; false when it did not
+    // link) and llBreakAllLinks (answers how many objects were separated from the root)
+    bool createLink(int from, double time, const QString& target, bool parent);
+    int breakAllLinks(int from, double time);
+    int rootObject(int object) const { const int r = m_objects[size_t(object)].linkedTo; return r >= 0 ? r : object; }
+    // the link number of the first prim of an object inside its linkset (1 for a root or an object that is not linked)
+    int linkOffset(int object) const;
     // step 9b-4: the object's inventory changed (changed with CHANGED_INVENTORY to its scripts); llGiveInventory to a key
     void inventoryChanged(int from, double time);
     QString giveInventory(int from, double time, const QString& to, const InventoryItem& item);

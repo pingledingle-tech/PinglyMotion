@@ -29,6 +29,108 @@ const HttpReply* HttpReply::find(const std::vector<HttpReply>& replies, const QS
   return nullptr;
 }
 
+// ---- third gap list run, step 8: keyframed motion
+
+namespace
+{
+// Second Life's rotation product: a * b applies a, then b (so a turn in the object's own axes is turn * rotation)
+void quatMul(const double a[4], const double b[4], double out[4])
+{
+  out[0] = b[3] * a[0] + b[0] * a[3] + b[1] * a[2] - b[2] * a[1];
+  out[1] = b[3] * a[1] + b[1] * a[3] + b[2] * a[0] - b[0] * a[2];
+  out[2] = b[3] * a[2] + b[2] * a[3] + b[0] * a[1] - b[1] * a[0];
+  out[3] = b[3] * a[3] - b[0] * a[0] - b[1] * a[1] - b[2] * a[2];
+}
+
+// the part fraction (0 to 1) of a turn, by the shortest way; backwards undoes the turn
+void partOfTurn(const float turn[4], double fraction, bool backwards, double out[4])
+{
+  double q[4] = {turn[0], turn[1], turn[2], turn[3]};
+  const double m = std::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+  out[0] = out[1] = out[2] = 0.0;
+  out[3] = 1.0;
+  if (!(m > 1.0e-9)) return;
+  for (double& c : q) c /= m;
+  if (q[3] < 0.0) for (double& c : q) c = -c;
+  const double sinHalf = std::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2]);
+  if (!(sinHalf > 1.0e-9)) return;
+  const double half = std::atan2(sinHalf, q[3]) * fraction * (backwards ? -1.0 : 1.0);
+  const double k = std::sin(half) / sinHalf;
+  out[0] = q[0] * k;
+  out[1] = q[1] * k;
+  out[2] = q[2] * k;
+  out[3] = std::cos(half);
+}
+}
+
+void KeyframedMotion::reset()
+{
+  index = mode == MODE_REVERSE && !frames.empty() ? int(frames.size()) - 1 : 0;
+  into = 0.0;
+  backwards = mode == MODE_REVERSE;
+}
+
+void KeyframedMotion::advance(double dt, float pos[3], float rot[4], float velocity[3])
+{
+  for (int i = 0; i < 3; ++i) velocity[i] = 0.0f;
+  if (!playing || frames.empty()) return;
+  const int last = int(frames.size()) - 1;
+  double remaining = dt;
+  for (int guard = 0; remaining > 1.0e-9 && playing && guard < 100000; ++guard)
+  {
+    if (index < 0 || index > last) index = qBound(0, index, last);
+    const Frame& f = frames[size_t(index)];
+    const double use = std::min(remaining, f.time - into);
+    const double fraction = f.time > 0.0 ? use / f.time : 1.0;
+    const double sign = backwards ? -1.0 : 1.0;
+    for (int i = 0; i < 3; ++i) pos[i] += float(sign * double(f.move[i]) * fraction);
+    double piece[4], cur[4] = {rot[0], rot[1], rot[2], rot[3]}, next[4];
+    partOfTurn(f.turn, fraction, backwards, piece);
+    quatMul(piece, cur, next);
+    const double n = std::sqrt(next[0] * next[0] + next[1] * next[1] + next[2] * next[2] + next[3] * next[3]);
+    for (int i = 0; i < 4; ++i) rot[i] = float(n > 1.0e-12 ? next[i] / n : cur[i]);
+    into += use;
+    remaining -= use;
+    if (into < f.time - 1.0e-9) continue;
+    // the frame is done: the next one, or what the mode does at the end
+    into = 0.0;
+    if (!backwards)
+    {
+      if (index < last) ++index;
+      else if (mode == MODE_LOOP) index = 0;
+      else if (mode == MODE_PING_PONG) backwards = true;
+      else { playing = false; reset(); }
+    }
+    else
+    {
+      if (index > 0) --index;
+      else if (mode == MODE_PING_PONG) backwards = false;
+      else { playing = false; reset(); }   // REVERSE has played every frame
+    }
+  }
+  if (playing && !frames.empty())
+  {
+    const Frame& f = frames[size_t(qBound(0, index, last))];
+    const double sign = backwards ? -1.0 : 1.0;
+    for (int i = 0; i < 3; ++i) velocity[i] = f.time > 0.0 ? float(sign * double(f.move[i]) / f.time) : 0.0f;
+  }
+}
+
+bool World::createLink(double time, const QString& target, bool parent)
+{
+  if (logFull()) return false;
+  log(time, QJsonObject{{"type", "link"}, {"op", "create"}, {"target", target}, {"parent", parent},
+                        {"linked", false}, {"note", "There is no other object here to link."}});
+  return false;
+}
+
+int World::breakAllLinks(double time)
+{
+  if (!logFull())
+    log(time, QJsonObject{{"type", "link"}, {"op", "break_all"}, {"released", 0}, {"note", "Nothing was linked with llCreateLink."}});
+  return 0;
+}
+
 QString World::clip(const QString& text)
 {
   return text.size() > MAX_TEXT_CHARS ? text.left(MAX_TEXT_CHARS) : text;
