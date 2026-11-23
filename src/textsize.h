@@ -18,6 +18,8 @@
 #define TEXTSIZE_H
 
 #include <QFont>
+#include <QKeySequence>
+#include <QList>
 
 namespace TextSize
 {
@@ -50,6 +52,17 @@ namespace TextSize
   int scaled(int size);
   // the same at a given percent (cut to 100..200)
   int scaled(int size,int percent);
+
+  // The keys of View > Text size, Smaller text and Text size back to 100%
+  // (docs/UX_DECISIONS.md, 6c). The first key is the one the menu shows.
+  // Bigger is Ctrl and the plus key: on Nordic and German layouts the plus
+  // key stands next to 0 and "=" needs Shift (Ctrl+Shift+0 is taken by
+  // Windows), on a US layout Ctrl+= is the same key without Shift. The
+  // number pad's plus, minus and 0 work too. No two keys of one list are
+  // the same key press, so Qt never sees an ambiguous shortcut.
+  QList<QKeySequence> biggerKeys();
+  QList<QKeySequence> smallerKeys();
+  QList<QKeySequence> resetKeys();
 
   // forgets the start font and goes back to 100 percent (tests only)
   void resetForTests();

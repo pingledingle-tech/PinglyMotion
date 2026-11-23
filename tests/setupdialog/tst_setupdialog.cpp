@@ -369,7 +369,7 @@ void TestSetupDialog::keysMouseDialogKeysMatchTheMenus()
   }
   QCOMPARE(checked, expectedKey.size());
   // Text size is a key combination that is not stored in a single menu key string this simply
-  QCOMPARE(QString::fromLatin1(viewTextSize.key), QStringLiteral("Ctrl+="));
+  QCOMPARE(QString::fromLatin1(viewTextSize.key), QStringLiteral("Ctrl++"));
 }
 
 void TestSetupDialog::menuItemsAreNoLongerGreyed()

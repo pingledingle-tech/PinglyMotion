@@ -141,6 +141,17 @@ class Animation : public QObject
     RotationLimits getRotationLimits(BVHNode* node);
     void setPosition(double x,double y,double z);
     QVector3D getPosition();
+
+    // The hip height of the start pose, a new animation's frame 1 (data/TPose.dingle), in
+    // inches: with it the avatar's soles touch the floor of the 3D view.
+    static constexpr float StandingHipHeight=43.5285187f;
+    // How far the 3D view lifts the figure so its feet stand on the floor: Second Life
+    // stands the hip of frame 1 at standing height whatever height the file gives it, so
+    // the view does the same, for every animation in one place (UX fixes 1: clips whose
+    // frame 1 hip is at 41 inches, like data/Relaxed.dingle and the examples, stood
+    // 2.53 inches under the floor). StandingHipHeight minus the hip height of frame 1;
+    // 0 for a new animation. check_animation uses the same floor (src/animcheck.cpp).
+    float standingLift();
     void addKeyFrameAllJoints();
     void addKeyFrame(BVHNode* joint);
     bool isKeyFrame();

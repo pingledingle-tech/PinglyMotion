@@ -78,3 +78,27 @@ void TextSize::resetForTests()
   g_haveBase=false;
   g_percent=Default;
 }
+
+namespace
+{
+  QKeySequence ctrl(Qt::Key key,bool numberPad=false)
+  {
+    const Qt::KeyboardModifiers modifiers=numberPad ? (Qt::ControlModifier|Qt::KeypadModifier) : Qt::ControlModifier;
+    return QKeySequence(QKeyCombination(modifiers,key));
+  }
+}
+
+QList<QKeySequence> TextSize::biggerKeys()
+{
+  return {ctrl(Qt::Key_Plus),ctrl(Qt::Key_Equal),ctrl(Qt::Key_Plus,true)};
+}
+
+QList<QKeySequence> TextSize::smallerKeys()
+{
+  return {ctrl(Qt::Key_Minus),ctrl(Qt::Key_Minus,true)};
+}
+
+QList<QKeySequence> TextSize::resetKeys()
+{
+  return {ctrl(Qt::Key_0),ctrl(Qt::Key_0,true)};
+}

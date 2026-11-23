@@ -602,7 +602,7 @@ body.charter #legend { display:flex; }
         <button role="menuitem" data-cmd="nextregion"><span class="chk"></span><span class="grow">Next area</span><kbd>F6</kbd></button>
         <hr><button role="menuitemcheckbox" data-cmd="theme" aria-checked="false"><span class="chk"></span><span class="grow">Light theme</span><kbd>T</kbd></button>
         <button role="menuitemcheckbox" data-cmd="expert" aria-checked="false"><span class="chk"></span><span class="grow">Expert mode</span><kbd>Shift+E</kbd></button>
-        <button role="menuitem" data-cmd="scale"><svg class="i" data-i="sliders-horizontal"></svg><span class="grow">Text size: <span id="scaleNow">100</span>%</span><kbd>Ctrl+=</kbd></button>
+        <button role="menuitem" data-cmd="scale"><svg class="i" data-i="sliders-horizontal"></svg><span class="grow">Text size: <span id="scaleNow">100</span>%</span><kbd>Ctrl++</kbd></button>
         <button role="menuitem" data-cmd="scaledown"><span class="chk"></span><span class="grow">Smaller text</span><kbd>Ctrl+-</kbd></button>
         <button role="menuitem" data-cmd="scalereset"><span class="chk"></span><span class="grow">Text size back to 100%</span><kbd>Ctrl+0</kbd></button>
         <button role="menuitem" data-cmd="setup"><svg class="i" data-i="settings"></svg><span class="grow">Setup...</span></button>
@@ -2767,7 +2767,7 @@ function openKeys() {
     ["Undo, redo", "Ctrl+Z, Ctrl+Shift+Z"], ["Save, open, export", "Ctrl+S, Ctrl+O, Ctrl+Shift+E"], ["Open the menu", "F10, then arrow keys"], ["Next area (menu, joints, 3D view, selected joint, Script Lab, timeline)", "F6, Shift+F6"],
     ["Hide or show panels", "Tab after clicking in the 3D view, or View > Hide panels. Reached with the keyboard, Tab moves on"], ["Change a panel's width or height", "Arrow keys on the thin line between panels"], ["Move or resize a floating panel", "Arrow keys or Shift+arrow keys on its grip button"],
     ["Script Lab open or closed", "Ctrl+Shift+L"], ["Library open or closed", "Ctrl+Shift+B"], ["Make figure 1 or 2 active (Expert mode, two figures)", "Alt+1, Alt+2"], ["Throw away a pose change, or cancel a pull", "Esc"], ["Close a menu, dialog or hint", "Esc"],
-    ["Move between keys on the timeline", "Arrow keys on a key"], ["Pick an easing choice", "Arrow keys in the tile row"], ["Theme, Expert mode, hints", "T, Shift+E, Shift+H"], ["Charter overlay", "C"], ["Text size", "Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%"]];
+    ["Move between keys on the timeline", "Arrow keys on a key"], ["Pick an easing choice", "Arrow keys in the tile row"], ["Theme, Expert mode, hints", "T, Shift+E, Shift+H"], ["Charter overlay", "C"], ["Text size", "Ctrl++ bigger, Ctrl+- smaller, Ctrl+0 back to 100%"]];
   $("#keysTable").innerHTML = "<tr><th>Action</th><th>Keys</th></tr>" + rows.concat(SCHEMES[scheme].rows, KEYROWS_ALL).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("");
   openDialog("#dlgKeys");
 }

@@ -88,7 +88,18 @@ namespace Theme
     constexpr int iconStroke=2;
     constexpr int iconSmall=16;
     constexpr int labelWeight=600;
+    // the line between two docked panels (and a splitter), wide enough to grab
+    // easily: spacing s (UX fixes 1, docs/UX_DECISIONS.md 6c)
+    constexpr int panelGrab=spacingS;
+    // the edge of a floating panel that resizes it: spacing xs
+    constexpr int floatingEdge=spacingXs;
   }
+
+  // the two sizes above at the current text size (TextSize::scaled); the style
+  // that Theme::apply() sets answers them for PM_DockWidgetSeparatorExtent,
+  // PM_SplitterWidth and PM_DockWidgetFrameWidth
+  int panelGrabWidth();
+  int floatingEdgeWidth();
 }
 
 #endif
