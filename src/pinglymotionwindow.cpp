@@ -105,6 +105,7 @@
 #include "usersettingsdialog.h"
 
 #include "panelvisibility.h"
+#include "propmanager.h"
 #include "pinglymotionwindow.h"
 #include "playback.h"
 #include "scriptlab/scriptlabpanel.h"
@@ -578,6 +579,25 @@ PinglyMotionWindow::PinglyMotionWindow() :
   EffectsPreview* effects=new EffectsPreview(this);
   ui->animationView->setEffectsPreview(effects);
   m_scriptLabPanel->setEffects(effects);
+  // and props as prims (lane 1 job E): a prop named like a prim of the watched object shows the
+  // colour and transparency its scripts gave that prim; the other props keep their own colour
+  connect(m_scriptLabPanel,&ScriptLabPanel::propTintsChanged,this,[this]()
+  {
+    const QList<LabTint::Tint> tints=m_scriptLabPanel->propTints();
+    PropManager* props=scene->propManager();
+    for(int i=0;i<props->count();++i)
+    {
+      Prop* prop=props->at(i);
+      prop->clearTint();
+      for(const LabTint::Tint& tint : tints)
+      {
+        if(tint.prim!=prop->name()) continue;
+        const QColor colour=tint.hasColour ? QColor::fromRgbF(tint.colour[0],tint.colour[1],tint.colour[2]) : prop->drawColour();
+        prop->setTint(colour,tint.hasAlpha ? tint.alpha : 1.0f);
+      }
+    }
+    ui->animationView->update();
+  });
   // and lets the RLV camera limits limit the 3D view's camera, off until its box is ticked (job 7b)
   CameraOverride* cameraOverride=new CameraOverride(this);
   cameraOverride->setState(&m_controlApi->rlv());

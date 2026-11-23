@@ -29,6 +29,7 @@
 #include <QPushButton>
 
 #include "lucideicons.h"
+#include "scriptlab/labtint.h"
 #include "scriptlab/labtree.h"
 #include "scriptlab/labwatcher.h"
 #include "scriptlab/rlvstate.h"
@@ -100,6 +101,7 @@ class TestLabTree : public QObject
     void guide();
     void dotsInBothThemes();
     void tabOrder();
+    void propTints();
 
   private:
     // MyObject/Root/main.lsl, MyObject/Root/settings.txt, MyObject/Lid/lid.lsl
@@ -492,6 +494,51 @@ void TestLabTree::tabOrder()
   QCOMPARE(next(panel.section("tree")->header()), static_cast<QWidget*>(panel.folderTree()));
   QCOMPARE(next(panel.folderTree()), static_cast<QWidget*>(panel.section("guide")->header()));
   QCOMPARE(next(panel.section("guide")->header()), static_cast<QWidget*>(panel.section("script")->header()));
+}
+
+// props as prims (job E): the tints follow the "Show effects in 3D view" box and the folder runs
+void TestLabTree::propTints()
+{
+  RlvState state;
+  LabWatcher watcher;
+  watcher.setRlvState(&state);
+  ScriptLabPanel panel;
+  panel.setState(&state);
+  panel.setWatcher(&watcher);
+  QSignalSpy changed(&panel, &ScriptLabPanel::propTintsChanged);
+  QTemporaryDir dir;
+  const QString top = makeObject(dir);
+  QVERIFY(writeFile(top + "/Lid/lid.lsl", "default { state_entry() { llSetColor(<0.0, 1.0, 0.0>, ALL_SIDES); llSetAlpha(0.5, ALL_SIDES); } }\n"));
+  QVERIFY(panel.watchFolder(top));
+  QVERIFY(panel.propTints().isEmpty());   // the box is off at start
+  QCOMPARE(changed.count(), 0);
+  panel.effectsBox()->setChecked(true);
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(panel.propTints().size(), 1);
+  const LabTint::Tint tint = panel.propTints().first();
+  QCOMPARE(tint.prim, QString("Lid"));
+  QCOMPARE(tint.link, 2);
+  QVERIFY(tint.hasColour);
+  QCOMPARE(tint.colour[1], 1.0f);
+  QCOMPARE(tint.alpha, 0.5f);
+  // the same run again: nothing changed, no signal
+  QVERIFY(panel.runAgain());
+  QCOMPARE(changed.count(), 1);
+  // the lid no longer colours itself: the tint goes
+  QVERIFY(writeFile(top + "/Lid/lid.lsl", LidScript));
+  watcher.runScript("Lid/lid.lsl");
+  QVERIFY(panel.propTints().isEmpty());
+  QCOMPARE(changed.count(), 2);
+  // unticked or stopped: no tints
+  QVERIFY(writeFile(top + "/Lid/lid.lsl", "default { state_entry() { llSetColor(<1.0, 0.0, 0.0>, ALL_SIDES); } }\n"));
+  watcher.runScript("Lid/lid.lsl");
+  QCOMPARE(panel.propTints().size(), 1);
+  panel.effectsBox()->setChecked(false);
+  QVERIFY(panel.propTints().isEmpty());
+  panel.effectsBox()->setChecked(true);
+  QCOMPARE(panel.propTints().size(), 1);
+  panel.stopWatching();
+  QVERIFY(panel.propTints().isEmpty());
 }
 
 QTEST_MAIN(TestLabTree)

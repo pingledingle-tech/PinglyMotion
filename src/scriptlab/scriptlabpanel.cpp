@@ -1572,6 +1572,7 @@ void ScriptLabPanel::refreshLive()
   m_treeSection->setVisible(linkset);
   m_treeSection->setCount(m_folderTree->countText());
   m_guideSection->setVisible(!watching || linkset);
+  updatePropTints();
   int folderScripts = 0;
   for (const QJsonValue& p : folder.value("linkset").toObject().value("prims").toArray())
     folderScripts += int(p.toObject().value("scripts").toArray().size());
@@ -1824,8 +1825,19 @@ void ScriptLabPanel::connectEffectsToWatcher()
   }
 }
 
+void ScriptLabPanel::updatePropTints()
+{
+  // props as prims (lane 1 job E): only while the effects are shown and the object is watched
+  const bool show = m_effectsBox && m_effectsBox->isChecked() && m_watcher && m_watcher->watching() && m_watcher->linkset();
+  const QList<LabTint::Tint> tints = show ? LabTint::fromFolder(m_watcher->folderResult()) : QList<LabTint::Tint>();
+  if (tints == m_propTints) return;
+  m_propTints = tints;
+  emit propTintsChanged();
+}
+
 void ScriptLabPanel::effectsToggled(bool on)
 {
+  updatePropTints();
   if (!m_effects) return;
   m_effects->setEnabled(on);
   // ticked: show the newest run at once, without waiting for the next save

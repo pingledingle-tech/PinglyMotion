@@ -46,6 +46,7 @@
 #include "viewmodesoverride.h"
 #include "effectspreview.h"
 #include "labeditor.h"
+#include "labtint.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
@@ -133,6 +134,10 @@ class ScriptLabPanel : public QWidget
     bool showScript(const QString& file);
     // the script the Script part shows ("" when none), relative to the folder
     QString shownScript() const { return m_shownFile; }
+    // --- props as prims (lane 1 job E): the colour and transparency the scripts of the watched
+    // object gave its prims, while "Show effects in 3D view" is ticked; empty otherwise. The
+    // window gives each tint to the prop of the same name (Prop::setTint) and clears the rest.
+    QList<LabTint::Tint> propTints() const { return m_propTints; }
     // stops watching, as Stop watching does
     void stopWatching();
     // watches the example scripts that come with the program (examples/scriptlab), as
@@ -282,6 +287,10 @@ class ScriptLabPanel : public QWidget
     // the "N items" count
     static QString itemCount(int items);
 
+  signals:
+    // propTints() changed (lane 1 job E)
+    void propTintsChanged();
+
   public slots:
     // reads the state again (connected to RlvState::changed)
     void refresh();
@@ -425,6 +434,8 @@ class ScriptLabPanel : public QWidget
     QLabel* m_guideExample = nullptr;
     QString m_pickedFile;              // the script picked in the tree, for the run m_pickedRun
     int m_pickedRun = -1;
+    QList<LabTint::Tint> m_propTints;
+    void updatePropTints();
     QString m_shownFile;               // the script shown in the view (relative to the folder)
     QList<QJsonObject> m_shownProblems;
     QList<QMetaObject::Connection> m_watcherConnections;
