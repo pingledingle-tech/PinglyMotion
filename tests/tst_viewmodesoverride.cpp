@@ -151,7 +151,7 @@ void TestViewModesOverride::restored()
   ViewModesOverride o;
   o.setState(&state);
   o.setEnabled(true);
-  QVERIFY(state.apply("hood", "@showself=n,setcam_textures=n,setoverlay=n,setoverlay_texture:abc=force").ok());
+  QVERIFY(state.apply("hood", "@showself=n,setcam_textures=n,setoverlay=n,setoverlay_texture:aaaaaaaa-0000-0000-0000-000000000002=force").ok());
   QVERIFY(o.hideFigure() && o.plainFloor() && o.overlay());
   QCOMPARE(o.modes().objects, QStringList{"hood"});
   o.setEnabled(false);

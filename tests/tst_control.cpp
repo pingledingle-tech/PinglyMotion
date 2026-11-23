@@ -3147,7 +3147,7 @@ void ControlTest::rlvAcceptanceCheck()
 
 void ControlTest::rlvAnswersEveryCommand()
 {
-  QJsonObject answer = run(R"({"command":"rlv_command","object":"hud","text":"@fly=n,fly=n,dance=n,unsit=force,tplm=y,sendim:abc=n"})");
+  QJsonObject answer = run(R"({"command":"rlv_command","object":"hud","text":"@fly=n,fly=n,dance=n,unsit=force,tplm=y,sendim:12=n"})");
   QVERIFY(answer["ok"].toBool());
   const QJsonArray results = answer["results"].toArray();
   QCOMPARE(results.size(), 6);
@@ -3155,7 +3155,7 @@ void ControlTest::rlvAnswersEveryCommand()
   for (int i = 0; i < expected.size(); i++)
     QCOMPARE(results[i].toObject()["result"].toString(), expected[i]);
   QVERIFY(results[2].toObject()["reason"].toString().contains("unknown behaviour"));
-  QCOMPARE(results[5].toObject()["option"].toString(), QString("abc"));
+  QCOMPARE(results[5].toObject()["option"].toString(), QString("12"));
   QCOMPARE(results[5].toObject()["type"].toString(), QString("add"));
 
   run(R"({"command":"rlv_command","object":"collar","text":"@fly=n"})");

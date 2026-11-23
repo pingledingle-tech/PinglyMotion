@@ -19,6 +19,7 @@ Files:
 - tests/tst_rlvstate.cpp
 - tests/tst_rlva.cpp
 - tests/tst_cameraoverride.cpp
+- tests/tst_control.cpp
 - tests/tst_viewmodesoverride.cpp
 - tests/data/scriptlab/scenarios.json
 - docs/SCRIPT_LAB.md

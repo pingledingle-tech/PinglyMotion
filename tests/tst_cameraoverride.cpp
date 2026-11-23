@@ -188,15 +188,16 @@ void TestCameraOverride::badOption()
 {
   RlvState state;
   state.setMode(Rlv::Mode::Rlva);
-  QVERIFY(state.apply("collar", "@setcam_avdistmax:far=n").ok());
+  // RLVa refuses a distance that is not a number, so it is never held (docs/RLV_OPTION_TYPES.md)
+  const RlvState::Outcome outcome = state.apply("collar", "@setcam_avdistmax:far=n").outcomes.value(0);
+  QCOMPARE(outcome.result, Rlv::Result::Failed);
+  QCOMPARE(outcome.reason, QString("@setcam_avdistmax:far=n: \"far\" is not a number. Use a number such as 1.5."));
   CameraOverride o;
   o.setState(&state);
   o.setEnabled(true);
   QVERIFY(!o.active());
-  QCOMPARE(o.limits().ignored, QStringList{"setcam_avdistmax:far"});
-  QCOMPARE(o.lines(), (QStringList{
-    "The script does not limit the camera now.",
-    "Not used: setcam_avdistmax:far is not a distance in metres."}));
+  QVERIFY(o.limits().ignored.isEmpty());
+  QCOMPARE(o.lines(), QStringList{"The script does not limit the camera now."});
 }
 
 void TestCameraOverride::linesWhileOff()
