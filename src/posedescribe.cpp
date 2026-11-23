@@ -69,8 +69,9 @@ namespace
     return names.value(joint, joint);
   }
 
-  // the classic joints covered by describe_pose (not the Bento fingers, face,
-  // wings, tail or groin: see the file comment in posedescribe.h)
+  // the classic joints covered by describe_pose's rules, changes and symmetry
+  // (not the Bento fingers, which only "hands" reads, nor the face, wings,
+  // tail or groin: see the file comment in posedescribe.h)
   const QStringList CLASSIC_JOINTS = {
     "hip", "abdomen", "chest", "neck", "head",
     "lCollar", "rCollar", "lShldr", "rShldr", "lForeArm", "rForeArm", "lHand", "rHand",
@@ -212,6 +213,110 @@ namespace
     return rules;
   }
 
+  // -------------------------------------------------------------- hands
+
+  // The character's own directions, as describe_motion uses them: forward is
+  // the hip's forward axis (+Z) laid flat on the floor, up is straight up
+  // (away from the floor, world +Y), left is the character's own left (the
+  // hip's +X laid flat). Laying forward flat keeps "up" and "down" true to
+  // the floor when the hip tilts, as in sitting; a hip pointing straight up
+  // or down has no flat forward, so world +Z is used then.
+  struct BodyFrame
+  {
+    QVector3D forward, up, left;
+  };
+
+  BodyFrame bodyFrame(const QMatrix4x4& hipMatrix)
+  {
+    const QVector3D hipForward = hipMatrix.mapVector(QVector3D(0, 0, 1));
+    QVector3D forward(hipForward.x(), 0, hipForward.z());
+    forward = forward.lengthSquared() > 1e-6 ? forward.normalized() : QVector3D(0, 0, 1);
+    const QVector3D up(0, 1, 0);
+    return {forward, up, QVector3D::crossProduct(up, forward)};
+  }
+
+  // A direction as the nearest of six words, from its parts along forward,
+  // up and out (out is away from the body's middle on that hand's side, in is
+  // towards it). The largest part wins; on an exact tie forward wins over up
+  // and up over out, so the word never depends on rounding order.
+  QString nearestWord(double forward, double up, double out)
+  {
+    const double f = qAbs(forward), u = qAbs(up), o = qAbs(out);
+    if (f >= u && f >= o) return forward >= 0 ? "forward" : "back";
+    if (u >= o) return up >= 0 ? "up" : "down";
+    return out >= 0 ? "out" : "in";
+  }
+
+  QJsonObject frameJson(double forward, double up, double out, int decimals)
+  {
+    const double scale = decimals == 3 ? 1000.0 : 100.0;
+    auto rounded = [scale](double v) { return qRound(v * scale) / scale; };
+    return QJsonObject{{"forward", rounded(forward)}, {"up", rounded(up)}, {"out", rounded(out)}};
+  }
+
+  // The Bento fingers, thumb first, as named in the skeleton
+  // (mHandIndex3Left and so on) and as named in the answer.
+  const QList<QPair<QString, QString>> FINGERS = {
+    {"Thumb", "thumb"}, {"Index", "index"}, {"Middle", "middle"}, {"Ring", "ring"}, {"Pinky", "pinky"},
+  };
+
+  // One hand: which way the palm faces, and where each fingertip is.
+  //
+  // The palm faces along the wrist joint's own -Y axis: in the start pose
+  // (arms straight out to the side) the palms face the floor and the finger
+  // joints curl towards -Y, on both sides of the shipped skeletons.
+  //
+  // A fingertip is the End Site after the finger's third joint (joint 3's tip,
+  // where the finger ends); a skeleton without that End Site uses joint 3
+  // itself. Fingers the skeleton does not have (a skeleton without Bento
+  // joints) are left out.
+  QJsonObject handJson(BVHNode* root, const QHash<BVHNode*, QMatrix4x4>& world, BVHNode* hand, bool leftSide,
+                       const BodyFrame& body)
+  {
+    const QMatrix4x4 handMatrix = world.value(hand);
+    const QVector3D wrist = handMatrix.map(QVector3D());
+    const double outSign = leftSide ? 1.0 : -1.0;
+
+    const QVector3D palm = handMatrix.mapVector(QVector3D(0, -1, 0)).normalized();
+    const double palmForward = QVector3D::dotProduct(palm, body.forward);
+    const double palmUp = QVector3D::dotProduct(palm, body.up);
+    const double palmOut = outSign * QVector3D::dotProduct(palm, body.left);
+
+    QJsonObject fingertips;
+    for (const auto& finger : FINGERS)
+    {
+      BVHNode* joint3 = findNode(root, "mHand" + finger.first + "3" + (leftSide ? "Left" : "Right"));
+      if (!joint3 || !world.contains(joint3)) continue;
+      BVHNode* tip = joint3;
+      for (int i = 0; i < joint3->numChildren(); i++)
+        if (joint3->child(i)->type == BVH_END && world.contains(joint3->child(i))) { tip = joint3->child(i); break; }
+
+      const QVector3D tipWorld = world.value(tip).map(QVector3D());
+      const QVector3D fromWrist = tipWorld - wrist;
+      const double forward = QVector3D::dotProduct(fromWrist, body.forward);
+      const double up = QVector3D::dotProduct(fromWrist, body.up);
+      const double out = outSign * QVector3D::dotProduct(fromWrist, body.left);
+      const double m = AnimExport::INCHES_TO_METERS;
+
+      QJsonObject from = frameJson(forward, up, out, 2);
+      from["meters"] = frameJson(forward * m, up * m, out * m, 3);
+
+      QJsonObject entry;
+      entry["position"] = positionJson(tipWorld);
+      entry["from_wrist"] = from;
+      entry["distance"] = qRound(fromWrist.length() * 100.0) / 100.0;
+      entry["distance_meters"] = qRound(fromWrist.length() * m * 1000.0) / 1000.0;
+      entry["points"] = nearestWord(forward, up, out);
+      fingertips[finger.second] = entry;
+    }
+
+    QJsonObject result;
+    result["palm"] = nearestWord(palmForward, palmUp, palmOut);
+    result["palm_vector"] = frameJson(palmForward, palmUp, palmOut, 2);
+    result["fingertips"] = fingertips;
+    return result;
+  }
+
   // -------------------------------------------------------------- changed joints
 
   QJsonArray changedJoints(const QHash<QString, QVector3D>& rotation, const QHash<QString, QVector3D>& reference)
@@ -326,6 +431,11 @@ QJsonObject PoseDescribe::describe(Animation* animation, int frame)
   QJsonArray sentences;
   for (const QString& sentence : rules.sentences) sentences << sentence;
 
+  const BodyFrame body = bodyFrame(world.value(joint.value("hip")));
+  QJsonObject hands;
+  hands["lHand"] = handJson(root, world, joint.value("lHand"), true, body);
+  hands["rHand"] = handJson(root, world, joint.value("rHand"), false, body);
+
   QJsonObject answer;
   answer["ok"] = true;
   answer["frame"] = frame + 1;
@@ -333,6 +443,7 @@ QJsonObject PoseDescribe::describe(Animation* animation, int frame)
   answer["sentences"] = sentences;
   answer["changed_joints"] = changedJoints(rotation, referenceRotation);
   answer["symmetry"] = symmetryNotes(rotation);
+  answer["hands"] = hands;
   answer["summary"] = rules.sentences.isEmpty()
                          ? QString("A neutral pose: nothing bent, raised or shifted enough to describe.")
                          : SkeletonWalk::capitalize(rules.sentences.join("; ")) + ".";
