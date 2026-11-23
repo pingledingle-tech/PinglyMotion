@@ -1,6 +1,6 @@
 Branch: job/setsphere-view
 Status: active
-Pull request: pending
+Pull request: #415
 Files:
 - src/scriptlab/environmentoverride.*
 - src/animationview.*
