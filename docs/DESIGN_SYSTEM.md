@@ -217,6 +217,9 @@ moves on its own unless the user asked for it.
 - Camera and key schemes: PinglyMotion default, Maya, Blender and Second Life
   habits; the choice is remembered (charter P11) and the camera follows it at
   once (UX phase 4a).
+- The 3D view's view tools: V Pick, O Look around, M Move the view, Z Zoom (UX phase 4b);
+  the view-direction widget is one Tab stop, its ends are chosen with the arrow keys and
+  Enter or Space.
 
 ## Guidance
 

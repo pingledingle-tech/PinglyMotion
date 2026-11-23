@@ -197,20 +197,22 @@ void TestSetupDialog::cameraKeysDialogMatchesSpec()
     CameraKeysDialog dialog;
     QCOMPARE(dialog.habitChecked(), QLatin1String(habit->id));
     QTableWidget* table = dialog.table();
-    QCOMPARE(table->rowCount(), 9);
-    QCOMPARE(CameraHabitSpec::sharedRowCount, 4);
+    QCOMPARE(table->rowCount(), 11);
+    QCOMPARE(CameraHabitSpec::sharedRowCount, 6);
     for (int row = 0; row < 5; ++row)
     {
       QCOMPARE(table->item(row, 0)->text(), CameraHabitSpec::action(habit->rows[row]));
       QCOMPARE(table->item(row, 1)->text(), CameraHabitSpec::gesture(habit->rows[row]));
     }
-    // UX phase 4a: the keys every habit shares, under the habit's rows, word for word
+    // UX phase 4a and 4b: the keys every habit shares, under the habit's rows, word for word
     const QStringList shared = {
+      QStringLiteral("Turn on one axis"), QStringLiteral("Drag the red X, green Y or blue Z ring around the picked joint"),
+      QStringLiteral("View tools: pick, look around, move the view, zoom"), QStringLiteral("V, O, M, Z"),
       QStringLiteral("Frame the picked joint, the whole figure, home view"), QStringLiteral("F, Shift+F, 0"),
-      QStringLiteral("Front, side, top view"), QStringLiteral("Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)"),
+      QStringLiteral("Front, side, top view"), QStringLiteral("Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view), or click an end of the axis widget"),
       QStringLiteral("Look around with keys"), QStringLiteral("Alt + arrow keys in the 3D view"),
       QStringLiteral("Zoom with keys"), QStringLiteral("Page Up, Page Down")};
-    for (int row = 0; row < 4; ++row)
+    for (int row = 0; row < 6; ++row)
     {
       QCOMPARE(table->item(5 + row, 0)->text(), shared.at(2 * row));
       QCOMPARE(table->item(5 + row, 1)->text(), shared.at(2 * row + 1));
@@ -268,6 +270,11 @@ void TestSetupDialog::keysMouseDialogHasEveryRow()
   QCOMPARE(maya.table()->item(5, 1)->text(), QStringLiteral("Shift+F"));
   QCOMPARE(maya.table()->item(6, 1)->text(), QStringLiteral("Alt + arrow keys in the 3D view"));
   QCOMPARE(maya.table()->item(7, 1)->text(), QStringLiteral("Page Up, Page Down"));
+  // UX phase 4b part 1
+  QCOMPARE(maya.table()->item(8, 0)->text(), QStringLiteral("Turn on one axis"));
+  QCOMPARE(maya.table()->item(8, 1)->text(), QStringLiteral("Drag the red X, green Y or blue Z ring around the picked joint"));
+  QCOMPARE(maya.table()->item(9, 0)->text(), QStringLiteral("View tools: pick, look around, move the view, zoom"));
+  QCOMPARE(maya.table()->item(9, 1)->text(), QStringLiteral("V, O, M, Z"));
 }
 
 // the Keys and mouse page must never show a key that is not the menu's own (design charter P6,

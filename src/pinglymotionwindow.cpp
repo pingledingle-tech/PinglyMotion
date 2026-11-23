@@ -122,6 +122,7 @@
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
 #include "wheelguard.h"
+#include "viewtoolbar.h"
 
 // What the remote control commands do in the window: the same steps as clicking.
 class WindowControlHost : public ControlHost
@@ -1111,6 +1112,7 @@ void PinglyMotionWindow::buildMenus()
     Theme::apply(!light);
     if(m_topBar) m_topBar->setDark(!light);
     if(m_emptyState) m_emptyState->applyLook();
+    if(m_viewToolbar) m_viewToolbar->applyLook();
     if(m_reasonLine) m_reasonLine->applyLook();
     if(m_selectedJoint) m_selectedJoint->applyLook();
     fitPanelWidths();
@@ -1301,10 +1303,131 @@ void PinglyMotionWindow::buildTopBar()
   });
   connect(m_topBar,&TopBar::setupRequested,this,&PinglyMotionWindow::openSetupDialog);
 
+  setupViewToolbar();
+
   m_emptyState=new EmptyState(ui->animationView);
   m_emptyState->hide();
   connect(m_emptyState,&EmptyState::startChosen,this,&PinglyMotionWindow::startFromLibrary);
   connect(m_emptyState,&EmptyState::newChosen,this,[this](){ fileNew(); });
+}
+
+// UX phase 4b: the view toolbar at the top left of the 3D view (docs/UX_DECISIONS.md 6b)
+void PinglyMotionWindow::setupViewToolbar()
+{
+  using Part=ViewToolSpec::Part;
+  AnimationView* view=ui->animationView;
+  m_viewToolbar=new ViewToolbar(view);
+
+  // the saved choices
+  const ViewTool tool=Camera::toolFor(UserSettings::viewTool());
+  view->setViewTool(tool);
+  m_viewToolbar->setTool(tool);
+  view->setShowFloor(UserSettings::showFloor());
+  view->setShowRings(UserSettings::showRings());
+  m_viewToolbar->setPartShown(Part::Floor,UserSettings::showFloor());
+  m_viewToolbar->setPartShown(Part::Rings,UserSettings::showRings());
+  m_viewToolbar->setPartShown(Part::JointDots,UserSettings::skeleton());
+  m_viewToolbar->setPartShown(Part::ToolNames,UserSettings::viewToolNames());
+
+  connect(m_viewToolbar,&ViewToolbar::toolChosen,this,&PinglyMotionWindow::chooseViewTool);
+  connect(view,&AnimationView::viewToolRequested,this,&PinglyMotionWindow::chooseViewTool);
+  connect(m_viewToolbar,&ViewToolbar::partToggled,this,&PinglyMotionWindow::chooseViewPart);
+  // Joint dots is Options > Show skeleton: either one changes both
+  connect(ui->optionsSkeletonAction,&QAction::toggled,m_viewToolbar,[this](bool on)
+  {
+    m_viewToolbar->setPartShown(ViewToolSpec::Part::JointDots,on);
+  });
+  connect(m_viewToolbar,&ViewToolbar::focusRequested,this,&PinglyMotionWindow::focusPickedJoint);
+  connect(m_viewToolbar,&ViewToolbar::wholeFigureRequested,this,[this,view]()
+  {
+    view->frameWholeFigure();
+    statusBar()->showMessage(ViewToolSpec::tr(ViewToolSpec::wholeFigureDone),5000);
+  });
+  connect(m_viewToolbar,&ViewToolbar::homeRequested,this,[this]()
+  {
+    on_resetCameraAction_triggered();
+    statusBar()->showMessage(ViewToolSpec::tr(ViewToolSpec::homeDone),5000);
+  });
+  connect(m_viewToolbar,&ViewToolbar::lookRequested,this,[this,view](int index)
+  {
+    if(index<0 || index>=ViewToolSpec::lookCount) return;
+    const ViewToolSpec::Look& look=ViewToolSpec::looks[index];
+    view->camera()->setView(look.height,look.angle);
+    view->update();
+    statusBar()->showMessage(ViewToolSpec::lookingFromMessage(Camera::viewNameFor(look.height,look.angle)),5000);
+  });
+  connect(m_viewToolbar,&ViewToolbar::endChosen,this,[this,view](ViewToolSpec::End end)
+  {
+    const ViewToolSpec::EndSpec& spec=ViewToolSpec::endSpec(end);
+    view->camera()->lookFrom(spec.height,spec.angle);
+    view->update();
+    statusBar()->showMessage(ViewToolSpec::lookingFromMessage(Camera::viewNameFor(spec.height,spec.angle)),5000);
+  });
+  // dragging the widget's background turns the view as Look around does (half a degree per pixel)
+  connect(m_viewToolbar,&ViewToolbar::dragged,this,[view](int dx,int dy)
+  {
+    view->camera()->rotate(dy*0.5f,dx*0.5f);
+    view->update();
+  });
+  connect(view,&AnimationView::viewDrawn,m_viewToolbar,[this,view]()
+  {
+    m_viewToolbar->setCameraAngles(view->camera()->xRotation(),view->camera()->yRotation());
+  });
+  connect(view,&AnimationView::hoverHintChanged,this,&PinglyMotionWindow::showHoverHint);
+}
+
+void PinglyMotionWindow::chooseViewTool(ViewTool tool)
+{
+  UserSettings::setViewTool(QLatin1String(Camera::toolId(tool)));
+  ui->animationView->setViewTool(tool);
+  if(m_viewToolbar) m_viewToolbar->setTool(tool);
+  statusBar()->showMessage(ViewToolSpec::toolChosenMessage(tool),5000);
+}
+
+void PinglyMotionWindow::chooseViewPart(ViewToolSpec::Part part,bool shown)
+{
+  using Part=ViewToolSpec::Part;
+  switch(part)
+  {
+    case Part::Floor:
+      UserSettings::setShowFloor(shown);
+      ui->animationView->setShowFloor(shown);
+      break;
+    case Part::Rings:
+      UserSettings::setShowRings(shown);
+      ui->animationView->setShowRings(shown);
+      break;
+    case Part::JointDots:
+      // the same setting as Options > Show skeleton, through its own action
+      ui->optionsSkeletonAction->setChecked(shown);
+      break;
+    case Part::ToolNames:
+      UserSettings::setViewToolNames(shown);
+      break;
+  }
+  if(m_viewToolbar) m_viewToolbar->setPartShown(part,shown);
+  statusBar()->showMessage(ViewToolSpec::shownMessage(part,shown),5000);
+}
+
+void PinglyMotionWindow::focusPickedJoint()
+{
+  if(currentPart && ui->animationView->focusOnPickedJoint())
+    statusBar()->showMessage(ViewToolSpec::tr(ViewToolSpec::focusDone).arg(jointDisplayName(currentPart->name())),5000);
+  else
+    statusBar()->showMessage(ViewToolSpec::tr(ViewToolSpec::focusNoJoint),5000);
+}
+
+void PinglyMotionWindow::showHoverHint(const QString& hint)
+{
+  if(hint.isEmpty() || !UserSettings::tipsOn())
+  {
+    // take away only our own hint, never another message
+    if(!m_shownHoverHint.isEmpty() && statusBar()->currentMessage()==m_shownHoverHint) statusBar()->clearMessage();
+    m_shownHoverHint.clear();
+    return;
+  }
+  m_shownHoverHint=hint;
+  statusBar()->showMessage(hint);
 }
 
 // a start choice of the empty state: the clip of the reference library, by the same route as
@@ -1365,6 +1488,8 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
     if(empty) m_emptyState->choiceButtons().last()->setFocus();
   }
   if(m_topBar) m_topBar->setAnimationOpen(!empty);
+  // the view toolbar has nothing to look at while the empty state covers the 3D view
+  if(m_viewToolbar) m_viewToolbar->setVisible(!empty);
   // the timeline shows one line instead of its rows (UX phase 3a)
   ui->timelineView->setNoAnimation(empty);
   updateEditActions();

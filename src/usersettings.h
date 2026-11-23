@@ -100,10 +100,21 @@ class UserSettings
     static void setExpertMode(bool on);
     static bool expertMode();
     // camera habit: one of cameraHabits(), default "pinglymotion"; anything else becomes the default.
-    // Stored only; the camera does not use it yet.
+    // The 3D view follows it since UX phase 4a.
     static void setCameraHabit(const QString& value);
     static QString cameraHabit();
     static QStringList cameraHabits();   // "pinglymotion", "maya", "blender", "sl"
+    // the view toolbar in the 3D view (UX phase 4b): the tool of the left mouse button, one of
+    // viewTools() ("pick" by default; anything else becomes "pick"), and its Show menu
+    static void setViewTool(const QString& value);
+    static QString viewTool();
+    static QStringList viewTools();      // "pick", "orbit", "pan", "zoom"
+    static void setShowFloor(bool on);
+    static bool showFloor();
+    static void setShowRings(bool on);
+    static bool showRings();
+    static void setViewToolNames(bool on);
+    static bool viewToolNames();
     // text size in percent, 100 (default) to 200; applied to the whole program
     // by src/textsize.* (main() at start, PinglyMotionWindow::setTextSizePercent).
     // A value outside the range is cut to the nearest end.
@@ -180,6 +191,14 @@ private:
     static const QString m_expertModeKey;
     static QString m_cameraHabit;
     static const QString m_cameraHabitKey;
+    static QString m_viewTool;
+    static const QString m_viewToolKey;
+    static bool m_showFloor;
+    static const QString m_showFloorKey;
+    static bool m_showRings;
+    static const QString m_showRingsKey;
+    static bool m_viewToolNames;
+    static const QString m_viewToolNamesKey;
     static int m_textSizePercent;
     static const QString m_textSizePercentKey;
 

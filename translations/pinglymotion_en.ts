@@ -300,10 +300,6 @@ Green: live, the pose shows on your avatar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Look around with keys</source>
         <translation type="unfinished"></translation>
     </message>
@@ -321,6 +317,26 @@ Green: live, the pose shows on your avatar</source>
     </message>
     <message>
         <source>Camera and keys like %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn on one axis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the red X, green Y or blue Z ring around the picked joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View tools: pick, look around, move the view, zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>V, O, M, Z</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view), or click an end of the axis widget</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1037,6 +1053,22 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Page Up, Page Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn on one axis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the red X, green Y or blue Z ring around the picked joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View tools: pick, look around, move the view, zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>V, O, M, Z</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5603,6 +5635,233 @@ Click to turn them on or off.</source>
     </message>
     <message>
         <source>Not used: %1 is not a value the 3D view can use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ViewToolSpec</name>
+    <message>
+        <source>View tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a joint to pick it. Pulling a limb comes in a later version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look around</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag anywhere to turn the view around the figure.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag to slide the view sideways or up and down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag up to come closer, down to go back. The mouse wheel zooms too.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick: click a joint to pick it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look around: drag anywhere to turn the view.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the view: drag to slide the view.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom: drag up to come closer, down to go back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look around: drag anywhere. V goes back to picking joints.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the view: drag. V goes back to picking joints.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom: drag up or down. V goes back to picking joints.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Picked joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Focus on the picked joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Whole figure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frame the whole figure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home view: front, normal size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home view: front, normal size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The whole figure fits the view.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Camera turns around %1 now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Focus: Pick a joint first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from: front, side, top or back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show or hide parts of the 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Front</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floor grid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rotation rings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Joint dots</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tool names in this toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hiding: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View direction: click an axis end to look from there</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag to look around</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from the left side (+X)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from the right side (−X)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from the top (+Y)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from below (−Y)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from the front (+Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look from the back (−Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Looking from: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Below</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the red X ring to turn the joint: tilt forward or back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the green Y ring to turn the joint: turn left or right.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the blue Z ring to turn the joint: lean to the side.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

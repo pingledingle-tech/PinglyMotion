@@ -143,27 +143,27 @@ void TestCameraHabits::wheelZoomsInEveryHabit()
   QVERIFY(!body.contains(QStringLiteral("m_cameraHabit")));
 }
 
-// The mockup's KEYROWS_ALL rows that are built; the Front, side, top row leaves out the axis
-// widget (UX phase 4b)
+// The mockup's KEYROWS_ALL rows that are built, word for word: since UX phase 4b part 1 the
+// rings, the view tools and the axis widget too; dragging a joint and the keyboard pull (the
+// first, second and fourth rows) come with part 2
 void TestCameraHabits::sharedRowsMatchTheMockup()
 {
   const QString mockup = read(QStringLiteral(PINGLYMOTION_MOCKUP));
   QVERIFY(!mockup.isEmpty());
-  QCOMPARE(CameraHabitSpec::sharedRowCount, 4);
+  QCOMPARE(CameraHabitSpec::sharedRowCount, 6);
   for (int row = 0; row < CameraHabitSpec::sharedRowCount; ++row)
   {
     const QString action = QString::fromLatin1(CameraHabitSpec::sharedRows[row].action);
     const QString gesture = QString::fromLatin1(CameraHabitSpec::sharedRows[row].gesture);
-    if (row == 1)
-    {
-      QCOMPARE(action, QStringLiteral("Front, side, top view"));
-      QCOMPARE(gesture, QStringLiteral("Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)"));
-      QVERIFY(mockup.contains(QStringLiteral("[\"Front, side, top view\", \"Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view), or click an end of the axis widget\"]")));
-      continue;
-    }
     const QString pair = QStringLiteral("[\"%1\", \"%2\"]").arg(action, gesture);
     QVERIFY2(mockup.contains(pair), qPrintable(pair));
   }
+  QCOMPARE(QString::fromLatin1(CameraHabitSpec::sharedRows[0].action), QStringLiteral("Turn on one axis"));
+  QCOMPARE(QString::fromLatin1(CameraHabitSpec::sharedRows[1].gesture), QStringLiteral("V, O, M, Z"));
+  // nothing that is not built yet
+  for (const CameraHabitSpec::Row& row : CameraHabitSpec::sharedRows)
+    for (const char* later : {"Pull a limb", "Turn only that joint", "Pull with the keyboard"})
+      QVERIFY(QString::fromLatin1(row.action) != QLatin1String(later));
 }
 
 void TestCameraHabits::chosenMessage()
@@ -194,11 +194,12 @@ void TestCameraHabits::viewFollowsTheHabit()
 {
   const QString source = viewSource();
   QVERIFY(!source.isEmpty());
-  // the press asks the habit, a left press that only picks never turns into a camera drag
-  QVERIFY(source.contains(QStringLiteral("Camera::gestureFor(m_cameraHabit,event->button(),keys)")));
+  // the press asks the habit (and, since UX phase 4b, the view tool), a left press that only
+  // picks never turns into a camera drag
+  QVERIFY(source.contains(QStringLiteral("Camera::gestureFor(m_cameraHabit,m_viewTool,event->button(),keys)")));
   QVERIFY(source.contains(QStringLiteral("if(m_cameraDrag==CameraDrag::None) return;\n    if((event->pos()-m_pressPos).manhattanLength()<4) return;")));
   // double click and Alt + click focus only in their habit
-  QVERIFY(source.contains(QStringLiteral("Camera::gestureFor(m_cameraHabit,event->button(),event->modifiers()).picks")));
+  QVERIFY(source.contains(QStringLiteral("Camera::gestureFor(m_cameraHabit,m_viewTool,event->button(),event->modifiers()).picks")));
   QVERIFY(source.contains(QStringLiteral("else if(Camera::focusesOnDoubleClick(m_cameraHabit))")));
   QVERIFY(source.contains(QStringLiteral("Camera::focusesOnAltClick(m_cameraHabit)")));
   // the keys: Alt + arrows, view keys, number pad 0, Shift+F, F / number pad "."

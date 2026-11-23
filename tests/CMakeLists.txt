@@ -96,6 +96,9 @@ SET_TESTS_PROPERTIES (camera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 # UX phase 4a: the camera follows the chosen habit, the view keys
 ADD_SUBDIRECTORY (camerahabits)
 
+# UX phase 4b part 1: the view toolbar, the view-direction widget, the view name, the ring hint
+ADD_SUBDIRECTORY (viewtools)
+
 # the .anim writer (#10), not used by the program yet
 ADD_SUBDIRECTORY (animexport)
 

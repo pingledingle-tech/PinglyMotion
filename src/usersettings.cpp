@@ -65,6 +65,14 @@ bool UserSettings::m_expertMode = false;
 const QString UserSettings::m_expertModeKey = "expert_mode";
 QString UserSettings::m_cameraHabit = "pinglymotion";
 const QString UserSettings::m_cameraHabitKey = "camera_habit";
+QString UserSettings::m_viewTool = "pick";
+const QString UserSettings::m_viewToolKey = "view_tool";
+bool UserSettings::m_showFloor = true;
+const QString UserSettings::m_showFloorKey = "show_floor";
+bool UserSettings::m_showRings = true;
+const QString UserSettings::m_showRingsKey = "show_rings";
+bool UserSettings::m_viewToolNames = true;
+const QString UserSettings::m_viewToolNamesKey = "view_tool_names";
 int UserSettings::m_textSizePercent = 100;
 const QString UserSettings::m_textSizePercentKey = "text_size_percent";
 QByteArray UserSettings::m_panelLayout;
@@ -145,6 +153,22 @@ void UserSettings::setCameraHabit(const QString& value)
   m_cameraHabit = cameraHabits().contains(value) ? value : QString("pinglymotion");
 }
 QString UserSettings::cameraHabit()                  { return m_cameraHabit; }
+
+QStringList UserSettings::viewTools()
+{
+  return {"pick", "orbit", "pan", "zoom"};
+}
+void UserSettings::setViewTool(const QString& value)
+{
+  m_viewTool = viewTools().contains(value) ? value : QString("pick");
+}
+QString UserSettings::viewTool()                     { return m_viewTool; }
+void UserSettings::setShowFloor(bool on)             { m_showFloor = on; }
+bool UserSettings::showFloor()                       { return m_showFloor; }
+void UserSettings::setShowRings(bool on)             { m_showRings = on; }
+bool UserSettings::showRings()                       { return m_showRings; }
+void UserSettings::setViewToolNames(bool on)         { m_viewToolNames = on; }
+bool UserSettings::viewToolNames()                   { return m_viewToolNames; }
 void UserSettings::setTextSizePercent(int value)     { m_textSizePercent = qBound(100, value, 200); }
 int UserSettings::textSizePercent()                  { return m_textSizePercent; }
 void UserSettings::setPanelLayout(const QByteArray& state) { m_panelLayout = state; }
@@ -207,6 +231,10 @@ void UserSettings::readSettings()
     setExpertMode(settings.value(m_expertModeKey, false).toString().toLower() == "true"
                   || settings.value(m_expertModeKey, false).toString() == "1");
     setCameraHabit(settings.value(m_cameraHabitKey, "pinglymotion").toString());
+    setViewTool(settings.value(m_viewToolKey, "pick").toString());
+    setShowFloor(settings.value(m_showFloorKey, true).toBool());
+    setShowRings(settings.value(m_showRingsKey, true).toBool());
+    setViewToolNames(settings.value(m_viewToolNamesKey, true).toBool());
     // a stored value that is not a whole number gives 100
     bool sizeOk = false;
     const int size = settings.value(m_textSizePercentKey, 100).toInt(&sizeOk);
@@ -262,6 +290,10 @@ void UserSettings::writeSettings()
   settings.setValue(m_jointMoreOptionsKey, jointMoreOptions());
   settings.setValue(m_expertModeKey, expertMode());
   settings.setValue(m_cameraHabitKey, cameraHabit());
+  settings.setValue(m_viewToolKey, viewTool());
+  settings.setValue(m_showFloorKey, showFloor());
+  settings.setValue(m_showRingsKey, showRings());
+  settings.setValue(m_viewToolNamesKey, viewToolNames());
   settings.setValue(m_textSizePercentKey, textSizePercent());
   settings.setValue(m_panelLayoutKey, panelLayout());
   settings.setValue(m_panelLayoutVersionKey, panelLayoutVersion());
