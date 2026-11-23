@@ -1,7 +1,8 @@
 # PinglyMotion automatic tests (Qt Test)
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test)
 
-# The files of the program's core are built once, as the library pinglymotion_core (src/CMakeLists.txt)
+# Core files: library pinglymotion_core; files that several tests need: library pinglymotion_shared (src/CMakeLists.txt).
+# A test links them and never lists such a file in ADD_EXECUTABLE (tools/check_shared_lib.py fails the Linux build).
 
 ADD_EXECUTABLE (pinglymotion_tests tst_bento.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

@@ -257,6 +257,10 @@ jobs:
         run: python3 tests/test_gen_soma77_bvh.py
       - name: Kimodo text-to-motion helper (issue 18)
         run: python3 tests/test_kimodo_helper.py
+      - name: Tests use the shared test library (CLAUDE.md, docs/DEV.md)
+        run: |
+          python3 tests/test_check_shared_lib.py
+          python3 tools/check_shared_lib.py
       - name: CI path filter decides which jobs run
         run: python3 tests/test_ci_changes.py
       - name: Auto-merge decides only on green required checks
