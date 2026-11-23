@@ -540,16 +540,32 @@ void TestSelectedJoint::resetJoint()
 
 void TestSelectedJoint::pullWithKeysIsGreyedWithAReason()
 {
+  // UX phase 4b part 2: Pull with keys works, and is greyed only when the joint cannot turn
   SelectedJointPanel panel;
   panel.showJoint(shoulder());
   QCOMPARE(panel.pullKeysButton()->text(), QStringLiteral("Pull with keys"));
+  QVERIFY(panel.pullKeysButton()->isEnabled());
+  QCOMPARE(panel.pullKeysButton()->toolTip(),
+           QStringLiteral("Pull with the keyboard (Enter in the 3D view)\nPick the joint up and move it with the arrow keys. Enter sets a key. Esc cancels."));
+  QCOMPARE(panel.pullKeysButton()->statusTip(), QString());
+  QSignalSpy pull(&panel, &SelectedJointPanel::pullKeysRequested);
+  panel.pullKeysButton()->click();
+  QCOMPARE(pull.count(), 1);
+  // greyed with the sliders' reason while they are
+  panel.setTurnBlocked(QStringLiteral("Stop playing first."));
   QVERIFY(!panel.pullKeysButton()->isEnabled());
-  QCOMPARE(panel.pullKeysButton()->toolTip(), QStringLiteral("Pulling with keys comes in a later version."));
-  QCOMPARE(panel.pullKeysButton()->statusTip(), QStringLiteral("Pulling with keys comes in a later version."));
-  // still greyed for every joint and while nothing blocks the sliders
-  panel.showJoint(pelvis());
+  QCOMPARE(panel.pullKeysButton()->toolTip(), QStringLiteral("Stop playing first."));
+  QCOMPARE(panel.pullKeysButton()->statusTip(), QStringLiteral("Stop playing first."));
   panel.setTurnBlocked(QString());
+  QVERIFY(panel.pullKeysButton()->isEnabled());
+  // the Avatar Position only moves
+  SelectedJointPanel::Joint position;
+  position.name = QStringLiteral("Avatar Position");
+  position.canTurn = false;
+  position.canMove = true;
+  panel.showJoint(position);
   QVERIFY(!panel.pullKeysButton()->isEnabled());
+  QCOMPARE(panel.pullKeysButton()->toolTip(), QStringLiteral("The Avatar Position can only be moved."));
 }
 
 void TestSelectedJoint::dragChoiceIsOnByDefaultAndKept()
@@ -560,18 +576,31 @@ void TestSelectedJoint::dragChoiceIsOnByDefaultAndKept()
     QCOMPARE(panel.dragHeading()->text(), QStringLiteral("When you drag this joint in the 3D view"));
     QCOMPARE(panel.pullLimbButton()->text(), QStringLiteral("Pull the limb"));
     QCOMPARE(panel.turnOnlyButton()->text(), QStringLiteral("Turn only this joint"));
-    QCOMPARE(panel.dragCaption()->text(), QStringLiteral("Dragging turns only this joint for now. Pulling the limb comes later."));
+    QCOMPARE(panel.dragCaption()->text(), QStringLiteral("The joints above it bend, so the limb follows your pointer. This is called IK. "
+                                                         "Hold Shift when you press to get the other one."));
     // on by default
     QCOMPARE(panel.pullLimb(), true);
     QVERIFY(panel.pullLimbButton()->isChecked());
     QVERIFY(!panel.turnOnlyButton()->isChecked());
-    // dragging a limb comes with UX phase 4b: greyed with the reason
-    for (QPushButton* button : {panel.pullLimbButton(), panel.turnOnlyButton()})
-    {
-      QVERIFY(!button->isEnabled());
-      QCOMPARE(button->toolTip(), QStringLiteral("Pulling the limb comes in a later version."));
-      QCOMPARE(button->statusTip(), QStringLiteral("Pulling the limb comes in a later version."));
-    }
+    // both work since UX phase 4b part 2, with the mockup's tips
+    QVERIFY(panel.pullLimbButton()->isEnabled());
+    QVERIFY(panel.turnOnlyButton()->isEnabled());
+    QCOMPARE(panel.pullLimbButton()->toolTip(), QStringLiteral("Pull the limb (IK) (Shift when you press: the other one)"));
+    QCOMPARE(panel.turnOnlyButton()->toolTip(), QStringLiteral("Turn only this joint"));
+    // choosing Turn only changes the caption, the setting and says so
+    QSignalSpy chosen(&panel, &SelectedJointPanel::dragChoiceChanged);
+    panel.turnOnlyButton()->click();
+    QCOMPARE(chosen.count(), 1);
+    QCOMPARE(chosen.at(0).at(0).toBool(), false);
+    QCOMPARE(UserSettings::pullLimbOnDrag(), false);
+    QCOMPARE(panel.dragCaption()->text(), QStringLiteral("Only this joint turns; the rest of the body stays still. "
+                                                         "Hold Shift when you press to get the other one."));
+    panel.pullLimbButton()->click();
+    QCOMPARE(chosen.count(), 2);
+    QCOMPARE(chosen.at(1).at(0).toBool(), true);
+    QCOMPARE(UserSettings::pullLimbOnDrag(), true);
+    QCOMPARE(SelectedJointSpec::tr2(SelectedJointSpec::dragChosenPull), QStringLiteral("Dragging a joint pulls the limb (IK)."));
+    QCOMPARE(SelectedJointSpec::tr2(SelectedJointSpec::dragChosenTurn), QStringLiteral("Dragging a joint turns only that joint."));
   }
   // the choice is kept in pull_limb_on_drag and read again at the next start
   QCOMPARE(UserSettings::pullLimbOnDrag(), true);
@@ -666,7 +695,7 @@ void TestSelectedJoint::reasonLineNamesTheSlider()
   QVERIFY(reason.valid());
   QCOMPARE(ReasonLine::lineText(reason.name, reason.why), QStringLiteral("Y: Turn left or right: Stop playing first."));
   const ReasonLine::Reason keys = ReasonLine::reasonFor(panel.pullKeysButton());
-  QCOMPARE(ReasonLine::lineText(keys.name, keys.why), QStringLiteral("Pull with keys: Pulling with keys comes in a later version."));
+  QCOMPARE(ReasonLine::lineText(keys.name, keys.why), QStringLiteral("Pull with keys: Stop playing first."));
   // a working control has no reason
   panel.setTurnBlocked(QString());
   QVERIFY(!ReasonLine::reasonFor(panel.slider(Mode::Turn, 1)).valid());
@@ -746,6 +775,9 @@ void TestSelectedJoint::textsAreShortAndFromTheMockup()
                               SelectedJointSpec::turnLimitsOff, SelectedJointSpec::limitsSwitch, SelectedJointSpec::resetJoint,
                               SelectedJointSpec::pullKeys, SelectedJointSpec::dragHeading, SelectedJointSpec::pullLimb,
                               SelectedJointSpec::turnOnly, SelectedJointSpec::moreOptions, SelectedJointSpec::changeLabel,
+                              SelectedJointSpec::pullKeysName, SelectedJointSpec::pullKeysKey, SelectedJointSpec::pullLimbName,
+                              SelectedJointSpec::pullLimbKey, SelectedJointSpec::dragCaptionTurn, SelectedJointSpec::dragCaptionShift,
+                              SelectedJointSpec::dragChosenPull, SelectedJointSpec::dragChosenTurn,
                               SelectedJointSpec::moveMode, SelectedJointSpec::moveWhy, SelectedJointSpec::allowedRange,
                               SelectedJointSpec::noLimits, SelectedJointSpec::resetWhy, "Second Life name: ",
                               SelectedJointSpec::axes[0].turnName, SelectedJointSpec::axes[1].turnName, SelectedJointSpec::axes[2].turnName};
@@ -761,8 +793,9 @@ void TestSelectedJoint::textsAreShortAndFromTheMockup()
   const char* all[] = {SelectedJointSpec::nothingLine, SelectedJointSpec::pickLine, SelectedJointSpec::pickSteps[0],
                        SelectedJointSpec::pickSteps[1], SelectedJointSpec::pickSteps[2], SelectedJointSpec::hint,
                        SelectedJointSpec::nearText, SelectedJointSpec::limitsTip, SelectedJointSpec::resetTip,
-                       SelectedJointSpec::resetWhy, SelectedJointSpec::pullKeysWhy, SelectedJointSpec::dragWhy,
-                       SelectedJointSpec::dragCaption, SelectedJointSpec::moveWhy, SelectedJointSpec::turnWhy,
+                       SelectedJointSpec::resetWhy, SelectedJointSpec::pullKeysTip, SelectedJointSpec::dragCaptionPull,
+                       SelectedJointSpec::dragCaptionTurn, SelectedJointSpec::dragCaptionShift, SelectedJointSpec::dragChosenPull,
+                       SelectedJointSpec::dragChosenTurn, SelectedJointSpec::moveWhy, SelectedJointSpec::turnWhy,
                        SelectedJointSpec::sliderKeys, SelectedJointSpec::dragHeading};
   for (const char* text : all)
     verifyShortSentences(QString::fromUtf8(text));

@@ -11,6 +11,9 @@ Files:
 - src/viewtoolbar.*
 - src/keysmousedialog.*
 - src/camerakeysdialog.*
+- src/camerahabitspec.h
+- tests/camerahabits/**
+- tests/tst_camera.cpp
 - src/CMakeLists.txt
 - tests/CMakeLists.txt
 - tests/limbpull/**

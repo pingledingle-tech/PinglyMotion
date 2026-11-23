@@ -118,7 +118,8 @@ namespace LimbPull
   using TurnOf = std::function<QVector3D(BVHNode* node)>;
   using LimitsOf = std::function<void(BVHNode* node, QVector3D& minimum, QVector3D& maximum)>;
 
-  // Sets up the pull of joint. turnOnly: only the joint turns (Shift, or Turn only this
+  // Sets up the pull of joint. A joint already turned past one of its limits keeps that turn as
+  // the end of its range for this pull, so the pull never snaps it back. turnOnly: only the joint turns (Shift, or Turn only this
   // joint); a joint with nothing above it turns only too (held). frameOf gives each joint's
   // frame before its turn (the 3D view: where it was drawn; the tests: frameFromSkeleton()).
   // False when a frame is missing or the joint has no rotation.

@@ -428,7 +428,7 @@ QWidget* SelectedJointPanel::buildJointPage(const Controls* controls)
   m_pullKeys = new QPushButton(tr2(SelectedJointSpec::pullKeys), page);
   m_pullKeys->setObjectName(QStringLiteral("pullKeysButton"));
   m_pullKeys->setAutoDefault(false);
-  setReason(m_pullKeys, false, QString(), tr2(SelectedJointSpec::pullKeysWhy));
+  connect(m_pullKeys, &QPushButton::clicked, this, &SelectedJointPanel::pullKeysRequested);
   buttons->addWidget(m_reset);
   buttons->addWidget(m_pullKeys);
   buttons->addStretch(1);
@@ -450,15 +450,19 @@ QWidget* SelectedJointPanel::buildJointPage(const Controls* controls)
   m_dragGroup->addButton(m_pullLimb);
   m_dragGroup->addButton(m_turnOnly);
   (UserSettings::pullLimbOnDrag() ? m_pullLimb : m_turnOnly)->setChecked(true);
-  connect(m_pullLimb, &QPushButton::toggled, this, [](bool on) { UserSettings::setPullLimbOnDrag(on); });
-  // dragging a limb comes with UX phase 4b: both are greyed until then, the choice is kept
-  setReason(m_pullLimb, false, QString(), tr2(SelectedJointSpec::dragWhy));
-  setReason(m_turnOnly, false, QString(), tr2(SelectedJointSpec::dragWhy));
+  connect(m_pullLimb, &QPushButton::toggled, this, [this](bool on)
+  {
+    UserSettings::setPullLimbOnDrag(on);
+    m_dragCaption->setText(dragCaptionText());
+    emit dragChoiceChanged(on);
+  });
+  m_pullLimb->setToolTip(QStringLiteral("%1 (%2)").arg(tr2(SelectedJointSpec::pullLimbName), tr2(SelectedJointSpec::pullLimbKey)));
+  m_turnOnly->setToolTip(tr2(SelectedJointSpec::turnOnly));
   drag->addWidget(m_pullLimb);
   drag->addWidget(m_turnOnly);
   drag->addStretch(1);
   column->addLayout(drag);
-  m_dragCaption = wrapLabel(tr2(SelectedJointSpec::dragCaption), page);
+  m_dragCaption = wrapLabel(dragCaptionText(), page);
   m_dragCaption->setObjectName(QStringLiteral("dragCaption"));
   column->addWidget(m_dragCaption);
 
@@ -607,6 +611,13 @@ void SelectedJointPanel::setMode(Mode mode)
   emit modeChanged(mode);
 }
 
+QString SelectedJointPanel::dragCaptionText() const
+{
+  const bool pull = m_pullLimb ? m_pullLimb->isChecked() : UserSettings::pullLimbOnDrag();
+  return tr2(pull ? SelectedJointSpec::dragCaptionPull : SelectedJointSpec::dragCaptionTurn) + QLatin1Char(' ') +
+         tr2(SelectedJointSpec::dragCaptionShift);
+}
+
 bool SelectedJointPanel::pullLimb() const
 {
   return m_pullLimb->isChecked();
@@ -743,6 +754,12 @@ void SelectedJointPanel::refreshButtons()
     setReason(m_reset, false, QString(), blocked);
   else
     setReason(m_reset, m_joint.changed, tr2(SelectedJointSpec::resetTip), tr2(SelectedJointSpec::resetWhy));
+  // Pull with keys turns joints: greyed like the sliders, and for the Avatar Position
+  const QString pullTip = QStringLiteral("%1 (%2)\n%3").arg(tr2(SelectedJointSpec::pullKeysName), tr2(SelectedJointSpec::pullKeysKey), tr2(SelectedJointSpec::pullKeysTip));
+  if (!m_turnBlocked.isEmpty())
+    setReason(m_pullKeys, false, QString(), m_turnBlocked);
+  else
+    setReason(m_pullKeys, m_joint.canTurn, pullTip, tr2(SelectedJointSpec::turnWhy));
   setReason(m_moveMode, m_joint.canMove, QString(), tr2(SelectedJointSpec::moveWhy));
   setReason(m_turnMode, m_joint.canTurn, QString(), tr2(SelectedJointSpec::turnWhy));
 }

@@ -63,6 +63,7 @@ class TestViewTools : public QObject
     void choicesSurviveRestart();
     void lookInBothThemes();
     void viewAndWindowWiring();
+    void pullTextsMatchTheMockup();
 
   private:
     static QString read(const QString& path);
@@ -86,8 +87,8 @@ void TestViewTools::initTestCase()
 }
 
 // The four tools: the mockup's data-name, data-key and data-tipline, the setTool() feedback and
-// the hint bar line. Pick says less than the mockup's "Pick and pull" on purpose: pulling a limb
-// is part 2 of phase 4b, and the program never claims what it cannot do yet.
+// the hint bar line. Since part 2 the first tool is the mockup's "Pick and pull"; its tip leaves out
+// "Drag empty space to look around.", which is true only in the PinglyMotion habit.
 void TestViewTools::toolTextsMatchTheMockup()
 {
   const QString page = mockup();
@@ -103,10 +104,12 @@ void TestViewTools::toolTextsMatchTheMockup()
     QCOMPARE(QLatin1String(spec.key), m.captured(3));
     if (tool == ViewTool::Pick)
     {
-      QCOMPARE(m.captured(2), QStringLiteral("Pick and pull"));
-      QCOMPARE(QLatin1String(spec.name), QLatin1String("Pick"));
-      QCOMPARE(QLatin1String(spec.label), QLatin1String("Pick"));
-      QCOMPARE(QLatin1String(spec.tipline), QLatin1String("Click a joint to pick it. Pulling a limb comes in a later version."));
+      // since part 2 (dragging a joint) the mockup's name; its tip without the last sentence,
+      // which is true only in the PinglyMotion habit
+      QCOMPARE(QLatin1String(spec.name), m.captured(2));
+      QCOMPARE(QLatin1String(spec.label), m.captured(2));
+      QCOMPARE(m.captured(4), QStringLiteral("Click a joint to pick it, drag it to pull the limb. Drag empty space to look around."));
+      QCOMPARE(QLatin1String(spec.tipline), QLatin1String("Click a joint to pick it, drag it to pull the limb."));
       continue;
     }
     QCOMPARE(QLatin1String(spec.name), m.captured(2));
@@ -117,7 +120,7 @@ void TestViewTools::toolTextsMatchTheMockup()
 
   // setTool() feedback
   QVERIFY(page.contains(QStringLiteral("pick: \"Pick and pull: click a joint to pick it, drag it to pull the limb.\"")));
-  QCOMPARE(ViewToolSpec::toolChosenMessage(ViewTool::Pick), QStringLiteral("Pick: click a joint to pick it."));
+  QCOMPARE(ViewToolSpec::toolChosenMessage(ViewTool::Pick), QStringLiteral("Pick and pull: click a joint to pick it, drag it to pull the limb."));
   for (ViewTool tool : {ViewTool::Orbit, ViewTool::Pan, ViewTool::Zoom})
   {
     const QString text = ViewToolSpec::toolChosenMessage(tool);
@@ -523,10 +526,10 @@ void TestViewTools::toolbarButtons()
   }
   QCOMPARE(ids, QStringList({"viewToolPick", "viewToolOrbit", "viewToolPan", "viewToolZoom", "viewFocus", "viewWholeFigure",
                              "viewHome", "viewLookFrom", "viewShow"}));
-  QCOMPARE(labels, QStringList({"Pick", "Look around", "Move the view", "Zoom", "Picked joint", "Whole figure", "Home view",
+  QCOMPARE(labels, QStringList({"Pick and pull", "Look around", "Move the view", "Zoom", "Picked joint", "Whole figure", "Home view",
                                 "Look from", "Show"}));
   QCOMPARE(keys, QStringList({"V", "O", "M", "Z", "F", "Shift+F", "0", "Numpad 1, 3, 7", ""}));
-  QCOMPARE(tips.at(0), QStringLiteral("Pick (V)\nClick a joint to pick it. Pulling a limb comes in a later version."));
+  QCOMPARE(tips.at(0), QStringLiteral("Pick and pull (V)\nClick a joint to pick it, drag it to pull the limb."));
   QCOMPARE(tips.at(1), QStringLiteral("Look around (O)\nDrag anywhere to turn the view around the figure."));
   QCOMPARE(tips.at(3), QStringLiteral("Zoom (Z)\nDrag up to come closer, down to go back. The mouse wheel zooms too."));
   QCOMPARE(tips.at(5), QStringLiteral("Frame the whole figure (Shift+F)"));
@@ -807,7 +810,7 @@ void TestViewTools::viewAndWindowWiring()
   QVERIFY(view.contains(QStringLiteral("if(m_showFloor)")));
   QVERIFY(view.contains(QStringLiteral("ViewToolSpec::ringHoverHint(ring)")));
   QVERIFY(view.contains(QStringLiteral("ViewToolSpec::toolHoverHint(m_viewTool)")));
-  QVERIFY(view.contains(QStringLiteral("if(!m_renderSize.isValid()) emit viewDrawn();")));
+  QVERIFY(view.contains(QStringLiteral("QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);\n    emit viewDrawn();")));
   // the window: one path for the toolbar and the keys, the saved choices at start
   QVERIFY(window.contains(QStringLiteral("connect(m_viewToolbar,&ViewToolbar::toolChosen,this,&PinglyMotionWindow::chooseViewTool);")));
   QVERIFY(window.contains(QStringLiteral("connect(view,&AnimationView::viewToolRequested,this,&PinglyMotionWindow::chooseViewTool);")));
@@ -822,6 +825,69 @@ void TestViewTools::viewAndWindowWiring()
   QVERIFY(window.contains(QStringLiteral("if(m_viewToolbar) m_viewToolbar->applyLook();")));
   QVERIFY(window.contains(QStringLiteral("connect(view,&AnimationView::hoverHintChanged,this,&PinglyMotionWindow::showHoverHint);")));
   QVERIFY(window.contains(QStringLiteral("if(hint.isEmpty() || !UserSettings::tipsOn())")));
+
+  // UX phase 4b part 2, dragging a joint: a press on a joint picks it, a drag of 5 pixels pulls it
+  // the drag choice's way (Shift: the other one); release sets the key, Esc cancels; Enter or G
+  // picks it up for the arrow keys (12 pixels, Shift 3), Enter sets the key
+  QVERIFY(view.contains(QStringLiteral("if((event->pos()-m_pull.pressPos).manhattanLength()<5) return;")));
+  QVERIFY(view.contains(QStringLiteral("if(selected!=partSelected) clickSelect(selected);")));
+  QVERIFY(view.contains(QStringLiteral("const bool turnOnly=UserSettings::pullLimbOnDrag()==m_pull.shiftAtPress;")));
+  QVERIFY(view.contains(QStringLiteral("if(m_pull.active && !m_pull.viaKeys) finishPull();")));
+  QVERIFY(view.contains(QStringLiteral("if(key==Qt::Key_Escape)\n    {\n      cancelPull();")));
+  QVERIFY(view.contains(QStringLiteral("if(key==Qt::Key_Return || key==Qt::Key_Enter || key==Qt::Key_Space)\n      {\n        finishPull();")));
+  QVERIFY(view.contains(QStringLiteral("startKeyPull(event->key()!=Qt::Key_G && (event->modifiers() & Qt::ShiftModifier));")));
+  QVERIFY(view.contains(QStringLiteral("startPull(partSelected,UserSettings::pullLimbOnDrag()==otherWay,true);")));
+  QVERIFY(view.contains(QStringLiteral("LimbPull::solve(m_pull.pull.chain,fromScreen(m_pull.target,m_pull.depth),true);")));
+  QVERIFY(view.contains(QStringLiteral("emit pullFinished(pull.pulled,LimbPull::drivenTurns(pull),pull.chain.turnOnly);")));
+  QVERIFY(view.contains(QStringLiteral("if(event->type()==QEvent::ShortcutOverride && m_pull.active)")));
+  QVERIFY(view.contains(QStringLiteral("setCursor(QCursor(Qt::ClosedHandCursor));")));
+  QVERIFY(view.contains(QStringLiteral("ViewToolSpec::tr(ViewToolSpec::jointHover)")));
+  // the picture shows the pull's turns before release, and the rings their letters and faint back half
+  QVERIFY(view.contains(QStringLiteral("QVector3D rotation = previewed!=m_pullPreview.constEnd() ? previewed.value() : motion->frameData(frame).rotation();")));
+  QVERIFY(view.contains(QStringLiteral("back=depth>centreDepth;")));
+  QVERIFY(view.contains(QStringLiteral("static const float dirs[3][2]={{1.0f,-0.35f},{-1.0f,-0.35f},{0.25f,1.0f}};")));
+  // the window: the same reasons as Set key, the keys set at release, the Selected joint panel's button
+  QVERIFY(window.contains(QStringLiteral("return TimelineSpec::setKeyBlocked(!m_empty,true,playstate!=PLAYSTATE_STOPPED,protect);")));
+  QVERIFY(window.contains(QStringLiteral("connect(view,&AnimationView::pullFinished,this,&PinglyMotionWindow::pullFinished);")));
+  QVERIFY(window.contains(QStringLiteral("anim->setRotation(turn.first,turn.second.x(),turn.second.y(),turn.second.z());")));
+  QVERIFY(window.contains(QStringLiteral("ViewToolSpec::pullDoneMessage(jointDisplayName(pulled->name()),driven,anim->getFrame()+1,turnOnly)")));
+  QVERIFY(window.contains(QStringLiteral("statusBar()->showMessage(ViewToolSpec::tr(ViewToolSpec::pullCancelled),5000);")));
+  QVERIFY(window.contains(QStringLiteral("ui->animationView->startKeyPull(false);")));
+}
+
+void TestViewTools::pullTextsMatchTheMockup()
+{
+  const QString page = mockup();
+  QVERIFY(!page.isEmpty());
+  // the label next to the pointer (showDragTip())
+  QVERIFY(page.contains(QStringLiteral("`Turning only ${name} (it holds the body)` : `Turning only ${name}`) : `Pulling ${name}`")));
+  QVERIFY(page.contains(QStringLiteral("\"Arrow keys move it · Enter: set key · Esc: cancel\" : \"Release: set key · Esc: cancel\"")));
+  QVERIFY(page.contains(QStringLiteral("Shift when you press: turn only this joint")));
+  QCOMPARE(ViewToolSpec::pullLines(QStringLiteral("Right Hand"), false, false, false),
+           QStringList({"Pulling Right Hand", "Release: set key · Esc: cancel", "Shift when you press: turn only this joint"}));
+  QCOMPARE(ViewToolSpec::pullLines(QStringLiteral("Right Forearm"), true, false, false),
+           QStringList({"Turning only Right Forearm", "Release: set key · Esc: cancel"}));
+  QCOMPARE(ViewToolSpec::pullLines(QStringLiteral("Abdomen"), true, true, false),
+           QStringList({"Turning only Abdomen (it holds the body)", "Release: set key · Esc: cancel"}));
+  QCOMPARE(ViewToolSpec::pullLines(QStringLiteral("Right Hand"), false, false, true),
+           QStringList({"Pulling Right Hand", "Arrow keys move it · Enter: set key · Esc: cancel"}));
+  // the status line at the end (finishJointDrag() without "Ctrl+Z undoes it.": Undo is not built)
+  QVERIFY(page.contains(QStringLiteral("(d.turnOnly ? \"Turned \" + fullName(d.id) : \"Pulled \" + fullName(d.id)) + \". Key set at frame \"")));
+  QCOMPARE(ViewToolSpec::pullDoneMessage(QStringLiteral("Right Hand"), {"Right Forearm", "Right Upper Arm", "Right Collar"}, 5, false),
+           QStringLiteral("Pulled Right Hand. Key set at frame 5 for Right Forearm, Right Upper Arm, Right Collar and Right Hand."));
+  QCOMPARE(ViewToolSpec::pullDoneMessage(QStringLiteral("Right Forearm"), {}, 12, true),
+           QStringLiteral("Turned Right Forearm. Key set at frame 12 for Right Forearm."));
+  // cancel and the reasons
+  for (const char* text : {ViewToolSpec::pullCancelled, ViewToolSpec::keysNoJoint, ViewToolSpec::finishFirst, ViewToolSpec::jointHover})
+    QVERIFY2(page.contains(QString::fromUtf8(text)), text);
+  QVERIFY(page.contains(QStringLiteral("Pull a joint: Stop playing first.")));
+  QCOMPARE(ViewToolSpec::tr(ViewToolSpec::pullBlocked).arg(QStringLiteral("Stop playing first.")), QStringLiteral("Pull a joint: Stop playing first."));
+  QVERIFY(page.contains(QStringLiteral("Pull with keys: Open an animation first.")));
+  QCOMPARE(ViewToolSpec::tr(ViewToolSpec::keysBlocked).arg(QStringLiteral("Open an animation first.")), QStringLiteral("Pull with keys: Open an animation first."));
+  // the arrow keys' steps
+  QVERIFY(page.contains(QStringLiteral("const st = e.shiftKey ? 3 : 12")));
+  QCOMPARE(ViewToolSpec::keyStep, 12);
+  QCOMPARE(ViewToolSpec::keyStepSmall, 3);
 }
 
 QTEST_MAIN(TestViewTools)

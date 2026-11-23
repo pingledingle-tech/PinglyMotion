@@ -84,6 +84,13 @@ static Joint jointFor(BVHNode* node, const TurnOf& turnOf, const LimitsOf& limit
   axesOf(node, joint.axes);
   joint.rotation = turnOf(node);
   limitsOf(node, joint.minimum, joint.maximum);
+  // a joint that is already turned past a limit (a pose on purpose) is not snapped back: its
+  // limits reach as far as its turn now
+  for (int axis = 0; axis < 3; ++axis)
+  {
+    setComponent(joint.minimum, axis, std::min(component(joint.minimum, axis), component(joint.rotation, axis)));
+    setComponent(joint.maximum, axis, std::max(component(joint.maximum, axis), component(joint.rotation, axis)));
+  }
   return joint;
 }
 

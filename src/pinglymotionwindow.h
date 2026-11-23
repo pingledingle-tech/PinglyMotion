@@ -560,6 +560,8 @@ class PinglyMotionWindow : public QMainWindow
     void chooseViewTool(ViewTool tool);
     void chooseViewPart(ViewToolSpec::Part part, bool shown);
     void focusPickedJoint();
+    // UX phase 4b part 2: a pull of a joint in the 3D view was released; sets the keys
+    void pullFinished(BVHNode* pulled,const QList<QPair<BVHNode*,QVector3D>>& turns,bool turnOnly);
     // the hint about what is under the mouse in the 3D view, in the status line while hints are on
     void showHoverHint(const QString& hint);
     QString m_shownHoverHint;

@@ -47,6 +47,9 @@
 #include "camera.h"
 #include "prop.h"
 #include "bvh.h"
+#include "limbpull.h"
+
+#include <functional>
 
 class QMouseEvent;
 class QOpenGLFramebufferObject;
@@ -58,6 +61,7 @@ class ViewModesOverride;
 class EffectsPreview;
 class PropManager;
 class Scene;
+class QLabel;
 
 class AnimationView : public QOpenGLWidget
 {
@@ -111,6 +115,18 @@ class AnimationView : public QOpenGLWidget
     QString hoverHint() const { return m_hoverHint; }
 
     // the shapes the view draws for its handles (cube, sphere and cone)
+    // Dragging a joint (UX phase 4b part 2, docs/UX_DECISIONS.md 6a): the window says why a pull
+    // cannot start now ("Stop playing first.", the locked first frame; empty: it can), and gives
+    // the joints' plain names ("Right Hand") for the label next to the pointer
+    void setPullGuard(const std::function<QString()>& guard) { m_pullGuard = guard; }
+    void setJointNamer(const std::function<QString(const QString&)>& namer) { m_jointNamer = namer; }
+    // true while a joint is being pulled or turned by a drag or the keys
+    bool pulling() const { return m_pull.active; }
+    // what the label next to the pointer says during a pull (its two or three lines), for the tests
+    QStringList pullLabelLines() const;
+    // the turns a pull shows now, before it is released (empty when no pull runs)
+    QHash<const BVHNode*,QVector3D> pullPreview() const { return m_pullPreview; }
+
     void setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<Mesh> sphereMesh, QSharedPointer<Mesh> coneMesh);
 
   signals:
@@ -138,6 +154,13 @@ class AnimationView : public QOpenGLWidget
     void viewToolRequested(ViewTool tool);
     // hoverHint() changed
     void hoverHintChanged(const QString& hint);
+    // A pull ended with a release (or Enter): the window sets these turns as keys at the current
+    // frame, nearest joint first. pulled: the joint that was dragged; turnOnly: only it turned.
+    void pullFinished(BVHNode* pulled, const QList<QPair<BVHNode*,QVector3D>>& turns, bool turnOnly);
+    // a pull was cancelled with Esc: nothing changed
+    void pullCancelled();
+    // the 3D view has a sentence for the status line ("Pull with keys: Pick a joint first. ...")
+    void statusMessage(const QString& text);
     // the view was drawn on screen (the camera may have moved): the view toolbar follows it
     void viewDrawn();
 
@@ -150,6 +173,10 @@ class AnimationView : public QOpenGLWidget
     // F, and the view toolbar's Picked joint: the camera turns around the picked joint; false
     // when no joint is picked (or it was not drawn yet)
     bool focusOnPickedJoint();
+    // Pull with keys (the Selected joint panel's button, Enter or G in the 3D view): picks the
+    // joint up; the arrow keys move it, Enter sets the key, Esc cancels. turnOnly: the other way
+    // than the drag choice (Shift + Enter)
+    void startKeyPull(bool otherWay=false);
     // loads the body (Ruth2 or Max); if that fails the other one is loaded
     // instead and false is returned
     bool setBody(AvatarSkin::Body wanted);
@@ -219,6 +246,8 @@ class AnimationView : public QOpenGLWidget
       Click,     // left button on a joint, prop or empty space: a click, or orbit once it moves
       Camera,    // moving the camera (m_cameraDrag says how)
       Ring,      // turning a joint with a rotation ring
+      Joint,     // pressed on a joint: a click picks it, a drag pulls it
+      Pull,      // pulling a joint (or turning only it) with the mouse
       Prop       // dragging a prop handle
     };
     MouseDrag m_mouseDrag=MouseDrag::None;
@@ -255,6 +284,8 @@ class AnimationView : public QOpenGLWidget
     unsigned int selectName;
     unsigned int partHighlighted;
     QMatrix4x4 m_viewMatrix;
+    // the projection of the last picture on screen (for pulling a joint between pictures)
+    QMatrix4x4 m_lastProjection;
     QVector3D m_selectedPosition;
     bool m_haveSelectedPosition=false;
     void zoomToSelectedPart();
@@ -390,6 +421,45 @@ class AnimationView : public QOpenGLWidget
     // selection name of the nearest joint above that is shown, while drawing
     unsigned int m_shownAncestor=0;
     QHash<QString,SkinJointState> m_skinJointStates;
+
+    // dragging a joint (UX phase 4b part 2)
+    struct PullState
+    {
+      bool active=false;
+      bool viaKeys=false;
+      LimbPull::Pull pull;
+      unsigned int selectName=0;  // the pick name of the pulled joint
+      QPointF start;              // where the tip was on screen when the pull started (widget pixels)
+      QPointF target;             // where the tip should go now (widget pixels)
+      float depth=0;              // the tip's depth when it started (clip space z / w)
+      QPoint pressPos;            // the mouse position when the button went down
+      bool shiftAtPress=false;
+    };
+    PullState m_pull;
+    QHash<const BVHNode*,QVector3D> m_pullPreview;
+    // where each joint's frame was drawn, before its own turn (world coordinates)
+    QHash<const BVHNode*,QMatrix4x4> m_jointFrames;
+    std::function<QString()> m_pullGuard;
+    std::function<QString(const QString&)> m_jointNamer;
+    QLabel* m_pullLabel=nullptr;
+    // starts a pull of this pick name; false (with the reason in the status line) when it cannot
+    bool startPull(unsigned int selected,bool turnOnly,bool viaKeys);
+    void movePullTo(const QPointF& target);
+    void finishPull();
+    void cancelPull();
+    void endPull();
+    QString jointName(const BVHNode* node) const;
+    void showPullLabel();
+    // the dashed line from where the joint was to the pointer, and the target ring (screen space)
+    void drawPullLine();
+    QPointF toScreen(const QVector3D& world,float* depth=nullptr) const;
+    QVector3D fromScreen(const QPointF& point,float depth) const;
+
+    // the letters on the rotation rings (X, Y, Z on their axis colour), placed where the mockup puts them
+    QLabel* m_ringLabel[3]={nullptr,nullptr,nullptr};
+    QPointF m_ringLabelPos[3];
+    bool m_ringLabelShown[3]={false,false,false};
+    void placeRingLabels();
 };
 
 #endif
