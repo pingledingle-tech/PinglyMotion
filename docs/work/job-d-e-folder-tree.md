@@ -1,5 +1,5 @@
 Branch: job/d-e-folder-tree
-Status: active
+Status: done
 Pull request: #436
 Files:
 - src/scriptlab/labfolder.*
