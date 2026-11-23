@@ -7,6 +7,8 @@ Files:
 - src/scriptlab/lsl/interp.h
 - src/scriptlab/lsl/world.h
 - src/scriptlab/lsl/world.cpp
+- src/scriptlab/lsl/sandbox.cpp
+- src/scriptlab/lsl/sandbox.h
 - tests/tst_lslavatar.cpp
 - tests/tst_lslpure.cpp
 - tests/CMakeLists.txt
