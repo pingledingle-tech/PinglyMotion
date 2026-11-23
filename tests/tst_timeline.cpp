@@ -3,8 +3,9 @@
  * issue 202)
  *
  * Clicks, drags, the wheel and the Delete and Insert keys on an offscreen
- * timeline, checked against the animation's frame and keys. Before the
- * skeleton's track names are known, every track has its own row.
+ * timeline, checked against the animation's frame and keys. Since UX phase
+ * 3a only changed joints have a row (tests/timelinerows): the two tracks used
+ * here get a key, so TRACK has the first row and TRACK + 1 the second.
  */
 #include <QtTest>
 #include <QSignalSpy>
@@ -41,8 +42,9 @@ static const int TRACK = 3;
 
 QPoint TimelineTest::cell(int track, int frame) const
 {
+  const int row = m_timeline->rows().rowOfTrack(track);
   return QPoint(frame * Constants::keyWidth() + Constants::keyWidth() / 2,
-                track * Constants::lineHeight() + Constants::lineHeight() / 2);
+                row * Constants::lineHeight() + Constants::lineHeight() / 2);
 }
 
 void TimelineTest::init()
@@ -63,7 +65,12 @@ void TimelineTest::init()
   m_anim->setFrame(5);
   m_anim->setRotation(m_anim->getNode(TRACK), 10, 20, 30);
   QVERIFY(m_anim->isKeyFrame(TRACK, 5));
+  // the next track changed late in the animation, so it has a row too
+  m_anim->setFrame(15);
+  m_anim->setRotation(m_anim->getNode(TRACK + 1), 5, 0, 0);
   m_anim->setFrame(0);
+  QCOMPARE(m_timeline->rows().rowOfTrack(TRACK), 0);
+  QCOMPARE(m_timeline->rows().rowOfTrack(TRACK + 1), 1);
 }
 
 void TimelineTest::cleanup()

@@ -139,7 +139,9 @@ void TimelineRowsTest::newAnimationHasNoRows()
   Fixture f;
   QCOMPARE(f.rows().rowCount(), 0);
   QVERIFY(!f.rows().anyChanged());
+  // no rows: the key frame area has no height
   QCOMPARE(f.view.getTimeline()->height(), 0);
+  QCOMPARE(f.view.getTimeline()->width(), 30 * Constants::keyWidth());
   // every joint is in the start pose
   for (int t = 0; t < Constants::numParts(); ++t)
     QVERIFY2(!TimelineRows::jointChanged(&f.anim, t), qPrintable(f.anim.getPartName(t)));
@@ -219,7 +221,7 @@ void TimelineRowsTest::keyAfterFirstFrameCountsAsChanged()
   const int head = f.track("head");
   // a key at frame 10 that keeps the start pose (Set key without turning)
   f.anim.setFrame(10);
-  QVERIFY(TimelineSpec::setKey(&f.anim, f.node(head)));
+  QVERIFY(TimelineSpec::addKey(&f.anim, f.node(head)));
   QVERIFY(TimelineRows::jointChanged(&f.anim, head));
   QCOMPARE(f.shown(), QVector<int>({head}));
   // a key only at frame 0 in the start pose has not changed
@@ -248,22 +250,36 @@ void TimelineRowsTest::importedJointKeyedOnEveryFrameAtRestHasNoRow()
   // the animation made longer: the head's keys are now set by hand, so it has changed
   f.anim.setNumberOfFrames(8);
   QVERIFY(TimelineRows::jointChanged(&f.anim, head));
-  QCOMPARE(f.shown(), QVector<int>({head, neck}));
+  QVERIFY(neck < head);
+  QCOMPARE(f.shown(), QVector<int>({neck, head}));
 }
 
 void TimelineRowsTest::avatarPositionChangesByPlace()
 {
-  Fixture f;
-  QCOMPARE(f.anim.getPartName(0), QStringLiteral("position"));
-  QVERIFY(!TimelineRows::jointChanged(&f.anim, 0));
-  // the Avatar Position starts away from 0 (its height); only a move counts
-  f.anim.setFrame(0);
-  const QVector3D start = f.anim.getPosition();
-  QVERIFY(start.y() > 1);
-  f.anim.setPosition(start.x() + 4, start.y(), start.z());
-  QVERIFY(TimelineRows::jointChanged(&f.anim, 0));
-  QCOMPARE(f.shown(), QVector<int>({0}));
-  QCOMPARE(f.rows().areaOfTrack(0), int(JointGroups::BodyTab));
+  {
+    Fixture f;
+    QCOMPARE(f.anim.getPartName(0), QStringLiteral("position"));
+    QVERIFY(!TimelineRows::jointChanged(&f.anim, 0));
+    // the Avatar Position starts in the middle of the floor at the figure's height
+    f.anim.setFrame(0);
+    const QVector3D start = f.anim.getPosition();
+    QVERIFY(start.y() > 1);
+    QVERIFY(qAbs(start.x()) < 0.001 && qAbs(start.z()) < 0.001);
+    // moved sideways at frame 0: changed
+    f.anim.setPosition(start.x() + 4, start.y(), start.z());
+    QVERIFY(TimelineRows::jointChanged(&f.anim, 0));
+    QCOMPARE(f.shown(), QVector<int>({0}));
+    QCOMPARE(f.rows().areaOfTrack(0), int(JointGroups::BodyTab));
+  }
+  {
+    Fixture f;
+    // up at frame 9: another place than the first key
+    f.anim.setFrame(9);
+    const QVector3D start = f.anim.getPosition();
+    f.anim.setPosition(start.x(), start.y() + 3, start.z());
+    QVERIFY(TimelineRows::jointChanged(&f.anim, 0));
+    QCOMPARE(f.shown(), QVector<int>({0}));
+  }
 }
 
 void TimelineRowsTest::deletingTheKeyTakesTheRowAway()
@@ -372,7 +388,7 @@ void TimelineRowsTest::setKeyAddsKeyAtFrameWithPose()
   // frame 12: between keys the head holds 30 degrees; Set key keeps that pose
   f.anim.setFrame(12);
   QVERIFY(!f.node(head)->isKeyframe(12));
-  QVERIFY(TimelineSpec::setKey(&f.anim, f.node(head)));
+  QVERIFY(TimelineSpec::addKey(&f.anim, f.node(head)));
   QVERIFY(f.node(head)->isKeyframe(12));
   QCOMPARE(f.node(head)->numKeyframes(), 3);
   QVERIFY(qAbs(f.node(head)->frameData(12).rotation().x() - 30) < 0.001);
@@ -389,17 +405,17 @@ void TimelineRowsTest::setKeyNeverTakesAKeyAway()
   const int head = f.track("head");
   f.turn(head, 8, 12);
   f.anim.setFrame(8);
-  QVERIFY(!TimelineSpec::setKey(&f.anim, f.node(head)));
+  QVERIFY(!TimelineSpec::addKey(&f.anim, f.node(head)));
   QVERIFY(f.node(head)->isKeyframe(8));
   QCOMPARE(f.node(head)->numKeyframes(), 2);
   QVERIFY(qAbs(f.node(head)->frameData(8).rotation().x() - 12) < 0.001);
   // frame 0 always has a key
   f.anim.setFrame(0);
-  QVERIFY(!TimelineSpec::setKey(&f.anim, f.node(f.track("neck"))));
+  QVERIFY(!TimelineSpec::addKey(&f.anim, f.node(f.track("neck"))));
   QCOMPARE(f.node(f.track("neck"))->numKeyframes(), 1);
   // nothing to key
-  QVERIFY(!TimelineSpec::setKey(&f.anim, nullptr));
-  QVERIFY(!TimelineSpec::setKey(nullptr, f.node(head)));
+  QVERIFY(!TimelineSpec::addKey(&f.anim, nullptr));
+  QVERIFY(!TimelineSpec::addKey(nullptr, f.node(head)));
 }
 
 void TimelineRowsTest::setKeyMessages()
@@ -573,7 +589,8 @@ void TimelineRowsTest::scrollsToSelectedChangedJoint()
   }
   // a row already in view does not move the timeline
   const int before = f.bar()->value();
-  f.view.selectTrack(changed[0]);
+  f.view.selectTrack(changed[2]);
+  QVERIFY(f.rowVisible(changed[2]));
   QCOMPARE(f.bar()->value(), before);
 }
 
@@ -604,7 +621,8 @@ void TimelineRowsTest::keyboardUpDownMovesBetweenRows()
   QCOMPARE(f.view.selectedTrack(), head);
   QTest::keyClick(timeline, Qt::Key_Up);
   QCOMPARE(f.view.selectedTrack(), neck);
-  QCOMPARE(clicked.count(), 3);
+  // each move is reported as a click on the row (the stop at the end is not)
+  QCOMPARE(clicked.count(), 4);
   QCOMPARE(clicked.last().first().toInt(), neck);
   f.view.backgroundClicked();
   QTest::keyClick(timeline, Qt::Key_Up);

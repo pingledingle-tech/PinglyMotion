@@ -35,7 +35,7 @@ namespace TimelineSpec
     return text(areas[(area>=0 && area<int(JointGroups::TAB_COUNT)) ? area : int(JointGroups::OtherTab)]);
   }
 
-  bool setKey(Animation* anim,BVHNode* joint)
+  bool addKey(Animation* anim,BVHNode* joint)
   {
     if(!anim || !joint) return false;
     if(joint->isKeyframe(anim->getFrame())) return false;
@@ -77,6 +77,10 @@ bool TimelineRows::jointChanged(Animation* anim,int track)
 
   const bool position=(track==0);
   const FrameData first=joint->keyframeDataByIndex(0);
+  // the Avatar Position starts at the middle of the floor at the figure's own
+  // height, which differs from figure to figure: a move away from the middle,
+  // or a key in another place than the first key, counts
+  if(position && (qAbs(first.position().x())>same || qAbs(first.position().z())>same)) return true;
   bool afterFirstFrame=false;
   for(int key=0;key<keys;key++)
   {
@@ -129,10 +133,10 @@ bool TimelineRows::updateTrack(Animation* anim,int track)
   if(!anim || track<0 || track>=m_changed.count()) return false;
   const bool now=jointChanged(anim,track);
   if(now==m_changed[track]) return false;
+  // the selected joint keeps its row, but "No keys yet" may come or go
   m_changed[track]=now;
-  const QVector<int> before=m_rows;
   build();
-  return before!=m_rows;
+  return true;
 }
 
 bool TimelineRows::setSelected(int selectedTrack)

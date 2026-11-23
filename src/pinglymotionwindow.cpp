@@ -1194,7 +1194,7 @@ void PinglyMotionWindow::setKeyFromMenu()
 {
   Animation* anim=scene->getAnimation();
   if(m_empty || !anim || currentPart==nullptr || !ui->keyframeButton->isEnabled()) return;
-  const bool added=TimelineSpec::setKey(anim,currentPart);
+  const bool added=TimelineSpec::addKey(anim,currentPart);
   if(added)
   {
     ui->animationView->update();

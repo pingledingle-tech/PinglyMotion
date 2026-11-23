@@ -7,8 +7,8 @@
  * so picking a joint without keys still scrolls the timeline to it.
  *
  * A joint has changed when one of its keys holds a pose other than the start
- * pose of a new animation (no turn; for the Avatar Position: another place
- * than its first key), or when it has a key after the first frame that was
+ * pose of a new animation (no turn; for the Avatar Position: away from the
+ * middle of the floor, or another place than its first key), or when it has a key after the first frame that was
  * set by hand (it is not keyed on every frame, as an imported file is).
  * Joints of hidden groups that are left out of the lists (JointGroups) and
  * End Sites never have a row.
@@ -55,7 +55,7 @@ namespace TimelineSpec
   // Set key for one joint at the animation's current frame: answers true when
   // a key was added, false when the frame had one already. It never takes a
   // key away; the new key keeps the pose the joint has now.
-  bool setKey(Animation* anim,BVHNode* joint);
+  bool addKey(Animation* anim,BVHNode* joint);
   // the status line after Set key; frames are counted from 1 on screen
   QString setKeyMessage(bool added,int frame,const QString& jointName);
   // why Set key (and Set the first key) cannot be used now, empty when it can;
@@ -69,7 +69,8 @@ class TimelineRows
     // works the rows out again for this animation and selected joint (-1: none);
     // answers whether the rows changed
     bool update(Animation* anim,int selectedTrack);
-    // one joint's keys changed: answers whether the rows changed
+    // one joint's keys changed: answers whether it changed from or back to
+    // its start pose (its row, or "No keys yet", may come or go)
     bool updateTrack(Animation* anim,int track);
     // the selected joint changed: answers whether the rows changed
     bool setSelected(int selectedTrack);

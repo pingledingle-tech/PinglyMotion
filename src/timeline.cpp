@@ -69,14 +69,27 @@ Timeline::~Timeline()
 void Timeline::layoutChanged()
 {
   const bool moved=rows_.update(animation,trackSelected);
+  fitSize();
   if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
   fullRepaint=true;
   update();
   if(moved) emit rowsChanged();
 }
 
+void Timeline::fitSize()
+{
+  // as wide as the frames, as high as the rows (no rows: no height)
+  const QSize newSize(numOfFrames * Constants::keyWidth(), rows_.rowCount() * Constants::lineHeight());
+  if(newSize!=size())
+  {
+    resize(newSize);
+    emit resized(newSize);
+  }
+}
+
 void Timeline::rowsMoved()
 {
+  fitSize();
   if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
   fullRepaint=true;
   update();
@@ -89,14 +102,7 @@ void Timeline::paintEvent(QPaintEvent* /* e */)
   if(isHidden()) return;
 
 
-  QSize newSize = QSize(numOfFrames * Constants::keyWidth(), rows_.rowCount() * Constants::lineHeight());
-
-  if(newSize!=size())
-  {
-    qCDebug(lcView,"paintEvent(): resizing timeline widget to %dx%d",newSize.width(),newSize.height());
-    resize(newSize);
-    emit resized(newSize);
-  }
+  fitSize();
   // clip keyframe drawing to "dirty" area of redraw
   firstVisibleKeyX=0;
   visibleKeysX=numOfFrames;
@@ -158,6 +164,7 @@ void Timeline::setNumberOfFrames(int frames)
 
   offscreen=newOffscreen;
 
+  fitSize();
   fullRepaint=true;
   repaint();
   if(moved) emit rowsChanged();
@@ -193,6 +200,7 @@ void Timeline::setAnimation(Animation* anim)
   }
 
   rows_.update(animation,trackSelected);
+  fitSize();
   if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
   emit animationChanged(anim);
 

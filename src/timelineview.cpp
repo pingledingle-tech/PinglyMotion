@@ -110,7 +110,6 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   noKeysTitle_->setFont(titleFont);
   noKeysLine_=new QLabel(TimelineSpec::text(TimelineSpec::noKeysLine),noKeys_);
   noKeysLine_->setObjectName(QStringLiteral("timelineNoKeysLine"));
-  noKeysLine_->setWordWrap(true);
   noKeysLine_->setForegroundRole(QPalette::PlaceholderText);
   // the button in a row of its own, drawn as the main button (src/transportlook.*)
   QWidget* buttonRow=new QWidget(noKeys_);
@@ -199,9 +198,15 @@ void TimelineView::fitRowHeight()
   if(outerView_ && outerView_->widget())
   {
     // lay the content out now, so the scroll bar knows the new height at once
-    outerView_->widget()->layout()->activate();
-    outerView_->widget()->resize(outerView_->viewport()->width(),
-                                 std::max(outerView_->viewport()->height(),outerView_->widget()->minimumSizeHint().height()));
+    // (selectTrack scrolls to a row that was only just added)
+    QWidget* content=outerView_->widget();
+    rowsArea_->layout()->invalidate();
+    rowsArea_->layout()->activate();
+    rowsArea_->updateGeometry();
+    content->layout()->invalidate();
+    content->layout()->activate();
+    const int height=std::max(outerView_->viewport()->height(),content->minimumSizeHint().height());
+    content->resize(outerView_->viewport()->width(),height);
   }
 }
 

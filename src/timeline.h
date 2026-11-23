@@ -81,6 +81,8 @@ class Timeline : public QFrame
     bool isDirty(int frame);      // returns true if frame is inside "dirty" redraw region
     // the rows moved: draw them all again and tell the panel
     void rowsMoved();
+    // as wide as the frames and as high as the rows
+    void fitSize();
     // the body area of a joint's row (TimelineRows::areaOfTrack)
     int areaOf(int track) const { return rows_.areaOfTrack(track); }
 
