@@ -555,13 +555,13 @@ void Interpreter::moneyEvent(const QString& id, int amount)
   queueEvent(Event{"money", {Value::key(id), Value::integer(amount)}, QString(), QString()});
 }
 
-void Interpreter::collisionEvent(const QString& id, const QString& name, int link, bool end)
+void Interpreter::collisionEvent(const QString& id, const QString& name, int link, const QString& eventName)
 {
   Detected d;   // the other object or avatar in the collision (its position is not simulated); one at a time
   d.key = d.owner = id;
   d.name = name;
   d.link = link;
-  queueEvent(Event{end ? "collision_end" : "collision_start", {Value::integer(1)}, id, name, {d}});
+  queueEvent(Event{eventName, {Value::integer(1)}, id, name, {d}});
 }
 
 void Interpreter::landCollisionEvent(const QString& eventName, const float pos[3])

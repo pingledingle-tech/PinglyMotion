@@ -266,11 +266,11 @@ void LslParserTest::checkErrors()
 void LslParserTest::warnings()
 {
   // not_at_target and collision_start used to be examples of events never raised; they are raised now (second gap
-  // list, step 6, part 2), so remote_data (deprecated, out of scope) and the still-unraised plain collision stand in
+  // list, step 6, part 2), so remote_data (deprecated, out of scope) stands in (plain collision is raised since steps 10 to 12 of the third run)
   const Parser::Result r = Parser::parse(
-    "default {\n state_entry() {\n  llGetAccel();\n }\n remote_data(integer e, key i, key c, string n, integer d, string v) { }\n collision(integer n) { }\n}");
+    "default {\n state_entry() {\n  llGetAccel();\n }\n remote_data(integer e, key i, key c, string n, integer d, string v) { }\n}");
   QVERIFY(r.ok());   // valid LSL: warnings only
-  QCOMPARE(int(r.warnings.size()), 3);
+  QCOMPARE(int(r.warnings.size()), 2);
   QCOMPARE(r.warnings[0].line, 3);
   QCOMPARE(r.warnings[0].column, 3);
   QVERIFY(r.warnings[0].message.contains("llGetAccel is not supported yet"));
