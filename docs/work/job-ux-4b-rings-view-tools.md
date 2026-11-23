@@ -1,5 +1,5 @@
 Branch: job/ux-4b-rings-view-tools
-Status: active
+Status: done
 Pull request: #406
 Files:
 - src/viewtoolspec.h
