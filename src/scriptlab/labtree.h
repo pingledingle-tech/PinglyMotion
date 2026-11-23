@@ -18,9 +18,10 @@
  * danger or text_muted from docs/design_tokens.json, through theme.h) and
  * the state as a word as well (design charter P10). A prim and the object
  * sum up their scripts: how many of each state, with the dot of the worst,
- * and the memory of all their scripts. Memory is what each script used at
- * the end of the run (the sandbox's rough count; Second Life gives a
- * script 64 KB).
+ * and the memory of all their scripts. Memory is what each script's values
+ * used at the end of the run (the sandbox's rough count, code not counted;
+ * Second Life gives a script 64 KB). A script the folder refused (a name
+ * used twice, a file too large) has an Error row with the reason.
  *
  * Picking a script (click, or Enter on its row) sends scriptPicked with its
  * file, so the panel shows that script in the editor.

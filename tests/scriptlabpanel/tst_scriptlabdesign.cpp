@@ -508,14 +508,15 @@ void TestScriptLabDesign::foldingAndKeyboard()
 {
   ScriptLabPanel panel;
   // made in this order: the Type commands page first, then the Live scripts page
-  const QStringList keys = {"restrictions", "actions", "sphere", "replies", "script", "problems", "log", "restrictionsNow", "objects", "input", "inventory"};
+  const QStringList keys = {"restrictions", "actions", "sphere", "replies", "tree", "guide", "script", "problems", "log", "restrictionsNow", "objects", "input", "inventory"};
   QStringList found;
   for (ScriptLabSection* s : panel.sections()) found << s->key();
   QCOMPARE(found, keys);
   // open at first except Objects and Send input, as in the mockup's fold state, and the vision sphere's sliders
   for (ScriptLabSection* s : panel.sections())
   {
-    const bool open = s->key() != "objects" && s->key() != "input" && s->key() != "inventory" && s->key() != "sphere";
+    const bool open = s->key() != "objects" && s->key() != "input" && s->key() != "inventory" && s->key() != "sphere"
+                      && s->key() != "guide";
     QCOMPARE(s->isExpanded(), open);
     QCOMPARE(s->body()->isHidden(), !open);
     QCOMPARE(s->objectName(), "scriptLabSection_" + s->key());
@@ -831,7 +832,8 @@ void TestScriptLabDesign::runAgainWithoutScript()
   panel.setState(&state);
   panel.setWatcher(&watcher);
   QTemporaryDir dir;
-  QVERIFY(panel.watchFolder(dir.path()));
+  // each file on its own, as lab_watch without "linkset" (the panel follows that watch)
+  QVERIFY(watcher.watch(dir.path()).ok());
   QVERIFY(writeScript(dir.filePath("gone.lsl"), "default { state_entry() { } }\n"));
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
   QVERIFY(panel.runAgainButton()->isEnabled());
@@ -841,6 +843,19 @@ void TestScriptLabDesign::runAgainWithoutScript()
   QCOMPARE(panel.runAgainButton()->toolTip(), QString("The script is not in the folder any more."));
   QVERIFY(!panel.runAgain());
   QCOMPARE(watcher.runCount(), 1);
+
+  // the folder as one object (Watch folder): the folder runs again without the script, so there is none to show
+  QTemporaryDir object;
+  QVERIFY(panel.watchFolder(object.path()));
+  QVERIFY(writeScript(object.filePath("gone.lsl"), "default { state_entry() { } }\n"));
+  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
+  QVERIFY(panel.runAgainButton()->isEnabled());
+  QVERIFY(QFile::remove(object.filePath("gone.lsl")));
+  watcher.rescan();
+  QCOMPARE(watcher.runCount(), 3);
+  QVERIFY(!panel.runAgainButton()->isEnabled());
+  QCOMPARE(panel.runAgainButton()->toolTip(), QString("No script yet. Watch a folder and save a .lsl file in it first."));
+  QVERIFY(!panel.runAgain());
 }
 
 // each part's open or folded state is saved in the settings and read back at the next start
@@ -848,14 +863,14 @@ void TestScriptLabDesign::partsRemembered()
 {
   {
     ScriptLabPanel panel;
-    QCOMPARE(panel.partsState(), QString("restrictions=open,actions=open,sphere=folded,replies=open,script=open,problems=open,log=open,"
+    QCOMPARE(panel.partsState(), QString("restrictions=open,actions=open,sphere=folded,replies=open,tree=open,guide=folded,script=open,problems=open,log=open,"
                                          "restrictionsNow=open,objects=folded,input=folded,inventory=folded"));
     QCOMPARE(UserSettings::scriptLabParts(), QString());   // nothing saved until a part is folded or opened
     QTest::mouseClick(panel.section("script")->header(), Qt::LeftButton);
     QTest::mouseClick(panel.section("objects")->header(), Qt::LeftButton);
     QTest::mouseClick(panel.section("replies")->header(), Qt::LeftButton);
   }
-  const QString saved = "restrictions=open,actions=open,sphere=folded,replies=folded,script=folded,problems=open,log=open,"
+  const QString saved = "restrictions=open,actions=open,sphere=folded,replies=folded,tree=open,guide=folded,script=folded,problems=open,log=open,"
                         "restrictionsNow=open,objects=open,input=folded,inventory=folded";
   QCOMPARE(UserSettings::scriptLabParts(), saved);
 

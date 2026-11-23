@@ -5,7 +5,10 @@
  */
 
 #include <QEvent>
+#include <QFileInfo>
 #include <QHash>
+#include <QMap>
+#include <QSet>
 #include <QHeaderView>
 #include <QJsonArray>
 #include <QPainter>
@@ -138,13 +141,20 @@ void LabFolderTree::setFolderResult(const QJsonObject& folder)
   QHash<QString, QJsonObject> checks;
   for (const QJsonValue& v : folder.value("check").toObject().value("scripts").toArray())
     checks.insert(v.toObject().value("file").toString(), v.toObject());
-  QHash<QString, QString> problems;
+  QMap<QString, QString> problems;
+  QHash<QString, int> problemLinks;
   for (const QJsonValue& v : linkset.value("problems").toArray())
   {
     const QJsonObject p = v.toObject();
     if (!p.value("file").toString().isEmpty() && !problems.contains(p.value("file").toString()))
+    {
       problems.insert(p.value("file").toString(), p.value("message").toString());
+      problemLinks.insert(p.value("file").toString(), p.value("link").toInt());
+    }
   }
+  QSet<QString> listed;
+  for (const QJsonValue& pv : prims)
+    for (const QJsonValue& sv : pv.toObject().value("scripts").toArray()) listed.insert(sv.toObject().value("file").toString());
   const bool ran = folder.value("ok").toBool() && folder.contains("result");
   QHash<QString, QJsonObject> runs;
   const QJsonArray objects = folder.value("result").toObject().value("objects").toArray();
@@ -214,11 +224,27 @@ void LabFolderTree::setFolderResult(const QJsonObject& folder)
         const qint64 memory = qint64(run.value("memory").toDouble());
         item->setText(MemoryColumn, memoryText(memory));
         item->setData(NameColumn, MemoryRole, memory);
-        item->setToolTip(MemoryColumn, tr("Memory the script used at the end of the run. A script may use up to 64 KB."));
+        item->setToolTip(MemoryColumn, tr("Memory of the script's values at the end of the run, a rough count. Code is not counted. A script may use up to 64 KB."));
         primMemory += memory;
         primHasMemory = true;
       }
       primStates << state;
+      ++scriptCount;
+    }
+    // a script the folder refused (a name used twice, too large): its row says why, nothing ran
+    for (auto it = problems.constBegin(); it != problems.constEnd(); ++it)
+    {
+      if (listed.contains(it.key()) || problemLinks.value(it.key()) != link || !it.key().endsWith(QLatin1String(".lsl"))) continue;
+      QTreeWidgetItem* item = new QTreeWidgetItem(prim);
+      item->setText(NameColumn, QFileInfo(it.key()).completeBaseName());
+      item->setText(KindColumn, tr("LSL script"));
+      item->setText(StateColumn, stateWord(Error));
+      item->setData(NameColumn, KindRole, ScriptRow);
+      item->setData(NameColumn, FileRole, it.key());
+      item->setData(NameColumn, StateRole, int(Error));
+      item->setToolTip(NameColumn, it.key());
+      item->setToolTip(StateColumn, it.value());
+      primStates << Error;
       ++scriptCount;
     }
     for (const QJsonValue& nv : p.value("notecards").toArray())

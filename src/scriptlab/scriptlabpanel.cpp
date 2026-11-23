@@ -1688,7 +1688,8 @@ void ScriptLabPanel::refreshLive()
   if (m_editor->waitingForRun() && marksFit && last.value("run").toInt() > m_runAtSave)
   {
     QString notRun = last.value("read_error").toString();
-    if (notRun.isEmpty() && last.contains("not_run")) notRun = last.value("not_run").toString();
+    // a folder that did not run because of this script's own errors: the errors say it
+    if (notRun.isEmpty() && last.contains("not_run") && last.value("errors").toArray().isEmpty()) notRun = last.value("not_run").toString();
     m_editor->reportRun(errorCount, warningCount, notRun);
   }
   QStringList problemCount;
