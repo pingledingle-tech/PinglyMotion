@@ -17,8 +17,11 @@
  * docs/ASSISTANT_GUIDE.md section 1 and 3) and in metres
  * (AnimExport::INCHES_TO_METERS). The floor is y = 0 in that space: the
  * start pose stands with the hip at 43.5 and the legs straight down to it.
- * Bento joints (fingers, face, wings, tail) are not covered: only the
- * classic skeleton, the one the guide's sections 2 and 5 talk about.
+ * The rules, changes and symmetry cover the classic skeleton only, the one
+ * the guide's sections 2 and 5 talk about. "hands" (phase 2c) adds, for each
+ * hand, which way the palm faces and where each Bento fingertip is, relative
+ * to the wrist, in the character's own directions; the face, wings and tail
+ * are not covered.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */

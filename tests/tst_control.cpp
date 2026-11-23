@@ -214,6 +214,9 @@ class ControlTest : public QObject
     void describePoseOnTPose();
     void describePoseOnSittingExample();
     void describePoseOnRaisedHand();
+    void describePoseHandsAtRest();
+    void describePosePalmTurns();
+    void describePoseCurledFingerMovesItsTip();
     void describeMotionOfAHandMadeArmLift();
     void describeMotionRefusesBadRanges();
     void describeMotionOfTheCmuWalk();
@@ -1882,6 +1885,112 @@ void ControlTest::describePoseOnRaisedHand()
   const QJsonObject lHand = answer["positions"].toObject()["lHand"].toObject();
   const QJsonObject head = answer["positions"].toObject()["head"].toObject();
   QVERIFY(lHand["y"].toDouble() > head["y"].toDouble());
+}
+
+// phase 2c: describe_pose's "hands" on the T-pose. Arms straight out to the
+// side, palms to the floor, fingers straight out from the wrist; the numbers
+// are the sums of the finger offsets in bin/data/SLFemale.bvh (wrist to the
+// End Site after joint 3). The right hand is the mirror image, so in the
+// character's own directions (out = away from the body's middle) both hands
+// read the same.
+void ControlTest::describePoseHandsAtRest()
+{
+  const QJsonObject answer = run(R"({"command":"describe_pose"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  const QJsonObject hands = answer["hands"].toObject();
+  QCOMPARE(hands.keys(), (QStringList{"lHand", "rHand"}));
+
+  for (const QString& side : {QStringLiteral("lHand"), QStringLiteral("rHand")})
+  {
+    const QJsonObject hand = hands[side].toObject();
+    QCOMPARE(hand["palm"].toString(), QString("down"));
+    QCOMPARE(hand["palm_vector"].toObject(), (QJsonObject{{"forward", 0.0}, {"up", -1.0}, {"out", 0.0}}));
+
+    const QJsonObject tips = hand["fingertips"].toObject();
+    QCOMPARE(tips.keys(), (QStringList{"index", "middle", "pinky", "ring", "thumb"}));
+    for (const QJsonValue& tip : tips) QCOMPARE(tip.toObject()["points"].toString(), QString("out"));
+
+    const QJsonObject index = tips["index"].toObject()["from_wrist"].toObject();
+    QCOMPARE(index["forward"].toDouble(), 3.15);
+    QCOMPARE(index["up"].toDouble(), -0.04);
+    QCOMPARE(index["out"].toDouble(), 7.48);
+    QCOMPARE(index["meters"].toObject()["out"].toDouble(), 0.19);
+
+    const QJsonObject thumb = tips["thumb"].toObject()["from_wrist"].toObject();
+    QCOMPARE(thumb["forward"].toDouble(), 3.82);
+    QCOMPARE(thumb["up"].toDouble(), 0.08);
+    QCOMPARE(thumb["out"].toDouble(), 4.49);
+
+    const QJsonObject middle = tips["middle"].toObject();
+    QCOMPARE(middle["from_wrist"].toObject()["out"].toDouble(), 8.78);
+    QCOMPARE(middle["from_wrist"].toObject()["up"].toDouble(), -0.2);
+    QCOMPARE(middle["distance"].toDouble(), 8.79);
+  }
+
+  // the world position of a fingertip is the wrist plus the offsets: the
+  // left index tip lies further out to the figure's left (+x) than the wrist
+  const QJsonObject wrist = answer["positions"].toObject()["lHand"].toObject();
+  const QJsonObject tip = hands["lHand"].toObject()["fingertips"].toObject()["index"].toObject()["position"].toObject();
+  QCOMPARE(tip["x"].toDouble(), qRound((wrist["x"].toDouble() + 7.480316) * 100.0) / 100.0);
+  QCOMPARE(tip["z"].toDouble(), qRound((wrist["z"].toDouble() + 3.149606) * 100.0) / 100.0);
+}
+
+// phase 2c: the palm word follows the arm. Rolling the left arm forward
+// (lShldr X -90: "front goes down" turned the other way) turns the palm to
+// face forward; the forearm rolling the same way again turns it up; the arm
+// raised straight up (lShldr Z +90, the forearm unrolled again) turns it out,
+// away from the body. The
+// right hand is not posed and keeps facing down.
+void ControlTest::describePosePalmTurns()
+{
+  struct Case { const char* request; const char* palm; QJsonObject vector; };
+  const QList<Case> cases = {
+    {R"({"command":"set_pose","frame":2,"joints":{"lShldr":[-90,0,0]}})", "forward",
+     QJsonObject{{"forward", 1.0}, {"up", 0.0}, {"out", 0.0}}},
+    {R"({"command":"set_pose","frame":3,"joints":{"lShldr":[-90,0,0],"lForeArm":[-90,0,0]}})", "up",
+     QJsonObject{{"forward", 0.0}, {"up", 1.0}, {"out", 0.0}}},
+    {R"({"command":"set_pose","frame":4,"joints":{"lShldr":[0,0,90],"lForeArm":[0,0,0]}})", "out",
+     QJsonObject{{"forward", 0.0}, {"up", 0.0}, {"out", 1.0}}},
+  };
+  int frame = 2;
+  for (const Case& c : cases)
+  {
+    QJsonObject answer = run(c.request);
+    QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+    answer = run(QString(R"({"command":"describe_pose","frame":%1})").arg(frame++).toUtf8().constData());
+    QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+    const QJsonObject hands = answer["hands"].toObject();
+    QCOMPARE(hands["lHand"].toObject()["palm"].toString(), QString(c.palm));
+    QCOMPARE(hands["lHand"].toObject()["palm_vector"].toObject(), c.vector);
+    QCOMPARE(hands["rHand"].toObject()["palm"].toString(), QString("down"));
+  }
+}
+
+// phase 2c: curling the left index finger (joints 1 and 2 turned down by 90,
+// Z- on a left finger = tip down, as lHand Z+ = tip up in the calibration
+// table) folds its tip back under the knuckles: from 7.48 out from the wrist
+// to 1.34, and a little below the wrist. The finger's sideways offset
+// (forward 3.15) does not change, so the tip now points mostly forward. The
+// other tips stay.
+void ControlTest::describePoseCurledFingerMovesItsTip()
+{
+  QJsonObject answer = run(R"({"command":"set_pose","frame":2,"joints":{"mHandIndex1Left":[0,0,-90],"mHandIndex2Left":[0,0,-90]}})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  answer = run(R"({"command":"describe_pose","frame":2})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+
+  const QJsonObject tips = answer["hands"].toObject()["lHand"].toObject()["fingertips"].toObject();
+  const QJsonObject index = tips["index"].toObject();
+  const QJsonObject from = index["from_wrist"].toObject();
+  QCOMPARE(from["forward"].toDouble(), 3.15);
+  QCOMPARE(from["up"].toDouble(), -0.43);
+  QCOMPARE(from["out"].toDouble(), 1.34);
+  QCOMPARE(index["points"].toString(), QString("forward"));
+  QCOMPARE(index["distance"].toDouble(), 3.45);
+
+  // the middle finger was not touched
+  QCOMPARE(tips["middle"].toObject()["from_wrist"].toObject()["out"].toDouble(), 8.78);
+  QCOMPARE(answer["hands"].toObject()["lHand"].toObject()["palm"].toString(), QString("down"));
 }
 
 // issue #129: describe_motion on a hand-made arm lift: the left arm goes up

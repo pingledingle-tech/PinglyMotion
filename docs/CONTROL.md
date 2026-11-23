@@ -218,10 +218,30 @@ own units and in metres, with each foot's height above the floor; plain sentence
 notable (bent knees or elbows, a hand above the head or behind the body, feet flat or lifted,
 weight on one foot, a lean, the head turned or tipped); the classic joints that moved from frame 1,
 in everyday names, with "more" or "less"; whether the left and right arms and legs are symmetric;
-and a one-line summary. It covers the classic joints only, not the Bento fingers, face, wings or
-tail. The thresholds it uses to choose a word (for example "bent" or "lifted") each have a dead
+and a one-line summary. The sentences, changed joints and symmetry cover the classic joints only.
+The thresholds it uses to choose a word (for example "bent" or "lifted") each have a dead
 zone around them, so a change of a degree or an inch right at the old boundary cannot flip the
 wording back and forth.
+
+`hands` (phase 2c) holds `lHand` and `rHand`, each with:
+
+- `palm`: which way the palm faces, the nearest of `forward`, `back`, `in`, `out`, `up` and `down`,
+  and `palm_vector`, the palm's direction as a unit vector with the parts `forward`, `up` and `out`.
+- `fingertips`: `thumb`, `index`, `middle`, `ring` and `pinky`, each with `position` (the world
+  position, in the same shape as `positions`), `from_wrist` (`forward`, `up`, `out` in the program's
+  units, and `meters`), `distance` and `distance_meters` from the wrist, and `points`, the nearest
+  of the six words for the direction from the wrist to the tip. A curled finger shows as a shorter
+  `distance` and a tip that no longer points `out`.
+
+The directions are the character's own: `forward` is the way the hip faces, laid flat on the floor
+(world forward when the hip points straight up or down); `up` is away from the floor; `out` is away
+from the body's middle on that hand's side (the figure's left for the left hand, its right for the
+right hand) and `in` is towards it, so a mirrored pose gives the same numbers for both hands. The
+palm faces along the wrist joint's own -Y axis: in the start pose (arms straight out to the side)
+both palms face `down` and every fingertip points `out`. A fingertip is the end of the finger's
+third joint (`mHandIndex3Left` and so on), where the finger ends. Fingers a skeleton does not have
+are left out. The largest part decides the word; on an exact tie `forward` wins over `up`, and `up`
+over `out`. The face, wings and tail are not covered.
 
 ### describe_motion
 
