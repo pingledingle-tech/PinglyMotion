@@ -1,6 +1,6 @@
 Branch: job/l1f2-suggestions
 Status: active
-Pull request: pending
+Pull request: #431
 Files:
 - src/scriptlab/labeditor.*
 - src/scriptlab/labsuggest.*
