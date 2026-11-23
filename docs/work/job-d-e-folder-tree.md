@@ -1,6 +1,6 @@
 Branch: job/d-e-folder-tree
 Status: active
-Pull request: pending
+Pull request: #436
 Files:
 - src/scriptlab/labfolder.*
 - src/scriptlab/labwatcher.*
