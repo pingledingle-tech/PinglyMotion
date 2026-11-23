@@ -44,6 +44,280 @@
     </message>
 </context>
 <context>
+    <name>AiAssistant</name>
+    <message>
+        <source>A program</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 s ago</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 min ago</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 h ago</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn off (locks every AI out)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No AI has connected yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: connected, active %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: last active %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect another AI...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AiConnectDialog</name>
+    <message>
+        <source>Connect an AI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An AI assistant on this PC can pose, play, look at and save your animation in PinglyMotion.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Which AI do you use?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Claude</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ChatGPT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick your AI to see its steps.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How it&apos;s kept safe</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It only works on your own PC. Nothing on the network or the internet can reach it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It is off each time PinglyMotion starts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There is a new secret key each time you turn it on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Requests from web pages are refused.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn off locks every AI out and deletes the key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It has been through a security review and is tested automatically on every change: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>security report</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click &lt;b&gt;Show the file&lt;/b&gt;. A folder opens with PinglyMotion.mcpb selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In the Claude app, open &lt;b&gt;Settings &amp;gt; Desktop app&lt;/b&gt; and click &lt;b&gt;Manage&lt;/b&gt; next to &lt;b&gt;Extensions&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click &lt;b&gt;Advanced settings&lt;/b&gt;, then &lt;b&gt;Install Extension...&lt;/b&gt;, and pick PinglyMotion.mcpb. Follow the prompts to finish.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click &lt;b&gt;Turn on AI Assistant&lt;/b&gt; below. It is off each time PinglyMotion starts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In Claude, start a new chat and ask, for example: &quot;Raise the avatar&apos;s right arm and show me a picture.&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Older layout of the Claude app: Settings &amp;gt; Extensions &amp;gt; Advanced settings &amp;gt; Install Extension...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In some versions the installed extension is listed under Settings &amp;gt; Plugins.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the mcp folder next to PinglyMotion with PinglyMotion.mcpb selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Anthropic&apos;s help page: local MCP servers and extensions in Claude</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Node is installed on this PC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Node is not installed on this PC. ChatGPT needs it to start PinglyMotion&apos;s helper. Install the LTS version from %1, then try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not yet tested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ChatGPT&apos;s &quot;Add a custom MCP server&quot; form only takes a web address or a tunnel, so it cannot be used: PinglyMotion only works on your own PC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Connect ChatGPT&lt;/b&gt; adds PinglyMotion to the settings file that the ChatGPT desktop app reads (config.toml in the .codex folder in your user folder). It makes a backup first and changes nothing else in the file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect ChatGPT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds PinglyMotion to ChatGPT&apos;s settings file. A backup is made first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Then restart the ChatGPT app, click &lt;b&gt;Turn on AI Assistant&lt;/b&gt; below and ask ChatGPT, for example: &quot;Raise the avatar&apos;s right arm and show me a picture.&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenAI&apos;s page about MCP servers (see &quot;Configure with config.toml&quot;)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not tested by us</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Most AI tools that can start a local MCP server need a command and a file:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Command: &lt;b&gt;node&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Argument: the file &lt;b&gt;pinglymotion_mcp.js&lt;/b&gt; in the mcp folder next to PinglyMotion</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Copy the command&lt;/b&gt; puts the whole line, with the file&apos;s full place on your PC, on the clipboard, ready to paste into your AI tool&apos;s settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the command</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the mcp folder next to PinglyMotion with pinglymotion_mcp.js selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pinglymotion_mcp.js was not found in the mcp folder next to PinglyMotion. Download PinglyMotion again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied. Paste it into your AI tool&apos;s settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did it work, or not? %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tell us what worked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 was not found in the mcp folder next to PinglyMotion. Download PinglyMotion again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pinglymotion_mcp.js was not found in the mcp folder next to PinglyMotion. Download PinglyMotion again. Nothing was changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done. PinglyMotion was added to ChatGPT&apos;s settings file. Restart the ChatGPT app.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done. PinglyMotion was added to ChatGPT&apos;s settings file. A backup of the old file was saved next to it. Restart the ChatGPT app.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done. The PinglyMotion entry in ChatGPT&apos;s settings file was updated. A backup of the old file was saved next to it. Restart the ChatGPT app.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PinglyMotion is already in ChatGPT&apos;s settings file. Nothing was changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing was changed. The README in the mcp folder shows the lines to add by hand.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant is on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn on AI Assistant</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The AI Assistant is on already. Turn it off in its menu in the status bar.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turns on the AI Assistant until you turn it off or close PinglyMotion.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AnimExportDialog</name>
     <message>
         <source>Export as Second Life .anim</source>
@@ -523,49 +797,65 @@ Green: live, the pose shows on your avatar</source>
     </message>
 </context>
 <context>
+    <name>CodexConfig</name>
+    <message>
+        <source>ChatGPT&apos;s settings file already names PinglyMotion, or its MCP servers, in a form this button cannot change safely.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ChatGPT&apos;s settings file could not be read.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The folder for ChatGPT&apos;s settings file could not be made.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A backup of ChatGPT&apos;s settings file could not be made, so nothing was changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ChatGPT&apos;s settings file could not be written. It was left as it was.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ControlIndicator</name>
     <message>
-        <source>Remote control. Click to turn it on or off.
-Grey: off
-Yellow: on, no assistant connected
-Green: assistant connected
+        <source>%1 failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant on, waiting for an AI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant: a wrong key was refused</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant: %1 AI connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant: lets an AI on this PC pose and play the animation.
+Click to set it up, or to turn it on or off.
+Grey: off (it is off each time PinglyMotion starts)
+Yellow: on, waiting for an AI
+Green: an AI is connected
 Red: a request with a wrong key was refused</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 s ago</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 min ago</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 h ago</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote control off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote control on, no assistant connected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote control: request with a wrong key refused</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 connected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>A program</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 failed</source>
+        <source>Last command: %1 (%2)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -593,10 +883,6 @@ Red: a request with a wrong key was refused</source>
     </message>
     <message>
         <source>other users could read it</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Programs on this computer can now pose and play the animation.&lt;/p&gt;&lt;p&gt;Address: %1&lt;br&gt;The secret key is in:&lt;br&gt;%2&lt;/p&gt;&lt;p&gt;Only programs running as you can read that file.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;%3&quot;&gt;How to connect an AI assistant&lt;/a&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1887,14 +2173,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Allow remote control (AI and other programs)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Lets programs on this computer pose and play the animation. It is off each time you start.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Live link to Aurora</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1904,23 +2182,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Aurora link: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote control</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote control could not be started:
-%1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote control is on</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> - remote control on</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2285,6 +2546,31 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source>Expert mode is on. Paste mirrored shows on the timeline; more controls come in later updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;your user folder&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The AI Assistant could not be turned on:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant on. AI tools on this PC can now pose and play the animation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant off. Every AI is locked out and the key is deleted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> - AI Assistant on</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -14,6 +14,7 @@ Files:
 - tests/tst_control.cpp
 - tests/dialogfit/**
 - tests/statusbar/**
+- tests/menutexts/**
 - tests/test_mcpb.py
 - tests/test_mcp_node.py
 - tools/mcp/**

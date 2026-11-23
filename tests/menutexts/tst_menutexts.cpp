@@ -212,7 +212,7 @@ void TestMenuTexts::oldMainWordingIsGone()
     QVERIFY2(!ui.strings.contains(QLatin1String(old)), old);
 }
 
-// texts that the window sets in code (A24, A25, A28, A30, B6, B13)
+// texts that the window sets in code (A24, A25, A30, B6, B13; A28 is gone, issue 7)
 void TestMenuTexts::windowSourceTexts()
 {
   const QString source = readSource("pinglymotionwindow.cpp");
@@ -221,7 +221,6 @@ void TestMenuTexts::windowSourceTexts()
          "tr(\"Lighting...\")",
          "tr(\"The open source Ruth2 avatar, with fingers and a face that follow the extra Second Life bones.\")",
          "tr(\"The open source Max avatar, with fingers and a face that follow the extra Second Life bones.\")",
-         "tr(\"Lets programs on this computer pose and play the animation. It is off each time you start.\")",
          "tr(\"Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed.\")",
          "tr(\"(not attached)\")",
          "tr(\"Second Life name: %1\")",
@@ -230,7 +229,9 @@ void TestMenuTexts::windowSourceTexts()
     QVERIFY2(source.contains(QLatin1String(now)), now);
   for (const char* old : {"tr(\"Light...\")", "Bento bones", "Off every time PinglyMotion starts",
                           "the part list", "tr(\"* not attached *\")", "Name in the animation file",
-                          "Moves the whole avatar."})
+                          "Moves the whole avatar.",
+                          // A28: the Options entry and the "Remote control is on" box went with issue 7 (the AI Assistant button)
+                          "Allow remote control (AI and other programs)", "Remote control is on"})
     QVERIFY2(!source.contains(QLatin1String(old)), old);
 }
 
