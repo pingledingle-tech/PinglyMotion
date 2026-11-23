@@ -47,6 +47,13 @@ class ControlServer : public QObject
 
     // Where programs find the address and key: <data folder>/PinglyMotion/control.json
     static QString connectionFilePath();
+    // The same path as the info box shows it: without the user's account folder.
+    // Windows: %LOCALAPPDATA%\PinglyMotion\control.json; macOS and Linux: the
+    // path starting with ~. A path outside both folders is shown as it is.
+    static QString displayPath(const QString& path, const QString& dataFolder, const QString& homeFolder, bool windows);
+    static QString displayConnectionFilePath();
+    // The text of the "Remote control is on" box (rich text), without any absolute home path
+    static QString infoHtml(const QString& url);
     // Writes the file atomically and readable by the owner only (issue #144).
     // false (and error) if any step fails; the old file is then left as it was.
     bool writeConnectionFile(QString* error = nullptr) const;

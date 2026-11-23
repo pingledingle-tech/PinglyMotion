@@ -21,6 +21,7 @@
 #include "updatersettings.h"
 
 #include "updatenotificationdialog.h"
+#include "dialogfit.h"
 #include "ui_updatenotificationdialog.h"
 
 UpdateNotificationDialog::UpdateNotificationDialog(QWidget *parent) :
@@ -29,13 +30,13 @@ UpdateNotificationDialog::UpdateNotificationDialog(QWidget *parent) :
           | Qt::CustomizeWindowHint
           | Qt::WindowTitleHint
           | Qt::WindowSystemMenuHint
-          | Qt::WindowCloseButtonHint
-          | Qt::MSWindowsFixedSizeDialogHint),
+          | Qt::WindowCloseButtonHint),
   ui(new Ui::UpdateNotificationDialog)
 {
   ui->setupUi(this);
 
   ui->autoUpdatesCheckBox->setChecked(UpdaterSettings::hasAutomaticUpdates());
+  DialogFit::install(this, ui->scrollArea);
 }
 
 UpdateNotificationDialog::~UpdateNotificationDialog()

@@ -28,6 +28,10 @@ namespace TextSize
   // a percent cut to Minimum..Maximum
   int bounded(int percent);
 
+  // one step of 25 percent up (stops at 200, never wraps to 100) or down (stops at 100)
+  int stepUp(int percent);
+  int stepDown(int percent);
+
   // `base` made `percent` percent as big (cut to 100..200): the point size
   // when the font has one, otherwise the pixel size. Nothing else changes.
   QFont scaledFont(const QFont& base,int percent);

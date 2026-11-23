@@ -15,6 +15,7 @@
 #include <QVBoxLayout>
 
 #include "camerahabitspec.h"
+#include "dialogfit.h"
 #include "lucideicons.h"
 #include "theme.h"
 #include "usersettings.h"
@@ -30,7 +31,7 @@ CameraKeysDialog::CameraKeysDialog(QWidget* parent) : QDialog(parent), m_table(n
   setWindowTitle(tr2(CameraKeysText::title));
   setWindowIcon(LucideIcons::icon(QStringLiteral("video"), Theme::color(Theme::Token::Text), Theme::color(Theme::Token::TextDisabled)));
 
-  QVBoxLayout* outer = new QVBoxLayout(this);
+  QVBoxLayout* outer = DialogFit::contentLayout(this);
 
   QHBoxLayout* header = new QHBoxLayout();
   QLabel* icon = new QLabel(this);
@@ -88,7 +89,7 @@ CameraKeysDialog::CameraKeysDialog(QWidget* parent) : QDialog(parent), m_table(n
   done->setDefault(true);
   connect(done, &QPushButton::clicked, this, &QDialog::accept);
   actions->addWidget(done);
-  outer->addLayout(actions);
+  DialogFit::finish(this, actions);
 }
 
 void CameraKeysDialog::fillTable(const QString& habitId)

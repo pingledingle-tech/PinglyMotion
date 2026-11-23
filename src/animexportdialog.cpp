@@ -22,6 +22,7 @@
 #include <algorithm>
 
 #include "animexportdialog.h"
+#include "dialogfit.h"
 
 namespace AnimExportUi
 {
@@ -113,7 +114,7 @@ AnimExportDialog::AnimExportDialog(double seconds,QWidget* parent)
 {
   setWindowTitle(tr("Export as Second Life .anim"));
 
-  QVBoxLayout* layout=new QVBoxLayout(this);
+  QVBoxLayout* layout=DialogFit::contentLayout(this);
 
   layout->addWidget(new QLabel(AnimExportUi::lengthText(seconds),this));
 
@@ -159,7 +160,7 @@ AnimExportDialog::AnimExportDialog(double seconds,QWidget* parent)
   ok->setDefault(true);
   connect(buttons,&QDialogButtonBox::accepted,this,&QDialog::accept);
   connect(buttons,&QDialogButtonBox::rejected,this,&QDialog::reject);
-  layout->addWidget(buttons);
+  DialogFit::finish(this,buttons);
 }
 
 AnimExportUi::Settings AnimExportDialog::settings() const

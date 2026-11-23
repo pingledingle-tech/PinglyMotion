@@ -96,6 +96,9 @@ SET_TESTS_PROPERTIES (camera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 # UX phase 4a: the camera follows the chosen habit, the view keys
 ADD_SUBDIRECTORY (camerahabits)
 
+# Dialogs fit the screen, text size steps, the remote control box
+ADD_SUBDIRECTORY (dialogfit)
+
 # UX phase 4b part 1: the view toolbar, the view-direction widget, the view name, the ring hint
 ADD_SUBDIRECTORY (viewtools)
 ADD_SUBDIRECTORY (limbpull)

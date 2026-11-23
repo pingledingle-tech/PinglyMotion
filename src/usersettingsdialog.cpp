@@ -21,6 +21,7 @@
 #include "usersettings.h"
 
 #include "usersettingsdialog.h"
+#include "dialogfit.h"
 #include "ui_usersettingsdialog.h"
 
 UserSettingsDialog::UserSettingsDialog(QWidget* parent) :
@@ -29,8 +30,7 @@ UserSettingsDialog::UserSettingsDialog(QWidget* parent) :
           | Qt::CustomizeWindowHint
           | Qt::WindowTitleHint
           | Qt::WindowSystemMenuHint
-          | Qt::WindowCloseButtonHint
-          | Qt::MSWindowsFixedSizeDialogHint),
+          | Qt::WindowCloseButtonHint),
   ui(new Ui::UserSettingsDialog)
 {
 
@@ -40,6 +40,7 @@ UserSettingsDialog::UserSettingsDialog(QWidget* parent) :
   ui->floorTranslucencySpin->setValue(UserSettings::floorTranslucency());
   ui->easeInCheckbox->setChecked(UserSettings::easeIn());
   ui->easeOutCheckbox->setChecked(UserSettings::easeOut());
+  DialogFit::install(this, ui->scrollArea, QSize(340, 190));
 }
 
 UserSettingsDialog::~UserSettingsDialog()

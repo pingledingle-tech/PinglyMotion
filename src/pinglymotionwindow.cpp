@@ -689,13 +689,7 @@ void PinglyMotionWindow::setRemoteControl(bool on,bool showInfo)
     if(showInfo)
     {
       QMessageBox box(QMessageBox::Information,tr("Remote control is on"),
-        tr("<p>Programs on this computer can now pose and play the animation.</p>"
-           "<p>Address: %1<br>The secret key is in:<br>%2</p>"
-           "<p>Only programs running as you can read that file. Turn this off in the Options menu when you do not need it.</p>"
-           "<p><a href=\"%3\">How to connect an AI assistant</a></p>")
-          .arg(m_controlServer->url().toHtmlEscaped(),
-               QDir::toNativeSeparators(ControlServer::connectionFilePath()).toHtmlEscaped(),
-               QStringLiteral("https://github.com/pingledingle-tech/PinglyMotion/blob/main/docs/CONTROL.md#set-up-an-ai-assistant")),
+        ControlServer::infoHtml(m_controlServer->url()),
         QMessageBox::Ok,this);
       box.setTextFormat(Qt::RichText);
       box.setTextInteractionFlags(Qt::TextBrowserInteraction);
@@ -1144,10 +1138,18 @@ void PinglyMotionWindow::buildMenus()
   m_textSizeAction=specAction(this,viewTextSize,false,text(viewTextSize).arg(UserSettings::textSizePercent()));
   connect(m_textSizeAction,&QAction::triggered,this,[this]()
   {
-    const int now=UserSettings::textSizePercent();
-    setTextSizePercent(now>=200 ? 100 : now+25);
+    setTextSizePercent(TextSize::stepUp(UserSettings::textSizePercent()));
   });
   ui->menuView->addAction(m_textSizeAction);
+  QAction* textSmallerAction=specAction(this,viewTextSmaller,false);
+  connect(textSmallerAction,&QAction::triggered,this,[this]()
+  {
+    setTextSizePercent(TextSize::stepDown(UserSettings::textSizePercent()));
+  });
+  ui->menuView->addAction(textSmallerAction);
+  QAction* textResetAction=specAction(this,viewTextReset,false);
+  connect(textResetAction,&QAction::triggered,this,[this]() { setTextSizePercent(TextSize::Default); });
+  ui->menuView->addAction(textResetAction);
   QAction* viewSetupAction=specAction(this,viewSetup,false);
   connect(viewSetupAction,&QAction::triggered,this,&PinglyMotionWindow::openSetupDialog);
   ui->menuView->addAction(viewSetupAction);

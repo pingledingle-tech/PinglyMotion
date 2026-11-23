@@ -49,6 +49,7 @@ SET (PINGLYMOTION_SHARED_SRC
               camera.cpp
               controlapi.cpp
               controlindicator.cpp
+              dialogfit.cpp
               controlserver.cpp
               easing.cpp
               easingtiles.cpp

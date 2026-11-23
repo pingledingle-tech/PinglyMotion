@@ -306,6 +306,8 @@ namespace
     {&MenuSpec::viewLightTheme, "viewLightThemeAction", "Light theme", "T", ""},
     {&MenuSpec::viewExpertMode, "viewExpertModeAction", "Expert mode", "Shift+E", ""},
     {&MenuSpec::viewTextSize, "viewTextSizeAction", "Text size: %1%", "Ctrl+=", ""},
+    {&MenuSpec::viewTextSmaller, "viewTextSmallerAction", "Smaller text", "Ctrl+-", ""},
+    {&MenuSpec::viewTextReset, "viewTextResetAction", "Text size back to 100%", "Ctrl+0", ""},
     {&MenuSpec::viewSetup, "viewSetupAction", "Setup...", "", ""},
     {&MenuSpec::helpSetup, "helpSetupAction", "Setup: beginner or experienced, mouse and keys...", "", ""},
     {&MenuSpec::helpWelcome, "helpWelcomeAction", "Show the welcome card again", "",
@@ -368,6 +370,9 @@ void TestMenuTexts::phase1aMatchesMockup()
   }
   QVERIFY(checked >= 15);
   QVERIFY(html.contains(QStringLiteral("<span class=\"grow\">Text size: <span id=\"scaleNow\">100</span>%</span><kbd>Ctrl+=</kbd>")));
+  // Ctrl+= stops at 200 and does not wrap; Ctrl+- and Ctrl+0 step back
+  QVERIFY(html.contains(QStringLiteral("scale = Math.min(200, scale + 25)")));
+  QVERIFY(html.contains(QStringLiteral("scale = Math.max(100, scale - 25)")));
   QVERIFY(html.contains(QStringLiteral("<div class=\"mh\" role=\"presentation\">Look from</div>")));
   QVERIFY(html.contains(QStringLiteral("<div class=\"mh\" role=\"presentation\">Panels</div>")));
   QVERIFY(html.contains(QStringLiteral("Export for Second Life...</span><kbd>Ctrl+Shift+E</kbd>")));
@@ -413,6 +418,13 @@ void TestMenuTexts::phase1aWindowUsesTable()
     QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,true)").arg(QLatin1String(greyed))), greyed);
   for (const char* working : {"viewLightTheme", "viewExpertMode", "viewHome", "helpKeys"})
     QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,false)").arg(QLatin1String(working))), working);
+  // text size: Ctrl+= stops at 200 (TextSize::stepUp), Ctrl+- steps down, Ctrl+0 goes back to 100
+  for (const char* name : {"viewTextSmaller", "viewTextReset"})
+    QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,false)").arg(QLatin1String(name))), name);
+  QVERIFY(source.contains(QStringLiteral("setTextSizePercent(TextSize::stepUp(UserSettings::textSizePercent()));")));
+  QVERIFY(source.contains(QStringLiteral("setTextSizePercent(TextSize::stepDown(UserSettings::textSizePercent()));")));
+  QVERIFY(source.contains(QStringLiteral("setTextSizePercent(TextSize::Default);")));
+  QVERIFY(!source.contains(QStringLiteral("now>=200 ? 100 : now+25")));
   QVERIFY(source.contains(QStringLiteral("UserSettings::setDarkTheme(!light);")));
   QVERIFY(source.contains(QStringLiteral("UserSettings::setExpertMode(on);")));
   QVERIFY(!source.contains(QStringLiteral("tr(\"Dark theme\")")));

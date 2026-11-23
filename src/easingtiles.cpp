@@ -1,5 +1,6 @@
 // The easing tile row (issue #53 step 5). See easingtiles.h.
 #include "easingtiles.h"
+#include "dialogfit.h"
 #include "wraprow.h"
 
 #include <QButtonGroup>
@@ -681,7 +682,7 @@ CurveEditorDialog::CurveEditorDialog(const Easing::Bezier& start,QWidget* parent
   setObjectName(QStringLiteral("curveEditorDialog"));
   setWindowTitle(tr("Custom curve"));
 
-  QVBoxLayout* layout=new QVBoxLayout(this);
+  QVBoxLayout* layout=DialogFit::contentLayout(this);
   QLabel* hint=new QLabel(tr("Drag the two round handles. Steep parts move fast, flat parts slowly."),this);
   hint->setObjectName(QStringLiteral("curveEditorHint"));
   hint->setWordWrap(true);
@@ -697,7 +698,7 @@ CurveEditorDialog::CurveEditorDialog(const Easing::Bezier& start,QWidget* parent
   connect(again,&QPushButton::clicked,this,[this]() { m_editor->setCurve(m_start); });
   connect(buttons,&QDialogButtonBox::accepted,this,&QDialog::accept);
   connect(buttons,&QDialogButtonBox::rejected,this,&QDialog::reject);
-  layout->addWidget(buttons);
+  DialogFit::finish(this,buttons);
 }
 
 Easing::Bezier CurveEditorDialog::curve() const

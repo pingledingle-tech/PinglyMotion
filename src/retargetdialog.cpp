@@ -24,6 +24,7 @@
 #include <QVBoxLayout>
 
 #include "retargetdialog.h"
+#include "dialogfit.h"
 
 namespace RetargetUi
 {
@@ -147,9 +148,8 @@ RetargetDialog::RetargetDialog(const AnimFile::Animation& source,const AnimFile:
     m_editor(source,target)
 {
   setWindowTitle(tr("Import a BVH from another skeleton"));
-  resize(640,520);
 
-  QVBoxLayout* layout=new QVBoxLayout(this);
+  QVBoxLayout* layout=DialogFit::contentLayout(this);
   QLabel* intro=new QLabel(tr("%1 has its own skeleton.\nThe program matched its joints to the avatar's joints.\n"
                               "Is a match wrong? Pick another avatar joint in the list.").arg(fileName),this);
   intro->setTextFormat(Qt::PlainText);
@@ -229,7 +229,7 @@ RetargetDialog::RetargetDialog(const AnimFile::Animation& source,const AnimFile:
   m_open->setDefault(true);
   connect(buttons,&QDialogButtonBox::accepted,this,&RetargetDialog::accept);
   connect(buttons,&QDialogButtonBox::rejected,this,&QDialog::reject);
-  layout->addWidget(buttons);
+  DialogFit::finish(this,buttons,QSize(640,520));
 
   fillTable();
   loadSaved();

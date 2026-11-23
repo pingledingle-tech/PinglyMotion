@@ -19,12 +19,12 @@
  ***************************************************************************/
 
 #include "whatsnewdialog.h"
+#include "dialogfit.h"
 #include "ui_whatsnewdialog.h"
 
 WhatsNewDialog::WhatsNewDialog(QString news, QWidget* parent) :
   QDialog(parent,
           Qt::Dialog
-          | Qt::MSWindowsFixedSizeDialogHint
           | Qt::CustomizeWindowHint
           | Qt::WindowTitleHint
           | Qt::WindowSystemMenuHint
@@ -34,6 +34,7 @@ WhatsNewDialog::WhatsNewDialog(QString news, QWidget* parent) :
   ui->setupUi(this);
 
   ui->plainTextEdit->setPlainText(news);
+  DialogFit::install(this, ui->scrollArea);
 }
 
 WhatsNewDialog::~WhatsNewDialog()

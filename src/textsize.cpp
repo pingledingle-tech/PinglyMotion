@@ -33,6 +33,16 @@ QFont TextSize::scaledFont(const QFont& base,int percent)
   return font;
 }
 
+int TextSize::stepUp(int percent)
+{
+  return bounded(bounded(percent)+25);
+}
+
+int TextSize::stepDown(int percent)
+{
+  return bounded(bounded(percent)-25);
+}
+
 int TextSize::apply(int percent)
 {
   const int p=bounded(percent);

@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 
 #include "camerahabitspec.h"
+#include "dialogfit.h"
 #include "lucideicons.h"
 #include "theme.h"
 #include "usersettings.h"
@@ -50,7 +51,7 @@ SetupDialog::SetupDialog(QWidget* parent) :
   setWindowTitle(tr2(SetupText::title));
   setWindowIcon(LucideIcons::icon(QStringLiteral("settings"), Theme::color(Theme::Token::Text), Theme::color(Theme::Token::TextDisabled)));
 
-  QVBoxLayout* outer = new QVBoxLayout(this);
+  QVBoxLayout* outer = DialogFit::contentLayout(this);
   outer->setSpacing(Theme::Size::spacingL);
 
   QHBoxLayout* header = new QHBoxLayout();
@@ -158,7 +159,7 @@ SetupDialog::SetupDialog(QWidget* parent) :
   done->setDefault(true);
   connect(done, &QPushButton::clicked, this, &QDialog::accept);
   actions->addWidget(done);
-  outer->addLayout(actions);
+  DialogFit::finish(this, actions);
 }
 
 bool SetupDialog::expertChecked() const { return m_expertRadio && m_expertRadio->isChecked(); }
