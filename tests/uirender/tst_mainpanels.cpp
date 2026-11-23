@@ -35,6 +35,7 @@
 #include "panelwindow.h"
 #include "paneltitlebar.h"
 #include "textsize.h"
+#include "theme.h"
 #include "uirender.h"
 
 #include "ui_pinglymotionwindow.h"
@@ -125,6 +126,8 @@ class TestMainPanels : public QObject
     void timelineRowsBreakOnlyWhenTheyDoNotFit();
     void selectedJointPageFitsItsPanel();
     void expertModeMovesNothing();
+    void panelEdgesAreEasyToGrab();
+    void jointsPanelCanBeMadeWider();
 };
 
 void TestMainPanels::panelsRearrangeAndNothingIsClipped_data()
@@ -317,6 +320,61 @@ void TestMainPanels::expertModeMovesNothing()
         QVERIFY2(expert.value(it.key()) == it.value(),
                  qPrintable(QStringLiteral("%1 (%2 wide, %3) moved when Expert mode was switched").arg(it.key()).arg(width).arg(v.name())));
     }
+}
+
+// UX fixes 1 (the project owner's test notes, 23 November 2026): the line between panels was
+// hard to hit. The line between docked panels (and any splitter) is spacing s (8 pixels at
+// 100 percent) wide and the edge of a floating panel spacing xs (4), both grow with the text size
+void TestMainPanels::panelEdgesAreEasyToGrab()
+{
+  QCOMPARE(Theme::Size::panelGrab, 8);
+  QCOMPARE(Theme::Size::floatingEdge, 4);
+  const int expected[][3] = {{100, 8, 4}, {150, 12, 6}, {200, 16, 8}};
+  for (const auto& row : expected)
+  {
+    UiRender::Scope scope({true, row[0]});
+    MainWindow w;
+    QStyle* style = w.window.style();
+    QCOMPARE(style->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent, nullptr, &w.window), row[1]);
+    QCOMPARE(style->pixelMetric(QStyle::PM_SplitterWidth, nullptr, &w.window), row[1]);
+    QCOMPARE(style->pixelMetric(QStyle::PM_DockWidgetFrameWidth, nullptr, w.panels.jointsDock), row[2]);
+    // the panel layout counts the same width between the panels
+    QCOMPARE(w.panels.needs(&w.window).separator, row[1]);
+  }
+}
+
+// UX fixes 1: in Expert mode the Joints panel could not be made wider (the wide layout fixed
+// its width). It starts as wide as its contents need and the line beside it makes it wider,
+// in every layout; it never gets narrower than its contents
+void TestMainPanels::jointsPanelCanBeMadeWider()
+{
+  UiRender::Scope scope({true, 100});
+  // windows with room for 120 more pixels beside the 3D view and the timeline
+  for (const int width : {1920, 1366})
+  {
+    MainWindow w;
+    const Reflow got = w.arrange(width);
+    QScrollArea* scroll = w.panels.jointsScroll;
+    const int least = scroll->minimumWidth();
+    QVERIFY(least > 0);
+    QCOMPARE(scroll->maximumWidth(), QWIDGETSIZE_MAX);
+    QCOMPARE(w.panels.jointCardScroll->maximumWidth(), QWIDGETSIZE_MAX);
+    if (got != Reflow::Wide) continue;
+    // starts at its least width
+    QCOMPARE(scroll->width(), least);
+    const int before = w.panels.jointsDock->width();
+    w.window.resizeDocks({w.panels.jointsDock}, {before + 120}, Qt::Horizontal);
+    w.settle();
+    QCOMPARE(w.panels.jointsDock->width(), before + 120);
+    // and a fit after that (text size or theme change) keeps the width the user gave it
+    w.panels.fit(got);
+    w.settle();
+    QCOMPARE(w.panels.jointsDock->width(), before + 120);
+    // never narrower than its contents
+    w.window.resizeDocks({w.panels.jointsDock}, {10}, Qt::Horizontal);
+    w.settle();
+    QVERIFY(scroll->width() >= least);
+  }
 }
 
 QTEST_MAIN(TestMainPanels)

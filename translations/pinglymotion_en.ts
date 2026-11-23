@@ -1977,15 +1977,15 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ctrl+Shift+B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl++ bigger, Ctrl+- smaller, Ctrl+0 back to 100%</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

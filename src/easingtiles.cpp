@@ -400,6 +400,11 @@ EasingTiles::EasingTiles(QWidget* parent) :
   secondPart->addStretch(1);
   m_rows=WrapRow::make({firstPart,secondPart});
   m_rows->setSpacing(4);
+  // one run of tiles from the left, as in the mockup: on one line the first part keeps its
+  // own width and the second part, with the room left over, starts right after it (UX
+  // fixes 1: the two parts shared the room, so three tiles stood far off on the right)
+  m_rows->setStretch(0,0);
+  m_rows->setStretch(1,1);
   layout->addLayout(m_rows);
 
   m_hint=new QLabel(this);
