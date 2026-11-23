@@ -1,5 +1,5 @@
 Branch: job/leddringer
-Status: active
+Status: done
 Pull request: #434
 Files:
 - src/animationview.*
