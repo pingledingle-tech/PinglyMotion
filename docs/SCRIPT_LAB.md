@@ -223,6 +223,8 @@ an RLV relay, a store), and they talk to each other.
 
 ## What exists now (step 9b-1, issue 310): the signature table and pure functions
 
+- The definition check (lane 1, job L1-A) lists what the interpreter lacks compared with those definitions: [LSL_DEFINITION_CHECK.md](LSL_DEFINITION_CHECK.md). A test fails if a function the sandbox runs, or an event it raises, is not in the definitions.
+
 - The signature table knows every function, event and constant of Second Life's own lsl-definitions (526 functions, 43
   events, 1 082 constants), not only the viewer's keyword list: `src/scriptlab/lslbuiltins_extra.inc`, made by
   `tools/gen_lsl_extra.py` from `lsl_definitions.yaml` (MIT, Linden Research; [CREDITS.md](../CREDITS.md)). The

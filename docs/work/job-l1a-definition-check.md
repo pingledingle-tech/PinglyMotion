@@ -1,6 +1,6 @@
 Branch: job/l1a-definition-check
-Status: active
-Pull request: pending
+Status: done
+Pull request: #426
 Files:
 - tests/data/lsl-definitions/**
 - tools/lsl_definition_check.py
@@ -11,6 +11,8 @@ Files:
 - docs/SLUA_RULES.md
 - docs/DEV.md
 - CREDITS.md
+- docs/ROADMAP.md
+- tools/gen_lsl_extra.py
 
 ## What
 

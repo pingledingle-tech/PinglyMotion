@@ -21,7 +21,7 @@ Decided: the converter starts with "LSL style" (what Linden Lab's `llcompat` lay
 
 Order:
 
-- **A. Definition check.** Compare our function, constant and event lists with Linden Lab's definition files (`lsl-definitions`). It shows what we lack and replaces the hand-made gap lists.
+- **A. Definition check (done, lane 1 job L1-A).** Compares our function, constant and event lists with Linden Lab's definition files (`lsl-definitions`). It shows what we lack and replaces the hand-made gap lists: `python3 tools/lsl_definition_check.py`, report in [LSL_DEFINITION_CHECK.md](LSL_DEFINITION_CHECK.md), test `lsl_definition_check`.
 - **B. The folder is the object.** A top folder is one object (one linkset), a subfolder is one prim, and the scripts and notecards of a prim sit in its folder. Live runs the whole folder as one linkset (`llMessageLinked` and `link_message` already exist in the interpreter). Import checks all scripts at once. The event log and the limits show which script and which prim each line came from. Limits for path length, size and endless loops.
 - **C. RLV type check.** Approved by the project owner: an invalid value is rejected as RLVa does, the command has no effect, and a clear warning says why. First confirm the behaviour against the RLVa code.
 - **D. The panel (after B).** A tree with icons (a cube for the object, one shape per prim, a document for scripts, an LSL or Lua mark), colour dots and sums, memory per script, and the maker guide.

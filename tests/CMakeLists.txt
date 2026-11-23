@@ -189,6 +189,8 @@ SET_TESTS_PROPERTIES (rlvsources PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscre
 FIND_PACKAGE (Python3 COMPONENTS Interpreter QUIET)
 IF (Python3_Interpreter_FOUND)
   ADD_TEST (NAME rlvsources_tool COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_rlv_sources.py)
+  # the Script Lab interpreter against Linden Lab's lsl-definitions (tools/lsl_definition_check.py, docs/LSL_DEFINITION_CHECK.md)
+  ADD_TEST (NAME lsl_definition_check COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_lsl_definition_check.py)
 ENDIF ()
 
 # Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
