@@ -1,6 +1,6 @@
 Branch: job/check-shared-lib
-Status: active
-Pull request: pending
+Status: done
+Pull request: #440
 Files:
 - tools/check_shared_lib.py
 - tests/test_check_shared_lib.py
