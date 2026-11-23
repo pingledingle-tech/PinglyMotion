@@ -1,6 +1,6 @@
 Branch: job/script-lab-beginners
 Status: active
-Pull request: pending
+Pull request: #443
 Files:
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/labtree.*
