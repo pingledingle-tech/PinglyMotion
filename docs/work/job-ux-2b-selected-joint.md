@@ -12,6 +12,9 @@ Files:
 - src/pinglymotionwindowfile.cpp
 - src/pinglymotionwindowplayback.cpp
 - src/usersettings.*
+- src/lucideicons.cpp
+- tests/transportbar/tst_transportbar.cpp
+- docs/TEACHING.md
 - tests/selectedjoint/**
 - tests/uirender/**
 - tests/usersettings/**

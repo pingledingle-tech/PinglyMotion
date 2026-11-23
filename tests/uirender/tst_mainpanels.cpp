@@ -27,7 +27,10 @@
 #include <QToolButton>
 #include <QtTest>
 
+#include <QSlider>
+
 #include "panelcontent.h"
+#include "selectedjointpanel.h"
 #include "panellayout.h"
 #include "panelwindow.h"
 #include "paneltitlebar.h"
@@ -120,6 +123,7 @@ class TestMainPanels : public QObject
     void panelsRearrangeAndNothingIsClipped();
     void needsGrowWithTheTextSize();
     void timelineRowsBreakOnlyWhenTheyDoNotFit();
+    void selectedJointPageFitsItsPanel();
 };
 
 void TestMainPanels::panelsRearrangeAndNothingIsClipped_data()
@@ -237,6 +241,40 @@ void TestMainPanels::timelineRowsBreakOnlyWhenTheyDoNotFit()
   QCOMPARE(bar->startButton()->y(), bar->replayButton()->y());
   QVERIFY(bar->backButton()->y() > bar->startButton()->y());
   QCOMPARE(bar->backButton()->y(), bar->forwardButton()->y());
+}
+
+// The Selected joint panel's joint page (UX phase 2b) with the limit warning
+// and More options open, in the program's own panel with the designer file's
+// sliders and fields: nothing clipped, at every text size and theme.
+void TestMainPanels::selectedJointPageFitsItsPanel()
+{
+  for (const UiRender::Variant& v : UiRender::variants())
+  {
+    UiRender::Scope scope(v);
+    MainWindow w;
+    SelectedJointPanel* panel = w.panels.selectedJoint;
+    QVERIFY(panel);
+    QCOMPARE(panel->slider(SelectedJointPanel::Mode::Turn, 0), w.ui.xRotationSlider);
+    QCOMPARE(panel->valueField(SelectedJointPanel::Mode::Move, 2), static_cast<QLineEdit*>(w.ui.zPositionEdit));
+    QVERIFY(!w.ui.rotationGroupBox->isVisibleTo(&w.window));
+    SelectedJointPanel::Joint joint;
+    joint.name = QStringLiteral("Right Arm: Shoulder");
+    joint.slName = QStringLiteral("mShoulderRight");
+    joint.keys = 2;
+    joint.changed = true;
+    panel->setMoreOpen(true);
+    panel->showJoint(joint);
+    for (QSlider* slider : {w.ui.xRotationSlider, w.ui.yRotationSlider, w.ui.zRotationSlider})
+      slider->setRange(-9000, 9000);
+    w.ui.xRotationSlider->setValue(8900);
+    QVERIFY(panel->warning()->isVisibleTo(panel));
+    w.panels.fit(Reflow::Wide);
+    QCOMPARE(w.arrange(1920), Reflow::Wide);
+    if (!UiRender::outDir().isEmpty())
+      UiRender::save(w.window.grab().toImage(), QStringLiteral("mainpanels_selectedjoint"), v);
+    const QStringList problems = panelProblems(w.panels.jointCardDock);
+    QVERIFY2(problems.isEmpty(), qPrintable(v.name() + QStringLiteral(": ") + problems.join('\n')));
+  }
 }
 
 QTEST_MAIN(TestMainPanels)

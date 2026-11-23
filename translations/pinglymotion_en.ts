@@ -4940,6 +4940,221 @@ Error: %2</source>
     </message>
 </context>
 <context>
+    <name>SelectedJointPanel</name>
+    <message>
+        <source>Nothing to turn yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an animation first. Then pick a joint to turn it here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This panel turns one joint at a time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a joint on the figure, or in the Joints list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn it with the coloured sliders here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turning it sets a key at this frame.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick the right shoulder for me</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life name: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no keys yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Body</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Face</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hands</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn this joint with the three sliders. Turning it sets a key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tilt forward or back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left or right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>red</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn left or right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Up or down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>green</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lean to the side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward or back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>blue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arrow keys: one degree. Page Up and Page Down: ten.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>allowed range</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no limits</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> (near its limit)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Near its limit: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This joint is almost at the furthest it can turn. Turn it back a little, or pick another joint.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn limits off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warn near the joint&apos;s limits</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life has no limits. Turn them off for odd poses on purpose.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset this joint to how it is in the first frame.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This joint is not changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull with keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pulling with keys comes in a later version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When you drag this joint in the 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull the limb</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn only this joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pulling the limb comes in a later version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dragging turns only this joint for now. Pulling the limb comes later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turn or move</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only the pelvis and the Avatar Position can be moved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Avatar Position can only be moved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2, in degrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SetupDialog</name>
     <message>
         <source>Setup</source>

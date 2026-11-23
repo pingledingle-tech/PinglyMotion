@@ -89,6 +89,13 @@ class UserSettings
     // a part not named keeps its first state (docs/UX_DECISIONS.md, 6d)
     static void setScriptLabParts(const QString& value);
     static QString scriptLabParts();
+    // the Selected joint panel (docs/UX_DECISIONS.md, 6): what a drag in the 3D view
+    // does, Pull the limb (true, default) or Turn only this joint (read by the drag of
+    // UX phase 4b), and whether its More options part is open (default folded)
+    static void setPullLimbOnDrag(bool on);
+    static bool pullLimbOnDrag();
+    static void setJointMoreOptions(bool open);
+    static bool jointMoreOptions();
 
     static void setExpertMode(bool on);
     static bool expertMode();
@@ -165,6 +172,10 @@ private:
     static const QString m_tipsOnKey;
     static QString m_scriptLabParts;
     static const QString m_scriptLabPartsKey;
+    static bool m_pullLimbOnDrag;
+    static const QString m_pullLimbOnDragKey;
+    static bool m_jointMoreOptions;
+    static const QString m_jointMoreOptionsKey;
     static bool m_expertMode;
     static const QString m_expertModeKey;
     static QString m_cameraHabit;

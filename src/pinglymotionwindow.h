@@ -41,6 +41,7 @@
 class QCloseEvent;
 class QResizeEvent;
 class MainPanels;
+class SelectedJointPanel;
 class QFileInfo;
 class QButtonGroup;
 class QLineEdit;
@@ -383,6 +384,15 @@ class PinglyMotionWindow : public QMainWindow
     void flipPoseClicked();
     void tPoseClicked();
     void resetAllClicked();
+    // the Selected joint panel (UX phase 2b, src/selectedjointpanel.h): its page
+    // and joint follow the window (no animation, no joint picked, the joint);
+    // Reset joint puts the picked joint back as it is in the first frame
+    SelectedJointPanel* m_selectedJoint=nullptr;
+    void refreshJointPanel();
+    // why the sliders cannot be used now ("Stop playing first."), or empty
+    QString jointBlockedReason() const;
+    void resetJointClicked();
+    void pickDemoJoint();
     void buildPartLists();
     void jointGroupsChanged();
     void buildDocks();

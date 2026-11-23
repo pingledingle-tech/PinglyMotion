@@ -89,6 +89,7 @@
 
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
+#include "selectedjointpanel.h"
 #include "playback.h"
 #include "theme.h"
 #include "ui_pinglymotionwindow.h"
@@ -109,14 +110,15 @@ void PinglyMotionWindow::enableProps(bool state)
   ui->attachToComboBox->setEnabled(state);
 }
 
+// the Selected joint panel greys its sliders with the reason (UX phase 2b)
 void PinglyMotionWindow::enableAvatarRotation(bool state)
 {
-  ui->rotationGroupBox->setEnabled(state);
+  if(m_selectedJoint) m_selectedJoint->setTurnBlocked(state ? QString() : jointBlockedReason());
 }
 
 void PinglyMotionWindow::enableAvatarPosition(bool state)
 {
-  ui->positionGroupBox->setEnabled(state);
+  if(m_selectedJoint) m_selectedJoint->setMoveBlocked(state ? QString() : jointBlockedReason());
 }
 
 void PinglyMotionWindow::updatePropSpins(const QVector3D& position, const QVector3D& rotation, const QVector3D& scale)
