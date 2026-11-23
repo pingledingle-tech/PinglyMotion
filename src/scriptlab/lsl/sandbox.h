@@ -129,14 +129,14 @@ struct SandboxInput
   // or "end" for collision and moving, or "start", "end" or empty (the continuous land_collision) for land_collision.
   QString stage;
   float pos[3] = {0.0f, 0.0f, 0.0f};        // land_collision*: the event's own vector argument
-  // at_target: the event's own arguments (llTarget's target number is not tracked by the sandbox)
+  // at_target: the event's own arguments (a manual input; llTarget's own targets raise it after a step)
   int tnum = 0;
   float targetpos[3] = {0.0f, 0.0f, 0.0f};
   float ourpos[3] = {0.0f, 0.0f, 0.0f};
   // second gap list, step 6, part 3: "step" advances the simple motion model (gravity scaled by llSetBuoyancy;
   // llApplyImpulse already changed the velocity at once) by "dt" simulated seconds for one object, and fires
   // moving_start/moving_end itself when the object's speed crosses MOVING_SPEED_THRESHOLD. No motion model yet
-  // for llMoveToTarget, so at_target/not_at_target still only come from the manual inputs above (a later job).
+  // for llMoveToTarget; at_target/not_at_target come from the manual inputs above and from the scripts' llTarget targets, checked after each step.
   double dt = 0.0;
   // several-objects job: "drop" puts an item into the object, as an avatar does by dragging it from their inventory
   // (name and id: the avatar, empty: the owner). The owner may always; anyone else only after llAllowInventoryDrop(TRUE).
