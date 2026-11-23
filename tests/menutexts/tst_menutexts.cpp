@@ -307,7 +307,7 @@ namespace
      "Next area is not built yet. For now use Tab to move between the fields."},
     {&MenuSpec::viewLightTheme, "viewLightThemeAction", "Light theme", "T", ""},
     {&MenuSpec::viewExpertMode, "viewExpertModeAction", "Expert mode", "Shift+E", ""},
-    {&MenuSpec::viewTextSize, "viewTextSizeAction", "Text size: %1%", "Ctrl+=", ""},
+    {&MenuSpec::viewTextSize, "viewTextSizeAction", "Text size: %1%", "Ctrl++", ""},
     {&MenuSpec::viewTextSmaller, "viewTextSmallerAction", "Smaller text", "Ctrl+-", ""},
     {&MenuSpec::viewTextReset, "viewTextResetAction", "Text size back to 100%", "Ctrl+0", ""},
     {&MenuSpec::viewSetup, "viewSetupAction", "Setup...", "", ""},
@@ -370,8 +370,8 @@ void TestMenuTexts::phase1aMatchesMockup()
     ++checked;
   }
   QVERIFY(checked >= 15);
-  QVERIFY(html.contains(QStringLiteral("<span class=\"grow\">Text size: <span id=\"scaleNow\">100</span>%</span><kbd>Ctrl+=</kbd>")));
-  // Ctrl+= stops at 200 and does not wrap; Ctrl+- and Ctrl+0 step back
+  QVERIFY(html.contains(QStringLiteral("<span class=\"grow\">Text size: <span id=\"scaleNow\">100</span>%</span><kbd>Ctrl++</kbd>")));
+  // Ctrl++ stops at 200 and does not wrap; Ctrl+- and Ctrl+0 step back
   QVERIFY(html.contains(QStringLiteral("scale = Math.min(200, scale + 25)")));
   QVERIFY(html.contains(QStringLiteral("scale = Math.max(100, scale - 25)")));
   QVERIFY(html.contains(QStringLiteral("<div class=\"mh\" role=\"presentation\">Look from</div>")));
@@ -419,7 +419,7 @@ void TestMenuTexts::phase1aWindowUsesTable()
     QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,true)").arg(QLatin1String(greyed))), greyed);
   for (const char* working : {"viewLightTheme", "viewExpertMode", "viewHome", "helpKeys"})
     QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,false)").arg(QLatin1String(working))), working);
-  // text size: Ctrl+= stops at 200 (TextSize::stepUp), Ctrl+- steps down, Ctrl+0 goes back to 100
+  // text size: Ctrl++ stops at 200 (TextSize::stepUp), Ctrl+- steps down, Ctrl+0 goes back to 100
   for (const char* name : {"viewTextSmaller", "viewTextReset"})
     QVERIFY2(source.contains(QStringLiteral("specAction(this,%1,false)").arg(QLatin1String(name))), name);
   QVERIFY(source.contains(QStringLiteral("setTextSizePercent(TextSize::stepUp(UserSettings::textSizePercent()));")));

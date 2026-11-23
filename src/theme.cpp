@@ -4,14 +4,40 @@
  */
 #include <QApplication>
 #include <QPalette>
+#include <QProxyStyle>
 #include <QStyle>
 #include <QStyleFactory>
 
+#include "textsize.h"
 #include "theme.h"
 
 namespace
 {
   bool g_dark=true;
+
+  // Fusion with wider edges to grab (the project owner's test notes, 23 November 2026:
+  // the line between panels was hard to hit): the lines between docked panels and any
+  // splitter are Theme::panelGrabWidth() wide, the edge of a floating panel
+  // Theme::floatingEdgeWidth() (docs/UX_DECISIONS.md, 6c)
+  class PanelStyle : public QProxyStyle
+  {
+    public:
+      using QProxyStyle::QProxyStyle;
+
+      int pixelMetric(PixelMetric metric,const QStyleOption* option=nullptr,const QWidget* widget=nullptr) const override
+      {
+        switch(metric)
+        {
+          case PM_DockWidgetSeparatorExtent:
+          case PM_SplitterWidth:
+            return Theme::panelGrabWidth();
+          case PM_DockWidgetFrameWidth:
+            return Theme::floatingEdgeWidth();
+          default:
+            return QProxyStyle::pixelMetric(metric,option,widget);
+        }
+      }
+  };
 
   struct TokenValue
   {
@@ -58,7 +84,7 @@ void Theme::apply(bool dark)
   g_dark=dark;
 
   // Fusion looks the same on Windows, macOS and Linux and follows the palette
-  QApplication::setStyle(QStyleFactory::create("Fusion"));
+  QApplication::setStyle(new PanelStyle(QStyleFactory::create("Fusion")));
 
   // the window palette is made from the tokens only (charter P1, P7): the
   // widgets that still read a palette role get a token colour, in both themes
@@ -99,6 +125,16 @@ void Theme::apply(bool dark)
   p.setColor(QPalette::Disabled,QPalette::HighlightedText,disabled);
 
   QApplication::setPalette(p);
+}
+
+int Theme::panelGrabWidth()
+{
+  return TextSize::scaled(Size::panelGrab);
+}
+
+int Theme::floatingEdgeWidth()
+{
+  return TextSize::scaled(Size::floatingEdge);
 }
 
 bool Theme::isDark()

@@ -7,6 +7,7 @@
 //   change is selected.
 // - The six names are on the tiles as text, and only the tile under the mouse
 //   moves its figure (UX step 3); without a hover the row is still.
+#include <QLayout>
 #include <QtTest>
 #include <QTemporaryDir>
 #include <QLabel>
@@ -72,6 +73,7 @@ class EasingTilesTest : public QObject
     // UX phase 5 (the approved mockup, docs/UX_DECISIONS.md sections 2 and 3)
     void headingAndExpertOnlyEditButton();
     void expertModeMovesNoTile();
+    void tilesStandInOneRunFromTheLeft();
     void greyedRowSaysWhy();
     void customLineShowsWithTipsOff();
     void tabReachesTheCurrentTileOnly();
@@ -761,6 +763,50 @@ void EasingTilesTest::expertModeMovesNoTile()
     QCOMPARE(row.findChild<QWidget*>(QStringLiteral("easingHint"))->geometry().bottom(), hintBottom);
     UserSettings::setExpertMode(false);
   }
+}
+
+// UX fixes 1 (the project owner's test notes, 23 November 2026): the tiles stood in two groups,
+// three on the left and three far off on the right. On one line they stand in one run from
+// the left edge, 4 pixels apart, with Edit curve right after them; broken into two lines
+// both lines start at the left edge
+void EasingTilesTest::tilesStandInOneRunFromTheLeft()
+{
+  UserSettings::setExpertMode(true);
+  for (const bool wrapped : {false, true})
+  {
+    EasingTiles row;
+    row.setWrapped(wrapped);
+    const int width = 1400;
+    row.resize(width, row.heightForWidth(width) > 0 ? row.heightForWidth(width) : row.sizeHint().height());
+    row.show();
+    QCoreApplication::processEvents();
+    QList<QRect> tiles;
+    for (int i = 0; i < Easing::PresetCount; ++i)
+      tiles << row.findChild<QWidget*>(QStringLiteral("easingTile%1").arg(i))->geometry();
+    const int left = row.layout()->contentsMargins().left();
+    QCOMPARE(tiles.at(0).left(), left);
+    QCOMPARE(row.heading()->geometry().left(), left);
+    const int half = Easing::PresetCount / 2;
+    for (int i = 1; i < Easing::PresetCount; ++i)
+    {
+      if (wrapped && i == half)
+      {
+        // the second line starts under the first tile
+        QCOMPARE(tiles.at(i).left(), left);
+        QVERIFY(tiles.at(i).top() > tiles.at(0).bottom());
+        continue;
+      }
+      QVERIFY2(tiles.at(i).left() == tiles.at(i - 1).right() + 1 + 4,
+               qPrintable(QStringLiteral("tile %1 starts at %2, tile %3 ends at %4 (%5)").arg(i).arg(tiles.at(i).left())
+                              .arg(i - 1).arg(tiles.at(i - 1).right()).arg(wrapped ? "two lines" : "one line")));
+      QCOMPARE(tiles.at(i).top(), tiles.at(i - 1).top());
+    }
+    // Edit curve right after the last tile
+    QCOMPARE(row.editCurveButton()->geometry().left(), tiles.last().right() + 1 + 4);
+    // and the room left over stays on the right, after Edit curve
+    QVERIFY(row.editCurveButton()->geometry().right() < width - row.layout()->contentsMargins().right() - 1);
+  }
+  UserSettings::setExpertMode(false);
 }
 
 void EasingTilesTest::greyedRowSaysWhy()

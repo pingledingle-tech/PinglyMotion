@@ -1261,18 +1261,23 @@ void PinglyMotionWindow::buildMenus()
   ui->menuView->addAction(m_expertModeAction);
 
   m_textSizeAction=specAction(this,viewTextSize,false,text(viewTextSize).arg(UserSettings::textSizePercent()));
+  // every keyboard layout's keys (TextSize::biggerKeys: Ctrl and the plus key next to 0 on a
+  // Nordic layout, Ctrl+= on a US layout, the number pad), the menu shows the first
+  m_textSizeAction->setShortcuts(TextSize::biggerKeys());
   connect(m_textSizeAction,&QAction::triggered,this,[this]()
   {
     setTextSizePercent(TextSize::stepUp(UserSettings::textSizePercent()));
   });
   ui->menuView->addAction(m_textSizeAction);
   QAction* textSmallerAction=specAction(this,viewTextSmaller,false);
+  textSmallerAction->setShortcuts(TextSize::smallerKeys());
   connect(textSmallerAction,&QAction::triggered,this,[this]()
   {
     setTextSizePercent(TextSize::stepDown(UserSettings::textSizePercent()));
   });
   ui->menuView->addAction(textSmallerAction);
   QAction* textResetAction=specAction(this,viewTextReset,false);
+  textResetAction->setShortcuts(TextSize::resetKeys());
   connect(textResetAction,&QAction::triggered,this,[this]() { setTextSizePercent(TextSize::Default); });
   ui->menuView->addAction(textResetAction);
   QAction* viewSetupAction=specAction(this,viewSetup,false);

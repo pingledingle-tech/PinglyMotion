@@ -666,6 +666,11 @@ QVector3D Animation::getPosition()
   return positionNode->frameData(frame).position();
 }
 
+float Animation::standingLift()
+{
+  return StandingHipHeight-float(positionNode->frameData(0).position().y());
+}
+
 const QString Animation::getPartName(int index) const
 {
   //  exception fot position pseudonode

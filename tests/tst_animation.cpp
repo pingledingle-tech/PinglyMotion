@@ -40,6 +40,8 @@ class AnimationTest : public QObject
     void flipMirrorsAJointWithNoPartnerInPlace();
     void tPoseZeroesEveryJoint();
     void resetAllCopiesFrameZero();
+    void standingLiftPutsFrameOneHipAtStandingHeight();
+    void theViewLiftsEveryFigureInOnePlace();
 
   private:
     BVH* m_bvh=nullptr;
@@ -165,6 +167,48 @@ void AnimationTest::resetAllCopiesFrameZero()
 
   QCOMPARE(m_anim->getRotation(lShldr),QVector3D(7,8,9));
   QCOMPARE(m_anim->getRotation(head),QVector3D(4,5,6));
+}
+
+// UX fixes 1 (the project owner's test notes, 23 November 2026): clips stood under the floor.
+// The 3D view lifts every figure so the hip of frame 1 is at standing height, as Second Life
+// plays it (Animation::standingLift)
+void AnimationTest::standingLiftPutsFrameOneHipAtStandingHeight()
+{
+  // a new animation is the start pose: its hip is at standing height already
+  QCOMPARE(Animation::StandingHipHeight,43.5285187f);
+  QVERIFY2(qAbs(m_anim->standingLift())<0.0001f,qPrintable(QString::number(m_anim->standingLift())));
+
+  // a key on a later frame does not move the floor
+  m_anim->setFrame(5);
+  m_anim->setPosition(0,30,0);
+  QVERIFY(qAbs(m_anim->standingLift())<0.0001f);
+
+  // frame 1's hip lower by 13.5285187 inches: the figure is lifted by that much
+  m_anim->setFrame(0);
+  m_anim->setPosition(0,30,0);
+  QVERIFY2(qAbs(m_anim->standingLift()-13.5285187f)<0.0001f,qPrintable(QString::number(m_anim->standingLift())));
+
+  // the clips with frame 1's hip at 41 inches (data/Relaxed.dingle, examples/wave.dingle)
+  for(const char* file : {"data/Relaxed.dingle","../examples/wave.dingle"})
+  {
+    BVH bvh;
+    Animation clip(&bvh,QString::fromLatin1(file));
+    QVERIFY2(qAbs(clip.standingLift()-2.5285187f)<0.0001f,qPrintable(QStringLiteral("%1: %2").arg(QLatin1String(file)).arg(clip.standingLift())));
+  }
+}
+
+// the one place: AnimationView::drawFigure lifts every figure (both figures, the Script Lab
+// figure) right after the hip position, and nothing else adds its own lift
+void AnimationTest::theViewLiftsEveryFigureInOnePlace()
+{
+  QFile file(QStringLiteral("../src/animationview.cpp"));
+  QVERIFY(file.open(QIODevice::ReadOnly|QIODevice::Text));
+  const QString source=QString::fromUtf8(file.readAll());
+  const QString lift=QStringLiteral("SceneState::translate(0, anim->standingLift(), 0);");
+  QCOMPARE(source.count(lift),1);
+  QCOMPARE(source.count(QStringLiteral("standingLift()")),1);
+  QVERIFY(source.indexOf(lift)>source.indexOf(QStringLiteral("SceneState::translate(position.x(), position.y(), position.z());")));
+  QVERIFY(source.indexOf(lift)<source.indexOf(QStringLiteral("SceneState::translate(0, -1.27f+m_avatarSkin.footDrop(), 0);")));
 }
 
 QTEST_GUILESS_MAIN(AnimationTest)

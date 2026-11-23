@@ -245,22 +245,18 @@ public:
     return width+scroll->verticalScrollBar()->sizeHint().width();
   }
 
-  // The Joints and Selected joint panels are as wide as their contents need,
-  // no more and no less, in their own columns (the wide layout); when they
-  // share a place (medium) or stand in one column (narrow) they may be wider.
+  // The Joints and Selected joint panels are at least as wide as their
+  // contents need, in every layout, and start that wide; the user can drag the
+  // line beside them to make them wider (UX fixes 1: in Expert mode the Joints
+  // panel could not be made wider, because the wide layout fixed its width).
   // The timeline is as wide as its rows need, as they stand now.
   void fit(PanelLayout::Reflow mode) const
   {
+    Q_UNUSED(mode)
     for (QScrollArea* scroll : {jointsScroll,jointCardScroll})
     {
-      const int width=fitWidth(scroll);
-      if (mode==PanelLayout::Reflow::Wide)
-        scroll->setFixedWidth(width);
-      else
-      {
-        scroll->setMinimumWidth(width);
-        scroll->setMaximumWidth(QWIDGETSIZE_MAX);
-      }
+      scroll->setMinimumWidth(fitWidth(scroll));
+      scroll->setMaximumWidth(QWIDGETSIZE_MAX);
     }
     fitTimeline();
   }

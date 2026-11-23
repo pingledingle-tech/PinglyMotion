@@ -1556,6 +1556,10 @@ void AnimationView::drawFigure(Animation* anim,unsigned int index)
     QVector3D position = anim->getPosition();
     SceneState::translate(position.x(), position.y(), position.z());
 
+    // the feet on the floor, for every animation in this one place: frame 1's hip at
+    // standing height, as Second Life plays it (Animation::standingLift)
+    SceneState::translate(0, anim->standingLift(), 0);
+
     // male or female decides the skeleton too, so set it before walking it
     m_avatarSkin.setMale(anim->getFigureType()==Animation::FIGURE_MALE);
 
