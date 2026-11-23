@@ -27,6 +27,7 @@ Files:
 - docs/PRODUCT.md
 - docs/DESIGN_SYSTEM.md
 - docs/TEACHING_TEXTS.md
+- docs/POSING_UX.md
 - CREDITS.md
 
 ## What
