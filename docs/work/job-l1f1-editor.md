@@ -1,6 +1,6 @@
 Branch: job/l1f1-editor
 Status: active
-Pull request: pending
+Pull request: #428
 Files:
 - src/scriptlab/labeditor.*
 - src/scriptlab/lslhighlighter.*
