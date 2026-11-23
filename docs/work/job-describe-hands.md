@@ -1,6 +1,6 @@
 Branch: job/describe-hands
 Status: active
-Pull request: pending
+Pull request: #419
 Files:
 - src/posedescribe.*
 - src/controlapi.cpp
