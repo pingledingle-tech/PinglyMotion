@@ -362,6 +362,9 @@ class World
     // plain World nor a worn object ever runs); llApplyImpulse and the model's "step" change the velocity.
     virtual void velocity(float out[3]) const { for (int i = 0; i < 3; ++i) out[i] = m_velocity[i]; }
     virtual void setVelocity(const float v[3]) { for (int i = 0; i < 3; ++i) m_velocity[i] = v[i]; }
+    // third gap list run, step 6: llSetForce / llGetForce record the force (region axes); the motion model does not use it
+    virtual void force(float out[3]) const { for (int i = 0; i < 3; ++i) out[i] = m_force[i]; }
+    virtual void setForce(const float f[3]) { for (int i = 0; i < 3; ++i) m_force[i] = f[i]; }
     // llSetBuoyancy: 0 (full gravity) to 1 (floats); the model's "step" scales gravity by (1 - buoyancy)
     virtual float buoyancy() const { return m_buoyancy; }
     virtual void setBuoyancy(float b) { m_buoyancy = b; }
@@ -506,6 +509,7 @@ class World
     float m_position[3] = {128.0f, 128.0f, 20.0f};
     float m_velocity[3] = {0.0f, 0.0f, 0.0f};
     float m_buoyancy = 0.0f;
+    float m_force[3] = {0.0f, 0.0f, 0.0f};
     float m_scale[3] = {0.5f, 0.5f, 0.5f};
     PrimStore m_prims;
     Inventory m_inventory;

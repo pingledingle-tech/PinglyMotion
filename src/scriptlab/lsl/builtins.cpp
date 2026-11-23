@@ -91,6 +91,7 @@ enum class Fn
   JsonGetValue, JsonSetValue, JsonValueType, List2Json, Json2List, ListRandomize, Log, Acos, Axes2Rot, AngleBetween, Rot2Axis,
   Asin, Log10,
   // third gap list run, steps 1 to 3: limit reads, llTarget, region reads
+  SetRegionPos, ListStatistics, Rot2Angle, XorBase64, XorBase64StringsCorrect, ModPow, SetForce, GetForce, SetVelocity,
   GetMemoryLimit, SetMemoryLimit, GetNumberOfSides, GetLinkNumberOfSides, GetObjectPrimCount, GetObjectMass, GetBoundingBox,
   GetEnergy, Target, TargetRemove, GetRegionTimeDilation, GetRegionFPS, GetRegionAgentCount, GetSimulatorHostname,
   // leftover reads and media: display names, simulator data, environment, clock, link media, touch face data
@@ -256,6 +257,12 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llJsonGetValue", Fn::JsonGetValue}, {"llJsonSetValue", Fn::JsonSetValue}, {"llJsonValueType", Fn::JsonValueType},
   {"llList2Json", Fn::List2Json}, {"llJson2List", Fn::Json2List}, {"llListRandomize", Fn::ListRandomize},
   {"llAsin", Fn::Asin}, {"llLog10", Fn::Log10},
+  // third gap list run, steps 4 to 6: llSetRegionPos, pure maths and strings, force/impulse/velocity records
+  // (llWarp2Pos is no LSL function and stays unknown)
+  {"llSetRegionPos", Fn::SetRegionPos}, {"llListStatistics", Fn::ListStatistics}, {"llRot2Angle", Fn::Rot2Angle},
+  {"llXorBase64", Fn::XorBase64}, {"llXorBase64Strings", Fn::XorBase64}, {"llXorBase64StringsCorrect", Fn::XorBase64StringsCorrect},
+  {"llModPow", Fn::ModPow}, {"llSetForce", Fn::SetForce}, {"llGetForce", Fn::GetForce}, {"llSetVelocity", Fn::SetVelocity},
+  {"llApplyRotationalImpulse", Fn::RecordOnly}, {"llGroundRepel", Fn::RecordOnly},
   {"llGetMemoryLimit", Fn::GetMemoryLimit}, {"llSetMemoryLimit", Fn::SetMemoryLimit}, {"llMinEventDelay", Fn::RecordOnly},
   {"llGetNumberOfSides", Fn::GetNumberOfSides}, {"llGetLinkNumberOfSides", Fn::GetLinkNumberOfSides},
   {"llGetObjectPrimCount", Fn::GetObjectPrimCount}, {"llGetObjectMass", Fn::GetObjectMass}, {"llGetBoundingBox", Fn::GetBoundingBox},
@@ -1533,6 +1540,143 @@ void applyImpulse(World& w, double now, const float impulse[3], bool local)
   w.setVelocity(v);
   if (w.logFull()) return;
   w.log(now, QJsonObject{{"type", "velocity"}, {"op", "impulse"}, {"impulse", vecJson(turned)}, {"mass", rnd5(mass)}, {"velocity", vecJson(v)}});
+}
+
+// third gap list run, step 4: llSetRegionPos moves the whole object to a region position with no 10 m limit (the wiki
+// documents none). FALSE (and no move) for a worn object, a physical one (STATUS_PHYSICS) and a target outside
+// x and y -10..266 and z 0..4096. Not modelled: the ground snap for a target below the terrain.
+int setRegionPos(World& w, double now, const float target[3])
+{
+  const char* refused = nullptr;
+  if (w.attachPoint() > 0) refused = "Worn: an attachment cannot be moved with llSetRegionPos.";
+  else if (w.primStore().status & 0x1) refused = "The object is physical: llSetRegionPos does nothing.";
+  else if (!(target[0] >= -10.0f && target[0] <= 266.0f && target[1] >= -10.0f && target[1] <= 266.0f && target[2] >= 0.0f && target[2] <= 4096.0f))
+    refused = "The target is outside the allowed range (x and y -10 to 266, z 0 to 4096): the object did not move.";
+  if (refused)
+  {
+    logPrim(w, now, "position", 1, QJsonObject{{"position", vecJson(target)}, {"note", refused}});
+    return 0;
+  }
+  w.setPosition(target);
+  logPrim(w, now, "position", 1, QJsonObject{{"position", vecJson(target)}});
+  return 1;
+}
+
+// llListStatistics: only integers and floats count; an empty list (or none numeric) gives 0.0. The wiki does not say
+// how an even count gives the median (the mean of the two middle values here), whether STD_DEV is sample or
+// population (sample, n - 1: it matches the wiki's example; 0.0 for one value), or what GEOMETRIC_MEAN gives for
+// values whose product is negative (its page contradicts itself; 0.0 here, 0.0 too when a value is 0).
+float listStatistics(int mode, const std::vector<Value>& items)
+{
+  std::vector<double> v;
+  for (const Value& x : items)
+  {
+    if (x.type == Type::Integer) v.push_back(double(x.i));
+    else if (x.type == Type::Float) v.push_back(double(x.f[0]));
+  }
+  const size_t n = v.size();
+  if (n == 0) return 0.0f;
+  double sum = 0.0, sq = 0.0;
+  for (double d : v) { sum += d; sq += d * d; }
+  const double mn = *std::min_element(v.begin(), v.end());
+  const double mx = *std::max_element(v.begin(), v.end());
+  const double mean = sum / double(n);
+  switch (mode)
+  {
+    case 0: return float(mx - mn);
+    case 1: return float(mn);
+    case 2: return float(mx);
+    case 3: return float(mean);
+    case 4:
+    {
+      std::sort(v.begin(), v.end());
+      return float(n % 2 ? v[n / 2] : (v[n / 2 - 1] + v[n / 2]) / 2.0);
+    }
+    case 5:
+    {
+      if (n < 2) return 0.0f;
+      double dev = 0.0;
+      for (double d : v) dev += (d - mean) * (d - mean);
+      return float(std::sqrt(dev / double(n - 1)));
+    }
+    case 6: return float(sum);
+    case 7: return float(sq);
+    case 8: return float(n);
+    case 9:
+    {
+      int negatives = 0;
+      double logs = 0.0;
+      for (double d : v)
+      {
+        if (d == 0.0) return 0.0f;
+        if (d < 0.0) ++negatives;
+        logs += std::log(std::fabs(d));
+      }
+      if (negatives % 2) return 0.0f;
+      return float(std::exp(logs / double(n)));
+    }
+    default: return 0.0f;
+  }
+}
+
+// llXorBase64 (and llXorBase64Strings, whose old bug the wiki does not describe: same here) and
+// llXorBase64StringsCorrect (the key ends at its first NUL byte, as the wiki says): decode both, xor with the repeating
+// key, encode. An empty key returns the first string unchanged.
+QString xorBase64(const QString& text, const QString& key, bool nulEndsKey)
+{
+  QByteArray k = QByteArray::fromBase64(key.toLatin1(), QByteArray::IgnoreBase64DecodingErrors);
+  if (nulEndsKey) { const int z = k.indexOf('\0'); if (z >= 0) k.truncate(z); }
+  if (k.isEmpty()) return text;
+  QByteArray d = QByteArray::fromBase64(text.toLatin1(), QByteArray::IgnoreBase64DecodingErrors);
+  for (int i = 0; i < d.size(); ++i) d[i] = char(d[i] ^ k[i % k.size()]);
+  return QString::fromLatin1(d.toBase64());
+}
+
+// llModPow: all three arguments are unsigned 32-bit values (the wiki); the result is read back as a signed integer.
+// A modulus of 0 gives 0 (not documented).
+int modPow(int a, int b, int c)
+{
+  const quint64 m = quint32(c);
+  if (m == 0) return 0;
+  quint64 base = quint32(a) % m, result = 1 % m;
+  quint32 e = quint32(b);
+  while (e)
+  {
+    if (e & 1) result = result * base % m;
+    base = base * base % m;
+    e >>= 1;
+  }
+  return int(qint32(quint32(result)));
+}
+
+// llSetForce records the force on the object (turned into region axes when local); llGetForce reads it back
+void setObjectForce(World& w, double now, const float force[3], bool local)
+{
+  float turned[3];
+  if (local)
+  {
+    const PrimState& r = primOf(w, 1);
+    rotVec(Quat{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]}, force, turned);
+  }
+  else for (int i = 0; i < 3; ++i) turned[i] = force[i];
+  w.setForce(turned);
+  if (w.logFull()) return;
+  w.log(now, QJsonObject{{"type", "velocity"}, {"op", "force"}, {"force", vecJson(turned)}});
+}
+
+// llSetVelocity sets the velocity directly (no physics check, as llApplyImpulse makes none)
+void setObjectVelocity(World& w, double now, const float velocity[3], bool local)
+{
+  float turned[3];
+  if (local)
+  {
+    const PrimState& r = primOf(w, 1);
+    rotVec(Quat{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]}, velocity, turned);
+  }
+  else for (int i = 0; i < 3; ++i) turned[i] = velocity[i];
+  w.setVelocity(turned);
+  if (w.logFull()) return;
+  w.log(now, QJsonObject{{"type", "velocity"}, {"op", "set"}, {"velocity", vecJson(turned)}});
 }
 
 // llSetBuoyancy: 0 (full gravity) to 1 (floats); the sandbox clamps to this range (Second Life allows other values)
@@ -4058,6 +4202,23 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       }
       return Value::makeList(std::move(out));
     }
+    case Fn::SetRegionPos: return Value::integer(setRegionPos(m_world, m_now, a[0].f));
+    case Fn::ListStatistics: return Value::number(listStatistics(a[0].i, a[1].list));
+    case Fn::Rot2Angle:
+    {
+      const Quat r = quatOf(a[0]);
+      const float s2 = r.s * r.s, v2 = r.x * r.x + r.y * r.y + r.z * r.z;
+      if (!(s2 + v2 > 0.0f)) return Value::number(0.0f);
+      if (s2 < v2) return Value::number(2.0f * std::acos(std::sqrt(s2 / (s2 + v2))));
+      if (v2 > 0.0f) return Value::number(2.0f * std::asin(std::sqrt(v2 / (s2 + v2))));
+      return Value::number(0.0f);
+    }
+    case Fn::XorBase64: return Value::string(xorBase64(a[0].s, a[1].s, false));
+    case Fn::XorBase64StringsCorrect: return Value::string(xorBase64(a[0].s, a[1].s, true));
+    case Fn::ModPow: return Value::integer(modPow(a[0].i, a[1].i, a[2].i));
+    case Fn::SetForce: setObjectForce(m_world, m_now, a[0].f, a[1].i != 0); return Value();
+    case Fn::GetForce: { float f[3]; m_world.force(f); return Value::vector(f[0], f[1], f[2]); }
+    case Fn::SetVelocity: setObjectVelocity(m_world, m_now, a[0].f, a[1].i != 0); return Value();
     case Fn::GetEnergy: return Value::number(1.0f);
     case Fn::Target: return Value::integer(addTarget(a[0].f, a[1].f[0]));
     case Fn::TargetRemove: removeTarget(a[0].i); return Value();

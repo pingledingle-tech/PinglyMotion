@@ -106,6 +106,8 @@ class ObjectWorld : public RlvWorld
     void setPosition(const float p[3]) override { for (int i = 0; i < 3; ++i) state().spec.position[i] = p[i]; }
     void velocity(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = state().velocity[i]; }
     void setVelocity(const float v[3]) override { for (int i = 0; i < 3; ++i) state().velocity[i] = v[i]; }
+    void force(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = state().force[i]; }
+    void setForce(const float f[3]) override { for (int i = 0; i < 3; ++i) state().force[i] = f[i]; }
     float buoyancy() const override { return state().buoyancy; }
     void setBuoyancy(float b) override { state().buoyancy = b; }
     PrimStore& primStore() override { return state().prims; }

@@ -211,6 +211,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsllimits_tests PRIVATE ${CMAKE_SOURCE_
 TARGET_LINK_LIBRARIES (pinglymotion_lsllimits_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lsllimits COMMAND pinglymotion_lsllimits_tests)
 
+# Script Lab: llSetRegionPos, pure maths and strings, force/impulse/velocity records (third gap list run, steps 4 to 6)
+ADD_EXECUTABLE (pinglymotion_lslsteps456_tests tst_lslsteps456.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslsteps456_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslsteps456_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslsteps456 COMMAND pinglymotion_lslsteps456_tests)
+
 # Script Lab: static warnings (lint) and lsl_lint; the examples and the fuzz corpus must be lint clean
 ADD_EXECUTABLE (pinglymotion_lsllint_tests tst_lsllint.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsllint_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
