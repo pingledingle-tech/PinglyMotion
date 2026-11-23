@@ -209,6 +209,21 @@ Drafts for the library panel (roadmap item 6, issue 19) and for two figures in o
 | FIG-16 | Top bar | After the file name (two figures only) | figure 2 of 2 | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
 | FIG-17 | 4 Status line | From the library was chosen in the Add window | Pick a move, then press Add as a second figure. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
 
+### AI notice (job K, 23 Nov 2026)
+
+What the AI Assistant window will say about what a connected AI can see and do, below its "How it's kept safe" list (`src/aiconnectdialog.cpp`; keep `tools/mcp/README.txt` in step). Every line was checked against the code first; the proof for each is in [SECURITY_PRIVACY.md](SECURITY_PRIVACY.md), section 2 (for AI-08, section 1). Not built yet: the project owner reads the texts first. "It is off each time PinglyMotion starts" is already in the program's safety list, so it is not repeated here.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| AI-01 | AI Assistant window | Section title under "How it's kept safe" | What an AI can see and do | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+| AI-02 | AI Assistant window | First line of the notice | When it is on, an AI app on this PC can help.<br>It can read and change the animation that is open. | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+| AI-03 | AI Assistant window | Second line of the notice | It can take pictures of the 3D view.<br>It can save files in the PinglyMotion folder. | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+| AI-04 | AI Assistant window | Third line of the notice (Script Lab Live) | It can read scripts in a folder it names.<br>It never changes them. | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+| AI-05 | AI Assistant window | Fourth line of the notice | Your AI app may send what it sees to its company.<br>That company's privacy rules apply. | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+| AI-06 | AI Assistant window | Fifth line of the notice | PinglyMotion itself sends nothing to any AI company. | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+| AI-07 | AI Assistant window | Sixth line of the notice | The status bar shows which AI is connected.<br>The name comes from the AI app itself. | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+| AI-08 | AI Assistant window | Last line of the notice | PinglyMotion only goes online to look for updates.<br>Turn that off in Help, About. | draft (23 Nov 2026) | Job K, security bundle (pull request 432) |
+
 ### Places 1 to 4, 7 to 9
 
 These texts were first drafts for the places that had no text. The owner reviewed them on 19 November 2026 (see "Review order" below). Control names such as "Set key" and "Play" are placeholders: the job that builds the screen checks them against the real labels before the status changes. Tips and hints get more rows when the tips and hint jobs start.

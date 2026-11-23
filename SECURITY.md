@@ -72,6 +72,13 @@ workflow from a given commit.
 On Windows, `Get-FileHash PinglyMotion-vX.Y.Z-windows.zip` shows the SHA-256
 to compare with the one in `SHA256SUMS`.
 
+## What is proven
+
+[docs/SECURITY_PRIVACY.md](docs/SECURITY_PRIVACY.md) says in plain words what the program sends
+over the internet, what a connected AI can see and do, and how it is protected.
+Each claim is marked tested (with the test's name) or not tested, and the page
+lists the honest limits.
+
 ## Known issues
 
 The security audits are in [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md)
