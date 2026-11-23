@@ -1,6 +1,6 @@
 Branch: job/ux-fixes-1
 Status: active
-Pull request: pending
+Pull request: #442
 Files:
 - src/panelcontent.h
 - src/panellayout.h
