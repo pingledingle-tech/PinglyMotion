@@ -91,15 +91,16 @@ void TestRlvState::clearAll()
 void TestRlvState::clearWithFilter()
 {
   RlvState state;
-  state.apply("collar", "@tplm=n,tploc=n,tplure=n,fly=n,sendim:abc=n");
+  state.apply("collar", "@tplm=n,tploc=n,tplure=n,fly=n,sendim:12=n");
   state.apply("collar", "@clear=tp");
   QVERIFY(!state.has("tplm"));
   QVERIFY(!state.has("tploc"));
   QVERIFY(!state.has("tplure"));
   QVERIFY(state.has("fly"));
   // the filter also matches the option part
-  state.apply("collar", "@clear=abc");
-  QVERIFY(!state.has("sendim", "abc"));
+  QVERIFY(state.has("sendim", "12"));
+  state.apply("collar", "@clear=12");
+  QVERIFY(!state.has("sendim", "12"));
   QCOMPARE(state.objects().value("collar"), QStringList{"fly"});
 }
 
@@ -165,23 +166,23 @@ void TestRlvState::version()
 void TestRlvState::getStatus()
 {
   RlvState state;
-  state.apply("collar", "@detach=n,sendim=n,sendim:abc=n");
+  state.apply("collar", "@detach=n,sendim=n,sendim:12=n");
   state.apply("hud", "@fly=n");
 
   RlvState::ApplyResult r = state.apply("collar", "@getstatus=2222");
   QCOMPARE(r.replies.size(), 1);
   QCOMPARE(r.replies[0].channel, 2222);
-  QCOMPARE(r.replies[0].text, QString("/detach/sendim/sendim:abc"));
+  QCOMPARE(r.replies[0].text, QString("/detach/sendim/sendim:12"));
 
   r = state.apply("collar", "@getstatus:send=2222");
-  QCOMPARE(r.replies[0].text, QString("/sendim/sendim:abc"));
+  QCOMPARE(r.replies[0].text, QString("/sendim/sendim:12"));
 
   r = state.apply("collar", "@getstatus:send;|=2222");
   QCOMPARE(r.replies.size(), 1);
-  QCOMPARE(r.replies[0].text, QString("|sendim|sendim:abc"));
+  QCOMPARE(r.replies[0].text, QString("|sendim|sendim:12"));
 
   r = state.apply("collar", "@getstatusall=5");
-  QCOMPARE(r.replies[0].text, QString("/detach/sendim/sendim:abc/fly"));
+  QCOMPARE(r.replies[0].text, QString("/detach/sendim/sendim:12/fly"));
 
   // an object without restrictions gets an empty answer
   r = state.apply("other", "@getstatus=5");

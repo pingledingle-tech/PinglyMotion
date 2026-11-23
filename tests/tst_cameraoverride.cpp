@@ -188,15 +188,16 @@ void TestCameraOverride::badOption()
 {
   RlvState state;
   state.setMode(Rlv::Mode::Rlva);
-  QVERIFY(state.apply("collar", "@setcam_avdistmax:far=n").ok());
+  // RLVa refuses a distance that is not a number, so it is never held (docs/RLV_OPTION_TYPES.md)
+  const RlvState::Outcome outcome = state.apply("collar", "@setcam_avdistmax:far=n").outcomes.value(0);
+  QCOMPARE(outcome.result, Rlv::Result::Failed);
+  QCOMPARE(outcome.reason, QString("@setcam_avdistmax:far=n: \"far\" is not a number. Use a number such as 1.5."));
   CameraOverride o;
   o.setState(&state);
   o.setEnabled(true);
   QVERIFY(!o.active());
-  QCOMPARE(o.limits().ignored, QStringList{"setcam_avdistmax:far"});
-  QCOMPARE(o.lines(), (QStringList{
-    "The script does not limit the camera now.",
-    "Not used: setcam_avdistmax:far is not a distance in metres."}));
+  QVERIFY(o.limits().ignored.isEmpty());
+  QCOMPARE(o.lines(), QStringList{"The script does not limit the camera now."});
 }
 
 void TestCameraOverride::linesWhileOff()
@@ -452,14 +453,17 @@ void TestCameraOverride::eyeOffset()
 void TestCameraOverride::badOffsets()
 {
   RlvState state;
-  QVERIFY(state.apply("collar", "@setcam_eyeoffset:1/2=n,setcam_focusoffset:0/0/500=n,setcam_eyeoffsetscale:0=n").ok());
+  // RLVa refuses an offset that is not three numbers, so it is never held (docs/RLV_OPTION_TYPES.md)
+  const RlvState::ApplyResult r = state.apply("collar", "@setcam_eyeoffset:1/2=n,setcam_focusoffset:0/0/500=n,setcam_eyeoffsetscale:0=n");
+  QVERIFY(r.ok());
+  QCOMPARE(r.outcomes.value(0).result, Rlv::Result::Failed);
+  QCOMPARE(r.outcomes.value(0).reason, QString("@setcam_eyeoffset:1/2=n: \"1/2\" is not three numbers x/y/z. Use three numbers such as 0/0/1."));
   CameraOverride o;
   o.setState(&state);
   o.setEnabled(true);
   QVERIFY(!o.active());
   QCOMPARE(o.lines(), (QStringList{
     "The script does not limit the camera now.",
-    "Not used: setcam_eyeoffset:1/2 is not an offset x/y/z in metres.",
     "Not used: setcam_focusoffset:0/0/500 is not an offset x/y/z in metres.",
     "Not used: setcam_eyeoffsetscale:0 is not a scale."}));
   QVERIFY(state.apply("collar", "@clear").ok());
@@ -677,12 +681,16 @@ void TestCameraOverride::forcedModeAndBadForce()
     "The script does not limit the camera now.",
     "Not shown: setcam_mode:mouselook=force. The 3D view always looks from outside the avatar."}));
 
-  // a forced field of view that is not an angle, an offset that is not x/y/z
-  QVERIFY(state.apply("hud", "@setcam_fov:wide=force").ok());
+  // a forced field of view that is not a number, an offset that is not x/y/z: RLVa refuses
+  // them, so nothing is recorded and the 3D view does not change (docs/RLV_OPTION_TYPES.md)
+  const QStringList linesBefore = o.lines();
+  QCOMPARE(state.apply("hud", "@setcam_fov:wide=force").outcomes.value(0).result, Rlv::Result::Failed);
   QVERIFY(!o.active());
-  QCOMPARE(o.lines().last(), QString("Not used: setcam_fov:wide=force is not an angle in radians."));
-  QVERIFY(state.apply("hud", "@setcam_eyeoffset:1/2=force").ok());
-  QCOMPARE(o.lines().last(), QString("Not used: setcam_eyeoffset:1/2=force is not an offset x/y/z in metres."));
+  QCOMPARE(o.lines(), linesBefore);
+  QCOMPARE(state.apply("hud", "@setcam_eyeoffset:1/2=force").outcomes.value(0).result, Rlv::Result::Failed);
+  QCOMPARE(o.lines(), linesBefore);
+  QVERIFY(!state.recorded().contains("setcam_fov"));
+  QVERIFY(!state.recorded().contains("setcam_eyeoffset"));
   state.reset();
   QCOMPARE(o.lines(), QStringList{"The script does not limit the camera now."});
 }

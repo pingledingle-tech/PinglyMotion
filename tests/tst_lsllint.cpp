@@ -111,6 +111,8 @@ void LslLintTest::checks_data()
                                   << QStringList{"2:13 rlv-syntax", "3:13 rlv-syntax", "4:13 rlv-syntax"};
   QTest::newRow("rlv wrong parameter or option") << "default { state_entry() {\n llOwnerSay(\"@version=n\");\n llOwnerSay(\"@fly:x=n\"); } }"
                                                  << QStringList{"2:13 rlv-param", "3:13 rlv-param"};
+  QTest::newRow("rlv option value RLVa refuses") << "default { state_entry() {\n llOwnerSay(\"@sendim:notauuid=n\");\n llOwnerSay(\"@detach:spine=n,detach:x=n\"); } }"
+                                                << QStringList{"2:13 rlv-param", "3:13 rlv-param"};
   QTest::newRow("rlv with a changing part") << "default { state_entry() {\n llOwnerSay(\"@sit:\" + (string)llGetOwner() + \"=force\");\n llOwnerSay(\"@detach=n,sitt:\" + (string)llGetOwner() + \"=force\");\n llOwnerSay(\"@\" + llGetObjectDesc()); } }"
                                             << QStringList{"3:13 rlv-unknown"};
   QTest::newRow("rlv constant parts joined") << "default { state_entry() {\n llOwnerSay(\"@detach=n,\" + \"nosuch=n\"); } }" << QStringList{"2:13 rlv-unknown"};
@@ -178,6 +180,11 @@ default
   QCOMPARE(int(v.warnings.size()), 2);
   QCOMPARE(v.warnings[0].message, QString("RLV text \"@\": no command after \"@\"."));
   QCOMPARE(v.warnings[1].message, QString("RLV command \"@nosuch:...\": unknown behaviour \"nosuch\"."));
+
+  const Lint::Result w = Lint::lint("default { state_entry() { llOwnerSay(\"@detach:x=n\"); } }");
+  QCOMPARE(int(w.warnings.size()), 1);
+  QCOMPARE(w.warnings[0].id, QString("rlv-param"));
+  QCOMPARE(w.warnings[0].message, QString("RLV command \"@detach:x=n\": \"x\" is not an attachment point. Use a name such as spine or left hand."));
 
   QCOMPARE(Lint::ids(), (QStringList{"unused-local", "unused-param", "unused-global", "unused-function", "shadowed", "unreachable",
                                      "assign-in-condition", "empty-body", "self-assign", "list-compare", "divide-by-zero", "deprecated",
