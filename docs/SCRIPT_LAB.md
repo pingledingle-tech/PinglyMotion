@@ -88,7 +88,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 318 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list, eleven from the second round of pure functions, and 20 from the land and parcel job: 18 land and parcel functions plus `llAsin` and `llLog10`, and 16 from the leftover reads and media job); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 331 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list, eleven from the second round of pure functions, and 20 from the land and parcel job: 18 land and parcel functions plus `llAsin` and `llLog10`, and 16 from the leftover reads and media job, and 13 from the avatar and camera job); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -325,6 +325,10 @@ A deliberately small slice, not a physics engine: one more `inputs` type and two
 ## What exists now (leftover reads and media, second gap list)
 
 - 16 more functions run, all with canned answers or record only: `llGetDisplayName`, `llRequestDisplayName`, `llRequestUsername` and `llRequestSimulatorData` (the `dataserver` event comes at once), `llGetGMTclock`, `llGetEnv`, `llSetContentType` (a `recorded_only` entry), the link media functions `llSetLinkMedia`, `llGetLinkMedia` and `llClearLinkMedia` (the same storage as `llSetPrimMediaParams`), and the touch data `llDetectedTouchFace`, `llDetectedTouchUV`, `llDetectedTouchST`, `llDetectedTouchNormal`, `llDetectedTouchBinormal` and `llDetectedTouchPos`. `llGetObjectDetails` now answers the flags 50 to 56 (`OBJECT_HEALTH` to `OBJECT_VOLUME_DETECT`). The constants table already had every `OBJECT_*` constant of the wiki (1 to 56); none was added. Details: [CONTROL.md](CONTROL.md), "Leftover reads and media". Tests: `tests/tst_lslrest.cpp`.
+
+## What exists now (avatar and camera)
+
+- 13 more functions run, record only or with canned answers: `llAttachToAvatar`, `llAttachToAvatarTemp` and `llDetachFromAvatar` (need `PERMISSION_ATTACH`; a `recorded_only` entry, the object's attachment point does not change), `llGetAttachedList`, `llGetAgentLanguage`, `llForceMouselook` (record only), `llGetCameraPos`, `llGetCameraRot`, `llGetCameraAspect`, `llGetCameraFOV` (need `PERMISSION_TRACK_CAMERA`) and `llTeleportAgentHome`, `llTeleportAgent`, `llTeleportAgentGlobalCoords` (need `PERMISSION_TELEPORT`, owner only, record only). Details: [CONTROL.md](CONTROL.md), "Avatar and camera". Tests: `tests/tst_lslavatar.cpp`.
 
 ## What exists now (second round of pure functions): JSON, llListRandomize and maths
 

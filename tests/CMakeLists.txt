@@ -193,6 +193,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslrest_tests PRIVATE ${CMAKE_SOURCE_DI
 TARGET_LINK_LIBRARIES (pinglymotion_lslrest_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslrest COMMAND pinglymotion_lslrest_tests)
 
+# Script Lab: avatar attach/detach, camera and teleport functions
+ADD_EXECUTABLE (pinglymotion_lslavatar_tests tst_lslavatar.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslavatar_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslavatar_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslavatar COMMAND pinglymotion_lslavatar_tests)
+
 # Script Lab: static warnings (lint) and lsl_lint; the examples and the fuzz corpus must be lint clean
 ADD_EXECUTABLE (pinglymotion_lsllint_tests tst_lsllint.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsllint_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

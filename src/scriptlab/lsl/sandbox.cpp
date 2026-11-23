@@ -113,6 +113,7 @@ class ObjectWorld : public RlvWorld
       return false;
     }
     bool hasAttachments() const override { return m_sandbox.hasAttachments(); }
+    QStringList attachedKeys(const QString& avatar) const override { return m_sandbox.attachedKeys(avatar); }
     std::vector<Detected> sense(const QString& name, const QString& id, int type, double range, double arc) override
     {
       return m_sandbox.sense(m_slot, name, id, type, range, arc);
@@ -1172,6 +1173,19 @@ bool Sandbox::hasAttachments() const
   for (const Object& o : m_objects)
     if (o.spec.attached > 0) return true;
   return false;
+}
+
+QStringList Sandbox::attachedKeys(const QString& avatar) const
+{
+  QStringList out;
+  for (const Object& o : m_objects)
+  {
+    const QString owner = o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+    if (o.dead || owner != avatar || o.spec.attached <= 0) continue;
+    if (o.spec.attached >= 31 && o.spec.attached <= 38) continue;   // HUDs are never listed
+    out << o.spec.key;
+  }
+  return out;
 }
 
 QString Sandbox::nameOf(const QString& key) const

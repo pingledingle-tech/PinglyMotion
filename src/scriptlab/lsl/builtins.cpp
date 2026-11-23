@@ -91,7 +91,9 @@ enum class Fn
   // leftover reads and media: display names, simulator data, environment, clock, link media, touch face data
   GetDisplayName, RequestDisplayName, RequestUsername, RequestSimulatorData, GetGMTclock, GetEnv,
   SetLinkMedia, GetLinkMedia, ClearLinkMedia,
-  DetectedTouchFace, DetectedTouchUV, DetectedTouchST, DetectedTouchNormal, DetectedTouchBinormal, DetectedTouchPos
+  DetectedTouchFace, DetectedTouchUV, DetectedTouchST, DetectedTouchNormal, DetectedTouchBinormal, DetectedTouchPos,
+  // avatar and camera: attach and detach (record only), attached list, language, camera reads, teleports (record only)
+  AttachToAvatar, DetachFromAvatar, GetAttachedList, GetAgentLanguage, GetCameraPos, GetCameraRot, GetCameraView, Teleport
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -191,6 +193,10 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llOffsetTexture", Fn::RecordOnly},
   {"llScaleTexture", Fn::RecordOnly},
   {"llRotateTexture", Fn::RecordOnly},
+  {"llAttachToAvatar", Fn::AttachToAvatar}, {"llAttachToAvatarTemp", Fn::AttachToAvatar}, {"llDetachFromAvatar", Fn::DetachFromAvatar},
+  {"llGetAttachedList", Fn::GetAttachedList}, {"llGetAgentLanguage", Fn::GetAgentLanguage}, {"llForceMouselook", Fn::RecordOnly},
+  {"llGetCameraAspect", Fn::GetCameraView}, {"llGetCameraFOV", Fn::GetCameraView}, {"llGetCameraPos", Fn::GetCameraPos}, {"llGetCameraRot", Fn::GetCameraRot},
+  {"llTeleportAgent", Fn::Teleport}, {"llTeleportAgentGlobalCoords", Fn::Teleport}, {"llTeleportAgentHome", Fn::Teleport},
   {"llSetCameraEyeOffset", Fn::RecordOnly},
   {"llSetCameraAtOffset", Fn::RecordOnly},
   {"llSetCameraParams", Fn::RecordOnly},
@@ -3404,6 +3410,74 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       // nothing of anyone else's is in the sandbox, so nothing is returned: recorded, and 0 (no error) is the answer
       m_world.recordOnly(m_now, name, recordArgs(a));
       return Value::integer(0);
+
+    // -------------------------------------------- avatar and camera: attach, detach, camera reads, teleports
+    case Fn::AttachToAvatar:
+    case Fn::DetachFromAvatar:
+    {
+      // record only: the object's attachment point does not change, so llGetAttached and the attach event stay as they are
+      if (!(m_permissions & 0x20))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to attach but PERMISSION_ATTACH permission not set"}});
+        return Value();
+      }
+      m_world.recordOnly(m_now, name, recordArgs(a));
+      return Value();
+    }
+    case Fn::GetAttachedList:
+    {
+      // an avatar of the sandbox: the keys of the objects it wears (not HUDs); any other key: ["NOT FOUND"]
+      if (!m_world.agents().contains(a[0].s)) return Value::makeList({Value::string("NOT FOUND")});
+      std::vector<Value> out;
+      for (const QString& key : m_world.attachedKeys(a[0].s)) out.push_back(Value::key(key));
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
+    case Fn::GetAgentLanguage:
+      // every avatar of the sandbox shares its language, canned as "en"; any other key gives ""
+      return Value::string(m_world.agents().contains(a[0].s) ? "en" : "");
+    case Fn::GetCameraPos:
+    case Fn::GetCameraRot:
+    {
+      const bool pos = *it == Fn::GetCameraPos;
+      if (!(m_permissions & 0x400))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to track camera but PERMISSION_TRACK_CAMERA permission not set"}});
+      }
+      else
+      {
+        // the sandbox has no camera: the camera sits at the owner's place, looking along the x axis
+        if (pos) return Value::vector(128.0f, 128.0f, 20.0f);
+        return Value::rotation(0.0f, 0.0f, 0.0f, 1.0f);
+      }
+      return pos ? Value::vector(0.0f, 0.0f, 0.0f) : Value::rotation(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+    case Fn::GetCameraView:
+      // 0.0 without PERMISSION_TRACK_CAMERA (the wiki); else canned: the viewer's default 60 degree field of view (in
+      // radians) and a 16:9 window
+      if (!(m_permissions & 0x400))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to track camera but PERMISSION_TRACK_CAMERA permission not set"}});
+        return Value::number(0.0f);
+      }
+      return Value::number(name == "llGetCameraFOV" ? 1.0471976f : 1.7777778f);
+    case Fn::Teleport:
+    {
+      QString problem;
+      if (!(m_permissions & 0x1000)) problem = "Script trying to teleport but PERMISSION_TELEPORT permission not set";
+      else if (a[0].s != m_world.ownerKey()) problem = QString("%1: only the owner can be teleported").arg(name);
+      if (!problem.isEmpty())
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", problem}});
+        return Value();
+      }
+      m_world.recordOnly(m_now, name, recordArgs(a));
+      return Value();
+    }
 
     // -------------------------------------------- more record-only functions and the animation override (step 9b-8)
     case Fn::RecordOnly:
