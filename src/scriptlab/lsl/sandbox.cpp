@@ -787,7 +787,7 @@ void Sandbox::deliver(const SandboxInput& input)
       // second gap list, step 6, part 3: a simple, deterministic, non-realtime step of the motion model. Not a
       // physics engine: gravity (scaled by llSetBuoyancy) changes velocity, velocity changes position; llApplyImpulse
       // already changed velocity at once, before this step runs. No model yet for llMoveToTarget (a later job), so
-      // this never fires at_target/not_at_target, only moving_start/moving_end.
+      // it fires moving_start/moving_end and checks the scripts' llTarget targets (at_target/not_at_target).
       entry.remove("name");
       entry["dt"] = input.dt;
       if (o.spec.attached > 0)
@@ -814,6 +814,9 @@ void Sandbox::deliver(const SandboxInput& input)
         m_log.log(t, mv);
         for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->movingEvent(!moving);
       }
+      // third gap list run, step 2: the scripts' llTarget targets are checked against the new position (the events show
+      // in the scripts' own log entries, as for a manual at_target input)
+      for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->checkTargets(o.spec.position);
       return;
     }
     if (input.type == "email")
@@ -1496,6 +1499,7 @@ bool Sandbox::details(int from, const QString& key, ObjectDetails& out) const
     out.phantom = (o.prims.status & 0x10) ? 1 : 0;
     out.tempOnRez = root.tempOnRez;
     out.mass = w.prims.mass(o.spec.scale, o.spec.prims);
+    w.prims.boundingBox(o.spec.scale, o.spec.prims, out.boundMin, out.boundMax);
     out.text = root.text;
     for (int k = 0; k < 3; ++k) out.textColor[k] = root.textColor[k];
     out.textAlpha = root.textAlpha;

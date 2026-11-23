@@ -65,7 +65,7 @@ void LslParserTest::builtinData()
   QCOMPARE(int(f->args.size()), 3);
   QCOMPARE(f->args[1], Type::Integer);
   QVERIFY(f->supported);
-  QVERIFY(!Builtins::function("llGetEnergy")->supported);
+  QVERIFY(!Builtins::function("llGetAccel")->supported);
   QCOMPARE(Builtins::event("listen")->args.size(), size_t(4));
   QCOMPARE(Builtins::constant("PERMISSION_TRIGGER_ANIMATION")->value.i, 0x10);
   QCOMPARE(Builtins::constant("TRUE")->value.i, 1);
@@ -268,12 +268,12 @@ void LslParserTest::warnings()
   // not_at_target and collision_start used to be examples of events never raised; they are raised now (second gap
   // list, step 6, part 2), so remote_data (deprecated, out of scope) and the still-unraised plain collision stand in
   const Parser::Result r = Parser::parse(
-    "default {\n state_entry() {\n  llGetEnergy();\n }\n remote_data(integer e, key i, key c, string n, integer d, string v) { }\n collision(integer n) { }\n}");
+    "default {\n state_entry() {\n  llGetAccel();\n }\n remote_data(integer e, key i, key c, string n, integer d, string v) { }\n collision(integer n) { }\n}");
   QVERIFY(r.ok());   // valid LSL: warnings only
   QCOMPARE(int(r.warnings.size()), 3);
   QCOMPARE(r.warnings[0].line, 3);
   QCOMPARE(r.warnings[0].column, 3);
-  QVERIFY(r.warnings[0].message.contains("llGetEnergy is not supported yet"));
+  QVERIFY(r.warnings[0].message.contains("llGetAccel is not supported yet"));
   QVERIFY(r.warnings[1].message.contains("remote_data"));
   QVERIFY(r.warnings[1].message.contains("does not raise it yet"));
 }

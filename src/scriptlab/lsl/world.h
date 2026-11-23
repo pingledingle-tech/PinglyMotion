@@ -128,6 +128,9 @@ class PrimStore
     // llGetMass (gap list 2, step 2): every prim a box of density 10 lindograms per cubic metre (1000 kg/m3), the root
     // with rootSize (the object's scale), the children with their own size
     float mass(const float rootSize[3], int count);
+    // llGetBoundingBox (third gap list run): the smallest box along the region's axes round all prims (each a box turned by
+    // its rotation; a child's place and rotation are turned by the root's), as min and max corner relative to the root's position
+    void boundingBox(const float rootSize[3], int count, float outMin[3], float outMax[3]);
 
   private:
     std::vector<PrimState> m_prims;
@@ -226,6 +229,8 @@ struct ObjectDetails
   float textAlpha = 1.0f;
   QString sitRoot;                  // an avatar sitting on an object: that object's key
   float height = 0.0f;              // gap list 2, step 3: an avatar's height in metres (llGetAgentSize)
+  float boundMin[3] = {0.0f, 0.0f, 0.0f};   // an object: the corners of the box round all its prims, relative to the root
+  float boundMax[3] = {0.0f, 0.0f, 0.0f};   // prim's position, along the region's axes (llGetBoundingBox)
 };
 
 // Gap list 2, step 3: the region every object of the sandbox stands in, with canned settings, so every run gives the
@@ -258,6 +263,13 @@ struct RegionSettings
   int parcelSeeAvatars = 1;                                  // PARCEL_DETAILS_SEE_AVATARS
   int parcelTpRouting = 2;                                   // PARCEL_DETAILS_TP_ROUTING: 2, teleports land anywhere
   int parcelScriptDanger = 0;                                // PARCEL_DETAILS_SCRIPT_DANGER
+
+  // Third gap list run, step 3: canned region reads (llGetRegionTimeDilation, llGetRegionFPS, llGetSimulatorHostname) and
+  // the mass llGetObjectMass gives an avatar. llGetRegionAgentCount counts the agents of the world (llGetAgentList).
+  static constexpr float AVATAR_MASS = 50.0f;                // kg, the sandbox's choice
+  float timeDilation = 1.0f;                                 // a healthy region
+  float fps = 45.0f;                                         // the frame rate of a healthy region
+  QString hostname = "sim-sandbox.invalid";                  // llGetSimulatorHostname: a name that never resolves
 
   // the date, a time stamp and the Second Life time (US Pacific, with summer time) at simulated time now
   QString date(double now) const;                            // llGetDate: "YYYY-MM-DD" (UTC)

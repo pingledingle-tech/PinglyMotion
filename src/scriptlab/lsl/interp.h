@@ -43,6 +43,7 @@ struct Limits
   int maxEvents = 10000;           // events handled, whole run
   int maxQueue = 64;               // events waiting (Second Life also keeps 64)
   int maxListens = 65;             // open listens (as in Second Life)
+  static constexpr int SCRIPT_MEMORY_MAX = 65536;   // llSetMemoryLimit: the most a Mono script may ask for
 };
 
 // chat or a touch from outside, at a simulated time
@@ -130,6 +131,11 @@ class Interpreter
     void atTargetEvent(int tnum, const float targetpos[3], const float ourpos[3]);
     // queues not_at_target()
     void notAtTargetEvent();
+    // third gap list run, step 2: the object is at ourpos now (the Sandbox calls this after its motion model moved it). For
+    // every target of llTarget within its range at_target(handle, targetpos, ourpos) is queued; with targets but none reached
+    // not_at_target() is queued once. A target stays until llTargetRemove (Second Life too); no target: nothing happens.
+    void checkTargets(const float ourpos[3]);
+    int targetCount() const { return int(m_targets.size()); }
     // the current state has a handler for this event
     bool handles(const QString& event) const;
     // Gap list 2, step 2. llSetScriptState from another script: a script that is not running keeps its variables, state,
@@ -209,6 +215,12 @@ class Interpreter
     double m_nextTimer = 0.0;
     int m_permissions = 0;
     QString m_permissionKey;
+    struct TargetEntry { int handle; float pos[3]; float range; };
+    std::vector<TargetEntry> m_targets;   // llTarget: this script's position targets
+    int m_nextTarget = 1;                 // the handle the next llTarget gives (the first is 1)
+    int m_memoryLimit = Limits::SCRIPT_MEMORY_MAX;   // llGetMemoryLimit / llSetMemoryLimit
+    int addTarget(const float pos[3], float range);
+    void removeTarget(int handle);
     int m_controls = 0;              // step 9b-6: the controls llTakeControls took (0 = none)
     bool m_controlsAccept = false;
     bool m_controlsPassOn = false;

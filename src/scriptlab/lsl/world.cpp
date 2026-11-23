@@ -300,6 +300,52 @@ float PrimStore::mass(const float rootSize[3], int count)
   return total;
 }
 
+void PrimStore::boundingBox(const float rootSize[3], int count, float outMin[3], float outMax[3])
+{
+  count = qMax(1, count);
+  auto turn = [](const float q[4], const float v[3], float r[3])
+  {
+    // r = q * v * q^-1 for a unit quaternion q = (x, y, z, s)
+    const float tx = 2.0f * (q[1] * v[2] - q[2] * v[1]), ty = 2.0f * (q[2] * v[0] - q[0] * v[2]), tz = 2.0f * (q[0] * v[1] - q[1] * v[0]);
+    r[0] = v[0] + q[3] * tx + (q[1] * tz - q[2] * ty);
+    r[1] = v[1] + q[3] * ty + (q[2] * tx - q[0] * tz);
+    r[2] = v[2] + q[3] * tz + (q[0] * ty - q[1] * tx);
+  };
+  auto mul = [](const float a[4], const float b[4], float r[4])
+  {
+    r[0] = a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1];
+    r[1] = a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0];
+    r[2] = a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3];
+    r[3] = a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2];
+  };
+  const float rootRot[4] = {prim(1, count).rotation[0], prim(1, count).rotation[1], prim(1, count).rotation[2], prim(1, count).rotation[3]};
+  bool first = true;
+  for (int link = 1; link <= count; ++link)
+  {
+    const PrimState& p = prim(link, count);
+    const float* size = link == 1 ? rootSize : p.size;
+    float centre[3] = {0.0f, 0.0f, 0.0f}, rot[4] = {rootRot[0], rootRot[1], rootRot[2], rootRot[3]};
+    if (link > 1)
+    {
+      turn(rootRot, p.position, centre);
+      mul(rootRot, p.rotation, rot);
+    }
+    for (int corner = 0; corner < 8; ++corner)
+    {
+      const float local[3] = {(corner & 1 ? 0.5f : -0.5f) * size[0], (corner & 2 ? 0.5f : -0.5f) * size[1], (corner & 4 ? 0.5f : -0.5f) * size[2]};
+      float r[3];
+      turn(rot, local, r);
+      for (int k = 0; k < 3; ++k)
+      {
+        const float v = centre[k] + r[k];
+        if (first || v < outMin[k]) outMin[k] = v;
+        if (first || v > outMax[k]) outMax[k] = v;
+      }
+      first = false;
+    }
+  }
+}
+
 bool World::details(const QString& key, ObjectDetails& out)
 {
   out = ObjectDetails();
@@ -323,6 +369,7 @@ bool World::details(const QString& key, ObjectDetails& out)
     out.phantom = (primStore().status & 16) ? 1 : 0;   // STATUS_PHANTOM
     out.tempOnRez = root.tempOnRez;
     out.mass = primStore().mass(out.scale, count);
+    primStore().boundingBox(out.scale, count, out.boundMin, out.boundMax);
     out.text = root.text;
     for (int i = 0; i < 3; ++i) out.textColor[i] = root.textColor[i];
     out.textAlpha = root.textAlpha;

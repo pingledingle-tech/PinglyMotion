@@ -1,6 +1,6 @@
 Branch: job/lsl-limits-targets-region
-Status: active
-Pull request: pending
+Status: done
+Pull request: #396
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/world.h

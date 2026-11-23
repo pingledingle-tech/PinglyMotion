@@ -90,6 +90,9 @@ enum class Fn
   // second round of pure functions: JSON, llListRandomize, llLog, llAcos and three rotation helpers
   JsonGetValue, JsonSetValue, JsonValueType, List2Json, Json2List, ListRandomize, Log, Acos, Axes2Rot, AngleBetween, Rot2Axis,
   Asin, Log10,
+  // third gap list run, steps 1 to 3: limit reads, llTarget, region reads
+  GetMemoryLimit, SetMemoryLimit, GetNumberOfSides, GetLinkNumberOfSides, GetObjectPrimCount, GetObjectMass, GetBoundingBox,
+  GetEnergy, Target, TargetRemove, GetRegionTimeDilation, GetRegionFPS, GetRegionAgentCount, GetSimulatorHostname,
   // leftover reads and media: display names, simulator data, environment, clock, link media, touch face data
   GetDisplayName, RequestDisplayName, RequestUsername, RequestSimulatorData, GetGMTclock, GetEnv,
   SetLinkMedia, GetLinkMedia, ClearLinkMedia,
@@ -253,6 +256,12 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llJsonGetValue", Fn::JsonGetValue}, {"llJsonSetValue", Fn::JsonSetValue}, {"llJsonValueType", Fn::JsonValueType},
   {"llList2Json", Fn::List2Json}, {"llJson2List", Fn::Json2List}, {"llListRandomize", Fn::ListRandomize},
   {"llAsin", Fn::Asin}, {"llLog10", Fn::Log10},
+  {"llGetMemoryLimit", Fn::GetMemoryLimit}, {"llSetMemoryLimit", Fn::SetMemoryLimit}, {"llMinEventDelay", Fn::RecordOnly},
+  {"llGetNumberOfSides", Fn::GetNumberOfSides}, {"llGetLinkNumberOfSides", Fn::GetLinkNumberOfSides},
+  {"llGetObjectPrimCount", Fn::GetObjectPrimCount}, {"llGetObjectMass", Fn::GetObjectMass}, {"llGetBoundingBox", Fn::GetBoundingBox},
+  {"llGetEnergy", Fn::GetEnergy}, {"llTarget", Fn::Target}, {"llTargetRemove", Fn::TargetRemove},
+  {"llGetRegionTimeDilation", Fn::GetRegionTimeDilation}, {"llGetRegionFPS", Fn::GetRegionFPS},
+  {"llGetRegionAgentCount", Fn::GetRegionAgentCount}, {"llGetSimulatorHostname", Fn::GetSimulatorHostname},
   {"llLog", Fn::Log}, {"llAcos", Fn::Acos}, {"llAxes2Rot", Fn::Axes2Rot}, {"llAngleBetween", Fn::AngleBetween},
   {"llRot2Axis", Fn::Rot2Axis},
   // leftover reads and media: canned answers, record only where nothing can happen
@@ -4003,6 +4012,59 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::Frand: return Value::number(nextRandom() * a[0].f[0]);
     case Fn::Log: return Value::number(a[0].f[0] > 0.0f ? std::log(a[0].f[0]) : 0.0f);   // the wiki: 0 for a value of 0 or less
     case Fn::Asin: return Value::number(std::asin(a[0].f[0]));   // outside -1..1 the answer is NaN, as for llAcos
+
+    // -------------------------------------------- limit reads, llTarget and region reads (third gap list run, steps 1 to 3)
+    case Fn::GetMemoryLimit: return Value::integer(m_memoryLimit);
+    case Fn::SetMemoryLimit:
+      // TRUE and stored when the limit is from the memory the script uses now up to 65536 (the Mono maximum); else FALSE
+      if (a[0].i < m_memory || a[0].i > Limits::SCRIPT_MEMORY_MAX) return Value::integer(0);
+      m_memoryLimit = a[0].i;
+      return Value::integer(1);
+    case Fn::GetNumberOfSides: return Value::integer(PrimState::FACES);   // every simulated prim is a box with six faces
+    case Fn::GetLinkNumberOfSides:
+    {
+      // six for a link number the object has (0 and 1 for a single prim) and for LINK_THIS; 0 for any other number
+      const int link = a[0].i, count = qMax(1, m_world.numberOfPrims());
+      return Value::integer(link == -4 || (link >= 0 && link <= count) ? PrimState::FACES : 0);
+    }
+    case Fn::GetObjectPrimCount:
+    {
+      ObjectDetails d;
+      return Value::integer(m_world.details(a[0].s, d) && !d.avatar ? d.prims : 0);   // an avatar or an unknown key: 0
+    }
+    case Fn::GetObjectMass:
+    {
+      ObjectDetails d;
+      if (!m_world.details(a[0].s, d)) return Value::number(0.0f);
+      return Value::number(d.avatar ? RegionSettings::AVATAR_MASS : d.mass);   // the same mass as llGetMass for the own object
+    }
+    case Fn::GetBoundingBox:
+    {
+      ObjectDetails d;
+      std::vector<Value> out;
+      if (m_world.details(a[0].s, d))
+      {
+        if (d.avatar)
+        {
+          // an avatar: a box of the sandbox's avatar size, centred on the avatar's position (relative to it)
+          out.push_back(Value::vector(-RegionSettings::AVATAR_WIDTH / 2, -RegionSettings::AVATAR_DEPTH / 2, -d.height / 2));
+          out.push_back(Value::vector(RegionSettings::AVATAR_WIDTH / 2, RegionSettings::AVATAR_DEPTH / 2, d.height / 2));
+        }
+        else
+        {
+          out.push_back(Value::vector(d.boundMin[0], d.boundMin[1], d.boundMin[2]));
+          out.push_back(Value::vector(d.boundMax[0], d.boundMax[1], d.boundMax[2]));
+        }
+      }
+      return Value::makeList(std::move(out));
+    }
+    case Fn::GetEnergy: return Value::number(1.0f);
+    case Fn::Target: return Value::integer(addTarget(a[0].f, a[1].f[0]));
+    case Fn::TargetRemove: removeTarget(a[0].i); return Value();
+    case Fn::GetRegionTimeDilation: return Value::number(m_world.region().timeDilation);
+    case Fn::GetRegionFPS: return Value::number(m_world.region().fps);
+    case Fn::GetRegionAgentCount: return Value::integer(int(m_world.agents().size()));
+    case Fn::GetSimulatorHostname: return Value::string(m_world.region().hostname);
     case Fn::Log10: return Value::number(a[0].f[0] > 0.0f ? std::log10(a[0].f[0]) : 0.0f);   // 0 for a value of 0 or less, as llLog
     case Fn::Acos: return Value::number(std::acos(a[0].f[0]));   // outside -1..1 the answer is NaN, as in Second Life
     case Fn::VecMag: return Value::number(std::sqrt(a[0].f[0] * a[0].f[0] + a[0].f[1] * a[0].f[1] + a[0].f[2] * a[0].f[2]));

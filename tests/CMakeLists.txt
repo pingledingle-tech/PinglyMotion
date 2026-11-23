@@ -205,6 +205,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslavatar_tests PRIVATE ${CMAKE_SOURCE_
 TARGET_LINK_LIBRARIES (pinglymotion_lslavatar_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslavatar COMMAND pinglymotion_lslavatar_tests)
 
+# Script Lab: limit reads, llTarget and region reads
+ADD_EXECUTABLE (pinglymotion_lsllimits_tests tst_lsllimits.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsllimits_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lsllimits_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lsllimits COMMAND pinglymotion_lsllimits_tests)
+
 # Script Lab: static warnings (lint) and lsl_lint; the examples and the fuzz corpus must be lint clean
 ADD_EXECUTABLE (pinglymotion_lsllint_tests tst_lsllint.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsllint_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
