@@ -1,6 +1,6 @@
 Branch: job/security-bundle
 Status: active
-Pull request: pending
+Pull request: #432
 Files:
 - CLAUDE.md
 - docs/DEV.md
