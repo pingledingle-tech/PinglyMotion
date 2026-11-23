@@ -76,6 +76,8 @@
 #include "controlapi.h"
 #include "controlserver.h"
 #include "controlindicator.h"
+#include "aiassistant.h"
+#include "aiconnectdialog.h"
 #include "auroralink.h"
 #include "sliderscale.h"
 #include <QStatusBar>
@@ -301,7 +303,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_propFilter(PinglyMotionWindow::tr("Props (*.prp)")),
   m_untitledName(DingleSave::defaultName()),
   m_precision(SliderScale::precision),
-  m_controlAction(nullptr),
   m_controlIndicator(nullptr)
 {
   QApplication::setOrganizationName(Constants::organizationName());
@@ -542,7 +543,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
     ui->helpWhatsNewAction->setVisible(false);
   }
 
-  // Options > Allow remote control: lets other programs and AI tools pose and play the animation
+  // the AI Assistant (remote control): lets AI tools and other programs pose and play the animation
   m_controlHost.reset(new WindowControlHost(this));
   m_controlApi.reset(new ControlApi(m_controlHost.data()));
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
@@ -570,11 +571,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   viewModesOverride->setState(&m_controlApi->rlv());
   ui->animationView->setViewModesOverride(viewModesOverride);
   m_scriptLabPanel->setViewModesOverride(viewModesOverride);
-  m_controlAction=new QAction(tr("Allow remote control (AI and other programs)"),this);
-  m_controlAction->setCheckable(true);
-  m_controlAction->setToolTip(tr("Lets programs on this computer pose and play the animation. It is off each time you start."));
-  ui->menuOptions->addAction(m_controlAction);
-  connect(m_controlAction,&QAction::toggled,this,[this](bool on){ setRemoteControl(on,true); });
 
   // status bar (#88): "Tips on" switch, remote control and Aurora link, left to right;
   // messages still show on the left
@@ -603,10 +599,13 @@ PinglyMotionWindow::PinglyMotionWindow() :
   buildEditMenu();
   buildTopBar();
 
-  // is remote control on, who is connected, what it did last (issue #43)
+  // the AI Assistant button: off, waiting, who is connected (issues #43 and #7); always off at start
   m_controlIndicator=new ControlIndicator(this);
   statusBar()->addPermanentWidget(m_controlIndicator);
-  connect(m_controlIndicator,&ControlIndicator::toggleRequested,m_controlAction,&QAction::toggle);
+  connect(m_controlIndicator,&ControlIndicator::clicked,this,&PinglyMotionWindow::aiAssistantClicked);
+  connect(m_controlIndicator,&ControlIndicator::turnOnRequested,this,[this](){ setRemoteControl(true); });
+  connect(m_controlIndicator,&ControlIndicator::turnOffRequested,this,[this](){ setRemoteControl(false); });
+  connect(m_controlIndicator,&ControlIndicator::connectAnotherRequested,this,&PinglyMotionWindow::showAiConnectDialog);
   connect(m_controlServer.data(),&ControlServer::contact,m_controlIndicator,&ControlIndicator::onContact);
   connect(m_controlServer.data(),&ControlServer::refused,m_controlIndicator,&ControlIndicator::onRefused);
   // the connection file must not stay behind when the program ends
@@ -664,51 +663,71 @@ PinglyMotionWindow::PinglyMotionWindow() :
 
   if(startWithControl)
   {
-    // started with --control: no information box, nobody is waiting to click it away
-    setRemoteControl(true,false);
-    QSignalBlocker blocker(m_controlAction);
-    m_controlAction->setChecked(m_controlServer->running());
+    // started with --control (tests and scripts): on from the start, nobody clicks anything
+    setRemoteControl(true);
   }
 }
 
-void PinglyMotionWindow::setRemoteControl(bool on,bool showInfo)
+void PinglyMotionWindow::setRemoteControl(bool on)
 {
   if(on)
   {
+    if(m_controlServer->running()) return;
     QString error;
+    // a new secret key every time (ControlServer::start)
     if(!m_controlServer->start(ControlServer::DEFAULT_PORT,&error) || !m_controlServer->writeConnectionFile(&error))
     {
       m_controlServer->stop();
-      QSignalBlocker blocker(m_controlAction);
-      m_controlAction->setChecked(false);
-      QMessageBox::warning(this,tr("Remote control"),tr("Remote control could not be started:\n%1").arg(error));
+      // never the user's account folder on screen
+      error.replace(QDir::toNativeSeparators(QDir::homePath()),tr("<your user folder>"));
+      error.replace(QDir::homePath(),tr("<your user folder>"));
+      QMessageBox::warning(this,tr("AI Assistant"),tr("The AI Assistant could not be turned on:\n%1").arg(error));
       updateWindowTitle();
       return;
     }
-    updateWindowTitle();
-    if(showInfo)
-    {
-      QMessageBox box(QMessageBox::Information,tr("Remote control is on"),
-        ControlServer::infoHtml(m_controlServer->url()),
-        QMessageBox::Ok,this);
-      box.setTextFormat(Qt::RichText);
-      box.setTextInteractionFlags(Qt::TextBrowserInteraction);
-      box.exec();
-    }
+    statusBar()->showMessage(tr("AI Assistant on. AI tools on this PC can now pose and play the animation."),5000);
   }
   else
   {
+    // locks every AI out: the server stops and the file with the key is deleted
     m_controlServer->removeConnectionFile();
     m_controlServer->stop();
-    updateWindowTitle();
+    statusBar()->showMessage(tr("AI Assistant off. Every AI is locked out and the key is deleted."),5000);
   }
+  updateWindowTitle();
+}
+
+void PinglyMotionWindow::aiAssistantClicked()
+{
+  // the first time (no AI has ever connected and it is off): ask which AI
+  if(!m_controlServer->running() && !AiAssistant::anyKnown())
+  {
+    showAiConnectDialog();
+    return;
+  }
+  QMenu* menu=m_controlIndicator->buildMenu(this);
+  QToolButton* button=m_controlIndicator->button();
+  // above the button: the status bar is at the bottom of the window
+  const QPoint corner=button->mapToGlobal(QPoint(0,0));
+  menu->popup(QPoint(corner.x(),corner.y()-menu->sizeHint().height()));
+}
+
+void PinglyMotionWindow::showAiConnectDialog()
+{
+  AiConnectDialog dialog(m_controlServer->running(),this);
+  connect(&dialog,&AiConnectDialog::turnOnRequested,this,[this,&dialog]()
+  {
+    setRemoteControl(true);
+    dialog.setRunning(m_controlServer->running());
+  });
+  dialog.exec();
 }
 
 // the title says so while other programs can control PinglyMotion
 void PinglyMotionWindow::updateWindowTitle()
 {
   QString title=Constants::windowTitle(m_empty ? QString() : currentFile);
-  if(m_controlServer && m_controlServer->running()) title+=tr(" - remote control on");
+  if(m_controlServer && m_controlServer->running()) title+=tr(" - AI Assistant on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink)
     title+=AuroraIndicator::titleSuffixFor(AuroraIndicator::stateFor(m_auroraLink->enabled(),m_auroraLink->connected()));

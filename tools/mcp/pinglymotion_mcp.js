@@ -5,8 +5,8 @@
  * The MCP server, written for Node so that Claude Desktop, which ships its own Node,
  * can run it without Python (issue #7). It is the only MCP server; the old Python one was removed. It talks to
  * PinglyMotion's local control interface (see docs/CONTROL.md), so PinglyMotion must
- * be running with remote control on: start it with `pinglymotion --control`, or tick
- * Options > Allow remote control.
+ * be running with the AI Assistant on: click the AI Assistant button in its status bar
+ * and turn it on, or start it with `pinglymotion --control`.
  *
  * Uses only Node's built-in modules (Node 16 or newer). Speaks MCP over
  * stdin/stdout, so it is started by the AI tool, not by hand.
@@ -50,11 +50,11 @@ const GUIDE_TOOL = {
 };
 
 const NOT_RUNNING =
-  "PinglyMotion is not running with remote control on. Start PinglyMotion with --control, " +
-  "or tick Options > Allow remote control, then try again.";
+  "PinglyMotion is not running with the AI Assistant on. Start PinglyMotion, click the AI Assistant " +
+  "button in its status bar and turn it on, then try again.";
 const UNREACHABLE =
-  "Could not reach PinglyMotion. It may have been closed, or remote control was turned off. " +
-  "Start it again and turn remote control on.";
+  "Could not reach PinglyMotion. It may have been closed, or the AI Assistant was turned off. " +
+  "Start it again and turn the AI Assistant on (the button in its status bar).";
 
 class PinglyMotionError extends Error {}
 

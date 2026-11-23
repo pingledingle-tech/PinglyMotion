@@ -22,7 +22,7 @@ Files:
 - .github/workflows/release.yml
 - translations/pinglymotion_en.ts
 - README.md
-- bin/NEWS
+- docs/mockup/index.html
 - docs/CONTROL.md
 - docs/PRODUCT.md
 - docs/UX_DECISIONS.md

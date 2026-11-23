@@ -481,9 +481,12 @@ class PinglyMotionWindow : public QMainWindow
     bool emptyMode() const { return m_empty; }
     void setKeyFromMenu();
 
-    // remote control (Options > Allow remote control), see controlapi.h
+    // the AI Assistant (remote control, issue 7): the button in the status bar, see controlapi.h
     friend class WindowControlHost;
-    void setRemoteControl(bool on, bool showInfo);
+    void setRemoteControl(bool on);
+    // the button was clicked: the setup dialog the first time, its menu after that
+    void aiAssistantClicked();
+    void showAiConnectDialog();
     void updateWindowTitle();
 
     void selectProp();
@@ -520,7 +523,6 @@ class PinglyMotionWindow : public QMainWindow
     QScopedPointer<ControlServer> m_controlServer;
     AuroraLink* m_auroraLink = nullptr;
     QAction* m_auroraAction = nullptr;
-    QAction* m_controlAction;
     ControlIndicator* m_controlIndicator;
     // status bar (#88): Aurora link status and the "Tips on" switch
     AuroraIndicator* m_auroraIndicator = nullptr;

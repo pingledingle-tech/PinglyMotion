@@ -7,21 +7,30 @@ Nothing here is tied to one AI.
 
 ## Turn it on
 
-- Menu **Options > Allow remote control (AI and other programs)**, or
-- start PinglyMotion with `PinglyMotion --control`.
+- Click the **AI Assistant** button in the status bar (bottom right) and choose **Turn on** (or **Turn on AI
+  Assistant** in its setup dialog), or
+- start PinglyMotion with `PinglyMotion --control` (for scripts and tests).
 
-It is off every time PinglyMotion starts, unless you use `--control`. While it is on, the window
-title says "remote control on".
+It is off every time PinglyMotion starts, unless you use `--control`, and it never turns on by itself. While it
+is on, the window title says "AI Assistant on".
 
-The bottom right of the status bar shows a coloured dot and who is connected, for example
-`● Claude Code connected · set_pose (3 s ago)`. Click the dot to turn remote control on or off.
+The button is one button: a coloured dot and its state in words (issue 7).
 
-| Dot | Meaning |
-|---|---|
-| Grey | Remote control off |
-| Yellow | On, no assistant connected (nothing heard for 30 seconds) |
-| Green | Assistant connected; shows its name and the last command |
-| Red | A request with a wrong key was refused |
+| Dot | Text | Meaning |
+|---|---|---|
+| Grey | `AI Assistant off` | Off |
+| Yellow | `AI Assistant on, waiting for an AI` | On, no AI connected (nothing heard for 30 seconds) |
+| Green | `AI Assistant: Claude`, or `AI Assistant: 2 AI connected` | Connected; the AI's name, or how many; its tip shows the last command |
+| Red | `AI Assistant: a wrong key was refused` | A request with a wrong key was refused |
+
+Clicking it: if no AI has ever connected and it is off, the dialog **Connect an AI** opens and asks "Which AI
+do you use?" (Claude, ChatGPT, Other), each with only its own steps (see "Set up an AI assistant" below).
+Otherwise a small menu opens: **Turn on** or **Turn off (locks every AI out)**, each AI that has connected with
+when it was last active, and **Connect another AI...**. Turn off stops the server and deletes `control.json`
+with the key, so every AI is locked out. PinglyMotion remembers the names of the AIs that have connected (in its
+settings, group `ai_assistant`), never the key. The name comes from the AI tool (MCP `clientInfo`, header
+`X-PinglyMotion-Client`) and is shown as the user knows it: `claude-ai` as Claude, `codex-mcp-client` as
+ChatGPT.
 
 ## Who can use it
 
@@ -1202,42 +1211,93 @@ Limits and safety (the folder may hold anything):
 
 ## Set up an AI assistant
 
-The Claude Desktop extension `PinglyMotion.mcpb` is the one way to connect an AI assistant. It holds an
-MCP server (`tools/mcp/pinglymotion_mcp.js` in the source tree, Node, built-in modules only) that lets
-the Claude app use remote control. The Windows zip and each release carry the extension. There is no
-Python server any more, and no manual setup of a server by path.
+There is one MCP server, `tools/mcp/pinglymotion_mcp.js` (Node, built-in modules only). The Windows zip and
+each release have a folder `mcp` next to the program (made by `tools/ci/package_mcp.sh`):
 
-### Quick way: the Claude Desktop extension
+- `PinglyMotion.mcpb`: the extension for the Claude app (the server packed with its manifest);
+- `pinglymotion_mcp.js`, with `commands.json` and `ASSISTANT_GUIDE.md` next to it: the server for ChatGPT and
+  other AI tools;
+- `README.txt`: the three guides below in plain text, so they work offline, and "How it's kept safe".
 
-The Windows zip (and each release) has `PinglyMotion.mcpb`, an extension for the Claude app, and a
-short `START HERE - Claude.txt` with the same steps. No file editing and no typed paths:
+In the program, the **AI Assistant** button opens the same guides (dialog **Connect an AI**, `src/aiconnectdialog.*`).
+It never shows a path of the user's account: it names the files, opens the folder with the file selected (**Show
+the file**) or copies the command (**Copy the command**). Tell us what worked with another AI in
+[issue 414, "Connect another AI: tell us what worked"](https://github.com/pingledingle-tech/PinglyMotion/issues/414).
+
+### Claude: the extension
+
+No file editing and no typed paths:
 
 1. Unzip the download first (do not open the `.mcpb` from inside the zip). Nothing else has to be
    installed: the extension runs on the Node that the Claude app brings.
-   If it does not start, say so in issue #7.
-2. In the Claude app open **Settings > Extensions** (in newer versions: **Settings > Desktop app**, then
-   **Manage** next to Extensions). Click **Advanced settings**, find the section **Extension Developer**,
-   click **Install Extension...** and pick `PinglyMotion.mcpb`. The app shows a window about the
-   extension; follow its prompts to finish. Alternative: drag the file into the Claude window.
-   Double-clicking the file may also work, but on some Windows PCs it does nothing or Windows asks which
-   app to use (the Claude app is not offered); then ignore that and use the Settings route. Companies
-   and teams can block own extensions in the Claude app; then an administrator has to allow it.
-3. Start PinglyMotion and turn on **Options > Allow remote control (AI and other programs)** (it is off
-   at every start).
-4. In a new chat in the Claude app, ask: "Raise the avatar's right arm and show me a picture." If
+2. In PinglyMotion click the **AI Assistant** button, pick **Claude** and click **Show the file**: the `mcp` folder
+   opens with `PinglyMotion.mcpb` selected.
+3. In the Claude app open **Settings > Desktop app** and click **Manage** next to **Extensions**. Click
+   **Advanced settings**, then **Install Extension...** (section **Extension Developer**), and pick
+   `PinglyMotion.mcpb`. Follow the prompts to finish. Older layout of the Claude app: **Settings > Extensions >
+   Advanced settings > Install Extension...**. In some versions the installed extension is listed under
+   **Settings > Plugins**. Companies and teams can block own extensions in the Claude app; then an administrator
+   has to allow it. Anthropic's help page:
+   [Getting started with local MCP servers on Claude Desktop](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop).
+4. In PinglyMotion click **Turn on AI Assistant** (it is off at every start).
+5. In a new chat in the Claude app, ask: "Raise the avatar's right arm and show me a picture." If
    Claude asks for permission to use PinglyMotion, allow it; if it does not ask, that is fine.
 
-Update: install the `PinglyMotion.mcpb` from the new download the same way (step 2). The extension holds no
+Update: install the `PinglyMotion.mcpb` from the new download the same way (step 3). The extension holds no
 settings and no key; it talks only to `127.0.0.1` and checks that it really is PinglyMotion
 before it sends the key. The extension is
 built from this repository by `tools/mcp/build_mcpb.py` and is not signed. Claude Desktop ships its own
 Node, so nothing else has to be installed.
 
-Other assistants, and anything that does not speak MCP, can use the plain HTTP commands described above.
+### ChatGPT: the desktop app's config.toml (not yet tested)
+
+ChatGPT's "Add a custom MCP server" form only takes a web address or a tunnel, so it cannot be used for a server
+that runs only on the user's PC. The ChatGPT desktop app, the Codex CLI and the IDE extension share one settings
+file, `config.toml` in `CODEX_HOME` (by default `.codex` in the user's home folder); see OpenAI's page
+[Model Context Protocol](https://developers.openai.com/codex/mcp), "Configure with config.toml". A local server is
+a table with a command and its arguments.
+
+**Connect ChatGPT** in the dialog (`CodexConfig` in `src/aiassistant.*`):
+
+- copies the file first to `config.toml.backup-<yyyyMMdd-HHmmss>` (a new name every time, never over an
+  older backup), then writes the new file in one step;
+- adds this at the end, or, when the table is there, changes only its `command` and `args` lines (every other
+  byte stays as it was; the line endings of the file are kept):
+
+  ```toml
+  [mcp_servers.pinglymotion]
+  command = "node"
+  args = ['C:\path\to\PinglyMotion\mcp\pinglymotion_mcp.js']
+  ```
+
+  (the path is a TOML literal string in single quotes, so its backslashes stay as they are);
+- changes nothing when the entry is already right, and refuses (changing nothing) when the file names
+  PinglyMotion or `mcp_servers` in a form it cannot change safely: an inline table, a dotted key, two tables, an
+  array of tables, a sub-table without the table, or a `url` entry;
+- says whether Node is installed (the app starts `node`), and says so plainly when it is not.
+
+Then restart the ChatGPT app and turn the AI Assistant on.
+
+### Other or local AI tools (not tested by us)
+
+Most AI tools that can start a local MCP server (stdio) need the command `node` and the argument: the full
+path of `pinglymotion_mcp.js` in the `mcp` folder. **Copy the command** puts `node "<path>"` on the clipboard.
+Anything that does not speak MCP can use the plain HTTP commands described above.
+
+### How it's kept safe
+
+- It only works on your own PC: it listens on `127.0.0.1` only.
+- It is off each time PinglyMotion starts, and never turns on by itself.
+- There is a new secret key each time it is turned on.
+- Requests from web pages are refused (the `Origin` and `Host` checks).
+- Turn off locks every AI out and deletes the key.
+
+It has been through a security review and is tested automatically on every change: see the
+[security report](SECURITY_AUDIT_21NOV.md).
 
 ### Use it
 
-Start PinglyMotion and turn on **Options > Allow remote control** (or start it with `--control`).
+Start PinglyMotion and turn on the AI Assistant (the button in the status bar, or start it with `--control`).
 Then ask the assistant to pose the figure. The tools are listed even when PinglyMotion is not running,
 and say what to do if one is called then. Restart the assistant after updating PinglyMotion: a new MCP
 server refuses to talk to an old PinglyMotion.

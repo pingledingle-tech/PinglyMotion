@@ -161,9 +161,8 @@ jobs:
           # ONE folder examples/ next to the program holds every file the project owner may open: no
           # separate downloads; library/ goes next to the program. The release packages use the same script.
           bash tools/ci/package_examples.sh dist
-          # the Claude Desktop extension (issue #7)
-          python tools/mcp/build_mcpb.py dist/PinglyMotion.mcpb
-          cp "tools/mcp/START_HERE_CLAUDE.txt" "dist/START HERE - Claude.txt"
+          # the mcp folder: the Claude extension, the Node server for other AI tools and the README with all guides (issue #7)
+          bash tools/ci/package_mcp.sh dist
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations dist/PinglyMotion.exe
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
