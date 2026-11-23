@@ -447,6 +447,62 @@ kbd { font-family:ui-monospace, monospace; font-size:var(--caption); border:var(
 .grid2 { display:grid; grid-template-columns:auto minmax(0, 1fr); gap:var(--s); align-items:center; }
 .proposal { font-size:var(--caption); color:var(--text_muted); border:var(--bw) dashed var(--border); border-radius:var(--r-small); padding:0 var(--xs); font-weight:400; }
 
+/* ---- Library panel (roadmap item 6) and two figures (Expert mode): drawn in the mockup, not built yet ---- */
+#library { container-type:inline-size; }
+body[data-layout="narrow"] .dock > .panel:not(.floating) { flex:none; } /* one column: each docked panel as tall as its content, so two never overlap */
+.docktabs .tab { flex:1 1 auto; min-width:fit-content; white-space:nowrap; } /* four tabs in a narrow column wrap to a second row instead of cutting words */
+.lib .body { gap:var(--m); }
+#libMain { flex:1 1 0; display:flex; flex-direction:column; gap:var(--s); }
+#libMain .libprev { flex:none; }
+.libcats { display:flex; flex-wrap:wrap; gap:var(--xs); }
+.libcats .btn { gap:var(--xs); }
+.libcats .btn .n { font-size:var(--caption); color:var(--text_muted); font-variant-numeric:tabular-nums; }
+.libcats [role=radio][aria-checked="true"] { background:var(--selection); color:var(--on_accent); border-color:var(--selection); font-weight:600; }
+.libcats [role=radio][aria-checked="true"] .n { color:var(--on_accent); }
+.liblist { position:relative; list-style:none; margin:0; padding:var(--xs); display:flex; flex-direction:column; gap:2px; flex:1 1 0; min-height:120px; overflow:auto;
+  border:var(--bw) solid color-mix(in srgb, var(--border) 60%, transparent); border-radius:var(--r-control); }
+.liblist:focus-visible { outline-offset:0; }
+.liblist [role=option] { flex:none; display:flex; flex-direction:column; gap:0; padding:var(--xs) var(--s); border-radius:var(--r-small); cursor:pointer; min-height:var(--h-default); }
+.liblist [role=option]:hover { background:var(--surface_raised); }
+.liblist [role=option][aria-selected="true"] { background:var(--selection); color:var(--on_accent); }
+.liblist .l1 { display:flex; align-items:center; gap:var(--s); flex-wrap:wrap; font-weight:600; }
+.liblist .l2 { font-size:var(--caption); color:var(--text_muted); }
+.liblist [aria-selected="true"] .l2 { color:var(--on_accent); }
+.libprev { border:var(--bw) solid color-mix(in srgb, var(--border) 60%, transparent); border-radius:var(--r-control); padding:var(--m); display:flex; flex-direction:column; gap:var(--s); }
+.libprev .sech { margin:0; }
+.libprev .pvrow { display:flex; flex-wrap:wrap; gap:var(--m); align-items:flex-start; }
+.libprev .pvcol { display:flex; flex-direction:column; gap:var(--s); flex:1 1 140px; min-width:0; }
+.libprev svg.pv { width:120px; height:auto; aspect-ratio:160 / 150; flex:none; background:var(--background); border:var(--bw) solid var(--border); border-radius:var(--r-control); }
+.pv .bone { stroke:var(--text_muted); stroke-width:4; stroke-linecap:round; }
+.pv .head { fill:var(--surface_raised); stroke:var(--text_muted); stroke-width:2; }
+.pv .pvfloor { stroke:var(--border); stroke-width:1; }
+.libfacts { font-size:var(--body); gap:var(--xs) var(--m); }
+.figs { position:absolute; top:var(--s); right:var(--s); z-index:5; max-width:calc(50% - 16px); }
+.figs .btn { width:100%; }
+.figs .btn .lbl { overflow:hidden; text-overflow:ellipsis; }
+.figs .btn svg { margin-left:auto; }
+.fignum { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; flex:none; border-radius:var(--r-small);
+  border:var(--bw) solid var(--border); background:var(--surface_raised); color:var(--text); font-size:var(--caption); font-weight:700; }
+.figs [aria-checked="true"] .fignum, .figrow.on .fignum { background:var(--selection); border-color:var(--selection); color:var(--on_accent); }
+.view .other { cursor:pointer; }
+.view .other .bone { stroke:var(--text_disabled); stroke-width:5; }
+.view .other .head { fill:var(--surface); stroke:var(--text_disabled); }
+.view .other:hover .bone { stroke:var(--text_muted); }
+.view .figtag { cursor:pointer; }
+.view .figtag rect { fill:var(--surface); stroke:var(--border); stroke-width:1; }
+.view .figtag text { fill:var(--text_muted); font-size:12px; }
+.view .figtag.on rect { fill:var(--selection); stroke:var(--selection); }
+.view .figtag.on text { fill:var(--on_accent); font-weight:700; }
+.view .figtag .tk { fill:none; stroke:var(--on_accent); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.figrow { grid-column:1 / 3; display:flex; align-items:center; gap:var(--s); min-height:var(--h-default); padding:var(--xs) var(--s); margin-top:var(--xs);
+  border-top:var(--bw) solid var(--border); font-weight:600; }
+.figrow .fn { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.tname.dim { color:var(--text_muted); background:transparent; border-left-color:color-mix(in srgb, var(--area) 45%, transparent); }
+.trow.dim { background:transparent; }
+.key.dim { background:var(--text_disabled); cursor:default; width:10px; height:10px; margin:-5px 0 0 -5px; }
+body:not(.expert) .figx, body:not(.expert) .figs { display:none !important; }
+body:not(.expert) .figctl { visibility:hidden; }
+
 /* ---- Status line ---- */
 .status { grid-area:status; display:flex; align-items:center; gap:var(--l); padding:0 var(--m); min-height:var(--h-default);
   background:var(--surface); border-top:var(--bw) solid var(--border); }
@@ -521,6 +577,7 @@ body.charter #legend { display:flex; }
         <button role="menuitem" data-cmd="open"><svg class="i" data-i="folder-open"></svg><span class="grow">Open the dance example</span><kbd>Ctrl+O</kbd></button>
         <button role="menuitem" data-cmd="save"><svg class="i" data-i="save"></svg><span class="grow">Save</span><kbd>Ctrl+S</kbd></button>
         <button role="menuitem" data-cmd="export"><svg class="i" data-i="upload"></svg><span class="grow">Export for Second Life...</span><kbd>Ctrl+Shift+E</kbd></button>
+        <button role="menuitem" class="figx" data-cmd="addfig" data-p="P5"><svg class="i" data-i="user-plus"></svg><span class="grow">Add a second figure...</span></button>
         <hr><button role="menuitem" data-cmd="close"><svg class="i" data-i="x"></svg><span class="grow">Close animation</span><kbd>Ctrl+W</kbd></button>
       </div></li>
     <li role="none"><button class="mtitle" role="menuitem" aria-haspopup="true" aria-expanded="false" data-menu="edit">Edit</button>
@@ -539,6 +596,7 @@ body.charter #legend { display:flex; }
         <button role="menuitem" data-cmd="home"><svg class="i" data-i="house"></svg><span class="grow">Home view</span><kbd>0</kbd></button>
         <hr><div class="mh" role="presentation">Panels</div>
         <button role="menuitemcheckbox" data-cmd="labtoggle" aria-checked="false"><span class="chk"></span><span class="grow">Script Lab</span><kbd>Ctrl+Shift+L</kbd></button>
+        <button role="menuitemcheckbox" data-cmd="libtoggle" aria-checked="false"><span class="chk"></span><span class="grow">Library</span><kbd>Ctrl+Shift+B</kbd></button>
         <button role="menuitem" data-cmd="hidepanels"><svg class="i" data-i="eye-off"></svg><span class="grow">Hide panels</span><kbd>Tab</kbd></button>
         <button role="menuitem" data-cmd="resetlayout"><svg class="i" data-i="layout-template"></svg><span class="grow">Reset layout</span></button>
         <button role="menuitem" data-cmd="nextregion"><span class="chk"></span><span class="grow">Next area</span><kbd>F6</kbd></button>
@@ -569,6 +627,7 @@ body.charter #legend { display:flex; }
     <button class="btn" data-cmd="export" data-name="Export for Second Life" data-key="Ctrl+Shift+E"><svg class="i" data-i="upload"></svg>Export</button>
     <span class="divider"></span>
     <button class="btn" id="labBtn" data-cmd="labtoggle" data-name="Script Lab: test RLV and LSL scripts" data-key="Ctrl+Shift+L" aria-pressed="false"><svg class="i" data-i="flask-conical"></svg>Script Lab</button>
+    <button class="btn" id="libBtn" data-cmd="libtoggle" data-name="Library: ready-made moves to start from" data-key="Ctrl+Shift+B" aria-pressed="false" data-p="P3 P4"><svg class="i" data-i="library-big"></svg>Library</button>
     <button class="btn" id="setupBtn" data-cmd="setup" data-name="Setup" data-tipline="Beginner or experienced, mouse and keys habits, theme, text size and hints." data-p="P4 P11"><svg class="i" data-i="settings"></svg>Setup</button>
     <button class="btn icon" id="themeBtn" data-cmd="theme" data-name="Switch theme" data-key="T" data-p="P7 P9"><svg class="i" data-i="sun"></svg></button>
   </div>
@@ -639,6 +698,7 @@ body.charter #legend { display:flex; }
       </div>
     </div>
   </div>
+  <div class="vtools labels figs" id="figs" role="radiogroup" aria-labelledby="figsL" hidden data-p="P3 P5 P8 P10"></div>
   <div class="hintbar" id="hintbar" data-p="P4"></div>
   <div class="empty" id="viewEmpty" hidden data-p="P4 P6">
     <span class="bigicon"><svg class="i i24" data-i="sparkles"></svg></span>
@@ -655,6 +715,7 @@ body.charter #legend { display:flex; }
     <button class="tab" role="tab" data-dtab="joints" id="dt-joints"><svg class="i" data-i="user"></svg>Joints</button>
     <button class="tab" role="tab" data-dtab="selected" id="dt-selected"><svg class="i" data-i="rotate-3d"></svg>Selected joint</button>
     <button class="tab" role="tab" data-dtab="scriptlab" id="dt-scriptlab"><svg class="i" data-i="flask-conical"></svg>Script Lab</button>
+    <button class="tab" role="tab" data-dtab="library" id="dt-library"><svg class="i" data-i="library-big"></svg>Library</button>
   </div>
   <aside class="panel" id="selected" aria-labelledby="sh" data-region data-panel="selected">
     <div class="ph"><span class="phicon"><svg class="i i20" data-i="rotate-3d"></svg></span><h2 id="sh">Selected joint</h2><span class="floattag">Floating</span>
@@ -668,6 +729,13 @@ body.charter #legend { display:flex; }
       <button class="btn compact icon ghost" data-cmd="float" data-panel="scriptlab" data-name="Pop out: float this panel as its own window"><svg class="i" data-i="square-arrow-out-up-right"></svg></button>
       <button class="btn compact icon ghost" data-cmd="labtoggle" data-name="Close Script Lab" data-key="Ctrl+Shift+L" data-tipline="View > Script Lab opens it again."><svg class="i" data-i="x"></svg></button></span></div>
     <div class="body" id="labBody" data-p="P3 P4 P5 P6 P10"></div>
+  </section>
+  <section class="panel lib" id="library" aria-labelledby="lbh" data-region data-panel="library" hidden>
+    <div class="ph"><span class="phicon"><svg class="i i20" data-i="library-big"></svg></span><h2 id="lbh">Library</h2><span class="floattag">Floating</span>
+      <span class="tools"><button class="btn compact icon ghost grip" data-grip="library" data-name="Move or resize this window" data-key="Arrow keys move, Shift+arrows resize"><svg class="i" data-i="grip-vertical"></svg></button>
+      <button class="btn compact icon ghost" data-cmd="float" data-panel="library" data-name="Pop out: float this panel as its own window"><svg class="i" data-i="square-arrow-out-up-right"></svg></button>
+      <button class="btn compact icon ghost" data-cmd="libtoggle" data-name="Close the library" data-key="Ctrl+Shift+B" data-tipline="View > Library opens it again."><svg class="i" data-i="x"></svg></button></span></div>
+    <div class="body" id="libBody" data-p="P3 P4 P6 P8"></div>
   </section>
 </div>
 
@@ -749,6 +817,16 @@ body.charter #legend { display:flex; }
   <div class="actions"><button class="btn" data-start="skip">Skip</button></div>
 </div></div>
 
+<div class="scrim" id="dlgAddFig"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="afT" data-p="P4 P5">
+  <h3 id="afT"><svg class="i i24" data-i="user-plus"></svg>Add a second figure</h3>
+  <p style="margin:0">The second figure plays next to the first, in the same scene.</p>
+  <div class="choices">
+    <button class="btn choice main" data-cmd="figfromlib"><span>From the library</span><small>Pick a ready-made move, then press Add as a second figure.</small></button>
+    <button class="btn choice" data-cmd="figfromfile"><span>From a file...</span><small>A .dingle, .anim, BVH or glTF file.</small></button>
+  </div>
+  <div class="actions"><button class="btn" data-cmd="dlgclose">Cancel</button></div>
+</div></div>
+
 <div class="scrim" id="dlgSetup"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="suT" data-p="P4 P7 P9 P11 P12">
   <h3 id="suT"><svg class="i i24" data-i="settings"></svg>Setup</h3>
   <p class="muted" style="margin:0">Change these any time. PinglyMotion remembers them. Nothing here moves the panels.</p>
@@ -801,6 +879,14 @@ body.charter #legend { display:flex; }
 <script>
 "use strict";
 const ICONS = {"play":"<path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\"/>","square":"<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/>","rotate-ccw":"<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/>","step-back":"<path d=\"M13.971 4.285A2 2 0 0 1 17 6v12a2 2 0 0 1-3.029 1.715l-9.997-5.998a2 2 0 0 1-.003-3.432z\"/><path d=\"M21 20V4\"/>","step-forward":"<path d=\"M10.029 4.285A2 2 0 0 0 7 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z\"/><path d=\"M3 4v16\"/>","repeat":"<path d=\"m17 2 4 4-4 4\"/><path d=\"M3 11v-1a4 4 0 0 1 4-4h14\"/><path d=\"m7 22-4-4 4-4\"/><path d=\"M21 13v1a4 4 0 0 1-4 4H3\"/>","sun":"<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.93 4.93 1.41 1.41\"/><path d=\"m17.66 17.66 1.41 1.41\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.34 17.66-1.41 1.41\"/><path d=\"m19.07 4.93-1.41 1.41\"/>","moon":"<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"/>","folder-open":"<path d=\"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2\"/>","save":"<path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\"/><path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\"/><path d=\"M7 3v4a1 1 0 0 0 1 1h7\"/>","undo-2":"<path d=\"M9 14 4 9l5-5\"/><path d=\"M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11\"/>","redo-2":"<path d=\"m15 14 5-5-5-5\"/><path d=\"M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13\"/>","upload":"<path d=\"M12 3v12\"/><path d=\"m17 8-5-5-5 5\"/><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/>","search":"<path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/>","diamond":"<path d=\"M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z\"/>","diamond-plus":"<path d=\"M12 8v8\"/><path d=\"M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.71a2.41 2.41 0 0 0-3.41 0z\"/><path d=\"M8 12h8\"/>","x":"<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>","info":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/>","lightbulb":"<path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"/><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/>","keyboard":"<path d=\"M10 8h.01\"/><path d=\"M12 12h.01\"/><path d=\"M14 8h.01\"/><path d=\"M16 12h.01\"/><path d=\"M18 8h.01\"/><path d=\"M6 8h.01\"/><path d=\"M7 16h10\"/><path d=\"M8 12h.01\"/><rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/>","video":"<path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\"/><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/>","settings":"<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/> <circle cx=\"12\" cy=\"12\" r=\"3\"/>","circle-help":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M9 9.5a3 2.5 0 016 0c0 2-2 2-3 3.5\"/><path d=\"M12 17h.01\"/>","eye":"<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>","eye-off":"<path d=\"M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49\"/><path d=\"M14.084 14.158a3 3 0 0 1-4.242-4.242\"/><path d=\"M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143\"/><path d=\"m2 2 20 20\"/>","lock":"<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>","rotate-3d":"<path d=\"M16.466 7.5C15.643 4.237 13.952 2 12 2 9.239 2 7 6.477 7 12s2.239 10 5 10c.342 0 .677-.069 1-.2\"/> <path d=\"m15.194 13.707 3.814 1.86-1.86 3.814\"/> <path d=\"M19 15.57c-1.804.885-4.274 1.43-7 1.43-5.523 0-10-2.239-10-5s4.477-5 10-5c4.838 0 8.873 1.718 9.8 4\"/>","move-3d":"<path d=\"M5 3v16h16\"/><path d=\"m5 19 6-6\"/><path d=\"m2 6 3-3 3 3\"/><path d=\"m18 16 3 3-3 3\"/>","flip-horizontal-2":"<path d=\"M10 12H8\"/><path d=\"M16 12h-2\"/><path d=\"M22 12h-2\"/><path d=\"M4 12H2\"/><path d=\"M7.298 20.288A1 1 0 0 0 8 22h8a1 1 0 0 0 .703-1.712l-3.991-3.99a1 1 0 0 0-1.424-.001z\"/><path d=\"M7.298 3.712A1 1 0 0 1 8 2h8a1 1 0 0 1 .703 1.712l-3.991 3.99a1 1 0 0 1-1.424.001z\"/>","user":"<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/>","hand":"<path d=\"M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2\"/> <path d=\"M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2\"/> <path d=\"M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8\"/> <path d=\"M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15\"/>","smile":"<path d=\"M15 10V9\"/><path d=\"M16.472 15a6 6 0 01-8.943 0\"/><path d=\"M9 10V9\"/><circle cx=\"12\" cy=\"12\" r=\"10\"/>","shapes":"<path d=\"M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"3.5\"/>","bot":"<path d=\"M12 8V4H8\"/><rect width=\"16\" height=\"12\" x=\"4\" y=\"8\" rx=\"2\"/><path d=\"M2 14h2\"/><path d=\"M20 14h2\"/><path d=\"M15 13v2\"/><path d=\"M9 13v2\"/>","link":"<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/>","file-plus":"<path d=\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\"/><path d=\"M14 2v5a1 1 0 0 0 1 1h5\"/><path d=\"M9 15h6\"/><path d=\"M12 18v-6\"/>","circle-alert":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/>","triangle-alert":"<path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/>","check":"<path d=\"M20 6 9 17l-5-5\"/>","chevron-down":"<path d=\"m6 9 6 6 6-6\"/>","sliders-horizontal":"<path d=\"M10 5H3\"/><path d=\"M12 19H3\"/><path d=\"M14 3v4\"/><path d=\"M16 17v4\"/><path d=\"M21 12h-9\"/><path d=\"M21 19h-5\"/><path d=\"M21 5h-7\"/><path d=\"M8 10v4\"/><path d=\"M8 12H3\"/>","footprints":"<path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"/><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"/><path d=\"M16 17h4\"/><path d=\"M4 13h4\"/>","list-checks":"<path d=\"M13 5h8\"/><path d=\"M13 12h8\"/><path d=\"M13 19h8\"/><path d=\"m3 17 2 2 4-4\"/><path d=\"m3 7 2 2 4-4\"/>","book-open":"<path d=\"M12 5v16\"/><path d=\"M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z\"/>","flask-conical":"<path d=\"M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2\"/> <path d=\"M8.5 2h7\"/> <path d=\"M7 16h10\"/>","square-arrow-out-up-right":"<path d=\"M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6\"/> <path d=\"m21 3-9 9\"/> <path d=\"M15 3h6v6\"/>","square-arrow-down-left":"<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/> <path d=\"m16 8-8 8\"/> <path d=\"M16 16H8V8\"/>","mouse-pointer-2":"<path d=\"M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z\"/>","orbit":"<circle cx=\"12\" cy=\"12\" r=\"3\"/> <circle cx=\"19\" cy=\"5\" r=\"2\"/> <circle cx=\"5\" cy=\"19\" r=\"2\"/> <path d=\"M10.4 21.9a10 10 0 0 0 9.941-15.416\"/> <path d=\"M13.5 2.1a10 10 0 0 0-9.841 15.416\"/>","zoom-in":"<circle cx=\"11\" cy=\"11\" r=\"8\"/> <line x1=\"21\" x2=\"16.65\" y1=\"21\" y2=\"16.65\"/> <line x1=\"11\" x2=\"11\" y1=\"8\" y2=\"14\"/> <line x1=\"8\" x2=\"14\" y1=\"11\" y2=\"11\"/>","scan":"<path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/> <path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/> <path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/> <path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/>","maximize":"<path d=\"M8 3H5a2 2 0 0 0-2 2v3\"/> <path d=\"M21 8V5a2 2 0 0 0-2-2h-3\"/> <path d=\"M3 16v3a2 2 0 0 0 2 2h3\"/> <path d=\"M16 21h3a2 2 0 0 0 2-2v-3\"/>","house":"<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"/> <path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/>","grid-3x3":"<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/> <path d=\"M3 9h18\"/> <path d=\"M3 15h18\"/> <path d=\"M9 3v18\"/> <path d=\"M15 3v18\"/>","layout-template":"<rect width=\"18\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"/> <rect width=\"9\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"/> <rect width=\"5\" height=\"7\" x=\"16\" y=\"14\" rx=\"1\"/>","chevrons-left":"<path d=\"m11 17-5-5 5-5\"/> <path d=\"m18 17-5-5 5-5\"/>","chevrons-right":"<path d=\"m6 17 5-5-5-5\"/> <path d=\"m13 17 5-5-5-5\"/>","ban":"<circle cx=\"12\" cy=\"12\" r=\"10\"/> <path d=\"m4.9 4.9 14.2 14.2\"/>","circle-check":"<circle cx=\"12\" cy=\"12\" r=\"10\"/> <path d=\"m9 12 2 2 4-4\"/>","terminal":"<polyline points=\"4 17 10 11 4 5\"/> <line x1=\"12\" x2=\"20\" y1=\"19\" y2=\"19\"/>","file-code":"<path d=\"M10 12.5 8 15l2 2.5\"/> <path d=\"m14 12.5 2 2.5-2 2.5\"/> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\"/> <path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z\"/>","message-square":"<path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/>","box":"<path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\"/> <path d=\"m3.3 7 8.7 5 8.7-5\"/> <path d=\"M12 22V12\"/>","chevron-right":"<path d=\"m9 18 6-6-6-6\"/>","grip-vertical":"<circle cx=\"9\" cy=\"12\" r=\"1\"/> <circle cx=\"9\" cy=\"5\" r=\"1\"/> <circle cx=\"9\" cy=\"19\" r=\"1\"/> <circle cx=\"15\" cy=\"12\" r=\"1\"/> <circle cx=\"15\" cy=\"5\" r=\"1\"/> <circle cx=\"15\" cy=\"19\" r=\"1\"/>","move":"<path d=\"M12 2v20\"/> <path d=\"m15 19-3 3-3-3\"/> <path d=\"m19 9 3 3-3 3\"/> <path d=\"M2 12h20\"/> <path d=\"m5 9-3 3 3 3\"/> <path d=\"m9 5 3-3 3 3\"/>","refresh-cw":"<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\"/> <path d=\"M21 3v5h-5\"/> <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\"/> <path d=\"M8 16H3v5\"/>","notebook-text":"<path d=\"M2 6h4\"/> <path d=\"M2 10h4\"/> <path d=\"M2 14h4\"/> <path d=\"M2 18h4\"/> <rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\"/> <path d=\"M9.5 8h5\"/> <path d=\"M9.5 12H16\"/> <path d=\"M9.5 16H14\"/>","pointer":"<path d=\"M22 14a8 8 0 0 1-8 8\"/> <path d=\"M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2\"/> <path d=\"M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1\"/> <path d=\"M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10\"/> <path d=\"M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15\"/>","send":"<path d=\"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z\"/> <path d=\"m21.854 2.147-10.94 10.939\"/>","axis-3d":"<path d=\"M4 4v16h16\"/> <path d=\"m4 20 7-7\"/>","settings-2":"<path d=\"M20 7h-9\"/> <path d=\"M14 17H5\"/> <circle cx=\"17\" cy=\"17\" r=\"3\"/> <circle cx=\"7\" cy=\"7\" r=\"3\"/>","package":"<path d=\"M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z\"/> <path d=\"M12 22V12\"/> <path d=\"m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7\"/> <path d=\"m7.5 4.27 9 5.15\"/>","circle-x":"<circle cx=\"12\" cy=\"12\" r=\"10\"/> <path d=\"m15 9-6 6\"/> <path d=\"m9 9 6 6\"/>","list":"<path d=\"M3 12h.01\"/> <path d=\"M3 18h.01\"/> <path d=\"M3 6h.01\"/> <path d=\"M8 12h13\"/> <path d=\"M8 18h13\"/> <path d=\"M8 6h13\"/>","sparkles":"<path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"/> <path d=\"M20 3v4\"/> <path d=\"M22 5h-4\"/> <path d=\"M4 17v2\"/> <path d=\"M5 18H3\"/>","palette":"<circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"/> <circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"/> <circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/> <circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"/> <path d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z\"/>","panel-right-open":"<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/> <path d=\"M15 3v18\"/> <path d=\"m10 15-3-3 3-3\"/>","crosshair":"<circle cx=\"12\" cy=\"12\" r=\"10\"/> <line x1=\"22\" x2=\"18\" y1=\"12\" y2=\"12\"/> <line x1=\"6\" x2=\"2\" y1=\"12\" y2=\"12\"/> <line x1=\"12\" x2=\"12\" y1=\"6\" y2=\"2\"/> <line x1=\"12\" x2=\"12\" y1=\"22\" y2=\"18\"/>"};
+
+Object.assign(ICONS, { // Lucide icons for the library panel and the two figures (ISC licence, as above)
+  "library-big": "<rect width=\"8\" height=\"18\" x=\"3\" y=\"3\" rx=\"1\"/><path d=\"M7 3v18\"/><path d=\"M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z\"/>",
+  "import": "<path d=\"M12 3v12\"/><path d=\"m8 11 4 4 4-4\"/><path d=\"M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4\"/>",
+  "users": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/>",
+  "user-plus": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"/><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"/>",
+  "user-minus": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"/>"
+});
 
 // ---------- Small helpers ----------
 const $ = (s, r = document) => r.querySelector(s);
@@ -861,10 +947,10 @@ const PRINCIPLES = [
   ["P2", "Old stuff goes", "No old icons or styles anywhere on this screen: Lucide only."],
   ["P3", "Self-explaining", "Every control has a word or a tooltip with its name and shortcut. View tools show their names until you hide them."],
   ["P4", "Guided", "Welcome card, Setup button, one hint card at a time, hint bar, next-step line, notes, empty states. Help > Show hints turns all off; remembered."],
-  ["P5", "Only what is needed now", "More options folds away lock, move and turn-around; Expert mode adds Edit curve and Paste mirrored, and the joint grid in the Hands tab. Script Lab parts fold away."],
+  ["P5", "Only what is needed now", "More options folds away lock, move and turn-around; Expert mode adds Edit curve and Paste mirrored, the joint grid in the Hands tab and a second figure. Script Lab parts fold away."],
   ["P6", "Talks back", "Greyed-out controls keep focus and say why in the tooltip and the status line. Actions give feedback."],
   ["P7", "Dark and light", "Theme switch (T). Both themes use the same tokens, axis colours included."],
-  ["P8", "Full keyboard", "Menus, tabs, list, tiles, keys, splitters, floating panels (grip + arrows), view widget (arrows), hand presets (arrows, Enter) and the joint grid (arrows, type a number) work with the keyboard. Esc closes."],
+  ["P8", "Full keyboard", "Menus, tabs, list, tiles, keys, splitters, floating panels (grip + arrows), view widget (arrows), hand presets (arrows, Enter), the joint grid (arrows, type a number), the library list (arrows, Enter, Space) and the Figures box (arrows, Alt+1, Alt+2) work with the keyboard. Esc closes."],
   ["P9", "Contrast and scale", "Token colours meet WCAG AA. View > Text size goes from 100 to 200 percent and the panels rearrange instead of scrolling sideways."],
   ["P10", "No meaning by colour alone", "Axis colours always carry X, Y, Z letters; area colours have names; Stop has a square icon and a word; Allowed and Blocked are words."],
   ["P11", "Fast for experts", "Shortcuts everywhere; view tool keys V, O, M, Z, F; camera and keys like PinglyMotion, Maya, Blender or Second Life."],
@@ -980,12 +1066,13 @@ function trackVal(id, f) {
 function rotOf(id) { return override[id] ? override[id].slice() : trackVal(id, frame); }
 function isEdited(id) { return !!(doc && ((doc.tracks[id] && doc.tracks[id].length) || override[id] || (doc.start && doc.start[id]))); }
 
-function worldPositions() {
+function worldPositions() { return fk(rotOf, figX()); }
+function fk(rot, x0) { // joint positions for any pose; x0 moves the figure sideways (two figures stand side by side)
   const P = {}, R = {};
   for (const id of ORDER) {
     const j = J[id];
-    const local = rotM(...rotOf(id));
-    if (!j.parent) { P[id] = j.off.slice(); R[id] = local; continue; }
+    const local = rotM(...rot(id));
+    if (!j.parent) { P[id] = [j.off[0] + x0, j.off[1], j.off[2]]; R[id] = local; continue; }
     const pr = R[j.parent], pp = P[j.parent];
     const o = mv(pr, j.off);
     P[id] = [pp[0] + o[0], pp[1] + o[1], pp[2] + o[2]];
@@ -1078,6 +1165,7 @@ function renderScene() {
     }
     s += "</g>";
   }
+  s += otherFigures();
   const sc = vscale();
   const bones = BONES.map(([a, b]) => ({ a, b, z: (pr[a][2] + pr[b][2]) / 2 })).sort((m, n) => m.z - n.z);
   const pulledSet = jd && jd.active ? new Set(jd.driven.concat([jd.id])) : null;
@@ -1095,7 +1183,7 @@ function renderScene() {
     const area = AREAS.find(a => a.id === J[id].area);
     s += `<circle class="${cls.join(" ")}" style="--area:var(${area.c})" data-j="${id}" cx="${p[0]}" cy="${p[1]}" r="${Math.max(6, 0.022 * sc)}"><title>${esc(fullName(id))}</title></circle>`;
   }
-  svg.innerHTML = s;
+  svg.innerHTML = s + figTags();
 }
 function fullName(id) { const j = J[id]; if (!j) return ""; const n = j.name; if (!j.side || /^(Left|Right)/.test(n)) return n; return (j.side === "L" ? "Left " : "Right ") + n; }
 
@@ -1300,6 +1388,7 @@ function renderSelected() {
     <div class="jhead"><div class="jname">${esc(fullName(sel))}</div>
       <div class="row tight"><span class="chip" style="--c:var(${area.c})"><span class="sw"></span>${area.name}</span>
       <span class="chip">${icon("diamond")}${keys ? keys + (keys === 1 ? " key" : " keys") : "no keys yet"}</span>
+      ${figs.length > 1 ? `<span class="chip">${icon("users")}Figure ${figAct + 1}</span>` : ""}
       ${override[sel] ? `<span class="chip warn">${icon("triangle-alert")}Changed, not a key yet</span>` : ""}</div>
       <span class="cap">Second Life name: ${esc(j.sl)}</span></div>
     ${hintsOn ? `<p class="explain">${icon("info")}<span>Turn this joint with the three sliders, or drag the coloured rings around it in the 3D view. Then press Set key to save the pose.</span></p>` : ""}
@@ -1338,14 +1427,19 @@ function editedTracks() {
   if (sel && !ids.includes(sel)) ids.push(sel);
   return ids;
 }
-const fx = f => (doc.frames > 1 ? f / (doc.frames - 1) * 100 : 0);
+const fx = f => (tlFrames() > 1 ? f / (tlFrames() - 1) * 100 : 0);
 function renderTimeline() {
   const ta = $("#trackArea");
   if (!doc) { ta.innerHTML = '<div class="tempty"><p class="muted" style="margin:0">The timeline shows your keys over time. Open an animation first.</p></div>'; return; }
   const ids = editedTracks(); const anyKey = ids.some(id => doc.tracks[id] && doc.tracks[id].length);
   let h = '<div class="tracks" data-p="P10 P13"><div></div><div class="ruler" id="ruler" data-name="Time marker" data-tip="TIP-03" data-key="Left or right arrow">';
-  for (let f = 0; f < doc.frames; f += 5) h += `<span style="left:${fx(f)}%">${f}</span>`;
+  const rstep = tlFrames() > 150 ? 30 : tlFrames() > 75 ? 10 : 5; // longer clips from the library get fewer numbers
+  for (let f = 0; f < tlFrames(); f += rstep) h += `<span style="left:${fx(f)}%">${f}</span>`;
   h += `<div class="loopband" style="left:${fx(doc.loop[0])}%;width:${fx(doc.loop[1]) - fx(doc.loop[0])}%" title="Loop range"></div></div>`;
+  const two = figs.length > 1; // two figures: the other figure's rows come greyed under its own header row
+  for (let fi = 0; fi < (two ? 2 : 1); fi++) {
+  if (two) h += figHeader(fi);
+  if (two && fi !== figAct) { h += dimRows(fi); continue; }
   for (const id of ids) {
     const j = J[id], area = AREAS.find(a => a.id === j.area);
     h += `<div class="tname${id === sel ? " sel" : ""}" style="--area:var(${area.c})" data-j="${id}">${esc(fullName(id))}<span class="an">${area.name}</span></div><div class="trow${id === sel ? " sel" : ""}" style="--area:var(${area.c})" data-row="${id}">`;
@@ -1354,6 +1448,7 @@ function renderTimeline() {
       h += `<button class="key" style="--area:var(${area.c});left:${fx(k.f)}%" role="option" aria-selected="${isSel}" tabindex="${isSel ? 0 : -1}" data-key-j="${id}" data-key-f="${k.f}" data-name="Key at frame ${k.f}: ${esc(fullName(id))}" data-tipline="Easing choice into this key: ${EASES.find(e => e.id === k.e).name}. Arrow keys move between keys."></button>`;
     }
     h += "</div>";
+  }
   }
   h += `<div class="marker" id="marker" style="left:calc(180px + 12px + (100% - 204px) * ${fx(frame) / 100})"></div></div>`;
   if (!anyKey) h += `<div class="tempty" data-p="P4"><h3>No keys yet</h3><p class="muted" style="margin:0">${TXT["NEXT-04"]}</p><button class="btn main" data-cmd="setkey">${icon("diamond-plus")}Set the first key</button></div>`;
@@ -1529,6 +1624,366 @@ function renderLab() {
   b.innerHTML = h; fillIcons(b); syncSwitches(b);
 }
 
+// ---------- Library panel (roadmap item 6, issue 19: drawn in the mockup, not built yet) ----------
+// The 106 clips of library/index.json, copied from it on 23 Nov 2026: id, name, description, tags, source, frames, seconds, file.
+// All are 30 frames a second, 19 joints, on the Second Life skeleton (sl-classic).
+const LIB = [
+  ["cmu-07-04", "Slow walk", "A slow, relaxed walk forward.", ["walk", "slow", "calm"], "cmu", 114, 3.77, "cmu_07_04.bvh"],
+  ["cmu-07-12", "Brisk walk", "A quick, purposeful walk forward.", ["walk", "fast"], "cmu", 67, 2.2, "cmu_07_12.bvh"],
+  ["cmu-37-01", "Slow walk, long", "A slow walk that goes on for a few steps.", ["walk", "slow"], "cmu", 129, 4.27, "cmu_37_01.bvh"],
+  ["cmu-16-11", "Walk and veer left", "A walk that curves to the left.", ["walk", "turn"], "cmu", 135, 4.47, "cmu_16_11.bvh"],
+  ["cmu-16-30", "Walk, turn right", "A walk with a 90 degree turn to the right.", ["walk", "turn"], "cmu", 68, 2.23, "cmu_16_30.bvh"],
+  ["cmu-111-01", "Walk backwards", "Walks backwards.", ["walk", "backwards"], "cmu", 251, 8.33, "cmu_111_01.bvh"],
+  ["cmu-02-03", "Jog", "A short jog.", ["run"], "cmu", 45, 1.47, "cmu_02_03.bvh"],
+  ["cmu-16-08", "Jog and stop", "A jog that ends in a sudden stop.", ["run", "transition"], "cmu", 61, 2.0, "cmu_16_08.bvh"],
+  ["cmu-75-01", "Run and jump", "A run that ends in a jump.", ["run", "jump"], "cmu", 96, 3.17, "cmu_75_01.bvh"],
+  ["cmu-16-05", "Forward jump", "A standing jump forward.", ["jump"], "cmu", 75, 2.47, "cmu_16_05.bvh"],
+  ["cmu-118-01", "Jumps", "A few jumps in place.", ["jump"], "cmu", 180, 5.97, "cmu_118_01.bvh"],
+  ["cmu-05-03", "Ballet, sideways steps", "Sideways arabesque, a turn step, folding arms.", ["dance", "calm"], "cmu", 110, 3.63, "cmu_05_03.bvh"],
+  ["cmu-05-06", "Ballet, pirouettes", "A cartwheel-like start, pirouettes and a jete.", ["dance"], "cmu", 223, 7.4, "cmu_05_06.bvh"],
+  ["cmu-05-12", "Ballet, arms high", "Arms held high, a pointed foot, upper body rotation.", ["dance", "calm"], "cmu", 340, 11.3, "cmu_05_12.bvh"],
+  ["cmu-60-01", "Salsa", "Salsa dancing, eight seconds.", ["dance", "music"], "cmu", 241, 8.0, "cmu_60_01.bvh"],
+  ["cmu-10-01", "Kick a ball", "Walks up and kicks a soccer ball.", ["sport"], "cmu", 202, 6.7, "cmu_10_01.bvh"],
+  ["cmu-13-09", "Drink soda", "Lifts a can and drinks from it.", ["drink", "stand"], "cmu", 277, 9.2, "cmu_13_09.bvh"],
+  ["cmu-14-37", "Drink soda, short", "A shorter version of drinking from a can.", ["drink", "stand"], "cmu", 130, 4.3, "cmu_14_37.bvh"],
+  ["cmu-79-01", "Chop wood", "Swings an axe to chop wood.", ["tool", "work"], "cmu", 148, 4.9, "cmu_79_01.bvh"],
+  ["cmu-80-01", "Shake hands", "Reaches out and shakes hands with someone.", ["gesture"], "cmu", 214, 7.1, "cmu_80_01.bvh"],
+  ["cmu-77-01", "Look around", "Stands and looks around.", ["stand", "idle"], "cmu", 274, 9.1, "cmu_77_01.bvh"],
+  ["cmu-13-04", "Sit on a stool, chin in hand", "Sits down on a stepstool and rests the chin in the hand.", ["sit", "calm"], "cmu", 227, 7.53, "cmu_13_04.bvh"],
+  ["cmu-14-30", "Sit on a stool, ankle on knee", "Sits on a stepstool with one ankle on the other knee.", ["sit", "calm"], "cmu", 242, 8.03, "cmu_14_30.bvh"],
+  ["cmu-13-14", "Laugh", "Standing, laughing.", ["emote", "happy"], "cmu", 241, 8.0, "cmu_13_14.bvh"],
+  ["cmu-13-17", "Boxing", "Boxing moves: jabs and footwork.", ["fight"], "cmu", 241, 8.0, "cmu_13_17.bvh"],
+  ["cmu-13-27", "Direct traffic", "Waves and points like a traffic guard.", ["gesture", "wave"], "cmu", 242, 8.03, "cmu_13_27.bvh"],
+  ["cmu-18-08", "Explain with gestures", "Talks and explains with hand gestures.", ["talk", "gesture"], "cmu", 301, 10.0, "cmu_18_08.bvh"],
+  ["cmu-18-10", "Angry gestures", "An argument with angry hand gestures.", ["talk", "gesture", "angry"], "cmu", 301, 10.0, "cmu_18_10.bvh"],
+  ["cmu-13-01", "Sit on a high stool and get up", "Sits down on a high stool and stands up again.", ["sit", "transition"], "cmu", 242, 8.03, "cmu_13_01.bvh"],
+  ["cmu-14-29", "Sit on a stepstool, swing legs", "Sits on a stepstool, swings the legs and stands up.", ["sit", "transition"], "cmu", 212, 7.03, "cmu_14_29.bvh"],
+  ["cmu-15-10", "Sit on a high stool, second take", "Sits on a high stool and stands up again.", ["sit", "transition"], "cmu", 212, 7.03, "cmu_15_10.bvh"],
+  ["cmu-14-24", "Direct traffic, wave and point", "Waves and points like a traffic guard.", ["gesture", "wave"], "cmu", 242, 8.03, "cmu_14_24.bvh"],
+  ["cmu-17-01", "Walk, angry", "A walk with anger and frustration.", ["walk", "angry"], "cmu", 182, 6.03, "cmu_17_01.bvh"],
+  ["cmu-17-03", "Walk, stealthy", "A stealthy walk.", ["walk", "slow"], "cmu", 182, 6.03, "cmu_17_03.bvh"],
+  ["cmu-17-05", "Walk, hobbling", "A hobbling walk.", ["walk", "sad"], "cmu", 182, 6.03, "cmu_17_05.bvh"],
+  ["cmu-17-06", "Walk, jaunty", "A jaunty, cheerful walk.", ["walk", "happy"], "cmu", 182, 6.03, "cmu_17_06.bvh"],
+  ["cmu-17-08", "Walk, heavy build", "The walk of a muscular, heavyset person.", ["walk"], "cmu", 182, 6.03, "cmu_17_08.bvh"],
+  ["cmu-20-06", "March", "Soldiers march.", ["walk", "loop"], "cmu", 74, 2.43, "cmu_20_06.bvh"],
+  ["cmu-20-08", "Zombie march", "A stiff zombie march.", ["walk", "slow"], "cmu", 55, 1.8, "cmu_20_08.bvh"],
+  ["cmu-20-11", "High five and walk", "Reaches for a high five and walks on.", ["gesture", "walk", "happy"], "cmu", 59, 1.93, "cmu_20_11.bvh"],
+  ["cmu-55-02", "Lambada", "Lambada dancing, eight seconds.", ["dance", "music"], "cmu", 241, 8.0, "cmu_55_02.bvh"],
+  ["cmu-18-15", "Chicken dance", "The chicken dance, eight seconds.", ["dance", "happy"], "cmu", 241, 8.0, "cmu_18_15.bvh"],
+  ["cmu-05-02", "Dance, expressive arms", "Modern dance with expressive arms and a pirouette.", ["dance"], "cmu", 241, 8.0, "cmu_05_02.bvh"],
+  ["cmu-49-09", "Dance, arms high", "Modern dance with arms held high and a side arabesque.", ["dance", "calm"], "cmu", 241, 8.0, "cmu_49_09.bvh"],
+  ["cmu-13-29", "Jumping jacks and twists", "Jumping jacks and side twists.", ["sport", "fast"], "cmu", 241, 8.0, "cmu_13_29.bvh"],
+  ["cmu-26-09", "Bend and pick up", "Bends down and picks something up.", ["work", "transition"], "cmu", 186, 6.17, "cmu_26_09.bvh"],
+  ["m2m-sitting-enter", "Sit down", "Lowers into a chair.", ["sit", "transition"], "mesh2motion", 51, 1.67, "m2m_sitting-enter.bvh"],
+  ["m2m-sitting-exit", "Stand up from chair", "Gets up from a chair.", ["sit", "transition"], "mesh2motion", 41, 1.33, "m2m_sitting-exit.bvh"],
+  ["m2m-sitting-talking", "Sit and talk", "Seated, talking with small gestures.", ["sit", "talk"], "mesh2motion", 111, 3.67, "m2m_sitting-talking.bvh"],
+  ["m2m-sitting-writing", "Sit and write", "Seated, writing.", ["sit", "work"], "mesh2motion", 121, 4.0, "m2m_sitting-writing.bvh"],
+  ["m2m-sit-ground-idle", "Sit on the ground", "Sits on the ground, idle.", ["sit", "idle", "calm"], "mesh2motion", 91, 3.0, "m2m_sit-ground-idle.bvh"],
+  ["m2m-sit-ground-crying", "Sit on the ground, crying", "Sits on the ground and cries.", ["sit", "sad", "emote"], "mesh2motion", 76, 2.5, "m2m_sit-ground-crying.bvh"],
+  ["m2m-crouch-idle", "Crouch", "Crouching, idle.", ["crouch", "idle"], "mesh2motion", 111, 3.67, "m2m_crouch-idle.bvh"],
+  ["m2m-kneel", "Kneel", "Kneels down.", ["kneel"], "mesh2motion", 90, 2.97, "m2m_kneel.bvh"],
+  ["m2m-idle-foldarms", "Stand, arms folded", "Standing with folded arms.", ["stand", "idle"], "mesh2motion", 76, 2.5, "m2m_idle-foldarms.bvh"],
+  ["m2m-idle-listening", "Stand and listen", "Standing, listening.", ["stand", "idle", "talk"], "mesh2motion", 51, 1.67, "m2m_idle-listening.bvh"],
+  ["m2m-idle-talking", "Stand and talk", "Standing, talking with gestures.", ["stand", "talk", "gesture"], "mesh2motion", 111, 3.67, "m2m_idle-talking.bvh"],
+  ["m2m-idle-subtle", "Stand, subtle idle", "A quiet standing idle.", ["stand", "idle", "calm"], "mesh2motion", 78, 2.57, "m2m_idle-subtle.bvh"],
+  ["m2m-head-nod", "Nod", "A head nod.", ["gesture", "emote"], "mesh2motion", 26, 0.83, "m2m_head-nod.bvh"],
+  ["m2m-clapping", "Clap", "Clapping hands.", ["gesture", "happy"], "mesh2motion", 46, 1.5, "m2m_clapping.bvh"],
+  ["m2m-victory", "Victory", "A victory pose and cheer.", ["emote", "happy"], "mesh2motion", 57, 1.87, "m2m_victory.bvh"],
+  ["m2m-reject", "Reject", "A dismissive, rejecting gesture.", ["gesture", "emote"], "mesh2motion", 113, 3.73, "m2m_reject.bvh"],
+  ["m2m-confused", "Confused", "Looks confused.", ["emote"], "mesh2motion", 87, 2.87, "m2m_confused.bvh"],
+  ["m2m-angry", "Angry", "An angry outburst.", ["emote", "angry"], "mesh2motion", 25, 0.8, "m2m_angry.bvh"],
+  ["m2m-meditate", "Meditate", "Meditating.", ["sit", "calm"], "mesh2motion", 44, 1.43, "m2m_meditate.bvh"],
+  ["m2m-pray", "Pray", "Praying.", ["kneel", "calm"], "mesh2motion", 121, 4.0, "m2m_pray.bvh"],
+  ["m2m-dance-arm-pump", "Dance, arm pump", "A dance with pumping arms.", ["dance", "happy"], "mesh2motion", 61, 2.0, "m2m_dance-arm-pump.bvh"],
+  ["m2m-dance-body-roll", "Dance, body roll", "A dance with a body roll.", ["dance"], "mesh2motion", 194, 6.43, "m2m_dance-body-roll.bvh"],
+  ["m2m-dance-charleston", "Dance, Charleston", "The Charleston.", ["dance"], "mesh2motion", 70, 2.3, "m2m_dance-charleston.bvh"],
+  ["m2m-dance-reach-hip", "Dance, reach and hip", "A dance reaching out, hand on hip.", ["dance"], "mesh2motion", 77, 2.53, "m2m_dance-reach-hip.bvh"],
+  ["m2m-walk-happy", "Walk, happy", "A cheerful walk, on the spot.", ["walk", "happy", "loop"], "mesh2motion", 33, 1.07, "m2m_walk-happy.bvh"],
+  ["m2m-walk-relaxed", "Walk, relaxed", "A relaxed walk, on the spot.", ["walk", "calm", "loop"], "mesh2motion", 43, 1.4, "m2m_walk-relaxed.bvh"],
+  ["m2m-walk-female", "Walk, female", "A walk with a female gait, on the spot.", ["walk", "loop"], "mesh2motion", 42, 1.37, "m2m_walk-female.bvh"],
+  ["m2m-sitting-idle", "Sit, idle", "Seated, idle.", ["sit", "idle", "calm"], "mesh2motion", 63, 2.07, "m2m_sitting-idle.bvh"],
+  ["m2m-greeting", "Greeting", "A greeting with a wave.", ["wave", "gesture", "happy"], "mesh2motion", 149, 4.93, "m2m_greeting.bvh"],
+  ["m2m-dance-simple", "Dance, simple", "A simple dance.", ["dance"], "mesh2motion", 38, 1.23, "m2m_dance-simple.bvh"],
+  ["m2m-dab", "Dab", "A dab move.", ["dance", "emote"], "mesh2motion", 59, 1.93, "m2m_dab.bvh"],
+  ["m2m-drunk-walk", "Walk, drunk", "A staggering walk.", ["walk"], "mesh2motion", 51, 1.67, "m2m_drunk-walk.bvh"],
+  ["m2m-walk", "Walk", "A plain walk, on the spot.", ["walk", "loop"], "mesh2motion", 51, 1.67, "m2m_walk.bvh"],
+  ["m2m-walk-backwards", "Walk backwards", "Walks backwards, on the spot.", ["walk", "backwards", "loop"], "mesh2motion", 31, 1.0, "m2m_walk-backwards.bvh"],
+  ["m2m-walk-cautious", "Walk, cautious", "A careful walk, on the spot.", ["walk", "slow", "loop"], "mesh2motion", 56, 1.83, "m2m_walk-cautious.bvh"],
+  ["m2m-walk-formal", "Walk, formal", "A formal, upright walk, on the spot.", ["walk", "calm", "loop"], "mesh2motion", 51, 1.67, "m2m_walk-formal.bvh"],
+  ["m2m-walk-injured", "Walk, injured", "A limping walk, on the spot.", ["walk", "sad", "slow", "loop"], "mesh2motion", 51, 1.67, "m2m_walk-injured.bvh"],
+  ["m2m-walk-carry", "Walk, carrying", "Walks carrying something, on the spot.", ["walk", "work", "loop"], "mesh2motion", 61, 2.0, "m2m_walk-carry.bvh"],
+  ["m2m-jog", "Jog", "A jog, on the spot.", ["run", "loop"], "mesh2motion", 37, 1.2, "m2m_jog.bvh"],
+  ["m2m-run-female", "Run, female", "A run with a female gait, on the spot.", ["run", "loop"], "mesh2motion", 27, 0.87, "m2m_run-female.bvh"],
+  ["m2m-sprint", "Sprint", "A fast sprint, on the spot.", ["run", "fast", "loop"], "mesh2motion", 26, 0.83, "m2m_sprint.bvh"],
+  ["m2m-idle-a", "Stand, idle", "A standing idle.", ["stand", "idle"], "mesh2motion", 94, 3.1, "m2m_idle-a.bvh"],
+  ["m2m-idle-hurt", "Stand, hurt", "A standing idle, as if hurt.", ["stand", "idle", "sad"], "mesh2motion", 51, 1.67, "m2m_idle-hurt.bvh"],
+  ["m2m-idle-talkingphone", "Stand, on the phone", "Standing and talking on a phone.", ["stand", "talk"], "mesh2motion", 88, 2.9, "m2m_idle-talkingphone.bvh"],
+  ["m2m-texting-walk", "Walk and text", "Walks while looking at a phone, on the spot.", ["walk", "loop"], "mesh2motion", 36, 1.17, "m2m_texting-walk.bvh"],
+  ["m2m-singing", "Sing", "Singing.", ["emote", "music", "happy"], "mesh2motion", 121, 4.0, "m2m_singing.bvh"],
+  ["m2m-sleeping", "Sleep", "Sleeping.", ["lie", "calm"], "mesh2motion", 50, 1.63, "m2m_sleeping.bvh"],
+  ["m2m-yes", "Say yes", "A nod for yes.", ["gesture", "emote"], "mesh2motion", 76, 2.5, "m2m_yes.bvh"],
+  ["m2m-tired-hunched", "Tired, hunched", "Standing tired and hunched over.", ["stand", "sad", "slow"], "mesh2motion", 31, 1.0, "m2m_tired-hunched.bvh"],
+  ["m2m-tired-kneeling", "Tired, kneeling", "Kneeling, tired.", ["kneel", "sad"], "mesh2motion", 25, 0.8, "m2m_tired-kneeling.bvh"],
+  ["m2m-jumping-jacks", "Jumping jacks", "Jumping jacks, on the spot.", ["sport", "loop"], "mesh2motion", 40, 1.3, "m2m_jumping-jacks.bvh"],
+  ["m2m-moonwalk", "Moonwalk", "A moonwalk.", ["dance", "backwards"], "mesh2motion", 31, 1.0, "m2m_moonwalk.bvh"],
+  ["m2m-drumming", "Drum", "Drumming.", ["music"], "mesh2motion", 122, 4.03, "m2m_drumming.bvh"],
+  ["m2m-guitar-playing", "Play guitar", "Playing a guitar.", ["music"], "mesh2motion", 121, 4.0, "m2m_guitar-playing.bvh"],
+  ["m2m-consume", "Eat or drink", "Brings something to the mouth to eat or drink.", ["drink"], "mesh2motion", 41, 1.33, "m2m_consume.bvh"],
+  ["m2m-pick-up", "Pick up", "Bends down and picks something up.", ["work"], "mesh2motion", 72, 2.37, "m2m_pick-up.bvh"],
+  ["m2m-open-door", "Open a door", "Opens a door.", ["work"], "mesh2motion", 138, 4.57, "m2m_open-door.bvh"],
+  ["m2m-knock", "Knock", "Knocks on a door.", ["gesture"], "mesh2motion", 88, 2.9, "m2m_knock.bvh"],
+  ["m2m-crawl", "Crawl", "Crawls on hands and knees.", ["crouch"], "mesh2motion", 52, 1.7, "m2m_crawl.bvh"],
+  ["m2m-crouch-walk", "Crouch walk", "Walks in a crouch.", ["crouch", "walk"], "mesh2motion", 76, 2.5, "m2m_crouch-walk.bvh"]
+];
+const LIB_CATS = [["all", "All"], ["walk", "Walk"], ["dance", "Dance"], ["sit", "Sit"], ["stand", "Stand"], ["gesture", "Gesture"], ["idle", "Idle"], ["wave", "Wave"]];
+const LIB_SOURCE = { cmu: ["CMU motion capture database", "No restrictions on use. No formal licence text."], mesh2motion: ["Mesh2Motion", "CC0 1.0: free to use for anything."] };
+const START_CLIPS = { stand: "m2m-idle-a", sit: "m2m-sitting-idle", wave: "m2m-dance-simple" }; // the welcome card's three start choices open these clips, as in the program
+let libUi = Object.assign({ open: false, q: "", cat: "all", sel: "m2m-idle-a" }, store.get("lib", {}));
+let libMissing = false, libOpenId = null, libPrev = null; // mockup only: no library folder; the clip that is open now; the running preview
+function saveLib() { store.set("lib", { open: libUi.open, q: libUi.q, cat: libUi.cat, sel: libUi.sel }); }
+const libClip = id => LIB.find(c => c[0] === id);
+const libWords = c => (c[0] + " " + c[1] + " " + c[2] + " " + c[3].join(" ")).toLowerCase().split(/[^a-z0-9]+/);
+function libHits() { // as find_reference: each word must begin a word in the id, name, description or tags
+  const ws = libUi.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return LIB.filter(c => (libUi.cat === "all" || c[3].includes(libUi.cat)) && ws.every(w => libWords(c).some(x => x.startsWith(w))));
+}
+function libKind(c) { for (const k of ["run", "walk", "jump", "dance", "sit", "kneel", "crouch", "wave", "drink", "talk", "gesture", "emote", "music", "work", "sport", "fight"]) if (c[3].includes(k)) return k; return "idle"; }
+function libPose(c, u) { // a stand-in move from the clip's tags (the mockup does not read the real clip); u goes from 0 to 1 over the clip
+  const k = libKind(c), per = { run: 0.7, walk: 1.1, jump: 1.6, dance: 1.0 }[k] || 2.4, w = 2 * Math.PI * Math.max(1, Math.round(c[6] / per)) * u;
+  const s = Math.sin(w), s1 = Math.sin(w + 1), a = Math.abs(s);
+  switch (k) {
+    case "walk": case "run": { const m = k === "run" ? 1.6 : 1; return { Lhip: [-25 * m * s, 0, 0], Rhip: [25 * m * s, 0, 0], Lknee: [Math.max(0, 45 * m * s1), 0, 0], Rknee: [Math.max(0, -45 * m * s1), 0, 0],
+      Lshoulder: [20 * m * s, 0, 8], Rshoulder: [-20 * m * s, 0, -8], torso: [k === "run" ? 12 : 3, 6 * s, 0] }; }
+    case "jump": return { Lhip: [-45 * (1 - a), 0, 0], Rhip: [-45 * (1 - a), 0, 0], Lknee: [80 * (1 - a), 0, 0], Rknee: [80 * (1 - a), 0, 0], Lshoulder: [-90 * a, 0, 10], Rshoulder: [-90 * a, 0, -10], torso: [25 * (1 - a), 0, 0] };
+    case "dance": return { Lshoulder: [0, 0, 70 + 45 * s], Rshoulder: [0, 0, -70 + 45 * s], Lelbow: [0, 0, 30 * s1], Relbow: [0, 0, 30 * s1], torso: [0, 15 * s, 8 * s], pelvis: [0, 0, 6 * s], Lknee: [20 * a, 0, 0], Rknee: [20 * (1 - a), 0, 0], head: [0, -12 * s, 0] };
+    case "sit": return { Lhip: [-90, 0, 0], Rhip: [-90, 0, 0], Lknee: [90, 0, 0], Rknee: [90, 0, 0], chest: [4 * s, 0, 0], head: [0, 15 * s, 0], Lshoulder: [-20, 0, 10], Rshoulder: [-20, 0, -10] };
+    case "kneel": return { Lhip: [-10, 0, 0], Rhip: [-10, 0, 0], Lknee: [100, 0, 0], Rknee: [100, 0, 0], chest: [10 + 4 * s, 0, 0], head: [10, 0, 0] };
+    case "crouch": return { Lhip: [-95, 0, 0], Rhip: [-95, 0, 0], Lknee: [120, 0, 0], Rknee: [120, 0, 0], torso: [35, 0, 0], head: [-20, 12 * s, 0], Lshoulder: [-40, 0, 10], Rshoulder: [-40, 0, -10] };
+    case "wave": return { Rshoulder: [0, 0, -110], Relbow: [0, 0, -45 + 35 * s], Rwrist: [0, 0, 15 * s1], head: [0, -10, 4] };
+    case "drink": return { Rshoulder: [-60, 0, -10], Relbow: [100 + 15 * a, 0, 0], head: [-10 * a, 0, 0] };
+    case "emote": return { head: [15 * s, 0, 0], chest: [6 * s, 0, 0], Lshoulder: [-15 * a, 0, 15], Rshoulder: [-15 * a, 0, -15] };
+    case "idle": return { chest: [0, 0, 2 * s], head: [0, 12 * s, 0], Lshoulder: [0, 0, 4 + 2 * s], Rshoulder: [0, 0, -4 + 2 * s] };
+    default: return { Rshoulder: [-35 - 10 * s, 0, -20], Lshoulder: [-30 + 10 * s1, 0, 20], Relbow: [60 + 15 * s, 0, 0], Lelbow: [55 + 15 * s1, 0, 0], head: [0, 10 * s, 0] }; // gestures, talk, music, work, sport
+  }
+}
+function libDoc(c) { // the stand-in clip as an animation: nine keys spread over the clip's real length
+  const n = c[5], tracks = {};
+  for (let i = 0; i <= 8; i++) { const f = Math.round(i * (n - 1) / 8), p = libPose(c, f / (n - 1));
+    for (const id of Object.keys(p)) (tracks[id] = tracks[id] || []).push({ f, v: p[id].slice(), e: "both" }); }
+  return { name: c[7], frames: n, loop: [0, n - 1], tracks, notes: false };
+}
+function previewSvg(c, u) {
+  const pose = libPose(c, u), { P } = fk(id => pose[id] || [0, 0, 0], 0), yaw = -35 * Math.PI / 180;
+  const pt = id => { const p = P[id]; return [80 + (p[0] * Math.cos(yaw) + p[2] * Math.sin(yaw)) * 72, 142 - p[1] * 72]; };
+  let s = `<line class="pvfloor" x1="20" y1="142" x2="140" y2="142"/>`;
+  for (const [a, b] of BONES) if (!/Index/.test(b)) { const p = pt(a), q = pt(b); s += `<line class="bone" x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}"/>`; }
+  const h = pt("head"); s += `<circle class="head" cx="${h[0].toFixed(1)}" cy="${(h[1] - 7).toFixed(1)}" r="8"/>`;
+  return s;
+}
+function libStopPreview() { if (libPrev) { cancelAnimationFrame(libPrev.raf); libPrev = null; } }
+function libTogglePreview() {
+  const c = libClip(libUi.sel); if (!c) return;
+  if (libPrev) { libStopPreview(); renderLibMain(); feedback("Preview stopped."); focusLib('[data-cmd="libpreview"]'); return; }
+  const t0 = performance.now();
+  const step = ts => { const svg = $("#libPv"); if (!svg || !libPrev) return; svg.innerHTML = previewSvg(c, ((ts - t0) / 1000 % c[6]) / c[6]); libPrev.raf = requestAnimationFrame(step); };
+  libPrev = { id: c[0], raf: requestAnimationFrame(step) }; renderLibMain(); focusLib('[data-cmd="libpreview"]');
+}
+function focusLib(sel_) { const el = $(sel_); if (el) el.focus(); }
+function renderLibrary() {
+  const b = $("#libBody"); if (!b || $("#library").hidden) return;
+  const keep = document.activeElement && b.contains(document.activeElement) ? document.activeElement : null;
+  const keepSel = keep ? (keep.id ? "#" + keep.id : keep.dataset.libcat ? `[data-libcat="${keep.dataset.libcat}"]` : keep.dataset.cmd ? `#libBody [data-cmd="${keep.dataset.cmd}"]` : null) : null;
+  let h = hintsOn && !libMissing ? `<p class="explain">${icon("info")}<span>Ready-made moves to start from. Pick one, then press Use this.</span></p>` : "";
+  if (libMissing) {
+    h += `<div class="emptycard" data-p="P4 P6"><h3>${icon("library-big", "i20")}No library found</h3><p>The library folder next to PinglyMotion is missing. Install PinglyMotion again to get it back.</p></div>`;
+  } else {
+    const count = id => (id === "all" ? LIB.length : LIB.filter(c => c[3].includes(id)).length);
+    h += `<label class="field" data-name="Search the library" data-tipline="Type words like walk, wave or sit."><svg class="i" data-i="search"></svg><span class="sr">Search the library</span><input id="libsearch" type="search" placeholder="Search the library" value="${esc(libUi.q)}"></label>
+      <div><div class="label" id="libCatL" style="margin-bottom:6px">Kind of move</div><div class="libcats" role="radiogroup" aria-labelledby="libCatL" id="libCats" data-p="P8 P10">${LIB_CATS.map(([id, name]) =>
+        `<button class="btn compact" role="radio" aria-checked="${id === libUi.cat}" tabindex="${id === libUi.cat ? 0 : -1}" data-libcat="${id}" data-name="${name}: ${count(id)} clips">${name}<span class="n">${count(id)}</span></button>`).join("")}</div></div>
+      <div id="libMain"></div>`;
+  }
+  h += `<div class="row"><button class="btn compact" data-cmd="libmissing" data-name="Mockup only: pretend the library folder is missing">${icon("triangle-alert")}${libMissing ? "Mockup: bring the library back" : "Mockup: no library folder"}</button></div>`;
+  b.innerHTML = h; if (!libMissing) renderLibMain(); fillIcons(b);
+  if (keepSel) { const n = $(keepSel); if (n) n.focus(); }
+}
+function renderLibMain() {
+  const m = $("#libMain"); if (!m) return;
+  const hits = libHits();
+  if (hits.length && !hits.some(c => c[0] === libUi.sel)) { libUi.sel = hits[0][0]; libStopPreview(); }
+  let h = `<div class="cap" aria-live="polite" id="libCount">${hits.length === LIB.length ? LIB.length + " clips" : hits.length + " of " + LIB.length + " clips"}</div>`;
+  if (!hits.length) {
+    h += `<div class="emptycard" data-p="P4"><h3>${icon("search", "i20")}No clip found</h3><p>Try another word, or show all clips.</p><button class="btn" data-cmd="libclear">${icon("library-big")}Show all clips</button></div>`;
+    m.innerHTML = h; fillIcons(m); return;
+  }
+  h += `<ul class="liblist" id="liblist" role="listbox" aria-label="Clips" tabindex="0" aria-activedescendant="lc-${libUi.sel}" data-p="P8">${hits.map(c =>
+    `<li role="option" id="lc-${c[0]}" data-clip="${c[0]}" aria-selected="${c[0] === libUi.sel}"><span class="l1">${esc(c[1])}${c[0] === libOpenId && doc ? `<span class="chip">${icon("check")}Open now</span>` : ""}</span><span class="l2">${c[6].toFixed(1)} s · ${esc(c[3].join(", "))}</span></li>`).join("")}</ul>`;
+  const c = libClip(libUi.sel), src = LIB_SOURCE[c[4]];
+  h += `<section class="libprev" aria-labelledby="lpT" data-p="P3 P5 P6">
+    <h3 class="sech" id="lpT">${esc(c[1])}</h3><p class="muted" style="margin:0">${esc(c[2])}</p>
+    <div class="pvrow"><svg class="pv" id="libPv" viewBox="0 0 160 150" role="img" aria-label="Preview of ${esc(c[1])}">${previewSvg(c, 0)}</svg><div class="pvcol">
+    <div class="row"><button class="btn compact" data-cmd="libpreview" data-name="${libPrev ? "Stop the preview" : "Play the preview"}" data-key="Space in the list">${icon(libPrev ? "square" : "play")}${libPrev ? "Stop preview" : "Play preview"}</button><span class="proposal" title="Mockup only">mockup: a stand-in move</span></div>
+    <div class="grid2 libfacts"><span class="muted">Length</span><span>${c[6].toFixed(1)} s, ${c[5]} frames</span>
+      <span class="muted">Skeleton</span><span>Second Life, 19 joints</span>
+      <span class="muted">From</span><span>${esc(src[0])}</span><span class="muted">Licence</span><span>${esc(src[1])}</span></div></div></div>
+    <div class="row"><button class="btn main" data-cmd="libuse" data-name="Use this" data-key="Enter in the list" data-tipline="Opens this move as your animation. Save it under your own name.">${icon("import")}Use this</button>
+      <button class="btn figx" data-cmd="libaddfig" data-name="Add as a second figure" data-tipline="Puts this move on a second figure in the same scene." data-p="P5">${icon("user-plus")}Add as a second figure</button></div>
+  </section>`;
+  m.innerHTML = h; fillIcons(m); updateStates();
+  const o = $("#lc-" + libUi.sel), l = $("#liblist"); // keep the picked clip in sight inside the list only (the panel itself does not scroll)
+  if (o && l) { if (o.offsetTop < l.scrollTop) l.scrollTop = o.offsetTop - 4; else if (o.offsetTop + o.offsetHeight > l.scrollTop + l.clientHeight) l.scrollTop = o.offsetTop + o.offsetHeight - l.clientHeight + 4; }
+}
+function libSelect(id, focusList) { if (id !== libUi.sel) libStopPreview(); libUi.sel = id; saveLib(); renderLibMain(); if (focusList) focusLib("#liblist"); }
+function libLoad(id) {
+  const c = libClip(id); stop(); pushUndoClear(); doc = libDoc(c); frame = 0; sel = null; selKey = null; override = {}; libOpenId = id;
+  applyPrefs(); renderAll(); showCard(); feedback(`Opened ${c[1]} from the library. Save it under your own name.`);
+}
+function libUse(id) {
+  const c = libClip(id); if (!c) return;
+  if (doc && undoStack.length) { openInfo(`Open ${c[1]}?`, "<p style='margin:0'>Your animation has changes that are not saved.</p>", [["Cancel", "dlgclose"], ["Open without saving", "libforce"], ["Save, then open", "libsaveopen", "main"]]); return; }
+  libLoad(id);
+}
+function libToggle(focus) {
+  libUi.open = !libUi.open; libStopPreview(); if (libUi.open && !layout.float.library) layout.dtab = "library"; saveLib(); saveLayout(); applyLayout(); renderAll(); setTimeout(renderScene, 0);
+  feedback(libUi.open ? "Library open. It shares the right side with Selected joint: switch with the tabs." : "Library closed. View > Library opens it again.");
+  showCard(); if (libUi.open && focus !== false) focusLib(libMissing ? '#libBody button' : "#libsearch");
+}
+
+// ---------- Two figures in one scene (Expert mode only: drawn in the mockup, not built yet) ----------
+// figs is empty for the normal scene with one figure. With two, figs[i] keeps each figure's animation; the globals
+// (doc, sel, override, the undo lists) always belong to the active figure, so the rest of the mockup works unchanged.
+let figs = [], figAct = 0, figCur = -1;
+const FIG_X = [-0.45, 0.45]; // where the two figures stand, in metres from the middle
+function figX() { return figs.length < 2 ? 0 : FIG_X[figCur >= 0 ? figCur : figAct]; }
+function figDoc(i) { return i === figAct ? doc : figs[i].doc; }
+function stashFig() { if (figs.length) Object.assign(figs[figAct], { doc, sel, selKey, override, undoStack, redoStack }); }
+function loadFig(i) { figAct = i; ({ doc, sel, selKey, override, undoStack, redoStack } = figs[i]); }
+function withFig(i, fn) { // run fn with figure i's animation in place (to draw the figure that is not active)
+  if (i === figAct) return fn();
+  const keep = { doc, override, figCur }; doc = figs[i].doc; override = figs[i].override || {}; figCur = i;
+  try { return fn(); } finally { doc = keep.doc; override = keep.override; figCur = keep.figCur; }
+}
+function setActiveFig(i) {
+  if (figs.length < 2 || !figs[i] || i === figAct || (jd && jd.active)) return;
+  if (!expert) { say("Switching figures is in Expert mode. View > Expert mode turns it on.", "reason"); return; }
+  stashFig(); loadFig(i); renderAll(); showCard();
+  feedback(`Figure ${i + 1} is active: ${doc.name}. Its joints and keys show now.`);
+}
+function addFigure(d) {
+  if (!doc || figs.length > 1) return;
+  figs = [{ doc, sel, selKey, override, undoStack, redoStack }, { doc: d, sel: null, selKey: null, override: {}, undoStack: [], redoStack: [] }];
+  figAct = 0; stashFig(); loadFig(1); cam.zoom = 0.85; cam.panX = 0; cam.panY = 0;
+  applyPrefs(); renderAll(); showCard(); feedback(`Added figure 2: ${d.name}. Click a figure to make it active.`);
+}
+function askRemoveFigure(i) {
+  if (figs.length < 2) return; stashFig();
+  if (figs[i].undoStack.length) { figRemoveAsk = i; openInfo(`Remove figure ${i + 1}?`, `<p style='margin:0'>${esc(figs[i].doc.name)} has changes that are not saved.</p>`, [["Cancel", "dlgclose"], ["Remove without saving", "figremoveforce", "danger"], ["Save, then remove", "figremovesave", "main"]]); return; }
+  removeFigure(i);
+}
+let figRemoveAsk = null;
+function removeFigure(i) {
+  stashFig(); figs.splice(i, 1); loadFig(0); figs = []; figAct = 0;
+  cam.zoom = 1; cam.panX = 0; cam.panY = 0; closeDialogs();
+  applyPrefs(); renderAll(); showCard();
+  feedback(`Figure ${i + 1} removed from the scene. Its file is not changed.` + (i === 0 ? " " + doc.name + " is figure 1 now." : ""));
+}
+function otherFigures() { // the figure that is not active: grey bones, no joint dots; a click makes it active
+  if (figs.length < 2) return "";
+  let s = "";
+  figs.forEach((f, i) => { if (i === figAct) return;
+    withFig(i, () => { const { P } = worldPositions(); const pr = {}; for (const id of ORDER) pr[id] = project(P[id]);
+      s += `<g class="other" data-fig="${i}" data-name="Figure ${i + 1}: ${esc(f.doc.name)}" data-tipline="${expert ? "Click to make this figure active." : "Switching figures is in Expert mode."}">`;
+      for (const [a, b] of BONES) s += `<line class="bone" x1="${pr[a][0]}" y1="${pr[a][1]}" x2="${pr[b][0]}" y2="${pr[b][1]}"/>`;
+      const hd = project([P.head[0], P.head[1] + 0.1, P.head[2]]); s += `<circle class="head" cx="${hd[0]}" cy="${hd[1]}" r="${0.11 * vscale()}"/></g>`; });
+  });
+  return s;
+}
+function figTags() { // a name tag over each head: number and file name; the active one filled, bold, with a tick (P10)
+  if (figs.length < 2) return "";
+  let s = ""; const tags = [], fb = $("#figs"), ob = fb && !fb.hidden && fb.offsetHeight ? [fb.offsetLeft, fb.offsetTop + fb.offsetHeight] : null;
+  figs.forEach((f, i) => withFig(i, () => { const { P } = worldPositions(); const p = project([P.head[0], P.head[1] + 0.3, P.head[2]]);
+    const on = i === figAct, txt = `${i + 1} · ${figDoc(i).name}`, w = txt.length * 6.6 + (on ? 34 : 16);
+    let x = p[0] - w / 2, y = p[1] - 12; if (ob && x + w > ob[0] - 4 && y < ob[1] + 4) y = ob[1] + 6; // never under the Figures box
+    tags.push({ i, on, txt, w, x, y }); }));
+  const [a, b] = tags; // two tags that would touch: the other figure's tag goes one row up
+  if (a.x < b.x + b.w + 4 && b.x < a.x + a.w + 4 && Math.abs(a.y - b.y) < 26) (a.on ? b : a).y = Math.min(a.y, b.y) - 26;
+  for (const t of tags) s += `<g class="figtag${t.on ? " on" : ""}" data-fig="${t.i}" transform="translate(${t.x},${t.y})"><rect width="${t.w}" height="22" rx="4"/>${t.on ? `<path class="tk" d="M10 11.5l3 3 6-6"/>` : ""}<text x="${t.on ? 26 : 8}" y="15">${esc(t.txt)}</text></g>`;
+  return s;
+}
+function renderFigs() {
+  const box = $("#figs"); if (!box) return;
+  box.hidden = figs.length < 2;
+  if (figs.length < 2) { box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="gl" id="figsL">Figures</div>` + figs.map((f, i) => { const on = i === figAct;
+    return `<button class="btn" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}" data-fig="${i}" data-name="Figure ${i + 1}: ${esc(figDoc(i).name)}" data-key="Alt+${i + 1}" data-tipline="${on ? "This figure is active. Its joints and keys show." : "Click to make this figure active."}"><span class="fignum">${i + 1}</span><span class="lbl">${esc(figDoc(i).name)}</span>${on ? icon("check") : ""}</button>`; }).join("");
+  $("#filename").innerHTML += ` <span class="cap">· figure ${figAct + 1} of 2</span>`;
+}
+function figHeader(i) {
+  const on = i === figAct, d = figDoc(i);
+  return `<div class="figrow${on ? " on" : ""}" data-p="P5 P10 P12"><span class="fignum">${i + 1}</span><span class="fn">${esc(d.name)}</span>${on ? `<span class="chip">${icon("check")}Active</span>` : `<button class="btn compact figctl" data-cmd="figactive" data-figi="${i}" data-name="Make figure ${i + 1} active" data-key="Alt+${i + 1}">Make active</button>`}
+    <span class="spacer"></span><button class="btn compact danger figctl" data-cmd="figremove" data-figi="${i}" data-name="Remove figure ${i + 1} from the scene" data-tipline="Its file is not changed.">${icon("user-minus")}Remove</button></div>`;
+}
+function dimRows(i) { // the other figure's changed joints, greyed: a click makes that figure active and picks the joint
+  const N = tlFrames(), fxN = f => (N > 1 ? f / (N - 1) * 100 : 0);
+  return withFig(i, () => ORDER.filter(id => doc.tracks[id] && doc.tracks[id].length).map(id => { const area = AREAS.find(a => a.id === J[id].area);
+    return `<div class="tname dim" style="--area:var(${area.c})" data-figj="${i}:${id}" data-name="${esc(fullName(id))}, figure ${i + 1}" data-tipline="Click to make figure ${i + 1} active and pick this joint.">${esc(fullName(id))}<span class="an">${area.name}</span></div><div class="trow dim" style="--area:var(${area.c})">` +
+      doc.tracks[id].map(k => `<span class="key dim" style="left:${fxN(k.f)}%"></span>`).join("") + "</div>"; }).join(""));
+}
+const tlFrames = () => Math.max(doc ? doc.frames : 0, ...figs.filter((f, i) => i !== figAct).map(f => f.doc.frames)); // the timeline is as long as the longest figure
+
+// Commands of the library and the figures (run() hands them here first)
+function runExtra(cmd, el) {
+  switch (cmd) {
+    case "libtoggle": libToggle(); return true;
+    case "libclear": libUi.q = ""; libUi.cat = "all"; saveLib(); renderLibrary(); focusLib("#libsearch"); feedback("Showing all " + LIB.length + " clips."); return true;
+    case "libmissing": libMissing = !libMissing; libStopPreview(); renderLibrary(); focusLib('[data-cmd="libmissing"]'); return true;
+    case "libpreview": libTogglePreview(); return true;
+    case "libuse": libUse(libUi.sel); return true;
+    case "libforce": closeDialogs(); libLoad(libUi.sel); return true;
+    case "libsaveopen": closeDialogs(); feedback("Saved " + doc.name + ". (Mockup: nothing is written.)"); libLoad(libUi.sel); return true;
+    case "libaddfig": { const c = libClip(libUi.sel); addFigure(libDoc(c)); return true; }
+    case "addfig": openDialog("#dlgAddFig"); return true;
+    case "figfromlib": closeDialogs(); if (!libUi.open) libToggle(false); else { layout.dtab = "library"; saveLayout(); applyLayout(); renderAll(); }
+      focusLib("#liblist"); feedback("Pick a move, then press Add as a second figure.", "hint"); return true;
+    case "figfromfile": closeDialogs(); { const d = waveDoc(); d.name = "wave copy.dingle"; addFigure(d); } return true;
+    case "figactive": setActiveFig(+el.dataset.figi); return true;
+    case "figremove": askRemoveFigure(+el.dataset.figi); return true;
+    case "figremoveforce": closeDialogs(); removeFigure(figRemoveAsk); return true;
+    case "figremovesave": closeDialogs(); feedback("Saved " + figs[figRemoveAsk].doc.name + ". (Mockup: nothing is written.)"); removeFigure(figRemoveAsk); return true;
+    case "close": if (figs.length > 1) { askRemoveFigure(figAct); return true; } return false;
+  }
+  return false;
+}
+// Library and figures: clicks, typing and keys (P8)
+document.addEventListener("click", e => {
+  const lc = e.target.closest("[data-clip]"); if (lc) { libSelect(lc.dataset.clip, true); return; }
+  const ct = e.target.closest("[data-libcat]"); if (ct) { libUi.cat = ct.dataset.libcat; saveLib(); libStopPreview(); renderLibrary(); focusLib(`[data-libcat="${libUi.cat}"]`); return; }
+  const fg = e.target.closest("#figs [data-fig], #view [data-fig]"); if (fg) { setActiveFig(+fg.dataset.fig); const n = $(`#figs [data-fig="${figAct}"]`); if (n && fg.closest("#figs")) n.focus(); return; }
+  const fj = e.target.closest("[data-figj]"); if (fj) { const [i, id] = fj.dataset.figj.split(":"); setActiveFig(+i); if (figAct === +i) selectJoint(id); }
+});
+document.addEventListener("input", e => { if (e.target.matches("#libsearch")) { libUi.q = e.target.value; saveLib(); renderLibMain(); } });
+document.addEventListener("keydown", e => {
+  const t = e.target, k = e.key;
+  if (t.matches && t.matches("#libsearch")) {
+    if (k === "Escape" && t.value) { e.preventDefault(); e.stopPropagation(); t.value = ""; libUi.q = ""; saveLib(); renderLibMain(); return; }
+    if (k === "ArrowDown" || k === "Enter") { const l = $("#liblist"); if (l) { e.preventDefault(); e.stopPropagation(); l.focus(); } return; }
+  }
+  if (t.matches && t.matches("#libCats [role=radio]") && /Arrow|Home|End/.test(k)) {
+    e.preventDefault(); e.stopPropagation(); const rs = $$("#libCats [role=radio]"), i = rs.indexOf(t);
+    const n = k === "Home" ? rs[0] : k === "End" ? rs[rs.length - 1] : rs[(i + (k === "ArrowRight" || k === "ArrowDown" ? 1 : rs.length - 1)) % rs.length]; n.click(); return;
+  }
+  if (t.matches && t.matches("#liblist")) {
+    const ids = libHits().map(c => c[0]), i = ids.indexOf(libUi.sel);
+    if (/^(ArrowDown|ArrowUp|Home|End|PageDown|PageUp)$/.test(k)) { e.preventDefault(); e.stopPropagation();
+      const n = k === "Home" ? 0 : k === "End" ? ids.length - 1 : Math.max(0, Math.min(ids.length - 1, i + ({ ArrowDown: 1, ArrowUp: -1, PageDown: 8, PageUp: -8 }[k]))); libSelect(ids[n], true); return; }
+    if (k === "Enter") { e.preventDefault(); e.stopPropagation(); clickCmd("libuse"); return; }
+    if (k === " ") { e.preventDefault(); e.stopPropagation(); libTogglePreview(); focusLib("#liblist"); return; }
+  }
+  if (t.matches && t.matches("#figs [role=radio]") && /Arrow/.test(k)) { e.preventDefault(); e.stopPropagation(); setActiveFig(1 - figAct); const n = $(`#figs [data-fig="${figAct}"]`); if (n) n.focus(); return; }
+  if (e.altKey && !e.ctrlKey && !e.metaKey && (k === "1" || k === "2") && figs.length > 1) { e.preventDefault(); e.stopPropagation(); setActiveFig(+k - 1); return; }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "B" || k === "b") && !$(".scrim.open")) { e.preventDefault(); e.stopPropagation(); run("libtoggle"); return; }
+}, true);
+
 // ---------- Disabled states with reasons (P6) ----------
 function setDis(el, why) { if (why) { el.setAttribute("aria-disabled", "true"); el.dataset.why = why; } else { el.removeAttribute("aria-disabled"); delete el.dataset.why; } }
 function updateStates() {
@@ -1548,6 +2003,9 @@ function updateStates() {
   $$('[data-cmd="curve"]').forEach(e => setDis(e, none || (easingTarget() ? null : "Select a key on the timeline first.")));
   $$('[data-cmd="export"]').forEach(e => { if (!none && !Object.keys(doc.tracks).length) setDis(e, "Nothing to export yet. Set a key first."); });
   $$('[data-cmd="float"]').forEach(e => setDis(e, layoutMode === "narrow" && !layout.float[e.dataset.panel] ? "The window is too small to float panels. Make it bigger or the text smaller." : null));
+  const figWhy = none || (figs.length > 1 ? "The scene has two figures. Remove one first." : null);
+  $$('[data-cmd="addfig"],[data-cmd="libaddfig"]').forEach(e => setDis(e, figWhy));
+  $$('[data-cmd="libuse"]').forEach(e => setDis(e, doc && libOpenId === libUi.sel ? "This move is open now." : null));
   $$(".menu [aria-disabled]").forEach(m => m.setAttribute("tabindex", "-1"));
 }
 
@@ -1557,7 +2015,7 @@ function renderAll() {
   $("#viewEmpty").hidden = !!doc;
   $("#filename").innerHTML = doc ? `<b>${esc(doc.name)}</b>${undoStack.length ? " ● unsaved changes" : ""}` : "No animation open";
   $("#frameLbl").textContent = doc ? `Frame ${String(frame).padStart(2, " ")} of ${doc.frames - 1} · ${(frame / FPS).toFixed(2)} s` : "";
-  renderScene(); renderJointList(); renderSelected(); renderTimeline(); renderTiles(); renderNote(); renderLab(); renderTools(); updateStates();
+  renderScene(); renderJointList(); renderSelected(); renderTimeline(); renderTiles(); renderNote(); renderLab(); renderLibrary(); renderFigs(); renderTools(); updateStates();
   $("#hintbar").hidden = !hintsOn || !doc;
   updateHintbar(); updateMsgDefault(); syncSwitches(document); fillIcons();
   if (document.body.classList.contains("charter")) drawCharter();
@@ -1674,21 +2132,22 @@ function applyLayout() {
   const jEl = $("#joints"), dock = $("#rightDock");
   if (layoutMode === "medium" && jEl.parentElement !== dock) dock.insertBefore(jEl, $("#selected"));
   if (layoutMode !== "medium" && jEl.parentElement === dock) $("#app").insertBefore(jEl, $("#splitL"));
-  for (const p of ["joints", "selected", "scriptlab", "timeline"]) {
+  for (const p of ["joints", "selected", "scriptlab", "library", "timeline"]) {
     const el = $("#" + p); const f = isFloat(p); el.classList.toggle("floating", f);
     if (f) { const g = layout.float[p]; el.style.left = g.x + "px"; el.style.top = g.y + "px"; el.style.width = g.w + "px"; el.style.height = g.h + "px"; }
     else { el.style.left = el.style.top = el.style.width = el.style.height = ""; }
     const btn = $(`[data-cmd="float"][data-panel="${p}"]`); if (btn) { btn.querySelector("svg").innerHTML = ICONS[f ? "square-arrow-down-left" : "square-arrow-out-up-right"]; btn.dataset.name = f ? "Dock back into the window" : "Pop out: float this panel as its own window"; }
   }
   const labOpen = lab.open;
-  $("#scriptlab").hidden = !labOpen;
-  const inDock = (layoutMode === "medium" ? ["joints"] : []).concat(["selected"], labOpen ? ["scriptlab"] : []).filter(p => !isFloat(p));
+  $("#scriptlab").hidden = !labOpen; $("#library").hidden = !libUi.open;
+  const inDock = (layoutMode === "medium" ? ["joints"] : []).concat(["selected"], labOpen ? ["scriptlab"] : [], libUi.open ? ["library"] : []).filter(p => !isFloat(p));
   if (!inDock.includes(layout.dtab)) layout.dtab = inDock.includes("selected") ? "selected" : inDock[0] || "selected";
   const tabs = inDock.length > 1 && layoutMode !== "narrow";
   $("#dockTabs").hidden = !tabs;
   $$("#dockTabs [data-dtab]").forEach(t => { t.hidden = !inDock.includes(t.dataset.dtab); t.setAttribute("aria-selected", t.dataset.dtab === layout.dtab); t.tabIndex = t.dataset.dtab === layout.dtab ? 0 : -1; });
-  for (const p of ["joints", "selected", "scriptlab"]) {
+  for (const p of ["joints", "selected", "scriptlab", "library"]) {
     const el = $("#" + p); if (p === "scriptlab" && !labOpen) { el.style.display = "none"; continue; }
+    if (p === "library" && !libUi.open) { el.style.display = "none"; continue; }
     if (p === "joints" && layoutMode !== "medium") { el.style.display = ""; continue; }
     el.style.display = (!inDock.includes(p) || !tabs || layout.dtab === p) ? "" : "none";
   }
@@ -1700,7 +2159,8 @@ function applyLayout() {
   $("#splitL").hidden = !leftDocked; $("#splitR").hidden = !rightDocked; $("#splitT").hidden = !timeDocked;
   dock.style.overflow = rightDocked ? "" : "visible"; // the column is 0 wide; a floating panel inside still shows
   app.setProperty("--ht", layout.ht && timeDocked ? layout.ht + "px" : "auto"); app.setProperty("--htmax", layout.ht ? "none" : "calc(36vh / var(--z))");
-  $("#labBtn").setAttribute("aria-pressed", labOpen);
+  $("#labBtn").setAttribute("aria-pressed", labOpen); $("#libBtn").setAttribute("aria-pressed", libUi.open);
+  $$('[data-cmd="libtoggle"][role="menuitemcheckbox"]').forEach(m => m.setAttribute("aria-checked", libUi.open));
   $$('[data-cmd="labtoggle"][role="menuitemcheckbox"]').forEach(m => m.setAttribute("aria-checked", labOpen));
   $$('.split').forEach(sp => { const k = sp.dataset.split; sp.setAttribute("aria-valuenow", Math.round(k === "ht" ? (layout.ht || $("#timeline").offsetHeight) : layout[k])); sp.setAttribute("aria-valuemin", k === "ht" ? 160 : 200); sp.setAttribute("aria-valuemax", k === "ht" ? 600 : 560); });
 }
@@ -1716,7 +2176,7 @@ function floatPanel(p) {
   saveLayout(); applyLayout(); renderAll(); setTimeout(() => { renderScene(); showCard(); }, 0);
   const b = $(`[data-cmd="float"][data-panel="${p}"]`); if (b) b.focus();
 }
-function panelName(p) { return { joints: "Joints", selected: "Selected joint", scriptlab: "Script Lab", timeline: "Timeline" }[p]; }
+function panelName(p) { return { joints: "Joints", selected: "Selected joint", scriptlab: "Script Lab", library: "Library", timeline: "Timeline" }[p]; }
 function resetLayout() { layout = JSON.parse(JSON.stringify(DEF_LAYOUT)); lab.open = false; saveLab(); saveLayout(); document.body.classList.remove("panels-hidden"); applyLayout(); renderAll(); setTimeout(renderScene, 0); feedback("Layout reset: every panel docked in its first place, Script Lab closed."); }
 // Splitters: drag with the mouse, or arrow keys when focused (P8)
 (function () {
@@ -1757,7 +2217,7 @@ function resetLayout() { layout = JSON.parse(JSON.stringify(DEF_LAYOUT)); lab.op
   document.addEventListener("pointerup", () => { if (fd) { fd = null; saveLayout(); } });
   new ResizeObserver(es => { for (const en of es) { const p = en.target.dataset.panel; if (en.target.classList.contains("floating") && layout.float[p]) { layout.float[p].w = Math.round(en.target.offsetWidth); layout.float[p].h = Math.round(en.target.offsetHeight); saveLayout(); } } })
     .observe($("#joints"));
-  ["selected", "scriptlab", "timeline"].forEach(p => new ResizeObserver(() => { const el = $("#" + p); if (el.classList.contains("floating") && layout.float[p]) { layout.float[p].w = el.offsetWidth; layout.float[p].h = el.offsetHeight; saveLayout(); } }).observe($("#" + p)));
+  ["selected", "scriptlab", "library", "timeline"].forEach(p => new ResizeObserver(() => { const el = $("#" + p); if (el.classList.contains("floating") && layout.float[p]) { layout.float[p].w = el.offsetWidth; layout.float[p].h = el.offsetHeight; saveLayout(); } }).observe($("#" + p)));
   document.addEventListener("keydown", e => {
     const g0 = e.target.closest && e.target.closest("[data-grip]"); if (!g0 || !/Arrow/.test(e.key)) return;
     const p = g0.dataset.grip, g = layout.float[p]; if (!g) return; e.preventDefault(); e.stopPropagation();
@@ -1768,7 +2228,7 @@ function resetLayout() { layout = JSON.parse(JSON.stringify(DEF_LAYOUT)); lab.op
 })();
 
 // ---------- Commands ----------
-function setFrame(f) { if (!doc) return; frame = Math.max(0, Math.min(doc.frames - 1, f)); renderAll(); }
+function setFrame(f) { if (!doc) return; frame = Math.max(0, Math.min(tlFrames() - 1, f)); renderAll(); }
 let raf = null, playStart = 0, playFrom = 0;
 function tick(ts) {
   if (!playing) return;
@@ -1804,6 +2264,8 @@ function blocked(el) { return el && el.getAttribute("aria-disabled") === "true";
 function run(cmd, el) {
   if (blocked(el)) { const d = el.dataset.why; if (d) say((el.dataset.name || "") + ": " + d, "reason"); return; }
   closeMenus(); closePops();
+  if (runExtra(cmd, el)) return;
+  if (cmd === "new" || cmd === "open" || cmd === "close") libOpenId = null;
   switch (cmd) {
     case "new": pushUndoClear(); doc = standDoc(); frame = 0; sel = null; selKey = null; override = {}; feedback("New animation. " + TXT["NEXT-01"], "hint"); break;
     case "open": pushUndoClear(); doc = waveDoc(); frame = 15; sel = "Rshoulder"; selKey = 15; override = {}; feedback("Opened wave.dingle (the dance example)."); break;
@@ -2127,12 +2589,12 @@ document.addEventListener("keydown", e => {
 });
 function clickCmd(cmd) { const el = $(`button[data-cmd="${cmd}"]:not(.menu button)`) || $(`[data-cmd="${cmd}"]`); updateStates(); run(cmd, el); }
 function viewLabel() { $("#viewlabel").textContent = cam.label; }
-const REGIONS = ["#menubar .mtitle", "#jlist", "#handsBody", "#view", "#selBody", "#labBody", "#tbar"];
+const REGIONS = ["#menubar .mtitle", "#jlist", "#handsBody", "#view", "#selBody", "#labBody", "#libBody", "#tbar"];
 function nextRegion(d) {
   const vis = REGIONS.filter(r => { const el = $(r); return el && el.getClientRects().length; });
   const cur = vis.findIndex(r => { const el = $(r); const box = el.closest("[data-region], .top") || el; return box.contains(document.activeElement); });
   const n = vis[(cur + d + vis.length) % vis.length]; let el = $(n);
-  if (n === "#selBody" || n === "#tbar" || n === "#labBody" || n === "#handsBody") el = $$("button:not([tabindex='-1']), input", el).find(x => x.getClientRects().length) || el;
+  if (n === "#selBody" || n === "#tbar" || n === "#labBody" || n === "#libBody" || n === "#handsBody") el = $$("button:not([tabindex='-1']), input", el).find(x => x.getClientRects().length) || el;
   el.focus();
 }
 
@@ -2304,7 +2766,7 @@ function openKeys() {
   const rows = [["Start or stop playing", "Space"], ["Frame back, frame forward", "Left arrow, Right arrow"], ["Replay from start", "Home"], ["Set key", "K"], ["Loop on or off", "L"],
     ["Undo, redo", "Ctrl+Z, Ctrl+Shift+Z"], ["Save, open, export", "Ctrl+S, Ctrl+O, Ctrl+Shift+E"], ["Open the menu", "F10, then arrow keys"], ["Next area (menu, joints, 3D view, selected joint, Script Lab, timeline)", "F6, Shift+F6"],
     ["Hide or show panels", "Tab after clicking in the 3D view, or View > Hide panels. Reached with the keyboard, Tab moves on"], ["Change a panel's width or height", "Arrow keys on the thin line between panels"], ["Move or resize a floating panel", "Arrow keys or Shift+arrow keys on its grip button"],
-    ["Script Lab open or closed", "Ctrl+Shift+L"], ["Throw away a pose change, or cancel a pull", "Esc"], ["Close a menu, dialog or hint", "Esc"],
+    ["Script Lab open or closed", "Ctrl+Shift+L"], ["Library open or closed", "Ctrl+Shift+B"], ["Make figure 1 or 2 active (Expert mode, two figures)", "Alt+1, Alt+2"], ["Throw away a pose change, or cancel a pull", "Esc"], ["Close a menu, dialog or hint", "Esc"],
     ["Move between keys on the timeline", "Arrow keys on a key"], ["Pick an easing choice", "Arrow keys in the tile row"], ["Theme, Expert mode, hints", "T, Shift+E, Shift+H"], ["Charter overlay", "C"], ["Text size", "Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%"]];
   $("#keysTable").innerHTML = "<tr><th>Action</th><th>Keys</th></tr>" + rows.concat(SCHEMES[scheme].rows, KEYROWS_ALL).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("");
   openDialog("#dlgKeys");
@@ -2339,6 +2801,7 @@ document.addEventListener("click", e => {
   if (what === "wave") { doc = waveDoc(); frame = 15; sel = "Rshoulder"; selKey = 15; }
   else if (what === "sit") { doc = sitDoc(); frame = 0; sel = null; selKey = null; }
   else { doc = standDoc(); frame = 0; sel = null; selKey = null; }
+  libOpenId = START_CLIPS[what] || null; // the program opens the library clips Stand, idle / Sit, idle / Dance, simple
   override = {}; undoStack = []; redoStack = []; ui.area = "body"; renderAreaTabs();
   $$(".scrim").forEach(sc => sc.classList.remove("open"));
   applyPrefs(); renderAll(); showCard(); $("#view").focus();

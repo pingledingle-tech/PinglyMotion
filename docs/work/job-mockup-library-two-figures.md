@@ -1,5 +1,5 @@
 Branch: job/mockup-library-two-figures
-Status: active
+Status: done
 Pull request: #429
 Files:
 - docs/mockup/index.html
