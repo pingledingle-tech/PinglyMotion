@@ -14,6 +14,8 @@ Files:
 - tests/usersettings/**
 - tests/transportbar/tst_transportbar.cpp
 - docs/EASING.md
+- docs/DINGLE_FORMAT.md
+- docs/TEACHING_TEXTS.md
 
 ## What
 

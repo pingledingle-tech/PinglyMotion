@@ -143,7 +143,7 @@ Where: `src/controlindicator.cpp`, `src/easingtiles.cpp`.
 | D2 | Remote control: request with a wrong key refused | Security status | Remote control: a request with a wrong code was refused | yes (G7) |
 | D3 | Aurora off / Waiting for Aurora / Aurora live | Indicator | no change | no |
 | D4 | Tips on / Tips off / "Help tips: short help when the mouse rests on a control. / Click to turn them on or off." | Tips switch | no change | no |
-| D5 | Select a key frame on the timeline | Easing row with no key picked | Click a key on the timeline to pick its easing. | yes (G1) |
+| D5 | Select a key on the timeline (was "Select a key frame on the timeline" until UX phase 5, which took the mockup's words) | Easing row with no key picked | Click a key on the timeline to pick its easing. | yes (G1, the "key" part done) |
 | D6 | Even / Slow start / Slow finish / Slow both ends / Overshoot, then settle / Hold, then snap, and the six hints | Easing tiles (approved, in the program) | no change | no |
 
 ### 3.5 File dialogs and messages
