@@ -93,6 +93,10 @@ class AnimationView : public QOpenGLWidget
     // The picture the view shows, drawn at its own size whatever the window size is.
     QImage renderImage(int imageWidth, int imageHeight);
     Camera* camera() const;
+    // the mouse and key habit the camera follows (UX phase 4a); the window sets it from
+    // UserSettings::cameraHabit() at start and whenever Setup or Camera and keys changes it
+    void setCameraHabit(CameraHabit habit) { m_cameraHabit = habit; }
+    CameraHabit cameraHabit() const { return m_cameraHabit; }
 
     // the shapes the view draws for its handles (cube, sphere and cone)
     void setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<Mesh> sphereMesh, QSharedPointer<Mesh> coneMesh);
@@ -120,6 +124,10 @@ class AnimationView : public QOpenGLWidget
 
   public slots:
     void resetCamera();
+    // Shift+F: the camera looks at the whole figure from just far enough to see all of
+    // it (the joints where they were last drawn), keeping its turn; false when nothing
+    // was drawn yet
+    bool frameWholeFigure();
     // loads the body (Ruth2 or Max); if that fails the other one is loaded
     // instead and false is returned
     bool setBody(AvatarSkin::Body wanted);
@@ -193,6 +201,7 @@ class AnimationView : public QOpenGLWidget
     MouseDrag m_mouseDrag=MouseDrag::None;
     Qt::MouseButton m_dragButton=Qt::NoButton;
     CameraDrag m_cameraDrag=CameraDrag::None;
+    CameraHabit m_cameraHabit=CameraHabit::PinglyMotion;
     QPoint m_pressPos;               // where the button went down (widget pixels)
     unsigned int m_pressSelected=0;  // what was under the mouse then
     unsigned int m_lastClicked=0;    // what the last click selected

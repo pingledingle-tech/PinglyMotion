@@ -21,6 +21,7 @@ Files:
 - docs/PRODUCT.md
 - docs/POSING_UX.md
 - docs/DESIGN_SYSTEM.md
+- README.md
 
 ## What
 

@@ -93,6 +93,9 @@ TARGET_LINK_LIBRARIES (pinglymotion_camera_tests pinglymotion_shared ${PINGLYMOT
 ADD_TEST (NAME camera COMMAND pinglymotion_camera_tests)
 SET_TESTS_PROPERTIES (camera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# UX phase 4a: the camera follows the chosen habit, the view keys
+ADD_SUBDIRECTORY (camerahabits)
+
 # the .anim writer (#10), not used by the program yet
 ADD_SUBDIRECTORY (animexport)
 

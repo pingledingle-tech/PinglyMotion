@@ -26,6 +26,7 @@
 #include <QMatrix4x4>
 #include <QPointF>
 #include <QRectF>
+#include <QString>
 #include <QVector3D>
 
 // A perspective projection, shifted so a point straight ahead of the camera
@@ -86,25 +87,65 @@ struct CameraConstraint
   bool operator!=(const CameraConstraint& o) const { return !(*this == o); }
 };
 
+// The mouse and key habits of the Camera and keys dialog (src/camerahabitspec.h,
+// UserSettings::cameraHabit(), docs/UX_DECISIONS.md section 6c, UX phase 4a)
+enum class CameraHabit
+{
+  PinglyMotion,   // "pinglymotion", the default
+  Maya,           // "maya"
+  Blender,        // "blender"
+  SecondLife      // "sl"
+};
+
+// What pressing a mouse button does in the 3D view (the mockup's gestureFor())
+struct CameraGesture
+{
+  // the camera move while the mouse is dragged (None: the camera does not move)
+  CameraDrag drag = CameraDrag::None;
+  // true: a left press picks the joint, prop or rotation ring under it (a joint or the
+  // empty space is picked on release); with a drag as well, moving the mouse first
+  // turns it into that camera drag (the PinglyMotion habit's "Drag empty space").
+  // false with a drag: only the camera moves, nothing is picked.
+  bool picks = false;
+
+  bool operator==(const CameraGesture& o) const { return drag == o.drag && picks == o.picks; }
+};
+
 class Camera : public QObject
 {
   Q_OBJECT
 
   public:
-    // The camera move for a drag with this mouse button and these keys.
-    // Left drag without Alt gives Orbit; the view only uses that on empty
-    // space (on a joint or prop the left button selects).
-    //   simple:      left = orbit, right = pan
-    //   Blender:     middle = orbit, Shift + middle = pan, Ctrl + middle = zoom
-    //   Second Life: Alt + left = orbit and zoom, Ctrl + Alt + left = orbit,
-    //                Ctrl + Alt + Shift + left = pan
-    static CameraDrag dragFor(Qt::MouseButton button, Qt::KeyboardModifiers keys);
-    // Blender number pad views: 1 front, 3 side (from the figure's right),
-    // 7 top; with Ctrl the opposite side (back, left; no bottom view).
-    // Returns false for other keys.
+    // the habit of a UserSettings::cameraHabit() id; an unknown id gives PinglyMotion
+    static CameraHabit habitFor(const QString& id);
+    // What a press of this mouse button with these keys does in this habit
+    // (docs/mockup/index.html, gestureFor()):
+    //   PinglyMotion: left = pick, or orbit when dragged; right = pan
+    //   Maya:         Alt + left = orbit, Alt + middle = pan, Alt + right = zoom; left = pick
+    //   Blender:      middle = orbit, Shift + middle = pan, Ctrl + middle = zoom; left = pick
+    //   Second Life:  Alt + left = orbit and zoom, Ctrl + Alt + left = orbit,
+    //                 Ctrl + Alt + Shift + left = pan; left = pick
+    // The mouse wheel zooms in every habit.
+    static CameraGesture gestureFor(CameraHabit habit, Qt::MouseButton button, Qt::KeyboardModifiers keys);
+    // Second Life: Alt + click on a joint turns the camera around it
+    static bool focusesOnAltClick(CameraHabit habit) { return habit == CameraHabit::SecondLife; }
+    // PinglyMotion: a double click on a joint turns the camera around it
+    static bool focusesOnDoubleClick(CameraHabit habit) { return habit == CameraHabit::PinglyMotion; }
+    // Views by key: number pad 1 front, 3 side (from the figure's right), 7 top;
+    // with Ctrl the opposite side (back, left; no bottom view). In the 3D view the
+    // keys 1, 3 and 7 above the letters do the same (the mockup). Returns false for
+    // other keys.
     static bool viewForKey(int key, Qt::KeyboardModifiers keys, float* height, float* angle);
-    // Blender number pad "." (focus on the selected joint)
-    static bool isFocusKey(int key, Qt::KeyboardModifiers keys);
+    // Focus on the picked joint: F in every habit, number pad "." in the Blender habit
+    static bool isFocusKey(CameraHabit habit, int key, Qt::KeyboardModifiers keys);
+    // Frame the whole figure: Shift+F
+    static bool isWholeFigureKey(int key, Qt::KeyboardModifiers keys);
+    // Home view: number pad 0 (the 0 above the letters is View > Home view's own key)
+    static bool isHomeKey(int key, Qt::KeyboardModifiers keys);
+    // Look around with keys: Alt + arrow keys turn the camera by this many degrees
+    // (up/down: height, left/right: around), the mockup's 10 degree steps
+    static constexpr float KeyTurnDegrees = 10.0f;
+    static bool turnForKey(int key, Qt::KeyboardModifiers keys, float* up, float* around);
 
     // the vertical field of view of the 3D view, in degrees (the user cannot change it)
     static constexpr float DefaultFieldOfView = 60.0f;
@@ -131,6 +172,13 @@ class Camera : public QObject
 
     // move the camera so it looks straight at a point, from a distance
     void lookAt(float x, float y, float z, float distance);
+    // Frame the whole figure (Shift+F): look at the middle of the box from low to high,
+    // keeping the turn, from just far enough that a ball around the box (FrameMargin
+    // times its half diagonal) fits the view; aspect = view width / height
+    static constexpr float FrameMargin = 1.15f;
+    void frameBox(const QVector3D& low, const QVector3D& high, float aspect);
+    // the distance frameBox() uses for a ball of this radius
+    float frameDistance(float radius, float aspect) const;
     // look at the middle of the figure: height = degrees above the floor,
     // angle = degrees around the figure (0 = default front view), distance from the middle
     void orbit(float height, float angle, float distance);

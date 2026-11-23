@@ -715,9 +715,10 @@ int AnimationView::pickPartByColor(int x, int y)
   return name;
 }
 
-// Mouse and keys: see docs/POSING_UX.md ("Mouse and keys") and
-// Camera::dragFor(). A left click selects; a left drag on empty space (or on
-// the body) turns the camera; rings turn joints; Alt is the Second Life camera.
+// Mouse and keys: see docs/UX_DECISIONS.md (6c, UX phase 4a) and
+// Camera::gestureFor(): the camera habit decides which buttons move the camera.
+// A left click selects; in the PinglyMotion habit a left drag on empty space (or
+// on the body) turns the camera; rings turn joints.
 void AnimationView::mouseMoveEvent(QMouseEvent* event)
 {
   if(m_mouseDrag==MouseDrag::Ring && m_ringDragging>=0)
@@ -757,6 +758,8 @@ void AnimationView::mouseMoveEvent(QMouseEvent* event)
   // a click becomes a camera drag once the mouse has moved a little
   if(m_mouseDrag==MouseDrag::Click)
   {
+    // in the Maya, Blender and Second Life habits a left drag only picks
+    if(m_cameraDrag==CameraDrag::None) return;
     if((event->pos()-m_pressPos).manhattanLength()<4) return;
     m_mouseDrag=MouseDrag::Camera;
     QToolTip::hideText();
@@ -887,14 +890,15 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
   oldDragY=clickPos.y();
   dragX=dragY=0;
 
-  m_cameraDrag=Camera::dragFor(event->button(),keys);
-  if(m_cameraDrag==CameraDrag::None) return;
+  const CameraGesture gesture=Camera::gestureFor(m_cameraHabit,event->button(),keys);
+  m_cameraDrag=gesture.drag;
 
-  // right and middle button, and Alt (Second Life): always the camera
-  if(event->button()!=Qt::LeftButton || (keys & Qt::AltModifier))
+  // a camera-only gesture of the habit (right-drag, middle-drag, Alt + drag ...)
+  if(!gesture.picks)
   {
-    // Alt + click on a joint: turn around that joint from here (Second Life)
-    if(event->button()==Qt::LeftButton)
+    if(m_cameraDrag==CameraDrag::None) return;
+    // Alt + click on a joint: turn around that joint from here (Second Life habit)
+    if(event->button()==Qt::LeftButton && Camera::focusesOnAltClick(m_cameraHabit))
     {
       const unsigned int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
       if(selected && selected<static_cast<unsigned int>(OpenGlIds::ObjectStart))
@@ -1011,8 +1015,8 @@ void AnimationView::mouseReleaseEvent(QMouseEvent* event)
 
 void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
 {
-  // Alt: Second Life camera, the press already focused
-  if(event->button()!=Qt::LeftButton || (event->modifiers() & Qt::AltModifier))
+  // a camera gesture of the habit (Alt in Second Life: the press already focused)
+  if(!Camera::gestureFor(m_cameraHabit,event->button(),event->modifiers()).picks)
   {
     mousePressEvent(event);
     return;
@@ -1056,9 +1060,9 @@ void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
     m_scene->getAnimation()->setIK(m_scene->getAnimation()->getNode(selected),
                      !m_scene->getAnimation()->getIK(m_scene->getAnimation()->getNode(selected)));
   }
-  else
+  else if(Camera::focusesOnDoubleClick(m_cameraHabit))
   {
-    // double-click: look at the joint and turn around it
+    // double-click: look at the joint and turn around it (PinglyMotion habit)
     zoomToSelectedPart();
   }
   update();
@@ -1103,16 +1107,35 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
     update();
   }
 
+  float up,around;
+  if(Camera::turnForKey(event->key(),event->modifiers(),&up,&around))
+  {
+    // Alt + arrow keys: look around in steps
+    camera()->rotate(up,around);
+    update();
+    return;
+  }
   if(Camera::viewForKey(event->key(),event->modifiers(),&height,&angle))
   {
-    // number pad 1 / 3 / 7: front / side / top (Blender)
+    // number pad (or 1, 3, 7 in the 3D view): front / side / top
     camera()->setView(height,angle);
     update();
     return;
   }
-  if(Camera::isFocusKey(event->key(),event->modifiers()))
+  if(Camera::isHomeKey(event->key(),event->modifiers()))
   {
-    // F, or number pad . (Blender)
+    // number pad 0: home view
+    resetCamera();
+    return;
+  }
+  if(Camera::isWholeFigureKey(event->key(),event->modifiers()))
+  {
+    frameWholeFigure();
+    return;
+  }
+  if(Camera::isFocusKey(m_cameraHabit,event->key(),event->modifiers()))
+  {
+    // F, or number pad . in the Blender habit
     zoomToSelectedPart();
     return;
   }
@@ -1868,5 +1891,23 @@ void AnimationView::resetCamera()
 {
   camera()->reset();
   update();
+}
+
+bool AnimationView::frameWholeFigure()
+{
+  bool any=false;
+  QVector3D low,high;
+  for(auto it=m_jointPositions.constBegin();it!=m_jointPositions.constEnd();++it)
+  {
+    if(it.key()>=static_cast<unsigned int>(OpenGlIds::ObjectStart)) continue;
+    const QVector3D& p=it.value();
+    if(!any) { low=high=p; any=true; continue; }
+    low=QVector3D(qMin(low.x(),p.x()),qMin(low.y(),p.y()),qMin(low.z(),p.z()));
+    high=QVector3D(qMax(high.x(),p.x()),qMax(high.y(),p.y()),qMax(high.z(),p.z()));
+  }
+  if(!any) return false;
+  camera()->frameBox(low,high,height()>0 ? float(width())/float(height()) : 1.0f);
+  update();
+  return true;
 }
 
