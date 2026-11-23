@@ -1,6 +1,6 @@
 Branch: job/easing-ux
 Status: active
-Pull request: pending
+Pull request: #422
 Files:
 - src/easingtiles.*
 - src/timelineview.*
