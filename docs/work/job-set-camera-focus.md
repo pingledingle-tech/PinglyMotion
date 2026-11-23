@@ -1,6 +1,6 @@
 Branch: job/set-camera-focus
 Status: active
-Pull request: pending
+Pull request: #417
 Files:
 - src/controlapi.cpp
 - src/controlapi.h
