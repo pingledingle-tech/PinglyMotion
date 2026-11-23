@@ -306,6 +306,7 @@ class Sandbox
     void deliverHttp(const SandboxInput& input);
     bool isSitting(const QString& key) const;
     bool hasAttachments() const;
+    QStringList attachedKeys(const QString& avatar) const;
     int linkNumber(int slot) const;
     void where(int index, float out[3]) const;
     QString nameOf(const QString& key) const;

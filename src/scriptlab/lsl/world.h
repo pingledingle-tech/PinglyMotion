@@ -372,6 +372,8 @@ class World
     virtual bool isSitting(const QString& key) const { Q_UNUSED(key); return false; }       // on any object of the world
     virtual bool sitsOnObject(const QString& key) const { Q_UNUSED(key); return false; }   // on this object
     virtual bool hasAttachments() const { return false; }
+    // llGetAttachedList: the keys of the objects the avatar wears (HUDs left out); a plain World has none
+    virtual QStringList attachedKeys(const QString& avatar) const { Q_UNUSED(avatar); return QStringList(); }
     // Step 9b-7: llSensor and llSensorRepeat look for avatars and other objects of the world: name and id filters
     // (empty and null key: any), type mask (AGENT 1, ACTIVE 2, PASSIVE 4, SCRIPTED 8), range in metres (at most 96) and
     // arc in radians around the object's forward direction; the nearest first, at most 16. A plain World knows no one.

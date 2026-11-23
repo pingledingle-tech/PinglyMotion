@@ -957,6 +957,15 @@ Canned answers and record-only functions; nothing is fetched, played or shown. W
 - **`llGetObjectDetails` flags 50 to 56:** `OBJECT_HEALTH` and `OBJECT_DAMAGE` 0.0, `OBJECT_DAMAGE_TYPE` 0 (`DAMAGE_TYPE_GENERIC`), `OBJECT_LOCKED` and `OBJECT_VOLUME_DETECT` 0 (`llVolumeDetect` is record only). `OBJECT_PERMS` and `OBJECT_PERMS_COMBINED` give five integers each (base, owner, group, everyone, next owner), the same as `llGetObjectPermMask` (`2147483647, 2147483647, 0, 0, 532480`), five zeros for an avatar.
 - Not done: the forced delays, a display name that differs from the user name, `DATA_SIM_RELEASE`, other regions in `llRequestSimulatorData`.
 
+#### Avatar and camera (Script Lab, second gap list)
+Record-only and canned-answer functions; nothing is attached, moved or shown. Where the Second Life wiki is unclear the function gives its documented return type with a harmless value.
+- **Attach and detach:** `llAttachToAvatar(point)`, `llAttachToAvatarTemp(point)` and `llDetachFromAvatar()` need `PERMISSION_ATTACH`; without it a `debug` line `Script trying to attach but PERMISSION_ATTACH permission not set` is written and nothing else happens. With it a `recorded_only` entry is written. The object's attachment point does not change, so `llGetAttached` and the `attach` event stay as they are (the `attach` and `detach` inputs still do that).
+- **`llGetAttachedList(id)`** gives the keys of the objects of the world that the avatar wears, in the order of the objects, HUD points (31 to 38) left out; `["NOT FOUND"]` for a key that is no avatar of the sandbox (the wiki). **`llGetAgentLanguage(id)`** gives `en` for an avatar of the sandbox and `""` for any other key.
+- **Camera reads:** `llGetCameraPos`, `llGetCameraRot`, `llGetCameraAspect` and `llGetCameraFOV` need `PERMISSION_TRACK_CAMERA`; without it a `debug` line `Script trying to track camera but PERMISSION_TRACK_CAMERA permission not set` is written and the answer is `ZERO_VECTOR`, `ZERO_ROTATION` or 0.0. With it the sandbox has no camera and answers its canned view: the owner's place `<128, 128, 20>`, `ZERO_ROTATION`, aspect 1.777778 and field of view 1.047198 radians (60 degrees).
+- **Record only:** `llForceMouselook`, `llSetCameraParams`, `llClearCameraParams`, `llSetCameraEyeOffset` and `llSetCameraAtOffset` write `recorded_only` entries (the camera calls do not check `PERMISSION_CONTROL_CAMERA` yet).
+- **Teleports:** `llTeleportAgentHome`, `llTeleportAgent` and `llTeleportAgentGlobalCoords` need `PERMISSION_TELEPORT` (`debug` line `Script trying to teleport but PERMISSION_TELEPORT permission not set` without it) and only teleport the owner (any other key: `debug` line `<function>: only the owner can be teleported`); otherwise a `recorded_only` entry is written and nobody moves.
+- Not done: attachment state that changes, a camera that moves, the teleport throttle, Experiences, the forced delays.
+
 #### Pure functions and object state (Script Lab step 9b-1, issue 310)
 
 These run without any world: rotation maths (`llEuler2Rot`, `llRot2Euler`, `llRot2Fwd`, `llRot2Left`, `llRot2Up`,

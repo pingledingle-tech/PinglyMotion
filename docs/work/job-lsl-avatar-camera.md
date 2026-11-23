@@ -1,5 +1,5 @@
 Branch: job/lsl-avatar-camera
-Status: active
+Status: done
 Pull request: #391
 Files:
 - src/scriptlab/lsl/builtins.cpp
