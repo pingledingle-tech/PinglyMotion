@@ -71,7 +71,7 @@ enum class Fn
   // step 9b-8: more record-only functions, and the animation override
   // land and parcel: canned answers for the one parcel of the sandbox
   GetLandOwnerAt, OverMyLand, GetParcelFlags, GetParcelPrimCount, GetParcelMaxPrims, GetParcelPrimOwners, GetParcelDetails,
-  SetParcelMusicURL, GetParcelMusicURL, ReturnObjects,
+  SetParcelMusicURL, GetParcelMusicURL, ReturnObjects, ParcelMediaCommandList, ParcelMediaQuery, ReleaseCamera,
   RecordOnly, SetAnimationOverride, ResetAnimationOverride, GetAnimationOverride,
   // step 9b-9: HTTP requests with canned replies (never on the network)
   HTTPRequest,
@@ -228,6 +228,7 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llPassTouches", Fn::RecordOnly},
   {"llPassCollisions", Fn::RecordOnly},
   {"llSetParcelMusicURL", Fn::SetParcelMusicURL},
+  {"llParcelMediaCommandList", Fn::ParcelMediaCommandList}, {"llParcelMediaQuery", Fn::ParcelMediaQuery}, {"llReleaseCamera", Fn::ReleaseCamera},
   // land and parcel (second Script Lab gap list): ban and pass lists, map and eject record only; reads give canned answers
   {"llAddToLandBanList", Fn::RecordOnly}, {"llRemoveFromLandBanList", Fn::RecordOnly}, {"llResetLandBanList", Fn::RecordOnly},
   {"llAddToLandPassList", Fn::RecordOnly}, {"llRemoveFromLandPassList", Fn::RecordOnly}, {"llResetLandPassList", Fn::RecordOnly},
@@ -3798,6 +3799,97 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       m_world.setParcelMusicUrl(a[0].s);
       return Value();
     case Fn::GetParcelMusicURL: return Value::string(m_world.parcelMusicUrl());
+    case Fn::ParcelMediaCommandList:
+    case Fn::ParcelMediaQuery:
+    {
+      // Steps 10-12 of the third gap-list run. The wiki's forced delay of 2 s is not modelled. Only the parcel's owner
+      // (here: a script owned by the parcel owner) may use either function; otherwise nothing happens and a query
+      // gives []. Sandbox guesses: an entry that is not a known command, or a command whose value is missing or of the
+      // wrong type, stops the list there (what came before stays done); a query entry that cannot be asked is skipped.
+      const bool query = *it == Fn::ParcelMediaQuery;
+      const bool allowed = parcelOwnerKey(m_world) == m_world.ownerKey();
+      ParcelMediaState& pm = m_world.parcelMedia();
+      QJsonObject entry{{"type", "parcel_media"}, {"op", query ? "query" : "command"}, {"allowed", allowed}};
+      std::vector<Value> out;
+      const std::vector<Value>& l = a[0].list;
+      QString stoppedAt;
+      if (allowed)
+      {
+        for (size_t i = 0; i < l.size(); ++i)
+        {
+          if (l[i].type != Type::Integer) { stoppedAt = QString("entry %1 is not a command number").arg(i); break; }
+          const int cmd = l[i].i;
+          auto need = [&](size_t n, std::initializer_list<Type> types)
+          {
+            if (i + n >= l.size()) return false;
+            size_t k = 0;
+            for (Type t : types) { if (l[i + 1 + k].type != t) return false; ++k; }
+            return true;
+          };
+          if (query)
+          {
+            switch (cmd)
+            {
+              case 5: out.push_back(Value::string(pm.url)); break;                                        // URL
+              case 12: out.push_back(Value::string(pm.description)); break;                               // DESC
+              case 4: out.push_back(Value::key(pm.texture)); break;                                       // TEXTURE
+              case 10: out.push_back(Value::string(pm.type)); break;                                      // TYPE
+              case 11: out.push_back(Value::integer(pm.width)); out.push_back(Value::integer(pm.height)); break;   // SIZE
+              case 9: out.push_back(Value::integer(pm.autoAlign)); break;                                 // AUTO_ALIGN
+              default: break;                                                                              // not askable: skipped
+            }
+            continue;
+          }
+          switch (cmd)
+          {
+            case 0: pm.status = "stop"; pm.time = 0.0f; break;                                            // STOP
+            case 1: pm.status = "pause"; break;                                                           // PAUSE
+            case 2: pm.status = "play"; break;                                                            // PLAY
+            case 3: pm.status = "loop"; break;                                                            // LOOP
+            case 8: pm.status = "stop"; pm.time = 0.0f; pm.url.clear(); pm.texture = ParcelMediaState().texture; break;  // UNLOAD
+            case 5: if (!need(1, {Type::String})) { stoppedAt = "URL needs a string"; break; } pm.url = l[++i].s; break;
+            case 4: if (!need(1, {Type::Key})) { stoppedAt = "TEXTURE needs a key"; break; } pm.texture = l[++i].s; break;
+            case 10: if (!need(1, {Type::String})) { stoppedAt = "TYPE needs a string"; break; } pm.type = l[++i].s; break;
+            case 12: if (!need(1, {Type::String})) { stoppedAt = "DESC needs a string"; break; } pm.description = l[++i].s; break;
+            case 11:
+              if (!need(2, {Type::Integer, Type::Integer})) { stoppedAt = "SIZE needs two integers"; break; }
+              pm.width = l[i + 1].i; pm.height = l[i + 2].i; i += 2; break;
+            case 9: if (!need(1, {Type::Integer})) { stoppedAt = "AUTO_ALIGN needs an integer"; break; } pm.autoAlign = l[++i].i ? 1 : 0; break;
+            case 13: if (!need(1, {Type::Float})) { stoppedAt = "LOOP_SET needs a float"; break; } pm.loopSet = l[++i].f[0]; break;
+            case 6: if (!need(1, {Type::Float})) { stoppedAt = "TIME needs a float"; break; } pm.time = l[++i].f[0]; break;
+            case 7: if (!need(1, {Type::Key})) { stoppedAt = "AGENT needs a key"; break; } pm.agent = l[++i].s; break;
+            default: stoppedAt = QString("%1 is not a parcel media command").arg(cmd); break;
+          }
+          if (!stoppedAt.isEmpty()) break;
+        }
+      }
+      entry["status"] = pm.status;
+      if (!allowed) entry["note"] = "The script's owner does not own the parcel; nothing happened.";
+      else if (!stoppedAt.isEmpty()) entry["stopped"] = stoppedAt;
+      if (!m_world.logFull()) m_world.log(m_now, entry);
+      if (!query) return Value();
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
+    case Fn::ReleaseCamera:
+    {
+      // Deprecated (the wiki: use llClearCameraParams). Needs PERMISSION_CONTROL_CAMERA, granted by the avatar given.
+      if (!(m_permissions & 0x800))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to control camera but PERMISSION_CONTROL_CAMERA permission not set"}});
+        return Value();
+      }
+      if (!m_world.agents().contains(a[0].s) || a[0].s != m_permissionKey)
+      {
+        // an avatar that did not grant the permission (or is not in the sandbox): nothing is released (sandbox guess)
+        if (!m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "camera"}, {"op", "release"}, {"released", false}, {"avatar", World::clip(a[0].s)}});
+        return Value();
+      }
+      m_world.recordOnly(m_now, name, recordArgs(a));
+      return Value();
+    }
     case Fn::ReturnObjects:
       // nothing of anyone else's is in the sandbox, so nothing is returned: recorded, and 0 (no error) is the answer
       m_world.recordOnly(m_now, name, recordArgs(a));

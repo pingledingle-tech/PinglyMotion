@@ -355,6 +355,24 @@ struct Email
   QString message;
 };
 
+// Steps 10-12 of the third gap-list run: the media of the sandbox's one parcel (llParcelMediaCommandList and
+// llParcelMediaQuery). Record only: nothing is fetched or played; "status" is what the last STOP, PAUSE, PLAY, LOOP or
+// UNLOAD left ("stop", "pause", "play" or "loop").
+struct ParcelMediaState
+{
+  QString url;
+  QString texture = "00000000-0000-0000-0000-000000000000";
+  QString description;
+  QString type;
+  int width = 0;
+  int height = 0;
+  int autoAlign = 0;
+  float loopSet = 0.0f;
+  float time = 0.0f;
+  QString agent;                    // PARCEL_MEDIA_COMMAND_AGENT: the avatar the commands are for (empty: everyone)
+  QString status = "stop";
+};
+
 class World
 {
   public:
@@ -517,6 +535,8 @@ class World
     // llSetParcelMusicURL stores the address and llGetParcelMusicURL reads it back (the one parcel's music)
     const QString& parcelMusicUrl() const { return m_parcelMusicUrl; }
     void setParcelMusicUrl(const QString& url) { m_parcelMusicUrl = url; }
+    ParcelMediaState& parcelMedia() { return m_parcelMedia; }
+    const ParcelMediaState& parcelMedia() const { return m_parcelMedia; }
 
     // Gap list 2, step 4: URLs of the sandbox's fake web server (host URL_HOST, which never resolves; port 12046 for
     // http, 12043 for https, as in Second Life). MAX_URLS in the whole world (Second Life's cap of 38 per resident).
@@ -583,6 +603,7 @@ class World
     QString m_objectDesc;
     RegionSettings m_region;
     QString m_parcelMusicUrl;
+    ParcelMediaState m_parcelMedia;
     QStringList m_urls;
     int m_urlCounter = 0;
     std::deque<Email> m_mail;

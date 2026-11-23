@@ -217,9 +217,9 @@ namespace
       if (!o.value("phase").isString()) return where + "\"phase\" must be text.";
       in.stage = o.value("phase").toString();
       if (in.stage != "start" && in.stage != "end")
-        return where + "\"phase\" must be \"start\" or \"end\"" + (in.type == "land_collision" ? " (leave it out for the continuous land_collision)." : ".");
+        return where + "\"phase\" must be \"start\" or \"end\"" + (in.type == "land_collision" || in.type == "collision" ? QString(" (leave it out for the continuous %1).").arg(in.type) : QString("."));
     }
-    else if (in.type == "collision" || in.type == "moving")
+    else if (in.type == "moving")
       return where + QString("a %1 input needs \"phase\": \"start\" or \"end\".").arg(in.type);
     if (o.contains("pos"))
     {
