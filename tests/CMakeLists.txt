@@ -98,6 +98,7 @@ ADD_SUBDIRECTORY (camerahabits)
 
 # UX phase 4b part 1: the view toolbar, the view-direction widget, the view name, the ring hint
 ADD_SUBDIRECTORY (viewtools)
+ADD_SUBDIRECTORY (limbpull)
 
 # the .anim writer (#10), not used by the program yet
 ADD_SUBDIRECTORY (animexport)
