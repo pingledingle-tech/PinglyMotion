@@ -18,6 +18,10 @@ Files:
 - src/animation.*
 - src/CMakeLists.txt
 - tests/uirender/**
+- tests/easingtiles/**
+- tests/setupdialog/**
+- tests/tst_animation.cpp
+- docs/mockup/index.html
 - tests/menutexts/**
 - tests/transportbar/**
 - tests/textsize/**
