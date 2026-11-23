@@ -21,6 +21,13 @@ GitHub is the truth, not a chat: what is running is the open pull requests and t
 - The owner can say "stopp køen" (stop the queue) or "fortsett køen" (resume it) at any time, in plain words.
 - Honest limit: a chat acts only when the owner writes in it or a background job reports back to it. So the queue moves at those moments (a job finishing, the owner saying "status"), not on its own while the job chat is closed; never claim that a chat runs continuously.
 - Visible jobs that need the owner's test (step 5 of "When you are done") wait for it in `test/combined`; the queue keeps moving meanwhile.
+- **Security alerts** (standing rule, the project owner, 23 November 2026, 16:41 and 16:46):
+  - **Read them** at every status and every time a slot is free: code scanning (CodeQL), Dependabot and secret scanning, as far as they can be read. Say in one line which kinds could not be read. Routes that work today (commands in `docs/DEV.md`, "Security alerts"): the code-scanning bot's review comments on pull requests (author `github-advanced-security[bot]`), the open-alert list that the nightly CodeQL run writes to its log and summary, and Dependabot's own pull requests. The session token gets 403 on the alert lists themselves, and the proxy blocks the secret scanning list.
+  - **Queue them:** each real alert becomes a fix job in this same queue (one job per finding or small group, ordinary job flow), placed before other filler jobs. There is no separate security queue and no pull request outside the job flow.
+  - **Done only when proven:** the tests that show the fix pass, all required checks are green, and CodeQL on the fixed code no longer reports the alert. A fix that changes a parser or the control commands also needs the fuzz run green.
+  - **Never by hand:** no alert is dismissed or marked fixed by hand. A false positive goes to the project owner with the reason, and is dismissed only after his answer.
+  - **Never weaker:** never weaken, skip or remove a security check or test to close an alert.
+  - **Report:** a new high or critical alert is reported to the project owner in one line when it is found.
 
 ## While you work
 

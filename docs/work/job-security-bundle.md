@@ -1,5 +1,5 @@
 Branch: job/security-bundle
-Status: active
+Status: done
 Pull request: #432
 Files:
 - CLAUDE.md

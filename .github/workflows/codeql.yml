@@ -111,6 +111,61 @@ jobs:
         with:
           category: /language:${{ matrix.language }}
 
+  # Nightly and manual runs: list the open alerts, so a session can read them
+  # (its own token gets 403 on the alert lists). One log line per alert,
+  # "ALERT #<number> <severity> <rule> <file>:<line>", and a table in the run
+  # summary. Read-only token; it never dismisses or changes an alert. A list it
+  # cannot read is reported as "NOT READ", never as "no alerts". Runs after the
+  # analysis so the list includes tonight's results. Rule: CLAUDE.md, "The job queue".
+  alerts:
+    needs: codeql
+    if: ${{ always() && !github.event.repository.private && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      security-events: read
+    steps:
+      - name: List open security alerts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          summary="$GITHUB_STEP_SUMMARY"
+          code_scanning_failed=""
+          echo "## Open security alerts" >> "$summary"
+          if out=$(gh api --paginate "repos/$REPO/code-scanning/alerts?state=open&per_page=100" \
+                --jq '.[] | "#\(.number)\t\(.rule.security_severity_level // .rule.severity // "unknown")\t\(.rule.id)\t\(.most_recent_instance.location.path):\(.most_recent_instance.location.start_line)"' 2>/tmp/cs-error); then
+            count=$(printf '%s' "$out" | grep -c . || true)
+            echo "Code scanning: $count open alert(s) on the default branch"
+            echo "Code scanning: $count open alert(s) on the default branch." >> "$summary"
+            if [ "$count" -gt 0 ]; then
+              printf '\n| Alert | Severity | Rule | File:line |\n|---|---|---|---|\n' >> "$summary"
+              printf '%s\n' "$out" | while IFS="$(printf '\t')" read -r number severity rule where; do
+                echo "ALERT $number $severity $rule $where"
+                echo "| $number | $severity | \`$rule\` | \`$where\` |" >> "$summary"
+              done
+            fi
+          else
+            echo "NOT READ code scanning: $(head -c 300 /tmp/cs-error)"
+            echo "Code scanning: NOT READ ($(head -c 300 /tmp/cs-error))." >> "$summary"
+            code_scanning_failed=1
+          fi
+          # Dependabot and secret scanning: tried with the same read-only token; GitHub
+          # may refuse both. A refusal is reported, it does not fail the run.
+          for kind in dependabot secret-scanning; do
+            if out=$(gh api --paginate "repos/$REPO/$kind/alerts?state=open&per_page=100" --jq '.[] | "#\(.number)"' 2>/tmp/other-error); then
+              count=$(printf '%s' "$out" | grep -c . || true)
+              echo "ALERTS $kind: $count open"
+              echo "$kind: $count open alert(s): $(printf '%s' "$out" | tr '\n' ' ')" >> "$summary"
+            else
+              echo "NOT READ $kind: $(head -c 300 /tmp/other-error)"
+              echo "$kind: NOT READ ($(head -c 300 /tmp/other-error))." >> "$summary"
+            fi
+          done
+          # this job's token has security-events: read, so code scanning must be readable;
+          # if it is not, the job fails so the gap is seen (Dependabot and secret scanning do not)
+          if [ -n "${code_scanning_failed:-}" ]; then echo "::error::The open code scanning alerts could not be read."; exit 1; fi
+
   # The matrix above reports as "codeql (<language>, <build-mode>)" per combination,
   # so a branch ruleset cannot require it directly. This job reports under one
   # fixed name, "analyze", that the ruleset requires instead. It is skipped
