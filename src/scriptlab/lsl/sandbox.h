@@ -262,6 +262,7 @@ class Sandbox
       // (floats); "moving" is the last known speed-vs-threshold state, for moving_start/moving_end.
       float velocity[3] = {0.0f, 0.0f, 0.0f};
       float buoyancy = 0.0f;
+      float force[3] = {0.0f, 0.0f, 0.0f};   // third gap list run, step 6: llSetForce record
       bool moving = false;
       // several-objects job: llSetRemoteScriptAccessPin (0: remote loading off), llAllowInventoryDrop, and the limits
       // its scripts were added with (a script loaded with llRemoteLoadScriptPin gets them too)
