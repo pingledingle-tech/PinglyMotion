@@ -135,34 +135,96 @@ To make the table again after a change to the skeleton or the limits:
 | mHandThumb1Left | X | + | left thumb tip | down | -90 to 90 |
 | mHandThumb1Left | Y | + | left thumb tip | back | -90 to 90 |
 | mHandThumb1Left | Z | + | left thumb tip | up | -90 to 90 |
+| mHandThumb2Left | X | + | left thumb tip | down | -90 to 90 |
+| mHandThumb2Left | Y | + | left thumb tip | back | -90 to 90 |
+| mHandThumb2Left | Z | + | left thumb tip | up | -90 to 90 |
+| mHandThumb3Left | X | + | left thumb tip | down (small) | -90 to 90 |
+| mHandThumb3Left | Y | + | left thumb tip | back | -90 to 90 |
+| mHandThumb3Left | Z | + | left thumb tip | up | -90 to 90 |
 | mHandIndex1Left | X | + | left index tip | down (small) | -15 to 15 |
 | mHandIndex1Left | Y | + | left index tip | back | -25 to 25 |
 | mHandIndex1Left | Z | + | left index tip | up | -90 to 45 |
+| mHandIndex2Left | X | + | left index tip | down (small) | -15 to 15 |
+| mHandIndex2Left | Y | + | left index tip | back | -25 to 25 |
+| mHandIndex2Left | Z | + | left index tip | up | -100 to 0 |
+| mHandIndex3Left | X | + | left index tip | down (small) | -15 to 15 |
+| mHandIndex3Left | Y | + | left index tip | back | -25 to 25 |
+| mHandIndex3Left | Z | + | left index tip | up | -90 to 10 |
 | mHandMiddle1Left | X | + | left middle tip | back (small) | -15 to 15 |
 | mHandMiddle1Left | Y | + | left middle tip | back | -25 to 25 |
 | mHandMiddle1Left | Z | + | left middle tip | up | -90 to 45 |
+| mHandMiddle2Left | X | + | left middle tip | back (small) | -15 to 15 |
+| mHandMiddle2Left | Y | + | left middle tip | back | -25 to 25 |
+| mHandMiddle2Left | Z | + | left middle tip | up | -100 to 0 |
+| mHandMiddle3Left | X | + | left middle tip | back (small) | -15 to 15 |
+| mHandMiddle3Left | Y | + | left middle tip | back | -25 to 25 |
+| mHandMiddle3Left | Z | + | left middle tip | up | -90 to 10 |
 | mHandRing1Left | X | + | left ring tip | up (small) | -15 to 15 |
 | mHandRing1Left | Y | + | left ring tip | back | -25 to 25 |
 | mHandRing1Left | Z | + | left ring tip | up | -90 to 45 |
+| mHandRing2Left | X | + | left ring tip | up (small) | -15 to 15 |
+| mHandRing2Left | Y | + | left ring tip | back | -25 to 25 |
+| mHandRing2Left | Z | + | left ring tip | up | -100 to 0 |
+| mHandRing3Left | X | + | left ring tip | up (small) | -15 to 15 |
+| mHandRing3Left | Y | + | left ring tip | back | -25 to 25 |
+| mHandRing3Left | Z | + | left ring tip | up | -90 to 10 |
 | mHandPinky1Left | X | + | left pinky tip | up | -15 to 15 |
 | mHandPinky1Left | Y | + | left pinky tip | in across the body | -25 to 25 |
 | mHandPinky1Left | Z | + | left pinky tip | up | -90 to 45 |
+| mHandPinky2Left | X | + | left pinky tip | up | -15 to 15 |
+| mHandPinky2Left | Y | + | left pinky tip | in across the body | -25 to 25 |
+| mHandPinky2Left | Z | + | left pinky tip | up | -100 to 0 |
+| mHandPinky3Left | X | + | left pinky tip | up | -15 to 15 |
+| mHandPinky3Left | Y | + | left pinky tip | in across the body | -25 to 25 |
+| mHandPinky3Left | Z | + | left pinky tip | up | -90 to 10 |
 | mHandThumb1Right | X | + | right thumb tip | down | -90 to 90 |
 | mHandThumb1Right | Y | + | right thumb tip | in across the body | -90 to 90 |
 | mHandThumb1Right | Z | + | right thumb tip | down | -90 to 90 |
+| mHandThumb2Right | X | + | right thumb tip | down | -90 to 90 |
+| mHandThumb2Right | Y | + | right thumb tip | in across the body | -90 to 90 |
+| mHandThumb2Right | Z | + | right thumb tip | down | -90 to 90 |
+| mHandThumb3Right | X | + | right thumb tip | down (small) | -90 to 90 |
+| mHandThumb3Right | Y | + | right thumb tip | in across the body | -90 to 90 |
+| mHandThumb3Right | Z | + | right thumb tip | down | -90 to 90 |
 | mHandIndex1Right | X | + | right index tip | down (small) | -15 to 15 |
 | mHandIndex1Right | Y | + | right index tip | forward | -25 to 25 |
 | mHandIndex1Right | Z | + | right index tip | down | -45 to 90 |
+| mHandIndex2Right | X | + | right index tip | down (small) | -15 to 15 |
+| mHandIndex2Right | Y | + | right index tip | forward | -25 to 25 |
+| mHandIndex2Right | Z | + | right index tip | down | 0 to 100 |
+| mHandIndex3Right | X | + | right index tip | down (small) | -15 to 15 |
+| mHandIndex3Right | Y | + | right index tip | forward | -25 to 25 |
+| mHandIndex3Right | Z | + | right index tip | down | -10 to 90 |
 | mHandMiddle1Right | X | + | right middle tip | back (small) | -15 to 15 |
 | mHandMiddle1Right | Y | + | right middle tip | forward | -25 to 25 |
 | mHandMiddle1Right | Z | + | right middle tip | down | -45 to 90 |
+| mHandMiddle2Right | X | + | right middle tip | back (small) | -15 to 15 |
+| mHandMiddle2Right | Y | + | right middle tip | forward | -25 to 25 |
+| mHandMiddle2Right | Z | + | right middle tip | down | 0 to 100 |
+| mHandMiddle3Right | X | + | right middle tip | back (small) | -15 to 15 |
+| mHandMiddle3Right | Y | + | right middle tip | forward | -25 to 25 |
+| mHandMiddle3Right | Z | + | right middle tip | down | -10 to 90 |
 | mHandRing1Right | X | + | right ring tip | up (small) | -15 to 15 |
 | mHandRing1Right | Y | + | right ring tip | forward | -25 to 25 |
 | mHandRing1Right | Z | + | right ring tip | down | -45 to 90 |
+| mHandRing2Right | X | + | right ring tip | up (small) | -15 to 15 |
+| mHandRing2Right | Y | + | right ring tip | forward | -25 to 25 |
+| mHandRing2Right | Z | + | right ring tip | down | 0 to 100 |
+| mHandRing3Right | X | + | right ring tip | up (small) | -15 to 15 |
+| mHandRing3Right | Y | + | right ring tip | forward | -25 to 25 |
+| mHandRing3Right | Z | + | right ring tip | down | -10 to 90 |
 | mHandPinky1Right | X | + | right pinky tip | up | -15 to 15 |
 | mHandPinky1Right | Y | + | right pinky tip | forward | -25 to 25 |
 | mHandPinky1Right | Z | + | right pinky tip | down | -45 to 90 |
+| mHandPinky2Right | X | + | right pinky tip | up | -15 to 15 |
+| mHandPinky2Right | Y | + | right pinky tip | forward | -25 to 25 |
+| mHandPinky2Right | Z | + | right pinky tip | down | 0 to 100 |
+| mHandPinky3Right | X | + | right pinky tip | up | -15 to 15 |
+| mHandPinky3Right | Y | + | right pinky tip | forward | -25 to 25 |
+| mHandPinky3Right | Z | + | right pinky tip | down | -10 to 90 |
 <!-- calibration-table:end -->
+
+Finger curl is the Z axis, seen with the palm down: in the table every finger joint (1, 2 and 3, both hands) moves its tip up or down on Z. The sign is opposite on the two hands: on the left hand curling (tip down) is negative Z, on the right hand positive Z, and the four fingers' allowed ranges lie mostly on the curling side. X and Y swing the finger sideways or twist it.
 
 ## 3. Typical poses as numbers
 
