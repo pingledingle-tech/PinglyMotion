@@ -3,6 +3,9 @@ Status: active
 Pull request: #436
 Files:
 - src/scriptlab/labfolder.*
+- src/scriptlab/labtree.*
+- src/lucideicons.cpp
+- src/CMakeLists.txt
 - src/scriptlab/labwatcher.*
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/objectsview.*
