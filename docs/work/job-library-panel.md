@@ -1,5 +1,5 @@
 Branch: job/library-panel
-Status: active
+Status: done
 Pull request: #437
 Files:
 - src/librarypanel.*
