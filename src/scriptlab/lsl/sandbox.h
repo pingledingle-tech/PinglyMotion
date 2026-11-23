@@ -229,6 +229,8 @@ class Sandbox
     int prims(int index) const { return m_objects[size_t(index)].spec.prims; }
     // the Linkset Data of an object
     const LinksetData& linksetData(int index) const { return m_objects[size_t(index)].data; }
+    // step 9b-4: the simulated inventory of an object now (its items and scripts; the Script Lab panel shows it)
+    const Inventory& inventory(int index) const { return m_objects[size_t(index)].inventory; }
     RlvState& rlv() { return m_rlv; }
 
   private:

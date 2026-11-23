@@ -69,6 +69,8 @@ namespace
     // <circle cx="12" cy="12" r="10" />
     {"circle-x",{"M22 12a10 10 0 1 0-20 0a10 10 0 1 0 20 0z","m15 9-6 6","m9 9 6 6"}},
     {"refresh-cw",{"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8","M21 3v5h-5","M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16","M8 16H3v5"}},
+    // <rect width="16" height="20" x="4" y="2" rx="2" />
+    {"notebook-text",{"M2 6h4","M2 10h4","M2 14h4","M2 18h4","M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2v-16a2 2 0 0 1 2-2z","M9.5 8h5","M9.5 12H16","M9.5 16H14"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix
