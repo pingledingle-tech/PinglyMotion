@@ -278,8 +278,14 @@ class ScriptLabPanel : public QWidget
     // back as the boxes were ticked. A minimised window does not count as hidden.
     bool viewEffectsActive() const { return !m_hiddenByUser; }
 
+    // A click on a line of the event log (job R3): an error line ("at line 4, column 9") or an
+    // RLV line ("rlv_command: @detach=x") shows its code line in the script. False when the log
+    // line points at no line of the script.
+    bool showLogLine(int logLine);
+
   protected:
     void changeEvent(QEvent* event) override;
+    bool eventFilter(QObject* watched, QEvent* event) override;
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;
 
@@ -293,6 +299,7 @@ class ScriptLabPanel : public QWidget
     void chooseFolder();
     void openInEditor();
     void showProblem(int index);
+    void showScriptPlace(int line, int column);   // line and column from 1
     void setLiveStatus(const QString& text, int tone);   // tone: 0 muted, 1 success, 2 danger
     void styleLiveStatus();
     void buildInputSection(QWidget* page, QVBoxLayout* layout);

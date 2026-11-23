@@ -11,8 +11,8 @@
  *    means "send text to the owner" is llOwnerSay in LSL and ll.OwnerSay in SLua);
  *  - the providers (LabSuggest::Provider): each one gives the items it knows for a context.
  *    Now: Linden Lab's LSL definitions (functions, events, constants, types, keywords) and the
- *    names made in the script itself. The RLV job (R3) adds a provider for "@" lines inside
- *    llOwnerSay; a Lua layer later adds its own language and providers;
+ *    names made in the script itself, and (job R3, rlvsuggest.h) the RLV commands after "@"
+ *    inside the owner-say text; a Lua layer later adds its own language and providers;
  *  - the engine (LabSuggest::Engine): asks the providers that handle the language, sorts and
  *    joins their items.
  *
@@ -50,6 +50,12 @@ namespace LabSuggest
     QString detail;        // help, Expert only: kind, types, parameters
     QString provider;      // the provider's id
     int tier = 0;          // how well it matches (0 best); set by the provider with matchTier()
+    // RLV items (job R3) and other providers whose typed part is not a plain name:
+    int replaceFrom = -1;  // 0 or more: insert replaces the text from here to the cursor, not the prefix
+    QString mark;          // shown after the name in the list, e.g. "RLVa only" (a word, not a colour)
+    QString example;       // a whole example line shown under the help, e.g. "@detach=n"
+    QString exampleInsert; // what Ctrl+Enter puts in, from exampleFrom to the cursor
+    int exampleFrom = -1;
   };
 
   // where the cursor is

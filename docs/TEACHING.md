@@ -158,6 +158,33 @@ Built in pull request 431 (23 Nov 2026). The texts are in `src/scriptlab/labedit
 | LABSG-08 | 2 Tip on hover | The language box in the editor's tool row, only while the Lua switch is on | The script language. Lua is a trial: no checks or suggestions yet. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F3 |
 | LABSG-09 | 4 What to do next | SLua was chosen in the language box | Lua is a trial. No Lua suggestions or checks yet. | in the program (pull request 431, 23 Nov 2026) | lane 1 job F3 |
 
+### Script Lab editor: RLV suggestions, help and warnings (lane 1, jobs R3 and R4)
+
+Built in pull request 433 (23 Nov 2026). The texts are in `src/scriptlab/rlvsuggest.cpp`, `src/scriptlab/labeditor.cpp`, `src/scriptlab/rlvbehaviours.cpp` (the warnings) and `src/scriptlab/scriptlabpanel.cpp`; `tests/scriptlabpanel/tst_rlvsuggest.cpp` and `tests/tst_rlvexamples.cpp` check them letter for letter. The command names, values and examples in the rows are examples: the program puts in the real ones. The plain sentence for each command ("Locks this object on you, so it cannot be taken off.") is not in this table: the 223 lines are in `src/scriptlab/rlvhelp_plain.inc`, checked with the same rules (at most 12 words a sentence, no avoided word) by `tests/tst_rlvexamples.cpp`.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABRLV-01 | 2 Tip on hover | Script Lab editor: under the help of an RLV command in the suggestion list (the example from the table) | Ctrl+Enter puts in the example: @detach=n | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-02 | 2 Tip on hover | After a command name in the list while the viewer rule is RLV | (RLVa only) | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-03 | 2 Tip on hover | After a command name in the list while the viewer rule is RLVa | (RLV only) | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-04 | 2 Tip on hover | Help for the form n after "=" | Turns the rule on. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-05 | 2 Tip on hover | Help for the form y after "=" | Lifts the rule again. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-06 | 2 Tip on hover | Help for the form force after "=" | Does it once, right now. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-07 | 2 Tip on hover | Help for the channel after "=" (a question) | A channel number. The answer comes back on it. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-08 | 2 Tip on hover | Help for a key option after ":" | A key (UUID): 36 letters and digits with dashes. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-09 | 2 Tip on hover | Help for a number option after ":" | A number, such as 1.5. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-10 | 2 Tip on hover | Help for an option with no fixed type (the sample comes from the example) | An example value. Change it to what you need. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-11 | 2 Tip on hover | Help for clear in the list | Lifts every rule this object holds. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-12 | 8 Warning | A form the command does not know (command and forms from the table) | @detach=x: x is not valid. Use n, y or force. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-13 | 8 Warning | The = part is missing | @detach: the = part is missing. End it with =n, =y or =force. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-14 | 8 Warning | An unknown command close to a known one | @detatch=n: detatch is not an RLV command. Did you mean detach? | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-15 | 8 Warning | A form the command does not take | @sendchat=force: sendchat does not take =force. Use n or y. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-16 | 8 Warning | A needed option is missing (the example from the table) | @redirchat=n: redirchat needs an option after ":". Example: @redirchat:2222=n | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-17 | 8 Warning | An option on a command that takes none | @sendchat:x=n: sendchat takes no option. Remove ":x". | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-18 | 8 Warning | A command the chosen viewer does not know | @setcam=n: setcam is RLVa only. RLV viewers do not know it. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-19 | 2 Tip on hover | The tip of Errors and warnings | Click a line, or press Enter, to show it in the script | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-20 | 2 Tip on hover | The tip of the event log | What the script did in the last run, in simulated seconds. Click an error or RLV line to show it in the script. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+
 ### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
 
 Drafts for the library panel (roadmap item 6, issue 19) and for two figures in one scene (Expert mode only), drawn in `docs/mockup/index.html` and described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6l and 6m. Nothing is built yet; the project owner looks at the mockup first. `<clip name>` and `<file name>` stand for the real name. The mockup's own helper texts (for example "Mockup: no library folder") are not program texts and are not listed.

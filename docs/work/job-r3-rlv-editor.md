@@ -14,7 +14,8 @@ Files:
 - tests/scriptlabpanel/**
 - tests/tst_rlvexamples.cpp
 - tests/tst_rlvoptions.cpp
-- tests/tst_lslrlv.cpp
+- tests/tst_lsllint.cpp
+- docs/CONTROL.md
 - docs/SCRIPT_LAB.md
 - docs/RLV_OPTION_TYPES.md
 - docs/UX_DECISIONS.md

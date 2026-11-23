@@ -418,39 +418,27 @@ class Linter
       {
         const QString behaviour = last.left(end);
         if (behaviour != QLatin1String("clear") && !Rlv::findBehaviour(behaviour))
-          warn(line, column, "rlv-unknown", "RLV command \"@" + shorten(last) + "...\": unknown behaviour \"" + shorten(behaviour) + "\".");
+        {
+          const QString near = Rlv::nearestName(behaviour);
+          warn(line, column, "rlv-unknown", "@" + shorten(last) + "...: " + shorten(behaviour) + " is not an RLV command. "
+                                              + (near.isEmpty() ? QStringLiteral("Check the spelling.") : "Did you mean " + near + "?"));
+        }
       }
     }
 
     void rlvCommand(const Rlv::Command& c, int line, int column)
     {
-      const QString shown = "RLV command \"@" + shorten(c.text) + "\": ";
-      if (!c.valid)
-      {
-        warn(line, column, "rlv-syntax", shown + (c.error.isEmpty() ? QStringLiteral("bad syntax") : c.error) + ".");
-        return;
-      }
-      if (c.type == Rlv::ParamType::Clear) return;
-      const Rlv::Behaviour* b = Rlv::findBehaviour(c.behaviour);
-      if (!b)
-      {
-        warn(line, column, "rlv-unknown", shown + "unknown behaviour \"" + shorten(c.behaviour) + "\".");
-        return;
-      }
+      if (c.valid && c.type == Rlv::ParamType::Clear) return;
+      const Rlv::Behaviour* b = c.valid ? Rlv::findBehaviour(c.behaviour) : nullptr;
       // judge it in the viewer family that knows it: RLVa (the default standard), RLV-only names in plain RLV
-      const Rlv::Mode mode = b->dialect == Rlv::Dialect::RlvOnly ? Rlv::Mode::Rlv : Rlv::Mode::Rlva;
-      const QString problem = Rlv::checkCommand(c, mode);
-      if (!problem.isEmpty())
-      {
-        warn(line, column, "rlv-param", shown + problem + ".");
-        return;
-      }
-      // an option value RLVa refuses (docs/RLV_OPTION_TYPES.md); the warning starts with "@<command>: "
-      QString value = Rlv::optionProblem(c, mode);
-      if (value.isEmpty()) return;
-      const QString head = QStringLiteral("@") + c.text + QStringLiteral(": ");
-      if (value.startsWith(head)) value = value.mid(head.size());
-      warn(line, column, "rlv-param", shown + value);
+      const Rlv::Mode mode = b && b->dialect == Rlv::Dialect::RlvOnly ? Rlv::Mode::Rlv : Rlv::Mode::Rlva;
+      // plain words with a fix, starting with "@<command>: " (lane 1, job R3)
+      QString message = Rlv::plainProblem(c, mode);
+      if (message.isEmpty()) return;
+      const QString head = QStringLiteral("@") + c.text;
+      if (c.text.size() > 60 && message.startsWith(head)) message = QStringLiteral("@") + shorten(c.text) + message.mid(head.size());
+      const char* id = !c.valid ? "rlv-syntax" : !b ? "rlv-unknown" : "rlv-param";
+      warn(line, column, id, message);
     }
 
     static QString shorten(const QString& text)
