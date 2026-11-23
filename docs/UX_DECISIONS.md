@@ -217,7 +217,7 @@ Decided after comparing the mockup's File menu (five items) against the program'
 
 - **File menu:** New animation (Ctrl+N), Open... (Ctrl+O), Save (Ctrl+S), Save as..., Export for Second Life... (Ctrl+Shift+E), Close animation (Ctrl+W), Exit. Export BVH only in Expert mode.
 - **No separate Import.** Open... takes `.dingle`, `.anim`, BVH and glTF. A `.dingle` opens directly; an `.anim`, BVH or glTF opens its own import window only when needed; a BVH already on the Second Life skeleton opens directly. Save always writes a `.dingle` afterwards. Save and Export stay separate (`.anim` cannot carry per-key easing or notes).
-- **Add...** (bring a second figure into the same scene, `src/pinglymotionwindowfile.cpp`, `addAnimationFile`): Expert mode only, with a clearer name (proposed: "Add a second figure..."). Drawn in the mockup on 23 November 2026, see 6m.
+- **Add...** (bring a second figure into the same scene, `src/pinglymotionwindowfile.cpp`, `addAnimationFile`): Expert mode only, with a clearer name (proposed: "Add a second figure..."). Drawn in the mockup on 23 November 2026, see 6m. **Built (pull request 439):** File > Add a second figure..., under Export, Expert mode only (6m).
 - **Claude connection and Aurora link:** switched on and off by clicking "Assistant" and "Aurora" in the status bar, and also present in Setup. The matching Options entries go away. The AI connection is built (section 6j); its Options entry is gone. A Setup entry for it is not built yet.
 - **The old Settings window** (`src/usersettingsdialog.*`): the menu entry is removed; the code stays in the repository so nothing already built is lost. It held three things: default ease in/out for new keys, floor transparency, fog.
 - **Also decided, following from the new design:** Loop playback and "Stop joints at their furthest turn" are removed from Options (already covered by the Loop switch and "Warn near the joint's limits"). Open log, Clear log, What's new and About move to Help. Cut, Copy and Paste stay in Edit; since phase 3b they copy and paste the timeline's selected stretch (section 5).
@@ -283,7 +283,7 @@ Roadmap item 6 ("Reference library browser", issue 19). The project owner said �
 
 - The preview is the clip itself on a small stick figure of the 19 classic joints, turned a little as in the mockup; the walk moves on the spot (the hip's way over the floor is left out so the figure stays in the box). Stopped, it shows the clip's first frame (not the reference pose in front of it).
 - The facts stand under the preview and its button at every width (the mockup puts them beside it when there is room), so they keep their lines in the narrow docked column.
-- "Add as a second figure" is not built here: it comes with two figures (6m).
+- "Add as a second figure" was not built here: it came with two figures (6m, pull request 439).
 - The search text, the kind and the picked clip are not kept between starts (the mockup keeps them in its own store); the panel's place, float, size and whether it is open are saved with the layout like the other panels.
 - F6 (Next area) is still not built for any panel.
 
@@ -315,9 +315,9 @@ The look (sizes, the row and chip drawing, the preview figure) waits for the com
 - Downloaded clips from `tools/fetch_reference.py` (listed by `find_reference` with `downloaded: true`), filters by length, sorting, favourites and a pose-only kind.
 - Mockup fix in the same job: in the one-column layout each docked panel is now as tall as its content (before, Selected joint ran into Script Lab or the library below it at 200 percent text), and the dock tabs wrap to a second row instead of cutting their words.
 
-## 6m. Two figures in one scene, Expert mode only (drawn in the mockup, 23 November 2026, not built)
+## 6m. Two figures in one scene, Expert mode only (drawn in the mockup, 23 November 2026; built, pull request 439)
 
-Today File > Add... (`addAnimationFile` in `src/pinglymotionwindowfile.cpp`) brings another animation into the same scene, without telling the user which figure is which (6h). The project owner said «Tegn nå» for this in the same design review (23 November 2026). Drawn in `docs/mockup/index.html`; texts `FIG-01` to `FIG-17` and `LIB-26` in [TEACHING.md](TEACHING.md). Nothing in the program changes until the owner says ok.
+Before this, File > Add... (`addAnimationFile` in `src/pinglymotionwindowfile.cpp`) brought another animation into the same scene, without telling the user which figure is which (6h). The project owner said «Tegn nå» for this in the same design review (23 November 2026). Drawn in `docs/mockup/index.html`; texts `FIG-01` to `FIG-18` and `LIB-26` in [TEACHING.md](TEACHING.md). The owner approved the mockup on 23 November 2026, 17:05 («Det ser bra ut, så second fungerer som samme som den ene+»); built as drawn, see "Built" at the end of this section.
 
 **What is shown**
 
@@ -337,6 +337,27 @@ Today File > Add... (`addAnimationFile` in `src/pinglymotionwindowfile.cpp`) bri
 
 - Moving the second figure to another place in the scene (today this is the Avatar Position of that figure), linking two figures (one leads, the other follows), and exporting both as one file.
 - Undo for adding or removing a figure.
+
+**Built (pull request 439):** `src/figures.*` (the texts in one table, `FigureSpec`; the Add a second figure window, the Figures box, the name tags, the timeline's header rows, the other figure's greyed rows and the question before Remove), wired in `src/pinglymotionwindow.cpp` and `src/pinglymotionwindowfile.cpp` (`setupFigures`, `addSecondFigure`, `addFigureFile`, `addLibraryClipAsFigure`, `makeFigureActive`, `removeFigure`, `refreshFigures`), the header rows in `src/timelineview.*`, the button in `src/librarypanel.*`, the chip in `src/selectedjointpanel.*`, the places and the grey figure in `src/animationview.*`, and `Scene::removeAnimation`. Tested exactly by `tests/twofigures` (every text against the register, the Add window's three choices, the Figures box with its clicks and arrow keys, the header rows, Beginner hiding Make active and Remove on the same pixels, the greyed rows and their clicks, the timeline's order with either figure active, the question before Remove, where a new figure stands, save and reopen, the Library button only in Expert mode and greyed when the scene is full, the chip, and the window's wiring read from its source) and `tests/tst_scene.cpp` (`sceneRemoveAnimation`).
+
+What is saved: nothing new. Each figure is its own animation with its own file, as before; Save, Save as and Export work on the active figure only and write the ordinary `.dingle` (or `.anim`) of that figure. The scene itself (which figures, their places, which one is active) is not saved and is not kept with the layout: the next start opens one animation as always. The `.dingle` format is unchanged ([ANIM_FORMAT.md](ANIM_FORMAT.md) is not touched). Remove never writes a file; with unsaved changes it asks first (Cancel, Remove without saving, Save, then remove).
+
+On purpose different from the drawing or from the words above:
+
+- "figure 2 of 2" stands in the window title after the file name: the program's top bar has no file name.
+- From a file... says "A .dingle, BVH or .avm file." (`FIG-05` was ".dingle, .anim, BVH or glTF"): the add route opens what File > Open opens today; `.anim` and glTF go through their import windows, which do not add a second figure yet.
+- A click on the other figure makes it active and also picks the joint that was clicked. Its joints take only a click, never a pull, so nothing changes in it by mistake.
+- The other figure is drawn without joint dots, rings and bone lines.
+- The timeline's ruler is as long as the active figure; the other figure's keys past its end are not shown. Both figures still play together on the same frame.
+- The name tags show in both modes (they only tell the figures apart); a click on the other figure's tag in Beginner mode says "Switching figures is in Expert mode. View > Expert mode turns it on." When two tags would touch, they are not moved apart yet.
+- A greyed row of the other figure has the tip "Click to make figure 2 active and pick this joint." (`FIG-18`, the mockup's text, now in the register).
+
+Found and fixed while building it (they were there before, with the old File > Add... too):
+
+- Switching to the other figure marked it as changed: the window wrote the shown frame count back into the animation. It now only shows it.
+- The timeline kept the length of the figure shown before when the other one had the same number of frames in the field, or after the field was no longer written back; it now takes the length of the figure it shows.
+
+The look (the grey figure, the tags, the Figures box, the header rows) goes to the combined review.
 
 ## 7. Mirror and whole pose (built, UX phase 2a)
 

@@ -2750,11 +2750,19 @@ void PinglyMotionWindow::updateInputs()
 
     // we do that in nextPlaystate() now
 
-    ui->framesSpin->setValue(anim->getNumberOfFrames());
+    // showing the animation's own frame count and speed must not write them back: with two
+    // figures that marked the figure that became active as changed (docs/UX_DECISIONS.md 6m)
+    {
+      const QSignalBlocker blockFrames(ui->framesSpin);
+      ui->framesSpin->setValue(anim->getNumberOfFrames());
+    }
     ui->currentFrameSlider->setMaximum(anim->getNumberOfFrames()-1);
     // Frame back / Frame forward: not past the first or the last frame
     if(m_transport) m_transport->setFrame(anim->getFrame(),anim->getNumberOfFrames());
-    ui->fpsSpin->setValue(anim->fps());
+    {
+      const QSignalBlocker blockFps(ui->fpsSpin);
+      ui->fpsSpin->setValue(anim->fps());
+    }
 
     // prevent feedback loop
     ui->scaleSpin->blockSignals(true);

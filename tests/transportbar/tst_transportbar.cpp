@@ -551,7 +551,14 @@ void TestTransportBar::lookDrawnInTheTokenColours()
 void TestTransportBar::lookLucidePaths()
 {
   QCOMPARE(QString::fromLatin1(LucideIcons::version()), QStringLiteral("1.77.0"));
-  QCOMPARE(LucideIcons::names(), QStringList({"play", "square", "rotate-ccw", "undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun", "moon", "sparkles", "x", "lightbulb", "info", "keyboard", "video", "flip-horizontal-2", "chevron-right", "chevron-down", "ban", "folder-open", "file-code", "terminal", "circle-check", "circle-x", "refresh-cw", "notebook-text", "box", "rotate-3d", "mouse-pointer-2", "move-3d", "diamond", "triangle-alert", "diamond-plus", "book-open", "eye-off", "orbit", "hand", "zoom-in", "crosshair", "maximize", "house", "axis-3d", "eye", "check", "sliders-horizontal", "library-big", "search", "import"}));
+  QCOMPARE(LucideIcons::names(), QStringList({"play", "square", "rotate-ccw", "undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun", "moon", "sparkles", "x", "lightbulb", "info", "keyboard", "video", "flip-horizontal-2", "chevron-right", "chevron-down", "ban", "folder-open", "file-code", "terminal", "circle-check", "circle-x", "refresh-cw", "notebook-text", "box", "rotate-3d", "mouse-pointer-2", "move-3d", "diamond", "triangle-alert", "diamond-plus", "book-open", "eye-off", "orbit", "hand", "zoom-in", "crosshair", "maximize", "house", "axis-3d", "eye", "check", "sliders-horizontal", "library-big", "search", "import", "user-plus", "user-minus"}));
+  // two figures (docs/UX_DECISIONS.md 6m): the head is the circle round 9,7 with radius 4, the
+  // shoulders reach from x 2 to 16 at the bottom; user-plus has its cross out to x 22
+  const QRectF plus = LucideIcons::path(QStringLiteral("user-plus")).boundingRect();
+  QVERIFY(qAbs(plus.left() - 2) < 0.05 && qAbs(plus.top() - 3) < 0.05 && qAbs(plus.right() - 22) < 0.05 && qAbs(plus.bottom() - 21) < 0.05);
+  const QRectF minus = LucideIcons::path(QStringLiteral("user-minus")).boundingRect();
+  QVERIFY(qAbs(minus.left() - 2) < 0.05 && qAbs(minus.top() - 3) < 0.05 && qAbs(minus.right() - 22) < 0.05 && qAbs(minus.bottom() - 21) < 0.05);
+  QVERIFY(!LucideIcons::path(QStringLiteral("user-plus")).contains(QPointF(19, 3)));
   QVERIFY(LucideIcons::path(QStringLiteral("no-such-icon")).isEmpty());
   // the Library panel's icons (from the approved mockup): the search lens is the circle round
   // 11,11 with radius 8 and the handle to 21,21; the book stands from x 3

@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QToolButton>
 #include <QRegularExpression>
 #include <QSignalSpy>
 #include <QStandardPaths>
@@ -246,8 +247,12 @@ class TestTwoFigures : public QObject
         QCOMPARE(dialog.libraryButton()->text(), QStringLiteral("From the library\nPick a ready-made move, then press Add as a second figure."));
         QCOMPARE(dialog.fileButton()->text(), QStringLiteral("From a file...\nA .dingle, BVH or .avm file."));
         QCOMPARE(dialog.cancelButton()->text(), QStringLiteral("Cancel"));
+        // From the library is the main choice (accent fill), From a file a normal one
+        QVERIFY(dialog.libraryButton()->styleSheet().startsWith(QStringLiteral("QToolButton { background: ") + Theme::color(Theme::Token::Accent).name()));
+        QVERIFY(dialog.fileButton()->styleSheet().startsWith(QStringLiteral("QToolButton { background: ") + Theme::color(Theme::Token::SurfaceRaised).name()));
         QCOMPARE(dialog.choice(), AddFigureDialog::Choice::Cancel);
-        QPushButton* button = which == 0 ? dialog.libraryButton() : which == 1 ? dialog.fileButton() : dialog.cancelButton();
+        QAbstractButton* button = which == 0 ? static_cast<QAbstractButton*>(dialog.libraryButton())
+                                : which == 1 ? static_cast<QAbstractButton*>(dialog.fileButton()) : dialog.cancelButton();
         dialog.show();
         QTest::mouseClick(button, Qt::LeftButton);
         const AddFigureDialog::Choice expected = which == 0 ? AddFigureDialog::Choice::Library
@@ -331,6 +336,10 @@ class TestTwoFigures : public QObject
       // making a figure active goes through the combo box route (Joints list, Selected joint, timeline)
       const QString file = source("pinglymotionwindowfile.cpp");
       QVERIFY(body(file, QStringLiteral("void PinglyMotionWindow::makeFigureActive(int index)")).contains(QStringLiteral("animationChanged(index);")));
+      // switching only shows the other figure's frame count and speed: nothing is written back,
+      // so the figure that becomes active is not marked as changed
+      QVERIFY(window.contains(QStringLiteral("const QSignalBlocker blockFrames(ui->framesSpin);\n      ui->framesSpin->setValue(anim->getNumberOfFrames());")));
+      QVERIFY(window.contains(QStringLiteral("const QSignalBlocker blockFps(ui->fpsSpin);\n      ui->fpsSpin->setValue(anim->fps());")));
       // the title says which one is active
       QVERIFY(window.contains(QStringLiteral("FigureSpec::titleText(activeFigure()+1,animationIds.count());")));
     }
@@ -541,6 +550,32 @@ class TestTwoFigures : public QObject
       QVERIFY(view.findChildren<FigureHeader*>().isEmpty());
       QVERIFY(view.findChildren<FigureRows*>().isEmpty());
       QCOMPARE(view.activeRowsArea()->y(), 0);
+    }
+
+    // switching figures: the timeline takes the length of the figure it shows now
+    void timelineFollowsTheActiveFiguresLength()
+    {
+      Skeleton skeleton;
+      Animation a(&skeleton.bvh);
+      Animation b(&skeleton.bvh);
+      a.setNumberOfFrames(20);
+      b.setNumberOfFrames(114);
+      turn(a, Skeleton::track(a, QStringLiteral("head")), 5, 20);
+      turn(b, Skeleton::track(b, QStringLiteral("head")), 50, 20);
+      Timeline timeline;
+      timeline.setAnimation(&a);
+      QCOMPARE(timeline.width(), 20 * Constants::keyWidth());
+      timeline.setAnimation(&b);
+      QCOMPARE(timeline.width(), 114 * Constants::keyWidth());
+      timeline.setAnimation(&a);
+      QCOMPARE(timeline.width(), 20 * Constants::keyWidth());
+      // a and b were only shown: neither is marked as changed by that
+      a.setDirty(false);
+      b.setDirty(false);
+      timeline.setAnimation(&b);
+      timeline.setAnimation(&a);
+      QVERIFY(!a.dirty());
+      QVERIFY(!b.dirty());
     }
 
     // ---- removing ----

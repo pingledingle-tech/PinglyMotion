@@ -45,6 +45,7 @@ class QButtonGroup;
 class QMessageBox;
 class QPushButton;
 class QRadioButton;
+class QToolButton;
 class QVBoxLayout;
 
 namespace FigureSpec
@@ -139,16 +140,16 @@ class AddFigureDialog : public QDialog
 
     QLabel* titleLabel() const { return m_title; }
     QLabel* lineLabel() const { return m_line; }
-    QPushButton* libraryButton() const { return m_library; }
-    QPushButton* fileButton() const { return m_file; }
+    QToolButton* libraryButton() const { return m_library; }
+    QToolButton* fileButton() const { return m_file; }
     QPushButton* cancelButton() const { return m_cancel; }
 
   private:
     Choice m_choice = Choice::Cancel;
     QLabel* m_title = nullptr;
     QLabel* m_line = nullptr;
-    QPushButton* m_library = nullptr;
-    QPushButton* m_file = nullptr;
+    QToolButton* m_library = nullptr;
+    QToolButton* m_file = nullptr;
     QPushButton* m_cancel = nullptr;
 };
 

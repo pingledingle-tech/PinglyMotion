@@ -19,6 +19,7 @@ Files:
 - src/timelinerows.*
 - src/selectedjointpanel.*
 - src/lucideicons.cpp
+- tests/transportbar/**
 - src/topbar.*
 - src/menuspec.h
 - src/figures.*

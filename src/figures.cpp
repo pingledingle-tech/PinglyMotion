@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSizePolicy>
+#include <QToolButton>
 #include <QToolTip>
 #include <QVBoxLayout>
 
@@ -172,14 +173,23 @@ AddFigureDialog::AddFigureDialog(QWidget* parent)
   m_line->setWordWrap(true);
   layout->addWidget(m_line);
 
-  // two choices: the name, then a line under it (the mockup's .choice buttons)
+  // two choices: the name, then a line under it (the mockup's .choice buttons, drawn as the
+  // welcome card's start choices are)
   const auto choiceButton = [this](const char* name, const char* line, bool main)
   {
-    QPushButton* button = new QPushButton(FigureSpec::tr(name) + QLatin1Char('\n') + FigureSpec::tr(line), this);
-    button->setMinimumHeight(TextSize::scaled(Size::controlLarge) + Size::spacingL);
-    button->setAutoDefault(false);
-    button->setStyleSheet(buttonStyle(false, main) + QStringLiteral("QPushButton { text-align: left; padding: %1px %2px; }")
-                            .arg(Size::spacingS).arg(Size::spacingM));
+    QToolButton* button = new QToolButton(this);
+    button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    button->setText(FigureSpec::tr(name) + QLatin1Char('\n') + FigureSpec::tr(line));
+    button->setMinimumHeight(TextSize::scaled(Size::controlLarge) + Size::spacingM);
+    const QString fill = hex(main ? Token::Accent : Token::SurfaceRaised);
+    const QString fg = hex(main ? Token::OnAccent : Token::Text);
+    const QString edge = hex(main ? Token::Accent : Token::Border);
+    button->setStyleSheet(QStringLiteral(
+      "QToolButton { background: %1; color: %2; border: %5px solid %3; border-radius: %4px; padding: %8px %9px; }"
+      "QToolButton:focus { border: %6px solid %7; }")
+      .arg(fill, fg, edge).arg(Size::radiusControl).arg(Size::borderWidth).arg(Size::focusRingWidth)
+      .arg(hex(Token::FocusRing)).arg(Size::spacingS).arg(Size::spacingL));
     return button;
   };
   m_library = choiceButton(fromLibrary, fromLibraryLine, true);
@@ -202,8 +212,8 @@ AddFigureDialog::AddFigureDialog(QWidget* parent)
   setStyleSheet(QStringLiteral("QDialog#addFigureDialog { background: %1; } QLabel { color: %2; }")
                   .arg(hex(Token::Surface), hex(Token::Text)));
 
-  connect(m_library, &QPushButton::clicked, this, [this]() { m_choice = Choice::Library; accept(); });
-  connect(m_file, &QPushButton::clicked, this, [this]() { m_choice = Choice::File; accept(); });
+  connect(m_library, &QToolButton::clicked, this, [this]() { m_choice = Choice::Library; accept(); });
+  connect(m_file, &QToolButton::clicked, this, [this]() { m_choice = Choice::File; accept(); });
   connect(m_cancel, &QPushButton::clicked, this, [this]() { m_choice = Choice::Cancel; reject(); });
   m_library->setFocus();
 }
