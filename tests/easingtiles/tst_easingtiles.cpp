@@ -803,8 +803,8 @@ void EasingTilesTest::tilesStandInOneRunFromTheLeft()
     }
     // Edit curve right after the last tile
     QCOMPARE(row.editCurveButton()->geometry().left(), tiles.last().right() + 1 + 4);
-    // and the room left over stays on the right
-    QVERIFY(row.editCurveButton()->geometry().right() < width / 2 || wrapped);
+    // and the room left over stays on the right, after Edit curve
+    QVERIFY(row.editCurveButton()->geometry().right() < width - row.layout()->contentsMargins().right() - 1);
   }
   UserSettings::setExpertMode(false);
 }
