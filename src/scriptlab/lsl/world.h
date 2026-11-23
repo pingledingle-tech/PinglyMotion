@@ -241,6 +241,20 @@ struct RegionSettings
   double timeOfDay = 7200.0;                                 // llGetTimeOfDay at the start: noon of that day
   qint64 unixStart = DEFAULT_UNIX_START;                     // llGetUnixTime at the start (UTC seconds since 1970)
 
+  // Land and parcel reads (llGetLandOwnerAt, llGetParcelFlags, llGetParcelDetails and friends). The sandbox has no parcel
+  // model: the whole region is one parcel with these canned values. No lsl_run option sets them yet (C++ only).
+  static constexpr float SIZE = 256.0f;                      // a region is SIZE by SIZE metres; a position outside it is on no parcel
+  QString parcelOwner;                                       // the parcel's owner; empty means the objects' owner (then llOverMyLand is TRUE)
+  QString parcelName = "Sandbox Parcel";                     // PARCEL_DETAILS_NAME
+  QString parcelDescription;                                 // PARCEL_DETAILS_DESC
+  QString parcelId = "5a7d0000-0000-4000-8000-000000000001"; // PARCEL_DETAILS_ID
+  int parcelArea = 65536;                                    // PARCEL_DETAILS_AREA: the whole region, in square metres
+  int parcelFlags = 0x0800004B;                              // fly, scripts, landmark, create objects, all object entry
+  int parcelMaxPrims = 15000;                                // llGetParcelMaxPrims and PARCEL_DETAILS_PRIM_CAPACITY (a full region)
+  int parcelSeeAvatars = 1;                                  // PARCEL_DETAILS_SEE_AVATARS
+  int parcelTpRouting = 2;                                   // PARCEL_DETAILS_TP_ROUTING: 2, teleports land anywhere
+  int parcelScriptDanger = 0;                                // PARCEL_DETAILS_SCRIPT_DANGER
+
   // the date, a time stamp and the Second Life time (US Pacific, with summer time) at simulated time now
   QString date(double now) const;                            // llGetDate: "YYYY-MM-DD" (UTC)
   QString timestamp(double now) const;                       // llGetTimestamp: "YYYY-MM-DDThh:mm:ss.ffffffZ" (UTC)
@@ -400,6 +414,9 @@ class World
     virtual const RegionSettings& region() const { return m_region; }
     void setRegion(const RegionSettings& region) { m_region = region; }
     virtual QStringList agents() const { return QStringList{ownerKey()}; }
+    // llSetParcelMusicURL stores the address and llGetParcelMusicURL reads it back (the one parcel's music)
+    const QString& parcelMusicUrl() const { return m_parcelMusicUrl; }
+    void setParcelMusicUrl(const QString& url) { m_parcelMusicUrl = url; }
 
     // Gap list 2, step 4: URLs of the sandbox's fake web server (host URL_HOST, which never resolves; port 12046 for
     // http, 12043 for https, as in Second Life). MAX_URLS in the whole world (Second Life's cap of 38 per resident).
@@ -462,6 +479,7 @@ class World
     QString m_objectName = "Object";
     QString m_objectDesc;
     RegionSettings m_region;
+    QString m_parcelMusicUrl;
     QStringList m_urls;
     int m_urlCounter = 0;
     std::deque<Email> m_mail;
