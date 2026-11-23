@@ -103,6 +103,15 @@ class UserSettings
     static void setJointMoreOptions(bool open);
     static bool jointMoreOptions();
 
+    // the welcome card (UX phase 6a, docs/UX_DECISIONS.md, 6k): true once it was answered or
+    // skipped, so it shows only once; Help > Show the welcome card again shows it again
+    static void setWelcomeSeen(bool seen);
+    static bool welcomeSeen();
+    // the hint card now shown (0 = the first one; the number of cards = all seen), kept
+    // between sessions; a value below 0 gives 0, above 99 gives 99
+    static void setHintCard(int index);
+    static int hintCard();
+
     static void setExpertMode(bool on);
     static bool expertMode();
     // calls `changed` with the new value whenever setExpertMode() changes it, as long as
@@ -200,6 +209,10 @@ private:
     static const QString m_pullLimbOnDragKey;
     static bool m_jointMoreOptions;
     static const QString m_jointMoreOptionsKey;
+    static bool m_welcomeSeen;
+    static const QString m_welcomeSeenKey;
+    static int m_hintCard;
+    static const QString m_hintCardKey;
     static bool m_expertMode;
     static const QString m_expertModeKey;
     static QMap<QString, QRect> m_windowPlaces;

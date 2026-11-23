@@ -115,6 +115,9 @@
 #include "theme.h"
 #include "menuspec.h"
 #include "emptystate.h"
+#include "guidancespec.h"
+#include "hintcard.h"
+#include "welcomedialog.h"
 #include "topbar.h"
 #include "reasonline.h"
 #include "setupdialog.h"
@@ -613,6 +616,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
     m_scriptLabPanel->setHintsOn(on);   // the Script Lab panel's explanation line
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);   // the Selected joint panel's hint line
     refreshHandsPanel();   // the Hands tab's hint lines
+    if(m_hintCards) m_hintCards->setHintsOn(on);
     if(m_hintsAction) m_hintsAction->setChecked(on);   // Help > Show hints follows the switch
   });
   buildMenus();
@@ -670,6 +674,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   QString fileFromCommandLine;
   for(const QString& arg : args)
     if(!arg.startsWith("--") && fileFromCommandLine.isEmpty()) fileFromCommandLine=arg;
+  m_startedWithFileOrControl=startWithControl || !fileFromCommandLine.isEmpty();
   if(!fileFromCommandLine.isEmpty())
   {
     fileOpen(fileFromCommandLine);
@@ -771,6 +776,28 @@ void PinglyMotionWindow::queueAfterShow()
 void PinglyMotionWindow::afterShow()
 {
   updateChecker.onStartup();
+  // the welcome card, on the first start only; not when a file was given on the command line or
+  // the program was started for scripts and tests (--control), where nobody clicks anything
+  if(WelcomeDialog::due() && !m_startedWithFileOrControl) showWelcomeCard();
+}
+
+// Help > Show the welcome card again, Setup's button, and the first start
+void PinglyMotionWindow::showWelcomeCard()
+{
+  WelcomeDialog dialog(this);
+  dialog.exec();
+  const WelcomeDialog::Answer answer=dialog.answer();
+  WelcomeDialog::apply(answer);
+  // the same paths as the menu items and the Setup dialog, so everything shows the new choice
+  if(m_expertModeAction && m_expertModeAction->isChecked()!=answer.expert) m_expertModeAction->setChecked(answer.expert);
+  if(answer.expert && !answer.cameraHabit.isEmpty()) chooseCameraHabit(answer.cameraHabit);
+  if(answer.skipped)
+  {
+    statusBar()->showMessage(GuidanceSpec::tr(GuidanceSpec::skipMessage,"WelcomeDialog"),8000);
+    return;
+  }
+  startFromLibrary(answer.clipId);
+  statusBar()->showMessage(GuidanceSpec::tr(GuidanceSpec::readyMessage,"WelcomeDialog"),8000);
 }
 
 // slot gets called by AnimationView::mousePressEvent()
@@ -788,6 +815,7 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
   if(node)
   {
     currentPart=node;
+    if(m_hintCards) m_hintCards->setPicked(true);
 
     // show the joint in the joint table, on its tab
     const int track=ui->animationView->partNames().indexOf(currentPart->name());
@@ -839,6 +867,7 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
 // slot gets called by AnimationView::mouseMoveEvent()
 void PinglyMotionWindow::partDragged(BVHNode* node,double x,double y,double z)
 {
+  if(m_hintCards) m_hintCards->markTurned();
   if(node)
   {
     // check if this frame is protected
@@ -1172,8 +1201,9 @@ void PinglyMotionWindow::buildMenus()
     if(m_panels && m_panels->pasteMirrored) m_panels->pasteMirrored->setVisible(on);
     // and the Hands tab's joint grid (UX phase 2c)
     refreshHandsPanel();
-    statusBar()->showMessage(on ? tr("Expert mode is on. Paste mirrored shows on the timeline; more controls come in later updates.")
-                                : tr("Beginner mode is on."),5000);
+    // the Edit curve button follows through UserSettings::watchExpertMode; the mockup's sentences
+    statusBar()->showMessage(on ? GuidanceSpec::tr(GuidanceSpec::expertOnMessage,"GuidanceSpec")
+                                : GuidanceSpec::tr(GuidanceSpec::expertOffMessage,"GuidanceSpec"),5000);
   });
   ui->menuView->addAction(m_expertModeAction);
 
@@ -1203,7 +1233,9 @@ void PinglyMotionWindow::buildMenus()
   QAction* helpSetupAction=specAction(this,helpSetup,false);
   connect(helpSetupAction,&QAction::triggered,this,&PinglyMotionWindow::openSetupDialog);
   ui->menuHelp->addAction(helpSetupAction);
-  ui->menuHelp->addAction(specAction(this,helpWelcome,false));
+  QAction* helpWelcomeAction=specAction(this,helpWelcome,false);
+  connect(helpWelcomeAction,&QAction::triggered,this,&PinglyMotionWindow::showWelcomeCard);
+  ui->menuHelp->addAction(helpWelcomeAction);
   m_hintsAction=specAction(this,helpHints,false);
   m_hintsAction->setCheckable(true);
   m_hintsAction->setChecked(UserSettings::tipsOn());
@@ -1217,6 +1249,7 @@ void PinglyMotionWindow::buildMenus()
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);
     refreshHandsPanel();
     m_tipsSwitch->setOn(on);
+    if(m_hintCards) m_hintCards->setHintsOn(on);   // the hint cards follow the setting (UX phase 6a)
   });
   ui->menuHelp->addAction(m_hintsAction);
   ui->menuHelp->addSeparator();
@@ -1360,6 +1393,40 @@ void PinglyMotionWindow::buildTopBar()
   m_emptyState->hide();
   connect(m_emptyState,&EmptyState::startChosen,this,&PinglyMotionWindow::startFromLibrary);
   connect(m_emptyState,&EmptyState::newChosen,this,[this](){ fileNew(); });
+
+  buildHintCards();
+}
+
+// UX phase 6a: the hint cards (src/hintcard.h), one at a time by the part of the window they talk about
+void PinglyMotionWindow::buildHintCards()
+{
+  m_hintCards=new HintCards(this,[this](const QString& name) -> QWidget*
+  {
+    if(name==QLatin1String("view")) return ui->animationView;
+    if(name==QLatin1String("selected")) return m_selectedJoint;
+    if(name==QLatin1String("setKey")) return m_panels ? m_panels->setKey : nullptr;
+    if(name==QLatin1String("start")) return m_panels && m_panels->transport ? m_panels->transport->startButton() : nullptr;
+    if(name==QLatin1String("tiles")) return ui->timelineView->easingTiles();
+    if(name==QLatin1String("joints")) return m_jointsDock;
+    if(name==QLatin1String("setup")) return m_topBar ? m_topBar->setupWidget() : nullptr;
+    return nullptr;
+  });
+  connect(m_hintCards,&HintCards::hintsOffRequested,this,[this]()
+  {
+    if(m_hintsAction) m_hintsAction->setChecked(false);
+    statusBar()->showMessage(GuidanceSpec::tr(GuidanceSpec::hintsOffMessage,"HintCard"),8000);
+  });
+  // turning a joint with a slider also counts, as dragging a ring does (partDragged)
+  for(QSlider* slider : {ui->xRotationSlider,ui->yRotationSlider,ui->zRotationSlider})
+  {
+    connect(slider,&QAbstractSlider::sliderMoved,this,[this](){ m_hintCards->markTurned(); });
+    connect(slider,&QAbstractSlider::actionTriggered,this,[this](){ m_hintCards->markTurned(); });
+  }
+  // a card follows its part when a panel is shown or hidden
+  for(QDockWidget* dock : {m_jointsDock,m_jointCardDock,m_timelineDock})
+    if(dock) connect(dock,&QDockWidget::visibilityChanged,m_hintCards,[this](bool){ m_hintCards->refresh(); });
+  m_hintCards->setHintsOn(UserSettings::tipsOn());
+  m_hintCards->setAnimationOpen(!m_empty);
 }
 
 // UX phase 4b: the view toolbar at the top left of the 3D view (docs/UX_DECISIONS.md 6b)
@@ -1447,6 +1514,7 @@ void PinglyMotionWindow::pullFinished(BVHNode* pulled,const QList<QPair<BVHNode*
 {
   Animation* anim=scene->getAnimation();
   if(!anim || !pulled || turns.isEmpty()) return;
+  if(m_hintCards) m_hintCards->markPulled();
   QStringList driven;
   for(const auto& turn : turns)
   {
@@ -1578,6 +1646,7 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
     if(empty) m_emptyState->choiceButtons().last()->setFocus();
   }
   if(m_topBar) m_topBar->setAnimationOpen(!empty);
+  if(m_hintCards) m_hintCards->setAnimationOpen(!empty);
   // the view toolbar has nothing to look at while the empty state covers the 3D view
   if(m_viewToolbar) m_viewToolbar->setVisible(!empty);
   // the timeline shows one line instead of its rows (UX phase 3a)
@@ -1812,7 +1881,11 @@ void PinglyMotionWindow::openSetupDialog()
   });
   connect(&dialog,&SetupDialog::cameraHabitRequested,this,&PinglyMotionWindow::chooseCameraHabit);
   connect(&dialog,&SetupDialog::showCameraKeysRequested,this,&PinglyMotionWindow::openCameraKeysDialog);
+  bool welcomeAgain=false;
+  connect(&dialog,&SetupDialog::welcomeRequested,this,[&dialog,&welcomeAgain]() { welcomeAgain=true; dialog.accept(); });
   dialog.exec();
+  // the welcome card opens after Setup has closed, never on top of it
+  if(welcomeAgain) showWelcomeCard();
 }
 
 // Help > Camera and keys..., and the Setup dialog's "Show all mouse and keys" button

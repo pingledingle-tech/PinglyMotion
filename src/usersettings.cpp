@@ -67,6 +67,10 @@ bool UserSettings::m_pullLimbOnDrag = true;
 const QString UserSettings::m_pullLimbOnDragKey = "pull_limb_on_drag";
 bool UserSettings::m_jointMoreOptions = false;
 const QString UserSettings::m_jointMoreOptionsKey = "joint_more_options";
+bool UserSettings::m_welcomeSeen = false;
+const QString UserSettings::m_welcomeSeenKey = "welcome_seen";
+int UserSettings::m_hintCard = 0;
+const QString UserSettings::m_hintCardKey = "hint_card";
 bool UserSettings::m_expertMode = false;
 const QString UserSettings::m_expertModeKey = "expert_mode";
 QMap<QString, QRect> UserSettings::m_windowPlaces;
@@ -191,6 +195,10 @@ QRect UserSettings::windowPlace(const QString& name)
   return m_windowPlaces.value(name);
 }
 bool UserSettings::expertMode()                      { return m_expertMode; }
+void UserSettings::setWelcomeSeen(bool seen)         { m_welcomeSeen = seen; }
+bool UserSettings::welcomeSeen()                     { return m_welcomeSeen; }
+void UserSettings::setHintCard(int index)            { m_hintCard = std::clamp(index, 0, 99); }
+int UserSettings::hintCard()                         { return m_hintCard; }
 QStringList UserSettings::cameraHabits()
 {
   return { QStringLiteral("pinglymotion"), QStringLiteral("maya"), QStringLiteral("blender"), QStringLiteral("sl") };
@@ -278,6 +286,12 @@ void UserSettings::readSettings()
     setExpertMode(settings.value(m_expertModeKey, false).toString().toLower() == "true"
                   || settings.value(m_expertModeKey, false).toString() == "1");
     setCameraHabit(settings.value(m_cameraHabitKey, "pinglymotion").toString());
+    // true or 1 only; anything else means the welcome card was not answered yet
+    setWelcomeSeen(settings.value(m_welcomeSeenKey, false).toString().toLower() == "true"
+                   || settings.value(m_welcomeSeenKey, false).toString() == "1");
+    bool cardOk = false;
+    const int card = settings.value(m_hintCardKey, 0).toInt(&cardOk);
+    setHintCard(cardOk ? card : 0);
     // the places of separate windows (UX phase 5); anything that is not a usable rect is left out
     m_windowPlaces.clear();
     settings.beginGroup(m_windowPlacesGroup);
@@ -346,6 +360,8 @@ void UserSettings::writeSettings()
   settings.setValue(m_jointMoreOptionsKey, jointMoreOptions());
   settings.setValue(m_expertModeKey, expertMode());
   settings.setValue(m_cameraHabitKey, cameraHabit());
+  settings.setValue(m_welcomeSeenKey, welcomeSeen());
+  settings.setValue(m_hintCardKey, hintCard());
   settings.remove(m_windowPlacesGroup);
   settings.beginGroup(m_windowPlacesGroup);
   for (auto it = m_windowPlaces.cbegin(); it != m_windowPlaces.cend(); ++it)

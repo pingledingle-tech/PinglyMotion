@@ -31,6 +31,7 @@ class TestUserSettings : public QObject
     void windowPlacesSurviveSaveAndReload();
     void badWindowPlacesAreLeftOut();
     void expertModeWatchers();
+    void welcomeAndHintCardAreRemembered();
 
   private:
     void writeVersionGroup(const QVariantMap& values);
@@ -225,6 +226,46 @@ void TestUserSettings::expertModeWatchers()
   // the context is gone: no more calls
   UserSettings::setExpertMode(true);
   QCOMPARE(seen, (QList<bool>{ true, false }));
+}
+
+// UX phase 6a: the welcome card shows once, the hint card is remembered
+void TestUserSettings::welcomeAndHintCardAreRemembered()
+{
+  // nothing stored: the card was not answered and the first hint card is next
+  writeVersionGroup({});
+  UserSettings::setWelcomeSeen(true);
+  UserSettings::setHintCard(7);
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::welcomeSeen(), false);
+  QCOMPARE(UserSettings::hintCard(), 0);
+
+  UserSettings::setWelcomeSeen(true);
+  UserSettings::setHintCard(4);
+  UserSettings::writeSettings();
+  UserSettings::setWelcomeSeen(false);
+  UserSettings::setHintCard(0);
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::welcomeSeen(), true);
+  QCOMPARE(UserSettings::hintCard(), 4);
+
+  // the key names in the file
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                     Constants::organizationName(), Constants::applicationName());
+  QCOMPARE(settings.value(group + QStringLiteral("welcome_seen")).toString(), QStringLiteral("true"));
+  QCOMPARE(settings.value(group + QStringLiteral("hint_card")).toInt(), 4);
+
+  // 1 counts as true; anything else does not; a card number is cut to 0 to 99 and a word gives 0
+  writeVersionGroup({{QStringLiteral("welcome_seen"), QStringLiteral("1")}, {QStringLiteral("hint_card"), QStringLiteral("500")}});
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::welcomeSeen(), true);
+  QCOMPARE(UserSettings::hintCard(), 99);
+  writeVersionGroup({{QStringLiteral("welcome_seen"), QStringLiteral("yes please")}, {QStringLiteral("hint_card"), QStringLiteral("abc")}});
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::welcomeSeen(), false);
+  QCOMPARE(UserSettings::hintCard(), 0);
+  writeVersionGroup({{QStringLiteral("hint_card"), QStringLiteral("-3")}});
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::hintCard(), 0);
 }
 
 QTEST_MAIN(TestUserSettings)

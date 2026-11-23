@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSettings>
+#include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTableWidget>
 #include <QTemporaryDir>
@@ -38,6 +39,8 @@ class TestSetupDialog : public QObject
     void textSizeChoiceEmits();
     void hintsSwitchEmits();
     void showAllKeysOpensCameraDialog();
+    // "Show the welcome card again" (UX phase 6a, the mockup's Guidance section)
+    void welcomeButtonAsksForTheWelcomeCard();
     // a choice applied through UserSettings (the same path the window's own actions take) is
     // still there after a restart-like write and reload, and the dialog shows it again
     void choiceRoundTripsAfterRestart();
@@ -321,6 +324,21 @@ void TestSetupDialog::menuItemsAreNoLongerGreyed()
   using namespace MenuSpec;
   for (const Item* item : {&viewSetup, &helpSetup, &helpCamera, &helpKeys})
     QCOMPARE(QString::fromLatin1(item->reason), QString());
+}
+
+void TestSetupDialog::welcomeButtonAsksForTheWelcomeCard()
+{
+  SetupDialog dialog;
+  QVERIFY(dialog.welcomeButton());
+  QCOMPARE(dialog.welcomeButton()->text(), QStringLiteral("Show the welcome card again"));
+  QCOMPARE(SetupText::welcomeAgain, "Show the welcome card again");
+  QVERIFY(!dialog.welcomeButton()->icon().isNull());
+  QSignalSpy spy(&dialog, &SetupDialog::welcomeRequested);
+  dialog.welcomeButton()->click();
+  QCOMPARE(spy.count(), 1);
+  // the same words as Help > Show the welcome card again
+  QCOMPARE(MenuSpec::text(MenuSpec::helpWelcome), dialog.welcomeButton()->text());
+  QVERIFY(QString::fromLatin1(MenuSpec::helpWelcome.reason).isEmpty());
 }
 
 QTEST_MAIN(TestSetupDialog)

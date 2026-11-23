@@ -7,10 +7,16 @@ Files:
 - src/guidancespec.h
 - src/pinglymotionwindow.*
 - src/menuspec.h
+- src/lucideicons.cpp
+- src/topbar.*
 - src/usersettings.*
 - src/setupdialog.*
 - src/CMakeLists.txt
+- src/easingtiles.*
+- src/panelcontent.h
 - tests/guidance/**
+- tests/easingtiles/**
+- tests/uirender/**
 - tests/CMakeLists.txt
 - tests/usersettings/**
 - tests/menutexts/**

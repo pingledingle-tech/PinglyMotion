@@ -68,6 +68,7 @@ class TransportBar;
 class TopBar;
 class ReasonLine;
 class EmptyState;
+class HintCards;
 class ViewToolbar;
 class ScriptLabPanel;
 class AuroraLink;
@@ -92,6 +93,8 @@ class PinglyMotionWindow : public QMainWindow
     ~PinglyMotionWindow();
 
     void queueAfterShow();
+    // Help > Show the welcome card again (UX phase 6a)
+    void showWelcomeCard();
 
   signals:
     void resetCamera();
@@ -540,6 +543,9 @@ class PinglyMotionWindow : public QMainWindow
     TopBar* m_topBar = nullptr;
     ReasonLine* m_reasonLine = nullptr;
     EmptyState* m_emptyState = nullptr;
+    HintCards* m_hintCards = nullptr;
+    bool m_startedWithFileOrControl = false;
+    void buildHintCards();
     // true while no animation is open: a clean untitled animation stays behind the empty state
     // so the old code never meets "no animation"; the commands see none (see WindowControlHost)
     bool m_empty = false;

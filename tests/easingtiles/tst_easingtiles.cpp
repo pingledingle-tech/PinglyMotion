@@ -71,6 +71,7 @@ class EasingTilesTest : public QObject
     void dialogStartAgainAndLimits();
     // UX phase 5 (the approved mockup, docs/UX_DECISIONS.md sections 2 and 3)
     void headingAndExpertOnlyEditButton();
+    void expertModeMovesNoTile();
     void greyedRowSaysWhy();
     void customLineShowsWithTipsOff();
     void tabReachesTheCurrentTileOnly();
@@ -733,6 +734,33 @@ void EasingTilesTest::headingAndExpertOnlyEditButton()
   // the button sits right of the tiles, with the mockup's icon
   QVERIFY(!expertRow.editCurveButton()->icon().isNull());
   UserSettings::setExpertMode(false);
+}
+
+// charter P12 (UX phase 6a): switching Beginner or Expert mode shows or hides Edit curve and moves
+// no tile, and the row stays as high
+void EasingTilesTest::expertModeMovesNoTile()
+{
+  for (const int width : {1100, 700, 420})
+  {
+    UserSettings::setExpertMode(false);
+    EasingTiles row;
+    row.resize(width, row.heightForWidth(width) > 0 ? row.heightForWidth(width) : row.sizeHint().height());
+    row.show();
+    QCoreApplication::processEvents();
+    QList<QRect> beginner;
+    for (int i = 0; i < Easing::PresetCount; ++i) beginner << row.findChild<QWidget*>(QStringLiteral("easingTile%1").arg(i))->geometry();
+    const QRect heading = row.heading()->geometry();
+    const int hintBottom = row.findChild<QWidget*>(QStringLiteral("easingHint"))->geometry().bottom();
+    UserSettings::setExpertMode(true);
+    QCoreApplication::processEvents();
+    QVERIFY(row.editCurveButton()->isVisibleTo(&row));
+    for (int i = 0; i < Easing::PresetCount; ++i)
+      QVERIFY2(row.findChild<QWidget*>(QStringLiteral("easingTile%1").arg(i))->geometry() == beginner.at(i),
+               qPrintable(QStringLiteral("tile %1 moved in a row %2 wide").arg(i).arg(width)));
+    QCOMPARE(row.heading()->geometry(), heading);
+    QCOMPARE(row.findChild<QWidget*>(QStringLiteral("easingHint"))->geometry().bottom(), hintBottom);
+    UserSettings::setExpertMode(false);
+  }
 }
 
 void EasingTilesTest::greyedRowSaysWhy()

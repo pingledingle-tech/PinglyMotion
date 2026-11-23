@@ -100,6 +100,13 @@ public:
     keyBarLayout->addWidget(setKey);
     pasteMirrored=new QPushButton(TimelineSpec::text(ClipSpec::pasteMirroredButton),keyBar);
     pasteMirrored->setObjectName(QStringLiteral("pasteMirroredButton"));
+    // Expert mode shows it and Beginner mode hides it; the space stays, so Set key and the frame
+    // slider never move when the mode changes (charter P12)
+    {
+      QSizePolicy keepSpace=pasteMirrored->sizePolicy();
+      keepSpace.setRetainSizeWhenHidden(true);
+      pasteMirrored->setSizePolicy(keepSpace);
+    }
     keyBarLayout->addWidget(pasteMirrored);
     TransportLook::apply(keyBar);
     playLayout->addWidget(keyBar);
