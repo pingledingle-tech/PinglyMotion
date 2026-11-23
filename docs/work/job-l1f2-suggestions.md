@@ -1,5 +1,5 @@
 Branch: job/l1f2-suggestions
-Status: active
+Status: done
 Pull request: #431
 Files:
 - src/scriptlab/labeditor.*
@@ -26,7 +26,7 @@ Files:
 
 ## What
 
-Lane 1, job F2: the Script Lab editor suggests names while typing (functions, events,
+Lane 1, jobs F2 and F3 (F3 merged in by the job chat, 23 Nov 2026 16:45), plus the CodeQL fix of the difference table: the Script Lab editor suggests names while typing (functions, events,
 constants and types from Linden Lab's LSL definitions) and shows short help for the
 highlighted suggestion. A suggestion engine with providers, so the RLV job (R3) only adds
 a provider and a later Lua layer only adds a language. The list never takes Enter or Tab

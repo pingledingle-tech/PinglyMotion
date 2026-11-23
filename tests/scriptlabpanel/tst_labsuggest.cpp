@@ -782,6 +782,10 @@ void TestLabSuggest::luaSwitchOnShowsChoice()
   QCOMPARE(s.editor->languageBox()->itemText(1), QString("SLua (Lua, trial)"));
   QCOMPARE(s.editor->languageBox()->currentText(), QString("LSL"));
   QCOMPARE(s.editor->languageInUse(), QString("lsl"));
+  // reached with Tab right after Go to line (charter P8)
+  s.editor->goToButton()->setFocus(Qt::TabFocusReason);
+  QTest::keyClick(s.editor->goToButton(), Qt::Key_Tab);
+  QVERIFY(s.editor->languageBox()->hasFocus());
   // choosing SLua with the keyboard: remembered, no suggestions, a plain line says why
   s.editor->languageBox()->setFocus();
   QTest::keyClick(s.editor->languageBox(), Qt::Key_Down);
