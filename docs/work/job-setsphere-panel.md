@@ -1,6 +1,6 @@
 Branch: job/setsphere-panel
 Status: active
-Pull request: pending
+Pull request: #416
 Files:
 - src/scriptlab/spherecontrols.*
 - src/scriptlab/scriptlabpanel.*
