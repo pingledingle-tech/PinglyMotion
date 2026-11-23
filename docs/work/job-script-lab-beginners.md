@@ -1,5 +1,5 @@
 Branch: job/script-lab-beginners
-Status: active
+Status: done
 Pull request: #443
 Files:
 - src/scriptlab/scriptlabpanel.*
