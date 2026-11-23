@@ -1,6 +1,6 @@
 Branch: job/r3-rlv-editor
 Status: active
-Pull request: pending
+Pull request: #433
 Files:
 - src/scriptlab/labsuggest.*
 - src/scriptlab/rlvsuggest.*
