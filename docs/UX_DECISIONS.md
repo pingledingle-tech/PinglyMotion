@@ -39,6 +39,14 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - One thin text line under the timeline, showing the note for the current frame while playing.
 - A button hides it.
 
+**Built, UX phase 3c (behaviour and texts, 23 November 2026):** `src/timelinenotes.*` (reading the notes, the note for a frame, when the line shows, the line itself), placed under the easing tiles in `src/timelineview.*`; test `tests/timelinenotes`.
+
+- The notes come from the file: the wave example keeps WAVE-01 to WAVE-06 ([TEACHING.md](TEACHING.md)) in its `extensions` under `"pinglymotion.exampleNotes"` (one note per key and a small task). A line break in a note becomes a space, because the line has one row of text (it wraps only when the panel is too narrow). A note in a wrong shape (no text, a frame below 0 or not whole, a second note for the same frame) is left out; at most 1000 notes of at most 1000 characters each.
+- The line shows the note of the last key at or before the current frame (the first note before the first key), the same while playing and while stopped. Stopped at the last frame, at or after the last note's key, it shows the task ("Your turn: make the arm stop more softly."), as the mockup does.
+- It shows only while an animation with notes is open and Help > Show hints is on. **Hide notes** (Lucide `eye-off`, tooltip "Hide the notes") hides it and the status line says "Notes hidden. Help > Show hints shows them again." (the mockup's words). Turning Show hints on again (also with the Tips switch in the status bar) brings the notes back; while the hints are already on, that means turning them off and on. Hiding lasts for this session.
+- A `.dingle` file now keeps its `extensions` when it is saved (the format always said so; before this step the program dropped them), so a saved copy of the wave still has its notes.
+- Left for the combined review (look, not blocking): the spacing (`spacing.s` above and below, `spacing.m` left and right, `spacing.s` between icon, text and button), the tint (`surface` with 8 percent `area_other`, the mockup's `.note`) and the `area_other` book icon, and that the line stands between the tiles' hint and the frame slider.
+
 ## 5. Timeline look
 
 - One row per joint, diamond keys where a pose is set.
@@ -222,7 +230,7 @@ This is the one numbered list of interface steps ("UX step N" in issues and pull
 9. Beginner / Expert mode, remembered. Owner test: switch, restart, mode kept.
 10. First-run welcome window. Automated test that it shows only once; owner test: look and wording.
 11. Curve window: opened from "Edit curve", movable, resizable, second screen; position kept after restart.
-12. Teaching-note strip under the timeline (wave notes), hide button.
+12. Teaching-note strip under the timeline (wave notes), hide button. Built in UX phase 3c (section 4), with automated tests; its look goes to the combined review.
 13. Homepage and icon (separate track, does not touch the main window, may run in parallel).
 
 Done before this list (from the older plan in [POSING_UX.md](POSING_UX.md)): **Camera and keys**; **Joint list names, headings and search**; **Panels** (floating, movable panels, Tab to hide, reset layout; jobs P1 to P6); **Status bar** (Claude and Aurora status, tips switch); the **Easing tile row** itself ([EASING.md](EASING.md), issue 53).

@@ -5225,6 +5225,21 @@ Error: %2</source>
     </message>
 </context>
 <context>
+    <name>TimelineNotes</name>
+    <message>
+        <source>Hide notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide the notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes hidden. Help &gt; Show hints shows them again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TimelineView</name>
     <message>
         <source>Body</source>

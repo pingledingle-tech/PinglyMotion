@@ -79,6 +79,11 @@ class Animation : public QObject
     void loadBVH(const QString& bvhFile,const QByteArray* data=nullptr);
     // what went wrong while the constructor read its files; empty when all was well
     const QList<LoadProblem>& loadProblems() const { return m_loadProblems; }
+    // the "extensions" object of the .dingle file it was read from, written
+    // back on save (the wave example's notes are in it, UX phase 3c); empty
+    // for other files
+    const QJsonObject& extensions() const { return m_extensions; }
+    void setExtensions(const QJsonObject& extensions) { m_extensions=extensions; }
     // false and an error text when the file could not be written; unsaved changes stay marked
     bool saveBVH(const QString& bvhFile, QString* error=nullptr);
     // the pose of one frame as a small BVH, for the Aurora link
@@ -224,6 +229,7 @@ class Animation : public QObject
 
     bool mirrored;
     QList<LoadProblem> m_loadProblems;
+    QJsonObject m_extensions;
     bool ikOn[NUM_IK];
     IKTree ikTree;
 

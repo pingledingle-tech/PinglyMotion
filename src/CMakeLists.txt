@@ -71,6 +71,7 @@ SET (PINGLYMOTION_SHARED_SRC
               theme.cpp
               timeline.cpp
               timelineclip.cpp
+              timelinenotes.cpp
               timelinerows.cpp
               timelineview.cpp
               transportbar.cpp

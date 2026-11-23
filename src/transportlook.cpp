@@ -211,6 +211,8 @@ namespace TransportLook
     if(name==QLatin1String("keyframeButton") || name==QLatin1String("timelineFirstKeyButton")) return QStringLiteral("diamond-plus");
     // Paste mirrored (UX phase 3b, the mockup's flip-horizontal-2)
     if(name==QLatin1String("pasteMirroredButton")) return QStringLiteral("flip-horizontal-2");
+    // Hide notes on the notes line under the timeline (UX phase 3c, the mockup's eye-off)
+    if(name==QLatin1String("hideNotesButton")) return QStringLiteral("eye-off");
     return QString();
   }
 
