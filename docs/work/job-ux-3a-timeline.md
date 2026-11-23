@@ -1,5 +1,5 @@
 Branch: job/ux-3a-timeline
-Status: active
+Status: done
 Pull request: #397
 Files:
 - src/timeline.*
