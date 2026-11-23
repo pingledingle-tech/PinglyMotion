@@ -13,6 +13,7 @@ Files:
 - src/aboutdialog.*
 - src/whatsnewdialog.*
 - src/updatenotificationdialog.*
+- src/easingtiles.*
 - src/textsize.*
 - src/menuspec.h
 - src/pinglymotionwindow.*
