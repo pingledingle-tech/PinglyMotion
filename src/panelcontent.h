@@ -21,6 +21,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QMainWindow>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -34,7 +35,9 @@
 #include "panellayout.h"
 #include "paneltitlebar.h"
 #include "selectedjointpanel.h"
+#include "timelinerows.h"
 #include "timelineview.h"
+#include "transportlook.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
 #include "wheelguard.h"
@@ -53,6 +56,8 @@ public:
   SelectedJointPanel* selectedJoint=nullptr;
   TransportBar* transport=nullptr;
   TimelineView* timelineView=nullptr;
+  // Set key, the main button of the timeline panel (UX phase 3a)
+  QPushButton* setKey=nullptr;
   // the loop points, frame and speed row of the timeline panel
   QBoxLayout* rangeRow=nullptr;
   // the "(10%)" labels after the loop points
@@ -78,7 +83,19 @@ public:
     timelineView=ui->timelineView;
     QHBoxLayout* playLayout=new QHBoxLayout;
     playLayout->addWidget(ui->currentFrameSlider,1);
-    playLayout->addWidget(ui->keyframeButton);
+    // Set key: the blue main button of the timeline (UX phase 3a, the mockup's
+    // #bKey), drawn by src/transportlook.* in a row of its own
+    QWidget* keyBar=new QWidget(timelinePanel);
+    keyBar->setObjectName(QStringLiteral("setKeyBar"));
+    QHBoxLayout* keyBarLayout=new QHBoxLayout(keyBar);
+    keyBarLayout->setContentsMargins(0,0,0,0);
+    setKey=ui->keyframeButton;
+    setKey->setCheckable(false);
+    setKey->setText(TimelineSpec::text(TimelineSpec::setKey));
+    setKey->setParent(keyBar);
+    keyBarLayout->addWidget(setKey);
+    TransportLook::apply(keyBar);
+    playLayout->addWidget(keyBar);
     timelineLayout->addLayout(playLayout);
 
     // Start, Stop, Replay from start, Frame back, Frame forward and Loop

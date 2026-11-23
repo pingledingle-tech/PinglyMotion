@@ -195,7 +195,7 @@ class PinglyMotionWindow : public QMainWindow
     void on_propZRotSpin_valueChanged(int);
 
     void on_currentFrameSlider_valueChanged(int newValue);
-    void on_keyframeButton_toggled(bool on);
+    void on_keyframeButton_clicked();
     void on_loopInSpinBox_editingFinished();
     void on_loopOutSpinBox_editingFinished();
     void on_framesSpin_valueChanged(int num);
@@ -316,6 +316,8 @@ class PinglyMotionWindow : public QMainWindow
 
     void updateFps();
     void updateKeyBtn();
+    // a joint's name as the Joints list shows it, or its file name
+    QString jointDisplayName(const QString& fileName) const;
     // Edit > Set key: enabled, tip and reason follow the state of the window
     void updateEditActions();
     void updateInputs();

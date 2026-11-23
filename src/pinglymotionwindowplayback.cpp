@@ -319,10 +319,10 @@ void PinglyMotionWindow::on_currentFrameSlider_valueChanged(int newValue)
   frameSlider(newValue);
 }
 
-void PinglyMotionWindow::on_keyframeButton_toggled(bool)
+// Set key, the timeline's main button (UX phase 3a): sets a key, never takes one away
+void PinglyMotionWindow::on_keyframeButton_clicked()
 {
-  scene->getAnimation()->toggleKeyFrame(currentPart); // (animationView->getSelectedPart());
-  ui->animationView->update();
+  setKeyFromMenu();
 }
 
 void PinglyMotionWindow::on_loopInSpinBox_editingFinished()

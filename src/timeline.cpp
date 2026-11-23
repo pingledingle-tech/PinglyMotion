@@ -64,19 +64,23 @@ Timeline::~Timeline()
 {
 }
 
-// rows shown in the timeline: joints of hidden groups may be left out
-static int timelineRows()
+// the set of shown rows changed (joint groups shown or hidden, or the theme):
+// work the rows out again and draw everything again from a clean pixmap
+void Timeline::layoutChanged()
 {
-  const int rows=JointGroups::rowCount();
-  return rows>0 ? rows : Constants::numParts();
+  const bool moved=rows_.update(animation,trackSelected);
+  if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
+  fullRepaint=true;
+  update();
+  if(moved) emit rowsChanged();
 }
 
-// the set of shown rows changed: draw everything again from a clean pixmap
-void Timeline::layoutChanged()
+void Timeline::rowsMoved()
 {
   if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
   fullRepaint=true;
   update();
+  emit rowsChanged();
 }
 
 void Timeline::paintEvent(QPaintEvent* /* e */)
@@ -85,7 +89,7 @@ void Timeline::paintEvent(QPaintEvent* /* e */)
   if(isHidden()) return;
 
 
-  QSize newSize = QSize(numOfFrames * Constants::keyWidth(), (timelineRows() - 1) * Constants::lineHeight());
+  QSize newSize = QSize(numOfFrames * Constants::keyWidth(), rows_.rowCount() * Constants::lineHeight());
 
   if(newSize!=size())
   {
@@ -138,6 +142,8 @@ void Timeline::setNumberOfFrames(int frames)
 {
 
   numOfFrames=frames;
+  // a joint keyed on every frame counts as imported, so the length matters
+  const bool moved=rows_.update(animation,trackSelected);
 
   QPixmap* newOffscreen = new QPixmap(numOfFrames * Constants::keyWidth(), Constants::lineHeight() * (Constants::numParts() + 1));
   newOffscreen->fill(TimelineLook::row(false,Theme::isDark()));
@@ -154,6 +160,7 @@ void Timeline::setNumberOfFrames(int frames)
 
   fullRepaint=true;
   repaint();
+  if(moved) emit rowsChanged();
 }
 
 void Timeline::setCurrentFrame(int frame)
@@ -185,14 +192,23 @@ void Timeline::setAnimation(Animation* anim)
 
   }
 
+  rows_.update(animation,trackSelected);
+  if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
   emit animationChanged(anim);
 
   fullRepaint=true;
   repaint();
+  emit rowsChanged();
 }
 
 void Timeline::redrawTrackImmediately(int track)
 {
+  // a joint that changed (or went back to its start pose) gets (or loses) its row
+  if(rows_.updateTrack(animation,track))
+  {
+    rowsMoved();
+    return;
+  }
   drawTrack(track);
   update();
 }
@@ -206,7 +222,7 @@ void Timeline::drawKeyframe(int track,int frame)
 {
 
   if(track==-1) return;
-  const int row=JointGroups::rowOfTrack(track);
+  const int row=rows_.rowOfTrack(track);
   if(row<0) return;
 
   int ypos = row * Constants::lineHeight();
@@ -217,7 +233,7 @@ void Timeline::drawKeyframe(int track,int frame)
 
   // text colour, on_accent on the selected row (the token pair that has contrast)
   const bool dark=Theme::isDark();
-  QColor color(TimelineLook::key(trackSelected==track && animation->getPartName(track)!="Site",dark));
+  QColor color(TimelineLook::key(trackSelected==track && animation->getPartName(track)!="Site",areaOf(track),dark));
   // draw the key frame
   if(frame==0)
   {
@@ -269,6 +285,13 @@ void Timeline::selectTrack(int track)
 {
   int oldTrack=trackSelected;
   trackSelected=track;
+  // the selected joint always has a row: a joint without keys gets one at the end
+  if(rows_.setSelected(track))
+  {
+    rowsMoved();
+    repaint();
+    return;
+  }
   // if the user clicked on a different track
   if(oldTrack!=trackSelected)
   {
@@ -291,8 +314,9 @@ void Timeline::drawTrack(int track)
   QString trackName=animation->getPartName(track);
   const bool selected=(track==trackSelected && trackName!="Site");
 
-  const int row=JointGroups::rowOfTrack(track);
+  const int row=rows_.rowOfTrack(track);
   if(row<0) return;
+  const int area=areaOf(track);
 
   int light=0;
   int y = row * Constants::lineHeight();
@@ -310,7 +334,7 @@ void Timeline::drawTrack(int track)
   for(int x = firstGreyShade; x < (firstGreyShade + visibleKeysX + 10) * Constants::keyWidth(); x += 10 * Constants::keyWidth())
   {
     // draw a filled rectangle in the row colour, every other block toward the background
-    p->fillRect(x, y, x + 10 * Constants::keyWidth(), Constants::lineHeight(), light ? TimelineLook::rowAlternate(selected,dark) : TimelineLook::row(selected,dark));
+    p->fillRect(x, y, x + 10 * Constants::keyWidth(), Constants::lineHeight(), light ? TimelineLook::rowAlternate(selected,area,dark) : TimelineLook::row(selected,area,dark));
     light=1-light;
   }
 
@@ -322,8 +346,8 @@ void Timeline::drawTrack(int track)
   }
 
   // draw straight line as track marker within "dirty" redraw region
-  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2, (visibleKeysX + 1) * Constants::keyWidth(), 1, TimelineLook::midLine(selected,dark));
-  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2 + 1, (visibleKeysX + 1) * Constants::keyWidth(), 1, TimelineLook::midLineShade(selected,dark));
+  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2, (visibleKeysX + 1) * Constants::keyWidth(), 1, TimelineLook::midLine(selected,area,dark));
+  p->fillRect(firstVisibleKeyX * Constants::keyWidth(), y + Constants::lineHeight() / 2 + 1, (visibleKeysX + 1) * Constants::keyWidth(), 1, TimelineLook::midLineShade(selected,area,dark));
 
   delete p;
 
@@ -359,8 +383,8 @@ void Timeline::drawTrack(int track)
             const FrameData& oldFrameData=joint->keyframeDataByIndex(key-1);
             int frameDiff = (frameNum - oldFrame + 1) * Constants::keyWidth() / 2;
 
-            QColor pen1(TimelineLook::key(selected,dark));
-            QColor pen2(TimelineLook::midLineShade(selected,dark));
+            QColor pen1(TimelineLook::key(selected,area,dark));
+            QColor pen2(TimelineLook::midLineShade(selected,area,dark));
 
             if(oldFrameData.easeOut())
             {
@@ -442,7 +466,7 @@ bool Timeline::isDirty(int frame)
 void Timeline::mousePressEvent(QMouseEvent* e)
 {
   // get track and frame based on mouse coordinates
-  const int track=JointGroups::trackOfRow(e->position().toPoint().y() / Constants::lineHeight());
+  const int track=rows_.trackOfRow(e->position().toPoint().y() / Constants::lineHeight());
   if(track<0) return;
   selectTrack(track);
   frameSelected = e->position().toPoint().x() / Constants::keyWidth();
@@ -561,6 +585,20 @@ void Timeline::keyPressEvent(QKeyEvent* e)
 
       repaint();
       break;
+
+    // the row above or below becomes the selected joint (as a click on it)
+    case Qt::Key_Up:
+    case Qt::Key_Down:
+    {
+      int row=rows_.rowOfTrack(trackSelected);
+      if(row<0) row=(e->key()==Qt::Key_Down) ? -1 : rows_.rowCount();
+      row+=(e->key()==Qt::Key_Down) ? 1 : -1;
+      const int track=rows_.trackOfRow(row);
+      if(track<0) break;
+      selectTrack(track);
+      emit trackClicked(track);
+      break;
+    }
 
     case Qt::Key_Insert:
       emit insertFrame(trackSelected,frameSelected);

@@ -52,6 +52,50 @@ namespace TimelineLook
   {
     return Theme::color(selected ? Token::OnAccent : dimmed ? Token::TextDisabled : Token::Text,dark);
   }
+
+  // UX phase 3a: each row in the colour of its body area (JointGroups::Tab:
+  // Body, Face, Hands, Other), the same tokens as the Joints panel's tabs
+  inline QColor area(int area,bool dark)
+  {
+    static const Token tokens[]={Token::AreaBody,Token::AreaFace,Token::AreaHands,Token::AreaOther};
+    return Theme::color(tokens[(area>=0 && area<4) ? area : 3],dark);
+  }
+  // the key frame row of a joint: surface with 5 percent of its area colour
+  // (the mockup's .trow), selection for the selected joint
+  inline QColor row(bool selected,int areaId,bool dark)
+  {
+    return selected ? row(true,dark) : Theme::mix(row(false,dark),area(areaId,dark),0.05);
+  }
+  inline QColor rowAlternate(bool selected,int areaId,bool dark)
+  {
+    return Theme::mix(row(selected,areaId,dark),Theme::color(Token::Background,dark),0.35);
+  }
+  inline QColor midLine(bool selected,int areaId,bool dark)
+  {
+    return Theme::mix(row(selected,areaId,dark),Theme::color(Token::Background,dark),0.7);
+  }
+  inline QColor midLineShade(bool selected,int areaId,bool dark)
+  {
+    return Theme::mix(row(selected,areaId,dark),Theme::color(selected ? Token::OnAccent : Token::Text,dark),0.15);
+  }
+  // the name of a joint: surface with 9 percent of its area colour (the
+  // mockup's .tname), selection for the selected joint
+  inline QColor nameRow(bool selected,int areaId,bool dark)
+  {
+    return selected ? row(true,dark) : Theme::mix(row(false,dark),area(areaId,dark),0.09);
+  }
+  // the stripe at the left of a joint's name: its area colour (border-left 4px)
+  inline int areaStripeWidth() { return 4; }
+  // the area's name at the right of a joint's name: text_muted (on_accent when selected)
+  inline QColor areaName(bool selected,bool dark)
+  {
+    return Theme::color(selected ? Token::OnAccent : Token::TextMuted,dark);
+  }
+  // key frames: the area colour, on_accent on the selected row (the mockup's .key)
+  inline QColor key(bool selected,int areaId,bool dark)
+  {
+    return selected ? key(true,dark) : area(areaId,dark);
+  }
 }
 
 #endif

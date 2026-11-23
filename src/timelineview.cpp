@@ -20,9 +20,13 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QLabel>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QPainter>
+
+#include <algorithm>
 
 #include "animation.h"
 #include "bvhnode.h"
@@ -30,16 +34,10 @@
 #include "easingtiles.h"
 #include "jointgroups.h"
 #include "timeline.h"
+#include "transportlook.h"
 
 #include "timelineview.h"
 #include "timelinelook.h"
-
-// rows shown in the timeline: joints of hidden groups may be left out
-static int timelineRows()
-{
-  const int rows=JointGroups::rowCount();
-  return rows>0 ? rows : Constants::numParts();
-}
 
 // scroll area that asks for the same height the timeline had with the
 // classic skeleton, so the 3D view keeps its size
@@ -69,13 +67,19 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   outer->setFrameShape(QFrame::NoFrame);
   outerView_=outer;
 
+  // the rows on top, the empty states under them (UX phase 3a)
   QWidget* content=new QWidget(outer);
-  QHBoxLayout* contentLayout=new QHBoxLayout(content);
+  QVBoxLayout* contentColumn=new QVBoxLayout(content);
+  contentColumn->setContentsMargins(0,0,0,0);
+  contentColumn->setSpacing(0);
+
+  rowsArea_=new QWidget(content);
+  QHBoxLayout* contentLayout=new QHBoxLayout(rowsArea_);
   contentLayout->setContentsMargins(0,0,0,0);
 
-  timelineTracks=new TimelineTracks(content);
+  timelineTracks=new TimelineTracks(rowsArea_);
   timeline=new Timeline(0);
-  view=new QScrollArea(content);
+  view=new QScrollArea(rowsArea_);
 
   view->setBackgroundRole(QPalette::Base);
 
@@ -83,13 +87,56 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   view->setWidget(timeline);
-  // tall enough for all tracks, the outer area scrolls vertically
-  view->setMinimumHeight((timelineRows() + 1) * Constants::lineHeight());
+  timelineTracks->setRows(&timeline->rows());
+  // tall enough for all rows, the outer area scrolls vertically
+  fitRowHeight();
 
   timeline->setBackgroundRole(QPalette::Base);
 
   contentLayout->addWidget(timelineTracks,0);
   contentLayout->addWidget(view);
+  contentColumn->addWidget(rowsArea_,0);
+
+  // "No keys yet": the title, one line and Set the first key (the mockup's .tempty)
+  noKeys_=new QWidget(content);
+  noKeys_->setObjectName(QStringLiteral("timelineNoKeys"));
+  QVBoxLayout* noKeysLayout=new QVBoxLayout(noKeys_);
+  noKeysLayout->setContentsMargins(Theme::Size::spacingM,Theme::Size::spacingS,Theme::Size::spacingM,Theme::Size::spacingS);
+  noKeysLayout->setSpacing(Theme::Size::spacingXs);
+  noKeysTitle_=new QLabel(TimelineSpec::text(TimelineSpec::noKeysTitle),noKeys_);
+  noKeysTitle_->setObjectName(QStringLiteral("timelineNoKeysTitle"));
+  QFont titleFont=noKeysTitle_->font();
+  titleFont.setWeight(QFont::DemiBold);
+  noKeysTitle_->setFont(titleFont);
+  noKeysLine_=new QLabel(TimelineSpec::text(TimelineSpec::noKeysLine),noKeys_);
+  noKeysLine_->setObjectName(QStringLiteral("timelineNoKeysLine"));
+  noKeysLine_->setWordWrap(true);
+  noKeysLine_->setForegroundRole(QPalette::PlaceholderText);
+  // the button in a row of its own, drawn as the main button (src/transportlook.*)
+  QWidget* buttonRow=new QWidget(noKeys_);
+  QHBoxLayout* buttonLayout=new QHBoxLayout(buttonRow);
+  buttonLayout->setContentsMargins(0,0,0,0);
+  firstKeyButton_=new QPushButton(TimelineSpec::text(TimelineSpec::firstKey),buttonRow);
+  firstKeyButton_->setObjectName(QStringLiteral("timelineFirstKeyButton"));
+  buttonLayout->addWidget(firstKeyButton_);
+  buttonLayout->addStretch(1);
+  TransportLook::apply(buttonRow);
+  noKeysLayout->addWidget(noKeysTitle_);
+  noKeysLayout->addWidget(noKeysLine_);
+  noKeysLayout->addWidget(buttonRow);
+  contentColumn->addWidget(noKeys_,0);
+  connect(firstKeyButton_,&QPushButton::clicked,this,&TimelineView::setKeyRequested);
+
+  // no animation open: one line instead of the rows
+  noAnimation_=new QLabel(TimelineSpec::text(TimelineSpec::noAnimation),content);
+  noAnimation_->setObjectName(QStringLiteral("timelineNoAnimation"));
+  noAnimation_->setWordWrap(true);
+  noAnimation_->setForegroundRole(QPalette::PlaceholderText);
+  noAnimation_->setContentsMargins(Theme::Size::spacingM,Theme::Size::spacingS,Theme::Size::spacingM,Theme::Size::spacingS);
+  noAnimation_->hide();
+  contentColumn->addWidget(noAnimation_,0);
+  contentColumn->addStretch(1);
+
   outer->setWidget(content);
 
   layout->addWidget(outer,1);
@@ -109,6 +156,8 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
 
   connect(timeline, &Timeline::animationChanged, this, &TimelineView::setAnimation);
   connect(timeline, &Timeline::trackClicked, this, &TimelineView::selectTrack);
+  connect(timeline, &Timeline::rowsChanged, this, &TimelineView::rowsChanged);
+  updateEmptyState();
 }
 
 TimelineView::~TimelineView()
@@ -124,10 +173,67 @@ void TimelineView::scrollTo(int x)
 
 void TimelineView::setAnimation(Animation* anim)
 {
-  // the number of tracks is known once the skeleton is loaded
-  view->setMinimumHeight((timelineRows() + 1) * Constants::lineHeight());
   timelineTracks->setAnimation(anim);
   animation_=anim;
+  rowsChanged();
+}
+
+const TimelineRows& TimelineView::rows() const
+{
+  return timeline->rows();
+}
+
+void TimelineView::setNameOf(const std::function<QString(const QString&)>& nameOf)
+{
+  timelineTracks->setNameOf(nameOf);
+  timelineTracks->update();
+}
+
+void TimelineView::fitRowHeight()
+{
+  const int rows=timeline->rows().rowCount();
+  // no rows: no row area at all, the empty state stands on top
+  view->setMinimumHeight(rows ? rows*Constants::lineHeight()+2 : 0);
+  view->setMaximumHeight(rows ? QWIDGETSIZE_MAX : 0);
+  timelineTracks->updateGeometry();
+  if(outerView_ && outerView_->widget())
+  {
+    // lay the content out now, so the scroll bar knows the new height at once
+    outerView_->widget()->layout()->activate();
+    outerView_->widget()->resize(outerView_->viewport()->width(),
+                                 std::max(outerView_->viewport()->height(),outerView_->widget()->minimumSizeHint().height()));
+  }
+}
+
+void TimelineView::rowsChanged()
+{
+  fitRowHeight();
+  timelineTracks->update();
+  updateEmptyState();
+  scrollToSelected();
+}
+
+void TimelineView::updateEmptyState()
+{
+  const bool noKeys=!none_ && animation_ && !timeline->rows().anyChanged();
+  noKeys_->setVisible(noKeys);
+  noAnimation_->setVisible(none_);
+  rowsArea_->setVisible(!none_);
+  if(outerView_ && outerView_->widget()) outerView_->widget()->layout()->activate();
+}
+
+void TimelineView::setNoAnimation(bool none)
+{
+  none_=none;
+  updateEmptyState();
+  fitRowHeight();
+}
+
+void TimelineView::setFirstKeyBlocked(const QString& why)
+{
+  firstKeyButton_->setEnabled(why.isEmpty());
+  firstKeyButton_->setToolTip(why);
+  firstKeyButton_->setStatusTip(why);
 }
 
 bool TimelineView::currentSegment(BVHNode*& joint,int& startFrame,int& endFrame) const
@@ -165,11 +271,17 @@ EasingTiles* TimelineView::easingTiles() const
 void TimelineView::selectTrack(int track)
 {
   selectedTrack_=track;
-  timeline->selectTrack(track);
   timelineTracks->selectTrack(track);
+  // a joint without keys gets its row here (rowsChanged follows)
+  timeline->selectTrack(track);
+  scrollToSelected();
+}
 
+void TimelineView::scrollToSelected()
+{
   // scroll the row into view; a joint without a row (hidden group) is left alone
-  const int row=(track<0) ? -1 : JointGroups::rowOfTrack(track);
+  const int track=selectedTrack_;
+  const int row=(track<0) ? -1 : timeline->rows().rowOfTrack(track);
   if(row>=0 && outerView_)
   {
     // scroll by the least amount that shows the whole row; a row already
@@ -186,10 +298,10 @@ void TimelineView::selectTrack(int track)
 
 void TimelineView::layoutChanged()
 {
-  view->setMinimumHeight((timelineRows() + 1) * Constants::lineHeight());
   timeline->layoutChanged();
-  timelineTracks->updateGeometry();
+  fitRowHeight();
   timelineTracks->update();
+  updateEmptyState();
 }
 
 void TimelineView::changeEvent(QEvent* event)
@@ -219,46 +331,84 @@ TimelineTracks::~TimelineTracks()
 
 QSize TimelineTracks::sizeHint() const
 {
-  return QSize(Constants::leftStrut(), (timelineRows() - 1) * Constants::lineHeight() + 2);
+  const int rows=rows_ ? rows_->rowCount() : 0;
+  return QSize(neededWidth(), rows * Constants::lineHeight() + 2);
+}
+
+QString TimelineTracks::shownName(int track) const
+{
+  if(!animation) return QString();
+  const QString name=animation->getPartName(track);
+  if(nameOf_)
+  {
+    const QString shown=nameOf_(name);
+    if(!shown.isEmpty()) return shown;
+  }
+  return name;
+}
+
+// the stripe, a gap, the name, a gap, the area name and a gap on the right
+int TimelineTracks::neededWidth() const
+{
+  int widest=0;
+  if(rows_ && animation)
+  {
+    const QFontMetrics metrics(font());
+    const int gap=Theme::Size::spacingS;
+    for(int track : rows_->tracks())
+    {
+      const int width=TimelineLook::areaStripeWidth()+gap+metrics.horizontalAdvance(shownName(track))
+                      +gap+metrics.horizontalAdvance(TimelineSpec::areaName(rows_->areaOfTrack(track)))+gap;
+      widest=std::max(widest,width);
+    }
+  }
+  return std::max(Constants::leftStrut(),widest);
 }
 
 void TimelineTracks::paintEvent(QPaintEvent*)
 {
-  resize(sizeHint());
-  if(!animation) return;
+  if(size()!=sizeHint()) resize(sizeHint());
+  if(!animation || !rows_) return;
   {
     QPainter p(this);
     p.fillRect(rect(),TimelineLook::row(false,Theme::isDark()));
   }
 
-  for (int part = 0; part < Constants::numParts(); part++)
+  for (int track : rows_->tracks())
   {
-    drawTrack(part);
+    drawTrack(track);
   }
 }
 
 void TimelineTracks::drawTrack(int track)
 {
-  if(track==-1) return;
+  if(track==-1 || !rows_) return;
 
-  QString trackName=(animation) ? animation->getPartName(track) : "";
-  if(trackName!="Site")
-  {
-    const int row=JointGroups::rowOfTrack(track);
-    if(row<0) return;
-    QPainter p(this);
-    // colours from the design tokens (src/timelinelook.h); joints of hidden groups are dimmed
-    const bool dark=Theme::isDark();
-    const bool selected=(track==selectedTrack);
+  const int row=rows_->rowOfTrack(track);
+  if(row<0) return;
+  QPainter p(this);
+  // colours from the design tokens (src/timelinelook.h): the area colour as a
+  // stripe and a tint, joints of hidden groups dimmed
+  const bool dark=Theme::isDark();
+  const bool selected=(track==selectedTrack);
+  const int area=rows_->areaOfTrack(track);
+  const int gap=Theme::Size::spacingS;
 
-    int y = row * Constants::lineHeight() + 2;
+  int y = row * Constants::lineHeight() + 2;
 
-    p.fillRect(0, y, width(), Constants::lineHeight(), TimelineLook::row(selected,dark));
+  p.fillRect(0, y, width(), Constants::lineHeight(), TimelineLook::nameRow(selected,area,dark));
+  p.fillRect(0, y, TimelineLook::areaStripeWidth(), Constants::lineHeight(), TimelineLook::area(area,dark));
 
-    // draw track name
-    p.setPen(TimelineLook::name(selected,JointGroups::trackDimmed(track),dark));
-    p.drawText(0, y + Constants::keyHeight(), trackName);
-  }
+  // the area's name on the right, the joint's name on the left
+  const QFontMetrics metrics(font());
+  const QString areaName=TimelineSpec::areaName(area);
+  const int areaWidth=metrics.horizontalAdvance(areaName);
+  const int nameLeft=TimelineLook::areaStripeWidth()+gap;
+  const QRect line(0, y, width(), Constants::lineHeight());
+  p.setPen(TimelineLook::areaName(selected,dark));
+  p.drawText(QRect(width()-gap-areaWidth, y, areaWidth, Constants::lineHeight()), Qt::AlignVCenter|Qt::AlignLeft, areaName);
+  p.setPen(TimelineLook::name(selected,JointGroups::trackDimmed(track),dark));
+  p.drawText(QRect(nameLeft, line.top(), width()-nameLeft-gap-areaWidth-gap, line.height()), Qt::AlignVCenter|Qt::AlignLeft, shownName(track));
 }
 
 void TimelineTracks::setAnimation(Animation* anim)

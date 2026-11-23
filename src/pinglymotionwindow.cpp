@@ -93,6 +93,7 @@
 #include "pinglymotion.h"
 #include "scene.h"
 #include "timeline.h"
+#include "timelinerows.h"
 #include "timelineview.h"
 #include "updatersettings.h"
 #include "usersettings.h"
@@ -931,6 +932,11 @@ void PinglyMotionWindow::buildDocks()
   connect(m_transport,&TransportBar::forwardClicked,this,[this]() { stepFrame(1); });
   connect(m_transport,&TransportBar::loopToggled,ui->optionsLoopAction,&QAction::setChecked);
 
+  // the timeline (UX phase 3a): "Set the first key" does what Set key does, and
+  // the rows show the joints by the names of the Joints list
+  connect(ui->timelineView,&TimelineView::setKeyRequested,this,&PinglyMotionWindow::setKeyFromMenu);
+  ui->timelineView->setNameOf([this](const QString& fileName) { return jointDisplayName(fileName); });
+
   // the default layout is built in code (src/panelwindow.h), the same one
   // View > Reset layout brings back
   PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
@@ -1180,13 +1186,29 @@ void PinglyMotionWindow::buildEditMenu()
   updateEditActions();
 }
 
-// Set key: the same as the key button, but it never takes a key away
+// Set key (the timeline's main button, Edit > Set key, K and "Set the first key"):
+// a key for the picked joint at this frame; it never takes a key away (UX phase 3a).
+// A turn already keeps itself as a key, so on a frame with a key the status
+// line says so instead.
 void PinglyMotionWindow::setKeyFromMenu()
 {
   Animation* anim=scene->getAnimation();
   if(m_empty || !anim || currentPart==nullptr || !ui->keyframeButton->isEnabled()) return;
-  if(anim->isKeyFrame(ui->animationView->getSelectedPartIndex(),anim->getFrame())) return;
-  ui->keyframeButton->click();
+  const bool added=TimelineSpec::setKey(anim,currentPart);
+  if(added)
+  {
+    ui->animationView->update();
+    updateKeyBtn();
+  }
+  statusBar()->showMessage(TimelineSpec::setKeyMessage(added,anim->getFrame(),jointDisplayName(currentPart->name())),5000);
+}
+
+// the name of a joint as the Joints list shows it ("Left Shoulder"), or its file name
+QString PinglyMotionWindow::jointDisplayName(const QString& fileName) const
+{
+  if(!m_jointInfo) return fileName;
+  const QString name=JointList::friendlyName(*m_jointInfo,fileName);
+  return name.isEmpty() ? fileName : name;
 }
 
 // Set key is greyed with the reason when it cannot work right now
@@ -1194,14 +1216,16 @@ void PinglyMotionWindow::updateEditActions()
 {
   refreshJointPanel();
   if(!m_setKeyAction) return;
-  QString why;
-  if(m_empty) why=QCoreApplication::translate("MenuSpec",MenuSpec::openFirst);
-  else if(currentPart==nullptr) why=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyPickJoint);
-  else if(playstate!=PLAYSTATE_STOPPED) why=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyStopPlaying);
-  else if(protect) why=QCoreApplication::translate("MenuSpec",MenuSpec::setKeyLocked);
+  const QString why=TimelineSpec::setKeyBlocked(!m_empty,currentPart!=nullptr,playstate!=PLAYSTATE_STOPPED,protect);
   m_setKeyAction->setEnabled(why.isEmpty());
   m_setKeyAction->setToolTip(why);
   m_setKeyAction->setStatusTip(why);
+  // the timeline's Set key button and "Set the first key" are greyed the same way,
+  // and the reason line shows why (src/reasonline.h)
+  ui->keyframeButton->setEnabled(why.isEmpty());
+  ui->keyframeButton->setToolTip(why);
+  ui->keyframeButton->setStatusTip(why);
+  ui->timelineView->setFirstKeyBlocked(why);
 }
 
 // UX phase 1b: the top bar (src/topbar.h) and the empty state (src/emptystate.h)
@@ -1285,6 +1309,8 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
     if(empty) m_emptyState->choiceButtons().last()->setFocus();
   }
   if(m_topBar) m_topBar->setAnimationOpen(!empty);
+  // the timeline shows one line instead of its rows (UX phase 3a)
+  ui->timelineView->setNoAnimation(empty);
   updateEditActions();
   updateWindowTitle();
 }
@@ -2206,16 +2232,9 @@ void PinglyMotionWindow::updateKeyBtn()
 {
   Animation* anim=scene->getAnimation();
 
-  // make sure we don't send a toggle signal on display update
-  ui->keyframeButton->blockSignals(true);
-
   int frame=anim->getFrame();
   int partIndex=ui->animationView->getSelectedPartIndex();
   bool hasKeyframe=anim->isKeyFrame(partIndex,frame);
-  ui->keyframeButton->setDown(hasKeyframe);
-
-  // re-enable toggle signal
-  ui->keyframeButton->blockSignals(false);
 
   // the easing tiles show the choice of the pose change that ends at this key
   EasingTiles* tiles=ui->timelineView->easingTiles();
@@ -2230,9 +2249,9 @@ void PinglyMotionWindow::updateKeyBtn()
 
 void PinglyMotionWindow::enableInputs(bool state)
 {
-  // protection overrides state for keyframe button
+  // protection overrides state for keyframe button (updateEditActions below
+  // greys Set key with its reason)
   if(protect) state=false;
-  ui->keyframeButton->setEnabled(state);
 
   // do not enable rotation if we have no part selected
   if(currentPart == NULL) state=false;

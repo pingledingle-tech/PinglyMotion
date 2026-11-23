@@ -15,7 +15,9 @@ Files:
 - src/lucideicons.cpp
 - src/transportlook.*
 - src/CMakeLists.txt
+- CMakeLists.txt
 - tests/CMakeLists.txt
+- tests/transportbar/tst_transportbar.cpp
 - tests/tst_timeline.cpp
 - tests/tst_timelineview.cpp
 - tests/timelinerows/**

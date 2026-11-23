@@ -28,11 +28,16 @@
 #include <QWidget>
 #include <QFrame>
 
+#include <functional>
+
+class QLabel;
+class QPushButton;
 class QScrollArea;
 class Timeline;
 class Animation;
 class EasingTiles;
 class BVHNode;
+class TimelineRows;
 
 class TimelineTracks : public QWidget
 {
@@ -46,6 +51,13 @@ class TimelineTracks : public QWidget
 
     void drawTrack(int track);
     void setAnimation(Animation* anim);
+    // the rows to draw (the timeline's, UX phase 3a)
+    void setRows(const TimelineRows* rows) { rows_=rows; }
+    // the name shown for a joint (its friendly name, see TimelineView::setNameOf)
+    void setNameOf(const std::function<QString(const QString&)>& nameOf) { nameOf_=nameOf; updateGeometry(); }
+    QString shownName(int track) const;
+    // as wide as the widest name with its area name, at least Constants::leftStrut
+    int neededWidth() const;
 
     void selectTrack(int track);
     // the highlighted track name row, -1 when none
@@ -57,6 +69,8 @@ class TimelineTracks : public QWidget
     virtual void paintEvent(QPaintEvent* event);
 
     int selectedTrack=-1;
+    const TimelineRows* rows_=nullptr;
+    std::function<QString(const QString&)> nameOf_;
 };
 
 class TimelineView : public QFrame
@@ -75,6 +89,25 @@ class TimelineView : public QFrame
     TimelineTracks* tracks() const { return timelineTracks; }
     // the outer area that scrolls the track rows up and down
     QScrollArea* rowScroller() const { return outerView_; }
+    // UX phase 3a: the joints that have a row (the timeline's)
+    const TimelineRows& rows() const;
+    // the names shown for the joints: their friendly names (the window knows them)
+    void setNameOf(const std::function<QString(const QString&)>& nameOf);
+    // the empty states: "No keys yet" with "Set the first key", and the line
+    // shown while no animation is open
+    QWidget* noKeys() const { return noKeys_; }
+    QLabel* noKeysTitle() const { return noKeysTitle_; }
+    QLabel* noKeysLine() const { return noKeysLine_; }
+    QPushButton* firstKeyButton() const { return firstKeyButton_; }
+    QLabel* noAnimationLine() const { return noAnimation_; }
+    // no animation is open (the window's empty state): the rows give way to one line
+    void setNoAnimation(bool none);
+    // Set the first key is greyed with this reason; empty: it can be clicked
+    void setFirstKeyBlocked(const QString& why);
+
+  signals:
+    // "Set the first key" was clicked: the window sets a key like Set key
+    void setKeyRequested();
 
   public slots:
     void selectTrack(int track);
@@ -101,6 +134,22 @@ class TimelineView : public QFrame
     EasingTiles* easingTiles_;
 
   private:
+    // other joints have a row now: sizes, the empty state, and the selected row in view
+    void rowsChanged();
+    void updateEmptyState();
+    // scroll by the least amount that shows the selected joint's row
+    void scrollToSelected();
+    // the row area is as high as its rows; laid out at once, so scrolling knows the height
+    void fitRowHeight();
+
+    QWidget* noKeys_=nullptr;
+    QLabel* noKeysTitle_=nullptr;
+    QLabel* noKeysLine_=nullptr;
+    QPushButton* firstKeyButton_=nullptr;
+    QLabel* noAnimation_=nullptr;
+    QWidget* rowsArea_=nullptr;
+    bool none_=false;
+
     // the selected joint, the pose change ending at the current frame:
     // false when there is none
     bool currentSegment(BVHNode*& joint,int& startFrame,int& endFrame) const;
