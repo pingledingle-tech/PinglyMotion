@@ -1,6 +1,6 @@
 Branch: job/hands-tab
 Status: active
-Pull request: pending
+Pull request: #420
 Files:
 - src/handstab.*
 - src/handpose.*
