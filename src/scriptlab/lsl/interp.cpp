@@ -311,6 +311,8 @@ void Interpreter::resetScript()
   m_sensorActive = false;
   m_controls = 0;
   m_controlsAccept = m_controlsPassOn = false;
+  m_targets.clear();
+  m_memoryLimit = Limits::SCRIPT_MEMORY_MAX;
   m_timeBase = m_now;
   m_inEvent = false;
   try
@@ -581,6 +583,39 @@ void Interpreter::atTargetEvent(int tnum, const float targetpos[3], const float 
 void Interpreter::notAtTargetEvent()
 {
   queueEvent(Event{"not_at_target", {}, QString(), QString()});
+}
+
+int Interpreter::addTarget(const float pos[3], float range)
+{
+  static const size_t MAX_TARGETS = 64;
+  if (m_targets.size() >= MAX_TARGETS) m_targets.erase(m_targets.begin());   // the oldest goes, so a loop cannot grow it
+  TargetEntry t;
+  t.handle = m_nextTarget++;
+  for (int i = 0; i < 3; ++i) t.pos[i] = pos[i];
+  t.range = range;
+  m_targets.push_back(t);
+  return t.handle;
+}
+
+void Interpreter::removeTarget(int handle)
+{
+  for (size_t i = 0; i < m_targets.size(); ++i)
+    if (m_targets[i].handle == handle) { m_targets.erase(m_targets.begin() + long(i)); return; }
+}
+
+void Interpreter::checkTargets(const float ourpos[3])
+{
+  if (m_targets.empty() || stopped() || !running()) return;
+  bool reached = false;
+  const std::vector<TargetEntry> targets = m_targets;
+  for (const TargetEntry& t : targets)
+  {
+    const double dx = double(ourpos[0]) - t.pos[0], dy = double(ourpos[1]) - t.pos[1], dz = double(ourpos[2]) - t.pos[2];
+    if (std::sqrt(dx * dx + dy * dy + dz * dz) > double(t.range)) continue;
+    reached = true;
+    atTargetEvent(t.handle, t.pos, ourpos);
+  }
+  if (!reached) notAtTargetEvent();
 }
 
 void Interpreter::linksetDataEvent(int action, const QString& name, const QString& value)
