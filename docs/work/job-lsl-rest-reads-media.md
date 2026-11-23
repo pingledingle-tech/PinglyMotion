@@ -1,6 +1,6 @@
 Branch: job/lsl-rest-reads-media
 Status: active
-Pull request: pending
+Pull request: #389
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/interp.cpp
