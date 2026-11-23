@@ -1,5 +1,5 @@
 Branch: job/ux-4a-camera-habits
-Status: active
+Status: done
 Pull request: #404
 Files:
 - src/camera.*
