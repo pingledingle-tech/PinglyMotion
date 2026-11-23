@@ -1,6 +1,6 @@
 Branch: job/lsl-avatar-camera
 Status: active
-Pull request: pending
+Pull request: #391
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/interp.cpp
