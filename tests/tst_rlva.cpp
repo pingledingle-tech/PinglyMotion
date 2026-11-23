@@ -431,7 +431,7 @@ void TestRlva::recordedIsBounded()
   RlvState state;
   state.setMode(Rlv::Mode::Rlva);
   // a long option is cut, and the record never holds more entries than there are behaviours
-  state.apply("obj", "@setcam_fov:" + QString(Rlv::MAX_OPTION_LENGTH, 'a') + "=force");
+  state.apply("obj", "@setcam_fov:1." + QString(Rlv::MAX_OPTION_LENGTH - 2, '0') + "=force");
   QCOMPARE(state.recorded().value("setcam_fov").length(), RlvState::MAX_RECORDED_LENGTH);
   for (int i = 0; i < 200; i++) state.apply("obj", QString("@setcam_fov:%1=force,setcam_mode:%1=force").arg(i));
   QVERIFY(state.recorded().size() <= Rlv::behaviours().size());

@@ -1,9 +1,11 @@
 Branch: job/l1c-rlv-type-check
 Status: active
-Pull request: pending
+Pull request: #430
 Files:
 - src/scriptlab/rlvbehaviours.*
 - src/scriptlab/rlvstate.*
+- src/scriptlab/lsl/lint.cpp
+- tests/tst_lsllint.cpp
 - tests/tst_rlvoptions.cpp
 - tests/tst_rlvtable.cpp
 - tests/tst_rlvsources.cpp
@@ -13,6 +15,13 @@ Files:
 - tools/rlv_sources.py
 - docs/RLV_OPTION_TYPES.md
 - CREDITS.md
+- docs/README.md
+- tests/tst_rlvstate.cpp
+- tests/tst_rlva.cpp
+- tests/tst_cameraoverride.cpp
+- tests/tst_viewmodesoverride.cpp
+- tests/data/scriptlab/scenarios.json
+- docs/SCRIPT_LAB.md
 
 ## What
 

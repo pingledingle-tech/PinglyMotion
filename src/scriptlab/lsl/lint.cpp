@@ -440,7 +440,17 @@ class Linter
       // judge it in the viewer family that knows it: RLVa (the default standard), RLV-only names in plain RLV
       const Rlv::Mode mode = b->dialect == Rlv::Dialect::RlvOnly ? Rlv::Mode::Rlv : Rlv::Mode::Rlva;
       const QString problem = Rlv::checkCommand(c, mode);
-      if (!problem.isEmpty()) warn(line, column, "rlv-param", shown + problem + ".");
+      if (!problem.isEmpty())
+      {
+        warn(line, column, "rlv-param", shown + problem + ".");
+        return;
+      }
+      // an option value RLVa refuses (docs/RLV_OPTION_TYPES.md); the warning starts with "@<command>: "
+      QString value = Rlv::optionProblem(c, mode);
+      if (value.isEmpty()) return;
+      const QString head = QStringLiteral("@") + c.text + QStringLiteral(": ");
+      if (value.startsWith(head)) value = value.mid(head.size());
+      warn(line, column, "rlv-param", shown + value);
     }
 
     static QString shorten(const QString& text)

@@ -996,17 +996,33 @@
       ]
     },
     {
-      "about": "KNOWN GAP: the sandbox does not check the type of an option yet (a channel, a UUID, a number), so these are accepted; RLVa refuses at least sendchannel:abc. When option types are checked, this scenario changes",
-      "name": "rlv_option_types_not_checked",
+      "about": "RLVa mode checks the type of an option (docs/RLV_OPTION_TYPES.md): a bad channel or key is refused with a warning and nothing is held; a number RLVa reads is kept",
+      "name": "rlv_option_types_checked",
       "steps": [
         {
           "expect": {
             "ok": true,
             "replies": [],
-            "restrictions": 3,
+            "restrictions": 1,
             "results": [
-              {"behaviour":"sendchannel","command":"sendchannel:abc=n","option":"abc","param":"n","result":"success","type":"add"},
-              {"behaviour":"recvim","command":"recvim:not-a-key=add","option":"not-a-key","param":"add","result":"success","type":"add"},
+              {
+                "behaviour": "sendchannel",
+                "command": "sendchannel:abc=n",
+                "option": "abc",
+                "param": "n",
+                "reason": "@sendchannel:abc=n: \"abc\" is not a valid channel. Use a whole number from 1.",
+                "result": "failed",
+                "type": "add"
+              },
+              {
+                "behaviour": "recvim",
+                "command": "recvim:not-a-key=add",
+                "option": "not-a-key",
+                "param": "add",
+                "reason": "@recvim:not-a-key=add: \"not-a-key\" is not a key or a distance. Use a key, or metres such as 20 or 5;20.",
+                "result": "failed",
+                "type": "add"
+              },
               {
                 "behaviour": "setcam_avdistmin",
                 "command": "setcam_avdistmin:-1=n",
@@ -1023,8 +1039,6 @@
         {
           "expect": {
             "restrictions": [
-              {"behaviour":"sendchannel","object":"collar","option":"abc"},
-              {"behaviour":"recvim","object":"collar","option":"not-a-key"},
               {"behaviour":"setcam_avdistmin","object":"collar","option":"-1"}
             ]
           },

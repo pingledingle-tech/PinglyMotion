@@ -39,6 +39,38 @@ namespace Rlv
   // whether a behaviour takes an option after ":"
   enum class OptionUse { None, Optional, Required };
 
+  // What the option after ":" must be, as RLVa checks it (docs/RLV_OPTION_TYPES.md has
+  // the RLVa function behind each type). RLVa refuses a command whose option does not
+  // fit: nothing changes and the command fails. The sandbox checks this in RLVa mode.
+  enum class ValueType
+  {
+    Unchecked,       // any text; not checked (folder paths, filters, names, or not confirmed in RLVa)
+    None,            // RLVa takes no option for this form, although the sandbox table allows one
+    Uuid,            // a key: 36 characters, hex digits with a separator at places 9, 14, 19 and 24
+    TextureUuid,     // a key as above; spaces around it are allowed (RLVa's texture modifiers)
+    UuidOrDistance,  // a key, or a distance in metres: <min>[;<max>], both 0 or more
+    UuidOrNumber,    // a key, or a number (a distance in metres)
+    Number,          // a decimal number, e.g. 1.5
+    Integer,         // a whole number, e.g. 2
+    Channel,         // a whole number from 1 (a chat channel)
+    ReplyChannel,    // a chat channel from 1 to 2147483646 (2147483647 is the debug channel)
+    Vector3,         // three numbers: x/y/z
+    Vector4,         // four numbers: a/b/c/d
+    AttachPoint,     // an attachment point name, e.g. spine
+    Layer,           // a clothing layer name, e.g. shirt
+    CameraMode,      // mouselook, thirdperson or reset
+    Notify           // <channel>[;filter]; checked by RlvState itself
+  };
+  QString valueTypeName(ValueType type);    // e.g. "uuid", "number"
+
+  // the option value type of a behaviour, one for the restriction forms (n, y, add,
+  // rem) and one for =force; questions (=<channel>) are not checked
+  struct OptionValue
+  {
+    ValueType restriction = ValueType::Unchecked;
+    ValueType force = ValueType::Unchecked;
+  };
+
   // which viewer family answers to a behaviour: "RLV" is in RLVa and in the
   // RLV wiki's specification, "RLVa only" is in RLVa but not in the wiki's
   // specification (it does not work in Kokua), "RLV only" is in the wiki but
@@ -75,6 +107,7 @@ namespace Rlv
     QString name;
     int params = 0;              // ParamFlag bits
     OptionUse option = OptionUse::None;
+    OptionValue value;           // what the option must be (RLVa); Unchecked when any text goes
     QStringList blocks;          // action ids it blocks while held without an option
     QString description;
     Dialect dialect = Dialect::Rlv;
@@ -127,6 +160,24 @@ namespace Rlv
   // mode (the default) RLV-only behaviours are reported as unknown, in plain
   // RLV mode the RLVa-only ones and RLVa-only parameter types.
   QString checkCommand(const Command& command, Mode mode = Mode::Rlva);
+
+  // The option value type for this form of the behaviour (Unchecked for questions,
+  // @clear and unknown behaviours).
+  ValueType valueType(const Behaviour& behaviour, ParamType type);
+  // true when the option fits the type, with RLVa's own rules (an empty option fits:
+  // whether one is needed is checkCommand's question)
+  bool optionFits(ValueType type, const QString& option);
+  // The attachment point names RLVa knows (lower case): the 55 points of the viewer's
+  // avatar and "root", RLVa's other name for "avatar center".
+  const QStringList& rlvaAttachPointNames();
+  // The clothing layer names RLVa knows: the 17 wearable types, "universal" included.
+  const QStringList& rlvaLayerNames();
+
+  // Checks the option value of a syntactically allowed command (checkCommand gave no
+  // reason). Empty when it fits, otherwise a plain-words warning that names the
+  // command, the bad value and the fix. Only RLVa mode checks; plain RLV mode gives
+  // empty, because the RLV viewer's handling of bad values is not confirmed.
+  QString optionProblem(const Command& command, Mode mode = Mode::Rlva);
 }
 
 #endif

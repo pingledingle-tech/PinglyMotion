@@ -20,6 +20,11 @@ the add/rem form for them), so exceptions count as restriction. notes (RLVa only
 RLVa's own flags: extended, experimental, synonym, deprecated, plus secure-form for a
 name_sec that RLVa makes from a behaviour with its strict flag, and modifier for a
 name_<part> force command that RLVa makes from a local modifier (setsphere_mode ...).
+It also holds what the option must be, where the dictionary line says it: option-none,
+option-exception, option-none-or-exception, option-modifier or option-none-or-modifier
+for a generic restriction (its RLV_OPTION_* template argument), and value-float,
+value-int, value-vector3, value-vector4 or value-uuid for a local modifier (its typeid).
+Behaviours with their own handler have no option note (docs/RLV_OPTION_TYPES.md).
 Prefix families (setdebug_<name> and the like) are written as "name_*". In the wiki file,
 unofficial marks the commands listed after the page's "Unofficial Commands" heading (other
 viewers' commands, not part of the specification).
@@ -50,6 +55,14 @@ PROCESSORS = {
     "RlvForceGenericProcessor": "force",
     "RlvReplyProcessor": "query",
 }
+# the option kind of a generic restriction processor (the template argument, rlvdefines.h)
+OPTIONS = {"RLV_OPTION_NONE": "option-none", "RLV_OPTION_EXCEPTION": "option-exception",
+           "RLV_OPTION_NONE_OR_EXCEPTION": "option-none-or-exception", "RLV_OPTION_MODIFIER": "option-modifier",
+           "RLV_OPTION_NONE_OR_MODIFIER": "option-none-or-modifier"}
+GENERIC = ("RlvBehaviourGenericProcessor", "RlvBehaviourGenericToggleProcessor")
+# the value type of a local modifier (typeid(...) in addModifier)
+VALUES = {"float": "value-float", "int": "value-int", "LLVector3": "value-vector3", "LLVector4": "value-vector4",
+          "LLUUID": "value-uuid"}
 FLAGS = {"BHVR_EXTENDED": "extended", "BHVR_EXPERIMENTAL": "experimental",
          "BHVR_SYNONYM": "synonym", "BHVR_DEPRECATED": "deprecated"}
 
@@ -133,7 +146,10 @@ def read_rlva(text):
             part = re.search(r"\"([a-z0-9_]+)\"", args)
             if not part:
                 raise SourceError("modifier without a name: %s" % st[:80])
-            table.add("%s_%s" % (pending[var], part.group(1)), "force", ["modifier"])
+            kind = re.search(r"typeid\((\w+)\)", args)
+            if not kind or kind.group(1) not in VALUES:
+                raise SourceError("modifier with an unknown value type: %s" % st[:80])
+            table.add("%s_%s" % (pending[var], part.group(1)), "force", ["modifier", VALUES[kind.group(1)]])
             continue
         m = re.fullmatch(r"addEntry\((\w+)\)", st)
         if m:
@@ -145,7 +161,7 @@ def read_rlva(text):
             if st.startswith("if") or st.startswith("toggleBehaviourFlag"):
                 continue
             raise SourceError("line not understood: %s" % st[:100])
-        cls, _templ, args = m.groups()
+        cls, templ, args = m.groups()
         nm = re.match(r"\s*\"([a-z0-9_]+)\"", args)
         if not nm:
             raise SourceError("entry without a name: %s" % st[:100])
@@ -160,6 +176,11 @@ def read_rlva(text):
         else:
             raise SourceError("unknown processor %s" % cls)
         notes, strict = _flags(args)
+        if cls in GENERIC:
+            option = [OPTIONS[o] for o in re.findall(r"\b(RLV_OPTION_\w+)\b", templ or "") if o in OPTIONS]
+            if len(option) != 1:
+                raise SourceError("generic entry %s has no single option kind" % name)
+            notes.add(option[0])
         table.add(name, kind, notes)
         if strict:
             if kind != "restriction":

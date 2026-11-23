@@ -169,8 +169,9 @@ TARGET_LINK_LIBRARIES (pinglymotion_timelineview_tests pinglymotion_shared pingl
 ADD_TEST (NAME timelineview WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_timelineview_tests)
 SET_TESTS_PROPERTIES (timelineview PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
-# the Script Lab's RLV core: command parser and restriction state (#287), RLVa-only behaviours and the mode switch (#297)
-FOREACH (RLV_TEST rlvcommand rlvstate rlva rlvtable)
+# the Script Lab's RLV core: command parser and restriction state (#287), RLVa-only behaviours and the mode switch (#297),
+# the option value check (docs/RLV_OPTION_TYPES.md)
+FOREACH (RLV_TEST rlvcommand rlvstate rlva rlvtable rlvoptions)
   ADD_EXECUTABLE (pinglymotion_${RLV_TEST}_tests tst_${RLV_TEST}.cpp)
   TARGET_INCLUDE_DIRECTORIES (pinglymotion_${RLV_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
   TARGET_LINK_LIBRARIES (pinglymotion_${RLV_TEST}_tests pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)

@@ -859,6 +859,11 @@ run the test and fix the table where it fails.
 - The sandbox has no avatar, inventory or camera, so the RLVa questions about them answer empty (`getheightoffset`
   answers `0`). `getcommand` lists the behaviours known in the current mode.
 - `setcam_*` behaviours with a distance need it as option (`@setcam_avdistmin:2=n`); without it the command fails.
+- Option values are checked as RLVa checks them, in RLVa mode (lane 1, job C; `docs/RLV_OPTION_TYPES.md`): a key, a
+  number, a channel, an attachment point, a clothing layer, x/y/z or a camera mode. A bad value is refused with no
+  change, and the log says what to write instead, e.g. `@detach:x=n: "x" is not an attachment point. Use a name such as
+  spine or left hand.` A refused `=y` is `unset`. It never stops the script. Folder paths, filters and names are not
+  checked, and plain RLV mode checks nothing (not confirmed). `lsl_lint` gives the same warning as `rlv-param`.
 
 ## Tests: what is covered and what is not (22 November 2026)
 
@@ -906,9 +911,7 @@ Not tested automatically (gaps):
   `tst_control.cpp`, not in the smoke run), and `lsl_event` before any `lsl_run` in the real program (the scenarios
   share one running program).
 - Second Life itself: the sandbox is never identical to it; the final test is always in Second Life.
-- Known differences, pinned by the scenarios so that a change shows: the type of an RLV option (a channel, a UUID, a
-  number) is not checked yet, so `@sendchannel:abc=n` is accepted where RLVa refuses it (scenario
-  `rlv_option_types_not_checked`); a dialog answer sent with `lsl_event` may be any text, not only a button the dialog
+- Known differences, pinned by the scenarios so that a change shows: a dialog answer sent with `lsl_event` may be any text, not only a button the dialog
   showed (it is said on the dialog's channel, scenario `example_hud_cuffs`).
 
 ## Limits

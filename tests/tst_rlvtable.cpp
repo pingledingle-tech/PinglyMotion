@@ -259,7 +259,7 @@ void TestRlvTable::chatImRows()
   QVERIFY(!b->description.isEmpty());
   QVERIFY(Rlv::findBehaviour(name, Rlv::Mode::Rlv));   // plain RLV knows it
   RlvState state;
-  const QString arg = name == "notify" ? "5" : (name.startsWith("redir") ? "7" : "c2d4ef12-3a45-4b67-89ab-0123456789ab");
+  const QString arg = name == "notify" ? "5" : (name.startsWith("redir") ? "7" : (name.startsWith("sendchannel") ? "9" : "c2d4ef12-3a45-4b67-89ab-0123456789ab"));
   if (option == static_cast<int>(Rlv::OptionUse::None))
   {
     QCOMPARE(one(state, "@" + name + "=n").result, Rlv::Result::Success);
@@ -319,7 +319,9 @@ void TestRlvTable::chatImBlocks()
   QCOMPARE(falseCount, 1);   // exactly this one action
   // with an option it is an exception, not a block
   state.reset();
-  one(state, "@" + name + ":c2d4ef12-3a45-4b67-89ab-0123456789ab=add");
+  const QString exception = name.startsWith("sendchannel") ? "9" : "c2d4ef12-3a45-4b67-89ab-0123456789ab";
+  const RlvState::Outcome added = one(state, "@" + name + ":" + exception + "=add");
+  if (Rlv::findBehaviour(name)->option != Rlv::OptionUse::None) QCOMPARE(added.result, Rlv::Result::Success);
   QCOMPARE(state.actions().value(action), true);
 }
 
@@ -510,7 +512,10 @@ void TestRlvTable::rowsOfThisPart_data()
 
 static QString argumentFor(const QString& name)
 {
-  if (name.startsWith("attach") || name.startsWith("detach") || name.startsWith("addattach") || name.startsWith("remattach")) return "clothes/hat";
+  // option values RLVa accepts (docs/RLV_OPTION_TYPES.md): a point, a layer, else a folder or a key
+  if (name == "addattach" || name == "remattach") return "spine";
+  if (name == "addoutfit" || name == "remoutfit") return "shirt";
+  if (name.startsWith("attach") || name.startsWith("detach")) return "clothes/hat";
   return "c2d4ef12-3a45-4b67-89ab-0123456789ab";
 }
 
@@ -537,6 +542,23 @@ void TestRlvTable::rowsOfThisPart()
   state.setMode(home);
   const QString arg = argumentFor(name);
   const QString withOption = ":" + arg;
+  // RLVa takes no option for these (docs/RLV_OPTION_TYPES.md); the rest checks the plain RLV form
+  if (b->value.restriction == Rlv::ValueType::None && (spec.params & Rlv::AllowAddRemove) && home == Rlv::Mode::Rlva)
+  {
+    QCOMPARE(one(state, "@" + name + withOption + "=n").reason,
+             QString("@%1%2=n: RLVa takes no option here. Remove \"%2\".").arg(name, withOption));
+    QVERIFY(state.restrictions().isEmpty());
+    if (spec.dialect == Rlv::Dialect::RlvaOnly)
+    {
+      // only RLVa knows it, so without the option it is a plain restriction
+      QCOMPARE(one(state, "@" + name + "=n").result, Rlv::Result::Success);
+      QCOMPARE(state.actions().value(b->blocks.value(0)), false);
+      QCOMPARE(one(state, "@" + name + "=y").result, Rlv::Result::Success);
+      QVERIFY(state.restrictions().isEmpty());
+      return;
+    }
+    state.setMode(Rlv::Mode::Rlv);
+  }
   if (spec.params & Rlv::AllowAddRemove)
   {
     const QString opt = spec.option == NO ? QString() : withOption;
@@ -853,16 +875,21 @@ void TestRlvTable::recordedRows()
 
   RlvState state;
   state.setMode(spec.dialect == RLVONLY ? Rlv::Mode::Rlv : Rlv::Mode::Rlva);
+  // a force value of the type RLVa reads (docs/RLV_OPTION_TYPES.md)
+  QString value = "2";
+  if (b->value.force == Rlv::ValueType::Vector3) value = "1/0.5/0";
+  if (b->value.force == Rlv::ValueType::Vector4) value = "1/0.5/0/1";
+  if (b->value.force == Rlv::ValueType::TextureUuid) value = "c2d4ef12-3a45-4b67-89ab-0123456789ab";
   const QString opt = spec.option == NO ? QString() : ":1/0.5/0";
   if (!(spec.params & AR))
   {
     // a value set with =force only
     QCOMPARE(one(state, "@" + name + opt + "=n").reason, QString("@%1 does not take =n").arg(name));
     QVERIFY(state.restrictions().isEmpty());
-    const RlvState::Outcome forced = one(state, "@" + name + ":2=force");
+    const RlvState::Outcome forced = one(state, "@" + name + ":" + value + "=force");
     QCOMPARE(forced.result, Rlv::Result::Retained);
     QVERIFY(forced.reason.contains("recorded only"));
-    QCOMPARE(state.recorded().value(name), QString("2"));
+    QCOMPARE(state.recorded().value(name), value);
     return;
   }
   const RlvState::Outcome added = one(state, "@" + name + opt + "=n");
@@ -877,10 +904,10 @@ void TestRlvTable::recordedRows()
   QVERIFY(state.restrictions().isEmpty());
   if (spec.params & FO)
   {
-    const RlvState::Outcome forced = one(state, "@" + name + ":2=force");
+    const RlvState::Outcome forced = one(state, "@" + name + ":" + value + "=force");
     QCOMPARE(forced.result, Rlv::Result::Retained);
     QVERIFY(forced.reason.contains("recorded only"));
-    QCOMPARE(state.recorded().value(name), QString("2"));
+    QCOMPARE(state.recorded().value(name), value);
     QVERIFY(state.restrictions().isEmpty());
   }
   else

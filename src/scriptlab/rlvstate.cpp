@@ -71,6 +71,17 @@ RlvState::Outcome RlvState::run(const QString& objectId, const Rlv::Command& com
     return outcome;
   }
 
+  // RLVa refuses an option value of the wrong type (docs/RLV_OPTION_TYPES.md): an add or
+  // force fails and changes nothing; a remove finds nothing held under that option, so it
+  // is "unset", as in RLVa. The warning says what to write instead.
+  const QString badValue = Rlv::optionProblem(command, m_mode);
+  if (!badValue.isEmpty())
+  {
+    outcome.result = command.type == Rlv::ParamType::Remove ? Rlv::Result::Unset : Rlv::Result::Failed;
+    outcome.reason = badValue;
+    return outcome;
+  }
+
   switch (command.type)
   {
     case Rlv::ParamType::Clear:

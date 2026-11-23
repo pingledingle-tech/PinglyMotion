@@ -115,10 +115,12 @@ void TestViewModesOverride::overlay()
   QCOMPARE(o.modes().alpha, 0.75);
   QCOMPARE(state.apply("visor", "@setoverlay_alpha:0.25=n").outcomes.value(0).reason, QString("@setoverlay_alpha does not take =n"));
   QCOMPARE(o.modes().alpha, 0.75);
-  // a bad tint: not used, nothing drawn
-  QVERIFY(state.apply("visor", "@setoverlay_tint:red=force").ok());
-  QVERIFY(!o.overlay());
-  QCOMPARE(o.lines().last(), QString("Not used: setoverlay_tint:red is not a value the 3D view can use."));
+  // a bad tint: RLVa refuses it (docs/RLV_OPTION_TYPES.md), so the tint from before stays
+  const RlvState::Outcome badTint = state.apply("visor", "@setoverlay_tint:red=force").outcomes.value(0);
+  QCOMPARE(badTint.result, Rlv::Result::Failed);
+  QCOMPARE(badTint.reason, QString("@setoverlay_tint:red=force: \"red\" is not three numbers x/y/z. Use three numbers such as 0/0/1."));
+  QVERIFY(o.overlay());
+  QCOMPARE(o.modes().overlayColour(), QVector4D(1, 0, 0, 0.75f));
   // the overlay lifted
   QVERIFY(state.apply("visor", "@setoverlay=y").ok());
   QVERIFY(!o.overlay());

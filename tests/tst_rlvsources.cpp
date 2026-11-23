@@ -115,6 +115,7 @@ class TestRlvSources : public QObject
     void prefixFamiliesMatchTheWiki();
     void kokuaMarkInPlainMode();
     void rlvaIsTheDefaultMode();
+    void optionValueTypesMatchRlva();
 
   private:
     Source m_rlva;
@@ -229,6 +230,74 @@ void TestRlvSources::rlvaIsTheDefaultMode()
 {
   QCOMPARE(Rlv::checkCommand(Rlv::parseCommand("showself=n")), QString());
   QCOMPARE(Rlv::checkCommand(Rlv::parseCommand("camdrawmax:20=n")), QStringLiteral("unknown behaviour \"camdrawmax\""));
+}
+
+// The option value type in the table against what RLVa's dictionary line says: the
+// RLV_OPTION_* kind of a generic restriction and the typeid of a local modifier
+// (the option-* and value-* notes of rlva.tsv, docs/RLV_OPTION_TYPES.md).
+void TestRlvSources::optionValueTypesMatchRlva()
+{
+  using V = Rlv::ValueType;
+  // rows the sandbox keeps as it was, on purpose; docs/RLV_OPTION_TYPES.md says why
+  const QSet<QString> knownDifferences = {
+    QStringLiteral("touchattach"),          // RLVa takes a key as an exception; the sandbox table takes no option
+    QStringLiteral("setcam_focusoffset"),   // RLVa's restriction form refuses every value; the sandbox keeps any text
+    QStringLiteral("setsphere_param"),      // RLVa needs four numbers; the sandbox's sphere view reads one to four
+  };
+  // modifier values RLVa reads with std::stof, sscanf("%f/%f/%f") or LLUUID::parseUUID
+  const QSet<V> modifierTypes = {V::Number, V::Vector3, V::TextureUuid};
+  QStringList problems;
+  int checked = 0;
+  for (const Rlv::Behaviour& b : Rlv::behaviours())
+  {
+    if (!m_rlva.contains(b.name) || knownDifferences.contains(b.name)) continue;
+    const QStringList notes = m_rlva.value(b.name).notes;
+    const V r = b.value.restriction;
+    const V f = b.value.force;
+    QString why;
+    if (notes.contains(QStringLiteral("option-none")))
+    {
+      if (!(b.option == Rlv::OptionUse::None || r == V::None)) why = QStringLiteral("RLVa takes no option");
+    }
+    else if (notes.contains(QStringLiteral("option-exception")))
+    {
+      if (r != V::Uuid || b.option != Rlv::OptionUse::Required) why = QStringLiteral("RLVa needs a key");
+    }
+    else if (notes.contains(QStringLiteral("option-none-or-exception")))
+    {
+      if (r != V::Uuid || b.option != Rlv::OptionUse::Optional) why = QStringLiteral("RLVa takes no option or a key");
+    }
+    else if (notes.contains(QStringLiteral("option-modifier")) || notes.contains(QStringLiteral("option-none-or-modifier")))
+    {
+      if (!modifierTypes.contains(r)) why = QStringLiteral("RLVa needs a modifier value");
+    }
+    else if (notes.contains(QStringLiteral("value-float")))
+    {
+      if (f != V::Number) why = QStringLiteral("RLVa reads a float");
+    }
+    else if (notes.contains(QStringLiteral("value-int")))
+    {
+      if (f != V::Integer) why = QStringLiteral("RLVa reads an int");
+    }
+    else if (notes.contains(QStringLiteral("value-vector3")))
+    {
+      if (f != V::Vector3) why = QStringLiteral("RLVa reads three numbers");
+    }
+    else if (notes.contains(QStringLiteral("value-vector4")))
+    {
+      if (f != V::Vector4) why = QStringLiteral("RLVa reads four numbers");
+    }
+    else if (notes.contains(QStringLiteral("value-uuid")))
+    {
+      if (f != V::TextureUuid) why = QStringLiteral("RLVa reads a key");
+    }
+    else continue;   // its own handler: docs/RLV_OPTION_TYPES.md, checked by tst_rlvoptions.cpp
+    checked++;
+    if (!why.isEmpty())
+      problems << QStringLiteral("%1: %2, the table has %3 / %4").arg(b.name, why, Rlv::valueTypeName(r), Rlv::valueTypeName(f));
+  }
+  QVERIFY2(problems.isEmpty(), qPrintable(problems.join(QLatin1Char('\n'))));
+  QVERIFY(checked > 100);   // the notes were read
 }
 
 QTEST_GUILESS_MAIN(TestRlvSources)
