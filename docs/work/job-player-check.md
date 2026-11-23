@@ -1,5 +1,5 @@
 Branch: job/player-check
-Status: active
+Status: done
 Pull request: #445
 Files:
 - docs/PLAYER_CHECK.md
