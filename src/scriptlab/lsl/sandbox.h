@@ -342,6 +342,7 @@ class Sandbox
     // gap list 2, step 3: the avatars in the region (llGetAgentList): the owner unless listed, the listed avatars in
     // their order, then avatars sitting on an object that are not listed
     QStringList agents() const;
+    QStringList objectKeys() const;   // steps 13 to 15: the live objects (llCastRay)
     // gap list 2, step 4: the URLs of the fake web server, each held by one script (a slot)
     struct UrlEntry
     {

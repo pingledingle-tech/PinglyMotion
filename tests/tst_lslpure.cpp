@@ -114,13 +114,13 @@ void LslPureTest::tableHasTheNewNames()
   // llWarp2Pos is in neither list (the viewer's nor Second Life's lsl-definitions), so it is no LSL function
   QVERIFY(Builtins::function("llWarp2Pos") == nullptr);
   // the list does not run what it only names
-  QVERIFY(!Builtins::function("llStartObjectAnimation")->supported);
+  QVERIFY(!Builtins::function("llGetAccel")->supported);
   QVERIFY(Builtins::function("llReplaceSubString")->supported);
 }
 
 void LslPureTest::supportedCount()
 {
-  QCOMPARE(Builtins::supportedFunctions().size(), 370);
+  QCOMPARE(Builtins::supportedFunctions().size(), 382);
 }
 
 void LslPureTest::rotations()
@@ -401,8 +401,8 @@ void LslPureTest::unsupportedRangesAreClear()
   const QStringList b = lines("say(llList2CSV(llList2ListStrided([1, 2, 3, 4], 3, 1, 2)));");
   QVERIFY2(b.size() == 1 && b[0].contains("llList2ListStrided with a start after the end") && b[0].contains("not supported yet"), qPrintable(b.join("|")));
   // a function that is only named stops the script with the same kind of message
-  const QStringList c = lines("llStartObjectAnimation(\"x\");");
-  QVERIFY(c.size() == 1 && c[0].contains("llStartObjectAnimation is not supported yet"));
+  const QStringList c = lines("vector v = llGetAccel();");
+  QVERIFY(c.size() == 1 && c[0].contains("llGetAccel is not supported yet"));
 }
 
 // ---- second round of pure functions. Maths values computed outside the program (Python, math
