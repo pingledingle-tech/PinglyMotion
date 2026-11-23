@@ -517,12 +517,12 @@ void LslMoneyTest::inputErrors_data()
                                    << "Input 1: \"headers\" must be an object of at most 32 headers, each name (letters, digits and \"-\", 1 to 64) with a text value of at most 1024 characters.";
   QTest::newRow("header not text") << QJsonObject{{"type", "http_request"}, {"headers", QJsonObject{{"a", 1}}}}
                                    << "Input 1: \"headers\" must be an object of at most 32 headers, each name (letters, digits and \"-\", 1 to 64) with a text value of at most 1024 characters.";
-  QTest::newRow("address on chat") << QJsonObject{{"address", "a@b.c"}} << "Input 1: \"address\" is only for email.";
+  QTest::newRow("address on chat") << QJsonObject{{"address", "a@b.c"}} << "Input 1: \"address\" is only for email and remote_data.";
   QTest::newRow("body on chat") << QJsonObject{{"body", "x"}} << "Input 1: \"body\" is only for http_request and email.";
   QTest::newRow("long subject") << QJsonObject{{"type", "email"}, {"subject", QString(256, 's')}} << "Input 1: \"subject\" must be text of at most 255 characters.";
   QTest::newRow("unknown type") << QJsonObject{{"type", "pay"}}
                                 << "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                                   "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\".";
+                                   "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\".";
 }
 
 void LslMoneyTest::inputErrors()

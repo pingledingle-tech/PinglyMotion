@@ -116,6 +116,17 @@ class Interpreter
     static constexpr double HTTP_RESPONSE_TIMEOUT = 25.0;
     static constexpr double HTTP_HEADER_TIMEOUT = 30.0;
     bool httpRequestEvent(const IncomingRequest& request);
+    // Step 17: the channel this script opened with llOpenRemoteDataChannel (empty: none) and the newest llSendRemoteData message
+    static constexpr int MAX_REMOTE_MESSAGES = 64;
+    QString remoteChannel() const { return m_remoteChannel; }
+    QString newestRemoteSent() const { return m_remoteSent.isEmpty() ? QString() : m_remoteSent.last(); }
+    bool hasRemoteSent(const QString& id) const { return m_remoteSent.contains(id); }
+    // queues remote_data(REMOTE_DATA_REQUEST, channel, message, sender, idata, sdata); false, with nothing queued, when the
+    // script has no open channel or the channel key is given and is another
+    bool remoteDataRequest(const QString& channel, const QString& message, const QString& sender, int idata, const QString& sdata);
+    // queues remote_data(REMOTE_DATA_REPLY, channel, message, sender, idata, sdata) for a message llSendRemoteData sent;
+    // false, with nothing queued, for an unknown message
+    bool remoteDataReply(const QString& message, const QString& sender, int idata, const QString& sdata);
     // queues money(payer, amount)
     void moneyEvent(const QString& id, int amount);
     // Second gap list, step 6, part 2: synthetic collision-family events for testing. There is no motion model, so
@@ -244,6 +255,12 @@ class Interpreter
     bool m_started = false;
     std::vector<IncomingRequest> m_incoming;   // gap list 2, step 4: requests waiting for llHTTPResponse
     void dropExpiredRequests();
+    // steps 17: remote data (XML-RPC). One channel per script, the message IDs of requests that wait for llRemoteDataReply
+    // and of the llSendRemoteData messages that wait for an answer
+    QString m_remoteChannel;
+    QStringList m_remoteReceived;
+    QStringList m_remoteSent;
+    QMap<QString, QString> m_remoteSentChannel;   // message ID -> the channel llSendRemoteData was given
 
     qint64 m_steps = 0;
     int m_callDepth = 0;
