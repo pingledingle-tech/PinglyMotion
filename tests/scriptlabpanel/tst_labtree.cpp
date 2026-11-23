@@ -13,6 +13,7 @@
 #include <QtTest>
 
 #include <QDir>
+#include <QFontDatabase>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -452,7 +453,7 @@ void TestLabTree::guide()
     for (const QString& sentence : line.split(". "))
       QVERIFY2(sentence.split(' ', Qt::SkipEmptyParts).size() <= 12, qPrintable(sentence));
   QVERIFY(panel.guideExample()->text().startsWith("MyObject/        one object\n  Root/          the root prim\n"));
-  QVERIFY(panel.guideExample()->font().fixedPitch() || QFontInfo(panel.guideExample()->font()).fixedPitch());
+  QCOMPARE(panel.guideExample()->font().family(), QFontDatabase::systemFont(QFontDatabase::FixedFont).family());   // the system's fixed-width font
   QTest::mouseClick(guide->header(), Qt::LeftButton);
   QVERIFY(guide->isExpanded());
   QVERIFY(UserSettings::scriptLabParts().contains("guide=open"));
