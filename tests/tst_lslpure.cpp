@@ -41,13 +41,33 @@ class LslPureTest : public QObject
     void objectNameIsHeardByOthers();
     void refusedObjectState();
     void unsupportedRangesAreClear();
+    void logAndAcos();
+    void axes2RotAndRot2Axis();
+    void angleBetween();
+    void listRandomize();
+    void jsonGetValue();
+    void jsonValueType();
+    void jsonSetValue();
+    void list2Json();
+    void json2List();
 
   private:
     static QString U(const char16_t* text) { return QString::fromUtf16(text); }
     // runs a script that says each line with say(); the owner_say lines
     static QStringList lines(const QString& body, const QJsonObject& extra = QJsonObject());
     static QJsonObject run(const QString& body, const QJsonObject& extra = QJsonObject());
+    // lines() with the JSON_* constants (U+FDD0 to U+FDD8) written as {INVALID}, {OBJECT} and so on
+    static QStringList jsonLines(const QString& body);
 };
+
+QStringList LslPureTest::jsonLines(const QString& body)
+{
+  static const char* names[] = {"{INVALID}", "{OBJECT}", "{ARRAY}", "{NUMBER}", "{STRING}", "{NULL}", "{TRUE}", "{FALSE}", "{DELETE}"};
+  QStringList out = lines(body);
+  for (QString& line : out)
+    for (int i = 0; i < 9; ++i) line.replace(QChar(char16_t(0xFDD0 + i)), QString::fromLatin1(names[i]));
+  return out;
+}
 
 QJsonObject LslPureTest::run(const QString& body, const QJsonObject& extra)
 {
@@ -100,7 +120,7 @@ void LslPureTest::tableHasTheNewNames()
 
 void LslPureTest::supportedCount()
 {
-  QCOMPARE(Builtins::supportedFunctions().size(), 271);
+  QCOMPARE(Builtins::supportedFunctions().size(), 282);
 }
 
 void LslPureTest::rotations()
@@ -383,6 +403,288 @@ void LslPureTest::unsupportedRangesAreClear()
   // a function that is only named stops the script with the same kind of message
   const QStringList c = lines("llStartObjectAnimation(\"x\");");
   QVERIFY(c.size() == 1 && c[0].contains("llStartObjectAnimation is not supported yet"));
+}
+
+// ---- second round of pure functions. Maths values computed outside the program (Python, math
+// module, then rounded to LSL's six or five decimals); JSON examples from the Second Life wiki
+// pages "Json usage in LSL", llJson2List and llList2Json where the wiki shows them.
+
+void LslPureTest::logAndAcos()
+{
+  const QStringList got = lines(R"lsl(
+    say((string)llLog(10.0));
+    say((string)llLog(1.0));
+    say((string)llLog(0.5));
+    say((string)llLog(0.0));
+    say((string)llLog(-3.0));
+    say((string)llAcos(0.5));
+    say((string)llAcos(1.0));
+    say((string)llAcos(-1.0));
+    say((string)llAcos(0.0));
+    say((string)llAcos(2.0));
+  )lsl");
+  // the wiki: llLog gives 0 for a value of 0 or less; llAcos outside -1..1 is NaN
+  QCOMPARE(got, QStringList({"2.302585", "0.000000", "-0.693147", "0.000000", "0.000000", "1.047198", "0.000000", "3.141593",
+                             "1.570796", "NaN"}));
+}
+
+void LslPureTest::axes2RotAndRot2Axis()
+{
+  const QStringList got = lines(R"lsl(
+    say((string)llAxes2Rot(<0, 1, 0>, <-1, 0, 0>, <0, 0, 1>));
+    say((string)llAxes2Rot(<1, 0, 0>, <0, 0, 1>, <0, -1, 0>));
+    say((string)llAxes2Rot(<-1, 0, 0>, <0, -1, 0>, <0, 0, 1>));
+    say((string)llAxes2Rot(<1, 0, 0>, <0, 1, 0>, <0, 0, 1>));
+    rotation q = llEuler2Rot(<0.3, 0.5, 0.7>);
+    say((string)llAxes2Rot(llRot2Fwd(q), llRot2Left(q), llRot2Up(q)));
+    say((string)llRot2Axis(ZERO_ROTATION));
+    say((string)llRot2Axis(<0, 0, 0.70711, 0.70711>));
+    say((string)llRot2Axis(<0, 0, 0.70711, -0.70711>));
+    say((string)llRot2Axis(llAxisAngle2Rot(<1, 2, 2>, 1.0)));
+    say((string)llRot2Axis(<1, 2, 3, 4>));
+  )lsl");
+  QCOMPARE(got, QStringList({
+    "<0.00000, 0.00000, 0.70711, 0.70711>",
+    "<0.70711, 0.00000, 0.00000, 0.70711>",
+    "<0.00000, 0.00000, 1.00000, 0.00000>",
+    "<0.00000, 0.00000, 0.00000, 1.00000>",
+    "<0.05213, 0.27944, 0.29378, 0.91263>",
+    "<0.00000, 0.00000, 0.00000>",          // llVecNorm of a zero vector (the wiki's reference code)
+    "<0.00000, 0.00000, 1.00000>",
+    "<0.00000, 0.00000, -1.00000>",         // s below zero turns the axis round
+    "<0.33333, 0.66667, 0.66667>",
+    "<0.26726, 0.53452, 0.80178>"}));
+}
+
+void LslPureTest::angleBetween()
+{
+  const QStringList got = lines(R"lsl(
+    say((string)llAngleBetween(ZERO_ROTATION, llEuler2Rot(<0, 0, PI_BY_TWO>)));
+    say((string)llAngleBetween(llEuler2Rot(<0.3, 0.5, 0.7>), llEuler2Rot(<0.3, 0.5, 0.7>)));
+    say((string)llAngleBetween(<0, 0, 1, 0>, ZERO_ROTATION));
+    say((string)llAngleBetween(llAxisAngle2Rot(<1, 0, 0>, 0.5), llAxisAngle2Rot(<1, 0, 0>, 2.0)));
+    say((string)llAngleBetween(ZERO_ROTATION, llAxisAngle2Rot(<0, 0, 1>, 4.0)));
+    say((string)llAngleBetween(<0.5, 0.5, 0.5, 0.5>, <-0.5, -0.5, -0.5, -0.5>));
+    say((string)llAngleBetween(<0, 0, 0, 0>, ZERO_ROTATION));
+  )lsl");
+  // a turn of 4 radians is 2 PI - 4 = 2.283185 the short way; q and -q are the same rotation
+  QCOMPARE(got, QStringList({"1.570796", "0.000000", "3.141593", "1.500000", "2.283185", "0.000000", "0.000000"}));
+}
+
+void LslPureTest::listRandomize()
+{
+  // The sandbox's random numbers are the same in every run (a fixed seed), so the order is exact;
+  // the expected orders were computed outside the program (Python, the same LCG and a Fisher-Yates
+  // shuffle), and the checks below also prove each is a
+  // shuffle of the same entries with the strides kept together.
+  const QStringList got = lines(R"lsl(
+    list a = llListRandomize([1, 2, 3, 4, 5, 6, 7, 8], 1);
+    say(llList2CSV(a));
+    say(llList2CSV(llListSort(a, 1, TRUE)));
+    list b = llListRandomize([1, "a", 2, "b", 3, "c", 4, "d"], 2);
+    say(llList2CSV(b));
+    say(llList2CSV(llListSortStrided(b, 2, 0, TRUE)));
+    say(llList2CSV(llListRandomize([1, 2, 3, 4], 3)));
+    say((string)llGetListLength(llListRandomize([1, 2, 3], 0)));
+    say(llList2CSV(llListSort(llListRandomize([3, 1, 2], -5), 1, TRUE)));
+    say((string)llGetListLength(llListRandomize([], 2)));
+    say(llList2CSV(llListRandomize(["only"], 1)));
+  )lsl");
+  QCOMPARE(got.size(), 9);
+  QCOMPARE(got[0], QStringLiteral("2, 3, 7, 5, 6, 4, 8, 1"));
+  QCOMPARE(got[1], QStringLiteral("1, 2, 3, 4, 5, 6, 7, 8"));
+  QCOMPARE(got[2], QStringLiteral("1, a, 4, d, 2, b, 3, c"));
+  QCOMPARE(got[3], QStringLiteral("1, a, 2, b, 3, c, 4, d"));
+  QCOMPARE(got[4], QStringLiteral("1, 2, 3, 4"));   // 4 is no multiple of 3: unchanged (the wiki)
+  QCOMPARE(got[5], QStringLiteral("3"));            // a stride under 1 counts as 1
+  QCOMPARE(got[6], QStringLiteral("1, 2, 3"));
+  QCOMPARE(got[7], QStringLiteral("0"));
+  QCOMPARE(got[8], QStringLiteral("only"));
+}
+
+void LslPureTest::jsonGetValue()
+{
+  const QStringList got = jsonLines(R"lsl(
+    string j = "{\"alpha\":1,\"beta\":[\"x\",\"y\",\"z\"],\"gamma\":{\"a\":3.2,\"b\":true}}";
+    say(llJsonGetValue(j, ["alpha"]));
+    say(llJsonGetValue(j, ["beta"]));
+    say(llJsonGetValue(j, ["beta", 2]));
+    say(llJsonGetValue(j, ["gamma", "a"]));
+    say(llJsonGetValue(j, ["gamma", "b"]));
+    say(llJsonGetValue(j, ["delta"]));
+    say(llJsonGetValue(j, ["beta", 3]));
+    say(llJsonGetValue(j, ["beta", -1]));
+    say(llJsonGetValue(j, ["beta", "0"]));
+    say(llJsonGetValue(j, ["alpha", "x"]));
+    say(llJsonGetValue(j, ["alpha", 1.0]));
+    say(llJsonGetValue(j, []));
+    say(llJsonGetValue("{\"parent\":[ , ,  , , ]}", ["parent", 2]));
+    say(llJsonGetValue("{\"parent\":[ , ,  , , ]}", ["parent", 1, "child", "etc."]));
+    say(llJsonGetValue("{\"parent\":,}", ["parent"]));
+    say(llJsonGetValue("{\"a\":1,\"a\":2}", ["a"]));
+    say(llJsonGetValue("{\"a\":1", ["a"]));
+    say(llJsonGetValue("", []));
+    say(llJsonGetValue("{\"n\":null,\"f\":false}", ["n"]) + llJsonGetValue("{\"n\":null,\"f\":false}", ["f"]));
+    say(llJsonGetValue("[1, 2 ,3]", [1]));
+    say(llJsonGetValue(" {\"a\" : [ 10 , 20 ] } ", ["a"]));
+    say(llJsonGetValue("{\"s\":\"line\\nnext \\\"q\\\" \\u00e6\"}", ["s"]));
+    say(llJsonGetValue("[1 2]", [0]));
+  )lsl");
+  QCOMPARE(got, QStringList({
+    "1", "[\"x\",\"y\",\"z\"]", "z", "3.2", "{TRUE}",
+    "{INVALID}", "{INVALID}", "{INVALID}", "{INVALID}", "{INVALID}", "{INVALID}",
+    "{\"alpha\":1,\"beta\":[\"x\",\"y\",\"z\"],\"gamma\":{\"a\":3.2,\"b\":true}}",
+    "{NULL}", "{NULL}", "{NULL}",                 // the wiki's empty-value examples
+    "2",                                          // the last of two equal keys wins (the wiki)
+    "{INVALID}", "{INVALID}", "{NULL}{FALSE}", "2", "[ 10 , 20 ]",
+    QString("line\nnext \"q\" ") + QChar(0xE6),
+    "{INVALID}"}));
+}
+
+void LslPureTest::jsonValueType()
+{
+  const QStringList got = jsonLines(R"lsl(
+    string j = "{\"alpha\":1,\"beta\":[\"x\",\"y\",\"z\"],\"gamma\":{\"a\":3.2,\"b\":true}}";
+    say(llJsonValueType(j, ["alpha"]));
+    say(llJsonValueType(j, ["beta"]));
+    say(llJsonValueType(j, ["gamma"]));
+    say(llJsonValueType(j, ["beta", 0]));
+    say(llJsonValueType(j, ["gamma", "b"]));
+    say(llJsonValueType(j, ["x"]));
+    say(llJsonValueType(j, []));
+    say(llJsonValueType("{\"a\":", []));
+    say(llJsonValueType("{\"a\":", ["a"]));
+    say(llJsonValueType("[1,]", [1]));
+    say(llJsonValueType("null", []));
+    say(llJsonValueType("false", []));
+    say(llJsonValueType("abc", []));
+    say(llJsonValueType("\"abc\"", []));
+    say(llJsonValueType("-1.5e3", []));
+    say(llJsonValueType("01", []));
+    say(llJsonValueType("", []));
+  )lsl");
+  QCOMPARE(got, QStringList({"{NUMBER}", "{ARRAY}", "{OBJECT}", "{STRING}", "{TRUE}", "{INVALID}", "{OBJECT}",
+                             "{OBJECT}",   // the wiki: a malformed object still reports JSON_OBJECT
+                             "{INVALID}", "{NULL}", "{NULL}", "{FALSE}", "{INVALID}", "{STRING}", "{NUMBER}",
+                             "{INVALID}",  // a leading zero is no JSON number
+                             "{INVALID}"}));
+}
+
+void LslPureTest::jsonSetValue()
+{
+  const QStringList got = jsonLines(R"lsl(
+    say(llJsonSetValue("{\"a\":1}", ["b"], "2"));
+    say(llJsonSetValue("{\"a\":1}", ["a"], "hello"));
+    say(llJsonSetValue("{\"a\":1}", ["a"], "true"));
+    say(llJsonSetValue("{\"a\":1}", ["a"], JSON_FALSE));
+    say(llJsonSetValue("[1,2,3]", [JSON_APPEND], "4"));
+    say(llJsonSetValue("[1,2,3]", [3], "4"));
+    say(llJsonSetValue("[1,2,3]", [4], "4"));
+    say(llJsonSetValue("[1,2,3]", [-2], "4"));
+    say(llJsonSetValue("[1,2,3]", [1], JSON_DELETE));
+    say(llJsonSetValue("{\"a\":1,\"b\":2}", ["a"], JSON_DELETE));
+    say(llJsonSetValue("{ \"a\":1 }", ["zz"], JSON_DELETE));
+    say(llJsonSetValue("{\"a\":1}", [0], "x"));
+    say(llJsonSetValue("", ["a", "b"], "1"));
+    say(llJsonSetValue("{\"a\":{\"b\":1}}", ["a", "c", JSON_APPEND], "\"q\""));
+    say(llJsonSetValue("{\"a\":1}", ["a"], "[1, 2]"));
+    say(llJsonSetValue("{\"a\":1}", ["a"], "say \"hi\""));
+    say(llJsonSetValue("{\"a\":1", ["a"], "2"));
+    say(llJsonSetValue("{\"a\":1}", [1.5], "2"));
+    say(llJsonSetValue("{\"a\" : 1, \"b\" : [ 1 ]}", ["c"], "3"));
+    say(llJsonSetValue("{\"a\":1}", ["a"], "{bad"));
+    say(llJsonSetValue("{\"a\":1}", ["a"], " 5 "));
+    say(llJsonSetValue("[]", [0], "line\nbreak"));
+    say(llJsonSetValue("{\"a\":1}", ["a"], JSON_NULL));
+    say(llJsonSetValue("{\"a\":[1,2]}", ["a", 0, "k"], "v"));
+  )lsl");
+  QCOMPARE(got, QStringList({
+    "{\"a\":1,\"b\":2}",
+    "{\"a\":\"hello\"}",
+    "{\"a\":true}",                       // "true", "false" and "null" go in as JSON (the wiki)
+    "{\"a\":false}",
+    "[1,2,3,4]",
+    "[1,2,3,4]",                          // an index equal to the length appends
+    "{INVALID}", "{INVALID}",             // past the end, or negative and not JSON_APPEND
+    "[1,3]",
+    "{\"b\":2}",
+    "{ \"a\":1 }",                        // deleting what is not there changes nothing
+    "[\"x\"]",                            // an index on an object makes it an array (the wiki)
+    "{\"a\":{\"b\":1}}",
+    "{\"a\":{\"b\":1,\"c\":[\"q\"]}}",
+    "{\"a\":[1, 2]}",
+    "{\"a\":\"say \\\"hi\\\"\"}",
+    "{INVALID}", "{INVALID}",
+    "{\"a\":1,\"b\":[ 1 ],\"c\":3}",      // a changed object is written again without spaces
+    "{\"a\":\"{bad\"}",
+    "{\"a\":5}",
+    "[\"line\\nbreak\"]",
+    "{\"a\":null}",
+    "{\"a\":[{\"k\":\"v\"},2]}"}));
+}
+
+void LslPureTest::list2Json()
+{
+  const QStringList got = jsonLines(R"lsl(
+    say(llList2Json(JSON_ARRAY, [1, 2.5, "x", <1, 2, 3>, JSON_TRUE, JSON_FALSE, JSON_NULL, "null", "\"q\"", "7", "[1,2]", NULL_KEY, TRUE]));
+    say(llList2Json(JSON_OBJECT, ["a", 3.2, "b", JSON_TRUE]));
+    say(llList2Json(JSON_OBJECT, ["a"]));
+    say(llList2Json(JSON_OBJECT, [1, 2]));
+    say(llList2Json(JSON_STRING, [1]));
+    say(llList2Json(JSON_ARRAY, []));
+    say(llList2Json(JSON_OBJECT, []));
+    say(llList2Json(JSON_ARRAY, ["\"x\"", "\"y\"", "\"z\""]));
+    say(llList2Json(JSON_ARRAY, [llAcos(2.0)]));
+    say(llList2Json(JSON_ARRAY, ["a\"b", "new\nline", "back\\slash"]));
+    say(llList2Json(JSON_OBJECT, ["inner", llList2Json(JSON_ARRAY, [1, 2]), "q\"k", ""]));
+  )lsl");
+  QCOMPARE(got, QStringList({
+    "[1,2.500000,\"x\",\"<1.00000, 2.00000, 3.00000>\",true,false,null,null,\"q\",7,[1,2],"
+    "\"00000000-0000-0000-0000-000000000000\",1]",
+    "{\"a\":3.200000,\"b\":true}",
+    "{INVALID}", "{INVALID}", "{INVALID}",
+    "[]", "{}",
+    "[\"x\",\"y\",\"z\"]",                // the wiki's example
+    "[\"NaN\"]",                          // NaN has no JSON number: it goes in as a string (sandbox choice)
+    "[\"a\\\"b\",\"new\\nline\",\"back\\\\slash\"]",
+    "{\"inner\":[1,2],\"q\\\"k\":\"\"}"}));
+}
+
+void LslPureTest::json2List()
+{
+  const QStringList got2 = jsonLines(R"lsl(
+    list l = llJson2List("{\"pi\": 3.14, \"set\": [1,2,3], \"status\": \"ok\"}");
+    say(llList2CSV(l));
+    say((string)llGetListEntryType(l, 0) + (string)llGetListEntryType(l, 1) + (string)llGetListEntryType(l, 3));
+    l = llJson2List("[0, 3.14, [1,2,3], {}]");
+    say(llList2CSV(l));
+    say((string)llGetListEntryType(l, 0) + (string)llGetListEntryType(l, 1) + (string)llGetListEntryType(l, 2));
+    say(llDumpList2String(llJson2List("[true,false,null,]"), "|"));
+    say((string)llGetListLength(llJson2List("")));
+    say(llList2CSV(llJson2List("89556747-24cb-43ed-920b-47caed15465f")));
+    say(llDumpList2String(llJson2List("{\"a\":"), "|"));
+    say(llList2CSV(llJson2List("\"hi\"")));
+    l = llJson2List("42");
+    say(llList2CSV(l) + " " + (string)llGetListEntryType(l, 0));
+    l = llJson2List("[12345678901, -7, 1e2]");
+    say(llList2CSV(l) + " " + (string)llGetListEntryType(l, 0) + (string)llGetListEntryType(l, 1) + (string)llGetListEntryType(l, 2));
+    say(llList2String(llJson2List("[\"a\\\"b\"]"), 0));
+    say((string)llGetListLength(llJson2List("[]")) + (string)llGetListLength(llJson2List("{}")));
+  )lsl");
+  QCOMPARE(got2, QStringList({
+    "pi, 3.140000, set, [1,2,3], status, ok",  // the wiki's example
+    "323",
+    "0, 3.140000, [1,2,3], {}",                // the wiki's example
+    "123",
+    "{TRUE}|{FALSE}|{NULL}|{NULL}",
+    "0",
+    "89556747-24cb-43ed-920b-47caed15465f",    // a bare text comes back as one string (the wiki)
+    "{INVALID}",                               // a malformed object (sandbox choice)
+    "hi",
+    "42 1",
+    "12345678848.000000, -7, 100.000000 212",  // too large for an integer: a float (sandbox choice)
+    "a\"b",
+    "00"}));
 }
 
 QTEST_APPLESS_MAIN(LslPureTest)
