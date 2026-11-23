@@ -12,6 +12,7 @@
 #include <QtTest>
 
 #include "animation.h"
+#include "propfile.h"
 #include "bvh.h"
 #include "bvhnode.h"
 
@@ -41,6 +42,7 @@ class AnimationTest : public QObject
     void tPoseZeroesEveryJoint();
     void resetAllCopiesFrameZero();
     void standingLiftPutsFrameOneHipAtStandingHeight();
+    void throneSeatMeetsTheSeatedHip();
     void theViewLiftsEveryFigureInOnePlace();
 
   private:
@@ -209,6 +211,35 @@ void AnimationTest::theViewLiftsEveryFigureInOnePlace()
   QCOMPARE(source.count(QStringLiteral("standingLift()")),1);
   QVERIFY(source.indexOf(lift)>source.indexOf(QStringLiteral("SceneState::translate(position.x(), position.y(), position.z());")));
   QVERIFY(source.indexOf(lift)<source.indexOf(QStringLiteral("SceneState::translate(0, -1.27f+m_avatarSkin.footDrop(), 0);")));
+}
+
+// the throne example: the seat of examples/throne.prp is 8.9 inches under the hip of the seated key
+// in the file's own numbers (hip 28, seat top 19.1). The view lifts the figure by standingLift(),
+// so the seat is raised by the same 2.53 inches in the data (seat top 21.63), and the hip stands
+// 8.9 inches above it again
+void AnimationTest::throneSeatMeetsTheSeatedHip()
+{
+  BVH bvh;
+  Animation throne(&bvh,QStringLiteral("../examples/throne.dingle"));
+  QVERIFY2(qAbs(throne.standingLift()-2.5285187f)<0.0001f,qPrintable(QString::number(throne.standingLift())));
+  throne.setFrame(1);
+  QCOMPARE(throne.getPosition().y(),28.0f);
+  const float seatedHip=throne.getPosition().y()+throne.standingLift(); // where the view draws it: 30.5285187
+
+  QFile file(QStringLiteral("../examples/throne.prp"));
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  const PropFile::Result result=PropFile::parse(file.readAll());
+  QVERIFY2(result.ok(),qPrintable(result.error));
+  QCOMPARE(int(result.props->size()),4);
+  const PropRecord& seat=result.props->at(0);
+  QCOMPARE(seat.position[1],9.965);
+  QCOMPARE(seat.scale[1],23.33);
+  const double seatTop=seat.position[1]+seat.scale[1]/2.0;
+  QVERIFY2(qAbs(seatTop-21.63)<0.0001,qPrintable(QString::number(seatTop)));
+  // hip over seat: 8.8985 (was 8.9 before the lift, the 0.0015 is the rounding of the data)
+  QVERIFY2(qAbs((seatedHip-seatTop)-8.8985187)<0.0001,qPrintable(QString::number(seatedHip-seatTop)));
+  // the base still reaches the floor line it had (-1.7)
+  QVERIFY2(qAbs((seat.position[1]-seat.scale[1]/2.0)+1.7)<0.0001,"base bottom moved");
 }
 
 QTEST_GUILESS_MAIN(AnimationTest)
