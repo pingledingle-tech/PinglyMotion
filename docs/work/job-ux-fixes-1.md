@@ -1,5 +1,5 @@
 Branch: job/ux-fixes-1
-Status: active
+Status: done
 Pull request: #442
 Files:
 - src/panelcontent.h
