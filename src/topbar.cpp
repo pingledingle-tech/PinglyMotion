@@ -120,6 +120,11 @@ void TopBar::syncAll()
 }
 
 // enabled state, tip and status line of one button
+QWidget* TopBar::setupWidget() const
+{
+  return m_buttons.size() > 5 ? m_bar->widgetForAction(m_buttons.at(5)) : nullptr;
+}
+
 void TopBar::sync(QAction* button)
 {
   const MenuSpec::Button* spec = nullptr;

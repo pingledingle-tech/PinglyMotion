@@ -24,6 +24,7 @@
 #include <QDialog>
 
 class QCheckBox;
+class QPushButton;
 class QRadioButton;
 
 namespace SetupText
@@ -44,6 +45,7 @@ namespace SetupText
   inline constexpr const char* textSizeLabel = QT_TRANSLATE_NOOP("SetupDialog", "Text size");
   inline constexpr const char* guidanceLabel = QT_TRANSLATE_NOOP("SetupDialog", "Guidance");
   inline constexpr const char* hintsChoice = QT_TRANSLATE_NOOP("SetupDialog", "Show hints, tips and the next-step line");
+  inline constexpr const char* welcomeAgain = QT_TRANSLATE_NOOP("SetupDialog", "Show the welcome card again");
   inline constexpr const char* doneButton = QT_TRANSLATE_NOOP("SetupDialog", "Done");
 
   // the five text size choices (docs/UX_DECISIONS.md, section 8: 100 to 200, steps of 25)
@@ -63,6 +65,7 @@ class SetupDialog : public QDialog
     bool darkChecked() const;
     int textSizeChecked() const;
     bool hintsChecked() const;
+    QPushButton* welcomeButton() const { return m_welcomeButton; }
 
   signals:
     // the user changed a choice; PinglyMotionWindow stores it and applies it (same path as its
@@ -73,6 +76,8 @@ class SetupDialog : public QDialog
     void textSizeRequested(int percent);
     void hintsRequested(bool on);
     void showCameraKeysRequested();
+    // "Show the welcome card again": the window closes Setup and shows the card (UX phase 6a)
+    void welcomeRequested();
 
   private:
     QRadioButton* m_beginnerRadio;
@@ -82,6 +87,7 @@ class SetupDialog : public QDialog
     QRadioButton* m_lightRadio;
     QList<QRadioButton*> m_textSizeRadios;
     QCheckBox* m_hintsCheck;
+    QPushButton* m_welcomeButton = nullptr;
 };
 
 #endif

@@ -1249,6 +1249,17 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>GuidanceSpec</name>
+    <message>
+        <source>Expert mode: more controls, nothing moved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Beginner mode: expert controls hidden.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>HandsPanel</name>
     <message>
         <source>Left hand</source>
@@ -1476,6 +1487,109 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Key set at frame %1 for %2 joints.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HintCard</name>
+    <message>
+        <source>Pick a joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a joint on the figure to pick it. You can also use the Joints list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull a limb</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press a joint and drag. The limb follows your pointer. Let go to set a key. Esc cancels. Hold Shift when you press to turn only that joint. No mouse? Press Enter on the picked joint and use the arrow keys.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag one of the coloured rings around the picked joint, or use the sliders on the right.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Red, green, blue = X, Y, Z</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Everywhere in PinglyMotion, X is red, Y is green and Z is blue: the rings, the sliders and the axis widget. The letters are always shown too.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the pose</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saves the pose you see now as a key. A key is a saved pose.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watch it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Plays your animation from the start. Press it again to stop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change how it moves</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a key on the timeline, then an easing choice. Each tile draws the move: a curve from Start to End.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the panels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every panel has a pop-out button in its title. Pop it out to move it anywhere, even to a second screen. View &gt; Reset layout puts everything back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup any time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Beginner or experienced, mouse habits, theme and text size are all in Setup, the gear button at the top right.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn hints off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn all hints off (Help &gt; Show hints)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next hint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close this hint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hint %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hints off. Turn them on again in Setup or Help &gt; Show hints.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1847,10 +1961,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Show the welcome card again</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The welcome card is not built yet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2811,10 +2921,6 @@ Pick a smaller file, then try again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Beginner mode is on.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Left</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2860,10 +2966,6 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source>Set key</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Expert mode is on. Paste mirrored shows on the timeline; more controls come in later updates.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5980,6 +6082,10 @@ Error: %2</source>
         <source>Done</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show the welcome card again</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SphereControls</name>
@@ -6709,6 +6815,45 @@ Click to turn them on or off.</source>
     </message>
     <message>
         <source>Finish or cancel the pull first: Esc cancels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WelcomeDialog</name>
+    <message>
+        <source>Make your first animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a pose to start. You can change everything later in &lt;b&gt;Setup&lt;/b&gt; (the gear button at the top right).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Have you made animations before?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New to animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experienced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Camera and keys like</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome card closed. Setup (top right) or Help brings it back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ready. Click a joint on the figure to pick it.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -152,6 +152,11 @@ SetupDialog::SetupDialog(QWidget* parent) :
   m_hintsCheck->setChecked(UserSettings::tipsOn());
   connect(m_hintsCheck, &QCheckBox::toggled, this, [this](bool on) { emit hintsRequested(on); });
   outer->addWidget(m_hintsCheck, 0, Qt::AlignLeft);
+  m_welcomeButton = new QPushButton(tr2(SetupText::welcomeAgain), this);
+  m_welcomeButton->setObjectName(QStringLiteral("setupWelcomeButton"));
+  m_welcomeButton->setIcon(LucideIcons::icon(QStringLiteral("lightbulb"), Theme::color(Theme::Token::Text), Theme::color(Theme::Token::TextDisabled)));
+  connect(m_welcomeButton, &QPushButton::clicked, this, [this]() { emit welcomeRequested(); });
+  outer->addWidget(m_welcomeButton, 0, Qt::AlignLeft);
 
   QHBoxLayout* actions = new QHBoxLayout();
   actions->addStretch(1);

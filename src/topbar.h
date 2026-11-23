@@ -58,6 +58,9 @@ class TopBar : public QObject
     void setDark(bool dark);
     bool dark() const { return m_dark; }
 
+    // the Setup button's widget in the bar, for the hint card that points at it; null when none
+    QWidget* setupWidget() const;
+
     // colours and icons again after the theme changed
     void applyLook();
 

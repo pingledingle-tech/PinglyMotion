@@ -124,6 +124,7 @@ class TestMainPanels : public QObject
     void needsGrowWithTheTextSize();
     void timelineRowsBreakOnlyWhenTheyDoNotFit();
     void selectedJointPageFitsItsPanel();
+    void expertModeMovesNothing();
 };
 
 void TestMainPanels::panelsRearrangeAndNothingIsClipped_data()
@@ -275,6 +276,47 @@ void TestMainPanels::selectedJointPageFitsItsPanel()
     const QStringList problems = panelProblems(w.panels.jointCardDock);
     QVERIFY2(problems.isEmpty(), qPrintable(v.name() + QStringLiteral(": ") + problems.join('\n')));
   }
+}
+
+// Beginner or Expert mode shows or hides Paste mirrored and moves no other control (charter P12,
+// UX phase 6a): the window makes it visible or hidden exactly like this (PinglyMotionWindow)
+void TestMainPanels::expertModeMovesNothing()
+{
+  for (const UiRender::Variant& v : UiRender::variants())
+    for (int width : {1920, 1100, 700})
+    {
+      UiRender::Scope scope(v);
+      MainWindow w;
+      w.arrange(width);
+      QWidget* timeline = w.panels.timelineDock->widget();
+      auto geometries = [&]()
+      {
+        QHash<QString, QRect> found;
+        int unnamed = 0;
+        for (QWidget* child : timeline->findChildren<QWidget*>())
+        {
+          if (child == w.panels.pasteMirrored || !child->isVisibleTo(&w.window)) continue;
+          if (child->objectName().startsWith(QLatin1String("qt_"))) continue;
+          const QString key = child->objectName().isEmpty() ? QStringLiteral("#%1").arg(unnamed++) : child->objectName();
+          found.insert(key + QLatin1Char(':') + QString::fromLatin1(child->metaObject()->className()),
+                       QRect(child->mapTo(&w.window, QPoint(0, 0)), child->size()));
+        }
+        return found;
+      };
+      w.panels.pasteMirrored->setVisible(false);
+      w.settle();
+      const QHash<QString, QRect> beginner = geometries();
+      QVERIFY(!beginner.isEmpty());
+      QVERIFY(!w.panels.pasteMirrored->isVisibleTo(&w.window));
+      w.panels.pasteMirrored->setVisible(true);
+      w.settle();
+      QVERIFY(w.panels.pasteMirrored->isVisibleTo(&w.window));
+      const QHash<QString, QRect> expert = geometries();
+      QCOMPARE(expert.keys().size(), beginner.keys().size());
+      for (auto it = beginner.cbegin(); it != beginner.cend(); ++it)
+        QVERIFY2(expert.value(it.key()) == it.value(),
+                 qPrintable(QStringLiteral("%1 (%2 wide, %3) moved when Expert mode was switched").arg(it.key()).arg(width).arg(v.name())));
+    }
 }
 
 QTEST_MAIN(TestMainPanels)

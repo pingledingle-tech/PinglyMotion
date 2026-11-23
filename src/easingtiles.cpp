@@ -387,6 +387,13 @@ EasingTiles::EasingTiles(QWidget* parent) :
   {
     if(m_hasChoice) emit editCurveRequested();
   });
+  // hidden in Beginner mode, but its room stays, so the tiles break into rows in the same way in
+  // both modes and none of them moves when the mode changes (charter P12)
+  {
+    QSizePolicy keepSpace=m_editButton->sizePolicy();
+    keepSpace.setRetainSizeWhenHidden(true);
+    m_editButton->setSizePolicy(keepSpace);
+  }
   secondPart->addWidget(m_editButton,0,Qt::AlignVCenter);
 
   firstPart->addStretch(1);

@@ -77,8 +77,8 @@ namespace MenuSpec
 
   // Help
   inline constexpr Item helpSetup = {"helpSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup: beginner or experienced, mouse and keys..."), "", ""};
-  inline constexpr Item helpWelcome = {"helpWelcomeAction", QT_TRANSLATE_NOOP("MenuSpec", "Show the welcome card again"), "",
-    QT_TRANSLATE_NOOP("MenuSpec", "The welcome card is not built yet.")};
+  // built in UX phase 6a: the welcome card (src/welcomedialog.*)
+  inline constexpr Item helpWelcome = {"helpWelcomeAction", QT_TRANSLATE_NOOP("MenuSpec", "Show the welcome card again"), "", ""};
   inline constexpr Item helpHints = {"helpHintsAction", QT_TRANSLATE_NOOP("MenuSpec", "Show hints"), "Shift+H", ""};
   // built in UX phase 1d: the Keys and mouse dialog (src/keysmousedialog.*)
   inline constexpr Item helpKeys = {"helpKeysAction", QT_TRANSLATE_NOOP("MenuSpec", "Keys and mouse"), "?", ""};

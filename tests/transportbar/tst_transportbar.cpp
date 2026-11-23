@@ -551,7 +551,7 @@ void TestTransportBar::lookDrawnInTheTokenColours()
 void TestTransportBar::lookLucidePaths()
 {
   QCOMPARE(QString::fromLatin1(LucideIcons::version()), QStringLiteral("1.77.0"));
-  QCOMPARE(LucideIcons::names(), QStringList({"play", "square", "rotate-ccw", "undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun", "moon", "sparkles", "info", "keyboard", "video", "flip-horizontal-2", "chevron-right", "chevron-down", "ban", "folder-open", "file-code", "terminal", "circle-check", "circle-x", "refresh-cw", "notebook-text", "rotate-3d", "mouse-pointer-2", "move-3d", "diamond", "triangle-alert", "diamond-plus", "book-open", "eye-off", "orbit", "hand", "zoom-in", "crosshair", "maximize", "house", "axis-3d", "eye", "check", "sliders-horizontal"}));
+  QCOMPARE(LucideIcons::names(), QStringList({"play", "square", "rotate-ccw", "undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun", "moon", "sparkles", "x", "lightbulb", "info", "keyboard", "video", "flip-horizontal-2", "chevron-right", "chevron-down", "ban", "folder-open", "file-code", "terminal", "circle-check", "circle-x", "refresh-cw", "notebook-text", "rotate-3d", "mouse-pointer-2", "move-3d", "diamond", "triangle-alert", "diamond-plus", "book-open", "eye-off", "orbit", "hand", "zoom-in", "crosshair", "maximize", "house", "axis-3d", "eye", "check", "sliders-horizontal"}));
   QVERIFY(LucideIcons::path(QStringLiteral("no-such-icon")).isEmpty());
   QVERIFY(LucideIcons::icon(QStringLiteral("no-such-icon"), Qt::white, Qt::gray).isNull());
 
