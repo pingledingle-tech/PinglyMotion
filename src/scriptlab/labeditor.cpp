@@ -30,6 +30,7 @@
 #include <QVBoxLayout>
 
 #include "lslhighlighter.h"
+#include "rlvsuggest.h"
 #include "lucideicons.h"
 #include "scriptlabsection.h"
 #include "theme.h"
@@ -163,6 +164,12 @@ LabCodeEdit::LabCodeEdit(QWidget* parent) :
   m_detail->setObjectName("labSuggestDetail");
   m_detail->setWordWrap(true);
   popup->addWidget(m_detail);
+  // an RLV command's example (job R3): shown in both modes, Ctrl+Enter puts it in (charter P12)
+  m_example = new QLabel(m_popup);
+  m_example->setObjectName("labSuggestExample");
+  m_example->setWordWrap(true);
+  m_example->setTextFormat(Qt::PlainText);
+  popup->addWidget(m_example);
   m_hint = new QLabel(tr("Press Down to pick, then Enter or Tab. Esc closes the list."), m_popup);
   m_hint->setObjectName("labSuggestHint");
   m_hint->setWordWrap(true);
@@ -174,6 +181,26 @@ LabCodeEdit::LabCodeEdit(QWidget* parent) :
     takeSuggestion();
   });
   stylePopup();
+
+  // RLV commands after "@" inside the owner-say text (job R3)
+  m_rlv = std::make_shared<LabSuggest::RlvProvider>();
+  m_engine.addProvider(m_rlv);
+}
+
+void LabCodeEdit::setRlvMode(Rlv::Mode mode)
+{
+  m_rlv->setMode(mode);
+  if (suggestionsVisible()) refreshSuggestions();
+}
+
+Rlv::Mode LabCodeEdit::rlvMode() const
+{
+  return m_rlv->mode();
+}
+
+QString LabCodeEdit::suggestionRowText(int row) const
+{
+  return row >= 0 && row < m_list->count() ? m_list->item(row)->text() : QString();
 }
 
 void LabCodeEdit::applyFixedFont()
@@ -665,6 +692,17 @@ void LabCodeEdit::refreshSuggestions()
   fillSuggestions(items);
 }
 
+void LabCodeEdit::refreshAfterSymbol()
+{
+  // a character that cannot be in a name closes the list, unless a provider has something for
+  // the place it leads to without being asked: "@", ":", "=" and "," in an RLV line (job R3)
+  if (m_held || (!suggestionsVisible() && m_onRequestOnly)) { hideSuggestions(); return; }
+  const QList<LabSuggest::Item> items = m_engine.suggest(toPlainText(), textCursor().position(), false);
+  if (items.isEmpty()) { hideSuggestions(); return; }
+  m_requested = false;
+  fillSuggestions(items);
+}
+
 void LabCodeEdit::fillSuggestions(const QList<LabSuggest::Item>& items)
 {
   m_items = items;
@@ -672,8 +710,9 @@ void LabCodeEdit::fillSuggestions(const QList<LabSuggest::Item>& items)
   m_list->clear();
   for (const LabSuggest::Item& it : items)
   {
-    QListWidgetItem* row = new QListWidgetItem(it.name, m_list);
-    row->setToolTip(LabSuggest::kindWord(it.kind));
+    // a mark such as "RLVa only" is a word after the name, never only a colour (charter P10)
+    QListWidgetItem* row = new QListWidgetItem(it.mark.isEmpty() ? it.name : tr("%1 (%2)").arg(it.name, it.mark), m_list);
+    row->setToolTip(it.mark.isEmpty() ? LabSuggest::kindWord(it.kind) : LabSuggest::kindWord(it.kind) + QStringLiteral(" · ") + it.mark);
   }
   m_list->clearSelection();
   m_popup->show();
@@ -684,12 +723,14 @@ void LabCodeEdit::fillSuggestions(const QList<LabSuggest::Item>& items)
 
 void LabCodeEdit::setSuggestionRow(int row)
 {
-  if (m_items.isEmpty()) { m_row = -1; m_help->clear(); m_detail->clear(); return; }
+  if (m_items.isEmpty()) { m_row = -1; m_help->clear(); m_detail->clear(); m_example->clear(); m_example->hide(); return; }
   m_row = qBound(0, row, int(m_items.size()) - 1);
   const LabSuggest::Item& it = m_items.at(m_row);
   m_help->setText(it.plain);
   m_detail->setText(it.detail);
   m_detail->setVisible(m_expertHelp && !it.detail.isEmpty());
+  m_example->setText(it.example.isEmpty() ? QString() : tr("Ctrl+Enter puts in the example: %1").arg(it.example));
+  m_example->setVisible(!it.example.isEmpty());
   m_hint->setVisible(m_suggestHints);
   // the chosen row: the selection fill and bold text (a shape, not only a colour, charter P10);
   // before an arrow key nothing is chosen, the help shows the first row
@@ -749,7 +790,7 @@ void LabCodeEdit::stylePopup()
     "QListWidget#labSuggestList { background: %1; color: %4; border: none; }"
     "QListWidget#labSuggestList::item:selected { background: %5; color: %6; }"
     "QLabel#labSuggestHelp { color: %4; background: transparent; }"
-    "QLabel#labSuggestDetail, QLabel#labSuggestHint { color: %7; background: transparent; }")
+    "QLabel#labSuggestDetail, QLabel#labSuggestHint, QLabel#labSuggestExample { color: %7; background: transparent; }")
     .arg(raised.name(), border.name()).arg(radiusSmall)
     .arg(text.name(), token(Theme::Token::Selection, m_dark).name(), token(Theme::Token::OnAccent, m_dark).name(), muted.name()));
 }
@@ -787,6 +828,15 @@ bool LabCodeEdit::suggestionKey(QKeyEvent* event)
     event->accept();
     return true;
   }
+  // Ctrl+Enter puts in the highlighted command's example (job R3); a key of its own, so plain
+  // Enter still never takes anything by itself
+  if (mods == Qt::ControlModifier && (k == Qt::Key_Return || k == Qt::Key_Enter)
+      && m_row >= 0 && m_row < m_items.size() && !m_items.at(m_row).example.isEmpty())
+  {
+    takeExample();
+    event->accept();
+    return true;
+  }
   if (mods == Qt::NoModifier && (k == Qt::Key_Return || k == Qt::Key_Enter || k == Qt::Key_Tab))
   {
     if (m_inList)
@@ -815,7 +865,7 @@ void LabCodeEdit::afterKey(int key, Qt::KeyboardModifiers mods, const QString& t
   {
     m_held = false;
     if (m_engine.language().isNameChar(typed.at(typed.size() - 1))) refreshSuggestions();
-    else hideSuggestions();
+    else refreshAfterSymbol();
     return;
   }
   if (key == Qt::Key_Backspace || key == Qt::Key_Delete)
@@ -837,11 +887,30 @@ void LabCodeEdit::takeSuggestion()
   // one undo step: the typed part of the name is replaced by the whole name
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
-  cursor.setPosition(context.prefixStart);
+  const int from = item.replaceFrom >= 0 && item.replaceFrom <= context.cursor ? item.replaceFrom : context.prefixStart;
+  cursor.setPosition(from);
   cursor.setPosition(context.cursor, QTextCursor::KeepAnchor);
   cursor.insertText(insertion.text);
   cursor.endEditBlock();
   cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, insertion.cursorBack);
+  setTextCursor(cursor);
+  hideSuggestions();
+  emit suggestionTaken(item.name);
+}
+
+void LabCodeEdit::takeExample()
+{
+  if (m_row < 0 || m_row >= m_items.size()) return;
+  const LabSuggest::Item item = m_items.at(m_row);
+  const int end = textCursor().position();
+  if (item.example.isEmpty() || item.exampleFrom < 0 || item.exampleFrom > end) return;
+  // one undo step: the command typed so far is replaced by the whole example
+  QTextCursor cursor = textCursor();
+  cursor.beginEditBlock();
+  cursor.setPosition(item.exampleFrom);
+  cursor.setPosition(end, QTextCursor::KeepAnchor);
+  cursor.insertText(item.exampleInsert);
+  cursor.endEditBlock();
   setTextCursor(cursor);
   hideSuggestions();
   emit suggestionTaken(item.name);

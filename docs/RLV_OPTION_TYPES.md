@@ -36,7 +36,12 @@ warning that names the command, the value and the fix, for example:
 The warning goes to the Script Lab log line of the command and to `rlv_state` and
 `lsl_run` answers as `reason`. A warning never stops the script: the other commands of
 the line and the rest of the script run on. The static check (`lsl_lint`) gives the same
-warning, with the id `rlv-param`, for constant `llOwnerSay("@...")` text.
+warning, with the id `rlv-param`, for constant `llOwnerSay("@...")` text; since lane 1
+job R3 its message starts with the command, as above (`Rlv::plainProblem()`). The script
+editor shows these warnings in the script (wavy line, icon, the text in the problem list)
+and uses the same value type for its suggestions after `:`: the names for `AttachPoint`,
+`Layer` and `CameraMode`, and one sample value with a plain sentence for the other types
+([SCRIPT_LAB.md](SCRIPT_LAB.md), "RLV in the editor").
 
 Only RLVa mode checks values. In plain RLV mode the sandbox accepts any value as before,
 because the RLV viewer's own handling of bad values is not confirmed (no source read).

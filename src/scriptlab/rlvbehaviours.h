@@ -178,6 +178,43 @@ namespace Rlv
   // command, the bad value and the fix. Only RLVa mode checks; plain RLV mode gives
   // empty, because the RLV viewer's handling of bad values is not confirmed.
   QString optionProblem(const Command& command, Mode mode = Mode::Rlva);
+
+  // ---- help for the script editor (lane 1, job R3; data in rlvhelp_plain.inc) ----
+
+  // One row of help per behaviour of the table and per family (setdebug_, ...): one whole
+  // example line in our own words and one plain sentence for a beginner (at most 12 words).
+  struct Help
+  {
+    QString name;
+    QString example;    // e.g. "@detach=n"
+    QString sentence;   // e.g. "Locks this object on you, so it cannot be taken off."
+  };
+  const QVector<Help>& helpRows();
+  // the row for a behaviour (a family member such as setenv_daytime gets its family's row);
+  // nullptr when there is none
+  const Help* findHelp(const QString& name);
+  // the four families (setdebug_, setenv_, getdebug_, getenv_): any name after the "_"
+  const QVector<Behaviour>& familyBehaviours();
+
+  // The forms a behaviour takes after "=", in the order the editor lists them: n, y, add,
+  // rem, force, then "<channel>" for a question. Forms only RLVa has are listed too;
+  // formIsRlvaOnly() tells.
+  QStringList formsOf(const Behaviour& behaviour);
+  bool formIsRlvaOnly(const Behaviour& behaviour, const QString& form);
+  // the forms in words for a fix, without the RLVa-only ones in plain RLV mode:
+  // "n or y", "n, y or force", "a channel number such as 2222"; with withEquals
+  // "=n, =y or =force", "=2222 (a channel number)"
+  QString formsText(const Behaviour& behaviour, Mode mode, bool withEquals = false);
+
+  // The known name closest to an unknown one (at most two letters off), or empty
+  QString nearestName(const QString& name);
+
+  // The warning the editor and the static check show for one command of an owner-say line:
+  // empty when the command is fine in this mode, otherwise plain words that start with
+  // "@<command>: ", say what is wrong and how to fix it, for example
+  // "@detach=x: x is not valid. Use n, y or force." The option value part is
+  // optionProblem()'s (RLVa mode only).
+  QString plainProblem(const Command& command, Mode mode = Mode::Rlva);
 }
 
 #endif

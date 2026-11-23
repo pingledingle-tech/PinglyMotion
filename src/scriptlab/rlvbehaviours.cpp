@@ -10,6 +10,7 @@
 
 #include "rlvbehaviours.h"
 
+#include <algorithm>
 #include <charconv>
 #include <limits>
 #include <string>
@@ -804,5 +805,161 @@ namespace Rlv
     if (behaviour->option == OptionUse::Required && command.option.isEmpty() && command.type != ParamType::Reply)
       return QString("@%1 needs an option").arg(command.behaviour);
     return QString();
+  }
+
+  // ---- help for the script editor (lane 1, job R3) ----
+
+  const QVector<Help>& helpRows()
+  {
+    static const QVector<Help> rows =
+    {
+#define RLV_HELP(n, e, s) {QStringLiteral(n), QStringLiteral(e), QStringLiteral(s)},
+#include "rlvhelp_plain.inc"
+#undef RLV_HELP
+    };
+    return rows;
+  }
+
+  const QVector<Behaviour>& familyBehaviours()
+  {
+    return families();
+  }
+
+  const Help* findHelp(const QString& name)
+  {
+    for (const Help& row : helpRows())
+      if (row.name == name) return &row;
+    const Behaviour* behaviour = findBehaviour(name);
+    if (!behaviour || behaviour->name == name) return nullptr;
+    for (const Help& row : helpRows())
+      if (row.name == behaviour->name) return &row;
+    return nullptr;
+  }
+
+  QStringList formsOf(const Behaviour& behaviour)
+  {
+    QStringList forms;
+    if (behaviour.params & AllowAddRemove) forms << QStringLiteral("n") << QStringLiteral("y") << QStringLiteral("add") << QStringLiteral("rem");
+    if (behaviour.params & AllowForce) forms << QStringLiteral("force");
+    if (behaviour.params & AllowReply) forms << QStringLiteral("<channel>");
+    return forms;
+  }
+
+  bool formIsRlvaOnly(const Behaviour& behaviour, const QString& form)
+  {
+    int flag = 0;
+    if (form == QLatin1String("force")) flag = AllowForce;
+    else if (form == QLatin1String("<channel>")) flag = AllowReply;
+    else flag = AllowAddRemove;
+    return (behaviour.rlvaOnlyParams & flag) != 0;
+  }
+
+  QString formsText(const Behaviour& behaviour, Mode mode, bool withEquals)
+  {
+    const int params = mode == Mode::Rlv ? (behaviour.params & ~behaviour.rlvaOnlyParams) : behaviour.params;
+    const QString eq = withEquals ? QStringLiteral("=") : QString();
+    QStringList parts;
+    if (params & AllowAddRemove) parts << eq + QStringLiteral("n") << eq + QStringLiteral("y");
+    if (params & AllowForce) parts << eq + QStringLiteral("force");
+    if (params & AllowReply) parts << (withEquals ? QStringLiteral("=2222 (a channel number)") : QStringLiteral("a channel number such as 2222"));
+    if (parts.isEmpty()) return QString();
+    if (parts.size() == 1) return parts.first();
+    const QString last = parts.takeLast();
+    return parts.join(QStringLiteral(", ")) + QStringLiteral(" or ") + last;
+  }
+
+  namespace
+  {
+    // letters to change, add or remove to make one name the other (Levenshtein distance),
+    // stopping early once it is past limit
+    int distance(const QString& a, const QString& b, int limit)
+    {
+      if (qAbs(a.size() - b.size()) > limit) return limit + 1;
+      std::vector<int> row(size_t(b.size()) + 1);
+      for (int j = 0; j <= b.size(); ++j) row[size_t(j)] = j;
+      for (int i = 1; i <= a.size(); ++i)
+      {
+        int diagonal = row[0];
+        row[0] = i;
+        int best = row[0];
+        for (int j = 1; j <= b.size(); ++j)
+        {
+          const int up = row[size_t(j)];
+          const int cost = a.at(i - 1) == b.at(j - 1) ? 0 : 1;
+          row[size_t(j)] = std::min({up + 1, row[size_t(j) - 1] + 1, diagonal + cost});
+          diagonal = up;
+          best = std::min(best, row[size_t(j)]);
+        }
+        if (best > limit) return limit + 1;
+      }
+      return row[size_t(b.size())];
+    }
+  }
+
+  QString nearestName(const QString& name)
+  {
+    if (name.isEmpty() || name.size() > MAX_BEHAVIOUR_LENGTH) return QString();
+    QString best;
+    int bestDistance = 3;
+    for (const Behaviour& behaviour : behaviours())
+    {
+      const int d = distance(name, behaviour.name, 2);
+      if (d < bestDistance) { bestDistance = d; best = behaviour.name; }
+    }
+    return best;
+  }
+
+  QString plainProblem(const Command& command, Mode mode)
+  {
+    const QString head = QStringLiteral("@") + command.text + QStringLiteral(": ");
+    const Behaviour* known = findBehaviour(command.behaviour);
+    if (!command.valid)
+    {
+      const bool formError = command.error.startsWith(QLatin1String("missing")) || command.error.startsWith(QLatin1String("parameter must"));
+      if (known && formError && !command.text.contains(QLatin1Char('=')))
+        return head + QString("the = part is missing. End it with %1.").arg(formsText(*known, mode, true));
+      if (known && formError && command.param.isEmpty())
+        return head + QString("nothing comes after =. Use %1.").arg(formsText(*known, mode));
+      if (known && formError)
+        return head + QString("%1 is not valid. Use %2.").arg(command.param, formsText(*known, mode));
+      return head + (command.error.isEmpty() ? QStringLiteral("this is not an RLV command") : command.error) + QLatin1Char('.');
+    }
+    if (command.type == ParamType::Clear) return QString();
+    if (!known)
+    {
+      const QString near = nearestName(command.behaviour);
+      return head + QString("%1 is not an RLV command. ").arg(command.behaviour)
+             + (near.isEmpty() ? QStringLiteral("Check the spelling.") : QString("Did you mean %1?").arg(near));
+    }
+    if (!findBehaviour(command.behaviour, mode))
+      return head + (known->dialect == Dialect::RlvaOnly
+                       ? QString("%1 is RLVa only. RLV viewers do not know it.").arg(command.behaviour)
+                       : QString("%1 is RLV only. RLVa viewers do not know it.").arg(command.behaviour));
+    int needed = 0;
+    switch (command.type)
+    {
+      case ParamType::Add:
+      case ParamType::Remove: needed = AllowAddRemove; break;
+      case ParamType::Force: needed = AllowForce; break;
+      case ParamType::Reply: needed = AllowReply; break;
+      default: break;
+    }
+    const int params = mode == Mode::Rlv ? (known->params & ~known->rlvaOnlyParams) : known->params;
+    if (!(params & needed))
+    {
+      const QString what = command.type == ParamType::Reply ? QStringLiteral("a channel") : QStringLiteral("=") + command.param;
+      if (known->params & needed)   // only RLVa has this form
+        return head + QString("%1 with %2 is RLVa only. Use %3.").arg(command.behaviour, what, formsText(*known, mode));
+      return head + QString("%1 does not take %2. Use %3.").arg(command.behaviour, what, formsText(*known, mode));
+    }
+    if (known->option == OptionUse::None && !command.option.isEmpty())
+      return head + QString("%1 takes no option. Remove \":%2\".").arg(command.behaviour, command.option);
+    if (known->option == OptionUse::Required && command.option.isEmpty() && command.type != ParamType::Reply)
+    {
+      const Help* help = findHelp(command.behaviour);
+      return head + QString("%1 needs an option after \":\".").arg(command.behaviour)
+             + (help ? QString(" Example: %1").arg(help->example) : QString());
+    }
+    return optionProblem(command, mode);
   }
 }

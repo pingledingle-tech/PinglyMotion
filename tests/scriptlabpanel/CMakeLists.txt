@@ -66,3 +66,11 @@ FIND_PACKAGE (Python3 COMPONENTS Interpreter)
 IF (Python3_FOUND)
   ADD_TEST (NAME lsl_help_data COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_gen_lsl_help.py)
 ENDIF ()
+
+# Lane 1 jobs R3 and R4: the editor uses the RLV table (src/scriptlab/rlvsuggest.*): suggestions after "@",
+# "," "=" and ":", help and examples, "RLVa only" marks, Ctrl+Enter, the warnings in the editor and the jump to the line
+ADD_EXECUTABLE (pinglymotion_rlvsuggest_tests tst_rlvsuggest.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_rlvsuggest_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_LINK_LIBRARIES (pinglymotion_rlvsuggest_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME rlvsuggest COMMAND pinglymotion_rlvsuggest_tests)
+SET_TESTS_PROPERTIES (rlvsuggest PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

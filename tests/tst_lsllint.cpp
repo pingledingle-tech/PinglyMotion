@@ -152,9 +152,9 @@ default
       "1:9 unused-global: The global variable gOld is never used.",
       "2:1 unused-param: The parameter p of f is never used.",
       "9:15 assign-in-condition: This condition assigns with =; write == to compare.",
-      "9:31 rlv-unknown: RLV command \"@flyaway=n\": unknown behaviour \"flyaway\".",
-      "9:31 rlv-syntax: RLV command \"@sendim=maybe\": parameter must be n, add, y, rem, force or a channel number from 1 to 2147483647.",
-      "9:31 rlv-param: RLV command \"@fly:x=n\": @fly takes no option.",
+      "9:31 rlv-unknown: @flyaway=n: flyaway is not an RLV command. Check the spelling.",
+      "9:31 rlv-syntax: @sendim=maybe: maybe is not valid. Use n or y.",
+      "9:31 rlv-param: @fly:x=n: fly takes no option. Remove \":x\".",
       "10:15 list-compare: == between two lists only compares their lengths, not what they hold.",
       "10:20 empty-body: The if has an empty body: the ; right after it ends it.",
       "11:15 divide-by-zero: Dividing by zero stops the script with a math error.",
@@ -179,12 +179,12 @@ default
   const Lint::Result v = Lint::lint("default { state_entry() { llOwnerSay(\"@\"); llOwnerSay(\"@nosuch:\" + llGetObjectDesc()); } }");
   QCOMPARE(int(v.warnings.size()), 2);
   QCOMPARE(v.warnings[0].message, QString("RLV text \"@\": no command after \"@\"."));
-  QCOMPARE(v.warnings[1].message, QString("RLV command \"@nosuch:...\": unknown behaviour \"nosuch\"."));
+  QCOMPARE(v.warnings[1].message, QString("@nosuch:...: nosuch is not an RLV command. Check the spelling."));
 
   const Lint::Result w = Lint::lint("default { state_entry() { llOwnerSay(\"@detach:x=n\"); } }");
   QCOMPARE(int(w.warnings.size()), 1);
   QCOMPARE(w.warnings[0].id, QString("rlv-param"));
-  QCOMPARE(w.warnings[0].message, QString("RLV command \"@detach:x=n\": \"x\" is not an attachment point. Use a name such as spine or left hand."));
+  QCOMPARE(w.warnings[0].message, QString("@detach:x=n: \"x\" is not an attachment point. Use a name such as spine or left hand."));
 
   QCOMPARE(Lint::ids(), (QStringList{"unused-local", "unused-param", "unused-global", "unused-function", "shadowed", "unreachable",
                                      "assign-in-condition", "empty-body", "self-assign", "list-compare", "divide-by-zero", "deprecated",

@@ -387,7 +387,7 @@ Life: test the final script there too.
   `%` by a literal 0), `deprecated` (once per function), and for `llOwnerSay` text that starts with `@`, checked
   with the sandbox's RLV parser and behaviour table (as `rlv_command` does): `rlv-syntax` (bad syntax),
   `rlv-unknown` (a behaviour unknown in both RLV and RLVa) and `rlv-param` (a parameter or option the behaviour
-  does not take; RLVa-only behaviours are judged as RLVa). Text built with `+` is checked as far as its constant
+  does not take, or an option value RLVa refuses; RLVa-only behaviours are judged as RLVa). Each RLV message starts with the command and says the fix in plain words, for example `@detach=x: x is not valid. Use n, y or force.` or `@detatch=n: detatch is not an RLV command. Did you mean detach?` (`Rlv::plainProblem()`, lane 1 job R3). Text built with `+` is checked as far as its constant
   start goes: the complete commands, and the behaviour name of the last one when it ends before the changing part
   (`"@sit:" + (string)id + "=force"` checks `sit`).
 - `lsl_run {source, seconds, inputs, keep_rlv}` runs the script with a simulated clock: `state_entry` of the default

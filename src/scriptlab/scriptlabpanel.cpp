@@ -5,6 +5,11 @@
  */
 
 #include <QCheckBox>
+#include <QResizeEvent>
+#include <QSizeGrip>
+#include <QMouseEvent>
+#include <QRegularExpression>
+#include <QTextDocument>
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDesktopServices>
@@ -47,6 +52,7 @@
 #include "objectsview.h"
 #include "paneltitlebar.h"
 #include "rlvbehaviours.h"
+#include "textsize.h"
 #include "rlvstate.h"
 #include "scriptlabsection.h"
 #include "spherecontrols.h"
@@ -178,6 +184,12 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   QWidget(parent)
 {
   setObjectName("scriptLabPanel");
+  setMinimumSize(minimumPanelSize());
+  // the grip for a floating panel (not in a layout: it sits in the bottom right corner)
+  m_sizeGrip = new QSizeGrip(this);
+  m_sizeGrip->setObjectName("scriptLabSizeGrip");
+  m_sizeGrip->setToolTip(tr("Drag to change the size of the Script Lab window"));
+  m_sizeGrip->hide();
 
   QVBoxLayout* outer = new QVBoxLayout(this);
   outer->setContentsMargins(0, 0, 0, 0);
@@ -591,6 +603,8 @@ void ScriptLabPanel::refreshMode()
   }
   m_modeRlv->setAccessibleName(tr("Viewer rules: RLV"));
   m_modeRlva->setAccessibleName(tr("Viewer rules: RLVa"));
+  // the editor marks commands the chosen viewer does not know (job R3)
+  if (m_editor) m_editor->codeEdit()->setRlvMode(rlv ? Rlv::Mode::Rlv : Rlv::Mode::Rlva);
 }
 
 void ScriptLabPanel::setState(RlvState* state)
@@ -742,6 +756,12 @@ void ScriptLabPanel::hideEvent(QHideEvent* event)
 void ScriptLabPanel::changeEvent(QEvent* event)
 {
   QWidget::changeEvent(event);
+  // the text size changed: the sizes follow it
+  if (event->type() == QEvent::FontChange)
+  {
+    setMinimumSize(minimumPanelSize());
+    updateGeometry();
+  }
   // the theme was switched: new token colours
   if (event->type() == QEvent::PaletteChange)
   {
@@ -868,7 +888,40 @@ QDockWidget* ScriptLabPanel::makeDock(QMainWindow* window, ScriptLabPanel* panel
   // hidden until asked for: someone who only animates never sees it
   window->addDockWidget(Qt::RightDockWidgetArea, dock);
   dock->hide();
+  // the size grip shows while the panel floats (the custom title bar takes the system frame away)
+  connect(dock, &QDockWidget::topLevelChanged, panel, [panel](bool floating) { panel->setFloatingGrip(floating); });
   return dock;
+}
+
+QSize ScriptLabPanel::defaultSize()
+{
+  // room for the suggestion list with its help and the warnings side by side with the script
+  return QSize(TextSize::scaled(480), TextSize::scaled(720));
+}
+
+QSize ScriptLabPanel::minimumPanelSize()
+{
+  return QSize(TextSize::scaled(300), TextSize::scaled(240));
+}
+
+void ScriptLabPanel::setFloatingGrip(bool floating)
+{
+  m_sizeGrip->setVisible(floating);
+  placeSizeGrip();
+}
+
+void ScriptLabPanel::placeSizeGrip()
+{
+  if (!m_sizeGrip) return;
+  const QSize hint = m_sizeGrip->sizeHint();
+  m_sizeGrip->setGeometry(width() - hint.width(), height() - hint.height(), hint.width(), hint.height());
+  m_sizeGrip->raise();
+}
+
+void ScriptLabPanel::resizeEvent(QResizeEvent* event)
+{
+  QWidget::resizeEvent(event);
+  placeSizeGrip();
 }
 
 // --- Live (issue 292) -------------------------------------------------------
@@ -1027,7 +1080,7 @@ void ScriptLabPanel::buildLivePage()
   m_problemsSection = addSection(QStringLiteral("problems"), tr("Errors and warnings"), true, page, layout);
   m_problems = new QListWidget(m_problemsSection->body());
   m_problems->setObjectName("scriptLabProblems");
-  m_problems->setToolTip(tr("Press Enter or double-click a line to show it in the script"));
+  m_problems->setToolTip(tr("Click a line, or press Enter, to show it in the script"));
   m_problems->setMinimumHeight(3 * m_problems->fontMetrics().height() + 2 * SpacingS);
   m_problems->setWordWrap(true);
   m_problemsSection->bodyLayout()->addWidget(m_problems);
@@ -1038,7 +1091,7 @@ void ScriptLabPanel::buildLivePage()
   m_runLog->setObjectName("scriptLabRunLog");
   m_runLog->setReadOnly(true);
   m_runLog->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  m_runLog->setToolTip(tr("What the script did in the last run: what it said, its listens, timers and RLV commands. Times are simulated seconds."));
+  m_runLog->setToolTip(tr("What the script did in the last run, in simulated seconds. Click an error or RLV line to show it in the script."));
   m_runLog->setMinimumHeight(6 * m_runLog->fontMetrics().height() + 2 * SpacingS);
   m_logSection->bodyLayout()->addWidget(m_runLog);
 
@@ -1125,6 +1178,9 @@ void ScriptLabPanel::buildLivePage()
   connect(m_openEditor, &QPushButton::clicked, this, &ScriptLabPanel::openInEditor);
   connect(m_runAgain, &QPushButton::clicked, this, &ScriptLabPanel::runAgain);
   connect(m_problems, &QListWidget::itemActivated, this, [this](QListWidgetItem* item) { showProblem(m_problems->row(item)); });
+  // one click is enough to show the line (job R3); Enter and a double-click still work
+  connect(m_problems, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) { showProblem(m_problems->row(item)); });
+  m_runLog->viewport()->installEventFilter(this);
 
   setTabOrder(m_watch, m_example);
   setTabOrder(m_example, m_liveFolder);
@@ -1268,10 +1324,62 @@ void ScriptLabPanel::showProblem(int index)
 {
   if (index < 0 || index >= m_shownProblems.size()) return;
   const QJsonObject problem = m_shownProblems.at(index);
-  const QTextBlock block = m_scriptView->document()->findBlockByNumber(problem.value("line").toInt() - 1);
+  showScriptPlace(problem.value("line").toInt(), problem.value("column").toInt());
+}
+
+bool ScriptLabPanel::showLogLine(int logLine)
+{
+  const QTextBlock entry = m_runLog->document()->findBlockByNumber(logLine);
+  if (!entry.isValid()) return false;
+  const QString text = entry.text();
+  static const QRegularExpression at(QStringLiteral("at line (\\d+), column (\\d+)"));
+  const QRegularExpressionMatch m = at.match(text);
+  if (m.hasMatch())
+  {
+    showScriptPlace(m.captured(1).toInt(), m.captured(2).toInt());
+    return true;
+  }
+  // an RLV line: the first script line that holds the same text
+  const int start = int(text.indexOf(QStringLiteral("rlv_command: ")));
+  if (start < 0) return false;
+  QString command = text.mid(start + 13);
+  for (const QString& end : {QStringLiteral(" (refused: "), QStringLiteral("; reply on channel ")})
+  {
+    const int cut = int(command.indexOf(end));
+    if (cut >= 0) command = command.left(cut);
+  }
+  if (command.isEmpty()) return false;
+  const QTextDocument* script = m_scriptView->document();
+  for (QTextBlock block = script->begin(); block.isValid(); block = block.next())
+  {
+    const int column = int(block.text().indexOf(command, 0, Qt::CaseInsensitive));
+    if (column >= 0)
+    {
+      showScriptPlace(block.blockNumber() + 1, column + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ScriptLabPanel::eventFilter(QObject* watched, QEvent* event)
+{
+  // a click on a log line shows its code line (job R3)
+  if (m_runLog && watched == m_runLog->viewport() && event->type() == QEvent::MouseButtonRelease)
+  {
+    const QMouseEvent* mouse = static_cast<QMouseEvent*>(event);
+    if (mouse->button() == Qt::LeftButton && !m_runLog->textCursor().hasSelection())
+      showLogLine(m_runLog->cursorForPosition(mouse->position().toPoint()).blockNumber());
+  }
+  return QWidget::eventFilter(watched, event);
+}
+
+void ScriptLabPanel::showScriptPlace(int line, int column)
+{
+  const QTextBlock block = m_scriptView->document()->findBlockByNumber(line - 1);
   if (!block.isValid()) return;
   QTextCursor cursor(block);
-  cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, qBound(0, problem.value("column").toInt() - 1, block.length() - 1));
+  cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, qBound(0, column - 1, block.length() - 1));
   m_scriptView->setTextCursor(cursor);
   m_scriptView->centerCursor();
   m_scriptView->setFocus(Qt::OtherFocusReason);

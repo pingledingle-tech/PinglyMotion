@@ -29,8 +29,13 @@
  * highlighted one (a plain sentence; in Expert mode also a dense line). The list
  * never takes Enter or Tab by itself: only after the user moved into it with an
  * arrow key. Esc closes it until typing goes on; Ctrl+Space opens it. Setup can
- * make it come only with Ctrl+Space. The RLV job (R3) adds a provider to
- * suggestEngine(); its warnings join through LabCodeEdit::setProblems.
+ * make it come only with Ctrl+Space.
+ *
+ * RLV (lane 1, job R3): inside llOwnerSay("@...") the list comes up by itself after "@", ":",
+ * "=" and "," with the RLV commands, their options and forms (rlvsuggest.h). The help adds
+ * the command's example; Ctrl+Enter puts it in. Commands only RLVa knows are marked
+ * "(RLVa only)" while the panel's viewer rule is RLV (setRlvMode). The RLV warnings of the
+ * static check come through setProblems.
  *
  * Language choice (lane 1, job F3): behind the Lua switch in Setup (off at
  * start) the tool row shows LSL or SLua at its right end. Only the choice: SLua
@@ -53,6 +58,7 @@
 #include <memory>
 
 #include "labsuggest.h"
+#include "rlvbehaviours.h"
 
 class LslHighlighter;
 class QComboBox;
@@ -64,6 +70,7 @@ class QMenu;
 class QPushButton;
 class QToolButton;
 class ScriptLabFrame;
+namespace LabSuggest { class RlvProvider; }
 
 // one error or warning to mark in the text (line and column count from 1)
 struct LabProblem
@@ -138,6 +145,13 @@ class LabCodeEdit : public QPlainTextEdit
     QLabel* suggestionHelp() const { return m_help; }
     QLabel* suggestionDetail() const { return m_detail; }
     QLabel* suggestionHint() const { return m_hint; }
+    QLabel* suggestionExample() const { return m_example; }
+    // the text a row shows: the name, and a mark such as "(RLVa only)" after it
+    QString suggestionRowText(int row) const;
+
+    // --- RLV suggestions (job R3): the panel's viewer rule decides the "RLVa only" marks
+    void setRlvMode(Rlv::Mode mode);
+    Rlv::Mode rlvMode() const;
 
   signals:
     // the editor's own keys, given to LabEditor
@@ -174,6 +188,8 @@ class LabCodeEdit : public QPlainTextEdit
     void fillSuggestions(const QList<LabSuggest::Item>& items);
     void setSuggestionRow(int row);
     void takeSuggestion();
+    void takeExample();
+    void refreshAfterSymbol();
     void placePopup();
     void stylePopup();
 
@@ -194,6 +210,8 @@ class LabCodeEdit : public QPlainTextEdit
     QLabel* m_help = nullptr;
     QLabel* m_detail = nullptr;
     QLabel* m_hint = nullptr;
+    QLabel* m_example = nullptr;
+    std::shared_ptr<LabSuggest::RlvProvider> m_rlv;
     int m_row = -1;
     bool m_inList = false;
     bool m_held = false;
