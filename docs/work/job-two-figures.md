@@ -1,5 +1,5 @@
 Branch: job/two-figures
-Status: active
+Status: done
 Pull request: #439
 Files:
 - src/pinglymotionwindowfile.cpp
