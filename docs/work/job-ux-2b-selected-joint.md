@@ -1,6 +1,6 @@
 Branch: job/ux-2b-selected-joint
 Status: active
-Pull request: pending
+Pull request: #395
 Files:
 - src/selectedjointpanel.*
 - src/CMakeLists.txt
