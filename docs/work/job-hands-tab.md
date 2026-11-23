@@ -9,6 +9,7 @@ Files:
 - tests/handstab/**
 - CMakeLists.txt
 - src/lucideicons.cpp
+- tests/transportbar/tst_transportbar.cpp
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/PRODUCT.md
