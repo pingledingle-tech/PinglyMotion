@@ -81,6 +81,8 @@ namespace
     // the limit warning; the release above has no file of this name, so the path
     // is Lucide's triangle-alert as the approved mockup carries it (docs/mockup/index.html)
     {"triangle-alert",{"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3","M12 9v4","M12 17h.01"}},
+    // Set key and Set the first key (UX phase 3a)
+    {"diamond-plus",{"M12 8v8","M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.71a2.41 2.41 0 0 0-3.41 0z","M8 12h8"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

@@ -157,6 +157,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/reasonline)
   # the Selected joint panel (UX phase 2b)
   ADD_SUBDIRECTORY (tests/selectedjoint)
+  # the timeline: rows for changed joints, area colours, Set key, empty states (UX phase 3a)
+  ADD_SUBDIRECTORY (tests/timelinerows)
   # test helper that draws panels offscreen in the program's theme, at 100, 150 and 200 percent text
   ADD_SUBDIRECTORY (tests/uirender)
   # the text size, 100 to 200 percent, applied to the whole program (UX phase 0c)

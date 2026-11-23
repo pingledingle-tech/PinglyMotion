@@ -54,14 +54,7 @@
       <item row="2" column="2">
        <widget class="QPushButton" name="keyframeButton">
         <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="icons.qrc">
-          <normaloff>:/icons/icons/key.png</normaloff>:/icons/icons/key.png</iconset>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
+         <string>Set key</string>
         </property>
        </widget>
       </item>

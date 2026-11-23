@@ -70,6 +70,7 @@ SET (PINGLYMOTION_SHARED_SRC
               selectedjointpanel.cpp
               theme.cpp
               timeline.cpp
+              timelinerows.cpp
               timelineview.cpp
               transportbar.cpp
               transportlook.cpp

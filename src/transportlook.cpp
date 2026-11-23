@@ -196,6 +196,8 @@ namespace TransportLook
   {
     const QString name=button->objectName();
     if(name==QLatin1String("transportStartButton")) return Kind::Main;
+    // Set key and Set the first key: the main button of the timeline (UX phase 3a)
+    if(name==QLatin1String("keyframeButton") || name==QLatin1String("timelineFirstKeyButton")) return Kind::Main;
     if(name==QLatin1String("transportStopButton")) return Kind::Danger;
     return Kind::Normal;
   }
@@ -206,6 +208,7 @@ namespace TransportLook
     if(name==QLatin1String("transportStartButton")) return QStringLiteral("play");
     if(name==QLatin1String("transportStopButton")) return QStringLiteral("square");
     if(name==QLatin1String("transportReplayButton")) return QStringLiteral("rotate-ccw");
+    if(name==QLatin1String("keyframeButton") || name==QLatin1String("timelineFirstKeyButton")) return QStringLiteral("diamond-plus");
     return QString();
   }
 
