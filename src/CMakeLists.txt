@@ -59,6 +59,7 @@ SET (PINGLYMOTION_SHARED_SRC
               controlserver.cpp
               easing.cpp
               easingtiles.cpp
+              figures.cpp
               gltfimport.cpp
               handpose.cpp
               handstab.cpp

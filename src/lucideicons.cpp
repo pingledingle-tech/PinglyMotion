@@ -106,6 +106,9 @@ namespace
     {"eye",{"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0","M15 12a3 3 0 1 0-6 0a3 3 0 1 0 6 0z"}},
     // the tick of a picked tile on the Hands tab (UX phase 2c)
     {"check",{"M20 6 9 17l-5-5"}},
+    // two figures (docs/UX_DECISIONS.md 6m), from the approved mockup: add and remove a figure
+    {"user-plus",{"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M13 7a4 4 0 1 0-8 0a4 4 0 1 0 8 0z","M19 8L19 14","M22 11L16 11"}},
+    {"user-minus",{"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M13 7a4 4 0 1 0-8 0a4 4 0 1 0 8 0z","M22 11L16 11"}},
     // Edit curve beside the easing tiles (UX phase 5), from the approved mockup
     {"sliders-horizontal",{"M10 5H3","M12 19H3","M14 3v4","M16 17v4","M21 12h-9","M21 19h-5","M21 5h-7","M8 10v4","M8 12H3"}},
     // the Library panel (roadmap item 6), from the approved mockup: its title and top bar button,

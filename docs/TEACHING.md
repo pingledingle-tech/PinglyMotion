@@ -217,25 +217,26 @@ Drafts for the library panel (roadmap item 6, issue 19) and for two figures in o
 | LIB-23 | 4 Status line | A clip was opened from the library | Opened &lt;clip name&gt; from the library. Save it under your own name. | in the program (pull request 437, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
 | LIB-24 | 2 Tip on hover | Mouse rests on Library in the top bar | Library: ready-made moves to start from | in the program (pull request 437, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
 | LIB-25 | 4 Status line | The panel opens or closes | Library open. It shares the right side with Selected joint: switch with the tabs.<br>Library closed. View > Library opens it again. | in the program (pull request 437, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
-| LIB-26 | Library panel | Second button, Expert mode only, and its tip | Add as a second figure<br>Puts this move on a second figure in the same scene. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| LIB-26 | Library panel | Second button, Expert mode only, and its tip | Add as a second figure<br>Puts this move on a second figure in the same scene. | in the program | src/figures.h, two figures (pull request 439) |
 | LIB-27 | 4 Status line | Show all clips was pressed | Showing all 106 clips. | in the program (pull request 437, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
-| FIG-01 | File menu | Expert mode only; the item ends with three dots | Add a second figure | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-02 | 6 Reason | Add a second figure is greyed | The scene has two figures. Remove one first. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-03 | Add a second figure window | Title and the line under it | Add a second figure<br>The second figure plays next to the first, in the same scene. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-04 | Add a second figure window | First choice (name and line) | From the library<br>Pick a ready-made move, then press Add as a second figure. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-05 | Add a second figure window | Second choice; the name ends with three dots | From a file<br>A .dingle, .anim, BVH or glTF file. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-06 | 3D view | Heading of the Figures box (two figures only) | Figures | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-07 | 2 Tip on hover | Mouse rests on a figure in the Figures box or in the 3D view | This figure is active. Its joints and keys show.<br>Click to make this figure active. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-08 | 4 Status line | A second figure was added | Added figure 2: &lt;file name&gt;. Click a figure to make it active. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-09 | 4 Status line | The other figure was made active | Figure 2 is active: &lt;file name&gt;. Its joints and keys show now. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-10 | 6 Reason | A figure is clicked in Beginner mode | Switching figures is in Expert mode. View > Expert mode turns it on. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-11 | Timeline | The row over each figure's joints | Active<br>Make active<br>Remove | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-12 | 2 Tip on hover | Mouse rests on Remove | Its file is not changed. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-13 | Remove figure window | Remove with unsaved changes: title, line, buttons | Remove figure 2?<br>&lt;file name&gt; has changes that are not saved.<br>Cancel<br>Remove without saving<br>Save, then remove | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-14 | 4 Status line | A figure was removed (the second line only when figure 1 went) | Figure 2 removed from the scene. Its file is not changed.<br>&lt;file name&gt; is figure 1 now. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-15 | Selected joint panel | Chip beside the key count (two figures only) | Figure 2 | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-16 | Top bar | After the file name (two figures only) | figure 2 of 2 | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
-| FIG-17 | 4 Status line | From the library was chosen in the Add window | Pick a move, then press Add as a second figure. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-01 | File menu | Expert mode only; the item ends with three dots | Add a second figure | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-02 | 6 Reason | Add a second figure is greyed | The scene has two figures. Remove one first. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-03 | Add a second figure window | Title and the line under it | Add a second figure<br>The second figure plays next to the first, in the same scene. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-04 | Add a second figure window | First choice (name and line) | From the library<br>Pick a ready-made move, then press Add as a second figure. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-05 | Add a second figure window | Second choice; the name ends with three dots | From a file<br>A .dingle, BVH or .avm file. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-06 | 3D view | Heading of the Figures box (two figures only) | Figures | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-07 | 2 Tip on hover | Mouse rests on a figure in the Figures box or in the 3D view | This figure is active. Its joints and keys show.<br>Click to make this figure active. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-08 | 4 Status line | A second figure was added | Added figure 2: &lt;file name&gt;. Click a figure to make it active. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-09 | 4 Status line | The other figure was made active | Figure 2 is active: &lt;file name&gt;. Its joints and keys show now. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-10 | 6 Reason | A figure is clicked in Beginner mode | Switching figures is in Expert mode. View > Expert mode turns it on. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-11 | Timeline | The row over each figure's joints | Active<br>Make active<br>Remove | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-12 | 2 Tip on hover | Mouse rests on Remove | Its file is not changed. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-13 | Remove figure window | Remove with unsaved changes: title, line, buttons | Remove figure 2?<br>&lt;file name&gt; has changes that are not saved.<br>Cancel<br>Remove without saving<br>Save, then remove | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-14 | 4 Status line | A figure was removed (the second line only when figure 1 went) | Figure 2 removed from the scene. Its file is not changed.<br>&lt;file name&gt; is figure 1 now. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-15 | Selected joint panel | Chip beside the key count (two figures only) | Figure 2 | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-16 | Top bar | After the file name (two figures only) | figure 2 of 2 | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-17 | 4 Status line | From the library was chosen in the Add window | Pick a move, then press Add as a second figure. | in the program | src/figures.h, two figures (pull request 439) |
+| FIG-18 | 2 Tip on hover | Mouse rests on a greyed row of the other figure in the timeline | Click to make figure 2 active and pick this joint. | in the program | src/figures.h, two figures (pull request 439) |
 
 ### AI notice (job K, 23 Nov 2026)
 

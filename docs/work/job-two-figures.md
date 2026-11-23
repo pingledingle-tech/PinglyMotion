@@ -8,6 +8,9 @@ Files:
 - src/pinglymotionwindow.ui
 - src/pinglymotionwindowplayback.cpp
 - src/animationmanager.*
+- src/scene.*
+- CMakeLists.txt
+- tests/tst_scene.cpp
 - src/animationview.*
 - src/viewcolours.h
 - src/librarypanel.*
@@ -15,6 +18,7 @@ Files:
 - src/timelineview.*
 - src/timelinerows.*
 - src/selectedjointpanel.*
+- src/lucideicons.cpp
 - src/topbar.*
 - src/menuspec.h
 - src/figures.*

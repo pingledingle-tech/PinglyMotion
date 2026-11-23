@@ -32,6 +32,7 @@
 #include "bvhnode.h"
 #include "constants.h"
 #include "easingtiles.h"
+#include "figures.h"
 #include "jointgroups.h"
 #include "timeline.h"
 #include "timelinenotes.h"
@@ -71,6 +72,7 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   // the rows on top, the empty states under them (UX phase 3a)
   QWidget* content=new QWidget(outer);
   QVBoxLayout* contentColumn=new QVBoxLayout(content);
+  contentColumn_=contentColumn;
   contentColumn->setContentsMargins(0,0,0,0);
   contentColumn->setSpacing(0);
 
@@ -170,6 +172,8 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   connect(timeline, &Timeline::animationChanged, this, &TimelineView::setAnimation);
   connect(timeline, &Timeline::trackClicked, this, &TimelineView::selectTrack);
   connect(timeline, &Timeline::rowsChanged, this, &TimelineView::rowsChanged);
+  // the other figure's greyed keys move sideways with the active figure's keys
+  connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, this, [this]() { syncFigureRows(); });
   updateEmptyState();
 }
 
@@ -221,8 +225,88 @@ const TimelineRows& TimelineView::rows() const
 
 void TimelineView::setNameOf(const std::function<QString(const QString&)>& nameOf)
 {
+  nameOf_=nameOf;
   timelineTracks->setNameOf(nameOf);
   timelineTracks->update();
+  for(FigureRows* rows : figureRows_) if(rows) rows->setNameOf(nameOf);
+}
+
+void TimelineView::setFigures(const QList<Animation*>& animations,const QStringList& paths,int active,bool expert)
+{
+  // the old parts go after this event (a header may be the sender of the click that got here)
+  for(FigureHeader* header : figureHeaders_)
+  {
+    header->hide();
+    header->deleteLater();
+  }
+  for(FigureRows* rows : figureRows_)
+  {
+    if(!rows) continue;
+    rows->hide();
+    rows->deleteLater();
+  }
+  figureHeaders_.clear();
+  figureRows_.clear();
+
+  contentColumn_->removeWidget(rowsArea_);
+  contentColumn_->removeWidget(noKeys_);
+  contentColumn_->removeWidget(noAnimation_);
+  int at=0;
+  const int count=int(std::min(animations.size(),paths.size()));
+  if(count<2)
+  {
+    // one figure: exactly as before
+    contentColumn_->insertWidget(at++,rowsArea_,0);
+    contentColumn_->insertWidget(at++,noKeys_,0);
+  }
+  else
+  {
+    QWidget* content=outerView_->widget();
+    for(int i=0;i<count;i++)
+    {
+      FigureHeader* header=new FigureHeader(content);
+      header->setFigure(i+1,paths.at(i),i==active);
+      header->setExpert(expert);
+      connect(header,&FigureHeader::makeActiveClicked,this,[this,i]() { emit makeActiveRequested(i); });
+      connect(header,&FigureHeader::removeClicked,this,[this,i]() { emit removeRequested(i); });
+      figureHeaders_ << header;
+      contentColumn_->insertWidget(at++,header,0);
+      if(i==active)
+      {
+        figureRows_ << nullptr;
+        contentColumn_->insertWidget(at++,rowsArea_,0);
+        contentColumn_->insertWidget(at++,noKeys_,0);
+        continue;
+      }
+      FigureRows* rows=new FigureRows(content);
+      rows->setNameOf(nameOf_);
+      rows->setAnimation(animations.at(i),i+1);
+      connect(rows,&FigureRows::rowClicked,this,[this,i](int track) { emit otherJointClicked(i,track); });
+      figureRows_ << rows;
+      contentColumn_->insertWidget(at++,rows,0);
+    }
+  }
+  contentColumn_->insertWidget(at++,noAnimation_,0);
+  syncFigureRows();
+  updateEmptyState();
+  fitRowHeight();
+}
+
+void TimelineView::setFiguresExpert(bool expert)
+{
+  for(FigureHeader* header : figureHeaders_) header->setExpert(expert);
+}
+
+void TimelineView::syncFigureRows()
+{
+  const int namesWidth=timelineTracks->width();
+  const int scroll=view->horizontalScrollBar()->value();
+  for(FigureRows* rows : figureRows_)
+  {
+    if(!rows) continue;
+    rows->setNamesWidth(namesWidth);
+    rows->setScrollX(scroll);
+  }
 }
 
 void TimelineView::fitRowHeight()
@@ -250,6 +334,7 @@ void TimelineView::fitRowHeight()
 void TimelineView::rowsChanged()
 {
   fitRowHeight();
+  syncFigureRows();
   timelineTracks->update();
   updateEmptyState();
   scrollToSelected();
@@ -331,7 +416,8 @@ void TimelineView::scrollToSelected()
   {
     // scroll by the least amount that shows the whole row; a row already
     // in view does not move the timeline
-    const int top=row*Constants::lineHeight()+2;
+    // with two figures a header row (and the other figure's rows) may stand above
+    const int top=rowsArea_->y()+row*Constants::lineHeight()+2;
     const int bottom=top+Constants::lineHeight();
     QScrollBar* bar=outerView_->verticalScrollBar();
     if(top<bar->value())

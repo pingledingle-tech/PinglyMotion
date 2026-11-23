@@ -53,6 +53,11 @@ class Scene : public QObject
     // setAnimation
     void addAnimation(Animation* animation);
 
+    // takes one animation out of the scene without touching the others (two figures,
+    // docs/UX_DECISIONS.md 6m); the caller owns it after this and deletes it.
+    // false when it was not in the scene
+    bool removeAnimation(Animation* animation);
+
     // This function clears the animations
     void clear();
 

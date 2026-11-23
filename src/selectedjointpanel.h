@@ -222,6 +222,9 @@ class SelectedJointPanel : public QWidget
     QLabel* nameLabel() const { return m_name; }
     QLabel* areaChip() const { return m_area; }
     QLabel* keysChip() const { return m_keys; }
+    // two figures (6m): "Figure 2" beside the key count; empty hides it
+    void setFigureChip(const QString& text);
+    QLabel* figureChip() const { return m_figure; }
     QLabel* slNameLabel() const { return m_slName; }
     QLabel* hintLabel() const { return m_hint; }
     QLabel* sectionHeading() const { return m_section; }
@@ -302,6 +305,7 @@ class SelectedJointPanel : public QWidget
     QLabel* m_name = nullptr;
     QLabel* m_area = nullptr;
     QLabel* m_keys = nullptr;
+    QLabel* m_figure = nullptr;
     QLabel* m_slName = nullptr;
     QLabel* m_hint = nullptr;
     QLabel* m_section = nullptr;

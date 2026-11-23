@@ -26,6 +26,7 @@
 #define PINGLYMOTIONWINDOW_H
 
 #include <QMainWindow>
+#include <QHash>
 #include <QMap>
 #include <QScopedPointer>
 #include <QTimer>
@@ -72,6 +73,8 @@ class HintCards;
 class ViewToolbar;
 class ScriptLabPanel;
 class LibraryPanel;
+class FiguresBox;
+class FigureTag;
 class AuroraLink;
 class WindowControlHost;
 class Scene;
@@ -242,6 +245,27 @@ class PinglyMotionWindow : public QMainWindow
     void fileAdd(const QString& fileName);
     bool checkAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
     void addAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
+
+    // Two figures in one scene, Expert mode only (docs/UX_DECISIONS.md 6m)
+    // File > Add a second figure...: asks From the library or From a file...
+    void addSecondFigure();
+    // adds a checked file as the next figure at its own place and makes it active; false when
+    // the scene is full or the file cannot be read
+    bool addFigureFile(const QString& fileName,const QByteArray* data=nullptr);
+    // the Library panel's Add as a second figure
+    void addLibraryClipAsFigure(const QString& clipId);
+    // the figure the panels work on (0-based, figure order), -1 with none
+    int activeFigure() const;
+    // makes a figure active: the Joints list, Selected joint and the timeline follow it
+    void makeFigureActive(int index);
+    // takes a figure out of the scene (asks first when it has unsaved changes); its file is not
+    // changed and the other figure stays where it is; false when nothing was removed
+    bool removeFigure(int index);
+    // the Figures box, the name tags, the timeline's header rows, the chip, the title and the
+    // reasons of the two add commands follow the figures and the mode
+    void refreshFigures();
+    // the name tags go over the heads as the 3D view drew them
+    void placeFigureTags();
     bool fileSave();
     bool fileSaveAs();
     // after a save to newFile: when the animation came from an old .avm file with the same name,
@@ -408,6 +432,14 @@ class PinglyMotionWindow : public QMainWindow
     // and joint follow the window (no animation, no joint picked, the joint);
     // Reset joint puts the picked joint back as it is in the first frame
     SelectedJointPanel* m_selectedJoint=nullptr;
+    // two figures (6m): the box in the 3D view, the name tags, Alt+1 and Alt+2, and each
+    // figure's place sideways (kept, so removing one figure never moves the other)
+    FiguresBox* m_figuresBox=nullptr;
+    QList<FigureTag*> m_figureTags;
+    QList<QAction*> m_figureActions;
+    QHash<const Animation*,int> m_figurePlace;
+    int m_announcedFigure=-1;
+    void setupFigures();
     void refreshJointPanel();
     // why the sliders cannot be used now ("Stop playing first."), or empty
     QString jointBlockedReason() const;

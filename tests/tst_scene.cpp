@@ -39,6 +39,7 @@ private slots:
   void sceneSecondAnimationTakesFrame();
   void sceneSetAnimationReplaces();
   void sceneSelectAnimation();
+  void sceneRemoveAnimation();
   void sceneRepaintOnFrameChange();
   void sceneProps();
 
@@ -394,6 +395,45 @@ void SceneTest::sceneSelectAnimation()
   scene.selectAnimation(2);
   QCOMPARE(scene.getAnimation(), a);
   QCOMPARE(selected.count(), 1);
+}
+
+// two figures (docs/UX_DECISIONS.md 6m): Remove takes one figure out and leaves the other as it was
+void SceneTest::sceneRemoveAnimation()
+{
+  Scene scene(50);
+  Animation* a = newAnimation(10);
+  Animation* b = newAnimation(20);
+  scene.addAnimation(a);
+  scene.addAnimation(b);
+  const QVector3D place = a->getPosition();
+  QCOMPARE(scene.getAnimation(), b);
+
+  // the active one goes: the one left becomes active, nothing of it changes
+  QVERIFY(scene.removeAnimation(b));
+  QCOMPARE(scene.getCountOfAnimations(), 1);
+  QCOMPARE(scene.getAnimation(), a);
+  QCOMPARE(scene.getAnimation(0), a);
+  QCOMPARE(a->getPosition(), place);
+  QCOMPARE(a->getNumberOfFrames(), 10);
+  // b is not deleted by the scene: the caller owns it now, and the scene no longer repaints for it
+  QSignalSpy repaint(&scene, &Scene::repaint);
+  b->setFrame(5);
+  QCOMPARE(repaint.count(), 0);
+  delete b;
+
+  // not in the scene: nothing happens
+  Animation* c = newAnimation(5);
+  QVERIFY(!scene.removeAnimation(c));
+  QCOMPARE(scene.getCountOfAnimations(), 1);
+  delete c;
+
+  // removing the first of two keeps the second active
+  Animation* d = newAnimation(10);
+  scene.addAnimation(d);
+  QVERIFY(scene.removeAnimation(a));
+  delete a;
+  QCOMPARE(scene.getAnimation(), d);
+  QCOMPARE(scene.getIndexOfAnimation(d), 0);
 }
 
 void SceneTest::sceneRepaintOnFrameChange()
