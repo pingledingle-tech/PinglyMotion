@@ -10,6 +10,7 @@
 #include <QElapsedTimer>
 #include <QMessageAuthenticationCode>
 #include <QtTest>
+#include <climits>
 #include <QSignalSpy>
 #include <QEventLoop>
 #include <QJsonDocument>
@@ -164,6 +165,8 @@ class ControlTest : public QObject
   Q_OBJECT
 
   private slots:
+    void gridSizeUsesWideMath();
+    void projectKeepsBigPicturesExact();
     void initTestCase();
     void cleanupTestCase();
     void init();
@@ -3443,6 +3446,32 @@ void ControlTest::scriptLabLslRlv()
   QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
   QCOMPARE(answer["time"].toDouble(), 2.0);
   QCOMPARE(api.execute(QJsonObject{{"command", "rlv_state"}})["objects"].toObject().keys(), QStringList({"c0ffee00-0000-4000-8000-000000000003"}));
+}
+
+void ControlTest::gridSizeUsesWideMath()
+{
+  // an ordinary sheet: 3 cells of 400x300 in 2 columns is 2 rows
+  QCOMPARE(ScreenshotSheet::gridSize(QSize(400, 300), 2, 3), QSize(800, 600));
+  // 50000 * 50000 does not fit 32 bits: refused, not wrapped to a small or negative size
+  QCOMPARE(ScreenshotSheet::gridSize(QSize(50000, 10), 50000, 1), QSize());
+  QCOMPARE(ScreenshotSheet::gridSize(QSize(100000, 100000), 100000, 100000), QSize());
+  // the biggest width that still fits
+  QCOMPARE(ScreenshotSheet::gridSize(QSize(1, 1), INT_MAX, 1), QSize(INT_MAX, 1));
+  // not valid requests
+  QCOMPARE(ScreenshotSheet::gridSize(QSize(0, 5), 2, 3), QSize());
+  QCOMPARE(ScreenshotSheet::gridSize(QSize(5, 5), 0, 3), QSize());
+  QCOMPARE(ScreenshotSheet::gridSize(QSize(5, 5), 2, 0), QSize());
+  QVERIFY(ScreenshotSheet::grid(QVector<QImage>(), 2).isNull());
+}
+
+void ControlTest::projectKeepsBigPicturesExact()
+{
+  // identity matrices: x = -1 is the left edge, x = +1 the right edge, y = +1 the top
+  const QList<QPair<QString, QVector3D>> world = {{"hip", QVector3D(1, 1, 0)}, {"abdomen", QVector3D(-1, -1, 0)}};
+  const QVector<ScreenshotSheet::Mark> marks = ScreenshotSheet::project(world, QMatrix4x4(), QSize(2000000000, 2000000000));
+  QCOMPARE(marks.size(), 2);
+  QCOMPARE(marks[0].at, QPointF(2000000000.0, 0.0));
+  QCOMPARE(marks[1].at, QPointF(0.0, 2000000000.0));
 }
 
 QTEST_MAIN(ControlTest)

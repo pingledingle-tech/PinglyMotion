@@ -9,6 +9,7 @@
 #include <QPainter>
 #include <QVector4D>
 
+#include <climits>
 #include <cmath>
 
 #include "screenshotsheet.h"
@@ -107,7 +108,7 @@ namespace ScreenshotSheet
       if (!std::isfinite(x) || !std::isfinite(y)) continue;
       Mark mark;
       mark.joint = entry.first;
-      mark.at = QPointF((x + 1.0f) * 0.5f * size.width(), (1.0f - y) * 0.5f * size.height());
+      mark.at = QPointF((double(x) + 1.0) * 0.5 * double(size.width()), (1.0 - double(y)) * 0.5 * double(size.height()));
       marks << mark;
     }
     return marks;
@@ -195,16 +196,29 @@ namespace ScreenshotSheet
     painter.drawText(box.adjusted(15 + metrics.horizontalAdvance(left), 0, 0, 0), Qt::AlignVCenter | Qt::AlignLeft, right);
   }
 
+  QSize gridSize(const QSize& cell, int columns, int count)
+  {
+    if (cell.isEmpty() || columns < 1 || count < 1) return QSize();
+    const qint64 rows = (qint64(count) + columns - 1) / columns;
+    const qint64 width = qint64(cell.width()) * columns;
+    const qint64 height = qint64(cell.height()) * rows;
+    // the product is made in 64 bits; a picture that does not fit an int is refused
+    if (width > INT_MAX || height > INT_MAX) return QSize();
+    return QSize(int(width), int(height));
+  }
+
   QImage grid(const QVector<QImage>& cells, int columns)
   {
     if (cells.isEmpty() || columns < 1) return QImage();
     const QSize cell = cells.first().size();
-    const int rows = (cells.size() + columns - 1) / columns;
-    QImage sheet(cell.width() * columns, cell.height() * rows, QImage::Format_RGB32);
+    const QSize total = gridSize(cell, columns, int(cells.size()));
+    if (total.isEmpty()) return QImage();
+    QImage sheet(total, QImage::Format_RGB32);
+    if (sheet.isNull()) return QImage();
     sheet.fill(EMPTY_COLOR);
     QPainter painter(&sheet);
     for (int i = 0; i < cells.size(); i++)
-      painter.drawImage(QPoint((i % columns) * cell.width(), (i / columns) * cell.height()), cells.at(i));
+      painter.drawImage(QPoint(int((qint64(i % columns)) * cell.width()), int((qint64(i / columns)) * cell.height())), cells.at(i));
     return sheet;
   }
 }
