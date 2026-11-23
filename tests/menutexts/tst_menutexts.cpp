@@ -292,8 +292,8 @@ namespace
     {&MenuSpec::editUndo, "editUndoAction", "Undo", "Ctrl+Z", "Undo is not built yet. Save a copy before big changes."},
     {&MenuSpec::editRedo, "editRedoAction", "Redo", "Ctrl+Shift+Z", "Redo is not built yet. It comes with Undo."},
     {&MenuSpec::editSetKey, "editSetKeyAction", "Set key", "K", ""},
-    {&MenuSpec::editPasteMirrored, "editPasteMirroredAction", "Paste mirrored", "Ctrl+Shift+V",
-     "Paste mirrored is not built yet. Use Tools > Mirror to swap left and right."},
+    // built in UX phase 3b: its reasons come from the state (ClipSpec::pasteBlocked)
+    {&MenuSpec::editPasteMirrored, "editPasteMirroredAction", "Paste mirrored", "Ctrl+Shift+V", ""},
     {&MenuSpec::viewFront, "viewFrontAction", "Front", "Numpad 1", ""},
     {&MenuSpec::viewSide, "viewSideAction", "Side", "Numpad 3", ""},
     {&MenuSpec::viewTop, "viewTopAction", "Top", "Numpad 7", ""},
@@ -495,7 +495,8 @@ void TestMenuTexts::phase1bEditMenuInTheWindow()
   QVERIFY(body.contains(QStringLiteral("specAction(this,editUndo,true)")));
   QVERIFY(body.contains(QStringLiteral("specAction(this,editRedo,true)")));
   QVERIFY(body.contains(QStringLiteral("specAction(this,editSetKey,false)")));
-  QVERIFY(body.contains(QStringLiteral("specAction(this,editPasteMirrored,true)")));
+  QVERIFY(body.contains(QStringLiteral("specAction(this,editPasteMirrored,false)")));
+  QVERIFY(body.contains(QStringLiteral("connect(m_pasteMirroredAction,&QAction::triggered,this,&PinglyMotionWindow::pasteMirroredFromMenu);")));
   QVERIFY(body.contains(QStringLiteral("keyInView(m_setKeyAction,ui->animationView)")));
   // the order of the menu
   int last = -1;

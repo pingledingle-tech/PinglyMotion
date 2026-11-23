@@ -312,7 +312,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // the build label shows from the first moment, not only after the first file
   setWindowTitle(Constants::windowTitle(m_untitledName));
   setAttribute(Qt::WA_DeleteOnClose);
-  frameDataValid=false;
   currentPart=0;
   longestRunningTime=0.0;
   scene = new Scene(AnimationView::firstObjectId(), this);
@@ -936,6 +935,16 @@ void PinglyMotionWindow::buildDocks()
   // the rows show the joints by the names of the Joints list
   connect(ui->timelineView,&TimelineView::setKeyRequested,this,&PinglyMotionWindow::setKeyFromMenu);
   ui->timelineView->setNameOf([this](const QString& fileName) { return jointDisplayName(fileName); });
+  // UX phase 3b: the selected stretch says what it holds, and Copy and Cut use it;
+  // Paste mirrored beside Set key (Expert mode only, as in the mockup)
+  connect(ui->timelineView->getTimeline(),&Timeline::selectionChanged,this,[this]()
+  {
+    const QString message=ClipSpec::selectedMessage(ui->timelineView->getTimeline()->selection());
+    if(!message.isEmpty()) statusBar()->showMessage(message,5000);
+    updateEditActions();
+  });
+  connect(m_panels->pasteMirrored,&QPushButton::clicked,this,&PinglyMotionWindow::pasteMirroredFromMenu);
+  m_panels->pasteMirrored->setVisible(UserSettings::expertMode());
 
   // the default layout is built in code (src/panelwindow.h), the same one
   // View > Reset layout brings back
@@ -1105,7 +1114,9 @@ void PinglyMotionWindow::buildMenus()
   connect(m_expertModeAction,&QAction::toggled,this,[this](bool on)
   {
     UserSettings::setExpertMode(on);
-    statusBar()->showMessage(on ? tr("Expert mode is on. The extra controls come in later updates.")
+    // the timeline's Paste mirrored button is an Expert mode control (UX phase 3b, the mockup)
+    if(m_panels && m_panels->pasteMirrored) m_panels->pasteMirrored->setVisible(on);
+    statusBar()->showMessage(on ? tr("Expert mode is on. Paste mirrored shows on the timeline; more controls come in later updates.")
                                 : tr("Beginner mode is on."),5000);
   });
   ui->menuView->addAction(m_expertModeAction);
@@ -1158,9 +1169,9 @@ void PinglyMotionWindow::buildMenus()
   ui->menuHelp->addAction(ui->helpAboutAction);
 }
 
-// UX phase 1b: Edit as in the mockup: Undo, Redo, Set key, Paste mirrored. Undo, Redo and Paste
-// mirrored are not built yet and are greyed with a reason; Set key presses the key button. Cut,
-// Copy and Paste (the timeline's frames) stay below them: the mockup has no such items yet.
+// UX phase 1b: Edit as in the mockup: Undo, Redo, Set key, Paste mirrored. Undo and Redo are not
+// built yet and are greyed with a reason; Set key presses the key button. Cut, Copy and Paste (the
+// timeline's selected stretch, UX phase 3b) stay below them: the mockup has no such items yet.
 void PinglyMotionWindow::buildEditMenu()
 {
   using namespace MenuSpec;
@@ -1172,7 +1183,8 @@ void PinglyMotionWindow::buildEditMenu()
   m_setKeyAction=specAction(this,editSetKey,false);
   keyInView(m_setKeyAction,ui->animationView);
   connect(m_setKeyAction,&QAction::triggered,this,&PinglyMotionWindow::setKeyFromMenu);
-  m_pasteMirroredAction=specAction(this,editPasteMirrored,true);
+  m_pasteMirroredAction=specAction(this,editPasteMirrored,false);
+  connect(m_pasteMirroredAction,&QAction::triggered,this,&PinglyMotionWindow::pasteMirroredFromMenu);
 
   ui->menuEdit->addAction(m_undoAction);
   ui->menuEdit->addAction(m_redoAction);
@@ -1229,6 +1241,34 @@ void PinglyMotionWindow::updateEditActions()
   ui->keyframeButton->setToolTip(why);
   ui->keyframeButton->setStatusTip(why);
   ui->timelineView->setFirstKeyBlocked(why);
+
+  // UX phase 3b: Copy and Cut need rows to copy, Paste and Paste mirrored a copied
+  // stretch; each is greyed with its reason (design charter P6)
+  Timeline* line=ui->timelineView->getTimeline();
+  const bool playing=playstate!=PLAYSTATE_STOPPED;
+  const QString copyWhy=ClipSpec::copyBlocked(!m_empty,line->rows().rowCount()==0,playing);
+  Animation* anim=scene ? scene->getAnimation() : nullptr;
+  const QString pasteWhy=ClipSpec::pasteBlocked(!m_empty,m_clip.isEmpty(),playing,protect,anim ? anim->getFrame() : 0);
+  auto grey=[](QObject* control,const QString& reason)
+  {
+    if(QAction* action=qobject_cast<QAction*>(control))
+    {
+      action->setEnabled(reason.isEmpty());
+      action->setToolTip(reason);
+      action->setStatusTip(reason);
+    }
+    else if(QPushButton* button=qobject_cast<QPushButton*>(control))
+    {
+      button->setEnabled(reason.isEmpty());
+      button->setToolTip(reason);
+      button->setStatusTip(reason);
+    }
+  };
+  grey(ui->editCopyAction,copyWhy);
+  grey(ui->editCutAction,copyWhy);
+  grey(ui->editPasteAction,pasteWhy);
+  if(m_pasteMirroredAction) grey(m_pasteMirroredAction,pasteWhy);
+  if(m_panels && m_panels->pasteMirrored) grey(m_panels->pasteMirrored,pasteWhy);
 }
 
 // UX phase 1b: the top bar (src/topbar.h) and the empty state (src/emptystate.h)
@@ -2217,11 +2257,6 @@ void PinglyMotionWindow::updateInputs()
   else
     emit enableInputs(false);
 
-  if (frameDataValid)
-    ui->editPasteAction->setEnabled(true);
-  else
-    ui->editPasteAction->setEnabled(false);
-
   if(ui->propNameCombo->count())
     enableProps(true);
   else
@@ -2321,31 +2356,54 @@ void PinglyMotionWindow::easingChoiceClicked(Easing::Preset preset)
 
 
 
-// Menu Action: Edit / Cut
+// Menu Action: Edit / Cut: copy the stretch, then take its keys away (frame 0 keeps its key)
 void PinglyMotionWindow::editCut()
 {
-  scene->getAnimation()->cutFrame();
-  frameDataValid=true;
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim || !ui->editCutAction->isEnabled()) return;
+  const TimelineRange range=ui->timelineView->getTimeline()->copyRange();
+  if(range.isEmpty()) return;
+  m_clip.copy(anim,range);
+  TimelineClip::removeKeys(anim,range);
+  ui->animationView->update();
   updateInputs();
+  statusBar()->showMessage(ClipSpec::copyMessage(range,true),5000);
 }
 
 // Menu Action: Edit / Copy
 void PinglyMotionWindow::editCopy()
 {
-  scene->getAnimation()->copyFrame();
-  frameDataValid=true;
-  updateInputs();
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim || !ui->editCopyAction->isEnabled()) return;
+  const TimelineRange range=ui->timelineView->getTimeline()->copyRange();
+  if(range.isEmpty()) return;
+  m_clip.copy(anim,range);
+  updateEditActions();
+  statusBar()->showMessage(ClipSpec::copyMessage(range,false),5000);
 }
 
-// Menu Action: Edit / Paste
+// Menu Action: Edit / Paste and Edit / Paste mirrored: the copied stretch from the current frame on
+void PinglyMotionWindow::pasteClip(bool mirrored)
+{
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim) return;
+  if(!ClipSpec::pasteBlocked(true,m_clip.isEmpty(),playstate!=PLAYSTATE_STOPPED,protect,anim->getFrame()).isEmpty()) return;
+  const int frame=anim->getFrame();
+  const TimelineClip::PasteResult result=m_clip.paste(anim,frame,mirrored);
+  ui->animationView->update();
+  updateInputs();
+  updateKeyBtn();
+  statusBar()->showMessage(ClipSpec::pasteMessage(result,frame,mirrored),8000);
+}
+
 void PinglyMotionWindow::editPaste()
 {
-  if(frameDataValid)
-  {
-    scene->getAnimation()->pasteFrame();
-    ui->animationView->update();
-    updateInputs();
-  }
+  pasteClip(false);
+}
+
+void PinglyMotionWindow::pasteMirroredFromMenu()
+{
+  pasteClip(true);
 }
 
 // Menu Action: Edit / Paste

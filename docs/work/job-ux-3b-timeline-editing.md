@@ -1,11 +1,14 @@
 Branch: job/ux-3b-timeline-editing
-Status: active
+Status: done
 Pull request: #400
 Files:
 - src/timelineclip.*
 - src/timeline.*
 - src/timelineview.*
 - src/timelinerows.*
+- src/timelinelook.h
+- src/panelcontent.h
+- src/transportlook.cpp
 - src/menuspec.h
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindow.h

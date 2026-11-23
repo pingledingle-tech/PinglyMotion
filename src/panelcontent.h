@@ -35,6 +35,7 @@
 #include "panellayout.h"
 #include "paneltitlebar.h"
 #include "selectedjointpanel.h"
+#include "timelineclip.h"
 #include "timelinerows.h"
 #include "timelineview.h"
 #include "transportlook.h"
@@ -58,6 +59,9 @@ public:
   TimelineView* timelineView=nullptr;
   // Set key, the main button of the timeline panel (UX phase 3a)
   QPushButton* setKey=nullptr;
+  // Paste mirrored, beside Set key, shown in Expert mode (UX phase 3b, the mockup's
+  // expert-only button); the window connects it and greys it with its reason
+  QPushButton* pasteMirrored=nullptr;
   // the loop points, frame and speed row of the timeline panel
   QBoxLayout* rangeRow=nullptr;
   // the "(10%)" labels after the loop points
@@ -94,6 +98,9 @@ public:
     setKey->setText(TimelineSpec::text(TimelineSpec::setKey));
     setKey->setParent(keyBar);
     keyBarLayout->addWidget(setKey);
+    pasteMirrored=new QPushButton(TimelineSpec::text(ClipSpec::pasteMirroredButton),keyBar);
+    pasteMirrored->setObjectName(QStringLiteral("pasteMirroredButton"));
+    keyBarLayout->addWidget(pasteMirrored);
     TransportLook::apply(keyBar);
     playLayout->addWidget(keyBar);
     timelineLayout->addLayout(playLayout);

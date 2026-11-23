@@ -24,6 +24,7 @@
 
 #include "menuspec.h"
 #include "reasonline.h"
+#include "timelineclip.h"
 #include "theme.h"
 #include "topbar.h"
 #include "playback.h"
@@ -249,7 +250,8 @@ void TestReasonLine::menuItemsSayWhy()
   QMenu* menu = w.window.menuBar()->addMenu(QStringLiteral("&Edit"));
   QAction* paste = menu->addAction(QStringLiteral("Paste mirrored\tCtrl+Shift+V"));
   paste->setEnabled(false);
-  paste->setStatusTip(MenuSpec::reason(MenuSpec::editPasteMirrored));
+  // UX phase 3b: greyed with the mockup's reason while nothing is copied
+  paste->setStatusTip(ClipSpec::text(ClipSpec::copyFirst));
   QAction* setKey = menu->addAction(QStringLiteral("Set key"));
   QAction* next = menu->addAction(QStringLiteral("&Next area"));
   next->setEnabled(false);
@@ -257,7 +259,7 @@ void TestReasonLine::menuItemsSayWhy()
   w.line->watchMenus();
 
   emit menu->hovered(paste);
-  QCOMPARE(w.line->text(), QStringLiteral("Paste mirrored: Paste mirrored is not built yet. Use Tools > Mirror to swap left and right."));
+  QCOMPARE(w.line->text(), QStringLiteral("Paste mirrored: Copy a stretch of the timeline first (select keys, then Ctrl+C)."));
   emit menu->hovered(setKey);
   QCOMPARE(w.line->text(), QString());
   emit menu->hovered(next);

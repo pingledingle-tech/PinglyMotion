@@ -130,6 +130,25 @@ void Timeline::paintEvent(QPaintEvent* /* e */)
   QPainter p(this);
   p.drawPixmap(0,0,*offscreen);
 
+  // the selected stretch (UX phase 3b): a box in the selection colour over its frames and rows
+  const TimelineRange range=selection();
+  if(!range.isEmpty())
+  {
+    int top=rows_.rowCount();
+    int bottom=-1;
+    for(int track : range.tracks)
+    {
+      top=qMin(top,rows_.rowOfTrack(track));
+      bottom=qMax(bottom,rows_.rowOfTrack(track));
+    }
+    const QRect box(range.firstFrame*Constants::keyWidth(),top*Constants::lineHeight(),
+                    range.frameCount()*Constants::keyWidth(),(bottom-top+1)*Constants::lineHeight());
+    p.fillRect(box,TimelineLook::selectionBox(Theme::isDark()));
+    p.setPen(TimelineLook::selectionBoxBorder(Theme::isDark()));
+    p.setBrush(Qt::NoBrush);
+    p.drawRect(box.adjusted(0,0,-1,-1));
+  }
+
   // draw current frame marker
   p.fillRect(xpos + Constants::keyWidth() / 2 - 1, 0, 2, height(), TimelineLook::currentFrame(Theme::isDark()));
 
@@ -189,6 +208,8 @@ void Timeline::setAnimation(Animation* anim)
     disconnect(this, &Timeline::insertFrame, animation, &Animation::insertFrame);
   }
   animation=anim;
+  // a stretch of another animation means nothing here
+  clearSelection();
 
   if(animation)
   {
@@ -476,6 +497,25 @@ void Timeline::mousePressEvent(QMouseEvent* e)
   // get track and frame based on mouse coordinates
   const int track=rows_.trackOfRow(e->position().toPoint().y() / Constants::lineHeight());
   if(track<0) return;
+  const int frame=qBound(0,int(e->position().toPoint().x() / Constants::keyWidth()),qMax(0,numOfFrames-1));
+
+  // UX phase 3b: Shift and a press on an empty place selects a stretch (a
+  // second Shift click moves its far corner); Shift on a key still copies the
+  // key by dragging it, as before
+  const bool onKey=frame>0 && frame<(numOfFrames-1) && animation->isKeyFrame(track,frame);
+  if((e->modifiers() & Qt::ShiftModifier) && !onKey && e->button()==Qt::LeftButton)
+  {
+    if(hasSelection()) extendSelection(track,frame);
+    else setSelection(track,frame,track,frame);
+    frameSelected=frame;
+    animation->setFrame(frame);
+    selecting_=true;
+    leftMouseButton=true;
+    return;
+  }
+  // a plain click leaves the stretch
+  clearSelection();
+
   selectTrack(track);
   frameSelected = e->position().toPoint().x() / Constants::keyWidth();
 
@@ -498,6 +538,7 @@ void Timeline::mousePressEvent(QMouseEvent* e)
 void Timeline::mouseReleaseEvent(QMouseEvent*)
 {
   leftMouseButton=false;
+  selecting_=false;
   if(dragging)
   {
     // first switch off dragging state, so drawKeyframe() will work as expected
@@ -512,6 +553,15 @@ void Timeline::mouseMoveEvent(QMouseEvent* e)
 {
   // calculate new position (in frames)
   int frame = e->position().toPoint().x() / Constants::keyWidth();
+
+  // a Shift drag that selects: the far corner follows the pointer, kept inside the rows and frames
+  if(selecting_)
+  {
+    if(rows_.rowCount()==0 || numOfFrames<=0) return;
+    const int row=qBound(0,int(e->position().toPoint().y() / Constants::lineHeight()),rows_.rowCount()-1);
+    extendSelection(rows_.trackOfRow(row),frame);
+    return;
+  }
 
   // if frame position has not changed, do nothing
   if(frame==frameSelected) return;
@@ -577,6 +627,36 @@ void Timeline::wheelEvent(QWheelEvent* e)
 
 void Timeline::keyPressEvent(QKeyEvent* e)
 {
+  // UX phase 3b: Shift and the arrow keys grow or shrink the selected stretch
+  // (it starts at the picked joint and the current frame); Escape leaves it
+  if(e->modifiers() & Qt::ShiftModifier)
+  {
+    const int key=e->key();
+    if(key==Qt::Key_Left || key==Qt::Key_Right || key==Qt::Key_Up || key==Qt::Key_Down)
+    {
+      int track=hasSelection() ? selEndTrack_ : trackSelected;
+      if(!animation) { e->ignore(); return; }
+      int frame=hasSelection() ? selEndFrame_ : animation->getFrame();
+      if(rows_.rowOfTrack(track)<0) { e->accept(); return; }
+      if(key==Qt::Key_Left) frame--;
+      else if(key==Qt::Key_Right) frame++;
+      else
+      {
+        const int next=rows_.trackOfRow(rows_.rowOfTrack(track)+(key==Qt::Key_Down ? 1 : -1));
+        if(next>=0) track=next;
+      }
+      extendSelection(track,frame);
+      e->accept();
+      return;
+    }
+  }
+  if(e->key()==Qt::Key_Escape && hasSelection())
+  {
+    clearSelection();
+    e->accept();
+    return;
+  }
+
   switch(e->key())
   {
     case Qt::Key_Shift:
@@ -638,4 +718,70 @@ void Timeline::keyReleaseEvent(QKeyEvent* e)
       return;
   }
   e->accept();
+}
+
+TimelineRange Timeline::selection() const
+{
+  TimelineRange range;
+  if(!hasSelection() || numOfFrames<=0) return range;
+  const int rowA=rows_.rowOfTrack(selAnchorTrack_);
+  const int rowB=rows_.rowOfTrack(selEndTrack_);
+  if(rowA<0 || rowB<0) return range;
+  range.firstFrame=qBound(0,qMin(selAnchorFrame_,selEndFrame_),numOfFrames-1);
+  range.lastFrame=qBound(0,qMax(selAnchorFrame_,selEndFrame_),numOfFrames-1);
+  for(int row=qMin(rowA,rowB);row<=qMax(rowA,rowB);row++)
+  {
+    const int track=rows_.trackOfRow(row);
+    if(track>=0) range.tracks.append(track);
+  }
+  return range;
+}
+
+void Timeline::setSelection(int anchorTrack,int anchorFrame,int endTrack,int endFrame)
+{
+  selAnchorTrack_=anchorTrack;
+  selAnchorFrame_=anchorFrame;
+  selEndTrack_=endTrack;
+  selEndFrame_=endFrame;
+  update();
+  emit selectionChanged();
+}
+
+void Timeline::clearSelection()
+{
+  selecting_=false;
+  if(!hasSelection()) return;
+  selAnchorTrack_=selAnchorFrame_=selEndTrack_=selEndFrame_=-1;
+  update();
+  emit selectionChanged();
+}
+
+void Timeline::extendSelection(int track,int frame)
+{
+  if(!animation || numOfFrames<=0 || track<0) return;
+  frame=qBound(0,frame,numOfFrames-1);
+  if(!hasSelection())
+  {
+    // start at the picked joint (when it has a row) and the current frame
+    const int anchor=(rows_.rowOfTrack(trackSelected)>=0) ? trackSelected : track;
+    selAnchorTrack_=anchor;
+    selAnchorFrame_=qBound(0,animation->getFrame(),numOfFrames-1);
+  }
+  if(track==selEndTrack_ && frame==selEndFrame_) return;
+  selEndTrack_=track;
+  selEndFrame_=frame;
+  // the current frame follows the far corner
+  frameSelected=frame;
+  animation->setFrame(frame);
+  update();
+  emit selectionChanged();
+}
+
+TimelineRange Timeline::copyRange() const
+{
+  TimelineRange range=selection();
+  if(!range.isEmpty() || !animation || numOfFrames<=0) return range;
+  range.firstFrame=range.lastFrame=qBound(0,animation->getFrame(),numOfFrames-1);
+  range.tracks=rows_.tracks().toList();
+  return range;
 }

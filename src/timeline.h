@@ -23,6 +23,7 @@
 
 #include <QFrame>
 
+#include "timelineclip.h"
 #include "timelinerows.h"
 
 /**
@@ -48,6 +49,19 @@ class Timeline : public QFrame
     // the joints that have a row (UX phase 3a: changed joints and the selected one)
     const TimelineRows& rows() const { return rows_; }
 
+    // UX phase 3b: a stretch of the timeline (frames and rows) is selected
+    // with Shift and a drag or click, or Shift and the arrow keys; Copy, Cut
+    // and Paste mirrored use it. The corners are a joint and a frame each.
+    bool hasSelection() const { return selAnchorTrack_>=0 && selEndTrack_>=0; }
+    // the frames and the joints (in row order) between the two corners; empty
+    // when nothing is selected or a corner's joint has no row any more
+    TimelineRange selection() const;
+    void setSelection(int anchorTrack,int anchorFrame,int endTrack,int endFrame);
+    void clearSelection();
+    // what Copy and Cut take: the selected stretch, or without one the current
+    // frame on every joint that has a row
+    TimelineRange copyRange() const;
+
   signals:
     void positionCenter(int pos);
     void trackClicked(int track);
@@ -57,6 +71,8 @@ class Timeline : public QFrame
     void insertFrame(int track,int frame);
     // other joints have a row now (a joint changed, or another one was selected)
     void rowsChanged();
+    // the selected stretch changed (or went away)
+    void selectionChanged();
 
   public slots:
     void setCurrentFrame(int frame);
@@ -109,6 +125,17 @@ class Timeline : public QFrame
     int trackSelected;
     int frameSelected;
     int dragging;         // contains the current animation frame where dragging occurs
+
+    // the selected stretch (UX phase 3b): corners as joint and frame, -1 when none
+    int selAnchorTrack_=-1;
+    int selAnchorFrame_=-1;
+    int selEndTrack_=-1;
+    int selEndFrame_=-1;
+    // a Shift drag that selects is going on
+    bool selecting_=false;
+    // moves the corner that is not the anchor (starting a stretch at the
+    // picked joint and the current frame when there is none)
+    void extendSelection(int track,int frame);
 };
 
 #endif

@@ -43,6 +43,15 @@ namespace TimelineLook
   {
     return Theme::color(selected ? Token::OnAccent : Token::Text,dark);
   }
+  // UX phase 3b: the selected stretch of the timeline, selection at 22 percent
+  // (as the mockup's pressed view tools) with a 1 pixel selection border
+  inline QColor selectionBox(bool dark)
+  {
+    QColor c=Theme::color(Token::Selection,dark);
+    c.setAlphaF(0.22);
+    return c;
+  }
+  inline QColor selectionBoxBorder(bool dark) { return Theme::color(Token::Selection,dark); }
   // the key being dragged
   inline QColor keyDragged(bool dark) { return Theme::color(Token::Danger,dark); }
   // the line at the current frame
