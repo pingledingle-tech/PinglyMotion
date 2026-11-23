@@ -233,6 +233,10 @@ ADD_EXECUTABLE (pinglymotion_lslsteps131415_tests tst_lslsteps131415.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslsteps131415_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_lslsteps131415_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslsteps131415 COMMAND pinglymotion_lslsteps131415_tests)
+ADD_EXECUTABLE (pinglymotion_lslsteps1617_tests tst_lslsteps1617.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslsteps1617_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslsteps1617_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslsteps1617 COMMAND pinglymotion_lslsteps1617_tests)
 
 # Script Lab: static warnings (lint) and lsl_lint; the examples and the fuzz corpus must be lint clean
 ADD_EXECUTABLE (pinglymotion_lsllint_tests tst_lsllint.cpp)

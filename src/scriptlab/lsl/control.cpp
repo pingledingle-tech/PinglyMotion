@@ -314,7 +314,13 @@ namespace
     else
     {
       for (const char* field : {"address", "subject"})
-        if (o.contains(field)) return where + "\"" + field + "\" is only for email.";
+        if (o.contains(field) && !(in.type == "remote_data" && std::string(field) == "address"))
+          return where + "\"" + field + "\" is only for email" + (std::string(field) == "address" ? " and remote_data." : ".");
+      if (in.type == "remote_data")
+      {
+        in.address = o.value("address").toString();
+        if (in.address.size() > 255) return where + "\"address\" must be text of at most 255 characters (the sender).";
+      }
       if (o.contains("body") && in.type != "http_request") return where + "\"body\" is only for http_request and email.";
     }
     return QString();
@@ -334,11 +340,11 @@ namespace
     }
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
-    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email",
+    static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email", "remote_data",
                                        "collision", "land_collision", "moving", "at_target", "not_at_target", "step", "drop"};
     if (!types.contains(in.type))
       return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                      "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\".";
+                      "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -350,8 +356,26 @@ namespace
     if (o.contains("kind"))
     {
       in.kind = o.value("kind").toString();
-      if (in.type != "chat") return where + "\"kind\" is only for chat.";
-      if (in.kind != "say" && in.kind != "whisper" && in.kind != "shout") return where + "\"kind\" must be \"say\", \"whisper\" or \"shout\".";
+      if (in.type != "chat" && in.type != "remote_data") return where + "\"kind\" is only for chat and remote_data.";
+      if (in.type == "chat" && in.kind != "say" && in.kind != "whisper" && in.kind != "shout") return where + "\"kind\" must be \"say\", \"whisper\" or \"shout\".";
+      if (in.type == "remote_data" && in.kind != "request" && in.kind != "reply") return where + "\"kind\" must be \"request\" or \"reply\".";
+    }
+    else if (in.type == "remote_data") in.kind = "request";
+    // steps 16 and 17: remote data (XML-RPC): sender in "address", the integer in "idata", the string in "text", the
+    // message in "id", the channel in "channel_key" (a request only; empty: the object's open channel)
+    for (const char* field : {"idata", "channel_key"})
+      if (o.contains(field) && in.type != "remote_data") return where + "\"" + field + "\" is only for remote_data.";
+    if (in.type == "remote_data")
+    {
+      if (o.contains("idata") && !wholeNumber(o.value("idata"), -2147483648.0, 2147483647.0, in.idata))
+        return where + "\"idata\" must be a whole number.";
+      if (o.contains("channel_key"))
+      {
+        if (!o.value("channel_key").isString() || !validKey(o.value("channel_key").toString()))
+          return where + "\"channel_key\" must be a key: 1 to 36 letters, digits or \"-\".";
+        if (in.kind != "request") return where + "\"channel_key\" is only for a remote_data request.";
+        in.channelKey = o.value("channel_key").toString();
+      }
     }
     if (in.type == "dialog")
     {
@@ -903,7 +927,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
     static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                       "amount", "url", "method", "body", "headers", "address", "subject", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
+                                       "amount", "url", "method", "body", "headers", "address", "subject", "idata", "channel_key", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -1011,7 +1035,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
   static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
+                                    "amount", "url", "method", "body", "headers", "address", "subject", "idata", "channel_key", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -1022,7 +1046,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
     return fail(message);
   }
   if (!request.contains("type"))
-    return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, collision, land_collision, "
+    return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, remote_data, collision, land_collision, "
                 "moving, at_target, not_at_target, step or drop.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))

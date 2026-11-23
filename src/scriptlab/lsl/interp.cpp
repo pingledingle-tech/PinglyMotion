@@ -296,6 +296,10 @@ void Interpreter::resetScript()
   // a reset frees the script's URLs and forgets the requests waiting for an answer (gap list 2, step 4)
   const int released = m_world.releaseAllUrls();
   m_incoming.clear();
+  m_remoteChannel.clear();
+  m_remoteReceived.clear();
+  m_remoteSent.clear();
+  m_remoteSentChannel.clear();
   QJsonObject entry{{"type", "reset"}};
   if (released > 0) entry["urls_released"] = released;
   m_world.log(m_now, entry);
@@ -547,6 +551,26 @@ bool Interpreter::httpRequestEvent(const IncomingRequest& request)
   if (waiting >= MAX_PENDING_HTTP) return false;
   m_incoming.push_back(request);
   queueEvent(Event{"http_request", {Value::key(request.id), Value::string(request.method), Value::string(request.body)}, QString(), QString()});
+  return true;
+}
+
+bool Interpreter::remoteDataRequest(const QString& channel, const QString& message, const QString& sender, int idata, const QString& sdata)
+{
+  if (m_remoteChannel.isEmpty() || (!channel.isEmpty() && channel != m_remoteChannel)) return false;
+  m_remoteReceived.append(message);
+  while (m_remoteReceived.size() > MAX_REMOTE_MESSAGES) m_remoteReceived.removeFirst();
+  queueEvent(Event{"remote_data", {Value::integer(2), Value::key(m_remoteChannel), Value::key(message), Value::string(sender),
+                                   Value::integer(idata), Value::string(sdata)}, QString(), QString()});
+  return true;
+}
+
+bool Interpreter::remoteDataReply(const QString& message, const QString& sender, int idata, const QString& sdata)
+{
+  if (!m_remoteSent.contains(message)) return false;
+  m_remoteSent.removeAll(message);
+  const QString channel = m_remoteSentChannel.take(message);
+  queueEvent(Event{"remote_data", {Value::integer(3), Value::key(channel), Value::key(message), Value::string(sender),
+                                   Value::integer(idata), Value::string(sdata)}, QString(), QString()});
   return true;
 }
 

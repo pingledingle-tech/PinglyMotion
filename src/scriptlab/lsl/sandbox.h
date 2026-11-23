@@ -95,7 +95,7 @@ struct ScriptEntry
 struct SandboxInput
 {
   double at = 0.0;
-  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email,
+  QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, remote_data,
                                    // collision, land_collision, moving, at_target, not_at_target, step, drop
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
@@ -119,6 +119,9 @@ struct SandboxInput
   QMap<QString, QString> headers;
   QString address;
   QString subject;
+  // steps 16 and 17: remote_data (kind "request" or "reply", stored in kind; id: the message; address: the sender; text: sdata)
+  int idata = 0;
+  QString channelKey;
   // touch: the phases after touch_start are scheduled by the Sandbox itself as inputs: 0 the touch from outside,
   // 1 a touch event while held (at start + step * TOUCH_REPEAT), 2 touch_end (at start + hold)
   int phase = 0;
