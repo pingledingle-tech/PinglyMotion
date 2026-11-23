@@ -54,6 +54,9 @@
 #include "scene.h"
 #include "floor.h"
 #include "skeletonwalk.h"
+#include "jointrings.h"
+#include "viewprojection.h"
+#include "timelinerows.h"
 #include "skinrenderer.h"
 
 #include "usersettings.h"
@@ -496,7 +499,7 @@ void AnimationView::initializeGL()
     }
   }
 
-  // Bento balls, props and handles: drawn by the shader with the same light
+  // meshes (props, handles, markers): drawn by the shader with the same light
   // as the body; while picking in their pick colour
   Mesh::setDrawHook([this](const Mesh& mesh)
   {
@@ -645,7 +648,7 @@ void AnimationView::drawEffectMarkers()
   const QVector4D objectColour=ViewColours::vector(ViewColours::objectMarker());
   const QVector4D lockColour=ViewColours::vector(ViewColours::lockMarker());
   QHash<QString,int> used;   // markers already drawn at a joint, so the next one sits beside them
-  // on top of the body, like the Bento balls, so a marker inside the body can be seen
+  // on top of the body, so a marker inside the body can be seen
   const GLboolean depthWasOn=glIsEnabled(GL_DEPTH_TEST);
   glDisable(GL_DEPTH_TEST);
   SceneState::setLighting(true);
@@ -799,8 +802,8 @@ int AnimationView::pickPartByColor(int x, int y)
   m_pickBuffer->release();
 
   // Which hit wins, in this order:
-  // 1. a Bento ball anywhere in the area (they are drawn on top of the body;
-  //    among them the one nearest the mouse)
+  // 1. the ring of a Bento joint anywhere in the area (they have no body
+  //    part of their own; among them the one nearest the mouse)
   // 2. a ring, handle or prop in the area that is in front of what is under
   //    the mouse (the nearest one), so thin rings stay easy to grab
   // 3. what is right under the mouse
@@ -1562,9 +1565,17 @@ void AnimationView::drawFigure(Animation* anim,unsigned int index)
     drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_PARTS);
     selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
     drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_ROT_AXES);
+    // the bone lines between the joints, always on, over the body
     selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
     glDisable(GL_DEPTH_TEST);
     drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_SKELETON);
+    // the joint rings, with depth test: the body hides the joints behind it
+    // (src/jointrings.h); while picking they carry their joint's name
+    if(!isPicking()) updateRingChanged(anim);
+    selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
+    glEnable(GL_DEPTH_TEST);
+    drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_RINGS);
+    glDisable(GL_DEPTH_TEST);
 
     // restore drawing matrix
     SceneState::popMatrix();
@@ -1588,38 +1599,29 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       selectName++;
       motion=motion->child(0);
     }
-    if(mode==MODE_SKELETON && UserSettings::skeleton() && !selecting)
+    // the line from the parent joint to this one (src/jointrings.h): always
+    // drawn, not to the hip from the floor, not to joints of hidden groups
+    // and to face joints only while the face is in focus
+    if(mode==MODE_SKELETON && !selecting &&
+       JointRings::hasBone(jointRoot->type==BVH_ROOT,motion->type==BVH_END,JointGroups::shown(motion->name()),
+                           isFaceBone(motion->name()),faceFocus(),m_hideMarkers))
     {
-      // the bones of a pulled limb are drawn thick in accent_text (the mockup's .bone.pulled)
+      // the bones of a pulled limb and the bone to the selected joint in accent_text
       const bool pulledBone=m_pull.active && (m_pullPreview.contains(motion) || motion==m_pull.pull.pulled);
-      SceneState::setLineWidth(pulledBone ? 4 : 1);
+      const bool selectedBone=(partSelected==selectName);
+      const qreal ratio=m_renderSize.isValid() ? 1.0 : devicePixelRatioF();
+      SceneState::setLineWidth(float(JointRings::boneWidth(selectedBone,pulledBone)*ratio));
+      const bool lighting=SceneState::lighting();
+      SceneState::setLighting(false);
       drawWithShader(GL_LINES,{-offset,QVector3D(0,0,0)},
-                     pulledBone ? ViewColours::vector(Theme::color(Theme::Token::AccentText)) : ViewColours::vector(ViewColours::bone()));
-
-      // face bones only get a ball while the head or a face bone is selected,
-      // otherwise the many face balls cover the whole head
-      if(jointRoot->type!=BVH_ROOT && JointGroups::shown(motion->name()) &&
-         (!isFaceBone(motion->name()) || faceFocus()))
-      {
-        // draw joint spheres in skeleton mode, danger_fill for selected parts,
-        // accent for highlighted and success for all others (tokens, src/viewcolours.h)
-        const ViewColours::Joint ballKind=(partSelected==selectName) ? ViewColours::Joint::Selected :
-                                          (partHighlighted==selectName) ? ViewColours::Joint::Highlighted : ViewColours::Joint::Other;
-        const QVector4D ball=ViewColours::vector(ViewColours::jointBall(ballKind));
-        SceneState::setColor(ball.x(),ball.y(),ball.z(),ball.w());
-
-        if(isBentoBone(motion->name()) && !m_hideMarkers)
-        {
-          SceneState::pushMatrix();
-          const float size=isFaceBone(motion->name()) ? 0.2f : 0.4f;
-          SceneState::scale(size,size,size);
-          m_sphereMeshModel->draw();
-          SceneState::popMatrix();
-        }
-        else
-          m_sphereMeshModel->draw();
-      }
+                     ViewColours::vector(JointRings::boneColour(pulledBone || selectedBone,Theme::isDark())));
+      SceneState::setLighting(lighting);
+      SceneState::setLineWidth(1);
     }
+    if(mode==MODE_RINGS &&
+       JointRings::hasRing(motion->type==BVH_END,JointGroups::shown(motion->name()),
+                           isFaceBone(motion->name()),faceFocus(),m_hideMarkers))
+      drawJointRing(anim,motion);
 
     // where this joint's frame is before its own turn, for pulling a joint (UX phase 4b part 2)
     if(mode==MODE_PARTS && !selecting)
@@ -1731,21 +1733,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       }
       else
       {
-      // Bento bones have no body mesh: draw a small ball that can be clicked.
-      // The balls are drawn on top of the body, so bones inside it (face,
-      // wings) can be seen and clicked. Face balls only show while the head
-      // or a face bone is selected, otherwise they would cover the face.
-      const QString& boneName=motion->name();
-      if(isBentoBone(boneName) && !m_hideMarkers && jointShown && (!isFaceBone(boneName) || faceFocus()))
-      {
-        SceneState::pushMatrix();
-        const float size=isFaceBone(boneName) ? 0.2f : 0.4f;
-        SceneState::scale(size,size,size);
-        glDisable(GL_DEPTH_TEST);
-        m_sphereMeshModel->draw();
-        glEnable(GL_DEPTH_TEST);
-        SceneState::popMatrix();
-      }
+      // Bento bones have no body mesh: they are clicked by their ring (MODE_RINGS)
 
       for(unsigned int index=0;index< (unsigned int) propManager()->count();index++)
       {
@@ -1764,6 +1752,62 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
     m_shownAncestor=shownAncestor;
     SceneState::popMatrix();
   }
+}
+
+// which joints of this animation have changed (TimelineRows::jointChanged),
+// by track, for the colour of their rings; the hip also counts as changed
+// when the Avatar Position moved
+void AnimationView::updateRingChanged(Animation* anim)
+{
+  m_ringChanged.fill(false,m_partNames.count());
+  for(int track=0;track<m_partNames.count();track++)
+    m_ringChanged[track]=TimelineRows::jointChanged(anim,track);
+  if(m_ringChanged.count()>1 && m_ringChanged.at(0)) m_ringChanged[1]=true;
+}
+
+// the ring of the joint being walked (selectName), at the origin of the
+// current matrix: a flat ring facing the camera, of a fixed size on the screen,
+// moved toward the camera by the body's depth there (src/jointrings.h)
+void AnimationView::drawJointRing(Animation* anim,const BVHNode* joint)
+{
+  const unsigned int track=selectName % static_cast<unsigned int>(OpenGlIds::AnimationIncrement);
+  JointRings::State state;
+  state.selected=(partSelected==selectName);
+  state.hovered=(partHighlighted==selectName);
+  state.changed=track<static_cast<unsigned int>(m_ringChanged.count()) && m_ringChanged.at(int(track));
+  state.area=TimelineRows::areaOf(joint->name());
+
+  const qreal ratio=m_renderSize.isValid() ? 1.0 : devicePixelRatioF();
+  const QSize viewport=m_renderSize.isValid() ? m_renderSize
+                                              : QSize(qMax(1,int(width()*ratio)),qMax(1,int(height()*ratio)));
+  const QMatrix4x4 projection=SceneState::projection();
+  const QVector3D eye=SceneState::modelview().map(QVector3D(0,0,0));
+  const QVector3D centre=JointRings::lifted(projection,eye,JointRings::lift(joint->name())*anim->getAvatarScale());
+  const QVector2D pixel=JointRings::pixelSize(projection,centre,viewport);
+  const float outer=float(JointRings::radius*ratio);
+
+  SceneState::pushMatrix();
+  SceneState::loadIdentity();
+  const bool lighting=SceneState::lighting();
+  SceneState::setLighting(false);
+  if(isPicking())
+  {
+    // the whole disc can be clicked, also inside a hollow ring
+    pickName(selectName);
+    drawWithShader(GL_TRIANGLES,JointRings::ringTriangles(centre,pixel,outer,0.0f),QVector4D());
+  }
+  else
+  {
+    const bool dark=Theme::isDark();
+    const float inner=outer-float(JointRings::edgeWidth(state)*ratio);
+    const QColor fill=JointRings::fillColour(state,dark);
+    if(fill.isValid())
+      drawWithShader(GL_TRIANGLES,JointRings::ringTriangles(centre,pixel,inner,0.0f),ViewColours::vector(fill));
+    drawWithShader(GL_TRIANGLES,JointRings::ringTriangles(centre,pixel,outer,inner),
+                   ViewColours::vector(JointRings::edgeColour(state,dark)));
+  }
+  SceneState::setLighting(lighting);
+  SceneState::popMatrix();
 }
 
 // Draws the avatar body, bent to fit the joints found by the last
@@ -2055,9 +2099,7 @@ void AnimationView::drawCircle(int axis,float radius,bool strong)
   if(!picking)
   {
     static const float dirs[3][2]={{1.0f,-0.35f},{-1.0f,-0.35f},{0.25f,1.0f}};
-    const QVector4D clip=m_ringMatrix[axis]*QVector4D(0,0,0,1);
-    const float w=clip.w()!=0.0f ? clip.w() : 1.0f;
-    const QPointF centre((double(clip.x())/w*0.5+0.5)*width(),(0.5-double(clip.y())/w*0.5)*height());
+    const QPointF centre=ViewProjection::toWidget(m_ringMatrix[axis]*QVector4D(0,0,0,1),width(),height());
     float bestValue=-1e9f;
     for(int i=0;i<=48;i++)
     {
@@ -2084,10 +2126,7 @@ void AnimationView::drawCircle(int axis,float radius,bool strong)
 // where a point of a rotation ring is in the widget, in widget pixels
 QPointF AnimationView::ringPointOnScreen(int axis,float angle,float* depth) const
 {
-  const QVector4D clip=m_ringMatrix[axis]*QVector4D(ringPoint(axis,m_ringRadius,angle),1.0f);
-  const float w=(clip.w()!=0.0f) ? clip.w() : 1.0f;
-  if(depth) *depth=clip.z()/w;
-  return QPointF((clip.x()/w*0.5f+0.5f)*width(),(0.5f-clip.y()/w*0.5f)*height());
+  return ViewProjection::toWidget(m_ringMatrix[axis]*QVector4D(ringPoint(axis,m_ringRadius,angle),1.0f),width(),height(),depth);
 }
 
 // A ring was clicked: find the spot that was grabbed and which way on the
@@ -2289,10 +2328,7 @@ bool AnimationView::frameWholeFigure()
 
 QPointF AnimationView::toScreen(const QVector3D& world,float* depth) const
 {
-  const QVector4D clip=m_lastProjection*m_viewMatrix*QVector4D(world,1.0f);
-  const float w=clip.w()!=0.0f ? clip.w() : 1.0f;
-  if(depth) *depth=clip.z()/w;
-  return QPointF((double(clip.x())/w*0.5+0.5)*width(),(0.5-double(clip.y())/w*0.5)*height());
+  return ViewProjection::toWidget(m_lastProjection*m_viewMatrix*QVector4D(world,1.0f),width(),height(),depth);
 }
 
 QVector3D AnimationView::fromScreen(const QPointF& point,float depth) const
