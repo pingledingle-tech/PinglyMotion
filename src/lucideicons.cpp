@@ -102,6 +102,8 @@ namespace
     {"eye",{"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0","M15 12a3 3 0 1 0-6 0a3 3 0 1 0 6 0z"}},
     // the tick of a picked tile on the Hands tab (UX phase 2c)
     {"check",{"M20 6 9 17l-5-5"}},
+    // Edit curve beside the easing tiles (UX phase 5), from the approved mockup
+    {"sliders-horizontal",{"M10 5H3","M12 19H3","M14 3v4","M16 17v4","M21 12h-9","M21 19h-5","M21 5h-7","M8 10v4","M8 12H3"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

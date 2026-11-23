@@ -1,12 +1,17 @@
 // The easing tile row (issue #53 step 5). See easingtiles.h.
 #include "easingtiles.h"
 #include "dialogfit.h"
+#include "lucideicons.h"
+#include "theme.h"
+#include "transportlook.h"
+#include "usersettings.h"
 #include "wraprow.h"
 
 #include <QButtonGroup>
 #include <QDialogButtonBox>
 #include <QEvent>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPainter>
@@ -131,6 +136,7 @@ namespace
   const int PictureHeight=34;
   const int NameHeight=30;
   const int TrailSteps=8;
+  const double TickSize=14;
   // the part of the way the figure may go past the end (Overshoot then settle)
   const double OvershootRoom=0.1;
 }
@@ -143,6 +149,40 @@ EasingTile::EasingTile(Easing::Preset preset,QWidget* parent) :
   setText(EasingChoice::tileName(preset));
   setCursor(Qt::PointingHandCursor);
   setAttribute(Qt::WA_Hover);
+  // Tab reaches only the current tile (the row sets it); the others by the arrow keys
+  setFocusPolicy(Qt::ClickFocus);
+}
+
+void EasingTile::keyPressEvent(QKeyEvent* event)
+{
+  switch(event->key())
+  {
+    case Qt::Key_Right:
+    case Qt::Key_Down:
+      emit stepRequested(1);
+      event->accept();
+      return;
+    case Qt::Key_Left:
+    case Qt::Key_Up:
+      emit stepRequested(-1);
+      event->accept();
+      return;
+    default:
+      break;
+  }
+  QAbstractButton::keyPressEvent(event);
+}
+
+void EasingTile::focusInEvent(QFocusEvent* event)
+{
+  QAbstractButton::focusInEvent(event);
+  update();
+}
+
+void EasingTile::focusOutEvent(QFocusEvent* event)
+{
+  QAbstractButton::focusOutEvent(event);
+  update();
 }
 
 // the name is drawn one point smaller than the text around it
@@ -166,7 +206,14 @@ QSize EasingTile::sizeHint() const
   int widest=0;
   for(const QString& word : text().split(QLatin1Char(' '),Qt::SkipEmptyParts))
     widest=qMax(widest,metrics.horizontalAdvance(word));
-  return QSize(qMax(TileWidth,widest+16),PictureHeight+nameHeight());
+  // wide enough that the name takes at most the two lines nameHeight() has
+  // room for (at 200 percent text "Slow both ends" would need three)
+  int width=qMax(TileWidth,widest+16);
+  const int twoLines=2*metrics.height();
+  while(width<TileWidth*4 &&
+        metrics.boundingRect(QRect(0,0,width-8,10000),Qt::AlignHCenter|Qt::AlignTop|Qt::TextWordWrap,text()).height()>twoLines)
+    width+=4;
+  return QSize(width,PictureHeight+nameHeight());
 }
 
 void EasingTile::setPhase(double phase)
@@ -257,6 +304,34 @@ void EasingTile::paintEvent(QPaintEvent*)
   painter.setBrush(Qt::NoBrush);
   const QRect nameRect(4,PictureHeight,width()-8,nameHeight()-4);
   painter.drawText(nameRect,Qt::AlignHCenter|Qt::AlignTop|Qt::TextWordWrap,this->text());
+
+  // the current choice: a check mark in a round badge in the top right corner (the mockup's tick)
+  if(on)
+  {
+    const QRectF badge(width()-3-TickSize,3,TickSize,TickSize);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(mark);
+    painter.drawEllipse(badge);
+    // Lucide "check", the mockup's icon
+    const QPainterPath check=LucideIcons::path(QStringLiteral("check"));
+    painter.save();
+    painter.translate(badge.topLeft()+QPointF(2,2));
+    const double scale=(TickSize-4)/24.0;
+    painter.scale(scale,scale);
+    painter.setPen(QPen(enabled ? Theme::color(Theme::Token::OnAccent) : pal.color(QPalette::Base),2.0/scale*1.2,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawPath(check);
+    painter.restore();
+  }
+
+  // the keyboard focus: the ring of the design system (focus_ring, 2 px)
+  if(hasFocus())
+  {
+    painter.setPen(QPen(Theme::color(Theme::Token::FocusRing),Theme::Size::focusRingWidth));
+    painter.setBrush(Qt::NoBrush);
+    const double inset=Theme::Size::focusRingWidth/2.0;
+    painter.drawRoundedRect(QRectF(rect()).adjusted(inset,inset,-inset,-inset),6,6);
+  }
 }
 
 // --------------------------------------------------------------- EasingTiles
@@ -268,7 +343,15 @@ EasingTiles::EasingTiles(QWidget* parent) :
   layout->setContentsMargins(4,2,4,2);
   layout->setSpacing(2);
 
-  // the six tiles and Custom curve in two parts: side by side, or one under
+  // the heading of the row, as in the mockup (label size, semibold)
+  m_heading=new QLabel(tr("How the move feels"),this);
+  m_heading->setObjectName(QStringLiteral("easingHeading"));
+  QFont headingFont=m_heading->font();
+  headingFont.setWeight(QFont::DemiBold);
+  m_heading->setFont(headingFont);
+  layout->addWidget(m_heading);
+
+  // the six tiles and Edit curve in two parts: side by side, or one under
   // the other when they do not fit on one line (docs/UX_DECISIONS.md, 6c)
   QHBoxLayout* firstPart=new QHBoxLayout();
   firstPart->setContentsMargins(0,0,0,0);
@@ -289,21 +372,22 @@ EasingTiles::EasingTiles(QWidget* parent) :
     connect(tile,&EasingTile::clicked,this,&EasingTiles::tileClicked);
     connect(tile,&EasingTile::hovered,this,&EasingTiles::tileHovered);
     connect(tile,&EasingTile::left,this,&EasingTiles::tileLeft);
+    connect(tile,&EasingTile::stepRequested,this,&EasingTiles::tileStep);
     m_tiles[i]=tile;
   }
   m_group=group;
 
-  // a free curve for this pose change (issue #11), in a dialog
-  m_customButton=new QPushButton(tr("Custom curve..."),this);
-  m_customButton->setObjectName(QStringLiteral("customCurveButton"));
-  m_customButton->setCheckable(true);
-  connect(m_customButton,&QPushButton::clicked,this,[this]()
+  // a free curve for this pose change (issue #11), in the Edit curve window;
+  // Expert mode only, as in the mockup
+  m_editButton=new QPushButton(tr("Edit curve..."),this);
+  m_editButton->setObjectName(QStringLiteral("editCurveButton"));
+  // the status line names it without the dots (reason line, charter P6)
+  m_editButton->setProperty("reasonName",tr("Edit curve"));
+  connect(m_editButton,&QPushButton::clicked,this,[this]()
   {
-    // the button shows the state; only the dialog changes it
-    m_customButton->setChecked(m_custom);
-    if(m_hasChoice) emit customCurveRequested();
+    if(m_hasChoice) emit editCurveRequested();
   });
-  secondPart->addWidget(m_customButton,0,Qt::AlignVCenter);
+  secondPart->addWidget(m_editButton,0,Qt::AlignVCenter);
 
   firstPart->addStretch(1);
   secondPart->addStretch(1);
@@ -320,7 +404,20 @@ EasingTiles::EasingTiles(QWidget* parent) :
   m_timer->setInterval(40);
   connect(m_timer,&QTimer::timeout,this,&EasingTiles::tick);
 
+  // the Edit curve button in the look of the design system (icon, focus ring)
+  TransportLook::apply(this);
+
+  m_expert=UserSettings::expertMode();
+  m_editButton->setVisible(m_expert);
+  UserSettings::watchExpertMode(this,[this](bool on) { setExpertMode(on); });
+
   setNoKey();
+}
+
+void EasingTiles::setExpertMode(bool expert)
+{
+  m_expert=expert;
+  m_editButton->setVisible(expert);
 }
 
 void EasingTiles::setWrapped(bool wrapped)
@@ -364,12 +461,74 @@ void EasingTiles::setChoice(Easing::Preset preset)
   {
     m_tiles[i]->setEnabled(true);
     m_tiles[i]->setChecked(static_cast<Easing::Preset>(i)==preset);
+    m_tiles[i]->setStatusTip(QString());
   }
-  m_customButton->setEnabled(true);
-  m_customButton->setChecked(false);
+  m_editButton->setEnabled(true);
+  m_editButton->setStatusTip(QString());
   refreshHint();
   updateAnimation();
   if(m_customCheck && m_customCheck()) setCustom(true);
+  refreshFocusOrder();
+}
+
+// only one tile is in the Tab order: the current one, or the first when none
+// is marked (a custom curve); the arrow keys reach the others
+void EasingTiles::refreshFocusOrder()
+{
+  int inOrder=0;
+  for(int i=0;i<Easing::PresetCount;i++)
+    if(m_tiles[i]->isChecked()) inOrder=i;
+  for(int i=0;i<Easing::PresetCount;i++)
+    m_tiles[i]->setFocusPolicy(i==inOrder ? Qt::StrongFocus : Qt::ClickFocus);
+}
+
+void EasingTiles::tileStep(int step)
+{
+  EasingTile* from=qobject_cast<EasingTile*>(sender());
+  if(!from || !m_hasChoice) return;
+  const int count=Easing::PresetCount;
+  const int next=((static_cast<int>(from->preset())+step)%count+count)%count;
+  EasingTile* tile=m_tiles[next];
+  // the arrow key picks the choice, as a click does, and the focus follows
+  tile->setFocus(Qt::TabFocusReason);
+  tile->click();
+}
+
+QString EasingTiles::tileReason() const
+{
+  if(m_hasChoice) return QString();
+  switch(m_noKey)
+  {
+    case NoKey::NoAnimation: return tr("Open an animation first.");
+    case NoKey::NoJoint: return tr("Pick a joint first.");
+    case NoKey::NoMove: break;
+  }
+  return tr("Select a key on the timeline. The first key has no move before it.");
+}
+
+QString EasingTiles::editCurveReason() const
+{
+  if(m_hasChoice) return QString();
+  if(m_noKey==NoKey::NoAnimation) return tr("Open an animation first.");
+  return tr("Select a key on the timeline first.");
+}
+
+void EasingTiles::refreshNoKey()
+{
+  if(!m_hasChoice) setNoKey();
+}
+
+// greys the row with its reasons: the tip and the status line of each greyed control
+void EasingTiles::applyNoKeyState()
+{
+  m_noKey=m_noKeyCheck ? m_noKeyCheck() : NoKey::NoMove;
+  const QString tileWhy=tileReason();
+  for(int i=0;i<Easing::PresetCount;i++)
+  {
+    m_tiles[i]->setStatusTip(tileWhy);
+    m_tiles[i]->setProperty("reasonName",tr("Easing choice"));
+  }
+  m_editButton->setStatusTip(editCurveReason());
 }
 
 void EasingTiles::setCustom(bool custom)
@@ -385,23 +544,27 @@ void EasingTiles::setCustom(bool custom)
   }
   else if(m_hasChoice)
     m_tiles[static_cast<int>(m_choice)]->setChecked(true);
-  m_customButton->setChecked(custom);
   refreshHint();
+  refreshFocusOrder();
 }
 
 void EasingTiles::setNoKey()
 {
   m_hasChoice=false;
   m_custom=false;
-  m_customButton->setEnabled(false);
-  m_customButton->setChecked(false);
+  m_editButton->setEnabled(false);
+  // an exclusive group keeps one button checked; lift that for a moment
+  m_group->setExclusive(false);
   for(int i=0;i<Easing::PresetCount;i++)
   {
     m_tiles[i]->setEnabled(false);
     m_tiles[i]->setChecked(false);
   }
+  m_group->setExclusive(true);
+  applyNoKeyState();
   refreshHint();
   updateAnimation();
+  refreshFocusOrder();
 }
 
 void EasingTiles::setTipsOn(bool on)
@@ -428,19 +591,24 @@ std::optional<Easing::Preset> EasingTiles::animatingTile() const
 
 void EasingTiles::refreshHint()
 {
+  // a greyed-out control's tip is its reason (charter P6), with the tips on or off
   for(int i=0;i<Easing::PresetCount;i++)
   {
     const Easing::Preset preset=static_cast<Easing::Preset>(i);
-    m_tiles[i]->setToolTip(m_tipsOn ? EasingChoice::hint(preset) : QString());
+    if(!m_hasChoice) m_tiles[i]->setToolTip(tileReason());
+    else m_tiles[i]->setToolTip(m_tipsOn ? EasingChoice::hint(preset) : QString());
   }
-  m_customButton->setToolTip(m_tipsOn ? tr("Draw your own speed for this pose change.") : QString());
+  if(!m_hasChoice) m_editButton->setToolTip(editCurveReason());
+  else m_editButton->setToolTip(m_tipsOn ? tr("Draw your own speed for this pose change.") : QString());
 
+  // the "select a key" line and the custom curve line are the state, not tips:
+  // they show with the tips off too; with no animation open the line is empty
   if(!m_hasChoice)
-    m_hint->setText(tr("Select a key frame on the timeline"));
-  else if(!m_tipsOn)
-    m_hint->setText(QString());
+    m_hint->setText(m_noKey==NoKey::NoAnimation ? QString() : tr("Select a key on the timeline"));
   else if(m_custom && !m_hovered)
     m_hint->setText(tr("This pose change uses your own curve. Click a tile to go back."));
+  else if(!m_tipsOn)
+    m_hint->setText(QString());
   else
     m_hint->setText(EasingChoice::hint(m_hovered ? *m_hovered : m_choice));
 }
@@ -479,7 +647,10 @@ void EasingTiles::changeEvent(QEvent* event)
   {
     for(int i=0;i<Easing::PresetCount;i++)
       m_tiles[i]->setText(EasingChoice::tileName(static_cast<Easing::Preset>(i)));
-    m_customButton->setText(tr("Custom curve..."));
+    m_heading->setText(tr("How the move feels"));
+    m_editButton->setText(tr("Edit curve..."));
+    m_editButton->setProperty("reasonName",tr("Edit curve"));
+    if(!m_hasChoice) applyNoKeyState();
     refreshHint();
   }
 }
@@ -498,8 +669,8 @@ void EasingTiles::tileClicked()
   if(!tile || !m_hasChoice) return;
   m_choice=tile->preset();
   m_custom=false;
-  m_customButton->setChecked(false);
   refreshHint();
+  refreshFocusOrder();
   emit choiceClicked(tile->preset());
 }
 
@@ -534,6 +705,47 @@ CurveEditor::CurveEditor(QWidget* parent) :
 {
   setObjectName(QStringLiteral("curveEditor"));
   setMouseTracking(true);
+  setFocusPolicy(Qt::StrongFocus);
+  setAccessibleName(tr("Speed curve"));
+}
+
+void CurveEditor::keyPressEvent(QKeyEvent* event)
+{
+  const double step=(event->modifiers() & Qt::ShiftModifier) ? bigStep() : keyStep();
+  double dx=0;
+  double dy=0;
+  switch(event->key())
+  {
+    case Qt::Key_Left: dx=-step; break;
+    case Qt::Key_Right: dx=step; break;
+    case Qt::Key_Up: dy=step; break;
+    case Qt::Key_Down: dy=-step; break;
+    case Qt::Key_Space:
+      m_active=1-m_active;
+      update();
+      event->accept();
+      return;
+    default:
+      QWidget::keyPressEvent(event);
+      return;
+  }
+  Easing::Bezier c=m_curve;
+  if(m_active==0) { c.x1+=dx; c.y1+=dy; }
+  else { c.x2+=dx; c.y2+=dy; }
+  setCurve(c);
+  event->accept();
+}
+
+void CurveEditor::focusInEvent(QFocusEvent* event)
+{
+  QWidget::focusInEvent(event);
+  update();
+}
+
+void CurveEditor::focusOutEvent(QFocusEvent* event)
+{
+  QWidget::focusOutEvent(event);
+  update();
 }
 
 void CurveEditor::setCurve(const Easing::Bezier& curve)
@@ -596,6 +808,11 @@ void CurveEditor::mousePressEvent(QMouseEvent* event)
     if(distance<=bestDistance) { best=h; bestDistance=distance; }
   }
   m_dragging=best;
+  if(best>=0 && best!=m_active)
+  {
+    m_active=best;
+    update();
+  }
 }
 
 void CurveEditor::mouseMoveEvent(QMouseEvent* event)
@@ -655,6 +872,18 @@ void CurveEditor::paintEvent(QPaintEvent*)
   painter.setBrush(fill);
   for(int h=0;h<2;h++) painter.drawEllipse(handlePosition(h),HandleRadius,HandleRadius);
 
+  // with the keyboard focus: the ring of the design system around the
+  // editor, and a second ring around the handle the arrow keys move
+  if(hasFocus())
+  {
+    const QColor ring=Theme::color(Theme::Token::FocusRing);
+    painter.setPen(QPen(ring,Theme::Size::focusRingWidth));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawEllipse(handlePosition(m_active),HandleRadius+Theme::Size::focusRingOffset+1,HandleRadius+Theme::Size::focusRingOffset+1);
+    const double inset=Theme::Size::focusRingWidth/2.0;
+    painter.drawRect(QRectF(rect()).adjusted(inset,inset,-inset,-inset));
+  }
+
   // the dot trail, as on the tiles: one dot per equal time step
   const double y=height()-TrailHeight/2;
   const double left=r.left();
@@ -680,13 +909,21 @@ CurveEditorDialog::CurveEditorDialog(const Easing::Bezier& start,QWidget* parent
   m_start(Easing::sanitized(start))
 {
   setObjectName(QStringLiteral("curveEditorDialog"));
-  setWindowTitle(tr("Custom curve"));
+  setWindowTitle(tr("Edit curve"));
+  // a window of its own, with the normal title bar buttons (no "?" help button)
+  setWindowFlag(Qt::WindowContextHelpButtonHint,false);
+  setSizeGripEnabled(true);
 
   QVBoxLayout* layout=DialogFit::contentLayout(this);
   QLabel* hint=new QLabel(tr("Drag the two round handles. Steep parts move fast, flat parts slowly."),this);
   hint->setObjectName(QStringLiteral("curveEditorHint"));
   hint->setWordWrap(true);
   layout->addWidget(hint);
+  QLabel* keys=new QLabel(tr("Keys: the arrow keys move a handle (Shift: bigger steps), Space picks the other handle."),this);
+  keys->setObjectName(QStringLiteral("curveEditorKeys"));
+  keys->setWordWrap(true);
+  keys->setForegroundRole(QPalette::PlaceholderText);
+  layout->addWidget(keys);
 
   m_editor=new CurveEditor(this);
   m_editor->setCurve(m_start);
@@ -699,6 +936,9 @@ CurveEditorDialog::CurveEditorDialog(const Easing::Bezier& start,QWidget* parent
   connect(buttons,&QDialogButtonBox::accepted,this,&QDialog::accept);
   connect(buttons,&QDialogButtonBox::rejected,this,&QDialog::reject);
   DialogFit::finish(this,buttons);
+  // opens where it was last time (kept between sessions), clamped to the screen
+  DialogFit::remember(this,placeName());
+  m_editor->setFocus();
 }
 
 Easing::Bezier CurveEditorDialog::curve() const

@@ -33,6 +33,11 @@ Settings::~Settings()
 {
 }
 
+QStringList Settings::childKeys() const
+{
+  return m_settings.childKeys();
+}
+
 QStringList Settings::childGroups() const
 {
   return m_settings.childGroups();

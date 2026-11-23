@@ -656,6 +656,11 @@ void TimelineRowsTest::namesAndAreaNamesFitAtLargeText()
     f.turn(hand, 3);
     f.turn(f.track("mFaceJaw"), 3);
     f.view.resize(800, 300);
+    // wide enough for the name column and all 30 frames of the key area: the
+    // view's own width comes from the easing row under it, which is narrower
+    // in Beginner mode since Edit curve shows in Expert mode only (UX phase 5);
+    // 24 pixels for the layout spacing and the frames
+    f.view.setMinimumWidth(f.view.tracks()->sizeHint().width() + f.view.getTimeline()->width() + 24);
     const QImage image = UiRender::render(&f.view);
     UiRender::save(image, QStringLiteral("timeline_rows"), v);
     TimelineTracks* names = f.view.tracks();

@@ -62,6 +62,17 @@ namespace DialogFit
   // The available area of the screen the dialog is on (or would open on).
   QRect availableArea(const QDialog* dialog);
 
+  // A separate window that keeps its place (UX phase 5, the Edit curve
+  // window): it opens where it was last time, with the size the user gave
+  // it, kept between sessions under `name` (UserSettings::windowPlace). The
+  // place is checked against the screen it lands on: no larger than that
+  // screen's available area and with the title bar inside it; a place on a
+  // screen that is gone opens on the screen of the parent. The first time,
+  // the dialog opens at its own size as before. The place is stored each
+  // time the dialog is hidden (OK, Cancel or the close button). Call after
+  // finish() or install().
+  void remember(QDialog* dialog, const QString& name);
+
   // tests only: pretend every screen has this available area (a null rect: the real screen)
   void setAreaForTests(const QRect& area);
 }

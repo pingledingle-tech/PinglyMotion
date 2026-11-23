@@ -20,6 +20,8 @@
 #include <QVBoxLayout>
 #include <QWindow>
 
+#include "usersettings.h"
+
 namespace
 {
   QRect g_testArea;
@@ -41,6 +43,12 @@ namespace
       QSize preferred() const { return m_preferred; }
       QScrollArea* scroll() const { return m_scroll; }
 
+      // the name of the kept place (DialogFit::remember), and whether the
+      // dialog has its size from the user now rather than from its content
+      void setPlaceName(const QString& name) { m_placeName = name; }
+      QString placeName() const { return m_placeName; }
+      bool keepsSize() const { return m_keepsSize; }
+
       void later()
       {
         if (m_pending) return;
@@ -56,9 +64,17 @@ namespace
           switch (event->type())
           {
             case QEvent::Show:
+              restorePlace();
               DialogFit::fit(m_dialog);
               connectScreen();
               later();   // the frame is known only after the window is shown
+              break;
+            case QEvent::Hide:
+              storePlace();
+              break;
+            case QEvent::Resize:
+              // a size the user gives a kept window stays, also when the text size changes
+              if (!m_placeName.isEmpty() && m_dialog->isVisible() && !m_fitting) m_keepsSize = true;
               break;
             case QEvent::FontChange:
             case QEvent::ApplicationFontChange:
@@ -73,7 +89,29 @@ namespace
         return false;
       }
 
+    public:
+      // set while DialogFit::fit() resizes, so its own resize is not taken as the user's
+      bool m_fitting = false;
+
     private:
+      void restorePlace()
+      {
+        if (m_placeName.isEmpty()) return;
+        const QRect place = UserSettings::windowPlace(m_placeName);
+        if (!place.isValid()) return;
+        m_fitting = true;
+        m_dialog->resize(place.size());
+        m_dialog->move(place.topLeft());
+        m_fitting = false;
+        m_keepsSize = true;
+      }
+
+      void storePlace()
+      {
+        if (m_placeName.isEmpty()) return;
+        UserSettings::setWindowPlace(m_placeName, QRect(m_dialog->pos(), m_dialog->size()));
+      }
+
       void connectScreen()
       {
         if (m_screenConnected || !m_dialog->windowHandle()) return;
@@ -84,6 +122,8 @@ namespace
       QDialog* m_dialog;
       QScrollArea* m_scroll;
       QSize m_preferred;
+      QString m_placeName;
+      bool m_keepsSize = false;
       bool m_pending = false;
       bool m_screenConnected = false;
   };
@@ -151,10 +191,22 @@ void DialogFit::setAreaForTests(const QRect& area)
   g_testArea = area;
 }
 
+void DialogFit::remember(QDialog* dialog, const QString& name)
+{
+  if (!dialog) return;
+  if (Fitter* fitter = fitterOf(dialog)) fitter->setPlaceName(name);
+}
+
 QRect DialogFit::availableArea(const QDialog* dialog)
 {
   if (!g_testArea.isNull()) return g_testArea;
   const QScreen* screen = nullptr;
+  // a kept window is checked against the screen it is on now, which may be
+  // a second screen before its window knows it
+  const Fitter* fitter = fitterOf(dialog);
+  if (fitter && !fitter->placeName().isEmpty() && dialog->isVisible())
+    screen = QGuiApplication::screenAt(dialog->frameGeometry().center());
+  if (screen) return screen->availableGeometry();
   if (dialog->windowHandle()) screen = dialog->windowHandle()->screen();
   if (!screen && dialog->parentWidget() && dialog->parentWidget()->window()->windowHandle())
     screen = dialog->parentWidget()->window()->windowHandle()->screen();
@@ -187,6 +239,8 @@ void DialogFit::fit(QDialog* dialog)
     want.rwidth() += scroll->verticalScrollBar()->sizeHint().width();
   }
   want = want.expandedTo(fitter->preferred());
+  // a kept window keeps the size the user gave it (no smaller than its content needs)
+  if (fitter->keepsSize()) want = dialog->size();
   want = want.expandedTo(dialog->minimumSizeHint().boundedTo(maxSize));
 
   // a minimum that does not fit the screen would make the dialog too big
@@ -198,7 +252,9 @@ void DialogFit::fit(QDialog* dialog)
     dialog->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
   }
 
+  fitter->m_fitting = true;
   dialog->resize(want.boundedTo(maxSize));
+  fitter->m_fitting = false;
 
   if (!dialog->isVisible()) return;
   const QRect frame = dialog->frameGeometry();

@@ -26,7 +26,13 @@
 */
 
 #include <QByteArray>
+#include <QMap>
+#include <QRect>
 #include <QStringList>
+
+#include <functional>
+
+class QObject;
 
 class QString;
 
@@ -84,7 +90,7 @@ class UserSettings
     static void setTipsOn(bool on);
     static bool tipsOn();
     // Beginner (default, false) or Expert (true) mode, docs/UX_DECISIONS.md section 8.
-    // Stored only; no part of the program reads it yet.
+    // Read by the timeline's Paste mirrored and the Edit curve button.
     // which parts of the Script Lab panel are open or folded: "key=open,key=folded";
     // a part not named keeps its first state (docs/UX_DECISIONS.md, 6d)
     static void setScriptLabParts(const QString& value);
@@ -99,6 +105,13 @@ class UserSettings
 
     static void setExpertMode(bool on);
     static bool expertMode();
+    // calls `changed` with the new value whenever setExpertMode() changes it, as long as
+    // `context` lives (UX phase 5: the Edit curve button shows in Expert mode only)
+    static void watchExpertMode(QObject* context, std::function<void(bool)> changed);
+    // where a separate window was and how big (frame top left and inner size), by name,
+    // kept between sessions (UX phase 5, the Edit curve window); a null rect when unknown
+    static void setWindowPlace(const QString& name, const QRect& place);
+    static QRect windowPlace(const QString& name);
     // camera habit: one of cameraHabits(), default "pinglymotion"; anything else becomes the default.
     // The 3D view follows it since UX phase 4a.
     static void setCameraHabit(const QString& value);
@@ -189,6 +202,8 @@ private:
     static const QString m_jointMoreOptionsKey;
     static bool m_expertMode;
     static const QString m_expertModeKey;
+    static QMap<QString, QRect> m_windowPlaces;
+    static const QString m_windowPlacesGroup;
     static QString m_cameraHabit;
     static const QString m_cameraHabitKey;
     static QString m_viewTool;

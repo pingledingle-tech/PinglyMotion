@@ -887,17 +887,28 @@ Red: a request with a wrong key was refused</source>
     </message>
 </context>
 <context>
-    <name>CurveEditorDialog</name>
+    <name>CurveEditor</name>
     <message>
-        <source>Custom curve</source>
+        <source>Speed curve</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>CurveEditorDialog</name>
     <message>
         <source>Drag the two round handles. Steep parts move fast, flat parts slowly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Start again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keys: the arrow keys move a handle (Shift: bigger steps), Space picks the other handle.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -952,19 +963,47 @@ Red: a request with a wrong key was refused</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Custom curve...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Draw your own speed for this pose change.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select a key frame on the timeline</source>
+        <source>This pose change uses your own curve. Click a tile to go back.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This pose change uses your own curve. Click a tile to go back.</source>
+        <source>How the move feels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit curve...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an animation first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a joint first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a key on the timeline. The first key has no move before it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a key on the timeline first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Easing choice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a key on the timeline</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

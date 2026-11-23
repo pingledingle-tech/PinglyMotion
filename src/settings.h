@@ -32,6 +32,7 @@ class Settings : public QObject
     ~Settings();
 
     QStringList childGroups() const;
+    QStringList childKeys() const;
     void beginGroup(const QString& prefix);
     void endGroup();
 
