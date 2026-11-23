@@ -6,7 +6,7 @@ Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_
 
 The project owner wants to build RLV tools for Second Life with Claude Code and GitHub, and test them live in PinglyMotion.
 
-Script Lab is a sandbox inside PinglyMotion for testing RLV and LSL scripts. It is not a full LSL IDE and has no built-in script editor for now.
+Script Lab is a sandbox inside PinglyMotion for testing RLV and LSL scripts. It is not a full LSL IDE: it gets a small editor and an LSL-to-Lua converter, but no debugger and no project building.
 
 ## 2. Workflow when it is finished
 
@@ -75,7 +75,7 @@ The original plan:
 
 - PinglyMotion watches a folder (a cloned repository) and reloads a script when it changes.
 - Control commands `lsl_check` (errors with line and column), `lsl_run` (event log plus final RLV state), `lsl_event`. `lsl_check` and `lsl_run` came early, with step 3 (issue 289, [CONTROL.md](CONTROL.md)); this step adds `lsl_event` and the final RLV state.
-- The panel shows the script read-only with line numbers and error marks, and a button "Open in editor" that opens the file in the user's own editor. No built-in editor for now.
+- The panel shows the script read-only with line numbers and error marks, and a button "Open in editor" that opens the file in the user's own editor. No built-in editor yet; a small one is planned (see ROADMAP.md).
 - Done (issue 292): the folder watch, the Live page with the script, errors and log, "Open in editor", and the control commands `lab_watch`, `lab_unwatch` and `lab_result` ([SCRIPT_LAB.md](SCRIPT_LAB.md)). The watch's runs take their chat and touches from the `inputs` option of `lab_watch`, because each run starts fresh with a simulated clock; `lsl_event` came with step 5 (issue 291) and sends an event to the world of the last `lsl_run`. The final RLV state of a run comes from step 4 (issue 290).
 
 ### Step 7: Effects in the 3D view (visible)
