@@ -1,6 +1,6 @@
 Branch: job/leddringer
 Status: active
-Pull request: pending
+Pull request: #434
 Files:
 - src/animationview.*
 - src/viewcolours.h
