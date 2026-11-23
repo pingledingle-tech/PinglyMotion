@@ -4,7 +4,10 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QAction>
 #include <QCheckBox>
+#include <QInputDialog>
+#include <QScopeGuard>
 #include <QResizeEvent>
 #include <QSizeGrip>
 #include <QMouseEvent>
@@ -42,9 +45,12 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTreeWidget>
+#include <QTreeWidgetItemIterator>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 #include "effectspreview.h"
+#include "labbeginner.h"
 #include "labeditor.h"
 #include "labtree.h"
 #include "labwatcher.h"
@@ -473,6 +479,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
 
   // the Live page first, as in the mockup
   buildLivePage();
+  buildTips();
   m_tabs->insertTab(CommandsPage, commandsScroll, tr("Type commands"));
   m_tabs->setTabToolTip(CommandsPage, tr("Commands: type RLV lines by hand"));
   m_tabs->setCurrentIndex(LivePage);
@@ -509,7 +516,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   // each part opens or folds as it was last time; a change is saved at once in the settings
   applyPartsState(UserSettings::scriptLabParts());
   for (ScriptLabSection* s : m_sections)
-    connect(s, &ScriptLabSection::expandedChanged, this, [this]() { UserSettings::setScriptLabParts(partsState()); });
+    connect(s, &ScriptLabSection::expandedChanged, this, [this]() { UserSettings::setScriptLabParts(partsState()); refreshTips(); });
+  updateWorkLayout();
 }
 
 QStringList ScriptLabPanel::tryLines()
@@ -545,6 +553,7 @@ void ScriptLabPanel::setHintsOn(bool on)
   m_hintsOn = on;
   m_explainFrame->setVisible(on);
   if (m_editor) m_editor->setHintsOn(on);   // the editor's card on what an RLV line is
+  refreshTips();   // the word tips are guidance too (charter P4)
 }
 
 ScriptLabSection* ScriptLabPanel::addSection(const QString& key, const QString& title, bool expanded, QWidget* page, QVBoxLayout* layout)
@@ -656,25 +665,32 @@ void ScriptLabPanel::applyStyle()
   m_reset->setStyleSheet(button.arg(QLatin1String(t.dangerFill), QLatin1String(t.onAccent)).arg(RadiusControl).arg(SpacingM)
                          .arg(QLatin1String(t.focusRing)));
   if (!m_watch) return;
-  // Live page: Watch folder is the main button there; Stop watching and Open
-  // in editor are normal buttons (surface_raised fill, border, text), greyed
-  // out with text_disabled (DESIGN_SYSTEM.md, "Shape" and "States")
-  m_watch->setStyleSheet(button.arg(QLatin1String(t.accent), QLatin1String(t.onAccent)).arg(RadiusControl).arg(SpacingM)
-                         .arg(QLatin1String(t.focusRing)));
+  // Live page: Make example project is the main button there (job U3); Watch folder, New folder,
+  // Stop watching and Open in editor are normal buttons (surface_raised fill, border, text). Greyed,
+  // they keep text_muted and a half border, so the word stays readable at 4.5:1 (job U3: higher
+  // contrast than text_disabled; the reason is a line under them too)
+  m_makeExample->setStyleSheet(button.arg(QLatin1String(t.accent), QLatin1String(t.onAccent)).arg(RadiusControl).arg(SpacingM)
+                               .arg(QLatin1String(t.focusRing)));
+  const QColor raised(QLatin1String(t.surfaceRaised));
+  const QString halfBorder = Theme::mix(raised, QColor(QLatin1String(t.border)), 0.5).name(QColor::HexRgb).toUpper();
   const QString normal = QStringLiteral(
     "QPushButton { background: %1; color: %2; border: 1px solid %3; border-radius: %4px; padding: 0 %5px; }"
-    "QPushButton:disabled { color: %6; }"
+    "QPushButton:disabled { color: %6; border: 1px solid %8; }"
     "QPushButton:focus { border: 2px solid %7; }")
     .arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.border))
     .arg(RadiusControl).arg(SpacingM)
-    .arg(QLatin1String(t.textDisabled), QLatin1String(t.focusRing));
+    .arg(QLatin1String(t.textMuted), QLatin1String(t.focusRing), halfBorder);
+  m_watch->setStyleSheet(normal);
+  m_newFolder->setStyleSheet(normal);
   m_unwatch->setStyleSheet(normal);
   m_openEditor->setStyleSheet(normal);
   m_runAgain->setStyleSheet(normal);
   m_runAgain->setIcon(LucideIcons::icon(QStringLiteral("refresh-cw"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
   for (QPushButton* b : m_tryButtons) b->setStyleSheet(normal);
   m_example->setStyleSheet(normal);
-  m_watch->setIcon(LucideIcons::icon(QStringLiteral("folder-open"), QColor(QLatin1String(t.onAccent)), QColor(QLatin1String(t.textDisabled))));
+  m_watch->setIcon(LucideIcons::icon(QStringLiteral("folder-open"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textMuted))));
+  m_makeExample->setIcon(LucideIcons::icon(QStringLiteral("box"), QColor(QLatin1String(t.onAccent)), QColor(QLatin1String(t.textMuted))));
+  styleEffectsButton();
   m_example->setIcon(LucideIcons::icon(QStringLiteral("flask-conical"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
 
   // Viewer rules: two normal buttons joined into one segment; the chosen one has the
@@ -711,7 +727,15 @@ void ScriptLabPanel::applyStyle()
   m_inventoryEmpty->setPalette(muted);
   m_inventoryNote->setPalette(muted);
   m_guideExample->setPalette(muted);
+  m_treeLine->setPalette(muted);
+  m_scriptButtonsReason->setPalette(muted);
+  // the maker guide: rules in the text colour, the warnings with the warning colour on their heading
+  QPalette warningPalette = m_guideWarningsHeading->palette();
+  warningPalette.setColor(QPalette::WindowText, QColor(QLatin1String(t.warning)));
+  m_guideWarningsHeading->setPalette(warningPalette);
   m_folderTree->applyStyle(dark);
+  m_stepCard->applyStyle(dark);
+  for (LabTipCard* tip : m_tipCards) tip->applyStyle(dark);
   m_tabs->setTabIcon(LivePage, LucideIcons::icon(QStringLiteral("file-code"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
   if (m_tabs->count() > CommandsPage)
     m_tabs->setTabIcon(CommandsPage, LucideIcons::icon(QStringLiteral("terminal"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
@@ -925,6 +949,7 @@ void ScriptLabPanel::resizeEvent(QResizeEvent* event)
 {
   QWidget::resizeEvent(event);
   placeSizeGrip();
+  updateWorkLayout();
 }
 
 // --- Live (issue 292) -------------------------------------------------------
@@ -950,6 +975,13 @@ void ScriptLabPanel::buildLivePage()
   layout->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
   layout->setSpacing(SpacingS);
 
+  // --- the example's steps (job U3): shown after Make example project and from Help > Script Lab steps
+  m_stepCard = new LabStepCard(page);
+  m_stepCard->hide();
+  layout->addWidget(m_stepCard);
+  connect(m_stepCard, &LabStepCard::stepRequested, this, [this](int index) { doStep(index); });
+  connect(m_stepCard, &LabStepCard::closeRequested, this, &ScriptLabPanel::closeSteps);
+
   // --- the empty state: no folder watched (charter P4)
   m_liveEmpty = new ScriptLabFrame(page);
   m_liveEmpty->setObjectName("scriptLabLiveEmpty");
@@ -970,11 +1002,21 @@ void ScriptLabPanel::buildLivePage()
   headingRow->addWidget(m_liveEmptyHeading);
   headingRow->addStretch(1);
   card->addLayout(headingRow);
-  m_liveEmptyText = new QLabel(tr("Pick the folder with your .lsl scripts. Each time you save one, it is checked and run here."), m_liveEmpty);
+  m_liveEmptyText = new QLabel(tr("Script Lab shows your scripts from a folder on your PC. Choose a folder to see them here."), m_liveEmpty);
   m_liveEmptyText->setObjectName("scriptLabLiveEmptyText");
   m_liveEmptyText->setWordWrap(true);
   card->addWidget(m_liveEmptyText);
 
+  // job U3: a finished example first, from one click (value first); then your own folders
+  m_makeExample = new QPushButton(tr("Make example project"), m_liveEmpty);
+  m_makeExample->setObjectName("scriptLabMakeExample");
+  m_makeExample->setMinimumHeight(ControlLarge);
+  m_makeExample->setIconSize(QSize(20, 20));
+  m_makeExample->setToolTip(tr("Copies a working example to your folder and shows it in 3D."));
+  m_newFolder = new QPushButton(tr("New folder"), m_liveEmpty);
+  m_newFolder->setObjectName("scriptLabNewFolder");
+  m_newFolder->setMinimumHeight(ControlLarge);
+  m_newFolder->setToolTip(tr("Makes an empty folder for your scripts and watches it."));
   m_watch = new QPushButton(tr("Watch folder..."), m_liveEmpty);
   m_watch->setObjectName("scriptLabWatch");
   m_watch->setMinimumHeight(ControlLarge);
@@ -988,9 +1030,13 @@ void ScriptLabPanel::buildLivePage()
   QWidget* emptyButtons = new QWidget(m_liveEmpty);
   emptyButtons->setObjectName("scriptLabLiveEmptyButtons");
   FlowLayout* emptyFlow = new FlowLayout(emptyButtons, SpacingS);
+  m_makeExample->setParent(emptyButtons);
   m_watch->setParent(emptyButtons);
+  m_newFolder->setParent(emptyButtons);
   m_example->setParent(emptyButtons);
+  emptyFlow->addWidget(m_makeExample);
   emptyFlow->addWidget(m_watch);
+  emptyFlow->addWidget(m_newFolder);
   emptyFlow->addWidget(m_example);
   card->addWidget(emptyButtons);
   layout->addWidget(m_liveEmpty);
@@ -1046,11 +1092,22 @@ void ScriptLabPanel::buildLivePage()
   scriptButtons->addWidget(m_openEditor);
   scriptButtons->addStretch(1);
   layout->addLayout(scriptButtons);
+  // why they are greyed, readable without hovering (job U3, charter P6)
+  m_scriptButtonsReason = new QLabel(page);
+  m_scriptButtonsReason->setObjectName("scriptLabScriptButtonsReason");
+  m_scriptButtonsReason->setWordWrap(true);
+  m_scriptButtonsReason->setTextFormat(Qt::PlainText);
+  m_scriptButtonsReason->hide();
+  layout->addWidget(m_scriptButtonsReason);
 
   // Script Lab step 7 (issue 293): the run's effects in the 3D view, off until ticked
-  m_effectsBox = new QCheckBox(tr("Show effects in 3D view"), page);
+  // a clear on/off button since job U3: on has the selection fill and a check mark
+  m_effectsBox = new QPushButton(tr("Show effects in 3D view"), page);
   m_effectsBox->setObjectName("scriptLabShowEffects");
+  m_effectsBox->setCheckable(true);
   m_effectsBox->setChecked(false);
+  m_effectsBox->setMinimumHeight(ControlHeight);
+  m_effectsBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
   m_effectsBox->setToolTip(tr("Play the animation the script started on a preview figure and show worn objects and locks. "
                               "Your animation is not changed; untick to see it again."));
   layout->addWidget(m_effectsBox);
@@ -1060,28 +1117,77 @@ void ScriptLabPanel::buildLivePage()
   m_effectsStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   m_effectsStatus->hide();
   layout->addWidget(m_effectsStatus);
-  connect(m_effectsBox, &QCheckBox::toggled, this, &ScriptLabPanel::effectsToggled);
+  connect(m_effectsBox, &QPushButton::toggled, this, &ScriptLabPanel::effectsToggled);
+
+  // --- job U3: the tree on the left and the editor on the right when the panel is wide, stacked when narrow
+  m_workArea = new QWidget(page);
+  m_workArea->setObjectName("scriptLabWorkArea");
+  m_workLayout = new QBoxLayout(QBoxLayout::TopToBottom, m_workArea);
+  m_workLayout->setContentsMargins(0, 0, 0, 0);
+  m_workLayout->setSpacing(SpacingS);
+  m_treeColumn = new QWidget(m_workArea);
+  m_treeColumn->setObjectName("scriptLabTreeColumn");
+  QVBoxLayout* treeColumn = new QVBoxLayout(m_treeColumn);
+  treeColumn->setContentsMargins(0, 0, 0, 0);
+  treeColumn->setSpacing(SpacingS);
+  m_editorColumn = new QWidget(m_workArea);
+  m_editorColumn->setObjectName("scriptLabEditorColumn");
+  QVBoxLayout* editorColumn = new QVBoxLayout(m_editorColumn);
+  editorColumn->setContentsMargins(0, 0, 0, 0);
+  editorColumn->setSpacing(SpacingS);
+  m_workLayout->addWidget(m_treeColumn);
+  m_workLayout->addWidget(m_editorColumn);
+  layout->addWidget(m_workArea);
 
   // --- the folder as one object (lane 1 job D): a tree with icons, colour dots, sums and memory
-  m_treeSection = addSection(QStringLiteral("tree"), tr("Object"), true, page, layout);
+  m_treeSection = addSection(QStringLiteral("tree"), tr("Object"), true, m_treeColumn, treeColumn);
+  // one line on what the tree shows, and the switch that links it with the 3D view (job U3)
+  m_treeLine = new QLabel(tr("This tree is your object. Each folder in it is one prim."), m_treeSection->body());
+  m_treeLine->setObjectName("scriptLabTreeLine");
+  m_treeLine->setWordWrap(true);
+  m_treeSection->bodyLayout()->addWidget(m_treeLine);
+  m_followBox = new QCheckBox(tr("Follow selection in 3D view"), m_treeSection->body());
+  m_followBox->setObjectName("scriptLabFollowSelection");
+  m_followBox->setToolTip(tr("Click a piece here to light up its prop in 3D view. "
+                             "Click a prop and its row is picked here."));
+  m_followBox->setChecked(UserSettings::scriptLabFollowSelection());
+  m_treeSection->bodyLayout()->addWidget(m_followBox);
+  connect(m_followBox, &QCheckBox::toggled, this, [](bool on) { UserSettings::setScriptLabFollowSelection(on); });
   m_folderTree = new LabFolderTree(m_treeSection->body());
   m_treeSection->bodyLayout()->addWidget(m_folderTree);
   connect(m_folderTree, &LabFolderTree::scriptPicked, this, [this](const QString& file) { showScript(file); });
+  // a piece picked in the tree lights up its prop in the 3D view (the name is the link)
+  connect(m_folderTree, &LabFolderTree::primPicked, this, [this](const QString& prim)
+  {
+    if (m_followBox->isChecked() && m_hooks.selectProp) m_hooks.selectProp(prim);
+  });
 
-  // --- the short maker guide, folded at first (charter P5)
-  m_guideSection = addSection(QStringLiteral("guide"), tr("How to lay out the folder"), false, page, layout);
+  // --- the short maker guide, folded at first (charter P5); rules and warnings apart (job U3)
+  m_guideSection = addSection(QStringLiteral("guide"), tr("How to lay out the folder"), false, m_treeColumn, treeColumn);
+  m_guideRulesHeading = sectionLabel(tr("Rules"), m_guideSection->body());
+  m_guideRulesHeading->setObjectName("scriptLabGuideRulesHeading");
+  m_guideSection->bodyLayout()->addWidget(m_guideRulesHeading);
   m_guideText = new QLabel(tr("One folder is one object. Each subfolder is one prim.\n"
                               "Files in the top folder or in Root form the root prim.\n"
                               "Put scripts (.lsl) and notecards (.txt) in their prim's folder.\n"
-                              "Give every script and notecard its own name.\n"
-                              "Copy scripts from Second Life by hand: select all, copy, paste.\n"
-                              "The sandbox is never the same as Second Life. Test there last."),
+                              "Give every script and notecard its own name."),
                            m_guideSection->body());
   m_guideText->setObjectName("scriptLabGuideText");
   m_guideText->setWordWrap(true);
   m_guideText->setTextFormat(Qt::PlainText);
   m_guideText->setTextInteractionFlags(Qt::TextSelectableByMouse);
   m_guideSection->bodyLayout()->addWidget(m_guideText);
+  m_guideWarningsHeading = sectionLabel(tr("Warnings"), m_guideSection->body());
+  m_guideWarningsHeading->setObjectName("scriptLabGuideWarningsHeading");
+  m_guideSection->bodyLayout()->addWidget(m_guideWarningsHeading);
+  m_guideWarnings = new QLabel(tr("Copy scripts from Second Life by hand: select all, copy, paste.\n"
+                                  "The sandbox is never the same as Second Life. Test there last."),
+                               m_guideSection->body());
+  m_guideWarnings->setObjectName("scriptLabGuideWarnings");
+  m_guideWarnings->setWordWrap(true);
+  m_guideWarnings->setTextFormat(Qt::PlainText);
+  m_guideWarnings->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_guideSection->bodyLayout()->addWidget(m_guideWarnings);
   m_guideExample = new QLabel(tr("MyObject/        one object\n"
                                  "  Root/          the root prim\n"
                                  "    main.lsl\n"
@@ -1096,7 +1202,7 @@ void ScriptLabPanel::buildLivePage()
   m_guideSection->bodyLayout()->addWidget(m_guideExample);
 
   // --- the script, read only, with line numbers
-  m_scriptSection = addSection(QStringLiteral("script"), tr("Script"), true, page, layout);
+  m_scriptSection = addSection(QStringLiteral("script"), tr("Script"), true, m_editorColumn, editorColumn);
   // the script in our own text box (lane 1, job F1): editable, Save runs it (labeditor.h)
   m_editor = new LabEditor(m_scriptSection->body());
   m_scriptView = m_editor->codeEdit();
@@ -1209,6 +1315,8 @@ void ScriptLabPanel::buildLivePage()
   m_tabs->setTabToolTip(LivePage, tr("Live: your .lsl scripts run each time you save them"));
 
   connect(m_watch, &QPushButton::clicked, this, &ScriptLabPanel::chooseFolder);
+  connect(m_makeExample, &QPushButton::clicked, this, &ScriptLabPanel::makeExampleProject);
+  connect(m_newFolder, &QPushButton::clicked, this, &ScriptLabPanel::chooseNewFolder);
   connect(m_example, &QPushButton::clicked, this, &ScriptLabPanel::tryExampleScripts);
   connect(m_unwatch, &QPushButton::clicked, this, &ScriptLabPanel::stopWatching);
   connect(m_openEditor, &QPushButton::clicked, this, &ScriptLabPanel::openInEditor);
@@ -1218,14 +1326,17 @@ void ScriptLabPanel::buildLivePage()
   connect(m_problems, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) { showProblem(m_problems->row(item)); });
   m_runLog->viewport()->installEventFilter(this);
 
-  setTabOrder(m_watch, m_example);
+  setTabOrder(m_makeExample, m_watch);
+  setTabOrder(m_watch, m_newFolder);
+  setTabOrder(m_newFolder, m_example);
   setTabOrder(m_example, m_liveFolder);
   setTabOrder(m_liveFolder, m_unwatch);
   setTabOrder(m_unwatch, m_runAgain);
   setTabOrder(m_runAgain, m_openEditor);
   setTabOrder(m_openEditor, m_effectsBox);
   setTabOrder(m_effectsBox, m_treeSection->header());
-  setTabOrder(m_treeSection->header(), m_folderTree);
+  setTabOrder(m_treeSection->header(), m_followBox);
+  setTabOrder(m_followBox, m_folderTree);
   setTabOrder(m_folderTree, m_guideSection->header());
   setTabOrder(m_guideSection->header(), m_scriptSection->header());
   setTabOrder(m_scriptSection->header(), m_editor->exampleButton());
@@ -1542,6 +1653,8 @@ void ScriptLabPanel::runSavedScript(const QString& path)
 void ScriptLabPanel::refreshLive()
 {
   if (!m_liveStatus || !m_editor) return;
+  // job U3: the steps' ticks and the word tips follow every change, also after an early return below
+  const auto followUp = qScopeGuard([this]() { refreshSteps(); refreshTips(); });
   const bool dark = isDark(palette());
   const bool watching = m_watcher && m_watcher->watching();
 
@@ -1560,6 +1673,9 @@ void ScriptLabPanel::refreshLive()
 
   // the empty state while no folder is watched; the folder, status, script and its parts while watching
   m_liveEmpty->setVisible(!watching);
+  // New folder needs a place it may write to; the root is made when missing
+  m_newFolder->setToolTip(tr("Makes an empty folder for your scripts and watches it.") + QLatin1Char(' ')
+                          + QDir::toNativeSeparators(scriptsRoot()));
   for (QWidget* w : QList<QWidget*>{m_liveFolderLabel, m_liveFolder, m_unwatch, m_runAgain, m_openEditor,
                                     m_problemsSection, m_logSection, m_liveRestrictionsSection})
     w->setVisible(watching);
@@ -1621,6 +1737,16 @@ void ScriptLabPanel::refreshLive()
                                        : tr("The script is not in the folder any more."));
   m_openEditor->setToolTip(m_shownFile.isEmpty() ? tr("No script yet. Watch a folder and save a .lsl file in it first.")
                                                  : tr("Open the script in the program your computer uses for .lsl files"));
+  // the reason as a readable line, not only in the tip (job U3): "Run again, Open in editor: <why>"
+  m_runAgain->setStatusTip(canRunAgain ? QString() : m_runAgain->toolTip());
+  m_openEditor->setStatusTip(m_openEditor->isEnabled() ? QString() : m_openEditor->toolTip());
+  QString reasonLine;
+  if (!canRunAgain && !m_openEditor->isEnabled())
+    reasonLine = tr("%1, %2: %3").arg(m_runAgain->text(), m_openEditor->text(), m_runAgain->toolTip());
+  else if (!canRunAgain)
+    reasonLine = tr("%1: %2").arg(m_runAgain->text(), m_runAgain->toolTip());
+  m_scriptButtonsReason->setText(reasonLine);
+  m_scriptButtonsReason->setVisible(watching && !reasonLine.isEmpty());
 
   // errors and warnings, with marks in the script
   m_problems->clear();
@@ -1837,6 +1963,8 @@ void ScriptLabPanel::updatePropTints()
 
 void ScriptLabPanel::effectsToggled(bool on)
 {
+  styleEffectsButton();
+  refreshSteps();   // the step "Show effects" follows the button
   updatePropTints();
   if (!m_effects) return;
   m_effects->setEnabled(on);
@@ -2277,4 +2405,341 @@ bool ScriptLabPanel::answerDialog(const QString& button)
   }
   QJsonObject request{{"type", "dialog"}, {"object", dialog.value("object").toString()}, {"button", button}};
   return sendInput(request, tr("Dialog answer \"%1\" to %2").arg(button, dialog.value("object").toString()));
+}
+
+// --- Script Lab for beginners (job U3) ----------------------------------------
+
+void ScriptLabPanel::styleEffectsButton()
+{
+  if (!m_effectsBox) return;
+  const bool dark = isDark(palette());
+  const Tokens& t = tokens(dark);
+  const QString selection = Theme::color(Theme::Token::Selection, dark).name(QColor::HexRgb).toUpper();
+  // off: a normal button with the eye; on: the selection fill, on_accent text and a check mark
+  // (DESIGN_SYSTEM.md, "States": selected has a fill and a shape)
+  m_effectsBox->setStyleSheet(QStringLiteral(
+    "QPushButton { background: %1; color: %2; border: 1px solid %3; border-radius: %4px; padding: 0 %5px; }"
+    "QPushButton:checked { background: %6; color: %7; border: 1px solid %6; }"
+    "QPushButton:focus { border: 2px solid %8; }")
+    .arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.border))
+    .arg(RadiusControl).arg(SpacingM)
+    .arg(selection, QLatin1String(t.onAccent), QLatin1String(t.focusRing)));
+  const bool on = m_effectsBox->isChecked();
+  m_effectsBox->setIcon(LucideIcons::icon(on ? QStringLiteral("check") : QStringLiteral("eye"),
+                                          QColor(QLatin1String(on ? t.onAccent : t.text)), QColor(QLatin1String(t.textMuted))));
+  m_effectsBox->setAccessibleDescription(on ? tr("On: the 3D view shows what the scripts do.") : tr("Off."));
+}
+
+int ScriptLabPanel::sideBySideWidth()
+{
+  // room for the tree (about 300 px) and the editor with its suggestion list (about 440 px)
+  return TextSize::scaled(760);
+}
+
+void ScriptLabPanel::updateWorkLayout()
+{
+  if (!m_workLayout) return;
+  const bool wide = width() >= sideBySideWidth();
+  if (wide == m_sideBySide && m_workLayout->direction() == (wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom)) return;
+  m_sideBySide = wide;
+  m_workLayout->setDirection(wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom);
+  // side by side the width is shared 2 to 3; stacked, each column takes the height it needs
+  m_workLayout->setStretch(0, wide ? 2 : 0);
+  m_workLayout->setStretch(1, wide ? 3 : 0);
+  // side by side, both columns start at the top
+  m_workLayout->setAlignment(m_treeColumn, wide ? Qt::AlignTop : Qt::Alignment());
+  m_workLayout->setAlignment(m_editorColumn, wide ? Qt::AlignTop : Qt::Alignment());
+  // the page's layout keeps the old size of the work area until it is told: stacked needs far more height
+  m_workLayout->invalidate();
+  m_workArea->updateGeometry();
+}
+
+QString ScriptLabPanel::exampleObjectsFolder() const
+{
+  if (!m_objectsFolder.isEmpty()) return m_objectsFolder;
+  return QDir::cleanPath(EffectsPreview::defaultExamplesFolder() + QStringLiteral("/objects"));
+}
+
+QString ScriptLabPanel::scriptsRoot() const
+{
+  return m_scriptsRoot.isEmpty() ? LabBeginner::defaultScriptsRoot() : m_scriptsRoot;
+}
+
+bool ScriptLabPanel::watchingProject() const
+{
+  return !m_projectFolder.isEmpty() && m_watcher && m_watcher->watching() && m_watcher->linkset()
+         && QDir::cleanPath(m_watcher->folder()) == QDir::cleanPath(QDir::fromNativeSeparators(m_projectFolder));
+}
+
+bool ScriptLabPanel::makeExampleProject()
+{
+  QString error;
+  const LabExample example = LabBeginner::firstExample(exampleObjectsFolder(), &error);
+  if (!example.isValid())
+  {
+    m_refusal = tr("Error: %1").arg(error);
+    refreshLive();
+    return false;
+  }
+  const QString folder = LabBeginner::copyExample(example, scriptsRoot(), &error);
+  if (folder.isEmpty())
+  {
+    m_refusal = tr("Error: %1").arg(error);
+    refreshLive();
+    return false;
+  }
+  m_projectFolder = folder;
+  m_stepExample = example;
+  m_doneSteps.clear();
+  // the props first, so the colours of the first run find them by name
+  if (m_hooks.showPropsTab) m_hooks.showPropsTab();
+  if (m_hooks.addProp)
+    for (const LabExample::Prop& prop : example.props) m_hooks.addProp(prop);
+  const QList<LabExample::Entry> steps = example.steps();
+  for (int i = 0; i < steps.size(); ++i)
+    if (steps.at(i).control == QLatin1String("Props") || steps.at(i).control == QLatin1String("Live scripts")) m_doneSteps.insert(i);
+  m_stepsShown = true;
+  if (!watchFolder(folder)) return false;
+  m_tabs->setCurrentIndex(LivePage);
+  m_effectsBox->setChecked(true);
+  refreshLive();
+  return true;
+}
+
+bool ScriptLabPanel::makeNewFolder(const QString& name)
+{
+  QString error;
+  const QString folder = LabBeginner::makeFolder(scriptsRoot(), name, &error);
+  if (folder.isEmpty())
+  {
+    m_refusal = tr("Error: %1").arg(error);
+    refreshLive();
+    return false;
+  }
+  return watchFolder(folder);
+}
+
+void ScriptLabPanel::chooseNewFolder()
+{
+  bool ok = false;
+  const QString name = QInputDialog::getText(this, tr("New folder"),
+                                             tr("Name of the new folder. It goes in %1.").arg(QDir::toNativeSeparators(scriptsRoot())),
+                                             QLineEdit::Normal, tr("My object"), &ok);
+  if (ok) makeNewFolder(name);
+}
+
+QAction* ScriptLabPanel::makeStepsAction(QObject* parent)
+{
+  QAction* action = new QAction(tr("Script Lab steps"), parent);
+  action->setObjectName("helpScriptLabStepsAction");
+  action->setToolTip(tr("Show the steps of the example project again."));
+  action->setStatusTip(action->toolTip());
+  connect(action, &QAction::triggered, this, &ScriptLabPanel::showSteps);
+  return action;
+}
+
+void ScriptLabPanel::showSteps()
+{
+  // no example made yet: the steps of the first example, whose Watch step makes the project
+  if (!m_stepExample.isValid()) m_stepExample = LabBeginner::firstExample(exampleObjectsFolder());
+  m_stepsShown = true;
+  m_tabs->setCurrentIndex(LivePage);
+  refreshSteps();
+  if (m_stepCard->isVisible())
+  {
+    for (QPushButton* b : m_stepCard->stepButtons())
+      if (b->isEnabled()) { b->setFocus(Qt::OtherFocusReason); break; }
+    if (QScrollArea* scroll = qobject_cast<QScrollArea*>(m_tabs->widget(LivePage))) scroll->ensureWidgetVisible(m_stepCard);
+  }
+}
+
+void ScriptLabPanel::closeSteps()
+{
+  m_stepsShown = false;
+  refreshSteps();
+}
+
+void ScriptLabPanel::refreshSteps()
+{
+  if (!m_stepCard) return;
+  const bool show = m_stepsShown && m_stepExample.isValid();
+  m_stepCard->setVisible(show);
+  if (!show) return;
+  m_stepCard->setExample(m_stepExample.title, m_stepExample.texts(QStringLiteral("see")), m_stepExample.texts(QStringLiteral("next")));
+  const QList<LabExample::Entry> entries = m_stepExample.steps();
+  int lastProps = -1;
+  for (int i = 0; i < entries.size(); ++i)
+    if (entries.at(i).control == QLatin1String("Props")) lastProps = i;
+  bool allProps = !m_stepExample.props.isEmpty() && m_hooks.hasProp;
+  if (allProps)
+    for (const LabExample::Prop& prop : m_stepExample.props) allProps = allProps && m_hooks.hasProp(prop.name);
+  QList<LabStepCard::Step> steps;
+  for (int i = 0; i < entries.size(); ++i)
+  {
+    const LabExample::Entry& e = entries.at(i);
+    LabStepCard::Step step;
+    step.text = e.text;
+    const QString notReady = tr("This step does not work in the program yet.");
+    if (e.control == QLatin1String("Props") && i == lastProps)
+    {
+      step.button = tr("Add the props");
+      step.enabled = bool(m_hooks.addProp);
+      step.reason = notReady;
+      step.done = allProps;
+    }
+    else if (e.control == QLatin1String("Props"))
+    {
+      step.button = tr("Show Props");
+      step.enabled = bool(m_hooks.showPropsTab);
+      step.reason = notReady;
+      step.done = m_doneSteps.contains(i) || allProps;
+    }
+    else if (e.control == QLatin1String("Live scripts"))
+    {
+      step.button = tr("Show Live scripts");
+      step.done = m_doneSteps.contains(i) || watchingProject();
+    }
+    else if (e.control == QLatin1String("Watch folder..."))
+    {
+      step.button = tr("Watch the folder");
+      step.done = watchingProject();
+    }
+    else if (e.control == QLatin1String("Show effects in 3D view"))
+    {
+      step.button = tr("Show effects");
+      step.done = m_effectsBox->isChecked() && watchingProject();
+    }
+    else
+    {
+      // Touch, Say and the dialog buttons do not reach a watched folder yet (docs/EXAMPLES.md)
+      step.button = e.control;
+      step.enabled = false;
+      step.reason = notReady;
+    }
+    steps << step;
+  }
+  m_stepCard->setSteps(steps);
+}
+
+bool ScriptLabPanel::doStep(int index)
+{
+  const QList<LabExample::Entry> entries = m_stepExample.steps();
+  if (index < 0 || index >= entries.size()) return false;
+  const QList<LabStepCard::Step> shown = m_stepCard->steps();
+  if (index < shown.size() && !shown.at(index).enabled) return false;
+  const QString control = entries.at(index).control;
+  int lastProps = -1;
+  for (int i = 0; i < entries.size(); ++i)
+    if (entries.at(i).control == QLatin1String("Props")) lastProps = i;
+  bool ok = true;
+  if (control == QLatin1String("Props") && index == lastProps)
+  {
+    if (!m_hooks.addProp) return false;
+    if (m_hooks.showPropsTab) m_hooks.showPropsTab();
+    for (const LabExample::Prop& prop : m_stepExample.props) ok = m_hooks.addProp(prop) && ok;
+  }
+  else if (control == QLatin1String("Props"))
+  {
+    if (!m_hooks.showPropsTab) return false;
+    m_hooks.showPropsTab();
+  }
+  else if (control == QLatin1String("Live scripts"))
+    m_tabs->setCurrentIndex(LivePage);
+  else if (control == QLatin1String("Watch folder..."))
+  {
+    // the example project's folder; made first when there is none yet
+    if (m_projectFolder.isEmpty()) ok = makeExampleProject();
+    else ok = watchFolder(m_projectFolder);
+  }
+  else if (control == QLatin1String("Show effects in 3D view"))
+    m_effectsBox->setChecked(true);
+  else
+    return false;
+  if (ok) m_doneSteps.insert(index);
+  refreshSteps();
+  return ok;
+}
+
+bool ScriptLabPanel::selectPrim(const QString& name)
+{
+  if (!m_followBox->isChecked()) return false;
+  return m_folderTree->selectPrim(name);
+}
+
+void ScriptLabPanel::buildTips()
+{
+  // where each tip stands: next to its word (prim, root prim and notecard over the tree;
+  // sandbox under the explanation; the RLV words under the Viewer rules row)
+  QVBoxLayout* outer = qobject_cast<QVBoxLayout*>(layout());
+  for (const LabBeginner::Tip& tip : LabBeginner::jargonTips())
+  {
+    LabTipCard* card = new LabTipCard(tip, this);
+    card->hide();
+    const QString key = QLatin1String(tip.key);
+    if (key == QLatin1String("prim") || key == QLatin1String("rootPrim") || key == QLatin1String("notecard"))
+    {
+      card->setParent(m_treeSection->body());
+      m_treeSection->bodyLayout()->insertWidget(1, card);   // under the line on what the tree shows
+    }
+    else
+    {
+      // in a row with the panel's side margins, as the rows around it; a hidden card leaves no gap
+      QHBoxLayout* row = new QHBoxLayout;
+      row->setContentsMargins(SpacingM, 0, SpacingM, 0);
+      row->addWidget(card);
+      outer->insertLayout(key == QLatin1String("sandbox") ? outer->indexOf(m_explainFrame) + 1 : outer->indexOf(m_tabs), row);
+    }
+    // the tip's word is also the tooltip of its word, so it can be read again after closing
+    if (key == QLatin1String("viewerRules")) m_modeLabel->setToolTip(tip.text);
+    connect(card, &LabTipCard::closed, this, &ScriptLabPanel::closeTip);
+    m_tipCards << card;
+  }
+}
+
+LabTipCard* ScriptLabPanel::shownTip() const
+{
+  for (LabTipCard* card : m_tipCards)
+    if (!card->isHidden()) return card;
+  return nullptr;
+}
+
+void ScriptLabPanel::closeTip(const QString& key)
+{
+  QStringList closed = UserSettings::scriptLabTipsClosed().split(QLatin1Char(','), Qt::SkipEmptyParts);
+  if (!closed.contains(key)) closed << key;
+  UserSettings::setScriptLabTipsClosed(closed.join(QLatin1Char(',')));
+  const bool hadFocus = shownTip() && shownTip()->isAncestorOf(focusWidget());
+  refreshTips();
+  // the keyboard stays in the panel: on the next tip's close button, or the panel
+  if (hadFocus)
+  {
+    if (LabTipCard* next = shownTip()) next->closeButton()->setFocus(Qt::OtherFocusReason);
+    else setFocus(Qt::OtherFocusReason);
+  }
+}
+
+void ScriptLabPanel::refreshTips()
+{
+  if (m_tipCards.isEmpty()) return;
+  // value first: no tips before something is watched, and none while hints are off (charter P4)
+  const bool watching = m_watcher && m_watcher->watching();
+  const QStringList closed = UserSettings::scriptLabTipsClosed().split(QLatin1Char(','), Qt::SkipEmptyParts);
+  bool notecards = false;
+  for (QTreeWidgetItemIterator it(m_folderTree); *it; ++it)
+    if ((*it)->data(LabFolderTree::NameColumn, LabFolderTree::KindRole).toInt() == LabFolderTree::NotecardRow) notecards = true;
+  const bool treeShown = m_treeSection->isVisibleTo(this) && m_treeSection->isExpanded() && m_folderTree->objectItem();
+  LabTipCard* due = nullptr;
+  if (m_hintsOn && watching)
+    for (LabTipCard* card : m_tipCards)
+    {
+      const QString key = card->key();
+      if (closed.contains(key)) continue;
+      bool anchored = true;
+      if (key == QLatin1String("prim") || key == QLatin1String("rootPrim")) anchored = treeShown;
+      else if (key == QLatin1String("notecard")) anchored = treeShown && notecards;
+      if (!anchored) continue;
+      due = card;
+      break;
+    }
+  for (LabTipCard* card : m_tipCards) card->setVisible(card == due);
 }

@@ -289,7 +289,8 @@ void TestScriptLabDesign::pages()
   QCOMPARE(panel.actionList()->headerItem()->text(1), QString("Now"));
 }
 
-// no folder watched: the empty state with a heading, one line and two large buttons; nothing else of a run
+// no folder watched: the empty state with a heading, one line and four large buttons (job U3: Make example
+// project first); nothing else of a run
 void TestScriptLabDesign::emptyState()
 {
   ScriptLabPanel panel;
@@ -298,7 +299,8 @@ void TestScriptLabDesign::emptyState()
   panel.setExampleScriptsFolder(PINGLYMOTION_EXAMPLES_DIR "/scriptlab");
   QVERIFY(!panel.liveEmpty()->isHidden());
   QCOMPARE(panel.liveEmptyHeading()->text(), QString("No folder watched"));
-  QCOMPARE(panel.liveEmptyText()->text(), QString("Pick the folder with your .lsl scripts. Each time you save one, it is checked and run here."));
+  // job U3: the line in plain words (docs/TEACHING.md, LABNEW-01)
+  QCOMPARE(panel.liveEmptyText()->text(), QString("Script Lab shows your scripts from a folder on your PC. Choose a folder to see them here."));
   verifyShortSentences(panel.liveEmptyText()->text());
   QVERIFY(panel.liveEmptyText()->wordWrap());
   QVERIFY(panel.liveEmptyHeading()->font().pointSizeF() > panel.liveEmptyText()->font().pointSizeF());
@@ -312,6 +314,12 @@ void TestScriptLabDesign::emptyState()
   QCOMPARE(panel.exampleButton()->toolTip(), QString("Watch the example scripts that come with the program. One runs at once."));
   QVERIFY(panel.liveEmpty()->isAncestorOf(panel.watchButton()));
   QVERIFY(panel.liveEmpty()->isAncestorOf(panel.exampleButton()));
+  QCOMPARE(panel.makeExampleButton()->text(), QString("Make example project"));
+  QCOMPARE(panel.newFolderButton()->text(), QString("New folder"));
+  QCOMPARE(panel.makeExampleButton()->minimumHeight(), Theme::Size::controlLarge);
+  QCOMPARE(panel.newFolderButton()->minimumHeight(), Theme::Size::controlLarge);
+  QVERIFY(panel.liveEmpty()->isAncestorOf(panel.makeExampleButton()));
+  QVERIFY(panel.liveEmpty()->isAncestorOf(panel.newFolderButton()));
   // the parts of a run are hidden: no folder, no status, no script, no world
   for (const char* key : {"script", "problems", "log", "restrictionsNow", "objects", "input", "inventory"})
     QVERIFY2(panel.section(key)->isHidden(), key);
@@ -603,15 +611,17 @@ void TestScriptLabDesign::themes()
     QVERIFY(!panel.heldChipFrame()->dashed());
     QCOMPARE(panel.heldChip()->palette().color(QPalette::WindowText), QColor(t.value("text").toString()));
 
-    // the empty state: a dashed border, radius.panel, the line in text_muted; Watch folder is the main button
+    // the empty state: a dashed border, radius.panel, the line in text_muted; Make example project is the
+    // main button (job U3), Watch folder a normal one; greyed buttons keep text_muted (job U3, higher contrast)
     QCOMPARE(panel.liveEmpty()->borderColour(), border);
     QVERIFY(!panel.liveEmpty()->fillColour().isValid());
     QCOMPARE(panel.liveEmpty()->radius(), Theme::Size::radiusPanel);
     QVERIFY(panel.liveEmpty()->dashed());
     QCOMPARE(panel.liveEmptyText()->palette().color(QPalette::WindowText), QColor(t.value("text_muted").toString()));
-    QVERIFY(panel.watchButton()->styleSheet().contains("background: " + t.value("accent").toString() + ";"));
+    QVERIFY(panel.makeExampleButton()->styleSheet().contains("background: " + t.value("accent").toString() + ";"));
+    QVERIFY(panel.watchButton()->styleSheet().contains("background: " + t.value("surface_raised").toString() + ";"));
     QVERIFY(panel.exampleButton()->styleSheet().contains("background: " + t.value("surface_raised").toString() + ";"));
-    QVERIFY(panel.exampleButton()->styleSheet().contains(":disabled { color: " + t.value("text_disabled").toString() + "; }"));
+    QVERIFY(panel.exampleButton()->styleSheet().contains(":disabled { color: " + t.value("text_muted").toString() + ";"));
 
     // the parts: the border token at 60 percent on the surface, radius.control; the count in text_muted
     for (ScriptLabSection* s : panel.sections())
@@ -799,7 +809,7 @@ void TestScriptLabDesign::runAgain()
   QCOMPARE(panel.runAgainButton()->text(), QString("Run again"));
   QVERIFY(!panel.runAgainButton()->icon().isNull());
   QCOMPARE(panel.runAgainButton()->minimumHeight(), Theme::Size::controlCompact);
-  QVERIFY(panel.runAgainButton()->styleSheet().contains(":disabled { color: " + themeTokens(true).value("text_disabled").toString() + "; }"));
+  QVERIFY(panel.runAgainButton()->styleSheet().contains(":disabled { color: " + themeTokens(true).value("text_muted").toString() + ";"));
   QVERIFY(!panel.runAgainButton()->isEnabled());
   QCOMPARE(panel.runAgainButton()->toolTip(), QString("No script yet. Watch a folder and save a .lsl file in it first."));
   QVERIFY(!panel.runAgain());
@@ -1216,7 +1226,7 @@ void TestScriptLabDesign::inventoryThemesAndKeyboard()
   QVERIFY(!inv->isExpanded());
 }
 
-// at the smallest docked width the empty state's two buttons wrap instead of being cut off
+// at the smallest docked width the empty state's buttons wrap instead of being cut off
 void TestScriptLabDesign::emptyStateButtonsWrap()
 {
   ScriptLabPanel panel;
@@ -1226,7 +1236,7 @@ void TestScriptLabDesign::emptyStateButtonsWrap()
   QVERIFY(QTest::qWaitForWindowExposed(&panel));
   QCoreApplication::processEvents();
   QWidget* card = panel.liveEmpty();
-  for (QPushButton* b : {panel.watchButton(), panel.exampleButton()})
+  for (QPushButton* b : {panel.makeExampleButton(), panel.watchButton(), panel.newFolderButton(), panel.exampleButton()})
   {
     const QRect r(b->mapTo(card, QPoint(0, 0)), b->size());
     QVERIFY2(card->rect().contains(r), qPrintable(QStringLiteral("%1: %2,%3 %4x%5 in %6x%7").arg(b->text()).arg(r.x()).arg(r.y())
@@ -1237,8 +1247,8 @@ void TestScriptLabDesign::emptyStateButtonsWrap()
   // side by side when there is room, as in the mockup
   panel.resize(700, 600);
   QCoreApplication::processEvents();
-  QCOMPARE(panel.exampleButton()->mapTo(card, QPoint(0, 0)).y(), panel.watchButton()->mapTo(card, QPoint(0, 0)).y());
-  QVERIFY(panel.exampleButton()->x() > panel.watchButton()->x());
+  QCOMPARE(panel.watchButton()->mapTo(card, QPoint(0, 0)).y(), panel.makeExampleButton()->mapTo(card, QPoint(0, 0)).y());
+  QVERIFY(panel.watchButton()->x() > panel.makeExampleButton()->x());
 }
 
 QTEST_MAIN(TestScriptLabDesign)

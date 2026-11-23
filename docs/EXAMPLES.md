@@ -6,7 +6,7 @@ Where they are: `examples/objects/` in the repository, and the folder `examples/
 
 Every example has a guide in plain words: what it is, at most five steps, what you should see and what to change next, with a one-line meaning for each new word. The guide is stored as data next to the example (`example.json`, below), so the program can show it later (job U3), and the same texts are in the tables on this page. The texts follow the writing rules of [TEACHING.md](TEACHING.md) (at most 12 words a sentence) and are checked with `python3 tools/check_texts.py docs/EXAMPLES.md`. All texts are drafts until the project owner has read them.
 
-**Honest status (23 November 2026).** Only the first example, First colour, works from start to end in the program today. The others run in the tests with exact answers, but in the program two things are missing; both are listed in "What the program can do now" below, and "For the example button" says what the example button (job U3) must do.
+**Honest status (23 November 2026).** Only the first example, First colour, works from start to end in the program today; since job U3 the Script Lab's **Make example project** button sets it up in one click. The others run in the tests with exact answers, but in the program two things are missing; both are listed in "What the program can do now" below, and "For the example button" says what the example button (job U3) must do.
 
 The scripts are written fresh for PinglyMotion and reuse the loose examples in `examples/scriptlab/` (`hud_cuffs_hud.lsl`, `hud_cuffs_cuffs.lsl`, `rlv_lock.lsl`, `states_timer.lsl`), which stay where they are for **Try the example scripts**. The relay follows the open relay specification, described in our own words; no code from other relays is copied.
 
@@ -73,7 +73,7 @@ Guide:
 | EXCOLOUR-04 | Example guide | Step 1 (Props) | Start with no props. Pick Props in the Joints panel. | draft | E1, shown by U3 |
 | EXCOLOUR-05 | Example guide | Step 2 (Props) | On Props, press the box button, the first shape button. It is Box 0. | draft | E1, shown by U3 |
 | EXCOLOUR-06 | Example guide | Step 3 (Live scripts) | Open Script Lab and pick Live scripts. | draft | E1, shown by U3 |
-| EXCOLOUR-07 | Example guide | Step 4 (Watch folder...) | Press Watch folder. Pick examples, then objects, then First_colour. | draft | E1, shown by U3 |
+| EXCOLOUR-07 | Example guide | Step 4 (Watch folder...) | Press Watch folder. Pick your copy of First_colour. | draft | E1, shown by U3 |
 | EXCOLOUR-08 | Example guide | Step 5 (Show effects in 3D view) | Tick Show effects in 3D view. | draft | E1, shown by U3 |
 | EXCOLOUR-09 | Example guide | What you should see | The box turns red. The log says: Box 0 is red now. | draft | E1, shown by U3 |
 | EXCOLOUR-10 | Example guide | What to change next | Open colour.lsl. Change <1.0, 0.0, 0.0> to <0.0, 1.0, 0.0> and save. | draft | E1, shown by U3 |
@@ -319,7 +319,7 @@ The joint is a name, not a number: a `.prp` file stores the attachment as a trac
 
 ## For the example button (job U3)
 
-What a later "make example project" button has to do, found in the code on 23 November 2026. None of it is built in E1.
+What a later "make example project" button has to do, found in the code on 23 November 2026. None of it is built in E1. **Built in job U3 (pull request 443):** points 1, 2, 3 and 5 for the first example, First colour (the button copies it into `Documents/PinglyMotion/Scripts`, puts its props in the scene by name, watches it, turns the effects on and shows the steps); point 4 is not built, so the steps that need Touch, Say or the dialog buttons are greyed with "This step does not work in the program yet." ([UX_DECISIONS.md](UX_DECISIONS.md), 6o).
 
 1. **Put the props into the scene with their names.** The route that exists: `Scene::addProp(type, mesh, attach, x, y, z, scale x, y, z, turn x, y, z)` (`src/scene.h`), as File, Open props does in `PinglyMotionWindow::fileLoadProps` (`src/pinglymotionwindowfile.cpp`): the shape picks the mesh (`cubeMesh`, `sphereMesh`, `coneMesh`, `torusMesh`), each new prop is added to `propNameCombo`, and `emit clearProps()` empties the scene first. The missing part: `PropManager::addProp` always names a prop `Box 0`, `Box 1` and so on. The smallest change is an optional name argument on `PropManager::addProp` and `Scene::addProp` (the name used when it is free) and a new prop name in `propNameCombo`; then the tint code finds the props by name with no other change.
 2. **Turn the joint name into the attachment number:** the number is the joint's index in `AnimationView::partNames()` (0 is position, then every joint and end site in skeleton order), the same list `buildPartLists` puts in Attach to.

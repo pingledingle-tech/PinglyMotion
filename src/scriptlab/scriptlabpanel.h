@@ -25,6 +25,14 @@
  * script shows it. "How to lay out the folder" is the short maker guide. The
  * example scripts stay separate examples (each runs on its own).
  *
+ * Job U3, Script Lab for beginners (docs/UX_DECISIONS.md, 6o): the tree on the
+ * left and the editor on the right when the panel is wide, an empty state in
+ * plain words with "Make example project" first (it copies the first example
+ * to the user's own folder, watches it, puts its props in the scene, shows the
+ * effects and the steps), "New folder", the example's steps with ticks and a
+ * button each, selection that follows between the tree and the 3D view, short
+ * explanations of the jargon words, and clearer states.
+ *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
  *
@@ -39,18 +47,25 @@
 #include <QJsonObject>
 #include <QList>
 #include <QPointer>
+#include <QSet>
 #include <QWidget>
+
+#include <functional>
 
 #include "cameraoverride.h"
 #include "environmentoverride.h"
 #include "viewmodesoverride.h"
 #include "effectspreview.h"
+#include "labbeginner.h"
 #include "labeditor.h"
 #include "labtint.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
 
+class QAbstractButton;
+class QAction;
+class QBoxLayout;
 class QCheckBox;
 class QComboBox;
 class QGridLayout;
@@ -149,6 +164,65 @@ class ScriptLabPanel : public QWidget
     QString exampleScriptsFolder() const;
     void setExampleScriptsFolder(const QString& folder) { m_examplesFolder = folder; refreshLive(); }
 
+    // --- Script Lab for beginners (job U3) -----------------------------------------
+    // What the panel asks of the scene; the window fills these in (the tests give their own).
+    struct SceneHooks
+    {
+      std::function<bool(const LabExample::Prop&)> addProp;   // puts the prop in the scene; true when it is there
+      std::function<bool(const QString&)> hasProp;            // a prop of that name is in the scene
+      std::function<bool(const QString&)> selectProp;         // lights up the prop of that name; false when none
+      std::function<void()> showPropsTab;                     // shows Props in the Joints panel
+    };
+    void setSceneHooks(const SceneHooks& hooks) { m_hooks = hooks; refreshSteps(); }
+    // "Make example project": copies the first example of exampleObjectsFolder() to scriptsRoot()
+    // (an earlier copy is used as it is), puts its props in the scene, watches it, shows the effects,
+    // the Live page and the steps. False when refused (the status line says why).
+    bool makeExampleProject();
+    // "New folder": makes scriptsRoot()/<name> and watches it; false when refused (the status line says why)
+    bool makeNewFolder(const QString& name);
+    // the examples "Make example project" copies from (examples/objects next to the program)
+    QString exampleObjectsFolder() const;
+    void setExampleObjectsFolder(const QString& folder) { m_objectsFolder = folder; }
+    // where the program makes folders: Documents/PinglyMotion/Scripts (the tests give another one)
+    QString scriptsRoot() const;
+    void setScriptsRoot(const QString& folder) { m_scriptsRoot = folder; }
+    // the example project made last ("" when none)
+    QString projectFolder() const { return m_projectFolder; }
+    // the steps of the example (Help > Script Lab steps opens them again)
+    void showSteps();
+    void closeSteps();
+    bool stepsShown() const { return m_stepsShown; }
+    LabStepCard* stepCard() const { return m_stepCard; }
+    // does step <index> as its button does; false when it cannot be done
+    bool doStep(int index);
+    // the Help menu's "Script Lab steps" item (the window adds it and shows the panel)
+    QAction* makeStepsAction(QObject* parent);
+    // the empty state's buttons
+    QPushButton* makeExampleButton() const { return m_makeExample; }
+    QPushButton* newFolderButton() const { return m_newFolder; }
+    // the line over the tree that says what it shows
+    QLabel* treeLine() const { return m_treeLine; }
+    // selection that follows between the tree and the 3D view, on at start (remembered)
+    QCheckBox* followSelectionBox() const { return m_followBox; }
+    // picks the prim of that name in the tree, as a click on its prop does; false when it is not
+    // in the tree or following is off. Sends nothing back.
+    bool selectPrim(const QString& name);
+    // the tree beside the editor when the panel is at least sideBySideWidth() wide, under it otherwise
+    bool sideBySide() const { return m_sideBySide; }
+    static int sideBySideWidth();
+    QWidget* treeColumn() const { return m_treeColumn; }
+    QWidget* editorColumn() const { return m_editorColumn; }
+    // the short explanations of jargon words: one shows at a time, a closed one never again
+    QList<LabTipCard*> tipCards() const { return m_tipCards; }
+    LabTipCard* shownTip() const;
+    void closeTip(const QString& key);
+    // the maker guide in two parts: rules (guideText) and warnings
+    QLabel* guideWarnings() const { return m_guideWarnings; }
+    QLabel* guideRulesHeading() const { return m_guideRulesHeading; }
+    QLabel* guideWarningsHeading() const { return m_guideWarningsHeading; }
+    // why Run again and Open in editor are greyed, as a readable line under them
+    QLabel* scriptButtonsReason() const { return m_scriptButtonsReason; }
+
     // --- Viewer rules (the panel in the new design): plain RLV or RLVa, as the RLV state answers.
     // Switching removes every restriction, as after a relog (RlvState::setMode).
     void setMode(Rlv::Mode mode);
@@ -156,7 +230,8 @@ class ScriptLabPanel : public QWidget
     // on and off (off at start). Not owned (the window owns it and gives it to the 3D view).
     void setEffects(EffectsPreview* preview);
     EffectsPreview* effects() const { return m_effects; }
-    QCheckBox* effectsBox() const { return m_effectsBox; }
+    // a clear on/off button since job U3 (it was a tick box)
+    QPushButton* effectsBox() const { return m_effectsBox; }
     QLabel* effectsStatus() const { return m_effectsStatus; }
     // --- Camera limits in the 3D view (job 7b): the override the Commands page's "Show camera limits
     // in 3D view" box turns on and off (off at start). Not owned (the window owns it and gives it to the 3D view).
@@ -443,7 +518,8 @@ class ScriptLabPanel : public QWidget
     void effectsToggled(bool on);
     void connectEffectsToWatcher();
     QPointer<EffectsPreview> m_effects;
-    QCheckBox* m_effectsBox = nullptr;
+    QPushButton* m_effectsBox = nullptr;
+    void styleEffectsButton();
     QLabel* m_effectsStatus = nullptr;
     QList<QMetaObject::Connection> m_effectsConnections;
     QList<QMetaObject::Connection> m_effectsWatcherConnections;
@@ -479,6 +555,36 @@ class ScriptLabPanel : public QWidget
     bool m_hiddenByUser = false;   // hidden for real (not just minimised)
     QCheckBox* m_viewModesBox = nullptr;
     QLabel* m_viewModesStatus = nullptr;
+
+    // --- job U3
+    void buildTips();
+    void refreshTips();
+    void refreshSteps();
+    void updateWorkLayout();
+    void chooseNewFolder();
+    SceneHooks m_hooks;
+    QString m_objectsFolder;
+    QString m_scriptsRoot;
+    QString m_projectFolder;
+    LabExample m_stepExample;
+    QSet<int> m_doneSteps;
+    bool m_stepsShown = false;
+    LabStepCard* m_stepCard = nullptr;
+    QPushButton* m_makeExample = nullptr;
+    QPushButton* m_newFolder = nullptr;
+    QLabel* m_treeLine = nullptr;
+    QCheckBox* m_followBox = nullptr;
+    bool m_sideBySide = false;
+    QWidget* m_workArea = nullptr;
+    QBoxLayout* m_workLayout = nullptr;
+    QWidget* m_treeColumn = nullptr;
+    QWidget* m_editorColumn = nullptr;
+    QList<LabTipCard*> m_tipCards;
+    QLabel* m_guideRulesHeading = nullptr;
+    QLabel* m_guideWarningsHeading = nullptr;
+    QLabel* m_guideWarnings = nullptr;
+    QLabel* m_scriptButtonsReason = nullptr;
+    bool watchingProject() const;
 };
 
 #endif

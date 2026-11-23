@@ -69,7 +69,11 @@ LabFolderTree::LabFolderTree(QWidget* parent) : QTreeWidget(parent)
   // one click or Enter on a script shows it
   const auto picked = [this](QTreeWidgetItem* item)
   {
-    if (m_building || !item || item->data(NameColumn, KindRole).toInt() != ScriptRow) return;
+    if (m_building || !item) return;
+    // job U3: a prim, or a file in it, names the prop of the same name
+    const QString prim = primOf(item);
+    if (!prim.isEmpty()) emit primPicked(prim);
+    if (item->data(NameColumn, KindRole).toInt() != ScriptRow) return;
     emit scriptPicked(item->data(NameColumn, FileRole).toString());
   };
   connect(this, &QTreeWidget::itemClicked, this, [picked](QTreeWidgetItem* item, int) { picked(item); });
@@ -125,6 +129,7 @@ QColor LabFolderTree::stateColour(State state, bool dark)
 void LabFolderTree::setFolderResult(const QJsonObject& folder)
 {
   const QString picked = pickedScript();
+  const QString pickedPrimName = currentItem() && currentItem()->data(NameColumn, KindRole).toInt() == PrimRow ? pickedPrim() : QString();
   m_building = true;
   clear();
   m_count.clear();
@@ -180,6 +185,7 @@ void LabFolderTree::setFolderResult(const QJsonObject& folder)
     prim->setText(NameColumn, p.value("name").toString());
     prim->setText(KindColumn, link == 1 ? tr("Root prim, link 1") : tr("Prim, link %1").arg(link));
     prim->setData(NameColumn, KindRole, PrimRow);
+    prim->setData(NameColumn, PrimRole, p.value("name").toString());
     prim->setToolTip(NameColumn, p.value("folder").toString().isEmpty() ? tr("The files right in the top folder")
                                                                          : tr("The folder %1").arg(p.value("folder").toString()));
     QList<State> primStates;
@@ -286,6 +292,7 @@ void LabFolderTree::setFolderResult(const QJsonObject& folder)
   applyStyle(m_dark);
   if (QTreeWidgetItem* item = itemForFile(picked))
     if (item->data(NameColumn, KindRole).toInt() == ScriptRow) setCurrentItem(item);
+  if (QTreeWidgetItem* prim = itemForPrim(pickedPrimName)) setCurrentItem(prim);
   m_building = false;
 }
 
@@ -318,6 +325,33 @@ QString LabFolderTree::pickedScript() const
   const QTreeWidgetItem* item = currentItem();
   if (!item || item->data(NameColumn, KindRole).toInt() != ScriptRow) return QString();
   return item->data(NameColumn, FileRole).toString();
+}
+
+QTreeWidgetItem* LabFolderTree::itemForPrim(const QString& name) const
+{
+  if (name.isEmpty()) return nullptr;
+  for (QTreeWidgetItemIterator it(const_cast<LabFolderTree*>(this)); *it; ++it)
+    if ((*it)->data(NameColumn, KindRole).toInt() == PrimRow && (*it)->data(NameColumn, PrimRole).toString() == name) return *it;
+  return nullptr;
+}
+
+QString LabFolderTree::primOf(const QTreeWidgetItem* item)
+{
+  for (; item; item = item->parent())
+    if (item->data(NameColumn, KindRole).toInt() == PrimRow) return item->data(NameColumn, PrimRole).toString();
+  return QString();
+}
+
+bool LabFolderTree::selectPrim(const QString& name)
+{
+  QTreeWidgetItem* item = itemForPrim(name);
+  if (!item) return false;
+  const bool building = m_building;
+  m_building = true;   // nothing is sent back: the click came from the 3D view
+  setCurrentItem(item);
+  scrollToItem(item);
+  m_building = building;
+  return true;
 }
 
 void LabFolderTree::restyleItem(QTreeWidgetItem* item, bool dark)

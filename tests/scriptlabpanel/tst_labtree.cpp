@@ -443,15 +443,21 @@ void TestLabTree::guide()
   QVERIFY(!guide->isHidden());
   QVERIFY(!guide->isExpanded());
   QCOMPARE(guide->title(), QString("How to lay out the folder"));
+  // job U3: the guide in two parts, the rules and the warnings, each with its heading
+  QCOMPARE(panel.guideRulesHeading()->text(), QString("Rules"));
   QCOMPARE(panel.guideText()->text(), QString("One folder is one object. Each subfolder is one prim.\n"
                                               "Files in the top folder or in Root form the root prim.\n"
                                               "Put scripts (.lsl) and notecards (.txt) in their prim's folder.\n"
-                                              "Give every script and notecard its own name.\n"
-                                              "Copy scripts from Second Life by hand: select all, copy, paste.\n"
-                                              "The sandbox is never the same as Second Life. Test there last."));
-  for (const QString& line : panel.guideText()->text().split('\n'))
-    for (const QString& sentence : line.split(". "))
-      QVERIFY2(sentence.split(' ', Qt::SkipEmptyParts).size() <= 12, qPrintable(sentence));
+                                              "Give every script and notecard its own name."));
+  QCOMPARE(panel.guideWarningsHeading()->text(), QString("Warnings"));
+  QCOMPARE(panel.guideWarnings()->text(), QString("Copy scripts from Second Life by hand: select all, copy, paste.\n"
+                                                  "The sandbox is never the same as Second Life. Test there last."));
+  QCOMPARE(panel.guideWarningsHeading()->palette().color(QPalette::WindowText),
+           Theme::color(Theme::Token::Warning, ScriptLabPanel::isDark(panel.palette())));
+  for (QLabel* part : {panel.guideText(), panel.guideWarnings()})
+    for (const QString& line : part->text().split('\n'))
+      for (const QString& sentence : line.split(". "))
+        QVERIFY2(sentence.split(' ', Qt::SkipEmptyParts).size() <= 12, qPrintable(sentence));
   QVERIFY(panel.guideExample()->text().startsWith("MyObject/        one object\n  Root/          the root prim\n"));
   QCOMPARE(panel.guideExample()->font().family(), QFontDatabase::systemFont(QFontDatabase::FixedFont).family());   // the system's fixed-width font
   QTest::mouseClick(guide->header(), Qt::LeftButton);
@@ -492,7 +498,9 @@ void TestLabTree::tabOrder()
     return n;
   };
   QCOMPARE(next(panel.effectsBox()), static_cast<QWidget*>(panel.section("tree")->header()));
-  QCOMPARE(next(panel.section("tree")->header()), static_cast<QWidget*>(panel.folderTree()));
+  // job U3: the switch that links the tree with the 3D view comes before the tree
+  QCOMPARE(next(panel.section("tree")->header()), static_cast<QWidget*>(panel.followSelectionBox()));
+  QCOMPARE(next(panel.followSelectionBox()), static_cast<QWidget*>(panel.folderTree()));
   QCOMPARE(next(panel.folderTree()), static_cast<QWidget*>(panel.section("guide")->header()));
   QCOMPARE(next(panel.section("guide")->header()), static_cast<QWidget*>(panel.section("script")->header()));
 }

@@ -95,6 +95,12 @@ class UserSettings
     // a part not named keeps its first state (docs/UX_DECISIONS.md, 6d)
     static void setScriptLabParts(const QString& value);
     static QString scriptLabParts();
+    // Script Lab for beginners (job U3): the word tips the user closed ("prim,rlv"), and whether
+    // the tree and the 3D view pick the same piece (on at start)
+    static void setScriptLabTipsClosed(const QString& value);
+    static QString scriptLabTipsClosed();
+    static void setScriptLabFollowSelection(bool on);
+    static bool scriptLabFollowSelection();
     // the Selected joint panel (docs/UX_DECISIONS.md, 6): what a drag in the 3D view
     // does, Pull the limb (true, default) or Turn only this joint (read by the drag of
     // UX phase 4b), and whether its More options part is open (default folded)
@@ -217,6 +223,10 @@ private:
     static const QString m_tipsOnKey;
     static QString m_scriptLabParts;
     static const QString m_scriptLabPartsKey;
+    static QString m_scriptLabTipsClosed;
+    static const QString m_scriptLabTipsClosedKey;
+    static bool m_scriptLabFollowSelection;
+    static const QString m_scriptLabFollowSelectionKey;
     static bool m_pullLimbOnDrag;
     static const QString m_pullLimbOnDragKey;
     static bool m_jointMoreOptions;

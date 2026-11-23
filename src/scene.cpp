@@ -146,13 +146,15 @@ const Prop* Scene::addProp(Prop::PropType type, QSharedPointer<Mesh> mesh,
                            int attach,
                            double xPosition, double yPosition, double zPosition,
                            double xScale, double yScale, double zScale,
-                           double xRotation, double yRotation, double zRotation)
+                           double xRotation, double yRotation, double zRotation,
+                           const QString& wantedName)
 {
   Prop* newProp = m_propManager->addProp(type, mesh,
                                          attach,
                                          xPosition, yPosition, zPosition,
                                          xScale, yScale, zScale,
-                                         xRotation, yRotation, zRotation);
+                                         xRotation, yRotation, zRotation,
+                                         wantedName);
   emit repaint();
 
   return newProp;

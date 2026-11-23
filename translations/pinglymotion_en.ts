@@ -2423,6 +2423,41 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabStepCard</name>
+    <message>
+        <source>Close the steps. Help, Script Lab steps shows them again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You should see</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Then try</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 done</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabSuggest</name>
     <message>
         <source>returns nothing</source>
@@ -2636,6 +2671,13 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>function, returns %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LabTipCard</name>
+    <message>
+        <source>Close this tip. It does not come back.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5949,6 +5991,106 @@ Try a BVH file for a person with arms and legs.</source>
         <source>The saved mapping could not be deleted: %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The example could not be read.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The example objects are not next to the program.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type a name for the folder first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The name is too long. Use at most %1 characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use only letters, digits, spaces, - and _ in the name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Windows keeps this name for itself. Pick another name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The folder path would be too long. Use a shorter name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A folder with this name is already there. Pick another name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not make the folder. Check that Documents can be written.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One part of an object. Each folder is one prim.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Root prim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The main part of the object. It is the folder Root.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notecard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A text file that a script can read. Here it is a .txt file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sandbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A safe place to test. Nothing here reaches Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Viewer rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Which kind of RLV the test viewer follows.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLV</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rules a script sends to your viewer, like no detaching.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLVa</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A newer kind of RLV, used in Firestorm and other viewers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N held</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How many RLV rules hold the avatar right now.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RetargetDialog</name>
@@ -6566,10 +6708,6 @@ Error: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Pick the folder with your .lsl scripts. Each time you save one, it is checked and run here.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Try the example scripts</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6782,15 +6920,6 @@ Error: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>One folder is one object. Each subfolder is one prim.
-Files in the top folder or in Root form the root prim.
-Put scripts (.lsl) and notecards (.txt) in their prim&apos;s folder.
-Give every script and notecard its own name.
-Copy scripts from Second Life by hand: select all, copy, paste.
-The sandbox is never the same as Second Life. Test there last.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>MyObject/        one object
   Root/          the root prim
     main.lsl
@@ -6832,6 +6961,114 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>Error: the object %1 was not run (run %2). %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab shows your scripts from a folder on your PC. Choose a folder to see them here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make example project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copies a working example to your folder and shows it in 3D.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Makes an empty folder for your scripts and watches it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This tree is your object. Each folder in it is one prim.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Follow selection in 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a piece here to light up its prop in 3D view. Click a prop and its row is picked here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One folder is one object. Each subfolder is one prim.
+Files in the top folder or in Root form the root prim.
+Put scripts (.lsl) and notecards (.txt) in their prim&apos;s folder.
+Give every script and notecard its own name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy scripts from Second Life by hand: select all, copy, paste.
+The sandbox is never the same as Second Life. Test there last.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On: the 3D view shows what the scripts do.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name of the new folder. It goes in %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>My object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab steps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the steps of the example project again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This step does not work in the program yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add the props</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Props</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Live scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watch the folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show effects</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

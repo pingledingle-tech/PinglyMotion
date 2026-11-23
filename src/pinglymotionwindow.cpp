@@ -602,6 +602,44 @@ PinglyMotionWindow::PinglyMotionWindow() :
     }
     ui->animationView->update();
   });
+  // Script Lab for beginners (job U3): the panel puts an example's props in the scene by name, lights
+  // up the prop of a piece picked in its tree (the existing prop selection), and a click on a prop in
+  // the 3D view picks its piece in the tree
+  ScriptLabPanel::SceneHooks hooks;
+  hooks.hasProp=[this](const QString& name) { return scene->getPropByName(name)!=nullptr; };
+  hooks.addProp=[this](const LabExample::Prop& p)
+  {
+    if(scene->getPropByName(p.name)) return true;   // there already: nothing is added twice
+    Prop::PropType type=Prop::Box;
+    QSharedPointer<Mesh> mesh=cubeMesh;
+    if(p.shape==QLatin1String("sphere")) { type=Prop::Sphere; mesh=sphereMesh; }
+    else if(p.shape==QLatin1String("cone")) { type=Prop::Cone; mesh=coneMesh; }
+    else if(p.shape==QLatin1String("torus")) { type=Prop::Torus; mesh=torusMesh; }
+    // the joint by name: its place in the Attach to list (0 is not attached)
+    const int attach=p.joint.isEmpty() ? 0 : qMax(0,int(ui->animationView->partNames().indexOf(p.joint)));
+    const Prop* prop=scene->addProp(type,mesh,attach,
+                                    p.position.x(),p.position.y(),p.position.z(),
+                                    p.scale.x(),p.scale.y(),p.scale.z(),
+                                    p.rotation.x(),p.rotation.y(),p.rotation.z(),p.name);
+    if(!prop) return false;
+    ui->propNameCombo->addItem(prop->name());
+    ui->animationView->update();
+    return prop->name()==p.name;
+  };
+  hooks.selectProp=[this](const QString& name)
+  {
+    Prop* prop=scene->getPropByName(name);
+    if(!prop) return false;
+    propClicked(prop);
+    ui->animationView->update();
+    return true;
+  };
+  hooks.showPropsTab=[this]() { ui->avatarPropsTab->setCurrentIndex(1); };
+  m_scriptLabPanel->setSceneHooks(hooks);
+  connect(ui->animationView,&AnimationView::propClicked,this,[this](Prop* prop)
+  {
+    if(prop) m_scriptLabPanel->selectPrim(prop->name());
+  });
   // and lets the RLV camera limits limit the 3D view's camera, off until its box is ticked (job 7b)
   CameraOverride* cameraOverride=new CameraOverride(this);
   cameraOverride->setState(&m_controlApi->rlv());
@@ -1294,6 +1332,15 @@ void PinglyMotionWindow::buildMenus()
   QAction* helpWelcomeAction=specAction(this,helpWelcome,false);
   connect(helpWelcomeAction,&QAction::triggered,this,&PinglyMotionWindow::showWelcomeCard);
   ui->menuHelp->addAction(helpWelcomeAction);
+  // the steps of the Script Lab example project again (job U3); the panel opens with them
+  QAction* scriptLabStepsAction=m_scriptLabPanel->makeStepsAction(this);
+  connect(scriptLabStepsAction,&QAction::triggered,this,[this]()
+  {
+    m_scriptLabDock->show();
+    m_scriptLabDock->raise();
+    m_scriptLabPanel->showSteps();   // again, now that it is on screen: the first step gets the keys
+  });
+  ui->menuHelp->addAction(scriptLabStepsAction);
   m_hintsAction=specAction(this,helpHints,false);
   m_hintsAction->setCheckable(true);
   m_hintsAction->setChecked(UserSettings::tipsOn());

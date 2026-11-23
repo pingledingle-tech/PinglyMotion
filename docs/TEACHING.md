@@ -186,6 +186,60 @@ Built in pull request 433 (23 Nov 2026). The texts are in `src/scriptlab/rlvsugg
 | LABRLV-20 | 2 Tip on hover | The tip of the event log | What the script did in the last run, in simulated seconds. Click an error or RLV line to show it in the script. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
 | LABRLV-21 | 2 Tip on hover | The size grip in the corner of the floating Script Lab window | Drag to change the size of the Script Lab window | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
 
+### Script Lab for beginners (job U3)
+
+Built in pull request 443 (23 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` checks them letter for letter. In LABNEW-06, LABNEW-20 and LABNEW-21 the program puts in the real path, title and numbers. The word tips (LABNEW-35 to LABNEW-42) show one at a time with the word as the title (Prim, Root prim, Notecard, Sandbox, Viewer rules, RLV, RLVa, N held). The button "Make example project" and the step texts it shows come from the example guides (EXCOLOUR rows in [EXAMPLES.md](EXAMPLES.md)).
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABNEW-01 | 4 Empty state | Script Lab, Live scripts: no folder watched, the line | Script Lab shows your scripts from a folder on your PC. Choose a folder to see them here. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-02 | 4 Empty state | The main button: copy the first example and open it | Make example project | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-03 | 2 Tip on hover | Make example project | Copies a working example to your folder and shows it in 3D. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-04 | 4 Empty state | Button: make an empty folder under Documents, PinglyMotion, Scripts | New folder | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-05 | 2 Tip on hover | New folder (the program adds the folder's path) | Makes an empty folder for your scripts and watches it. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-06 | 4 What to do next | New folder: the question for the name (the program puts in the path) | Name of the new folder. It goes in %1. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-07 | 4 What to do next | New folder: the name it suggests | My object | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-08 | 8 Warning | New folder: no name | Type a name for the folder first. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-09 | 8 Warning | New folder: name over 40 characters | The name is too long. Use at most 40 characters. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-10 | 8 Warning | New folder: a sign that is not allowed | Use only letters, digits, spaces, - and _ in the name. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-11 | 8 Warning | New folder: CON, NUL, COM1 and the like | Windows keeps this name for itself. Pick another name. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-12 | 8 Warning | New folder: the folder is there already (nothing is overwritten) | A folder with this name is already there. Pick another name. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-13 | 8 Warning | New folder or example: the path is over 200 characters | The folder path would be too long. Use a shorter name. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-14 | 8 Warning | New folder or example: the folder could not be made | Could not make the folder. Check that Documents can be written. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-15 | 8 Warning | Make example project: the examples are not next to the program | The example objects are not next to the program. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-16 | 8 Warning | Make example project: example.json cannot be read | The example could not be read. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-17 | 4 What to do next | Object part: the line over the tree | This tree is your object. Each folder in it is one prim. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-18 | 4 What to do next | Object part: the switch that links the tree and the 3D view | Follow selection in 3D view | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-19 | 2 Tip on hover | Follow selection in 3D view | Click a piece here to light up its prop in 3D view. Click a prop and its row is picked here. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-20 | 4 What to do next | Steps card: the title (the example's title) | Steps: First colour | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-21 | 4 What to do next | Steps card: progress (the numbers from the steps) | 3 of 5 done | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-22 | 4 What to do next | Steps card: the heading over the result, shown first | You should see | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-23 | 4 What to do next | Steps card: the heading over what to change next | Then try | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-24 | 2 Tip on hover | Steps card: the close button | Close the steps. Help, Script Lab steps shows them again. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-25 | 4 What to do next | Step button: show Props in the Joints panel | Show Props | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-26 | 4 What to do next | Step button: put the example's props in the scene | Add the props | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-27 | 4 What to do next | Step button: show the Live scripts page | Show Live scripts | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-28 | 4 What to do next | Step button: watch the example's folder (made first when needed) | Watch the folder | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-29 | 4 What to do next | Step button: turn on Show effects in 3D view | Show effects | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-30 | 8 Warning | A step the program cannot do yet (Touch, Say, dialog buttons): line and tip | This step does not work in the program yet. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-31 | 4 What to do next | Help menu item | Script Lab steps | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-32 | 2 Tip on hover | Help, Script Lab steps | Show the steps of the example project again. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-33 | 2 Tip on hover | A step's tick (for screen readers too) | Done | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-34 | 2 Tip on hover | A step's empty tick | Not done | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-35 | 4 What to do next | Word tip: Prim (same words as EXCOLOUR-03) | One part of an object. Each folder is one prim. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-36 | 4 What to do next | Word tip: Root prim | The main part of the object. It is the folder Root. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-37 | 4 What to do next | Word tip: Notecard | A text file that a script can read. Here it is a .txt file. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-38 | 4 What to do next | Word tip: Sandbox | A safe place to test. Nothing here reaches Second Life. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-39 | 4 What to do next | Word tip: Viewer rules (also the tip of the words Viewer rules) | Which kind of RLV the test viewer follows. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-40 | 4 What to do next | Word tip: RLV | Rules a script sends to your viewer, like no detaching. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-41 | 4 What to do next | Word tip: RLVa | A newer kind of RLV, used in Firestorm and other viewers. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-42 | 4 What to do next | Word tip: N held (the chip by Viewer rules) | How many RLV rules hold the avatar right now. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-43 | 2 Tip on hover | A word tip's close button | Close this tip. It does not come back. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-44 | 4 What to do next | How to lay out the folder: heading over the rules | Rules | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-45 | 8 Warning | How to lay out the folder: heading over the warnings | Warnings | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-46 | 2 Tip on hover | Show effects in 3D view, for screen readers, when on | On: the 3D view shows what the scripts do. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+| LABNEW-47 | 2 Tip on hover | Show effects in 3D view, for screen readers, when off | Off. | in the program (pull request 443, 23 Nov 2026) | job U3 |
+
 ### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
 
 Drafts for the library panel (roadmap item 6, issue 19) and for two figures in one scene (Expert mode only), drawn in `docs/mockup/index.html` and described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6l and 6m. Nothing is built yet; the project owner looks at the mockup first. `<clip name>` and `<file name>` stand for the real name. The mockup's own helper texts (for example "Mockup: no library folder") are not program texts and are not listed.

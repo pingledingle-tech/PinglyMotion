@@ -82,7 +82,8 @@ Prop* PropManager::addProp(Prop::PropType type, QSharedPointer<Mesh> mesh,
                            int attach,
                            double xPosition, double yPosition, double zPosition,
                            double xScale, double yScale, double zScale,
-                           double xRotation, double yRotation, double zRotation)
+                           double xRotation, double yRotation, double zRotation,
+                           const QString& wantedName)
 {
   QString name;
   QString baseName;
@@ -92,11 +93,14 @@ Prop* PropManager::addProp(Prop::PropType type, QSharedPointer<Mesh> mesh,
   else if(type==Prop::Cone) baseName="Cone";
   else if(type==Prop::Torus) baseName="Torus";
 
+  // a wanted name (a prim's name, job U3) when no prop has it yet; otherwise "Box 0", "Box 1", ...
+  if(!wantedName.trimmed().isEmpty() && !getPropByName(wantedName))
+    name=wantedName;
   int objectNum=0;
-  do
+  while(name.isEmpty() || getPropByName(name))
   {
     name=baseName+" "+QString::number(objectNum++);
-  } while(getPropByName(name));
+  }
 
   Prop* newProp = new Prop(m_nextPropId, type, name, mesh);
 

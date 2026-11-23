@@ -163,7 +163,7 @@ Code) edits in their own editor and sees the result in PinglyMotion at once. Sin
 ## What exists now (step 7, issue 293): effects in the 3D view
 
 What a script run does to the avatar shows in the 3D view, only while the Live page's **Show effects in 3D view** box
-is ticked. The box is off each time the program starts, so someone who only animates never sees a change. Runs that
+is ticked (an on/off button since job U3; "ticked" means on). The box is off each time the program starts, so someone who only animates never sees a change. Runs that
 count: each Live run, and each `lsl_run` and `lsl_event` from the control commands (the newest of them is shown).
 An animation started in one command keeps playing through the `lsl_event` commands that follow in the same world.
 
@@ -1013,7 +1013,7 @@ Code: `src/scriptlab/labtree.*` and the Live page in `src/scriptlab/scriptlabpan
 - **Status line.** A folder of several scripts is named as the object: "OK: the object MyObject ran without errors (run 3), 12 log line(s)." When the shown script is fine but the object did not run: "Error: the object MyObject was not run (run 3): Lid/lid.lsl does not compile. Pick it in the tree to see why." or "... it breaks 1 limit(s) or rule(s), listed under Errors and warnings." A folder of one script keeps the old wording with the file name.
 - **Event log.** With several scripts every line names its source: "lid (Lid): owner_say: lid got hello", or "Root: " for an input. A folder of one script keeps the short lines.
 - **Folder problems** (limits and rules) are lines in Errors and warnings: "Folder error, Lid/main.lsl: The name "main" is used twice ...", and things left out as "Folder note, ...".
-- **Maker guide.** A folding part "How to lay out the folder", folded at first (charter P5), shown on the empty Live page and while an object is watched: six short lines and the example folder in a fixed-width font. Each part's open or folded state is remembered (`tree` and `guide` in `scriptlab_parts`).
+- **Maker guide.** A folding part "How to lay out the folder", folded at first (charter P5), shown on the empty Live page and while an object is watched: six short lines (since job U3 as four Rules and two Warnings) and the example folder in a fixed-width font. Each part's open or folded state is remembered (`tree` and `guide` in `scriptlab_parts`).
 - **Not yet:** `llGetLinkName` still does not give the folder names (it needs a change to `lsl_run`'s objects, a control-command change of its own); the Lua mark comes with Lua (only `.lsl` files are read).
 
 ## Props as prims (lane 1, job E)
@@ -1036,6 +1036,10 @@ Code: `src/scriptlab/lsl/lsl2slua.*` (the entry, `Lsl2Slua::convert()`), `sluale
 ## Example objects (job E1)
 
 Six example objects in `examples/objects/`, each one folder in the folder model with props of the same names and a plain-words guide stored as data (`example.json`): First colour, Button HUD, Gear set (the main example: HUD, wrist and ankle cuffs, collar, hood, gag and blindfold), Timed lock, a simple RLV relay and a work system. Everything about them, the guide texts, a recipe of what the program can do now and what a later example button must do: [EXAMPLES.md](EXAMPLES.md). Tests: `tests/tst_examples.cpp`, `tests/test_examples.py`. **Try the example scripts** still watches the loose scripts in `examples/scriptlab/`, one at a time.
+
+## Script Lab for beginners (job U3)
+
+Built 23 November 2026, pull request 443. For someone who has never scripted: **Make example project** on the empty Live page copies the first example (First colour) into `Documents/PinglyMotion/Scripts`, puts its props in the scene, watches it, shows the effects and a steps card with a button for each step (Help > Script Lab steps opens it again); **New folder** makes an empty folder there and watches it (limits on name and path; nothing is ever overwritten or deleted). The tree and the editor stand side by side when the panel is wide; a click on a piece in the tree lights up its prop in the 3D view and the other way round (switch: Follow selection in 3D view); short tips explain prim, root prim, notecard, sandbox, Viewer rules, RLV, RLVa and "N held", once each. Show effects in 3D view is an on/off button. Details and every choice: [UX_DECISIONS.md](UX_DECISIONS.md), 6o. Code: `src/scriptlab/labbeginner.*`, `src/scriptlab/scriptlabpanel.*`. Test: `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp`.
 
 ## Later
 
