@@ -1,5 +1,5 @@
 Branch: job/describe-hands
-Status: active
+Status: done
 Pull request: #419
 Files:
 - src/posedescribe.*
