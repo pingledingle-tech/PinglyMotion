@@ -749,7 +749,7 @@ void Sandbox::deliver(const SandboxInput& input)
   }
 
   if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
-      input.type == "sit" || input.type == "stand" || input.type == "control" || input.type == "money" || input.type == "email" ||
+      input.type == "sit" || input.type == "stand" || input.type == "control" || input.type == "money" || input.type == "email" || input.type == "remote_data" ||
       input.type == "collision" || input.type == "land_collision" || input.type == "moving" || input.type == "at_target" || input.type == "not_at_target" ||
       input.type == "step" || input.type == "drop")
   {
@@ -1038,6 +1038,45 @@ void Sandbox::deliver(const SandboxInput& input)
       }
       o.mail.push_back(mail);
       entry["waiting"] = int(o.mail.size());
+      m_log.log(t, entry);
+      return;
+    }
+    if (input.type == "remote_data")
+    {
+      // remote data (XML-RPC, deprecated): nothing comes over the network. A request goes to the script of the object that
+      // has an open channel (llOpenRemoteDataChannel); a reply answers a message that a script sent with llSendRemoteData.
+      entry.remove("name");
+      const bool reply = input.kind == "reply";
+      entry["kind"] = input.kind;
+      const QString sender = input.address.isEmpty() ? QString(REMOTE_IP) : input.address;
+      entry["sender"] = World::clip(sender);
+      entry["idata"] = input.idata;
+      entry["sdata"] = World::clip(input.text);
+      QString message = input.id;
+      if (!reply && message.isEmpty()) message = QString("c0de0000-0000-4000-8000-%1").arg(++m_requestCounter, 12, 10, QChar('0'));
+      bool delivered = false;
+      if (reply)
+      {
+        for (int i = o.slotCount - 1; i >= 0 && !delivered; --i)
+        {
+          Interpreter* interp = m_slots[size_t(o.firstSlot + i)].interp.get();
+          const QString id = message.isEmpty() ? interp->newestRemoteSent() : message;
+          if (id.isEmpty() || !interp->hasRemoteSent(id)) continue;
+          message = id;
+          delivered = interp->remoteDataReply(id, sender, input.idata, input.text);
+        }
+        if (!delivered) entry["error"] = message.isEmpty() ? QString("No script of the object has sent a message with llSendRemoteData.")
+                                                           : QString("No script of the object sent this message with llSendRemoteData.");
+      }
+      else
+      {
+        for (int i = 0; i < o.slotCount && !delivered; ++i)
+          delivered = m_slots[size_t(o.firstSlot + i)].interp->remoteDataRequest(input.channelKey, message, sender, input.idata, input.text);
+        if (!delivered) entry["error"] = input.channelKey.isEmpty()
+            ? QString("No script of the object has an open channel; a script opens one with llOpenRemoteDataChannel.")
+            : QString("No script of the object has this channel open.");
+      }
+      if (!message.isEmpty()) entry["message"] = message;
       m_log.log(t, entry);
       return;
     }

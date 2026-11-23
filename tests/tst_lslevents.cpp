@@ -216,7 +216,7 @@ void LslEventsTest::changedIsRefusedWhenWrong()
   QCOMPARE(error(QJsonObject{{"type", "changed"}, {"change", "owner"}}), QString());
   // the type list in the message
   QVERIFY(error(QJsonObject{{"type", "weather"}}).contains("\"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                                                            "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\""));
+                                                            "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\""));
 }
 
 void LslEventsTest::checkerKnowsBothEvents()
@@ -225,9 +225,9 @@ void LslEventsTest::checkerKnowsBothEvents()
     "default { on_rez(integer p) { } changed(integer c) { } }"}});
   QVERIFY(a["valid"].toBool());
   QCOMPARE(a["warnings"].toArray().size(), 0);
-  // an event that is still never raised keeps its warning (remote_data: deprecated, not part of the second gap list)
+  // an event that is still never raised keeps its warning (path_update: pathfinding, not part of the second gap list)
   const QJsonObject b = Control::check(QJsonObject{{"command", "lsl_check"},
-    {"source", "default { remote_data(integer e, key i, key c, string n, integer d, string v) { } }"}});
+    {"source", "default { path_update(integer type, list reserved) { } }"}});
   QCOMPARE(b["warnings"].toArray().size(), 1);
 }
 

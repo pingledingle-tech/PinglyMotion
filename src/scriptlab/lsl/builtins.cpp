@@ -104,7 +104,9 @@ enum class Fn
   SetLinkMedia, GetLinkMedia, ClearLinkMedia,
   DetectedTouchFace, DetectedTouchUV, DetectedTouchST, DetectedTouchNormal, DetectedTouchBinormal, DetectedTouchPos,
   // avatar and camera: attach and detach (record only), attached list, language, camera reads, teleports (record only)
-  AttachToAvatar, DetachFromAvatar, GetAttachedList, GetAgentLanguage, GetCameraPos, GetCameraRot, GetCameraView, Teleport
+  AttachToAvatar, DetachFromAvatar, GetAttachedList, GetAgentLanguage, GetCameraPos, GetCameraRot, GetCameraView, Teleport,
+  // steps 16 and 17: llCloud, and the deprecated XML-RPC remote data functions
+  Cloud, OpenRemoteData, CloseRemoteData, RemoteDataSetRegion, SendRemoteData, RemoteDataReply
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -198,6 +200,11 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llLoopSoundSlave", Fn::RecordOnly},
   {"llPlaySoundSlave", Fn::RecordOnly},
   {"llSoundPreload", Fn::RecordOnly},
+  // step 16: deprecated and never implemented: llSound plays like llPlaySound did (recorded only), llTakeCamera does nothing
+  {"llSound", Fn::RecordOnly}, {"llTakeCamera", Fn::RecordOnly}, {"llCloud", Fn::Cloud},
+  // step 17: remote data (XML-RPC), deprecated
+  {"llOpenRemoteDataChannel", Fn::OpenRemoteData}, {"llCloseRemoteDataChannel", Fn::CloseRemoteData},
+  {"llRemoteDataSetRegion", Fn::RemoteDataSetRegion}, {"llSendRemoteData", Fn::SendRemoteData}, {"llRemoteDataReply", Fn::RemoteDataReply},
   {"llAdjustSoundVolume", Fn::RecordOnly},
   {"llSetSoundQueueing", Fn::RecordOnly},
   {"llSetSoundRadius", Fn::RecordOnly},
@@ -4405,6 +4412,65 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       for (const IncomingRequest& r : m_incoming)
         if (r.id == a[0].s) return Value::string(r.headers.value(a[1].s));
       return Value::string(QString());
+    }
+
+    // -------------------------------------------- steps 16 and 17: llCloud and remote data (XML-RPC, deprecated)
+    case Fn::Cloud:
+      // the wiki: since 13.02.08.270166 it only returns 0.0
+      return Value::number(0.0f);
+    case Fn::OpenRemoteData:
+    {
+      // one channel per script: a second call gives the same channel again (the wiki: the same ID is kept). The channel
+      // is announced by remote_data(REMOTE_DATA_CHANNEL, channel, NULL_KEY, "", 0, ""). Nothing is opened on the network.
+      const bool fresh = m_remoteChannel.isEmpty();
+      if (fresh) m_remoteChannel = nextKey();
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "remote_data"}, {"op", "open"}, {"channel", m_remoteChannel}, {"new", fresh},
+                                       {"note", "Simulated: no XML-RPC channel exists; a request comes from a remote_data input."}});
+      queueEvent(Event{"remote_data", {Value::integer(1), Value::key(m_remoteChannel), Value::key("00000000-0000-0000-0000-000000000000"),
+                                       Value::string(QString()), Value::integer(0), Value::string(QString())}, QString(), QString()});
+      return Value();
+    }
+    case Fn::CloseRemoteData:
+    {
+      const bool found = !m_remoteChannel.isEmpty() && a[0].s == m_remoteChannel;
+      if (found)
+      {
+        m_remoteChannel.clear();
+        m_remoteReceived.clear();
+      }
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "remote_data"}, {"op", "close"}, {"channel", World::clip(a[0].s)}, {"result", found ? "closed" : "not_found"}});
+      return Value();
+    }
+    case Fn::RemoteDataSetRegion:
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "remote_data"}, {"op", "set_region"}, {"channel", m_remoteChannel},
+                                       {"note", "Simulated: the sandbox has one region, so there is nothing to register again."}});
+      return Value();
+    case Fn::SendRemoteData:
+    {
+      // the request is only recorded, never sent. The answer is a remote_data input of kind "reply" with this message ID.
+      const QString id = nextKey();
+      m_remoteSent.append(id);
+      m_remoteSentChannel.insert(id, a[0].s);
+      while (m_remoteSent.size() > MAX_REMOTE_MESSAGES) m_remoteSentChannel.remove(m_remoteSent.takeFirst());
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "remote_data"}, {"op", "send"}, {"channel", World::clip(a[0].s)}, {"dest", World::clip(a[1].s)},
+                                       {"idata", a[2].i}, {"sdata", World::clip(a[3].s)}, {"message", id},
+                                       {"note", "Simulated: nothing is sent; send a remote_data input of kind reply to answer it."}});
+      return Value::key(id);
+    }
+    case Fn::RemoteDataReply:
+    {
+      QString result = "sent";
+      if (m_remoteChannel.isEmpty() || a[0].s != m_remoteChannel) result = "unknown_channel";
+      else if (!m_remoteReceived.contains(a[1].s)) result = "unknown_message";
+      else m_remoteReceived.removeAll(a[1].s);
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "remote_data"}, {"op", "reply"}, {"channel", World::clip(a[0].s)}, {"message", World::clip(a[1].s)},
+                                       {"sdata", World::clip(a[2].s)}, {"idata", a[3].i}, {"result", result}});
+      return Value();
     }
 
     // -------------------------------------------- prim media, record only (gap list 2, step 5)
