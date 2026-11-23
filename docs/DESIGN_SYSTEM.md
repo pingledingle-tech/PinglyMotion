@@ -95,6 +95,11 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   keys and the lines between them `text` (`on_accent` on the selected row), a
   key being dragged and the line at the current frame `danger`, track names
   `text` (`text_disabled` for a hidden group, `on_accent` when selected).
+  Since UX phase 3a each row follows its body area (`tests/timelinerows`): the
+  key row is `surface` with 5 percent of the area token, the name 9 percent,
+  a 4 pixel stripe in the area token on the left of the name, the area's name
+  in `text_muted`, and keys and the lines between them in the area token; the
+  selected row stays `selection` with `on_accent`.
 - **3D view** (`src/viewcolours.h`): rotation rings and prop axis lines in the
   axis tokens (a ring that is not in use is 20 percent toward `background`, a
   highlighted prop handle 20 percent toward `text`), joint balls `danger_fill`
