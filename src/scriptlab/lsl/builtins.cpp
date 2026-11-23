@@ -96,6 +96,9 @@ enum class Fn
   GetEnergy, Target, TargetRemove, GetRegionTimeDilation, GetRegionFPS, GetRegionAgentCount, GetSimulatorHostname,
   // third gap list run, steps 7 to 9: damage, keyframed motion, linking objects
   SetDamage, SetKeyframedMotion, CreateLink, BreakAllLinks,
+  // third gap list run, steps 13 to 15: ray casts, land editing, landmark data, texture reads and transforms, scale factor, object animations
+  CastRay, ModifyLand, RequestInventoryData, TextureTransform, GetTextureOffset, GetTextureRot, GetTextureScale,
+  GetMinScaleFactor, GetMaxScaleFactor, ScaleByFactor, GetObjectAnimationNames, StartObjectAnimation, StopObjectAnimation,
   // leftover reads and media: display names, simulator data, environment, clock, link media, touch face data
   GetDisplayName, RequestDisplayName, RequestUsername, RequestSimulatorData, GetGMTclock, GetEnv,
   SetLinkMedia, GetLinkMedia, ClearLinkMedia,
@@ -201,9 +204,9 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llCollisionSound", Fn::RecordOnly},
   {"llSetTextureAnim", Fn::RecordOnly},
   {"llSetLinkTextureAnim", Fn::RecordOnly},
-  {"llOffsetTexture", Fn::RecordOnly},
-  {"llScaleTexture", Fn::RecordOnly},
-  {"llRotateTexture", Fn::RecordOnly},
+  {"llOffsetTexture", Fn::TextureTransform},
+  {"llScaleTexture", Fn::TextureTransform},
+  {"llRotateTexture", Fn::TextureTransform},
   {"llAttachToAvatar", Fn::AttachToAvatar}, {"llAttachToAvatarTemp", Fn::AttachToAvatar}, {"llDetachFromAvatar", Fn::DetachFromAvatar},
   {"llGetAttachedList", Fn::GetAttachedList}, {"llGetAgentLanguage", Fn::GetAgentLanguage}, {"llForceMouselook", Fn::RecordOnly},
   {"llGetCameraAspect", Fn::GetCameraView}, {"llGetCameraFOV", Fn::GetCameraView}, {"llGetCameraPos", Fn::GetCameraPos}, {"llGetCameraRot", Fn::GetCameraRot},
@@ -285,6 +288,12 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llDetectedTouchFace", Fn::DetectedTouchFace}, {"llDetectedTouchUV", Fn::DetectedTouchUV}, {"llDetectedTouchST", Fn::DetectedTouchST},
   {"llDetectedTouchNormal", Fn::DetectedTouchNormal}, {"llDetectedTouchBinormal", Fn::DetectedTouchBinormal},
   {"llDetectedTouchPos", Fn::DetectedTouchPos},
+  // third gap list run, steps 13 to 15
+  {"llCastRay", Fn::CastRay}, {"llModifyLand", Fn::ModifyLand}, {"llRequestInventoryData", Fn::RequestInventoryData},
+  {"llGetTextureOffset", Fn::GetTextureOffset}, {"llGetTextureRot", Fn::GetTextureRot}, {"llGetTextureScale", Fn::GetTextureScale},
+  {"llGetMinScaleFactor", Fn::GetMinScaleFactor}, {"llGetMaxScaleFactor", Fn::GetMaxScaleFactor}, {"llScaleByFactor", Fn::ScaleByFactor},
+  {"llGetObjectAnimationNames", Fn::GetObjectAnimationNames}, {"llStartObjectAnimation", Fn::StartObjectAnimation},
+  {"llStopObjectAnimation", Fn::StopObjectAnimation}
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1565,6 +1574,223 @@ int setRegionPos(World& w, double now, const float target[3])
   }
   w.setPosition(target);
   logPrim(w, now, "position", 1, QJsonObject{{"position", vecJson(target)}});
+  return 1;
+}
+
+// ---- steps 13 to 15: llCastRay, llModifyLand and llScaleByFactor
+//
+// llCastRay (Second Life wiki). Every object is one box: the smallest box along the region's axes round all its prims
+// (the same box as llGetBoundingBox); an avatar is a box of the sandbox's avatar size; the ground is the flat plane at
+// llGround inside the region. A ray that starts inside a box does not hit it (the wiki says so for the script's own
+// prim). Hits come nearest first (the wiki gives no order). Worn objects are not hit.
+struct RayHit
+{
+  double t = 0.0;
+  QString key;
+  int link = 0;
+  float pos[3] = {0.0f, 0.0f, 0.0f};
+  float normal[3] = {0.0f, 0.0f, 0.0f};
+};
+
+// slab test of the segment start + t * delta, t from 0 to 1, against the box lo..hi; false when it misses or starts inside
+bool rayBox(const float start[3], const float delta[3], const float lo[3], const float hi[3], double& tEnter, float normal[3])
+{
+  double t0 = -1.0e30, t1 = 1.0e30;
+  int axis = 0;
+  double sign = 1.0;
+  for (int k = 0; k < 3; ++k)
+  {
+    if (delta[k] == 0.0f)
+    {
+      if (start[k] < lo[k] || start[k] > hi[k]) return false;
+      continue;
+    }
+    double a = (double(lo[k]) - start[k]) / delta[k], b = (double(hi[k]) - start[k]) / delta[k];
+    double enterSign = delta[k] > 0.0f ? -1.0 : 1.0;   // the face hit when entering: the one the ray comes from
+    if (a > b) std::swap(a, b);
+    if (a > t0) { t0 = a; axis = k; sign = enterSign; }
+    if (b < t1) t1 = b;
+    if (t0 > t1) return false;
+  }
+  if (t0 < 0.0 || t0 > 1.0) return false;   // starts inside (or behind) the box, or stops short of it
+  tEnter = t0;
+  normal[0] = normal[1] = normal[2] = 0.0f;
+  normal[axis] = float(sign);
+  return true;
+}
+
+// the list llCastRay answers (see the function table above); options are checked first
+Value castRay(World& w, const float start[3], const float end[3], const std::vector<Value>& options, Interpreter* it)
+{
+  Q_UNUSED(it);
+  int reject = 0, flags = 0, maxHits = 1;
+  bool phantom = false;
+  const Value unknown = Value::makeList(std::vector<Value>{Value::integer(-1)});   // RCERR_UNKNOWN
+  if (options.size() % 2 != 0) return unknown;
+  for (size_t i = 0; i + 1 < options.size(); i += 2)
+  {
+    if (options[i].type != Type::Integer || options[i + 1].type != Type::Integer) return unknown;
+    const int v = options[i + 1].i;
+    switch (options[i].i)
+    {
+      case 0: reject = v; break;                                // RC_REJECT_TYPES
+      case 1: phantom = v != 0; break;                          // RC_DETECT_PHANTOM
+      case 2: flags = v; break;                                 // RC_DATA_FLAGS
+      case 3: maxHits = qBound(1, v, 256); break;               // RC_MAX_HITS
+      default: return unknown;
+    }
+  }
+  if ((reject & 15) == 15) return Value();   // caller raises the runtime error (rejecting every type)
+  const float delta[3] = {end[0] - start[0], end[1] - start[1], end[2] - start[2]};
+  std::vector<RayHit> hits;
+  auto consider = [&](const ObjectDetails& d, const float lo[3], const float hi[3])
+  {
+    RayHit h;
+    if (!rayBox(start, delta, lo, hi, h.t, h.normal)) return;
+    h.key = d.key;
+    h.link = (!d.avatar && d.prims > 1) ? 1 : 0;
+    for (int k = 0; k < 3; ++k) h.pos[k] = float(double(start[k]) + h.t * double(delta[k]));
+    hits.push_back(h);
+  };
+  for (const QString& key : w.objectKeys())
+  {
+    ObjectDetails d;
+    if (!w.details(key, d) || d.avatar || d.attached > 0) continue;
+    const bool ghost = d.phantom != 0;
+    if (ghost && !phantom) continue;
+    if (!(ghost && phantom))
+    {
+      if (d.physics && (reject & 2)) continue;
+      if (!d.physics && (reject & 4)) continue;
+    }
+    float lo[3], hi[3];
+    for (int k = 0; k < 3; ++k) { lo[k] = d.position[k] + d.boundMin[k]; hi[k] = d.position[k] + d.boundMax[k]; }
+    consider(d, lo, hi);
+  }
+  if (!(reject & 1))
+  {
+    for (const QString& key : w.agents())
+    {
+      ObjectDetails d;
+      if (!w.details(key, d) || !d.avatar) continue;
+      const float half[3] = {RegionSettings::AVATAR_WIDTH / 2, RegionSettings::AVATAR_DEPTH / 2, d.height / 2};
+      float lo[3], hi[3];
+      for (int k = 0; k < 3; ++k) { lo[k] = d.position[k] - half[k]; hi[k] = d.position[k] + half[k]; }
+      consider(d, lo, hi);
+    }
+  }
+  if (!(reject & 8) && delta[2] != 0.0f && start[0] >= 0.0f && start[0] <= RegionSettings::SIZE && start[1] >= 0.0f && start[1] <= RegionSettings::SIZE)
+  {
+    const double g = double(w.region().ground);
+    const double t = (g - double(start[2])) / double(delta[2]);
+    const float x = float(double(start[0]) + t * double(delta[0])), y = float(double(start[1]) + t * double(delta[1]));
+    if (t >= 0.0 && t <= 1.0 && x >= 0.0f && x <= RegionSettings::SIZE && y >= 0.0f && y <= RegionSettings::SIZE)
+    {
+      RayHit h;
+      h.t = t;
+      h.key = QStringLiteral("00000000-0000-0000-0000-000000000000");
+      h.pos[0] = x; h.pos[1] = y; h.pos[2] = float(g);
+      h.normal[2] = 1.0f;
+      hits.push_back(h);
+    }
+  }
+  std::stable_sort(hits.begin(), hits.end(), [](const RayHit& a, const RayHit& b) { return a.t < b.t; });
+  if (int(hits.size()) > maxHits) hits.resize(size_t(maxHits));
+  std::vector<Value> out;
+  for (const RayHit& h : hits)
+  {
+    out.push_back(Value::key(h.key));
+    if (flags & 4) out.push_back(Value::integer(h.link));
+    out.push_back(Value::vector(h.pos[0], h.pos[1], h.pos[2]));
+    if (flags & 1) out.push_back(Value::vector(h.normal[0], h.normal[1], h.normal[2]));
+  }
+  out.push_back(Value::integer(int(hits.size())));
+  return Value::makeList(std::move(out));
+}
+
+// llModifyLand: record only (the sandbox's ground stays flat, so llGround does not change). Nothing happens, and
+// the entry says why, when the action is not 0 to 5, the brush is not 0 to 2, or the parcel belongs to somebody else
+// than the object's owner. The place is the object's (a prim's place for a linked one is not modelled).
+void modifyLand(World& w, double now, int action, int brush)
+{
+  static const char* const ACTIONS[] = {"level", "raise", "lower", "smooth", "noise", "revert"};
+  static const double SIDES[] = {2.0, 4.0, 8.0};
+  QString result = "ok";
+  if (action < 0 || action > 5 || brush < 0 || brush > 2) result = "bad_value";
+  else if (!w.region().parcelOwner.isEmpty() && w.region().parcelOwner != w.ownerKey()) result = "not_owner";
+  float here[3];
+  w.position(here);
+  if (w.logFull()) return;
+  QJsonObject e{{"type", "land_edit"}, {"action", action}, {"brush", brush}, {"position", vecJson(here)}, {"result", result}};
+  if (action >= 0 && action <= 5) e["name"] = ACTIONS[action];
+  if (brush >= 0 && brush <= 2) e["size_m"] = SIDES[brush];
+  w.log(now, e);
+}
+
+// llScaleByFactor, llGetMinScaleFactor and llGetMaxScaleFactor. The wiki's limits: every prim side 0.01 to 64 m and a
+// child's distance from the root at most 54 m. The sandbox lets a factor reach a limit with a small tolerance (1e-5,
+// relative), so a factor read back from llGetMinScaleFactor or llGetMaxScaleFactor works (the wiki warns that it may not).
+struct ScaleExtent
+{
+  float smallest = 0.0f, largest = 0.0f, farChild = 0.0f;
+};
+
+ScaleExtent scaleExtent(World& w)
+{
+  ScaleExtent e;
+  const int count = qMax(1, w.numberOfPrims());
+  bool first = true;
+  for (int link = 1; link <= count; ++link)
+  {
+    float size[3];
+    if (link == 1) w.scale(size); else for (int k = 0; k < 3; ++k) size[k] = primOf(w, link).size[k];
+    for (int k = 0; k < 3; ++k)
+    {
+      if (first || size[k] < e.smallest) e.smallest = size[k];
+      if (first || size[k] > e.largest) e.largest = size[k];
+      first = false;
+    }
+    if (link > 1)
+    {
+      const float* p = primOf(w, link).position;
+      e.farChild = qMax(e.farChild, std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]));
+    }
+  }
+  return e;
+}
+
+float minScaleFactor(World& w)
+{
+  const ScaleExtent e = scaleExtent(w);
+  return e.smallest > 0.0f ? 0.01f / e.smallest : 0.0f;
+}
+
+float maxScaleFactor(World& w)
+{
+  const ScaleExtent e = scaleExtent(w);
+  float m = e.largest > 0.0f ? 64.0f / e.largest : 0.0f;
+  if (e.farChild > 0.0f) m = qMin(m, 54.0f / e.farChild);
+  return m;
+}
+
+int scaleByFactor(World& w, double now, float factor)
+{
+  if (!(factor > 0.0f) || !std::isfinite(factor)) return 0;
+  if ((w.primStore().status & 0x1) || w.keyframes().active()) return 0;   // physical, or in keyframed motion
+  const ScaleExtent e = scaleExtent(w);
+  const double tol = 1.0e-5;
+  if (double(e.smallest) * factor < 0.01 * (1.0 - tol) || double(e.largest) * factor > 64.0 * (1.0 + tol)) return 0;
+  if (double(e.farChild) * factor > 54.0 * (1.0 + tol)) return 0;
+  const int count = qMax(1, w.numberOfPrims());
+  for (int link = 1; link <= count; ++link)
+  {
+    PrimState& p = primOf(w, link);
+    if (link == 1) w.scale(p.size);   // the root's size is the object's scale
+    for (int k = 0; k < 3; ++k) p.size[k] = qBound(0.01f, p.size[k] * factor, 64.0f);
+    if (link == 1) { w.setScale(p.size); logPrim(w, now, "size", link, QJsonObject{{"size", vecJson(p.size)}, {"factor", rnd5(factor)}}); continue; }
+    for (int k = 0; k < 3; ++k) p.position[k] *= factor;
+    logPrim(w, now, "size", link, QJsonObject{{"size", vecJson(p.size)}, {"position", vecJson(p.position)}, {"factor", rnd5(factor)}});
+  }
   return 1;
 }
 
@@ -4438,6 +4664,93 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
         }
       }
       return Value::makeList(std::move(out));
+    }
+    // -------------------------------------------- ray casts, land, landmark data, textures, scale factor and object animations (steps 13 to 15)
+    case Fn::CastRay:
+    {
+      const Value r = castRay(m_world, a[0].f, a[1].f, a[2].list, this);
+      if (r.type != Type::List) fail("llCastRay: every hit type is rejected (RC_REJECT_TYPES 15), so nothing can be hit. Remove one of the RC_REJECT_* flags.");
+      return r;
+    }
+    case Fn::ModifyLand: modifyLand(m_world, m_now, a[0].i, a[1].i); return Value();
+    case Fn::RequestInventoryData:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      QString problem;
+      if (!item) problem = "Couldn't find item '" + World::clip(a[0].s) + "'";
+      else if (item->type != 3) problem = "llRequestInventoryData: only landmarks are supported, '" + World::clip(item->name) + "' is not one";
+      if (!problem.isEmpty())
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", problem}});
+        return Value::key(NULL_KEY);
+      }
+      const QString id = nextKey();
+      // the place as a vector in text, an offset from the region's origin
+      const QString data = castValue(Value::vector(item->landmark[0], item->landmark[1], item->landmark[2]), Type::String).s;
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"item", World::clip(item->name)}, {"query", id}});
+      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      return Value::key(id);
+    }
+    case Fn::TextureTransform:
+    {
+      // llOffsetTexture(u, v, face), llScaleTexture(u, v, face) and llRotateTexture(radians, face): kept on the faces of the
+      // script's own prim (so the reads give them back) and still recorded, as before
+      PrimState& p = primOf(m_world, qMax(1, m_world.linkNumber()));
+      const bool rotate = name == "llRotateTexture";
+      const int face = a[rotate ? 1 : 2].i;
+      for (int f : facesOf(face))
+      {
+        if (rotate) p.faces[f].rotation = a[0].f[0];
+        else if (name == "llOffsetTexture") { p.faces[f].offsets[0] = a[0].f[0]; p.faces[f].offsets[1] = a[1].f[0]; }
+        else { p.faces[f].repeats[0] = a[0].f[0]; p.faces[f].repeats[1] = a[1].f[0]; }
+      }
+      m_world.recordOnly(m_now, name, recordArgs(a));
+      return Value();
+    }
+    case Fn::GetTextureOffset:
+    case Fn::GetTextureRot:
+    case Fn::GetTextureScale:
+    {
+      // ALL_SIDES gives face 0 (the wiki, for llGetTextureOffset); a face the prim lacks gives zero (<0,0,0>, 0.0)
+      const int face = a[0].i == ALL_SIDES ? 0 : a[0].i;
+      const bool real = face >= 0 && face < PrimState::FACES;
+      const PrimState& p = primOf(m_world, qMax(1, m_world.linkNumber()));
+      if (*it == Fn::GetTextureRot) return Value::number(real ? p.faces[face].rotation : 0.0f);
+      const float* v = *it == Fn::GetTextureOffset ? p.faces[real ? face : 0].offsets : p.faces[real ? face : 0].repeats;
+      return real ? Value::vector(v[0], v[1], 0.0f) : Value::vector(0.0f, 0.0f, 0.0f);
+    }
+    case Fn::GetMinScaleFactor: return Value::number(minScaleFactor(m_world));
+    case Fn::GetMaxScaleFactor: return Value::number(maxScaleFactor(m_world));
+    case Fn::ScaleByFactor: return Value::integer(scaleByFactor(m_world, m_now, a[0].f[0]));
+    case Fn::GetObjectAnimationNames:
+    {
+      std::vector<Value> out;
+      for (const QString& n : m_objectAnims) out.push_back(Value::string(n));
+      return Value::makeList(std::move(out));
+    }
+    case Fn::StartObjectAnimation:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      if (!item || item->type != 20)
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "Couldn't find animation '" + World::clip(a[0].s) + "'"}});
+        return Value();
+      }
+      if (m_objectAnims.contains(item->name) || m_objectAnims.size() >= 64) return Value();
+      m_objectAnims << item->name;
+      if (!m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "object_animation"}, {"op", "start"}, {"animation", World::clip(item->name)}});
+      return Value();
+    }
+    case Fn::StopObjectAnimation:
+    {
+      // by name, or by the key of an inventory animation (llGetObjectAnimationNames gives a key for one it cannot find)
+      QString target = a[0].s;
+      for (const InventoryItem& item : m_world.inventory().items())
+        if (item.type == 20 && item.key == a[0].s && m_objectAnims.contains(item.name)) { target = item.name; break; }
+      if (!m_objectAnims.removeAll(target)) return Value();
+      if (!m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "object_animation"}, {"op", "stop"}, {"animation", World::clip(target)}});
+      return Value();
     }
     case Fn::SetRegionPos: return Value::integer(setRegionPos(m_world, m_now, a[0].f));
     case Fn::ListStatistics: return Value::number(listStatistics(a[0].i, a[1].list));

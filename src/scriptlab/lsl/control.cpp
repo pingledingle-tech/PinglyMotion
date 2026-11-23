@@ -446,7 +446,7 @@ namespace
       const QString at = where + QString("inventory item %1: ").arg(i + 1);
       if (!list[i].isObject()) return shape;
       const QJsonObject e = list[i].toObject();
-      static const QStringList fields = {"name", "type", "key", "lines", "creator", "description"};
+      static const QStringList fields = {"name", "type", "key", "lines", "creator", "description", "position"};
       for (auto it = e.begin(); it != e.end(); ++it)
         if (!fields.contains(it.key())) return at + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
       InventoryItem item;
@@ -474,6 +474,18 @@ namespace
         if (!e.value("description").isString() || e.value("description").toString().size() > 127)
           return at + "\"description\" must be text of at most 127 characters.";
         item.description = e.value("description").toString();
+      }
+      if (e.contains("position"))
+      {
+        if (item.type != 3) return at + "\"position\" is only for a landmark.";
+        const QJsonValue pos = e.value("position");
+        if (!pos.isArray() || pos.toArray().size() != 3) return at + "\"position\" must be a list of three numbers (x, y, z).";
+        for (int k = 0; k < 3; ++k)
+        {
+          const QJsonValue n = pos.toArray().at(k);
+          if (!n.isDouble() || !std::isfinite(n.toDouble()) || std::fabs(n.toDouble()) > 1.0e7) return at + "\"position\" must be a list of three numbers (x, y, z).";
+          item.landmark[k] = float(n.toDouble());
+        }
       }
       if (e.contains("lines"))
       {

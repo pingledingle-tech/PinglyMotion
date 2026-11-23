@@ -209,6 +209,7 @@ class ObjectWorld : public RlvWorld
     }
     const RegionSettings& region() const override { return m_sandbox.m_region; }
     QStringList agents() const override { return m_sandbox.agents(); }
+    QStringList objectKeys() const override { return m_sandbox.objectKeys(); }
     bool details(const QString& key, ObjectDetails& out) override { return m_sandbox.details(m_slot, key, out); }
     // gap list 2, step 4: the URLs are counted in the whole world; each belongs to the script that asked for it
     QString grantUrl(bool secure) override
@@ -1740,6 +1741,14 @@ bool Sandbox::details(int from, const QString& key, ObjectDetails& out) const
     for (const Sitter& sitter : o.sitters)
       if (sitter.key == key) return asAvatar(sitter.name, AVATAR_POSITION, nullptr, nullptr, false);
   return false;
+}
+
+QStringList Sandbox::objectKeys() const
+{
+  QStringList out;
+  for (const Object& o : m_objects)
+    if (!o.dead) out << o.spec.key;
+  return out;
 }
 
 QStringList Sandbox::agents() const
