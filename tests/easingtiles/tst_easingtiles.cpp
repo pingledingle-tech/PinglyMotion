@@ -80,6 +80,7 @@ class EasingTilesTest : public QObject
     void editCurveWindowStaysOnTheScreen();
     void editCurveWindowAtDoubleText();
     void pictures();
+    void choiceIsPerJoint();
 
   private:
     // the jump example, with the joint and two neighbouring keys used below
@@ -1061,6 +1062,44 @@ void EasingTilesTest::pictures()
     QVERIFY2(clippedWindow.isEmpty(), qPrintable(v.name() + ": " + clippedWindow.join("; ")));
   }
   UserSettings::setExpertMode(false);
+}
+
+// roadmap item 5, "Easing per joint": a choice changes only the selected
+// joint's pose change; another joint with keys on the same frames keeps its own
+void EasingTilesTest::choiceIsPerJoint()
+{
+  BVH bvh;
+  QScopedPointer<Animation> anim;
+  BVHNode* joint = nullptr;
+  int from = 0, to = 0;
+  QVERIFY(openJump(bvh, anim, joint, from, to));
+  // a second joint with a pose change ending on the same key frame
+  BVHNode* other = nullptr;
+  int otherFrom = 0;
+  for (const char* name : {"rShldr", "lForeArm", "rForeArm", "hip", "abdomen", "chest", "neck", "head"})
+  {
+    BVHNode* candidate = findJoint(anim->getMotion(), name);
+    if (candidate && candidate != joint && EasingChoice::segmentEndingAt(candidate, to, otherFrom))
+    {
+      other = candidate;
+      break;
+    }
+  }
+  QVERIFY2(other, "jump.dingle needs a second joint with a key on the same frame");
+
+  EasingChoice::setChoice(anim.data(), other, otherFrom, to, Easing::Preset::Even);
+  EasingChoice::setChoice(anim.data(), joint, from, to, Easing::Preset::HoldThenSnap);
+  QCOMPARE(EasingChoice::choiceOf(joint, from, to), Easing::Preset::HoldThenSnap);
+  QCOMPARE(EasingChoice::choiceOf(other, otherFrom, to), Easing::Preset::Even);
+  EasingChoice::setChoice(anim.data(), other, otherFrom, to, Easing::Preset::SlowStart);
+  QCOMPARE(EasingChoice::choiceOf(joint, from, to), Easing::Preset::HoldThenSnap);
+  QCOMPARE(EasingChoice::choiceOf(other, otherFrom, to), Easing::Preset::SlowStart);
+  // the custom curve is per joint as well
+  const Easing::Bezier mine{0.2, 0.1, 0.3, 1.2};
+  EasingChoice::setCustomCurve(anim.data(), joint, from, to, mine);
+  QVERIFY(EasingChoice::customCurveOf(joint, from).has_value());
+  QVERIFY(!EasingChoice::customCurveOf(other, otherFrom).has_value());
+  QCOMPARE(EasingChoice::choiceOf(other, otherFrom, to), Easing::Preset::SlowStart);
 }
 
 QTEST_MAIN(EasingTilesTest)
