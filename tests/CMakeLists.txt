@@ -217,6 +217,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslsteps456_tests PRIVATE ${CMAKE_SOURC
 TARGET_LINK_LIBRARIES (pinglymotion_lslsteps456_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslsteps456 COMMAND pinglymotion_lslsteps456_tests)
 
+# Script Lab: llSetDamage, llSetKeyframedMotion, llCreateLink and llBreakAllLinks (third gap list run, steps 7 to 9)
+ADD_EXECUTABLE (pinglymotion_lslsteps789_tests tst_lslsteps789.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslsteps789_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslsteps789_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslsteps789 COMMAND pinglymotion_lslsteps789_tests)
+
 # Script Lab: static warnings (lint) and lsl_lint; the examples and the fuzz corpus must be lint clean
 ADD_EXECUTABLE (pinglymotion_lsllint_tests tst_lsllint.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsllint_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

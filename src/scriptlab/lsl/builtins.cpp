@@ -94,6 +94,8 @@ enum class Fn
   SetRegionPos, ListStatistics, Rot2Angle, XorBase64, XorBase64StringsCorrect, ModPow, SetForce, GetForce, SetVelocity,
   GetMemoryLimit, SetMemoryLimit, GetNumberOfSides, GetLinkNumberOfSides, GetObjectPrimCount, GetObjectMass, GetBoundingBox,
   GetEnergy, Target, TargetRemove, GetRegionTimeDilation, GetRegionFPS, GetRegionAgentCount, GetSimulatorHostname,
+  // third gap list run, steps 7 to 9: damage, keyframed motion, linking objects
+  SetDamage, SetKeyframedMotion, CreateLink, BreakAllLinks,
   // leftover reads and media: display names, simulator data, environment, clock, link media, touch face data
   GetDisplayName, RequestDisplayName, RequestUsername, RequestSimulatorData, GetGMTclock, GetEnv,
   SetLinkMedia, GetLinkMedia, ClearLinkMedia,
@@ -263,6 +265,9 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llXorBase64", Fn::XorBase64}, {"llXorBase64Strings", Fn::XorBase64}, {"llXorBase64StringsCorrect", Fn::XorBase64StringsCorrect},
   {"llModPow", Fn::ModPow}, {"llSetForce", Fn::SetForce}, {"llGetForce", Fn::GetForce}, {"llSetVelocity", Fn::SetVelocity},
   {"llApplyRotationalImpulse", Fn::RecordOnly}, {"llGroundRepel", Fn::RecordOnly},
+  // third gap list run, steps 7 to 9 (llGetDamage is no LSL function)
+  {"llSetDamage", Fn::SetDamage}, {"llSetKeyframedMotion", Fn::SetKeyframedMotion},
+  {"llCreateLink", Fn::CreateLink}, {"llBreakAllLinks", Fn::BreakAllLinks},
   {"llGetMemoryLimit", Fn::GetMemoryLimit}, {"llSetMemoryLimit", Fn::SetMemoryLimit}, {"llMinEventDelay", Fn::RecordOnly},
   {"llGetNumberOfSides", Fn::GetNumberOfSides}, {"llGetLinkNumberOfSides", Fn::GetLinkNumberOfSides},
   {"llGetObjectPrimCount", Fn::GetObjectPrimCount}, {"llGetObjectMass", Fn::GetObjectMass}, {"llGetBoundingBox", Fn::GetBoundingBox},
@@ -1677,6 +1682,146 @@ void setObjectVelocity(World& w, double now, const float velocity[3], bool local
   w.setVelocity(turned);
   if (w.logFull()) return;
   w.log(now, QJsonObject{{"type", "velocity"}, {"op", "set"}, {"velocity", vecJson(turned)}});
+}
+
+// ---- third gap list run, steps 7 to 9
+
+// llSetDamage keeps the damage (the wiki: -100.0 full heal to 100.0 instant kill); a value outside is cut to that range
+void setObjectDamage(World& w, double now, float damage)
+{
+  const bool nan = !(damage == damage);
+  const float shown = nan ? 0.0f : qBound(-100.0f, damage, 100.0f);
+  w.setDamage(shown);
+  if (w.logFull()) return;
+  QJsonObject e{{"type", "damage"}, {"damage", rnd5(shown)}};
+  if (nan || shown != damage) e["note"] = "The damage is limited to -100.0 (full heal) to 100.0 (instant kill).";
+  w.log(now, e);
+}
+
+// llSetKeyframedMotion(keyframes, options). Follows the wiki; where it is silent the choices are noted in CONTROL.md.
+void setKeyframedMotion(World& w, double now, const std::vector<Value>& keys, const std::vector<Value>& opts)
+{
+  auto refuse = [&](const QString& text) {
+    if (w.logFull()) return;
+    w.log(now, QJsonObject{{"type", "debug"}, {"channel", qint32(0x7FFFFFFF)}, {"text", "llSetKeyframedMotion: " + text}});
+    w.log(now, QJsonObject{{"type", "keyframed"}, {"op", "refused"}, {"applied", false}, {"note", text}});
+  };
+  // the options: flag and value pairs
+  if (opts.size() % 2 != 0) return refuse("the options are pairs of a KFM_ flag and its value.");
+  int mode = KeyframedMotion::MODE_FORWARD, data = KeyframedMotion::DATA_ROTATION | KeyframedMotion::DATA_TRANSLATION, command = -1;
+  for (size_t i = 0; i < opts.size(); i += 2)
+  {
+    if (opts[i].type != Type::Integer || opts[i + 1].type != Type::Integer) return refuse("each option is an integer flag and an integer value.");
+    const int flag = opts[i].i, value = opts[i + 1].i;
+    if (flag == 0)
+    {
+      if (value < 0 || value > 2) return refuse("KFM_COMMAND is KFM_CMD_PLAY, KFM_CMD_STOP or KFM_CMD_PAUSE.");
+      command = value;
+    }
+    else if (flag == 1)
+    {
+      if (value < 0 || value > 3) return refuse("KFM_MODE is KFM_FORWARD, KFM_LOOP, KFM_PING_PONG or KFM_REVERSE.");
+      mode = value;
+    }
+    else if (flag == 2)
+    {
+      if (value < 1 || value > 3) return refuse("KFM_DATA is KFM_ROTATION, KFM_TRANSLATION or both together.");
+      data = value;
+    }
+    else return refuse("unknown option " + QString::number(flag) + ".");
+  }
+  if (command >= 0 && opts.size() != 2) return refuse("KFM_COMMAND must be the only option.");
+  if (command >= 0 && !keys.empty()) return refuse("KFM_COMMAND cannot be used in the call that sets the keyframes.");
+  // where it works: the root prim of a non-physical object that is not worn
+  if (w.attachPoint() > 0) return refuse("it does not work in an attachment.");
+  if (w.primStore().status & 0x1) return refuse("it works only on non-physical objects.");
+  if (w.linkNumber() > 1) return refuse("it works only on the root prim of a linkset.");
+  KeyframedMotion& k = w.keyframes();
+  if (command >= 0)
+  {
+    static const char* const names[] = {"play", "stop", "pause"};
+    const bool had = k.active();
+    if (had)
+    {
+      if (command == 0) k.playing = true;
+      else
+      {
+        k.playing = false;
+        if (command == 1) k.reset();
+      }
+    }
+    if (w.logFull()) return;
+    QJsonObject e{{"type", "keyframed"}, {"op", "command"}, {"command", names[command]}, {"applied", had}};
+    if (!had) e["note"] = "There is no keyframed motion to control.";
+    w.log(now, e);
+    return;
+  }
+  if (keys.empty())
+  {
+    const bool had = k.active();
+    k = KeyframedMotion();
+    if (w.logFull()) return;
+    w.log(now, QJsonObject{{"type", "keyframed"}, {"op", "clear"}, {"applied", had}});
+    return;
+  }
+  const bool hasMove = data & KeyframedMotion::DATA_TRANSLATION, hasTurn = data & KeyframedMotion::DATA_ROTATION;
+  const size_t stride = size_t((hasMove ? 1 : 0) + (hasTurn ? 1 : 0) + 1);
+  if (keys.size() % stride != 0)
+    return refuse(QString("the keyframe list has %1 element(s); every keyframe takes %2 (%3).")
+                    .arg(keys.size()).arg(stride).arg(hasMove && hasTurn ? "position, rotation, time" : (hasMove ? "position, time" : "rotation, time")));
+  std::vector<KeyframedMotion::Frame> frames;
+  double total = 0.0;
+  for (size_t at = 0; at < keys.size(); at += stride)
+  {
+    KeyframedMotion::Frame f;
+    const int n = int(at / stride) + 1;
+    size_t j = at;
+    if (hasMove)
+    {
+      if (keys[j].type != Type::Vector) return refuse(QString("keyframe %1 needs a vector (the move).").arg(n));
+      for (int i = 0; i < 3; ++i) f.move[i] = keys[j].f[i];
+      ++j;
+    }
+    if (hasTurn)
+    {
+      if (keys[j].type != Type::Rotation) return refuse(QString("keyframe %1 needs a rotation (the turn).").arg(n));
+      for (int i = 0; i < 4; ++i) f.turn[i] = keys[j].f[i];
+      ++j;
+    }
+    if (keys[j].type != Type::Float && keys[j].type != Type::Integer) return refuse(QString("keyframe %1 needs a float (the time in seconds).").arg(n));
+    f.time = keys[j].type == Type::Float ? double(keys[j].f[0]) : double(keys[j].i);
+    if (!(f.time >= 0.1)) return refuse(QString("keyframe %1: the time must be at least 0.1 seconds.").arg(n));
+    for (int i = 0; i < 3; ++i)
+      if (!std::isfinite(f.move[i])) return refuse(QString("keyframe %1: the move is not a number.").arg(n));
+    const double len = std::sqrt(double(f.move[0]) * f.move[0] + double(f.move[1]) * f.move[1] + double(f.move[2]) * f.move[2]);
+    if (len / f.time > 250.0) return refuse(QString("keyframe %1: %2 m in %3 s is faster than 250 m/s.").arg(n).arg(rnd5(float(len))).arg(rnd5(float(f.time))));
+    const double norm = std::sqrt(double(f.turn[0]) * f.turn[0] + double(f.turn[1]) * f.turn[1] + double(f.turn[2]) * f.turn[2] + double(f.turn[3]) * f.turn[3]);
+    if (!(norm > 1.0e-6) || !std::isfinite(norm)) return refuse(QString("keyframe %1: the rotation has no length (use ZERO_ROTATION for no turn).").arg(n));
+    if (!hasTurn) { f.turn[0] = f.turn[1] = f.turn[2] = 0.0f; f.turn[3] = 1.0f; }
+    total += f.time;
+    frames.push_back(f);
+  }
+  k = KeyframedMotion();
+  k.frames = std::move(frames);
+  k.mode = mode;
+  k.data = data;
+  k.playing = true;
+  k.reset();
+  if (w.logFull()) return;
+  static const char* const modes[] = {"forward", "loop", "ping_pong", "reverse"};
+  w.log(now, QJsonObject{{"type", "keyframed"}, {"op", "set"}, {"applied", true}, {"frames", int(k.frames.size())},
+                         {"mode", modes[mode]}, {"data", data}, {"seconds", rnd5(float(total))}});
+}
+
+// llCreateLink and llBreakAllLinks need PERMISSION_CHANGE_LINKS, granted by the owner (the wiki)
+bool changeLinksAllowed(World& w, double now, qint32 permissions, const QString& permissionKey)
+{
+  QString problem;
+  if (!(permissions & 0x80)) problem = "Script trying to change links but PERMISSION_CHANGE_LINKS permission not set!";
+  else if (permissionKey != w.ownerKey()) problem = "Script trying to change links but PERMISSION_CHANGE_LINKS was not granted by the owner!";
+  if (problem.isEmpty()) return true;
+  if (!w.logFull()) w.log(now, QJsonObject{{"type", "debug"}, {"channel", qint32(0x7FFFFFFF)}, {"text", problem}});
+  return false;
 }
 
 // llSetBuoyancy: 0 (full gravity) to 1 (floats); the sandbox clamps to this range (Second Life allows other values)
@@ -4219,6 +4364,14 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::SetForce: setObjectForce(m_world, m_now, a[0].f, a[1].i != 0); return Value();
     case Fn::GetForce: { float f[3]; m_world.force(f); return Value::vector(f[0], f[1], f[2]); }
     case Fn::SetVelocity: setObjectVelocity(m_world, m_now, a[0].f, a[1].i != 0); return Value();
+    case Fn::SetDamage: setObjectDamage(m_world, m_now, a[0].f[0]); return Value();
+    case Fn::SetKeyframedMotion: setKeyframedMotion(m_world, m_now, a[0].list, a[1].list); return Value();
+    case Fn::CreateLink:
+      if (changeLinksAllowed(m_world, m_now, m_permissions, m_permissionKey)) m_world.createLink(m_now, a[0].s, a[1].i != 0);
+      return Value();
+    case Fn::BreakAllLinks:
+      if (changeLinksAllowed(m_world, m_now, m_permissions, m_permissionKey)) m_world.breakAllLinks(m_now);
+      return Value();
     case Fn::GetEnergy: return Value::number(1.0f);
     case Fn::Target: return Value::integer(addTarget(a[0].f, a[1].f[0]));
     case Fn::TargetRemove: removeTarget(a[0].i); return Value();

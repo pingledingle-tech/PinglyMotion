@@ -108,9 +108,15 @@ class ObjectWorld : public RlvWorld
     void setVelocity(const float v[3]) override { for (int i = 0; i < 3; ++i) state().velocity[i] = v[i]; }
     void force(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = state().force[i]; }
     void setForce(const float f[3]) override { for (int i = 0; i < 3; ++i) state().force[i] = f[i]; }
+    float damage() const override { return state().damage; }
+    void setDamage(float d) override { state().damage = d; }
+    KeyframedMotion& keyframes() override { return state().keyframes; }
+    bool createLink(double time, const QString& target, bool parent) override { return m_sandbox.createLink(m_slot, time, target, parent); }
+    int breakAllLinks(double time) override { return m_sandbox.breakAllLinks(m_slot, time); }
     float buoyancy() const override { return state().buoyancy; }
     void setBuoyancy(float b) override { state().buoyancy = b; }
-    PrimStore& primStore() override { return state().prims; }
+    // a linked object's scripts read and change the prims in the root's list (step 9)
+    PrimStore& primStore() override { return m_sandbox.m_objects[size_t(m_sandbox.rootObject(object()))].prims; }
     Inventory& inventory() override { return state().inventory; }
     QString sitterOnTarget(int link) const override
     {
@@ -322,6 +328,7 @@ QString Sandbox::add(const ObjectSpec& spec, const std::vector<ScriptEntry>& scr
     script.type = 10;
     o.inventory.add(script, s.key);   // a script with the name of a listed item is not added twice
   }
+  o.ownPrims = s.prims;
   o.firstSlot = int(m_slots.size());
   o.slotCount = int(scripts.size());
   m_objects.push_back(std::move(o));
@@ -378,7 +385,185 @@ int Sandbox::refusedLines() const
 int Sandbox::linkNumber(int slot) const
 {
   const Slot& s = m_slots[size_t(slot)];
-  return m_objects[size_t(s.object)].spec.prims == 1 ? 0 : s.link;
+  const Object& o = m_objects[size_t(s.object)];
+  if (o.spec.prims == 1) return 0;
+  if (o.linkedTo >= 0) return linkOffset(s.object) + s.link - 1;
+  // a root: its own prims after the first come after the prims of the objects linked to it
+  int children = 0;
+  for (int c : o.linkChildren) children += m_objects[size_t(c)].ownPrims;
+  return s.link <= 1 ? s.link : s.link + children;
+}
+
+int Sandbox::linkOffset(int object) const
+{
+  const Object& o = m_objects[size_t(object)];
+  if (o.linkedTo < 0) return 1;
+  int number = 2;
+  for (int c : m_objects[size_t(o.linkedTo)].linkChildren)
+  {
+    if (c == object) break;
+    number += m_objects[size_t(c)].ownPrims;
+  }
+  return number;
+}
+
+// ---------------------------------------------------------------- llCreateLink and llBreakAllLinks (third gap list run, step 9)
+
+bool Sandbox::createLink(int from, double time, const QString& targetKey, bool parent)
+{
+  static const qint32 DEBUG = 0x7FFFFFFF;
+  World& w = *m_slots[size_t(from)].world;
+  const int callerObject = m_slots[size_t(from)].object;
+  Object& caller = m_objects[size_t(callerObject)];
+  auto entry = [&](bool linked, const QString& note, const QString& shout) {
+    if (w.logFull()) return;
+    if (!shout.isEmpty()) w.log(time, QJsonObject{{"type", "debug"}, {"channel", DEBUG}, {"text", shout}});
+    QJsonObject e{{"type", "link"}, {"op", "create"}, {"target", targetKey}, {"parent", parent}, {"linked", linked}};
+    if (!note.isEmpty()) e["note"] = note;
+    w.log(time, e);
+  };
+  if (caller.spec.attached > 0)
+  {
+    entry(false, "Worn: llCreateLink from a script in an attachment fails silently.", QString());
+    return false;
+  }
+  int target = -1;
+  for (size_t i = 0; i < m_objects.size(); ++i)
+    if (m_objects[i].spec.key == targetKey && !m_objects[i].dead) target = int(i);
+  if (target < 0)
+  {
+    entry(false, "The target is not a prim of the sandbox's region.", "llCreateLink: the target must be a prim in this region.");
+    return false;
+  }
+  const Object& t = m_objects[size_t(target)];
+  if (t.spec.attached > 0)
+  {
+    entry(false, "The target is attached to an avatar.", "llCreateLink: the target must not be attached to an avatar.");
+    return false;
+  }
+  const QString callerOwner = caller.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : caller.spec.ownerKey;
+  const QString targetOwner = t.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : t.spec.ownerKey;
+  if (callerOwner != targetOwner)
+  {
+    entry(false, "The two objects have different owners.", "llCreateLink: both objects must have the same owner.");
+    return false;
+  }
+  if (rootObject(target) == rootObject(callerObject))
+  {
+    entry(false, "The target is in the same linkset already.", QString());
+    return false;
+  }
+  // the sandbox joins whole objects: the new root may have objects linked to it already, the other one must not
+  const int root = parent ? callerObject : target;
+  const int other = parent ? target : callerObject;
+  if (m_objects[size_t(root)].linkedTo >= 0 || m_objects[size_t(other)].linkedTo >= 0 || !m_objects[size_t(other)].linkChildren.empty())
+  {
+    entry(false, "The sandbox links an object that is not linked yet to the root of a linkset (or to an object that is not linked): "
+                 "joining two linksets, or a child to another root, is not modelled.", QString());
+    return false;
+  }
+  Object& r = m_objects[size_t(root)];
+  Object& x = m_objects[size_t(other)];
+  int total = r.ownPrims;
+  for (int c : r.linkChildren) total += m_objects[size_t(c)].ownPrims;
+  const int before = total;
+  total += x.ownPrims;
+  if (total > MAX_PRIMS)
+  {
+    entry(false, QString("A linkset has at most %1 prims.").arg(MAX_PRIMS), QString());
+    return false;
+  }
+  // Second Life: the prim centres must fit in a sphere of 54 m (64 m since 27 June 2023, the wiki's banner); the sandbox
+  // takes the largest distance between two objects of the set, which is a little less strict
+  std::vector<int> members{root};
+  for (int c : r.linkChildren) members.push_back(c);
+  float pa[3], pb[3];
+  where(other, pa);
+  for (int m : members)
+  {
+    where(m, pb);
+    if (distance(pa, pb) >= MAX_LINK_DISTANCE)
+    {
+      entry(false, QString("The objects are too far apart: the prims of a linkset must fit in %1 m.").arg(MAX_LINK_DISTANCE), QString());
+      return false;
+    }
+  }
+  r.prims.insertPrims(1, x.prims.copyPrims(0, x.ownPrims, x.ownPrims), before);
+  r.linkChildren.insert(r.linkChildren.begin(), other);
+  x.linkedTo = root;
+  r.spec.prims = total;
+  for (int c : r.linkChildren) m_objects[size_t(c)].spec.prims = total;
+  if (!w.logFull())
+  {
+    QJsonObject e{{"type", "link"}, {"op", "create"}, {"target", targetKey}, {"parent", parent}, {"linked", true},
+                  {"root", r.spec.key}, {"prims", total}};
+    w.log(time, e);
+  }
+  members.push_back(other);
+  for (int m : members)
+  {
+    const Object& o = m_objects[size_t(m)];
+    for (int i = 0; i < o.slotCount; ++i)
+    {
+      Slot& slot = m_slots[size_t(o.firstSlot + i)];
+      slot.interp->syncTo(time);
+      slot.interp->changedEvent(0x20);   // CHANGED_LINK
+    }
+  }
+  return true;
+}
+
+int Sandbox::breakAllLinks(int from, double time)
+{
+  World& w = *m_slots[size_t(from)].world;
+  const int root = rootObject(m_slots[size_t(from)].object);
+  Object& r = m_objects[size_t(root)];
+  if (r.linkChildren.empty())
+  {
+    if (!w.logFull())
+      w.log(time, QJsonObject{{"type", "link"}, {"op", "break_all"}, {"released", 0},
+                              {"note", "Nothing was linked with llCreateLink; the prims an object has from the start stay together in the sandbox."}});
+    return 0;
+  }
+  int total = r.spec.prims;
+  // the blocks of the children sit after the root prim, the newest first: take them out from the back
+  std::vector<int> start;
+  int at = 1;
+  for (int c : r.linkChildren)
+  {
+    start.push_back(at);
+    at += m_objects[size_t(c)].ownPrims;
+  }
+  QJsonArray names;
+  std::vector<int> members{root};
+  for (size_t j = r.linkChildren.size(); j-- > 0;)
+  {
+    Object& c = m_objects[size_t(r.linkChildren[j])];
+    std::vector<PrimState> block = r.prims.removePrims(start[j], c.ownPrims, total);
+    total -= c.ownPrims;
+    c.prims.removePrims(0, c.ownPrims, c.ownPrims);
+    c.prims.insertPrims(0, block, 0);
+    c.linkedTo = -1;
+    c.spec.prims = c.ownPrims;
+    members.push_back(r.linkChildren[j]);
+    names.prepend(c.spec.key);
+  }
+  const int released = int(r.linkChildren.size());
+  r.linkChildren.clear();
+  r.spec.prims = r.ownPrims;
+  if (!w.logFull())
+    w.log(time, QJsonObject{{"type", "link"}, {"op", "break_all"}, {"released", released}, {"root", r.spec.key}, {"objects", names}});
+  for (int m : members)
+  {
+    const Object& o = m_objects[size_t(m)];
+    for (int i = 0; i < o.slotCount; ++i)
+    {
+      Slot& slot = m_slots[size_t(o.firstSlot + i)];
+      slot.interp->syncTo(time);
+      slot.interp->changedEvent(0x20);   // CHANGED_LINK
+    }
+  }
+  return released;
 }
 
 // ---------------------------------------------------------------- running
@@ -798,9 +983,21 @@ void Sandbox::deliver(const SandboxInput& input)
         m_log.log(t, entry);
         return;
       }
-      const float g = GRAVITY_Z * (1.0f - o.buoyancy);
-      o.velocity[2] += g * float(input.dt);
-      for (int i = 0; i < 3; ++i) o.spec.position[i] += o.velocity[i] * float(input.dt);
+      if (o.keyframes.active())
+      {
+        // third gap list run, step 8: llSetKeyframedMotion moves the object by its frames (linear in place, the turn
+        // spread over the frame); a keyframed object does not fall, and its velocity is the frame's speed
+        PrimState& rootPrim = m_objects[size_t(rootObject(target))].prims.prim(1, o.spec.prims);
+        o.keyframes.advance(input.dt, o.spec.position, rootPrim.rotation, o.velocity);
+        entry["keyframed"] = o.keyframes.playing ? "playing" : "paused_or_ended";
+        entry["rotation"] = QJsonArray{rnd5(rootPrim.rotation[0]), rnd5(rootPrim.rotation[1]), rnd5(rootPrim.rotation[2]), rnd5(rootPrim.rotation[3])};
+      }
+      else
+      {
+        const float g = GRAVITY_Z * (1.0f - o.buoyancy);
+        o.velocity[2] += g * float(input.dt);
+        for (int i = 0; i < 3; ++i) o.spec.position[i] += o.velocity[i] * float(input.dt);
+      }
       entry["velocity"] = QJsonArray{rnd5(o.velocity[0]), rnd5(o.velocity[1]), rnd5(o.velocity[2])};
       entry["position"] = QJsonArray{rnd5(o.spec.position[0]), rnd5(o.spec.position[1]), rnd5(o.spec.position[2])};
       m_log.log(t, entry);
