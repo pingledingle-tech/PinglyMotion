@@ -521,9 +521,10 @@ class TestAiAssistant : public QObject
       const AiAssistant::Launch windows = AiAssistant::showInFolder("C:/PM/mcp/PinglyMotion.mcpb", true);
       QCOMPARE(windows.program, QString("explorer.exe"));
       QCOMPARE(windows.arguments, (QStringList{"/select,", QDir::toNativeSeparators("C:/PM/mcp/PinglyMotion.mcpb")}));
-      const AiAssistant::Launch other = AiAssistant::showInFolder("/opt/pm/mcp/PinglyMotion.mcpb", false);
+      // a real absolute folder, so the test means the same on every system (on Windows "/opt" gets a drive letter)
+      const AiAssistant::Launch other = AiAssistant::showInFolder(m_mcp + "/PinglyMotion.mcpb", false);
       QVERIFY(other.program.isEmpty());
-      QCOMPARE(other.url, QUrl::fromLocalFile("/opt/pm/mcp"));
+      QCOMPARE(other.url, QUrl::fromLocalFile(m_mcp));
       QVERIFY(!AiAssistant::showFile(m_dir.filePath("missing.mcpb")));
     }
 
