@@ -5,6 +5,7 @@ Files:
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/scriptlabsection.*
 - src/scriptlab/objectsview.*
+- src/scriptlab/lsl/sandbox.h
 - tests/scriptlabpanel/**
 - src/lucideicons.cpp
 - tests/transportbar/tst_transportbar.cpp

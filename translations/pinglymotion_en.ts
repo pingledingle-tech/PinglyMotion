@@ -4843,6 +4843,90 @@ Error: %2</source>
         <source>&quot;%1&quot; on channel %2</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Inventory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No inventory yet. An AI assistant gives one with lsl_run.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What the object holds in the run: its scripts and the items given with it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Simulated: given with the run, nothing is read from Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Texture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sound</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Landmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notecard, 1 line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notecard, %1 lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Body part</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gesture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Material</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inventory of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ScriptLabSection</name>
