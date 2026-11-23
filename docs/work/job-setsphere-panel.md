@@ -1,5 +1,5 @@
 Branch: job/setsphere-panel
-Status: active
+Status: done
 Pull request: #416
 Files:
 - src/scriptlab/spherecontrols.*
@@ -11,6 +11,7 @@ Files:
 - tests/CMakeLists.txt
 - docs/SCRIPT_LAB.md
 - docs/UX_DECISIONS.md
+- translations/pinglymotion_en.ts
 
 ## What
 
