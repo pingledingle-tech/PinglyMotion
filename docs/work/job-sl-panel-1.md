@@ -1,6 +1,6 @@
 Branch: job/sl-panel-1
 Status: active
-Pull request: pending
+Pull request: #387
 Files:
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/scriptlabsection.*
