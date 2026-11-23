@@ -109,6 +109,7 @@
 #include "pinglymotionwindow.h"
 #include "playback.h"
 #include "scriptlab/scriptlabpanel.h"
+#include "librarypanel.h"
 #include "scriptlab/cameraoverride.h"
 #include "scriptlab/environmentoverride.h"
 #include "scriptlab/viewmodesoverride.h"
@@ -489,6 +490,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
     addDockWidget(Qt::BottomDockWidgetArea,m_timelineDock);
   if(!m_scriptLabDock->isFloating() && !(dockWidgetArea(m_scriptLabDock) & m_scriptLabDock->allowedAreas()))
     addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
+  if(!m_libraryDock->isFloating() && !(dockWidgetArea(m_libraryDock) & m_libraryDock->allowedAreas()))
+    tabifyDockWidget(m_jointCardDock,m_libraryDock);
   // the timeline stands visible at every start; hiding it lasts for this session only
   PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
   // at large text or in a small window the panels rearrange (docs/UX_DECISIONS.md, 6c);
@@ -634,6 +637,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
     ui->timelineView->easingTiles()->setTipsOn(on);
     ui->timelineView->setHintsOn(on);
     m_scriptLabPanel->setHintsOn(on);   // the Script Lab panel's explanation line
+    m_libraryPanel->setHintsOn(on);     // the Library panel's line on top
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);   // the Selected joint panel's hint line
     refreshHandsPanel();   // the Hands tab's hint lines
     if(m_hintCards) m_hintCards->setHintsOn(on);
@@ -1057,6 +1061,28 @@ void PinglyMotionWindow::buildDocks()
   m_scriptLabPanel=new ScriptLabPanel;
   m_scriptLabDock=ScriptLabPanel::makeDock(this,m_scriptLabPanel);
 
+  // --- Library panel (roadmap item 6, issue 19; docs/UX_DECISIONS.md 6l):
+  // ready-made moves to start from. Hidden until View > Library; a tab next
+  // to Selected joint on the right; saved with the layout like the others.
+  m_libraryPanel=new LibraryPanel;
+  m_libraryPanel->setLibraryFolder(ControlApi::defaultLibraryFolder());
+  m_libraryPanel->setHintsOn(UserSettings::tipsOn());
+  m_libraryDock=LibraryPanel::makeDock(this,m_libraryPanel);
+  tabifyDockWidget(m_jointCardDock,m_libraryDock);
+  m_jointCardDock->raise();
+  connect(m_libraryPanel,&LibraryPanel::useRequested,this,&PinglyMotionWindow::useLibraryClip);
+  connect(m_libraryPanel,&LibraryPanel::statusMessage,this,[this](const QString& text) { statusBar()->showMessage(text,5000); });
+  // opening brings the panel to the front of its side and puts the keyboard in the search field
+  connect(m_libraryDock->toggleViewAction(),&QAction::triggered,this,[this](bool on)
+  {
+    if(on)
+    {
+      m_libraryDock->raise();
+      m_libraryPanel->focusSearch();
+    }
+    statusBar()->showMessage(LibrarySpec::tr(on ? LibrarySpec::openedPanel : LibrarySpec::closedPanel),5000);
+  });
+
   // View menu: a tick for each panel, then Hide panels (Tab) and Reset
   // layout. The Timeline item comes from the designer file; the other two
   // are the panels' own.
@@ -1184,6 +1210,7 @@ void PinglyMotionWindow::buildMenus()
   ui->menuView->addAction(showJointCardAction);
   ui->menuView->addAction(ui->optionsShowTimelineAction);
   ui->menuView->addAction(scriptLabAction);
+  ui->menuView->addAction(m_libraryDock->toggleViewAction());
   ui->menuView->addAction(m_hidePanelsAction);
   if(resetLayoutAction) ui->menuView->addAction(resetLayoutAction);
   ui->menuView->addAction(specAction(this,viewNextArea,true));
@@ -1266,6 +1293,7 @@ void PinglyMotionWindow::buildMenus()
     ui->timelineView->easingTiles()->setTipsOn(on);
     ui->timelineView->setHintsOn(on);
     m_scriptLabPanel->setHintsOn(on);
+    m_libraryPanel->setHintsOn(on);
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);
     refreshHandsPanel();
     m_tipsSwitch->setOn(on);
@@ -1399,6 +1427,7 @@ void PinglyMotionWindow::buildTopBar()
   sources.save=ui->fileSaveAction;
   sources.exportAnim=ui->fileExportAnimAction;
   sources.scriptLab=m_scriptLabDock->toggleViewAction();
+  sources.library=m_libraryDock->toggleViewAction();
   m_topBar=new TopBar(ui->toolBar,sources,this);
   m_topBar->setDark(UserSettings::darkTheme());
   connect(m_topBar,&TopBar::themeRequested,this,[this]()
@@ -1622,6 +1651,30 @@ void PinglyMotionWindow::startFromLibrary(const QString& clipId)
   statusBar()->showMessage(answer.value(QStringLiteral("reference")).toObject().value(QStringLiteral("credit")).toString(),10000);
 }
 
+// Use this in the Library panel (docs/UX_DECISIONS.md 6l): with unsaved changes a small window
+// asks first (Cancel, Open without saving, Save, then open); then the clip opens by the route
+// of load_reference, and the status line says what was opened
+void PinglyMotionWindow::useLibraryClip(const QString& clipId)
+{
+  const LibraryClip* clip=m_libraryPanel->index().find(clipId);
+  if(!clip) return;
+  bool unsaved=false;
+  for(Animation* anim : animationIds) if(anim->dirty()) unsaved=true;
+  if(unsaved)
+  {
+    QScopedPointer<QMessageBox> box(LibraryPanel::unsavedBox(this,clip->name));
+    box->exec();
+    const LibraryPanel::UnsavedChoice choice=LibraryPanel::choiceOf(box.data());
+    if(choice==LibraryPanel::UnsavedChoice::Cancel) return;
+    if(choice==LibraryPanel::UnsavedChoice::SaveThenOpen && !fileSave()) return;
+    // the user chose to let the changes go (or they are saved now)
+    for(Animation* anim : animationIds) anim->setDirty(false);
+  }
+  QString message;
+  LibraryPanel::openClip(m_controlApi.data(),clipId,message);
+  statusBar()->showMessage(message,10000);
+}
+
 // no animation open: the empty state covers the 3D view, the panels and the actions that need an
 // animation are greyed with "Open an animation first."
 void PinglyMotionWindow::setEmptyMode(bool empty)
@@ -1677,7 +1730,7 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
 
 QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
 {
-  return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock};
+  return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock,m_libraryDock};
 }
 
 // View > Reset layout: the default layout built in code, all three panels
@@ -1691,6 +1744,10 @@ void PinglyMotionWindow::resetPanelLayout()
   m_scriptLabDock->setFloating(false);
   addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
   m_scriptLabDock->hide();
+  // the library too: a closed tab next to Selected joint
+  m_libraryDock->setFloating(false);
+  tabifyDockWidget(m_jointCardDock,m_libraryDock);
+  m_libraryDock->hide();
   // this is the wide layout now; rearranged again if the window has no room for it
   m_reflower.wideLayoutChanged(this,reflowDocks());
   m_applyingTab=false;
@@ -1804,6 +1861,7 @@ PanelWindow::Docks PinglyMotionWindow::reflowDocks() const
   docks.jointCard=m_jointCardDock;
   docks.timeline=m_timelineDock;
   docks.scriptLab=m_scriptLabDock;
+  docks.library=m_libraryDock;
   return docks;
 }
 
@@ -3054,6 +3112,8 @@ void PinglyMotionWindow::setCurrentFile(const QString& fileName)
   // "Pose: changed from ..." on the Hands tab belongs to the file it was picked in
   if(m_handsPanel && fileName!=currentFile) m_handsPanel->forgetPicks();
   currentFile=fileName;
+  // a clip opened from the library gets the "Open now" chip in the Library panel
+  if(m_libraryPanel) m_libraryPanel->setOpenFile(fileName);
   updateWindowTitle();
 }
 

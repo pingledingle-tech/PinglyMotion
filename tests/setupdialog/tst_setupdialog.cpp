@@ -357,6 +357,7 @@ void TestSetupDialog::keysMouseDialogKeysMatchTheMenus()
     {QStringLiteral("Show hints"), helpHints.key},
     {QStringLiteral("Hide panels"), viewHidePanels.key},
     {QStringLiteral("Script Lab"), viewScriptLab.key},
+    {QStringLiteral("Library"), viewLibrary.key},
   };
   int checked = 0;
   for (const KeysMouseSpec::Row& row : KeysMouseSpec::rows)

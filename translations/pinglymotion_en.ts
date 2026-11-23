@@ -1841,6 +1841,14 @@ Pick the ones you want.</source>
         <source>Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+B</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LabCodeEdit</name>
@@ -2532,6 +2540,209 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LibraryPanel</name>
+    <message>
+        <source>Library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ready-made moves to start from. Pick one, then press Use this.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search the library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type words like walk, wave or sit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Kind of move</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 clips</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 clips</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No clip found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try another word, or show all clips.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show all clips</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No library found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The library folder next to PinglyMotion is missing. Install PinglyMotion again to get it back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Length</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skeleton</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>From</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Licence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 s, %2 frames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life, %1 joints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CMU motion capture database</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No restrictions on use. No formal licence text.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mesh2Motion</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CC0 1.0: free to use for anything.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use this</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens this move as your animation. Save it under your own name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This move is open now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open %1?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your animation has changes that are not saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open without saving</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save, then open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opened %1 from the library. Save it under your own name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Library: ready-made moves to start from</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Library open. It shares the right side with Selected joint: switch with the tabs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Library closed. View &gt; Library opens it again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing all %1 clips.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clips</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: %2 clips</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Walk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gesture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Idle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wave</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MenuSpec</name>
     <message>
         <source>New animation</source>
@@ -2719,6 +2930,14 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Text size back to 100%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Library: ready-made moves to start from</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

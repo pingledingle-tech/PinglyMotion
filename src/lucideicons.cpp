@@ -108,6 +108,12 @@ namespace
     {"check",{"M20 6 9 17l-5-5"}},
     // Edit curve beside the easing tiles (UX phase 5), from the approved mockup
     {"sliders-horizontal",{"M10 5H3","M12 19H3","M14 3v4","M16 17v4","M21 12h-9","M21 19h-5","M21 5h-7","M8 10v4","M8 12H3"}},
+    // the Library panel (roadmap item 6), from the approved mockup: its title and top bar button,
+    // the search field and Use this
+    {"library-big",{"M4 3h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z","M7 3v18",
+      "M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"}},
+    {"search",{"m21 21-4.34-4.34","M19 11a8 8 0 1 0-16 0a8 8 0 1 0 16 0z"}},
+    {"import",{"M12 3v12","m8 11 4 4 4-4","M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

@@ -71,6 +71,7 @@ namespace
     QAction save{QStringLiteral("Save")};
     QAction exportAnim{QStringLiteral("Export")};
     QAction scriptLab{QStringLiteral("Script Lab")};
+    QAction library{QStringLiteral("Library")};
     TopBar* top = nullptr;
 
     Fixture()
@@ -80,12 +81,14 @@ namespace
       redo.setEnabled(false);
       redo.setStatusTip(MenuSpec::reason(MenuSpec::editRedo));
       scriptLab.setCheckable(true);
+      library.setCheckable(true);
       TopBar::Sources sources;
       sources.undo = &undo;
       sources.redo = &redo;
       sources.save = &save;
       sources.exportAnim = &exportAnim;
       sources.scriptLab = &scriptLab;
+      sources.library = &library;
       top = new TopBar(&bar, sources, &bar);
     }
   };
@@ -241,12 +244,13 @@ void TestEmptyState::topTableIsExact()
     {&MenuSpec::topSave, "topSaveAction", "Save", "Save", "Ctrl+S", "Saves your animation to a file. You can open it again later.", "", "save"},
     {&MenuSpec::topExport, "topExportAction", "Export", "Export for Second Life", "Ctrl+Shift+E", "", "", "upload"},
     {&MenuSpec::topScriptLab, "topScriptLabAction", "Script Lab", "Script Lab: test RLV and LSL scripts", "Ctrl+Shift+L", "", "", "flask-conical"},
+    {&MenuSpec::topLibrary, "topLibraryAction", "Library", "Library: ready-made moves to start from", "Ctrl+Shift+B", "", "", "library-big"},
     {&MenuSpec::topSetup, "topSetupAction", "Setup", "Setup", "",
      "Beginner or experienced, mouse and keys habits, theme, text size and hints.", "", "settings"},
     {&MenuSpec::topTheme, "topThemeAction", "", "Switch theme", "T", "", "", "sun"},
   };
-  QCOMPARE(int(sizeof(MenuSpec::topBar) / sizeof(MenuSpec::topBar[0])), 7);
-  for (int i = 0; i < 7; i++)
+  QCOMPARE(int(sizeof(MenuSpec::topBar) / sizeof(MenuSpec::topBar[0])), 8);
+  for (int i = 0; i < 8; i++)
   {
     const MenuSpec::Button& b = *MenuSpec::topBar[i];
     QCOMPARE(&b, expected[i].button);
@@ -273,6 +277,7 @@ void TestEmptyState::topTableIsExact()
   QCOMPARE(QString::fromLatin1(MenuSpec::topRedo.key), QString::fromLatin1(MenuSpec::editRedo.key));
   QCOMPARE(QString::fromLatin1(MenuSpec::topExport.key), QString::fromLatin1(MenuSpec::fileExport.key));
   QCOMPARE(QString::fromLatin1(MenuSpec::topScriptLab.key), QString::fromLatin1(MenuSpec::viewScriptLab.key));
+  QCOMPARE(QString::fromLatin1(MenuSpec::topLibrary.key), QString::fromLatin1(MenuSpec::viewLibrary.key));
   QCOMPARE(QString::fromLatin1(MenuSpec::topTheme.key), QString::fromLatin1(MenuSpec::viewLightTheme.key));
 }
 
@@ -292,6 +297,7 @@ void TestEmptyState::topMatchesMockup()
                              "data-cmd=\"export\" data-name=\"Export for Second Life\" data-key=\"Ctrl+Shift+E\"", "</svg>Export</button>",
                              "<span class=\"divider\">",
                              "data-name=\"Script Lab: test RLV and LSL scripts\" data-key=\"Ctrl+Shift+L\"", "</svg>Script Lab</button>",
+                             "data-name=\"Library: ready-made moves to start from\" data-key=\"Ctrl+Shift+B\"", "</svg>Library</button>",
                              "data-cmd=\"setup\" data-name=\"Setup\"",
                              "data-tipline=\"Beginner or experienced, mouse and keys habits, theme, text size and hints.\"", "</svg>Setup</button>",
                              "data-cmd=\"theme\" data-name=\"Switch theme\" data-key=\"T\""})
@@ -301,7 +307,7 @@ void TestEmptyState::topMatchesMockup()
     last = at;
   }
   // the icons
-  for (const char* icon : {"undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun"})
+  for (const char* icon : {"undo-2", "redo-2", "save", "upload", "flask-conical", "library-big", "settings", "sun"})
     QVERIFY2(bar.contains(QStringLiteral("data-i=\"%1\"").arg(QLatin1String(icon))), icon);
   // the theme button's names and icons
   QVERIFY(html.contains(QStringLiteral("theme === \"dark\" ? \"Switch to the light theme\" : \"Switch to the dark theme\"")));
@@ -312,8 +318,8 @@ void TestEmptyState::topOrderAndDividers()
 {
   Fixture f;
   QCOMPARE(layout(&f.bar), QStringList({"spacer", "topUndoAction", "topRedoAction", "|", "topSaveAction", "topExportAction", "|",
-                                        "topScriptLabAction", "topSetupAction", "topThemeAction"}));
-  QCOMPARE(f.top->buttons().size(), 7);
+                                        "topScriptLabAction", "topLibraryAction", "topSetupAction", "topThemeAction"}));
+  QCOMPARE(f.top->buttons().size(), 8);
   QVERIFY(!f.bar.isMovable());
 }
 
@@ -321,7 +327,7 @@ void TestEmptyState::topTextsAndTips()
 {
   Fixture f;
   const QMap<QString, QString> text = {{"topUndoAction", ""}, {"topRedoAction", ""}, {"topSaveAction", "Save"},
-    {"topExportAction", "Export"}, {"topScriptLabAction", "Script Lab"}, {"topSetupAction", "Setup"}, {"topThemeAction", ""}};
+    {"topExportAction", "Export"}, {"topScriptLabAction", "Script Lab"}, {"topLibraryAction", "Library"}, {"topSetupAction", "Setup"}, {"topThemeAction", ""}};
   for (auto it = text.cbegin(); it != text.cend(); ++it)
     QCOMPARE(f.top->button(it.key().toLatin1().constData())->text(), it.value());
 
@@ -331,6 +337,7 @@ void TestEmptyState::topTextsAndTips()
     {"topSaveAction", "Save  (Ctrl+S)\nSaves your animation to a file. You can open it again later."},
     {"topExportAction", "Export for Second Life  (Ctrl+Shift+E)"},
     {"topScriptLabAction", "Script Lab: test RLV and LSL scripts  (Ctrl+Shift+L)"},
+    {"topLibraryAction", "Library: ready-made moves to start from  (Ctrl+Shift+B)"},
     {"topSetupAction", "Setup\nBeginner or experienced, mouse and keys habits, theme, text size and hints."},
     {"topThemeAction", "Switch to the light theme  (T)"},
   };
@@ -351,7 +358,7 @@ void TestEmptyState::topEnabledWithAnimation()
   Fixture f;
   f.top->setAnimationOpen(true);
   const QMap<QString, bool> enabled = {{"topUndoAction", false}, {"topRedoAction", false}, {"topSaveAction", true},
-    {"topExportAction", true}, {"topScriptLabAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
+    {"topExportAction", true}, {"topScriptLabAction", true}, {"topLibraryAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
   for (auto it = enabled.cbegin(); it != enabled.cend(); ++it)
     QVERIFY2(f.top->button(it.key().toLatin1().constData())->isEnabled() == it.value(), qPrintable(it.key()));
 }
@@ -362,7 +369,7 @@ void TestEmptyState::topEnabledWithoutAnimation()
   f.top->setAnimationOpen(false);
   QVERIFY(!f.top->animationOpen());
   const QMap<QString, bool> enabled = {{"topUndoAction", false}, {"topRedoAction", false}, {"topSaveAction", false},
-    {"topExportAction", false}, {"topScriptLabAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
+    {"topExportAction", false}, {"topScriptLabAction", true}, {"topLibraryAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
   for (auto it = enabled.cbegin(); it != enabled.cend(); ++it)
     QVERIFY2(f.top->button(it.key().toLatin1().constData())->isEnabled() == it.value(), qPrintable(it.key()));
   QCOMPARE(f.top->button("topSaveAction")->toolTip(),
@@ -409,6 +416,16 @@ void TestEmptyState::topClicksFollowTheActions()
   QVERIFY(!lab->isChecked());
   f.scriptLab.toggle();
   QVERIFY(lab->isChecked());
+
+  // Library: the same, pressed together with View > Library
+  QAction* library = f.top->button("topLibraryAction");
+  QVERIFY(library->isCheckable());
+  QVERIFY(!library->isChecked());
+  library->trigger();
+  QVERIFY(f.library.isChecked());
+  QVERIFY(library->isChecked());
+  f.library.setChecked(false);
+  QVERIFY(!library->isChecked());
 
   // Setup works: a click asks for the dialog
   QSignalSpy setup(f.top, &TopBar::setupRequested);

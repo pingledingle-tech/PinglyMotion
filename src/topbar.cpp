@@ -40,7 +40,8 @@ TopBar::TopBar(QToolBar* bar, const Sources& sources, QObject* parent) : QObject
 
   const QHash<const MenuSpec::Button*, QAction*> follow = {
     {&MenuSpec::topUndo, sources.undo}, {&MenuSpec::topRedo, sources.redo}, {&MenuSpec::topSave, sources.save},
-    {&MenuSpec::topExport, sources.exportAnim}, {&MenuSpec::topScriptLab, sources.scriptLab}};
+    {&MenuSpec::topExport, sources.exportAnim}, {&MenuSpec::topScriptLab, sources.scriptLab},
+    {&MenuSpec::topLibrary, sources.library}};
 
   int index = 0;
   for (const MenuSpec::Button* spec : MenuSpec::topBar)
@@ -70,11 +71,12 @@ TopBar::TopBar(QToolBar* bar, const Sources& sources, QObject* parent) : QObject
     for (int divider : MenuSpec::topBarDividers)
       if (divider == index) bar->addSeparator();
   }
-  connect(m_buttons.at(5), &QAction::triggered, this, [this]()
+  QAction* setup = button(MenuSpec::topSetup.id);
+  connect(setup, &QAction::triggered, this, [this, setup]()
   {
-    if (m_buttons.at(5)->isEnabled()) emit setupRequested();
+    if (setup->isEnabled()) emit setupRequested();
   });
-  connect(m_buttons.at(6), &QAction::triggered, this, &TopBar::themeRequested);
+  connect(button(MenuSpec::topTheme.id), &QAction::triggered, this, &TopBar::themeRequested);
 
   // the buttons that show only an icon
   for (QAction* button : m_buttons)
@@ -122,7 +124,8 @@ void TopBar::syncAll()
 // enabled state, tip and status line of one button
 QWidget* TopBar::setupWidget() const
 {
-  return m_buttons.size() > 5 ? m_bar->widgetForAction(m_buttons.at(5)) : nullptr;
+  QAction* setup = button(MenuSpec::topSetup.id);
+  return setup ? m_bar->widgetForAction(setup) : nullptr;
 }
 
 void TopBar::sync(QAction* button)

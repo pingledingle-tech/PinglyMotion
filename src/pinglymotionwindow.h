@@ -71,6 +71,7 @@ class EmptyState;
 class HintCards;
 class ViewToolbar;
 class ScriptLabPanel;
+class LibraryPanel;
 class AuroraLink;
 class WindowControlHost;
 class Scene;
@@ -437,6 +438,9 @@ class PinglyMotionWindow : public QMainWindow
     // Script Lab (issue 288): hidden until View > Script Lab
     QDockWidget* m_scriptLabDock=nullptr;
     ScriptLabPanel* m_scriptLabPanel=nullptr;
+    // the Library panel (roadmap item 6, issue 19): hidden until View > Library
+    QDockWidget* m_libraryDock=nullptr;
+    LibraryPanel* m_libraryPanel=nullptr;
     QScrollArea* m_jointsScroll=nullptr;
     QScrollArea* m_jointCardScroll=nullptr;
     // Tab (job P4): which panels Tab hid, so the next Tab shows the same ones;
@@ -489,6 +493,8 @@ class PinglyMotionWindow : public QMainWindow
     void setEmptyMode(bool empty);
     // the start choice with this library clip id was clicked in the empty state
     void startFromLibrary(const QString& clipId);
+    // Use this in the Library panel: asks about unsaved changes, then opens the clip
+    void useLibraryClip(const QString& clipId);
     bool emptyMode() const { return m_empty; }
     void setKeyFromMenu();
 

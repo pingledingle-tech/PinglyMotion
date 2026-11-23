@@ -70,6 +70,7 @@ namespace KeysMouseSpec
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Text size"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+= bigger, Ctrl+- smaller, Ctrl+0 back to 100%")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Hide panels"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Tab")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Script Lab"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+Shift+L")},
+    {QT_TRANSLATE_NOOP("KeysMouseDialog", "Library"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+Shift+B")},
   };
 
   inline QString action(const Row& row) { return QCoreApplication::translate("KeysMouseDialog", row.action); }
