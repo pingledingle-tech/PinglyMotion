@@ -17,6 +17,10 @@ Files:
 - src/scriptlab/lsl/session.*
 - tests/scriptlabpanel/**
 - tests/tst_labfolder.cpp
+- tests/tst_scene.cpp
+- tests/tst_labtint.cpp
+- src/scriptlab/labtint.*
+- src/pinglymotionwindow.cpp
 - tests/tst_labwatcher.cpp
 - tests/tst_lsllink.cpp
 - tests/tst_scriptlabwhole.cpp
