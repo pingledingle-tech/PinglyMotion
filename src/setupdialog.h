@@ -46,6 +46,14 @@ namespace SetupText
   inline constexpr const char* guidanceLabel = QT_TRANSLATE_NOOP("SetupDialog", "Guidance");
   inline constexpr const char* hintsChoice = QT_TRANSLATE_NOOP("SetupDialog", "Show hints, tips and the next-step line");
   inline constexpr const char* welcomeAgain = QT_TRANSLATE_NOOP("SetupDialog", "Show the welcome card again");
+  // Script Lab editor (lane 1, jobs F2 and F3)
+  inline constexpr const char* scriptEditorLabel = QT_TRANSLATE_NOOP("SetupDialog", "Script editor");
+  inline constexpr const char* suggestOnRequestChoice = QT_TRANSLATE_NOOP("SetupDialog", "Show suggestions only when I press Ctrl+Space");
+  inline constexpr const char* suggestOnRequestTip = QT_TRANSLATE_NOOP("SetupDialog",
+    "Off: suggestions come up while you type. Enter never picks one by itself.");
+  inline constexpr const char* luaSwitchChoice = QT_TRANSLATE_NOOP("SetupDialog", "Lua (trial): show the language choice in the editor");
+  inline constexpr const char* luaSwitchTip = QT_TRANSLATE_NOOP("SetupDialog",
+    "Lua is not checked or run yet. Scripts stay LSL.");
   inline constexpr const char* doneButton = QT_TRANSLATE_NOOP("SetupDialog", "Done");
 
   // the five text size choices (docs/UX_DECISIONS.md, section 8: 100 to 200, steps of 25)
@@ -65,6 +73,10 @@ class SetupDialog : public QDialog
     bool darkChecked() const;
     int textSizeChecked() const;
     bool hintsChecked() const;
+    bool suggestOnRequestChecked() const;
+    bool luaSwitchChecked() const;
+    QCheckBox* suggestOnRequestBox() const { return m_suggestOnRequestCheck; }
+    QCheckBox* luaSwitchBox() const { return m_luaSwitchCheck; }
     QPushButton* welcomeButton() const { return m_welcomeButton; }
 
   signals:
@@ -75,6 +87,9 @@ class SetupDialog : public QDialog
     void darkThemeRequested(bool dark);
     void textSizeRequested(int percent);
     void hintsRequested(bool on);
+    // Script Lab editor: suggestions only with Ctrl+Space; the Lua switch (job F3)
+    void suggestOnRequestRequested(bool on);
+    void luaSwitchRequested(bool on);
     void showCameraKeysRequested();
     // "Show the welcome card again": the window closes Setup and shows the card (UX phase 6a)
     void welcomeRequested();
@@ -87,6 +102,8 @@ class SetupDialog : public QDialog
     QRadioButton* m_lightRadio;
     QList<QRadioButton*> m_textSizeRadios;
     QCheckBox* m_hintsCheck;
+    QCheckBox* m_suggestOnRequestCheck = nullptr;
+    QCheckBox* m_luaSwitchCheck = nullptr;
     QPushButton* m_welcomeButton = nullptr;
 };
 

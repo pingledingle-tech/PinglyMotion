@@ -1137,7 +1137,8 @@ void ScriptLabPanel::buildLivePage()
   setTabOrder(m_editor->exampleButton(), m_editor->saveButton());
   setTabOrder(m_editor->saveButton(), m_editor->findButton());
   setTabOrder(m_editor->findButton(), m_editor->goToButton());
-  setTabOrder(m_editor->goToButton(), m_editor->findField());
+  setTabOrder(m_editor->goToButton(), m_editor->languageBox());   // shown only with the Lua switch on (job F3)
+  setTabOrder(m_editor->languageBox(), m_editor->findField());
   setTabOrder(m_editor->findField(), m_editor->goToField());
   setTabOrder(m_editor->goToField(), m_editor->keepButton());
   setTabOrder(m_editor->keepButton(), m_editor->loadButton());

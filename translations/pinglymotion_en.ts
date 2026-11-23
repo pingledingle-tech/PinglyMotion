@@ -1843,6 +1843,17 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabCodeEdit</name>
+    <message>
+        <source>Suggestions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Down to pick, then Enter or Tab. Esc closes the list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabEditor</name>
     <message>
         <source>No script open</source>
@@ -2062,6 +2073,84 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Nothing to save. Change the script first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SLua (Lua, trial)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The script language. Lua is a trial: no checks or suggestions yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lua is a trial. No Lua suggestions or checks yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LabSuggest</name>
+    <message>
+        <source>returns nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>returns %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>value %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Function</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Event</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Constant</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keyword</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Made in this script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Command</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LabSuggest::ScriptNamesProvider</name>
+    <message>
+        <source>A function made in this script.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A variable made in this script.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>function</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>function, returns %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6307,6 +6396,26 @@ Error: %2</source>
     </message>
     <message>
         <source>Show the welcome card again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script editor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show suggestions only when I press Ctrl+Space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off: suggestions come up while you type. Enter never picks one by itself.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lua (trial): show the language choice in the editor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lua is not checked or run yet. Scripts stay LSL.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

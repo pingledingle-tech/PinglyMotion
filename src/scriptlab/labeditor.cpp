@@ -5,6 +5,7 @@
  */
 
 #include <QApplication>
+#include <QComboBox>
 #include <QDir>
 #include <QEvent>
 #include <QFile>
@@ -17,7 +18,9 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QMenu>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
 #include <QSaveFile>
@@ -30,6 +33,7 @@
 #include "lucideicons.h"
 #include "scriptlabsection.h"
 #include "theme.h"
+#include "usersettings.h"
 
 #include "labeditor.h"
 
@@ -128,10 +132,48 @@ LabCodeEdit::LabCodeEdit(QWidget* parent) :
   {
     if (dy) m_numbers->scroll(0, dy);
     else m_numbers->update(0, rect.y(), m_numbers->width(), rect.height());
+    if (dy && suggestionsVisible()) placePopup();
   });
   connect(this, &QPlainTextEdit::cursorPositionChanged, this, &LabCodeEdit::updateBracketPair);
   connect(this, &QPlainTextEdit::textChanged, this, &LabCodeEdit::updateBracketPair);
   updateMargin();
+
+  // the suggestion list (job F2): a child of the text box, never a window of its own and never
+  // the focus, so the keys stay in the text and the list cannot take Enter by itself
+  m_popup = new QFrame(this);
+  m_popup->setObjectName("labSuggestPopup");
+  m_popup->setFocusPolicy(Qt::NoFocus);
+  m_popup->setAutoFillBackground(true);
+  QVBoxLayout* popup = new QVBoxLayout(m_popup);
+  popup->setContentsMargins(spacingXs, spacingXs, spacingXs, spacingXs);
+  popup->setSpacing(spacingXs);
+  m_list = new QListWidget(m_popup);
+  m_list->setObjectName("labSuggestList");
+  m_list->setFocusPolicy(Qt::NoFocus);
+  m_list->setSelectionMode(QAbstractItemView::SingleSelection);
+  m_list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  m_list->setUniformItemSizes(true);
+  m_list->setAccessibleName(tr("Suggestions"));
+  popup->addWidget(m_list);
+  m_help = new QLabel(m_popup);
+  m_help->setObjectName("labSuggestHelp");
+  m_help->setWordWrap(true);
+  popup->addWidget(m_help);
+  m_detail = new QLabel(m_popup);
+  m_detail->setObjectName("labSuggestDetail");
+  m_detail->setWordWrap(true);
+  popup->addWidget(m_detail);
+  m_hint = new QLabel(tr("Press Down to pick, then Enter or Tab. Esc closes the list."), m_popup);
+  m_hint->setObjectName("labSuggestHint");
+  m_hint->setWordWrap(true);
+  popup->addWidget(m_hint);
+  m_popup->hide();
+  connect(m_list, &QListWidget::itemClicked, this, [this](QListWidgetItem* item)
+  {
+    setSuggestionRow(m_list->row(item));
+    takeSuggestion();
+  });
+  stylePopup();
 }
 
 void LabCodeEdit::applyFixedFont()
@@ -158,6 +200,7 @@ void LabCodeEdit::setDark(bool dark)
 {
   m_dark = dark;
   m_highlighter->setDark(dark);
+  stylePopup();
   setExtraSelections(makeMarks());
   m_numbers->update();
   viewport()->update();
@@ -188,6 +231,7 @@ void LabCodeEdit::resizeEvent(QResizeEvent* event)
 {
   QPlainTextEdit::resizeEvent(event);
   updateMargin();
+  if (suggestionsVisible()) placePopup();
 }
 
 QList<int> LabCodeEdit::errorLines() const
@@ -345,7 +389,7 @@ bool LabCodeEdit::event(QEvent* event)
     const Qt::KeyboardModifiers mods = key->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier);
     const int k = key->key();
     const bool ctrl = mods == Qt::ControlModifier;
-    if ((ctrl && (k == Qt::Key_S || k == Qt::Key_F || k == Qt::Key_G)) || k == Qt::Key_Tab || k == Qt::Key_Backtab
+    if ((ctrl && (k == Qt::Key_S || k == Qt::Key_F || k == Qt::Key_G || k == Qt::Key_Space)) || k == Qt::Key_Tab || k == Qt::Key_Backtab
         || (mods == Qt::NoModifier && (k == Qt::Key_Escape || k == Qt::Key_F3)))
     {
       event->accept();
@@ -413,8 +457,17 @@ void LabCodeEdit::keyPressEvent(QKeyEvent* event)
 {
   const int k = event->key();
   const Qt::KeyboardModifiers mods = event->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier);
+  const QString typed = event->text();
+  // the suggestion list takes its keys first (arrows; Enter and Tab only once moved into it)
+  if (suggestionKey(event)) return;
+  editKey(event);
+  afterKey(k, mods, typed);
+}
 
-  // F2 (suggestions) and R3 (RLV help) will take Enter, Tab and Esc here first while their list is open.
+void LabCodeEdit::editKey(QKeyEvent* event)
+{
+  const int k = event->key();
+  const Qt::KeyboardModifiers mods = event->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier);
 
   if (k == Qt::Key_Escape && mods == Qt::NoModifier)
   {
@@ -543,6 +596,270 @@ void LabCodeEdit::keyPressEvent(QKeyEvent* event)
 }
 
 // ---------------------------------------------------------------------------------------------
+// Suggestions (lane 1, job F2)
+
+bool LabCodeEdit::suggestionsVisible() const
+{
+  return m_popup && !m_popup->isHidden();
+}
+
+QStringList LabCodeEdit::suggestionNames() const
+{
+  QStringList names;
+  for (const LabSuggest::Item& it : m_items) names << it.name;
+  return names;
+}
+
+void LabCodeEdit::setSuggestOnRequestOnly(bool on)
+{
+  m_onRequestOnly = on;
+  if (on && suggestionsVisible() && !m_requested) hideSuggestions();
+}
+
+void LabCodeEdit::setExpertHelp(bool on)
+{
+  m_expertHelp = on;
+  setSuggestionRow(m_row);
+  if (suggestionsVisible()) placePopup();
+}
+
+void LabCodeEdit::setSuggestHints(bool on)
+{
+  m_suggestHints = on;
+  m_hint->setVisible(on);
+  if (suggestionsVisible()) placePopup();
+}
+
+bool LabCodeEdit::showSuggestions()
+{
+  m_held = false;
+  m_requested = true;
+  const QList<LabSuggest::Item> items = m_engine.suggest(toPlainText(), textCursor().position(), true);
+  if (items.isEmpty())
+  {
+    hideSuggestions();
+    return false;
+  }
+  fillSuggestions(items);
+  return true;
+}
+
+void LabCodeEdit::hideSuggestions()
+{
+  m_popup->hide();
+  m_items.clear();
+  m_list->clear();
+  m_row = -1;
+  m_inList = false;
+  m_requested = false;
+}
+
+void LabCodeEdit::refreshSuggestions()
+{
+  if (m_held) { hideSuggestions(); return; }
+  if (!suggestionsVisible() && m_onRequestOnly) return;
+  const bool requested = suggestionsVisible() && m_requested;
+  const QList<LabSuggest::Item> items = m_engine.suggest(toPlainText(), textCursor().position(), requested);
+  if (items.isEmpty()) { hideSuggestions(); return; }
+  m_requested = requested;
+  fillSuggestions(items);
+}
+
+void LabCodeEdit::fillSuggestions(const QList<LabSuggest::Item>& items)
+{
+  m_items = items;
+  m_inList = false;   // a new list: Enter and Tab are a line break and an indent again
+  m_list->clear();
+  for (const LabSuggest::Item& it : items)
+  {
+    QListWidgetItem* row = new QListWidgetItem(it.name, m_list);
+    row->setToolTip(LabSuggest::kindWord(it.kind));
+  }
+  m_list->clearSelection();
+  m_popup->show();
+  m_popup->raise();
+  setSuggestionRow(0);
+  placePopup();
+}
+
+void LabCodeEdit::setSuggestionRow(int row)
+{
+  if (m_items.isEmpty()) { m_row = -1; m_help->clear(); m_detail->clear(); return; }
+  m_row = qBound(0, row, int(m_items.size()) - 1);
+  const LabSuggest::Item& it = m_items.at(m_row);
+  m_help->setText(it.plain);
+  m_detail->setText(it.detail);
+  m_detail->setVisible(m_expertHelp && !it.detail.isEmpty());
+  m_hint->setVisible(m_suggestHints);
+  // the chosen row: the selection fill and bold text (a shape, not only a colour, charter P10);
+  // before an arrow key nothing is chosen, the help shows the first row
+  for (int i = 0; i < m_list->count(); ++i)
+  {
+    QFont f = m_list->font();
+    f.setWeight(m_inList && i == m_row ? QFont::DemiBold : QFont::Normal);
+    m_list->item(i)->setFont(f);
+  }
+  if (m_inList)
+  {
+    m_list->setCurrentRow(m_row);
+    m_list->item(m_row)->setSelected(true);
+  }
+  else
+    m_list->clearSelection();
+  m_list->scrollToItem(m_list->item(m_row));
+}
+
+void LabCodeEdit::placePopup()
+{
+  if (!suggestionsVisible()) return;
+  const QFontMetrics fm(m_list->font());
+  // the bold row is the tallest one: room for it in every row
+  QFont bold = m_list->font();
+  bold.setWeight(QFont::DemiBold);
+  const int rowHeight = qMax(QFontMetrics(bold).height() + spacingXs, m_list->sizeHintForRow(0));
+  const int rows = qMin(6, int(m_list->count()));
+  m_list->setFixedHeight(rows * rowHeight + 2 * m_list->frameWidth());
+  const QRect inner = contentsRect();
+  const int width = qMax(120, qMin(inner.width() - 2 * spacingXs, qMax(fm.horizontalAdvance(QLatin1Char('m')) * 34, 240)));
+  m_popup->setFixedWidth(width);
+  // the height the wrapped help lines need at this width
+  m_popup->layout()->invalidate();
+  m_popup->layout()->activate();
+  const int wanted = m_popup->layout()->hasHeightForWidth() ? m_popup->layout()->totalHeightForWidth(width)
+                                                           : m_popup->layout()->totalSizeHint().height();
+  const int height = qMin(wanted, inner.height());
+  m_popup->setFixedHeight(height);
+  const QRect cursor = cursorRect().translated(viewport()->geometry().topLeft());
+  int x = qBound(inner.left(), cursor.left(), qMax(inner.left(), inner.right() - width));
+  int y = cursor.bottom() + 2;
+  if (y + height > inner.bottom() && cursor.top() - 2 - height >= inner.top()) y = cursor.top() - 2 - height;
+  y = qMax(inner.top(), qMin(y, inner.bottom() - height));
+  m_popup->move(x, y);
+}
+
+void LabCodeEdit::stylePopup()
+{
+  if (!m_popup) return;
+  const QColor raised = token(Theme::Token::SurfaceRaised, m_dark);
+  const QColor border = token(Theme::Token::Border, m_dark);
+  const QColor text = token(Theme::Token::Text, m_dark);
+  const QColor muted = token(Theme::Token::TextMuted, m_dark);
+  m_popup->setStyleSheet(QStringLiteral(
+    "QFrame#labSuggestPopup { background: %1; border: 1px solid %2; border-radius: %3px; }"
+    "QListWidget#labSuggestList { background: %1; color: %4; border: none; }"
+    "QListWidget#labSuggestList::item:selected { background: %5; color: %6; }"
+    "QLabel#labSuggestHelp { color: %4; background: transparent; }"
+    "QLabel#labSuggestDetail, QLabel#labSuggestHint { color: %7; background: transparent; }")
+    .arg(raised.name(), border.name()).arg(radiusSmall)
+    .arg(text.name(), token(Theme::Token::Selection, m_dark).name(), token(Theme::Token::OnAccent, m_dark).name(), muted.name()));
+}
+
+bool LabCodeEdit::suggestionKey(QKeyEvent* event)
+{
+  const int k = event->key();
+  const Qt::KeyboardModifiers mods = event->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier);
+  if (mods == Qt::ControlModifier && k == Qt::Key_Space)
+  {
+    m_escArmed = false;
+    if (!suggestionsVisible()) showSuggestions();
+    event->accept();
+    return true;
+  }
+  if (!suggestionsVisible()) return false;
+  if (mods == Qt::NoModifier && (k == Qt::Key_Down || k == Qt::Key_Up))
+  {
+    if (!m_inList)
+    {
+      m_inList = true;
+      setSuggestionRow(k == Qt::Key_Down ? 0 : int(m_items.size()) - 1);
+    }
+    else
+    {
+      const int n = int(m_items.size());
+      setSuggestionRow((m_row + (k == Qt::Key_Down ? 1 : -1) + n) % n);
+    }
+    event->accept();
+    return true;
+  }
+  if (mods == Qt::NoModifier && (k == Qt::Key_PageDown || k == Qt::Key_PageUp) && m_inList)
+  {
+    setSuggestionRow(m_row + (k == Qt::Key_PageDown ? 5 : -5));
+    event->accept();
+    return true;
+  }
+  if (mods == Qt::NoModifier && (k == Qt::Key_Return || k == Qt::Key_Enter || k == Qt::Key_Tab))
+  {
+    if (m_inList)
+    {
+      takeSuggestion();
+      event->accept();
+      return true;
+    }
+    hideSuggestions();   // not moved into the list: a line break or an indent as always
+    return false;
+  }
+  if (k == Qt::Key_Escape)
+  {
+    hideSuggestions();
+    m_held = true;       // it stays closed until typing goes on
+    return false;        // and Esc still arms the way out (Esc, then Tab)
+  }
+  return false;
+}
+
+void LabCodeEdit::afterKey(int key, Qt::KeyboardModifiers mods, const QString& typed)
+{
+  if (key == Qt::Key_Escape) return;
+  const bool plainTyping = !typed.isEmpty() && typed.at(0).isPrint() && !(mods & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier));
+  if (plainTyping)
+  {
+    m_held = false;
+    if (m_engine.language().isNameChar(typed.at(typed.size() - 1))) refreshSuggestions();
+    else hideSuggestions();
+    return;
+  }
+  if (key == Qt::Key_Backspace || key == Qt::Key_Delete)
+  {
+    if (suggestionsVisible()) refreshSuggestions();
+    return;
+  }
+  if (key == Qt::Key_Shift || key == Qt::Key_Control || key == Qt::Key_Alt || key == Qt::Key_Meta) return;
+  if (suggestionsVisible()) hideSuggestions();
+}
+
+void LabCodeEdit::takeSuggestion()
+{
+  if (m_row < 0 || m_row >= m_items.size()) return;
+  const LabSuggest::Item item = m_items.at(m_row);
+  const QString text = toPlainText();
+  const LabSuggest::Context context = m_engine.context(text, textCursor().position(), true);
+  const LabSuggest::Insertion insertion = LabSuggest::insertionFor(item, text.mid(context.cursor));
+  // one undo step: the typed part of the name is replaced by the whole name
+  QTextCursor cursor = textCursor();
+  cursor.beginEditBlock();
+  cursor.setPosition(context.prefixStart);
+  cursor.setPosition(context.cursor, QTextCursor::KeepAnchor);
+  cursor.insertText(insertion.text);
+  cursor.endEditBlock();
+  cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, insertion.cursorBack);
+  setTextCursor(cursor);
+  hideSuggestions();
+  emit suggestionTaken(item.name);
+}
+
+void LabCodeEdit::focusOutEvent(QFocusEvent* event)
+{
+  QPlainTextEdit::focusOutEvent(event);
+  hideSuggestions();
+}
+
+void LabCodeEdit::mousePressEvent(QMouseEvent* event)
+{
+  hideSuggestions();
+  QPlainTextEdit::mousePressEvent(event);
+}
+
+// ---------------------------------------------------------------------------------------------
 // LabEditor
 
 LabEditor::LabEditor(QWidget* parent) :
@@ -618,6 +935,28 @@ LabEditor::LabEditor(QWidget* parent) :
   tools->addWidget(m_findButton);
   tools->addWidget(m_goToButton);
   tools->addStretch(1);
+  // the language choice (job F3): at the right end, after the stretch, so showing it moves
+  // nothing (charter P12); only while the Lua switch in Setup is on
+  m_languageLabel = new QLabel(tr("Language"), this);
+  m_languageLabel->setObjectName("labEditorLanguageLabel");
+  m_languageBox = new QComboBox(this);
+  m_languageBox->setObjectName("labEditorLanguage");
+  m_languageBox->setMinimumHeight(controlCompact);
+  m_languageBox->addItem(QStringLiteral("LSL"), QStringLiteral("lsl"));   // tr-ok: the language's name
+  m_languageBox->addItem(tr("SLua (Lua, trial)"), QStringLiteral("slua"));
+  m_languageBox->setToolTip(tr("The script language. Lua is a trial: no checks or suggestions yet."));
+  m_languageLabel->setBuddy(m_languageBox);
+  tools->addWidget(m_languageLabel);
+  tools->addWidget(m_languageBox);
+  m_languageLabel->hide();
+  m_languageBox->hide();
+  connect(m_languageBox, QOverload<int>::of(&QComboBox::activated), this, [this](int index)
+  {
+    const QString id = m_languageBox->itemData(index).toString();
+    UserSettings::setScriptLanguage(id);   // remembered; followSettings() applies it
+    setLanguageChoice(id);
+    if (languageInUse() == QLatin1String("slua")) setMessage(tr("Lua is a trial. No Lua suggestions or checks yet."), 0);
+  });
   layout->addLayout(tools);
 
   // --- the find row (Ctrl+F): Enter or F3 next, Shift+Enter previous, Esc closes
@@ -766,7 +1105,8 @@ LabEditor::LabEditor(QWidget* parent) :
   setTabOrder(m_exampleButton, m_save);
   setTabOrder(m_save, m_findButton);
   setTabOrder(m_findButton, m_goToButton);
-  setTabOrder(m_goToButton, m_findField);
+  setTabOrder(m_goToButton, m_languageBox);
+  setTabOrder(m_languageBox, m_findField);
   setTabOrder(m_findField, m_goToField);
   setTabOrder(m_goToField, m_keep);
   setTabOrder(m_keep, m_load);
@@ -774,8 +1114,54 @@ LabEditor::LabEditor(QWidget* parent) :
   setTabOrder(m_difference, m_differenceView);
   setTabOrder(m_differenceView, m_edit);
 
+  // suggestions and the language follow Setup and Beginner or Expert (jobs F2 and F3)
+  UserSettings::watchExpertMode(this, [this](bool) { followSettings(); });
+  UserSettings::watchScriptEditor(this, [this]() { followSettings(); });
+  followSettings();
+
   applyStyle();
   updateState();
+}
+
+void LabEditor::followSettings()
+{
+  m_edit->setExpertHelp(UserSettings::expertMode());
+  m_edit->setSuggestOnRequestOnly(UserSettings::suggestOnRequestOnly());
+  m_languageChoice = UserSettings::scriptLanguage();
+  setLuaSwitch(UserSettings::luaSwitch());
+}
+
+void LabEditor::setLuaSwitch(bool on)
+{
+  m_luaSwitch = on;
+  applyLanguage();
+}
+
+void LabEditor::setLanguageChoice(const QString& id)
+{
+  m_languageChoice = id == QLatin1String("slua") ? QStringLiteral("slua") : QStringLiteral("lsl");
+  applyLanguage();
+}
+
+QString LabEditor::languageInUse() const
+{
+  return m_luaSwitch ? m_languageChoice : QStringLiteral("lsl");
+}
+
+void LabEditor::applyLanguage()
+{
+  // with the switch off nothing says Lua and the language is LSL (charter P5); the choice is kept
+  const bool show = m_luaSwitch && !m_path.isEmpty();
+  m_languageLabel->setVisible(show);
+  m_languageBox->setVisible(show);
+  m_languageBox->setCurrentIndex(m_languageChoice == QLatin1String("slua") ? 1 : 0);
+  const QString use = languageInUse();
+  if (m_edit->suggestEngine().language().id() != use)
+  {
+    m_edit->hideSuggestions();
+    if (use == QLatin1String("slua")) m_edit->suggestEngine().setLanguage(std::make_shared<LabSuggest::SluaLanguage>());
+    else m_edit->suggestEngine().setLanguage(std::make_shared<LabSuggest::LslLanguage>());
+  }
 }
 
 void LabEditor::setClockForTests(QTime (*clock)())
@@ -976,17 +1362,21 @@ QString LabEditor::differenceText(const QString& mine, const QString& theirs)
   const int m = int(b.size()) - head - tail;
   QStringList out;
   for (int i = 0; i < head; ++i) out << QStringLiteral("  ") + a.at(i);
-  if (qint64(n) * qint64(m) > 4000000)
+  // the table has (n + 1) * (m + 1) cells: counted in qsizetype (no int overflow) and bounded,
+  // so a very long file never allocates a huge table; nothing to compare when one side is empty
+  const qsizetype cells = (qsizetype(n) + 1) * (qsizetype(m) + 1);
+  if (n == 0 || m == 0 || cells > DifferenceTableLimit)
   {
-    // too big to compare line by line: all of yours, then all of the new one
+    // one side empty, or too big to compare line by line: all of yours, then all of the new one
     for (int i = 0; i < n; ++i) out << QStringLiteral("- ") + a.at(head + i);
     for (int j = 0; j < m; ++j) out << QStringLiteral("+ ") + b.at(head + j);
   }
   else
   {
     // longest common lines (dynamic programming), then walk it
-    QVector<int> table((n + 1) * (m + 1), 0);
-    const auto at = [&](int i, int j) -> int& { return table[i * (m + 1) + j]; };
+    const qsizetype width = qsizetype(m) + 1;
+    QVector<int> table(cells, 0);
+    const auto at = [&](int i, int j) -> int& { return table[qsizetype(i) * width + j]; };
     for (int i = n - 1; i >= 0; --i)
       for (int j = m - 1; j >= 0; --j)
         at(i, j) = a.at(head + i) == b.at(head + j) ? at(i + 1, j + 1) + 1 : qMax(at(i + 1, j), at(i, j + 1));
@@ -1193,6 +1583,7 @@ bool LabEditor::newFromExample(const QString& exampleFile)
 void LabEditor::setHintsOn(bool on)
 {
   m_hintsOn = on;
+  m_edit->setSuggestHints(on);
   updateState();
 }
 
@@ -1217,6 +1608,7 @@ void LabEditor::updateState()
   m_exampleButton->setToolTip(haveExamples ? tr("Open an example script as a new file in this folder")
                                            : tr("The example scripts are not next to the program."));
   for (QWidget* w : QList<QWidget*>{m_save, m_findButton, m_goToButton, m_edit}) w->setVisible(open);
+  applyLanguage();
   if (!open)
   {
     m_findRow->hide();

@@ -1879,6 +1879,9 @@ void PinglyMotionWindow::openSetupDialog()
   {
     if(m_hintsAction) m_hintsAction->setChecked(on);
   });
+  // the Script Lab editor follows these through UserSettings::watchScriptEditor (lane 1, F2 and F3)
+  connect(&dialog,&SetupDialog::suggestOnRequestRequested,this,[](bool on) { UserSettings::setSuggestOnRequestOnly(on); });
+  connect(&dialog,&SetupDialog::luaSwitchRequested,this,[](bool on) { UserSettings::setLuaSwitch(on); });
   connect(&dialog,&SetupDialog::cameraHabitRequested,this,&PinglyMotionWindow::chooseCameraHabit);
   connect(&dialog,&SetupDialog::showCameraKeysRequested,this,&PinglyMotionWindow::openCameraKeysDialog);
   bool welcomeAgain=false;

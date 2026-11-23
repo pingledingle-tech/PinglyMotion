@@ -116,6 +116,7 @@ class TestLabEditor : public QObject
     void unchangedFileFollowsDisk();
     void otherFileWaitsForSave();
     void differenceText();
+    void differenceTextBounded();
     void goToLine();
     void findText();
     void autoIndent();
@@ -498,6 +499,43 @@ void TestLabEditor::differenceText()
   QCOMPARE(LabEditor::differenceText("a\nc", "a\nb\nc"), QString("  a\n+ b\n  c"));
   QCOMPARE(LabEditor::differenceText("a\nb\nc", "a\nc"), QString("  a\n- b\n  c"));
   QCOMPARE(LabEditor::differenceText("", "x"), QString("+ x\n- "));
+}
+
+// a very long difference stays bounded (CodeQL: the table size is counted in qsizetype, never
+// int, and the table is never bigger than DifferenceTableLimit cells): over the limit, all of
+// yours, then all of the new one; one empty side never builds a table at all
+void TestLabEditor::differenceTextBounded()
+{
+  // 2 100 changed lines on each side: 2 101 * 2 101 cells is over the limit
+  QStringList mine{"same"};
+  QStringList theirs{"same"};
+  QStringList expected{"  same"};
+  const int n = 2100;
+  QVERIFY(qsizetype(n + 1) * qsizetype(n + 1) > LabEditor::DifferenceTableLimit);
+  for (int i = 0; i < n; ++i) mine << QString("a%1").arg(i);
+  for (int i = 0; i < n; ++i) theirs << QString("b%1").arg(i);
+  for (int i = 0; i < n; ++i) expected << QString("- a%1").arg(i);
+  for (int i = 0; i < n; ++i) expected << QString("+ b%1").arg(i);
+  mine << "end";
+  theirs << "end";
+  expected << "  end";
+  QElapsedTimer timer;
+  timer.start();
+  QCOMPARE(LabEditor::differenceText(mine.join('\n'), theirs.join('\n')), expected.join('\n'));
+  // 300 000 new lines against an empty side: no table, every line a "+"
+  QStringList many;
+  for (int i = 0; i < 300000; ++i) many << QString::number(i);
+  const QString big = LabEditor::differenceText(QString("top"), QString("top\n") + many.join('\n'));
+  QVERIFY(big.startsWith(QString("  top\n+ 0\n+ 1\n")));
+  QVERIFY(big.endsWith(QString("\n+ 299999")));
+  QCOMPARE(big.count(QLatin1Char('\n')), 300000);
+  QVERIFY2(timer.elapsed() < 20000, "the bounded difference must stay fast");
+  // just under the limit the lines are still compared one by one
+  QStringList a2{"x"}, b2{"x"};
+  for (int i = 0; i < 1000; ++i) { a2 << QString("p%1").arg(i % 3); b2 << QString("p%1").arg((i + 1) % 3); }
+  QVERIFY(qsizetype(1001) * qsizetype(1001) <= LabEditor::DifferenceTableLimit);
+  const QString compared = LabEditor::differenceText(a2.join('\n'), b2.join('\n'));
+  QVERIFY(compared.contains(QString("\n  p1\n")));   // common lines found, not all - then all +
 }
 
 // Ctrl+G opens the go-to-line row at the cursor's line; Enter jumps; a line that is not there says so

@@ -44,6 +44,9 @@ class TestSetupDialog : public QObject
     // a choice applied through UserSettings (the same path the window's own actions take) is
     // still there after a restart-like write and reload, and the dialog shows it again
     void choiceRoundTripsAfterRestart();
+    // Script editor (lane 1, jobs F2 and F3): suggestions only with Ctrl+Space and the Lua switch,
+    // at the end of the dialog, so nothing above them moves; both emit and are remembered
+    void scriptEditorChoices();
 
     // the Camera and keys dialog: one radio per habit, the table matches the habit exactly,
     // switching the radio switches the table and remembers the choice
@@ -80,6 +83,8 @@ void TestSetupDialog::init()
   UserSettings::setCameraHabit(QStringLiteral("pinglymotion"));
   UserSettings::setTextSizePercent(100);
   UserSettings::setDarkTheme(true);
+  UserSettings::setSuggestOnRequestOnly(false);
+  UserSettings::setLuaSwitch(false);
 }
 
 void TestSetupDialog::opensWithCurrentSettings()
@@ -190,6 +195,53 @@ void TestSetupDialog::choiceRoundTripsAfterRestart()
   SetupDialog dialog;
   QCOMPARE(dialog.cameraHabitChecked(), QStringLiteral("maya"));
   QCOMPARE(dialog.expertChecked(), true);
+}
+
+void TestSetupDialog::scriptEditorChoices()
+{
+  SetupDialog dialog;
+  dialog.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+  QCheckBox* suggest = dialog.suggestOnRequestBox();
+  QCheckBox* lua = dialog.luaSwitchBox();
+  QVERIFY(suggest && lua);
+  QCOMPARE(suggest->text(), QStringLiteral("Show suggestions only when I press Ctrl+Space"));
+  QCOMPARE(suggest->toolTip(), QStringLiteral("Off: suggestions come up while you type. Enter never picks one by itself."));
+  QCOMPARE(lua->text(), QStringLiteral("Lua (trial): show the language choice in the editor"));
+  QCOMPARE(lua->toolTip(), QStringLiteral("Lua is not checked or run yet. Scripts stay LSL."));
+  QCOMPARE(dialog.suggestOnRequestChecked(), false);
+  QCOMPARE(dialog.luaSwitchChecked(), false);
+  // both come after every other control of the dialog except Done
+  QPushButton* welcome = dialog.welcomeButton();
+  QVERIFY(suggest->geometry().top() > welcome->geometry().bottom());
+  QVERIFY(lua->geometry().top() > suggest->geometry().bottom());
+  // nothing moves when they change
+  QList<QRect> before;
+  for (QWidget* w : dialog.findChildren<QWidget*>()) before << w->geometry();
+  QSignalSpy suggestSpy(&dialog, &SetupDialog::suggestOnRequestRequested);
+  QSignalSpy luaSpy(&dialog, &SetupDialog::luaSwitchRequested);
+  QSignalSpy expertSpy(&dialog, &SetupDialog::expertModeRequested);
+  suggest->click();
+  lua->click();
+  QCOMPARE(suggestSpy.count(), 1);
+  QCOMPARE(suggestSpy.at(0).at(0).toBool(), true);
+  QCOMPARE(luaSpy.count(), 1);
+  QCOMPARE(luaSpy.at(0).at(0).toBool(), true);
+  QCOMPARE(expertSpy.count(), 0);
+  QCoreApplication::processEvents();
+  QList<QRect> after;
+  for (QWidget* w : dialog.findChildren<QWidget*>()) after << w->geometry();
+  QCOMPARE(after, before);
+  // the window stores them in UserSettings; after a restart-like write and read the dialog shows them
+  UserSettings::setSuggestOnRequestOnly(true);
+  UserSettings::setLuaSwitch(true);
+  UserSettings::writeSettings();
+  UserSettings::setSuggestOnRequestOnly(false);
+  UserSettings::setLuaSwitch(false);
+  UserSettings::readSettings();
+  SetupDialog again;
+  QCOMPARE(again.suggestOnRequestChecked(), true);
+  QCOMPARE(again.luaSwitchChecked(), true);
 }
 
 void TestSetupDialog::cameraKeysDialogMatchesSpec()
