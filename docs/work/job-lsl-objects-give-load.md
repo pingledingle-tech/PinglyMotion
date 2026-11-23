@@ -8,8 +8,11 @@ Files:
 - src/scriptlab/lsl/sandbox.cpp
 - src/scriptlab/lsl/sandbox.h
 - src/scriptlab/lsl/control.cpp
+- src/scriptlab/lsl/interp.h
+- src/scriptlab/lsl/interp.cpp
 - tests/tst_lslobjects.cpp
 - tests/tst_lslpure.cpp
+- tests/tst_lslstubs.cpp
 - tests/CMakeLists.txt
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md

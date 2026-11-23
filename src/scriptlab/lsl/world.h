@@ -142,6 +142,9 @@ struct InventoryItem
   int type = 7;                     // the INVENTORY_* number (7 = notecard)
   QString key;                      // the asset key; empty: made from the name when the item is added
   QStringList lines;                // a notecard's lines
+  // several-objects job: llGetInventoryCreator (empty: the owner of the object that holds it) and llGetInventoryDesc
+  QString creator;
+  QString description;
 };
 
 class Inventory
@@ -363,6 +366,23 @@ class World
     virtual Inventory& inventory() { return m_inventory; }
     virtual void inventoryChanged(double) {}
     virtual QString giveInventory(double time, const QString& to, const InventoryItem& item);
+    // Several-objects job (Script Lab gap list). giveInventoryList (llGiveInventoryList) answers like giveInventory; an
+    // object of the world gets every item it does not have yet (the names it already has go to refused) and one changed
+    // event. remoteScriptPin and setRemoteScriptPin (llSetRemoteScriptAccessPin; 0: remote loading is off). remoteLoadScript
+    // (llRemoteLoadScriptPin) answers "loaded", "replaced", "unknown_target", "wrong_pin", "no_source" (the sandbox has
+    // the code only of the object's own scripts), "too_many_scripts" or "other_owner_attachment"; a plain World knows no
+    // other object. allowDrop and setAllowDrop (llAllowInventoryDrop). scriptReset is called when the script resets.
+    virtual QString giveInventoryList(double time, const QString& to, const std::vector<InventoryItem>& items, QStringList& refused);
+    virtual int remoteScriptPin() const { return m_remotePin; }
+    virtual void setRemoteScriptPin(int pin) { m_remotePin = pin; }
+    virtual QString remoteLoadScript(double time, const QString& target, const QString& name, int pin, bool running, int param)
+    {
+      Q_UNUSED(time); Q_UNUSED(target); Q_UNUSED(name); Q_UNUSED(pin); Q_UNUSED(running); Q_UNUSED(param);
+      return "unknown_target";
+    }
+    virtual bool allowDrop() const { return m_allowDrop; }
+    virtual void setAllowDrop(bool allow) { m_allowDrop = allow; }
+    virtual void scriptReset() {}
     // Step 9b-5: avatars sitting on the object. The key of the avatar on the sit target of a prim (link 1 is the root;
     // empty when none), how many avatars sit on the object (llGetNumberOfPrims counts them), llUnSit, and the avatars
     // the sandbox knows: the owner and the avatars sitting on this object (for permissions and llGetAgentInfo).
@@ -486,6 +506,8 @@ class World
     QStringList m_urls;
     int m_urlCounter = 0;
     std::deque<Email> m_mail;
+    int m_remotePin = 0;
+    bool m_allowDrop = false;
 };
 
 // gap list 2, step 4: true when an email matches the filters of llGetNextEmail
