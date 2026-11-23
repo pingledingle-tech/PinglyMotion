@@ -115,6 +115,27 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   effect markers `accent` (box, object) and `danger_fill` (ball, lock). The 3D
   view's background and the avatar's own body shading do not follow the theme yet.
 
+## Code colours (Script Lab editor)
+
+Added with lane 1 job F1 (23 November 2026). The colours of LSL words in the
+Script Lab editor; they are `syntax` in [design_tokens.json](design_tokens.json),
+next to `themes`. They are decoration only and never carry a meaning (charter
+P10): keywords are also semibold, comments also italic, and an error is always
+a wavy underline, an icon by the line number and words in the error list. Each
+is at least 4.5:1 on `background`, `surface` and `surface_raised` in both
+themes (lowest: `function` light 5.1:1, `event` light 5.2:1).
+
+| Token | Dark | Light | Used for |
+|---|---|---|---|
+| `keyword` | `#7FB0FF` | `#1A56B0` | `default`, `state`, `if`, `else`, `for`, `do`, `while`, `jump`, `return` (same values as `accent_text`) |
+| `type` | `#D0A4F0` | `#7A3AB0` | `integer`, `float`, `string`, `key`, `vector`, `rotation`, `quaternion`, `list` |
+| `event` | `#F4A261` | `#9C4A0A` | Event names such as `state_entry`, `touch_start` |
+| `function` | `#5CC8C8` | `#0B6E6E` | Built-in functions such as `llOwnerSay` |
+| `constant` | `#E5C07B` | `#7A5200` | Built-in constants such as `TRUE`, `PI` |
+| `string` | `#A8D88A` | `#2E6B12` | Text in quotes |
+| `number` | `#F0A8D8` | `#A0306E` | Numbers |
+| `comment` | `#AEB2BA` | `#535963` | Comments (same values as `text_muted`) |
+
 ## Shape
 
 | Token | Value | Used for |

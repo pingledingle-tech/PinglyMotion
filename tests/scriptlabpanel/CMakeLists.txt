@@ -39,3 +39,15 @@ TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabdesign_tests PRIVATE
 TARGET_LINK_LIBRARIES (pinglymotion_scriptlabdesign_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME scriptlabdesign COMMAND pinglymotion_scriptlabdesign_tests)
 SET_TESTS_PROPERTIES (scriptlabdesign PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Lane 1 job F1: the Script Lab editor in our own text box (src/scriptlab/labeditor.*, lslhighlighter.*):
+# syntax colours, undo after save, the unsaved mark, save and run, never overwriting typed text,
+# the changed-outside question, go to line, find, indent, quotes, brackets, Esc then Tab, starter help
+ADD_EXECUTABLE (pinglymotion_labeditor_tests tst_labeditor.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labeditor_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_labeditor_tests PRIVATE
+  PINGLYMOTION_DOCS_DIR="${CMAKE_SOURCE_DIR}/docs"
+  PINGLYMOTION_EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples")
+TARGET_LINK_LIBRARIES (pinglymotion_labeditor_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME labeditor COMMAND pinglymotion_labeditor_tests)
+SET_TESTS_PROPERTIES (labeditor PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

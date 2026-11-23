@@ -450,7 +450,7 @@ void TestScriptLabPanel::liveTabAndEmptyState()
   QCOMPARE(panel.liveFolderField()->text(), QString());
   QCOMPARE(panel.liveFolderField()->placeholderText(), QString("No folder watched"));
   QVERIFY(panel.liveFolderField()->isReadOnly());
-  QVERIFY(panel.scriptView()->isReadOnly());
+  QVERIFY(!panel.scriptView()->isReadOnly());   // an editor since lane 1 job F1
   // greyed out with a reason (charter P6)
   QVERIFY(!panel.unwatchButton()->isEnabled());
   QCOMPARE(panel.unwatchButton()->toolTip(), QString("Not watching a folder. Choose one with Watch folder first."));

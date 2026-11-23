@@ -88,7 +88,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 
 - **Journey:** Export an animation and use it in an AO, poseball or furniture object, potentially with a generated LSL template.
 - **Value:** Help users take finished animation into an SL object.
-- **Status:** LSL templates and reusable libraries are ideas. LSL controls animations; it is not the animation authoring format. A full LSL IDE is outside the stated scope. The bounded exception is Script Lab, a sandbox for testing RLV and LSL scripts, with a small editor and an LSL-to-Lua converter, but no debugger and no project building ([SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md)).
+- **Status:** LSL templates and reusable libraries are ideas. LSL controls animations; it is not the animation authoring format. A full LSL IDE is outside the stated scope. The bounded exception is Script Lab, a sandbox for testing RLV and LSL scripts, with a small editor and an LSL-to-Lua converter, but no debugger and no project building ([SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md)). The small editor is built (lane 1 job F1, [SCRIPT_LAB.md](SCRIPT_LAB.md), "The editor"); the converter is not.
 - **Pass when:** an uploaded animation plays from an object with `llStartAnimation`. LSL templates and libraries have no issue yet ([IDEAS.md](IDEAS.md), [#19](https://github.com/pingledingle-tech/PinglyMotion/issues/19)).
 - **Issues:** [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159), [#19](https://github.com/pingledingle-tech/PinglyMotion/issues/19)
 

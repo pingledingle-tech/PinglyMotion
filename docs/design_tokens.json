@@ -59,6 +59,29 @@
       "replay_fill": "#6A3DBF"
     }
   },
+  "syntax": {
+    "about": "Script Lab editor: colours of LSL words (lane 1, job F1). Decoration only, never meaning (charter P10). Each is at least 4.5:1 on background, surface and surface_raised.",
+    "dark": {
+      "keyword": "#7FB0FF",
+      "type": "#D0A4F0",
+      "event": "#F4A261",
+      "function": "#5CC8C8",
+      "constant": "#E5C07B",
+      "string": "#A8D88A",
+      "number": "#F0A8D8",
+      "comment": "#AEB2BA"
+    },
+    "light": {
+      "keyword": "#1A56B0",
+      "type": "#7A3AB0",
+      "event": "#9C4A0A",
+      "function": "#0B6E6E",
+      "constant": "#7A5200",
+      "string": "#2E6B12",
+      "number": "#A0306E",
+      "comment": "#535963"
+    }
+  },
   "radius": {
     "small": 4,
     "control": 6,

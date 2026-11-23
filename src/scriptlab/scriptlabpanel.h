@@ -17,6 +17,8 @@
  * explanation shown with hints, and the newest dialog's buttons inside Objects.
  * Slice 3: the simulated inventory of an object of the world (items, type,
  * notecard lines), the last part of the Live page.
+ * Lane 1 job F1: the Script part is an editor in our own text box (labeditor.h);
+ * Save writes the file and the folder watch runs it at once.
  *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
@@ -38,6 +40,7 @@
 #include "environmentoverride.h"
 #include "viewmodesoverride.h"
 #include "effectspreview.h"
+#include "labeditor.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
@@ -219,7 +222,9 @@ class ScriptLabPanel : public QWidget
     ScriptLabSection* section(const QString& key) const;
     QList<ScriptLabSection*> sections() const { return m_sections; }
     QPushButton* openEditorButton() const { return m_openEditor; }
-    QPlainTextEdit* scriptView() const { return m_scriptView; }
+    // the script's text box (an editor since lane 1 job F1) and the whole editor around it
+    LabCodeEdit* scriptView() const { return m_scriptView; }
+    LabEditor* editor() const { return m_editor; }
     QListWidget* problemList() const { return m_problems; }
     QPlainTextEdit* runLog() const { return m_runLog; }
     QComboBox* inputObject() const { return m_inputObject; }
@@ -365,7 +370,10 @@ class ScriptLabPanel : public QWidget
     bool m_wasWatching = false;
     QString m_refusal;                 // why the last Watch folder was refused, until the next change
     QPushButton* m_openEditor = nullptr;
-    QPlainTextEdit* m_scriptView = nullptr;
+    LabCodeEdit* m_scriptView = nullptr;
+    LabEditor* m_editor = nullptr;
+    int m_runAtSave = 0;               // the watch's run count when the editor saved
+    void runSavedScript(const QString& path);
     QListWidget* m_problems = nullptr;
     QPlainTextEdit* m_runLog = nullptr;
     QString m_shownFile;               // the script shown in the view (relative to the folder)
