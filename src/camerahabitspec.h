@@ -65,7 +65,11 @@ namespace CameraHabitSpec
   // built: dragging a joint and the keyboard pull come with UX phase 4b part 2).
   // The Camera and keys dialog shows them under the habit's five rows.
   inline constexpr Row sharedRows[] = {
+    // UX phase 4b part 2: dragging a joint, with the mouse or the keys
+    {QT_TRANSLATE_NOOP("CameraHabitSpec", "Pull a limb"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Press a joint and drag. Let go to set a key. Esc cancels.")},
+    {QT_TRANSLATE_NOOP("CameraHabitSpec", "Turn only that joint"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Hold Shift when you press the joint (or choose Turn only this joint)")},
     {QT_TRANSLATE_NOOP("CameraHabitSpec", "Turn on one axis"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Drag the red X, green Y or blue Z ring around the picked joint")},
+    {QT_TRANSLATE_NOOP("CameraHabitSpec", "Pull with the keyboard"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Enter on the picked joint, arrow keys, Enter to set a key, Esc cancels")},
     {QT_TRANSLATE_NOOP("CameraHabitSpec", "View tools: pick, look around, move the view, zoom"), QT_TRANSLATE_NOOP("CameraHabitSpec", "V, O, M, Z")},
     {QT_TRANSLATE_NOOP("CameraHabitSpec", "Frame the picked joint, the whole figure, home view"), QT_TRANSLATE_NOOP("CameraHabitSpec", "F, Shift+F, 0")},
     {QT_TRANSLATE_NOOP("CameraHabitSpec", "Front, side, top view"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view), or click an end of the axis widget")},

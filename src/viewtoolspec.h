@@ -14,6 +14,7 @@
 
 #include <QCoreApplication>
 #include <QString>
+#include <QStringList>
 
 #include "camera.h"
 
@@ -35,10 +36,11 @@ namespace ViewToolSpec
     const char* icon;      // Lucide name
   };
 
-  // What the left mouse button does. Pick: the mockup's "Pick and pull" with "drag it to pull the
-  // limb"; pulling a limb is part 2 of UX phase 4b, so until then the button says only what it does.
-  inline constexpr Button pick = {"viewToolPick", QT_TRANSLATE_NOOP("ViewToolSpec", "Pick"), QT_TRANSLATE_NOOP("ViewToolSpec", "Pick"), "V",
-    QT_TRANSLATE_NOOP("ViewToolSpec", "Click a joint to pick it. Pulling a limb comes in a later version."), "mouse-pointer-2"};
+  // What the left mouse button does. Pick and pull: the mockup's text without its last sentence
+  // ("Drag empty space to look around."), which is true only in the PinglyMotion habit; in the
+  // others a plain drag on empty space does nothing (Camera::gestureFor()).
+  inline constexpr Button pick = {"viewToolPick", QT_TRANSLATE_NOOP("ViewToolSpec", "Pick and pull"), QT_TRANSLATE_NOOP("ViewToolSpec", "Pick and pull"), "V",
+    QT_TRANSLATE_NOOP("ViewToolSpec", "Click a joint to pick it, drag it to pull the limb."), "mouse-pointer-2"};
   inline constexpr Button orbit = {"viewToolOrbit", QT_TRANSLATE_NOOP("ViewToolSpec", "Look around"), QT_TRANSLATE_NOOP("ViewToolSpec", "Look around"), "O",
     QT_TRANSLATE_NOOP("ViewToolSpec", "Drag anywhere to turn the view around the figure."), "orbit"};
   inline constexpr Button pan = {"viewToolPan", QT_TRANSLATE_NOOP("ViewToolSpec", "Move the view"), QT_TRANSLATE_NOOP("ViewToolSpec", "Move the view"), "M",
@@ -49,9 +51,9 @@ namespace ViewToolSpec
   inline constexpr const Button* tools[] = {&pick, &orbit, &pan, &zoom};
   inline const Button& tool(ViewTool t) { return *tools[int(t)]; }
 
-  // the status line after a tool is chosen (the mockup's setTool() feedback; Pick as above)
+  // the status line after a tool is chosen (the mockup's setTool() feedback)
   inline constexpr const char* toolChosen[] = {
-    QT_TRANSLATE_NOOP("ViewToolSpec", "Pick: click a joint to pick it."),
+    QT_TRANSLATE_NOOP("ViewToolSpec", "Pick and pull: click a joint to pick it, drag it to pull the limb."),
     QT_TRANSLATE_NOOP("ViewToolSpec", "Look around: drag anywhere to turn the view."),
     QT_TRANSLATE_NOOP("ViewToolSpec", "Move the view: drag to slide the view."),
     QT_TRANSLATE_NOOP("ViewToolSpec", "Zoom: drag up to come closer, down to go back.")};
@@ -167,6 +169,48 @@ namespace ViewToolSpec
     QT_TRANSLATE_NOOP("ViewToolSpec", "Drag the green Y ring to turn the joint: turn left or right."),
     QT_TRANSLATE_NOOP("ViewToolSpec", "Drag the blue Z ring to turn the joint: lean to the side.")};
   inline QString ringHoverHint(int axis) { return axis >= 0 && axis <= 2 ? tr(ringHover[axis]) : QString(); }
+
+  // the hint while the mouse is over a joint with Pick and pull (the mockup's HINT-02)
+  inline constexpr const char* jointHover = QT_TRANSLATE_NOOP("ViewToolSpec", "Click to pick this joint. Press and drag to pull the limb.");
+
+  // Dragging a joint (UX phase 4b part 2, docs/UX_DECISIONS.md 6a; the mockup's showDragTip(),
+  // finishJointDrag(), cancelJointDrag() and startKeyGrab()). The label next to the pointer:
+  inline constexpr const char* pulling = QT_TRANSLATE_NOOP("ViewToolSpec", "Pulling %1");
+  inline constexpr const char* turningOnly = QT_TRANSLATE_NOOP("ViewToolSpec", "Turning only %1");
+  inline constexpr const char* turningHeld = QT_TRANSLATE_NOOP("ViewToolSpec", "Turning only %1 (it holds the body)");
+  inline constexpr const char* pullHowMouse = QT_TRANSLATE_NOOP("ViewToolSpec", "Release: set key · Esc: cancel");
+  inline constexpr const char* pullHowKeys = QT_TRANSLATE_NOOP("ViewToolSpec", "Arrow keys move it · Enter: set key · Esc: cancel");
+  inline constexpr const char* pullShift = QT_TRANSLATE_NOOP("ViewToolSpec", "Shift when you press: turn only this joint");
+  // the status line when it ends. The mockup adds "Ctrl+Z undoes it.": Undo is not built yet,
+  // so the program leaves that sentence out.
+  inline constexpr const char* pulled = QT_TRANSLATE_NOOP("ViewToolSpec", "Pulled %1. Key set at frame %2 for %3 and %1.");
+  inline constexpr const char* turned = QT_TRANSLATE_NOOP("ViewToolSpec", "Turned %1. Key set at frame %2 for %1.");
+  inline constexpr const char* pullCancelled = QT_TRANSLATE_NOOP("ViewToolSpec", "Pull cancelled. Nothing changed.");
+  // why a pull cannot start or go on
+  inline constexpr const char* pullBlocked = QT_TRANSLATE_NOOP("ViewToolSpec", "Pull a joint: %1");
+  inline constexpr const char* keysBlocked = QT_TRANSLATE_NOOP("ViewToolSpec", "Pull with keys: %1");
+  inline constexpr const char* keysNoJoint = QT_TRANSLATE_NOOP("ViewToolSpec", "Pull with keys: Pick a joint first. Click it on the figure or in the Joints list.");
+  inline constexpr const char* finishFirst = QT_TRANSLATE_NOOP("ViewToolSpec", "Finish or cancel the pull first: Esc cancels.");
+  // how far one arrow key moves the pulled joint on the screen (pixels; Shift: small steps), as the mockup
+  inline constexpr int keyStep = 12;
+  inline constexpr int keyStepSmall = 3;
+
+  // the label's lines: what happens, how to end it, and (a mouse pull of a limb) the Shift choice
+  inline QStringList pullLines(const QString& joint, bool turnOnly, bool held, bool viaKeys)
+  {
+    QStringList lines;
+    lines << tr(turnOnly ? (held ? turningHeld : turningOnly) : pulling).arg(joint);
+    lines << tr(viaKeys ? pullHowKeys : pullHowMouse);
+    if (!viaKeys && !turnOnly) lines << tr(pullShift);
+    return lines;
+  }
+  // "Pulled Right Hand. Key set at frame 5 for Right Forearm, Right Upper Arm and Right Hand.";
+  // driven: the joints that bent, nearest first; frame: as the frame counter shows it (from 1)
+  inline QString pullDoneMessage(const QString& joint, const QStringList& driven, int frame, bool turnOnly)
+  {
+    if (turnOnly || driven.isEmpty()) return tr(turned).arg(joint).arg(frame);
+    return tr(pulled).arg(joint).arg(frame).arg(driven.join(QStringLiteral(", ")));
+  }
 
   // the tip of a button: name, then the key, then the tip line, one per line
   inline QString tip(const Button& button)

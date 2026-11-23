@@ -22,9 +22,10 @@
  * their ranges and values for the range lines and the warning. Without them
  * (the tests) it makes its own.
  *
- * Dragging a limb in the 3D view (Pull the limb, Pull with keys) comes with
- * UX phase 4b; until then both are greyed with a true reason, and the drag
- * choice is kept (on by default, UserSettings::pullLimbOnDrag()).
+ * Dragging a limb in the 3D view (UX phase 4b part 2): the drag choice (Pull
+ * the limb, the default, or Turn only this joint; UserSettings::pullLimbOnDrag())
+ * decides what a drag does, and Pull with keys asks the 3D view to pick the
+ * joint up for the arrow keys.
  *
  * One table (SelectedJointSpec) for the widget and for tests/selectedjoint,
  * which checks every text exactly.
@@ -105,12 +106,25 @@ namespace SelectedJointSpec
   inline constexpr const char* resetTip = QT_TRANSLATE_NOOP("SelectedJointPanel", "Reset this joint to how it is in the first frame.");
   inline constexpr const char* resetWhy = QT_TRANSLATE_NOOP("SelectedJointPanel", "This joint is not changed.");
   inline constexpr const char* pullKeys = QT_TRANSLATE_NOOP("SelectedJointPanel", "Pull with keys");
-  inline constexpr const char* pullKeysWhy = QT_TRANSLATE_NOOP("SelectedJointPanel", "Pulling with keys comes in a later version.");
+  // its tip (the mockup's data-name, data-key and data-tipline; its first sentence has 15 words,
+  // over the 12-word limit, so it is said in two)
+  inline constexpr const char* pullKeysName = QT_TRANSLATE_NOOP("SelectedJointPanel", "Pull with the keyboard");
+  inline constexpr const char* pullKeysKey = QT_TRANSLATE_NOOP("SelectedJointPanel", "Enter in the 3D view");
+  inline constexpr const char* pullKeysTip = QT_TRANSLATE_NOOP("SelectedJointPanel", "Pick the joint up and move it with the arrow keys. Enter sets a key. Esc cancels.");
   inline constexpr const char* dragHeading = QT_TRANSLATE_NOOP("SelectedJointPanel", "When you drag this joint in the 3D view");
   inline constexpr const char* pullLimb = QT_TRANSLATE_NOOP("SelectedJointPanel", "Pull the limb");
   inline constexpr const char* turnOnly = QT_TRANSLATE_NOOP("SelectedJointPanel", "Turn only this joint");
-  inline constexpr const char* dragWhy = QT_TRANSLATE_NOOP("SelectedJointPanel", "Pulling the limb comes in a later version.");
-  inline constexpr const char* dragCaption = QT_TRANSLATE_NOOP("SelectedJointPanel", "Dragging turns only this joint for now. Pulling the limb comes later.");
+  inline constexpr const char* pullLimbName = QT_TRANSLATE_NOOP("SelectedJointPanel", "Pull the limb (IK)");
+  inline constexpr const char* pullLimbKey = QT_TRANSLATE_NOOP("SelectedJointPanel", "Shift when you press: the other one");
+  // the caption under the choice, then the Shift sentence (the mockup's first sentence has 16
+  // words, over the 12-word limit: "like pulling a puppet's hand" is left out)
+  inline constexpr const char* dragCaptionPull = QT_TRANSLATE_NOOP("SelectedJointPanel", "The joints above it bend, so the limb follows your pointer. This is called IK.");
+  inline constexpr const char* dragCaptionTurn = QT_TRANSLATE_NOOP("SelectedJointPanel", "Only this joint turns; the rest of the body stays still.");
+  inline constexpr const char* dragCaptionShift = QT_TRANSLATE_NOOP("SelectedJointPanel", "Hold Shift when you press to get the other one.");
+  // the status line after the choice changes
+  inline constexpr const char* dragChosenPull = QT_TRANSLATE_NOOP("SelectedJointPanel", "Dragging a joint pulls the limb (IK).");
+  inline constexpr const char* dragChosenTurn = QT_TRANSLATE_NOOP("SelectedJointPanel", "Dragging a joint turns only that joint.");
+  inline QString tr2(const char* text) { return QCoreApplication::translate("SelectedJointPanel", text); }
   inline constexpr const char* moreOptions = QT_TRANSLATE_NOOP("SelectedJointPanel", "More options");
   inline constexpr const char* moreCaption = QT_TRANSLATE_NOOP("SelectedJointPanel", "turn or move");
   inline constexpr const char* changeLabel = QT_TRANSLATE_NOOP("SelectedJointPanel", "Change");
@@ -245,6 +259,10 @@ class SelectedJointPanel : public QWidget
     void modeChanged(SelectedJointPanel::Mode mode);
     void resetRequested();
     void pickDemoRequested();
+    // Pull with keys: the 3D view picks the joint up (UX phase 4b part 2)
+    void pullKeysRequested();
+    // the drag choice changed: true for Pull the limb
+    void dragChoiceChanged(bool pullLimb);
 
   private:
     QWidget* buildNothingPage();
@@ -252,6 +270,8 @@ class SelectedJointPanel : public QWidget
     QWidget* buildJointPage(const Controls* controls);
     QWidget* axisRow(int axis, QSlider*& slider, QLineEdit*& field, QSlider* given, QLineEdit* givenField, Mode mode);
     void refresh();
+    // the caption under the drag choice, for the choice now
+    QString dragCaptionText() const;
     void refreshButtons();
     QStringList rangeTextsFor(int axis, Mode mode) const;
     void applyNearLook();

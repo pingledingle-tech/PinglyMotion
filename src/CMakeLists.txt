@@ -10,6 +10,7 @@ SET (PINGLYMOTION_CORE_SRC animation.cpp
               dingle.cpp
               dinglesave.cpp
               iktree.cpp
+              limbpull.cpp
               releaseinfo.cpp
               pmmesh.cpp
               jointgroups.cpp

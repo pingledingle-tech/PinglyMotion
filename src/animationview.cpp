@@ -33,6 +33,7 @@
 #include <QMessageBox>
 #include <climits>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QMouseEvent>
 #include <QScopedPointer>
 #include <QToolTip>
@@ -52,6 +53,8 @@
 
 #include "usersettings.h"
 #include "scenestate.h"
+#include "textsize.h"
+#include "theme.h"
 #include "screenshotsheet.h"
 #include "scriptlab/cameraoverride.h"
 #include "scriptlab/environmentoverride.h"
@@ -105,6 +108,22 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */)
   modifier=Qt::NoModifier;
   setMouseTracking(true);
   setFocusPolicy(Qt::StrongFocus);
+
+  // the label next to the pointer while a joint is pulled (the mockup's dragtip)
+  m_pullLabel=new QLabel(this);
+  m_pullLabel->setObjectName(QStringLiteral("pullLabel"));
+  m_pullLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+  m_pullLabel->setTextFormat(Qt::RichText);
+  m_pullLabel->hide();
+  // the letters on the rotation rings
+  for(int axis=0;axis<3;axis++)
+  {
+    m_ringLabel[axis]=new QLabel(QString(QChar('X'+axis)),this);
+    m_ringLabel[axis]->setObjectName(QStringLiteral("ringLabel%1").arg(QChar('X'+axis)));
+    m_ringLabel[axis]->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_ringLabel[axis]->setAlignment(Qt::AlignCenter);
+    m_ringLabel[axis]->hide();
+  }
 }
 
 AnimationView::~AnimationView()
@@ -307,7 +326,12 @@ void AnimationView::paintGL()
 
   draw();
   // only the picture on screen, not one renderImage() draws from another side
-  if(!m_renderSize.isValid()) emit viewDrawn();
+  if(!m_renderSize.isValid())
+  {
+    // the ring letters are widgets over the picture: moved after it is drawn
+    QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);
+    emit viewDrawn();
+  }
 }
 
 QImage AnimationView::renderImage(int imageWidth,int imageHeight)
@@ -422,6 +446,8 @@ void AnimationView::draw()
   {
     m_haveSelectedPosition=false;
     m_jointPositions.clear();
+    m_jointFrames.clear();
+    m_ringLabelShown[0]=m_ringLabelShown[1]=m_ringLabelShown[2]=false;
   }
   m_ringVisible[0]=m_ringVisible[1]=m_ringVisible[2]=false;
   if(!isValid()) initializeGL();
@@ -459,6 +485,7 @@ void AnimationView::draw()
   {
     // view matrix without any model transformation, to find world positions
     m_viewMatrix=SceneState::modelview();
+    if(!m_renderSize.isValid() && !isPicking()) m_lastProjection=SceneState::projection();
   }
   m_shadowCasters.clear();
   drawAnimations();
@@ -469,6 +496,7 @@ void AnimationView::draw()
     drawShadows();
   }
   drawProps();
+  drawPullLine();
   drawOverlay();
 }
 
@@ -728,6 +756,33 @@ int AnimationView::pickPartByColor(int x, int y)
 // on the body) turns the camera; rings turn joints.
 void AnimationView::mouseMoveEvent(QMouseEvent* event)
 {
+  // pressed on a joint: once the mouse moves 5 pixels, the drag pulls it (UX phase 4b part 2)
+  if(m_mouseDrag==MouseDrag::Joint)
+  {
+    if((event->pos()-m_pull.pressPos).manhattanLength()<5) return;
+    const unsigned int selected=m_pressSelected;
+    // pressing an unpicked joint picks it and pulls it in one gesture
+    if(selected!=partSelected) clickSelect(selected);
+    // the drag choice in the Selected joint panel; Shift when pressing does the other one
+    const bool turnOnly=UserSettings::pullLimbOnDrag()==m_pull.shiftAtPress;
+    if(!startPull(selected,turnOnly,false))
+    {
+      // it cannot be pulled now (the reason is in the status line): the rest of the drag does nothing
+      m_mouseDrag=MouseDrag::Pull;
+      return;
+    }
+    m_mouseDrag=MouseDrag::Pull;
+  }
+  if(m_mouseDrag==MouseDrag::Pull)
+  {
+    if(m_pull.active && !m_pull.viaKeys)
+    {
+      movePullTo(m_pull.start+QPointF(event->pos()-m_pull.pressPos));
+      showPullLabel();
+    }
+    return;
+  }
+
   if(m_mouseDrag==MouseDrag::Ring && m_ringDragging>=0)
   {
     // turn the joint as far as the mouse moved along the ring
@@ -882,8 +937,9 @@ void AnimationView::moveCamera(CameraDrag how,int dx,int dy)
 
 void AnimationView::mousePressEvent(QMouseEvent* event)
 {
-  // one drag at a time; other buttons are ignored until it ends
-  if(m_mouseDrag!=MouseDrag::None) return;
+  // one drag at a time; other buttons are ignored until it ends, and so is the mouse while a
+  // joint is pulled with the keys
+  if(m_mouseDrag!=MouseDrag::None || m_pull.active) return;
 
   const Qt::KeyboardModifiers keys=event->modifiers();
   modifier=keys;
@@ -952,7 +1008,18 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
     return;
   }
 
-  // a joint, a prop or empty space: select on release, unless the mouse
+  // a joint: a click picks it, a drag pulls the limb (UX phase 4b part 2, 6a)
+  if(selected && selected<static_cast<unsigned int>(OpenGlIds::ObjectStart) &&
+     m_scene->getAnimation(selected/static_cast<int>(OpenGlIds::AnimationIncrement)))
+  {
+    m_mouseDrag=MouseDrag::Joint;
+    m_pressSelected=selected;
+    m_pull.pressPos=event->pos();
+    m_pull.shiftAtPress=keys & Qt::ShiftModifier;
+    return;
+  }
+
+  // a prop or empty space: select on release, unless the mouse
   // moves first - then it turns the camera
   m_mouseDrag=MouseDrag::Click;
   m_pressSelected=selected;
@@ -1012,8 +1079,13 @@ void AnimationView::mouseReleaseEvent(QMouseEvent* event)
   // show mouse cursor again
   setCursor(Qt::ArrowCursor);
 
-  if(ended==MouseDrag::Click)
+  if(ended==MouseDrag::Click || ended==MouseDrag::Joint)
     clickSelect(m_pressSelected);
+  else if(ended==MouseDrag::Pull)
+  {
+    // release sets the key; after Esc the pull is already gone
+    if(m_pull.active && !m_pull.viaKeys) finishPull();
+  }
   else if(ended==MouseDrag::Ring)
   {
     m_ringDragging=-1;
@@ -1093,12 +1165,25 @@ bool AnimationView::event(QEvent* event)
   if(event->type()==QEvent::KeyPress)
   {
     QKeyEvent* key=static_cast<QKeyEvent*>(event);
+    // while a joint is pulled every key goes to the pull (keyPressEvent())
+    if(m_pull.active && (key->key()==Qt::Key_Tab || key->key()==Qt::Key_Backtab))
+    {
+      keyPressEvent(key);
+      return true;
+    }
     if(key->key()==Qt::Key_Tab && key->modifiers()==Qt::NoModifier)
     {
       key->accept();
       emit tabPressed();
       return true;
     }
+  }
+  // while a joint is pulled no menu key may act: the key comes to keyPressEvent(), which says
+  // "Finish or cancel the pull first: Esc cancels."
+  if(event->type()==QEvent::ShortcutOverride && m_pull.active)
+  {
+    event->accept();
+    return true;
   }
   return QOpenGLWidget::event(event);
 }
@@ -1107,6 +1192,51 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
 {
   int num=-1;
   float height,angle;
+
+  // pulling a joint (UX phase 4b part 2): Esc cancels; with the keys the arrow keys move it and
+  // Enter sets the key; every other key waits until the pull ends (the mockup's keydown handler)
+  if(m_pull.active)
+  {
+    const int key=event->key();
+    event->accept();
+    if(key==Qt::Key_Escape)
+    {
+      cancelPull();
+      return;
+    }
+    if(m_pull.viaKeys)
+    {
+      const int step=(event->modifiers() & Qt::ShiftModifier) ? ViewToolSpec::keyStepSmall : ViewToolSpec::keyStep;
+      QPointF move;
+      if(key==Qt::Key_Left) move=QPointF(-step,0);
+      else if(key==Qt::Key_Right) move=QPointF(step,0);
+      else if(key==Qt::Key_Up) move=QPointF(0,-step);
+      else if(key==Qt::Key_Down) move=QPointF(0,step);
+      if(!move.isNull())
+      {
+        movePullTo(m_pull.target+move);
+        showPullLabel();
+        return;
+      }
+      if(key==Qt::Key_Return || key==Qt::Key_Enter || key==Qt::Key_Space)
+      {
+        finishPull();
+        return;
+      }
+    }
+    if(key!=Qt::Key_Shift && key!=Qt::Key_Control && key!=Qt::Key_Alt && key!=Qt::Key_Meta &&
+       (event->modifiers() & (Qt::ControlModifier | Qt::MetaModifier)))
+      emit statusMessage(ViewToolSpec::tr(ViewToolSpec::finishFirst));
+    return;
+  }
+  // Enter or G picks the picked joint up (Shift + Enter: the other way than the drag choice)
+  if((event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter || event->key()==Qt::Key_G) &&
+     !(event->modifiers() & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)))
+  {
+    event->accept();
+    startKeyPull(event->key()!=Qt::Key_G && (event->modifiers() & Qt::ShiftModifier));
+    return;
+  }
 
   // Shift / Ctrl show the scale / rotate handles of a selected prop
   if(modifier!=event->modifiers())
@@ -1241,8 +1371,16 @@ void AnimationView::updateHoverHint()
     setHoverHint(ViewToolSpec::toolHoverHint(m_viewTool));
     return;
   }
+  if(m_pull.active) return;
   const int ring=static_cast<int>(partHighlighted)-static_cast<int>(OpenGlIds::RotateRingX);
-  setHoverHint(ring>=0 && ring<=2 && partSelected && m_showRings ? ViewToolSpec::ringHoverHint(ring) : QString());
+  if(ring>=0 && ring<=2 && partSelected && m_showRings)
+  {
+    setHoverHint(ViewToolSpec::ringHoverHint(ring));
+    return;
+  }
+  // over a joint: a click picks it, a drag pulls it (the mockup's HINT-02)
+  const QString name=selectionName(partHighlighted);
+  setHoverHint(!name.isEmpty() && name!=QLatin1String("Site") ? ViewToolSpec::tr(ViewToolSpec::jointHover) : QString());
 }
 
 void AnimationView::setHoverHint(const QString& hint)
@@ -1353,8 +1491,11 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
     }
     if(mode==MODE_SKELETON && UserSettings::skeleton() && !selecting)
     {
-      SceneState::setLineWidth(1);
-      drawWithShader(GL_LINES,{-offset,QVector3D(0,0,0)},ViewColours::vector(ViewColours::bone()));
+      // the bones of a pulled limb are drawn thick in accent_text (the mockup's .bone.pulled)
+      const bool pulledBone=m_pull.active && (m_pullPreview.contains(motion) || motion==m_pull.pull.pulled);
+      SceneState::setLineWidth(pulledBone ? 4 : 1);
+      drawWithShader(GL_LINES,{-offset,QVector3D(0,0,0)},
+                     pulledBone ? ViewColours::vector(Theme::color(Theme::Token::AccentText)) : ViewColours::vector(ViewColours::bone()));
 
       // face bones only get a ball while the head or a face bone is selected,
       // otherwise the many face balls cover the whole head
@@ -1381,7 +1522,12 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       }
     }
 
-    QVector3D rotation = motion->frameData(frame).rotation();
+    // where this joint's frame is before its own turn, for pulling a joint (UX phase 4b part 2)
+    if(mode==MODE_PARTS && !selecting)
+      m_jointFrames.insert(motion,m_viewMatrix.inverted()*SceneState::modelview());
+    // a pull shows its turns before it is released
+    const auto previewed=m_pullPreview.constFind(motion);
+    QVector3D rotation = previewed!=m_pullPreview.constEnd() ? previewed.value() : motion->frameData(frame).rotation();
     for(int i=0;i<motion->numChannels;i++)
     {
 /*
@@ -1455,6 +1601,12 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       }
       else if(partSelected==colorName)
         SceneState::setColor(0.6,0.3,0.3,1);
+      else if(m_pull.active && m_pullPreview.contains(motion))
+      {
+        // the pulled limb is highlighted (accent_text, as the mockup's pulled bones)
+        const QVector4D pulled=ViewColours::vector(Theme::color(Theme::Token::AccentText));
+        SceneState::setColor(pulled.x(),pulled.y(),pulled.z(),1);
+      }
       else if(partHighlighted==colorName)
         SceneState::setColor(0.4,0.5,0.3,1);
       else
@@ -1769,13 +1921,58 @@ void AnimationView::drawCircle(int axis,float radius,bool strong)
     positions << outwards*radius+normal*tube;
     normals << normal;
   };
+  // the back half of the ring (further away than the joint) is drawn faint, as in the mockup
+  // (opacity 0.35, or 0.6 while hovered or dragged): mixed with the background
+  QVector<QVector4D> colours;
+  colours.reserve(segments*sides*6);
+  const QVector4D backColour=picking ? ringColor :
+    ViewColours::vector(Theme::mix(ViewColours::ring(axis,strong),Theme::color(Theme::Token::Background),strong ? 0.4 : 0.65));
+  float centreDepth=0;
+  if(!picking)
+  {
+    const QVector4D centreClip=m_ringMatrix[axis]*QVector4D(0,0,0,1);
+    centreDepth=centreClip.w()!=0.0f ? centreClip.z()/centreClip.w() : centreClip.z();
+  }
   for(int i=0;i<segments;i++)
+  {
+    bool back=false;
+    if(!picking)
+    {
+      float depth=0;
+      ringPointOnScreen(axis,2*M_PI*(i+0.5f)/segments,&depth);
+      back=depth>centreDepth;
+    }
     for(int j=0;j<sides;j++)
     {
       corner(i,j); corner(i+1,j); corner(i+1,j+1);
       corner(i,j); corner(i+1,j+1); corner(i,j+1);
     }
-  drawWithShader(GL_TRIANGLES,positions,normals,QVector<QVector4D>(positions.size(),ringColor));
+    for(int k=0;k<sides*6;k++) colours << (back ? backColour : ringColor);
+  }
+  drawWithShader(GL_TRIANGLES,positions,normals,colours);
+
+  // where its letter goes: the ring point furthest along the mockup's direction for this
+  // axis on the screen, front half first (renderRings(): DIRS and the bonus of 40)
+  if(!picking)
+  {
+    static const float dirs[3][2]={{1.0f,-0.35f},{-1.0f,-0.35f},{0.25f,1.0f}};
+    const QVector4D clip=m_ringMatrix[axis]*QVector4D(0,0,0,1);
+    const float w=clip.w()!=0.0f ? clip.w() : 1.0f;
+    const QPointF centre((double(clip.x())/w*0.5+0.5)*width(),(0.5-double(clip.y())/w*0.5)*height());
+    float bestValue=-1e9f;
+    for(int i=0;i<=48;i++)
+    {
+      float depth=0;
+      const QPointF point=ringPointOnScreen(axis,2*M_PI*i/48,&depth);
+      const float value=(point.x()-centre.x())*dirs[axis][0]+(point.y()-centre.y())*dirs[axis][1]+(depth<=centreDepth ? 40.0f : 0.0f);
+      if(value>bestValue)
+      {
+        bestValue=value;
+        m_ringLabelPos[axis]=point;
+      }
+    }
+    m_ringLabelShown[axis]=true;
+  }
 
   // the axis itself, as a thin line (not pickable)
   if(!picking)
@@ -1977,3 +2174,216 @@ bool AnimationView::frameWholeFigure()
   return true;
 }
 
+
+// ---------- dragging a joint: pull the limb, or turn only that joint (UX phase 4b part 2) ----------
+
+QPointF AnimationView::toScreen(const QVector3D& world,float* depth) const
+{
+  const QVector4D clip=m_lastProjection*m_viewMatrix*QVector4D(world,1.0f);
+  const float w=clip.w()!=0.0f ? clip.w() : 1.0f;
+  if(depth) *depth=clip.z()/w;
+  return QPointF((double(clip.x())/w*0.5+0.5)*width(),(0.5-double(clip.y())/w*0.5)*height());
+}
+
+QVector3D AnimationView::fromScreen(const QPointF& point,float depth) const
+{
+  const QVector4D ndc(float(point.x()/qMax(1,width())*2.0-1.0),float(1.0-point.y()/qMax(1,height())*2.0),depth,1.0f);
+  const QVector4D world=(m_lastProjection*m_viewMatrix).inverted()*ndc;
+  return world.w()!=0.0f ? world.toVector3D()/world.w() : world.toVector3D();
+}
+
+QString AnimationView::jointName(const BVHNode* node) const
+{
+  if(!node) return QString();
+  const QString name=m_jointNamer ? m_jointNamer(node->name()) : QString();
+  return name.isEmpty() ? node->name() : name;
+}
+
+QStringList AnimationView::pullLabelLines() const
+{
+  if(!m_pull.active) return QStringList();
+  return ViewToolSpec::pullLines(jointName(m_pull.pull.pulled),m_pull.pull.chain.turnOnly,m_pull.pull.held,m_pull.viaKeys);
+}
+
+void AnimationView::startKeyPull(bool otherWay)
+{
+  if(m_pull.active || m_mouseDrag!=MouseDrag::None) return;
+  const QString why=m_pullGuard ? m_pullGuard() : QString();
+  if(!why.isEmpty())
+  {
+    emit statusMessage(ViewToolSpec::tr(ViewToolSpec::keysBlocked).arg(why));
+    return;
+  }
+  if(!partSelected || partSelected>=static_cast<unsigned int>(OpenGlIds::ObjectStart))
+  {
+    emit statusMessage(ViewToolSpec::tr(ViewToolSpec::keysNoJoint));
+    return;
+  }
+  setFocus();
+  startPull(partSelected,UserSettings::pullLimbOnDrag()==otherWay,true);
+}
+
+bool AnimationView::startPull(unsigned int selected,bool turnOnly,bool viaKeys)
+{
+  const QString why=m_pullGuard ? m_pullGuard() : QString();
+  if(!why.isEmpty())
+  {
+    emit statusMessage(ViewToolSpec::tr(viaKeys ? ViewToolSpec::keysBlocked : ViewToolSpec::pullBlocked).arg(why));
+    return false;
+  }
+  Animation* anim=m_scene->getAnimation(selected/static_cast<int>(OpenGlIds::AnimationIncrement));
+  if(!anim) return false;
+  BVHNode* node=anim->getNode(selected%static_cast<int>(OpenGlIds::AnimationIncrement));
+  const LimbPull::FrameOf frameOf=[this](BVHNode* joint,QMatrix4x4& frame)
+  {
+    const auto found=m_jointFrames.constFind(joint);
+    if(found==m_jointFrames.constEnd()) return false;
+    frame=found.value();
+    return true;
+  };
+  const LimbPull::TurnOf turnOf=[anim](BVHNode* joint) { return anim->getRotation(joint); };
+  const LimbPull::LimitsOf limitsOf=[anim](BVHNode* joint,QVector3D& minimum,QVector3D& maximum)
+  {
+    const RotationLimits limits=anim->getRotationLimits(joint);
+    minimum=limits.minimum;
+    maximum=limits.maximum;
+  };
+  if(!LimbPull::setUp(m_pull.pull,anim->getMotion(),node,turnOnly,frameOf,turnOf,limitsOf)) return false;
+
+  m_pull.active=true;
+  m_pull.viaKeys=viaKeys;
+  m_pull.selectName=selected;
+  m_pull.start=toScreen(LimbPull::tipPosition(m_pull.pull.chain),&m_pull.depth);
+  m_pull.target=m_pull.start;
+  m_pullPreview.clear();
+  for(const auto& turn : LimbPull::drivenTurns(m_pull.pull)) m_pullPreview.insert(turn.first,turn.second);
+
+  QToolTip::hideText();
+  setCursor(QCursor(Qt::ClosedHandCursor));
+  showPullLabel();
+  update();
+  return true;
+}
+
+void AnimationView::movePullTo(const QPointF& target)
+{
+  if(!m_pull.active) return;
+  m_pull.target=QPointF(qBound(0.0,target.x(),double(width())),qBound(0.0,target.y(),double(height())));
+  LimbPull::solve(m_pull.pull.chain,fromScreen(m_pull.target,m_pull.depth),true);
+  for(const auto& turn : LimbPull::drivenTurns(m_pull.pull)) m_pullPreview.insert(turn.first,turn.second);
+  update();
+}
+
+void AnimationView::finishPull()
+{
+  if(!m_pull.active) return;
+  const LimbPull::Pull pull=m_pull.pull;
+  endPull();
+  // the window sets the keys; the picture keeps the pull's turns until then
+  emit pullFinished(pull.pulled,LimbPull::drivenTurns(pull),pull.chain.turnOnly);
+  m_pullPreview.clear();
+  update();
+}
+
+void AnimationView::cancelPull()
+{
+  if(!m_pull.active) return;
+  endPull();
+  m_pullPreview.clear();
+  update();
+  emit pullCancelled();
+}
+
+void AnimationView::endPull()
+{
+  m_pull.active=false;
+  m_pull.viaKeys=false;
+  m_pullLabel->hide();
+  setCursor(Qt::ArrowCursor);
+  setHoverHint(QString());
+}
+
+void AnimationView::showPullLabel()
+{
+  if(!m_pull.active)
+  {
+    m_pullLabel->hide();
+    return;
+  }
+  const QStringList lines=pullLabelLines();
+  // the hint line says the same as the label
+  setHoverHint(lines.join(QStringLiteral(" · ")));
+  QString html=QStringLiteral("<b>%1</b>").arg(lines.value(0).toHtmlEscaped());
+  for(int i=1;i<lines.size();i++) html+=QStringLiteral("<br>%1").arg(lines.at(i).toHtmlEscaped());
+  m_pullLabel->setText(html);
+  m_pullLabel->setStyleSheet(QStringLiteral("QLabel { background: %1; color: %2; border: 1px solid %3; border-radius: %4px; padding: %5px %6px; }")
+                             .arg(Theme::color(Theme::Token::Surface).name(),Theme::color(Theme::Token::Text).name(),
+                                  Theme::color(Theme::Token::Border).name())
+                             .arg(Theme::Size::radiusControl).arg(Theme::Size::spacingXs).arg(Theme::Size::spacingS));
+  m_pullLabel->adjustSize();
+  // next to the pointer (mouse) or next to where the joint goes (keys), always inside the view
+  const QPointF anchor=m_pull.viaKeys ? m_pull.target+QPointF(24,24) : QPointF(mapFromGlobal(QCursor::pos()))+QPointF(18,18);
+  const int x=qBound(8,int(anchor.x()),qMax(8,width()-m_pullLabel->width()-8));
+  const int y=qBound(8,int(anchor.y()),qMax(8,height()-m_pullLabel->height()-8));
+  m_pullLabel->move(x,y);
+  m_pullLabel->show();
+  m_pullLabel->raise();
+}
+
+void AnimationView::drawPullLine()
+{
+  if(!m_pull.active || isPicking() || !m_skinRenderer.isReady()) return;
+  // in clip space: a dashed line (6 on, 4 off) from where the joint was to where it goes, and a
+  // ring of 12 pixels with a dot of 3 at the end, in accent_text (the mockup's pullline, pulltarget)
+  auto clip=[this](const QPointF& p) { return QVector3D(float(p.x()/qMax(1,width())*2.0-1.0),float(1.0-p.y()/qMax(1,height())*2.0),0.0f); };
+  const QVector4D colour=ViewColours::vector(Theme::color(Theme::Token::AccentText));
+  const qreal scale=TextSize::scaled(100)/100.0;
+  QVector<QVector3D> lines;
+  const QPointF from=m_pull.start, to=m_pull.target;
+  const qreal length=std::hypot(to.x()-from.x(),to.y()-from.y());
+  const qreal on=6*scale, off=4*scale;
+  for(qreal at=0;at<length;at+=on+off)
+  {
+    const qreal end=qMin(length,at+on);
+    lines << clip(from+(to-from)*(at/length)) << clip(from+(to-from)*(end/length));
+  }
+  const int segments=32;
+  for(int i=0;i<segments;i++)
+  {
+    const double a=2*M_PI*i/segments, b=2*M_PI*(i+1)/segments;
+    lines << clip(to+QPointF(std::cos(a),std::sin(a))*12*scale) << clip(to+QPointF(std::cos(b),std::sin(b))*12*scale);
+  }
+  QVector<QVector3D> dot;
+  for(int i=0;i<segments;i++)
+  {
+    const double a=2*M_PI*i/segments, b=2*M_PI*(i+1)/segments;
+    dot << clip(to) << clip(to+QPointF(std::cos(a),std::sin(a))*3*scale) << clip(to+QPointF(std::cos(b),std::sin(b))*3*scale);
+  }
+  glDisable(GL_DEPTH_TEST);
+  m_skinRenderer.drawGeometry(GL_LINES,lines,QVector<QVector3D>(),QVector<QVector4D>(lines.size(),colour),
+                              QMatrix4x4(),QMatrix4x4(),SceneState::Fog(),float(2*devicePixelRatioF()));
+  m_skinRenderer.drawGeometry(GL_TRIANGLES,dot,QVector<QVector3D>(),QVector<QVector4D>(dot.size(),colour),
+                              QMatrix4x4(),QMatrix4x4(),SceneState::Fog(),1.0f);
+  glEnable(GL_DEPTH_TEST);
+}
+
+void AnimationView::placeRingLabels()
+{
+  const int side=TextSize::scaled(16);
+  for(int axis=0;axis<3;axis++)
+  {
+    QLabel* label=m_ringLabel[axis];
+    const bool shown=m_ringLabelShown[axis] && m_showRings && partSelected;
+    if(!shown)
+    {
+      if(label->isVisible()) label->hide();
+      continue;
+    }
+    const QString style=QStringLiteral("QLabel { background: %1; color: %2; border-radius: %3px; font-weight: 700; }")
+                        .arg(ViewColours::axis(axis).name(),Theme::color(Theme::Token::OnAxis).name()).arg(TextSize::scaled(Theme::Size::radiusSmall));
+    if(label->styleSheet()!=style) label->setStyleSheet(style);
+    const QRect place(int(m_ringLabelPos[axis].x())-side/2,int(m_ringLabelPos[axis].y())-side/2,side,side);
+    if(label->geometry()!=place) label->setGeometry(place);
+    if(!label->isVisible()) label->show();
+  }
+}

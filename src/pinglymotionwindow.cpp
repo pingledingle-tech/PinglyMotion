@@ -933,6 +933,12 @@ void PinglyMotionWindow::buildDocks()
   connect(m_selectedJoint,&SelectedJointPanel::limitsToggled,ui->optionsJointLimitsAction,&QAction::setChecked);
   connect(m_selectedJoint,&SelectedJointPanel::resetRequested,this,&PinglyMotionWindow::resetJointClicked);
   connect(m_selectedJoint,&SelectedJointPanel::pickDemoRequested,this,&PinglyMotionWindow::pickDemoJoint);
+  // UX phase 4b part 2: Pull with keys, and the drag choice says what a drag does now
+  connect(m_selectedJoint,&SelectedJointPanel::pullKeysRequested,this,[this]() { ui->animationView->startKeyPull(false); });
+  connect(m_selectedJoint,&SelectedJointPanel::dragChoiceChanged,this,[this](bool pullLimb)
+  {
+    statusBar()->showMessage(SelectedJointSpec::tr2(pullLimb ? SelectedJointSpec::dragChosenPull : SelectedJointSpec::dragChosenTurn),5000);
+  });
 
   // Start, Stop, Replay from start, Frame back, Frame forward and Loop
   // (docs/UX_DECISIONS.md section 1)
@@ -1374,6 +1380,45 @@ void PinglyMotionWindow::setupViewToolbar()
     m_viewToolbar->setCameraAngles(view->camera()->xRotation(),view->camera()->yRotation());
   });
   connect(view,&AnimationView::hoverHintChanged,this,&PinglyMotionWindow::showHoverHint);
+
+  // dragging a joint (UX phase 4b part 2, docs/UX_DECISIONS.md 6a): it starts only when a key
+  // can be set (the same reasons as Set key), and the label names the joints as the Joints list
+  view->setPullGuard([this]()
+  {
+    return TimelineSpec::setKeyBlocked(!m_empty,true,playstate!=PLAYSTATE_STOPPED,protect);
+  });
+  view->setJointNamer([this](const QString& fileName) { return jointDisplayName(fileName); });
+  connect(view,&AnimationView::pullFinished,this,&PinglyMotionWindow::pullFinished);
+  connect(view,&AnimationView::pullCancelled,this,[this]()
+  {
+    statusBar()->showMessage(ViewToolSpec::tr(ViewToolSpec::pullCancelled),5000);
+  });
+  connect(view,&AnimationView::statusMessage,this,[this](const QString& text) { statusBar()->showMessage(text,5000); });
+}
+
+// A pull was released: each joint that bent gets a key with its new turn at this frame (a turn
+// is a key at once, as with the sliders), and the status line says which.
+void PinglyMotionWindow::pullFinished(BVHNode* pulled,const QList<QPair<BVHNode*,QVector3D>>& turns,bool turnOnly)
+{
+  Animation* anim=scene->getAnimation();
+  if(!anim || !pulled || turns.isEmpty()) return;
+  QStringList driven;
+  for(const auto& turn : turns)
+  {
+    anim->setRotation(turn.first,turn.second.x(),turn.second.y(),turn.second.z());
+    if(!turnOnly) driven << jointDisplayName(turn.first->name());
+  }
+  if(currentPart)
+  {
+    const QVector3D rotation=anim->getRotation(currentPart);
+    setX(rotation.x());
+    setY(rotation.y());
+    setZ(rotation.z());
+  }
+  updateKeyBtn();
+  ui->animationView->update();
+  // the frame as the frame counter shows it (from 1)
+  statusBar()->showMessage(ViewToolSpec::pullDoneMessage(jointDisplayName(pulled->name()),driven,anim->getFrame()+1,turnOnly),8000);
 }
 
 void PinglyMotionWindow::chooseViewTool(ViewTool tool)

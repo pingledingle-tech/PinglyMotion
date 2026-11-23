@@ -143,27 +143,29 @@ void TestCameraHabits::wheelZoomsInEveryHabit()
   QVERIFY(!body.contains(QStringLiteral("m_cameraHabit")));
 }
 
-// The mockup's KEYROWS_ALL rows that are built, word for word: since UX phase 4b part 1 the
-// rings, the view tools and the axis widget too; dragging a joint and the keyboard pull (the
-// first, second and fourth rows) come with part 2
+// The mockup's KEYROWS_ALL rows, word for word and in its order: since UX phase 4b part 2 all of
+// them (dragging a joint and the keyboard pull came with part 2)
 void TestCameraHabits::sharedRowsMatchTheMockup()
 {
   const QString mockup = read(QStringLiteral(PINGLYMOTION_MOCKUP));
   QVERIFY(!mockup.isEmpty());
-  QCOMPARE(CameraHabitSpec::sharedRowCount, 6);
+  QCOMPARE(CameraHabitSpec::sharedRowCount, 9);
+  QString all;
   for (int row = 0; row < CameraHabitSpec::sharedRowCount; ++row)
   {
     const QString action = QString::fromLatin1(CameraHabitSpec::sharedRows[row].action);
     const QString gesture = QString::fromLatin1(CameraHabitSpec::sharedRows[row].gesture);
     const QString pair = QStringLiteral("[\"%1\", \"%2\"]").arg(action, gesture);
     QVERIFY2(mockup.contains(pair), qPrintable(pair));
+    all += (row ? QStringLiteral(", ") : QString()) + pair;
   }
-  QCOMPARE(QString::fromLatin1(CameraHabitSpec::sharedRows[0].action), QStringLiteral("Turn on one axis"));
-  QCOMPARE(QString::fromLatin1(CameraHabitSpec::sharedRows[1].gesture), QStringLiteral("V, O, M, Z"));
-  // nothing that is not built yet
-  for (const CameraHabitSpec::Row& row : CameraHabitSpec::sharedRows)
-    for (const char* later : {"Pull a limb", "Turn only that joint", "Pull with the keyboard"})
-      QVERIFY(QString::fromLatin1(row.action) != QLatin1String(later));
+  QCOMPARE(QString::fromLatin1(CameraHabitSpec::sharedRows[0].action), QStringLiteral("Pull a limb"));
+  QCOMPARE(QString::fromLatin1(CameraHabitSpec::sharedRows[2].action), QStringLiteral("Turn on one axis"));
+  QCOMPARE(QString::fromLatin1(CameraHabitSpec::sharedRows[4].gesture), QStringLiteral("V, O, M, Z"));
+  // the whole list, in the mockup's order (its line breaks taken out)
+  QString rows = mockup.mid(mockup.indexOf(QStringLiteral("const KEYROWS_ALL = [")) + 21);
+  rows = rows.left(rows.indexOf(QStringLiteral("]];")) + 1).replace(QStringLiteral("\n  "), QStringLiteral(" "));
+  QCOMPARE(rows, all);
 }
 
 void TestCameraHabits::chosenMessage()

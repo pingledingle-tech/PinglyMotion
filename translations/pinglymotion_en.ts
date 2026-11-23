@@ -339,6 +339,30 @@ Green: live, the pose shows on your avatar</source>
         <source>Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view), or click an end of the axis widget</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Pull a limb</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press a joint and drag. Let go to set a key. Esc cancels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn only that joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hold Shift when you press the joint (or choose Turn only this joint)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull with the keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter on the picked joint, arrow keys, Enter to set a key, Esc cancels</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CameraKeysDialog</name>
@@ -1069,6 +1093,30 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>V, O, M, Z</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull a limb</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press a joint and drag. Let go to set a key. Esc cancels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn only that joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hold Shift when you press the joint (or choose Turn only this joint)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull with the keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter on the picked joint, arrow keys, Enter to set a key, Esc cancels</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5174,10 +5222,6 @@ Error: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Pulling with keys comes in a later version.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>When you drag this joint in the 3D view</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5187,14 +5231,6 @@ Error: %2</source>
     </message>
     <message>
         <source>Turn only this joint</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pulling the limb comes in a later version.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dragging turns only this joint for now. Pulling the limb comes later.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5219,6 +5255,46 @@ Error: %2</source>
     </message>
     <message>
         <source>%1, %2, in degrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull with the keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter in the 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick the joint up and move it with the arrow keys. Enter sets a key. Esc cancels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull the limb (IK)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift when you press: the other one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The joints above it bend, so the limb follows your pointer. This is called IK.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only this joint turns; the rest of the body stays still.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hold Shift when you press to get the other one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dragging a joint pulls the limb (IK).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dragging a joint turns only that joint.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5645,14 +5721,6 @@ Click to turn them on or off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Pick</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Click a joint to pick it. Pulling a limb comes in a later version.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Look around</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5674,10 +5742,6 @@ Click to turn them on or off.</source>
     </message>
     <message>
         <source>Drag up to come closer, down to go back. The mouse wheel zooms too.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pick: click a joint to pick it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5862,6 +5926,74 @@ Click to turn them on or off.</source>
     </message>
     <message>
         <source>Drag the blue Z ring to turn the joint: lean to the side.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick and pull</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a joint to pick it, drag it to pull the limb.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick and pull: click a joint to pick it, drag it to pull the limb.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to pick this joint. Press and drag to pull the limb.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pulling %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turning only %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turning only %1 (it holds the body)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release: set key · Esc: cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arrow keys move it · Enter: set key · Esc: cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift when you press: turn only this joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pulled %1. Key set at frame %2 for %3 and %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turned %1. Key set at frame %2 for %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull cancelled. Nothing changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull a joint: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull with keys: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull with keys: Pick a joint first. Click it on the figure or in the Joints list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finish or cancel the pull first: Esc cancels.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
