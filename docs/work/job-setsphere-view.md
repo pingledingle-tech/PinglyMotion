@@ -1,5 +1,5 @@
 Branch: job/setsphere-view
-Status: active
+Status: done
 Pull request: #415
 Files:
 - src/scriptlab/environmentoverride.*
