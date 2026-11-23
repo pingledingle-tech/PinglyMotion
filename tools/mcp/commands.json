@@ -281,7 +281,7 @@
             ]
         },
         {
-            "description": "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side.",
+            "description": "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side. joint (a name from the joints command, for example rHand or mHandIndex1Left) makes the camera look at where that joint is now instead of at the middle of the figure, for example a hand over the head, from the same distance as the program's Picked joint view (F key: 20 for a hand, 18 for the head and face, 60 for other joints) unless distance is given; the view, angle and height still turn it. The answer has joint and target (where the camera looks, x y z). A later set_camera without joint looks at the middle of the figure again.",
             "name": "set_camera",
             "parameters": {
                 "angle": {
@@ -289,12 +289,16 @@
                     "type": "number"
                 },
                 "distance": {
-                    "description": "Distance from the figure, 30 to 500, default 100",
+                    "description": "Distance from the figure, 30 to 500, default 100; with joint, distance from the joint, 10 to 500",
                     "type": "number"
                 },
                 "height": {
                     "description": "Degrees above the floor, 2 to 80, default 10",
                     "type": "number"
+                },
+                "joint": {
+                    "description": "Look at this joint (a name from the joints command, for example rHand), not at the middle of the figure",
+                    "type": "string"
                 },
                 "reset": {
                     "type": "boolean"

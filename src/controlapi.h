@@ -59,6 +59,13 @@ class ControlHost
     virtual void resetCamera() = 0;
     // current camera as height, angle, distance
     virtual QVector3D camera() = 0;
+    // set_camera with a joint: where the joint is now (current frame), in the 3D view's scene
+    // units. The default is the pose maths (PoseDescribe::worldTransforms); the window gives
+    // where the 3D view draws it, the point the Picked joint framing (F key) looks at.
+    virtual QVector3D jointPosition(BVHNode* joint);
+    // the camera at height and angle (degrees), looking at "target" from "distance" instead of
+    // at the middle of the figure. The default only turns the camera (setCamera).
+    virtual void setCameraFocus(float height, float angle, float distance, const QVector3D& target);
     // loop points as frame numbers (first frame is 1), already checked by the command
     virtual void setLoopPoints(int loopIn, int loopOut);
 };

@@ -2231,11 +2231,22 @@ bool AnimationView::focusOnPickedJoint()
 void AnimationView::zoomToSelectedPart()
 {
   if(!partSelected) return;
-  const QString name=selectionName(partSelected);
-  float distance=60.0f;
-  if(name=="head" || isFaceBone(name)) distance=18.0f;
-  else if(name.startsWith("mHand") || name=="lHand" || name=="rHand") distance=20.0f;
-  focusOnJoint(partSelected,distance);
+  focusOnJoint(partSelected,Camera::focusDistance(selectionName(partSelected)));
+}
+
+bool AnimationView::drawnJointPosition(const QString& joint,QVector3D* position)
+{
+  // a tiny picture off screen fills m_jointPositions for the pose as it is now; the camera
+  // and the picture on screen do not change
+  renderImage(64,48);
+  for(auto it=m_jointPositions.constBegin();it!=m_jointPositions.constEnd();++it)
+  {
+    if(it.key()>=static_cast<unsigned int>(OpenGlIds::AnimationIncrement)) continue;
+    if(selectionName(it.key())!=joint) continue;
+    if(position) *position=it.value();
+    return true;
+  }
+  return false;
 }
 
 bool AnimationView::focusOnJoint(unsigned int selected,float distance)

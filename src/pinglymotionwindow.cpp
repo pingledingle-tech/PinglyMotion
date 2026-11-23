@@ -263,6 +263,23 @@ class WindowControlHost : public ControlHost
       w->ui->animationView->resetCamera();
     }
 
+    QVector3D jointPosition(BVHNode* joint) override
+    {
+      // where the 3D view draws it (the Picked joint framing's point); the pose maths if not drawn
+      QVector3D position;
+      if (joint && w->ui->animationView->drawnJointPosition(joint->name(), &position)) return position;
+      return ControlHost::jointPosition(joint);
+    }
+
+    void setCameraFocus(float height, float angle, float distance, const QVector3D& target) override
+    {
+      // turn first, then look at the joint the way the F key does (Camera::lookAt keeps the turn)
+      Camera* c = w->ui->animationView->camera();
+      c->orbit(height, angle, distance);
+      c->lookAt(target.x(), target.y(), target.z(), distance);
+      w->ui->animationView->update();
+    }
+
     QVector3D camera() override
     {
       const Camera* c = w->ui->animationView->camera();
