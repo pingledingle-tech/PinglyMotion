@@ -24,8 +24,18 @@
 
 #include "bvhnode.h"
 
+#include <cstddef>
+
 #include <QQuaternion>
 #include <QVector3D>
+
+// rows * cols as a size: the product is made in a wide type before it is used
+// as the size of an array (an int product could overflow first)
+inline std::size_t ikMatrixCells(int rows, int cols)
+{
+  if (rows <= 0 || cols <= 0) return 0;
+  return std::size_t(rows) * std::size_t(cols);
+}
 
 struct IKBone
 {

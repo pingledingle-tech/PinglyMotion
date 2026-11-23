@@ -14,6 +14,7 @@
 
 #include <QtTest>
 #include <QMatrix4x4>
+#include <climits>
 #include <cmath>
 
 #include "animation.h"
@@ -358,6 +359,7 @@ class IKTest : public QObject
     void noMoveNoChange();
     void noMoveNoChangePosed_data();
     void noMoveNoChangePosed();
+    void matrixSizeDoesNotOverflow();
     void eulerRoundTrip();
     void matchesView_data();
     void matchesView();
@@ -633,6 +635,16 @@ void IKTest::hipSweep()
              qPrintable(QString("at %1 degrees: rHand %2 in, lFoot %3 in from the goal")
                         .arg(s.angle).arg(s.distance[0]).arg(s.distance[1])));
   }
+}
+
+void IKTest::matrixSizeDoesNotOverflow()
+{
+  QCOMPARE(ikMatrixCells(6, 4), std::size_t(24));
+  QCOMPARE(ikMatrixCells(0, 4), std::size_t(0));
+  QCOMPARE(ikMatrixCells(-3, 4), std::size_t(0));
+  // 100000 * 100000 = 10^10 does not fit 32 bits; the int product would have wrapped
+  QCOMPARE(ikMatrixCells(100000, 100000), std::size_t(10000000000ULL));
+  QCOMPARE(ikMatrixCells(INT_MAX, INT_MAX), std::size_t(INT_MAX) * std::size_t(INT_MAX));
 }
 
 QTEST_MAIN(IKTest)

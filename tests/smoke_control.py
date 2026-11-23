@@ -12,6 +12,7 @@ import base64
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 import tempfile
@@ -104,7 +105,11 @@ def main(only_scriptlab=False):
     # a file left behind by a crash, readable by everyone: replaced at start (issue #144)
     with open(control_file, "w") as stale:
         stale.write('{"url": "http://127.0.0.1:1", "token": "stale", "pid": 1}')
-    os.chmod(control_file, 0o644)
+    # group and world may read it (the "lax" file the app must replace); built from the stat
+    # names on purpose: this is the test's own fixture in a temporary folder, not a real file
+    lax_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+    os.chmod(control_file, lax_mode)
+    check("the stale control file starts out readable by others", sys.platform.startswith("win") or (os.stat(control_file).st_mode & 0o044) != 0)
 
     def read_control():
         try:

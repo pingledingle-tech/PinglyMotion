@@ -104,6 +104,10 @@ namespace ScreenshotSheet
   // the legend line at the bottom left
   void drawLegend(QImage& image);
 
+  // the size of grid() for "count" cells of size "cell": made in 64 bits; an empty size when
+  // it is not a valid request or too big for a picture
+  QSize gridSize(const QSize& cell, int columns, int count);
+
   // cells of equal size in rows of "columns"; an empty place stays dark grey
   QImage grid(const QVector<QImage>& cells, int columns);
 }

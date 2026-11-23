@@ -442,7 +442,7 @@ void IKTree::solve(int frame)
       cost[c] = 1.0 / (w * w);
       start[c] = value(angle, channels[c]);
     }
-    std::vector<double> J(rows * cols), err(rows), H(cols * cols), g(cols);
+    std::vector<double> J(ikMatrixCells(rows, cols)), err(rows), H(ikMatrixCells(cols, cols)), g(cols);
     std::vector<char> held(cols);
 
     // what the solver minimises:
