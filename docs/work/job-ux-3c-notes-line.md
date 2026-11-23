@@ -1,5 +1,5 @@
 Branch: job/ux-3c-notes-line
-Status: active
+Status: done
 Pull request: #402
 Files:
 - src/timelinenotes.*
