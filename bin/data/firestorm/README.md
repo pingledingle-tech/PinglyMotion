@@ -5,7 +5,8 @@ a section, a left/right mirror partner and the "do not flip on mirror" flag for
 every joint of PinglyMotion's skeleton, plus Firestorm's 9 hand presets.
 `src/jointinfo.h` reads it; `tests/tst_jointinfo.cpp` checks it. The joint
 list uses the friendly names and sections (`src/jointlist.h`, posing UX step 2);
-the mirror partners and hand presets are not used yet.
+the hand presets are the ready-made finger poses of the Hands tab
+(`src/handpose.h`, `src/handstab.h`, UX phase 2c).
 
 ## Source
 
@@ -84,19 +85,29 @@ not joints in BVH files.
   - `mGroin` stands under the "Tail" heading, because it follows the tail in
     Firestorm's list.
 
-## Open: rotation format of the hand presets
+## Rotation format of the hand presets (used since UX phase 2c)
 
-The presets are stored **as found** and are **not applied** anywhere yet.
-Firestorm's pose files (LLSD XML, `version` 5) give, per joint, `rotation` as
-three Euler angles in **radians** in Second Life's joint axes (X forward,
-Y left, Z up), with `jointBaseRotationIsZero` set: the rotation replaces the
-joint's base rotation instead of adding to it. When loading a file Firestorm
-builds the rotation with `LLMatrix3(x, y, z)` (roll, pitch, yaw) and no axis
-swap (`FSPoserAnimator::loadJointRotation()` in `fsposeranimator.cpp`).
+The preset files are stored **as found**. Firestorm's pose files (LLSD XML,
+`version` 5) give, per joint, `rotation` as three Euler angles in **radians**
+in Second Life's joint axes (X forward, Y left, Z up), with
+`jointBaseRotationIsZero` set: the rotation replaces the joint's base rotation
+instead of adding to it. When loading a file Firestorm builds the rotation with
+`LLMatrix3(x, y, z)` (roll, pitch, yaw) and no axis swap
+(`FSPoserAnimator::loadJointRotation()` in `fsposeranimator.cpp`); written as a
+rotation of column vectors that is Rx(roll) * Ry(pitch) * Rz(yaw)
+(`LLMatrix3::setRot()` and `LLQuaternion::getEulerAngles()` in `indra/llmath`).
 
 PinglyMotion keeps rotations as BVH Euler angles in **degrees**, in BVH axes
-(Y up), applied channel by channel in the file's order (#116). Converting a
-preset needs: radians to degrees, SL axes to BVH axes, Firestorm's roll/pitch/yaw
-order to the joint's BVH channel order, and a check against the rest pose of
-the finger joints. This is not done yet; it belongs to the Hands tab step of
-#88 and needs a picture test against Firestorm.
+(X the figure's left, Y up, Z forward), applied channel by channel in the
+file's order (#116; the finger joints are Xrotation Zrotation Yrotation).
+`HandPose::fromFirestorm()` (`src/handpose.cpp`) converts a preset: radians to
+degrees, Second Life's X to our Z, its Y to our X and its Z to our Y, and the
+turn written in the joint's channel order; of the two sets of angles for the
+same turn the smaller one is kept, and each angle is rounded to a whole degree.
+The program's own measurement agrees (the calibration table in
+`docs/ASSISTANT_GUIDE.md`: finger curl is Z, negative on the left hand,
+positive on the right), and `tests/handstab` checks that every curled preset
+curls that way and that the right hand is the left hand mirrored (Y and Z
+turned round), as the files have it. A picture test against Firestorm itself
+was not made; how the poses look on a Second Life avatar is for the project
+owner's combined review.

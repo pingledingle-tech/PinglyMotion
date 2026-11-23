@@ -100,6 +100,8 @@ namespace
       "M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}},
     {"axis-3d",{"M4 4v16h16","m4 20 7-7"}},
     {"eye",{"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0","M15 12a3 3 0 1 0-6 0a3 3 0 1 0 6 0z"}},
+    // the tick of a picked tile on the Hands tab (UX phase 2c)
+    {"check",{"M20 6 9 17l-5-5"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix
