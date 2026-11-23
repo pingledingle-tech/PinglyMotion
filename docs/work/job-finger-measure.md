@@ -1,6 +1,6 @@
 Branch: job/finger-measure
-Status: active
-Pull request: pending
+Status: done
+Pull request: #418
 Files:
 - tests/calibration/**
 - docs/ASSISTANT_GUIDE.md
