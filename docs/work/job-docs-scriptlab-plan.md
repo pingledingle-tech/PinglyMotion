@@ -1,6 +1,6 @@
 Branch: job/docs-scriptlab-plan
-Status: active
-Pull request: pending
+Status: done
+Pull request: #423
 Files:
 - docs/ROADMAP.md
 - docs/SCRIPT_LAB.md
