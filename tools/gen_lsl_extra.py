@@ -6,8 +6,8 @@
 LSL_DEFINITIONS_YAML is `lsl_definitions.yaml` from
 https://github.com/secondlife/lsl-definitions (Linden Research, Inc., MIT licence),
 the source Second Life itself keeps its function, event and constant lists in. It is
-newer than the viewer's keyword list that tools/gen_lsl_builtins.py reads. It is not
-stored in this repository.
+newer than the viewer's keyword list that tools/gen_lsl_builtins.py reads. A copy is
+kept in tests/data/lsl-definitions/ (use that file as the argument).
 
 BASE_INC (default src/scriptlab/lslbuiltins_data.inc) is the file made from the
 viewer's list. Every function, event and constant that the definitions have and the

@@ -1,6 +1,6 @@
 # SLua rules for the converter
 
-Status: plan (23 November 2026). Nothing here is built. SLua is Second Life's Lua, in beta; the rules may change while it is in beta.
+Status: plan (23 November 2026). Nothing here is built (only the copy of the definition files exists). SLua is Second Life's Lua, in beta; the rules may change while it is in beta.
 
 ## The source
 
@@ -10,7 +10,7 @@ The first source is Linden Lab's definition files from https://github.com/second
 - `slua_definitions.yaml`
 - `generated/secondlife.d.luau`
 
-A copy of them with the licence file will be kept in the repository. The copy is made by the later definition-check job, not by the job that wrote this page, so no definition file is in the repository yet.
+A copy of them with the licence file is kept in the repository, in `tests/data/lsl-definitions/` (the commit is in the `README.md` there). It was made by the definition-check job ([LSL_DEFINITION_CHECK.md](LSL_DEFINITION_CHECK.md)).
 
 ## What the definition files do not say
 
