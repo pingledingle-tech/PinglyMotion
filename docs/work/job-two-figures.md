@@ -1,6 +1,6 @@
 Branch: job/two-figures
 Status: active
-Pull request: pending
+Pull request: #439
 Files:
 - src/pinglymotionwindowfile.cpp
 - src/pinglymotionwindow.cpp
