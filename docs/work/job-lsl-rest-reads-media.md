@@ -1,9 +1,11 @@
 Branch: job/lsl-rest-reads-media
-Status: active
+Status: done
 Pull request: #389
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/interp.cpp
+- tests/tst_lslprims.cpp
+- tests/tst_lslownobject.cpp
 - src/scriptlab/lsl/world.h
 - tests/tst_lslrest.cpp
 - tests/tst_lslpure.cpp

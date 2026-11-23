@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 302 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list, eleven from the second round of pure functions, and 20 from the land and parcel job: 18 land and parcel functions plus `llAsin` and `llLog10`); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 318 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list, eleven from the second round of pure functions, and 20 from the land and parcel job: 18 land and parcel functions plus `llAsin` and `llLog10`, and 16 from the leftover reads and media job); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -286,6 +286,10 @@ A deliberately small slice, not a physics engine: one more `inputs` type and two
 
 - 18 more functions run, with no parcel model: the whole 256 by 256 m region is one canned parcel (`RegionSettings` in `world.h`). `llAddToLandBanList`, `llRemoveFromLandBanList`, `llResetLandBanList`, `llAddToLandPassList`, `llRemoveFromLandPassList`, `llResetLandPassList`, `llMapDestination` and `llEjectFromLand` only write a `recorded_only` entry; `llReturnObjectsByOwner` and `llReturnObjectsByID` do the same and answer 0. `llGetLandOwnerAt`, `llOverMyLand`, `llGetParcelFlags`, `llGetParcelPrimCount`, `llGetParcelMaxPrims`, `llGetParcelPrimOwners` and `llGetParcelDetails` give canned answers (a position outside the region is on no parcel); `llSetParcelMusicURL` records and stores the address and `llGetParcelMusicURL` reads it back. Also `llAsin` and `llLog10`. No `lsl_run` option sets the parcel values yet. Tests: `tests/tst_lslland.cpp`.
 
+## What exists now (leftover reads and media, second gap list)
+
+- 16 more functions run, all with canned answers or record only: `llGetDisplayName`, `llRequestDisplayName`, `llRequestUsername` and `llRequestSimulatorData` (the `dataserver` event comes at once), `llGetGMTclock`, `llGetEnv`, `llSetContentType` (a `recorded_only` entry), the link media functions `llSetLinkMedia`, `llGetLinkMedia` and `llClearLinkMedia` (the same storage as `llSetPrimMediaParams`), and the touch data `llDetectedTouchFace`, `llDetectedTouchUV`, `llDetectedTouchST`, `llDetectedTouchNormal`, `llDetectedTouchBinormal` and `llDetectedTouchPos`. `llGetObjectDetails` now answers the flags 50 to 56 (`OBJECT_HEALTH` to `OBJECT_VOLUME_DETECT`). The constants table already had every `OBJECT_*` constant of the wiki (1 to 56); none was added. Details: [CONTROL.md](CONTROL.md), "Leftover reads and media". Tests: `tests/tst_lslrest.cpp`.
+
 ## What exists now (second round of pure functions): JSON, llListRandomize and maths
 
 - Eleven more pure functions run: `llJsonGetValue`, `llJsonSetValue`, `llJsonValueType`, `llList2Json`, `llJson2List`, `llListRandomize`, `llLog`, `llAcos`, `llAxes2Rot`, `llAngleBetween` and `llRot2Axis`. No side effects and no log entries.
@@ -361,7 +365,7 @@ A deliberately small slice, not a physics engine: one more `inputs` type and two
   of `llGetAgentSize` (0.45 and 0.6 m), `DATA_BORN` (the start date of the run), `DATA_PAYINFO` (`"0"`), no answer for
   an unknown `DATA_*` number, the order of `llGetAgentList` (the owner, the listed avatars, then sitters), and that the
   three scopes give the same list because the sandbox is one parcel.
-- Not done here: `llGetGMTclock`, `llGetEnv`, `llGetRegionFPS`, `llGetRegionTimeDilation`, `llGetSimulatorHostname`,
+- Not done here: `llGetRegionFPS`, `llGetRegionTimeDilation`, `llGetSimulatorHostname`,
   ground that is not flat (`llGroundNormal`, `llGroundSlope`), the forced delay of `llRequestAgentData` (0.1 s).
 - Already in place: the checker knows that the sandbox raises `transaction_result` (`Parser::eventIsRaised`); this step
   adds a test for it.
@@ -399,8 +403,7 @@ A deliberately small slice, not a physics engine: one more `inputs` type and two
   The brief for this step said that unknown `llGetObjectDetails` flags give an empty list; the wiki says each unknown
   flag gives `OBJECT_UNKNOWN_DETAIL` (-1) in the list (an unknown key gives an empty list), and the sandbox follows
   the wiki.
-- Not done here: `OBJECT_HEALTH` to `OBJECT_VOLUME_DETECT` (50 to 56: health, damage, the permission lists, locked,
-  volume detect) give `OBJECT_UNKNOWN_DETAIL`; the keys of child prims (from `llGetLinkKey`) are not known to
+- Not done here: the keys of child prims (from `llGetLinkKey`) are not known to
   `llGetObjectDetails`; `llSameGroup` in an attachment does not use the owner's active group; the forced delay of
   `llSetLocalRot` (0.2 s) is not simulated, as for the other prim setters.
 - Tests: `tests/tst_lslownobject.cpp` (exact answers for every function) and the scenarios `lsl_own_object_reads` and

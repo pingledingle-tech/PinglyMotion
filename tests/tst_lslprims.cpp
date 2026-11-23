@@ -193,8 +193,8 @@ void LslPrimsTest::unsupportedRuleStops()
   a = run("llSetPrimitiveParams([123, 1]);");
   QCOMPARE(stops(a), QStringList({"The primitive rule 123 in llSetPrimitiveParams is not supported yet in the Script Lab sandbox, so the script was stopped here."}));
   // a function that is only named
-  a = run("llSetLinkMedia(1, 0, []);");
-  QVERIFY(stops(a).size() == 1 && stops(a)[0].contains("llSetLinkMedia is not supported yet"));
+  a = run("llStartObjectAnimation(\"walk\");");
+  QVERIFY(stops(a).size() == 1 && stops(a)[0].contains("llStartObjectAnimation is not supported yet"));
 }
 
 void LslPrimsTest::linkForms()

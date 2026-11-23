@@ -480,6 +480,7 @@ void Interpreter::touch(const QString& id, const QString& name, int link, TouchP
   d.key = d.owner = id;
   d.name = name;
   d.link = link;
+  d.touch = true;
   // one toucher at a time, so num_detected is 1
   switch (phase)
   {
