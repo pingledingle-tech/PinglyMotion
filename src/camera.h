@@ -219,6 +219,18 @@ class Camera : public QObject
     void frameBox(const QVector3D& low, const QVector3D& high, float aspect);
     // the distance frameBox() uses for a ball of this radius
     float frameDistance(float radius, float aspect) const;
+    // Picked joint (F key) and set_camera with a joint: how far from the joint the camera
+    // stays, in scene units: 18 for the head and the face bones (as AnimationView::isFaceBone()
+    // names them), 20 for a hand, else 60. Inline, so the control commands need no camera.cpp
+    static float focusDistance(const QString& joint)
+    {
+      if (joint == QLatin1String("head") || joint.startsWith(QLatin1String("mFace")) ||
+          joint.startsWith(QLatin1String("mEye")) || joint == QLatin1String("mSkull"))
+        return 18.0f;
+      if (joint.startsWith(QLatin1String("mHand")) || joint == QLatin1String("lHand") || joint == QLatin1String("rHand"))
+        return 20.0f;
+      return 60.0f;
+    }
     // look at the middle of the figure: height = degrees above the floor,
     // angle = degrees around the figure (0 = default front view), distance from the middle
     void orbit(float height, float angle, float distance);

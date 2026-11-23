@@ -27,6 +27,7 @@
 #include "animimport.h"
 #include "bvh.h"
 #include "bvhnode.h"
+#include "camera.h"
 #include "motiondescribe.h"
 #include "posedescribe.h"
 #include "scriptlab/rlvbehaviours.h"
@@ -80,8 +81,8 @@ namespace
     {"screenshot", "Takes a picture of the 3D view, so you can see the pose. Each picture is 4:3. Returns a PNG as base64 text. Optional, for checking your own work: views (up to 6 of front, back, left, right, three_quarter) gives one picture per view in a grid; frames (up to 12 frame numbers) gives one picture per frame (a strip, in rows of 4; with views, one row per frame and one column per view); each picture is captioned, and the answer lists what is in each cell. labels: true writes the classic joint names, the figure's own left side in blue and its right side in orange. trail: true adds dots where the hands and feet are at every frame (blue left, orange right). markers: false leaves out the small Bento joint balls. The program window, its camera and the current frame do not change.", "{\"width\":{\"type\":\"integer\",\"description\":\"Width of one picture in pixels, default 800 (400 with views or frames)\"},\"views\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"enum\":[\"front\",\"back\",\"left\",\"right\",\"three_quarter\"]}},\"frames\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"},\"description\":\"Frame numbers, first frame is 1\"},\"labels\":{\"type\":\"boolean\"},\"trail\":{\"type\":\"boolean\"},\"markers\":{\"type\":\"boolean\",\"description\":\"Default true\"}}", "[]"},
     {"set_figure", "Shows the female or the male Second Life body. This only changes what you see in PinglyMotion; the saved BVH is the same.",
      "{\"figure\":{\"type\":\"string\",\"enum\":[\"female\",\"male\"]}}", "[\"figure\"]"},
-    {"set_camera", "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side.",
-     "{\"view\":{\"type\":\"string\",\"enum\":[\"front\",\"back\",\"left\",\"right\",\"three_quarter\"]},\"angle\":{\"type\":\"number\",\"description\":\"Degrees around the figure, 0 = front. Used when there is no view\"},\"height\":{\"type\":\"number\",\"description\":\"Degrees above the floor, 2 to 80, default 10\"},\"distance\":{\"type\":\"number\",\"description\":\"Distance from the figure, 30 to 500, default 100\"},\"reset\":{\"type\":\"boolean\"}}", "[]"},
+    {"set_camera", "Turns the camera around the figure, for screenshots from another side. This never changes the animation. Give a view (front, back, left, right, three_quarter) or an angle, and optionally height and distance; reset goes back to the start view. Left and right are the figure's own left and right side. joint (a name from the joints command, for example rHand or mHandIndex1Left) makes the camera look at where that joint is now instead of at the middle of the figure, for example a hand over the head, from the same distance as the program's Picked joint view (F key: 20 for a hand, 18 for the head and face, 60 for other joints) unless distance is given; the view, angle and height still turn it. The answer has joint and target (where the camera looks, x y z). A later set_camera without joint looks at the middle of the figure again.",
+     "{\"view\":{\"type\":\"string\",\"enum\":[\"front\",\"back\",\"left\",\"right\",\"three_quarter\"]},\"angle\":{\"type\":\"number\",\"description\":\"Degrees around the figure, 0 = front. Used when there is no view\"},\"height\":{\"type\":\"number\",\"description\":\"Degrees above the floor, 2 to 80, default 10\"},\"distance\":{\"type\":\"number\",\"description\":\"Distance from the figure, 30 to 500, default 100; with joint, distance from the joint, 10 to 500\"},\"joint\":{\"type\":\"string\",\"description\":\"Look at this joint (a name from the joints command, for example rHand), not at the middle of the figure\"},\"reset\":{\"type\":\"boolean\"}}", "[]"},
     {"describe_pose", "Describes a frame (default: current frame) in words instead of a picture: world positions of the head, hands, feet and hip (inches and metres, each foot's height above the floor); plain sentences for notable things (bent knees or elbows, a hand above the head or behind the body, feet flat or lifted, weight on one foot, a lean, the head turned or tipped); the classic joints that moved from frame 1, in everyday names, with \"more\" or \"less\"; left/right symmetry of the arms and legs; and a one-line summary. Covers the classic joints only, not the Bento fingers, face, wings or tail.",
      "{\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[]"},
     {"describe_motion", "Describes the movement over a frame range (default: frame 2 to the last, because Second Life does not play frame 1) in words instead of pictures: for each classic joint that moves, its main axis increasing, holding or decreasing, by how many degrees, how fast (slow, medium, fast, very fast) and from which frame; the joints in the order they start; the paths of the hands and feet (straight, arc or out and back, length, top speed); foot contact, both feet off the floor, and where the weight is; the hip's height, bob and travel; the rhythm (repeat period, beats per minute, legs and arms in opposition or together, feet alternating); the loop seam between the loop points; what changes between consecutive keys; and a one-line summary. Never changes the animation or the current frame.",
@@ -443,6 +444,16 @@ static void setEasingInto(Animation* animation, BVHNode* node, int frame, Easing
   animation->setCurve(node, start, curve);
   animation->setEaseOut(node, start, startEaseOut);
   animation->setEaseIn(node, frame, endEaseIn);
+}
+
+QVector3D ControlHost::jointPosition(BVHNode* joint)
+{
+  return PoseDescribe::worldTransforms(animation(), animation()->getFrame()).value(joint).map(QVector3D());
+}
+
+void ControlHost::setCameraFocus(float height, float angle, float distance, const QVector3D&)
+{
+  setCamera(height, angle, distance);
 }
 
 void ControlHost::setLoopPoints(int loopIn, int loopOut)
@@ -1204,6 +1215,20 @@ QJsonObject ControlApi::exportAnim(const QJsonObject& request)
 
 QJsonObject ControlApi::setCamera(const QJsonObject& request)
 {
+  // focus on a joint (phase 2c-a): the camera looks at where that joint is now instead of at
+  // the middle of the figure, from the Picked joint (F key) distance unless one is given
+  BVHNode* focus = nullptr;
+  if (request.contains("joint"))
+  {
+    const QJsonValue value = request.value("joint");
+    if (!value.isString() || value.toString().isEmpty()) return fail("\"joint\" must be a joint name, for example rHand. Use the \"joints\" command to see the names.");
+    QString error;
+    focus = findJoint(value.toString(), error);
+    if (!focus) return fail(error);
+    if (request.value("reset").toBool(false)) return fail("Give either reset or joint, not both.");
+  }
+
+  QVector3D target;
   if (request.value("reset").toBool(false))
   {
     m_host->resetCamera();
@@ -1231,9 +1256,9 @@ QJsonObject ControlApi::setCamera(const QJsonObject& request)
       if (!request.value("angle").isDouble() || !qIsFinite(request.value("angle").toDouble())) return fail("\"angle\" must be a number of degrees.");
       angle = request.value("angle").toDouble();
     }
-    else if (!request.contains("height") && !request.contains("distance"))
+    else if (!focus && !request.contains("height") && !request.contains("distance"))
     {
-      return fail("Give a view, an angle, height, distance, or reset: true.");
+      return fail("Give a view, an angle, height, distance, a joint, or reset: true.");
     }
 
     float height = now.x();
@@ -1243,20 +1268,39 @@ QJsonObject ControlApi::setCamera(const QJsonObject& request)
       if (!value.isDouble() || value.toDouble() < 2.0 || value.toDouble() > 80.0) return fail("\"height\" must be from 2 to 80 degrees.");
       height = value.toDouble();
     }
-    float distance = now.z();
+    // nearer is allowed with a joint: the F key looks at a hand from 20
+    const double nearest = focus ? 10.0 : 30.0;
+    float distance = focus ? Camera::focusDistance(focus->name()) : now.z();
     if (request.contains("distance"))
     {
       const QJsonValue value = request.value("distance");
-      if (!value.isDouble() || value.toDouble() < 30.0 || value.toDouble() > 500.0) return fail("\"distance\" must be from 30 to 500.");
+      if (!value.isDouble() || value.toDouble() < nearest || value.toDouble() > 500.0)
+        return fail(focus ? "\"distance\" must be from 10 to 500 with a joint." : "\"distance\" must be from 30 to 500.");
       distance = value.toDouble();
     }
-    m_host->setCamera(height, angle, distance);
+    if (focus)
+    {
+      target = m_host->jointPosition(focus);
+      m_host->setCameraFocus(height, angle, distance, target);
+    }
+    else
+      m_host->setCamera(height, angle, distance);
   }
 
   const QVector3D camera = m_host->camera();
   QJsonObject answer = ok();
   answer["camera"] = QJsonObject{{"height", qRound(camera.x())}, {"angle", qRound(camera.y())}, {"distance", qRound(camera.z())}};
-  answer["note"] = "The animation is not changed. Take a screenshot to see the new view.";
+  if (focus)
+  {
+    // one decimal, in the 3D view's units (inches, like the hip position)
+    auto rounded = [](float v) { return std::round(double(v) * 10.0) / 10.0; };
+    answer["joint"] = focus->name();
+    answer["target"] = QJsonArray{rounded(target.x()), rounded(target.y()), rounded(target.z())};
+    answer["note"] = "The animation is not changed. The camera looks at " + focus->name() +
+                     "; a later set_camera without joint looks at the middle of the figure again. Take a screenshot to see the new view.";
+  }
+  else
+    answer["note"] = "The animation is not changed. Take a screenshot to see the new view.";
   return answer;
 }
 

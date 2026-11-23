@@ -207,6 +207,21 @@ def main(only_scriptlab=False):
         mcp.text("set_figure", figure="female")
         mcp.text("set_camera", reset=True)
 
+        # phase 2c-a: set_camera looks at the raised right hand, where the 3D view draws it
+        hand = json.loads(mcp.text("describe_pose", frame=2)[1])["positions"]["rHand"]
+        is_error, text = mcp.text("set_camera", joint="rHand")
+        focus = json.loads(text) if not is_error else {}
+        check("camera looks at a joint", not is_error and focus.get("joint") == "rHand" and focus["camera"]["distance"] == 20, text)
+        target = focus.get("target", [0, 0, 0])
+        check("the camera looks at the hand", all(abs(a - b) < 3.0 for a, b in zip(target, (hand["x"], hand["y"], hand["z"]))),
+              "%r against %r" % (target, hand))
+        close = picture()
+        check("the picture changes when the camera looks at the hand", hashlib.sha256(close).digest() != hashlib.sha256(second).digest())
+        is_error, text = mcp.text("set_camera", joint="mNoSuchBone")
+        check("an unknown joint is refused", is_error and "Unknown joint" in text, text)
+        check("looking at a joint does not change the pose", mcp.text("get_pose", frame=2, all=True)[1] == pose_before)
+        mcp.text("set_camera", reset=True)
+
         mcp.text("set_frame_count", frames=20)
         mcp.text("set_pose", frame=10, joints={"lHand": [30, 0, 0], "mHandIndex1Left": [0, 0, -40]})
         is_error, text = mcp.text("keys")

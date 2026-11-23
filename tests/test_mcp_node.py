@@ -145,6 +145,11 @@ def main():
         lsl_run = [c for c in json.load(handle)["commands"] if c["name"] == "lsl_run"][0]
         # step 4: llOwnerSay("@...") runs as an RLV command, and keep_rlv is an option
         assert "rlv_command" in lsl_run["description"] and "keep_rlv" in lsl_run["parameters"], lsl_run
+        # phase 2c-a: set_camera can look at a joint
+        set_camera = [c for c in json.load(open(os.path.join(MCP_DIR, "commands.json"), encoding="utf-8"))["commands"]
+                      if c["name"] == "set_camera"][0]
+        assert set_camera["parameters"]["joint"]["type"] == "string", set_camera
+        assert "rHand" in set_camera["description"] and "F key" in set_camera["description"], set_camera
     with open(os.path.join(HERE, "..", "docs", "ASSISTANT_GUIDE.md"), encoding="utf-8") as handle:
         guide = handle.read()
     # Script Lab Live (issue 292): the folder watch commands are in the bundled list
@@ -201,6 +206,10 @@ def main():
         assert len(pinglymotion.nonces[0]) == 64, pinglymotion.nonces
         mcp.tool("state")
         assert pinglymotion.nonces[0] != pinglymotion.nonces[1], "nonce must be new each time"
+        # set_camera passes the joint through to the program unchanged (phase 2c-a)
+        result = mcp.tool("set_camera", joint="rHand", view="front", distance=25)
+        got = json.loads(result["content"][0]["text"])
+        assert got["got"] == {"joint": "rHand", "view": "front", "distance": 25, "command": "set_camera"}, got
         assert proxy.seen == [], "request went through the proxy: %r" % proxy.seen
 
         # the live tool list comes from the running program

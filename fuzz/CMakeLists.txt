@@ -46,6 +46,7 @@ SET (FUZZ_CONTROL_SRC ${CMAKE_SOURCE_DIR}/src/controlapi.cpp
                    ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
                    ${CMAKE_SOURCE_DIR}/src/animexport.cpp
                    ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp
+                   ${CMAKE_SOURCE_DIR}/src/dialogfit.cpp
                    ${CMAKE_SOURCE_DIR}/src/animimport.cpp
                    ${CMAKE_SOURCE_DIR}/src/screenshotsheet.cpp)
 

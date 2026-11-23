@@ -73,12 +73,16 @@ class FakeHost : public ControlHost
       shots++;
       ScreenshotSheet::Request* request = ScreenshotSheet::current();
       if (!request) return image;
-      requests << *request;
       if (request->wantMarks)
       {
         Camera camera;
         if (request->overrideCamera) camera.orbit(request->height, request->angle, request->distance);
-        else camera.orbit(m_camera.x(), m_camera.y(), m_camera.z());
+        else
+        {
+          camera.orbit(m_camera.x(), m_camera.y(), m_camera.z());
+          // set_camera with a joint: looks at it the way the window's host does
+          if (focused) camera.lookAt(focusTarget.x(), focusTarget.y(), focusTarget.z(), m_camera.z());
+        }
         camera.setModelView();
         const QMatrix4x4 view = SceneState::modelview();
         const QRectF rect(0, 0, width, height);
@@ -90,6 +94,8 @@ class FakeHost : public ControlHost
         request->marks = ScreenshotSheet::project(world, projection * view, QSize(width, height));
       }
       request->drawn = true;
+      // copied after the marks are filled in, so a test can read them
+      requests << *request;
       return image;
     }
     bool newAnimation(QString&) override { return true; }
@@ -112,8 +118,16 @@ class FakeHost : public ControlHost
     bool unsavedChanges() override { return m_animation->dirty(); }
     bool male() override { return m_animation->getFigureType() == Animation::FIGURE_MALE; }
     void setMale(bool male) override { m_animation->setFigureType(male ? Animation::FIGURE_MALE : Animation::FIGURE_FEMALE); }
-    void setCamera(float height, float angle, float distance) override { m_camera = QVector3D(height, angle, distance); }
-    void resetCamera() override { m_camera = QVector3D(10, 0, 100); }
+    void setCamera(float height, float angle, float distance) override { m_camera = QVector3D(height, angle, distance); focused = false; }
+    void setCameraFocus(float height, float angle, float distance, const QVector3D& target) override
+    {
+      m_camera = QVector3D(height, angle, distance);
+      focusTarget = target;
+      focused = true;
+    }
+    void resetCamera() override { m_camera = QVector3D(10, 0, 100); focused = false; }
+    bool focused = false;
+    QVector3D focusTarget;
     QVector3D camera() override { return m_camera; }
 
     int refreshed = 0;
@@ -194,6 +208,9 @@ class ControlTest : public QObject
     void playAndStop();
     void figureCanBeMale();
     void cameraTurnsWithoutChangingTheAnimation();
+    void cameraFocusesOnAJoint();
+    void cameraFocusKeepsTheOldCallsAsTheyWere();
+    void cameraFocusRefusesUnknownJoints();
     void describePoseOnTPose();
     void describePoseOnSittingExample();
     void describePoseOnRaisedHand();
@@ -1111,7 +1128,7 @@ static double meanX(const QImage& image, const QColor& color)
 void ControlTest::screenshotLabelsShowTheFiguresSides()
 {
   // a T-pose: the arms straight out to the sides
-  QVERIFY(run(R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,-80],"rShldr":[0,0,80]}})")["ok"].toBool());
+  QVERIFY(run(R"({"command":"set_pose","frame":2,"joints":{"lShldr":[0,0,-80],"rShldr":[0,0,-80]}})")["ok"].toBool());
   QVERIFY(run(R"({"command":"set_frame","frame":2})")["ok"].toBool());
   const QColor left = ScreenshotSheet::colorOf(ScreenshotSheet::Side::Left);
   const QColor right = ScreenshotSheet::colorOf(ScreenshotSheet::Side::Right);
@@ -1665,6 +1682,126 @@ void ControlTest::cameraTurnsWithoutChangingTheAnimation()
   QCOMPARE(answer.value("camera").toObject().value("angle").toInt(), 0);
 
   QCOMPARE(m_animation->dirty(), dirtyBefore);
+}
+
+// phase 2c-a: set_camera with a joint looks at where that joint is now (a hand over the head),
+// from the Picked joint (F key) distance, and the hand is in the middle of the picture
+void ControlTest::cameraFocusesOnAJoint()
+{
+  // the right arm straight up: the right wrist ends up above the head
+  QJsonObject answer = run(R"({"command":"set_pose","frame":2,"joints":{"rShldr":[0,0,-80]}})");
+  QVERIFY2(answer.value("ok").toBool(), qPrintable(answer.value("error").toString()));
+  BVHNode* hand = findNodeOrNull(m_animation, "rHand");
+  BVHNode* head = findNodeOrNull(m_animation, "head");
+  QVERIFY(hand && head);
+  QCOMPARE(m_animation->getFrame(), 1);
+  const QHash<BVHNode*, QMatrix4x4> world = PoseDescribe::worldTransforms(m_animation, 1);
+  const QVector3D handAt = world.value(hand).map(QVector3D());
+  QVERIFY2(handAt.y() > world.value(head).map(QVector3D()).y(), "the right hand is over the head");
+
+  answer = run(R"({"command":"set_camera","joint":"rHand"})");
+  QVERIFY2(answer.value("ok").toBool(), qPrintable(answer.value("error").toString()));
+  QCOMPARE(answer.value("joint").toString(), QString("rHand"));
+  // the camera looks at the joint: the target is the hand's position, to one decimal
+  QVERIFY(m_host->focused);
+  QCOMPARE(m_host->focusTarget, handAt);
+  const QJsonArray target = answer.value("target").toArray();
+  QCOMPARE(target.size(), 3);
+  QCOMPARE(target.at(0).toDouble(), std::round(handAt.x() * 10.0) / 10.0);
+  QCOMPARE(target.at(1).toDouble(), std::round(handAt.y() * 10.0) / 10.0);
+  QCOMPARE(target.at(2).toDouble(), std::round(handAt.z() * 10.0) / 10.0);
+  // the turn stays, the distance is the F key's for a hand
+  const QJsonObject camera = answer.value("camera").toObject();
+  QCOMPARE(camera.value("height").toInt(), 10);
+  QCOMPARE(camera.value("angle").toInt(), 0);
+  QCOMPARE(camera.value("distance").toInt(), 20);
+  QCOMPARE(Camera::focusDistance("rHand"), 20.0f);
+  QCOMPARE(Camera::focusDistance("mHandIndex1Left"), 20.0f);
+  QCOMPARE(Camera::focusDistance("head"), 18.0f);
+  QCOMPARE(Camera::focusDistance("mFaceJaw"), 18.0f);
+  QCOMPARE(Camera::focusDistance("lShin"), 60.0f);
+
+  // the picture: the hand is in the middle, and much bigger than in the start view, where the
+  // camera looks at the middle of the figure
+  auto marksNow = [this](QHash<QString, QPointF>& at) {
+    const QJsonObject shot = run(R"({"command":"screenshot","width":400,"labels":true})");
+    QVERIFY2(shot.value("ok").toBool(), qPrintable(shot.value("error").toString()));
+    for (const ScreenshotSheet::Mark& mark : m_host->requests.last().marks) at.insert(mark.joint, mark.at);
+  };
+  QHash<QString, QPointF> focusedMarks;
+  marksNow(focusedMarks);
+  if (QTest::currentTestFailed()) return;
+  QVERIFY(focusedMarks.contains("rHand") && focusedMarks.contains("rForeArm"));
+  const QPointF handOnPicture = focusedMarks.value("rHand");
+  QVERIFY2(qAbs(handOnPicture.x() - 200.0) < 1.0 && qAbs(handOnPicture.y() - 150.0) < 1.0,
+           qPrintable(QString("hand at %1, %2").arg(handOnPicture.x()).arg(handOnPicture.y())));
+  const double focusedForearm = QLineF(focusedMarks.value("rForeArm"), handOnPicture).length();
+
+  QVERIFY(run(R"({"command":"set_camera","reset":true})").value("ok").toBool());
+  QVERIFY(!m_host->focused);
+  QHash<QString, QPointF> startMarks;
+  marksNow(startMarks);
+  if (QTest::currentTestFailed()) return;
+  const double startForearm = QLineF(startMarks.value("rForeArm"), startMarks.value("rHand")).length();
+  QVERIFY2(focusedForearm > 3.0 * startForearm, qPrintable(QString("%1 against %2").arg(focusedForearm).arg(startForearm)));
+
+  // a view, height and distance go with the joint; nearer than 30 is allowed with a joint
+  answer = run(R"({"command":"set_camera","joint":"rHand","view":"left","height":30,"distance":15})");
+  QVERIFY2(answer.value("ok").toBool(), qPrintable(answer.value("error").toString()));
+  QCOMPARE(m_host->camera(), QVector3D(30, 270, 15));
+  QCOMPARE(m_host->focusTarget, handAt);
+  QVERIFY(!run(R"({"command":"set_camera","joint":"rHand","distance":5})").value("ok").toBool());
+  QCOMPARE(run(R"({"command":"set_camera","joint":"rHand","distance":5})").value("error").toString(),
+           QString("\"distance\" must be from 10 to 500 with a joint."));
+}
+
+// without a joint every call gives the same camera as before phase 2c-a
+void ControlTest::cameraFocusKeepsTheOldCallsAsTheyWere()
+{
+  struct Case { const char* request; QVector3D camera; };
+  const Case cases[] = {
+    {R"({"command":"set_camera","view":"left"})", QVector3D(10, 270, 100)},
+    {R"({"command":"set_camera","view":"three_quarter","height":20})", QVector3D(20, 45, 100)},
+    {R"({"command":"set_camera","angle":30,"height":45,"distance":200})", QVector3D(45, 30, 200)},
+    {R"({"command":"set_camera","distance":80})", QVector3D(45, 30, 80)},
+    {R"({"command":"set_camera","reset":true})", QVector3D(10, 0, 100)},
+  };
+  for (const Case& entry : cases)
+  {
+    const QJsonObject answer = run(entry.request);
+    QVERIFY2(answer.value("ok").toBool(), entry.request);
+    QCOMPARE(m_host->camera(), entry.camera);
+    QVERIFY(!m_host->focused);
+    QVERIFY(!answer.contains("joint"));
+    QVERIFY(!answer.contains("target"));
+    QCOMPARE(answer.value("note").toString(), QString("The animation is not changed. Take a screenshot to see the new view."));
+  }
+  // the old limits and messages stay
+  QCOMPARE(run(R"({"command":"set_camera","distance":20})").value("error").toString(), QString("\"distance\" must be from 30 to 500."));
+  QCOMPARE(run(R"({"command":"set_camera"})").value("error").toString(), QString("Give a view, an angle, height, distance, a joint, or reset: true."));
+}
+
+void ControlTest::cameraFocusRefusesUnknownJoints()
+{
+  const QVector3D before = m_host->camera();
+  QJsonObject answer = run(R"({"command":"set_camera","joint":"mNoSuchBone"})");
+  QVERIFY(!answer.value("ok").toBool());
+  QCOMPARE(answer.value("error").toString(), QString("Unknown joint \"mNoSuchBone\". Use the \"joints\" command to see the names."));
+  // a near miss gets suggestions, as set_pose gives them
+  answer = run(R"({"command":"set_camera","joint":"rhand"})");
+  QVERIFY(!answer.value("ok").toBool());
+  QVERIFY2(answer.value("error").toString().startsWith("Unknown joint \"rhand\". Did you mean: "), qPrintable(answer.value("error").toString()));
+  QVERIFY(answer.value("error").toString().contains("rHand"));
+  for (const char* bad : {R"({"command":"set_camera","joint":""})", R"({"command":"set_camera","joint":7})",
+                          R"({"command":"set_camera","joint":["rHand"]})"})
+  {
+    answer = run(bad);
+    QVERIFY2(!answer.value("ok").toBool(), bad);
+    QCOMPARE(answer.value("error").toString(), QString("\"joint\" must be a joint name, for example rHand. Use the \"joints\" command to see the names."));
+  }
+  QCOMPARE(run(R"({"command":"set_camera","joint":"rHand","reset":true})").value("error").toString(), QString("Give either reset or joint, not both."));
+  QCOMPARE(m_host->camera(), before);
+  QVERIFY(!m_host->focused);
 }
 
 // issue #129: describe_pose on the T-pose (a new animation's frame 1).

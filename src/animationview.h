@@ -174,6 +174,10 @@ class AnimationView : public QOpenGLWidget
     // F, and the view toolbar's Picked joint: the camera turns around the picked joint; false
     // when no joint is picked (or it was not drawn yet)
     bool focusOnPickedJoint();
+    // set_camera with a joint (phase 2c-a): where the joint of the first animation is drawn now,
+    // the point focusOnPickedJoint() looks at; draws a small picture first so the position
+    // follows the current frame and pose; false when the joint is not drawn
+    bool drawnJointPosition(const QString& joint, QVector3D* position);
     // Pull with keys (the Selected joint panel's button, Enter or G in the 3D view): picks the
     // joint up; the arrow keys move it, Enter sets the key, Esc cancels. turnOnly: the other way
     // than the drag choice (Shift + Enter)
