@@ -146,8 +146,9 @@ void TestScriptLabInput::touchAndDialog()
     "1.000 s  event: touch_start(1)",
     "1.000 s  dialog: buttons=Lock, Unlock, A&B, channel=-7001, message=Lock the cuffs?, object=hud, to=" + owner}));
 
-  // the dialog the touch made: its text and one button for each button, & kept
-  QCOMPARE(panel.inputDialog()->text(), QString("Dialog from hud: Lock the cuffs?"));
+  // the dialog the touch made: its text and one button for each button, & kept (inside Objects, as in the mockup)
+  QCOMPARE(panel.inputDialog()->text(), QString("Dialog from hud"));
+  QCOMPARE(panel.dialogMessage()->text(), QString("\"Lock the cuffs?\" on channel -7001"));
   QStringList buttons;
   for (QPushButton* b : panel.dialogButtons()) { buttons << b->property("button").toString(); QVERIFY(b->isEnabled()); }
   QCOMPARE(buttons, QStringList({"Lock", "Unlock", "A&B"}));

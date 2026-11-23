@@ -55,6 +55,8 @@ bool UserSettings::m_hideJointsInLists = false;
 const QString UserSettings::m_hideJointsInListsKey = "hide_joints_in_lists";
 bool UserSettings::m_tipsOn = true;
 const QString UserSettings::m_tipsOnKey = "tips_on";
+QString UserSettings::m_scriptLabParts;
+const QString UserSettings::m_scriptLabPartsKey = "scriptlab_parts";
 bool UserSettings::m_expertMode = false;
 const QString UserSettings::m_expertModeKey = "expert_mode";
 QString UserSettings::m_cameraHabit = "pinglymotion";
@@ -122,6 +124,8 @@ void UserSettings::setHideJointsInLists(bool on)     { m_hideJointsInLists = on;
 bool UserSettings::hideJointsInLists()               { return m_hideJointsInLists; }
 void UserSettings::setTipsOn(bool on)                { m_tipsOn = on; }
 bool UserSettings::tipsOn()                          { return m_tipsOn; }
+void UserSettings::setScriptLabParts(const QString& value) { m_scriptLabParts = value.left(1000); }
+QString UserSettings::scriptLabParts()               { return m_scriptLabParts; }
 void UserSettings::setExpertMode(bool on)            { m_expertMode = on; }
 bool UserSettings::expertMode()                      { return m_expertMode; }
 QStringList UserSettings::cameraHabits()
@@ -188,6 +192,7 @@ void UserSettings::readSettings()
     setHiddenJointGroups(settings.value(m_hiddenJointGroupsKey, 7).toInt());
     setHideJointsInLists(settings.value(m_hideJointsInListsKey, false).toBool());
     setTipsOn(settings.value(m_tipsOnKey, true).toBool());
+    setScriptLabParts(settings.value(m_scriptLabPartsKey).toString());
     // only true/false (or 1/0) count; anything else gives Beginner mode
     setExpertMode(settings.value(m_expertModeKey, false).toString().toLower() == "true"
                   || settings.value(m_expertModeKey, false).toString() == "1");
@@ -242,6 +247,7 @@ void UserSettings::writeSettings()
   settings.setValue(m_hiddenJointGroupsKey, hiddenJointGroups());
   settings.setValue(m_hideJointsInListsKey, hideJointsInLists());
   settings.setValue(m_tipsOnKey, tipsOn());
+  settings.setValue(m_scriptLabPartsKey, scriptLabParts());
   settings.setValue(m_expertModeKey, expertMode());
   settings.setValue(m_cameraHabitKey, cameraHabit());
   settings.setValue(m_textSizePercentKey, textSizePercent());

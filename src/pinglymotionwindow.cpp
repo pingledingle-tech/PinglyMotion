@@ -581,6 +581,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   {
     UserSettings::setTipsOn(on);
     ui->timelineView->easingTiles()->setTipsOn(on);
+    m_scriptLabPanel->setHintsOn(on);   // the Script Lab panel's explanation line
     if(m_hintsAction) m_hintsAction->setChecked(on);   // Help > Show hints follows the switch
   });
   buildMenus();
@@ -1120,6 +1121,7 @@ void PinglyMotionWindow::buildMenus()
   {
     UserSettings::setTipsOn(on);
     ui->timelineView->easingTiles()->setTipsOn(on);
+    m_scriptLabPanel->setHintsOn(on);
     m_tipsSwitch->setOn(on);
   });
   ui->menuHelp->addAction(m_hintsAction);

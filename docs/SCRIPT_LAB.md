@@ -42,7 +42,7 @@ visibility are saved with the layout. View > Reset layout closes it again.
   `@detach=n,sendim=n`, `@clear`, Reset, replies, a line through `rlv_command`, colour tokens, and the panel's place
   after saving and loading the layout).
 
-### The panel in the new design (slice 1)
+### The panel in the new design (slices 1 and 2)
 
 The panel follows the approved mockup (`docs/mockup/index.html`, the Script Lab page; [UX_DECISIONS.md](UX_DECISIONS.md), 6d):
 
@@ -60,11 +60,23 @@ The panel follows the approved mockup (`docs/mockup/index.html`, the Script Lab 
   folded, as in the mockup. Objects, Send input and Show effects in 3D view also show without a folder once an
   `lsl_run` world exists.
 - Errors and warnings also lists the static warnings (`lsl_lint`) of a script that compiled.
-- Not in this slice (later slices): the green OK summary line of the mockup, the "Try:" example chips, Run again
-  (a proposal in the mockup), the simulated inventory part, the one-line explanation and the remembered fold state.
+- Slice 2: the status line is a box in its colour (success, danger, or the border colour while nothing ran) with the
+  circle-check, circle-x or info icon and its first word ("OK:", "Error:") in bold in that colour. **Run again** (next
+  to Open in editor) reads the shown script from the folder again and runs it from the start, with a fresh clock;
+  it is greyed with the reason when there is no script yet or the script is no longer in the folder. On Type
+  commands a **Try:** row has five example lines (`@detach=n,sendim=n`, `@tploc=n`, `@clear`, `@version=2222`,
+  `@showself=n`); a click puts the line in the command field and runs it, and the row wraps in a narrow panel.
+  While hints are on (Help > Show hints, the Tips switch) a line on top says "A safe sandbox for RLV and LSL scripts.
+  Nothing here reaches Second Life." Each part's open or folded state is saved at once (`scriptlab_parts` in the
+  settings) and comes back at the next start. The newest dialog ("Dialog from hud", the message and channel, and its
+  buttons) sits inside Objects, under the objects.
+- The top bar's Script Lab button now opens and closes the docked panel. Before slice 2 it only showed itself
+  pressed: it set the panel's View action to checked, which does not show a panel (only triggering it does).
+- Not built yet (a later slice): the simulated inventory part.
 - Code: `src/scriptlab/scriptlabpanel.*`, `src/scriptlab/scriptlabsection.*` (a folding part); test:
   `tests/scriptlabpanel/tst_scriptlabdesign.cpp` (exact texts, counts, the switch both ways, the empty state, folding
-  and keys, the tokens in both themes, and the mockup's texts looked up in the mockup file).
+  and keys, the tokens in both themes, the summary line, Try:, Run again, the saved fold state, the explanation, the
+  dialog inside Objects, the top bar button, and the mockup's texts looked up in the mockup file).
 
 ## What exists now (step 3, issue 289): the LSL interpreter
 
@@ -100,8 +112,8 @@ Several scripts run in one world, so a HUD and a restraint can talk on a channel
 - Control commands: `lsl_run` with `objects` instead of `source`, and `lsl_event` ([CONTROL.md](CONTROL.md),
   "Several objects and lsl_event"). The single-script form of `lsl_run` works as before.
 - The panel: on the Live scripts page, the folding part **Objects** lists the objects of the last run (name; where it is, or "Worn (point
-  35)"; "Running" or "Stopped: <why>" in the danger colour and bold; the restrictions it holds) and **Dialog** shows the
-  newest dialog (which object, the message, the buttons and the channel). The part is hidden until a script has run,
+  35)"; "Running" or "Stopped: <why>" in the danger colour and bold; the restrictions it holds) and, under them, the
+  newest dialog (which object, the message and the channel) with one button for each of its buttons. The part is hidden until a script has run,
   and follows every `lsl_run` and `lsl_event` at once. Code: `src/scriptlab/objectsview.*`.
 - Tests: `tests/tst_lslworld.cpp` (two objects talking on a channel, whisper out of range not heard, timer order,
   touch, dialog, attach and detach through `lsl_event`, two objects holding the same restriction where `@clear`

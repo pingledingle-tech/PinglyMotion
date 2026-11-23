@@ -49,6 +49,7 @@
 #include "lsl/lint.h"
 #include "lucideicons.h"
 #include "theme.h"
+#include "usersettings.h"
 
 #include "scriptlabpanel.h"
 
@@ -194,6 +195,55 @@ namespace
       QColor m_muted;
   };
 
+  // A layout that puts its items in a row and goes on in the next row when the
+  // row is full, so the "Try:" lines wrap in a narrow docked panel
+  class FlowLayout : public QLayout
+  {
+    public:
+      FlowLayout(QWidget* parent, int spacing) : QLayout(parent) { setContentsMargins(0, 0, 0, 0); setSpacing(spacing); }
+      ~FlowLayout() override { while (QLayoutItem* item = takeAt(0)) delete item; }
+      void addItem(QLayoutItem* item) override { m_items << item; }
+      int count() const override { return int(m_items.size()); }
+      QLayoutItem* itemAt(int index) const override { return m_items.value(index); }
+      QLayoutItem* takeAt(int index) override { return index >= 0 && index < m_items.size() ? m_items.takeAt(index) : nullptr; }
+      Qt::Orientations expandingDirections() const override { return {}; }
+      bool hasHeightForWidth() const override { return true; }
+      int heightForWidth(int width) const override { return place(QRect(0, 0, width, 0), false); }
+      void setGeometry(const QRect& rect) override { QLayout::setGeometry(rect); place(rect, true); }
+      QSize sizeHint() const override { return minimumSize(); }
+      QSize minimumSize() const override
+      {
+        QSize size;
+        for (const QLayoutItem* item : m_items) size = size.expandedTo(item->minimumSize());
+        const QMargins m = contentsMargins();
+        return size + QSize(m.left() + m.right(), m.top() + m.bottom());
+      }
+
+    private:
+      int place(const QRect& rect, bool apply) const
+      {
+        int x = rect.x();
+        int y = rect.y();
+        int rowHeight = 0;
+        for (QLayoutItem* item : m_items)
+        {
+          const QSize hint = item->sizeHint().expandedTo(item->minimumSize());
+          if (x > rect.x() && x + hint.width() > rect.right() + 1)
+          {
+            x = rect.x();
+            y += rowHeight + spacing();
+            rowHeight = 0;
+          }
+          if (apply) item->setGeometry(QRect(QPoint(x, y), hint));
+          x += hint.width() + spacing();
+          rowHeight = qMax(rowHeight, hint.height());
+        }
+        return y + rowHeight - rect.y();
+      }
+
+      QList<QLayoutItem*> m_items;
+  };
+
   QString fieldText(const QJsonValue& value)
   {
     if (value.isString()) return value.toString();
@@ -217,6 +267,24 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   QVBoxLayout* outer = new QVBoxLayout(this);
   outer->setContentsMargins(0, 0, 0, 0);
   outer->setSpacing(SpacingS);
+
+  // --- the one-line explanation, shown while hints are on (the mockup's .explain line)
+  m_explainFrame = new QWidget(this);
+  m_explainFrame->setObjectName("scriptLabExplainRow");
+  QHBoxLayout* explainRow = new QHBoxLayout(m_explainFrame);
+  explainRow->setContentsMargins(SpacingM, SpacingS, SpacingM, 0);
+  explainRow->setSpacing(SpacingS);
+  m_explainIcon = new QLabel(m_explainFrame);
+  m_explainIcon->setObjectName("scriptLabExplainIcon");
+  m_explainIcon->setAlignment(Qt::AlignTop);
+  explainRow->addWidget(m_explainIcon, 0, Qt::AlignTop);
+  m_explain = new QLabel(tr("A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life."), m_explainFrame);
+  m_explain->setObjectName("scriptLabExplain");
+  m_explain->setWordWrap(true);
+  explainRow->addWidget(m_explain, 1);
+  outer->addWidget(m_explainFrame);
+  m_hintsOn = UserSettings::tipsOn();
+  m_explainFrame->setVisible(m_hintsOn);
 
   // --- Viewer rules: RLV or RLVa, and how many restrictions are held (the mockup's top row)
   QHBoxLayout* rules = new QHBoxLayout;
@@ -329,6 +397,34 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   input->addLayout(buttons, 2, 1);
   input->setColumnStretch(1, 1);
   layout->addLayout(input);
+
+  // --- "Try:" example lines: a click puts the line in the command field and runs it
+  QWidget* tryRow = new QWidget(commandsPage);
+  tryRow->setObjectName("scriptLabTryRow");
+  FlowLayout* tryFlow = new FlowLayout(tryRow, SpacingS);
+  m_tryLabel = new QLabel(tr("Try:"), tryRow);
+  m_tryLabel->setObjectName("scriptLabTryLabel");
+  m_tryLabel->setMinimumHeight(ControlCompact);
+  QFont tryCaption = m_tryLabel->font();   // the "caption" type token, as the mockup's .cap
+  if (tryCaption.pointSizeF() > 0) tryCaption.setPointSizeF(tryCaption.pointSizeF() * 11.0 / 13.0);
+  m_tryLabel->setFont(tryCaption);
+  tryFlow->addWidget(m_tryLabel);
+  for (const QString& line : tryLines())
+  {
+    QPushButton* b = new QPushButton(line, tryRow);   // tr-ok: an RLV command, typed as is
+    b->setObjectName("scriptLabTryLine");
+    b->setMinimumHeight(ControlCompact);
+    b->setMaximumHeight(ControlCompact);
+    b->setToolTip(tr("Put this line in the command field and run it"));
+    connect(b, &QPushButton::clicked, this, [this, line]()
+    {
+      m_command->setText(line);
+      runCommandField();
+    });
+    tryFlow->addWidget(b);
+    m_tryButtons << b;
+  }
+  layout->addWidget(tryRow);
 
   // --- restrictions per object
   layout->addSpacing(SpacingL - SpacingS);
@@ -455,7 +551,9 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_object, m_command);
   setTabOrder(m_command, m_run);
   setTabOrder(m_run, m_reset);
-  setTabOrder(m_reset, m_restrictionsSection->header());
+  QWidget* beforeHeader = m_reset;
+  for (QPushButton* b : m_tryButtons) { setTabOrder(beforeHeader, b); beforeHeader = b; }
+  setTabOrder(beforeHeader, m_restrictionsSection->header());
   setTabOrder(m_restrictionsSection->header(), m_restrictions);
   setTabOrder(m_restrictions, m_actionsSection->header());
   setTabOrder(m_actionsSection->header(), m_actions);
@@ -470,6 +568,45 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   refreshMode();
   refreshLive();
   refreshInput();
+
+  // each part opens or folds as it was last time; a change is saved at once in the settings
+  applyPartsState(UserSettings::scriptLabParts());
+  for (ScriptLabSection* s : m_sections)
+    connect(s, &ScriptLabSection::expandedChanged, this, [this]() { UserSettings::setScriptLabParts(partsState()); });
+}
+
+QStringList ScriptLabPanel::tryLines()
+{
+  // the mockup's "Try:" row, in its order
+  return {QStringLiteral("@detach=n,sendim=n"), QStringLiteral("@tploc=n"), QStringLiteral("@clear"),
+          QStringLiteral("@version=2222"), QStringLiteral("@showself=n")};
+}
+
+QString ScriptLabPanel::partsState() const
+{
+  QStringList parts;
+  for (const ScriptLabSection* s : m_sections)
+    parts << s->key() + (s->isExpanded() ? QStringLiteral("=open") : QStringLiteral("=folded"));
+  return parts.join(QLatin1Char(','));
+}
+
+void ScriptLabPanel::applyPartsState(const QString& state)
+{
+  // anything else than "key=open" or "key=folded" of a known part is left alone
+  for (const QString& entry : state.split(QLatin1Char(','), Qt::SkipEmptyParts))
+  {
+    const QString key = entry.section(QLatin1Char('='), 0, 0).trimmed();
+    const QString value = entry.section(QLatin1Char('='), 1).trimmed();
+    ScriptLabSection* s = section(key);
+    if (!s || (value != QLatin1String("open") && value != QLatin1String("folded"))) continue;
+    s->setExpanded(value == QLatin1String("open"));
+  }
+}
+
+void ScriptLabPanel::setHintsOn(bool on)
+{
+  m_hintsOn = on;
+  m_explainFrame->setVisible(on);
 }
 
 ScriptLabSection* ScriptLabPanel::addSection(const QString& key, const QString& title, bool expanded, QWidget* page, QVBoxLayout* layout)
@@ -593,6 +730,9 @@ void ScriptLabPanel::applyStyle()
     .arg(QLatin1String(t.textDisabled), QLatin1String(t.focusRing));
   m_unwatch->setStyleSheet(normal);
   m_openEditor->setStyleSheet(normal);
+  m_runAgain->setStyleSheet(normal);
+  m_runAgain->setIcon(LucideIcons::icon(QStringLiteral("refresh-cw"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
+  for (QPushButton* b : m_tryButtons) b->setStyleSheet(normal);
   m_example->setStyleSheet(normal);
   m_watch->setIcon(LucideIcons::icon(QStringLiteral("folder-open"), QColor(QLatin1String(t.onAccent)), QColor(QLatin1String(t.textDisabled))));
   m_example->setIcon(LucideIcons::icon(QStringLiteral("flask-conical"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
@@ -638,6 +778,13 @@ void ScriptLabPanel::applyStyle()
   QPalette hint = m_empty->palette();
   hint.setColor(QPalette::WindowText, QColor(QString::fromLatin1(t.textMuted)));
   m_empty->setPalette(hint);
+  // the explanation: muted text with the info icon in accent_text (the mockup's .explain);
+  // the "Try:" caption and the dialog's message are muted too
+  m_explain->setPalette(muted);
+  m_tryLabel->setPalette(muted);
+  m_inputDialogMessage->setPalette(muted);
+  m_explainIcon->setPixmap(LucideIcons::icon(QStringLiteral("info"), Theme::color(Theme::Token::AccentText, dark),
+                                             QColor(QLatin1String(t.textDisabled))).pixmap(16, 16));
 }
 
 void ScriptLabPanel::changeEvent(QEvent* event)
@@ -858,18 +1005,33 @@ void ScriptLabPanel::buildLivePage()
   folderRow->addWidget(m_unwatch);
   layout->addLayout(folderRow);
 
-  // what happened last, in words (colour only backs it up)
-  m_liveStatus = new QLabel(page);
+  // what happened last, in words (colour and icon only back it up): the mockup's status line,
+  // a box in the tone's colour with a circle-check or circle-x icon and the word in bold
+  m_liveStatusFrame = new ScriptLabFrame(page);
+  m_liveStatusFrame->setObjectName("scriptLabLiveStatusLine");
+  QHBoxLayout* statusRow = new QHBoxLayout(m_liveStatusFrame);
+  statusRow->setContentsMargins(SpacingS, SpacingS, SpacingS, SpacingS);
+  statusRow->setSpacing(SpacingS);
+  m_liveStatusIcon = new QLabel(m_liveStatusFrame);
+  m_liveStatusIcon->setObjectName("scriptLabLiveStatusIcon");
+  statusRow->addWidget(m_liveStatusIcon, 0, Qt::AlignTop);
+  m_liveStatus = new QLabel(m_liveStatusFrame);
   m_liveStatus->setObjectName("scriptLabLiveStatus");
   m_liveStatus->setWordWrap(true);
+  m_liveStatus->setTextFormat(Qt::RichText);
   m_liveStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  layout->addWidget(m_liveStatus);
+  statusRow->addWidget(m_liveStatus, 1);
+  layout->addWidget(m_liveStatusFrame);
 
+  m_runAgain = new QPushButton(tr("Run again"), page);
+  m_runAgain->setObjectName("scriptLabRunAgain");
+  m_runAgain->setMinimumHeight(ControlCompact);
   m_openEditor = new QPushButton(tr("Open in editor"), page);
   m_openEditor->setObjectName("scriptLabOpenEditor");
   m_openEditor->setMinimumHeight(ControlHeight);
   QHBoxLayout* scriptButtons = new QHBoxLayout;
   scriptButtons->setSpacing(SpacingS);
+  scriptButtons->addWidget(m_runAgain);
   scriptButtons->addWidget(m_openEditor);
   scriptButtons->addStretch(1);
   layout->addLayout(scriptButtons);
@@ -929,7 +1091,27 @@ void ScriptLabPanel::buildLivePage()
   // --- the objects of the last LSL run and the newest dialog (step 5); folded at first, as in the mockup
   m_objectsSection = addSection(QStringLiteral("objects"), tr("Objects"), false, page, layout);
   m_objectsView = new ScriptLabObjectsView(m_objectsSection->body());
+  m_objectsView->setEmbedded(true);
   m_objectsSection->bodyLayout()->addWidget(m_objectsView);
+  // the newest dialog with its buttons, under the objects, as in the mockup
+  m_inputDialog = sectionLabel(QString(), m_objectsSection->body());
+  m_inputDialog->setObjectName("scriptLabInputDialog");
+  m_inputDialog->setWordWrap(true);
+  m_inputDialog->setTextFormat(Qt::PlainText);
+  m_inputDialog->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_objectsSection->bodyLayout()->addWidget(m_inputDialog);
+  m_inputDialogMessage = new QLabel(m_objectsSection->body());
+  m_inputDialogMessage->setObjectName("scriptLabDialogMessage");
+  m_inputDialogMessage->setWordWrap(true);
+  m_inputDialogMessage->setTextFormat(Qt::PlainText);
+  m_inputDialogMessage->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_objectsSection->bodyLayout()->addWidget(m_inputDialogMessage);
+  m_dialogButtonBox = new QWidget(m_objectsSection->body());
+  m_dialogButtonBox->setObjectName("scriptLabDialogButtons");
+  m_dialogGrid = new QGridLayout(m_dialogButtonBox);
+  m_dialogGrid->setContentsMargins(0, 0, 0, 0);
+  m_dialogGrid->setSpacing(SpacingS);
+  m_objectsSection->bodyLayout()->addWidget(m_dialogButtonBox);
 
   // --- touch, chat and dialog answers (issue 308); folded at first, as in the mockup
   m_inputSection = addSection(QStringLiteral("input"), tr("Send input"), false, page, layout);
@@ -950,12 +1132,14 @@ void ScriptLabPanel::buildLivePage()
   connect(m_example, &QPushButton::clicked, this, &ScriptLabPanel::tryExampleScripts);
   connect(m_unwatch, &QPushButton::clicked, this, &ScriptLabPanel::stopWatching);
   connect(m_openEditor, &QPushButton::clicked, this, &ScriptLabPanel::openInEditor);
+  connect(m_runAgain, &QPushButton::clicked, this, &ScriptLabPanel::runAgain);
   connect(m_problems, &QListWidget::itemActivated, this, [this](QListWidgetItem* item) { showProblem(m_problems->row(item)); });
 
   setTabOrder(m_watch, m_example);
   setTabOrder(m_example, m_liveFolder);
   setTabOrder(m_liveFolder, m_unwatch);
-  setTabOrder(m_unwatch, m_openEditor);
+  setTabOrder(m_unwatch, m_runAgain);
+  setTabOrder(m_runAgain, m_openEditor);
   setTabOrder(m_openEditor, m_effectsBox);
   setTabOrder(m_effectsBox, m_scriptSection->header());
   setTabOrder(m_scriptSection->header(), m_scriptView);
@@ -1091,12 +1275,44 @@ void ScriptLabPanel::showProblem(int index)
 
 void ScriptLabPanel::setLiveStatus(const QString& text, int tone)
 {
-  m_liveStatus->setText(text);
+  m_liveStatusPlain = text;
   m_liveTone = tone;
+  styleLiveStatus();
+}
+
+void ScriptLabPanel::styleLiveStatus()
+{
   const bool dark = isDark(palette());
+  const Tokens& t = tokens(dark);
+  const int tone = m_liveTone;
+  const QString& text = m_liveStatusPlain;
+  // the tone's colour: success, danger, or the border token while nothing ran (the mockup's .idle)
+  const QColor colour = tone == 1 ? successColour(dark) : tone == 2 ? dangerColour(dark) : QColor(QLatin1String(t.border));
+  const QColor surface = Theme::color(Theme::Token::Surface, dark);
+  m_liveStatusFrame->setLook(colour, Theme::mix(surface, colour, 0.10), RadiusControl, false);
+  m_liveStatusFrame->setAccessibleName(text);
+  const QString icon = tone == 1 ? QStringLiteral("circle-check") : tone == 2 ? QStringLiteral("circle-x") : QStringLiteral("info");
+  m_liveStatusIcon->setPixmap(LucideIcons::icon(icon, tone == 0 ? mutedColour(dark) : colour, QColor(QLatin1String(t.textDisabled))).pixmap(16, 16));
+  // the word before the first colon in bold and in the tone's colour, the rest in the text colour;
+  // while nothing ran the whole line is muted
   QPalette p = m_liveStatus->palette();
   p.setColor(QPalette::WindowText, tone == 1 ? successColour(dark) : tone == 2 ? dangerColour(dark) : mutedColour(dark));
   m_liveStatus->setPalette(p);
+  const int colon = text.indexOf(QLatin1Char(':'));
+  if (tone == 0 || colon <= 0)
+  {
+    m_liveStatus->setText(text.toHtmlEscaped());
+    return;
+  }
+  m_liveStatus->setText(QStringLiteral("<b>%1</b><span style=\"color:%2\">%3</span>")   // tr-ok: markup, the words are translated above
+                          .arg(text.left(colon + 1).toHtmlEscaped(), QLatin1String(t.text), text.mid(colon + 1).toHtmlEscaped()));
+}
+
+bool ScriptLabPanel::runAgain()
+{
+  if (!m_watcher || !m_watcher->watching() || m_shownFile.isEmpty() || m_watcher->absolutePath(m_shownFile).isEmpty()) return false;
+  m_watcher->runScript(m_shownFile);   // reads the saved file again; the result comes through resultChanged
+  return true;
 }
 
 QString ScriptLabPanel::logLine(const QJsonObject& entry)
@@ -1149,7 +1365,7 @@ void ScriptLabPanel::refreshLive()
 
   // the empty state while no folder is watched; the folder, status, script and its parts while watching
   m_liveEmpty->setVisible(!watching);
-  for (QWidget* w : QList<QWidget*>{m_liveFolderLabel, m_liveFolder, m_unwatch, m_openEditor,
+  for (QWidget* w : QList<QWidget*>{m_liveFolderLabel, m_liveFolder, m_unwatch, m_runAgain, m_openEditor,
                                     m_scriptSection, m_problemsSection, m_logSection, m_liveRestrictionsSection})
     w->setVisible(watching);
   updateWorldParts();
@@ -1177,6 +1393,12 @@ void ScriptLabPanel::refreshLive()
   m_scriptSection->setTitle(file.isEmpty() ? tr("Script") : tr("Script: %1").arg(file));
   m_scriptSection->setCount(tr("read only"));
   m_openEditor->setEnabled(!m_shownFile.isEmpty());
+  // Run again needs the shown script still in the folder
+  const bool canRunAgain = !m_shownFile.isEmpty() && !m_watcher->absolutePath(m_shownFile).isEmpty();
+  m_runAgain->setEnabled(canRunAgain);
+  m_runAgain->setToolTip(m_shownFile.isEmpty() ? tr("No script yet. Watch a folder and save a .lsl file in it first.")
+                         : canRunAgain ? tr("Runs the last saved script again from the start, with a fresh clock.")
+                                       : tr("The script is not in the folder any more."));
   m_openEditor->setToolTip(m_shownFile.isEmpty() ? tr("No script yet. Watch a folder and save a .lsl file in it first.")
                                                  : tr("Open the script in the program your computer uses for .lsl files"));
 
@@ -1255,6 +1477,7 @@ void ScriptLabPanel::refreshLive()
 
   // the status line, a word first; with no folder the empty state says what to do
   m_liveStatus->setVisible(watching || !m_refusal.isEmpty());
+  m_liveStatusFrame->setVisible(watching || !m_refusal.isEmpty());
   if (!m_refusal.isEmpty()) { setLiveStatus(m_refusal, 2); return; }
   if (!watching)
   {
@@ -1518,19 +1741,6 @@ void ScriptLabPanel::buildInputSection(QWidget* page, QVBoxLayout* layout)
   grid->setColumnStretch(1, 1);
   layout->addLayout(grid);
 
-  m_inputDialog = new QLabel(page);
-  m_inputDialog->setObjectName("scriptLabInputDialog");
-  m_inputDialog->setWordWrap(true);
-  m_inputDialog->setTextFormat(Qt::PlainText);
-  m_inputDialog->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  layout->addWidget(m_inputDialog);
-  m_dialogButtonBox = new QWidget(page);
-  m_dialogButtonBox->setObjectName("scriptLabDialogButtons");
-  m_dialogGrid = new QGridLayout(m_dialogButtonBox);
-  m_dialogGrid->setContentsMargins(0, 0, 0, 0);
-  m_dialogGrid->setSpacing(SpacingS);
-  layout->addWidget(m_dialogButtonBox);
-
   m_inputResult = new QLabel(page);
   m_inputResult->setObjectName("scriptLabInputResult");
   m_inputResult->setWordWrap(true);
@@ -1645,7 +1855,20 @@ void ScriptLabPanel::refreshInput()
     applyStyle();
   }
   if (dialog.isEmpty()) m_inputDialog->setText(tr("No dialog yet. When a script shows one, its buttons appear here."));
-  else m_inputDialog->setText(tr("Dialog from %1: %2").arg(dialog.value("object").toString(), dialog.value("message").toString()));
+  else m_inputDialog->setText(tr("Dialog from %1").arg(dialog.value("object").toString()));
+  m_inputDialogMessage->setText(dialog.isEmpty() ? QString()
+                                                 : tr("\"%1\" on channel %2").arg(dialog.value("message").toString())
+                                                     .arg(dialog.value("channel").toInt()));
+  m_inputDialogMessage->setVisible(!dialog.isEmpty());
+  QFont dialogFont = m_inputDialog->font();   // the "label" token for a dialog's heading, body text without one
+  dialogFont.setWeight(dialog.isEmpty() ? QFont::Normal : QFont::DemiBold);
+  m_inputDialog->setFont(dialogFont);
+  {
+    // the dialog's buttons come after the objects list and before Send input in the tab order
+    QWidget* before = m_objectsView->list();
+    for (QPushButton* b : dialogButtons()) { setTabOrder(before, b); before = b; }
+    setTabOrder(before, m_inputSection->header());
+  }
   for (QPushButton* b : dialogButtons())
   {
     b->setEnabled(world);

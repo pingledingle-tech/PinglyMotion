@@ -6,9 +6,11 @@ Files:
 - src/scriptlab/scriptlabsection.*
 - src/scriptlab/objectsview.*
 - tests/scriptlabpanel/**
-- src/pinglymotionwindow*.cpp
-- src/pinglymotionwindow.h
+- src/pinglymotionwindow.cpp
 - src/lucideicons.cpp
+- src/topbar.cpp
+- src/usersettings.*
+- tests/transportbar/tst_transportbar.cpp
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/SCRIPT_LAB.md

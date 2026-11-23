@@ -4614,10 +4614,6 @@ Buttons: %3 (channel %4)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Dialog from %1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Press this button in the dialog, as the owner&apos;s avatar (channel %1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4813,6 +4809,38 @@ Error: %2</source>
     </message>
     <message>
         <source>%1 lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put this line in the command field and run it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Run again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runs the last saved script again from the start, with a fresh clock.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The script is not in the folder any more.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dialog from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;%1&quot; on channel %2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
