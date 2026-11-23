@@ -1,5 +1,5 @@
 Branch: job/l1f1-editor
-Status: active
+Status: done
 Pull request: #428
 Files:
 - src/scriptlab/labeditor.*

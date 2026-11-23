@@ -114,6 +114,34 @@ Built in pull request 371 (22 Nov 2026). The texts are in `src/menuspec.h` and `
 | TOPBAR-03 | 2 Tip on hover | Mouse rests on the theme button in the dark theme | Switch to the light theme | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | TOPBAR-04 | 2 Tip on hover | Mouse rests on the theme button in the light theme | Switch to the dark theme | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 
+### Script Lab editor (lane 1, job F1)
+
+Built in pull request 428 (23 Nov 2026). The texts are in `src/scriptlab/labeditor.cpp`; `tests/scriptlabpanel/tst_labeditor.cpp` checks them letter for letter. The numbers and names in LABED-10, LABED-16 and LABED-17 are examples: the program puts in the real time, counts and file name.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABED-01 | 4 Empty state | Script Lab editor: no script open, heading | No script open | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-02 | 4 Empty state | Script Lab editor: no script open, the line | Start from an example, or save a .lsl file in the folder. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-03 | 4 Empty state | Script Lab editor: the button that opens an example as a new file | New from example | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-04 | 4 Empty state | Script Lab editor: the RLV card title, while hints are on | What is an RLV line? | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-05 | 4 Empty state | Script Lab editor: the RLV card text, while hints are on | A script sends an RLV line to the viewer. It starts with @, like @detach=n. The viewer then blocks or allows one thing. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-06 | 8 Warning | The shown file changed on disk while there are unsaved edits | The file changed outside. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-07 | 8 Warning | Answer: keep the typed text | Keep my changes | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-08 | 8 Warning | Answer: show the file as it is now | Load the new one | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-09 | 8 Warning | Answer: show which lines differ | Show the difference | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-10 | 4 What to do next | After Save, when the run is done (time and counts from the run) | Saved and run 15:30. 0 errors. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-11 | 4 What to do next | The text box gets the focus for the first time | Tab adds an indent. To move on, press Esc, then Tab. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-12 | 4 What to do next | Esc pressed in the text box | Press Tab to move on, or keep typing. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-13 | 4 What to do next | Answer Keep my changes | Your changes are kept. Save to write them to the file. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-14 | 4 What to do next | Answer Load the new one | Loaded the new file. Ctrl+Z brings your changes back. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-15 | 4 What to do next | The file changed on disk, nothing was typed | Loaded the changed file. Ctrl+Z brings the old text back. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-16 | 8 Warning | Go to line: the number is past the end (numbers from the script) | There is no line 99. The script has 8 lines. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-17 | 4 What to do next | New from example picked (the file name) | New script hello.lsl from an example. Press Ctrl+S to save and run it. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-18 | 8 Warning | New from example while there are unsaved edits | Save or undo your changes first. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-19 | 2 Tip on hover | Save is greyed: nothing changed | Nothing to save. Change the script first. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-20 | 2 Tip on hover | Mouse rests on the text box | Type to change the script. Ctrl+S saves and runs it. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+| LABED-21 | 2 Tip on hover | The part's count while there are unsaved edits (the mockup's words) | ● unsaved changes | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
+
 ### Places 1 to 4, 7 to 9
 
 These texts were first drafts for the places that had no text. The owner reviewed them on 19 November 2026 (see "Review order" below). Control names such as "Set key" and "Play" are placeholders: the job that builds the screen checks them against the real labels before the status changes. Tips and hints get more rows when the tips and hint jobs start.

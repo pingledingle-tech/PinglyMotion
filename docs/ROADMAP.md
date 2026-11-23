@@ -15,7 +15,7 @@ Status: **confirmed by the project owner on 22 November 2026.** It replaces the 
 
 ## Script Lab: folder, editor, converter (planned, 23 November 2026)
 
-Status: A (definition check) is done; B (the folder is the object) is done in the core; the rest is planned. It is the work of lane 1 (Script Lab). Order and wishes come from the project owner, 23 November 2026: "Lua er helt til slutt" (14:00); the plan goes into the goal picture with a docs job (14:11). The details of the folder model and the maker guide are in [SCRIPT_LAB.md](SCRIPT_LAB.md); the rules for the converter's output are in [SLUA_RULES.md](SLUA_RULES.md).
+Status: A (definition check) is done; B (the folder is the object) is done in the core; F1 (the editor) is built; the rest is planned. It is the work of lane 1 (Script Lab). Order and wishes come from the project owner, 23 November 2026: "Lua er helt til slutt" (14:00); the plan goes into the goal picture with a docs job (14:11). The details of the folder model and the maker guide are in [SCRIPT_LAB.md](SCRIPT_LAB.md); the rules for the converter's output are in [SLUA_RULES.md](SLUA_RULES.md).
 
 Decided: the converter starts with "LSL style" (what Linden Lab's `llcompat` layer allows) and is planned so that a Lua style can come later; the editor is built on our own text box (no QScintilla); the script checker stays inside PinglyMotion.
 
@@ -26,7 +26,7 @@ Order:
 - **C. RLV type check.** Approved by the project owner: an invalid value is rejected as RLVa does, the command has no effect, and a clear warning says why. First confirm the behaviour against the RLVa code.
 - **D. The panel (after B).** The Live page watches the folder as one object (the `linkset` mode of B). A tree with icons (a cube for the object, one shape per prim, a document for scripts, an LSL or Lua mark), colour dots and sums, memory per script, and the maker guide.
 - **E. Props as prims (after B).** Props have no colour or transparency today (`src/prop.h`); they are needed if scripts change them.
-- **F. The editor in our own text box, three jobs one after another.** F1: editable text, syntax colours, undo and save; Live must never overwrite what the owner types. F2: suggestions and help text from the definition file. F3: the language choice, LSL or Lua (only the choice).
+- **F. The editor in our own text box, three jobs one after another.** F1 (built, lane 1 job F1, extended with the owner's list of 23 November 2026): editable text, syntax colours, undo that survives saving, save and run with a clear line, line numbers, Go to line, Find, auto-indent, bracket pairs, closing quotes, the Esc-then-Tab way out, the changed-outside question, starter help; Live never overwrites what the owner types ([SCRIPT_LAB.md](SCRIPT_LAB.md), "The editor"). F2: suggestions and help text from the definition file. F3: the language choice, LSL or Lua (only the choice).
 - **G. Convert LSL to SLua, level 1 "LSL style".** A shared middle step sits between the LSL tree and the output, and the SLua details live in their own layer, so level 2 can swap that layer later. `jump` gets a marker and a panel warning: "this jump cannot be converted automatically, rewrite it by hand".
 
 Last, not queued: a Luau trial build (MinGW is also not checked yet), convert level 2 (real Lua style) and Lua in the tool.
