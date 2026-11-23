@@ -121,6 +121,20 @@ The File, View and Help menus follow the mockup (`docs/mockup/index.html`). One 
 - **Difference from the mockup, on purpose:** the mockup shows the line also for keyboard focus, because its greyed controls keep the focus. Qt never gives keyboard focus to a greyed-out widget, so here the line follows the mouse and the menus, not the Tab key. Giving greyed controls focus would mean drawing them greyed without disabling them; that is a separate step.
 - Test: `tests/reasonline` (exact lines, none for working controls, gone on leave, dark and light theme, and the format against the mockup file).
 
+## 6h. File menu, Add..., status bar toggles and the old Settings window (decided 23 Nov 2026, not yet built)
+
+Decided after comparing the mockup's File menu (five items) against the program's current menus, which still also have Tools and Options.
+
+- **File menu:** New animation (Ctrl+N), Open... (Ctrl+O), Save (Ctrl+S), Save as..., Export for Second Life... (Ctrl+Shift+E), Close animation (Ctrl+W), Exit. Export BVH only in Expert mode.
+- **No separate Import.** Open... takes `.dingle`, `.anim`, BVH and glTF. A `.dingle` opens directly; an `.anim`, BVH or glTF opens its own import window only when needed; a BVH already on the Second Life skeleton opens directly. Save always writes a `.dingle` afterwards. Save and Export stay separate (`.anim` cannot carry per-key easing or notes).
+- **Add...** (bring a second figure into the same scene, `src/pinglymotionwindowfile.cpp`, `addAnimationFile`): Expert mode only, with a clearer name (proposed: "Add a second figure..."). Two figures are not drawn in the mockup yet.
+- **Claude connection and Aurora link:** switched on and off by clicking "Assistant" and "Aurora" in the status bar, and also present in Setup. The matching Options entries go away.
+- **The old Settings window** (`src/usersettingsdialog.*`): the menu entry is removed; the code stays in the repository so nothing already built is lost. It held three things: default ease in/out for new keys, floor transparency, fog.
+- **Also decided, following from the new design:** Loop playback and "Stop joints at their furthest turn" are removed from Options (already covered by the Loop switch and "Warn near the joint's limits"). Open log, Clear log, What's new and About move to Help. Cut, Copy and Paste stay in Edit until phase 3b (select range, copy, Paste mirrored) is built.
+- **Still waiting for the project owner, not decided:** removing the "extra keys" control; mirroring a whole animation (today Tools > Mirror); the view options (Show skeleton, body choice, joint display, lighting, floor transparency, fog); Lock the first frame; the default ease in/out setting for new keys; whether Open... should also take `.prp` and whether Save should carry props in the same `.dingle` file.
+
+Source: the project owner, in a chat without a role, 22 November 2026 23:35 to 23 November 2026 00:55.
+
 ## 7. Mirror and whole pose (built, UX phase 2a)
 
 - Left / Right / Mirror switch at the top of the Joints panel (`Animation::setMirrored()`, `JointList::sideOf()`): Mirror is the default; Left and Right also filter which joints the table below lists.

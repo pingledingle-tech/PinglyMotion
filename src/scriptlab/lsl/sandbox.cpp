@@ -30,6 +30,8 @@ namespace
   // the owner's avatar stands here; attached objects are where the avatar is
   const float AVATAR_POSITION[3] = {128.0f, 128.0f, 20.0f};
   const double MAX_TIME = 1.0e7;
+  // second gap list, step 6, part 3: rounded to 5 decimals for the log, the same as builtins.cpp's rnd5/vecJson
+  double rnd5(float v) { return std::round(double(v) * 100000.0) / 100000.0; }
 }
 
 // ---------------------------------------------------------------- the world of one object
@@ -89,6 +91,10 @@ class ObjectWorld : public RlvWorld
     }
     void position(float out[3]) const override { m_sandbox.where(object(), out); }
     void setPosition(const float p[3]) override { for (int i = 0; i < 3; ++i) state().spec.position[i] = p[i]; }
+    void velocity(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = state().velocity[i]; }
+    void setVelocity(const float v[3]) override { for (int i = 0; i < 3; ++i) state().velocity[i] = v[i]; }
+    float buoyancy() const override { return state().buoyancy; }
+    void setBuoyancy(float b) override { state().buoyancy = b; }
     PrimStore& primStore() override { return state().prims; }
     Inventory& inventory() override { return state().inventory; }
     QString sitterOnTarget(int link) const override
@@ -528,7 +534,8 @@ void Sandbox::deliver(const SandboxInput& input)
 
   if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
       input.type == "sit" || input.type == "stand" || input.type == "control" || input.type == "money" || input.type == "email" ||
-      input.type == "collision" || input.type == "land_collision" || input.type == "moving" || input.type == "at_target" || input.type == "not_at_target")
+      input.type == "collision" || input.type == "land_collision" || input.type == "moving" || input.type == "at_target" || input.type == "not_at_target" ||
+      input.type == "step")
   {
     // a stand input without an object finds the object the avatar sits on
     if (input.type == "stand" && input.object.isEmpty())
@@ -739,6 +746,40 @@ void Sandbox::deliver(const SandboxInput& input)
       entry.remove("name");
       m_log.log(t, entry);
       for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->notAtTargetEvent();
+      return;
+    }
+    if (input.type == "step")
+    {
+      // second gap list, step 6, part 3: a simple, deterministic, non-realtime step of the motion model. Not a
+      // physics engine: gravity (scaled by llSetBuoyancy) changes velocity, velocity changes position; llApplyImpulse
+      // already changed velocity at once, before this step runs. No model yet for llMoveToTarget (a later job), so
+      // this never fires at_target/not_at_target, only moving_start/moving_end.
+      entry.remove("name");
+      entry["dt"] = input.dt;
+      if (o.spec.attached > 0)
+      {
+        entry["note"] = "Worn: the motion model does not apply to an attachment.";
+        m_log.log(t, entry);
+        return;
+      }
+      const float g = GRAVITY_Z * (1.0f - o.buoyancy);
+      o.velocity[2] += g * float(input.dt);
+      for (int i = 0; i < 3; ++i) o.spec.position[i] += o.velocity[i] * float(input.dt);
+      entry["velocity"] = QJsonArray{rnd5(o.velocity[0]), rnd5(o.velocity[1]), rnd5(o.velocity[2])};
+      entry["position"] = QJsonArray{rnd5(o.spec.position[0]), rnd5(o.spec.position[1]), rnd5(o.spec.position[2])};
+      m_log.log(t, entry);
+      const double speed = std::sqrt(double(o.velocity[0]) * o.velocity[0] + double(o.velocity[1]) * o.velocity[1] +
+                                      double(o.velocity[2]) * o.velocity[2]);
+      const bool moving = speed > MOVING_SPEED_THRESHOLD;
+      if (moving != o.moving)
+      {
+        o.moving = moving;
+        QJsonObject mv{{"type", "moving"}, {"phase", moving ? "start" : "end"},
+                       {"note", "Fired by the motion model (second gap list, step 6, part 3), not a manual input."}};
+        if (m_tag) mv["object"] = o.spec.name;
+        m_log.log(t, mv);
+        for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->movingEvent(!moving);
+      }
       return;
     }
     if (input.type == "email")

@@ -424,7 +424,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `url_request` | `llRequestURL` or `llRequestSecureURL` (second gap list, step 4) | `secure`, `request` (the key the call returned), `result` (`granted` or `denied`), `url` (when granted) |
 | `url_release` | `llReleaseURL` (second gap list, step 4) | `url`, `result` (`released` or `not_found`) |
 | `http_server_response` | `llHTTPResponse` (second gap list, step 4; nothing is sent) | `request`, `status`, `body`, `result` (`sent`, `timed_out` or `unknown_request`) |
-| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, the 37 stubs of step 9b-8 and the seven movement stubs of the second gap list, step 6 (see "Recorded only") | `function`, `args`, `note` |
+| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, the 37 stubs of step 9b-8, the five movement stubs of the second gap list, step 6, part 1, and the six vehicle stubs of step 7 (see "Recorded only"; `llApplyImpulse` and `llSetBuoyancy` moved out of this list in part 3) | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
 
@@ -574,15 +574,30 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
   Step 9b-8 adds 37 more with the same behaviour: `llTriggerSoundLimited`, `llLoopSoundMaster`, `llLoopSoundSlave`, `llPlaySoundSlave`, `llSoundPreload`, `llAdjustSoundVolume`, `llSetSoundQueueing`, `llSetSoundRadius`, `llCollisionSound`, `llSetTextureAnim`, `llSetLinkTextureAnim`, `llOffsetTexture`, `llScaleTexture`, `llRotateTexture`, `llSetCameraEyeOffset`, `llSetCameraAtOffset`, `llSetCameraParams`, `llClearCameraParams`, `llSetLinkCamera`, `llSetPayPrice`, `llSetClickAction`, `llSetTouchText`, `llPointAt`, `llStopPointAt`, `llLookAt`, `llStopLookAt`, `llMakeExplosion`, `llMakeFountain`, `llMakeSmoke`, `llMakeFire`, `llCollisionFilter`, `llPassTouches`, `llPassCollisions`, `llSetRemoteScriptAccessPin`, `llSetParcelMusicURL`, `llRefreshPrimURL`, `llSetPrimURL`.
 - **Animation overrides (step 9b-8):** `llSetAnimationOverride(state, animation)`, `llResetAnimationOverride(state)` (also `"ALL"`) and `llGetAnimationOverride(state)` need `PERMISSION_OVERRIDE_ANIMATIONS`; without it a debug line says so. An unknown state name gives a debug line. A successful set or reset writes an `animation_override` entry (`op`, `state`, `animation`), and the get answers the stored name, or an empty string.
-- **Movement and physics stubs (second gap list, step 6, part 1):** `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llApplyImpulse`, `llSetBuoyancy`, `llRotLookAt` and `llVolumeDetect` do nothing but
+- **Movement and physics stubs (second gap list, step 6, part 1):** `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llRotLookAt` and `llVolumeDetect` do nothing but
   write a `recorded_only` entry with the function and its exact arguments, the same way as the step 9b-8 stubs above: no motion model runs, the object never moves or turns, and nothing is simulated of
-  physics, buoyancy or volume detection. A test script's intent (target, impulse, buoyancy, look-at rotation, detect flag) can still be read back from the log. The vehicle functions are not part of this step.
+  target seeking, push, look-at rotation or volume detection. A test script's intent (target, look-at rotation, detect flag) can still be read back from the log. `llApplyImpulse` and `llSetBuoyancy` are
+  real functions now (part 3, below), not record only; the vehicle functions are not part of this step (step 7, below).
 - **Collision-family events (second gap list, step 6, part 2):** there is still no motion model, so these events never happen on their own; new `inputs` types raise them for testing, with exactly the
   llDetected* data or vector arguments given. `collision` (`phase`: `"start"` or `"end"`; `link`: the prim hit, default the root; `name`/`id`: the other object or avatar, as for `touch`) raises
   `collision_start` or `collision_end(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). `land_collision`
   (`phase`: `"start"`, `"end"` or left out for the continuous `land_collision`; `pos`: `[x, y, z]`, the event's own vector argument) and `moving` (`phase`: `"start"` or `"end"`, no detected data: `moving_start`
   and `moving_end` take no arguments) go to every script of the object, as `changed` does. `at_target` (`tnum`, `targetpos`, `ourpos`: the event's own arguments; `llTarget`'s target number is not tracked)
-  and `not_at_target` (no fields) likewise go to every script. None of this simulates collisions, gravity or `llTarget`; it only lets a script's handler be tested against given data.
+  and `not_at_target` (no fields) likewise go to every script. None of this simulates collisions, gravity or `llTarget`; it only lets a script's handler be tested against given data. Part 3, below, gives
+  `moving_start`/`moving_end` a second source (the motion model itself); this manual `moving` input is unchanged.
+- **A simple motion model (second gap list, step 6, part 3):** not a physics engine, one `inputs` type and two real functions, for one object at a time. `llApplyImpulse(vector impulse, integer local)`
+  changes the object's velocity **at once** by `impulse / mass` (the mass `llGetMass` gives); `local` turns the impulse by the object's root rotation first, as `llSetPos`'s local flag does.
+  `llSetBuoyancy(float buoyancy)` stores the value, clamped to 0 (full gravity) .. 1 (floats); other values that Second Life allows are refused here by clamping, not by an error. The new `inputs` type
+  `step` (`dt`: seconds, 0 to 60; `object`: as for the other types) advances the model for one object by `dt` simulated seconds: velocity changes by simple gravity (`-9.8` m/s² along z, scaled by
+  `(1 - buoyancy)`), then position changes by the new velocity; nothing happens between `step` inputs on its own. `llGetVel` answers the model's velocity (always `ZERO_VECTOR` before this step). Each
+  `step` writes an `input` entry (`dt`, the new `velocity` and `position`), and `llApplyImpulse` writes its own `velocity` entry (`op: "impulse"`, the impulse turned, the mass, the new velocity);
+  `llSetBuoyancy` writes a `velocity` entry too (`op: "buoyancy"`). When the object's speed crosses `0.1` m/s (the sandbox's own threshold) a `step` input also fires `moving_start` or `moving_end` itself,
+  with a `moving` log entry (`phase`) that says it came from the model, not a manual input. A worn object's `step` does nothing but log a note that the model does not apply to an attachment. Left out on
+  purpose, for a later job: `llMoveToTarget`/`llStopMoveToTarget` stay record only, so the model never seeks a target and `at_target`/`not_at_target` still only come from the manual inputs; `llPushObject`,
+  `llRotLookAt` and `llVolumeDetect` stay record only; real collisions from motion (two objects actually touching) are untouched.
+- **Vehicle function stubs (second gap list, step 7):** `llSetVehicleType`, `llSetVehicleFloatParam`, `llSetVehicleVectorParam`, `llSetVehicleRotationParam`, `llSetVehicleFlags` and `llRemoveVehicleFlags`
+  do nothing but write a `recorded_only` entry with the function and its exact arguments, the same way as the movement stubs above: no vehicle physics is simulated, and the object's position, rotation
+  and velocity never change because of these calls. A test script's intent (vehicle type, parameter, value, flags) can still be read back from the log.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
 #### HTTP requests with canned replies (Script Lab step 9b-9)

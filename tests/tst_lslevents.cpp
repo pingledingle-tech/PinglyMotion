@@ -216,7 +216,7 @@ void LslEventsTest::changedIsRefusedWhenWrong()
   QCOMPARE(error(QJsonObject{{"type", "changed"}, {"change", "owner"}}), QString());
   // the type list in the message
   QVERIFY(error(QJsonObject{{"type", "weather"}}).contains("\"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                                                            "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\" or \"not_at_target\""));
+                                                            "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\" or \"step\""));
 }
 
 void LslEventsTest::checkerKnowsBothEvents()
