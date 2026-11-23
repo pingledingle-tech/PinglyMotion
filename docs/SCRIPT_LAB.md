@@ -591,11 +591,29 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
   own fog; an alpha of 1 is shown as 0.99); the background beyond takes the colour at that alpha. With several
   objects the smallest distance and the largest alpha win, the colour of the first one. `camdrawmin` and
   `camdrawalphamin` are named as not shown (the fog starts at the camera).
-- `setsphere` (held; RLVa only) with `setsphere_distmax`, `setsphere_valuemax` and `setsphere_color` (sent as
-  `=force`, the only way RLVa takes them; the last value wins), mode 0 only: the same kind of fog. Another mode, or no
-  `setsphere_distmax`, is named as not shown. camdraw (RLV only) and setsphere (RLVa only) are never known in the
-  same mode, so the rule "with camdraw fog the sphere is named as not shown (one fog at a time)" cannot be reached
-  from a script now. The origin is always the camera.
+- `setsphere` (held; RLVa only): the vision sphere, a whole-picture effect (part 1 of the job asked for by the project
+  owner on 23 November 2026, 11:03: «we should have that, but that should be just made simple»). The drawn picture
+  is read back with its depth, each pixel's distance from the avatar's hip (or from the camera with
+  `setsphere_origin:1`) is worked out, and the effect is put on the picture as RLVa's sphere shader does it: the
+  strength runs in a straight line from `setsphere_valuemin` at `setsphere_distmin` to `setsphere_valuemax` at
+  `setsphere_distmax` (metres); below the inner distance it is 0 and beyond the outer one it stays at `valuemax`
+  (`setsphere_distextend`: 1 the default, 2 keeps `valuemin` inside, 3 both, 0 neither). Empty background counts as
+  far away. RLVa's defaults are used for a value not sent: mode 0, origin 0, both distances 0, both strengths 1,
+  colour black, so `@setsphere=n` alone turns everything beyond the hip black, as in RLVa. The values take only
+  `=force` (`=n` is refused, as in RLVa). Modes (`setsphere_mode`), each a simple version; the final check is in
+  Second Life:
+  - 0, colour fade: each pixel moves towards the colour by the strength. The colour is `setsphere_param:<r>/<g>/<b>`
+    (each 0 to 1) or `setsphere_color:<r>/<g>/<b>`; RLVa keeps both in one value, and here `setsphere_param` wins
+    when both were sent.
+  - 1, blur: the picture blurred by about 6 pixels, mixed in by the strength (up to 1).
+  - 2, blur with a size: blurred by half of `setsphere_param`'s first number in pixels (1 to 64), wherever the
+    strength is above 0.
+  - 4, pixel: blocks of `setsphere_param:<width>/<height>` pixels (1 to 64), wherever the strength is above 0; with
+    no size the blocks are 1 x 1 and nothing changes (the text under the box says so).
+  - 3, the colour split (chromatic aberration), is named as not shown. `setsphere_tween` is named as not shown (the
+    view changes at once). A value that is not a usable number is named as not used and its default is kept.
+  The settings are one small struct (`EnvironmentOverride::Sphere`), so the planned sliders and colour picker of
+  part 2 can drive the same effect. camdraw (RLV only) and setsphere (RLVa only) are never known in the same mode.
 - Any other `setenv_<name>` (presets, sun, moon, clouds, haze, water) is named as not shown; an option that is not
   a usable number or `r/g/b` colour is named as not used.
 - The text under the box says what is shown ("Environment set by the script: sky colour 0.8/0.55/0.45 from daytime
@@ -604,8 +622,12 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
 - The view's own look is never changed: the background and fog are worked out again for every picture, so unticking
   the box, `@clear` (forced values belong to their object), Reset or a mode switch gives exactly the picture from
   before (checked pixel by pixel in the self-test).
-- Code: `src/scriptlab/environmentoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
-  `src/animationview.cpp` (`draw()`). Tests: `tests/tst_environmentoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
+- The vision sphere follows the same box and the same rules: off until it is ticked, off while the Script Lab panel
+  is hidden and back as ticked when it is shown again, and a picture without it is left byte for byte as it was
+  (checked in the tests, and in the real program by comparing screenshots).
+- Code: `src/scriptlab/environmentoverride.*` (the values, `Sphere::strengthAt` and `applySphere`, the picture
+  work), the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp` (`draw()` and
+  `drawSphere()`). Tests: `tests/tst_environmentoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
 
 ## View modes in the 3D view (job 7c)
 

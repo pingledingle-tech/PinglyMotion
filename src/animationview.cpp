@@ -29,6 +29,11 @@
 #include <QMatrix4x4>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
+#include <QOpenGLContext>
+#include <limits>
+#include <vector>
+#include <QOpenGLFunctions>
+#include <QOpenGLTextureBlitter>
 #include <QTimer>
 #include <QMessageBox>
 #include <climits>
@@ -134,6 +139,11 @@ AnimationView::~AnimationView()
   makeCurrent();
   m_skinRenderer.cleanup();
   m_pickBuffer.reset();
+  if(m_sphereBlitter) m_sphereBlitter->destroy();
+  m_sphereBlitter.reset();
+  if(m_sphereTexture && QOpenGLContext::currentContext())
+    QOpenGLContext::currentContext()->functions()->glDeleteTextures(1,&m_sphereTexture);
+  m_sphereTexture=0;
   doneCurrent();
 }
 
@@ -229,6 +239,81 @@ void AnimationView::drawOverlay()
   m_skinRenderer.drawGeometry(GL_TRIANGLES,quad,QVector<QVector3D>(),QVector<QVector4D>(quad.size(),colour),
                               QMatrix4x4(),QMatrix4x4(),SceneState::Fog(),1.0f);
   glEnable(GL_DEPTH_TEST);
+}
+
+void AnimationView::drawSphere()
+{
+  if(!m_environmentOverride || !m_environmentOverride->sphereActive() || isPicking() || !m_skinRenderer.isReady()) return;
+  QOpenGLContext* context=QOpenGLContext::currentContext();
+  if(!context) return;
+  QOpenGLFunctions* f=context->functions();
+  GLint viewport[4]={0,0,0,0};
+  f->glGetIntegerv(GL_VIEWPORT,viewport);
+  const int w=viewport[2],h=viewport[3];
+  if(w<=0 || h<=0) return;
+
+  // the picture and its depth, rows from the bottom up as OpenGL keeps them
+  QImage image(w,h,QImage::Format_RGBA8888);
+  std::vector<float> depth(size_t(w)*size_t(h));
+  f->glPixelStorei(GL_PACK_ALIGNMENT,1);
+  f->glReadPixels(viewport[0],viewport[1],w,h,GL_RGBA,GL_UNSIGNED_BYTE,image.bits());
+  f->glReadPixels(viewport[0],viewport[1],w,h,GL_DEPTH_COMPONENT,GL_FLOAT,depth.data());
+
+  // each pixel's distance from the sphere's centre, in metres (world units are inches)
+  const EnvironmentOverride::Sphere sphere=m_environmentOverride->sphere();
+  const QMatrix4x4 toWorld=(SceneState::projection()*m_viewMatrix).inverted();
+  const QVector3D origin=sphere.origin==EnvironmentOverride::Sphere::Camera ? m_viewMatrix.inverted().map(QVector3D(0,0,0))
+                                                                           : m_sphereOrigin;
+  std::vector<float> metres(depth.size());
+  for(int y=0;y<h;y++)
+  {
+    const float ny=2.0f*(float(y)+0.5f)/float(h)-1.0f;
+    for(int x=0;x<w;x++)
+    {
+      const size_t i=size_t(y)*size_t(w)+size_t(x);
+      if(depth[i]>=1.0f)
+      {
+        // nothing drawn here: as far away as the sky
+        metres[i]=std::numeric_limits<float>::infinity();
+        continue;
+      }
+      const QVector4D p=toWorld.map(QVector4D(2.0f*(float(x)+0.5f)/float(w)-1.0f,ny,2.0f*depth[i]-1.0f,1.0f));
+      metres[i]=p.w()!=0.0f ? (p.toVector3DAffine()-origin).length()/EnvironmentOverride::InchesPerMetre
+                            : std::numeric_limits<float>::infinity();
+    }
+  }
+  m_environmentOverride->processPicture(image,metres);
+
+  // and back over the whole view, as it is: no depth test, no blending
+  if(!m_sphereBlitter)
+  {
+    m_sphereBlitter=std::make_unique<QOpenGLTextureBlitter>();
+    if(!m_sphereBlitter->create())
+    {
+      qWarning("3D view: the vision sphere cannot be drawn back");
+      return;
+    }
+  }
+  if(!m_sphereTexture) f->glGenTextures(1,&m_sphereTexture);
+  f->glBindTexture(GL_TEXTURE_2D,m_sphereTexture);
+  f->glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+  f->glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  f->glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+  f->glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+  f->glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+  f->glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,image.constBits());
+  f->glBindTexture(GL_TEXTURE_2D,0);
+
+  const GLboolean depthWasOn=f->glIsEnabled(GL_DEPTH_TEST);
+  const GLboolean blendWasOn=f->glIsEnabled(GL_BLEND);
+  f->glDisable(GL_DEPTH_TEST);
+  f->glDisable(GL_BLEND);
+  m_sphereBlitter->bind();
+  m_sphereBlitter->blit(m_sphereTexture,QOpenGLTextureBlitter::targetTransform(QRectF(0,0,w,h),QRect(0,0,w,h)),
+                        QOpenGLTextureBlitter::OriginBottomLeft);
+  m_sphereBlitter->release();
+  if(depthWasOn) f->glEnable(GL_DEPTH_TEST);
+  if(blendWasOn) f->glEnable(GL_BLEND);
 }
 
 void AnimationView::applyCameraOverride()
@@ -497,6 +582,7 @@ void AnimationView::draw()
   }
   drawProps();
   drawPullLine();
+  drawSphere();
   drawOverlay();
 }
 
@@ -521,11 +607,20 @@ void AnimationView::drawAnimations()
   // Script Lab effects (issue 293): the preview figure takes the place of the user's animations,
   // which stay as they are; it is never picked, so a click cannot select or change anything in it
   Animation* effect=m_effects ? m_effects->animation() : nullptr;
+  // the vision sphere's centre: the hip of the preview or the current animation, as it was drawn
+  const auto sphereOrigin=[this](Animation* anim,unsigned int index)
+  {
+    const unsigned int base=index*static_cast<unsigned int>(OpenGlIds::AnimationIncrement);
+    if(m_jointPositions.contains(base+1)) m_sphereOrigin=m_jointPositions.value(base+1);
+    else if(m_jointPositions.contains(base+2)) m_sphereOrigin=m_jointPositions.value(base+2);
+    else m_sphereOrigin=anim->getPosition();
+  };
   if(effect)
   {
     if(isPicking()) return;
     // an index far above the scene's, so no joint of the preview counts as selected
     drawFigure(effect,EffectFigureIndex);
+    sphereOrigin(effect,EffectFigureIndex);
     drawEffectMarkers();
     return;
   }
@@ -534,7 +629,11 @@ void AnimationView::drawAnimations()
   for(unsigned int index=0;index< (unsigned int) m_scene->getCountOfAnimations();index++)
   {
     drawFigure(m_scene->getAnimation(index),index);
-    if(m_scene->getAnimation(index)==current) drawEffectMarkers();
+    if(m_scene->getAnimation(index)==current)
+    {
+      drawEffectMarkers();
+      if(!isPicking()) sphereOrigin(current,index);
+    }
   }
 }
 

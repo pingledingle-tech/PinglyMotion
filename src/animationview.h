@@ -54,6 +54,7 @@
 class QMouseEvent;
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
+class QOpenGLTextureBlitter;
 class Animation;
 class CameraOverride;
 class EnvironmentOverride;
@@ -373,6 +374,14 @@ class AnimationView : public QOpenGLWidget
     QPointer<ViewModesOverride> m_viewModesOverride;
     // draws the Script Lab overlay (setoverlay) over the whole view
     void drawOverlay();
+    // the Script Lab vision sphere (setsphere): reads the drawn picture and its depth back, works the
+    // effect on it by each pixel's distance from the avatar (or the camera) and draws it back. Only
+    // while the environment override's sphere is active; otherwise the picture is not touched.
+    void drawSphere();
+    // where the vision sphere is centred for the avatar: the hip of the figure drawn last
+    QVector3D m_sphereOrigin;
+    std::unique_ptr<QOpenGLTextureBlitter> m_sphereBlitter;
+    unsigned int m_sphereTexture=0;
     // puts the override's constraint on the camera, or takes it off
     void applyCameraOverride();
 

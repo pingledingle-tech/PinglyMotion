@@ -20,8 +20,15 @@
  *     from the camera; the background beyond is the colour at that alpha.
  *     With several objects the smallest distance and the largest alpha win.
  *     camdrawmin and camdrawalphamin are named: the fog starts at the camera.
- *   - setsphere (held) with setsphere_distmax, setsphere_valuemax and
- *     setsphere_color (held or =force), mode 0 only: the same kind of fog.
+ *   - setsphere (held; RLVa only) with its setsphere_<name> values (=force
+ *     only): the vision sphere, a whole-picture effect worked on the drawn
+ *     picture (applySphere): what is further from the avatar (or the camera)
+ *     fades to a colour, blurs or turns into pixel blocks, by distance, as
+ *     RLVa's sphere shader works it out. A rough look: the final check is in
+ *     Second Life. The values are one small struct (Sphere), so a panel can
+ *     drive it too. The mode numbers, defaults and strength by distance
+ *     follow RLVa's sphere effect (Firestorm, LGPL 2.1; see CREDITS.md);
+ *     the picture filter is written anew.
  *   - Any other setenv_<name> is named as not shown.
  *
  * The 3D view's own look is never changed: the background and fog are worked
@@ -34,11 +41,15 @@
 #ifndef ENVIRONMENTOVERRIDE_H
 #define ENVIRONMENTOVERRIDE_H
 
+#include <vector>
+
+#include <QImage>
 #include <QMetaObject>
 #include <QObject>
 #include <QPointer>
 #include <QStringList>
 #include <QVector3D>
+#include <QVector4D>
 
 class RlvState;
 
@@ -52,6 +63,37 @@ class EnvironmentOverride : public QObject
     // a fog that reaches an alpha of 1 never ends: it is shown reaching this much
     static constexpr double MostAlpha = 0.99;
 
+    // the vision sphere (RLVa @setsphere and its setsphere_<name> values), as RLVa's sphere effect
+    // holds it; the defaults are RLVa's. Distances are metres from the origin.
+    struct Sphere
+    {
+      enum Mode { ColourFade = 0, Blur = 1, BlurVariable = 2, ChromaticAberration = 3, Pixel = 4 };
+      enum Origin { Avatar = 0, Camera = 1 };
+      enum Extend { ExtendMax = 1, ExtendMin = 2 };
+      int mode = ColourFade;
+      int origin = Avatar;
+      double distMin = 0;
+      double distMax = 0;
+      int distExtend = ExtendMax;   // beyond distMax the strength stays valueMax; below distMin valueMin
+      double valueMin = 1;
+      double valueMax = 1;
+      // colour fade: the colour (x, y, z); blur (variable): the size in pixels (x); pixel: the block size (x, y)
+      QVector4D params{0, 0, 0, 0};
+
+      // how strong the effect is at a distance (metres; infinity for the empty background)
+      double strengthAt(double metres) const;
+      bool operator==(const Sphere& o) const
+      {
+        return mode == o.mode && origin == o.origin && distMin == o.distMin && distMax == o.distMax &&
+               distExtend == o.distExtend && valueMin == o.valueMin && valueMax == o.valueMax && params == o.params;
+      }
+      bool operator!=(const Sphere& o) const { return !(*this == o); }
+    };
+    // the blur size of mode Blur, in pixels at full strength
+    static constexpr int BlurPixels = 6;
+    // the largest blur or pixel block size used, in pixels
+    static constexpr int MostPixels = 64;
+
     // what the RLV state asks of the sky and the draw distance
     struct Look
     {
@@ -62,17 +104,19 @@ class EnvironmentOverride : public QObject
       double fogDistance = 0;     // metres: the fog reaches fogAlpha here
       double fogAlpha = 1;        // 0 to 1
       QVector3D fogColour;        // 0 to 1
-      QString fogFrom;            // "camdraw" or "setsphere"
+      QString fogFrom;            // "camdraw"
+      bool hasSphere = false;
+      Sphere sphere;
       QStringList objects;        // the objects whose values are used, sorted
       QStringList notShown;       // what the view cannot show, each a sentence for the panel
       QStringList ignored;        // values whose option cannot be used, as "behaviour:option"
 
-      bool any() const { return hasSky || hasFog; }
+      bool any() const { return hasSky || hasFog || hasSphere; }
       bool operator==(const Look& o) const
       {
         return hasSky == o.hasSky && sky == o.sky && skyFrom == o.skyFrom && hasFog == o.hasFog &&
                fogDistance == o.fogDistance && fogAlpha == o.fogAlpha && fogColour == o.fogColour &&
-               fogFrom == o.fogFrom && objects == o.objects && notShown == o.notShown && ignored == o.ignored;
+               fogFrom == o.fogFrom && hasSphere == o.hasSphere && sphere == o.sphere && objects == o.objects && notShown == o.notShown && ignored == o.ignored;
       }
     };
 
@@ -97,6 +141,13 @@ class EnvironmentOverride : public QObject
     static QVector3D dayColour(double daytime);
     // "0.2/0.4/0.8": a colour for the text
     static QString colourText(const QVector3D& colour);
+    // "colour fade to 0/0/1, strength 0 at 2 m to 0.8 at 10 m from the avatar": the sphere for the text
+    static QString sphereText(const Sphere& sphere);
+    // the vision sphere worked on a drawn picture: metres holds the distance of each pixel from the
+    // sphere's origin, row by row in the image's own order (infinity where nothing was drawn). The colour
+    // fade changes red, green and blue and keeps the alpha; blur and pixel move the alpha with the colour.
+    // A pixel where the strength is 0 is left exactly as it was.
+    static void applySphere(QImage& image, const std::vector<float>& metres, const Sphere& sphere);
 
     explicit EnvironmentOverride(QObject* parent = nullptr);
 
@@ -112,6 +163,14 @@ class EnvironmentOverride : public QObject
     bool active() const { return m_enabled && m_look.any(); }
     // the scene to draw: the view's own while not active
     Scene scene(const Scene& own) const { return active() ? sceneFor(m_look, own) : own; }
+    // switched on and the script holds a vision sphere the view can show
+    bool sphereActive() const { return m_enabled && m_look.hasSphere; }
+    Sphere sphere() const { return m_look.sphere; }
+    // the drawn picture with the vision sphere on it while sphereActive(); otherwise left exactly as it was
+    void processPicture(QImage& image, const std::vector<float>& metres) const
+    {
+      if (sphereActive()) applySphere(image, metres, m_look.sphere);
+    }
 
     // what the view shows, in words, for the panel (empty while off and nothing is asked)
     QStringList lines() const;
