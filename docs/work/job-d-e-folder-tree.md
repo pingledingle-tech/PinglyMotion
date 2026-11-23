@@ -18,6 +18,7 @@ Files:
 - tests/scriptlabpanel/**
 - tests/tst_labfolder.cpp
 - tests/tst_scene.cpp
+- tests/transportbar/tst_transportbar.cpp
 - tests/tst_labtint.cpp
 - src/scriptlab/labtint.*
 - src/pinglymotionwindow.cpp
