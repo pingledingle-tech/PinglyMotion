@@ -6,6 +6,7 @@ Files:
 - src/scriptlab/lsl/interp.cpp
 - tests/tst_lslprims.cpp
 - tests/tst_lslownobject.cpp
+- tests/data/scriptlab/scenarios.json
 - src/scriptlab/lsl/world.h
 - tests/tst_lslrest.cpp
 - tests/tst_lslpure.cpp
