@@ -1,5 +1,5 @@
 Branch: job/fix-dialog-trap
-Status: active
+Status: done
 Pull request: #412
 Files:
 - src/dialogfit.*
