@@ -145,5 +145,7 @@ Found while reading the source; not changed in this job:
   numbers, and its hint for pixel blocks says `setsphere_param:<width>/<height>`. The value
   check is left off for this row until the sphere view and its hint text follow RLVa (that
   touches the translation file, which another job holds now).
+- The camera, environment and view mode boxes read a value as a whole (`5m` is "not a
+  distance"), while RLVa reads the number at the start (`5m` is 5).
 - `@getattach` lists the 40 points of the sandbox's own list (`Rlv::attachmentPoints()`),
   not the 55 RLVa knows.

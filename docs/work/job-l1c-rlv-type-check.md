@@ -1,5 +1,5 @@
 Branch: job/l1c-rlv-type-check
-Status: active
+Status: done
 Pull request: #430
 Files:
 - src/scriptlab/rlvbehaviours.*
