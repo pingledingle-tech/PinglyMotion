@@ -11,6 +11,7 @@ Files:
 - tests/tst_examples.cpp
 - tests/test_examples.py
 - tests/CMakeLists.txt
+- CREDITS.md
 
 ## What
 
