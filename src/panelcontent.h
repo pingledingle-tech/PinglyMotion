@@ -15,6 +15,7 @@
 #ifndef PANELCONTENT_H
 #define PANELCONTENT_H
 
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QDockWidget>
 #include <QFrame>
@@ -32,6 +33,7 @@
 #include "easingtiles.h"
 #include "panellayout.h"
 #include "paneltitlebar.h"
+#include "selectedjointpanel.h"
 #include "timelineview.h"
 #include "transportbar.h"
 #include "ui_pinglymotionwindow.h"
@@ -47,6 +49,8 @@ public:
   QScrollArea* timelineScroll=nullptr;
   QScrollArea* jointsScroll=nullptr;
   QScrollArea* jointCardScroll=nullptr;
+  // the joint page of the Selected joint panel (UX phase 2b)
+  SelectedJointPanel* selectedJoint=nullptr;
   TransportBar* transport=nullptr;
   TimelineView* timelineView=nullptr;
   // the loop points, frame and speed row of the timeline panel
@@ -137,12 +141,32 @@ public:
     // or the position, scale and rotation boxes of the prop. The boxes come
     // from the designer file and are moved here from the tabs; the page
     // follows the Avatar / Props switch.
-    QWidget* jointCard=new QWidget;
-    QVBoxLayout* jointCardLayout=new QVBoxLayout(jointCard);
-    jointCardLayout->setContentsMargins(0,0,0,0);
-    jointCardLayout->addWidget(ui->rotationGroupBox);
-    jointCardLayout->addWidget(ui->positionGroupBox);
-    jointCardLayout->addStretch(1);
+    // The joint page is the Selected joint panel of UX phase 2b
+    // (src/selectedjointpanel.h); it lays out the designer file's rotation and
+    // position sliders and fields, so the window's code keeps driving them. The
+    // old group boxes with their labels are left empty and hidden.
+    SelectedJointPanel::Controls controls;
+    controls.turn[0]=ui->xRotationSlider;
+    controls.turn[1]=ui->yRotationSlider;
+    controls.turn[2]=ui->zRotationSlider;
+    controls.turnValue[0]=ui->xRotationEdit;
+    controls.turnValue[1]=ui->yRotationEdit;
+    controls.turnValue[2]=ui->zRotationEdit;
+    controls.move[0]=ui->xPositionSlider;
+    controls.move[1]=ui->yPositionSlider;
+    controls.move[2]=ui->zPositionSlider;
+    controls.moveValue[0]=ui->xPositionEdit;
+    controls.moveValue[1]=ui->yPositionEdit;
+    controls.moveValue[2]=ui->zPositionEdit;
+    selectedJoint=new SelectedJointPanel(nullptr,&controls);
+    // out of the Joints panel's layout, kept (hidden) for the designer file's own code
+    for(QWidget* old : {static_cast<QWidget*>(ui->rotationGroupBox),static_cast<QWidget*>(ui->positionGroupBox)})
+    {
+      old->hide();
+      old->setParent(selectedJoint);
+      old->hide();
+    }
+    QWidget* jointCard=selectedJoint;
     QWidget* propCard=new QWidget;
     QVBoxLayout* propCardLayout=new QVBoxLayout(propCard);
     propCardLayout->setContentsMargins(0,0,0,0);
@@ -161,6 +185,17 @@ public:
     cardPanelLayout->setContentsMargins(4,4,4,4);
     cardPanelLayout->addWidget(cardStack,1);
     jointCardDock=makeTallPanel(window,text(QT_TRANSLATE_NOOP("PinglyMotionWindow","Selected joint")),PanelLayout::JointCardDock,cardPanel,jointCardScroll);
+
+    // the Joints panel's tabs lost the old group boxes above: their layouts
+    // forget the sizes they kept for them, so the panel is measured as it is now
+    for(QLayout* layout : ui->avatarPropsTab->findChildren<QLayout*>())
+      layout->invalidate();
+    ui->avatarPropsTab->updateGeometry();
+    jointsPanel->layout()->invalidate();
+    // a drop-down asks for the width of its items only once it is shown (Qt's
+    // default); the panel is measured before that, so the figure choice (two
+    // fixed items) asks for it at once
+    ui->figureCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
     // --- 3D view in the middle (replaces the old fixed layout)
     QWidget* central=new QWidget;

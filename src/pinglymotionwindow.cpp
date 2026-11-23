@@ -86,6 +86,7 @@
 #include "lucideicons.h"
 #include "textsize.h"
 #include "panelcontent.h"
+#include "selectedjointpanel.h"
 #include "panellayout.h"
 #include "panelwindow.h"
 #include "paneltitlebar.h"
@@ -582,6 +583,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
     UserSettings::setTipsOn(on);
     ui->timelineView->easingTiles()->setTipsOn(on);
     m_scriptLabPanel->setHintsOn(on);   // the Script Lab panel's explanation line
+    if(m_selectedJoint) m_selectedJoint->setHintsOn(on);   // the Selected joint panel's hint line
     if(m_hintsAction) m_hintsAction->setChecked(on);   // Help > Show hints follows the switch
   });
   buildMenus();
@@ -912,6 +914,13 @@ void PinglyMotionWindow::buildDocks()
   m_jointsScroll=m_panels->jointsScroll;
   m_jointCardScroll=m_panels->jointCardScroll;
 
+  // the Selected joint panel (UX phase 2b): the limits switch is the same
+  // setting as Options > Stop joints at their furthest turn
+  m_selectedJoint=m_panels->selectedJoint;
+  connect(m_selectedJoint,&SelectedJointPanel::limitsToggled,ui->optionsJointLimitsAction,&QAction::setChecked);
+  connect(m_selectedJoint,&SelectedJointPanel::resetRequested,this,&PinglyMotionWindow::resetJointClicked);
+  connect(m_selectedJoint,&SelectedJointPanel::pickDemoRequested,this,&PinglyMotionWindow::pickDemoJoint);
+
   // Start, Stop, Replay from start, Frame back, Frame forward and Loop
   // (docs/UX_DECISIONS.md section 1)
   m_transport=m_panels->transport;
@@ -1076,6 +1085,7 @@ void PinglyMotionWindow::buildMenus()
     if(m_topBar) m_topBar->setDark(!light);
     if(m_emptyState) m_emptyState->applyLook();
     if(m_reasonLine) m_reasonLine->applyLook();
+    if(m_selectedJoint) m_selectedJoint->applyLook();
     fitPanelWidths();
     fillJointTable();
     ui->animationView->update();
@@ -1122,6 +1132,7 @@ void PinglyMotionWindow::buildMenus()
     UserSettings::setTipsOn(on);
     ui->timelineView->easingTiles()->setTipsOn(on);
     m_scriptLabPanel->setHintsOn(on);
+    if(m_selectedJoint) m_selectedJoint->setHintsOn(on);
     m_tipsSwitch->setOn(on);
   });
   ui->menuHelp->addAction(m_hintsAction);
@@ -1181,6 +1192,7 @@ void PinglyMotionWindow::setKeyFromMenu()
 // Set key is greyed with the reason when it cannot work right now
 void PinglyMotionWindow::updateEditActions()
 {
+  refreshJointPanel();
   if(!m_setKeyAction) return;
   QString why;
   if(m_empty) why=QCoreApplication::translate("MenuSpec",MenuSpec::openFirst);
@@ -1844,6 +1856,85 @@ void PinglyMotionWindow::resetAllClicked()
   if(!anim) return;
   anim->resetAllToFrameZero();
   updateInputs();
+}
+
+// The Selected joint panel shows "Nothing to turn yet" without an animation,
+// "Pick a joint" without a picked joint, else the picked joint (UX phase 2b)
+void PinglyMotionWindow::refreshJointPanel()
+{
+  if(!m_selectedJoint) return;
+  Animation* anim=scene ? scene->getAnimation() : nullptr;
+  if(m_empty || !anim)
+  {
+    m_selectedJoint->showNothing();
+    return;
+  }
+  if(!currentPart)
+  {
+    m_selectedJoint->showPickJoint();
+    return;
+  }
+  SelectedJointPanel::Joint joint;
+  const QString fileName=currentPart->name();
+  const bool isPosition=currentPart->type==BVH_POS;
+  joint.name=isPosition ? JointList::friendlyName(*m_jointInfo,JointList::POSITION_TRACK) : m_jointInfo->uniqueName(fileName);
+  if(joint.name.isEmpty()) joint.name=JointList::friendlyName(*m_jointInfo,fileName);
+  if(const JointInfo::Joint* info=m_jointInfo->joint(fileName)) joint.slName=info->sl;
+  joint.area=isPosition ? static_cast<int>(JointGroups::OtherTab) : static_cast<int>(JointGroups::tabOf(fileName));
+  joint.keys=currentPart->numKeyframes();
+  joint.canTurn=!isPosition;
+  joint.canMove=isPosition || currentPart->type==BVH_ROOT;
+  // changed: not as in the first frame, so Reset joint has something to do
+  if(isPosition)
+    joint.changed=!qFuzzyCompare(anim->getPosition()+QVector3D(1,1,1),currentPart->frameData(0).position()+QVector3D(1,1,1));
+  else
+    joint.changed=!qFuzzyCompare(anim->getRotation(currentPart)+QVector3D(1,1,1),currentPart->frameData(0).rotation()+QVector3D(1,1,1));
+  m_selectedJoint->showJoint(joint);
+}
+
+QString PinglyMotionWindow::jointBlockedReason() const
+{
+  if(playstate!=PLAYSTATE_STOPPED) return QCoreApplication::translate("MenuSpec",MenuSpec::setKeyStopPlaying);
+  if(protect) return QCoreApplication::translate("MenuSpec",MenuSpec::setKeyLocked);
+  return QCoreApplication::translate("MenuSpec",MenuSpec::setKeyPickJoint);
+}
+
+// Reset joint: the picked joint as it is in the first frame, at this frame
+void PinglyMotionWindow::resetJointClicked()
+{
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim || !currentPart || protect) return;
+  if(currentPart->type==BVH_POS)
+  {
+    const QVector3D first=currentPart->frameData(0).position();
+    anim->setPosition(first.x(),first.y(),first.z());
+  }
+  else
+  {
+    const QVector3D first=currentPart->frameData(0).rotation();
+    anim->setRotation(currentPart,first.x(),first.y(),first.z());
+  }
+  updateInputs();
+  ui->animationView->update();
+}
+
+// "Pick the right shoulder for me" on the Pick a joint card
+void PinglyMotionWindow::pickDemoJoint()
+{
+  Animation* anim=scene->getAnimation();
+  if(m_empty || !anim) return;
+  const QString wanted=QLatin1String(SelectedJointSpec::pickDemoJoint);
+  for(int track=1;track<400;track++)
+  {
+    const QString name=anim->getPartName(track);
+    if(name.isEmpty()) break;
+    if(name==wanted)
+    {
+      // the same way as a click on the figure: the view tells the window (partClicked)
+      ui->animationView->selectPart(anim->getNode(track));
+      return;
+    }
+  }
 }
 
 // fill the joint table and "Attach To" from the skeleton
@@ -2658,6 +2749,7 @@ void PinglyMotionWindow::on_optionsSkeletonAction_toggled(bool on)
 void PinglyMotionWindow::on_optionsJointLimitsAction_toggled(bool on)
 {
   setJointLimits(on);
+  if(m_selectedJoint) m_selectedJoint->setLimitsOn(on);
 }
 
 void PinglyMotionWindow::on_optionsLoopAction_toggled(bool on)

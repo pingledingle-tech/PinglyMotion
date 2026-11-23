@@ -71,6 +71,16 @@ namespace
     {"refresh-cw",{"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8","M21 3v5h-5","M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16","M8 16H3v5"}},
     // <rect width="16" height="20" x="4" y="2" rx="2" />
     {"notebook-text",{"M2 6h4","M2 10h4","M2 14h4","M2 18h4","M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2v-16a2 2 0 0 1 2-2z","M9.5 8h5","M9.5 12H16","M9.5 16H14"}},
+    // the Selected joint panel (UX phase 2b): its title icon, the "Pick a joint"
+    // card, Move and Pull with keys, the key count chip
+    {"rotate-3d",{"M16.47214 7.52786 A 5 10 0 1 0 13 21.79796","m15.194 13.707 3.814 1.86-1.86 3.814",
+      "M21.79796 11 A 10 5 0 1 0 19 15.57071"}},
+    {"mouse-pointer-2",{"M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"}},
+    {"move-3d",{"M5 3v16h16","m5 19 6-6","m2 6 3-3 3 3","m18 16 3 3-3 3"}},
+    {"diamond",{"M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"}},
+    // the limit warning; the release above has no file of this name, so the path
+    // is Lucide's triangle-alert as the approved mockup carries it (docs/mockup/index.html)
+    {"triangle-alert",{"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3","M12 9v4","M12 17h.01"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

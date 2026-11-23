@@ -57,6 +57,10 @@ bool UserSettings::m_tipsOn = true;
 const QString UserSettings::m_tipsOnKey = "tips_on";
 QString UserSettings::m_scriptLabParts;
 const QString UserSettings::m_scriptLabPartsKey = "scriptlab_parts";
+bool UserSettings::m_pullLimbOnDrag = true;
+const QString UserSettings::m_pullLimbOnDragKey = "pull_limb_on_drag";
+bool UserSettings::m_jointMoreOptions = false;
+const QString UserSettings::m_jointMoreOptionsKey = "joint_more_options";
 bool UserSettings::m_expertMode = false;
 const QString UserSettings::m_expertModeKey = "expert_mode";
 QString UserSettings::m_cameraHabit = "pinglymotion";
@@ -126,6 +130,10 @@ void UserSettings::setTipsOn(bool on)                { m_tipsOn = on; }
 bool UserSettings::tipsOn()                          { return m_tipsOn; }
 void UserSettings::setScriptLabParts(const QString& value) { m_scriptLabParts = value.left(1000); }
 QString UserSettings::scriptLabParts()               { return m_scriptLabParts; }
+void UserSettings::setPullLimbOnDrag(bool on)        { m_pullLimbOnDrag = on; }
+bool UserSettings::pullLimbOnDrag()                  { return m_pullLimbOnDrag; }
+void UserSettings::setJointMoreOptions(bool open)    { m_jointMoreOptions = open; }
+bool UserSettings::jointMoreOptions()                { return m_jointMoreOptions; }
 void UserSettings::setExpertMode(bool on)            { m_expertMode = on; }
 bool UserSettings::expertMode()                      { return m_expertMode; }
 QStringList UserSettings::cameraHabits()
@@ -193,6 +201,8 @@ void UserSettings::readSettings()
     setHideJointsInLists(settings.value(m_hideJointsInListsKey, false).toBool());
     setTipsOn(settings.value(m_tipsOnKey, true).toBool());
     setScriptLabParts(settings.value(m_scriptLabPartsKey).toString());
+    setPullLimbOnDrag(settings.value(m_pullLimbOnDragKey, true).toBool());
+    setJointMoreOptions(settings.value(m_jointMoreOptionsKey, false).toBool());
     // only true/false (or 1/0) count; anything else gives Beginner mode
     setExpertMode(settings.value(m_expertModeKey, false).toString().toLower() == "true"
                   || settings.value(m_expertModeKey, false).toString() == "1");
@@ -248,6 +258,8 @@ void UserSettings::writeSettings()
   settings.setValue(m_hideJointsInListsKey, hideJointsInLists());
   settings.setValue(m_tipsOnKey, tipsOn());
   settings.setValue(m_scriptLabPartsKey, scriptLabParts());
+  settings.setValue(m_pullLimbOnDragKey, pullLimbOnDrag());
+  settings.setValue(m_jointMoreOptionsKey, jointMoreOptions());
   settings.setValue(m_expertModeKey, expertMode());
   settings.setValue(m_cameraHabitKey, cameraHabit());
   settings.setValue(m_textSizePercentKey, textSizePercent());
