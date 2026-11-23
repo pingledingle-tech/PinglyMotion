@@ -269,6 +269,7 @@ class Sandbox
       float force[3] = {0.0f, 0.0f, 0.0f};   // third gap list run, step 6: llSetForce record
       float damage = 0.0f;                   // step 7: llSetDamage
       KeyframedMotion keyframes;             // step 8: llSetKeyframedMotion
+      PhysicsState physics;                  // step 18: llGetAccel and the other physics reads
       // step 9: llCreateLink. A linked object stays in the list; linkedTo is its root's place (-1: not a child) and the
       // root's linkChildren lists the objects linked to it, the newest first (each joins at link 2). ownPrims is what the
       // object had before; spec.prims is the whole linkset's count while linked, so every script reads the same count.
@@ -321,6 +322,8 @@ class Sandbox
     // link) and llBreakAllLinks (answers how many objects were separated from the root)
     bool createLink(int from, double time, const QString& target, bool parent);
     int breakAllLinks(int from, double time);
+    // step 18: llBreakLink separates the object that holds the prim with this link number (true when one was separated)
+    bool breakLink(int from, double time, int link);
     int rootObject(int object) const { const int r = m_objects[size_t(object)].linkedTo; return r >= 0 ? r : object; }
     // the link number of the first prim of an object inside its linkset (1 for a root or an object that is not linked)
     int linkOffset(int object) const;

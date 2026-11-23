@@ -160,6 +160,17 @@ class PrimStore
     std::vector<PrimState> m_prims;
 };
 
+// Step 18: what the physics reads and settings keep for an object. accel is what the motion model's last "step" changed the
+// velocity by, per second; omega, torque (region axes) are records the model does not use; material is llGetPhysicsMaterial's
+// list in its order: gravity multiplier, restitution, friction, density.
+struct PhysicsState
+{
+  float accel[3] = {0.0f, 0.0f, 0.0f};
+  float omega[3] = {0.0f, 0.0f, 0.0f};
+  float torque[3] = {0.0f, 0.0f, 0.0f};
+  float material[4] = {1.0f, 0.3f, 0.5f, 1000.0f};
+};
+
 // Third gap list run, step 8: llSetKeyframedMotion. The frames are relative to the object's transform before them: a
 // translation in region axes and a rotation in the object's own axes (the Second Life wiki). The Sandbox's "step" input
 // advances it (advance); nothing here runs on its own.
@@ -325,6 +336,11 @@ struct RegionSettings
   float fps = 45.0f;                                         // the frame rate of a healthy region
   QString hostname = "sim-sandbox.invalid";                  // llGetSimulatorHostname: a name that never resolves
 
+  // Step 18: llGetRegionFlags (a typical region: fly over allowed, direct teleport allowed; no damage, no sandbox) and llWind
+  // (no wind anywhere). No lsl_run option sets them yet (C++ only).
+  int regionFlags = 0x100000;                                // REGION_FLAG_ALLOW_DIRECT_TELEPORT only
+  float wind[3] = {0.0f, 0.0f, 0.0f};                        // llWind: the same at every offset
+
   // the date, a time stamp and the Second Life time (US Pacific, with summer time) at simulated time now
   QString date(double now) const;                            // llGetDate: "YYYY-MM-DD" (UTC)
   QString timestamp(double now) const;                       // llGetTimestamp: "YYYY-MM-DDThh:mm:ss.ffffffZ" (UTC)
@@ -446,6 +462,10 @@ class World
     virtual void setDamage(float d) { m_damage = d; }
     // step 8: llSetKeyframedMotion
     virtual KeyframedMotion& keyframes() { return m_keyframes; }
+    // step 18: llGetAccel, llGetOmega, llGetTorque and llGetPhysicsMaterial read this; the Sandbox's "step" sets accel
+    virtual PhysicsState& physics() { return m_physics; }
+    // step 18: llBreakLink (a link number of an object that llCreateLink joined; the plain World has none)
+    virtual bool breakLink(double time, int link);
     // step 9: llCreateLink and llBreakAllLinks. The Sandbox joins and separates the objects of its world; the permission is
     // checked by the function before. The plain World has no other object to link.
     virtual bool createLink(double time, const QString& target, bool parent);
@@ -597,6 +617,7 @@ class World
     float m_buoyancy = 0.0f;
     float m_force[3] = {0.0f, 0.0f, 0.0f};
     float m_damage = 0.0f;
+    PhysicsState m_physics;
     KeyframedMotion m_keyframes;
     float m_scale[3] = {0.5f, 0.5f, 0.5f};
     PrimStore m_prims;

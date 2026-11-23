@@ -1223,7 +1223,9 @@ bool Parser::eventIsRaised(const QString& name)
                                          "http_response", "transaction_result", "http_request", "money", "email", "remote_data",
                                          // second gap list, step 6, part 2: collision-family events (synthetic input, no motion model)
                                          "collision_start", "collision_end", "collision", "land_collision_start", "land_collision_end", "land_collision",
-                                         "moving_start", "moving_end", "at_target", "not_at_target"};
+                                         "moving_start", "moving_end", "at_target", "not_at_target",
+                                         // step 18: raised by the rotation targets of llRotTarget after a "step" input
+                                         "at_rot_target", "not_at_rot_target"};
   return raised.contains(name);
 }
 
