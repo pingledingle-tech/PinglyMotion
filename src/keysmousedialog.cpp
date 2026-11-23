@@ -14,6 +14,7 @@
 
 #include "lucideicons.h"
 #include "theme.h"
+#include "usersettings.h"
 
 namespace
 {
@@ -42,7 +43,8 @@ KeysMouseDialog::KeysMouseDialog(QWidget* parent) : QDialog(parent), m_table(nul
   header->addStretch(1);
   outer->addLayout(header);
 
-  const int rowCount = int(sizeof(KeysMouseSpec::rows) / sizeof(KeysMouseSpec::rows[0]));
+  const QList<QPair<QString, QString>> rows = KeysMouseSpec::tableRows(CameraHabitSpec::find(UserSettings::cameraHabit()));
+  const int rowCount = int(rows.size());
   m_table = new QTableWidget(rowCount, 2, this);
   m_table->setHorizontalHeaderLabels({tr2(KeysMouseText::actionHeader), tr2(KeysMouseText::gestureHeader)});
   m_table->verticalHeader()->setVisible(false);
@@ -54,8 +56,8 @@ KeysMouseDialog::KeysMouseDialog(QWidget* parent) : QDialog(parent), m_table(nul
   setMinimumWidth(520);
   for (int row = 0; row < rowCount; ++row)
   {
-    m_table->setItem(row, 0, new QTableWidgetItem(KeysMouseSpec::action(KeysMouseSpec::rows[row])));
-    m_table->setItem(row, 1, new QTableWidgetItem(KeysMouseSpec::gesture(KeysMouseSpec::rows[row])));
+    m_table->setItem(row, 0, new QTableWidgetItem(rows.at(row).first));
+    m_table->setItem(row, 1, new QTableWidgetItem(rows.at(row).second));
   }
   m_table->resizeColumnToContents(0);
   m_table->resizeRowsToContents();

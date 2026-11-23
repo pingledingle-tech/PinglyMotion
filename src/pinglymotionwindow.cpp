@@ -114,6 +114,8 @@
 #include "topbar.h"
 #include "reasonline.h"
 #include "setupdialog.h"
+#include "camera.h"
+#include "camerahabitspec.h"
 #include "camerakeysdialog.h"
 #include "keysmousedialog.h"
 #include "transportbar.h"
@@ -515,6 +517,8 @@ PinglyMotionWindow::PinglyMotionWindow() :
   connect(&timer, &QTimer::timeout, this, &PinglyMotionWindow::frameTimeout);
 
   connect(this, &PinglyMotionWindow::resetCamera, ui->animationView, &AnimationView::resetCamera);
+  // UX phase 4a: the mouse follows the camera habit chosen in Setup or Camera and keys
+  ui->animationView->setCameraHabit(Camera::habitFor(UserSettings::cameraHabit()));
 
   connect(ui->animationView, qOverload<int>(&AnimationView::partClicked), ui->timelineView, &TimelineView::selectTrack);
   connect(ui->animationView, &AnimationView::backgroundClicked, ui->timelineView, &TimelineView::backgroundClicked);
@@ -1590,10 +1594,7 @@ void PinglyMotionWindow::openSetupDialog()
   {
     if(m_hintsAction) m_hintsAction->setChecked(on);
   });
-  connect(&dialog,&SetupDialog::cameraHabitRequested,this,[](const QString& habit)
-  {
-    UserSettings::setCameraHabit(habit);
-  });
+  connect(&dialog,&SetupDialog::cameraHabitRequested,this,&PinglyMotionWindow::chooseCameraHabit);
   connect(&dialog,&SetupDialog::showCameraKeysRequested,this,&PinglyMotionWindow::openCameraKeysDialog);
   dialog.exec();
 }
@@ -1602,11 +1603,15 @@ void PinglyMotionWindow::openSetupDialog()
 void PinglyMotionWindow::openCameraKeysDialog()
 {
   CameraKeysDialog dialog(this);
-  connect(&dialog,&CameraKeysDialog::cameraHabitRequested,this,[](const QString& habit)
-  {
-    UserSettings::setCameraHabit(habit);
-  });
+  connect(&dialog,&CameraKeysDialog::cameraHabitRequested,this,&PinglyMotionWindow::chooseCameraHabit);
   dialog.exec();
+}
+
+void PinglyMotionWindow::chooseCameraHabit(const QString& habit)
+{
+  UserSettings::setCameraHabit(habit);
+  ui->animationView->setCameraHabit(Camera::habitFor(UserSettings::cameraHabit()));
+  statusBar()->showMessage(CameraHabitSpec::chosenMessage(CameraHabitSpec::find(UserSettings::cameraHabit())),5000);
 }
 
 // Help > Keys and mouse (?)

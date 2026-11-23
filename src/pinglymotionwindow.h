@@ -546,6 +546,9 @@ class PinglyMotionWindow : public QMainWindow
     void openSetupDialog();
     void openCameraKeysDialog();
     void openKeysMouseDialog();
+    // UX phase 4a: store the camera habit, let the 3D view follow it at once and say so
+    // in the status line ("Camera and keys like Maya.")
+    void chooseCameraHabit(const QString& habit);
 };
 
 #endif

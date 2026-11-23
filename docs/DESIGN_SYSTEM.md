@@ -215,7 +215,8 @@ moves on its own unless the user asked for it.
   popup, or cancels a drag.
 - Shortcuts are shown in the menu entry and in the tooltip.
 - Camera and key schemes: PinglyMotion default, Maya, Blender and Second Life
-  habits; the choice is remembered (charter P11).
+  habits; the choice is remembered (charter P11) and the camera follows it at
+  once (UX phase 4a).
 
 ## Guidance
 

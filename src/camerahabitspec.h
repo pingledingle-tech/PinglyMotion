@@ -5,11 +5,10 @@
  * One table for the Camera and keys dialog (and the Setup dialog's "Mouse
  * and keys like" choice): the id UserSettings::cameraHabit() stores, the
  * name shown in the radio list, and the five gesture rows of the mockup's
- * clickable camera table. The camera itself does not read the habit yet
- * (docs/UX_DECISIONS.md, section 8; the mouse always uses the PinglyMotion
- * gestures until a later UX phase wires the others up), so this table only
- * feeds the two dialogs. tests/setupdialog checks every row against the
- * mockup exactly.
+ * clickable camera table. Since UX phase 4a the 3D view follows the chosen
+ * habit (Camera::gestureFor(), src/camera.h); this table holds the texts the
+ * dialogs show for it. tests/setupdialog checks every row against the mockup
+ * exactly, tests/camerahabits checks that each row is what the camera does.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -62,12 +61,27 @@ namespace CameraHabitSpec
     {QT_TRANSLATE_NOOP("CameraHabitSpec", "Pick a joint"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Click")},
     {QT_TRANSLATE_NOOP("CameraHabitSpec", "Focus on the picked joint"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Alt + click")}}};
 
+  // The keys that work the same in every habit (the mockup's KEYROWS_ALL, the rows that are
+  // built: dragging a joint, the rings, the keyboard pull and the view tools come with UX phase 4b).
+  // The Camera and keys dialog shows them under the habit's five rows.
+  inline constexpr Row sharedRows[] = {
+    {QT_TRANSLATE_NOOP("CameraHabitSpec", "Frame the picked joint, the whole figure, home view"), QT_TRANSLATE_NOOP("CameraHabitSpec", "F, Shift+F, 0")},
+    {QT_TRANSLATE_NOOP("CameraHabitSpec", "Front, side, top view"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)")},
+    {QT_TRANSLATE_NOOP("CameraHabitSpec", "Look around with keys"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Alt + arrow keys in the 3D view")},
+    {QT_TRANSLATE_NOOP("CameraHabitSpec", "Zoom with keys"), QT_TRANSLATE_NOOP("CameraHabitSpec", "Page Up, Page Down")}};
+
+  inline constexpr int sharedRowCount = int(sizeof(sharedRows) / sizeof(sharedRows[0]));
+
+  // the status line after a habit is chosen (the mockup's setScheme() feedback)
+  inline constexpr const char* chosen = QT_TRANSLATE_NOOP("CameraHabitSpec", "Camera and keys like %1.");
+
   // in the order of the mockup's radio list and UserSettings::cameraHabits()
   inline constexpr const Habit* all[] = {&pinglymotion, &maya, &blender, &sl};
 
   inline QString name(const Habit& habit) { return QCoreApplication::translate("CameraHabitSpec", habit.name); }
   inline QString action(const Row& row) { return QCoreApplication::translate("CameraHabitSpec", row.action); }
   inline QString gesture(const Row& row) { return QCoreApplication::translate("CameraHabitSpec", row.gesture); }
+  inline QString chosenMessage(const Habit& habit) { return QCoreApplication::translate("CameraHabitSpec", chosen).arg(name(habit)); }
 
   // the habit of this id, or PinglyMotion's own habit (the default) for an unknown or empty id,
   // the same rule as UserSettings::cameraHabit()

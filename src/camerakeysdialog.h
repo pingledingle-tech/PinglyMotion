@@ -4,7 +4,9 @@
  *
  * Pick the mouse and key habit you know (PinglyMotion, Maya, Blender or
  * Second Life, src/camerahabitspec.h); PinglyMotion remembers the choice
- * (UserSettings::cameraHabit()) and shows its five gestures in a table.
+ * (UserSettings::cameraHabit()) and shows its five gestures in a table,
+ * then the keys that work the same in every habit (CameraHabitSpec::sharedRows).
+ * Since UX phase 4a the 3D view follows the choice at once.
  * Reachable from Help > Camera and keys and from the Setup dialog's
  * "Show all mouse and keys" button.
  *

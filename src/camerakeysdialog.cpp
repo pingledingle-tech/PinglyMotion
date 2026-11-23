@@ -70,7 +70,7 @@ CameraKeysDialog::CameraKeysDialog(QWidget* parent) : QDialog(parent), m_table(n
   }
   outer->addLayout(radios);
 
-  m_table = new QTableWidget(5, 2, this);
+  m_table = new QTableWidget(5 + CameraHabitSpec::sharedRowCount, 2, this);
   m_table->setHorizontalHeaderLabels({tr2(CameraKeysText::actionHeader), tr2(CameraKeysText::gestureHeader)});
   m_table->verticalHeader()->setVisible(false);
   m_table->horizontalHeader()->setStretchLastSection(true);
@@ -98,6 +98,12 @@ void CameraKeysDialog::fillTable(const QString& habitId)
   {
     m_table->setItem(row, 0, new QTableWidgetItem(CameraHabitSpec::action(habit.rows[row])));
     m_table->setItem(row, 1, new QTableWidgetItem(CameraHabitSpec::gesture(habit.rows[row])));
+  }
+  // the keys that work the same in every habit, under the habit's own rows (the mockup's camTable())
+  for (int row = 0; row < CameraHabitSpec::sharedRowCount; ++row)
+  {
+    m_table->setItem(5 + row, 0, new QTableWidgetItem(CameraHabitSpec::action(CameraHabitSpec::sharedRows[row])));
+    m_table->setItem(5 + row, 1, new QTableWidgetItem(CameraHabitSpec::gesture(CameraHabitSpec::sharedRows[row])));
   }
   m_table->resizeColumnToContents(0);
   m_table->resizeRowsToContents();

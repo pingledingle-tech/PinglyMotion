@@ -197,11 +197,23 @@ void TestSetupDialog::cameraKeysDialogMatchesSpec()
     CameraKeysDialog dialog;
     QCOMPARE(dialog.habitChecked(), QLatin1String(habit->id));
     QTableWidget* table = dialog.table();
-    QCOMPARE(table->rowCount(), 5);
+    QCOMPARE(table->rowCount(), 9);
+    QCOMPARE(CameraHabitSpec::sharedRowCount, 4);
     for (int row = 0; row < 5; ++row)
     {
       QCOMPARE(table->item(row, 0)->text(), CameraHabitSpec::action(habit->rows[row]));
       QCOMPARE(table->item(row, 1)->text(), CameraHabitSpec::gesture(habit->rows[row]));
+    }
+    // UX phase 4a: the keys every habit shares, under the habit's rows, word for word
+    const QStringList shared = {
+      QStringLiteral("Frame the picked joint, the whole figure, home view"), QStringLiteral("F, Shift+F, 0"),
+      QStringLiteral("Front, side, top view"), QStringLiteral("Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)"),
+      QStringLiteral("Look around with keys"), QStringLiteral("Alt + arrow keys in the 3D view"),
+      QStringLiteral("Zoom with keys"), QStringLiteral("Page Up, Page Down")};
+    for (int row = 0; row < 4; ++row)
+    {
+      QCOMPARE(table->item(5 + row, 0)->text(), shared.at(2 * row));
+      QCOMPARE(table->item(5 + row, 1)->text(), shared.at(2 * row + 1));
     }
   }
 }
@@ -223,14 +235,39 @@ void TestSetupDialog::cameraKeysDialogSwitchesTable()
 
 void TestSetupDialog::keysMouseDialogHasEveryRow()
 {
-  KeysMouseDialog dialog;
   const int rowCount = int(sizeof(KeysMouseSpec::rows) / sizeof(KeysMouseSpec::rows[0]));
-  QCOMPARE(dialog.table()->rowCount(), rowCount);
-  for (int row = 0; row < rowCount; ++row)
+  for (const CameraHabitSpec::Habit* habit : CameraHabitSpec::all)
   {
-    QCOMPARE(dialog.table()->item(row, 0)->text(), KeysMouseSpec::action(KeysMouseSpec::rows[row]));
-    QCOMPARE(dialog.table()->item(row, 1)->text(), KeysMouseSpec::gesture(KeysMouseSpec::rows[row]));
+    UserSettings::setCameraHabit(QLatin1String(habit->id));
+    KeysMouseDialog dialog;
+    // Pick a joint, the habit's look around, move the view, zoom and focus rows, then the rest
+    QCOMPARE(dialog.table()->rowCount(), rowCount + 4);
+    QCOMPARE(dialog.table()->item(0, 0)->text(), QStringLiteral("Pick a joint"));
+    int habitRow = 0;
+    for (int i : {0, 1, 2, 4})
+    {
+      ++habitRow;
+      QCOMPARE(dialog.table()->item(habitRow, 0)->text(), CameraHabitSpec::action(habit->rows[i]));
+      QCOMPARE(dialog.table()->item(habitRow, 1)->text(), CameraHabitSpec::gesture(habit->rows[i]));
+    }
+    for (int row = 1; row < rowCount; ++row)
+    {
+      QCOMPARE(dialog.table()->item(row + 4, 0)->text(), KeysMouseSpec::action(KeysMouseSpec::rows[row]));
+      QCOMPARE(dialog.table()->item(row + 4, 1)->text(), KeysMouseSpec::gesture(KeysMouseSpec::rows[row]));
+    }
   }
+  // the Maya habit, word for word
+  UserSettings::setCameraHabit(QStringLiteral("maya"));
+  KeysMouseDialog maya;
+  QCOMPARE(maya.table()->item(1, 1)->text(), QStringLiteral("Alt + left-drag"));
+  QCOMPARE(maya.table()->item(2, 1)->text(), QStringLiteral("Alt + middle-drag"));
+  QCOMPARE(maya.table()->item(3, 1)->text(), QStringLiteral("Alt + right-drag, or wheel"));
+  QCOMPARE(maya.table()->item(4, 0)->text(), QStringLiteral("Focus on the picked joint"));
+  QCOMPARE(maya.table()->item(4, 1)->text(), QStringLiteral("F"));
+  QCOMPARE(maya.table()->item(5, 0)->text(), QStringLiteral("Frame the whole figure"));
+  QCOMPARE(maya.table()->item(5, 1)->text(), QStringLiteral("Shift+F"));
+  QCOMPARE(maya.table()->item(6, 1)->text(), QStringLiteral("Alt + arrow keys in the 3D view"));
+  QCOMPARE(maya.table()->item(7, 1)->text(), QStringLiteral("Page Up, Page Down"));
 }
 
 // the Keys and mouse page must never show a key that is not the menu's own (design charter P6,

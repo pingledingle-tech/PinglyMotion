@@ -287,6 +287,42 @@ Green: live, the pose shows on your avatar</source>
         <source>Alt + click</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Frame the picked joint, the whole figure, home view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F, Shift+F, 0</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Front, side, top view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numpad 1, 3, 7 (or 1, 3, 7 in the 3D view)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look around with keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + arrow keys in the 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom with keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Page Up, Page Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Camera and keys like %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CameraKeysDialog</name>
@@ -884,30 +920,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Look around (orbit)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag empty space</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the view (pan)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Right-drag</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Zoom</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mouse wheel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Front view</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1001,6 +1013,30 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Ctrl+Shift+L</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frame the whole figure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift+F</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look around with keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + arrow keys in the 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom with keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Page Up, Page Down</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

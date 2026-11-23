@@ -42,8 +42,8 @@ The roadmap explores better posing and timeline tools, native SL animation expor
 ## Tips
 
 - Click a body part or a small ball to select it, then turn it with the coloured rings or the sliders. Hold **Shift** while dragging a ring for finer control
-- Camera: drag empty space (or the body) to turn around, **right-drag** to move sideways, **mouse wheel** to zoom. **Double-click** a joint or press **F** to look at the selected joint; the camera then turns around it. **Esc** resets the camera
-- Blender habits work too (middle-drag turns, **Shift** + middle-drag moves, **Ctrl** + middle-drag zooms, number pad **1 / 3 / 7** for front / side / top, number pad **.** to focus), and so do Second Life habits (**Alt** + drag turns and zooms, **Ctrl + Alt** + drag turns, **Ctrl + Alt + Shift** + drag moves, **Alt** + click a joint to turn around it). All controls: [docs/POSING_UX.md](docs/POSING_UX.md#mouse-and-keys)
+- Camera: drag empty space (or the body) to turn around, **right-drag** to move sideways, **mouse wheel** to zoom. **Double-click** a joint or press **F** to look at the selected joint; the camera then turns around it. **Shift+F** shows the whole figure, **0** or **Esc** gives the home view, **1 / 3 / 7** (or the number pad) front / side / top, **Alt** + arrow keys turn around in steps
+- Used to Maya, Blender or Second Life? Pick those mouse habits in **Setup** or **Help > Camera and keys...**: Maya (**Alt** + left / middle / right drag), Blender (middle-drag turns, **Shift** + middle-drag moves, **Ctrl** + middle-drag zooms, number pad **.** to focus) or Second Life (**Alt** + drag turns and zooms, **Ctrl + Alt** + drag turns, **Ctrl + Alt + Shift** + drag moves, **Alt** + click a joint to turn around it). The table in that dialog shows every gesture
 - **Ctrl** + double-click a hand or foot switches IK on or off; **Shift** + double-click selects the mirrored joint too
 - The balls for the face only show while the head or a face bone is selected
 - Dark theme is on by default; switch to the light theme under **View > Light theme** (or press **T** in the 3D view)

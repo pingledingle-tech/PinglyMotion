@@ -1,6 +1,7 @@
 /*
- * PinglyMotion - tests for the camera: which mouse button and keys do what
- * (docs/POSING_UX.md, "Mouse and keys"), and that the camera turns around
+ * PinglyMotion - tests for the camera: which mouse button and keys do what in
+ * each camera habit (docs/UX_DECISIONS.md, 6c, UX phase 4a), the view keys,
+ * framing the whole figure, and that the camera turns around
  * the point in the middle of the view (#88)
  *
  * Licensed under the GNU General Public License version 2 or later.
@@ -13,6 +14,7 @@
 #include "scenestate.h"
 
 Q_DECLARE_METATYPE(CameraDrag)
+Q_DECLARE_METATYPE(CameraHabit)
 
 class TestCamera : public QObject
 {
@@ -23,7 +25,11 @@ class TestCamera : public QObject
     void dragFor();
     void numberPadViews_data();
     void numberPadViews();
+    void habitIds();
     void focusKeys();
+    void viewKeys();
+    void keyTurnMovesTenDegrees();
+    void frameBoxFitsTheFigure();
     void pivotIsInTheMiddle();
     void rotateKeepsPivot();
     void zoomKeepsPivot();
@@ -70,35 +76,77 @@ void TestCamera::compare(const QVector3D& a, const QVector3D& b, float within)
 
 void TestCamera::dragFor_data()
 {
+  QTest::addColumn<int>("habit");
   QTest::addColumn<int>("button");
   QTest::addColumn<int>("keys");
   QTest::addColumn<CameraDrag>("drag");
+  QTest::addColumn<bool>("picks");
 
   const int shift = Qt::ShiftModifier, ctrl = Qt::ControlModifier, alt = Qt::AltModifier;
+  const int pm = int(CameraHabit::PinglyMotion), maya = int(CameraHabit::Maya),
+            blender = int(CameraHabit::Blender), sl = int(CameraHabit::SecondLife);
+  const int left = Qt::LeftButton, right = Qt::RightButton, middle = Qt::MiddleButton;
 
-  // simple (default)
-  QTest::newRow("left drag") << int(Qt::LeftButton) << 0 << CameraDrag::Orbit;
-  QTest::newRow("right drag") << int(Qt::RightButton) << 0 << CameraDrag::Pan;
-  // Blender
-  QTest::newRow("middle drag") << int(Qt::MiddleButton) << 0 << CameraDrag::Orbit;
-  QTest::newRow("shift middle") << int(Qt::MiddleButton) << shift << CameraDrag::Pan;
-  QTest::newRow("ctrl middle") << int(Qt::MiddleButton) << ctrl << CameraDrag::Zoom;
-  // Second Life
-  QTest::newRow("alt drag") << int(Qt::LeftButton) << alt << CameraDrag::OrbitAndZoom;
-  QTest::newRow("ctrl alt drag") << int(Qt::LeftButton) << (ctrl | alt) << CameraDrag::Orbit;
-  QTest::newRow("ctrl alt shift drag") << int(Qt::LeftButton) << (ctrl | alt | shift) << CameraDrag::Pan;
-  // the old joint keys do nothing special to the camera any more
-  QTest::newRow("shift drag") << int(Qt::LeftButton) << shift << CameraDrag::Orbit;
-  QTest::newRow("ctrl drag") << int(Qt::LeftButton) << ctrl << CameraDrag::Orbit;
-  QTest::newRow("other button") << int(Qt::BackButton) << 0 << CameraDrag::None;
+  // PinglyMotion (the default): left picks, or orbits when dragged; right pans
+  QTest::newRow("pm left") << pm << left << 0 << CameraDrag::Orbit << true;
+  QTest::newRow("pm right") << pm << right << 0 << CameraDrag::Pan << false;
+  QTest::newRow("pm middle") << pm << middle << 0 << CameraDrag::None << false;
+  QTest::newRow("pm alt left") << pm << left << alt << CameraDrag::Orbit << true;
+  QTest::newRow("pm shift left") << pm << left << shift << CameraDrag::Orbit << true;
+  QTest::newRow("pm ctrl left") << pm << left << ctrl << CameraDrag::Orbit << true;
+  QTest::newRow("pm other button") << pm << int(Qt::BackButton) << 0 << CameraDrag::None << false;
+  // Maya: Alt + left orbit, Alt + middle pan, Alt + right zoom; left picks
+  QTest::newRow("maya alt left") << maya << left << alt << CameraDrag::Orbit << false;
+  QTest::newRow("maya alt middle") << maya << middle << alt << CameraDrag::Pan << false;
+  QTest::newRow("maya alt right") << maya << right << alt << CameraDrag::Zoom << false;
+  QTest::newRow("maya left") << maya << left << 0 << CameraDrag::None << true;
+  QTest::newRow("maya right") << maya << right << 0 << CameraDrag::None << false;
+  QTest::newRow("maya middle") << maya << middle << 0 << CameraDrag::None << false;
+  // Blender: middle orbit, Shift + middle pan, Ctrl + middle zoom; left picks
+  QTest::newRow("blender middle") << blender << middle << 0 << CameraDrag::Orbit << false;
+  QTest::newRow("blender shift middle") << blender << middle << shift << CameraDrag::Pan << false;
+  QTest::newRow("blender ctrl middle") << blender << middle << ctrl << CameraDrag::Zoom << false;
+  QTest::newRow("blender left") << blender << left << 0 << CameraDrag::None << true;
+  QTest::newRow("blender alt left") << blender << left << alt << CameraDrag::None << true;
+  QTest::newRow("blender right") << blender << right << 0 << CameraDrag::None << false;
+  // Second Life: Alt + left orbit and zoom, Ctrl + Alt orbit, Ctrl + Alt + Shift pan; left picks
+  QTest::newRow("sl alt left") << sl << left << alt << CameraDrag::OrbitAndZoom << false;
+  QTest::newRow("sl ctrl alt left") << sl << left << (ctrl | alt) << CameraDrag::Orbit << false;
+  QTest::newRow("sl ctrl alt shift left") << sl << left << (ctrl | alt | shift) << CameraDrag::Pan << false;
+  QTest::newRow("sl left") << sl << left << 0 << CameraDrag::None << true;
+  QTest::newRow("sl right") << sl << right << 0 << CameraDrag::None << false;
+  QTest::newRow("sl middle") << sl << middle << 0 << CameraDrag::None << false;
 }
 
 void TestCamera::dragFor()
 {
+  QFETCH(int, habit);
   QFETCH(int, button);
   QFETCH(int, keys);
   QFETCH(CameraDrag, drag);
-  QCOMPARE(Camera::dragFor(Qt::MouseButton(button), Qt::KeyboardModifiers(keys)), drag);
+  QFETCH(bool, picks);
+  const CameraGesture gesture = Camera::gestureFor(CameraHabit(habit), Qt::MouseButton(button), Qt::KeyboardModifiers(keys));
+  QCOMPARE(gesture.drag, drag);
+  QCOMPARE(gesture.picks, picks);
+}
+
+void TestCamera::habitIds()
+{
+  QCOMPARE(Camera::habitFor(QStringLiteral("pinglymotion")), CameraHabit::PinglyMotion);
+  QCOMPARE(Camera::habitFor(QStringLiteral("maya")), CameraHabit::Maya);
+  QCOMPARE(Camera::habitFor(QStringLiteral("blender")), CameraHabit::Blender);
+  QCOMPARE(Camera::habitFor(QStringLiteral("sl")), CameraHabit::SecondLife);
+  QCOMPARE(Camera::habitFor(QString()), CameraHabit::PinglyMotion);
+  QCOMPARE(Camera::habitFor(QStringLiteral("Maya")), CameraHabit::PinglyMotion);
+  // only these habits focus by Alt + click or double click (the mockup's Focus rows)
+  QVERIFY(Camera::focusesOnAltClick(CameraHabit::SecondLife));
+  QVERIFY(!Camera::focusesOnAltClick(CameraHabit::PinglyMotion));
+  QVERIFY(!Camera::focusesOnAltClick(CameraHabit::Maya));
+  QVERIFY(!Camera::focusesOnAltClick(CameraHabit::Blender));
+  QVERIFY(Camera::focusesOnDoubleClick(CameraHabit::PinglyMotion));
+  QVERIFY(!Camera::focusesOnDoubleClick(CameraHabit::Maya));
+  QVERIFY(!Camera::focusesOnDoubleClick(CameraHabit::Blender));
+  QVERIFY(!Camera::focusesOnDoubleClick(CameraHabit::SecondLife));
 }
 
 void TestCamera::numberPadViews_data()
@@ -119,9 +167,19 @@ void TestCamera::numberPadViews_data()
   QTest::newRow("end front") << int(Qt::Key_End) << pad << true << 0.0f << 0.0f;
   QTest::newRow("page down side") << int(Qt::Key_PageDown) << pad << true << 0.0f << 90.0f;
   QTest::newRow("home top") << int(Qt::Key_Home) << pad << true << 90.0f << 0.0f;
-  // not the number pad
-  QTest::newRow("main 1") << int(Qt::Key_1) << 0 << false << 0.0f << 0.0f;
+  // the digits above the letters, in the 3D view (the mockup)
+  QTest::newRow("main 1 front") << int(Qt::Key_1) << 0 << true << 0.0f << 0.0f;
+  QTest::newRow("main ctrl 1 back") << int(Qt::Key_1) << ctrl << true << 0.0f << 180.0f;
+  QTest::newRow("main 3 side") << int(Qt::Key_3) << 0 << true << 0.0f << 90.0f;
+  QTest::newRow("main 7 top") << int(Qt::Key_7) << 0 << true << 90.0f << 0.0f;
+  QTest::newRow("main ctrl 7") << int(Qt::Key_7) << ctrl << false << 0.0f << 0.0f;
+  // not a view key
+  QTest::newRow("shift 1") << int(Qt::Key_1) << int(Qt::ShiftModifier) << false << 0.0f << 0.0f;
+  QTest::newRow("alt 1") << int(Qt::Key_1) << int(Qt::AltModifier) << false << 0.0f << 0.0f;
+  QTest::newRow("main 2") << int(Qt::Key_2) << 0 << false << 0.0f << 0.0f;
   QTest::newRow("page down") << int(Qt::Key_PageDown) << 0 << false << 0.0f << 0.0f;
+  QTest::newRow("end") << int(Qt::Key_End) << 0 << false << 0.0f << 0.0f;
+  QTest::newRow("home") << int(Qt::Key_Home) << 0 << false << 0.0f << 0.0f;
   QTest::newRow("pad 5") << int(Qt::Key_5) << pad << false << 0.0f << 0.0f;
 }
 
@@ -144,15 +202,104 @@ void TestCamera::numberPadViews()
 
 void TestCamera::focusKeys()
 {
-  QVERIFY(Camera::isFocusKey(Qt::Key_F, Qt::NoModifier));
-  QVERIFY(Camera::isFocusKey(Qt::Key_F, Qt::ShiftModifier));
-  QVERIFY(Camera::isFocusKey(Qt::Key_Period, Qt::KeypadModifier));
-  // number pads with a decimal comma (e.g. Norwegian) and Num Lock off
-  QVERIFY(Camera::isFocusKey(Qt::Key_Comma, Qt::KeypadModifier));
-  QVERIFY(Camera::isFocusKey(Qt::Key_Delete, Qt::KeypadModifier));
-  QVERIFY(!Camera::isFocusKey(Qt::Key_F, Qt::ControlModifier));
-  QVERIFY(!Camera::isFocusKey(Qt::Key_Period, Qt::NoModifier));
-  QVERIFY(!Camera::isFocusKey(Qt::Key_Delete, Qt::NoModifier));
+  const Qt::KeyboardModifiers pad = Qt::KeypadModifier;
+  for (CameraHabit habit : {CameraHabit::PinglyMotion, CameraHabit::Maya, CameraHabit::Blender, CameraHabit::SecondLife})
+  {
+    // F in every habit
+    QVERIFY(Camera::isFocusKey(habit, Qt::Key_F, Qt::NoModifier));
+    // Shift+F is the whole figure now
+    QVERIFY(!Camera::isFocusKey(habit, Qt::Key_F, Qt::ShiftModifier));
+    QVERIFY(!Camera::isFocusKey(habit, Qt::Key_F, Qt::ControlModifier));
+    QVERIFY(!Camera::isFocusKey(habit, Qt::Key_F, Qt::AltModifier));
+    QVERIFY(!Camera::isFocusKey(habit, Qt::Key_Period, Qt::NoModifier));
+    QVERIFY(!Camera::isFocusKey(habit, Qt::Key_Delete, Qt::NoModifier));
+    // number pad "." only in the Blender habit (also with a decimal comma, e.g. Norwegian, and Num Lock off)
+    const bool blender = habit == CameraHabit::Blender;
+    QCOMPARE(Camera::isFocusKey(habit, Qt::Key_Period, pad), blender);
+    QCOMPARE(Camera::isFocusKey(habit, Qt::Key_Comma, pad), blender);
+    QCOMPARE(Camera::isFocusKey(habit, Qt::Key_Delete, pad), blender);
+    QVERIFY(!Camera::isFocusKey(habit, Qt::Key_Delete, pad | Qt::ControlModifier));
+  }
+}
+
+void TestCamera::viewKeys()
+{
+  // Shift+F: the whole figure
+  QVERIFY(Camera::isWholeFigureKey(Qt::Key_F, Qt::ShiftModifier));
+  QVERIFY(!Camera::isWholeFigureKey(Qt::Key_F, Qt::NoModifier));
+  QVERIFY(!Camera::isWholeFigureKey(Qt::Key_F, Qt::ShiftModifier | Qt::ControlModifier));
+  QVERIFY(!Camera::isWholeFigureKey(Qt::Key_G, Qt::ShiftModifier));
+  // number pad 0 (and Insert with Num Lock off): home view; the main 0 is the menu's own key
+  QVERIFY(Camera::isHomeKey(Qt::Key_0, Qt::KeypadModifier));
+  QVERIFY(Camera::isHomeKey(Qt::Key_Insert, Qt::KeypadModifier));
+  QVERIFY(!Camera::isHomeKey(Qt::Key_0, Qt::NoModifier));
+  QVERIFY(!Camera::isHomeKey(Qt::Key_Insert, Qt::NoModifier));
+  QVERIFY(!Camera::isHomeKey(Qt::Key_0, Qt::KeypadModifier | Qt::ControlModifier));
+  // Alt + arrow keys: 10 degrees around or up and down
+  float up = -1, around = -1;
+  QVERIFY(Camera::turnForKey(Qt::Key_Left, Qt::AltModifier, &up, &around));
+  QCOMPARE(up, 0.0f); QCOMPARE(around, -10.0f);
+  QVERIFY(Camera::turnForKey(Qt::Key_Right, Qt::AltModifier, &up, &around));
+  QCOMPARE(up, 0.0f); QCOMPARE(around, 10.0f);
+  QVERIFY(Camera::turnForKey(Qt::Key_Up, Qt::AltModifier, &up, &around));
+  QCOMPARE(up, 10.0f); QCOMPARE(around, 0.0f);
+  QVERIFY(Camera::turnForKey(Qt::Key_Down, Qt::AltModifier | Qt::KeypadModifier, &up, &around));
+  QCOMPARE(up, -10.0f); QCOMPARE(around, 0.0f);
+  // plain arrows step frames, Ctrl or Shift with Alt are not this
+  QVERIFY(!Camera::turnForKey(Qt::Key_Left, Qt::NoModifier, &up, &around));
+  QVERIFY(!Camera::turnForKey(Qt::Key_Left, Qt::AltModifier | Qt::ShiftModifier, &up, &around));
+  QVERIFY(!Camera::turnForKey(Qt::Key_Left, Qt::AltModifier | Qt::ControlModifier, &up, &around));
+  QVERIFY(!Camera::turnForKey(Qt::Key_A, Qt::AltModifier, &up, &around));
+}
+
+void TestCamera::keyTurnMovesTenDegrees()
+{
+  Camera camera;
+  const float x = camera.xRotation(), y = camera.yRotation();
+  const QVector3D pivot = camera.pivot();
+  float up, around;
+  QVERIFY(Camera::turnForKey(Qt::Key_Right, Qt::AltModifier, &up, &around));
+  camera.rotate(up, around);
+  QCOMPARE(camera.xRotation(), x);
+  QCOMPARE(camera.yRotation(), y + 10.0f);
+  QVERIFY(Camera::turnForKey(Qt::Key_Up, Qt::AltModifier, &up, &around));
+  camera.rotate(up, around);
+  QCOMPARE(camera.xRotation(), x + 10.0f);
+  compare(camera.pivot(), pivot);
+}
+
+void TestCamera::frameBoxFitsTheFigure()
+{
+  Camera camera;
+  camera.rotate(20, 35);
+  const float x = camera.xRotation(), y = camera.yRotation();
+  // a figure 70 high, 20 wide and 10 deep, standing off the middle
+  const QVector3D low(10, 0, -5), high(30, 70, 5);
+  camera.frameBox(low, high, 1.0f);
+  // looks at the middle of the box, keeps its turn
+  compare(camera.pivot(), QVector3D(20, 35, 0));
+  QCOMPARE(camera.xRotation(), x);
+  QCOMPARE(camera.yRotation(), y);
+  // from radius * margin / sin(half the field of view): 60 degrees, so sin = 0.5
+  const float radius = (high - low).length() / 2;
+  QVERIFY(qAbs(camera.distance() - radius * Camera::FrameMargin / 0.5f) < 0.01f);
+  // a wide view is decided by its height, a narrow one by its width
+  QVERIFY(qAbs(camera.frameDistance(10, 2.0f) - 10 * Camera::FrameMargin / 0.5f) < 0.001f);
+  const float halfWidth = std::atan(std::tan(qDegreesToRadians(30.0f)) * 0.5f);
+  QVERIFY(qAbs(camera.frameDistance(10, 0.5f) - 10 * Camera::FrameMargin / std::sin(halfWidth)) < 0.001f);
+  // every corner of the box is inside the view (in front of the camera, within the 60 degree cone)
+  for (int i = 0; i < 8; ++i)
+  {
+    const QVector3D corner(i & 1 ? high.x() : low.x(), i & 2 ? high.y() : low.y(), i & 4 ? high.z() : low.z());
+    const QVector3D p = seen(camera, corner);
+    QVERIFY(p.z() < 0);
+    QVERIFY(qAbs(p.y()) / -p.z() < std::tan(qDegreesToRadians(30.0f)));
+    QVERIFY(qAbs(p.x()) / -p.z() < std::tan(qDegreesToRadians(30.0f)));
+  }
+  // a single point gets a distance too
+  camera.frameBox(QVector3D(1, 2, 3), QVector3D(1, 2, 3), 1.0f);
+  compare(camera.pivot(), QVector3D(1, 2, 3));
+  QVERIFY(qAbs(camera.distance() - 5 * Camera::FrameMargin / 0.5f) < 0.01f);
 }
 
 void TestCamera::pivotIsInTheMiddle()

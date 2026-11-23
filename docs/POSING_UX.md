@@ -50,7 +50,7 @@ New users first: people who want to pose their avatar without knowing animation 
 
 ![Mouse and keys](images/posing-ux/mouse-and-keys.png)
 
-One scheme for everyone. The first column is all a new user needs; the other two also work.
+The first column is all a new user needs. Since UX phase 4a the user picks one habit (Setup or Help > Camera and keys...) and the camera follows only that one; a Maya habit came with the mockup ([UX_DECISIONS.md, 6c](UX_DECISIONS.md#6c-panels-pop-out-move-resize-dock-back-setup)). The table below is the plan of 18 November 2026; the gestures as built are in `src/camerahabitspec.h` and the Camera and keys dialog.
 
 | Action | Simple (default) | Blender habit | Second Life habit |
 |---|---|---|---|
@@ -79,7 +79,7 @@ Orbiting turns the camera between 80 degrees above and 80 degrees below the floo
 
 - The camera turns around the point in the middle of the view. Focus (double-click, F, number pad `.`, Alt + click) puts the joint there, so the camera then turns around that joint.
 - A left click selects; a left drag that starts on the body turns the camera too (the joint is not selected then). Rings and prop handles keep the left drag. Pressing on a joint and dragging pulls the limb (decided in the mockup, not built yet: [UX_DECISIONS.md](UX_DECISIONS.md#6a-dragging-a-joint-in-the-3d-view)); Shift when you press turns only that joint.
-- Number pad: 1 front, 3 side (from the figure's right), 7 top; Ctrl + 1 back, Ctrl + 3 the other side. With Num Lock off the same keys work. Number pad `,` (decimal comma keyboards) also focuses.
+- Number pad: 1 front, 3 side (from the figure's right), 7 top; Ctrl + 1 back, Ctrl + 3 the other side. With Num Lock off the same keys work. Number pad `,` (decimal comma keyboards) also focuses. Since UX phase 4a: 1, 3, 7 above the letters do the same in the 3D view, number pad 0 is the home view, Shift+F frames the whole figure, Alt + arrow keys turn the camera by 10 degrees, and the mouse, double-click, Alt + click and number pad `.` follow the chosen habit ([UX_DECISIONS.md, 6c](UX_DECISIONS.md#6c-panels-pop-out-move-resize-dock-back-setup)).
 - Wheel and drag zoom move a share of the distance (closer = smaller steps). Page Up / Page Down still zoom; F9–F12 still restore stored cameras (Shift + F9–F12 store).
 - Until the selected-joint card has an IK switch (UX step 6, Selected joint panel, in [UX_DECISIONS.md](UX_DECISIONS.md#9-build-order)), **Ctrl + double-click** a hand or foot switches IK on or off (it used to be a plain double-click). **Shift + double-click** still selects the mirrored joint too.
 - Shift / Ctrl still show the scale / rotate handles of a selected prop.

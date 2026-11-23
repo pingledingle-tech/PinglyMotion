@@ -112,49 +112,82 @@ QVector3D Camera::pivot() const
   return toWorld(QVector3D(panX, panY, panZ - pivotDistance));
 }
 
-CameraDrag Camera::dragFor(Qt::MouseButton button, Qt::KeyboardModifiers keys)
+CameraHabit Camera::habitFor(const QString& id)
+{
+  if (id == QLatin1String("maya")) return CameraHabit::Maya;
+  if (id == QLatin1String("blender")) return CameraHabit::Blender;
+  if (id == QLatin1String("sl")) return CameraHabit::SecondLife;
+  return CameraHabit::PinglyMotion;
+}
+
+CameraGesture Camera::gestureFor(CameraHabit habit, Qt::MouseButton button, Qt::KeyboardModifiers keys)
 {
   const bool shift = keys & Qt::ShiftModifier;
   const bool ctrl = keys & Qt::ControlModifier;
   const bool alt = keys & Qt::AltModifier;
+  const bool left = button == Qt::LeftButton;
+  CameraGesture gesture;
 
-  switch (button)
+  switch (habit)
   {
-    case Qt::LeftButton:
-      if (!alt) return CameraDrag::Orbit;
-      if (ctrl && shift) return CameraDrag::Pan;
-      if (ctrl) return CameraDrag::Orbit;
-      return CameraDrag::OrbitAndZoom;
-    case Qt::RightButton:
-      return CameraDrag::Pan;
-    case Qt::MiddleButton:
-      if (shift) return CameraDrag::Pan;
-      if (ctrl) return CameraDrag::Zoom;
-      return CameraDrag::Orbit;
-    default:
-      return CameraDrag::None;
+    case CameraHabit::Maya:
+      if (alt && left) gesture.drag = CameraDrag::Orbit;
+      else if (alt && button == Qt::MiddleButton) gesture.drag = CameraDrag::Pan;
+      else if (alt && button == Qt::RightButton) gesture.drag = CameraDrag::Zoom;
+      else gesture.picks = left;
+      break;
+    case CameraHabit::Blender:
+      if (button == Qt::MiddleButton)
+        gesture.drag = shift ? CameraDrag::Pan : ctrl ? CameraDrag::Zoom : CameraDrag::Orbit;
+      else gesture.picks = left;
+      break;
+    case CameraHabit::SecondLife:
+      if (left && alt)
+        gesture.drag = ctrl && shift ? CameraDrag::Pan : ctrl ? CameraDrag::Orbit : CameraDrag::OrbitAndZoom;
+      else gesture.picks = left;
+      break;
+    case CameraHabit::PinglyMotion:
+      if (button == Qt::RightButton) gesture.drag = CameraDrag::Pan;
+      else if (left)
+      {
+        gesture.drag = CameraDrag::Orbit;
+        gesture.picks = true;
+      }
+      break;
   }
+  return gesture;
 }
 
 bool Camera::viewForKey(int key, Qt::KeyboardModifiers keys, float* height, float* angle)
 {
-  // only the number pad; with Num Lock off it sends the arrow block keys
-  if (!(keys & Qt::KeypadModifier)) return false;
+  // the number pad (with Num Lock off it sends the arrow block keys), or the
+  // digits above the letters with nothing but Ctrl held
+  const bool keypad = keys & Qt::KeypadModifier;
+  if (keys & (Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier)) return false;
   const bool opposite = keys & Qt::ControlModifier;
   float h, a;
   switch (key)
   {
     case Qt::Key_1:
+      h = 0; a = opposite ? 180 : 0;
+      break;
     case Qt::Key_End:
+      if (!keypad) return false;
       h = 0; a = opposite ? 180 : 0;
       break;
     case Qt::Key_3:
+      h = 0; a = opposite ? 270 : 90;
+      break;
     case Qt::Key_PageDown:
+      if (!keypad) return false;
       h = 0; a = opposite ? 270 : 90;
       break;
     case Qt::Key_7:
-    case Qt::Key_Home:
       if (opposite) return false;
+      h = 90; a = 0;
+      break;
+    case Qt::Key_Home:
+      if (!keypad || opposite) return false;
       h = 90; a = 0;
       break;
     default:
@@ -165,12 +198,44 @@ bool Camera::viewForKey(int key, Qt::KeyboardModifiers keys, float* height, floa
   return true;
 }
 
-bool Camera::isFocusKey(int key, Qt::KeyboardModifiers keys)
+bool Camera::isFocusKey(CameraHabit habit, int key, Qt::KeyboardModifiers keys)
 {
-  if (key == Qt::Key_F && !(keys & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)))
+  if (key == Qt::Key_F && !(keys & (Qt::ShiftModifier | Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)))
     return true;
-  return (keys & Qt::KeypadModifier) &&
+  return habit == CameraHabit::Blender && (keys & Qt::KeypadModifier) &&
+         !(keys & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)) &&
          (key == Qt::Key_Period || key == Qt::Key_Comma || key == Qt::Key_Delete);
+}
+
+bool Camera::isWholeFigureKey(int key, Qt::KeyboardModifiers keys)
+{
+  return key == Qt::Key_F &&
+         (keys & ~Qt::KeypadModifier) == Qt::ShiftModifier;
+}
+
+bool Camera::isHomeKey(int key, Qt::KeyboardModifiers keys)
+{
+  return (keys & Qt::KeypadModifier) &&
+         !(keys & (Qt::ShiftModifier | Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)) &&
+         (key == Qt::Key_0 || key == Qt::Key_Insert);
+}
+
+bool Camera::turnForKey(int key, Qt::KeyboardModifiers keys, float* up, float* around)
+{
+  // only Alt (arrow keys may carry the keypad flag on some systems)
+  if ((keys & ~Qt::KeypadModifier) != Qt::AltModifier) return false;
+  float u = 0, a = 0;
+  switch (key)
+  {
+    case Qt::Key_Left:  a = -KeyTurnDegrees; break;
+    case Qt::Key_Right: a = KeyTurnDegrees; break;
+    case Qt::Key_Up:    u = KeyTurnDegrees; break;
+    case Qt::Key_Down:  u = -KeyTurnDegrees; break;
+    default: return false;
+  }
+  if (up) *up = u;
+  if (around) *around = a;
+  return true;
 }
 
 void Camera::rotate(float x, float y)
@@ -256,6 +321,25 @@ void Camera::reset()
 void Camera::lookAt(float x, float y, float z, float distance)
 {
   place(QVector3D(x, y, z), distance);
+  applyConstraint();
+}
+
+float Camera::frameDistance(float radius, float aspect) const
+{
+  // the narrower of the two half angles of the view decides
+  const float halfV = qDegreesToRadians(fieldOfView()) * 0.5f;
+  float half = halfV;
+  if (aspect > 0)
+    half = qMin(halfV, std::atan(std::tan(halfV) * aspect));
+  return radius * FrameMargin / std::sin(half);
+}
+
+void Camera::frameBox(const QVector3D& low, const QVector3D& high, float aspect)
+{
+  const QVector3D middle = (low + high) * 0.5f;
+  // a single point still gets a sensible distance (a tenth of the home view's)
+  const float radius = qMax((high - low).length() * 0.5f, 5.0f);
+  place(middle, frameDistance(radius, aspect));
   applyConstraint();
 }
 
