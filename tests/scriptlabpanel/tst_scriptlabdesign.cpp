@@ -403,7 +403,7 @@ void TestScriptLabDesign::sectionsOnTypeCommands()
   QCOMPARE(panel.section("restrictionsNow")->count(), QString("0"));
 }
 
-// Live scripts while watching: Script (read only), Errors and warnings (with lint), Event log, RLV restrictions now
+// Live scripts while watching: Script (an editor), Errors and warnings (with lint), Event log, RLV restrictions now
 void TestScriptLabDesign::sectionsOnLiveScripts()
 {
   RlvState state;
@@ -423,7 +423,9 @@ void TestScriptLabDesign::sectionsOnLiveScripts()
   QVERIFY(!panel.liveStatus()->isHidden());
   QVERIFY(!panel.effectsBox()->isHidden());
   QCOMPARE(panel.section("script")->title(), QString("Script"));
-  QCOMPARE(panel.section("script")->count(), QString("read only"));
+  // an editor since lane 1 job F1: no "read only" count; "● unsaved changes" while there are unsaved edits
+  QCOMPARE(panel.section("script")->count(), QString());
+  QVERIFY(!panel.scriptView()->isReadOnly());
   QCOMPARE(panel.section("problems")->title(), QString("Errors and warnings"));
   QCOMPARE(panel.section("problems")->count(), QString("none"));
   QCOMPARE(panel.section("log")->title(), QString("Event log"));
@@ -432,7 +434,8 @@ void TestScriptLabDesign::sectionsOnLiveScripts()
   QCOMPARE(panel.section("restrictionsNow")->count(), QString("0"));
   QVERIFY(!panel.liveRestrictionsEmpty()->isHidden());
   QCOMPARE(panel.liveRestrictionsEmpty()->text(), QString("No restrictions. A script that says @detach=n holds one."));
-  QCOMPARE(panel.scriptView()->parentWidget(), panel.section("script")->body());
+  QCOMPARE(panel.editor()->parentWidget(), panel.section("script")->body());
+  QCOMPARE(panel.scriptView()->parentWidget(), panel.editor());
   QCOMPARE(panel.problemList()->parentWidget(), panel.section("problems")->body());
   QCOMPARE(panel.runLog()->parentWidget(), panel.section("log")->body());
 

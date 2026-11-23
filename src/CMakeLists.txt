@@ -72,6 +72,8 @@ SET (PINGLYMOTION_SHARED_SRC
               retargetdialog.cpp
               retargetmapping.cpp
               screenshotsheet.cpp
+              scriptlab/labeditor.cpp
+              scriptlab/lslhighlighter.cpp
               scriptlab/objectsview.cpp
               scriptlab/scriptlabpanel.cpp
               scriptlab/scriptlabsection.cpp

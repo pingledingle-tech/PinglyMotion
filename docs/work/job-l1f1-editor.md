@@ -6,9 +6,11 @@ Files:
 - src/scriptlab/lslhighlighter.*
 - src/scriptlab/scriptlabpanel.*
 - src/CMakeLists.txt
-- src/textspec*
 - tests/scriptlabpanel/**
-- docs/texts/**
+- docs/TEACHING.md
+- docs/DESIGN_SYSTEM.md
+- docs/design_tokens.json
+- translations/pinglymotion_en.ts
 - docs/SCRIPT_LAB.md
 - docs/UX_DECISIONS.md
 - docs/PRODUCT.md

@@ -1843,6 +1843,229 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabEditor</name>
+    <message>
+        <source>No script open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start from an example, or save a .lsl file in the folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New from example</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What is an RLV line?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A script sends an RLV line to the viewer. It starts with @, like @detach=n. The viewer then blocks or allows one thing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find text in the script (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Jump to a line by its number (Ctrl+G)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter finds the next match, Shift+Enter the one before. Esc closes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next match (Enter or F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Match before (Shift+Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the find row (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type a line number and press Enter. Esc closes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the go to line row (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file changed outside.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep my changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep your text. Saving then writes it over the file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load the new one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the file as it is now. Ctrl+Z brings your changes back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the difference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lines with - are yours, lines with + are in the file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type to change the script. Ctrl+S saves and runs it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tab adds an indent. To move on, press Esc, then Tab.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Tab to move on, or keep typing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>● unsaved changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loaded the changed file. Ctrl+Z brings the old text back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your changes are kept. Save to write them to the file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loaded the new file. Ctrl+Z brings your changes back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to save. Open a script first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not saved: %1. Check the folder and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saved %1. Running it now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saved %1. Not run: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 errors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>, 1 warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>, %1 warnings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saved and run %1. %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There is no line %1. The script has 1 line.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There is no line %1. The script has %2 lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not found: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Match %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save or undo your changes first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watch a folder first. The new script is saved there.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The example %1 cannot be read.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New script %1 from an example. Press Ctrl+S to save and run it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an example script as a new file in this folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The example scripts are not next to the program.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the script and run it (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to save. Change the script first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabWatcher</name>
     <message>
         <source>Give the folder to watch.</source>
@@ -5251,10 +5474,6 @@ Buttons: %3 (channel %4)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The script as it is on disk, read only. Change it in your own editor and save.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Errors and warnings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5610,10 +5829,6 @@ Error: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>read only</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>1 error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5763,6 +5978,14 @@ Error: %2</source>
     </message>
     <message>
         <source>sliders on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no folder is watched.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the folder watch did not find the file.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
