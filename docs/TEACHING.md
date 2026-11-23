@@ -142,6 +142,57 @@ Built in pull request 428 (23 Nov 2026). The texts are in `src/scriptlab/labedit
 | LABED-20 | 2 Tip on hover | Mouse rests on the text box | Type to change the script. Ctrl+S saves and runs it. | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
 | LABED-21 | 2 Tip on hover | The part's count while there are unsaved edits (the mockup's words) | ● unsaved changes | in the program (pull request 428, 23 Nov 2026) | lane 1 job F1 |
 
+### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
+
+Drafts for the library panel (roadmap item 6, issue 19) and for two figures in one scene (Expert mode only), drawn in `docs/mockup/index.html` and described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6l and 6m. Nothing is built yet; the project owner looks at the mockup first. `<clip name>` and `<file name>` stand for the real name. The mockup's own helper texts (for example "Mockup: no library folder") are not program texts and are not listed.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LIB-01 | Library panel | Panel title, View > Library, top bar button | Library | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-02 | Library panel | The line on top while hints are on | Ready-made moves to start from. Pick one, then press Use this. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-03 | Library panel | The search field (its name and grey text) | Search the library | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-04 | 2 Tip on hover | Mouse rests on the search field | Type words like walk, wave or sit. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-05 | Library panel | Label over the kinds of move | Kind of move | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-06 | Library panel | The kinds, each with its number of clips | All, Walk, Dance, Sit, Stand, Gesture, Idle, Wave | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-07 | Library panel | The count over the list (all clips, or a search) | 106 clips<br>12 of 106 clips | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-08 | Library panel | Empty state: the search finds nothing (title) | No clip found | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-09 | Library panel | Empty state: the search finds nothing (line) | Try another word, or show all clips. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-10 | Library panel | Empty state: the button | Show all clips | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-11 | Library panel | Empty state: no library folder (title) | No library found | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-12 | Library panel | Empty state: no library folder (line) | The library folder next to PinglyMotion is missing. Install PinglyMotion again to get it back. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-13 | Library panel | The preview button, stopped and playing | Play preview<br>Stop preview | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-14 | Library panel | The labels of the facts under the preview | Length<br>Skeleton<br>From<br>Licence | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-15 | Library panel | The skeleton of every clip | Second Life, 19 joints | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-16 | Library panel | Licence of a CMU clip | No restrictions on use. No formal licence text. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-17 | Library panel | Licence of a Mesh2Motion clip | CC0 1.0: free to use for anything. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-18 | Library panel | The main button (Enter in the list) | Use this | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-19 | 2 Tip on hover | Mouse rests on Use this | Opens this move as your animation. Save it under your own name. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-20 | 6 Reason | Use this is greyed: the clip is open now | This move is open now. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-21 | Library panel | Chip on the clip that is open now | Open now | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-22 | Library panel | Use this with unsaved changes: title, line, buttons | Open &lt;clip name&gt;?<br>Your animation has changes that are not saved.<br>Cancel<br>Open without saving<br>Save, then open | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-23 | 4 Status line | A clip was opened from the library | Opened &lt;clip name&gt; from the library. Save it under your own name. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-24 | 2 Tip on hover | Mouse rests on Library in the top bar | Library: ready-made moves to start from | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-25 | 4 Status line | The panel opens or closes | Library open. It shares the right side with Selected joint: switch with the tabs.<br>Library closed. View > Library opens it again. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| LIB-26 | Library panel | Second button, Expert mode only, and its tip | Add as a second figure<br>Puts this move on a second figure in the same scene. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| LIB-27 | 4 Status line | Show all clips was pressed | Showing all 106 clips. | draft (mockup, 23 Nov 2026) | Roadmap item 6, issue 19 (pull request 429) |
+| FIG-01 | File menu | Expert mode only; the item ends with three dots | Add a second figure | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-02 | 6 Reason | Add a second figure is greyed | The scene has two figures. Remove one first. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-03 | Add a second figure window | Title and the line under it | Add a second figure<br>The second figure plays next to the first, in the same scene. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-04 | Add a second figure window | First choice (name and line) | From the library<br>Pick a ready-made move, then press Add as a second figure. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-05 | Add a second figure window | Second choice; the name ends with three dots | From a file<br>A .dingle, .anim, BVH or glTF file. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-06 | 3D view | Heading of the Figures box (two figures only) | Figures | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-07 | 2 Tip on hover | Mouse rests on a figure in the Figures box or in the 3D view | This figure is active. Its joints and keys show.<br>Click to make this figure active. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-08 | 4 Status line | A second figure was added | Added figure 2: &lt;file name&gt;. Click a figure to make it active. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-09 | 4 Status line | The other figure was made active | Figure 2 is active: &lt;file name&gt;. Its joints and keys show now. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-10 | 6 Reason | A figure is clicked in Beginner mode | Switching figures is in Expert mode. View > Expert mode turns it on. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-11 | Timeline | The row over each figure's joints | Active<br>Make active<br>Remove | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-12 | 2 Tip on hover | Mouse rests on Remove | Its file is not changed. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-13 | Remove figure window | Remove with unsaved changes: title, line, buttons | Remove figure 2?<br>&lt;file name&gt; has changes that are not saved.<br>Cancel<br>Remove without saving<br>Save, then remove | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-14 | 4 Status line | A figure was removed (the second line only when figure 1 went) | Figure 2 removed from the scene. Its file is not changed.<br>&lt;file name&gt; is figure 1 now. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-15 | Selected joint panel | Chip beside the key count (two figures only) | Figure 2 | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-16 | Top bar | After the file name (two figures only) | figure 2 of 2 | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+| FIG-17 | 4 Status line | From the library was chosen in the Add window | Pick a move, then press Add as a second figure. | draft (mockup, 23 Nov 2026) | Two figures, Expert mode (pull request 429) |
+
 ### Places 1 to 4, 7 to 9
 
 These texts were first drafts for the places that had no text. The owner reviewed them on 19 November 2026 (see "Review order" below). Control names such as "Set key" and "Play" are placeholders: the job that builds the screen checks them against the real labels before the status changes. Tips and hints get more rows when the tips and hint jobs start.
