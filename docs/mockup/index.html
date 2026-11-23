@@ -257,6 +257,47 @@ kbd { font-family:ui-monospace, monospace; font-size:var(--caption); border:var(
 .emptycard p { margin:0; color:var(--text_muted); }
 .emptycard ol { margin:0; padding-left:1.4em; color:var(--text_muted); }
 
+/* ---- Hands tab: finger presets, one slider per finger, the joint grid (UX phase M1) ---- */
+#handsBody { display:flex; flex-direction:column; gap:var(--l); }
+.hhand { display:flex; align-items:center; gap:var(--s); flex-wrap:wrap; font-weight:600; }
+.hhand svg { color:var(--area_hands); }
+.hhand .cap { font-weight:400; }
+.htiles { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:var(--s); }
+@container (max-width: 230px) { .htiles { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+.htile { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:2px; min-height:60px; height:auto; padding:var(--xs);
+  border-radius:var(--r-control); border:var(--bw) solid var(--border); background:var(--surface_raised); color:var(--text);
+  font:inherit; font-size:var(--caption); line-height:1.15; text-align:center; cursor:pointer; white-space:normal; }
+.htile:hover { background:color-mix(in srgb, var(--surface_raised) 92%, var(--text)); }
+.htile[aria-checked="true"] { border:2px solid var(--selection); font-weight:600; background:color-mix(in srgb, var(--selection) 14%, var(--surface_raised)); }
+.htile .tick { position:absolute; top:3px; right:3px; color:var(--on_accent); background:var(--selection); border-radius:50%; width:16px; height:16px; display:none; align-items:center; justify-content:center; }
+.htile .tick svg { width:12px; height:12px; }
+.htile[aria-checked="true"] .tick { display:flex; }
+.htile svg.fbars { width:40px; height:24px; flex:none; }
+.htile .fbars rect { fill:currentColor; }
+.htile[aria-disabled="true"] .fbars rect { fill:var(--text_disabled); }
+.hfingers { display:grid; grid-template-columns:auto minmax(0, 1fr) 3.4em; gap:var(--xs) var(--s); align-items:center; }
+.hfingers label { font-weight:600; }
+.hfingers input[type=range] { width:100%; height:var(--h-compact); margin:0; accent-color:var(--accent); }
+.hfingers input[type=range][aria-disabled="true"] { background:transparent !important; accent-color:var(--text_disabled); }
+.hfingers output { font-variant-numeric:tabular-nums; text-align:right; }
+.hfingers .hscale { grid-column:2; display:flex; justify-content:space-between; font-size:var(--caption); color:var(--text_muted); margin-top:-4px; }
+.hgrid { width:100%; border-collapse:separate; border-spacing:0 2px; font-variant-numeric:tabular-nums; }
+.hgrid th { font-weight:600; text-align:left; padding:0 var(--xs); }
+.hgrid thead th { text-align:center; padding:0 var(--xs) var(--xs); }
+.hgrid thead th .ax { vertical-align:middle; }
+.hgrid .hf th { padding:var(--s) var(--xs) 0; }
+.hgrid .hf th::before { content:""; display:inline-block; vertical-align:-2px; width:3px; height:14px; margin-right:var(--s); border-radius:2px; background:var(--area_hands); }
+.hgrid tbody th[scope=row] { font-weight:400; color:var(--text_muted); padding-left:var(--m); }
+.hgrid td { height:var(--h-compact); padding:0 var(--xs); text-align:center; border:var(--bw) solid color-mix(in srgb, var(--border) 45%, transparent); border-radius:var(--r-small); background:var(--surface); cursor:ew-resize; white-space:nowrap; }
+.hgrid td:hover { background:var(--surface_raised); }
+.hgrid tr.sel td { background:color-mix(in srgb, var(--selection) 14%, var(--surface)); }
+.hgrid tr.sel th[scope=row] { color:var(--text); font-weight:600; }
+.hgrid td[aria-disabled="true"] { cursor:not-allowed; }
+.hgrid td:focus-visible { outline-offset:0; }
+.hgrid td.editing { padding:0; cursor:text; }
+.hgrid td input { width:100%; height:calc(var(--h-compact) - 2px); border:0; background:var(--surface); color:var(--text); font:inherit; text-align:center; padding:0 var(--xs); border-radius:var(--r-small); outline:2px solid var(--focus_ring); }
+.hgrid .deg { color:var(--text_muted); }
+
 /* ---- 3D view ---- */
 .view { user-select:none; -webkit-user-select:none; grid-area:view; position:relative; min-width:0; min-height:0; overflow:hidden; cursor:grab; }
 .view.tool-pan { cursor:move; } .view.tool-zoom { cursor:zoom-in; } .view.tool-pick { cursor:default; }
@@ -548,6 +589,7 @@ body.charter #legend { display:flex; }
     </div>
     <label class="field" data-name="Search joints"><svg class="i" data-i="search"></svg><span class="sr">Search joints</span><input id="jsearch" type="search" placeholder="Search joints"></label>
     <ul class="jlist" id="jlist" role="listbox" aria-label="Joints" tabindex="0"></ul>
+    <div class="hands" id="handsBody" hidden data-p="P3 P5 P6 P8 P10"></div>
     <div data-p="P5">
       <h3 class="sech">Whole pose</h3>
       <div class="row tight">
@@ -817,16 +859,35 @@ const PRINCIPLES = [
   ["P2", "Old stuff goes", "No old icons or styles anywhere on this screen: Lucide only."],
   ["P3", "Self-explaining", "Every control has a word or a tooltip with its name and shortcut. View tools show their names until you hide them."],
   ["P4", "Guided", "Welcome card, Setup button, one hint card at a time, hint bar, next-step line, notes, empty states. Help > Show hints turns all off; remembered."],
-  ["P5", "Only what is needed now", "More options folds away lock, move and turn-around; Expert mode adds Edit curve and Paste mirrored. Script Lab parts fold away."],
+  ["P5", "Only what is needed now", "More options folds away lock, move and turn-around; Expert mode adds Edit curve and Paste mirrored, and the joint grid in the Hands tab. Script Lab parts fold away."],
   ["P6", "Talks back", "Greyed-out controls keep focus and say why in the tooltip and the status line. Actions give feedback."],
   ["P7", "Dark and light", "Theme switch (T). Both themes use the same tokens, axis colours included."],
-  ["P8", "Full keyboard", "Menus, tabs, list, tiles, keys, splitters, floating panels (grip + arrows), view widget (arrows) and dialogs work with the keyboard. Esc closes."],
+  ["P8", "Full keyboard", "Menus, tabs, list, tiles, keys, splitters, floating panels (grip + arrows), view widget (arrows), hand presets (arrows, Enter) and the joint grid (arrows, type a number) work with the keyboard. Esc closes."],
   ["P9", "Contrast and scale", "Token colours meet WCAG AA. View > Text size goes from 100 to 200 percent and the panels rearrange instead of scrolling sideways."],
   ["P10", "No meaning by colour alone", "Axis colours always carry X, Y, Z letters; area colours have names; Stop has a square icon and a word; Allowed and Blocked are words."],
   ["P11", "Fast for experts", "Shortcuts everywhere; view tool keys V, O, M, Z, F; camera and keys like PinglyMotion, Maya, Blender or Second Life."],
   ["P12", "One layout for all", "Beginner, Expert and hints on or off never move existing controls."],
   ["P13", "Plain, consistent words", "Words from TEACHING_TEXTS.md: key, turn, time marker, easing choice."]
 ];
+
+// ---------- Hands tab data (UX phase M1) ----------
+// The nine hand presets from bin/data/firestorm/hand_presets/ (Firestorm viewer, LGPL 2.1; credit in CREDITS.md),
+// in the order of joints.json, turned from radians to whole degrees. The numbers are in Firestorm's own axes:
+// which program axis each one becomes is decided when the Hands tab is built (src/jointinfo.h, conversion open).
+const FINGERS = [["Thumb", "Thumb"], ["Index", "Index Finger"], ["Middle", "Middle Finger"], ["Ring", "Ring Finger"], ["Pinky", "Pinky Finger"]];
+const FINGER_SHORT = { Thumb: "Thumb", Index: "Index", Middle: "Middle", Ring: "Ring", Pinky: "Pinky" };
+const PARTS = [["1", "Base"], ["2", "Mid"], ["3", "Tip"]];
+const HAND_MIRROR = [-1, 1, -1]; // in the preset files the right hand is the left hand with X and Z turned round
+const HAND_PRESETS = [ // name, then the left and the right hand: Thumb, Index, Middle, Ring, Pinky; Base, Mid, Tip; X, Y, Z in degrees
+  ["Flat", [[-1,0,0],[-2,0,1],[-2,0,0],[2,0,14],[2,0,-1],[1,0,0],[0,0,-3],[2,0,0],[1,0,-3],[2,0,-14],[2,0,-2],[1,0,0],[9,-13,-31],[2,2,-2],[1,0,6]], [[1,0,0],[2,0,-1],[2,0,0],[-2,0,-14],[-2,0,1],[-1,0,0],[0,0,3],[-2,0,0],[-1,0,3],[-2,0,14],[-2,0,2],[-1,0,0],[-9,-13,31],[-2,2,2],[-1,0,-6]]],
+  ["Grip", [[1,63,2],[7,16,-14],[-2,0,3],[-11,0,27],[-41,18,-2],[-30,13,-9],[-29,-4,0],[-38,0,-1],[-47,-5,-18],[-30,-7,-14],[-42,-13,-5],[-39,-20,-13],[-33,-36,-33],[-27,-29,13],[-12,-11,7]], [[-1,63,-2],[-7,16,14],[2,0,-3],[11,0,-27],[41,18,2],[30,13,9],[29,-4,0],[38,0,1],[47,-5,18],[30,-7,14],[42,-13,5],[39,-20,13],[33,-36,33],[27,-29,-13],[12,-11,-7]]],
+  ["Horns", [[-2,32,9],[-8,23,14],[-62,0,42],[11,0,17],[1,0,0],[1,0,0],[-20,0,-4],[-96,-7,-6],[-51,4,5],[-17,2,-26],[-93,-40,-22],[-62,-11,-1],[8,-31,-34],[-5,2,0],[1,0,6]], [[2,32,-9],[8,23,-14],[62,0,-42],[-11,0,-17],[-1,0,0],[-1,0,0],[20,0,4],[96,-7,6],[51,4,-5],[17,2,26],[93,-40,22],[62,-11,1],[-8,-31,34],[5,2,0],[-1,0,-6]]],
+  ["Okay", [[-9,45,17],[36,50,-34],[-6,0,7],[-27,11,23],[-46,7,-6],[-43,36,-5],[-10,-4,1],[-53,-4,3],[-40,7,0],[-4,-5,-18],[-19,-16,5],[-26,2,0],[1,-29,-43],[-17,-11,11],[4,-11,4]], [[9,45,-17],[-36,50,34],[6,0,-7],[27,11,-23],[46,7,6],[43,36,5],[10,-4,-1],[53,-4,-3],[40,7,0],[4,-5,18],[19,-16,-5],[26,2,0],[-1,-29,43],[17,-11,-11],[-4,-11,-4]]],
+  ["Pointing", [[15,50,-2],[-29,0,34],[-5,-13,-14],[5,0,22],[3,0,0],[0,0,0],[-49,-11,4],[-79,11,-1],[-64,0,-4],[-54,-5,-21],[-76,-36,-16],[-54,-14,0],[-46,-29,-50],[-101,-63,-29],[-56,-31,-2]], [[-15,50,2],[29,0,-34],[5,-13,14],[-5,0,-22],[-3,0,0],[0,0,0],[49,-11,-4],[79,11,1],[64,0,4],[54,-5,21],[76,-36,16],[54,-14,0],[46,-29,50],[101,-63,29],[56,-31,2]]],
+  ["Relaxed", [[20,40,2],[-4,16,6],[-2,0,3],[5,0,24],[-27,18,-1],[-9,13,-3],[-1,4,0],[-18,0,-4],[-18,0,-4],[5,-4,-14],[-15,-2,-3],[-14,-9,-2],[9,-13,-31],[-12,-11,7],[-12,-11,7]], [[-20,40,-2],[4,16,-6],[2,0,-3],[-5,0,-24],[27,18,1],[9,13,3],[1,4,0],[18,0,4],[18,0,4],[-5,-4,14],[15,-2,3],[14,-9,2],[-9,-13,31],[12,-11,-7],[12,-11,-7]]],
+  ["Thumbs Up", [[18,11,10],[-1,7,-12],[17,-5,-18],[-67,18,16],[-94,27,11],[-15,29,-3],[-68,9,-13],[-90,0,-9],[-22,0,-5],[-66,7,-36],[-85,-23,-24],[-30,-14,-6],[-70,-20,-60],[-100,-65,-43],[-1,-13,15]], [[-18,11,-10],[1,7,12],[-17,-5,18],[67,18,-16],[94,27,-11],[15,29,3],[68,9,13],[90,0,9],[22,0,5],[66,7,36],[85,-23,24],[30,-14,6],[70,-20,60],[100,-65,43],[1,-13,-15]]],
+  ["Tight Grip", [[0,49,-2],[-20,23,25],[-5,-13,-14],[-36,13,28],[-69,31,3],[-73,45,4],[-49,-11,4],[-79,11,-1],[-64,0,-4],[-54,-5,-21],[-76,-36,-16],[-54,-14,0],[-46,-29,-50],[-101,-63,-29],[-56,-31,-2]], [[0,49,2],[20,23,-25],[5,-13,14],[36,13,-28],[69,31,-3],[73,45,-4],[49,-11,-4],[79,11,1],[64,0,4],[54,-5,21],[76,-36,16],[54,-14,0],[46,-29,50],[101,-63,29],[56,-31,2]]],
+  ["Two Finger Salute", [[-9,61,8],[-76,70,58],[-34,-14,-5],[4,13,15],[2,0,-1],[1,0,0],[3,0,4],[2,0,0],[1,0,-3],[-57,1,-29],[-113,-23,-32],[-14,0,-4],[-43,-31,-52],[-116,-63,-37],[-32,-32,-3]], [[9,61,-8],[76,70,-58],[34,-14,5],[-4,13,-15],[-2,0,1],[-1,0,0],[-3,0,-4],[-2,0,0],[-1,0,3],[57,1,29],[113,-23,32],[14,0,4],[43,-31,52],[116,-63,37],[32,-32,3]]]];
 
 // ---------- Skeleton (simple forward kinematics, metres, y up, figure faces the camera) ----------
 const AREAS = [
@@ -847,22 +908,25 @@ for (const [s, sx, nm] of [["L", 1, "Left"], ["R", -1, "Right"]]) {
   joint(s + "collar", "Collar", "mCollar" + S, "chest", [0.06 * sx, 0.19, 0], "body", S + " Arm", [[-30, 30], [-30, 30], [-30, 30]], s);
   joint(s + "shoulder", "Shoulder", "mShoulder" + S, s + "collar", [0.12 * sx, 0, 0], "body", S + " Arm", [[-90, 90], [-90, 90], sx > 0 ? [-60, 180] : [-180, 60]], s);
   joint(s + "elbow", "Forearm", "mElbow" + S, s + "shoulder", [0, -0.28, 0], "body", S + " Arm", [[-10, 150], [-90, 90], sx > 0 ? [-10, 150] : [-150, 10]], s);
-  joint(s + "wrist", "Hand", "mWrist" + S, s + "elbow", [0, -0.25, 0], "hands", S + " Hand", [[-60, 60], [-80, 80], [-70, 70]], s);
+  joint(s + "wrist", "Hand", "mWrist" + S, s + "elbow", [0, -0.25, 0], "body", S + " Arm", [[-60, 60], [-80, 80], [-70, 70]], s); // the wrist is in Body, as in joints.json
   joint(s + "hip", "Hip", "mHip" + S, "pelvis", [0.1 * sx, -0.04, 0], "body", "Legs", [[-120, 40], [-45, 45], [-45, 45]], s);
   joint(s + "knee", "Knee", "mKnee" + S, s + "hip", [0, -0.44, 0], "body", "Legs", [[0, 150], [-10, 10], [-10, 10]], s);
   joint(s + "ankle", "Ankle", "mAnkle" + S, s + "knee", [0, -0.44, 0], "body", "Legs", [[-50, 50], [-30, 30], [-30, 30]], s);
   joint(s + "brow", "Eyebrow", "mFaceEyebrowCenter" + S, "head", [0.035 * sx, 0.13, 0.09], "face", "Forehead/Brows", [[-20, 20], [-20, 20], [-20, 20]], s);
   joint(s + "lid", "Upper Eye Lid", "mFaceEyeLidUpper" + S, "head", [0.035 * sx, 0.1, 0.09], "face", "Eyes", [[-30, 30], [-10, 10], [-10, 10]], s);
-  joint(s + "index", "Index Finger", "mHandIndex1" + S, s + "wrist", [0, -0.06, 0], "hands", S + " Hand", [[-10, 90], [-20, 20], [-10, 10]], s);
 }
+// The 30 finger joints of the Hands tab, as in bin/data/firestorm/joints.json: five fingers, three joints each, per hand.
+// The figure draws one short bone to each index finger base only.
+for (const [s, nm] of [["L", "Left"], ["R", "Right"]]) for (const [f, fname] of FINGERS) PARTS.forEach(([n, pname], k) =>
+  joint(s + f + n, fname + " " + pname, "mHand" + f + n + nm, k ? s + f + PARTS[k - 1][0] : s + "wrist", k ? [0, -0.025, 0] : [0, -0.06, 0], "hands", nm + " Hand", [[-130, 130], [-80, 80], [-70, 70]], s));
 joint("jaw", "Jaw", "mFaceJaw", "head", [0, 0.02, 0.06], "face", "Mouth", [[-5, 30], [-10, 10], [-10, 10]]);
 joint("tail", "Tail Base", "mTail1", "pelvis", [0, 0, -0.1], "other", "Tail", [[-90, 90], [-90, 90], [-90, 90]]);
 joint("wingL", "Left Wing", "mWing1Left", "chest", [0.08, 0.15, -0.1], "other", "Wings", null, "L");
 joint("wingR", "Right Wing", "mWing1Right", "chest", [-0.08, 0.15, -0.1], "other", "Wings", null, "R");
 const ORDER = Object.keys(J);
 const BONES = [["pelvis", "torso"], ["torso", "chest"], ["chest", "neck"], ["neck", "head"],
-  ["chest", "Lcollar"], ["Lcollar", "Lshoulder"], ["Lshoulder", "Lelbow"], ["Lelbow", "Lwrist"], ["Lwrist", "Lindex"],
-  ["chest", "Rcollar"], ["Rcollar", "Rshoulder"], ["Rshoulder", "Relbow"], ["Relbow", "Rwrist"], ["Rwrist", "Rindex"],
+  ["chest", "Lcollar"], ["Lcollar", "Lshoulder"], ["Lshoulder", "Lelbow"], ["Lelbow", "Lwrist"], ["Lwrist", "LIndex1"],
+  ["chest", "Rcollar"], ["Rcollar", "Rshoulder"], ["Rshoulder", "Relbow"], ["Relbow", "Rwrist"], ["Rwrist", "RIndex1"],
   ["pelvis", "Lhip"], ["Lhip", "Lknee"], ["Lknee", "Lankle"], ["pelvis", "Rhip"], ["Rhip", "Rknee"], ["Rknee", "Rankle"]];
 const CLICKABLE = ["pelvis", "torso", "chest", "neck", "head", "Lshoulder", "Lelbow", "Lwrist", "Rshoulder", "Relbow", "Rwrist", "Lhip", "Lknee", "Lankle", "Rhip", "Rknee", "Rankle"];
 
@@ -1082,7 +1146,132 @@ function renderJointList() {
   }
   list.innerHTML = h;
   list.setAttribute("aria-activedescendant", sel && $("#opt-" + sel) ? "opt-" + sel : "");
+  const handsOn = ui.area === "hands" && !ui.search.trim(); // the Hands tab shows presets and fingers instead of the list
+  list.hidden = handsOn; $("#handsBody").hidden = !handsOn; if (handsOn) renderHands();
 }
+
+// ---------- Hands tab (UX phase M1, drawn in the mockup, not yet built) ----------
+const isFinger = id => /^[LR](Thumb|Index|Middle|Ring|Pinky)[123]$/.test(id);
+function mirrorVal(id, v) { return isFinger(id) ? v.map((x, i) => x * HAND_MIRROR[i] || 0) : [v[0], -v[1], -v[2]]; }
+function fingerIds(s) { const a = []; for (const [f] of FINGERS) for (const [n] of PARTS) a.push(s + f + n); return a; }
+const presetOf = name => HAND_PRESETS.find(p => p[0] === name);
+const presetVals = (p, s) => (s === "L" ? p[1] : p[2]);
+let lastPick = { L: null, R: null };
+function handSide() { if (ui.side === "L" || ui.side === "R") return ui.side; return sel && isFinger(sel) ? sel[0] : "R"; }
+function handVals(s) { return fingerIds(s).map(id => (doc ? rotOf(id) : [0, 0, 0])); }
+function handChanged(s) { return handVals(s).some(v => v.some(x => Math.abs(x) > 0.5)); }
+function matchPreset(s) { const hv = handVals(s); const p = HAND_PRESETS.find(p => presetVals(p, s).every((v, i) => v.every((x, a) => Math.abs(x - hv[i][a]) < 0.5))); return p ? p[0] : null; }
+function handWhy() { return !doc ? "Open an animation first." : playing ? "Stop playing first." : null; }
+// One slider per finger: 0 is the open hand (nothing changed), 100 the Tight Grip preset, in between a straight blend.
+const OPEN_HAND = Array.from({ length: 15 }, () => [0, 0, 0]);
+function closure(s, fi) {
+  const a = OPEN_HAND, b = presetVals(presetOf("Tight Grip"), s), hv = handVals(s); let num = 0, den = 0;
+  for (let k = fi * 3; k < fi * 3 + 3; k++) for (let x = 0; x < 3; x++) { const d = b[k][x] - a[k][x]; num += (hv[k][x] - a[k][x]) * d; den += d * d; }
+  return Math.max(0, Math.min(100, Math.round(num / den * 100)));
+}
+function fingerBars(p) { // a small picture: five bars, shorter when the finger is more bent (from the preset's own numbers)
+  const v = p[1]; let h = "";
+  FINGERS.forEach((f, i) => { const sum = [0, 1, 2].reduce((t, k) => t + Math.abs(v[i * 3 + k][0]) + (i === 0 ? Math.abs(v[i * 3 + k][1]) : 0), 0);
+    const bent = Math.min(1, sum / 220), len = Math.round(20 - bent * 13), x = 3 + i * 8, y = (i === 0 ? 24 : 22) - len;
+    h += `<rect x="${x}" y="${i === 0 ? y + 2 : y}" width="5" height="${len}" rx="2.5"/>`; });
+  return `<svg class="fbars" viewBox="0 0 44 24" aria-hidden="true">${h}</svg>`;
+}
+function setHandJoint(id, vals, mirror) {
+  override[id] = vals.map(x => Math.max(-180, Math.min(180, Math.round(x))));
+  if (mirror) override[mirrorId(id)] = mirrorVal(id, override[id]);
+}
+function touchHand(ids) { if (ids.some(id => !override[id])) pushUndo(); }
+function sideWords(s) { return ui.side === "M" ? "both hands" : s === "L" ? "the left hand" : "the right hand"; }
+function renderHands() {
+  const b = $("#handsBody"), s = handSide(), why = handWhy(), hn = s === "L" ? "Left hand" : "Right hand";
+  const match = doc ? matchPreset(s) : null, changed = doc && handChanged(s), ids = fingerIds(s);
+  const unkeyed = doc && ids.some(id => override[id]);
+  const dis = why ? ` aria-disabled="true" data-why="${why}"` : "";
+  let state = "";
+  if (doc) state = match ? `<span class="chip ok">${icon("check")}Pose: ${esc(match)}</span>` : !changed ? '<span class="chip">Pose: open, nothing changed</span>'
+    : lastPick[s] ? `<span class="chip">Pose: changed from ${esc(lastPick[s])}</span>` : '<span class="chip">Pose: your own</span>';
+  if (unkeyed) state += `<span class="chip warn">${icon("triangle-alert")}Changed, not a key yet</span>`;
+  let h = `<div class="hhand">${icon("hand", "i20")}<span id="hHandName">${hn}</span><span class="cap">${ui.side === "M" ? "The other hand copies it." : "Only this hand changes."}</span></div>`;
+  if (state) h += `<div class="row tight" id="hstate">${state}</div>`;
+  if (hintsOn && doc) h += `<p class="explain">${icon("info")}<span>Pick a ready-made pose. Then bend each finger below.</span></p>`;
+  if (why === "Open an animation first.") h += `<p class="explain">${icon("info")}<span>Open an animation first. Then shape the hands here.</span></p>`;
+  h += `<section><h3 class="sech" id="hpL">Ready-made finger poses<span class="count">${HAND_PRESETS.length}</span></h3>
+    <div class="htiles" role="radiogroup" aria-labelledby="hpL" id="hpresets">`;
+  const focusName = match || HAND_PRESETS[0][0];
+  for (const p of HAND_PRESETS) h += `<button class="htile" role="radio" aria-checked="${p[0] === match}" tabindex="${p[0] === focusName ? 0 : -1}" data-hpreset="${esc(p[0])}" data-name="${esc(p[0])}" data-key="Enter or Space" data-tipline="Shapes the fingers of ${sideWords(s)}."${dis}><span class="tick">${icon("check")}</span>${fingerBars(p)}<span>${esc(p[0])}</span></button>`;
+  h += `</div></section><section><h3 class="sech">Bend each finger</h3><div class="hfingers">`;
+  FINGERS.forEach(([f], i) => { const v = doc ? closure(s, i) : 0;
+    h += `<label for="hf${i}">${FINGER_SHORT[f]}</label><input type="range" id="hf${i}" min="0" max="100" step="1" value="${v}" data-hfinger="${i}" aria-valuetext="${v} percent closed" data-name="${FINGER_SHORT[f]}: from open to closed" data-key="Arrow keys"${dis}><output id="hfo${i}" for="hf${i}">${doc ? v + "%" : "–"}</output>`; });
+  h += `<span></span><div class="hscale" aria-hidden="true"><span>Open</span><span>Closed</span></div><span></span></div></section>`;
+  const rwhy = why || (changed || (ui.side === "M" && handChanged(s === "L" ? "R" : "L")) ? null : "This hand is not changed.");
+  h += `<div class="row"><button class="btn compact" data-cmd="resethand" data-name="${ui.side === "M" ? "Reset both hands" : "Reset " + hn.toLowerCase()}" data-tipline="Back to the open hand. Undo brings it back."${rwhy ? ` aria-disabled="true" data-why="${rwhy}"` : ""}>${icon("rotate-ccw")}${ui.side === "M" ? "Reset both hands" : "Reset hand"}</button></div>`;
+  if (expert) h += `<section data-p="P5 P10"><h3 class="sech" id="hgL">Each joint, in degrees</h3><div id="hgridWrap">${handGrid(s, why)}</div>
+    ${hintsOn ? '<p class="cap" style="margin:6px 0 0">Type a number, or drag a cell sideways. Page Up and Page Down change it by 5.</p>' : ""}</section>`;
+  else if (hintsOn) h += '<p class="cap" style="margin:0">Expert mode shows every finger joint as numbers.</p>';
+  b.innerHTML = h;
+}
+let hcell = { r: 0, c: 0 }; // the grid cell with the keyboard focus: row 0 to 14, column 0 to 2 (X, Y, Z)
+function handGrid(s, why) {
+  const ids = fingerIds(s), si = sel ? ids.indexOf(sel) : -1; if (si >= 0) hcell.r = si;
+  let h = `<table class="hgrid" role="grid" aria-labelledby="hgL" id="hgrid"><thead><tr role="row"><th role="columnheader"><span class="sr">Joint</span></th>
+    ${AXES.map(a => `<th role="columnheader" aria-label="${a.l}"><span class="ax ${a.c}">${a.l}</span></th>`).join("")}</tr></thead><tbody>`;
+  FINGERS.forEach(([f, fname], fi) => {
+    h += `<tr class="hf" role="row"><th colspan="4" role="rowheader">${esc(fname)}</th></tr>`;
+    PARTS.forEach(([n, pname], k) => { const r = fi * 3 + k, id = ids[r], v = doc ? rotOf(id) : null;
+      h += `<tr role="row" class="${id === sel ? "sel" : ""}" data-hrow="${r}"><th scope="row" role="rowheader">${pname}</th>`;
+      AXES.forEach((a, c) => { h += `<td role="gridcell" tabindex="${r === hcell.r && c === hcell.c ? 0 : -1}" data-hcell="${r},${c}" data-hj="${id}" aria-label="${esc(fname + " " + pname)}, ${a.l}: ${v ? Math.round(v[c]) : "none"} degrees" data-name="${esc(fullName(id))}, ${a.l}" data-key="Type a number, or Page Up / Page Down"${why ? ` aria-disabled="true" data-why="${why}"` : ""}>${v ? Math.round(v[c]) + '<span class="deg">°</span>' : "–"}</td>`; });
+      h += "</tr>"; });
+  });
+  return h + "</tbody></table>";
+}
+function focusHand(sel_) { const el = $(sel_); if (el) el.focus(); }
+function applyPreset(name) {
+  const p = presetOf(name), sides = ui.side === "M" ? ["L", "R"] : [ui.side];
+  pushUndo(); for (const s of sides) { fingerIds(s).forEach((id, i) => setHandJoint(id, presetVals(p, s)[i], false)); lastPick[s] = name; }
+  feedback(`${name} on ${sideWords(sides[0])}. Set a key to keep it.`); renderAll(); focusHand(`[data-hpreset="${name}"]`);
+}
+function setFingerClosure(fi, t, live) {
+  const s = handSide(), a = OPEN_HAND, b = presetVals(presetOf("Tight Grip"), s), ids = fingerIds(s).slice(fi * 3, fi * 3 + 3);
+  touchHand(ids);
+  ids.forEach((id, k) => { const i = fi * 3 + k; setHandJoint(id, a[i].map((x, j) => x + (b[i][j] - x) * t / 100), ui.side === "M"); });
+  if (live) { const o = $("#hfo" + fi); if (o) o.textContent = t + "%"; const g = $("#hgridWrap"); if (g) g.innerHTML = handGrid(s, null); renderScene(); renderTimeline(); updateStates(); $("#filename").innerHTML = `<b>${esc(doc.name)}</b> ● unsaved changes`; }
+}
+function setHandCell(r, c, val) {
+  const s = handSide(), id = fingerIds(s)[r]; if (isNaN(val)) return;
+  touchHand([id]); const v = rotOf(id); v[c] = val; setHandJoint(id, v, ui.side === "M");
+}
+function editCell(td, first) {
+  if (blocked(td)) { say(td.dataset.name + ": " + td.dataset.why, "reason"); return; }
+  const [r, c] = td.dataset.hcell.split(",").map(Number), id = td.dataset.hj, old = Math.round(rotOf(id)[c]);
+  td.classList.add("editing"); td.innerHTML = `<input type="text" inputmode="numeric" aria-label="${esc(td.getAttribute("aria-label"))}" value="${first !== undefined ? first : old}">`;
+  const inp = $("input", td); inp.focus(); if (first === undefined) inp.select(); else inp.setSelectionRange(inp.value.length, inp.value.length);
+  let done = false;
+  const finish = ok => { if (done) return; done = true; hcell = { r, c };
+    if (ok) { const v = parseFloat(inp.value); if (!isNaN(v)) { setHandCell(r, c, v); feedback(`${fullName(id)}, ${AXES[c].l}: ${Math.round(Math.max(-180, Math.min(180, v)))} degrees. Set a key to keep it.`); } else feedback("Type a number, for example -40.", "warn"); }
+    renderAll(); focusHand(`[data-hcell="${r},${c}"]`); };
+  inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); finish(true); } if (e.key === "Escape") { e.preventDefault(); finish(false); } if (e.key === "Tab") finish(true); });
+  inp.addEventListener("blur", () => finish(true));
+}
+let hdrag = null; // dragging a grid cell sideways turns that joint on that axis
+document.addEventListener("pointerdown", e => {
+  const td = e.target.closest("#hgrid td[data-hcell]"); if (!td || td.classList.contains("editing") || e.button !== 0) return;
+  if (blocked(td)) return; const [r, c] = td.dataset.hcell.split(",").map(Number);
+  hdrag = { td, r, c, x: e.clientX, v0: Math.round(rotOf(td.dataset.hj)[c]), moved: false };
+});
+document.addEventListener("pointermove", e => {
+  if (!hdrag) return; const dx = (e.clientX - hdrag.x) / Z(); if (!hdrag.moved && Math.abs(dx) < 4) return;
+  hdrag.moved = true; const v = Math.max(-180, Math.min(180, hdrag.v0 + Math.round(dx / 2)));
+  setHandCell(hdrag.r, hdrag.c, v); const td = $(`[data-hcell="${hdrag.r},${hdrag.c}"]`); if (td) td.innerHTML = v + '<span class="deg">°</span>';
+  renderScene(); say(`${fullName(hdrag.td.dataset.hj)}, ${AXES[hdrag.c].l}: ${v} degrees. Release to stop.`, "hint");
+});
+document.addEventListener("pointerup", () => {
+  if (!hdrag) return; const d = hdrag; hdrag = null; hcell = { r: d.r, c: d.c };
+  const key = d.r + "," + d.c, now = Date.now(), twice = hlastUp.key === key && now - hlastUp.t < 450; hlastUp = { key, t: now };
+  if (!d.moved) { if (sel !== d.td.dataset.hj) selectJoint(d.td.dataset.hj, "list"); else { $$("#hgrid td").forEach(x => x.tabIndex = -1); } }
+  else { renderAll(); feedback(fullName(d.td.dataset.hj) + " changed. Set a key to keep it."); }
+  const f = $(`[data-hcell="${key}"]`); if (f) { f.tabIndex = 0; f.focus(); if (twice && !d.moved) editCell(f); } // a double click edits the cell
+});
+let hlastUp = { key: "", t: 0 };
 
 // ---------- Selected joint panel ----------
 let moreOpen = store.get("moreOpen", false);
@@ -1654,9 +1843,11 @@ function run(cmd, el) {
     case "frameall": cam.zoom = 1; cam.panX = 0; cam.panY = 0; feedback("The whole figure fits the view."); break;
     case "focus": if (sel) { const { P } = worldPositions(); cam.panX = 0; cam.panY = 0; const p = project(P[sel]); const v = $("#view"); cam.panX = v.clientWidth / 2 - p[0]; cam.panY = v.clientHeight / 2 - p[1]; feedback("Camera turns around " + fullName(sel) + " now."); } else { say("Focus: Pick a joint first.", "reason"); return; } break;
     case "resetjoint": pushUndo(); delete override[sel]; if (doc.tracks[sel]) delete doc.tracks[sel]; if (doc.start) delete doc.start[sel]; feedback(fullName(sel) + " reset."); break;
+    case "resethand": { const sides = ui.side === "M" ? ["L", "R"] : [handSide()]; pushUndo(); for (const sd of sides) { fingerIds(sd).forEach(id => { override[id] = [0, 0, 0]; }); lastPick[sd] = null; }
+      feedback((sides.length > 1 ? "Both hands" : sides[0] === "L" ? "Left hand" : "Right hand") + " back to open. Set a key to keep it."); renderAll(); focusHand('[data-cmd="resethand"]'); return; }
     case "resetall": pushUndo(); override = {}; for (const id of Object.keys(doc.tracks)) for (const k of doc.tracks[id]) if (k.f === frame) k.v = [0, 0, 0]; feedback("All joints reset at frame " + frame + ". Undo brings them back."); break;
     case "tpose": pushUndo(); override.Lshoulder = [0, 0, 90]; override.Rshoulder = [0, 0, -90]; override.Lelbow = [0, 0, 0]; override.Relbow = [0, 0, 0]; feedback("T-pose. " + TXT["NEXT-03"], "hint"); break;
-    case "flip": pushUndo(); { const o = {}; for (const id of ORDER) { const m = mirrorId(id); const r = rotOf(m); if (r.some(v => Math.abs(v) > 0.01)) o[id] = [r[0], -r[1], -r[2]]; } override = o; } feedback("Pose flipped left to right. " + TXT["NEXT-03"], "hint"); break;
+    case "flip": pushUndo(); { const o = {}; for (const id of ORDER) { const m = mirrorId(id); const r = rotOf(m); if (r.some(v => Math.abs(v) > 0.01)) o[id] = mirrorVal(m, r); } override = o; } feedback("Pose flipped left to right. " + TXT["NEXT-03"], "hint"); break;
     case "limits": limitsOn = !limitsOn; store.set("limits", limitsOn); feedback(limitsOn ? "Joint limits on: you get a warning near the furthest a joint can turn." : "Joint limits off: any pose is possible."); break;
     case "more": moreOpen = !moreOpen; store.set("moreOpen", moreOpen); renderSelected(); { const d = $('#selBody [data-cmd="more"]'); if (d) d.focus(); } return;
     case "lock": if (el) el.setAttribute("aria-checked", el.getAttribute("aria-checked") !== "true"); syncSwitches(el.parentElement); feedback("Mockup only: lock " + (el.getAttribute("aria-checked") === "true" ? "on." : "off.")); return;
@@ -1701,7 +1892,7 @@ function setKey(skipUndo) {
     const k = t.find(x => x.f === frame); if (k) k.v = v; else { t.push({ f: frame, v, e: "both" }); t.sort((a, b) => a.f - b.f); }
   }
   override = {}; selKey = frame;
-  feedback("Key set at frame " + frame + " for " + ids.map(fullName).join(", ") + ". " + (Object.values(doc.tracks).some(t => t.length > 1) ? "" : TXT["NEXT-05"]));
+  feedback("Key set at frame " + frame + " for " + (ids.length > 4 ? ids.length + " joints" : ids.map(fullName).join(", ")) + ". " + (Object.values(doc.tracks).some(t => t.length > 1) ? "" : TXT["NEXT-05"]));
   advanceIf("#bKey"); renderAll(); showCard();
 }
 function selectJoint(id, from) {
@@ -1716,7 +1907,7 @@ function setRot(axis, val) {
   if (!doc || !sel) return; if (!override[sel]) { pushUndo(); override[sel] = rotOf(sel); }
   val = ((val + 180) % 360 + 360) % 360 - 180; turnedOnce = true;
   override[sel][axis] = val;
-  if (ui.side === "M") { const m = mirrorId(sel); if (m !== sel) { override[m] = override[m] || rotOf(m); override[m][axis] = axis === 0 ? val : -val; } }
+  if (ui.side === "M") { const m = mirrorId(sel); if (m !== sel) { override[m] = override[m] || rotOf(m); override[m][axis] = isFinger(sel) ? val * HAND_MIRROR[axis] : axis === 0 ? val : -val; } }
   renderScene(); checkCards();
   const n = $("#nm" + axis); if (n) n.value = Math.round(val); const s = $("#sl" + axis); if (s && document.activeElement !== s) s.value = val;
   renderJointList(); renderTimeline(); updateStates(); updateMsgDefault();
@@ -1782,6 +1973,7 @@ document.addEventListener("click", e => {
     lab.inputLog.push(line); lab.fold.input = true; saveLab(); renderLab(); feedback("Sent: " + line); return; }
   const ik = e.target.closest("[data-ik]"); if (ik) { ikOn = ik.dataset.ik === "1"; store.set("ik", ikOn); renderSelected(); $(`[data-ik="${ik.dataset.ik}"]`).focus(); feedback(ikOn ? "Dragging a joint pulls the limb (IK)." : "Dragging a joint turns only that joint."); return; }
   const su = e.target.closest("[data-su]"); if (su) { setupChoice(su.dataset.su); return; }
+  const hp = e.target.closest("[data-hpreset]"); if (hp) { if (blocked(hp)) { say(hp.dataset.name + ": " + hp.dataset.why, "reason"); return; } applyPreset(hp.dataset.hpreset); return; }
   const tab = e.target.closest("[data-area]"); if (tab) { ui.area = tab.dataset.area; ui.search = ""; $("#jsearch").value = ""; renderAreaTabs(); renderJointList(); return; }
   const sd = e.target.closest("[data-side]"); if (sd) { ui.side = sd.dataset.side; syncSide(); renderJointList(); feedback(sd.dataset.side === "M" ? "Mirror: turning one side turns the other side too." : (sd.dataset.side === "L" ? "Left side only." : "Right side only.")); return; }
   const opt = e.target.closest("#jlist [role=option]"); if (opt && doc) { selectJoint(opt.dataset.j, "list"); return; }
@@ -1803,6 +1995,12 @@ document.addEventListener("input", e => {
   if (e.target.matches('#selBody input[type=range]')) setRot(+e.target.dataset.axis, +e.target.value);
   if (e.target.matches('#selBody input.num')) { const v = +e.target.value; if (!isNaN(v)) { setRot(+e.target.dataset.axis, v); const s = $("#sl" + e.target.dataset.axis); if (s) s.value = v; } }
 });
+document.addEventListener("input", e => {
+  if (!e.target.matches("#handsBody input[type=range]")) return; const fi = +e.target.dataset.hfinger;
+  if (blocked(e.target)) { e.target.value = doc ? closure(handSide(), fi) : 0; say(e.target.dataset.name + ": " + e.target.dataset.why, "reason"); return; }
+  setFingerClosure(fi, +e.target.value, true); e.target.setAttribute("aria-valuetext", e.target.value + " percent closed");
+});
+document.addEventListener("change", e => { if (e.target.matches("#handsBody input[type=range]") && !blocked(e.target)) { const id = e.target.id; renderAll(); focusHand("#" + id); } });
 document.addEventListener("change", e => { if (e.target.matches("#selBody input")) { const id = e.target.id; renderAll(); const el = $("#" + id); if (el) el.focus(); } });
 
 // ---------- Keyboard inside groups (arrow keys, roving focus) ----------
@@ -1811,6 +2009,27 @@ document.addEventListener("keydown", e => {
   const t = e.target;
   if (t.matches("#labCmd") && e.key === "Enter") { e.preventDefault(); labCommand(); return; }
   if (t.matches("#labTxt") && e.key === "Enter") { e.preventDefault(); $('[data-labinput="say"]').click(); return; }
+  if (t.matches("#hpresets .htile") && ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) { // arrows move, Enter or Space picks
+    e.preventDefault(); e.stopPropagation(); const ts = $$("#hpresets .htile"), i = ts.indexOf(t);
+    const cols = ts.filter(x => x.offsetTop === ts[0].offsetTop).length, step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];
+    const n = e.key === "Home" ? 0 : e.key === "End" ? ts.length - 1 : Math.max(0, Math.min(ts.length - 1, i + step));
+    ts.forEach(x => x.tabIndex = -1); ts[n].tabIndex = 0; ts[n].focus(); return;
+  }
+  if (t.matches("#hgrid td[data-hcell]")) { // the joint grid: arrows move, typing or Enter edits, Page Up / Page Down change by 5
+    const [r, c] = t.dataset.hcell.split(",").map(Number); let nr = r, nc = c;
+    if (e.key === "ArrowDown") nr = Math.min(14, r + 1); else if (e.key === "ArrowUp") nr = Math.max(0, r - 1);
+    else if (e.key === "ArrowRight") nc = Math.min(2, c + 1); else if (e.key === "ArrowLeft") nc = Math.max(0, c - 1);
+    else if (e.key === "Home") nc = 0; else if (e.key === "End") nc = 2;
+    else if (e.key === "Enter" || e.key === "F2") { e.preventDefault(); e.stopPropagation(); editCell(t); return; }
+    else if (/^[0-9-]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); e.stopPropagation(); editCell(t, e.key); return; }
+    else if (e.key === "PageUp" || e.key === "PageDown") { e.preventDefault(); e.stopPropagation();
+      if (blocked(t)) { say(t.dataset.name + ": " + t.dataset.why, "reason"); return; }
+      const d = (e.shiftKey ? 1 : 5) * (e.key === "PageUp" ? 1 : -1); setHandCell(r, c, Math.round(rotOf(t.dataset.hj)[c]) + d); hcell = { r, c }; renderAll(); focusHand(`[data-hcell="${r},${c}"]`); return; }
+    else return;
+    e.preventDefault(); e.stopPropagation(); hcell = { r: nr, c: nc };
+    if (nr !== r && doc) { selectJoint(fingerIds(handSide())[nr], "list"); } else { $$("#hgrid td").forEach(x => x.tabIndex = -1); }
+    focusHand(`[data-hcell="${nr},${nc}"]`); const f = $(`[data-hcell="${nr},${nc}"]`); if (f) f.tabIndex = 0; return;
+  }
   if (t.matches("#areaTabs .tab") && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
     e.preventDefault(); const i = AREAS.findIndex(a => a.id === ui.area); ui.area = AREAS[(i + (e.key === "ArrowRight" ? 1 : 3)) % 4].id; renderAreaTabs(); renderJointList(); $("#tab-" + ui.area).focus(); e.stopPropagation(); return;
   }
@@ -1902,12 +2121,12 @@ document.addEventListener("keydown", e => {
 });
 function clickCmd(cmd) { const el = $(`button[data-cmd="${cmd}"]:not(.menu button)`) || $(`[data-cmd="${cmd}"]`); updateStates(); run(cmd, el); }
 function viewLabel() { $("#viewlabel").textContent = cam.label; }
-const REGIONS = ["#menubar .mtitle", "#jlist", "#view", "#selBody", "#labBody", "#tbar"];
+const REGIONS = ["#menubar .mtitle", "#jlist", "#handsBody", "#view", "#selBody", "#labBody", "#tbar"];
 function nextRegion(d) {
   const vis = REGIONS.filter(r => { const el = $(r); return el && el.getClientRects().length; });
   const cur = vis.findIndex(r => { const el = $(r); const box = el.closest("[data-region], .top") || el; return box.contains(document.activeElement); });
   const n = vis[(cur + d + vis.length) % vis.length]; let el = $(n);
-  if (n === "#selBody" || n === "#tbar" || n === "#labBody") el = $$("button:not([tabindex='-1']), input", el).find(x => x.getClientRects().length) || el;
+  if (n === "#selBody" || n === "#tbar" || n === "#labBody" || n === "#handsBody") el = $$("button:not([tabindex='-1']), input", el).find(x => x.getClientRects().length) || el;
   el.focus();
 }
 

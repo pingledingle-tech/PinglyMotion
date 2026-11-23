@@ -1,11 +1,11 @@
 Branch: job/mockup-m1-hands
-Status: active
+Status: done
 Pull request: #394
 Files:
 - docs/mockup/index.html
 - docs/UX_DECISIONS.md
 - docs/ROADMAP.md
-- tests/test_mockup_hands.py
+- tests/test_site_mockup_hands.py
 
 ## What
 
