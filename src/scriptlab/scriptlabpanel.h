@@ -51,6 +51,7 @@ class QFrame;
 class ScriptLabObjectsView;
 class ScriptLabFrame;
 class ScriptLabSection;
+class SphereControls;
 namespace lsl { class Session; }
 class QLabel;
 class QLineEdit;
@@ -129,6 +130,8 @@ class ScriptLabPanel : public QWidget
     void setEnvironmentOverride(EnvironmentOverride* environmentOverride);
     QCheckBox* environmentBox() const { return m_environmentBox; }
     QLabel* environmentStatus() const { return m_environmentStatus; }
+    // the vision sphere's sliders and RLV line, in the "Vision sphere" part under the environment box
+    SphereControls* sphereControls() const { return m_sphereControls; }
     // the view modes shown in the 3D view (job 7c), off at start
     void setViewModesOverride(ViewModesOverride* viewModesOverride);
     QCheckBox* viewModesBox() const { return m_viewModesBox; }
@@ -401,6 +404,8 @@ class ScriptLabPanel : public QWidget
     QMetaObject::Connection m_environmentConnection;
     QCheckBox* m_environmentBox = nullptr;
     QLabel* m_environmentStatus = nullptr;
+    ScriptLabSection* m_sphereSection = nullptr;
+    SphereControls* m_sphereControls = nullptr;
     QPointer<ViewModesOverride> m_viewModes;
     QMetaObject::Connection m_viewModesConnection;
     bool m_hiddenByUser = false;   // hidden for real (not just minimised)

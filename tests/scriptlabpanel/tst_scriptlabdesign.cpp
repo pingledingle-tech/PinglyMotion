@@ -505,14 +505,14 @@ void TestScriptLabDesign::foldingAndKeyboard()
 {
   ScriptLabPanel panel;
   // made in this order: the Type commands page first, then the Live scripts page
-  const QStringList keys = {"restrictions", "actions", "replies", "script", "problems", "log", "restrictionsNow", "objects", "input", "inventory"};
+  const QStringList keys = {"restrictions", "actions", "sphere", "replies", "script", "problems", "log", "restrictionsNow", "objects", "input", "inventory"};
   QStringList found;
   for (ScriptLabSection* s : panel.sections()) found << s->key();
   QCOMPARE(found, keys);
-  // open at first except Objects and Send input, as in the mockup's fold state
+  // open at first except Objects and Send input, as in the mockup's fold state, and the vision sphere's sliders
   for (ScriptLabSection* s : panel.sections())
   {
-    const bool open = s->key() != "objects" && s->key() != "input" && s->key() != "inventory";
+    const bool open = s->key() != "objects" && s->key() != "input" && s->key() != "inventory" && s->key() != "sphere";
     QCOMPARE(s->isExpanded(), open);
     QCOMPARE(s->body()->isHidden(), !open);
     QCOMPARE(s->objectName(), "scriptLabSection_" + s->key());
@@ -845,14 +845,14 @@ void TestScriptLabDesign::partsRemembered()
 {
   {
     ScriptLabPanel panel;
-    QCOMPARE(panel.partsState(), QString("restrictions=open,actions=open,replies=open,script=open,problems=open,log=open,"
+    QCOMPARE(panel.partsState(), QString("restrictions=open,actions=open,sphere=folded,replies=open,script=open,problems=open,log=open,"
                                          "restrictionsNow=open,objects=folded,input=folded,inventory=folded"));
     QCOMPARE(UserSettings::scriptLabParts(), QString());   // nothing saved until a part is folded or opened
     QTest::mouseClick(panel.section("script")->header(), Qt::LeftButton);
     QTest::mouseClick(panel.section("objects")->header(), Qt::LeftButton);
     QTest::mouseClick(panel.section("replies")->header(), Qt::LeftButton);
   }
-  const QString saved = "restrictions=open,actions=open,replies=folded,script=folded,problems=open,log=open,"
+  const QString saved = "restrictions=open,actions=open,sphere=folded,replies=folded,script=folded,problems=open,log=open,"
                         "restrictionsNow=open,objects=open,input=folded,inventory=folded";
   QCOMPARE(UserSettings::scriptLabParts(), saved);
 

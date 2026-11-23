@@ -612,8 +612,31 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
     no size the blocks are 1 x 1 and nothing changes (the text under the box says so).
   - 3, the colour split (chromatic aberration), is named as not shown. `setsphere_tween` is named as not shown (the
     view changes at once). A value that is not a usable number is named as not used and its default is kept.
-  The settings are one small struct (`EnvironmentOverride::Sphere`), so the planned sliders and colour picker of
-  part 2 can drive the same effect. camdraw (RLV only) and setsphere (RLVa only) are never known in the same mode.
+  The settings are one small struct (`EnvironmentOverride::Sphere`), which the panel's sliders (below) drive too.
+  camdraw (RLV only) and setsphere (RLVa only) are never known in the same mode.
+- **Vision sphere sliders** (part 2, the same request of 23 November 2026: «we should have that, but that should be
+  just made simple»): a folding part "Vision sphere" under the environment box on the Type commands page, folded at
+  start. Sliders for the inner distance and the outer distance (0 to 20 m in steps of half a metre; each pushes the
+  other so the inner one is never past the outer one), Darkness (0 to 100 percent, the strength at the outer
+  distance; inside the inner distance the view stays clear, and the strength grows in a straight line between them)
+  and a colour button that opens Qt's own colour dialog (each part kept in hundredths, 0 to 1). The mode is always
+  the colour fade (0). Under them, the finished RLV line in a read-only field, all of it shown (it wraps), with Copy
+  (the line on the clipboard; the button then reads "Copied" until a value changes) and Clear. The line is what a
+  script sends with llOwnerSay, for example `@setsphere=n,setsphere_mode:0=force,setsphere_distmin:1=force,`
+  `setsphere_distmax:4=force,setsphere_valuemin:0=force,setsphere_valuemax:1=force,setsphere_param:0/0/0=force`
+  (one line, no spaces): the restriction, then each value with `=force`, the colour as `setsphere_param`. The note
+  under it says "RLVa only". The rules above are not changed: `=force` only, `=n` refused, RLVa only.
+- Moving a control sets the same sphere the script's `@setsphere` sets (`EnvironmentOverride::setTrySphere`), so
+  the 3D view changes at once. While it is set it is shown instead of the script's sphere, and the text under the
+  box says so ("Vision sphere from the sliders: ..."; with a script's sphere held too: "The sliders' sphere is shown
+  instead of the script's. Press Clear to show the script's again."); the part's count reads "sliders on". Clear
+  takes it off the view (the sliders keep their values). It follows the box and the panel like the script's
+  sphere: with the box off every control is greyed with the reason "Tick Show environment in 3D view to try the
+  sphere." and nothing reaches the picture; hiding the panel turns it off.
+- Code: `src/scriptlab/spherecontrols.*`; test `tests/tst_spherecontrols.cpp` (the exact line for slider and colour
+  values, the line sent as a script gives the same sphere back, a slider move changes exact pixels of the picture,
+  greyed with the box off, Clear, Copy, no user path in any text, the tab order, and pictures dark and light at 100
+  to 200 percent text without clipping).
 - Any other `setenv_<name>` (presets, sun, moon, clouds, haze, water) is named as not shown; an option that is not
   a usable number or `r/g/b` colour is named as not used.
 - The text under the box says what is shown ("Environment set by the script: sky colour 0.8/0.55/0.45 from daytime

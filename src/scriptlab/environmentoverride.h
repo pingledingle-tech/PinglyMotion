@@ -30,6 +30,9 @@
  *     follow RLVa's sphere effect (Firestorm, LGPL 2.1; see CREDITS.md);
  *     the picture filter is written anew.
  *   - Any other setenv_<name> is named as not shown.
+ *   - The sphere the Script Lab panel's sliders set (setTrySphere, part 2):
+ *     while it is set it is shown instead of the script's, under the same
+ *     box and the same off rules; clearTrySphere shows the script's again.
  *
  * The 3D view's own look is never changed: the background and fog are worked
  * out again for every picture, so unticking, @clear, Reset or the last value
@@ -41,6 +44,7 @@
 #ifndef ENVIRONMENTOVERRIDE_H
 #define ENVIRONMENTOVERRIDE_H
 
+#include <optional>
 #include <vector>
 
 #include <QImage>
@@ -163,14 +167,21 @@ class EnvironmentOverride : public QObject
     bool active() const { return m_enabled && m_look.any(); }
     // the scene to draw: the view's own while not active
     Scene scene(const Scene& own) const { return active() ? sceneFor(m_look, own) : own; }
-    // switched on and the script holds a vision sphere the view can show
-    bool sphereActive() const { return m_enabled && m_look.hasSphere; }
-    Sphere sphere() const { return m_look.sphere; }
+    // switched on and a vision sphere is held: the sliders' (setTrySphere) or the script's
+    bool sphereActive() const { return m_enabled && (m_try.has_value() || m_look.hasSphere); }
+    // the sphere shown: the sliders' while one is set, otherwise the script's
+    Sphere sphere() const { return m_try ? *m_try : m_look.sphere; }
     // the drawn picture with the vision sphere on it while sphereActive(); otherwise left exactly as it was
     void processPicture(QImage& image, const std::vector<float>& metres) const
     {
-      if (sphereActive()) applySphere(image, metres, m_look.sphere);
+      if (sphereActive()) applySphere(image, metres, sphere());
     }
+
+    // a sphere set by the Script Lab panel's sliders: shown instead of the script's (only while
+    // enabled(), as the script's); clearTrySphere() takes it away and the script's shows again
+    void setTrySphere(const Sphere& sphere);
+    void clearTrySphere();
+    bool hasTrySphere() const { return m_try.has_value(); }
 
     // what the view shows, in words, for the panel (empty while off and nothing is asked)
     QStringList lines() const;
@@ -186,6 +197,7 @@ class EnvironmentOverride : public QObject
     QList<QMetaObject::Connection> m_connections;
     bool m_enabled = false;
     Look m_look;
+    std::optional<Sphere> m_try;
 };
 
 #endif

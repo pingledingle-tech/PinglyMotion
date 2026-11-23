@@ -7,6 +7,7 @@ Files:
 - src/scriptlab/environmentoverride.*
 - src/CMakeLists.txt
 - tests/tst_spherecontrols.cpp
+- tests/scriptlabpanel/tst_scriptlabdesign.cpp
 - tests/CMakeLists.txt
 - docs/SCRIPT_LAB.md
 - docs/UX_DECISIONS.md
