@@ -63,6 +63,12 @@ namespace
     {"file-code",{"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
       "M14 2v5a1 1 0 0 0 1 1h5","M10 12.5 8 15l2 2.5","m14 12.5 2 2.5-2 2.5"}},
     {"terminal",{"M12 19h8","m4 17 6-6-6-6"}},
+    // the Script Lab panel, slice 2: the OK or Error summary line and Run again
+    // <circle cx="12" cy="12" r="10" />
+    {"circle-check",{"M22 12a10 10 0 1 0-20 0a10 10 0 1 0 20 0z","m9 12 2 2 4-4"}},
+    // <circle cx="12" cy="12" r="10" />
+    {"circle-x",{"M22 12a10 10 0 1 0-20 0a10 10 0 1 0 20 0z","m15 9-6 6","m9 9 6 6"}},
+    {"refresh-cw",{"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8","M21 3v5h-5","M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16","M8 16H3v5"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

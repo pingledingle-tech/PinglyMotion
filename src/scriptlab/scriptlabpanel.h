@@ -12,6 +12,9 @@
  * the "Viewer rules" RLV / RLVa switch with an "N held" chip on top, the pages
  * "Live scripts" (with an empty state while no folder is watched) and "Type
  * commands", and folding parts with counts (scriptlabsection.h).
+ * Slice 2: the OK or Error summary line with its icon, Run again, the "Try:"
+ * example lines, each part's open or folded state remembered, the one-line
+ * explanation shown with hints, and the newest dialog's buttons inside Objects.
  *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
@@ -99,6 +102,8 @@ class ScriptLabPanel : public QWidget
     // watches the example scripts that come with the program (examples/scriptlab), as
     // "Try the example scripts" does, and runs rlv_lock.lsl; false when refused
     bool tryExampleScripts();
+    // runs the script shown again from the start, as Run again does; false when there is none
+    bool runAgain();
     // the folder "Try the example scripts" watches; the tests may give another one
     QString exampleScriptsFolder() const;
     void setExampleScriptsFolder(const QString& folder) { m_examplesFolder = folder; refreshLive(); }
@@ -151,6 +156,20 @@ class ScriptLabPanel : public QWidget
     // ViewActionName and the text "Script Lab". Hidden until asked for.
     static QDockWidget* makeDock(QMainWindow* window, ScriptLabPanel* panel);
 
+    // --- Hints (Help > Show hints, the "Tips on" switch): the one-line explanation on top shows with them
+    void setHintsOn(bool on);
+    bool hintsOn() const { return m_hintsOn; }
+    QLabel* explanation() const { return m_explain; }
+    QWidget* explanationRow() const { return m_explainFrame; }
+
+    // The example lines of the "Try:" row on the Type commands page, in order
+    static QStringList tryLines();
+
+    // Each part's open or folded state as saved in the settings ("key=open,key=folded"),
+    // and back. A part not named keeps the state it had.
+    QString partsState() const;
+    void applyPartsState(const QString& state);
+
     // read by the tests
     QLineEdit* commandField() const { return m_command; }
     QLineEdit* objectField() const { return m_object; }
@@ -165,6 +184,16 @@ class ScriptLabPanel : public QWidget
     QPushButton* watchButton() const { return m_watch; }
     QPushButton* unwatchButton() const { return m_unwatch; }
     QLabel* liveStatus() const { return m_liveStatus; }
+    // the status line's text without its bold word's markup ("OK: ...", "Error: ...")
+    QString liveStatusText() const { return m_liveStatusPlain; }
+    // the status line's box (border and fill in the tone's colour) and icon
+    ScriptLabFrame* liveStatusFrame() const { return m_liveStatusFrame; }
+    QLabel* liveStatusIcon() const { return m_liveStatusIcon; }
+    // 0 idle, 1 OK, 2 error
+    int liveStatusTone() const { return m_liveTone; }
+    QPushButton* runAgainButton() const { return m_runAgain; }
+    QLabel* tryLabel() const { return m_tryLabel; }
+    QList<QPushButton*> tryButtons() const { return m_tryButtons; }
     // the Script part: its title is "Script" or "Script: <file>"
     ScriptLabSection* liveScriptName() const { return m_scriptSection; }
     QPushButton* modeRlvButton() const { return m_modeRlv; }
@@ -196,7 +225,10 @@ class ScriptLabPanel : public QWidget
     QPushButton* sayButton() const { return m_say; }
     QLabel* inputHint() const { return m_inputHint; }
     QLabel* inputResult() const { return m_inputResult; }
+    // the newest dialog, inside the Objects part: "Dialog from <object>" (or "No dialog yet. ...")
+    // and the muted line "\"<message>\" on channel <n>"
     QLabel* inputDialog() const { return m_inputDialog; }
+    QLabel* dialogMessage() const { return m_inputDialogMessage; }
     QList<QPushButton*> dialogButtons() const;
     QPlainTextEdit* inputLog() const { return m_inputLog; }
 
@@ -231,6 +263,7 @@ class ScriptLabPanel : public QWidget
     void openInEditor();
     void showProblem(int index);
     void setLiveStatus(const QString& text, int tone);   // tone: 0 muted, 1 success, 2 danger
+    void styleLiveStatus();
     void buildInputSection(QWidget* page, QVBoxLayout* layout);
     bool sendInput(QJsonObject request, const QString& what);
     QString inputBlocker() const;      // why nothing can be sent now; empty when it can
@@ -242,6 +275,17 @@ class ScriptLabPanel : public QWidget
     QJsonArray lintWarnings(const QString& source);
 
     QPointer<RlvState> m_state;
+    bool m_hintsOn = true;
+    QWidget* m_explainFrame = nullptr;
+    QLabel* m_explainIcon = nullptr;
+    QLabel* m_explain = nullptr;
+    QLabel* m_tryLabel = nullptr;
+    QList<QPushButton*> m_tryButtons;
+    QPushButton* m_runAgain = nullptr;
+    ScriptLabFrame* m_liveStatusFrame = nullptr;
+    QLabel* m_liveStatusIcon = nullptr;
+    QString m_liveStatusPlain;
+    QLabel* m_inputDialogMessage = nullptr;
     QLineEdit* m_object = nullptr;
     QLineEdit* m_command = nullptr;
     QPushButton* m_run = nullptr;

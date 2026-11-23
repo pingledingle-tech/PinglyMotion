@@ -37,6 +37,12 @@ class ScriptLabObjectsView : public QWidget
     QTreeWidget* list() const { return m_list; }
     QLabel* dialogText() const { return m_dialog; }
 
+    // Inside the Script Lab panel's folding Objects part: no heading of its own (the part's
+    // header says "Objects") and no dialog text (the panel shows the newest dialog there,
+    // with its buttons). Standalone, both show.
+    void setEmbedded(bool embedded);
+    bool embedded() const { return m_embedded; }
+
   public slots:
     void refresh();
 
@@ -48,6 +54,9 @@ class ScriptLabObjectsView : public QWidget
     QMetaObject::Connection m_connection;
     QTreeWidget* m_list;
     QLabel* m_dialog;
+    QLabel* m_heading = nullptr;
+    QLabel* m_dialogHeading = nullptr;
+    bool m_embedded = false;
 };
 
 #endif

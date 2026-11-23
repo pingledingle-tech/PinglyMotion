@@ -459,7 +459,7 @@ void TestScriptLabPanel::liveTabAndEmptyState()
   // a refused folder says why
   QVERIFY(!panel.watchFolder("relative"));
   QVERIFY(!panel.liveStatus()->isHidden());
-  QCOMPARE(panel.liveStatus()->text(), QString("Error: Give the whole path of the folder, not a relative one."));
+  QCOMPARE(panel.liveStatusText(), QString("Error: Give the whole path of the folder, not a relative one."));
   QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::dangerColour(ScriptLabPanel::isDark(panel.palette())));
 }
 
@@ -475,13 +475,13 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   panel.tabs()->setCurrentIndex(ScriptLabPanel::CommandsPage);
   QVERIFY(panel.watchFolder(dir.path()));
   QCOMPARE(panel.liveFolderField()->text(), QDir::toNativeSeparators(QFileInfo(dir.path()).canonicalFilePath()));
-  QCOMPARE(panel.liveStatus()->text(), QString("Watching. No .lsl file in this folder yet: save one here and it runs at once."));
+  QCOMPARE(panel.liveStatusText(), QString("Watching. No .lsl file in this folder yet: save one here and it runs at once."));
   QCOMPARE(panel.tabs()->currentIndex(), int(ScriptLabPanel::LivePage));   // the Live page comes to the front
   QVERIFY(panel.unwatchButton()->isEnabled());
 
   QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
-  QCOMPARE(panel.liveStatus()->text(), QString("Error: collar.lsl has 1 error(s) and was not run (run 1). Fix the line shown below and save."));
+  QCOMPARE(panel.liveStatusText(), QString("Error: collar.lsl has 1 error(s) and was not run (run 1). Fix the line shown below and save."));
   QCOMPARE(listTexts(panel.problemList()), QStringList{"Error, line 3, column 32: Argument 1 of llOwnerSay must be a string, not an integer."});
   const bool dark = ScriptLabPanel::isDark(panel.palette());
   QCOMPARE(panel.problemList()->item(0)->foreground().color(), ScriptLabPanel::dangerColour(dark));
@@ -504,7 +504,7 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QCOMPARE(panel.problemList()->count(), 0);
   QCOMPARE(panel.scriptView()->extraSelections().size(), 0);
   QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: locked"));
-  QCOMPARE(panel.liveStatus()->text(), QString("OK: collar.lsl ran without errors (run 2), 3 log line(s)."));
+  QCOMPARE(panel.liveStatusText(), QString("OK: collar.lsl ran without errors (run 2), 3 log line(s)."));
   QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::successColour(dark));
   saveShot(panel, "-ok");
 
@@ -536,7 +536,7 @@ void TestScriptLabPanel::liveFollowsControlCommands()
   QTest::qWait(1100);   // a new file time
   QVERIFY(writeScript(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));
   QTRY_COMPARE_WITH_TIMEOUT(api.lab().runCount(), 2, 10000);
-  QCOMPARE(panel.liveStatus()->text(),
+  QCOMPARE(panel.liveStatusText(),
            QString("OK: hello.lsl ran without errors (run 2), 3 log line(s). RLV restrictions at the end: detach, sendim."));
   QCOMPARE(restrictionRows(panel).size(), 2);
   QCOMPARE(shownStates(panel).value("detach"), QString("Blocked"));

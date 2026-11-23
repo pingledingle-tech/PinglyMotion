@@ -12,6 +12,12 @@
  * keyboard, and the token colours in the dark and the light theme. The texts
  * the mockup has are also looked up in the mockup file itself.
  *
+ * Slice 2: the OK or Error summary line (its box, icon and bold word), the
+ * "Try:" lines, Run again, each part's open or folded state saved and read
+ * back, the explanation line that shows with hints, the newest dialog with its
+ * buttons inside Objects, and the top bar's Script Lab button, which must show
+ * the docked panel (it only pressed itself before).
+ *
  * Set PINGLYMOTION_SCRIPTLAB_DESIGN_SHOT to a PNG path to save pictures of the
  * panel ("-empty", "-live", "-commands", "-light" are added before ".png").
  *
@@ -30,8 +36,14 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPlainTextEdit>
+#include <QMainWindow>
+#include <QDockWidget>
 #include <QPushButton>
+#include <QSettings>
+#include <QStandardPaths>
 #include <QTabWidget>
+#include <QToolBar>
+#include <QVBoxLayout>
 #include <QTemporaryDir>
 #include <QTreeWidget>
 
@@ -42,7 +54,10 @@
 #include "scriptlab/rlvstate.h"
 #include "scriptlab/scriptlabpanel.h"
 #include "scriptlab/scriptlabsection.h"
+#include "constants.h"
 #include "theme.h"
+#include "topbar.h"
+#include "usersettings.h"
 
 namespace
 {
@@ -130,6 +145,7 @@ class TestScriptLabDesign : public QObject
 
   private slots:
     void initTestCase();
+    void init();
     void viewerRulesSwitch();
     void switchFollowsControlCommand();
     void pages();
@@ -142,12 +158,35 @@ class TestScriptLabDesign : public QObject
     void foldingAndKeyboard();
     void themes();
     void textsInMockup();
+    // slice 2
+    void summaryLine();
+    void tryLines();
+    void runAgain();
+    void runAgainWithoutScript();
+    void partsRemembered();
+    void explanationWithHints();
+    void dialogInsideObjects();
+    void topBarOpensDockedPanel();
+
+  private:
+    QTemporaryDir m_settingsDir;
 };
 
 void TestScriptLabDesign::initTestCase()
 {
   // the program applies the theme before the panel is made; the tests do the same
   Theme::apply(true);
+  // the settings go to a folder of the test's own, never the user's
+  QVERIFY(m_settingsDir.isValid());
+  QStandardPaths::setTestModeEnabled(true);
+  QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, m_settingsDir.path());
+}
+
+void TestScriptLabDesign::init()
+{
+  // every panel starts with the first fold state and hints on
+  UserSettings::setScriptLabParts(QString());
+  UserSettings::setTipsOn(true);
 }
 
 // "Viewer rules": RLV or RLVa (RLVa first chosen); switching removes every restriction, as after a relog
@@ -289,8 +328,8 @@ void TestScriptLabDesign::tryExampleScripts()
   QCOMPARE(panel.liveScriptName()->title(), QString("Script: rlv_lock.lsl"));
   QCOMPARE(panel.heldChip()->text(), QString("2 held"));
   QCOMPARE(panel.section("restrictionsNow")->count(), QString("2"));
-  QVERIFY(panel.liveStatus()->text().startsWith("OK: rlv_lock.lsl ran without errors"));
-  QVERIFY(panel.liveStatus()->text().endsWith("RLV restrictions at the end: detach, sendim."));
+  QVERIFY(panel.liveStatusText().startsWith("OK: rlv_lock.lsl ran without errors"));
+  QVERIFY(panel.liveStatusText().endsWith("RLV restrictions at the end: detach, sendim."));
   // the example scripts give no warnings (tests/tst_lsllint.cpp)
   QCOMPARE(panel.section("problems")->count(), QString("none"));
 }
@@ -307,7 +346,7 @@ void TestScriptLabDesign::tryExampleScriptsMissing()
   QCOMPARE(panel.exampleButton()->toolTip(), QString("The example scripts are not next to the program."));
   QVERIFY(!panel.tryExampleScripts());
   QVERIFY(!watcher.watching());
-  QCOMPARE(panel.liveStatus()->text(), QString("Error: the example scripts are not next to the program."));
+  QCOMPARE(panel.liveStatusText(), QString("Error: the example scripts are not next to the program."));
   QVERIFY(!panel.liveStatus()->isHidden());
 }
 
@@ -490,10 +529,15 @@ void TestScriptLabDesign::foldingAndKeyboard()
   QVERIFY(restrictions->isExpanded());
   QVERIFY(!restrictions->body()->isHidden());
   QCOMPARE(restrictions->header()->icon().cacheKey() == openIcon, false);   // a new icon, the down chevron again
-  // Reset all, then the Restrictions header, then its list
-  QWidget* next = panel.resetButton()->nextInFocusChain();
-  while (next && !(next->focusPolicy() & Qt::TabFocus)) next = next->nextInFocusChain();
-  QCOMPARE(next, static_cast<QWidget*>(restrictions->header()));
+  // Reset all, then the "Try:" lines, then the Restrictions header, then its list
+  const auto nextFocus = [](QWidget* from)
+  {
+    QWidget* next = from->nextInFocusChain();
+    while (next && !(next->focusPolicy() & Qt::TabFocus)) next = next->nextInFocusChain();
+    return next;
+  };
+  QCOMPARE(nextFocus(panel.resetButton()), static_cast<QWidget*>(panel.tryButtons().first()));
+  QCOMPARE(nextFocus(panel.tryButtons().last()), static_cast<QWidget*>(restrictions->header()));
   // the Viewer rules: Space on the focused button switches (P8)
   RlvState state;
   panel.setState(&state);
@@ -594,8 +638,361 @@ void TestScriptLabDesign::textsInMockup()
                            "Switching removes every restriction, as after a relog.", "Live: your .lsl scripts run each time you save them",
                            "Commands: type RLV lines by hand", "Reset: remove every restriction of every object",
                            "No restrictions. ", "A script that says @detach=n holds one.",
-                           "Type a line above, for example @detach=n, and press Enter."})
+                           "Type a line above, for example @detach=n, and press Enter.",
+                           // slice 2
+                           "<span class=\"cap\">Try:</span>", "\"@detach=n,sendim=n\", \"@tploc=n\", \"@clear\", \"@version=2222\", \"@showself=n\"",
+                           "Run again", "Runs the last saved script again from the start, with a fresh clock.",
+                           "A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life.",
+                           "<b>OK:</b> cuffs.lsl ran without errors (run ", "<b>Error:</b> cuffs.lsl has 1 error and was not run (run ",
+                           "icon(ok ? \"circle-check\" : \"circle-x\")", "<div class=\"label\">Dialog from hud</div>",
+                           "\"Lock the cuffs?\" on channel -4712"})
     QVERIFY2(page.contains(QString::fromUtf8(text)), text);
+}
+
+// --- slice 2 ------------------------------------------------------------------
+
+// the status line as in the mockup: a box in the tone's colour, the circle-check or circle-x icon,
+// the word in bold in that colour and the rest in the text colour; idle while nothing ran
+void TestScriptLabDesign::summaryLine()
+{
+  for (const bool dark : {true, false})
+  {
+    const QJsonObject t = themeTokens(dark);
+    RlvState state;
+    LabWatcher watcher;
+    watcher.setRlvState(&state);
+    ScriptLabPanel panel;
+    setTheme(panel, dark);
+    panel.setState(&state);
+    panel.setWatcher(&watcher);
+    QTemporaryDir dir;
+    QVERIFY(panel.watchFolder(dir.path()));
+    const QColor surface(t.value("surface").toString());
+
+    // idle: the border token, the info icon, the whole line muted
+    QCOMPARE(panel.liveStatusText(), QString("Watching. No .lsl file in this folder yet: save one here and it runs at once."));
+    QCOMPARE(panel.liveStatusTone(), 0);
+    QVERIFY(!panel.liveStatusFrame()->isHidden());
+    QCOMPARE(panel.liveStatusFrame()->borderColour(), QColor(t.value("border").toString()));
+    QCOMPARE(panel.liveStatusFrame()->radius(), Theme::Size::radiusControl);
+    QVERIFY(!panel.liveStatusFrame()->dashed());
+    QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), QColor(t.value("text_muted").toString()));
+    QCOMPARE(panel.liveStatusIcon()->pixmap().toImage(),
+             LucideIcons::icon("info", QColor(t.value("text_muted").toString()), QColor(t.value("text_disabled").toString())).pixmap(16, 16).toImage());
+    QCOMPARE(panel.liveStatusFrame()->accessibleName(), panel.liveStatusText());
+
+    // OK, in green with the circle-check
+    QVERIFY(writeScript(dir.filePath("hello.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"@detach=n\"); }\n}\n"));
+    QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
+    QCOMPARE(panel.liveStatusText(), QString("OK: hello.lsl ran without errors (run 1), 3 log line(s). RLV restrictions at the end: detach."));
+    QCOMPARE(panel.liveStatusTone(), 1);
+    const QColor success(t.value("success").toString());
+    QCOMPARE(panel.liveStatusFrame()->borderColour(), success);
+    QCOMPARE(panel.liveStatusFrame()->fillColour(), Theme::mix(surface, success, 0.10));
+    QCOMPARE(panel.liveStatusIcon()->pixmap().toImage(),
+             LucideIcons::icon("circle-check", success, QColor(t.value("text_disabled").toString())).pixmap(16, 16).toImage());
+    QCOMPARE(panel.liveStatus()->textFormat(), Qt::RichText);
+    QCOMPARE(panel.liveStatus()->text(), "<b>OK:</b><span style=\"color:" + t.value("text").toString()
+                                           + "\"> hello.lsl ran without errors (run 1), 3 log line(s). RLV restrictions at the end: detach.</span>");
+    QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), success);   // the bold word
+    QCOMPARE(panel.liveStatusFrame()->accessibleName(), panel.liveStatusText());
+
+    // Error, in red with the circle-x; a name with < and & is shown as written
+    QTest::qWait(1100);
+    QVERIFY(writeScript(dir.filePath("hello.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
+    QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
+    QCOMPARE(panel.liveStatusText(), QString("Error: hello.lsl has 1 error(s) and was not run (run 2). Fix the line shown below and save."));
+    QCOMPARE(panel.liveStatusTone(), 2);
+    const QColor danger(t.value("danger").toString());
+    QCOMPARE(panel.liveStatusFrame()->borderColour(), danger);
+    QCOMPARE(panel.liveStatusFrame()->fillColour(), Theme::mix(surface, danger, 0.10));
+    QCOMPARE(panel.liveStatusIcon()->pixmap().toImage(),
+             LucideIcons::icon("circle-x", danger, QColor(t.value("text_disabled").toString())).pixmap(16, 16).toImage());
+    QVERIFY(panel.liveStatus()->text().startsWith("<b>Error:</b><span style="));
+    QCOMPARE(panel.liveStatus()->palette().color(QPalette::WindowText), danger);
+    if (dark) saveShot(panel, "-summary", 700);
+  }
+  Theme::apply(true);
+}
+
+// "Try:" and five example lines; a click puts the line in the command field and runs it
+void TestScriptLabDesign::tryLines()
+{
+  RlvState state;
+  ScriptLabPanel panel;
+  panel.setState(&state);
+  QCOMPARE(panel.tryLabel()->text(), QString("Try:"));
+  QVERIFY(panel.tryLabel()->font().pointSizeF() < panel.commandField()->font().pointSizeF());   // the caption size
+  const QStringList lines = {"@detach=n,sendim=n", "@tploc=n", "@clear", "@version=2222", "@showself=n"};
+  QCOMPARE(ScriptLabPanel::tryLines(), lines);
+  QCOMPARE(panel.tryButtons().size(), 5);
+  for (int i = 0; i < 5; ++i)
+  {
+    QPushButton* b = panel.tryButtons().at(i);
+    QCOMPARE(b->text(), lines.at(i));
+    QCOMPARE(b->toolTip(), QString("Put this line in the command field and run it"));
+    QCOMPARE(b->minimumHeight(), Theme::Size::controlCompact);
+    QCOMPARE(b->maximumHeight(), Theme::Size::controlCompact);
+    QVERIFY(b->focusPolicy() & Qt::TabFocus);
+    QVERIFY(b->styleSheet().contains("background: " + themeTokens(true).value("surface_raised").toString() + ";"));
+    QCOMPARE(b->parentWidget()->parentWidget(), panel.section("restrictions")->parentWidget());   // on the Type commands page
+  }
+  QTest::mouseClick(panel.tryButtons().at(0), Qt::LeftButton);
+  QCOMPARE(panel.heldChip()->text(), QString("2 held"));
+  QCOMPARE(panel.commandField()->text(), QString());   // run, so the field is empty again
+  QVERIFY(panel.log()->toPlainText().startsWith("panel: @detach=n,sendim=n\n"));
+  QTest::mouseClick(panel.tryButtons().at(1), Qt::LeftButton);
+  QCOMPARE(panel.heldChip()->text(), QString("3 held"));
+  QTest::mouseClick(panel.tryButtons().at(2), Qt::LeftButton);
+  QCOMPARE(panel.heldChip()->text(), QString("0 held"));
+  QTest::mouseClick(panel.tryButtons().at(3), Qt::LeftButton);
+  QVERIFY2(panel.log()->toPlainText().contains("Reply on channel 2222: "), qPrintable(panel.log()->toPlainText()));
+  // the keyboard: Space on the focused line runs it (P8)
+  panel.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&panel));
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::CommandsPage);
+  panel.tryButtons().at(4)->setFocus();
+  QTest::keyClick(panel.tryButtons().at(4), Qt::Key_Space);
+  QCOMPARE(panel.heldChip()->text(), QString("1 held"));
+  QCOMPARE(state.restrictions().first().behaviour, QString("showself"));
+  // the lines wrap in a narrow panel instead of widening it
+  panel.resize(300, 700);
+  QCoreApplication::processEvents();
+  QVERIFY(panel.tryButtons().last()->geometry().right() <= panel.tryButtons().last()->parentWidget()->width());
+  QVERIFY(panel.tryButtons().last()->y() > panel.tryButtons().first()->y());
+}
+
+// Run again runs the shown script once more from its saved file
+void TestScriptLabDesign::runAgain()
+{
+  RlvState state;
+  LabWatcher watcher;
+  watcher.setRlvState(&state);
+  ScriptLabPanel panel;
+  panel.setState(&state);
+  panel.setWatcher(&watcher);
+  QVERIFY(panel.runAgainButton()->isHidden());   // no folder: the empty state
+  QTemporaryDir dir;
+  QVERIFY(panel.watchFolder(dir.path()));
+  QVERIFY(!panel.runAgainButton()->isHidden());
+  QCOMPARE(panel.runAgainButton()->text(), QString("Run again"));
+  QVERIFY(!panel.runAgainButton()->icon().isNull());
+  QCOMPARE(panel.runAgainButton()->minimumHeight(), Theme::Size::controlCompact);
+  QVERIFY(panel.runAgainButton()->styleSheet().contains(":disabled { color: " + themeTokens(true).value("text_disabled").toString() + "; }"));
+  QVERIFY(!panel.runAgainButton()->isEnabled());
+  QCOMPARE(panel.runAgainButton()->toolTip(), QString("No script yet. Watch a folder and save a .lsl file in it first."));
+  QVERIFY(!panel.runAgain());
+
+  QVERIFY(writeScript(dir.filePath("again.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"hi\"); }\n}\n"));
+  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
+  QVERIFY(panel.runAgainButton()->isEnabled());
+  QCOMPARE(panel.runAgainButton()->toolTip(), QString("Runs the last saved script again from the start, with a fresh clock."));
+  QTest::mouseClick(panel.runAgainButton(), Qt::LeftButton);
+  QCOMPARE(watcher.runCount(), 2);
+  QCOMPARE(watcher.lastResult().value("file").toString(), QString("again.lsl"));
+  QCOMPARE(watcher.lastResult().value("run").toInt(), 2);
+  QCOMPARE(panel.liveStatusText(), QString("OK: again.lsl ran without errors (run 2), 3 log line(s)."));
+  // a fresh clock: the run starts at 0 s again
+  QVERIFY(panel.runLog()->toPlainText().startsWith("0.000 s  state: default"));
+  // the keyboard: after Stop watching comes Run again, then Open in editor
+  QCOMPARE(panel.unwatchButton()->nextInFocusChain() == panel.runAgainButton()
+           || [&]() { QWidget* w = panel.unwatchButton()->nextInFocusChain(); while (w && !(w->focusPolicy() & Qt::TabFocus)) w = w->nextInFocusChain(); return w == panel.runAgainButton(); }(), true);
+  QVERIFY(panel.runAgain());
+  QCOMPARE(watcher.runCount(), 3);
+}
+
+// Run again with the script gone from the folder: greyed out with the reason, nothing is run
+void TestScriptLabDesign::runAgainWithoutScript()
+{
+  RlvState state;
+  LabWatcher watcher;
+  watcher.setRlvState(&state);
+  ScriptLabPanel panel;
+  panel.setState(&state);
+  panel.setWatcher(&watcher);
+  QTemporaryDir dir;
+  QVERIFY(panel.watchFolder(dir.path()));
+  QVERIFY(writeScript(dir.filePath("gone.lsl"), "default { state_entry() { } }\n"));
+  QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
+  QVERIFY(panel.runAgainButton()->isEnabled());
+  QVERIFY(QFile::remove(dir.filePath("gone.lsl")));
+  watcher.rescan();
+  QVERIFY(!panel.runAgainButton()->isEnabled());
+  QCOMPARE(panel.runAgainButton()->toolTip(), QString("The script is not in the folder any more."));
+  QVERIFY(!panel.runAgain());
+  QCOMPARE(watcher.runCount(), 1);
+}
+
+// each part's open or folded state is saved in the settings and read back at the next start
+void TestScriptLabDesign::partsRemembered()
+{
+  {
+    ScriptLabPanel panel;
+    QCOMPARE(panel.partsState(), QString("restrictions=open,actions=open,replies=open,script=open,problems=open,log=open,"
+                                         "restrictionsNow=open,objects=folded,input=folded"));
+    QCOMPARE(UserSettings::scriptLabParts(), QString());   // nothing saved until a part is folded or opened
+    QTest::mouseClick(panel.section("script")->header(), Qt::LeftButton);
+    QTest::mouseClick(panel.section("objects")->header(), Qt::LeftButton);
+    QTest::mouseClick(panel.section("replies")->header(), Qt::LeftButton);
+  }
+  const QString saved = "restrictions=open,actions=open,replies=folded,script=folded,problems=open,log=open,"
+                        "restrictionsNow=open,objects=open,input=folded";
+  QCOMPARE(UserSettings::scriptLabParts(), saved);
+
+  // through the settings file, as at the next start
+  UserSettings::writeSettings();
+  UserSettings::setScriptLabParts(QStringLiteral("script=open"));
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::scriptLabParts(), saved);
+  {
+    QSettings file(QSettings::IniFormat, QSettings::UserScope, Constants::organizationName(), Constants::applicationName());
+    QVERIFY2(file.allKeys().filter("scriptlab_parts").size() == 1, qPrintable(file.allKeys().join(", ")));
+  }
+
+  ScriptLabPanel next;
+  QVERIFY(!next.section("script")->isExpanded());
+  QVERIFY(next.section("script")->body()->isHidden());
+  QVERIFY(!next.section("replies")->isExpanded());
+  QVERIFY(next.section("objects")->isExpanded());
+  QVERIFY(!next.section("input")->isExpanded());
+  QVERIFY(next.section("log")->isExpanded());
+  QCOMPARE(next.partsState(), saved);
+
+  // anything else is left alone: an unknown part, an unknown word, an empty entry
+  next.applyPartsState(QStringLiteral("bogus=open,log=maybe,,input=open,=folded"));
+  QVERIFY(next.section("input")->isExpanded());
+  QVERIFY(next.section("log")->isExpanded());
+  QCOMPARE(UserSettings::scriptLabParts(), next.partsState());   // the saved state is always the panel's
+  // Space on a header is saved too (P8)
+  next.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&next));
+  next.section("problems")->header()->setFocus();
+  QTest::keyClick(next.section("problems")->header(), Qt::Key_Space);
+  QVERIFY(UserSettings::scriptLabParts().contains("problems=folded"));
+}
+
+// the one-line explanation on top: shown with hints on, gone with hints off (Help > Show hints)
+void TestScriptLabDesign::explanationWithHints()
+{
+  for (const bool dark : {true, false})
+  {
+    const QJsonObject t = themeTokens(dark);
+    ScriptLabPanel panel;
+    setTheme(panel, dark);
+    QVERIFY(panel.hintsOn());
+    QVERIFY(!panel.explanationRow()->isHidden());
+    QCOMPARE(panel.explanation()->text(), QString("A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life."));
+    verifyShortSentences(panel.explanation()->text());
+    QVERIFY(panel.explanation()->wordWrap());
+    QCOMPARE(panel.explanation()->palette().color(QPalette::WindowText), QColor(t.value("text_muted").toString()));
+    QVERIFY(!panel.findChild<QLabel*>("scriptLabExplainIcon")->pixmap().isNull());
+    // above the Viewer rules
+    QVERIFY(panel.explanationRow()->geometry().bottom() <= panel.modeLabel()->mapTo(&panel, QPoint(0, 0)).y() || !panel.isVisible());
+    panel.setHintsOn(false);
+    QVERIFY(!panel.hintsOn());
+    QVERIFY(panel.explanationRow()->isHidden());
+    panel.setHintsOn(true);
+    QVERIFY(!panel.explanationRow()->isHidden());
+  }
+  Theme::apply(true);
+  UserSettings::setTipsOn(false);
+  ScriptLabPanel off;
+  QVERIFY(!off.hintsOn());
+  QVERIFY(off.explanationRow()->isHidden());
+}
+
+// the newest dialog and its buttons sit inside Objects, under the objects, as in the mockup
+void TestScriptLabDesign::dialogInsideObjects()
+{
+  NoAnimationHost host;
+  ControlApi api(&host);
+  ScriptLabPanel panel;
+  panel.setState(&api.rlv());
+  panel.setSession(&api.lslSession());
+  ScriptLabSection* objects = panel.section("objects");
+  QCOMPARE(panel.inputDialog()->parentWidget(), objects->body());
+  QCOMPARE(panel.dialogMessage()->parentWidget(), objects->body());
+  QVERIFY(panel.objectsView()->embedded());
+  QVERIFY(panel.objectsView()->dialogText()->isHidden());   // said once, by the panel
+  QCOMPARE(panel.inputDialog()->text(), QString("No dialog yet. When a script shows one, its buttons appear here."));
+  QVERIFY(panel.dialogMessage()->isHidden());
+  QCOMPARE(panel.inputDialog()->font().weight(), QFont::Normal);
+
+  QVERIFY(api.execute(QJsonObject{{"command", "lsl_run"}, {"source",
+    "default { state_entry() { llDialog(llGetOwner(), \"Lock the cuffs?\", [\"lock\", \"unlock\"], -4712); } }"}})["ok"].toBool());
+  QCOMPARE(panel.inputDialog()->text(), QString("Dialog from Object"));
+  QCOMPARE(panel.inputDialog()->font().weight(), QFont::DemiBold);
+  QVERIFY(!panel.dialogMessage()->isHidden());
+  QCOMPARE(panel.dialogMessage()->text(), QString("\"Lock the cuffs?\" on channel -4712"));
+  QCOMPARE(panel.dialogMessage()->palette().color(QPalette::WindowText), QColor(themeTokens(true).value("text_muted").toString()));
+  QCOMPARE(panel.dialogButtons().size(), 2);
+  for (QPushButton* b : panel.dialogButtons())
+  {
+    QVERIFY(objects->body()->isAncestorOf(b));
+    QVERIFY(!panel.section("input")->body()->isAncestorOf(b));
+  }
+  QCOMPARE(panel.dialogButtons().at(0)->text(), QString("lock"));
+  // the order on screen: objects list, dialog heading, message, buttons
+  QVERIFY(objects->bodyLayout()->indexOf(panel.objectsView()) < objects->bodyLayout()->indexOf(panel.inputDialog()));
+  QVERIFY(objects->bodyLayout()->indexOf(panel.inputDialog()) < objects->bodyLayout()->indexOf(panel.dialogMessage()));
+  // the keyboard: the objects list, the dialog's buttons, then Send input
+  QWidget* w = panel.objectsView()->list()->nextInFocusChain();
+  while (w && !(w->focusPolicy() & Qt::TabFocus)) w = w->nextInFocusChain();
+  QCOMPARE(w, static_cast<QWidget*>(panel.dialogButtons().at(0)));
+  QWidget* after = panel.dialogButtons().at(1)->nextInFocusChain();
+  while (after && !(after->focusPolicy() & Qt::TabFocus)) after = after->nextInFocusChain();
+  QCOMPARE(after, static_cast<QWidget*>(panel.section("input")->header()));
+  // pressing one answers the dialog
+  panel.dialogButtons().at(1)->click();
+  QCOMPARE(panel.inputResult()->text(), QString("Sent: Dialog answer \"unlock\" to Object (1 log line(s))."));
+}
+
+// the top bar's Script Lab button shows and hides the docked panel, and follows the panel
+// (a bug until slice 2: the button pressed itself but the panel stayed hidden)
+void TestScriptLabDesign::topBarOpensDockedPanel()
+{
+  QMainWindow window;
+  window.setCentralWidget(new QWidget(&window));
+  QToolBar* bar = window.addToolBar(QStringLiteral("top"));
+  ScriptLabPanel* panel = new ScriptLabPanel;
+  QDockWidget* dock = ScriptLabPanel::makeDock(&window, panel);
+  TopBar::Sources sources;
+  sources.scriptLab = dock->toggleViewAction();
+  TopBar top(bar, sources, &window);
+  window.resize(1200, 800);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  QAction* button = top.button("topScriptLabAction");
+  QVERIFY(button);
+  QVERIFY(button->isCheckable());
+  QVERIFY(dock->isHidden());
+  QVERIFY(!button->isChecked());
+
+  // a click on the button in the bar
+  QTest::mouseClick(top.widgetFor(button), Qt::LeftButton);
+  QVERIFY(!dock->isHidden());
+  QVERIFY(dock->isVisible());
+  QVERIFY(panel->isVisible());
+  QVERIFY(dock->width() > 0 && dock->height() > 0);
+  QVERIFY(button->isChecked());
+  QVERIFY(dock->toggleViewAction()->isChecked());
+  // and again: hidden
+  QTest::mouseClick(top.widgetFor(button), Qt::LeftButton);
+  QVERIFY(dock->isHidden());
+  QVERIFY(!button->isChecked());
+  // the View menu's action (Ctrl+Shift+L) presses the button
+  dock->toggleViewAction()->trigger();
+  QVERIFY(!dock->isHidden());
+  QVERIFY(button->isChecked());
+  // closing the panel with its own x lets the button up
+  dock->close();
+  QVERIFY(dock->isHidden());
+  QVERIFY(!button->isChecked());
+  // the keyboard: Space on the focused button opens it (P8)
+  top.widgetFor(button)->setFocus();
+  QTest::keyClick(top.widgetFor(button), Qt::Key_Space);
+  QVERIFY(!dock->isHidden());
+  QVERIFY(button->isChecked());
 }
 
 QTEST_MAIN(TestScriptLabDesign)
