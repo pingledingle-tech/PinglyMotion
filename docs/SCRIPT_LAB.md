@@ -54,7 +54,7 @@ The panel follows the approved mockup (`docs/mockup/index.html`, the Script Lab 
   **Try the example scripts** (watches `examples/scriptlab` next to the program and runs `rlv_lock.lsl` at once;
   greyed with a reason when that folder is missing).
 - Every part folds with its header (click, Space or Enter); the chevron points right or down, and a short count sits on
-  the right: Script ("read only"), Errors and warnings ("none", "1 error", "2 errors, 1 warning"), Event log ("3 lines",
+  the right: Script (empty, or "● unsaved changes" since the editor of lane 1 job F1), Errors and warnings ("none", "1 error", "2 errors, 1 warning"), Event log ("3 lines",
   "not run"), RLV restrictions now (a number), Objects (a number), Send input; on Type commands Restrictions (a number),
   What the avatar may do and Replies and messages (a number of lines run, or "none"). Objects and Send input start
   folded, as in the mockup. Objects, Send input and Show effects in 3D view also show without a folder once an
@@ -134,14 +134,14 @@ Several scripts run in one world, so a HUD and a restraint can talk on a channel
 ## What exists now (step 6, issue 292): Live
 
 The Script Lab watches a folder of scripts and runs a script again each time it is saved, so the user (or Claude
-Code) edits in their own editor and sees the result in PinglyMotion at once. There is no built-in editor yet (a small one is planned, see [ROADMAP.md](ROADMAP.md)).
+Code) edits in their own editor and sees the result in PinglyMotion at once. Since lane 1 job F1 the script can also be changed in the panel itself ("The editor" below).
 
 - The panel has two pages: **Type commands** (the RLV lines of step 2) and **Live scripts**. On Live scripts, **Watch folder...** (in the
   empty state) picks the folder (a cloned repository, for example); **Stop watching** ends it. When a watch starts, here or through
   `lab_watch`, the Live page comes to the front.
 - About 0.3 seconds after a `.lsl` file in the folder is saved, it is checked and, when it compiles, run. The page
-  shows a status line that starts with a word (`OK` or `Error`; the colour only backs it up), the script read-only
-  with line numbers (an error's line number is bold in the danger colour and the line is underlined), the errors
+  shows a status line that starts with a word (`OK` or `Error`; the colour only backs it up), the script
+  with line numbers (read-only until job F1, now in the editor) (an error's line number is bold in the danger colour and the line is underlined), the errors
   and warnings with line and column (Enter or a double-click shows the line in the script), the event log of the
   run, and the RLV restrictions at the end. The script's `llOwnerSay("@...")` lines go to the same RLV state the
   Commands page shows (emptied before each run, as `lsl_run` does unless `keep_rlv` is true). **Open in editor** opens the file in the program the computer uses for
@@ -926,6 +926,18 @@ Not tested automatically (gaps):
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.
+
+## The editor (lane 1, job F1: built)
+
+Plan: [ROADMAP.md](ROADMAP.md), "Script Lab: folder, editor, converter", F1. The Script part of the Live page is an editor in the program's own text box (`src/scriptlab/labeditor.*`, colours in `src/scriptlab/lslhighlighter.*`, no outside editor component). Test: `tests/scriptlabpanel/tst_labeditor.cpp`.
+
+- **Typing and saving.** The script can be typed in. LSL words have colours from the `syntax` tokens ([DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), "Code colours"): keywords (also semibold), types, events, functions, constants, strings, numbers and comments (also italic). The function, event and constant names are the ones the checker knows (`lsl/builtins.h`). The colours are decoration only: an error is a wavy underline in the danger colour, a circle-x icon and the bold number in the line number strip, the message as a tip and in the error list (warnings: the warning colour and a triangle icon). While there are unsaved edits the part's count says "● unsaved changes". **Save** (Ctrl+S, greyed with "Nothing to save. Change the script first.") writes the file (Windows line ends are kept), and the folder watch checks and runs it at once; the line under the text then says "Saved and run 15:30. 0 errors." (or "1 error.", ", 2 warnings", "Saved 15:30. Not run: ..."). Undo and redo (Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y) keep working after a save.
+- **Live never overwrites typing.** The Live page still runs each file on its own (the folder model of job B is only reached through `lab_watch` with `"linkset": true`; the panel switches to it in job D). A run of another script does not take the editor away from unsaved edits; the editor follows the runs again once they are saved or undone. When the shown file changes on disk while there are no unsaved edits, the new text is shown as one undo step ("Loaded the changed file. Ctrl+Z brings the old text back."). With unsaved edits the editor asks once, in a bar above the text: "The file changed outside." with **Keep my changes** (nothing changes; Save later writes the text over the file; the same file text does not ask again, a new change does), **Load the new one** (one undo step, so Ctrl+Z brings the edits back) and **Show the difference** (lines starting with `- ` are yours, `+ ` are in the file, two spaces are the same). While the question is open the run's marks are not put on the typed text.
+- **Keys.** Line numbers; **Go to line** (Ctrl+G: a row with the cursor's line number, Enter jumps, Esc closes; "There is no line 99. The script has 8 lines."); **Find** (Ctrl+F: a row, case does not matter, Enter or F3 next, Shift+Enter previous, it goes round, "Match 1 of 2" or "Not found: ..."). Enter keeps the indent, one step (4 spaces) more after `{`, and between `{` and `}` it opens a block with the cursor inside; `}` on a line with only spaces goes back one step. Tab inserts spaces to the next step (with several lines selected it indents them), Shift+Tab takes one step back. A typed `"` gets its closing quote (not before a word or after `\`), typing the closing quote steps over it, and a selection gets quotes round it. The bracket next to the cursor and its partner have a box round them (brackets in strings and comments do not count). The editor's keys win over the window's while the text has the focus (File > Save is Ctrl+S too).
+- **A way out for keyboard users (charter P8, WCAG 2.1.2).** Tab types an indent, so **Esc, then Tab** moves the focus on (Esc, then Shift+Tab moves back). The first time the text gets the focus the line says "Tab adds an indent. To move on, press Esc, then Tab."; after Esc it says "Press Tab to move on, or keep typing."
+- **Starter help (charter P4).** With no script the part shows "No script open", "Start from an example, or save a .lsl file in the folder." and **New from example**, a menu of the scripts in `examples/scriptlab`. Picking one puts its text in the editor as a new, unsaved file of the same name in the watched folder (`hello_2.lsl` and so on when the name is taken); nothing is written before Save. A short card says what an RLV line is: "A script sends an RLV line to the viewer. It starts with @, like @detach=n. The viewer then blocks or allows one thing." It goes away while hints are off.
+- **Theme and size.** Both themes; the text uses the system's fixed-width face at the program's text size (View > Text size, Setup).
+- **Not in this job:** suggestions and help text (F2), RLV suggestions and warnings (R3), the language choice (F3), Lua.
 
 ## The folder model and a short maker guide (lane 1, job B: the core is built)
 

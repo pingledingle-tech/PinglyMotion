@@ -40,6 +40,7 @@
 #include <QVBoxLayout>
 
 #include "effectspreview.h"
+#include "labeditor.h"
 #include "labwatcher.h"
 #include "lsl/control.h"
 #include "lsl/session.h"
@@ -108,95 +109,6 @@ namespace
     label->setFont(font);
     return label;
   }
-
-  // A read-only script view with line numbers in a strip on the left. Lines
-  // with an error have their number in the danger colour and bold, and the
-  // line is underlined (the error list says the same in words, P10).
-  class ScriptView : public QPlainTextEdit
-  {
-    public:
-      explicit ScriptView(QWidget* parent) :
-        QPlainTextEdit(parent),
-        m_numbers(new Numbers(this))
-      {
-        setReadOnly(true);
-        setLineWrapMode(QPlainTextEdit::NoWrap);
-        setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
-        setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-        connect(this, &QPlainTextEdit::blockCountChanged, this, [this](int) { updateMargin(); });
-        connect(this, &QPlainTextEdit::updateRequest, this, [this](const QRect& rect, int dy)
-        {
-          if (dy) m_numbers->scroll(0, dy);
-          else m_numbers->update(0, rect.y(), m_numbers->width(), rect.height());
-        });
-        updateMargin();
-      }
-
-      void setMarks(const QSet<int>& errorLines, const QColor& danger, const QColor& muted)
-      {
-        m_errorLines = errorLines;
-        m_danger = danger;
-        m_muted = muted;
-        m_numbers->update();
-      }
-
-      int numberWidth() const
-      {
-        const int digits = QString::number(qMax(1, blockCount())).size();
-        return SpacingS + fontMetrics().horizontalAdvance(QLatin1Char('9')) * qMax(2, digits) + SpacingS;
-      }
-
-      void paintNumbers(QPaintEvent* event)
-      {
-        QPainter painter(m_numbers);
-        painter.fillRect(event->rect(), palette().color(QPalette::Window));
-        QTextBlock block = firstVisibleBlock();
-        int top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
-        while (block.isValid() && top <= event->rect().bottom())
-        {
-          const int bottom = top + qRound(blockBoundingRect(block).height());
-          if (block.isVisible() && bottom >= event->rect().top())
-          {
-            const int line = block.blockNumber() + 1;
-            const bool error = m_errorLines.contains(line);
-            QFont font = this->font();
-            font.setWeight(error ? QFont::Bold : QFont::Normal);
-            painter.setFont(font);
-            painter.setPen(error ? m_danger : m_muted);
-            painter.drawText(0, top, m_numbers->width() - SpacingS, fontMetrics().height(), Qt::AlignRight, QString::number(line));
-          }
-          block = block.next();
-          top = bottom;
-        }
-      }
-
-    protected:
-      void resizeEvent(QResizeEvent* event) override
-      {
-        QPlainTextEdit::resizeEvent(event);
-        const QRect inner = contentsRect();
-        m_numbers->setGeometry(QRect(inner.left(), inner.top(), numberWidth(), inner.height()));
-      }
-
-    private:
-      class Numbers : public QWidget
-      {
-        public:
-          explicit Numbers(ScriptView* view) : QWidget(view), m_view(view) {}
-          QSize sizeHint() const override { return QSize(m_view->numberWidth(), 0); }
-        protected:
-          void paintEvent(QPaintEvent* event) override { m_view->paintNumbers(event); }
-        private:
-          ScriptView* m_view;
-      };
-
-      void updateMargin() { setViewportMargins(numberWidth(), 0, 0, 0); }
-
-      Numbers* m_numbers;
-      QSet<int> m_errorLines;
-      QColor m_danger;
-      QColor m_muted;
-  };
 
   // A layout that puts its items in a row and goes on in the next row when the
   // row is full, so the "Try:" lines wrap in a narrow docked panel
@@ -619,6 +531,7 @@ void ScriptLabPanel::setHintsOn(bool on)
 {
   m_hintsOn = on;
   m_explainFrame->setVisible(on);
+  if (m_editor) m_editor->setHintsOn(on);   // the editor's card on what an RLV line is
 }
 
 ScriptLabSection* ScriptLabPanel::addSection(const QString& key, const QString& title, bool expanded, QWidget* page, QVBoxLayout* layout)
@@ -1095,11 +1008,20 @@ void ScriptLabPanel::buildLivePage()
 
   // --- the script, read only, with line numbers
   m_scriptSection = addSection(QStringLiteral("script"), tr("Script"), true, page, layout);
-  m_scriptView = new ScriptView(m_scriptSection->body());
+  // the script in our own text box (lane 1, job F1): editable, Save runs it (labeditor.h)
+  m_editor = new LabEditor(m_scriptSection->body());
+  m_scriptView = m_editor->codeEdit();
   m_scriptView->setObjectName("scriptLabScriptView");
-  m_scriptView->setToolTip(tr("The script as it is on disk, read only. Change it in your own editor and save."));
-  m_scriptView->setMinimumHeight(8 * m_scriptView->fontMetrics().height() + 2 * SpacingS);
-  m_scriptSection->bodyLayout()->addWidget(m_scriptView);
+  m_editor->setHintsOn(m_hintsOn);
+  m_scriptSection->bodyLayout()->addWidget(m_editor);
+  connect(m_editor, &LabEditor::modifiedChanged, this, [this](bool)
+  {
+    // the part's title follows the editor's file (also a new one from an example), the count its unsaved mark
+    if (!m_editor->fileName().isEmpty()) m_scriptSection->setTitle(tr("Script: %1").arg(m_editor->fileName()));
+    m_scriptSection->setCount(m_editor->unsavedMark());
+    m_scriptSection->setVisible((m_watcher && m_watcher->watching()) || m_editor->isModified());
+  });
+  connect(m_editor, &LabEditor::saved, this, &ScriptLabPanel::runSavedScript);
 
   // --- errors and warnings with line and column (lint warnings too)
   m_problemsSection = addSection(QStringLiteral("problems"), tr("Errors and warnings"), true, page, layout);
@@ -1211,7 +1133,17 @@ void ScriptLabPanel::buildLivePage()
   setTabOrder(m_runAgain, m_openEditor);
   setTabOrder(m_openEditor, m_effectsBox);
   setTabOrder(m_effectsBox, m_scriptSection->header());
-  setTabOrder(m_scriptSection->header(), m_scriptView);
+  setTabOrder(m_scriptSection->header(), m_editor->exampleButton());
+  setTabOrder(m_editor->exampleButton(), m_editor->saveButton());
+  setTabOrder(m_editor->saveButton(), m_editor->findButton());
+  setTabOrder(m_editor->findButton(), m_editor->goToButton());
+  setTabOrder(m_editor->goToButton(), m_editor->findField());
+  setTabOrder(m_editor->findField(), m_editor->goToField());
+  setTabOrder(m_editor->goToField(), m_editor->keepButton());
+  setTabOrder(m_editor->keepButton(), m_editor->loadButton());
+  setTabOrder(m_editor->loadButton(), m_editor->differenceButton());
+  setTabOrder(m_editor->differenceButton(), m_editor->differenceView());
+  setTabOrder(m_editor->differenceView(), m_scriptView);
   setTabOrder(m_scriptView, m_problemsSection->header());
   setTabOrder(m_problemsSection->header(), m_problems);
   setTabOrder(m_problems, m_logSection->header());
@@ -1415,9 +1347,25 @@ QString ScriptLabPanel::logLine(const QJsonObject& entry)
   return time + type + (parts.isEmpty() ? QString() : QStringLiteral(": ") + parts.join(QStringLiteral(", ")));
 }
 
+void ScriptLabPanel::runSavedScript(const QString& path)
+{
+  // the editor wrote the file: the folder watch checks and runs it now, not after its pause
+  if (!m_watcher || !m_watcher->watching())
+  {
+    m_editor->reportRun(0, 0, tr("no folder is watched."));
+    return;
+  }
+  m_runAtSave = m_watcher->runCount();
+  m_watcher->rescan();
+  // the same time and size as before (saved twice in one second): run it anyway
+  const QString relative = QDir(m_watcher->folder()).relativeFilePath(path);
+  if (m_watcher->runCount() == m_runAtSave && !m_watcher->absolutePath(relative).isEmpty()) m_watcher->runScript(relative);
+  if (m_watcher->runCount() == m_runAtSave) m_editor->reportRun(0, 0, tr("the folder watch did not find the file."));
+}
+
 void ScriptLabPanel::refreshLive()
 {
-  if (!m_liveStatus) return;
+  if (!m_liveStatus || !m_editor) return;
   const bool dark = isDark(palette());
   const bool watching = m_watcher && m_watcher->watching();
 
@@ -1437,32 +1385,41 @@ void ScriptLabPanel::refreshLive()
   // the empty state while no folder is watched; the folder, status, script and its parts while watching
   m_liveEmpty->setVisible(!watching);
   for (QWidget* w : QList<QWidget*>{m_liveFolderLabel, m_liveFolder, m_unwatch, m_runAgain, m_openEditor,
-                                    m_scriptSection, m_problemsSection, m_logSection, m_liveRestrictionsSection})
+                                    m_problemsSection, m_logSection, m_liveRestrictionsSection})
     w->setVisible(watching);
   updateWorldParts();
 
   const QJsonObject last = watching ? m_watcher->lastResult() : QJsonObject();
   const QString file = last.value("file").toString();
 
-  // the script view: read the file again only when another file is shown
-  // or the file was run again
-  ScriptView* view = static_cast<ScriptView*>(m_scriptView);
+  // the editor: it shows the script of the newest run, but never replaces unsaved edits
+  // (another file waits until they are saved or undone; the same file changed on disk asks first)
+  m_editor->setTargetFolder(watching ? m_watcher->folder() : QString());
+  m_editor->setExamplesFolder(exampleScriptsFolder());
   QString text;
+  QString shownPath;
   if (last.isEmpty())
   {
     m_shownFile.clear();
-    view->clear();
+    // closed when the watch stops, or its file is gone; a file just saved and not run yet stays
+    if (!watching || (!m_editor->filePath().isEmpty() && !QFileInfo::exists(m_editor->filePath()))) m_editor->closeFile();
   }
   else
   {
     m_shownFile = file;
-    QFile in(m_watcher->absolutePath(file));
+    shownPath = m_watcher->absolutePath(file);
+    QFile in(shownPath);
     if (QFileInfo(in.fileName()).size() <= LabWatcher::MAX_FILE_BYTES && in.open(QIODevice::ReadOnly))
       text = QString::fromUtf8(in.read(LabWatcher::MAX_FILE_BYTES));
-    if (view->toPlainText() != text) view->setPlainText(text);
+    if (!shownPath.isEmpty()) m_editor->openFile(shownPath, file);
   }
-  m_scriptSection->setTitle(file.isEmpty() ? tr("Script") : tr("Script: %1").arg(file));
-  m_scriptSection->setCount(tr("read only"));
+  // the marks belong to the text the run used: shown only while the editor holds that file
+  // and no changed-outside question is open
+  const bool marksFit = !shownPath.isEmpty() && m_editor->filePath() == shownPath && !m_editor->outsideChangePending();
+  const QString editorName = m_editor->fileName().isEmpty() ? file : m_editor->fileName();
+  m_scriptSection->setVisible(watching || m_editor->isModified());
+  m_scriptSection->setTitle(editorName.isEmpty() ? tr("Script") : tr("Script: %1").arg(editorName));
+  m_scriptSection->setCount(m_editor->unsavedMark());
   m_openEditor->setEnabled(!m_shownFile.isEmpty());
   // Run again needs the shown script still in the folder
   const bool canRunAgain = !m_shownFile.isEmpty() && !m_watcher->absolutePath(m_shownFile).isEmpty();
@@ -1476,11 +1433,10 @@ void ScriptLabPanel::refreshLive()
   // errors and warnings, with marks in the script
   m_problems->clear();
   m_shownProblems.clear();
-  QSet<int> errorLines;
   QSet<QString> seen;
   int errorCount = 0;
   int warningCount = 0;
-  QList<QTextEdit::ExtraSelection> marks;
+  QList<LabProblem> marks;
   const auto addProblems = [&](const QJsonArray& list, bool error)
   {
     for (const QJsonValue& value : list)
@@ -1495,19 +1451,9 @@ void ScriptLabPanel::refreshLive()
       QListWidgetItem* item = new QListWidgetItem(itemText, m_problems);
       item->setForeground(error ? dangerColour(dark) : QColor(QString::fromLatin1(tokens(dark).warning)));
       m_shownProblems << p;
-      if (error) { errorLines.insert(line); ++errorCount; }
+      if (error) ++errorCount;
       else ++warningCount;
-      const QTextBlock block = view->document()->findBlockByNumber(line - 1);
-      if (block.isValid())
-      {
-        QTextEdit::ExtraSelection mark;
-        mark.cursor = QTextCursor(block);
-        mark.cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-        mark.format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
-        mark.format.setUnderlineColor(error ? dangerColour(dark) : QColor(QString::fromLatin1(tokens(dark).warning)));
-        mark.format.setToolTip(item->text());
-        marks << mark;
-      }
+      marks << LabProblem{line, column, item->text(), error};
     }
   };
   addProblems(last.value("errors").toArray(), true);
@@ -1528,8 +1474,14 @@ void ScriptLabPanel::refreshLive()
   addProblems(last.value("warnings").toArray(), false);
   // the static warnings (lsl_lint) of a script that compiled: valid LSL that is most likely a mistake
   if (last.value("valid").toBool() && !text.isEmpty()) addProblems(lintWarnings(text), false);
-  view->setExtraSelections(marks);
-  view->setMarks(errorLines, dangerColour(dark), mutedColour(dark));
+  if (marksFit || shownPath.isEmpty()) m_editor->codeEdit()->setProblems(marksFit ? marks : QList<LabProblem>());
+  // the run after the editor's Save: "Saved and run 15:30. 0 errors."
+  if (m_editor->waitingForRun() && marksFit && last.value("run").toInt() > m_runAtSave)
+  {
+    QString notRun = last.value("read_error").toString();
+    if (notRun.isEmpty() && last.contains("not_run")) notRun = last.value("not_run").toString();
+    m_editor->reportRun(errorCount, warningCount, notRun);
+  }
   QStringList problemCount;
   if (errorCount) problemCount << (errorCount == 1 ? tr("1 error") : tr("%1 errors").arg(errorCount));
   if (warningCount) problemCount << (warningCount == 1 ? tr("1 warning") : tr("%1 warnings").arg(warningCount));
