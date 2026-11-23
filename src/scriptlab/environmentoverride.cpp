@@ -47,6 +47,53 @@ namespace
     return true;
   }
 
+  // a whole number from low to high
+  bool whole(const QString& option, int low, int high, int* value)
+  {
+    bool ok = false;
+    const int v = QLocale::c().toInt(option.trimmed(), &ok);
+    if (!ok || v < low || v > high) return false;
+    *value = v;
+    return true;
+  }
+
+  // a sphere distance in metres: 0 to 10 km
+  bool reach(const QString& option, double* value)
+  {
+    bool ok = false;
+    const double v = QLocale::c().toDouble(option.trimmed(), &ok);
+    if (!ok || !std::isfinite(v) || v < 0 || v > 10000) return false;
+    *value = v;
+    return true;
+  }
+
+  // a sphere strength: 0 to 100 (1 is full for the colour fade; a blur can take more)
+  bool strength(const QString& option, double* value)
+  {
+    bool ok = false;
+    const double v = QLocale::c().toDouble(option.trimmed(), &ok);
+    if (!ok || !std::isfinite(v) || v < 0 || v > 100) return false;
+    *value = v;
+    return true;
+  }
+
+  // "x[/y[/z[/w]]]": one to four numbers, a part not given is 0
+  bool params(const QString& option, QVector4D* value)
+  {
+    const QStringList parts = option.split(QLatin1Char('/'));
+    if (parts.isEmpty() || parts.size() > 4) return false;
+    QVector4D out(0, 0, 0, 0);
+    for (int i = 0; i < parts.size(); ++i)
+    {
+      bool ok = false;
+      const double v = QLocale::c().toDouble(parts.at(i).trimmed(), &ok);
+      if (!ok || !std::isfinite(v) || std::fabs(v) > 10000) return false;
+      out[i] = float(v);
+    }
+    *value = out;
+    return true;
+  }
+
   QString number(double value)
   {
     return QLocale::c().toString(value, 'g', 6);
@@ -232,59 +279,76 @@ EnvironmentOverride::Look EnvironmentOverride::lookFrom(const RlvState& state)
     look.notShown << tr("Not shown: the camdraw values, because camdrawmax is not set (nothing to fade to).");
   }
 
-  // --- the vision sphere: setsphere held, its values held or forced (held first)
+  // --- the vision sphere: setsphere held (RLVa only), its values forced (RLVa takes them with =force only)
   QString option, object;
   if (held(list, QStringLiteral("setsphere"), &option, &object))
   {
     QSet<QString> sphereObjects{object};
+    Sphere sphere;
+    bool usable = true;
     const auto value = [&](const QString& name, QString* out) -> bool
     {
-      QString o;
-      if (held(list, name, out, &o)) { sphereObjects.insert(o); return true; }
-      if (recorded.contains(name)) { *out = recorded.value(name); sphereObjects.insert(by.value(name)); return true; }
-      return false;
+      if (!recorded.contains(name)) return false;
+      *out = recorded.value(name);
+      sphereObjects.insert(by.value(name));
+      return true;
     };
     QString text;
-    bool usable = true;
-    if (value(QStringLiteral("setsphere_mode"), &text) && text.trimmed() != QLatin1String("0"))
+    double v = 0;
+    if (value(QStringLiteral("setsphere_mode"), &text))
     {
-      look.notShown << tr("Not shown: setsphere_mode:%1 (only mode 0, the colour fade, is shown).").arg(text);
-      usable = false;
+      if (!whole(text, 0, 4, &sphere.mode)) ignore(QStringLiteral("setsphere_mode:") + text);
+      else if (sphere.mode == Sphere::ChromaticAberration)
+      {
+        look.notShown << tr("Not shown: setsphere_mode:3, the colour split (only the colour fade 0, blur 1 and 2, "
+                            "and pixel 4 are shown).");
+        usable = false;
+      }
     }
-    double sphereDistance = 0, sphereAlpha = 1;
-    QVector3D sphereColour(0, 0, 0);
-    if (usable && !value(QStringLiteral("setsphere_distmax"), &text))
+    if (value(QStringLiteral("setsphere_origin"), &text) && !whole(text, 0, 1, &sphere.origin))
+      ignore(QStringLiteral("setsphere_origin:") + text);
+    if (value(QStringLiteral("setsphere_distmin"), &text))
     {
-      look.notShown << tr("Not shown: setsphere, because setsphere_distmax is not set.");
-      usable = false;
+      if (reach(text, &v)) sphere.distMin = v;
+      else ignore(QStringLiteral("setsphere_distmin:") + text);
     }
-    else if (usable && !distance(text, &sphereDistance))
+    if (value(QStringLiteral("setsphere_distmax"), &text))
     {
-      ignore(QStringLiteral("setsphere_distmax:") + text);
-      usable = false;
+      if (reach(text, &v)) sphere.distMax = v;
+      else ignore(QStringLiteral("setsphere_distmax:") + text);
     }
-    if (usable && value(QStringLiteral("setsphere_valuemax"), &text) && !unit(text, &sphereAlpha))
+    if (value(QStringLiteral("setsphere_distextend"), &text) && !whole(text, 0, 3, &sphere.distExtend))
+      ignore(QStringLiteral("setsphere_distextend:") + text);
+    if (value(QStringLiteral("setsphere_valuemin"), &text))
     {
-      ignore(QStringLiteral("setsphere_valuemax:") + text);
-      usable = false;
+      if (strength(text, &v)) sphere.valueMin = v;
+      else ignore(QStringLiteral("setsphere_valuemin:") + text);
     }
-    if (usable && value(QStringLiteral("setsphere_color"), &text) && !colour(text, &sphereColour))
+    if (value(QStringLiteral("setsphere_valuemax"), &text))
     {
-      ignore(QStringLiteral("setsphere_color:") + text);
-      usable = false;
+      if (strength(text, &v)) sphere.valueMax = v;
+      else ignore(QStringLiteral("setsphere_valuemax:") + text);
     }
+    // the colour (r/g/b) and the params (up to four numbers) set the same value in RLVa; the params win here
+    QVector3D c;
+    if (value(QStringLiteral("setsphere_color"), &text))
+    {
+      if (colour(text, &c)) sphere.params = QVector4D(c, 1.0f);
+      else ignore(QStringLiteral("setsphere_color:") + text);
+    }
+    QVector4D p;
+    if (value(QStringLiteral("setsphere_param"), &text))
+    {
+      if (params(text, &p)) sphere.params = p;
+      else ignore(QStringLiteral("setsphere_param:") + text);
+    }
+    if (value(QStringLiteral("setsphere_tween"), &text))
+      look.notShown << tr("Not shown: setsphere_tween:%1 (the 3D view changes at once).").arg(text);
     if (usable)
     {
-      if (look.hasFog) look.notShown << tr("Not shown: setsphere (the camdraw fog is shown; one fog at a time).");
-      else
-      {
-        look.hasFog = true;
-        look.fogFrom = QStringLiteral("setsphere");
-        look.fogDistance = sphereDistance;
-        look.fogAlpha = sphereAlpha;
-        look.fogColour = sphereColour;
-        for (const QString& o : sphereObjects) objects.insert(o);
-      }
+      look.hasSphere = true;
+      look.sphere = sphere;
+      for (const QString& o : sphereObjects) objects.insert(o);
     }
   }
 
@@ -313,6 +377,138 @@ EnvironmentOverride::Scene EnvironmentOverride::sceneFor(const Look& look, const
     scene.background = scene.background + (look.fogColour - scene.background) * float(look.fogAlpha);
   }
   return scene;
+}
+
+double EnvironmentOverride::Sphere::strengthAt(double metres) const
+{
+  // as RLVa's sphere shader: a straight line from valueMin at distMin to valueMax at distMax; below and
+  // beyond, the end value if that side is extended, otherwise 0
+  if (metres < distMin) return (distExtend & ExtendMin) ? valueMin : 0.0;
+  if (metres > distMax) return (distExtend & ExtendMax) ? valueMax : 0.0;
+  if (distMax <= distMin) return valueMax;
+  return valueMin + (valueMax - valueMin) * (metres - distMin) / (distMax - distMin);
+}
+
+namespace
+{
+  // a box blur of all four parts (the alpha too, so a picture read as premultiplied stays right), across and then down, with running sums; done twice it is
+  // close to a soft (Gaussian) blur. The edges repeat the last pixel.
+  void boxBlur(QImage& image, int radius)
+  {
+    if (radius < 1) return;
+    const int w = image.width(), h = image.height();
+    std::vector<int> line;
+    std::vector<uchar> out;
+    const int span = 2 * radius + 1;
+    // pass 0 across a row, pass 1 down a column
+    for (int pass = 0; pass < 2; ++pass)
+    {
+      const int lines = pass == 0 ? h : w;
+      const int length = pass == 0 ? w : h;
+      line.assign(size_t(length) * 4, 0);
+      out.assign(size_t(length) * 4, 0);
+      for (int l = 0; l < lines; ++l)
+      {
+        const auto at = [&](int i) -> uchar*
+        {
+          i = qBound(0, i, length - 1);
+          return pass == 0 ? image.scanLine(l) + i * 4 : image.scanLine(i) + l * 4;
+        };
+        int sum[4] = {0, 0, 0, 0};
+        for (int i = -radius; i <= radius; ++i)
+          for (int k = 0; k < 4; ++k) sum[k] += at(i)[k];
+        for (int i = 0; i < length; ++i)
+        {
+          for (int k = 0; k < 4; ++k) out[size_t(i) * 4 + k] = uchar((sum[k] + span / 2) / span);
+          for (int k = 0; k < 4; ++k) sum[k] += at(i + radius + 1)[k] - at(i - radius)[k];
+        }
+        for (int i = 0; i < length; ++i)
+        {
+          uchar* px = pass == 0 ? image.scanLine(l) + i * 4 : image.scanLine(i) + l * 4;
+          for (int k = 0; k < 4; ++k) px[k] = out[size_t(i) * 4 + k];
+        }
+      }
+    }
+  }
+
+  uchar mixed(uchar a, double b, double t)
+  {
+    return uchar(qBound(0.0, std::round(a + (b - a) * t), 255.0));
+  }
+}
+
+void EnvironmentOverride::applySphere(QImage& image, const std::vector<float>& metres, const Sphere& sphere)
+{
+  const int w = image.width(), h = image.height();
+  if (w <= 0 || h <= 0 || metres.size() != size_t(w) * size_t(h)) return;
+  if (image.format() != QImage::Format_RGBA8888 && image.format() != QImage::Format_RGBA8888_Premultiplied &&
+      image.format() != QImage::Format_RGBX8888)
+    image.convertTo(QImage::Format_RGBA8888);
+
+  std::vector<float> strengths(metres.size());
+  bool any = false;
+  for (size_t i = 0; i < metres.size(); ++i)
+  {
+    strengths[i] = float(sphere.strengthAt(double(metres[i])));
+    if (strengths[i] > 0) any = true;
+  }
+  if (!any) return;
+
+  if (sphere.mode == Sphere::ColourFade)
+  {
+    const double c[3] = {qBound(0.0, double(sphere.params.x()), 1.0) * 255.0, qBound(0.0, double(sphere.params.y()), 1.0) * 255.0,
+                         qBound(0.0, double(sphere.params.z()), 1.0) * 255.0};
+    for (int y = 0; y < h; ++y)
+    {
+      uchar* row = image.scanLine(y);
+      for (int x = 0; x < w; ++x)
+      {
+        const double t = qMin(1.0, double(strengths[size_t(y) * w + x]));
+        if (t <= 0) continue;
+        for (int k = 0; k < 3; ++k) row[x * 4 + k] = mixed(row[x * 4 + k], c[k], t);
+      }
+    }
+  }
+  else if (sphere.mode == Sphere::Blur || sphere.mode == Sphere::BlurVariable)
+  {
+    // the whole picture blurred once, then mixed in by the strength (variable: fully wherever there is any)
+    const int radius = sphere.mode == Sphere::Blur ? BlurPixels
+                                                   : qBound(1, int(std::lround(sphere.params.x() / 2.0)), MostPixels);
+    QImage blurred = image.copy();
+    boxBlur(blurred, radius);
+    boxBlur(blurred, radius);
+    for (int y = 0; y < h; ++y)
+    {
+      uchar* row = image.scanLine(y);
+      const uchar* soft = blurred.constScanLine(y);
+      for (int x = 0; x < w; ++x)
+      {
+        const float s = strengths[size_t(y) * w + x];
+        if (s <= 0) continue;
+        const double t = sphere.mode == Sphere::Blur ? qMin(1.0, double(s)) : 1.0;
+        for (int k = 0; k < 4; ++k) row[x * 4 + k] = mixed(row[x * 4 + k], soft[x * 4 + k], t);
+      }
+    }
+  }
+  else if (sphere.mode == Sphere::Pixel)
+  {
+    // blocks of params x by y pixels, each the colour of its first pixel, wherever there is any strength
+    const int bw = qBound(1, int(std::lround(sphere.params.x())), MostPixels);
+    const int bh = qBound(1, int(std::lround(sphere.params.y())), MostPixels);
+    if (bw == 1 && bh == 1) return;
+    const QImage source = image.copy();
+    for (int y = 0; y < h; ++y)
+    {
+      uchar* row = image.scanLine(y);
+      const uchar* from = source.constScanLine((y / bh) * bh);
+      for (int x = 0; x < w; ++x)
+      {
+        if (strengths[size_t(y) * w + x] <= 0) continue;
+        const int sx = (x / bw) * bw;
+        for (int k = 0; k < 4; ++k) row[x * 4 + k] = from[sx * 4 + k];
+      }
+    }
+  }
 }
 
 EnvironmentOverride::EnvironmentOverride(QObject* parent) :
@@ -348,6 +544,29 @@ void EnvironmentOverride::update()
   emit changed();
 }
 
+QString EnvironmentOverride::sphereText(const Sphere& sphere)
+{
+  QString kind;
+  switch (sphere.mode)
+  {
+    case Sphere::ColourFade:
+      kind = tr("colour fade to %1").arg(colourText(sphere.params.toVector3D()));
+      break;
+    case Sphere::Blur: kind = tr("blur"); break;
+    case Sphere::BlurVariable:
+      kind = tr("blur of %1 pixels").arg(qBound(1, int(std::lround(sphere.params.x() / 2.0)), MostPixels));
+      break;
+    default:
+      kind = tr("pixel blocks of %1 x %2")
+               .arg(qBound(1, int(std::lround(sphere.params.x())), MostPixels))
+               .arg(qBound(1, int(std::lround(sphere.params.y())), MostPixels));
+      break;
+  }
+  const QString origin = sphere.origin == Sphere::Camera ? tr("camera") : tr("avatar");
+  return tr("%1, strength %2 at %3 m to %4 at %5 m from the %6")
+    .arg(kind, number(sphere.valueMin), number(sphere.distMin), number(sphere.valueMax), number(sphere.distMax), origin);
+}
+
 QStringList EnvironmentOverride::lines() const
 {
   QStringList lines;
@@ -356,6 +575,8 @@ QStringList EnvironmentOverride::lines() const
   if (m_look.hasFog)
     parts << tr("%1 fog of colour %2 reaching %3 at %4 m")
                .arg(m_look.fogFrom, colourText(m_look.fogColour), number(m_look.fogAlpha), number(m_look.fogDistance));
+  QStringList all = parts;
+  if (m_look.hasSphere) all << tr("vision sphere (%1)").arg(sphereText(m_look.sphere));
 
   if (!m_look.any())
   {
@@ -364,15 +585,27 @@ QStringList EnvironmentOverride::lines() const
   }
   else if (m_enabled)
   {
-    lines << tr("Environment set by the script: %1.").arg(parts.join(QStringLiteral(", ")));
-    lines << tr("The 3D view has no sky: it shows this as the background colour and the fog. A rough hint only.");
+    if (!parts.isEmpty())
+    {
+      lines << tr("Environment set by the script: %1.").arg(parts.join(QStringLiteral(", ")));
+      lines << tr("The 3D view has no sky: it shows this as the background colour and the fog. A rough hint only.");
+    }
+    if (m_look.hasSphere)
+    {
+      lines << tr("Vision sphere set by the script: %1.").arg(sphereText(m_look.sphere));
+      lines << tr("The whole picture changes by the distance from the %1. A rough look only: check it in Second Life.")
+                 .arg(m_look.sphere.origin == Sphere::Camera ? tr("camera") : tr("avatar"));
+      if (m_look.sphere.mode == Sphere::Pixel && qBound(1, int(std::lround(m_look.sphere.params.x())), MostPixels) == 1 &&
+          qBound(1, int(std::lround(m_look.sphere.params.y())), MostPixels) == 1)
+        lines << tr("Pixel blocks of 1 x 1 change nothing: the block size comes from setsphere_param:<width>/<height>.");
+    }
     lines << tr("Set by: %1.").arg(m_look.objects.join(QStringLiteral(", ")));
     lines << tr("Untick the box to get the 3D view's own look back.");
   }
   else
   {
     lines << tr("The script changes the environment: %1. Tick the box to see a hint in the 3D view.")
-               .arg(parts.join(QStringLiteral(", ")));
+               .arg(all.join(QStringLiteral(", ")));
   }
   if (m_look.hasFog && m_look.fogAlpha > MostAlpha && (m_enabled || !lines.isEmpty()))
     lines << tr("An alpha of 1 never ends in fog: the 3D view shows %1 at that distance.").arg(number(MostAlpha));

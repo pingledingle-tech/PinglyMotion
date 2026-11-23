@@ -5,7 +5,7 @@ Files:
 - src/scriptlab/environmentoverride.*
 - src/animationview.*
 - tests/tst_environmentoverride.cpp
-- tests/scriptlabpanel/tst_scriptlabpanel.cpp
+- tests/tst_scriptlabcamera.cpp
 - docs/SCRIPT_LAB.md
 - CREDITS.md
 

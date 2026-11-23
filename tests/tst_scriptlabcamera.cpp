@@ -96,6 +96,28 @@ void TestScriptLabCamera::effectsStopWhenPanelHidden()
   QVERIFY(!environmentOverride.enabled());
   panel.show();
   QVERIFY(environmentOverride.enabled());
+
+  // the vision sphere (setsphere) goes with the environment box: hidden panel, no sphere and the
+  // picture left exactly as it was; shown again, the sphere is back as the box is ticked
+  QVERIFY(rlv.apply("visor", "@setsphere=n,setsphere_mode:4=force,setsphere_param:4/4=force").ok());
+  QVERIFY(environmentOverride.sphereActive());
+  QImage before(8, 8, QImage::Format_RGBA8888);
+  for (int y = 0; y < 8; ++y)
+    for (int x = 0; x < 8; ++x) before.setPixelColor(x, y, x % 2 ? QColor(255, 255, 255) : QColor(0, 0, 0));
+  const std::vector<float> far(64, 20.0f);
+  QImage image = before;
+  environmentOverride.processPicture(image, far);
+  QVERIFY(image != before);
+  panel.hide();
+  QVERIFY(!environmentOverride.sphereActive());
+  image = before;
+  environmentOverride.processPicture(image, far);
+  QCOMPARE(image, before);
+  panel.show();
+  QVERIFY(environmentOverride.sphereActive());
+  image = before;
+  environmentOverride.processPicture(image, far);
+  QVERIFY(image != before);
 }
 
 void TestScriptLabCamera::boxAndText()
