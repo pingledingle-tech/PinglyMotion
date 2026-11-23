@@ -1174,10 +1174,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Paste mirrored is not built yet. Use Tools &gt; Mirror to swap left and right.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open an animation first.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2112,10 +2108,6 @@ Pick a smaller file, then try again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Expert mode is on. The extra controls come in later updates.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Beginner mode is on.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2165,6 +2157,10 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source>Set key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expert mode is on. Paste mirrored shows on the timeline; more controls come in later updates.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5272,6 +5268,62 @@ Error: %2</source>
     </message>
     <message>
         <source>This frame has a key already. Turning the joint changes it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy a stretch of the timeline first (select keys, then Ctrl+C).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to copy yet. Set a key first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selected frames %1 to %2 on %3. Ctrl+C copies them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied frames %1 to %2 of %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied frame %1 of %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut frames %1 to %2 of %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut frame %1 of %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pasted at frame %1 on %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pasted mirrored at frame %1 on %2. Left and right are swapped.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 key went past the last frame and was left out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 keys went past the last frame and were left out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 joints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste mirrored</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

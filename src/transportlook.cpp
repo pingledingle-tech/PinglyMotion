@@ -209,6 +209,8 @@ namespace TransportLook
     if(name==QLatin1String("transportStopButton")) return QStringLiteral("square");
     if(name==QLatin1String("transportReplayButton")) return QStringLiteral("rotate-ccw");
     if(name==QLatin1String("keyframeButton") || name==QLatin1String("timelineFirstKeyButton")) return QStringLiteral("diamond-plus");
+    // Paste mirrored (UX phase 3b, the mockup's flip-horizontal-2)
+    if(name==QLatin1String("pasteMirroredButton")) return QStringLiteral("flip-horizontal-2");
     return QString();
   }
 

@@ -33,16 +33,16 @@ namespace MenuSpec
   inline constexpr Item fileExport = {"fileExportAnimAction", QT_TRANSLATE_NOOP("MenuSpec", "Export for Second Life (.anim)..."), "Ctrl+Shift+E", ""};
   inline constexpr Item fileClose = {"fileCloseAction", QT_TRANSLATE_NOOP("MenuSpec", "Close animation"), "Ctrl+W", ""};
 
-  // Edit (UX phase 1b). Undo, Redo and Paste mirrored are not built yet, so they are greyed
-  // with a reason; Set key works through the key button and its reasons come from
-  // the state of the window (the setKey* texts below).
+  // Edit (UX phase 1b). Undo and Redo are not built yet, so they are greyed with a reason;
+  // Set key works through the key button and its reasons come from the state of the
+  // window (the setKey* texts below). Paste mirrored is built since UX phase 3b; its
+  // reasons come from the state too (ClipSpec::pasteBlocked, src/timelineclip.h).
   inline constexpr Item editUndo = {"editUndoAction", QT_TRANSLATE_NOOP("MenuSpec", "Undo"), "Ctrl+Z",
     QT_TRANSLATE_NOOP("MenuSpec", "Undo is not built yet. Save a copy before big changes.")};
   inline constexpr Item editRedo = {"editRedoAction", QT_TRANSLATE_NOOP("MenuSpec", "Redo"), "Ctrl+Shift+Z",
     QT_TRANSLATE_NOOP("MenuSpec", "Redo is not built yet. It comes with Undo.")};
   inline constexpr Item editSetKey = {"editSetKeyAction", QT_TRANSLATE_NOOP("MenuSpec", "Set key"), "K", ""};
-  inline constexpr Item editPasteMirrored = {"editPasteMirroredAction", QT_TRANSLATE_NOOP("MenuSpec", "Paste mirrored"), "Ctrl+Shift+V",
-    QT_TRANSLATE_NOOP("MenuSpec", "Paste mirrored is not built yet. Use Tools > Mirror to swap left and right.")};
+  inline constexpr Item editPasteMirrored = {"editPasteMirroredAction", QT_TRANSLATE_NOOP("MenuSpec", "Paste mirrored"), "Ctrl+Shift+V", ""};
 
   // why a control cannot be used right now (design charter P6), not tied to one item
   inline constexpr const char* openFirst = QT_TRANSLATE_NOOP("MenuSpec", "Open an animation first.");

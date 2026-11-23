@@ -99,7 +99,10 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   key row is `surface` with 5 percent of the area token, the name 9 percent,
   a 4 pixel stripe in the area token on the left of the name, the area's name
   in `text_muted`, and keys and the lines between them in the area token; the
-  selected row stays `selection` with `on_accent`.
+  selected row stays `selection` with `on_accent`. Since UX phase 3b the
+  selected stretch is a box of `selection` at 22 percent with a 1 pixel
+  `selection` border (`tests/timelineclip`), and the Paste mirrored button
+  beside Set key is a normal button with the Lucide `flip-horizontal-2` icon.
 - **3D view** (`src/viewcolours.h`): rotation rings and prop axis lines in the
   axis tokens (a ring that is not in use is 20 percent toward `background`, a
   highlighted prop handle 20 percent toward `text`), joint balls `danger_fill`

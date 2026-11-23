@@ -36,6 +36,7 @@
 #include "panelwindow.h"
 #include "playstate.h"
 #include "prop.h"
+#include "timelineclip.h"
 #include "updatechecker.h"
 
 class QCloseEvent;
@@ -255,6 +256,9 @@ class PinglyMotionWindow : public QMainWindow
     void editCut();
     void editCopy();
     void editPaste();
+    // UX phase 3b: the copied stretch, mirrored (Edit > Paste mirrored, Ctrl+Shift+V)
+    void pasteMirroredFromMenu();
+    void pasteClip(bool mirrored);
 
     void toolsOptimizeBVH();
     void toolsMirror();
@@ -446,7 +450,8 @@ class PinglyMotionWindow : public QMainWindow
     // holds the current playing status
     PlayState playstate;
 
-    bool frameDataValid;
+    // the stretch of the timeline Copy or Cut took last (UX phase 3b)
+    TimelineClip m_clip;
     // will be true if a frame is protected
     bool protect;
 
