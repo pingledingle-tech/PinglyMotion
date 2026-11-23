@@ -1,6 +1,6 @@
 Branch: job/player-check
 Status: active
-Pull request: pending
+Pull request: #445
 Files:
 - docs/PLAYER_CHECK.md
 
