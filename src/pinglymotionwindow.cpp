@@ -1207,7 +1207,10 @@ void PinglyMotionWindow::setKeyFromMenu()
 QString PinglyMotionWindow::jointDisplayName(const QString& fileName) const
 {
   if(!m_jointInfo) return fileName;
-  const QString name=JointList::friendlyName(*m_jointInfo,fileName);
+  // the name that tells left and right apart ("Left Arm: Collar"), as the
+  // Selected joint panel shows it; the Avatar Position by its list name
+  QString name=(fileName==JointList::POSITION_TRACK) ? QString() : m_jointInfo->uniqueName(fileName);
+  if(name.isEmpty()) name=JointList::friendlyName(*m_jointInfo,fileName);
   return name.isEmpty() ? fileName : name;
 }
 

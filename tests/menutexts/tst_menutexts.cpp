@@ -507,13 +507,18 @@ void TestMenuTexts::phase1bEditMenuInTheWindow()
     QVERIFY2(at > last, marker);
     last = at;
   }
-  // the reasons of Set key are chosen in this order
+  // the reasons of Set key are chosen in this order; since UX phase 3a the window asks
+  // TimelineSpec::setKeyBlocked (src/timelinerows.cpp, exact answers in tests/timelinerows)
   const int reasons = source.indexOf(QStringLiteral("void PinglyMotionWindow::updateEditActions()"));
   QVERIFY(reasons >= 0);
+  QVERIFY(source.indexOf(QStringLiteral("TimelineSpec::setKeyBlocked("), reasons) > reasons);
+  const QString rows = readSource("timelinerows.cpp");
+  const int blocked = rows.indexOf(QStringLiteral("QString setKeyBlocked("));
+  QVERIFY(blocked >= 0);
   last = -1;
   for (const char* marker : {"MenuSpec::openFirst", "MenuSpec::setKeyPickJoint", "MenuSpec::setKeyStopPlaying", "MenuSpec::setKeyLocked"})
   {
-    const int at = source.indexOf(QLatin1String(marker), std::max(last + 1, reasons));
+    const int at = rows.indexOf(QLatin1String(marker), std::max(last + 1, blocked));
     QVERIFY2(at > last, marker);
     last = at;
   }

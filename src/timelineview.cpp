@@ -337,7 +337,8 @@ TimelineTracks::~TimelineTracks()
 QSize TimelineTracks::sizeHint() const
 {
   const int rows=rows_ ? rows_->rowCount() : 0;
-  return QSize(neededWidth(), rows * Constants::lineHeight() + 2);
+  // no rows: no height (the row area is closed, the empty state stands on top)
+  return QSize(neededWidth(), rows ? rows * Constants::lineHeight() + 2 : 0);
 }
 
 QString TimelineTracks::shownName(int track) const

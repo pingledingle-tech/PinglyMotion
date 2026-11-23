@@ -316,7 +316,7 @@ class PinglyMotionWindow : public QMainWindow
 
     void updateFps();
     void updateKeyBtn();
-    // a joint's name as the Joints list shows it, or its file name
+    // a joint's name that tells left and right apart, or its file name
     QString jointDisplayName(const QString& fileName) const;
     // Edit > Set key: enabled, tip and reason follow the state of the window
     void updateEditActions();

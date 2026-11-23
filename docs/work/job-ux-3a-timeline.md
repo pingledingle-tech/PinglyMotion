@@ -18,6 +18,7 @@ Files:
 - CMakeLists.txt
 - tests/CMakeLists.txt
 - tests/transportbar/tst_transportbar.cpp
+- tests/menutexts/tst_menutexts.cpp
 - tests/tst_timeline.cpp
 - tests/tst_timelineview.cpp
 - tests/timelinerows/**
