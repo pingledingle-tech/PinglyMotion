@@ -69,6 +69,9 @@ namespace EasingChoice
 }
 
 // One tile: a checkable button with the moving figure and the name below it.
+// The current tile has a check mark in its corner (the mockup's tick). With
+// the keyboard focus it shows the focus ring; the arrow keys go to the next or
+// the previous tile (UX phase 5, the mockup's radio group).
 class EasingTile : public QAbstractButton
 {
   Q_OBJECT
@@ -88,9 +91,14 @@ class EasingTile : public QAbstractButton
   signals:
     void hovered(Easing::Preset preset);
     void left();
+    // an arrow key: +1 for the next tile (Right, Down), -1 for the previous one (Left, Up)
+    void stepRequested(int step);
 
   protected:
     void paintEvent(QPaintEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
     void enterEvent(QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
 
@@ -102,8 +110,12 @@ class EasingTile : public QAbstractButton
     double m_phase=0;
 };
 
-// The row: six tiles, one marked as current, and a one-line hint below.
-// Only the tile under the mouse moves its figure; the others stand at the start.
+// The row: the heading "How the move feels", six tiles, one marked as
+// current, the "Edit curve..." button (Expert mode only) and a one-line hint
+// below. Only the tile under the mouse moves its figure; the others stand at
+// the start. Keyboard (UX phase 5): Tab reaches the row at the current tile,
+// the arrow keys pick the next or previous choice (round the end), Space
+// picks the tile with the focus.
 class EasingTiles : public QWidget
 {
   Q_OBJECT
@@ -117,19 +129,39 @@ class EasingTiles : public QWidget
     // is greyed out and the hint says what to do.
     void setNoKey();
 
+    // Why there is no pose change to pick for (asked at every setNoKey()): no
+    // animation open, no joint picked, or no key with a move before it. The
+    // timeline sets it (it knows the animation and the joint).
+    enum class NoKey { NoAnimation, NoJoint, NoMove };
+    void setNoKeyCheck(std::function<NoKey()> check) { m_noKeyCheck=std::move(check); }
+    // asks the check again while no key is selected (the animation or the
+    // joint changed)
+    void refreshNoKey();
+    // the reason the greyed-out tiles and Edit curve give (their tip and the
+    // status line, charter P6); empty while a pose change is selected
+    QString tileReason() const;
+    QString editCurveReason() const;
+
+    // Expert mode shows the "Edit curve..." button (the mockup's expert-only
+    // button); it starts with UserSettings::expertMode() and follows it.
+    void setExpertMode(bool expert);
+    bool isExpertMode() const { return m_expert; }
+
     // Whether the hint line under the row shows the help texts (the "Tips on"
     // setting). The "select a key frame" line shows either way.
     void setTipsOn(bool on);
 
-    // The pose change has a custom curve (issue #11): no tile is marked, the
-    // "Custom curve" button is. Call after setChoice().
+    // The pose change has a custom curve (issue #11): no tile is marked and
+    // the hint line says so (with the tips on or off). Call after setChoice().
     void setCustom(bool custom);
     bool isCustom() const { return m_custom; }
     // Asked at the end of every setChoice(): does the selected pose change have
     // a custom curve? The timeline sets it (it knows the joint and the frame),
     // so the window needs no change.
     void setCustomCheck(std::function<bool()> check) { m_customCheck=std::move(check); }
-    QPushButton* customButton() const { return m_customButton; }
+    // "Edit curve..." (issue #11, UX phase 5): opens the Edit curve window
+    QPushButton* editCurveButton() const { return m_editButton; }
+    QLabel* heading() const { return m_heading; }
 
     bool hasChoice() const { return m_hasChoice; }
     Easing::Preset choice() const { return m_choice; }
@@ -155,8 +187,8 @@ class EasingTiles : public QWidget
   signals:
     // The user clicked a tile (not emitted when the window sets the choice).
     void choiceClicked(Easing::Preset preset);
-    // The user clicked "Custom curve" (issue #11).
-    void customCurveRequested();
+    // The user clicked "Edit curve..." (issue #11).
+    void editCurveRequested();
 
   protected:
     void showEvent(QShowEvent* event) override;
@@ -168,21 +200,28 @@ class EasingTiles : public QWidget
     void tileClicked();
     void tileHovered(Easing::Preset preset);
     void tileLeft();
+    void tileStep(int step);
 
   private:
     void refreshHint();
+    void refreshFocusOrder();
+    void applyNoKeyState();
     void updateAnimation();
     int widthWith(int rowWidth) const;
 
     EasingTile* m_tiles[Easing::PresetCount];
     QButtonGroup* m_group;
-    QPushButton* m_customButton;
+    QLabel* m_heading;
+    QPushButton* m_editButton;
     QBoxLayout* m_rows=nullptr;
     QLabel* m_hint;
     QTimer* m_timer;
     bool m_hasChoice=false;
     bool m_custom=false;
     std::function<bool()> m_customCheck;
+    std::function<NoKey()> m_noKeyCheck;
+    NoKey m_noKey=NoKey::NoMove;
+    bool m_expert=false;
     Easing::Preset m_choice=Easing::defaultPreset();
     bool m_tipsOn=true;
     std::optional<Easing::Preset> m_hovered;
@@ -208,6 +247,13 @@ class CurveEditor : public QWidget
     QPointF handlePosition(int handle) const;
     QPointF toCurve(const QPointF& position) const;
 
+    // Keyboard (charter: everything works without a mouse): the arrow keys
+    // move the active handle by keyStep() (Shift: bigStep()), Space makes the
+    // other handle active. A drag makes the dragged handle active.
+    int activeHandle() const { return m_active; }
+    static double keyStep() { return 0.01; }
+    static double bigStep() { return 0.1; }
+
     QSize sizeHint() const override { return QSize(360,300); }
     QSize minimumSizeHint() const override { return QSize(240,200); }
 
@@ -219,6 +265,9 @@ class CurveEditor : public QWidget
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
 
   private:
     QRectF graphRect() const;
@@ -227,15 +276,22 @@ class CurveEditor : public QWidget
 
     Easing::Bezier m_curve;
     int m_dragging=-1;
+    int m_active=0;
 };
 
-// The dialog around the curve editor: hint, "Start again", OK and Cancel.
+// The Edit curve window around the curve editor (UX_DECISIONS.md section 3,
+// UX phase 5): hint, "Start again", OK and Cancel. A separate window that can
+// be moved, resized and put on a second screen; it opens small, and after that
+// where it was last time with the size it had (kept between sessions under
+// placeName(), clamped to the screen by src/dialogfit.*).
 class CurveEditorDialog : public QDialog
 {
   Q_OBJECT
 
   public:
     CurveEditorDialog(const Easing::Bezier& start,QWidget* parent=nullptr);
+
+    static QString placeName() { return QStringLiteral("edit_curve_window"); }
 
     Easing::Bezier curve() const;
     CurveEditor* editor() const { return m_editor; }

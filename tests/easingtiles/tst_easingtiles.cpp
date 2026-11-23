@@ -11,6 +11,7 @@
 #include <QTemporaryDir>
 #include <QLabel>
 #include <QPushButton>
+#include <QDialogButtonBox>
 #include <QMouseEvent>
 #include <QApplication>
 #include <cmath>
@@ -19,8 +20,13 @@
 #include "bvh.h"
 #include "bvhnode.h"
 #include "dingle.h"
+#include "dialogfit.h"
 #include "easing.h"
 #include "easingtiles.h"
+#include "textsize.h"
+#include "theme.h"
+#include "uirender.h"
+#include "usersettings.h"
 
 static QByteArray readAll(const QString& path)
 {
@@ -63,6 +69,17 @@ class EasingTilesTest : public QObject
     void customCurveStaysInsideLimits();
     void editorDragsHandles();
     void dialogStartAgainAndLimits();
+    // UX phase 5 (the approved mockup, docs/UX_DECISIONS.md sections 2 and 3)
+    void headingAndExpertOnlyEditButton();
+    void greyedRowSaysWhy();
+    void customLineShowsWithTipsOff();
+    void tabReachesTheCurrentTileOnly();
+    void arrowKeysPickTheNextChoice();
+    void curveEditorKeyboard();
+    void editCurveWindowKeepsItsPlace();
+    void editCurveWindowStaysOnTheScreen();
+    void editCurveWindowAtDoubleText();
+    void pictures();
 
   private:
     // the jump example, with the joint and two neighbouring keys used below
@@ -112,7 +129,7 @@ void EasingTilesTest::noKeySelected()
   EasingTiles row;
   row.setTipsOn(true);
   QVERIFY(!row.hasChoice());
-  QCOMPARE(row.hintText(), QString("Select a key frame on the timeline"));
+  QCOMPARE(row.hintText(), QString("Select a key on the timeline"));
   for (int i = 0; i < Easing::PresetCount; i++)
   {
     QVERIFY(!row.tile(static_cast<Easing::Preset>(i))->isEnabled());
@@ -125,7 +142,7 @@ void EasingTilesTest::noKeySelected()
 
   // the same line shows with the tips off: it is the state, not a tip
   row.setTipsOn(false);
-  QCOMPARE(row.hintText(), QString("Select a key frame on the timeline"));
+  QCOMPARE(row.hintText(), QString("Select a key on the timeline"));
 }
 
 void EasingTilesTest::clickStoresSwitchesOrCurve_data()
@@ -448,19 +465,19 @@ void EasingTilesTest::previewMovesOnlyOnHoveredTile()
 void EasingTilesTest::customButtonFollowsTheKey()
 {
   EasingTiles row;
-  QPushButton* button = row.customButton();
+  QPushButton* button = row.editCurveButton();
   QVERIFY(button);
-  QCOMPARE(button->objectName(), QStringLiteral("customCurveButton"));
-  QCOMPARE(button->text(), QStringLiteral("Custom curve..."));
+  QCOMPARE(button->objectName(), QStringLiteral("editCurveButton"));
+  QCOMPARE(button->text(), QStringLiteral("Edit curve..."));
+  QVERIFY(!button->isCheckable());
   QVERIFY(!button->isEnabled());
 
-  QSignalSpy spy(&row, &EasingTiles::customCurveRequested);
+  QSignalSpy spy(&row, &EasingTiles::editCurveRequested);
   row.setChoice(Easing::Preset::SlowBothEnds);
   QVERIFY(button->isEnabled());
   button->click();
   QCOMPARE(spy.count(), 1);
-  // only the dialog changes the state, not the click
-  QVERIFY(!button->isChecked());
+  // only the window changes the state, not the click
   QVERIFY(!row.isCustom());
 
   row.setNoKey();
@@ -474,7 +491,6 @@ void EasingTilesTest::customStateMarksButtonNotTiles()
   row.setChoice(Easing::Preset::SlowStart);
   row.setCustom(true);
   QVERIFY(row.isCustom());
-  QVERIFY(row.customButton()->isChecked());
   for (int i = 0; i < Easing::PresetCount; i++)
     QVERIFY(!row.tile(static_cast<Easing::Preset>(i))->isChecked());
   QCOMPARE(row.hintText(), QStringLiteral("This pose change uses your own curve. Click a tile to go back."));
@@ -484,7 +500,6 @@ void EasingTilesTest::customStateMarksButtonNotTiles()
   row.tile(Easing::Preset::Even)->click();
   QCOMPARE(spy.count(), 1);
   QVERIFY(!row.isCustom());
-  QVERIFY(!row.customButton()->isChecked());
   QVERIFY(row.tile(Easing::Preset::Even)->isChecked());
 
   // without a key the custom state cannot be set
@@ -666,7 +681,7 @@ void EasingTilesTest::dialogStartAgainAndLimits()
 {
   const Easing::Bezier start = Easing::bezierFromPreset(Easing::Preset::SlowFinish);
   CurveEditorDialog dialog(start);
-  QCOMPARE(dialog.windowTitle(), QStringLiteral("Custom curve"));
+  QCOMPARE(dialog.windowTitle(), QStringLiteral("Edit curve"));
   QCOMPARE(dialog.curve(), start);
   QLabel* hint = dialog.findChild<QLabel*>("curveEditorHint");
   QVERIFY(hint);
@@ -683,6 +698,369 @@ void EasingTilesTest::dialogStartAgainAndLimits()
   // values outside the limits are kept inside them
   dialog.editor()->setCurve(Easing::Bezier{-1, 9, 2, -9});
   QCOMPARE(dialog.curve(), (Easing::Bezier{0, Easing::BezierMaxY, 1, Easing::BezierMinY}));
+}
+
+// ---------------------------------------------------------------- UX phase 5
+
+void EasingTilesTest::headingAndExpertOnlyEditButton()
+{
+  UserSettings::setExpertMode(false);
+  {
+    EasingTiles row;
+    QVERIFY(row.heading());
+    QCOMPARE(row.heading()->text(), QStringLiteral("How the move feels"));
+    QCOMPARE(row.heading()->objectName(), QStringLiteral("easingHeading"));
+    QVERIFY(row.heading()->font().weight() >= QFont::DemiBold);
+    // Beginner mode: no Edit curve button
+    QVERIFY(!row.isExpertMode());
+    QVERIFY(!row.editCurveButton()->isVisibleTo(&row));
+    // the Expert mode switch shows it at once, and hides it again
+    UserSettings::setExpertMode(true);
+    QVERIFY(row.isExpertMode());
+    QVERIFY(row.editCurveButton()->isVisibleTo(&row));
+    UserSettings::setExpertMode(false);
+    QVERIFY(!row.editCurveButton()->isVisibleTo(&row));
+    UserSettings::setExpertMode(true);
+  }
+  // a row made in Expert mode shows the button from the start; a deleted row
+  // is no longer called when the switch changes (no crash here)
+  EasingTiles expertRow;
+  QVERIFY(expertRow.editCurveButton()->isVisibleTo(&expertRow));
+  UserSettings::setExpertMode(false);
+  UserSettings::setExpertMode(true);
+  QVERIFY(expertRow.editCurveButton()->isVisibleTo(&expertRow));
+  // the button sits right of the tiles, with the mockup's icon
+  QVERIFY(!expertRow.editCurveButton()->icon().isNull());
+  UserSettings::setExpertMode(false);
+}
+
+void EasingTilesTest::greyedRowSaysWhy()
+{
+  EasingTiles row;
+  row.setTipsOn(false);
+  EasingTiles::NoKey state = EasingTiles::NoKey::NoAnimation;
+  row.setNoKeyCheck([&state]() { return state; });
+  QPushButton* edit = row.editCurveButton();
+  EasingTile* tile = row.tile(Easing::Preset::Even);
+
+  row.setNoKey();
+  QCOMPARE(tile->statusTip(), QStringLiteral("Open an animation first."));
+  QCOMPARE(tile->toolTip(), QStringLiteral("Open an animation first."));
+  QCOMPARE(tile->property("reasonName").toString(), QStringLiteral("Easing choice"));
+  QCOMPARE(edit->statusTip(), QStringLiteral("Open an animation first."));
+  QCOMPARE(edit->property("reasonName").toString(), QStringLiteral("Edit curve"));
+  // nothing open: the line under the row is empty (the timeline says it)
+  QCOMPARE(row.hintText(), QString());
+
+  state = EasingTiles::NoKey::NoJoint;
+  row.refreshNoKey();
+  QCOMPARE(tile->statusTip(), QStringLiteral("Pick a joint first."));
+  QCOMPARE(edit->statusTip(), QStringLiteral("Select a key on the timeline first."));
+  QCOMPARE(row.hintText(), QStringLiteral("Select a key on the timeline"));
+
+  state = EasingTiles::NoKey::NoMove;
+  row.refreshNoKey();
+  QCOMPARE(tile->statusTip(), QStringLiteral("Select a key on the timeline. The first key has no move before it."));
+  QCOMPARE(row.tileReason(), tile->statusTip());
+  QCOMPARE(edit->statusTip(), QStringLiteral("Select a key on the timeline first."));
+  QCOMPARE(row.editCurveReason(), edit->statusTip());
+  QCOMPARE(edit->toolTip(), QStringLiteral("Select a key on the timeline first."));
+
+  // a pose change is picked: no reasons, and refreshNoKey leaves it alone
+  row.setChoice(Easing::Preset::Even);
+  QVERIFY(tile->statusTip().isEmpty());
+  QVERIFY(edit->statusTip().isEmpty());
+  QVERIFY(row.tileReason().isEmpty());
+  state = EasingTiles::NoKey::NoAnimation;
+  row.refreshNoKey();
+  QVERIFY(row.hasChoice());
+  QVERIFY(tile->isEnabled());
+}
+
+void EasingTilesTest::customLineShowsWithTipsOff()
+{
+  EasingTiles row;
+  row.setTipsOn(false);
+  row.setChoice(Easing::Preset::SlowStart);
+  QVERIFY(row.hintText().isEmpty());
+  // the custom curve is the state of the pose change, not a tip
+  row.setCustom(true);
+  QCOMPARE(row.hintText(), QStringLiteral("This pose change uses your own curve. Click a tile to go back."));
+}
+
+void EasingTilesTest::tabReachesTheCurrentTileOnly()
+{
+  EasingTiles row;
+  row.setChoice(Easing::Preset::SlowFinish);
+  for (int i = 0; i < Easing::PresetCount; i++)
+  {
+    const Easing::Preset preset = static_cast<Easing::Preset>(i);
+    QCOMPARE(row.tile(preset)->focusPolicy(), preset == Easing::Preset::SlowFinish ? Qt::StrongFocus : Qt::ClickFocus);
+  }
+  // a click moves the Tab stop with the choice
+  row.tile(Easing::Preset::HoldThenSnap)->click();
+  QCOMPARE(row.tile(Easing::Preset::HoldThenSnap)->focusPolicy(), Qt::StrongFocus);
+  QCOMPARE(row.tile(Easing::Preset::SlowFinish)->focusPolicy(), Qt::ClickFocus);
+  // a custom curve marks no tile: the first tile is the Tab stop
+  row.setCustom(true);
+  QCOMPARE(row.tile(Easing::Preset::Even)->focusPolicy(), Qt::StrongFocus);
+  QCOMPARE(row.tile(Easing::Preset::HoldThenSnap)->focusPolicy(), Qt::ClickFocus);
+}
+
+void EasingTilesTest::arrowKeysPickTheNextChoice()
+{
+  EasingTiles row;
+  row.setChoice(Easing::Preset::SlowFinish);
+  QVERIFY(showAwayFromMouse(row));
+  row.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&row));
+  QSignalSpy spy(&row, &EasingTiles::choiceClicked);
+
+  EasingTile* start = row.tile(Easing::Preset::SlowFinish);
+  start->setFocus(Qt::TabFocusReason);
+  QVERIFY(start->hasFocus());
+
+  struct Step { int key; Easing::Preset expected; };
+  const Step steps[] = {
+    {Qt::Key_Right, Easing::Preset::SlowBothEnds},
+    {Qt::Key_Down, Easing::Preset::OvershootThenSettle},
+    {Qt::Key_Right, Easing::Preset::HoldThenSnap},
+    {Qt::Key_Right, Easing::Preset::Even},          // round the end
+    {Qt::Key_Left, Easing::Preset::HoldThenSnap},   // and back
+    {Qt::Key_Up, Easing::Preset::OvershootThenSettle},
+  };
+  int count = 0;
+  for (const Step& step : steps)
+  {
+    QWidget* focused = QApplication::focusWidget();
+    QVERIFY(focused);
+    QTest::keyClick(focused, static_cast<Qt::Key>(step.key));
+    count++;
+    QCOMPARE(spy.count(), count);
+    QCOMPARE(spy.last().at(0).value<Easing::Preset>(), step.expected);
+    QVERIFY(row.tile(step.expected)->isChecked());
+    QVERIFY(row.tile(step.expected)->hasFocus());
+    QCOMPARE(row.choice(), step.expected);
+  }
+
+  // Space on the focused tile picks it again (a click)
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Space);
+  QCOMPARE(spy.count(), count + 1);
+
+  // no key selected: the arrow keys change nothing
+  row.setNoKey();
+  QTest::keyClick(row.tile(Easing::Preset::OvershootThenSettle), Qt::Key_Right);
+  QCOMPARE(spy.count(), count + 1);
+}
+
+void EasingTilesTest::curveEditorKeyboard()
+{
+  CurveEditor editor;
+  editor.resize(360, 300);
+  QCOMPARE(editor.focusPolicy(), Qt::StrongFocus);
+  editor.setCurve(Easing::Bezier{0.25, 0.25, 0.75, 0.75});
+  QCOMPARE(editor.activeHandle(), 0);
+
+  QTest::keyClick(&editor, Qt::Key_Right);
+  QTest::keyClick(&editor, Qt::Key_Up);
+  QTest::keyClick(&editor, Qt::Key_Up);
+  Easing::Bezier c = editor.curve();
+  QVERIFY(std::fabs(c.x1 - 0.26) < 1e-9);
+  QVERIFY(std::fabs(c.y1 - 0.27) < 1e-9);
+  QCOMPARE(c.x2, 0.75);
+  QCOMPARE(c.y2, 0.75);
+
+  // Shift: steps of 0.1; Space: the other handle
+  QTest::keyClick(&editor, Qt::Key_Space);
+  QCOMPARE(editor.activeHandle(), 1);
+  QTest::keyClick(&editor, Qt::Key_Left, Qt::ShiftModifier);
+  QTest::keyClick(&editor, Qt::Key_Down, Qt::ShiftModifier);
+  c = editor.curve();
+  QVERIFY(std::fabs(c.x2 - 0.65) < 1e-9);
+  QVERIFY(std::fabs(c.y2 - 0.65) < 1e-9);
+  QVERIFY(std::fabs(c.x1 - 0.26) < 1e-9);
+
+  // the keys stop at the limits like a drag
+  for (int i = 0; i < 20; i++) QTest::keyClick(&editor, Qt::Key_Right, Qt::ShiftModifier);
+  QCOMPARE(editor.curve().x2, 1.0);
+
+  // a drag makes the dragged handle the one the keys move
+  QTest::mousePress(&editor, Qt::LeftButton, Qt::NoModifier, editor.handlePosition(0).toPoint());
+  QTest::mouseRelease(&editor, Qt::LeftButton, Qt::NoModifier, editor.handlePosition(0).toPoint());
+  QCOMPARE(editor.activeHandle(), 0);
+
+  // the window tells how
+  CurveEditorDialog dialog(Easing::bezierFromPreset(Easing::Preset::Even));
+  QLabel* keys = dialog.findChild<QLabel*>("curveEditorKeys");
+  QVERIFY(keys);
+  QCOMPARE(keys->text(), QStringLiteral("Keys: the arrow keys move a handle (Shift: bigger steps), Space picks the other handle."));
+}
+
+// the Edit curve window opens where it was last time, with the size it had
+void EasingTilesTest::editCurveWindowKeepsItsPlace()
+{
+  DialogFit::setAreaForTests(QRect(0, 0, 1600, 1000));
+  UserSettings::setWindowPlace(CurveEditorDialog::placeName(), QRect());
+  QCOMPARE(CurveEditorDialog::placeName(), QStringLiteral("edit_curve_window"));
+  const Easing::Bezier start = Easing::bezierFromPreset(Easing::Preset::SlowBothEnds);
+
+  QSize firstSize;
+  {
+    CurveEditorDialog dialog(start);
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    QApplication::processEvents();
+    // the first time: its own small size, inside the screen
+    firstSize = dialog.size();
+    QVERIFY(firstSize.width() <= 1600 && firstSize.height() <= 1000);
+    // the user moves it (to a second screen, say) and makes it bigger
+    dialog.move(300, 200);
+    dialog.resize(firstSize + QSize(140, 120));
+    QApplication::processEvents();
+    dialog.reject();
+  }
+  const QRect kept = UserSettings::windowPlace(CurveEditorDialog::placeName());
+  QCOMPARE(kept, QRect(QPoint(300, 200), firstSize + QSize(140, 120)));
+
+  {
+    CurveEditorDialog dialog(start);
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    QApplication::processEvents();
+    QCOMPARE(dialog.pos(), QPoint(300, 200));
+    QCOMPARE(dialog.size(), firstSize + QSize(140, 120));
+    // OK keeps the place too
+    dialog.move(320, 240);
+    QApplication::processEvents();
+    dialog.accept();
+  }
+  QCOMPARE(UserSettings::windowPlace(CurveEditorDialog::placeName()).topLeft(), QPoint(320, 240));
+  DialogFit::setAreaForTests(QRect());
+}
+
+// a kept place that no longer fits (a smaller or missing screen) is pulled
+// onto the screen and made no larger than it
+void EasingTilesTest::editCurveWindowStaysOnTheScreen()
+{
+  const QRect area(0, 0, 1024, 700);
+  DialogFit::setAreaForTests(area);
+  const Easing::Bezier start = Easing::bezierFromPreset(Easing::Preset::Even);
+
+  UserSettings::setWindowPlace(CurveEditorDialog::placeName(), QRect(5000, 4000, 400, 360));
+  {
+    CurveEditorDialog dialog(start);
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    QApplication::processEvents();
+    QVERIFY2(area.contains(dialog.frameGeometry()), qPrintable(QString("%1,%2 %3x%4").arg(dialog.x()).arg(dialog.y()).arg(dialog.width()).arg(dialog.height())));
+    QCOMPARE(dialog.size(), QSize(400, 360));
+    dialog.reject();
+  }
+
+  UserSettings::setWindowPlace(CurveEditorDialog::placeName(), QRect(-300, -200, 4000, 3000));
+  {
+    CurveEditorDialog dialog(start);
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    QApplication::processEvents();
+    QVERIFY(dialog.width() <= area.width() && dialog.height() <= area.height());
+    QVERIFY(area.contains(dialog.frameGeometry()));
+    // the title bar is inside the screen
+    QVERIFY(dialog.frameGeometry().top() >= area.top());
+    dialog.reject();
+  }
+  DialogFit::setAreaForTests(QRect());
+  UserSettings::setWindowPlace(CurveEditorDialog::placeName(), QRect());
+}
+
+// at 200 percent text the window grows with its content but keeps the size
+// the user gave it when that is bigger, and its buttons stay reachable
+void EasingTilesTest::editCurveWindowAtDoubleText()
+{
+  const QRect area(0, 0, 1280, 800);
+  DialogFit::setAreaForTests(area);
+  UserSettings::setWindowPlace(CurveEditorDialog::placeName(), QRect(100, 80, 900, 700));
+  CurveEditorDialog dialog(Easing::bezierFromPreset(Easing::Preset::Even));
+  dialog.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+  QApplication::processEvents();
+  QCOMPARE(dialog.size(), QSize(900, 700));
+  TextSize::apply(200);
+  QTest::qWait(50);
+  QApplication::processEvents();
+  QVERIFY(dialog.width() >= 900 && dialog.height() >= 700);
+  QVERIFY(dialog.width() <= area.width() && dialog.height() <= area.height());
+  QVERIFY(area.contains(dialog.frameGeometry()));
+  QDialogButtonBox* buttons = dialog.findChild<QDialogButtonBox*>();
+  QVERIFY(buttons);
+  QVERIFY(buttons->isVisible());
+  const QRect inDialog(buttons->mapTo(&dialog, QPoint(0, 0)), buttons->size());
+  QVERIFY(dialog.rect().contains(inDialog));
+  TextSize::apply(100);
+  dialog.reject();
+  DialogFit::setAreaForTests(QRect());
+  UserSettings::setWindowPlace(CurveEditorDialog::placeName(), QRect());
+}
+
+// the row and the window in both themes at 100, 150 and 200 percent text:
+// nothing clipped, the current tile in the selection colour with its check
+// mark, the heading and Edit curve there (pictures with PINGLYMOTION_UI_OUT)
+void EasingTilesTest::pictures()
+{
+  UserSettings::setExpertMode(true);
+  for (const UiRender::Variant& v : UiRender::variants())
+  {
+    UiRender::Scope scope(v);
+    EasingTiles row;
+    row.setTipsOn(true);
+    row.setChoice(Easing::Preset::SlowBothEnds);
+    const QImage image = UiRender::render(&row);
+    UiRender::save(image, QStringLiteral("easingtiles"), v);
+    const QStringList clipped = UiRender::clipping(&row);
+    QVERIFY2(clipped.isEmpty(), qPrintable(v.name() + ": " + clipped.join("; ")));
+    QVERIFY(row.heading()->isVisible());
+    // every name fits in two lines inside its tile (charter P9, 200 percent text)
+    for (int i = 0; i < Easing::PresetCount; i++)
+    {
+      EasingTile* tile = row.tile(static_cast<Easing::Preset>(i));
+      QFont small = tile->font();
+      if (small.pointSize() > 0) small.setPointSize(small.pointSize() - 1);
+      const QFontMetrics metrics(small);
+      const QRect needed = metrics.boundingRect(QRect(0, 0, tile->width() - 8, 10000),
+                                                Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap, tile->text());
+      QVERIFY2(needed.height() <= 2 * metrics.height(), qPrintable(v.name() + ": " + tile->text()));
+    }
+    QVERIFY(row.editCurveButton()->isVisible());
+    // the check badge of the current tile (14 px, 3 px from the top right
+    // corner) is in the selection colour, at a point beside the check stroke
+    EasingTile* current = row.tile(Easing::Preset::SlowBothEnds);
+    const QPoint inBadge(current->width() - 10, 6);
+    const QString why = UiRender::expectColour(image, &row, current, inBadge,
+                                               current->palette().color(QPalette::Highlight), QStringLiteral("check badge"), 24);
+    QVERIFY2(why.isEmpty(), qPrintable(v.name() + ": " + why));
+    // a tile that is not current has no badge there
+    EasingTile* other = row.tile(Easing::Preset::Even);
+    QVERIFY(UiRender::colourAt(image, &row, other, inBadge) != other->palette().color(QPalette::Highlight));
+
+    CurveEditorDialog dialog(Easing::bezierFromPreset(Easing::Preset::OvershootThenSettle));
+    const QImage window = UiRender::render(&dialog);
+    UiRender::save(window, QStringLiteral("editcurve"), v);
+    // a word-wrapped label may be narrower than its one-line hint: it is
+    // clipped only when it is lower than its text needs at its width
+    QStringList clippedWindow;
+    for (const QString& problem : UiRender::clipping(&dialog))
+    {
+      bool wrappedFits = false;
+      for (QLabel* label : dialog.findChildren<QLabel*>())
+        if (label->wordWrap() && problem.startsWith(QStringLiteral("QLabel '%1' is ").arg(label->objectName()))
+            && problem.contains(QStringLiteral("smaller than its size hint"))
+            && label->height() >= label->heightForWidth(label->width()))
+          wrappedFits = true;
+      if (!wrappedFits) clippedWindow << problem;
+    }
+    QVERIFY2(clippedWindow.isEmpty(), qPrintable(v.name() + ": " + clippedWindow.join("; ")));
+  }
+  UserSettings::setExpertMode(false);
 }
 
 QTEST_MAIN(EasingTilesTest)

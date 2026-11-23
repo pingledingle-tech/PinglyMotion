@@ -128,7 +128,7 @@ class TimelineView : public QFrame
 
   protected slots:
     void setAnimation(Animation* anim);
-    // "Custom curve" was clicked on the tile row: edit the pose change that
+    // "Edit curve..." was clicked on the tile row: edit the pose change that
     // ends at the current frame of the selected joint (issue #11)
     void editCustomCurve();
 

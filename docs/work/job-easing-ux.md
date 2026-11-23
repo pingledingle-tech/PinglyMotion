@@ -6,8 +6,13 @@ Files:
 - src/timelineview.*
 - src/dialogfit.*
 - src/usersettings.*
+- src/settings.*
+- src/lucideicons.cpp
+- src/transportlook.cpp
 - tests/easingtiles/**
 - tests/dialogfit/**
+- tests/usersettings/**
+- tests/transportbar/tst_transportbar.cpp
 - docs/EASING.md
 
 ## What

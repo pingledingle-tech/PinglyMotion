@@ -23,6 +23,12 @@
 
 #include "usersettings.h"
 
+#include <QPointer>
+
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 const QString UserSettings::m_userSettingsGroup = "user_settings";
 const QString UserSettings::m_userSettingsVersionGroup = "1.0";
 
@@ -63,6 +69,8 @@ bool UserSettings::m_jointMoreOptions = false;
 const QString UserSettings::m_jointMoreOptionsKey = "joint_more_options";
 bool UserSettings::m_expertMode = false;
 const QString UserSettings::m_expertModeKey = "expert_mode";
+QMap<QString, QRect> UserSettings::m_windowPlaces;
+const QString UserSettings::m_windowPlacesGroup = "window_places";
 QString UserSettings::m_cameraHabit = "pinglymotion";
 const QString UserSettings::m_cameraHabitKey = "camera_habit";
 QString UserSettings::m_viewTool = "pick";
@@ -142,7 +150,46 @@ void UserSettings::setPullLimbOnDrag(bool on)        { m_pullLimbOnDrag = on; }
 bool UserSettings::pullLimbOnDrag()                  { return m_pullLimbOnDrag; }
 void UserSettings::setJointMoreOptions(bool open)    { m_jointMoreOptions = open; }
 bool UserSettings::jointMoreOptions()                { return m_jointMoreOptions; }
-void UserSettings::setExpertMode(bool on)            { m_expertMode = on; }
+namespace
+{
+  // the watchers of the Expert mode switch; a watcher whose context is gone is dropped
+  std::vector<std::pair<QPointer<QObject>, std::function<void(bool)>>>& expertWatchers()
+  {
+    static std::vector<std::pair<QPointer<QObject>, std::function<void(bool)>>> watchers;
+    return watchers;
+  }
+}
+
+void UserSettings::setExpertMode(bool on)
+{
+  if (m_expertMode == on) return;
+  m_expertMode = on;
+  auto& watchers = expertWatchers();
+  watchers.erase(std::remove_if(watchers.begin(), watchers.end(),
+                                [](const auto& w) { return w.first.isNull(); }), watchers.end());
+  // a copy: a watcher may add another one
+  const auto now = watchers;
+  for (const auto& w : now)
+    if (w.first && w.second) w.second(on);
+}
+
+void UserSettings::watchExpertMode(QObject* context, std::function<void(bool)> changed)
+{
+  if (!context || !changed) return;
+  expertWatchers().emplace_back(QPointer<QObject>(context), std::move(changed));
+}
+
+void UserSettings::setWindowPlace(const QString& name, const QRect& place)
+{
+  if (name.isEmpty()) return;
+  if (place.isValid()) m_windowPlaces.insert(name, place);
+  else m_windowPlaces.remove(name);
+}
+
+QRect UserSettings::windowPlace(const QString& name)
+{
+  return m_windowPlaces.value(name);
+}
 bool UserSettings::expertMode()                      { return m_expertMode; }
 QStringList UserSettings::cameraHabits()
 {
@@ -231,6 +278,15 @@ void UserSettings::readSettings()
     setExpertMode(settings.value(m_expertModeKey, false).toString().toLower() == "true"
                   || settings.value(m_expertModeKey, false).toString() == "1");
     setCameraHabit(settings.value(m_cameraHabitKey, "pinglymotion").toString());
+    // the places of separate windows (UX phase 5); anything that is not a usable rect is left out
+    m_windowPlaces.clear();
+    settings.beginGroup(m_windowPlacesGroup);
+    for (const QString& name : settings.childKeys())
+    {
+      const QRect place = settings.value(name).toRect();
+      if (place.isValid() && place.width() <= 100000 && place.height() <= 100000) m_windowPlaces.insert(name, place);
+    }
+    settings.endGroup();
     setViewTool(settings.value(m_viewToolKey, "pick").toString());
     setShowFloor(settings.value(m_showFloorKey, true).toBool());
     setShowRings(settings.value(m_showRingsKey, true).toBool());
@@ -290,6 +346,11 @@ void UserSettings::writeSettings()
   settings.setValue(m_jointMoreOptionsKey, jointMoreOptions());
   settings.setValue(m_expertModeKey, expertMode());
   settings.setValue(m_cameraHabitKey, cameraHabit());
+  settings.remove(m_windowPlacesGroup);
+  settings.beginGroup(m_windowPlacesGroup);
+  for (auto it = m_windowPlaces.cbegin(); it != m_windowPlaces.cend(); ++it)
+    settings.setValue(it.key(), it.value());
+  settings.endGroup();
   settings.setValue(m_viewToolKey, viewTool());
   settings.setValue(m_showFloorKey, showFloor());
   settings.setValue(m_showRingsKey, showRings());

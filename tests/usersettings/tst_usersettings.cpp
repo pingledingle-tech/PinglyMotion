@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QRect>
 #include <QtTest>
 
 #include "constants.h"
@@ -27,6 +28,9 @@ class TestUserSettings : public QObject
     void textSizeIsCutToTheRange();
     void badStoredValuesFallBack();
     void unknownCameraHabitBecomesDefault();
+    void windowPlacesSurviveSaveAndReload();
+    void badWindowPlacesAreLeftOut();
+    void expertModeWatchers();
 
   private:
     void writeVersionGroup(const QVariantMap& values);
@@ -170,6 +174,57 @@ void TestUserSettings::unknownCameraHabitBecomesDefault()
   QCOMPARE(UserSettings::cameraHabit(), QStringLiteral("pinglymotion"));
   UserSettings::setCameraHabit(QStringLiteral("maya"));
   QCOMPARE(UserSettings::cameraHabit(), QStringLiteral("maya"));
+}
+
+// UX phase 5: the place of the Edit curve window is kept between sessions
+void TestUserSettings::windowPlacesSurviveSaveAndReload()
+{
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("edit_curve_window")), QRect());
+  UserSettings::setWindowPlace(QStringLiteral("edit_curve_window"), QRect(1930, 120, 420, 360));
+  UserSettings::writeSettings();
+  UserSettings::setWindowPlace(QStringLiteral("edit_curve_window"), QRect(1, 2, 3, 4));
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("edit_curve_window")), QRect(1930, 120, 420, 360));
+  // a negative place (a screen left of the main one) is a place too
+  UserSettings::setWindowPlace(QStringLiteral("edit_curve_window"), QRect(-1200, -40, 500, 400));
+  UserSettings::writeSettings();
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("edit_curve_window")), QRect(-1200, -40, 500, 400));
+  // an empty rect forgets it
+  UserSettings::setWindowPlace(QStringLiteral("edit_curve_window"), QRect());
+  UserSettings::writeSettings();
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("edit_curve_window")), QRect());
+}
+
+void TestUserSettings::badWindowPlacesAreLeftOut()
+{
+  writeVersionGroup({ { "window_places/edit_curve_window", "big" },
+                      { "window_places/zero", QRect(10, 10, 0, 0) },
+                      { "window_places/huge", QRect(0, 0, 900000, 500) },
+                      { "window_places/good", QRect(5, 6, 300, 200) } });
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("edit_curve_window")), QRect());
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("zero")), QRect());
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("huge")), QRect());
+  QCOMPARE(UserSettings::windowPlace(QStringLiteral("good")), QRect(5, 6, 300, 200));
+}
+
+void TestUserSettings::expertModeWatchers()
+{
+  UserSettings::setExpertMode(false);
+  QList<bool> seen;
+  {
+    QObject context;
+    UserSettings::watchExpertMode(&context, [&seen](bool on) { seen.append(on); });
+    UserSettings::setExpertMode(true);
+    UserSettings::setExpertMode(true);    // no change: no call
+    UserSettings::setExpertMode(false);
+    QCOMPARE(seen, (QList<bool>{ true, false }));
+  }
+  // the context is gone: no more calls
+  UserSettings::setExpertMode(true);
+  QCOMPARE(seen, (QList<bool>{ true, false }));
 }
 
 QTEST_MAIN(TestUserSettings)

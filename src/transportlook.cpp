@@ -213,6 +213,8 @@ namespace TransportLook
     if(name==QLatin1String("pasteMirroredButton")) return QStringLiteral("flip-horizontal-2");
     // Hide notes on the notes line under the timeline (UX phase 3c, the mockup's eye-off)
     if(name==QLatin1String("hideNotesButton")) return QStringLiteral("eye-off");
+    // Edit curve beside the easing tiles (UX phase 5, the mockup's sliders-horizontal)
+    if(name==QLatin1String("editCurveButton")) return QStringLiteral("sliders-horizontal");
     return QString();
   }
 

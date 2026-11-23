@@ -152,7 +152,15 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
     int startFrame=0,endFrame=0;
     return currentSegment(joint,startFrame,endFrame) && EasingChoice::customCurveOf(joint,startFrame).has_value();
   });
-  connect(easingTiles_,&EasingTiles::customCurveRequested,this,&TimelineView::editCustomCurve);
+  connect(easingTiles_,&EasingTiles::editCurveRequested,this,&TimelineView::editCustomCurve);
+  // why the row is greyed out (UX phase 5, the mockup's reasons): no animation,
+  // no joint, or no key with a move before it
+  easingTiles_->setNoKeyCheck([this]()
+  {
+    if(none_ || !animation_) return EasingTiles::NoKey::NoAnimation;
+    if(selectedTrack_<0) return EasingTiles::NoKey::NoJoint;
+    return EasingTiles::NoKey::NoMove;
+  });
 
   // the notes line under the tiles (UX phase 3c, the mockup's .note)
   notesLine_=new NotesLine(this);
@@ -254,6 +262,7 @@ void TimelineView::updateEmptyState()
   noAnimation_->setVisible(none_);
   rowsArea_->setVisible(!none_);
   if(outerView_ && outerView_->widget()) outerView_->widget()->layout()->activate();
+  easingTiles_->refreshNoKey();
 }
 
 void TimelineView::setNoAnimation(bool none)
@@ -306,6 +315,7 @@ EasingTiles* TimelineView::easingTiles() const
 void TimelineView::selectTrack(int track)
 {
   selectedTrack_=track;
+  easingTiles_->refreshNoKey();
   timelineTracks->selectTrack(track);
   // a joint without keys gets its row here (rowsChanged follows)
   timeline->selectTrack(track);
@@ -348,6 +358,7 @@ void TimelineView::changeEvent(QEvent* event)
 void TimelineView::backgroundClicked()
 {
   selectedTrack_=-1;
+  easingTiles_->refreshNoKey();
   timeline->selectTrack(-1);
   timelineTracks->selectTrack(-1);
 }
