@@ -48,6 +48,7 @@
 #include "rlvbehaviours.h"
 #include "rlvstate.h"
 #include "scriptlabsection.h"
+#include "spherecontrols.h"
 #include "lsl/lint.h"
 #include "lucideicons.h"
 #include "theme.h"
@@ -493,6 +494,10 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_environmentStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   m_environmentStatus->hide();
   layout->addWidget(m_environmentStatus);
+  // the vision sphere's sliders (setsphere part 2): folded at start, greyed until the box is ticked
+  m_sphereSection = addSection(QStringLiteral("sphere"), tr("Vision sphere"), false, commandsPage, layout);
+  m_sphereControls = new SphereControls(m_sphereSection->body());
+  m_sphereSection->bodyLayout()->addWidget(m_sphereControls);
   connect(m_environmentBox, &QCheckBox::toggled, this, [this](bool on)
   {
     Q_UNUSED(on);
@@ -564,7 +569,9 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_actionsSection->header(), m_actions);
   setTabOrder(m_actions, m_cameraBox);
   setTabOrder(m_cameraBox, m_environmentBox);
-  setTabOrder(m_environmentBox, m_viewModesBox);
+  setTabOrder(m_environmentBox, m_sphereSection->header());
+  setTabOrder(m_sphereSection->header(), m_sphereControls->innerSlider());
+  setTabOrder(m_sphereControls->clearButton(), m_viewModesBox);
   setTabOrder(m_viewModesBox, m_repliesSection->header());
   setTabOrder(m_repliesSection->header(), m_log);
 
@@ -779,6 +786,7 @@ void ScriptLabPanel::applyStyle()
   if (m_tabs->count() > CommandsPage)
     m_tabs->setTabIcon(CommandsPage, LucideIcons::icon(QStringLiteral("terminal"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
   for (ScriptLabSection* section : m_sections) section->applyStyle(dark);
+  m_sphereControls->applyStyle(dark);
   m_touch->setStyleSheet(normal);
   m_say->setStyleSheet(normal);
   for (QPushButton* b : dialogButtons()) b->setStyleSheet(normal);
@@ -1686,12 +1694,16 @@ void ScriptLabPanel::setEnvironmentOverride(EnvironmentOverride* environmentOver
     environmentOverride->setEnabled(m_environmentBox->isChecked() && !m_hiddenByUser);
     m_environmentConnection = connect(environmentOverride, &EnvironmentOverride::changed, this, &ScriptLabPanel::refreshEnvironment);
   }
+  m_sphereControls->setOverride(environmentOverride);
   refreshEnvironment();
 }
 
 void ScriptLabPanel::refreshEnvironment()
 {
   if (!m_environmentStatus) return;
+  // the sliders work while the box is ticked; the part's count says when their sphere is in the view
+  m_sphereControls->setAvailable(m_environment && m_environmentBox->isChecked());
+  m_sphereSection->setCount(m_environment && m_environmentBox->isChecked() && m_environment->hasTrySphere() ? tr("sliders on") : QString());
   const QStringList lines = m_environment ? m_environment->lines() : QStringList();
   m_environmentStatus->setText(lines.join(QLatin1Char('\n')));
   m_environmentStatus->setVisible(!lines.isEmpty());

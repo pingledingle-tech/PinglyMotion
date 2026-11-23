@@ -567,6 +567,20 @@ QString EnvironmentOverride::sphereText(const Sphere& sphere)
     .arg(kind, number(sphere.valueMin), number(sphere.distMin), number(sphere.valueMax), number(sphere.distMax), origin);
 }
 
+void EnvironmentOverride::setTrySphere(const Sphere& sphere)
+{
+  if (m_try && *m_try == sphere) return;
+  m_try = sphere;
+  emit changed();
+}
+
+void EnvironmentOverride::clearTrySphere()
+{
+  if (!m_try) return;
+  m_try.reset();
+  emit changed();
+}
+
 QStringList EnvironmentOverride::lines() const
 {
   QStringList lines;
@@ -578,7 +592,9 @@ QStringList EnvironmentOverride::lines() const
   QStringList all = parts;
   if (m_look.hasSphere) all << tr("vision sphere (%1)").arg(sphereText(m_look.sphere));
 
-  if (!m_look.any())
+  // the sliders' sphere counts only while the box is ticked; with the box off the text stays the script's
+  const bool trying = m_enabled && m_try.has_value();
+  if (!m_look.any() && !trying)
   {
     if (m_enabled && (!m_look.notShown.isEmpty() || !m_look.ignored.isEmpty()))
       lines << tr("The script asks nothing of the sky that the 3D view can show.");
@@ -590,7 +606,14 @@ QStringList EnvironmentOverride::lines() const
       lines << tr("Environment set by the script: %1.").arg(parts.join(QStringLiteral(", ")));
       lines << tr("The 3D view has no sky: it shows this as the background colour and the fog. A rough hint only.");
     }
-    if (m_look.hasSphere)
+    if (trying)
+    {
+      lines << tr("Vision sphere from the sliders: %1.").arg(sphereText(*m_try));
+      lines << tr("The whole picture changes by the distance from the %1. A rough look only: check it in Second Life.")
+                 .arg(m_try->origin == Sphere::Camera ? tr("camera") : tr("avatar"));
+      if (m_look.hasSphere) lines << tr("The sliders' sphere is shown instead of the script's. Press Clear to show the script's again.");
+    }
+    else if (m_look.hasSphere)
     {
       lines << tr("Vision sphere set by the script: %1.").arg(sphereText(m_look.sphere));
       lines << tr("The whole picture changes by the distance from the %1. A rough look only: check it in Second Life.")
@@ -599,7 +622,7 @@ QStringList EnvironmentOverride::lines() const
           qBound(1, int(std::lround(m_look.sphere.params.y())), MostPixels) == 1)
         lines << tr("Pixel blocks of 1 x 1 change nothing: the block size comes from setsphere_param:<width>/<height>.");
     }
-    lines << tr("Set by: %1.").arg(m_look.objects.join(QStringLiteral(", ")));
+    if (m_look.any()) lines << tr("Set by: %1.").arg(m_look.objects.join(QStringLiteral(", ")));
     lines << tr("Untick the box to get the 3D view's own look back.");
   }
   else

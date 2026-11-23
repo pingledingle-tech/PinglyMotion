@@ -1089,18 +1089,6 @@ Red: a request with a wrong key was refused</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Not shown: setsphere_mode:%1 (only mode 0, the colour fade, is shown).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not shown: setsphere, because setsphere_distmax is not set.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not shown: setsphere (the camdraw fog is shown; one fog at a time).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>sky colour %1 from %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1138,6 +1126,66 @@ Red: a request with a wrong key was refused</source>
     </message>
     <message>
         <source>Not used: %1 is not a value the 3D view can use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not shown: setsphere_mode:3, the colour split (only the colour fade 0, blur 1 and 2, and pixel 4 are shown).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not shown: setsphere_tween:%1 (the 3D view changes at once).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>colour fade to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>blur</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>blur of %1 pixels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pixel blocks of %1 x %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>camera</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>avatar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, strength %2 at %3 m to %4 at %5 m from the %6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>vision sphere (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Vision sphere from the sliders: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The whole picture changes by the distance from the %1. A rough look only: check it in Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The sliders&apos; sphere is shown instead of the script&apos;s. Press Clear to show the script&apos;s again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Vision sphere set by the script: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pixel blocks of 1 x 1 change nothing: the block size comes from setsphere_param:&lt;width&gt;/&lt;height&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5337,6 +5385,14 @@ Error: %2</source>
         <source>Inventory of %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Vision sphere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>sliders on</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ScriptLabSection</name>
@@ -5652,6 +5708,101 @@ Error: %2</source>
     </message>
     <message>
         <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SphereControls</name>
+    <message>
+        <source>Vision sphere colour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tick Show environment in 3D view to try the sphere.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 m</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inner distance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Outer distance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Darkness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Colour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLV line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLVa only. Paste the line into llOwnerSay in your script.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Colour %1. Opens the colour picker.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inside this distance the view stays clear (Left and Right arrows: half a metre)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At this distance the darkness is full (Left and Right arrows: half a metre)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How dark it gets at the outer distance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick the colour the view fades to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The line for your script, made from the values above</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the line to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take the sliders&apos; sphere off the 3D view. A sphere the script holds shows again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move a slider first: then its sphere shows in the 3D view.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -312,6 +312,13 @@ TARGET_LINK_LIBRARIES (pinglymotion_scriptlabcamera_tests pinglymotion_shared pi
 ADD_TEST (NAME scriptlabcamera COMMAND pinglymotion_scriptlabcamera_tests)
 SET_TESTS_PROPERTIES (scriptlabcamera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Script Lab vision sphere, part 2: the sliders and colour picker in the panel, the exact RLV line, the 3D picture
+ADD_EXECUTABLE (pinglymotion_spherecontrols_tests tst_spherecontrols.cpp ${CMAKE_CURRENT_SOURCE_DIR}/uirender/uirender.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_spherecontrols_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_SOURCE_DIR}/uirender ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_spherecontrols_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME spherecontrols WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_spherecontrols_tests)
+SET_TESTS_PROPERTIES (spherecontrols PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # Script Lab as a whole: the scenarios in tests/data/scriptlab/scenarios.json (every example script,
 # each class of RLV command, several objects, inventory, sitting, controls, sensors, HTTP, errors)
 # through ControlApi; tests/smoke_scriptlab.py sends the same scenarios to the real program

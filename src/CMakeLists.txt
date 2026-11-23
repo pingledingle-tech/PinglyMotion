@@ -71,6 +71,7 @@ SET (PINGLYMOTION_SHARED_SRC
               scriptlab/objectsview.cpp
               scriptlab/scriptlabpanel.cpp
               scriptlab/scriptlabsection.cpp
+              scriptlab/spherecontrols.cpp
               selectedjointpanel.cpp
               theme.cpp
               timeline.cpp
