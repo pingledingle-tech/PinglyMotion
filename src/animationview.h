@@ -97,6 +97,18 @@ class AnimationView : public QOpenGLWidget
     // UserSettings::cameraHabit() at start and whenever Setup or Camera and keys changes it
     void setCameraHabit(CameraHabit habit) { m_cameraHabit = habit; }
     CameraHabit cameraHabit() const { return m_cameraHabit; }
+    // the view tool of the left mouse button (UX phase 4b); the window sets it from
+    // UserSettings::viewTool() and when the toolbar or the keys V, O, M, Z choose one
+    void setViewTool(ViewTool tool);
+    ViewTool viewTool() const { return m_viewTool; }
+    // the view toolbar's Show menu: the rotation rings around the picked joint and the floor
+    void setShowRings(bool on);
+    bool showRings() const { return m_showRings; }
+    void setShowFloor(bool on);
+    bool showFloor() const { return m_showFloor; }
+    // what the hint line says about what is under the mouse: a rotation ring, or the view tool
+    // when it is not Pick (src/viewtoolspec.h); empty for nothing
+    QString hoverHint() const { return m_hoverHint; }
 
     // the shapes the view draws for its handles (cube, sphere and cone)
     void setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<Mesh> sphereMesh, QSharedPointer<Mesh> coneMesh);
@@ -122,12 +134,22 @@ class AnimationView : public QOpenGLWidget
     // shows the panels (docs/archive/PANELS_PLAN.md, job P4)
     void tabPressed();
 
+    // V, O, M or Z was pressed in the 3D view: the window chooses that view tool
+    void viewToolRequested(ViewTool tool);
+    // hoverHint() changed
+    void hoverHintChanged(const QString& hint);
+    // the view was drawn on screen (the camera may have moved): the view toolbar follows it
+    void viewDrawn();
+
   public slots:
     void resetCamera();
     // Shift+F: the camera looks at the whole figure from just far enough to see all of
     // it (the joints where they were last drawn), keeping its turn; false when nothing
     // was drawn yet
     bool frameWholeFigure();
+    // F, and the view toolbar's Picked joint: the camera turns around the picked joint; false
+    // when no joint is picked (or it was not drawn yet)
+    bool focusOnPickedJoint();
     // loads the body (Ruth2 or Max); if that fails the other one is loaded
     // instead and false is returned
     bool setBody(AvatarSkin::Body wanted);
@@ -165,6 +187,7 @@ class AnimationView : public QOpenGLWidget
     virtual void wheelEvent(QWheelEvent* event);
     virtual void keyPressEvent(QKeyEvent* event);
     virtual void keyReleaseEvent(QKeyEvent* event);
+    void leaveEvent(QEvent* event) override;
 
     QSize m_renderSize;   // set while renderImage() draws
     // true while renderImage() draws a picture without the Bento markers
@@ -202,6 +225,13 @@ class AnimationView : public QOpenGLWidget
     Qt::MouseButton m_dragButton=Qt::NoButton;
     CameraDrag m_cameraDrag=CameraDrag::None;
     CameraHabit m_cameraHabit=CameraHabit::PinglyMotion;
+    ViewTool m_viewTool=ViewTool::Pick;
+    bool m_showRings=true;
+    bool m_showFloor=true;
+    QString m_hoverHint;
+    // the hint for what is highlighted now (a ring) and the view tool
+    void updateHoverHint();
+    void setHoverHint(const QString& hint);
     QPoint m_pressPos;               // where the button went down (widget pixels)
     unsigned int m_pressSelected=0;  // what was under the mouse then
     unsigned int m_lastClicked=0;    // what the last click selected

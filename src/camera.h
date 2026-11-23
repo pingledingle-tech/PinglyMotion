@@ -111,6 +111,29 @@ struct CameraGesture
   bool operator==(const CameraGesture& o) const { return drag == o.drag && picks == o.picks; }
 };
 
+// What a left drag does in the 3D view (the view toolbar's tools, UX phase 4b, docs/UX_DECISIONS.md
+// 6b): Pick follows the camera habit; the other three turn, move or zoom the camera with a plain
+// left drag in every habit, and nothing is picked
+enum class ViewTool
+{
+  Pick,    // "pick", the default (key V)
+  Orbit,   // "orbit": Look around (key O)
+  Pan,     // "pan": Move the view (key M)
+  Zoom     // "zoom" (key Z)
+};
+
+// The name of the view under the view-direction widget (UX phase 4b)
+enum class ViewName
+{
+  Front,
+  Back,
+  LeftSide,    // the camera on the figure's left (+X)
+  RightSide,   // the camera on the figure's right (-X), the Side view (3)
+  Top,
+  Below,
+  Free         // any other direction
+};
+
 class Camera : public QObject
 {
   Q_OBJECT
@@ -127,6 +150,21 @@ class Camera : public QObject
     //                 Ctrl + Alt + Shift + left = pan; left = pick
     // The mouse wheel zooms in every habit.
     static CameraGesture gestureFor(CameraHabit habit, Qt::MouseButton button, Qt::KeyboardModifiers keys);
+    // The same with a view tool chosen (the mockup's gestureFor()): a left press with neither Alt
+    // nor Ctrl does the tool's camera drag and picks nothing; ViewTool::Pick and every other
+    // press give the habit's gesture
+    static CameraGesture gestureFor(CameraHabit habit, ViewTool tool, Qt::MouseButton button, Qt::KeyboardModifiers keys);
+    // The view tool keys in the 3D view: V, O, M, Z (alone or with Shift, as the mockup takes
+    // either case); false for any other key
+    static bool toolForKey(int key, Qt::KeyboardModifiers keys, ViewTool* tool);
+    // the id the setting stores ("pick", "orbit", "pan", "zoom") and back; an unknown id gives Pick
+    static const char* toolId(ViewTool tool);
+    static ViewTool toolFor(const QString& id);
+    // The view's name for a camera turn: height and angle as setView() takes them. Within half a
+    // degree of 0, 90, 180 or 270 around and no more than 10.5 degrees up or down (the home view
+    // looks from 10 degrees up) it is Front, Right side, Back or Left side; from 89.5 degrees up
+    // Top, from 89.5 degrees down Below; anything else is Free.
+    static ViewName viewNameFor(float height, float angle);
     // Second Life: Alt + click on a joint turns the camera around it
     static bool focusesOnAltClick(CameraHabit habit) { return habit == CameraHabit::SecondLife; }
     // PinglyMotion: a double click on a joint turns the camera around it
@@ -167,6 +205,8 @@ class Camera : public QObject
     // look at the pivot from a fixed direction: height = degrees above the
     // floor (0..90, 90 = straight down), angle = degrees around (0 = front)
     void setView(float height, float angle);
+    // the same, but height may go down to -90 (the view-direction widget's "Look from below")
+    void lookFrom(float height, float angle);
     void setModelView();
     void reset();
 

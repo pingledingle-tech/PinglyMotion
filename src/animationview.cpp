@@ -58,6 +58,7 @@
 #include "scriptlab/viewmodesoverride.h"
 #include "scriptlab/effectspreview.h"
 #include "viewcolours.h"
+#include "viewtoolspec.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
  : QOpenGLWidget(parent),
@@ -305,6 +306,8 @@ void AnimationView::paintGL()
   SceneState::loadIdentity();
 
   draw();
+  // only the picture on screen, not one renderImage() draws from another side
+  if(!m_renderSize.isValid()) emit viewDrawn();
 }
 
 QImage AnimationView::renderImage(int imageWidth,int imageHeight)
@@ -459,8 +462,12 @@ void AnimationView::draw()
   }
   m_shadowCasters.clear();
   drawAnimations();
-  m_scene->drawFloor();
-  drawShadows();
+  // the view toolbar's Show > Floor grid (UX phase 4b); the shadows lie on the floor
+  if(m_showFloor)
+  {
+    m_scene->drawFloor();
+    drawShadows();
+  }
   drawProps();
   drawOverlay();
 }
@@ -742,6 +749,7 @@ void AnimationView::mouseMoveEvent(QMouseEvent* event)
   {
     unsigned int oldPart=partHighlighted;
     partHighlighted=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
+    updateHoverHint();
     if(oldPart!=partHighlighted)
     {
       update();
@@ -890,7 +898,7 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
   oldDragY=clickPos.y();
   dragX=dragY=0;
 
-  const CameraGesture gesture=Camera::gestureFor(m_cameraHabit,event->button(),keys);
+  const CameraGesture gesture=Camera::gestureFor(m_cameraHabit,m_viewTool,event->button(),keys);
   m_cameraDrag=gesture.drag;
 
   // a camera-only gesture of the habit (right-drag, middle-drag, Alt + drag ...)
@@ -1016,7 +1024,7 @@ void AnimationView::mouseReleaseEvent(QMouseEvent* event)
 void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
 {
   // a camera gesture of the habit (Alt in Second Life: the press already focused)
-  if(!Camera::gestureFor(m_cameraHabit,event->button(),event->modifiers()).picks)
+  if(!Camera::gestureFor(m_cameraHabit,m_viewTool,event->button(),event->modifiers()).picks)
   {
     mousePressEvent(event);
     return;
@@ -1107,6 +1115,14 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
     update();
   }
 
+  ViewTool tool;
+  if(Camera::toolForKey(event->key(),event->modifiers(),&tool))
+  {
+    // V, O, M, Z: the tool of the left mouse button (the window chooses it, UX phase 4b)
+    emit viewToolRequested(tool);
+    return;
+  }
+
   float up,around;
   if(Camera::turnForKey(event->key(),event->modifiers(),&up,&around))
   {
@@ -1192,6 +1208,48 @@ void AnimationView::keyReleaseEvent(QKeyEvent* event)
     update();
   }
   event->ignore();
+}
+
+void AnimationView::leaveEvent(QEvent* event)
+{
+  setHoverHint(QString());
+  QOpenGLWidget::leaveEvent(event);
+}
+
+void AnimationView::setViewTool(ViewTool tool)
+{
+  m_viewTool=tool;
+  if(underMouse()) updateHoverHint();
+}
+
+void AnimationView::setShowRings(bool on)
+{
+  m_showRings=on;
+  update();
+}
+
+void AnimationView::setShowFloor(bool on)
+{
+  m_showFloor=on;
+  update();
+}
+
+void AnimationView::updateHoverHint()
+{
+  if(m_viewTool!=ViewTool::Pick)
+  {
+    setHoverHint(ViewToolSpec::toolHoverHint(m_viewTool));
+    return;
+  }
+  const int ring=static_cast<int>(partHighlighted)-static_cast<int>(OpenGlIds::RotateRingX);
+  setHoverHint(ring>=0 && ring<=2 && partSelected && m_showRings ? ViewToolSpec::ringHoverHint(ring) : QString());
+}
+
+void AnimationView::setHoverHint(const QString& hint)
+{
+  if(hint==m_hoverHint) return;
+  m_hoverHint=hint;
+  emit hoverHintChanged(hint);
 }
 
 void AnimationView::jointGroupsChanged()
@@ -1353,7 +1411,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       }
 
       // rotation rings: also drawn while picking, so they can be grabbed
-      if(mode==MODE_ROT_AXES && partSelected==selectName)
+      if(mode==MODE_ROT_AXES && partSelected==selectName && m_showRings)
       {
         const int ringX=static_cast<int>(OpenGlIds::RotateRingX);
         const int hovered=static_cast<int>(partHighlighted)-ringX;
@@ -1866,6 +1924,14 @@ void AnimationView::selectProp()
 
 // F key, number pad . or double-click: move the camera close to the selected
 // part (closer for face bones); the camera then turns around it
+bool AnimationView::focusOnPickedJoint()
+{
+  if(!partSelected || partSelected>=static_cast<unsigned int>(OpenGlIds::ObjectStart) ||
+     !m_jointPositions.contains(partSelected)) return false;
+  zoomToSelectedPart();
+  return true;
+}
+
 void AnimationView::zoomToSelectedPart()
 {
   if(!partSelected) return;
