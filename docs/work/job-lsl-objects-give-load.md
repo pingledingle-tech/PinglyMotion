@@ -1,6 +1,6 @@
 Branch: job/lsl-objects-give-load
 Status: active
-Pull request: pending
+Pull request: #393
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/world.h
