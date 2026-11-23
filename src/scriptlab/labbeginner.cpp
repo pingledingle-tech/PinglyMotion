@@ -284,6 +284,7 @@ LabBeginner::Tip LabBeginner::jargonTip(const QString& key)
 LabStepCard::LabStepCard(QWidget* parent) : ScriptLabFrame(parent)
 {
   setObjectName("scriptLabStepCard");
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   setFocusPolicy(Qt::NoFocus);
   QVBoxLayout* layout = new QVBoxLayout(this);
   layout->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
@@ -495,6 +496,8 @@ void LabStepCard::keyPressEvent(QKeyEvent* event)
 LabTipCard::LabTipCard(const LabBeginner::Tip& tip, QWidget* parent) : ScriptLabFrame(parent), m_key(QLatin1String(tip.key))
 {
   setObjectName(QStringLiteral("scriptLabTip_%1").arg(m_key));
+  // never squeezed below its text in a full page (the page shrinks its parts to their minimum)
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   QHBoxLayout* row = new QHBoxLayout(this);
   row->setContentsMargins(SpacingS, SpacingS, SpacingS, SpacingS);
   row->setSpacing(SpacingS);

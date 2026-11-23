@@ -1001,12 +1001,20 @@ LabEditor::LabEditor(QWidget* parent) :
   m_goToButton = makeButton(tr("Go to line"), QStringLiteral("labEditorGoTo"), this);
   m_goToButton->setToolTip(tr("Jump to a line by its number (Ctrl+G)"));
   tools->addWidget(m_save);
-  // job U3: "unsaved changes" right at the Save button, in words and the warning colour
+  // job U3: "unsaved changes" right under the Save button, in words and the warning colour; a line of
+  // its own, so the tool row keeps its width when the language choice shows too
   m_unsaved = new QLabel(this);
   m_unsaved->setObjectName("labEditorUnsaved");
   m_unsaved->setTextFormat(Qt::PlainText);
+  m_unsaved->setText(tr("● unsaved changes"));
+  // its room is kept while it is hidden, so Find and Go to line never move (charter P12)
+  QSizePolicy keep = m_unsaved->sizePolicy();
+  keep.setRetainSizeWhenHidden(true);
+  m_unsaved->setSizePolicy(keep);
   m_unsaved->hide();
-  tools->addWidget(m_unsaved);
+  QFont unsavedFont = m_unsaved->font();   // the "caption" type token
+  if (unsavedFont.pointSizeF() > 0) unsavedFont.setPointSizeF(unsavedFont.pointSizeF() * 11.0 / 13.0);
+  m_unsaved->setFont(unsavedFont);
   tools->addWidget(m_findButton);
   tools->addWidget(m_goToButton);
   tools->addStretch(1);
@@ -1033,6 +1041,7 @@ LabEditor::LabEditor(QWidget* parent) :
     if (languageInUse() == QLatin1String("slua")) setMessage(tr("Lua is a trial. No Lua suggestions or checks yet."), 0);
   });
   layout->addLayout(tools);
+  layout->addWidget(m_unsaved);
 
   // --- the find row (Ctrl+F): Enter or F3 next, Shift+Enter previous, Esc closes
   m_findRow = new QWidget(this);
@@ -1694,7 +1703,13 @@ void LabEditor::updateState()
   const bool canSave = open && (modified || !QFileInfo::exists(m_path));
   m_save->setEnabled(canSave);
   m_save->setToolTip(canSave ? tr("Save the script and run it (Ctrl+S)") : tr("Nothing to save. Change the script first."));
-  m_unsaved->setText(unsavedMark());
+  // its line is kept while a file is open (nothing moves when it shows), and gone with no file
+  QSizePolicy keep = m_unsaved->sizePolicy();
+  if (keep.retainSizeWhenHidden() != open)
+  {
+    keep.setRetainSizeWhenHidden(open);
+    m_unsaved->setSizePolicy(keep);
+  }
   m_unsaved->setVisible(open && modified);
   if (modified != m_lastModified)
   {

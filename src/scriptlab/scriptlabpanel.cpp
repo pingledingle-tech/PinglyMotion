@@ -1135,8 +1135,8 @@ void ScriptLabPanel::buildLivePage()
   QVBoxLayout* editorColumn = new QVBoxLayout(m_editorColumn);
   editorColumn->setContentsMargins(0, 0, 0, 0);
   editorColumn->setSpacing(SpacingS);
-  m_workLayout->addWidget(m_treeColumn, 2);
-  m_workLayout->addWidget(m_editorColumn, 3);
+  m_workLayout->addWidget(m_treeColumn);
+  m_workLayout->addWidget(m_editorColumn);
   layout->addWidget(m_workArea);
 
   // --- the folder as one object (lane 1 job D): a tree with icons, colour dots, sums and memory
@@ -2443,9 +2443,15 @@ void ScriptLabPanel::updateWorkLayout()
   if (wide == m_sideBySide && m_workLayout->direction() == (wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom)) return;
   m_sideBySide = wide;
   m_workLayout->setDirection(wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom);
+  // side by side the width is shared 2 to 3; stacked, each column takes the height it needs
+  m_workLayout->setStretch(0, wide ? 2 : 0);
+  m_workLayout->setStretch(1, wide ? 3 : 0);
   // side by side, both columns start at the top
   m_workLayout->setAlignment(m_treeColumn, wide ? Qt::AlignTop : Qt::Alignment());
   m_workLayout->setAlignment(m_editorColumn, wide ? Qt::AlignTop : Qt::Alignment());
+  // the page's layout keeps the old size of the work area until it is told: stacked needs far more height
+  m_workLayout->invalidate();
+  m_workArea->updateGeometry();
 }
 
 QString ScriptLabPanel::exampleObjectsFolder() const
@@ -2675,18 +2681,19 @@ void ScriptLabPanel::buildTips()
       card->setParent(m_treeSection->body());
       m_treeSection->bodyLayout()->insertWidget(1, card);   // under the line on what the tree shows
     }
-    else if (key == QLatin1String("sandbox"))
-      outer->insertWidget(outer->indexOf(m_explainFrame) + 1, card);
     else
-      outer->insertWidget(outer->indexOf(m_tabs), card);
+    {
+      // in a row with the panel's side margins, as the rows around it; a hidden card leaves no gap
+      QHBoxLayout* row = new QHBoxLayout;
+      row->setContentsMargins(SpacingM, 0, SpacingM, 0);
+      row->addWidget(card);
+      outer->insertLayout(key == QLatin1String("sandbox") ? outer->indexOf(m_explainFrame) + 1 : outer->indexOf(m_tabs), row);
+    }
     // the tip's word is also the tooltip of its word, so it can be read again after closing
     if (key == QLatin1String("viewerRules")) m_modeLabel->setToolTip(tip.text);
     connect(card, &LabTipCard::closed, this, &ScriptLabPanel::closeTip);
     m_tipCards << card;
   }
-  // the outer layout's tips need the panel's margins, as the rows around them
-  for (LabTipCard* card : m_tipCards)
-    if (card->parentWidget() == this) card->setContentsMargins(SpacingM, 0, SpacingM, 0);
 }
 
 LabTipCard* ScriptLabPanel::shownTip() const

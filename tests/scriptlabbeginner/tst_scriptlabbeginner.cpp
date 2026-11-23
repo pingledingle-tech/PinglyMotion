@@ -536,10 +536,15 @@ void TestScriptLabBeginner::treeBesideEditorWhenWide()
   QVERIFY(panel.section("script")->isVisibleTo(editor));
   QVERIFY(editor->mapTo(&panel, QPoint(0, 0)).x() >= tree->mapTo(&panel, QPoint(0, 0)).x() + tree->width());
   QCOMPARE(editor->mapTo(&panel, QPoint(0, 0)).y(), tree->mapTo(&panel, QPoint(0, 0)).y());
+  // a picture for a session to look at (docs/DEV.md, "How a session tests a visible change itself")
+  if (qEnvironmentVariableIsSet("PINGLYMOTION_UI_OUT"))
+    panel.grab().save(qEnvironmentVariable("PINGLYMOTION_UI_OUT") + "/scriptlab_beginner_wide.png");
   panel.resize(480, 800);
   QCoreApplication::processEvents();
   QVERIFY(!panel.sideBySide());
   QVERIFY(editor->mapTo(&panel, QPoint(0, 0)).y() >= tree->mapTo(&panel, QPoint(0, 0)).y() + tree->height());
+  if (qEnvironmentVariableIsSet("PINGLYMOTION_UI_OUT"))
+    panel.grab().save(qEnvironmentVariable("PINGLYMOTION_UI_OUT") + "/scriptlab_beginner_narrow.png");
   QCOMPARE(editor->mapTo(&panel, QPoint(0, 0)).x(), tree->mapTo(&panel, QPoint(0, 0)).x());
   panel.resize(759, 800);
   QCoreApplication::processEvents();
@@ -646,7 +651,7 @@ void TestScriptLabBeginner::openAndFoldedParts()
   Theme::apply(true);
 }
 
-// "● unsaved changes" stands right after Save while there are unsaved edits
+// "● unsaved changes" stands right under Save while there are unsaved edits
 void TestScriptLabBeginner::unsavedAtSave()
 {
   QTemporaryDir dir;
@@ -663,8 +668,13 @@ void TestScriptLabBeginner::unsavedAtSave()
   QCOMPARE(editor.unsavedLabel()->text(), QString("● unsaved changes"));
   QCOMPARE(editor.unsavedLabel()->palette().color(QPalette::WindowText),
            Theme::color(Theme::Token::Warning, ScriptLabPanel::isDark(editor.palette())));
-  // next to Save, in the same row
+  // under Save, starting where Save starts
   QCOMPARE(editor.unsavedLabel()->parentWidget(), editor.saveButton()->parentWidget());
+  editor.resize(600, 400);
+  editor.show();
+  QCoreApplication::processEvents();
+  QCOMPARE(editor.unsavedLabel()->x(), editor.saveButton()->x());
+  QVERIFY(editor.unsavedLabel()->y() >= editor.saveButton()->y() + editor.saveButton()->height());
   QVERIFY(editor.save());
   QVERIFY(editor.unsavedLabel()->isHidden());
 }
