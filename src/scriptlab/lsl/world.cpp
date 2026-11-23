@@ -124,6 +124,13 @@ bool World::createLink(double time, const QString& target, bool parent)
   return false;
 }
 
+bool World::breakLink(double time, int link)
+{
+  if (!logFull())
+    log(time, QJsonObject{{"type", "link"}, {"op", "break"}, {"link", link}, {"released", false}, {"note", "Nothing was linked with llCreateLink."}});
+  return false;
+}
+
 int World::breakAllLinks(double time)
 {
   if (!logFull())

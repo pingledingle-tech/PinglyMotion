@@ -316,6 +316,7 @@ void Interpreter::resetScript()
   m_controls = 0;
   m_controlsAccept = m_controlsPassOn = false;
   m_targets.clear();
+  m_rotTargets.clear();
   m_memoryLimit = Limits::SCRIPT_MEMORY_MAX;
   m_timeBase = m_now;
   m_inEvent = false;
@@ -640,6 +641,52 @@ void Interpreter::checkTargets(const float ourpos[3])
     atTargetEvent(t.handle, t.pos, ourpos);
   }
   if (!reached) notAtTargetEvent();
+}
+
+static float rotationAngle(const float a[4], const float b[4])
+{
+  // the angle between two rotations: 2 * acos(|a . b|) for unit quaternions (a rotation without length is made a unit first)
+  const double la = std::sqrt(double(a[0]) * a[0] + double(a[1]) * a[1] + double(a[2]) * a[2] + double(a[3]) * a[3]);
+  const double lb = std::sqrt(double(b[0]) * b[0] + double(b[1]) * b[1] + double(b[2]) * b[2] + double(b[3]) * b[3]);
+  if (!(la > 0.0) || !(lb > 0.0)) return 0.0f;
+  double dot = 0.0;
+  for (int i = 0; i < 4; ++i) dot += double(a[i]) * b[i];
+  dot = std::fabs(dot) / (la * lb);
+  if (dot > 1.0) dot = 1.0;
+  return float(2.0 * std::acos(dot));
+}
+
+int Interpreter::addRotTarget(const float rot[4], float error)
+{
+  static const size_t MAX_TARGETS = 64;
+  if (m_rotTargets.size() >= MAX_TARGETS) m_rotTargets.erase(m_rotTargets.begin());   // the oldest goes, so a loop cannot grow it
+  RotTargetEntry t;
+  t.handle = m_nextRotTarget++;
+  for (int i = 0; i < 4; ++i) t.rot[i] = rot[i];
+  t.error = error;
+  m_rotTargets.push_back(t);
+  return t.handle;
+}
+
+void Interpreter::removeRotTarget(int handle)
+{
+  for (size_t i = 0; i < m_rotTargets.size(); ++i)
+    if (m_rotTargets[i].handle == handle) { m_rotTargets.erase(m_rotTargets.begin() + long(i)); return; }
+}
+
+void Interpreter::checkRotTargets(const float ourrot[4])
+{
+  if (m_rotTargets.empty() || stopped() || !running()) return;
+  bool reached = false;
+  const std::vector<RotTargetEntry> targets = m_rotTargets;
+  for (const RotTargetEntry& t : targets)
+  {
+    if (rotationAngle(ourrot, t.rot) > t.error) continue;
+    reached = true;
+    queueEvent(Event{"at_rot_target", {Value::integer(t.handle), Value::rotation(t.rot[0], t.rot[1], t.rot[2], t.rot[3]),
+                                       Value::rotation(ourrot[0], ourrot[1], ourrot[2], ourrot[3])}, QString(), QString()});
+  }
+  if (!reached) queueEvent(Event{"not_at_rot_target", {}, QString(), QString()});
 }
 
 void Interpreter::linksetDataEvent(int action, const QString& name, const QString& value)
