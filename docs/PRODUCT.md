@@ -131,7 +131,7 @@ The work runs in **two tracks side by side**. They mostly change different files
 - Camera and keys: one scheme for new users, Blender and Second Life habits; old joint modifier keys removed. Beside it: a data file from Firestorm with joint names, groups, left/right pairs and hand presets (LGPL notice), and the status bar (Claude, Aurora, tips switch).
 - Friendly names, section headings and search in the joint list.
 - Floating, movable panels; Tab hides them; reset layout. Plan: [PANELS_PLAN.md](archive/PANELS_PLAN.md) (jobs P1 to P6).
-- Selected-joint card: trackball, sliders, joint limit warning.
+- Selected joint panel: X / Y / Z sliders with the allowed range, the near-limit warning with "Turn limits off", Turn / Move, and the empty cards (values and texts built in UX phase 2b, [UX_DECISIONS.md, 6](UX_DECISIONS.md#6-selected-joint-panel); its look and the rings and dragging in the 3D view come later).
 - Left / Right / Mirror and the whole-pose buttons.
 - **Milestone:** adjust a sitting pose, preview it in Aurora, save it and upload it in SL (validated in Firestorm on 21 November 2026, [#159](https://github.com/pingledingle-tech/PinglyMotion/issues/159)).
 - The remaining posing steps: Hands tab, timeline, help tips and hint bar, command search, pose library and export selection, settings, visual polish and own icon, 3D view follows the tab.

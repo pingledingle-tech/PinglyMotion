@@ -143,7 +143,7 @@ These texts were first drafts for the places that had no text. The owner reviewe
 | POSE-01 | 7 Starter pose | Starter list: Standing (name and one line) | Standing<br>Arms down, feet together. A calm start for most moves. | reviewed by the owner (19 Nov 2026) | #14 jobs 4 and 5 |
 | POSE-02 | 7 Starter pose | Starter list: Sitting (name and one line) | Sitting<br>Knees bent, back straight. Good for a quiet scene. | reviewed by the owner (19 Nov 2026) | #14 jobs 4 and 5 |
 | POSE-03 | 7 Starter pose | Starter list: Dance example (name and one line) | Dance example<br>A short loop with a note on each key. Change it to learn. | reviewed by the owner (19 Nov 2026) | #14 jobs 4 and 5 |
-| WARN-01 | 8 Warning | A joint is near the furthest it can turn | This joint is almost at the furthest it can turn.<br>Turn it back a little, or pick another joint. | reviewed by the owner (19 Nov 2026) | #14 job 6 |
+| WARN-01 | 8 Warning | A joint is near the furthest it can turn | This joint is almost at the furthest it can turn.<br>Turn it back a little, or pick another joint. | in the program | #14 job 6 |
 | WARN-02 | 8 Warning | The export is too long | This animation is too long to export.<br>Shorten it, or delete keys at the end. | reviewed by the owner (19 Nov 2026) | #10 |
 | WARN-03 | 8 Warning | Nothing was moved | Nothing moved between your keys.<br>Change a pose at one of them, then try again. | reviewed by the owner (19 Nov 2026) | #10 |
 | PAGE-01 | 9 First animation page | Page title | Your first animation | reviewed by the owner (19 Nov 2026) | step 6 of #54 |

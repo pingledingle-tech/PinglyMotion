@@ -1,5 +1,5 @@
 Branch: job/ux-2b-selected-joint
-Status: active
+Status: done
 Pull request: #395
 Files:
 - src/selectedjointpanel.*
