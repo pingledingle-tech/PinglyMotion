@@ -424,7 +424,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `url_request` | `llRequestURL` or `llRequestSecureURL` (second gap list, step 4) | `secure`, `request` (the key the call returned), `result` (`granted` or `denied`), `url` (when granted) |
 | `url_release` | `llReleaseURL` (second gap list, step 4) | `url`, `result` (`released` or `not_found`) |
 | `http_server_response` | `llHTTPResponse` (second gap list, step 4; nothing is sent) | `request`, `status`, `body`, `result` (`sent`, `timed_out` or `unknown_request`) |
-| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, the 37 stubs of step 9b-8 and the five movement stubs of the second gap list, step 6, part 1 (see "Recorded only"; `llApplyImpulse` and `llSetBuoyancy` moved out of this list in part 3) | `function`, `args`, `note` |
+| `recorded_only` | a function whose effect the sandbox does not play: `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL`, the 37 stubs of step 9b-8, the five movement stubs of the second gap list, step 6, part 1, and the six vehicle stubs of step 7 (see "Recorded only"; `llApplyImpulse` and `llSetBuoyancy` moved out of this list in part 3) | `function`, `args`, `note` |
 
 #### Several objects and lsl_event (Script Lab step 5, issue 291)
 
@@ -577,7 +577,7 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
 - **Movement and physics stubs (second gap list, step 6, part 1):** `llMoveToTarget`, `llStopMoveToTarget`, `llPushObject`, `llRotLookAt` and `llVolumeDetect` do nothing but
   write a `recorded_only` entry with the function and its exact arguments, the same way as the step 9b-8 stubs above: no motion model runs, the object never moves or turns, and nothing is simulated of
   target seeking, push, look-at rotation or volume detection. A test script's intent (target, look-at rotation, detect flag) can still be read back from the log. `llApplyImpulse` and `llSetBuoyancy` are
-  real functions now (part 3, below), not record only; the vehicle functions are not part of this step.
+  real functions now (part 3, below), not record only; the vehicle functions are not part of this step (step 7, below).
 - **Collision-family events (second gap list, step 6, part 2):** there is still no motion model, so these events never happen on their own; new `inputs` types raise them for testing, with exactly the
   llDetected* data or vector arguments given. `collision` (`phase`: `"start"` or `"end"`; `link`: the prim hit, default the root; `name`/`id`: the other object or avatar, as for `touch`) raises
   `collision_start` or `collision_end(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). `land_collision`
@@ -594,7 +594,10 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `llSetBuoyancy` writes a `velocity` entry too (`op: "buoyancy"`). When the object's speed crosses `0.1` m/s (the sandbox's own threshold) a `step` input also fires `moving_start` or `moving_end` itself,
   with a `moving` log entry (`phase`) that says it came from the model, not a manual input. A worn object's `step` does nothing but log a note that the model does not apply to an attachment. Left out on
   purpose, for a later job: `llMoveToTarget`/`llStopMoveToTarget` stay record only, so the model never seeks a target and `at_target`/`not_at_target` still only come from the manual inputs; `llPushObject`,
-  `llRotLookAt` and `llVolumeDetect` stay record only; real collisions from motion (two objects actually touching) and the vehicle functions (step 7) are untouched.
+  `llRotLookAt` and `llVolumeDetect` stay record only; real collisions from motion (two objects actually touching) are untouched.
+- **Vehicle function stubs (second gap list, step 7):** `llSetVehicleType`, `llSetVehicleFloatParam`, `llSetVehicleVectorParam`, `llSetVehicleRotationParam`, `llSetVehicleFlags` and `llRemoveVehicleFlags`
+  do nothing but write a `recorded_only` entry with the function and its exact arguments, the same way as the movement stubs above: no vehicle physics is simulated, and the object's position, rotation
+  and velocity never change because of these calls. A test script's intent (vehicle type, parameter, value, flags) can still be read back from the log.
 - Not done: other `PRIM_*` rules, the prim's real shape and face count, touch text, sit targets, physics and everything that needs a 3D world; they say "not supported yet" where a function is involved.
 
 #### HTTP requests with canned replies (Script Lab step 9b-9)
