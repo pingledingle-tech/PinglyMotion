@@ -1,6 +1,6 @@
 Branch: job/ux-4a-camera-habits
 Status: active
-Pull request: pending
+Pull request: #404
 Files:
 - src/camera.*
 - src/camerahabitspec.h
