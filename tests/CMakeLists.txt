@@ -135,6 +135,13 @@ TARGET_LINK_LIBRARIES (pinglymotion_scene_tests pinglymotion_shared pinglymotion
 ADD_TEST (NAME scene WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_scene_tests)
 SET_TESTS_PROPERTIES (scene PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# the Joints panel's whole-pose actions: Flip, T-pose, Reset all (posing UX phase 2a)
+ADD_EXECUTABLE (pinglymotion_animation_tests tst_animation.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_animation_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_animation_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
+ADD_TEST (NAME animation WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_animation_tests)
+SET_TESTS_PROPERTIES (animation PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # the timeline: clicks, drags, wheel, Delete and Insert (#202)
 ADD_EXECUTABLE (pinglymotion_timeline_tests tst_timeline.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_timeline_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

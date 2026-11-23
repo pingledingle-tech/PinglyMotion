@@ -29,10 +29,13 @@ class TestJointList : public QObject
     void hiddenJoints();
     void unknownJoints();
     void withoutJointData();
+    void sideOf();
+    void sideFilter();
 
   private:
     QVector<JointList::Row> rows(int tab,const QString& search=QString(),
-                                 const QVector<bool>& hidden=QVector<bool>(),bool leaveOut=false) const;
+                                 const QVector<bool>& hidden=QVector<bool>(),bool leaveOut=false,
+                                 QChar side=QChar()) const;
     static QStringList headings(const QVector<JointList::Row>& rows);
     static QStringList fileNames(const QVector<JointList::Row>& rows);
 
@@ -58,9 +61,9 @@ void TestJointList::initTestCase()
   QVERIFY(tracks.count()>150);
 }
 
-QVector<JointList::Row> TestJointList::rows(int tab,const QString& search,const QVector<bool>& hidden,bool leaveOut) const
+QVector<JointList::Row> TestJointList::rows(int tab,const QString& search,const QVector<bool>& hidden,bool leaveOut,QChar side) const
 {
-  return JointList::rows(info,tracks,tab,search,hidden,leaveOut);
+  return JointList::rows(info,tracks,tab,search,hidden,leaveOut,side);
 }
 
 QStringList TestJointList::headings(const QVector<JointList::Row>& rows)
@@ -240,6 +243,57 @@ void TestJointList::withoutJointData()
   QCOMPARE(fileNames(rows(JointGroups::BodyTab)).count(),fileNames(r).count());
   QCOMPARE(fileNames(JointList::rows(empty,tracks,JointGroups::BodyTab,"forearm",QVector<bool>(),false)),
            QStringList() << "lForeArm" << "rForeArm");
+}
+
+// posing UX phase 2a: the Left / Right / Mirror control
+void TestJointList::sideOf()
+{
+  QCOMPARE(JointList::sideOf(info,"mElbowLeft"),QChar('L'));
+  QCOMPARE(JointList::sideOf(info,"lForeArm"),QChar('L'));
+  QCOMPARE(JointList::sideOf(info,"mShoulderRight"),QChar('R'));
+  QCOMPARE(JointList::sideOf(info,"rShldr"),QChar('R'));
+  // the centre line, and joints the data does not know, have no side
+  QCOMPARE(JointList::sideOf(info,"hip"),QChar());
+  QCOMPARE(JointList::sideOf(info,"mPelvis"),QChar());
+  QCOMPARE(JointList::sideOf(info,"position"),QChar());
+  QCOMPARE(JointList::sideOf(info,"fooBone"),QChar());
+  // an unknown name still follows the BVH file convention (lXxx / rXxx)
+  QCOMPARE(JointList::sideOf(info,"lFooBone"),QChar('L'));
+  QCOMPARE(JointList::sideOf(info,"rFooBone"),QChar('R'));
+}
+
+void TestJointList::sideFilter()
+{
+  // Left: every joint on the right side is gone, the left side and the
+  // centre line (Body, Legs headings) stay, and nothing new appears
+  const QVector<JointList::Row> all=rows(JointGroups::BodyTab);
+  const QVector<JointList::Row> left=rows(JointGroups::BodyTab,QString(),QVector<bool>(),false,'L');
+  const QVector<JointList::Row> right=rows(JointGroups::BodyTab,QString(),QVector<bool>(),false,'R');
+
+  QVERIFY(left.count()<all.count());
+  QVERIFY(right.count()<all.count());
+  for(const QString& name : fileNames(left))
+    QVERIFY2(JointList::sideOf(info,name)!=QChar('R'),qPrintable(name));
+  for(const QString& name : fileNames(right))
+    QVERIFY2(JointList::sideOf(info,name)!=QChar('L'),qPrintable(name));
+
+  // "Left Arm" is gone from the right-side list, "Right Arm" stays
+  QVERIFY(!headings(right).contains("Left Arm"));
+  QVERIFY(headings(right).contains("Right Arm"));
+  QVERIFY(headings(left).contains("Left Arm"));
+  QVERIFY(!headings(left).contains("Right Arm"));
+
+  // every joint of the unfiltered list is on the left list, the right
+  // list, or both (the centre line is on both)
+  const QStringList leftNames=fileNames(left);
+  const QStringList rightNames=fileNames(right);
+  const QStringList allNames=fileNames(all);
+  const QSet<QString> leftOrRight=QSet<QString>(leftNames.begin(),leftNames.end())
+                                  +QSet<QString>(rightNames.begin(),rightNames.end());
+  QCOMPARE(leftOrRight,QSet<QString>(allNames.begin(),allNames.end()));
+
+  // a null side (Mirror) filters nothing, same as the default
+  QCOMPARE(fileNames(rows(JointGroups::BodyTab,QString(),QVector<bool>(),false,QChar())),fileNames(all));
 }
 
 QTEST_GUILESS_MAIN(TestJointList)

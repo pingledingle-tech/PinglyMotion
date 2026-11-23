@@ -42,7 +42,9 @@ class QCloseEvent;
 class QResizeEvent;
 class MainPanels;
 class QFileInfo;
+class QButtonGroup;
 class QLineEdit;
+class QPushButton;
 class QSlider;
 class QTabBar;
 class QTableWidget;
@@ -358,6 +360,29 @@ class PinglyMotionWindow : public QMainWindow
     void fillJointTable();
     void showSelectedTrack();
     void selectTrackInTable(int track);
+
+    // the Joints panel's Left / Right / Mirror control and the Whole pose
+    // actions Flip, T-pose and Reset all (posing UX phase 2a, docs/mockup).
+    // m_jointSide is a null QChar for Mirror (every joint listed; clicking
+    // Mirror sets Animation::setMirrored(true) on the animation open at that
+    // moment, so a Selected-joint edit also turns the other side); 'L' or 'R'
+    // for a single side (setMirrored(false), only that side and the centre
+    // line listed, JointList::sideOf()). The side control only changes the
+    // currently open animation when clicked: it is not forced onto every
+    // file as it is opened, so control-API and scripted edits are never
+    // silently mirrored behind the user's back.
+    QButtonGroup* m_sideGroup=nullptr;
+    QPushButton* m_leftSideButton=nullptr;
+    QPushButton* m_rightSideButton=nullptr;
+    QPushButton* m_mirrorSideButton=nullptr;
+    QPushButton* m_flipPoseButton=nullptr;
+    QPushButton* m_tPoseButton=nullptr;
+    QPushButton* m_resetAllButton=nullptr;
+    QChar m_jointSide=QChar();
+    void setJointSide(QChar side);
+    void flipPoseClicked();
+    void tPoseClicked();
+    void resetAllClicked();
     void buildPartLists();
     void jointGroupsChanged();
     void buildDocks();

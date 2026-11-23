@@ -1,6 +1,9 @@
 /*
  * PinglyMotion - rows of the joint list in the properties panel (#14, step 2)
  *
+ * sideOf() and the optional side filter in rows() are for the Joints panel's
+ * Left / Right / Mirror control (posing UX phase 2a).
+ *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -53,8 +56,27 @@ bool JointList::matches(const JointInfo& info,const QString& name,const QString&
   return true;
 }
 
+QChar JointList::sideOf(const JointInfo& info,const QString& name)
+{
+  if(const JointInfo::Joint* j=info.joint(name))
+  {
+    if(j->sl.endsWith(QLatin1String("Left"))) return QLatin1Char('L');
+    if(j->sl.endsWith(QLatin1String("Right"))) return QLatin1Char('R');
+    return QChar();
+  }
+  // a joint the data does not know: fall back to the BVH file name convention
+  // (lShldr, rShldr, ...), the same one BVHNode::mirror() relies on
+  if(name.size()>1 && name.at(1).isUpper())
+  {
+    if(name.startsWith(QLatin1Char('l'))) return QLatin1Char('L');
+    if(name.startsWith(QLatin1Char('r'))) return QLatin1Char('R');
+  }
+  return QChar();
+}
+
 QVector<JointList::Row> JointList::rows(const JointInfo& info,const QStringList& trackNames,int tab,
-                                        const QString& search,const QVector<bool>& hidden,bool leaveOutHidden)
+                                        const QString& search,const QVector<bool>& hidden,bool leaveOutHidden,
+                                        QChar side)
 {
   const bool searching=!search.trimmed().isEmpty();
   const int known=info.joints().count();
@@ -83,6 +105,11 @@ QVector<JointList::Row> JointList::rows(const JointInfo& info,const QStringList&
     const QString& name=trackNames[track];
     if(name==QLatin1String("Site")) continue;
     if(searching ? !matches(info,name,search) : JointGroups::tabOf(name)!=tab) continue;
+    if(!side.isNull())
+    {
+      const QChar jointSide=sideOf(info,name);
+      if(!jointSide.isNull() && jointSide!=side) continue;
+    }
 
     const bool isHidden=track<hidden.count() && hidden[track];
     if(isHidden && leaveOutHidden) continue;

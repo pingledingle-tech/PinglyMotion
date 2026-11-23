@@ -135,10 +135,10 @@ Decided after comparing the mockup's File menu (five items) against the program'
 
 Source: the project owner, in a chat without a role, 22 November 2026 23:35 to 23 November 2026 00:55.
 
-## 7. Mirror and whole pose
+## 7. Mirror and whole pose (built, UX phase 2a)
 
-- Left / Right / Mirror switch at the top of the Joints panel.
-- Whole-pose buttons (Flip, L→R, R→L, T-pose, Poses…, Reset all) in one small row at the bottom of the Joints panel.
+- Left / Right / Mirror switch at the top of the Joints panel (`Animation::setMirrored()`, `JointList::sideOf()`): Mirror is the default; Left and Right also filter which joints the table below lists.
+- Whole-pose buttons (Flip, T-pose, Reset all) in one small row at the bottom of the Joints panel, matching the mockup and the UX phase 2a queue item (issue 74): every joint of the current frame, not only the selected one. L→R, R→L and a "Poses…" picker from an earlier draft of this page are not built: a single Flip already only changes a joint whose source rotation moved from rest, so a separate L→R/R→L pair would do the same thing with an extra click; a pose picker overlaps the later reference library browser step (track 1, [PRODUCT.md](PRODUCT.md)), left for that step to decide.
 - Plus "Paste mirrored" on the timeline (see 5).
 
 ## 8. Beginner and expert

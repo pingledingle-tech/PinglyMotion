@@ -28,6 +28,7 @@
 #include <QTimer>
 #include <QVector3D>
 
+#include <functional>
 #include <optional>
 
 #include "easing.h"
@@ -165,6 +166,24 @@ class Animation : public QObject
     // mirror a joint or the whole animation, if joint==0
     void mirror(BVHNode* joint);
 
+    // Whole pose actions of the current frame only (posing UX phase 2a):
+    // every joint of the skeleton, not just the selected one.
+    //
+    // Mirrors the current frame left to right: a joint with a mirror partner
+    // takes the partner's current rotation with Y and Z negated (the
+    // convention BVHNode::mirror() already uses); a joint with no partner
+    // keeps its own rotation with Y and Z negated in place. A joint whose
+    // source rotation is all zero is left untouched, so it stays a
+    // non-keyframe where it was one.
+    void flipPose();
+    // Sets every joint's rotation to zero. The program's own rest-pose
+    // offsets (data/firestorm, TPose.dingle) put the figure in a T-pose when
+    // every rotation is zero, so this needs no joint-by-joint special case.
+    void tPose();
+    // Copies every joint's frame 0 rotation onto the current frame ("Reset
+    // all" in the Joints panel).
+    void resetAllToFrameZero();
+
     void optimize();
 
     enum { MAX_PARTS=512 };
@@ -215,6 +234,10 @@ class Animation : public QObject
     void deleteFrameHelper(BVHNode* joint,int frame);
     void optimizeHelper(BVHNode* joint);
     void mirrorHelper(BVHNode* joint);
+    // calls fn once for every rotation joint of the skeleton (not End Sites,
+    // not the position pseudo-track); used by flipPose(), tPose() and
+    // resetAllToFrameZero()
+    void forEachJoint(BVHNode* joint,const std::function<void(BVHNode*)>& fn);
 
     void calcPartMirrors();
     void setIK(IKPartType part, bool flag);
