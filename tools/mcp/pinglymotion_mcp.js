@@ -51,7 +51,7 @@ const GUIDE_TOOL = {
 
 const NOT_RUNNING =
   "PinglyMotion is not running with the AI Assistant on. Start PinglyMotion, click the AI Assistant " +
-  "button in its status bar and turn it on, then try again.";
+  "button in its status bar and turn it on (or start PinglyMotion with --control), then try again.";
 const UNREACHABLE =
   "Could not reach PinglyMotion. It may have been closed, or the AI Assistant was turned off. " +
   "Start it again and turn the AI Assistant on (the button in its status bar).";

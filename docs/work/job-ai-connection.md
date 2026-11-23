@@ -1,5 +1,5 @@
 Branch: job/ai-connection
-Status: active
+Status: done
 Pull request: #413
 Files:
 - src/controlindicator.*
