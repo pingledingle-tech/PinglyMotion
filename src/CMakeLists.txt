@@ -66,6 +66,7 @@ SET (PINGLYMOTION_SHARED_SRC
               screenshotsheet.cpp
               scriptlab/objectsview.cpp
               scriptlab/scriptlabpanel.cpp
+              scriptlab/scriptlabsection.cpp
               theme.cpp
               timeline.cpp
               timelineview.cpp

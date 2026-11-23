@@ -178,6 +178,140 @@ Green: live, the pose shows on your avatar</source>
     </message>
 </context>
 <context>
+    <name>CameraHabitSpec</name>
+    <message>
+        <source>PinglyMotion</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look around (orbit)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag empty space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the view (pan)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right-drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse wheel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click it, or its row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Focus on the picked joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F, or double-click it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maya</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + left-drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + middle-drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + right-drag, or wheel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Blender</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Middle-drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift + middle-drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl + middle-drag, or wheel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numpad .</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + drag (sideways), Ctrl + Alt + drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl + Alt + Shift + drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + drag up or down, or wheel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt + click</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CameraKeysDialog</name>
+    <message>
+        <source>Camera and keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick the habits you know. PinglyMotion remembers your choice.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What it does</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse or key</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CameraOverride</name>
     <message>
         <source>min distance %1 m</source>
@@ -532,6 +666,45 @@ Red: a request with a wrong key was refused</source>
     </message>
 </context>
 <context>
+    <name>EmptyState</name>
+    <message>
+        <source>No animation open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a pose to start. You can change it later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New animation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A calm standing pose. A good start for most moves.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sitting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A calm seated pose. Good for a quiet scene.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dance example</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A short, simple dance. Change it to learn.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>EnvironmentOverride</name>
     <message>
         <source>Not shown: %1 (the 3D view has no sun, moon, clouds or water).</source>
@@ -685,6 +858,153 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>KeysMouseDialog</name>
+    <message>
+        <source>Keys and mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What it does</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse or key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a joint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click it, or its row in the Joints panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Look around (orbit)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag empty space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the view (pan)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right-drag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse wheel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Front view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numpad 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Side view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numpad 3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Numpad 7</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step one frame back or forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left, Right arrow keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>K</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>T</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expert mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift+E</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show hints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift+H</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+=</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide panels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+L</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabWatcher</name>
     <message>
         <source>Give the folder to watch.</source>
@@ -735,10 +1055,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Close animation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close animation is not built yet. Use New animation to start again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -802,10 +1118,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Setup is not built yet. For now use Options &gt; Settings.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Setup: beginner or experienced, mouse and keys...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -826,15 +1138,7 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The keys and mouse page is not built yet.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Camera and keys...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Camera and keys is not built yet. It comes with Setup.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -843,6 +1147,90 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>The charter overlay is not built yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Undo is not built yet. Save a copy before big changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Redo is not built yet. It comes with Undo.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste mirrored</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste mirrored is not built yet. Use Tools &gt; Mirror to swap left and right.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an animation first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a joint first. Click it on the figure or in the list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop playing first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The first frame is locked. Turn off Lock the first frame to set a key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saves your animation to a file. You can open it again later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export for Second Life</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab: test RLV and LSL scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Beginner or experienced, mouse and keys habits, theme, text size and hints.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to the light theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to the dark theme</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1127,10 +1515,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reset camera view to default position</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Ctrl+N</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1176,22 +1560,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Z</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+Z</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1749,6 +2117,50 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source>Beginner mode is on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left side only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right side only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mirror: turning one side turns the other side too</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flip the whole pose left to right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>T-pose</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>T-pose: arms straight out to the sides</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset all joints of this frame</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3870,14 +4282,6 @@ Buttons: %3 (channel %4)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove every restriction of every object, as if all of them were taken off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Restrictions</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3898,15 +4302,7 @@ Buttons: %3 (channel %4)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Actions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Action</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>State</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3943,14 +4339,6 @@ Buttons: %3 (channel %4)</source>
     </message>
     <message>
         <source>The lines you ran, what happened, and the replies a script would hear on its channel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Commands</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Type RLV lines by hand and see what the avatar may still do</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4050,14 +4438,6 @@ Buttons: %3 (channel %4)</source>
     </message>
     <message>
         <source>What the script did in the last run: what it said, its listens, timers and RLV commands. Times are simulated seconds.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Live</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Watch a folder of .lsl scripts: each saved change is checked and run again here</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4291,6 +4671,222 @@ Error: %2</source>
     </message>
     <message>
         <source>Dialog answer &quot;%1&quot; to %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Viewer rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switching removes every restriction, as after a relog.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Plain RLV, as the RLV wiki lists it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLVa, as in Firestorm and other viewers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How many RLV restrictions are held now, by every object together</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset: remove every restriction of every object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What the avatar may do</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type commands</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Commands: type RLV lines by hand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>Viewer rules: %1. %n restriction(s) removed.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Viewer rules: RLV</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Viewer rules: RLVa</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n held</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick the folder with your .lsl scripts. Each time you save one, it is checked and run here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try the example scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLV restrictions now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No restrictions. A script that says @detach=n holds one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Live scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Live: your .lsl scripts run each time you save them</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: the example scripts are not next to the program.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watch the example scripts that come with the program. One runs at once.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The example scripts are not next to the program.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>read only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 errors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 warnings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ScriptLabSection</name>
+    <message>
+        <source>Hide this part (Space)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show this part (Space)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SetupDialog</name>
+    <message>
+        <source>Setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change these any time. PinglyMotion remembers them. Nothing here moves the panels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Have you made animations before?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New to animation (Beginner mode)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experienced (Expert mode)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expert mode shows more controls (curves, Paste mirrored). Beginner mode keeps the screen calm.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse and keys like</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show all mouse and keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guidance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show hints, tips and the next-step line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

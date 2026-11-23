@@ -277,7 +277,7 @@ void TestScriptLabInput::keyboard()
   QVERIFY(api.execute(twoObjects())["ok"].toBool());
   panel.show();
   QVERIFY(QTest::qWaitForWindowExposed(&panel));
-  panel.tabs()->setCurrentIndex(1);
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::LivePage);
   // Enter in the text field says the line
   panel.chatText()->setFocus();
   QTest::keyClicks(panel.chatText(), "hi");
@@ -322,7 +322,7 @@ void TestScriptLabInput::picture()
   ScriptLabPanel panel;
   panel.setSession(&api.lslSession());
   QVERIFY(api.execute(twoObjects())["ok"].toBool());
-  panel.tabs()->setCurrentIndex(1);
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::LivePage);
   panel.sendTouch("hud");
   panel.chatText()->setText("Hello");
   panel.resize(520, 1100);

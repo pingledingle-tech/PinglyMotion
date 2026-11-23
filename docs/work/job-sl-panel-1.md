@@ -5,9 +5,13 @@ Files:
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/scriptlabsection.*
 - tests/scriptlabpanel/**
-- tests/CMakeLists.txt
+- tests/tst_scriptlabeffects.cpp
+- tests/tst_scriptlabcamera.cpp
+- tests/transportbar/tst_transportbar.cpp
 - src/CMakeLists.txt
-- CMakeLists.txt
+- src/lucideicons.cpp
+- src/scriptlab/effectspreview.*
+- translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/SCRIPT_LAB.md
 - docs/ROADMAP.md
