@@ -2545,10 +2545,6 @@ void PinglyMotionWindow::selectAnimation(Animation* animation)
     }
   } // for
 
-  // the Joints panel's Left / Right / Mirror control (posing UX phase 2a)
-  // applies to every open animation, including one just opened or added
-  animation->setMirrored(m_jointSide.isNull());
-
   // update avatar figure combo box
   int figure=0;
   if(animation->getFigureType()==Animation::FIGURE_MALE) figure=1;

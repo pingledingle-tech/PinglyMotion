@@ -363,10 +363,14 @@ class PinglyMotionWindow : public QMainWindow
 
     // the Joints panel's Left / Right / Mirror control and the Whole pose
     // actions Flip, T-pose and Reset all (posing UX phase 2a, docs/mockup).
-    // m_jointSide is a null QChar for Mirror (every joint listed,
-    // Animation::setMirrored(true) so an edit also turns the other side);
-    // 'L' or 'R' for a single side (setMirrored(false), only that side and
-    // the centre line listed, JointList::sideOf()).
+    // m_jointSide is a null QChar for Mirror (every joint listed; clicking
+    // Mirror sets Animation::setMirrored(true) on the animation open at that
+    // moment, so a Selected-joint edit also turns the other side); 'L' or 'R'
+    // for a single side (setMirrored(false), only that side and the centre
+    // line listed, JointList::sideOf()). The side control only changes the
+    // currently open animation when clicked: it is not forced onto every
+    // file as it is opened, so control-API and scripted edits are never
+    // silently mirrored behind the user's back.
     QButtonGroup* m_sideGroup=nullptr;
     QPushButton* m_leftSideButton=nullptr;
     QPushButton* m_rightSideButton=nullptr;
