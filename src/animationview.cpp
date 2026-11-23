@@ -1110,9 +1110,11 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
     return;
   }
 
-  // a joint: a click picks it, a drag pulls the limb (UX phase 4b part 2, 6a)
+  // a joint: a click picks it, a drag pulls the limb (UX phase 4b part 2, 6a); a joint of a
+  // figure that is not active only takes a click, which makes that figure active (6m)
   if(selected && selected<static_cast<unsigned int>(OpenGlIds::ObjectStart) &&
-     m_scene->getAnimation(selected/static_cast<int>(OpenGlIds::AnimationIncrement)))
+     m_scene->getAnimation(selected/static_cast<int>(OpenGlIds::AnimationIncrement)) &&
+     m_scene->getAnimation(selected/static_cast<int>(OpenGlIds::AnimationIncrement))==m_scene->getAnimation())
   {
     m_mouseDrag=MouseDrag::Joint;
     m_pressSelected=selected;
@@ -1145,6 +1147,10 @@ void AnimationView::clickSelect(unsigned int selected)
   // body part clicked
   else if (selected < static_cast<unsigned int>(OpenGlIds::ObjectStart))
   {
+    // another figure: the window may say no (Beginner mode, 6m), then nothing changes
+    const int figure=static_cast<int>(selected/static_cast<unsigned int>(OpenGlIds::AnimationIncrement));
+    if(figure<m_scene->getCountOfAnimations() && m_scene->getAnimation(figure)!=m_scene->getAnimation() &&
+       m_figureGuard && !m_figureGuard(figure)) return;
     partSelected=selected;
     m_scene->selectAnimation(selected / static_cast<int>(OpenGlIds::AnimationIncrement));
     propManager()->selectProp(0);
@@ -1535,8 +1541,13 @@ void AnimationView::drawFigure(Animation* anim,unsigned int index)
     // lighting on: the shaders light what is drawn now
     SceneState::setLighting(true);
 
+    // two figures (docs/UX_DECISIONS.md 6m): the figure that is not active is drawn in
+    // text_disabled with no joint dots, and every figure stands at its own place
+    m_otherFigure=index!=EffectFigureIndex && m_scene->getCountOfAnimations()>1 && anim!=m_scene->getAnimation();
+
     // save current drawing matrix
     SceneState::pushMatrix();
+    SceneState::translate(m_figureOffsets.value(anim,0.0f),0,0);
 
     // scale drawing matrix to avatar scale specified
     float scale=anim->getAvatarScale();
@@ -1563,22 +1574,42 @@ void AnimationView::drawFigure(Animation* anim,unsigned int index)
 
     selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
     drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_PARTS);
-    selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
-    drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_ROT_AXES);
-    // the bone lines between the joints, always on, over the body
-    selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
-    glDisable(GL_DEPTH_TEST);
-    drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_SKELETON);
-    // the joint rings, with depth test: the body hides the joints behind it
-    // (src/jointrings.h); while picking they carry their joint's name
-    if(!isPicking()) updateRingChanged(anim);
-    selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
-    glEnable(GL_DEPTH_TEST);
-    drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_RINGS);
+    // the figure that is not active (two figures, 6m): no rings, no bone lines, no joint rings
+    if(!m_otherFigure)
+    {
+      selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
+      drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_ROT_AXES);
+      // the bone lines between the joints, always on, over the body
+      selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
+      glDisable(GL_DEPTH_TEST);
+      drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_SKELETON);
+      // the joint rings, with depth test: the body hides the joints behind it
+      // (src/jointrings.h); while picking they carry their joint's name
+      if(!isPicking()) updateRingChanged(anim);
+      selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);
+      glEnable(GL_DEPTH_TEST);
+      drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_RINGS);
+    }
     glDisable(GL_DEPTH_TEST);
 
     // restore drawing matrix
     SceneState::popMatrix();
+    m_otherFigure=false;
+
+    // the top of the figure, for its name tag (the highest joint as it was drawn)
+    if(!isPicking() && index!=EffectFigureIndex)
+    {
+      const unsigned int base=index*static_cast<unsigned int>(OpenGlIds::AnimationIncrement);
+      bool found=false;
+      QVector3D top;
+      for(auto it=m_jointPositions.constBegin();it!=m_jointPositions.constEnd();++it)
+      {
+        if(it.key()<=base || it.key()>=base+static_cast<unsigned int>(OpenGlIds::AnimationIncrement)) continue;
+        if(!found || it.value().y()>top.y()) top=it.value();
+        found=true;
+      }
+      if(found) m_figureTops.insert(index,top);
+    }
 }
 
 // NOTE: joints == motion for now
@@ -1838,9 +1869,12 @@ void AnimationView::drawSkin()
     colors.reserve(states.size());
     QVector<unsigned int> pickNames;
     pickNames.reserve(states.size());
+    // the figure that is not active is drawn in text_disabled (6m)
+    const QVector4D otherColour=ViewColours::vector(Theme::color(Theme::Token::TextDisabled));
     for(const SkinJointState* state : states)
     {
-      colors << QVector4D(state->color[0],state->color[1],state->color[2],state->color[3]);
+      if(m_otherFigure && !m_colorPicking) colors << otherColour;
+      else colors << QVector4D(state->color[0],state->color[1],state->color[2],state->color[3]);
       pickNames << state->selectName;
     }
 
@@ -2532,4 +2566,29 @@ void AnimationView::placeRingLabels()
     if(label->geometry()!=place) label->setGeometry(place);
     if(!label->isVisible()) label->show();
   }
+}
+
+void AnimationView::setFigureOffset(const Animation* anim,float x)
+{
+  if(x==0.0f) m_figureOffsets.remove(anim);
+  else m_figureOffsets.insert(anim,x);
+  update();
+}
+
+float AnimationView::figureOffset(const Animation* anim) const
+{
+  return m_figureOffsets.value(anim,0.0f);
+}
+
+bool AnimationView::figureTagPoint(int index,QPoint* point) const
+{
+  const auto found=m_figureTops.constFind(index);
+  if(found==m_figureTops.constEnd() || !point) return false;
+  // a little over the head, then into widget pixels with the last picture's camera
+  const QVector4D clip=m_lastProjection*m_viewMatrix*QVector4D(found.value()+QVector3D(0,6,0),1.0f);
+  if(clip.w()<=0.0f) return false;
+  const double x=(double(clip.x()/clip.w())+1.0)/2.0*width();
+  const double y=(1.0-double(clip.y()/clip.w()))/2.0*height();
+  *point=QPoint(int(qBound(-1.0e6,x,1.0e6)),int(qBound(-1.0e6,y,1.0e6)));
+  return true;
 }

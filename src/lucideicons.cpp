@@ -114,6 +114,9 @@ namespace
       "M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"}},
     {"search",{"m21 21-4.34-4.34","M19 11a8 8 0 1 0-16 0a8 8 0 1 0 16 0z"}},
     {"import",{"M12 3v12","m8 11 4 4 4-4","M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"}},
+    // two figures (docs/UX_DECISIONS.md 6m), from the approved mockup: add and remove a figure
+    {"user-plus",{"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M13 7a4 4 0 1 0-8 0a4 4 0 1 0 8 0z","M19 8L19 14","M22 11L16 11"}},
+    {"user-minus",{"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M13 7a4 4 0 1 0-8 0a4 4 0 1 0 8 0z","M22 11L16 11"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

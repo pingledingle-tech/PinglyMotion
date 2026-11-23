@@ -148,7 +148,7 @@ void TestMenuTexts::mainMenus()
     {QStringLiteral("resetCameraAction"), QStringLiteral("Reset view")},                               // A20
     {QStringLiteral("helpWhatsNewAction"), QStringLiteral("What's new...")},                           // A22
     // unchanged rows that the new wording must not have touched
-    {QStringLiteral("fileAddAction"), QStringLiteral("Add...")},
+    {QStringLiteral("fileAddAction"), QStringLiteral("Add a second figure...")},  // FIG-01, docs/UX_DECISIONS.md 6m
     {QStringLiteral("fileImportBvhAction"), QStringLiteral("Import BVH from another skeleton...")},    // A7
     {QStringLiteral("fileImportAnimAction"), QStringLiteral("Import Second Life .anim...")},           // A8
     {QStringLiteral("fileImportGltfAction"), QStringLiteral("Import glTF animation...")},              // A6

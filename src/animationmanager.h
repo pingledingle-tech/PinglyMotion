@@ -51,6 +51,9 @@ class AnimationManager : public QObject
 
     Animation* first();
     void append(Animation* const animation);
+    // takes one animation out of the list (not deleted: the caller owns it now); when it was
+    // the selected one, the first one left is selected. false when it was not in the list
+    bool remove(Animation* const animation);
 
     void setAnimation(Animation* animation);
     Animation* getAnimation();

@@ -79,6 +79,14 @@ void Scene::addAnimation(Animation* animation)
   }
 }
 
+bool Scene::removeAnimation(Animation* animation)
+{
+  if (!m_animationManager.remove(animation)) return false;
+  disconnect(animation, nullptr, this, nullptr);
+  emit repaint();
+  return true;
+}
+
 void Scene::clear()
 {
   m_animationManager.clear();

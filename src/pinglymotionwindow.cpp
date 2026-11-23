@@ -71,6 +71,7 @@
 #include "bvh.h"
 #include "dingle.h"
 #include "easingtiles.h"
+#include "figures.h"
 #include "propfile.h"
 #include "constants.h"
 #include "controlapi.h"
@@ -776,6 +777,9 @@ void PinglyMotionWindow::showAiConnectDialog()
 void PinglyMotionWindow::updateWindowTitle()
 {
   QString title=Constants::windowTitle(m_empty ? QString() : currentFile);
+  // two figures (docs/UX_DECISIONS.md 6m): "figure 2 of 2" after the file name
+  const QString figure=m_empty ? QString() : FigureSpec::titleText(activeFigure()+1,animationIds.count());
+  if(!figure.isEmpty()) title+=QStringLiteral(" \u00B7 ")+figure;
   if(m_controlServer && m_controlServer->running()) title+=tr(" - AI Assistant on");
   if(m_controlIndicator) m_controlIndicator->setRunning(m_controlServer && m_controlServer->running());
   if(m_auroraLink)
@@ -1248,6 +1252,8 @@ void PinglyMotionWindow::buildMenus()
     if(m_panels && m_panels->pasteMirrored) m_panels->pasteMirrored->setVisible(on);
     // and the Hands tab's joint grid (UX phase 2c)
     refreshHandsPanel();
+    // two figures (6m): the add commands, the Figures box, Make active and Remove
+    refreshFigures();
     // the Edit curve button follows through UserSettings::watchExpertMode; the mockup's sentences
     statusBar()->showMessage(on ? GuidanceSpec::tr(GuidanceSpec::expertOnMessage,"GuidanceSpec")
                                 : GuidanceSpec::tr(GuidanceSpec::expertOffMessage,"GuidanceSpec"),5000);
@@ -1437,6 +1443,7 @@ void PinglyMotionWindow::buildTopBar()
   connect(m_topBar,&TopBar::setupRequested,this,&PinglyMotionWindow::openSetupDialog);
 
   setupViewToolbar();
+  setupFigures();
 
   m_emptyState=new EmptyState(ui->animationView);
   m_emptyState->hide();
@@ -1476,6 +1483,52 @@ void PinglyMotionWindow::buildHintCards()
     if(dock) connect(dock,&QDockWidget::visibilityChanged,m_hintCards,[this](bool){ m_hintCards->refresh(); });
   m_hintCards->setHintsOn(UserSettings::tipsOn());
   m_hintCards->setAnimationOpen(!m_empty);
+}
+
+// Two figures in one scene, Expert mode only (docs/UX_DECISIONS.md 6m): the Figures box at the
+// top right of the 3D view, Alt+1 and Alt+2, the timeline's Make active and Remove, a click on
+// the other figure or its greyed rows, and the Library panel's Add as a second figure
+void PinglyMotionWindow::setupFigures()
+{
+  AnimationView* view=ui->animationView;
+  m_figuresBox=new FiguresBox(view);
+  connect(m_figuresBox,&FiguresBox::activateRequested,this,&PinglyMotionWindow::makeFigureActive);
+  for(int i=0;i<FigureSpec::maxFigures;i++)
+  {
+    QAction* action=new QAction(this);
+    action->setObjectName(QStringLiteral("figure%1Action").arg(i+1));
+    action->setShortcut(QKeySequence(QStringLiteral("Alt+%1").arg(i+1)));
+    action->setShortcutContext(Qt::WindowShortcut);
+    action->setEnabled(false);
+    connect(action,&QAction::triggered,this,[this,i]() { makeFigureActive(i); });
+    addAction(action);
+    m_figureActions << action;
+  }
+  // a click on the other figure: in Beginner mode nothing changes and the status line says why
+  view->setFigureGuard([this](int)
+  {
+    if(UserSettings::expertMode()) return true;
+    statusBar()->showMessage(FigureSpec::tr(FigureSpec::beginnerSwitch),5000);
+    return false;
+  });
+  connect(view,&AnimationView::viewDrawn,this,&PinglyMotionWindow::placeFigureTags);
+  connect(ui->timelineView,&TimelineView::makeActiveRequested,this,&PinglyMotionWindow::makeFigureActive);
+  connect(ui->timelineView,&TimelineView::removeRequested,this,[this](int figure) { removeFigure(figure); });
+  connect(ui->timelineView,&TimelineView::otherJointClicked,this,[this](int figure,int track)
+  {
+    if(!UserSettings::expertMode())
+    {
+      statusBar()->showMessage(FigureSpec::tr(FigureSpec::beginnerSwitch),5000);
+      return;
+    }
+    makeFigureActive(figure);
+    if(activeFigure()!=figure) return;
+    ui->timelineView->selectTrack(track);
+    ui->animationView->selectPart(track);
+  });
+  if(m_libraryPanel)
+    connect(m_libraryPanel,&LibraryPanel::addFigureRequested,this,&PinglyMotionWindow::addLibraryClipAsFigure);
+  refreshFigures();
 }
 
 // UX phase 4b: the view toolbar at the top left of the 3D view (docs/UX_DECISIONS.md 6b)
@@ -1725,6 +1778,8 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
   // the timeline shows one line instead of its rows (UX phase 3a)
   ui->timelineView->setNoAnimation(empty);
   updateEditActions();
+  // two figures (6m): nothing of it shows while the empty state covers the view
+  refreshFigures();
   updateWindowTitle();
 }
 
@@ -2695,11 +2750,19 @@ void PinglyMotionWindow::updateInputs()
 
     // we do that in nextPlaystate() now
 
-    ui->framesSpin->setValue(anim->getNumberOfFrames());
+    // showing the animation's own frame count and speed must not write them back: with two
+    // figures that marked the figure that became active as changed (docs/UX_DECISIONS.md 6m)
+    {
+      const QSignalBlocker blockFrames(ui->framesSpin);
+      ui->framesSpin->setValue(anim->getNumberOfFrames());
+    }
     ui->currentFrameSlider->setMaximum(anim->getNumberOfFrames()-1);
     // Frame back / Frame forward: not past the first or the last frame
     if(m_transport) m_transport->setFrame(anim->getFrame(),anim->getNumberOfFrames());
-    ui->fpsSpin->setValue(anim->fps());
+    {
+      const QSignalBlocker blockFps(ui->fpsSpin);
+      ui->fpsSpin->setValue(anim->fps());
+    }
 
     // prevent feedback loop
     ui->scaleSpin->blockSignals(true);
@@ -3095,6 +3158,9 @@ bool PinglyMotionWindow::clearOpenFiles()
   if(!askToSaveChanges()) return false;
 
   timeline->setAnimation(0);
+  // two figures (6m): the places go with the animations
+  for(Animation* anim : animationIds) ui->animationView->setFigureOffset(anim,0.0f);
+  m_figurePlace.clear();
   scene->clear();
   currentPart = NULL;
   openFiles.clear();
@@ -3102,6 +3168,7 @@ bool PinglyMotionWindow::clearOpenFiles()
   animationIds.clear();
   setCurrentFile(m_untitledName);
   longestRunningTime=0.0;
+  refreshFigures();
 
   return true;
 }
@@ -3190,6 +3257,9 @@ void PinglyMotionWindow::selectAnimation(Animation* animation)
 
   // enable export to second life if current file name is not the default untitled name
   if(!m_empty) ui->fileExportForSecondLifeAction->setEnabled(currentFile != m_untitledName);
+
+  // two figures (6m): the box, the tags, the header rows and the chip follow the active figure
+  refreshFigures();
 }
 
 

@@ -337,8 +337,13 @@ QWidget* SelectedJointPanel::buildJointPage(const Controls* controls)
   m_area->setObjectName(QStringLiteral("areaChip"));
   m_keys = new QLabel(head);
   m_keys->setObjectName(QStringLiteral("keysChip"));
+  // two figures (docs/UX_DECISIONS.md 6m): "Figure 2" beside the key count, hidden with one figure
+  m_figure = new QLabel(head);
+  m_figure->setObjectName(QStringLiteral("figureChip"));
+  m_figure->hide();
   chips->addWidget(m_area);
   chips->addWidget(m_keys);
+  chips->addWidget(m_figure);
   chips->addStretch(1);
   headColumn->addLayout(chips);
   m_slName = wrapLabel(QString(), head);
@@ -807,6 +812,8 @@ void SelectedJointPanel::applyLook()
                           .arg(text.name(), Theme::mix(surface, area, 0.14).name()));
   m_keys->setStyleSheet(chip.arg(Theme::Size::borderWidth).arg(border.name()).arg(Theme::Size::radiusSmall).arg(Theme::Size::spacingS)
                           .arg(text.name(), Theme::mix(surface, border, 0.14).name()));
+  m_figure->setStyleSheet(chip.arg(Theme::Size::borderWidth).arg(Theme::color(Token::Selection).name()).arg(Theme::Size::radiusSmall)
+                            .arg(Theme::Size::spacingS).arg(text.name(), Theme::mix(surface, Theme::color(Token::Selection), 0.14).name()));
   for (QLabel* label : {m_slName, m_hint, m_dragCaption, m_moreCaption})
     label->setStyleSheet(QStringLiteral("color: %1;").arg(muted.name()));
 
@@ -860,4 +867,10 @@ void SelectedJointPanel::applyLook()
   m_keys->setToolTip(QString());
   m_more->setIcon(LucideIcons::icon(m_more->isChecked() ? QStringLiteral("chevron-down") : QStringLiteral("chevron-right"), text, disabled));
   applyNearLook();
+}
+
+void SelectedJointPanel::setFigureChip(const QString& text)
+{
+  m_figure->setText(text);
+  m_figure->setVisible(!text.isEmpty());
 }

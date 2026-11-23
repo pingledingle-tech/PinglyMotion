@@ -130,6 +130,16 @@ class AnimationView : public QOpenGLWidget
 
     void setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<Mesh> sphereMesh, QSharedPointer<Mesh> coneMesh);
 
+    // Two figures in one scene (docs/UX_DECISIONS.md 6m): each figure stands at its own place
+    // sideways (scene units; the window keeps it, so removing one never moves the other); the
+    // figure that is not active is drawn in text_disabled with no joint dots and no rings
+    void setFigureOffset(const Animation* anim, float x);
+    float figureOffset(const Animation* anim) const;
+    // a click on another figure asks this first; false keeps everything as it is (Beginner mode)
+    void setFigureGuard(const std::function<bool(int)>& guard) { m_figureGuard = guard; }
+    // where a figure's name tag goes (a little over its head, widget pixels), from the last picture
+    bool figureTagPoint(int index, QPoint* point) const;
+
   signals:
     void partClicked(BVHNode* node, QVector3D rotation, RotationLimits rotLimit, QVector3D position);
     void partClicked(int part);
@@ -346,6 +356,12 @@ class AnimationView : public QOpenGLWidget
   private:
     // drawFigure() index of the Script Lab preview figure: its pick names are far from the scene's
     static constexpr unsigned int EffectFigureIndex=99;
+
+    // two figures (6m): the places, the guard, and the figure being drawn is not the active one
+    QHash<const Animation*,float> m_figureOffsets;
+    std::function<bool(int)> m_figureGuard;
+    bool m_otherFigure=false;
+    QHash<int,QVector3D> m_figureTops;
 
     enum class OpenGlIds
     {

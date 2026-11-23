@@ -35,6 +35,7 @@
 #include <QFileDialog>
 #include "startfolder.h"
 #include "logging.h"
+#include <QListWidget>
 #include <QMessageBox>
 #include <QSaveFile>
 #include <QTemporaryDir>
@@ -93,6 +94,9 @@
 #include "theme.h"
 #include "ui_pinglymotionwindow.h"
 #include "whatsnewdialog.h"
+#include "figures.h"
+#include "librarypanel.h"
+#include "libraryindex.h"
 #include "wheelguard.h"
 
 // What the remote control commands do in the window: the same steps as clicking.
@@ -184,6 +188,12 @@ bool PinglyMotionWindow::fileNew()
 // the empty state. A clean untitled animation stays behind it (see m_empty).
 void PinglyMotionWindow::fileClose()
 {
+  // two figures (docs/UX_DECISIONS.md 6m): Close takes the active figure out, as Remove does
+  if(animationIds.count()>1)
+  {
+    removeFigure(activeFigure());
+    return;
+  }
   if(fileNew()) setEmptyMode(true);
 }
 
@@ -828,9 +838,10 @@ void PinglyMotionWindow::on_fileOpenAction_triggered()
   fileOpen();
 }
 
+// File > Add a second figure... (Expert mode only, docs/UX_DECISIONS.md 6m)
 void PinglyMotionWindow::on_fileAddAction_triggered()
 {
-  fileAdd();
+  addSecondFigure();
 }
 
 void PinglyMotionWindow::on_fileSaveAction_triggered()
@@ -881,4 +892,232 @@ void PinglyMotionWindow::on_fileSavePropsAction_triggered()
 void PinglyMotionWindow::on_fileExitAction_triggered()
 {
   fileExit();
+}
+
+// ---- Two figures in one scene, Expert mode only (docs/UX_DECISIONS.md 6m)
+
+int PinglyMotionWindow::activeFigure() const
+{
+  return animationIds.indexOf(scene->getAnimation());
+}
+
+void PinglyMotionWindow::addSecondFigure()
+{
+  const QString why=FigureSpec::addBlocked(!m_empty,animationIds.count());
+  if(!UserSettings::expertMode() || !why.isEmpty())
+  {
+    if(!why.isEmpty()) statusBar()->showMessage(why,5000);
+    return;
+  }
+  AddFigureDialog dialog(this);
+  dialog.exec();
+  switch(dialog.choice())
+  {
+    case AddFigureDialog::Choice::Library:
+      // the library panel opens at its list; Add as a second figure does the rest
+      if(m_libraryDock)
+      {
+        m_libraryDock->show();
+        m_libraryDock->raise();
+      }
+      if(m_libraryPanel && m_libraryPanel->list()) m_libraryPanel->list()->setFocus();
+      statusBar()->showMessage(FigureSpec::tr(FigureSpec::pickFromLibrary),10000);
+      break;
+    case AddFigureDialog::Choice::File:
+    {
+      const QString file=selectFileToOpen(FigureSpec::tr(FigureSpec::dialogTitle));
+      if(!file.isEmpty() && checkAnimationFile(file)) addFigureFile(file);
+      break;
+    }
+    case AddFigureDialog::Choice::Cancel:
+      break;
+  }
+}
+
+bool PinglyMotionWindow::addFigureFile(const QString& fileName,const QByteArray* data)
+{
+  if(!FigureSpec::addBlocked(!m_empty,animationIds.count()).isEmpty()) return false;
+  // the new figure stands at the first free place, so the figure already there stays put
+  QList<int> used;
+  for(Animation* anim : animationIds) used << m_figurePlace.value(anim,0);
+  const int place=FigureSpec::freePlace(used);
+  const int before=animationIds.count();
+  addAnimationFile(fileName,data);
+  if(animationIds.count()!=before+1) return false;
+  Animation* added=animationIds.last();
+  m_figurePlace.insert(added,place);
+  ui->animationView->setFigureOffset(added,FigureSpec::placeOffset(place));
+  refreshFigures();
+  m_announcedFigure=activeFigure();
+  statusBar()->showMessage(FigureSpec::addedMessage(animationIds.count(),openFiles.last()),10000);
+  // the view zooms out so both fit, once the new figure has been drawn
+  QTimer::singleShot(0,this,[this]()
+  {
+    ui->animationView->repaint();
+    ui->animationView->frameWholeFigure();
+    placeFigureTags();
+  });
+  return true;
+}
+
+void PinglyMotionWindow::addLibraryClipAsFigure(const QString& clipId)
+{
+  if(!m_libraryPanel || !UserSettings::expertMode()) return;
+  const LibraryClip* clip=m_libraryPanel->index().find(clipId);
+  if(!clip) return;
+  const QString why=FigureSpec::addBlocked(!m_empty,animationIds.count());
+  if(!why.isEmpty())
+  {
+    statusBar()->showMessage(why,5000);
+    return;
+  }
+  const QString path=m_libraryPanel->index().absolutePath(*clip);
+  if(!checkAnimationFile(path))
+  {
+    statusBar()->showMessage(m_lastOpenError,10000);
+    return;
+  }
+  addFigureFile(path);
+}
+
+void PinglyMotionWindow::makeFigureActive(int index)
+{
+  if(index<0 || index>=animationIds.count() || index==activeFigure()) return;
+  animationChanged(index);
+  refreshFigures();
+}
+
+bool PinglyMotionWindow::removeFigure(int index)
+{
+  if(index<0 || index>=animationIds.count() || animationIds.count()<2) return false;
+  Animation* anim=animationIds.at(index);
+  if(anim->dirty() && !m_quietDialogs)
+  {
+    QScopedPointer<QMessageBox> box(FigureRemove::box(this,index+1,openFiles.at(index)));
+    box->exec();
+    const FigureRemove::Choice choice=FigureRemove::choiceOf(box.data());
+    if(choice==FigureRemove::Choice::Cancel) return false;
+    if(choice==FigureRemove::Choice::SaveThenRemove)
+    {
+      makeFigureActive(index);
+      if(!fileSave() || anim->dirty()) return false;
+    }
+  }
+  const int count=animationIds.count();
+  const QString otherPath=(index==0 && count==2) ? openFiles.at(1) : QString();
+
+  // the panels let go of it first, then the scene; the other figure is not moved
+  const bool wasActive=(scene->getAnimation()==anim);
+  disconnect(anim,nullptr,this,nullptr);
+  if(wasActive) timeline->setAnimation(nullptr);
+  scene->removeAnimation(anim);
+  animationIds.removeAt(index);
+  const QString removedPath=openFiles.takeAt(index);
+  m_avmOrigin.remove(removedPath);
+  ui->selectAnimationCombo->removeItem(index);
+  m_figurePlace.remove(anim);
+  ui->animationView->setFigureOffset(anim,0.0f);
+  anim->deleteLater();
+
+  Animation* now=scene->getAnimation();
+  if(!now && !animationIds.isEmpty()) now=animationIds.first();
+  if(now)
+  {
+    currentPart=nullptr;
+    selectAnimation(now);
+    ui->animationView->selectPart(0);
+  }
+  calculateLongestRunningTime();
+  m_announcedFigure=activeFigure();
+  refreshFigures();
+  statusBar()->showMessage(FigureSpec::removedMessage(index+1,otherPath),10000);
+  return true;
+}
+
+void PinglyMotionWindow::refreshFigures()
+{
+  const int count=animationIds.count();
+  const int active=activeFigure();
+  const bool expert=UserSettings::expertMode();
+  const bool two=count>=2 && !m_empty;
+
+  // the two ways to add a figure: Expert mode only, greyed with the reason when the scene is full
+  const QString why=FigureSpec::addBlocked(!m_empty,count);
+  ui->fileAddAction->setVisible(expert);
+  if(!m_empty)
+  {
+    ui->fileAddAction->setEnabled(why.isEmpty());
+    ui->fileAddAction->setToolTip(why);
+    ui->fileAddAction->setStatusTip(why);
+  }
+  if(m_libraryPanel) m_libraryPanel->setSecondFigureBlocked(why);
+
+  // switching: Alt+1 and Alt+2 in Expert mode with two figures
+  for(int i=0;i<m_figureActions.count();i++) m_figureActions.at(i)->setEnabled(two && expert && i<count);
+
+  // the Figures box at the top right of the 3D view (Expert mode only)
+  if(m_figuresBox)
+  {
+    m_figuresBox->setFigures(two ? openFiles : QStringList(),active);
+    m_figuresBox->setVisible(two && expert);
+    if(m_figuresBox->isVisible()) m_figuresBox->raise();
+  }
+
+  // the name tags over the heads (both modes: they only tell the figures apart)
+  while(m_figureTags.count()>(two ? count : 0))
+  {
+    FigureTag* tag=m_figureTags.takeLast();
+    tag->hide();
+    tag->deleteLater();
+  }
+  while(two && m_figureTags.count()<count)
+  {
+    FigureTag* tag=new FigureTag(ui->animationView);
+    const int number=m_figureTags.count();
+    connect(tag,&FigureTag::clicked,this,[this,number]()
+    {
+      if(!UserSettings::expertMode())
+      {
+        if(number!=activeFigure()) statusBar()->showMessage(FigureSpec::tr(FigureSpec::beginnerSwitch),5000);
+        return;
+      }
+      makeFigureActive(number);
+    });
+    m_figureTags << tag;
+  }
+  for(int i=0;i<m_figureTags.count();i++) m_figureTags.at(i)->setTag(i+1,openFiles.at(i),i==active);
+  placeFigureTags();
+
+  // the timeline's header rows; the chip and the window title
+  ui->timelineView->setFigures(two ? animationIds : QList<Animation*>(),two ? openFiles : QStringList(),active,expert);
+  if(m_selectedJoint) m_selectedJoint->setFigureChip(two ? FigureSpec::chipText(active+1,count) : QString());
+  updateWindowTitle();
+
+  // the status line says when another figure became active
+  if(two && active>=0 && active!=m_announcedFigure)
+    statusBar()->showMessage(FigureSpec::activeMessage(active+1,openFiles.at(active)),5000);
+  m_announcedFigure=active;
+}
+
+void PinglyMotionWindow::placeFigureTags()
+{
+  QRect box;
+  if(m_figuresBox && m_figuresBox->isVisible()) box=m_figuresBox->geometry();
+  for(int i=0;i<m_figureTags.count();i++)
+  {
+    FigureTag* tag=m_figureTags.at(i);
+    QPoint point;
+    if(!ui->animationView->figureTagPoint(i,&point))
+    {
+      tag->hide();
+      continue;
+    }
+    QRect place(point.x()-tag->width()/2,point.y()-tag->height(),tag->width(),tag->height());
+    // a tag moves down when the Figures box would cover it
+    if(box.isValid() && place.intersects(box.adjusted(-Theme::Size::spacingXs,0,0,Theme::Size::spacingXs)))
+      place.moveTop(box.bottom()+Theme::Size::spacingS);
+    tag->move(place.topLeft());
+    tag->setVisible(ui->animationView->rect().intersects(place));
+    tag->raise();
+  }
 }
