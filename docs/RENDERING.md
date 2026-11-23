@@ -28,7 +28,7 @@ The 3D view (`AnimationView`) draws everything with **OpenGL 3.3 core shaders**.
 
 - Studio lights that move with the camera: a warm key light, a soft fill, light from above and a darker bounce from below; soft "wrap" shadow edge for skin, a wide soft highlight and a thin rim light. Lighting is done per pixel in linear colour, gamma 2.2 at the end.
 - Options > Light… changes brightness, shine and warmth (`SkinRenderer::Look`, settings `light_brightness`, `light_shine`, `light_warmth`; 50 = standard).
-- Meshes (Bento balls, props, handles), lines, rings and the floor share the body's fragment shader, so they get the same light. With `SceneState::setLighting(false)` the plain colour is drawn.
+- Meshes (props, handles, effect markers), lines, rings and the floor share the body's fragment shader, so they get the same light. With `SceneState::setLighting(false)` the plain colour is drawn.
 - Fog: exponential, density 0.005, towards the background colour ("Use fog" in Options > Settings…).
 
 ## Lines
@@ -43,7 +43,7 @@ Every body drawn in a frame is drawn once more after the floor, flattened onto i
 
 - Hover and click use **colour IDs**: everything pickable is drawn into an offscreen buffer – only a 5×5 pixel area around the mouse – in a flat colour that encodes its pick name, and the pixels are read back (`AnimationView::pickPartByColor`).
 - The drawing code calls `pickName()` before each pickable thing; the same shaders draw it in that colour. The body uses `gl_PrimitiveID` to give every triangle the pick name of the joint it mostly belongs to (`Part::triangleJoint`).
-- Which hit wins: a Bento ball in the area; else a ring, handle or prop in front of what is under the mouse; else what is right under the mouse; else the nearest thing in the area.
+- Which hit wins: the ring of a Bento joint in the area; else a ring, handle or prop in front of what is under the mouse; else what is right under the mouse; else the nearest thing in the area.
 
 ## Checking that a change does not change the picture
 
@@ -55,3 +55,8 @@ There is no automatic picture test in CI yet. What was used for #61:
 4. Also compare a screenshot taken through the remote control (`screenshot` command), because it draws into an offscreen buffer and can differ from the live window.
 
 In the cloud sandbox Mesa gives OpenGL 4.5. Real graphics cards are tested by hand on Windows before or after a merge.
+
+## Joint rings and bone lines
+
+Since 23 November 2026 (`src/jointrings.h`, test `tests/jointrings`) every clickable joint is a flat ring facing the camera, of a fixed size on the screen (8 logical pixels outer radius, times the device pixel ratio), drawn in its own pass after the body with depth test on. The rings replace the Bento balls (which were drawn without depth test) and the balls of the old skeleton mode. A joint lies inside the body, so each ring is moved toward the camera along the line of sight by about the depth of the body in front of that joint (`JointRings::lift()`: 6 inches for the hip, abdomen, chest and spine, 0.8 for a finger): the ring of a joint on the near side is in front of the skin, the ring of a joint on the far side stays behind the body. The values were tuned by looking at pictures of the female body from the front, back and side; a joint near the edge of a limb can show half a ring. While picking, each ring is a filled disc in its joint's pick colour, so a click inside a hollow ring picks the joint. The bone lines are drawn always, without depth test, over the body; Options > Show skeleton no longer changes them.
+

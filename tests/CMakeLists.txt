@@ -193,6 +193,8 @@ IF (Python3_Interpreter_FOUND)
   ADD_TEST (NAME rlvsources_tool COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_rlv_sources.py)
   # the Script Lab interpreter against Linden Lab's lsl-definitions (tools/lsl_definition_check.py, docs/LSL_DEFINITION_CHECK.md)
   ADD_TEST (NAME lsl_definition_check COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_lsl_definition_check.py)
+  # the SLua table of the LSL-to-SLua converter is what tools/gen_slua_data.py makes from the definitions (job G)
+  ADD_TEST (NAME gen_slua_data COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_gen_slua_data.py)
 ENDIF ()
 
 # Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
@@ -259,6 +261,13 @@ ADD_EXECUTABLE (pinglymotion_lslsteps19_tests tst_lslsteps19.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslsteps19_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_lslsteps19_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslsteps19 COMMAND pinglymotion_lslsteps19_tests)
+
+# Script Lab lane 1, job G: the LSL-to-SLua converter (golden files in tests/data/slua/)
+ADD_EXECUTABLE (pinglymotion_lsl2slua_tests tst_lsl2slua.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsl2slua_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_COMPILE_DEFINITIONS (pinglymotion_lsl2slua_tests PRIVATE PINGLYMOTION_SOURCE="${CMAKE_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES (pinglymotion_lsl2slua_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lsl2slua COMMAND pinglymotion_lsl2slua_tests)
 
 # Script Lab: static warnings (lint) and lsl_lint; the examples and the fuzz corpus must be lint clean
 ADD_EXECUTABLE (pinglymotion_lsllint_tests tst_lsllint.cpp)

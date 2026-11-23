@@ -41,6 +41,9 @@ TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/cameraoverride.cpp scriptlab
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp scriptlab/lsl/lint.cpp
                 scriptlab/lsl/builtins.cpp scriptlab/lsl/interp.cpp scriptlab/lsl/world.cpp scriptlab/lsl/rlvworld.cpp scriptlab/lsl/control.cpp
                 scriptlab/lsl/sandbox.cpp scriptlab/lsl/session.cpp)
+# Script Lab lane 1, job G: the LSL-to-SLua converter, level 1 "LSL style" (QtCore only; docs/SLUA_RULES.md)
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/luair.cpp scriptlab/lsl/luaprinter.cpp scriptlab/lsl/sluadata.cpp
+                scriptlab/lsl/slualevel1.cpp scriptlab/lsl/lsl2slua.cpp)
 
 # Files that several automatic tests need besides the core: built once as a second static library
 # (before this, each test compiled its own copy: about 170 repeated compiles, most of the

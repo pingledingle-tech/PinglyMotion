@@ -1,7 +1,7 @@
 /*
  * PinglyMotion - colours of the 3D view's own drawing, from the design tokens
  *
- * The rotation rings, the axis lines of a prop, the joint balls, the bones
+ * The rotation rings, the axis lines of a prop, the joint rings, the bones
  * and the effect markers are drawn in these colours (src/animationview.cpp).
  * Every colour is a token of docs/design_tokens.json in the current theme or
  * the theme given; nothing is written by hand (design charter P1, P7).
@@ -42,18 +42,32 @@ namespace ViewColours
   }
   inline QColor ring(int axisIndex,bool strong) { return ring(axisIndex,strong,Theme::isDark()); }
 
-  // the ball on a joint in skeleton mode
-  enum class Joint { Selected, Highlighted, Other };
-  inline QColor jointBall(Joint joint,bool dark)
+  // the ring on a joint (src/jointrings.h, the mockup's .jt): the edge is
+  // accent_text under the mouse, on_accent on the selected joint, else text
+  inline QColor jointRingEdge(bool selected,bool hovered,bool dark)
   {
     using Theme::Token;
-    return Theme::color(joint==Joint::Selected ? Token::DangerFill : joint==Joint::Highlighted ? Token::Accent : Token::Success,dark);
+    return Theme::color(hovered ? Token::AccentText : selected ? Token::OnAccent : Token::Text,dark);
   }
-  inline QColor jointBall(Joint joint) { return jointBall(joint,Theme::isDark()); }
+  // the inside: selection on the selected joint, the body area's colour on a
+  // changed joint (area 0 Body, 1 Face, 2 Hands, 3 Other), else none: an
+  // invalid colour, the ring is hollow
+  inline QColor jointRingFill(bool selected,bool changed,int area,bool dark)
+  {
+    using Theme::Token;
+    if(selected) return Theme::color(Token::Selection,dark);
+    if(!changed) return QColor();
+    static const Token areas[]={Token::AreaBody,Token::AreaFace,Token::AreaHands,Token::AreaOther};
+    return Theme::color(areas[(area>=0 && area<4) ? area : 3],dark);
+  }
 
-  // the line from a joint to its parent in skeleton mode
-  inline QColor bone(bool dark) { return Theme::color(Theme::Token::AreaOther,dark); }
-  inline QColor bone() { return bone(Theme::isDark()); }
+  // the line from a joint to its parent (the mockup's .bone): text_muted;
+  // strong (to the selected joint, or in a pulled limb) accent_text
+  inline QColor bone(bool strong,bool dark)
+  {
+    return Theme::color(strong ? Theme::Token::AccentText : Theme::Token::TextMuted,dark);
+  }
+  inline QColor bone(bool strong) { return bone(strong,Theme::isDark()); }
 
   // effect preview markers: a box for an object, a ball for a lock
   inline QColor objectMarker(bool dark) { return Theme::color(Theme::Token::Accent,dark); }

@@ -762,7 +762,13 @@ class TestTwoFigures : public QObject
       // the other figure: text_disabled, no joint dots, no rings
       QVERIFY(view.contains(QStringLiteral("m_otherFigure=index!=EffectFigureIndex && m_scene->getCountOfAnimations()>1 && anim!=m_scene->getAnimation();")));
       QVERIFY(view.contains(QStringLiteral("const QVector4D otherColour=ViewColours::vector(Theme::color(Theme::Token::TextDisabled));")));
-      QVERIFY(view.contains(QStringLiteral("if(!m_otherFigure)\n    {\n      selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);\n      drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_ROT_AXES);")));
+      const int other = view.indexOf(QStringLiteral("if(!m_otherFigure)\n    {\n      selectName = index * static_cast<int>(OpenGlIds::AnimationIncrement);\n      drawPart(anim,index,anim->getFrame(),anim->getMotion(),joints[figType],MODE_ROT_AXES);"));
+      QVERIFY(other >= 0);
+      // the bone lines and the joint rings are inside the same block
+      const int close = view.indexOf(QStringLiteral("\n    }\n    glDisable(GL_DEPTH_TEST);"), other);
+      QVERIFY(close > other);
+      QVERIFY(view.mid(other, close - other).contains(QStringLiteral("MODE_SKELETON")));
+      QVERIFY(view.mid(other, close - other).contains(QStringLiteral("MODE_RINGS")));
       // each figure at its own place
       QVERIFY(view.contains(QStringLiteral("SceneState::translate(m_figureOffsets.value(anim,0.0f),0,0);")));
       // a joint of the other figure only takes a click (no pull)

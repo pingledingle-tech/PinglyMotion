@@ -1,0 +1,3 @@
+18:19 LSL reads the number at the start of a text ("12abc" gives 12, hex too); SLua's tonumber needs the whole text to be a number. | Make sure the text holds only the number.
+20:14 An assignment, ++ or -- inside an expression is written as a small function, because Lua has no such thing. | Put the assignment on its own line before this one.
+20:19 An assignment, ++ or -- inside an expression is written as a small function, because Lua has no such thing. | Put the assignment on its own line before this one.

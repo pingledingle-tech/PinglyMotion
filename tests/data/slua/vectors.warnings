@@ -1,0 +1,2 @@
+18:38 SLua may write a vector or rotation as text with other decimals than LSL's (string) does. | Build the text from .x, .y and .z with string.format if the exact form matters.
+18:54 SLua may write a vector or rotation as text with other decimals than LSL's (string) does. | Build the text from .x, .y and .z with string.format if the exact form matters.

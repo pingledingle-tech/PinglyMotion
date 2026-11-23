@@ -1024,6 +1024,15 @@ Code: `src/scriptlab/labtint.*`, `Prop::setTint` in `src/prop.*`, wired in `src/
 - A colour without an alpha keeps the prop solid; an alpha without a colour keeps the prop's own colour. A hovered or picked prop keeps its highlight colour, with the tint's transparency.
 - Not built (from the wider idea in [DECISIONS.md](DECISIONS.md)): making props from the prims by themselves, a click on a prop as a touch, and moving a prop when a script moves its prim.
 
+## Convert LSL to SLua (lane 1, job G: level 1 built)
+
+Code: `src/scriptlab/lsl/lsl2slua.*` (the entry, `Lsl2Slua::convert()`), `slualevel1.*` (the layer with the SLua rules), `luair.*` (a small Lua tree), `luaprinter.*` (writes the tree as text), `sluadata.*` with `slua_data.inc` (what changes in SLua for each function and event, made by `tools/gen_slua_data.py` from Linden Lab's definition files). Tests: `tests/tst_lsl2slua.cpp` with exact expected text for seven small scripts in `tests/data/slua/` (states, lists and strings, events, jump, user functions, integer and float math, vector and rotation members), and `tests/test_gen_slua_data.py`. The fuzz target `fuzz_lsl` converts every input. The rules and their sources: [SLUA_RULES.md](SLUA_RULES.md).
+
+- **What it does:** turns an LSL script that compiles into SLua text in "LSL style" (level 1): the script keeps its own shape (positions from 0, integer TRUE and FALSE inside), and the converter changes it only where SLua differs: `ll.` names, 1-based positions into `ll` functions, "not found" back to -1, booleans from `ll` back to 1 and 0 where the script uses them as numbers, the `evts` table of touch, collision and sensor events, states as tables with a `state()` function, LSL's integer division and casts, list and text joins, and vectors that cannot be changed in place.
+- **Warnings as data:** each has the line and column in the LSL text, a plain message and a suggested fix, for the panel to show later. `jump` gives "This jump cannot be converted automatically; rewrite it by hand." and a comment in the text. At most 200 warnings; the last says how many more there were.
+- **Bad input:** a script that does not compile gives its LSL errors and no text. The lexer and parser limit size and nesting; the output is limited to 4 MB. Nothing is run.
+- **Not built:** a panel or button for it (the language choice in the editor stays only a choice), running Lua, level 2 "real Lua style". **The output is not tested in Second Life** (not in a Lua beta region); the tests check the exact text the converter writes, not that Second Life runs it.
+
 ## Later
 
 A description of a separate repository for the owner's RLV tools (template, examples, `.rlvtest` scenarios in CI; not created, the scenario runner does not exist) is in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md). Ideas that come after the planned steps (not planned yet, nothing is being built): see "Script Lab: later" in [ROADMAP.md](ROADMAP.md).

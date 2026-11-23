@@ -213,8 +213,9 @@ class AnimationView : public QOpenGLWidget
     {
       MODE_COLLECT,   // only note where each joint is, for the avatar mesh
       MODE_PARTS,
-      MODE_SKELETON,
-      MODE_ROT_AXES
+      MODE_SKELETON,  // the bone lines
+      MODE_ROT_AXES,
+      MODE_RINGS      // the joint rings (src/jointrings.h)
     };
 
     void paintGL() override;
@@ -242,6 +243,10 @@ class AnimationView : public QOpenGLWidget
 
     void drawAnimations();
     void drawFigure(Animation* anim, unsigned int index);
+    void updateRingChanged(Animation* anim);
+    void drawJointRing(Animation* anim, const BVHNode* joint);
+    // by track: the joint has changed, so its ring has its area colour
+    QVector<bool> m_ringChanged;
     // the Script Lab markers (worn objects, locks) at the joints of the figure drawn last
     void drawEffectMarkers();
     void drawPart(Animation* anim, unsigned int index, int frame, BVHNode *motion,

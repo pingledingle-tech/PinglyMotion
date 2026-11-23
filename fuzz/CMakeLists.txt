@@ -129,7 +129,11 @@ SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/interp.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/world.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/rlvworld.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/control.cpp
-                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/sandbox.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/session.cpp)
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/sandbox.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/session.cpp
+                   # the LSL-to-SLua converter (lane 1, job G); fuzz_lsl converts every input
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/luair.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/luaprinter.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/sluadata.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/slualevel1.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/lsl2slua.cpp)
 TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LSL_FILES})
 TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
 # Script Lab Live (issue 292): the folder watch behind lab_watch, used by controlapi.cpp

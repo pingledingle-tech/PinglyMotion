@@ -110,8 +110,12 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   padding `spacing.s` and `spacing.m`, gap `spacing.s` (`tests/timelinenotes`).
 - **3D view** (`src/viewcolours.h`): rotation rings and prop axis lines in the
   axis tokens (a ring that is not in use is 20 percent toward `background`, a
-  highlighted prop handle 20 percent toward `text`), joint balls `danger_fill`
-  (selected), `accent` (highlighted) and `success` (others), bones `area_other`,
+  highlighted prop handle 20 percent toward `text`), joint rings
+  (`src/jointrings.h`, the mockup's `.jt`: 8 pixels outer radius, hollow with a
+  2 pixel `text` edge, filled with the body area colour when the joint has
+  changed, `selection` with a 3 pixel `on_accent` edge when selected, a 3 pixel
+  `accent_text` edge under the mouse), bones `text_muted` (to the selected joint
+  and in a pulled limb `accent_text`),
   effect markers `accent` (box, object) and `danger_fill` (ball, lock). The 3D
   view's background and the avatar's own body shading do not follow the theme yet.
 
