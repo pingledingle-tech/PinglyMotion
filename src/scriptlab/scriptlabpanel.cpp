@@ -768,6 +768,8 @@ void ScriptLabPanel::applyStyle()
   m_liveEmptyIcon->setPixmap(LucideIcons::icon(QStringLiteral("folder-open"), Theme::color(Theme::Token::AccentText, dark),
                                                QColor(QLatin1String(t.textDisabled))).pixmap(20, 20));
   m_liveRestrictionsEmpty->setPalette(muted);
+  m_inventoryEmpty->setPalette(muted);
+  m_inventoryNote->setPalette(muted);
   m_tabs->setTabIcon(LivePage, LucideIcons::icon(QStringLiteral("file-code"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
   if (m_tabs->count() > CommandsPage)
     m_tabs->setTabIcon(CommandsPage, LucideIcons::icon(QStringLiteral("terminal"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
@@ -976,12 +978,15 @@ void ScriptLabPanel::buildLivePage()
   m_example->setObjectName("scriptLabTryExamples");
   m_example->setMinimumHeight(ControlLarge);
   m_example->setIconSize(QSize(20, 20));
-  QHBoxLayout* emptyButtons = new QHBoxLayout;
-  emptyButtons->setSpacing(SpacingS);
-  emptyButtons->addWidget(m_watch);
-  emptyButtons->addWidget(m_example);
-  emptyButtons->addStretch(1);
-  card->addLayout(emptyButtons);
+  // the two buttons in a row that wraps, so the second goes under the first in a narrow docked panel
+  QWidget* emptyButtons = new QWidget(m_liveEmpty);
+  emptyButtons->setObjectName("scriptLabLiveEmptyButtons");
+  FlowLayout* emptyFlow = new FlowLayout(emptyButtons, SpacingS);
+  m_watch->setParent(emptyButtons);
+  m_example->setParent(emptyButtons);
+  emptyFlow->addWidget(m_watch);
+  emptyFlow->addWidget(m_example);
+  card->addWidget(emptyButtons);
   layout->addWidget(m_liveEmpty);
 
   // --- the folder and Stop watching, while watching
@@ -1116,6 +1121,33 @@ void ScriptLabPanel::buildLivePage()
   // --- touch, chat and dialog answers (issue 308); folded at first, as in the mockup
   m_inputSection = addSection(QStringLiteral("input"), tr("Send input"), false, page, layout);
   buildInputSection(m_inputSection->body(), m_inputSection->bodyLayout());
+
+  // --- the simulated inventory of the object chosen under Send input (step 9b-4, slice 3); folded at
+  // first, as in the mockup: Item and Type, then the caption that nothing comes from Second Life
+  m_inventorySection = addSection(QStringLiteral("inventory"), tr("Inventory"), false, page, layout);
+  m_inventoryEmpty = new QLabel(tr("No inventory yet. An AI assistant gives one with lsl_run."), m_inventorySection->body());
+  m_inventoryEmpty->setObjectName("scriptLabInventoryEmpty");
+  m_inventoryEmpty->setWordWrap(true);
+  m_inventorySection->bodyLayout()->addWidget(m_inventoryEmpty);
+  m_inventory = new QTreeWidget(m_inventorySection->body());
+  m_inventory->setObjectName("scriptLabInventory");
+  m_inventory->setHeaderLabels({tr("Item"), tr("Type")});
+  m_inventory->setRootIsDecorated(false);
+  m_inventory->setUniformRowHeights(true);
+  m_inventory->setSelectionMode(QAbstractItemView::NoSelection);
+  m_inventory->header()->setSectionResizeMode(QHeaderView::Stretch);
+  m_inventory->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  m_inventory->setToolTip(tr("What the object holds in the run: its scripts and the items given with it"));
+  m_inventory->setMinimumHeight(4 * m_inventory->fontMetrics().height() + 2 * SpacingS);
+  m_inventorySection->bodyLayout()->addWidget(m_inventory);
+  m_inventoryNote = new QLabel(tr("Simulated: given with the run, nothing is read from Second Life."), m_inventorySection->body());
+  m_inventoryNote->setObjectName("scriptLabInventoryNote");
+  m_inventoryNote->setWordWrap(true);
+  QFont noteFont = m_inventoryNote->font();   // the "caption" type token, as the mockup's .cap
+  if (noteFont.pointSizeF() > 0) noteFont.setPointSizeF(noteFont.pointSizeF() * 11.0 / 13.0);
+  m_inventoryNote->setFont(noteFont);
+  m_inventorySection->bodyLayout()->addWidget(m_inventoryNote);
+  connect(m_inputObject, &QComboBox::currentIndexChanged, this, &ScriptLabPanel::refreshInventory);
   layout->addStretch(1);
 
   // the page is taller than a small docked panel: it scrolls instead of forcing the panel's height up
@@ -1159,6 +1191,8 @@ void ScriptLabPanel::buildLivePage()
   setTabOrder(m_chatName, m_chatText);
   setTabOrder(m_chatText, m_say);
   setTabOrder(m_say, m_inputLog);
+  setTabOrder(m_inputLog, m_inventorySection->header());
+  setTabOrder(m_inventorySection->header(), m_inventory);
 }
 
 void ScriptLabPanel::updateWorldParts()
@@ -1167,7 +1201,7 @@ void ScriptLabPanel::updateWorldParts()
   // world of an lsl_run (an AI assistant's), which needs no folder
   const bool watching = m_watcher && m_watcher->watching();
   const bool world = m_session && m_session->sandbox();
-  for (QWidget* w : QList<QWidget*>{m_effectsBox, m_objectsSection, m_inputSection})
+  for (QWidget* w : QList<QWidget*>{m_effectsBox, m_objectsSection, m_inputSection, m_inventorySection})
     w->setVisible(watching || world);
 }
 
@@ -1875,6 +1909,73 @@ void ScriptLabPanel::refreshInput()
     b->setToolTip(world ? tr("Press this button in the dialog, as the owner's avatar (channel %1)").arg(dialog.value("channel").toInt()) : blocker);
   }
   m_dialogButtonBox->setVisible(!buttons.isEmpty());
+  refreshInventory();
+}
+
+QString ScriptLabPanel::itemCount(int items)
+{
+  return items == 1 ? tr("1 item") : tr("%1 items").arg(items);
+}
+
+QString ScriptLabPanel::inventoryTypeText(int type, int lines)
+{
+  // the INVENTORY_* numbers of the Second Life wiki, as lsl::Inventory knows them
+  switch (type)
+  {
+    case 0: return tr("Texture");
+    case 1: return tr("Sound");
+    case 3: return tr("Landmark");
+    case 5: return tr("Clothing");
+    case 6: return tr("Object");
+    case 7: return lines == 1 ? tr("Notecard, 1 line") : tr("Notecard, %1 lines").arg(lines);
+    case 10: return tr("Script");
+    case 13: return tr("Body part");
+    case 20: return tr("Animation");
+    case 21: return tr("Gesture");
+    case 56: return tr("Setting");
+    case 57: return tr("Material");
+    default: return tr("Type %1").arg(type);
+  }
+}
+
+void ScriptLabPanel::refreshInventory()
+{
+  if (!m_inventory) return;
+  const lsl::Sandbox* sandbox = m_session ? m_session->sandbox() : nullptr;
+  // the combo box lists the objects in the world's order, so its index is the object's
+  const int index = sandbox && m_inputObject->currentIndex() < sandbox->objectCount() ? m_inputObject->currentIndex() : -1;
+  m_inventory->clear();
+  if (!sandbox || index < 0)
+  {
+    m_inventorySection->setTitle(tr("Inventory"));
+    m_inventorySection->setCount(tr("none"));
+    m_inventoryEmpty->show();
+    m_inventory->hide();
+    m_inventoryNote->hide();
+    return;
+  }
+  // the scripts first, then the items given with the run in their order, as the mockup lists them
+  const std::vector<lsl::InventoryItem>& items = sandbox->inventory(index).items();
+  QList<const lsl::InventoryItem*> shown;
+  for (const lsl::InventoryItem& item : items)
+    if (item.type == 10) shown << &item;
+  for (const lsl::InventoryItem& item : items)
+    if (item.type != 10) shown << &item;
+  const bool dark = isDark(palette());
+  const QIcon notecard = LucideIcons::icon(QStringLiteral("notebook-text"), palette().color(QPalette::Text), mutedColour(dark));
+  for (const lsl::InventoryItem* item : shown)
+  {
+    QTreeWidgetItem* row = new QTreeWidgetItem(m_inventory);
+    row->setText(0, item->name);
+    row->setText(1, inventoryTypeText(item->type, int(item->lines.size())));
+    row->setToolTip(0, item->name);
+    if (item->type == 7) row->setIcon(1, notecard);
+  }
+  m_inventorySection->setTitle(tr("Inventory of %1").arg(m_inputObject->currentText()));
+  m_inventorySection->setCount(itemCount(int(shown.size())));
+  m_inventoryEmpty->hide();
+  m_inventory->show();
+  m_inventoryNote->show();
 }
 
 bool ScriptLabPanel::sendInput(QJsonObject request, const QString& what)

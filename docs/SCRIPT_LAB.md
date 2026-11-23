@@ -42,7 +42,7 @@ visibility are saved with the layout. View > Reset layout closes it again.
   `@detach=n,sendim=n`, `@clear`, Reset, replies, a line through `rlv_command`, colour tokens, and the panel's place
   after saving and loading the layout).
 
-### The panel in the new design (slices 1 and 2)
+### The panel in the new design (slices 1 to 3)
 
 The panel follows the approved mockup (`docs/mockup/index.html`, the Script Lab page; [UX_DECISIONS.md](UX_DECISIONS.md), 6d):
 
@@ -72,7 +72,14 @@ The panel follows the approved mockup (`docs/mockup/index.html`, the Script Lab 
   buttons) sits inside Objects, under the objects.
 - The top bar's Script Lab button now opens and closes the docked panel. Before slice 2 it only showed itself
   pressed: it set the panel's View action to checked, which does not show a panel (only triggering it does).
-- Not built yet (a later slice): the simulated inventory part.
+- Slice 3: the last part on Live scripts, **Inventory of <object>** (folded at first, as in the mockup), shows the
+  simulated inventory of the object chosen under Send input (the first object at start) in the world of the last
+  `lsl_run`: the object's scripts first, then the items given with the run, each with its name and type ("Script",
+  "Animation", "Notecard, 4 lines" with the notebook-text icon), the count ("3 items") and the caption "Simulated:
+  given with the run, nothing is read from Second Life." It follows the world at once: an item a script removes
+  goes from the list. Without a world it says "No inventory yet. An AI assistant gives one with lsl_run." A Live
+  folder run keeps no world, so it gives no inventory here. The empty state's two buttons now wrap under each other
+  in a narrow docked panel instead of being cut off.
 - Code: `src/scriptlab/scriptlabpanel.*`, `src/scriptlab/scriptlabsection.*` (a folding part); test:
   `tests/scriptlabpanel/tst_scriptlabdesign.cpp` (exact texts, counts, the switch both ways, the empty state, folding
   and keys, the tokens in both themes, the summary line, Try:, Run again, the saved fold state, the explanation, the

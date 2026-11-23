@@ -15,6 +15,8 @@
  * Slice 2: the OK or Error summary line with its icon, Run again, the "Try:"
  * example lines, each part's open or folded state remembered, the one-line
  * explanation shown with hints, and the newest dialog's buttons inside Objects.
+ * Slice 3: the simulated inventory of an object of the world (items, type,
+ * notecard lines), the last part of the Live page.
  *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
@@ -209,8 +211,8 @@ class ScriptLabPanel : public QWidget
     QPushButton* exampleButton() const { return m_example; }
     QTreeWidget* liveRestrictionList() const { return m_liveRestrictions; }
     QLabel* liveRestrictionsEmpty() const { return m_liveRestrictionsEmpty; }
-    // the folding parts, by key: "script", "problems", "log", "restrictionsNow", "objects", "input"
-    // (Live scripts) and "restrictions", "actions", "replies" (Type commands)
+    // the folding parts, by key: "script", "problems", "log", "restrictionsNow", "objects", "input",
+    // "inventory" (Live scripts) and "restrictions", "actions", "replies" (Type commands)
     ScriptLabSection* section(const QString& key) const;
     QList<ScriptLabSection*> sections() const { return m_sections; }
     QPushButton* openEditorButton() const { return m_openEditor; }
@@ -231,6 +233,16 @@ class ScriptLabPanel : public QWidget
     QLabel* dialogMessage() const { return m_inputDialogMessage; }
     QList<QPushButton*> dialogButtons() const;
     QPlainTextEdit* inputLog() const { return m_inputLog; }
+    // --- the simulated inventory (slice 3): the items of the object chosen under Send input (the first
+    // one at start), scripts first, as "Inventory of <object>" with "N items"; a muted line while
+    // there is no world, and the caption that it is simulated
+    QTreeWidget* inventoryList() const { return m_inventory; }
+    QLabel* inventoryEmpty() const { return m_inventoryEmpty; }
+    QLabel* inventoryNote() const { return m_inventoryNote; }
+    // the Type column's words for an INVENTORY_* number ("Script", "Notecard, 4 lines")
+    static QString inventoryTypeText(int type, int lines);
+    // the "N items" count
+    static QString itemCount(int items);
 
   public slots:
     // reads the state again (connected to RlvState::changed)
@@ -250,6 +262,8 @@ class ScriptLabPanel : public QWidget
     void refreshEnvironment();
     // shows the view modes override's lines under its box (connected to ViewModesOverride::changed)
     void refreshViewModes();
+    // reads the chosen object's inventory again (from refreshInput and when the object is changed)
+    void refreshInventory();
 
   protected:
     void changeEvent(QEvent* event) override;
@@ -312,6 +326,10 @@ class ScriptLabPanel : public QWidget
     ScriptLabSection* m_liveRestrictionsSection = nullptr;
     ScriptLabSection* m_objectsSection = nullptr;
     ScriptLabSection* m_inputSection = nullptr;
+    ScriptLabSection* m_inventorySection = nullptr;
+    QTreeWidget* m_inventory = nullptr;
+    QLabel* m_inventoryEmpty = nullptr;
+    QLabel* m_inventoryNote = nullptr;
     ScriptLabFrame* m_liveEmpty = nullptr;
     QLabel* m_liveEmptyIcon = nullptr;
     QLabel* m_liveEmptyHeading = nullptr;

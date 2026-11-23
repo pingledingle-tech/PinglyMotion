@@ -18,6 +18,11 @@
  * buttons inside Objects, and the top bar's Script Lab button, which must show
  * the docked panel (it only pressed itself before).
  *
+ * Slice 3: the simulated inventory part (Inventory of <object>, Item and Type,
+ * notecard lines, the caption, the object chosen under Send input, the empty
+ * line while there is no world, colours and keys), and the empty state's two
+ * buttons wrapping at the smallest docked width.
+ *
  * Set PINGLYMOTION_SCRIPTLAB_DESIGN_SHOT to a PNG path to save pictures of the
  * panel ("-empty", "-live", "-commands", "-light" are added before ".png").
  *
@@ -27,6 +32,7 @@
 #include <QtTest>
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QFile>
 #include <QFrame>
 #include <QJsonArray>
@@ -167,6 +173,13 @@ class TestScriptLabDesign : public QObject
     void explanationWithHints();
     void dialogInsideObjects();
     void topBarOpensDockedPanel();
+    // slice 3
+    void inventoryPart();
+    void inventoryWithoutWorld();
+    void inventoryFollowsObjectAndInput();
+    void inventoryTypeWords();
+    void inventoryThemesAndKeyboard();
+    void emptyStateButtonsWrap();
 
   private:
     QTemporaryDir m_settingsDir;
@@ -297,10 +310,10 @@ void TestScriptLabDesign::emptyState()
   QVERIFY(!panel.exampleButton()->icon().isNull());
   QVERIFY(panel.exampleButton()->isEnabled());
   QCOMPARE(panel.exampleButton()->toolTip(), QString("Watch the example scripts that come with the program. One runs at once."));
-  QCOMPARE(panel.watchButton()->parentWidget(), static_cast<QWidget*>(panel.liveEmpty()));
-  QCOMPARE(panel.exampleButton()->parentWidget(), static_cast<QWidget*>(panel.liveEmpty()));
+  QVERIFY(panel.liveEmpty()->isAncestorOf(panel.watchButton()));
+  QVERIFY(panel.liveEmpty()->isAncestorOf(panel.exampleButton()));
   // the parts of a run are hidden: no folder, no status, no script, no world
-  for (const char* key : {"script", "problems", "log", "restrictionsNow", "objects", "input"})
+  for (const char* key : {"script", "problems", "log", "restrictionsNow", "objects", "input", "inventory"})
     QVERIFY2(panel.section(key)->isHidden(), key);
   QVERIFY(panel.liveFolderField()->isHidden());
   QVERIFY(panel.unwatchButton()->isHidden());
@@ -492,14 +505,14 @@ void TestScriptLabDesign::foldingAndKeyboard()
 {
   ScriptLabPanel panel;
   // made in this order: the Type commands page first, then the Live scripts page
-  const QStringList keys = {"restrictions", "actions", "replies", "script", "problems", "log", "restrictionsNow", "objects", "input"};
+  const QStringList keys = {"restrictions", "actions", "replies", "script", "problems", "log", "restrictionsNow", "objects", "input", "inventory"};
   QStringList found;
   for (ScriptLabSection* s : panel.sections()) found << s->key();
   QCOMPARE(found, keys);
   // open at first except Objects and Send input, as in the mockup's fold state
   for (ScriptLabSection* s : panel.sections())
   {
-    const bool open = s->key() != "objects" && s->key() != "input";
+    const bool open = s->key() != "objects" && s->key() != "input" && s->key() != "inventory";
     QCOMPARE(s->isExpanded(), open);
     QCOMPARE(s->body()->isHidden(), !open);
     QCOMPARE(s->objectName(), "scriptLabSection_" + s->key());
@@ -645,7 +658,11 @@ void TestScriptLabDesign::textsInMockup()
                            "A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life.",
                            "<b>OK:</b> cuffs.lsl ran without errors (run ", "<b>Error:</b> cuffs.lsl has 1 error and was not run (run ",
                            "icon(ok ? \"circle-check\" : \"circle-x\")", "<div class=\"label\">Dialog from hud</div>",
-                           "\"Lock the cuffs?\" on channel -4712"})
+                           "\"Lock the cuffs?\" on channel -4712",
+                           // slice 3
+                           "Inventory of cuffs`, \"3 items\"", "<th>Item</th><th>Type</th>", "<td>cuffs.lsl</td><td>Script</td>",
+                           "${icon(\"notebook-text\")} Notecard, 4 lines", "<td>wave</td><td>Animation</td>",
+                           "Simulated: given with the run, nothing is read from Second Life.", "inv: false"})
     QVERIFY2(page.contains(QString::fromUtf8(text)), text);
 }
 
@@ -829,14 +846,14 @@ void TestScriptLabDesign::partsRemembered()
   {
     ScriptLabPanel panel;
     QCOMPARE(panel.partsState(), QString("restrictions=open,actions=open,replies=open,script=open,problems=open,log=open,"
-                                         "restrictionsNow=open,objects=folded,input=folded"));
+                                         "restrictionsNow=open,objects=folded,input=folded,inventory=folded"));
     QCOMPARE(UserSettings::scriptLabParts(), QString());   // nothing saved until a part is folded or opened
     QTest::mouseClick(panel.section("script")->header(), Qt::LeftButton);
     QTest::mouseClick(panel.section("objects")->header(), Qt::LeftButton);
     QTest::mouseClick(panel.section("replies")->header(), Qt::LeftButton);
   }
   const QString saved = "restrictions=open,actions=open,replies=folded,script=folded,problems=open,log=open,"
-                        "restrictionsNow=open,objects=open,input=folded";
+                        "restrictionsNow=open,objects=open,input=folded,inventory=folded";
   QCOMPARE(UserSettings::scriptLabParts(), saved);
 
   // through the settings file, as at the next start
@@ -993,6 +1010,217 @@ void TestScriptLabDesign::topBarOpensDockedPanel()
   QTest::keyClick(top.widgetFor(button), Qt::Key_Space);
   QVERIFY(!dock->isHidden());
   QVERIFY(button->isChecked());
+}
+
+// --- slice 3 ------------------------------------------------------------------
+
+namespace
+{
+  // the mockup's world: cuffs (a script, a notecard of 4 lines, an animation) and a hud
+  QJsonObject cuffsRun()
+  {
+    const QString cuffs = "default { touch_start(integer n) { llRemoveInventory(\"wave\"); } }";
+    return QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{
+      QJsonObject{{"name", "cuffs"}, {"scripts", QJsonArray{QJsonObject{{"name", "cuffs.lsl"}, {"source", cuffs}}}},
+                  {"inventory", QJsonArray{
+                     QJsonObject{{"name", "config"}, {"type", "notecard"}, {"lines", QJsonArray{"channel=-4711", "lock=n", "owner=only", "name=cuffs"}}},
+                     QJsonObject{{"name", "wave"}, {"type", "animation"}}}}},
+      QJsonObject{{"name", "hud"}, {"source", "default { state_entry() { } }"}}}}};
+  }
+
+  QStringList rowTexts(const QTreeWidget* list)
+  {
+    QStringList out;
+    for (int i = 0; i < list->topLevelItemCount(); ++i)
+      out << list->topLevelItem(i)->text(0) + " | " + list->topLevelItem(i)->text(1);
+    return out;
+  }
+}
+
+// the mockup's Inventory part: "Inventory of cuffs", "3 items", Item and Type, the script first,
+// the notecard with its lines and icon, and the caption that it is simulated
+void TestScriptLabDesign::inventoryPart()
+{
+  NoAnimationHost host;
+  ControlApi api(&host);
+  ScriptLabPanel panel;
+  panel.setState(&api.rlv());
+  panel.setWatcher(&api.lab());
+  panel.setSession(&api.lslSession());
+  const QJsonObject answer = api.execute(cuffsRun());
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  ScriptLabSection* inv = panel.section("inventory");
+  QVERIFY(inv);
+  QVERIFY(!inv->isHidden());
+  QCOMPARE(inv->title(), QString("Inventory of cuffs"));
+  QCOMPARE(inv->count(), QString("3 items"));
+  QVERIFY(!inv->isExpanded());   // folded at first, as in the mockup
+  QCOMPARE(panel.inventoryList()->parentWidget(), inv->body());
+  QCOMPARE(panel.inventoryList()->headerItem()->text(0), QString("Item"));
+  QCOMPARE(panel.inventoryList()->headerItem()->text(1), QString("Type"));
+  QCOMPARE(rowTexts(panel.inventoryList()), QStringList({"cuffs.lsl | Script", "config | Notecard, 4 lines", "wave | Animation"}));
+  QVERIFY(!panel.inventoryList()->topLevelItem(1)->icon(1).isNull());   // the notebook-text icon on the notecard
+  QVERIFY(panel.inventoryList()->topLevelItem(0)->icon(1).isNull());
+  QVERIFY(panel.inventoryList()->topLevelItem(2)->icon(1).isNull());
+  QVERIFY(LucideIcons::names().contains("notebook-text"));
+  QVERIFY(panel.inventoryEmpty()->isHidden());
+  QVERIFY(!panel.inventoryList()->isHidden());
+  QVERIFY(!panel.inventoryNote()->isHidden());
+  QCOMPARE(panel.inventoryNote()->text(), QString("Simulated: given with the run, nothing is read from Second Life."));
+  QVERIFY(panel.inventoryNote()->font().pointSizeF() < panel.inventoryList()->font().pointSizeF());   // the caption size
+  verifyShortSentences(panel.inventoryNote()->text());
+  // the last part on the Live page, under Send input
+  QCOMPARE(panel.sections().last(), inv);
+  QVERIFY(inv->parentWidget()->layout()->indexOf(panel.section("input")) < inv->parentWidget()->layout()->indexOf(inv));
+  // the same as lsl_run answered
+  const QJsonArray items = answer["objects"].toArray()[0].toObject()["inventory"].toArray();
+  QCOMPARE(items.size(), 3);
+}
+
+// no world: the part is hidden; a watched folder without a world shows the true reason, no fake items
+void TestScriptLabDesign::inventoryWithoutWorld()
+{
+  NoAnimationHost host;
+  ControlApi api(&host);
+  ScriptLabPanel panel;
+  panel.setState(&api.rlv());
+  panel.setWatcher(&api.lab());
+  panel.setSession(&api.lslSession());
+  QVERIFY(panel.section("inventory")->isHidden());
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  QVERIFY(panel.watchFolder(dir.path()));
+  ScriptLabSection* inv = panel.section("inventory");
+  QVERIFY(!inv->isHidden());
+  QCOMPARE(inv->title(), QString("Inventory"));
+  QCOMPARE(inv->count(), QString("none"));
+  QVERIFY(!panel.inventoryEmpty()->isHidden());
+  QCOMPARE(panel.inventoryEmpty()->text(), QString("No inventory yet. An AI assistant gives one with lsl_run."));
+  verifyShortSentences(panel.inventoryEmpty()->text());
+  QVERIFY(panel.inventoryList()->isHidden());
+  QVERIFY(panel.inventoryNote()->isHidden());
+  QCOMPARE(panel.inventoryList()->topLevelItemCount(), 0);
+  // a world comes, then goes again
+  QVERIFY(api.execute(cuffsRun())["ok"].toBool());
+  QCOMPARE(inv->count(), QString("3 items"));
+  api.lslSession().clear();
+  QCOMPARE(inv->title(), QString("Inventory"));
+  QCOMPARE(inv->count(), QString("none"));
+  QVERIFY(!panel.inventoryEmpty()->isHidden());
+  panel.stopWatching();
+  QVERIFY(inv->isHidden());
+}
+
+// the inventory is the one of the object chosen under Send input; a script that removes an item shows at once
+void TestScriptLabDesign::inventoryFollowsObjectAndInput()
+{
+  NoAnimationHost host;
+  ControlApi api(&host);
+  ScriptLabPanel panel;
+  panel.setState(&api.rlv());
+  panel.setSession(&api.lslSession());
+  QVERIFY(api.execute(cuffsRun())["ok"].toBool());
+  QCOMPARE(panel.inputObject()->currentText(), QString("cuffs"));
+  panel.inputObject()->setCurrentIndex(1);
+  QCOMPARE(panel.section("inventory")->title(), QString("Inventory of hud"));
+  QCOMPARE(panel.section("inventory")->count(), QString("1 item"));
+  QCOMPARE(rowTexts(panel.inventoryList()), QStringList({"Script | Script"}));
+  panel.inputObject()->setCurrentIndex(0);
+  QCOMPARE(panel.section("inventory")->title(), QString("Inventory of cuffs"));
+  // a touch: cuffs.lsl removes "wave" from its object
+  QVERIFY(panel.sendTouch("cuffs"));
+  QCOMPARE(panel.section("inventory")->count(), QString("2 items"));
+  QCOMPARE(rowTexts(panel.inventoryList()), QStringList({"cuffs.lsl | Script", "config | Notecard, 4 lines"}));
+  // a new run keeps the chosen object when it is there
+  panel.inputObject()->setCurrentIndex(1);
+  QVERIFY(api.execute(cuffsRun())["ok"].toBool());
+  QCOMPARE(panel.section("inventory")->title(), QString("Inventory of hud"));
+}
+
+// the Type column's words for every INVENTORY_* number the sandbox knows, and the counts
+void TestScriptLabDesign::inventoryTypeWords()
+{
+  const QList<QPair<int, QString>> words = {{0, "Texture"}, {1, "Sound"}, {3, "Landmark"}, {5, "Clothing"}, {6, "Object"},
+                                            {10, "Script"}, {13, "Body part"}, {20, "Animation"}, {21, "Gesture"},
+                                            {56, "Setting"}, {57, "Material"}};
+  for (const auto& w : words) QCOMPARE(ScriptLabPanel::inventoryTypeText(w.first, 0), w.second);
+  QCOMPARE(ScriptLabPanel::inventoryTypeText(7, 0), QString("Notecard, 0 lines"));
+  QCOMPARE(ScriptLabPanel::inventoryTypeText(7, 1), QString("Notecard, 1 line"));
+  QCOMPARE(ScriptLabPanel::inventoryTypeText(7, 4), QString("Notecard, 4 lines"));
+  QCOMPARE(ScriptLabPanel::itemCount(0), QString("0 items"));
+  QCOMPARE(ScriptLabPanel::itemCount(1), QString("1 item"));
+  QCOMPARE(ScriptLabPanel::itemCount(3), QString("3 items"));
+}
+
+// the colours are tokens in both themes; the part folds with Space and comes after Send input in the tab order
+void TestScriptLabDesign::inventoryThemesAndKeyboard()
+{
+  NoAnimationHost host;
+  ControlApi api(&host);
+  ScriptLabPanel panel;
+  panel.setState(&api.rlv());
+  panel.setSession(&api.lslSession());
+  QVERIFY(api.execute(cuffsRun())["ok"].toBool());
+  for (const bool dark : {true, false})
+  {
+    setTheme(panel, dark);
+    const QJsonObject t = themeTokens(dark);
+    QCOMPARE(panel.inventoryNote()->palette().color(QPalette::WindowText), QColor(t.value("text_muted").toString()));
+    QCOMPARE(panel.inventoryEmpty()->palette().color(QPalette::WindowText), QColor(t.value("text_muted").toString()));
+    QCOMPARE(rowTexts(panel.inventoryList()).size(), 3);   // the rows survive the switch
+    if (!qEnvironmentVariableIsEmpty("PINGLYMOTION_SCRIPTLAB_DESIGN_SHOT"))
+    {
+      panel.tabs()->setCurrentIndex(ScriptLabPanel::LivePage);
+      panel.section("inventory")->setExpanded(true);
+      saveShot(panel, dark ? "-inventory" : "-inventory-light", 900);
+      panel.section("inventory")->setExpanded(false);
+    }
+  }
+  setTheme(panel, true);
+
+  panel.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&panel));
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::LivePage);
+  ScriptLabSection* inv = panel.section("inventory");
+  QWidget* w = panel.inputLog()->nextInFocusChain();
+  while (w && !(w->focusPolicy() & Qt::TabFocus)) w = w->nextInFocusChain();
+  QCOMPARE(w, static_cast<QWidget*>(inv->header()));
+  inv->header()->setFocus();
+  QTest::keyClick(inv->header(), Qt::Key_Space);
+  QVERIFY(inv->isExpanded());
+  QVERIFY(!inv->body()->isHidden());
+  QVERIFY(panel.partsState().endsWith("inventory=open"));
+  QCOMPARE(UserSettings::scriptLabParts(), panel.partsState());   // saved at once
+  QWidget* next = inv->header()->nextInFocusChain();
+  while (next && !(next->focusPolicy() & Qt::TabFocus)) next = next->nextInFocusChain();
+  QCOMPARE(next, static_cast<QWidget*>(panel.inventoryList()));
+  QTest::keyClick(inv->header(), Qt::Key_Space);
+  QVERIFY(!inv->isExpanded());
+}
+
+// at the smallest docked width the empty state's two buttons wrap instead of being cut off
+void TestScriptLabDesign::emptyStateButtonsWrap()
+{
+  ScriptLabPanel panel;
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::LivePage);
+  panel.resize(282, 600);
+  panel.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&panel));
+  QCoreApplication::processEvents();
+  QWidget* card = panel.liveEmpty();
+  for (QPushButton* b : {panel.watchButton(), panel.exampleButton()})
+  {
+    const QRect r(b->mapTo(card, QPoint(0, 0)), b->size());
+    QVERIFY2(card->rect().contains(r), qPrintable(QStringLiteral("%1: %2,%3 %4x%5 in %6x%7").arg(b->text()).arg(r.x()).arg(r.y())
+                                                    .arg(r.width()).arg(r.height()).arg(card->width()).arg(card->height())));
+  }
+  // under each other when narrow
+  QVERIFY(panel.exampleButton()->mapTo(card, QPoint(0, 0)).y() > panel.watchButton()->mapTo(card, QPoint(0, 0)).y());
+  // side by side when there is room, as in the mockup
+  panel.resize(700, 600);
+  QCoreApplication::processEvents();
+  QCOMPARE(panel.exampleButton()->mapTo(card, QPoint(0, 0)).y(), panel.watchButton()->mapTo(card, QPoint(0, 0)).y());
+  QVERIFY(panel.exampleButton()->x() > panel.watchButton()->x());
 }
 
 QTEST_MAIN(TestScriptLabDesign)
