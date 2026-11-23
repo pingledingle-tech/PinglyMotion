@@ -125,16 +125,18 @@ void ScriptLabSection::updateHeader()
   const QColor text = Theme::color(Theme::Token::Text, m_dark);
   m_header->setIcon(LucideIcons::icon(isExpanded() ? QStringLiteral("chevron-down") : QStringLiteral("chevron-right"), text,
                                       Theme::color(Theme::Token::TextDisabled, m_dark)));
+  // job U3: open and folded parts can be told apart at a glance, not only by the chevron: a folded
+  // part is filled like a normal button (surface_raised), an open part is not
+  const QColor surface = Theme::color(Theme::Token::Surface, m_dark);
+  const QColor frame = Theme::mix(surface, Theme::color(Theme::Token::Border, m_dark), 0.6);
+  setLook(frame, isExpanded() ? QColor() : Theme::color(Theme::Token::SurfaceRaised, m_dark), Theme::Size::radiusControl, false);
 }
 
 void ScriptLabSection::applyStyle(bool dark)
 {
   m_dark = dark;
-  const QColor border = Theme::color(Theme::Token::Border, dark);
-  const QColor surface = Theme::color(Theme::Token::Surface, dark);
-  // the mockup's .labsec border: the border token at 60 percent on the panel
-  const QColor frame = Theme::mix(surface, border, 0.6);
-  setLook(frame, QColor(), Theme::Size::radiusControl, false);
+  // the mockup's .labsec border: the border token at 60 percent on the panel (set in updateHeader,
+  // with the fill of a folded part)
   m_header->setStyleSheet(QStringLiteral(
     "QPushButton { background: transparent; color: %1; border: none; text-align: left; padding: 0; }"
     "QPushButton:focus { border: %2px solid %3; border-radius: %4px; }")

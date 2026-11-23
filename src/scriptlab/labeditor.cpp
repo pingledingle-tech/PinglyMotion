@@ -1001,6 +1001,12 @@ LabEditor::LabEditor(QWidget* parent) :
   m_goToButton = makeButton(tr("Go to line"), QStringLiteral("labEditorGoTo"), this);
   m_goToButton->setToolTip(tr("Jump to a line by its number (Ctrl+G)"));
   tools->addWidget(m_save);
+  // job U3: "unsaved changes" right at the Save button, in words and the warning colour
+  m_unsaved = new QLabel(this);
+  m_unsaved->setObjectName("labEditorUnsaved");
+  m_unsaved->setTextFormat(Qt::PlainText);
+  m_unsaved->hide();
+  tools->addWidget(m_unsaved);
   tools->addWidget(m_findButton);
   tools->addWidget(m_goToButton);
   tools->addStretch(1);
@@ -1688,6 +1694,8 @@ void LabEditor::updateState()
   const bool canSave = open && (modified || !QFileInfo::exists(m_path));
   m_save->setEnabled(canSave);
   m_save->setToolTip(canSave ? tr("Save the script and run it (Ctrl+S)") : tr("Nothing to save. Change the script first."));
+  m_unsaved->setText(unsavedMark());
+  m_unsaved->setVisible(open && modified);
   if (modified != m_lastModified)
   {
     m_lastModified = modified;
@@ -1711,14 +1719,19 @@ void LabEditor::applyStyle()
   QPalette muted = m_starterText->palette();
   muted.setColor(QPalette::WindowText, token(Theme::Token::TextMuted, dark));
   m_starterText->setPalette(muted);
-  // normal buttons (surface_raised fill, border, text), Save with its icon; greyed with text_disabled
+  // normal buttons (surface_raised fill, border, text), Save with its icon; greyed with text_muted and a
+  // half border (job U3: higher contrast, so the word on a greyed button stays readable at 4.5:1)
   const QString normal = QStringLiteral(
     "QPushButton { background: %1; color: %2; border: 1px solid %3; border-radius: %4px; padding: 0 %5px; }"
-    "QPushButton:disabled { color: %6; }"
+    "QPushButton:disabled { color: %6; border: 1px solid %8; }"
     "QPushButton:focus { border: 2px solid %7; }")
     .arg(token(Theme::Token::SurfaceRaised, dark).name(), text.name(), border.name())
     .arg(radiusControl).arg(spacingM)
-    .arg(disabled.name(), token(Theme::Token::FocusRing, dark).name());
+    .arg(token(Theme::Token::TextMuted, dark).name(), token(Theme::Token::FocusRing, dark).name(),
+         Theme::mix(token(Theme::Token::SurfaceRaised, dark), border, 0.5).name());
+  QPalette unsaved = m_unsaved->palette();
+  unsaved.setColor(QPalette::WindowText, warning);
+  m_unsaved->setPalette(unsaved);
   for (QPushButton* b : findChildren<QPushButton*>()) b->setStyleSheet(normal);
   m_save->setIcon(LucideIcons::icon(QStringLiteral("save"), text, disabled));
   m_exampleButton->setIcon(LucideIcons::icon(QStringLiteral("file-code"), text, disabled));

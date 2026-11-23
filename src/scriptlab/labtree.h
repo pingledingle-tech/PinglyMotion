@@ -26,6 +26,11 @@
  * Picking a script (click, or Enter on its row) sends scriptPicked with its
  * file, so the panel shows that script in the editor.
  *
+ * Job U3: picking a prim or a script also sends primPicked with the prim's
+ * name, so the panel can light up the prop of the same name in the 3D view;
+ * selectPrim() picks a prim's row from outside (a click on a prop) without
+ * sending anything back.
+ *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -45,7 +50,8 @@ class LabFolderTree : public QTreeWidget
     // what a row is (stored under KindRole)
     enum Kind { ObjectRow = 0, PrimRow = 1, ScriptRow = 2, NotecardRow = 3 };
     enum Column { NameColumn = 0, KindColumn = 1, StateColumn = 2, MemoryColumn = 3 };
-    enum Role { FileRole = Qt::UserRole, KindRole = Qt::UserRole + 1, StateRole = Qt::UserRole + 2, MemoryRole = Qt::UserRole + 3 };
+    enum Role { FileRole = Qt::UserRole, KindRole = Qt::UserRole + 1, StateRole = Qt::UserRole + 2, MemoryRole = Qt::UserRole + 3,
+                PrimRole = Qt::UserRole + 4 };
 
     // the memory one script may use in Second Life (llGetMemoryLimit at the start)
     static constexpr qint64 SCRIPT_MEMORY = 65536;
@@ -69,6 +75,15 @@ class LabFolderTree : public QTreeWidget
     // the picked script's file ("" when none)
     QString pickedScript() const;
 
+    // --- prims (job U3): the row of a prim by its name (the prop's name), nullptr when none
+    QTreeWidgetItem* itemForPrim(const QString& name) const;
+    // the prim a row belongs to: its own name for a prim, its prim's for a script or notecard; "" for the object
+    static QString primOf(const QTreeWidgetItem* item);
+    // picks a prim's row as a click on its prop in the 3D view does; sends nothing. False when it is not in the tree
+    bool selectPrim(const QString& name);
+    // the prim of the picked row ("" when none, or the object row)
+    QString pickedPrim() const { return primOf(currentItem()); }
+
     // the part's count: "3 scripts in 2 prims" ("" while the tree is empty)
     QString countText() const { return m_count; }
 
@@ -86,6 +101,8 @@ class LabFolderTree : public QTreeWidget
 
   signals:
     void scriptPicked(const QString& file);
+    // a prim or one of its files was picked by the user (job U3)
+    void primPicked(const QString& name);
 
   protected:
     void changeEvent(QEvent* event) override;

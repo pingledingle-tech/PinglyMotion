@@ -5,15 +5,27 @@ Files:
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/labtree.*
 - src/scriptlab/labbeginner.*
-- src/scriptlab/CMakeLists.txt
+- src/scriptlab/labeditor.*
+- src/scriptlab/scriptlabsection.*
+- src/propmanager.*
+- src/scene.*
+- src/pinglymotionwindow.cpp
+- src/usersettings.*
 - src/CMakeLists.txt
-- src/texts/**
+- CMakeLists.txt
 - tests/scriptlabbeginner/**
-- tests/CMakeLists.txt
+- tests/scriptlabpanel/tst_scriptlabdesign.cpp
+- tests/scriptlabpanel/tst_scriptlabpanel.cpp
+- tests/scriptlabpanel/tst_labtree.cpp
+- tests/tst_scriptlabeffects.cpp
+- translations/**
+- examples/objects/First_colour/example.json
 - docs/UX_DECISIONS.md
 - docs/SCRIPT_LAB.md
 - docs/EXAMPLES.md
 - docs/TEACHING.md
+- docs/ROADMAP.md
+- docs/PRODUCT.md
 
 ## What
 

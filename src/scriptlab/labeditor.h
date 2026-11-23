@@ -299,6 +299,8 @@ class LabEditor : public QWidget
     // --- the parts, for the panel and the tests
     LabCodeEdit* codeEdit() const { return m_edit; }
     QPushButton* saveButton() const { return m_save; }
+    // "● unsaved changes" next to Save while there are unsaved edits (job U3)
+    QLabel* unsavedLabel() const { return m_unsaved; }
     QPushButton* findButton() const { return m_findButton; }
     QPushButton* goToButton() const { return m_goToButton; }
     QLabel* message() const { return m_message; }
@@ -349,6 +351,7 @@ class LabEditor : public QWidget
 
     LabCodeEdit* m_edit = nullptr;
     QPushButton* m_save = nullptr;
+    QLabel* m_unsaved = nullptr;
     QPushButton* m_findButton = nullptr;
     QPushButton* m_goToButton = nullptr;
     QLabel* m_message = nullptr;

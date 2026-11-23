@@ -328,16 +328,18 @@ void TestScriptLabPanel::colourTokens()
   QVERIFY(panel.runButton()->styleSheet().contains(QString("border-radius: %1px;").arg(tokens.value("radius").toObject().value("control").toInt())));
   QCOMPARE(panel.runButton()->minimumHeight(), tokens.value("control_height").toObject().value("default").toInt());
 
-  // the Live page (issue 292): Watch folder is the main button, the other two are normal buttons
-  QVERIFY(panel.watchButton()->styleSheet().contains("background: " + theme.value("accent").toString() + ";"));
-  for (QPushButton* normal : {panel.unwatchButton(), panel.openEditorButton()})
+  // the Live page (issue 292): since job U3 Make example project is the main button, Watch folder and the
+  // others are normal buttons, greyed with text_muted (higher contrast)
+  QVERIFY(panel.makeExampleButton()->styleSheet().contains("background: " + theme.value("accent").toString() + ";"));
+  for (QPushButton* normal : {panel.watchButton(), panel.unwatchButton(), panel.openEditorButton()})
   {
     QVERIFY(normal->styleSheet().contains("background: " + theme.value("surface_raised").toString() + ";"));
     QVERIFY(normal->styleSheet().contains("color: " + theme.value("text").toString() + ";"));
     QVERIFY(normal->styleSheet().contains("border: 1px solid " + theme.value("border").toString() + ";"));
-    QVERIFY(normal->styleSheet().contains(":disabled { color: " + theme.value("text_disabled").toString() + "; }"));
+    QVERIFY(normal->styleSheet().contains(":disabled { color: " + theme.value("text_muted").toString() + ";"));
     QVERIFY(normal->styleSheet().contains("border: 2px solid " + theme.value("focus_ring").toString() + ";"));
-    QCOMPARE(normal->minimumHeight(), tokens.value("control_height").toObject().value("default").toInt());
+    if (normal != panel.watchButton())   // the empty state's buttons are large (control_height.large)
+      QCOMPARE(normal->minimumHeight(), tokens.value("control_height").toObject().value("default").toInt());
   }
 }
 

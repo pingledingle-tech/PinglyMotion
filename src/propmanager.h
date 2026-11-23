@@ -44,7 +44,8 @@ class PropManager : public QObject
                   int attach,
                   double xPosition, double yPosition, double zPosition,
                   double xScale, double yScale, double zScale,
-                  double xRotation, double yRotation, double zRotation);
+                  double xRotation, double yRotation, double zRotation,
+                  const QString& wantedName = QString());   // used when free (Script Lab examples, job U3)
     void deleteProp(Prop* prop);
     void clearProps();
 

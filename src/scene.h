@@ -87,7 +87,8 @@ class Scene : public QObject
                         int attach = 0,
                         double xPosition = 10, double yPosition = 40, double zPosition = 10,
                         double xScale = 10, double yScale = 10, double zScale = 10,
-                        double xRotation = 0, double yRotation = 0, double zRotation = 0);
+                        double xRotation = 0, double yRotation = 0, double zRotation = 0,
+                        const QString& wantedName = QString());
     Prop* getPropByName(const QString& lookName);
     Prop* getPropById(unsigned int id);
     void deleteProp(Prop* prop);

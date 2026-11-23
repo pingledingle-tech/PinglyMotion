@@ -15,6 +15,7 @@
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QDir>
 #include <QFile>
@@ -78,7 +79,7 @@ void TestScriptLabEffects::boxAndPreview()
   panel.show();
 
   // the box: on the Live page, unticked, plain words
-  QCheckBox* box = panel.effectsBox();
+  QPushButton* box = panel.effectsBox();   // a clear on/off button since job U3
   QVERIFY(box);
   QCOMPARE(box->objectName(), QString("scriptLabShowEffects"));
   QCOMPARE(box->text(), QString("Show effects in 3D view"));
