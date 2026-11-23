@@ -629,7 +629,7 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
 - Moving a control sets the same sphere the script's `@setsphere` sets (`EnvironmentOverride::setTrySphere`), so
   the 3D view changes at once. While it is set it is shown instead of the script's sphere, and the text under the
   box says so ("Vision sphere from the sliders: ..."; with a script's sphere held too: "The sliders' sphere is shown
-  instead of the script's. Press Clear to show the script's again."); the part's count reads "sliders on". Clear
+  instead of the script's. Press Clear to show the script's again."); the part's count reads "sliders on" while the box is ticked. Clear
   takes it off the view (the sliders keep their values). It follows the box and the panel like the script's
   sphere: with the box off every control is greyed with the reason "Tick Show environment in 3D view to try the
   sphere." and nothing reaches the picture; hiding the panel turns it off.

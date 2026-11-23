@@ -300,9 +300,10 @@ void TestSphereControls::greyedWhileBoxOff()
   environment.processPicture(image, Metres);
   QVERIFY(image != white3());
 
-  // unticked again: greyed, and the picture is left exactly as it was
+  // unticked again: greyed, the count gone, and the picture is left exactly as it was
   panel.environmentBox()->setChecked(false);
   for (QWidget* w : all) QVERIFY(!w->isEnabled());
+  QCOMPARE(panel.section("sphere")->count(), QString());
   image = white3();
   environment.processPicture(image, Metres);
   QCOMPARE(image, white3());

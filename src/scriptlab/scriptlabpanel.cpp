@@ -1703,7 +1703,7 @@ void ScriptLabPanel::refreshEnvironment()
   if (!m_environmentStatus) return;
   // the sliders work while the box is ticked; the part's count says when their sphere is in the view
   m_sphereControls->setAvailable(m_environment && m_environmentBox->isChecked());
-  m_sphereSection->setCount(m_environment && m_environment->hasTrySphere() ? tr("sliders on") : QString());
+  m_sphereSection->setCount(m_environment && m_environmentBox->isChecked() && m_environment->hasTrySphere() ? tr("sliders on") : QString());
   const QStringList lines = m_environment ? m_environment->lines() : QStringList();
   m_environmentStatus->setText(lines.join(QLatin1Char('\n')));
   m_environmentStatus->setVisible(!lines.isEmpty());
