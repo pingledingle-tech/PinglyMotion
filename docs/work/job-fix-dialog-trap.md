@@ -1,6 +1,6 @@
 Branch: job/fix-dialog-trap
 Status: active
-Pull request: pending
+Pull request: #412
 Files:
 - src/dialogfit.*
 - src/setupdialog.*
