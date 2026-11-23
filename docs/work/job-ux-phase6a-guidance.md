@@ -15,6 +15,7 @@ Files:
 - src/easingtiles.*
 - src/panelcontent.h
 - tests/guidance/**
+- tests/transportbar/**
 - tests/easingtiles/**
 - tests/uirender/**
 - tests/CMakeLists.txt
