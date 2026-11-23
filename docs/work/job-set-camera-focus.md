@@ -1,5 +1,5 @@
 Branch: job/set-camera-focus
-Status: active
+Status: done
 Pull request: #417
 Files:
 - src/controlapi.cpp
