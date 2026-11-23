@@ -1,5 +1,5 @@
 Branch: job/l1b-folder-is-the-object
-Status: active
+Status: done
 Pull request: #427
 Files:
 - src/scriptlab/labfolder.*
@@ -9,12 +9,12 @@ Files:
 - fuzz/CMakeLists.txt
 - tests/tst_labfolder.cpp
 - tests/tst_labwatcher.cpp
+- tests/tst_control.cpp
 - tests/CMakeLists.txt
 - tools/mcp/commands.json
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md
 - docs/ROADMAP.md
-- docs/PRODUCT.md
 - docs/DECISIONS.md
 
 ## What

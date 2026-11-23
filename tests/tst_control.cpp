@@ -3297,7 +3297,7 @@ void ControlTest::scriptLabLiveCommands()
   QCOMPARE(run(R"({"command":"lab_watch","path":"relative/folder"})")["error"].toString(),
            QString("lab_watch: Give the whole path of the folder, not a relative one."));
   QCOMPARE(run(R"({"command":"lab_watch","path":"/x","fast":true})")["error"].toString(),
-           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs, keep_rlv."));
+           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs, keep_rlv, linkset."));
   QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"seconds", 5000}})["error"].toString(),
            QString("lab_watch: \"seconds\" must be between 0 and 3600 (simulated seconds)."));
   QCOMPARE(run(R"({"command":"lab_unwatch","now":1})")["error"].toString(), QString("lab_unwatch takes no options."));
@@ -3361,6 +3361,43 @@ void ControlTest::scriptLabLiveCommands()
   answer = run(R"({"command":"lab_result"})");
   QCOMPARE(answer["watching"].toBool(), false);
   QCOMPARE(answer["runs"].toInt(), 2);
+  QCOMPARE(answer["linkset"].toBool(), false);
+  QVERIFY(!answer.contains("folder_result"));
+
+  // lane 1, job B: "linkset": true watches the folder as one object; a link message reaches the other prim
+  QTemporaryDir objectDir;
+  QVERIFY(objectDir.isValid());
+  QVERIFY(QDir(objectDir.path()).mkpath("Cuff"));
+  {
+    QFile root(objectDir.filePath("main.lsl"));
+    QVERIFY(root.open(QIODevice::WriteOnly));
+    root.write("default { state_entry() { llMessageLinked(LINK_ALL_OTHERS, 1, \"lock\", NULL_KEY); } }");
+    QFile cuff(objectDir.filePath("Cuff/cuff.lsl"));
+    QVERIFY(cuff.open(QIODevice::WriteOnly));
+    cuff.write("default { link_message(integer s, integer n, string t, key k) { llOwnerSay(\"cuff \" + t); } }");
+  }
+  QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", objectDir.path()}, {"linkset", 1}})["error"].toString(),
+           QString("lab_watch: \"linkset\" must be true (the folder is one object) or false (every script on its own)."));
+  answer = m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", objectDir.path()}, {"seconds", 1}, {"linkset", true}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["linkset"].toBool(), true);
+  QCOMPARE(answer["runs"].toInt(), 3);   // runs count since the program started: one run of the whole folder
+  QCOMPARE(answer["scripts"].toArray(), QJsonArray({"Cuff/cuff.lsl", "main.lsl"}));
+  answer = m_api->execute(QJsonObject{{"command", "lab_result"}, {"file", "Cuff/cuff.lsl"}});
+  QCOMPARE(answer["linkset"].toBool(), true);
+  result = answer["result"].toObject();
+  QCOMPARE(result["prim"].toString(), QString("Cuff"));
+  QCOMPARE(result["link"].toInt(), 2);
+  QJsonArray cuffSaid;
+  for (const QJsonValue& v : result["result"].toObject()["log"].toArray())
+    if (v.toObject()["type"] == "owner_say") cuffSaid.append(QJsonArray{v.toObject()["text"], v.toObject()["script"], v.toObject()["prim"], v.toObject()["file"]});
+  QCOMPARE(cuffSaid, QJsonArray({QJsonArray{"cuff lock", "cuff", "Cuff", "Cuff/cuff.lsl"}}));
+  const QJsonObject folderResult = answer["folder_result"].toObject();
+  QCOMPARE(folderResult["ok"].toBool(), true);
+  QCOMPARE(folderResult["run"].toInt(), 3);
+  QCOMPARE(folderResult["linkset"].toObject()["object"].toString(), QFileInfo(objectDir.path()).fileName());
+  QCOMPARE(folderResult["linkset"].toObject()["prims"].toArray().size(), 2);
+  QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), true);
   QCOMPARE(m_animation->getNumberOfFrames(), frames);
 }
 

@@ -17,6 +17,11 @@
  * real-time cap, and one batch runs at most MAX_RUNS_PER_BATCH scripts
  * before the program gets back to the user.
  *
+ * Linkset mode (run option "linkset": true, lane 1 job B): the folder is one
+ * object (LabFolder, labfolder.h). Any saved script or notecard runs the
+ * whole folder again as one linkset; each script's result holds its own
+ * check and the shared run, and folderResult() the whole folder's answer.
+ *
  * QtCore only.
  *
  * Licensed under the GNU General Public License version 2 or later.
@@ -60,8 +65,10 @@ class LabWatcher : public QObject
 
     // Starts watching a folder (absolute path to an existing folder). Stops
     // watching the folder before, if any. seconds and inputs are given to
-    // every run, as in lsl_run (also keep_rlv); they are checked here. Then the newest script
-    // in the folder is run once, so there is a result at once.
+    // every run, as in lsl_run (also keep_rlv); they are checked here. With
+    // "linkset": true the folder is one object and every run runs all its
+    // scripts together (LabFolder). Then the newest script in the folder is
+    // run once (in linkset mode: the whole folder), so there is a result at once.
     Result watch(const QString& folder, const QJsonObject& runOptions = QJsonObject());
     // stops watching; false when nothing was watched
     bool unwatch();
@@ -84,13 +91,19 @@ class LabWatcher : public QObject
 
     // the run options given to watch()
     QJsonObject runOptions() const { return m_options; }
+    // true when the folder is watched as one object (run option "linkset")
+    bool linkset() const { return m_linkset; }
+    // linkset mode: the whole folder's newest answer (LabFolder::run plus "run" and "file", the file
+    // whose change started it); an empty object otherwise
+    QJsonObject folderResult() const { return m_folderResult; }
 
     // The RLV state the runs use (the one rlv_state and the panel show).
     // Not owned. Without it each run has a state of its own.
     void setRlvState(RlvState* state) { m_rlv = state; }
 
     // Reads, checks and runs one script now (also used by the tests and the
-    // first run after watch). relative is a path from scripts().
+    // first run after watch). relative is a path from scripts(). In linkset
+    // mode it runs the whole folder, with relative as the file that changed.
     void runScript(const QString& relative);
 
     // looks at the folder again at once (the debounce timer calls it)
@@ -109,7 +122,8 @@ class LabWatcher : public QObject
       qint64 size = 0;
     };
 
-    QMap<QString, Entry> scan(QStringList* folders);
+    QMap<QString, Entry> scan(QStringList* folders, QMap<QString, Entry>* notecards = nullptr);
+    void runFolder(const QString& trigger);
     void scheduleRescan();
     void runPending();
     void updateWatchedPaths(const QStringList& folders);
@@ -120,6 +134,9 @@ class LabWatcher : public QObject
     QFileSystemWatcher* m_watcher;
     QTimer m_debounce;
     QMap<QString, Entry> m_snapshot;
+    QMap<QString, Entry> m_notecards;  // linkset mode: notecards, so a saved notecard runs the folder again
+    bool m_linkset = false;
+    QJsonObject m_folderResult;
     QStringList m_pending;             // changed scripts waiting to run
     QMap<QString, QJsonObject> m_results;
     QJsonObject m_last;
