@@ -2070,19 +2070,19 @@
               {
                 "column": 49,
                 "line": 1,
-                "message": "llGetAccel is not supported yet in the Script Lab sandbox, so the script was stopped here.",
+                "message": "llGetSimStats is not supported yet in the Script Lab sandbox, so the script was stopped here.",
                 "t": 0,
                 "type": "unsupported"
               }
             ],
             "ok": true,
-            "stop_reason": "llGetAccel is not supported yet in the Script Lab sandbox, so the script was stopped here.",
+            "stop_reason": "llGetSimStats is not supported yet in the Script Lab sandbox, so the script was stopped here.",
             "stopped": true
           },
           "request": {
             "command": "lsl_run",
             "seconds": 1,
-            "source": "default { state_entry() { llOwnerSay(\"before\"); llGetAccel(); llOwnerSay(\"after\"); } }"
+            "source": "default { state_entry() { llOwnerSay(\"before\"); llGetSimStats(0); llOwnerSay(\"after\"); } }"
           }
         },
         {

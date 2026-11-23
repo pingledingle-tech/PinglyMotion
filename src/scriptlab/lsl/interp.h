@@ -147,6 +147,11 @@ class Interpreter
     // not_at_target() is queued once. A target stays until llTargetRemove (Second Life too); no target: nothing happens.
     void checkTargets(const float ourpos[3]);
     int targetCount() const { return int(m_targets.size()); }
+    // step 18: the same for llRotTarget. The object's rotation is ourrot now: for every rotation target within its error (the
+    // angle between the two rotations, in radians) at_rot_target(handle, targetrot, ourrot) is queued; with targets but none
+    // reached not_at_rot_target() is queued once. A target stays until llRotTargetRemove.
+    void checkRotTargets(const float ourrot[4]);
+    int rotTargetCount() const { return int(m_rotTargets.size()); }
     // the current state has a handler for this event
     bool handles(const QString& event) const;
     // Gap list 2, step 2. llSetScriptState from another script: a script that is not running keeps its variables, state,
@@ -231,6 +236,11 @@ class Interpreter
     int m_nextTarget = 1;                 // the handle the next llTarget gives (the first is 1)
     int m_memoryLimit = Limits::SCRIPT_MEMORY_MAX;   // llGetMemoryLimit / llSetMemoryLimit
     int addTarget(const float pos[3], float range);
+    struct RotTargetEntry { int handle; float rot[4]; float error; };
+    std::vector<RotTargetEntry> m_rotTargets;   // llRotTarget: this script's rotation targets
+    int m_nextRotTarget = 1;                    // the handle the next llRotTarget gives (the first is 1)
+    int addRotTarget(const float rot[4], float error);
+    void removeRotTarget(int handle);
     void removeTarget(int handle);
     int m_controls = 0;              // step 9b-6: the controls llTakeControls took (0 = none)
     bool m_controlsAccept = false;

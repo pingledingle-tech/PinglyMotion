@@ -111,6 +111,8 @@ class ObjectWorld : public RlvWorld
     float damage() const override { return state().damage; }
     void setDamage(float d) override { state().damage = d; }
     KeyframedMotion& keyframes() override { return state().keyframes; }
+    PhysicsState& physics() override { return state().physics; }
+    bool breakLink(double time, int link) override { return m_sandbox.breakLink(m_slot, time, link); }
     bool createLink(double time, const QString& target, bool parent) override { return m_sandbox.createLink(m_slot, time, target, parent); }
     int breakAllLinks(double time) override { return m_sandbox.breakAllLinks(m_slot, time); }
     float buoyancy() const override { return state().buoyancy; }
@@ -567,6 +569,57 @@ int Sandbox::breakAllLinks(int from, double time)
   return released;
 }
 
+// llBreakLink: the sandbox joins and separates whole objects, so the link number of any prim of an object that llCreateLink
+// joined separates that whole object; a prim an object had from the start (the root's own prims) cannot be taken out
+bool Sandbox::breakLink(int from, double time, int link)
+{
+  World& w = *m_slots[size_t(from)].world;
+  const int root = rootObject(m_slots[size_t(from)].object);
+  Object& r = m_objects[size_t(root)];
+  auto note = [&](const QString& text) {
+    if (!w.logFull()) w.log(time, QJsonObject{{"type", "link"}, {"op", "break"}, {"link", link}, {"released", false}, {"note", text}});
+    return false;
+  };
+  if (r.linkChildren.empty()) return note("Nothing was linked with llCreateLink; the prims an object has from the start stay together in the sandbox.");
+  int at = 1;
+  size_t found = r.linkChildren.size();
+  int start = 0;
+  for (size_t j = 0; j < r.linkChildren.size(); ++j)
+  {
+    const int n = m_objects[size_t(r.linkChildren[j])].ownPrims;
+    if (link >= at + 1 && link <= at + n) { found = j; start = at; break; }
+    at += n;
+  }
+  if (found == r.linkChildren.size()) return note("That link number is not a prim of an object that llCreateLink joined.");
+  const int childIndex = r.linkChildren[found];
+  Object& c = m_objects[size_t(childIndex)];
+  const int total = r.spec.prims;
+  std::vector<PrimState> block = r.prims.removePrims(start, c.ownPrims, total);
+  c.prims.removePrims(0, c.ownPrims, c.ownPrims);
+  c.prims.insertPrims(0, block, 0);
+  c.linkedTo = -1;
+  c.spec.prims = c.ownPrims;
+  r.linkChildren.erase(r.linkChildren.begin() + long(found));
+  r.spec.prims = total - c.ownPrims;
+  for (int other : r.linkChildren) m_objects[size_t(other)].spec.prims = r.spec.prims;
+  if (!w.logFull())
+    w.log(time, QJsonObject{{"type", "link"}, {"op", "break"}, {"link", link}, {"released", true}, {"root", r.spec.key},
+                            {"separated", c.spec.key}, {"prims", r.spec.prims}});
+  std::vector<int> members{root, childIndex};
+  for (int other : r.linkChildren) members.push_back(other);
+  for (int m : members)
+  {
+    const Object& o = m_objects[size_t(m)];
+    for (int i = 0; i < o.slotCount; ++i)
+    {
+      Slot& slot = m_slots[size_t(o.firstSlot + i)];
+      slot.interp->syncTo(time);
+      slot.interp->changedEvent(0x20);   // CHANGED_LINK
+    }
+  }
+  return true;
+}
+
 // ---------------------------------------------------------------- running
 
 void Sandbox::start()
@@ -984,6 +1037,7 @@ void Sandbox::deliver(const SandboxInput& input)
         m_log.log(t, entry);
         return;
       }
+      float velocityBefore[3] = {o.velocity[0], o.velocity[1], o.velocity[2]};
       if (o.keyframes.active())
       {
         // third gap list run, step 8: llSetKeyframedMotion moves the object by its frames (linear in place, the turn
@@ -999,6 +1053,9 @@ void Sandbox::deliver(const SandboxInput& input)
         o.velocity[2] += g * float(input.dt);
         for (int i = 0; i < 3; ++i) o.spec.position[i] += o.velocity[i] * float(input.dt);
       }
+      // step 18: llGetAccel is how much this step changed the velocity, per second (a step of no time keeps the last answer)
+      if (input.dt > 0.0)
+        for (int i = 0; i < 3; ++i) o.physics.accel[i] = float(double(o.velocity[i] - velocityBefore[i]) / input.dt);
       entry["velocity"] = QJsonArray{rnd5(o.velocity[0]), rnd5(o.velocity[1]), rnd5(o.velocity[2])};
       entry["position"] = QJsonArray{rnd5(o.spec.position[0]), rnd5(o.spec.position[1]), rnd5(o.spec.position[2])};
       m_log.log(t, entry);
@@ -1017,6 +1074,11 @@ void Sandbox::deliver(const SandboxInput& input)
       // third gap list run, step 2: the scripts' llTarget targets are checked against the new position (the events show
       // in the scripts' own log entries, as for a manual at_target input)
       for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->checkTargets(o.spec.position);
+      // step 18: the same for the rotation targets of llRotTarget, against the root prim's rotation
+      {
+        const PrimState& rootRot = m_objects[size_t(rootObject(target))].prims.prim(1, o.spec.prims);
+        for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->checkRotTargets(rootRot.rotation);
+      }
       return;
     }
     if (input.type == "email")

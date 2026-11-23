@@ -106,7 +106,11 @@ enum class Fn
   // avatar and camera: attach and detach (record only), attached list, language, camera reads, teleports (record only)
   AttachToAvatar, DetachFromAvatar, GetAttachedList, GetAgentLanguage, GetCameraPos, GetCameraRot, GetCameraView, Teleport,
   // steps 16 and 17: llCloud, and the deprecated XML-RPC remote data functions
-  Cloud, OpenRemoteData, CloseRemoteData, RemoteDataSetRegion, SendRemoteData, RemoteDataReply
+  Cloud, OpenRemoteData, CloseRemoteData, RemoteDataSetRegion, SendRemoteData, RemoteDataReply,
+  // step 18: physics reads and settings, rotation targets, llBreakLink, ground and region reads
+  GetAccel, GetCenterOfMass, GetGeometricCenter, GetMassMKS, GetOmega, GetPhysicsMaterial, SetPhysicsMaterial, GetTorque, SetTorque,
+  SetForceAndTorque, SetAngularVelocity, RotTarget, RotTargetRemove, BreakLink, DetectedGrab, EdgeOfWorld, GroundContour,
+  GroundNormal, GroundSlope, GetRegionFlags, Wind, ScriptDanger, GetSPMaxMemory
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -295,6 +299,16 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llDetectedTouchFace", Fn::DetectedTouchFace}, {"llDetectedTouchUV", Fn::DetectedTouchUV}, {"llDetectedTouchST", Fn::DetectedTouchST},
   {"llDetectedTouchNormal", Fn::DetectedTouchNormal}, {"llDetectedTouchBinormal", Fn::DetectedTouchBinormal},
   {"llDetectedTouchPos", Fn::DetectedTouchPos},
+  // step 18
+  {"llGetAccel", Fn::GetAccel}, {"llGetCenterOfMass", Fn::GetCenterOfMass}, {"llGetGeometricCenter", Fn::GetGeometricCenter},
+  {"llGetMassMKS", Fn::GetMassMKS}, {"llGetOmega", Fn::GetOmega}, {"llGetPhysicsMaterial", Fn::GetPhysicsMaterial},
+  {"llSetPhysicsMaterial", Fn::SetPhysicsMaterial}, {"llGetTorque", Fn::GetTorque}, {"llSetTorque", Fn::SetTorque},
+  {"llSetForceAndTorque", Fn::SetForceAndTorque}, {"llSetAngularVelocity", Fn::SetAngularVelocity},
+  {"llSetHoverHeight", Fn::RecordOnly}, {"llStopHover", Fn::RecordOnly}, {"llCollisionSprite", Fn::RecordOnly},
+  {"llRotTarget", Fn::RotTarget}, {"llRotTargetRemove", Fn::RotTargetRemove}, {"llBreakLink", Fn::BreakLink},
+  {"llDetectedGrab", Fn::DetectedGrab}, {"llEdgeOfWorld", Fn::EdgeOfWorld}, {"llGroundContour", Fn::GroundContour},
+  {"llGroundNormal", Fn::GroundNormal}, {"llGroundSlope", Fn::GroundSlope}, {"llGetRegionFlags", Fn::GetRegionFlags},
+  {"llWind", Fn::Wind}, {"llScriptDanger", Fn::ScriptDanger}, {"llGetSPMaxMemory", Fn::GetSPMaxMemory},
   // third gap list run, steps 13 to 15
   {"llCastRay", Fn::CastRay}, {"llModifyLand", Fn::ModifyLand}, {"llRequestInventoryData", Fn::RequestInventoryData},
   {"llGetTextureOffset", Fn::GetTextureOffset}, {"llGetTextureRot", Fn::GetTextureRot}, {"llGetTextureScale", Fn::GetTextureScale},
@@ -1916,6 +1930,84 @@ void setObjectVelocity(World& w, double now, const float velocity[3], bool local
   w.setVelocity(turned);
   if (w.logFull()) return;
   w.log(now, QJsonObject{{"type", "velocity"}, {"op", "set"}, {"velocity", vecJson(turned)}});
+}
+
+// ---- step 18: physics reads and settings
+
+// a vector the script gave, turned by the object's rotation when it is local (as llSetForce does)
+void turnedByObject(World& w, bool local, const float in[3], float out[3])
+{
+  if (local)
+  {
+    const PrimState& r = primOf(w, 1);
+    rotVec(Quat{r.rotation[0], r.rotation[1], r.rotation[2], r.rotation[3]}, in, out);
+  }
+  else for (int i = 0; i < 3; ++i) out[i] = in[i];
+}
+
+// llSetTorque and llSetForceAndTorque keep the torque (and the force) as records, as llSetForce does: the motion model does not use them
+void setObjectTorque(World& w, double now, const float* force, const float torque[3], bool local)
+{
+  float t[3], f[3] = {0.0f, 0.0f, 0.0f};
+  turnedByObject(w, local, torque, t);
+  float* store = w.physics().torque;
+  for (int i = 0; i < 3; ++i) store[i] = t[i];
+  if (force) { turnedByObject(w, local, force, f); w.setForce(f); }
+  if (w.logFull()) return;
+  QJsonObject e{{"type", "velocity"}, {"op", force ? "force_torque" : "torque"}, {"torque", vecJson(t)}};
+  if (force) e["force"] = vecJson(f);
+  w.log(now, e);
+}
+
+void setObjectAngularVelocity(World& w, double now, const float omega[3], bool local)
+{
+  float t[3];
+  turnedByObject(w, local, omega, t);
+  for (int i = 0; i < 3; ++i) w.physics().omega[i] = t[i];
+  if (w.logFull()) return;
+  w.log(now, QJsonObject{{"type", "velocity"}, {"op", "angular_velocity"}, {"omega", vecJson(t)}});
+}
+
+// llSetPhysicsMaterial: the mask says which of the four values are set (DENSITY 1, FRICTION 2, RESTITUTION 4, GRAVITY_MULTIPLIER 8).
+// The wiki gives the ranges and does not say what an outside value does: the sandbox cuts it to the range (a value that is not a number
+// is left out). Silently nothing in an attachment, as the wiki says.
+void setPhysicsMaterial(World& w, double now, int mask, const float values[4])
+{
+  if (w.attachPoint() > 0) return;
+  // values in the order of the call: gravity multiplier, restitution, friction, density; place in the stored list: the same
+  static const int FLAGS[4] = {8, 4, 2, 1};
+  static const float LOW[4] = {-1.0f, 0.0f, 0.0f, 1.0f}, HIGH[4] = {28.0f, 1.0f, 255.0f, 22587.0f};
+  PhysicsState& p = w.physics();
+  for (int i = 0; i < 4; ++i)
+    if ((mask & FLAGS[i]) && values[i] == values[i]) p.material[i] = qBound(LOW[i], values[i], HIGH[i]);
+  if (w.logFull()) return;
+  w.log(now, QJsonObject{{"type", "physics"}, {"op", "material"}, {"mask", mask & 15}, {"material", vecJson(p.material, 4)}});
+}
+
+// llGetCenterOfMass: a physical root gives the centre of mass of the linkset, every prim a box of the same density (llGetMass); every other
+// call gives the prim's own position (the wiki: a non-physical object gives llGetPos(); a child prim its own centre)
+void centerOfMass(World& w, float out[3])
+{
+  const int count = qMax(1, w.numberOfPrims());
+  const int link = qMax(1, w.linkNumber());
+  if (link > 1 || !(w.primStore().status & 0x1))
+  {
+    primWorldPosition(w, link, out);
+    return;
+  }
+  float root[3];
+  w.scale(root);
+  double total = 0.0, sum[3] = {0.0, 0.0, 0.0};
+  for (int l = 1; l <= count; ++l)
+  {
+    const float* size = l == 1 ? root : primOf(w, l).size;
+    const double m = double(size[0]) * size[1] * size[2];
+    float p[3];
+    primWorldPosition(w, l, p);
+    total += m;
+    for (int i = 0; i < 3; ++i) sum[i] += m * p[i];
+  }
+  for (int i = 0; i < 3; ++i) out[i] = total > 0.0 ? float(sum[i] / total) : 0.0f;
 }
 
 // ---- third gap list run, steps 7 to 9
@@ -4818,6 +4910,69 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       if (!m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "object_animation"}, {"op", "stop"}, {"animation", World::clip(target)}});
       return Value();
     }
+    // -------------------------------------------- step 18: physics reads and settings, rotation targets, ground and region reads
+    case Fn::GetAccel:
+    {
+      // the wiki: ZERO_VECTOR in an attachment and in a child prim; the model's last "step" otherwise
+      if (m_world.attachPoint() > 0 || m_world.linkNumber() > 1) return Value::vector(0.0f, 0.0f, 0.0f);
+      const float* v = m_world.physics().accel;
+      return Value::vector(v[0], v[1], v[2]);
+    }
+    case Fn::GetOmega: { const float* v = m_world.physics().omega; return Value::vector(v[0], v[1], v[2]); }   // the root's, from a child too
+    case Fn::GetTorque: { const float* v = m_world.physics().torque; return Value::vector(v[0], v[1], v[2]); }
+    case Fn::SetTorque: setObjectTorque(m_world, m_now, nullptr, a[0].f, a[1].i != 0); return Value();
+    case Fn::SetForceAndTorque: setObjectTorque(m_world, m_now, a[0].f, a[1].f, a[2].i != 0); return Value();
+    case Fn::SetAngularVelocity: setObjectAngularVelocity(m_world, m_now, a[0].f, a[1].i != 0); return Value();
+    case Fn::GetCenterOfMass: { float c[3]; centerOfMass(m_world, c); return Value::vector(c[0], c[1], c[2]); }
+    case Fn::GetGeometricCenter:
+    {
+      // the average of the prim centres relative to the root prim (the wiki); the root's own centre is the origin
+      const int count = qMax(1, m_world.numberOfPrims());
+      double sum[3] = {0.0, 0.0, 0.0};
+      for (int l = 2; l <= count; ++l)
+        for (int i = 0; i < 3; ++i) sum[i] += primOf(m_world, l).position[i];
+      return Value::vector(float(sum[0] / count), float(sum[1] / count), float(sum[2] / count));
+    }
+    case Fn::GetMassMKS:
+    {
+      // kilograms: the wiki says the value is llGetMass (lindograms) times 100
+      float s[3];
+      m_world.scale(s);
+      return Value::number(m_world.primStore().mass(s, qMax(1, m_world.numberOfPrims())) * 100.0f);
+    }
+    case Fn::GetPhysicsMaterial:
+    {
+      const float* m = m_world.physics().material;
+      return Value::makeList(std::vector<Value>{Value::number(m[0]), Value::number(m[1]), Value::number(m[2]), Value::number(m[3])});
+    }
+    case Fn::SetPhysicsMaterial:
+    {
+      const float values[4] = {a[1].f[0], a[2].f[0], a[3].f[0], a[4].f[0]};
+      setPhysicsMaterial(m_world, m_now, a[0].i, values);
+      return Value();
+    }
+    case Fn::RotTarget: return Value::integer(addRotTarget(a[0].f, a[1].f[0]));
+    case Fn::RotTargetRemove: removeRotTarget(a[0].i); return Value();
+    case Fn::BreakLink:
+      if (changeLinksAllowed(m_world, m_now, m_permissions, m_permissionKey) && m_world.attachPoint() == 0) m_world.breakLink(m_now, a[0].i);
+      return Value();
+    case Fn::DetectedGrab: return Value::vector(0.0f, 0.0f, 0.0f);   // a click is no grab: the sandbox has no grabbing, so always ZERO_VECTOR
+    case Fn::EdgeOfWorld: return Value::integer(1);               // the sandbox's region has no neighbour on any side
+    case Fn::GroundSlope: return Value::vector(0.0f, 0.0f, 0.0f);   // flat ground
+    case Fn::GroundContour: return Value::vector(0.0f, 0.0f, 0.0f); // the wiki: <-slope.y, slope.x, 0>
+    case Fn::GroundNormal: return Value::vector(0.0f, 0.0f, 1.0f);  // the wiki: <slope.x, slope.y, 1>
+    case Fn::GetRegionFlags: return Value::integer(m_world.region().regionFlags);
+    case Fn::Wind: { const float* v = m_world.region().wind; return Value::vector(v[0], v[1], v[2]); }
+    case Fn::ScriptDanger:
+    {
+      // the wiki: TRUE over public land, sandbox land, land where not everyone can build, or land that does not allow outside scripts
+      const RegionSettings& r = m_world.region();
+      if (!onParcel(a[0])) return Value::integer(0);
+      const bool danger = r.parcelScriptDanger != 0 || (r.regionFlags & 0x100) || !(r.parcelFlags & 0x2) || !(r.parcelFlags & 0x40);
+      return Value::integer(danger ? 1 : 0);
+    }
+    case Fn::GetSPMaxMemory: return Value::integer(0);   // the profiler (llScriptProfiler) is not supported, so no run was ever profiled
+
     case Fn::SetRegionPos: return Value::integer(setRegionPos(m_world, m_now, a[0].f));
     case Fn::ListStatistics: return Value::number(listStatistics(a[0].i, a[1].list));
     case Fn::Rot2Angle:
