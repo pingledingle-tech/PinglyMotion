@@ -1,6 +1,6 @@
 Branch: job/mockup-m1-hands
 Status: active
-Pull request: pending
+Pull request: #394
 Files:
 - docs/mockup/index.html
 - docs/UX_DECISIONS.md
