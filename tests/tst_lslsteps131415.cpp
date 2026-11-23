@@ -141,8 +141,8 @@ void LslSteps131415Test::supportedNow()
     QVERIFY2(Builtins::function(name) != nullptr, name);
     QVERIFY2(Builtins::function(name)->supported, name);
   }
-  // llGetSimStats is the unsupported example; llWarp2Pos is no LSL function
-  QVERIFY(!Builtins::function("llGetSimStats")->supported);
+  // llNavigateTo is the unsupported example; llWarp2Pos is no LSL function
+  QVERIFY(!Builtins::function("llNavigateTo")->supported);
   QVERIFY(Builtins::function("llWarp2Pos") == nullptr);
 }
 

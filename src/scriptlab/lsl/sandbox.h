@@ -96,7 +96,7 @@ struct SandboxInput
 {
   double at = 0.0;
   QString type = "chat";          // chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, remote_data,
-                                   // collision, land_collision, moving, at_target, not_at_target, step, drop
+                                   // collision, land_collision, moving, at_target, not_at_target, step, drop, experience
   QString object;                 // the object touched, attached, detached or whose dialog is answered (empty: the first)
   QString kind = "say";           // chat: say, whisper or shout (the range from the avatar)
   int channel = 0;
@@ -145,6 +145,10 @@ struct SandboxInput
   // (name and id: the avatar, empty: the owner). The owner may always; anyone else only after llAllowInventoryDrop(TRUE).
   QString item;
   int itemType = 7;
+  // step 19: experience. "kind" (stored in kind) is allow or deny (the avatar in id answers the experience's question and is
+  // remembered, as the wiki says), set or delete (the store is changed from outside: storeKey, and storeValue for set)
+  QString storeKey;
+  QString storeValue;
 };
 
 class Sandbox
@@ -201,6 +205,11 @@ class Sandbox
     // Gap list 2, step 3: the region's settings (name, corner, ground, water, day, start time). Before start() only.
     QString setRegion(const RegionSettings& region);
     const RegionSettings& region() const { return m_region; }
+    // Step 19: the experience of the world (with its key-value store) and the estate. Before start() only.
+    QString setExperience(const ExperienceState& experience);
+    QString setEstate(const EstateState& estate);
+    const ExperienceState& experience() const { return m_experience; }
+    const EstateState& estate() const { return m_estate; }
     // state_entry of every object (in order), then attach for the attached ones
     void start();
     // an input; refused (false) when MAX_PENDING_INPUTS are waiting
@@ -358,6 +367,8 @@ class Sandbox
     // frees every URL held by a script of the object; answers how many
     int releaseObjectUrls(int object);
     void deliverHttp(const SandboxInput& input);
+    // step 19: an experience input
+    void deliverExperience(const SandboxInput& input);
     bool isSitting(const QString& key) const;
     bool hasAttachments() const;
     QStringList attachedKeys(const QString& avatar) const;
@@ -384,6 +395,8 @@ class Sandbox
     std::vector<AvatarSpec> m_avatars;
     std::vector<HttpReply> m_http;
     RegionSettings m_region;
+    ExperienceState m_experience;
+    EstateState m_estate;
     std::vector<UrlEntry> m_urls;
     int m_requestCounter = 0;
     std::vector<SandboxInput> m_inputs;   // sorted by time, stable

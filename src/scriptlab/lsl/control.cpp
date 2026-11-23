@@ -341,10 +341,10 @@ namespace
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
     static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email", "remote_data",
-                                       "collision", "land_collision", "moving", "at_target", "not_at_target", "step", "drop"};
+                                       "collision", "land_collision", "moving", "at_target", "not_at_target", "step", "drop", "experience"};
     if (!types.contains(in.type))
       return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                      "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\".";
+                      "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -356,11 +356,35 @@ namespace
     if (o.contains("kind"))
     {
       in.kind = o.value("kind").toString();
-      if (in.type != "chat" && in.type != "remote_data") return where + "\"kind\" is only for chat and remote_data.";
+      if (in.type != "chat" && in.type != "remote_data" && in.type != "experience") return where + "\"kind\" is only for chat, remote_data and experience.";
       if (in.type == "chat" && in.kind != "say" && in.kind != "whisper" && in.kind != "shout") return where + "\"kind\" must be \"say\", \"whisper\" or \"shout\".";
       if (in.type == "remote_data" && in.kind != "request" && in.kind != "reply") return where + "\"kind\" must be \"request\" or \"reply\".";
+      if (in.type == "experience" && in.kind != "allow" && in.kind != "deny" && in.kind != "set" && in.kind != "delete")
+        return where + "\"kind\" must be \"allow\", \"deny\", \"set\" or \"delete\".";
     }
+    else if (in.type == "experience") return where + "an experience input needs \"kind\": \"allow\" or \"deny\" (the avatar in \"id\" answers), \"set\" or \"delete\" (the store changes, with \"key\").";
     else if (in.type == "remote_data") in.kind = "request";
+    // step 19: experience. "key" and "value" are the store's: set needs both, delete needs "key"
+    for (const char* field : {"key", "value"})
+      if (o.contains(field) && in.type != "experience") return where + "\"" + field + "\" is only for experience.";
+    if (in.type == "experience")
+    {
+      const bool store = in.kind == "set" || in.kind == "delete";
+      if (!store && (o.contains("key") || o.contains("value"))) return where + "\"key\" and \"value\" are only for the experience kinds set and delete.";
+      if (store)
+      {
+        if (!o.value("key").isString() || o.value("key").toString().toUtf8().size() < 1 || o.value("key").toString().toUtf8().size() > ExperienceState::MAX_KEY_BYTES)
+          return where + QString("an experience %1 input needs \"key\": the store's key, text of 1 to %2 bytes.").arg(in.kind).arg(ExperienceState::MAX_KEY_BYTES);
+        in.storeKey = o.value("key").toString();
+        if (in.kind == "set")
+        {
+          if (!o.value("value").isString() || o.value("value").toString().toUtf8().size() > ExperienceState::MAX_VALUE_BYTES)
+            return where + QString("an experience set input needs \"value\": text of at most %1 bytes.").arg(ExperienceState::MAX_VALUE_BYTES);
+          in.storeValue = o.value("value").toString();
+        }
+        else if (o.contains("value")) return where + "\"value\" is only for the experience kind set.";
+      }
+    }
     // steps 16 and 17: remote data (XML-RPC): sender in "address", the integer in "idata", the string in "text", the
     // message in "id", the channel in "channel_key" (a request only; empty: the object's open channel)
     for (const char* field : {"idata", "channel_key"})
@@ -653,6 +677,135 @@ namespace
     return QString();
   }
 
+  // step 19: a list of keys (at most 64) in field "field" of o; empty when fine
+  QString readKeyList(const QJsonObject& o, const char* field, const QString& where, QStringList& out)
+  {
+    const QString message = where + QString("\"%1\" must be a list of at most 64 keys, each 1 to 36 letters, digits or \"-\".").arg(field);
+    if (!o.value(field).isArray()) return message;
+    const QJsonArray list = o.value(field).toArray();
+    if (list.size() > 64) return message;
+    for (const QJsonValue& item : list)
+    {
+      if (!item.isString() || !validKey(item.toString())) return message;
+      if (!out.contains(item.toString())) out.append(item.toString());
+    }
+    return QString();
+  }
+
+  // step 19: "experience" of lsl_run: {key, name, owner, group, state, members, blocked, store, store_enabled, quota}; empty when fine.
+  // Giving it puts every script of the world into that experience.
+  QString readExperience(const QJsonValue& v, ExperienceState& out)
+  {
+    static const QStringList fields = {"key", "name", "owner", "group", "state", "members", "blocked", "store", "store_enabled", "quota"};
+    static const int MAX_PAIRS = 1000;
+    const QString where = "Experience: ";
+    if (!v.isObject()) return "\"experience\" must be an object with any of " + fields.join(", ") + ".";
+    const QJsonObject o = v.toObject();
+    for (auto it = o.begin(); it != o.end(); ++it)
+      if (!fields.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+    out = ExperienceState();
+    out.present = true;
+    for (const char* field : {"key", "owner", "group"})
+      if (o.contains(field) && (!o.value(field).isString() || !validKey(o.value(field).toString())))
+        return where + QString("\"%1\" must be a key: 1 to 36 letters, digits or \"-\".").arg(field);
+    if (o.contains("key")) out.key = o.value("key").toString();
+    if (o.contains("owner")) out.owner = o.value("owner").toString();
+    if (o.contains("group")) out.group = o.value("group").toString();
+    if (o.contains("name"))
+    {
+      if (!o.value("name").isString() || !validName(o.value("name").toString())) return where + "\"name\" must be text of 1 to 63 characters.";
+      out.name = o.value("name").toString();
+    }
+    if (o.contains("state"))
+    {
+      const QString state = o.value("state").toString();
+      if (!o.value("state").isString() || (state != "enabled" && state != "disabled" && state != "suspended"))
+        return where + "\"state\" must be \"enabled\", \"disabled\" or \"suspended\" (default enabled).";
+      out.state = state == "disabled" ? ExperienceState::Disabled : (state == "suspended" ? ExperienceState::Suspended : ExperienceState::None);
+    }
+    for (const char* field : {"members", "blocked"})
+      if (o.contains(field))
+      {
+        const QString problem = readKeyList(o, field, where, field[0] == 'm' ? out.members : out.blocked);
+        if (!problem.isEmpty()) return problem;
+      }
+    for (const QString& key : out.members)
+      if (out.blocked.contains(key)) return where + "the avatar " + clip(key, 36) + " is in both \"members\" and \"blocked\".";
+    if (o.contains("store_enabled"))
+    {
+      if (!o.value("store_enabled").isBool()) return where + "\"store_enabled\" must be true or false.";
+      out.storeEnabled = o.value("store_enabled").toBool();
+    }
+    if (o.contains("quota"))
+    {
+      int quota = 0;
+      if (!wholeNumber(o.value("quota"), 1, double(ExperienceState::DEFAULT_QUOTA), quota))
+        return where + QString("\"quota\" must be the bytes the store may hold, a whole number from 1 to %1.").arg(ExperienceState::DEFAULT_QUOTA);
+      out.quota = quota;
+    }
+    if (o.contains("store"))
+    {
+      if (!o.value("store").isObject()) return where + "\"store\" must be an object of key and value pairs, each value text.";
+      const QJsonObject store = o.value("store").toObject();
+      if (store.size() > MAX_PAIRS) return where + QString("\"store\" holds at most %1 pairs.").arg(MAX_PAIRS);
+      for (auto it = store.begin(); it != store.end(); ++it)
+      {
+        const int keyBytes = it.key().toUtf8().size();
+        if (keyBytes < 1 || keyBytes > ExperienceState::MAX_KEY_BYTES)
+          return where + QString("a key of \"store\" must be 1 to %1 bytes (UTF-8).").arg(ExperienceState::MAX_KEY_BYTES);
+        if (!it.value().isString() || it.value().toString().toUtf8().size() > ExperienceState::MAX_VALUE_BYTES)
+          return where + QString("the value of \"%1\" in \"store\" must be text of at most %2 bytes (UTF-8).").arg(clip(it.key(), 40)).arg(ExperienceState::MAX_VALUE_BYTES);
+        out.store.insert(it.key(), it.value().toString());
+      }
+      if (out.used() > out.quota) return where + "\"store\" is larger than \"quota\".";
+    }
+    return QString();
+  }
+
+  // step 19: "estate" of lsl_run: {owner, managers, allowed_agents, allowed_groups, banned_agents, mainland}; empty when fine
+  QString readEstate(const QJsonValue& v, EstateState& out)
+  {
+    static const QStringList fields = {"owner", "managers", "allowed_agents", "allowed_groups", "banned_agents", "mainland"};
+    const QString where = "Estate: ";
+    if (!v.isObject()) return "\"estate\" must be an object with any of " + fields.join(", ") + ".";
+    const QJsonObject o = v.toObject();
+    for (auto it = o.begin(); it != o.end(); ++it)
+      if (!fields.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+    out = EstateState();
+    if (o.contains("owner"))
+    {
+      if (!o.value("owner").isString() || !validKey(o.value("owner").toString()))
+        return where + "\"owner\" must be a key: 1 to 36 letters, digits or \"-\" (the estate owner; default: the owner of the world).";
+      out.owner = o.value("owner").toString();
+    }
+    if (o.contains("managers"))
+    {
+      const QString problem = readKeyList(o, "managers", where, out.managers);
+      if (!problem.isEmpty()) return problem;
+    }
+    if (o.contains("allowed_agents"))
+    {
+      const QString problem = readKeyList(o, "allowed_agents", where, out.allowedAgents);
+      if (!problem.isEmpty()) return problem;
+    }
+    if (o.contains("allowed_groups"))
+    {
+      const QString problem = readKeyList(o, "allowed_groups", where, out.allowedGroups);
+      if (!problem.isEmpty()) return problem;
+    }
+    if (o.contains("banned_agents"))
+    {
+      const QString problem = readKeyList(o, "banned_agents", where, out.bannedAgents);
+      if (!problem.isEmpty()) return problem;
+    }
+    if (o.contains("mainland"))
+    {
+      if (!o.value("mainland").isBool()) return where + "\"mainland\" must be true or false (a mainland region: llManageEstateAccess does not work there).";
+      out.mainland = o.value("mainland").toBool();
+    }
+    return QString();
+  }
+
   // step 9b-9: "http" of lsl_run: canned replies to llHTTPRequest, [{url, method, status, body}]; empty when fine
   QString readHttp(const QJsonValue& v, std::vector<HttpReply>& out)
   {
@@ -814,6 +967,25 @@ namespace
 
   double rounded(double t) { return std::round(t * 1000.0) / 1000.0; }
 
+  // step 19: where the experience and the estate stand now ("experience" only when one is set up, "estate" only when one was given or
+  // llManageEstateAccess changed a list), so an answer without them is the same as before
+  void addExperienceAnswer(QJsonObject& answer, const Sandbox& sandbox)
+  {
+    const ExperienceState& x = sandbox.experience();
+    if (x.present)
+    {
+      QJsonObject store;
+      for (auto it = x.store.begin(); it != x.store.end(); ++it) store[it.key()] = it.value();
+      answer["experience"] = QJsonObject{{"key", x.key}, {"name", x.name}, {"state", x.state == ExperienceState::None ? "enabled" : (x.state == ExperienceState::Disabled ? "disabled" : "suspended")},
+                                         {"members", QJsonArray::fromStringList(x.members)}, {"blocked", QJsonArray::fromStringList(x.blocked)},
+                                         {"store", store}, {"store_bytes", double(x.used())}, {"quota", double(x.quota)}};
+    }
+    const EstateState& e = sandbox.estate();
+    if (!e.owner.isEmpty() || !e.managers.isEmpty() || !e.allowedAgents.isEmpty() || !e.allowedGroups.isEmpty() || !e.bannedAgents.isEmpty() || e.mainland)
+      answer["estate"] = QJsonObject{{"owner", e.owner}, {"managers", QJsonArray::fromStringList(e.managers)}, {"allowed_agents", QJsonArray::fromStringList(e.allowedAgents)},
+                                     {"allowed_groups", QJsonArray::fromStringList(e.allowedGroups)}, {"banned_agents", QJsonArray::fromStringList(e.bannedAgents)}, {"mainland", e.mainland}};
+  }
+
   QJsonObject rlvAnswer(const Sandbox& sandbox, const RlvState& state)
   {
     return QJsonObject{{"lines", sandbox.rlvLines()}, {"refused", sandbox.refusedLines()}, {"state", RlvWorld::stateJson(state)}};
@@ -825,7 +997,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter", "inventory", "avatars", "http", "region"};
+                                       "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -920,6 +1092,19 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!problem.isEmpty()) return fail(problem);
   }
 
+  ExperienceState experience;
+  if (request.contains("experience"))
+  {
+    const QString problem = readExperience(request.value("experience"), experience);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+  EstateState estate;
+  if (request.contains("estate"))
+  {
+    const QString problem = readEstate(request.value("estate"), estate);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
   std::vector<SandboxInput> inputs;
   if (request.contains("inputs"))
   {
@@ -927,7 +1112,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
     static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                       "amount", "url", "method", "body", "headers", "address", "subject", "idata", "channel_key", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
+                                       "amount", "url", "method", "body", "headers", "address", "subject", "idata", "channel_key", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type", "key", "value"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -1000,6 +1185,8 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   }
   sandbox->setHttpReplies(http);
   sandbox->setRegion(region);
+  sandbox->setExperience(experience);
+  sandbox->setEstate(estate);
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
   sandbox->start();
   sandbox->runUntil(seconds);
@@ -1024,6 +1211,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   answer["objects"] = sandbox->objectsJson();
   if (!sandbox->lastDialog().isEmpty()) answer["dialog"] = sandbox->lastDialog();
   answer["warnings"] = warnings;
+  addExperienceAnswer(answer, *sandbox);
   answer["rlv"] = rlvAnswer(*sandbox, state);
   answer["note"] = "A sandbox with a simulated clock, not Second Life: test the final script in Second Life too.";
   // keep the world for lsl_event (only with the shared RLV state, which outlives it)
@@ -1035,7 +1223,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
   static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                    "amount", "url", "method", "body", "headers", "address", "subject", "idata", "channel_key", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
+                                    "amount", "url", "method", "body", "headers", "address", "subject", "idata", "channel_key", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type", "key", "value"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -1047,7 +1235,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
   }
   if (!request.contains("type"))
     return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, remote_data, collision, land_collision, "
-                "moving, at_target, not_at_target, step or drop.");
+                "moving, at_target, not_at_target, step, drop or experience.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {
@@ -1076,6 +1264,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
   QJsonObject answer{{"ok", true}, {"log", sandbox->log()}, {"log_truncated", sandbox->truncated()},
                      {"stopped", sandbox->allStopped()}, {"time", rounded(sandbox->now())}, {"objects", sandbox->objectsJson()}};
   if (!sandbox->lastDialog().isEmpty()) answer["dialog"] = sandbox->lastDialog();
+  addExperienceAnswer(answer, *sandbox);
   answer["rlv"] = rlvAnswer(*sandbox, sandbox->rlv());
   answer["note"] = "A sandbox with a simulated clock, not Second Life: test the final script in Second Life too.";
   session->notify();

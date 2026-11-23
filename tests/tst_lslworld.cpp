@@ -364,7 +364,7 @@ void LslWorldTest::refusesBadInput()
            QString("Input 1: a dialog answer needs \"button\": the text of the button pressed."));
   QCOMPARE(error(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok)}},
                              {"inputs", QJsonArray{QJsonObject{{"type", "touch"}, {"kind", "shout"}}}}}),
-           QString("Input 1: \"kind\" is only for chat and remote_data."));
+           QString("Input 1: \"kind\" is only for chat, remote_data and experience."));
   const QJsonObject bad = Control::run(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{object("a", ok), object("b", "default { x }")}}}, &rlv);
   QCOMPARE(bad["error"].toString(), QString("The script of object \"b\" does not compile, so nothing was run. The errors are listed (the same as lsl_check)."));
   QCOMPARE(bad["object"].toString(), QString("b"));
@@ -378,13 +378,13 @@ void LslWorldTest::eventNeedsAWorld()
            QString("There is no running world to send the event to. Start one with lsl_run first (with \"source\" or \"objects\")."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}}, &session)["error"].toString(),
            QString("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, remote_data, collision, land_collision, "
-                   "moving, at_target, not_at_target, step or drop."));
+                   "moving, at_target, not_at_target, step, drop or experience."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "fly"}}, &session)["error"].toString(),
            QString("\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                   "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\"."));
+                   "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\"."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"at", 1}}, &session)["error"].toString(),
            QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, hold, change, levels, edges, amount, url, method, body, headers, "
-                   "address, subject, idata, channel_key, seconds, phase, pos, tnum, targetpos, ourpos, dt, item, item_type."));
+                   "address, subject, idata, channel_key, seconds, phase, pos, tnum, targetpos, ourpos, dt, item, item_type, key, value."));
   RlvState rlv;
   run({object("a", "default { touch_start(integer n) { } }")}, 1, rlv, &session);
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"object", "zz"}}, &session)["error"].toString(),

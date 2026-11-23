@@ -211,6 +211,9 @@ class ObjectWorld : public RlvWorld
     }
     const RegionSettings& region() const override { return m_sandbox.m_region; }
     QStringList agents() const override { return m_sandbox.agents(); }
+    ExperienceState& experience() override { return m_sandbox.m_experience; }
+    EstateState& estate() override { return m_sandbox.m_estate; }
+    int scriptCount() const override { return int(m_sandbox.m_slots.size()); }
     QStringList objectKeys() const override { return m_sandbox.objectKeys(); }
     bool details(const QString& key, ObjectDetails& out) override { return m_sandbox.details(m_slot, key, out); }
     // gap list 2, step 4: the URLs are counted in the whole world; each belongs to the script that asked for it
@@ -798,6 +801,11 @@ void Sandbox::deliver(const SandboxInput& input)
   if (input.type == "http_request")
   {
     deliverHttp(input);
+    return;
+  }
+  if (input.type == "experience")
+  {
+    deliverExperience(input);
     return;
   }
 
@@ -1572,6 +1580,58 @@ QString Sandbox::setRegion(const RegionSettings& region)
   if (!(region.dayLength > 0.0) || !std::isfinite(region.dayLength)) return "The length of a day must be more than 0 seconds.";
   m_region = region;
   return QString();
+}
+
+QString Sandbox::setExperience(const ExperienceState& experience)
+{
+  if (m_started) return "The world has started already.";
+  m_experience = experience;
+  return QString();
+}
+
+QString Sandbox::setEstate(const EstateState& estate)
+{
+  if (m_started) return "The world has started already.";
+  m_estate = estate;
+  return QString();
+}
+
+void Sandbox::deliverExperience(const SandboxInput& input)
+{
+  QString name, key;
+  avatar(input, name, key);
+  QJsonObject entry{{"type", "input"}, {"input", "experience"}, {"kind", input.kind}};
+  const double t = m_slots.size() == 1 ? qMax(m_now, m_slots[0].interp->now()) : m_now;
+  if (!m_experience.present)
+  {
+    entry["error"] = "No experience is set up; give \"experience\" to lsl_run.";
+    m_log.log(t, entry);
+    return;
+  }
+  if (input.kind == "set" || input.kind == "delete")
+  {
+    // a change of the store from outside, as another script of the experience (in another region) would make it
+    entry["key"] = World::clip(input.storeKey);
+    int error;
+    QString old;
+    if (input.kind == "set") error = m_experience.update(input.storeKey, input.storeValue, false, QString());
+    else error = m_experience.remove(input.storeKey, old);
+    if (error != ExperienceState::None) entry["error"] = ExperienceState::errorMessage(error);
+    m_log.log(t, entry);
+    return;
+  }
+  // allow or deny: what the avatar answers is kept (the wiki: the decision lasts), and every script that asked gets its event
+  const bool allow = input.kind == "allow";
+  entry["id"] = key;
+  m_log.log(t, entry);
+  m_experience.members.removeAll(key);
+  m_experience.blocked.removeAll(key);
+  (allow ? m_experience.members : m_experience.blocked).append(key);
+  for (Slot& slot : m_slots)
+  {
+    slot.interp->syncTo(m_now);
+    slot.interp->experienceAnswer(key, allow ? ExperienceState::None : ExperienceState::NotPermitted);
+  }
 }
 
 void Sandbox::httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body)

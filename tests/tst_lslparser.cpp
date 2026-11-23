@@ -65,7 +65,7 @@ void LslParserTest::builtinData()
   QCOMPARE(int(f->args.size()), 3);
   QCOMPARE(f->args[1], Type::Integer);
   QVERIFY(f->supported);
-  QVERIFY(!Builtins::function("llGetSimStats")->supported);
+  QVERIFY(!Builtins::function("llNavigateTo")->supported);
   QCOMPARE(Builtins::event("listen")->args.size(), size_t(4));
   QCOMPARE(Builtins::constant("PERMISSION_TRIGGER_ANIMATION")->value.i, 0x10);
   QCOMPARE(Builtins::constant("TRUE")->value.i, 1);
@@ -268,12 +268,12 @@ void LslParserTest::warnings()
   // not_at_target and collision_start used to be examples of events never raised; they are raised now (second gap
   // list, step 6, part 2), so path_update (pathfinding, out of scope) stands in (plain collision is raised since steps 10 to 12 of the third run)
   const Parser::Result r = Parser::parse(
-    "default {\n state_entry() {\n  llGetSimStats(0);\n }\n path_update(integer type, list reserved) { }\n}");
+    "default {\n state_entry() {\n  llNavigateTo(<1.0, 1.0, 1.0>, []);\n }\n path_update(integer type, list reserved) { }\n}");
   QVERIFY(r.ok());   // valid LSL: warnings only
   QCOMPARE(int(r.warnings.size()), 2);
   QCOMPARE(r.warnings[0].line, 3);
   QCOMPARE(r.warnings[0].column, 3);
-  QVERIFY(r.warnings[0].message.contains("llGetSimStats is not supported yet"));
+  QVERIFY(r.warnings[0].message.contains("llNavigateTo is not supported yet"));
   QVERIFY(r.warnings[1].message.contains("path_update"));
   QVERIFY(r.warnings[1].message.contains("does not raise it yet"));
 }

@@ -98,6 +98,7 @@ void Interpreter::step(int line, int column)
 {
   m_line = line;
   m_column = column;
+  if (m_profiling && m_memory > m_spPeak) m_spPeak = m_memory;
   if (++m_steps > m_limits.maxSteps)
     failAt("limit", QString("The script ran more than %1 steps and was stopped (an endless loop?).").arg(m_limits.maxSteps));
   if ((m_steps & 1023) == 0 && m_clock.elapsed() > m_limits.maxWallMs)
@@ -318,6 +319,9 @@ void Interpreter::resetScript()
   m_targets.clear();
   m_rotTargets.clear();
   m_memoryLimit = Limits::SCRIPT_MEMORY_MAX;
+  m_experienceAsked.clear();   // the wiki: pending requests are lost on a reset, and the profiler goes back to PROFILE_NONE
+  m_profiling = false;
+  m_spPeak = 0;
   m_timeBase = m_now;
   m_inEvent = false;
   try
@@ -697,6 +701,14 @@ void Interpreter::linksetDataEvent(int action, const QString& name, const QStrin
 void Interpreter::changedEvent(int flags)
 {
   queueEvent(Event{"changed", {Value::integer(flags)}, QString(), QString()});
+}
+
+bool Interpreter::experienceAnswer(const QString& agent, int reason)
+{
+  if (!m_experienceAsked.removeOne(agent)) return false;
+  if (reason == 0) queueEvent(Event{"experience_permissions", {Value::key(agent)}, QString(), QString()});
+  else queueEvent(Event{"experience_permissions_denied", {Value::key(agent), Value::integer(reason)}, QString(), QString()});
+  return true;
 }
 
 void Interpreter::controlEvent(const QString& id, int levels, int edges)

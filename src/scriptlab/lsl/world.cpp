@@ -616,4 +616,106 @@ bool World::nextEmail(const QString& address, const QString& subject, Email& out
   return false;
 }
 
+// ---------------------------------------------------------------- step 19: the experience and its key-value store
+
+qint64 ExperienceState::used() const
+{
+  qint64 total = 0;
+  for (auto it = store.begin(); it != store.end(); ++it) total += it.key().toUtf8().size() + it.value().toUtf8().size();
+  return total;
+}
+
+// what every operation checks first, in this order: an experience, its state, the store, the sizes
+int ExperienceState::ready() const
+{
+  if (!present) return NoExperience;
+  if (state != None) return state;
+  if (!storeEnabled) return StoreDisabled;
+  return None;
+}
+
+int ExperienceState::check(const QString& k, const QString* v) const
+{
+  const int r = ready();
+  if (r != None) return r;
+  const int keyBytes = k.toUtf8().size();
+  if (keyBytes < 1 || keyBytes > MAX_KEY_BYTES) return InvalidParameters;
+  if (v && v->toUtf8().size() > MAX_VALUE_BYTES) return InvalidParameters;
+  return None;
+}
+
+int ExperienceState::create(const QString& k, const QString& v)
+{
+  const int e = check(k, &v);
+  if (e != None) return e;
+  if (store.contains(k)) return StorageException;
+  if (used() + k.toUtf8().size() + v.toUtf8().size() > quota) return QuotaExceeded;
+  store.insert(k, v);
+  return None;
+}
+
+int ExperienceState::read(const QString& k, QString& value) const
+{
+  const int e = check(k, nullptr);
+  if (e != None) return e;
+  auto it = store.constFind(k);
+  if (it == store.constEnd()) return KeyNotFound;
+  value = it.value();
+  return None;
+}
+
+int ExperienceState::update(const QString& k, const QString& v, bool checked, const QString& original)
+{
+  const int e = check(k, &v);
+  if (e != None) return e;
+  auto it = store.find(k);
+  if (checked && (it == store.end() || it.value() != original)) return RetryUpdate;
+  const qint64 before = it == store.end() ? 0 : k.toUtf8().size() + it.value().toUtf8().size();
+  if (used() - before + k.toUtf8().size() + v.toUtf8().size() > quota) return QuotaExceeded;
+  store.insert(k, v);
+  return None;
+}
+
+int ExperienceState::remove(const QString& k, QString& value)
+{
+  const int e = check(k, nullptr);
+  if (e != None) return e;
+  auto it = store.find(k);
+  if (it == store.end()) return StorageException;
+  value = it.value();
+  store.erase(it);
+  return None;
+}
+
+QString ExperienceState::answer(int error, const QString& payload)
+{
+  return error == None ? "1," + payload : QString("0,%1").arg(error);
+}
+
+QString ExperienceState::errorMessage(int error)
+{
+  switch (error)
+  {
+    case 0: return "no error";
+    case 1: return "exceeded throttle";
+    case 2: return "experiences are disabled";
+    case 3: return "invalid parameters";
+    case 4: return "operation not permitted";
+    case 5: return "script not associated with an experience";
+    case 6: return "not found";
+    case 7: return "invalid experience";
+    case 8: return "experience is disabled";
+    case 9: return "experience is suspended";
+    case 11: return "experience data quota exceeded";
+    case 12: return "key-value store is disabled";
+    case 13: return "key-value store communication failed";
+    case 14: return "key doesn't exist";
+    case 15: return "retry update";
+    case 16: return "experience content rating too high";
+    case 17: return "not allowed to run on this land";
+    case 18: return "experience permissions request timed out";
+    default: return "unknown error";   // 10 and every number that is no code
+  }
+}
+
 } // namespace lsl

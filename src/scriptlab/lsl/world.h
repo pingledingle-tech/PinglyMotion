@@ -391,6 +391,64 @@ struct ParcelMediaState
   QString status = "stop";
 };
 
+// Step 19: the experience every script of the world belongs to (set up with "experience" of lsl_run; without it no script is
+// in an experience) and its key-value store. Rules from the Second Life wiki (llCreateKeyValue and the other key-value
+// functions, llGetExperienceDetails, llRequestExperiencePermissions); the choices where the wiki is silent are listed in
+// docs/CONTROL.md. The store is shared by every script of the world, as an experience's store is.
+struct ExperienceState
+{
+  static constexpr int MAX_KEY_BYTES = 1011;                // the wiki: at most 1011 bytes for a key and 4095 for a value
+  static constexpr int MAX_VALUE_BYTES = 4095;
+  static constexpr qint64 DEFAULT_QUOTA = 134217728;        // the wiki: 128 MiB in all
+  static constexpr int MAX_KEYS_CHARS = 4096;               // llKeysKeyValue: the answer after "1," is cut here
+  // the XP_ERROR_* values the store gives
+  enum Error { None = 0, InvalidParameters = 3, NotPermitted = 4, NoExperience = 5, Disabled = 8, Suspended = 9, QuotaExceeded = 11,
+               StoreDisabled = 12, StorageException = 13, KeyNotFound = 14, RetryUpdate = 15 };
+
+  bool present = false;                                     // an experience is set up
+  QString key = "e0000000-0000-4000-8000-0000000000e1";
+  QString name = "Sandbox Experience";
+  QString owner;                                            // empty: the owner of the world
+  QString group = "00000000-0000-0000-0000-000000000000";
+  int state = None;                                         // None (enabled), Disabled or Suspended
+  QStringList members;                                      // avatars that allowed the experience
+  QStringList blocked;                                      // avatars that blocked it
+  bool storeEnabled = true;
+  qint64 quota = DEFAULT_QUOTA;
+  QMap<QString, QString> store;                             // sorted by key, so llKeysKeyValue gives a stable order
+
+  // None when the store can be used: an experience is set up, enabled, and its store is on; else the error every call gives
+  int ready() const;
+  // the bytes the store uses: the UTF-8 bytes of every key and value
+  qint64 used() const;
+  // each gives an Error; on success value is what the dataserver answer holds after "1,"
+  int create(const QString& k, const QString& v);
+  int read(const QString& k, QString& value) const;
+  int update(const QString& k, const QString& v, bool checked, const QString& original);
+  int remove(const QString& k, QString& value);
+  // the dataserver string: "1,<payload>" for None, else "0,<error>"
+  static QString answer(int error, const QString& payload = QString());
+  // llGetExperienceErrorMessage
+  static QString errorMessage(int error);
+
+  private:
+    int check(const QString& k, const QString* v) const;
+};
+
+// Step 19: the estate llManageEstateAccess changes (set up with "estate" of lsl_run). An empty owner means the owner of the world.
+struct EstateState
+{
+  static constexpr int THROTTLE_CALLS = 30;                 // the wiki: 30 calls in 30 seconds
+  static constexpr double THROTTLE_SECONDS = 30.0;
+  QString owner;
+  QStringList managers;
+  QStringList allowedAgents;
+  QStringList allowedGroups;
+  QStringList bannedAgents;
+  bool mainland = false;                                    // the call does not work there
+  std::deque<double> calls;                                 // when the recent calls were made (the throttle)
+};
+
 class World
 {
   public:
@@ -554,6 +612,12 @@ class World
     virtual const RegionSettings& region() const { return m_region; }
     void setRegion(const RegionSettings& region) { m_region = region; }
     virtual QStringList agents() const { return QStringList{ownerKey()}; }
+    // step 19: the experience and its store, the estate, and how many scripts the world runs (llGetSimStats)
+    virtual ExperienceState& experience() { return m_experience; }
+    void setExperience(const ExperienceState& experience) { m_experience = experience; }
+    virtual EstateState& estate() { return m_estate; }
+    void setEstate(const EstateState& estate) { m_estate = estate; }
+    virtual int scriptCount() const { return 1; }
     // steps 13 to 15: the keys of the objects llCastRay can hit (a plain World has only its own object)
     virtual QStringList objectKeys() const { return QStringList{objectKey()}; }
     // llSetParcelMusicURL stores the address and llGetParcelMusicURL reads it back (the one parcel's music)
@@ -627,6 +691,8 @@ class World
     QString m_objectName = "Object";
     QString m_objectDesc;
     RegionSettings m_region;
+    ExperienceState m_experience;
+    EstateState m_estate;
     QString m_parcelMusicUrl;
     ParcelMediaState m_parcelMedia;
     QStringList m_urls;

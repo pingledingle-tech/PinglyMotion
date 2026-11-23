@@ -139,8 +139,8 @@ void LslSteps789Test::supportedNow()
 {
   for (const char* f : {"llSetDamage", "llSetKeyframedMotion", "llCreateLink", "llBreakAllLinks"})
     QVERIFY2(Builtins::supportedFunctions().contains(QString::fromLatin1(f)), f);
-  // existing tests use llGetSimStats as their unsupported example: it must stay unsupported
-  QVERIFY(Builtins::function("llGetSimStats") && !Builtins::function("llGetSimStats")->supported);
+  // existing tests use llNavigateTo (pathfinding, not supported yet) as their unsupported example: it must stay unsupported
+  QVERIFY(Builtins::function("llNavigateTo") && !Builtins::function("llNavigateTo")->supported);
 }
 
 void LslSteps789Test::getDamageStaysUnknown()
