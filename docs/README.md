@@ -34,6 +34,7 @@ Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running wo
 | [index.html](index.html) | The project website (homepage) | user | current |
 | [download.html](download.html) | Website page: download (early preview), uninstall and system changes | user | current |
 | [privacy.html](privacy.html) | Website page: privacy policy (what the program, the helper and the website do with data) | user | current guidance |
+| [SECURITY_PRIVACY.md](SECURITY_PRIVACY.md) | Security and privacy in plain words: what goes over the internet, what a connected AI can see, each claim marked tested or not tested, honest limits; a kept place for the legal text | user, developer | current guidance |
 | [site.css](site.css), [site.js](site.js) | Shared style, language picker and light/dark switch of the website pages | developer | current |
 
 ## Formats and reference

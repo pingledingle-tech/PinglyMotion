@@ -146,6 +146,16 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 
 `python3 tools/work.py status` (needs `gh`, read-only, REST only) prints for every open pull request: draft or ready, merge conflict state (`unknown` if GitHub has not computed it after a few tries, never read as fine), the latest run of each check by start time (older cancelled duplicates are ignored), and minutes since the last push (`stopped?` over 40). Parsing is tested with canned data in `tests/test_work.py`.
 
+## Security alerts
+
+The rule (read at every status and free slot, fix as ordinary jobs, done only when CodeQL confirms) is in `CLAUDE.md`, "The job queue". What a session can read, as of 23 Nov 2026:
+
+- **Code scanning, on pull requests:** the bot's review comments. `gh api 'repos/pingledingle-tech/PinglyMotion/pulls/<n>/comments?per_page=100' --jq '.[] | select(.user.login=="github-advanced-security[bot]") | {path, line, body}'`. The body names the rule and links the alert number. Check merged pull requests too: an alert raised there stays open on `main` until a fix is merged.
+- **Code scanning, open on `main`:** the nightly CodeQL run (and a manual run) has a job `alerts` that lists every open alert with the workflow's own read-only token: one log line `ALERT #<number> <severity> <rule> <file>:<line>` each, and a table in the run summary. Read the log: take the newest run with `gh api 'repos/pingledingle-tech/PinglyMotion/actions/workflows/codeql.yml/runs?per_page=5'`, its `alerts` job with `.../actions/runs/<id>/jobs?per_page=100`, then `gh api .../actions/jobs/<job id>/logs | grep -E 'ALERT|NOT READ'`. The summary itself is not in the REST API.
+- **Dependabot:** the alert list gives 403 to the session and to the workflow token (the job says `NOT READ` for it). Dependabot security updates are on, so a vulnerable dependency shows as an open pull request by `dependabot[bot]`.
+- **Secret scanning:** the proxy blocks the list for a session, and the workflow token cannot read it either (`NOT READ`). Push protection is on.
+- Reading the Dependabot and secret scanning lists would need a token with more rights, which is a repository decision for the project owner. Sessions never change repository settings.
+
 ## Compile faster (Windows job, 22 Nov 2026)
 
 The Windows compile took 8 to 16.5 minutes, 80 percent of the job (ctest about 1 minute). Now:
@@ -167,7 +177,7 @@ Drawbacks: one more download in CI (ccache, from the Chocolatey community feed, 
 
 ## What runs where
 
-A pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. A draft runs only the quick checks; the rest starts when it is marked ready. Changes that only touch Markdown, `docs/`, licence files or the website (issue templates, `pages.yml`, `tools/site/` and its test, the website page tests `tests/test_site_*.py`, which the website job runs) skip the builds and the C++ CodeQL analysis; the required checks then report as skipped, which counts as passed (the rule and its test: `tools/ci/changes.py`, `tests/test_ci_changes.py`). After a merge, `main` gets a quick Linux build with the tests. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, and fuzzing. A release runs all of it first and is only published when everything passes.
+A pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. A draft runs only the quick checks; the rest starts when it is marked ready. Changes that only touch Markdown, `docs/`, licence files or the website (issue templates, `pages.yml`, `tools/site/` and its test, the website page tests `tests/test_site_*.py`, which the website job runs) skip the builds and the C++ CodeQL analysis; the required checks then report as skipped, which counts as passed (the rule and its test: `tools/ci/changes.py`, `tests/test_ci_changes.py`). After a merge, `main` gets a quick Linux build with the tests. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, the list of open code scanning alerts ("Security alerts" above), and fuzzing. A release runs all of it first and is only published when everything passes.
 
 ## Reference library download (issue 19)
 
