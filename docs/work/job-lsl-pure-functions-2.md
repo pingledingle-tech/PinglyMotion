@@ -1,6 +1,6 @@
 Branch: job/lsl-pure-functions-2
 Status: active
-Pull request: pending
+Pull request: #386
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - tests/tst_lslpure.cpp
