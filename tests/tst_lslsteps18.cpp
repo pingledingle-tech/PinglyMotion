@@ -29,7 +29,7 @@
  *    The ground is flat: slope and contour are ZERO_VECTOR, the normal is <0,0,1>. llWind is ZERO_VECTOR. llGetRegionFlags is
  *    REGION_FLAG_ALLOW_DIRECT_TELEPORT. llScriptDanger is FALSE on the sandbox's parcel and off the region; TRUE on a parcel
  *    with a script danger, in a region with REGION_FLAG_SANDBOX, or when the parcel does not let everybody run scripts or build.
- *    llGetSPMaxMemory is 0 (the profiler, llScriptProfiler, is not supported, so nothing was ever profiled).
+ *    llGetSPMaxMemory is 0 until llScriptProfiler profiled the script (step 19).
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -135,7 +135,7 @@ void LslSteps18Test::supportedNow()
     QVERIFY2(Builtins::function(name)->supported, name);
   }
   // the examples of "not supported yet" in the other tests
-  for (const char* name : {"llGetSimStats", "llScriptProfiler"})
+  for (const char* name : {"llNavigateTo"})
     QVERIFY2(Builtins::function(name) && !Builtins::function(name)->supported, name);
 }
 

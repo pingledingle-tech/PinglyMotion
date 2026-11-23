@@ -110,7 +110,11 @@ enum class Fn
   // step 18: physics reads and settings, rotation targets, llBreakLink, ground and region reads
   GetAccel, GetCenterOfMass, GetGeometricCenter, GetMassMKS, GetOmega, GetPhysicsMaterial, SetPhysicsMaterial, GetTorque, SetTorque,
   SetForceAndTorque, SetAngularVelocity, RotTarget, RotTargetRemove, BreakLink, DetectedGrab, EdgeOfWorld, GroundContour,
-  GroundNormal, GroundSlope, GetRegionFlags, Wind, ScriptDanger, GetSPMaxMemory
+  GroundNormal, GroundSlope, GetRegionFlags, Wind, ScriptDanger, GetSPMaxMemory,
+  // step 19: the key-value store, the experience functions, simulator statistics, the profiler and estate access
+  CreateKeyValue, ReadKeyValue, UpdateKeyValue, DeleteKeyValue, DataSizeKeyValue, KeyCountKeyValue, KeysKeyValue,
+  AgentInExperience, GetExperienceDetails, GetExperienceErrorMessage, RequestExperiencePermissions,
+  GetSimStats, ScriptProfiler, ManageEstateAccess
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -314,7 +318,13 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llGetTextureOffset", Fn::GetTextureOffset}, {"llGetTextureRot", Fn::GetTextureRot}, {"llGetTextureScale", Fn::GetTextureScale},
   {"llGetMinScaleFactor", Fn::GetMinScaleFactor}, {"llGetMaxScaleFactor", Fn::GetMaxScaleFactor}, {"llScaleByFactor", Fn::ScaleByFactor},
   {"llGetObjectAnimationNames", Fn::GetObjectAnimationNames}, {"llStartObjectAnimation", Fn::StartObjectAnimation},
-  {"llStopObjectAnimation", Fn::StopObjectAnimation}
+  {"llStopObjectAnimation", Fn::StopObjectAnimation},
+  // step 19
+  {"llCreateKeyValue", Fn::CreateKeyValue}, {"llReadKeyValue", Fn::ReadKeyValue}, {"llUpdateKeyValue", Fn::UpdateKeyValue},
+  {"llDeleteKeyValue", Fn::DeleteKeyValue}, {"llDataSizeKeyValue", Fn::DataSizeKeyValue}, {"llKeyCountKeyValue", Fn::KeyCountKeyValue},
+  {"llKeysKeyValue", Fn::KeysKeyValue}, {"llAgentInExperience", Fn::AgentInExperience}, {"llGetExperienceDetails", Fn::GetExperienceDetails},
+  {"llGetExperienceErrorMessage", Fn::GetExperienceErrorMessage}, {"llRequestExperiencePermissions", Fn::RequestExperiencePermissions},
+  {"llGetSimStats", Fn::GetSimStats}, {"llScriptProfiler", Fn::ScriptProfiler}, {"llManageEstateAccess", Fn::ManageEstateAccess}
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1581,6 +1591,94 @@ void applyImpulse(World& w, double now, const float impulse[3], bool local)
 // third gap list run, step 4: llSetRegionPos moves the whole object to a region position with no 10 m limit (the wiki
 // documents none). FALSE (and no move) for a worn object, a physical one (STATUS_PHYSICS) and a target outside
 // x and y -10..266 and z 0..4096. Not modelled: the ground snap for a target below the terrain.
+// step 19: llGetSimStats. A healthy, quiet region with canned numbers (the same in every run); the agent and script counts are
+// the world's own. A number that is no SIM_STAT_* gives 0.0 (the wiki does not say).
+float simStat(const World& w, int stat)
+{
+  switch (stat)
+  {
+    case 0: return 0.0f;                          // SIM_STAT_PCT_CHARS_STEPPED: no pathfinding characters
+    case 1: return w.region().fps;                // SIM_STAT_PHYSICS_FPS: the same as llGetRegionFPS
+    case 2: return 10.0f;                         // SIM_STAT_AGENT_UPDATES
+    case 3: return 22.0f;                         // SIM_STAT_FRAME_MS
+    case 4: return 0.5f;                          // SIM_STAT_NET_MS
+    case 5: return 4.0f;                          // SIM_STAT_OTHER_MS
+    case 6: return 1.5f;                          // SIM_STAT_PHYSICS_MS
+    case 7: return 1.0f;                          // SIM_STAT_AGENT_MS
+    case 8: return 0.25f;                         // SIM_STAT_IMAGE_MS
+    case 9: return 2.0f;                          // SIM_STAT_SCRIPT_MS
+    case 10: return float(w.agents().size());     // SIM_STAT_AGENT_COUNT
+    case 11: return 0.0f;                         // SIM_STAT_CHILD_AGENT_COUNT
+    case 12: return float(w.scriptCount());       // SIM_STAT_ACTIVE_SCRIPT_COUNT
+    case 13: return 120.0f;                       // SIM_STAT_PACKETS_IN
+    case 14: return 150.0f;                       // SIM_STAT_PACKETS_OUT
+    case 15: return 0.0f;                         // SIM_STAT_ASSET_DOWNLOADS
+    case 16: return 0.0f;                         // SIM_STAT_ASSET_UPLOADS
+    case 17: return 0.0f;                         // SIM_STAT_UNACKED_BYTES
+    case 18: return 0.5f;                         // SIM_STAT_PHYSICS_STEP_MS
+    case 19: return 0.25f;                        // SIM_STAT_PHYSICS_SHAPE_MS
+    case 20: return 0.25f;                        // SIM_STAT_PHYSICS_OTHER_MS
+    case 21: return 500.0f;                       // SIM_STAT_SCRIPT_EPS
+    case 22: return 10.0f;                        // SIM_STAT_SPARE_MS
+    case 23: return 5.0f;                         // SIM_STAT_SLEEP_MS
+    case 24: return 0.25f;                        // SIM_STAT_IO_PUMP_MS
+    case 25: return 100.0f;                       // SIM_STAT_SCRIPT_RUN_PCT: every script ran
+    case 26: return 0.0f;                         // SIM_STAT_AI_MS
+    default: return 0.0f;
+  }
+}
+
+// step 19: llManageEstateAccess. permissions and permissionKey are the script's (PERMISSION_SILENT_ESTATE_MANAGEMENT, 0x4000,
+// granted by the owner, means the owner is not told). True on success.
+bool manageEstateAccess(World& w, double now, int permissions, const QString& permissionKey, int action, const QString& id)
+{
+  static const QString DEFAULT_ESTATE_OWNER = "a2e76fcd-9360-4f6d-a924-000000000001";   // the owner of a plain World and of the Sandbox
+  static const QRegularExpression uuid("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+  static const QString NULL_KEY = "00000000-0000-0000-0000-000000000000";
+  const qint32 DEBUG_CHANNEL = 0x7FFFFFFF;
+  EstateState& e = w.estate();
+  const QString owner = w.ownerKey();
+  auto note = [&](const QString& text) { w.log(now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", text}}); };
+  while (!e.calls.empty() && e.calls.front() <= now - EstateState::THROTTLE_SECONDS) e.calls.pop_front();
+  if (int(e.calls.size()) >= EstateState::THROTTLE_CALLS) return false;
+  e.calls.push_back(now);
+  QStringList* list = nullptr;
+  bool add = false;
+  switch (action)
+  {
+    case 0x4: list = &e.allowedAgents; add = true; break;
+    case 0x8: list = &e.allowedAgents; break;
+    case 0x10: list = &e.allowedGroups; add = true; break;
+    case 0x20: list = &e.allowedGroups; break;
+    case 0x40: list = &e.bannedAgents; add = true; break;
+    case 0x80: list = &e.bannedAgents; break;
+    default: return false;
+  }
+  if (!uuid.match(id).hasMatch() || id == NULL_KEY) return false;
+  if (e.mainland)
+  {
+    note("llManageEstateAccess does not work on mainland");
+    return false;
+  }
+  const QString estateOwner = e.owner.isEmpty() ? DEFAULT_ESTATE_OWNER : e.owner;
+  if (owner != estateOwner && !e.managers.contains(owner))
+  {
+    note("llManageEstateAccess object owner must manage estate.");
+    return false;
+  }
+  bool changed;
+  if (add)
+  {
+    changed = !list->contains(id);
+    if (changed) list->append(id);
+  }
+  else changed = list->removeAll(id) > 0;
+  const bool silent = (permissions & 0x4000) && permissionKey == owner;
+  if (!w.logFull())
+    w.log(now, QJsonObject{{"type", "estate_access"}, {"action", action}, {"id", id}, {"changed", changed}, {"owner_notified", !silent}});
+  return true;
+}
+
 int setRegionPos(World& w, double now, const float target[3])
 {
   const char* refused = nullptr;
@@ -4971,7 +5069,117 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       const bool danger = r.parcelScriptDanger != 0 || (r.regionFlags & 0x100) || !(r.parcelFlags & 0x2) || !(r.parcelFlags & 0x40);
       return Value::integer(danger ? 1 : 0);
     }
-    case Fn::GetSPMaxMemory: return Value::integer(0);   // the profiler (llScriptProfiler) is not supported, so no run was ever profiled
+    case Fn::GetSPMaxMemory:
+      // 0 until llScriptProfiler(PROFILE_SCRIPT_MEMORY) ran; then the most memory the script used since (it stays after PROFILE_NONE)
+      if (m_profiling && m_memory > m_spPeak) m_spPeak = m_memory;
+      return Value::integer(qint32(qMin<qint64>(m_spPeak, std::numeric_limits<qint32>::max())));
+    // -------------------------------------------- step 19: the key-value store, experiences, simulator statistics, profiler, estate
+    case Fn::CreateKeyValue:
+    case Fn::ReadKeyValue:
+    case Fn::UpdateKeyValue:
+    case Fn::DeleteKeyValue:
+    case Fn::DataSizeKeyValue:
+    case Fn::KeyCountKeyValue:
+    case Fn::KeysKeyValue:
+    {
+      ExperienceState& x = m_world.experience();
+      int error = ExperienceState::None;
+      QString payload;
+      switch (*it)
+      {
+        case Fn::CreateKeyValue: error = x.create(a[0].s, a[1].s); payload = a[1].s; break;
+        case Fn::ReadKeyValue: error = x.read(a[0].s, payload); break;
+        case Fn::UpdateKeyValue: error = x.update(a[0].s, a[1].s, a[2].i != 0, a[3].s); payload = a[1].s; break;
+        case Fn::DeleteKeyValue: error = x.remove(a[0].s, payload); break;
+        case Fn::DataSizeKeyValue:
+          error = x.ready();
+          if (error == ExperienceState::None) payload = QString("%1,%2").arg(x.used()).arg(x.quota);
+          break;
+        case Fn::KeyCountKeyValue:
+          error = x.ready();
+          if (error == ExperienceState::None) payload = QString::number(x.store.size());
+          break;
+        default:   // llKeysKeyValue(first, count)
+        {
+          error = x.ready();
+          if (error != ExperienceState::None) break;
+          if (a[0].i < 0 || a[1].i < 1) { error = ExperienceState::InvalidParameters; break; }
+          if (a[0].i >= x.store.size()) { error = ExperienceState::KeyNotFound; break; }
+          int skipped = 0, taken = 0;
+          for (auto kv = x.store.begin(); kv != x.store.end() && taken < a[1].i; ++kv)
+          {
+            if (skipped++ < a[0].i) continue;
+            if (payload.size() + (taken ? 1 : 0) + kv.key().size() > ExperienceState::MAX_KEYS_CHARS) break;
+            payload += (taken ? "," : "") + kv.key();
+            ++taken;
+          }
+          break;
+        }
+      }
+      const QString id = nextKey();
+      const QString result = ExperienceState::answer(error, payload);
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"query", id}, {"result", World::clip(result)}});
+      queueEvent(Event{"dataserver", {Value::key(id), Value::string(result)}, QString(), QString()});
+      return Value::key(id);
+    }
+    case Fn::AgentInExperience:
+    {
+      const ExperienceState& x = m_world.experience();
+      const bool in = x.present && x.state == ExperienceState::None && x.members.contains(a[0].s) && m_world.agents().contains(a[0].s);
+      return Value::integer(in ? 1 : 0);
+    }
+    case Fn::GetExperienceDetails:
+    {
+      // the experience of the world, asked for by its key or by NULL_KEY; no experience, or another key, gives the empty list
+      const ExperienceState& x = m_world.experience();
+      std::vector<Value> out;
+      if (x.present && (a[0].s == NULL_KEY || a[0].s == x.key))
+      {
+        out.push_back(Value::string(x.name));
+        out.push_back(Value::key(x.owner.isEmpty() ? m_world.ownerKey() : x.owner));
+        out.push_back(Value::key(x.key));
+        out.push_back(Value::integer(x.state));
+        out.push_back(Value::string(ExperienceState::errorMessage(x.state)));
+        out.push_back(Value::key(x.group));
+      }
+      return Value::makeList(std::move(out));
+    }
+    case Fn::GetExperienceErrorMessage: return Value::string(ExperienceState::errorMessage(a[0].i));
+    case Fn::RequestExperiencePermissions:
+    {
+      const ExperienceState& x = m_world.experience();
+      const QString agent = a[0].s;
+      int denied = 0;
+      if (!x.present) denied = ExperienceState::NoExperience;
+      else if (x.state != ExperienceState::None) denied = x.state;
+      else if (!m_world.agents().contains(agent))
+      {
+        // like llRequestPermissions: no avatar of the sandbox has that key, so nobody is asked
+        m_world.log(m_now, QJsonObject{{"type", "experience"}, {"op", "request_permissions"}, {"agent", agent}, {"result", "nobody"},
+                                       {"note", "The sandbox has no avatar with that key; nobody was asked."}});
+        return Value();
+      }
+      else if (x.blocked.contains(agent)) denied = ExperienceState::NotPermitted;
+      const bool member = !denied && x.members.contains(agent);
+      if (!denied && !member && !m_experienceAsked.contains(agent) && m_experienceAsked.size() < MAX_EXPERIENCE_REQUESTS) m_experienceAsked << agent;
+      m_world.log(m_now, QJsonObject{{"type", "experience"}, {"op", "request_permissions"}, {"agent", agent},
+                                     {"result", denied ? "denied" : (member ? "granted" : "asked")}, {"reason", denied}});
+      if (denied) queueEvent(Event{"experience_permissions_denied", {Value::key(agent), Value::integer(denied)}, QString(), QString()});
+      else if (member) queueEvent(Event{"experience_permissions", {Value::key(agent)}, QString(), QString()});
+      return Value();
+    }
+    case Fn::GetSimStats: return Value::number(simStat(m_world, a[0].i));
+    case Fn::ScriptProfiler:
+      // PROFILE_SCRIPT_MEMORY (bit 0) starts profiling memory (the peak starts at the memory used now); any other value, PROFILE_NONE
+      // included, stops it and keeps the peak
+      if (a[0].i & 1)
+      {
+        if (!m_profiling) { m_profiling = true; m_spPeak = m_memory; }
+      }
+      else m_profiling = false;
+      return Value();
+    case Fn::ManageEstateAccess: return Value::integer(manageEstateAccess(m_world, m_now, m_permissions, m_permissionKey, a[0].i, a[1].s) ? 1 : 0);
 
     case Fn::SetRegionPos: return Value::integer(setRegionPos(m_world, m_now, a[0].f));
     case Fn::ListStatistics: return Value::number(listStatistics(a[0].i, a[1].list));

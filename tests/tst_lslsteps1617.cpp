@@ -115,8 +115,8 @@ void LslSteps1617Test::supportedNow()
     QVERIFY2(Builtins::function(name) != nullptr, name);
     QVERIFY2(Builtins::function(name)->supported, name);
   }
-  // llGetSimStats is the unsupported example; llWarp2Pos is no LSL function
-  QVERIFY(!Builtins::function("llGetSimStats")->supported);
+  // llNavigateTo is the unsupported example; llWarp2Pos is no LSL function
+  QVERIFY(!Builtins::function("llNavigateTo")->supported);
   QVERIFY(Builtins::function("llWarp2Pos") == nullptr);
 }
 
@@ -325,7 +325,7 @@ void LslSteps1617Test::inputErrors_data()
   QTest::addColumn<QString>("input");
   QTest::addColumn<QString>("message");
   QTest::newRow("kind") << "{\"type\":\"remote_data\",\"kind\":\"say\"}" << "Input 1: \"kind\" must be \"request\" or \"reply\".";
-  QTest::newRow("kind elsewhere") << "{\"type\":\"touch\",\"kind\":\"request\"}" << "Input 1: \"kind\" is only for chat and remote_data.";
+  QTest::newRow("kind elsewhere") << "{\"type\":\"touch\",\"kind\":\"request\"}" << "Input 1: \"kind\" is only for chat, remote_data and experience.";
   QTest::newRow("idata elsewhere") << "{\"type\":\"chat\",\"idata\":1}" << "Input 1: \"idata\" is only for remote_data.";
   QTest::newRow("idata text") << "{\"type\":\"remote_data\",\"idata\":\"x\"}" << "Input 1: \"idata\" must be a whole number.";
   QTest::newRow("channel_key elsewhere") << "{\"type\":\"touch\",\"channel_key\":\"abc\"}" << "Input 1: \"channel_key\" is only for remote_data.";

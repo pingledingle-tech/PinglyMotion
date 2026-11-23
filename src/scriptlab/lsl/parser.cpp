@@ -1225,7 +1225,9 @@ bool Parser::eventIsRaised(const QString& name)
                                          "collision_start", "collision_end", "collision", "land_collision_start", "land_collision_end", "land_collision",
                                          "moving_start", "moving_end", "at_target", "not_at_target",
                                          // step 18: raised by the rotation targets of llRotTarget after a "step" input
-                                         "at_rot_target", "not_at_rot_target"};
+                                         "at_rot_target", "not_at_rot_target",
+                                         // step 19: raised by llRequestExperiencePermissions
+                                         "experience_permissions", "experience_permissions_denied"};
   return raised.contains(name);
 }
 

@@ -127,6 +127,10 @@ class Interpreter
     // queues remote_data(REMOTE_DATA_REPLY, channel, message, sender, idata, sdata) for a message llSendRemoteData sent;
     // false, with nothing queued, for an unknown message
     bool remoteDataReply(const QString& message, const QString& sender, int idata, const QString& sdata);
+    // Step 19: an avatar answered a llRequestExperiencePermissions that waits for it: queues experience_permissions(agent) for
+    // reason 0 (XP_ERROR_NONE) or experience_permissions_denied(agent, reason); false, with nothing queued, when no request
+    // of this script waits for that avatar
+    bool experienceAnswer(const QString& agent, int reason);
     // queues money(payer, amount)
     void moneyEvent(const QString& id, int amount);
     // Second gap list, step 6, part 2: synthetic collision-family events for testing. There is no motion model, so
@@ -235,6 +239,12 @@ class Interpreter
     std::vector<TargetEntry> m_targets;   // llTarget: this script's position targets
     int m_nextTarget = 1;                 // the handle the next llTarget gives (the first is 1)
     int m_memoryLimit = Limits::SCRIPT_MEMORY_MAX;   // llGetMemoryLimit / llSetMemoryLimit
+    // step 19: avatars whose answer to llRequestExperiencePermissions is awaited, and llScriptProfiler: whether memory is being
+    // profiled and the most memory the script used since (checked at every statement and at llGetSPMaxMemory)
+    static constexpr int MAX_EXPERIENCE_REQUESTS = 64;
+    QStringList m_experienceAsked;
+    bool m_profiling = false;
+    qint64 m_spPeak = 0;
     int addTarget(const float pos[3], float range);
     struct RotTargetEntry { int handle; float rot[4]; float error; };
     std::vector<RotTargetEntry> m_rotTargets;   // llRotTarget: this script's rotation targets
