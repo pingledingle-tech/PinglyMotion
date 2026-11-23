@@ -910,7 +910,7 @@ void Sandbox::deliver(const SandboxInput& input)
       // collision_start or collision_end handler get it; when none does, the root's (as touches are passed on).
       const int link = input.link > 0 ? input.link : 1;
       entry["id"] = key;
-      entry["phase"] = input.stage;
+      if (!input.stage.isEmpty()) entry["phase"] = input.stage;
       if (input.link > 0) entry["link"] = input.link;
       if (link > o.spec.prims)
       {
@@ -918,8 +918,8 @@ void Sandbox::deliver(const SandboxInput& input)
         m_log.log(t, entry);
         return;
       }
-      const bool end = input.stage == "end";
-      const QString eventName = end ? "collision_end" : "collision_start";
+      // steps 10-12 of the third gap-list run: no "phase" is the continuous collision event (while colliding)
+      const QString eventName = input.stage == "start" ? "collision_start" : (input.stage == "end" ? "collision_end" : "collision");
       std::vector<int> hit;
       for (int pass = 0; pass < 2 && hit.empty(); ++pass)
         for (int i = 0; i < o.slotCount; ++i)
@@ -929,7 +929,7 @@ void Sandbox::deliver(const SandboxInput& input)
         }
       m_log.log(t, entry);
       const int hitLink = o.spec.prims == 1 ? 0 : link;
-      for (int i : hit) m_slots[size_t(i)].interp->collisionEvent(key, name, hitLink, end);
+      for (int i : hit) m_slots[size_t(i)].interp->collisionEvent(key, name, hitLink, eventName);
       return;
     }
     if (input.type == "land_collision")

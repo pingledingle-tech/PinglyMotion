@@ -126,7 +126,7 @@ struct SandboxInput
   int step = 0;
   // second gap list, step 6, part 2: a synthetic collision-family event for testing (there is no motion model, so
   // llDetected* data and the vector arguments are exactly as given here, nothing is simulated). "stage" is "start"
-  // or "end" for collision and moving, or "start", "end" or empty (the continuous land_collision) for land_collision.
+  // or "end" for moving, or "start", "end" or empty (the continuous collision or land_collision) for collision and land_collision.
   QString stage;
   float pos[3] = {0.0f, 0.0f, 0.0f};        // land_collision*: the event's own vector argument
   // at_target: the event's own arguments (a manual input; llTarget's own targets raise it after a step)

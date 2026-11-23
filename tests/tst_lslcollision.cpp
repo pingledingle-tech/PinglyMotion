@@ -142,8 +142,10 @@ void LslCollisionTest::atTargetAndNotAtTarget()
 void LslCollisionTest::refusesBadFields()
 {
   auto error = [](const QJsonObject& input) { return runSource("default { state_entry() { } }", QJsonArray{input})["error"].toString(); };
-  QCOMPARE(error(QJsonObject{{"type", "collision"}}), QString("Input 1: a collision input needs \"phase\": \"start\" or \"end\"."));
-  QCOMPARE(error(QJsonObject{{"type", "collision"}, {"phase", "sideways"}}), QString("Input 1: \"phase\" must be \"start\" or \"end\"."));
+  // a collision input without "phase" is the continuous collision event (steps 10 to 12 of the third run)
+  QCOMPARE(error(QJsonObject{{"type", "collision"}}), QString());
+  QCOMPARE(error(QJsonObject{{"type", "collision"}, {"phase", "sideways"}}),
+           QString("Input 1: \"phase\" must be \"start\" or \"end\" (leave it out for the continuous collision)."));
   QCOMPARE(error(QJsonObject{{"type", "moving"}}), QString("Input 1: a moving input needs \"phase\": \"start\" or \"end\"."));
   QCOMPARE(error(QJsonObject{{"type", "chat"}, {"phase", "start"}}), QString("Input 1: \"phase\" is only for collision, land_collision and moving."));
   QCOMPARE(error(QJsonObject{{"type", "land_collision"}}), QString("Input 1: a land_collision input needs \"pos\": [x, y, z] (the event's own vector argument)."));
@@ -156,8 +158,7 @@ void LslCollisionTest::refusesBadFields()
   QCOMPARE(error(QJsonObject{{"type", "at_target"}, {"tnum", 1}, {"targetpos", QJsonArray{0, 0, 0}}}),
            QString("Input 1: an at_target input needs \"ourpos\": [x, y, z] (where the object is now)."));
   QCOMPARE(error(QJsonObject{{"type", "chat"}, {"tnum", 1}}), QString("Input 1: \"tnum\" is only for at_target."));
-  QCOMPARE(error(QJsonObject{{"type", "collision"}, {"link", 2}}),
-           QString("Input 1: a collision input needs \"phase\": \"start\" or \"end\"."));
+  QCOMPARE(error(QJsonObject{{"type", "collision"}, {"link", 1}}), QString());
   // land_collision with no phase is the continuous event; that is fine
   QCOMPARE(error(QJsonObject{{"type", "land_collision"}, {"pos", QJsonArray{0, 0, 0}}}), QString());
 }
@@ -167,7 +168,7 @@ void LslCollisionTest::checkerKnowsTheEvents()
   for (const char* name : {"collision_start", "collision_end", "land_collision_start", "land_collision_end", "land_collision",
                             "moving_start", "moving_end", "at_target", "not_at_target", "transaction_result"})
     QVERIFY2(Parser::eventIsRaised(name), name);
-  QVERIFY(!Parser::eventIsRaised("collision"));   // plain collision needs real motion to repeat; not part of this step
+  QVERIFY(Parser::eventIsRaised("collision"));    // the continuous collision (input without "phase"), steps 10 to 12 of the third run
   const QJsonObject a = Control::check(QJsonObject{{"command", "lsl_check"}, {"source", R"lsl(
     default {
       collision_start(integer n) { } collision_end(integer n) { }
