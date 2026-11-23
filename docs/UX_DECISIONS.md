@@ -29,10 +29,14 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - The small preview picture animates only while the mouse hovers over a tile. No constant motion.
 - In the clickable mockup each tile draws its curve: time to the right, the pose from a dashed Start line to a dashed End line. The part of a curve that goes past End is drawn thicker, shaded, three times taller and marked "past End", so an overshoot can be seen at once (the project owner saw only the figures and not the overshoot in his test). On hover a dot runs along the curve and a small bar on the right shows how far the pose has come.
 
+**Built, UX phase 5 (23 November 2026):** the heading "How the move feels", a check mark on the current tile, the arrow keys in the row (Tab reaches the current tile), the reasons of a greyed-out row in its tips and the status line, and "Edit curve..." beside the tiles in Expert mode only, as in the mockup. Details: [EASING.md](EASING.md), "The row and the Edit curve window as in the mockup (UX phase 5)"; tests `tests/easingtiles`. Not built on purpose: the curve picture with the overshoot marked "past End"; showing the overshoot on the tiles is parked by the project owner (jobs list), so the tiles keep the approved figure and dot trail.
+
 ## 3. Curve editor
 
 - Opens as a small separate window from an "Edit curve" button (on the easing tile or the selected key).
 - Movable, resizable, can go on a second screen. Opens small on a laptop.
+
+**Built, UX phase 5 (23 November 2026):** the window "Edit curve" (`CurveEditorDialog` in `src/easingtiles.*`) opens from the "Edit curve..." button beside the tiles (Expert mode). It opens small the first time, then where it was last time with its size, also after a restart, checked against the screen it lands on (`DialogFit::remember` in `src/dialogfit.*`: never larger than that screen and with its title bar inside it). The curve works with the keyboard too (arrow keys move a handle, Space picks the other one). It is modal: it edits the pose change it was opened for. Tests: `tests/easingtiles`, `tests/usersettings`.
 
 ## 4. Teaching notes (like WAVE-01 to WAVE-06)
 
@@ -269,7 +273,7 @@ This is the one numbered list of interface steps ("UX step N" in issues and pull
 8. Timeline: select range, copy, Paste mirrored. Owner test: mirror a left-leg step into a right-leg step. Built in UX phase 3b (section 5), with automated tests (the left-leg step pasted mirrored as a right-leg step is one of them).
 9. Beginner / Expert mode, remembered. Owner test: switch, restart, mode kept.
 10. First-run welcome window. Automated test that it shows only once; owner test: look and wording.
-11. Curve window: opened from "Edit curve", movable, resizable, second screen; position kept after restart.
+11. Curve window: opened from "Edit curve", movable, resizable, second screen; position kept after restart. Built in UX phase 5 (section 3), with automated tests; how it feels goes to the combined review.
 12. Teaching-note strip under the timeline (wave notes), hide button. Built in UX phase 3c (section 4), with automated tests; its look goes to the combined review.
 13. Homepage and icon (separate track, does not touch the main window, may run in parallel).
 

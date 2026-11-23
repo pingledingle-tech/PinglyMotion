@@ -1,5 +1,5 @@
 Branch: job/easing-ux
-Status: active
+Status: done
 Pull request: #422
 Files:
 - src/easingtiles.*
@@ -16,6 +16,10 @@ Files:
 - docs/EASING.md
 - docs/DINGLE_FORMAT.md
 - docs/TEACHING_TEXTS.md
+- docs/UX_DECISIONS.md
+- docs/PRODUCT.md
+- docs/ROADMAP.md
+- translations/pinglymotion_en.ts
 
 ## What
 
