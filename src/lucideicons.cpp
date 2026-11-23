@@ -73,6 +73,8 @@ namespace
     {"refresh-cw",{"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8","M21 3v5h-5","M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16","M8 16H3v5"}},
     // <rect width="16" height="20" x="4" y="2" rx="2" />
     {"notebook-text",{"M2 6h4","M2 10h4","M2 14h4","M2 18h4","M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2v-16a2 2 0 0 1 2-2z","M9.5 8h5","M9.5 12H16","M9.5 16H14"}},
+    // the Script Lab folder tree (lane 1, job D): the object
+    {"box",{"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z","m3.3 7 8.7 5 8.7-5","M12 22V12"}},
     // the Selected joint panel (UX phase 2b): its title icon, the "Pick a joint"
     // card, Move and Pull with keys, the key count chip
     {"rotate-3d",{"M16.47214 7.52786 A 5 10 0 1 0 13 21.79796","m15.194 13.707 3.814 1.86-1.86 3.814",

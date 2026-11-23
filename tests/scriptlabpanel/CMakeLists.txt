@@ -74,3 +74,14 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_rlvsuggest_tests PRIVATE ${CMAKE_SOURCE
 TARGET_LINK_LIBRARIES (pinglymotion_rlvsuggest_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME rlvsuggest COMMAND pinglymotion_rlvsuggest_tests)
 SET_TESTS_PROPERTIES (rlvsuggest PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The folder as one object (lane 1, job D): the tree with icons, colour dots, sums and memory per script,
+# picking a script, the folder's limits, the maker guide, and the example scripts kept separate
+ADD_EXECUTABLE (pinglymotion_labtree_tests tst_labtree.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labtree_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_COMPILE_DEFINITIONS (pinglymotion_labtree_tests PRIVATE
+  PINGLYMOTION_DOCS_DIR="${CMAKE_SOURCE_DIR}/docs"
+  PINGLYMOTION_EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples")
+TARGET_LINK_LIBRARIES (pinglymotion_labtree_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME labtree COMMAND pinglymotion_labtree_tests)
+SET_TESTS_PROPERTIES (labtree PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

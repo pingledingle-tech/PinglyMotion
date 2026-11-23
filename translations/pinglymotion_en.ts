@@ -2109,6 +2109,181 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabFolderTree</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Kind</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The folder as one object: each subfolder is a prim. Click a script to show it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 KB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 errors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 warnings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 not run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 not run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 OK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Object, 1 prim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Object, %1 prims</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The top folder is one object, named after the folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Root prim, link 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prim, link %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The files right in the top folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The folder %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 error. Click to show it in the script.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 errors. Click to show them in the script.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not run: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 warning. Click to see it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 warnings. Click to see them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ran without errors.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LSL script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory of the script&apos;s values at the end of the run, a rough count. Code is not counted. A script may use up to 64 KB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notecard, 1 line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notecard, %1 lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>in 1 prim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>in %1 prims</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabSuggest</name>
     <message>
         <source>returns nothing</source>
@@ -6461,6 +6636,63 @@ Error: %2</source>
     </message>
     <message>
         <source>What the script did in the last run, in simulated seconds. Click an error or RLV line to show it in the script.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How to lay out the folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One folder is one object. Each subfolder is one prim.
+Files in the top folder or in Root form the root prim.
+Put scripts (.lsl) and notecards (.txt) in their prim&apos;s folder.
+Give every script and notecard its own name.
+Copy scripts from Second Life by hand: select all, copy, paste.
+The sandbox is never the same as Second Life. Test there last.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MyObject/        one object
+  Root/          the root prim
+    main.lsl
+    settings.txt   a notecard
+  Cuff_left/     another prim
+    cuff.lsl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder note: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder error, %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder note, %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the object %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>Error: the object %1 was not run (run %2): it breaks %n limit(s) or rule(s), listed under Errors and warnings.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Error: the object %1 was not run (run %2): %3 does not compile. Pick it in the tree to see why.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: the object %1 was not run (run %2). %3</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

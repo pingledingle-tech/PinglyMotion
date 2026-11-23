@@ -279,6 +279,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_labfolder_tests PRIVATE ${CMAKE_SOURCE_
 TARGET_LINK_LIBRARIES (pinglymotion_labfolder_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME labfolder COMMAND pinglymotion_labfolder_tests)
 
+# Script Lab lane 1, job E: props as prims (the colour and transparency the scripts give each prim)
+ADD_EXECUTABLE (pinglymotion_labtint_tests tst_labtint.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labtint_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_labtint_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME labtint COMMAND pinglymotion_labtint_tests)
+
 # Script Lab step 7 (#293): what a run does to the avatar, the animation lookup and the 3D view's preview
 ADD_EXECUTABLE (pinglymotion_labeffects_tests tst_labeffects.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_labeffects_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

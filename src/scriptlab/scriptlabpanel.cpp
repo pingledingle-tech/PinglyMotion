@@ -46,6 +46,7 @@
 
 #include "effectspreview.h"
 #include "labeditor.h"
+#include "labtree.h"
 #include "labwatcher.h"
 #include "lsl/control.h"
 #include "lsl/session.h"
@@ -709,6 +710,8 @@ void ScriptLabPanel::applyStyle()
   m_liveRestrictionsEmpty->setPalette(muted);
   m_inventoryEmpty->setPalette(muted);
   m_inventoryNote->setPalette(muted);
+  m_guideExample->setPalette(muted);
+  m_folderTree->applyStyle(dark);
   m_tabs->setTabIcon(LivePage, LucideIcons::icon(QStringLiteral("file-code"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
   if (m_tabs->count() > CommandsPage)
     m_tabs->setTabIcon(CommandsPage, LucideIcons::icon(QStringLiteral("terminal"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
@@ -1059,6 +1062,39 @@ void ScriptLabPanel::buildLivePage()
   layout->addWidget(m_effectsStatus);
   connect(m_effectsBox, &QCheckBox::toggled, this, &ScriptLabPanel::effectsToggled);
 
+  // --- the folder as one object (lane 1 job D): a tree with icons, colour dots, sums and memory
+  m_treeSection = addSection(QStringLiteral("tree"), tr("Object"), true, page, layout);
+  m_folderTree = new LabFolderTree(m_treeSection->body());
+  m_treeSection->bodyLayout()->addWidget(m_folderTree);
+  connect(m_folderTree, &LabFolderTree::scriptPicked, this, [this](const QString& file) { showScript(file); });
+
+  // --- the short maker guide, folded at first (charter P5)
+  m_guideSection = addSection(QStringLiteral("guide"), tr("How to lay out the folder"), false, page, layout);
+  m_guideText = new QLabel(tr("One folder is one object. Each subfolder is one prim.\n"
+                              "Files in the top folder or in Root form the root prim.\n"
+                              "Put scripts (.lsl) and notecards (.txt) in their prim's folder.\n"
+                              "Give every script and notecard its own name.\n"
+                              "Copy scripts from Second Life by hand: select all, copy, paste.\n"
+                              "The sandbox is never the same as Second Life. Test there last."),
+                           m_guideSection->body());
+  m_guideText->setObjectName("scriptLabGuideText");
+  m_guideText->setWordWrap(true);
+  m_guideText->setTextFormat(Qt::PlainText);
+  m_guideText->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_guideSection->bodyLayout()->addWidget(m_guideText);
+  m_guideExample = new QLabel(tr("MyObject/        one object\n"
+                                 "  Root/          the root prim\n"
+                                 "    main.lsl\n"
+                                 "    settings.txt   a notecard\n"
+                                 "  Cuff_left/     another prim\n"
+                                 "    cuff.lsl"),
+                              m_guideSection->body());
+  m_guideExample->setObjectName("scriptLabGuideExample");
+  m_guideExample->setTextFormat(Qt::PlainText);
+  m_guideExample->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+  m_guideExample->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_guideSection->bodyLayout()->addWidget(m_guideExample);
+
   // --- the script, read only, with line numbers
   m_scriptSection = addSection(QStringLiteral("script"), tr("Script"), true, page, layout);
   // the script in our own text box (lane 1, job F1): editable, Save runs it (labeditor.h)
@@ -1188,7 +1224,10 @@ void ScriptLabPanel::buildLivePage()
   setTabOrder(m_unwatch, m_runAgain);
   setTabOrder(m_runAgain, m_openEditor);
   setTabOrder(m_openEditor, m_effectsBox);
-  setTabOrder(m_effectsBox, m_scriptSection->header());
+  setTabOrder(m_effectsBox, m_treeSection->header());
+  setTabOrder(m_treeSection->header(), m_folderTree);
+  setTabOrder(m_folderTree, m_guideSection->header());
+  setTabOrder(m_guideSection->header(), m_scriptSection->header());
   setTabOrder(m_scriptSection->header(), m_editor->exampleButton());
   setTabOrder(m_editor->exampleButton(), m_editor->saveButton());
   setTabOrder(m_editor->saveButton(), m_editor->findButton());
@@ -1259,7 +1298,8 @@ bool ScriptLabPanel::tryExampleScripts()
     refreshLive();
     return false;
   }
-  if (!watchFolder(folder)) return false;
+  // the examples are separate scripts, not one object: each runs on its own
+  if (!watchWith(folder, QJsonObject())) return false;
   // the RLV example first, so the restrictions show at once
   if (m_watcher->scripts().contains(QStringLiteral("rlv_lock.lsl"))) m_watcher->runScript(QStringLiteral("rlv_lock.lsl"));
   return true;
@@ -1282,8 +1322,15 @@ void ScriptLabPanel::setWatcher(LabWatcher* watcher)
 
 bool ScriptLabPanel::watchFolder(const QString& folder)
 {
+  // the folder is one object (lane 1 job D): every save runs all its scripts together
+  return watchWith(folder, QJsonObject{{"linkset", true}});
+}
+
+bool ScriptLabPanel::watchWith(const QString& folder, const QJsonObject& options)
+{
   if (!m_watcher) return false;
-  const LabWatcher::Result result = m_watcher->watch(QDir::fromNativeSeparators(folder));
+  m_pickedFile.clear();
+  const LabWatcher::Result result = m_watcher->watch(QDir::fromNativeSeparators(folder), options);
   if (!result.ok())
   {
     m_refusal = tr("Error: %1").arg(result.error);
@@ -1297,6 +1344,7 @@ bool ScriptLabPanel::watchFolder(const QString& folder)
 
 void ScriptLabPanel::stopWatching()
 {
+  m_pickedFile.clear();
   if (m_watcher) m_watcher->unwatch();
   m_refusal.clear();
   refreshLive();
@@ -1332,6 +1380,9 @@ bool ScriptLabPanel::showLogLine(int logLine)
   const QTextBlock entry = m_runLog->document()->findBlockByNumber(logLine);
   if (!entry.isValid()) return false;
   const QString text = entry.text();
+  // a folder run: the line came from another script of the object, so show that script first
+  const QString from = m_logFiles.value(logLine);
+  if (!from.isEmpty() && from != m_shownFile && !showScript(from)) return false;
   static const QRegularExpression at(QStringLiteral("at line (\\d+), column (\\d+)"));
   const QRegularExpressionMatch m = at.match(text);
   if (m.hasMatch())
@@ -1420,6 +1471,15 @@ void ScriptLabPanel::styleLiveStatus()
                           .arg(text.left(colon + 1).toHtmlEscaped(), QLatin1String(t.text), text.mid(colon + 1).toHtmlEscaped()));
 }
 
+bool ScriptLabPanel::showScript(const QString& file)
+{
+  if (!m_watcher || !m_watcher->watching() || !m_watcher->linkset() || m_watcher->result(file).isEmpty()) return false;
+  m_pickedFile = file;
+  m_pickedRun = m_watcher->runCount();
+  refreshLive();
+  return m_shownFile == file;
+}
+
 bool ScriptLabPanel::runAgain()
 {
   if (!m_watcher || !m_watcher->watching() || m_shownFile.isEmpty() || m_watcher->absolutePath(m_shownFile).isEmpty()) return false;
@@ -1430,7 +1490,12 @@ bool ScriptLabPanel::runAgain()
 QString ScriptLabPanel::logLine(const QJsonObject& entry)
 {
   const QString type = entry.value("type").toString();
-  const QString time = QString::number(entry.value("t").toDouble(), 'f', 3) + QStringLiteral(" s  ");
+  QString time = QString::number(entry.value("t").toDouble(), 'f', 3) + QStringLiteral(" s  ");
+  // a folder run (lane 1 job D) names the source of each line: "main (Root): " or, for an input, "Root: "
+  const bool tagged = entry.contains("prim");
+  if (tagged)
+    time += entry.contains("script") ? QStringLiteral("%1 (%2): ").arg(entry.value("script").toString(), entry.value("prim").toString())
+                                     : QStringLiteral("%1: ").arg(entry.value("prim").toString());
   if (type == QLatin1String("owner_say")) return time + QStringLiteral("owner_say: ") + entry.value("text").toString();
   if (type == QLatin1String("say") || type == QLatin1String("whisper") || type == QLatin1String("shout") || type == QLatin1String("region_say"))
     return time + QStringLiteral("%1 on channel %2: %3").arg(type, fieldText(entry.value("channel")), entry.value("text").toString());
@@ -1451,8 +1516,10 @@ QString ScriptLabPanel::logLine(const QJsonObject& entry)
   // every other entry: its fields in a fixed order
   QStringList parts;
   const QStringList keys = entry.keys();
+  static const QStringList sourceKeys = {QStringLiteral("script"), QStringLiteral("prim"), QStringLiteral("file"), QStringLiteral("source")};
   for (const QString& key : keys)
-    if (key != QLatin1String("t") && key != QLatin1String("type")) parts << key + QStringLiteral("=") + fieldText(entry.value(key));
+    if (key != QLatin1String("t") && key != QLatin1String("type") && !(tagged && sourceKeys.contains(key)))
+      parts << key + QStringLiteral("=") + fieldText(entry.value(key));
   return time + type + (parts.isEmpty() ? QString() : QStringLiteral(": ") + parts.join(QStringLiteral(", ")));
 }
 
@@ -1498,7 +1565,22 @@ void ScriptLabPanel::refreshLive()
     w->setVisible(watching);
   updateWorldParts();
 
-  const QJsonObject last = watching ? m_watcher->lastResult() : QJsonObject();
+  // the folder as one object (lane 1 job D): the tree, and the script picked in it
+  const bool linkset = watching && m_watcher->linkset();
+  const QJsonObject folder = linkset ? m_watcher->folderResult() : QJsonObject();
+  m_folderTree->setFolderResult(folder);
+  m_treeSection->setVisible(linkset);
+  m_treeSection->setCount(m_folderTree->countText());
+  m_guideSection->setVisible(!watching || linkset);
+  updatePropTints();
+  int folderScripts = 0;
+  for (const QJsonValue& p : folder.value("linkset").toObject().value("prims").toArray())
+    folderScripts += int(p.toObject().value("scripts").toArray().size());
+  // a pick holds until the next run; then the editor follows the script whose save started it
+  const bool picked = linkset && !m_pickedFile.isEmpty() && m_pickedRun == m_watcher->runCount()
+                      && !m_watcher->result(m_pickedFile).isEmpty();
+  if (!picked) m_pickedFile.clear();
+  const QJsonObject last = !watching ? QJsonObject() : picked ? m_watcher->result(m_pickedFile) : m_watcher->lastResult();
   const QString file = last.value("file").toString();
 
   // the editor: it shows the script of the newest run, but never replaces unsaved edits
@@ -1530,6 +1612,7 @@ void ScriptLabPanel::refreshLive()
   m_scriptSection->setTitle(editorName.isEmpty() ? tr("Script") : tr("Script: %1").arg(editorName));
   m_scriptSection->setCount(m_editor->unsavedMark());
   m_openEditor->setEnabled(!m_shownFile.isEmpty());
+  if (QTreeWidgetItem* row = m_folderTree->itemForFile(m_shownFile)) m_folderTree->setCurrentItem(row);
   // Run again needs the shown script still in the folder
   const bool canRunAgain = !m_shownFile.isEmpty() && !m_watcher->absolutePath(m_shownFile).isEmpty();
   m_runAgain->setEnabled(canRunAgain);
@@ -1581,6 +1664,24 @@ void ScriptLabPanel::refreshLive()
     }
   }
   addProblems(last.value("warnings").toArray(), false);
+  // a folder run: the limits and rules the folder breaks (nothing ran), and what was left out
+  const auto addFolderProblems = [&](const QJsonArray& list, bool error)
+  {
+    for (const QJsonValue& value : list)
+    {
+      const QJsonObject p = value.toObject();
+      const QString where = p.value("file").toString();
+      const QString itemText = where.isEmpty() ? (error ? tr("Folder error: %1") : tr("Folder note: %1")).arg(p.value("message").toString())
+                                               : (error ? tr("Folder error, %1: %2") : tr("Folder note, %1: %2")).arg(where, p.value("message").toString());
+      QListWidgetItem* item = new QListWidgetItem(itemText, m_problems);
+      item->setForeground(error ? dangerColour(dark) : QColor(QString::fromLatin1(tokens(dark).warning)));
+      m_shownProblems << QJsonObject();   // no line to show
+      if (error) ++errorCount;
+      else ++warningCount;
+    }
+  };
+  addFolderProblems(folder.value("linkset").toObject().value("problems").toArray(), true);
+  addFolderProblems(folder.value("linkset").toObject().value("notes").toArray(), false);
   // the static warnings (lsl_lint) of a script that compiled: valid LSL that is most likely a mistake
   if (last.value("valid").toBool() && !text.isEmpty()) addProblems(lintWarnings(text), false);
   if (marksFit || shownPath.isEmpty()) m_editor->codeEdit()->setProblems(marksFit ? marks : QList<LabProblem>());
@@ -1588,7 +1689,8 @@ void ScriptLabPanel::refreshLive()
   if (m_editor->waitingForRun() && marksFit && last.value("run").toInt() > m_runAtSave)
   {
     QString notRun = last.value("read_error").toString();
-    if (notRun.isEmpty() && last.contains("not_run")) notRun = last.value("not_run").toString();
+    // a folder that did not run because of this script's own errors: the errors say it
+    if (notRun.isEmpty() && last.contains("not_run") && last.value("errors").toArray().isEmpty()) notRun = last.value("not_run").toString();
     m_editor->reportRun(errorCount, warningCount, notRun);
   }
   QStringList problemCount;
@@ -1598,8 +1700,16 @@ void ScriptLabPanel::refreshLive()
 
   // the event log of the run
   QStringList lines;
+  m_logFiles.clear();
   const QJsonArray runLog = run.value("log").toArray();
-  for (const QJsonValue& value : runLog) lines << logLine(value.toObject());
+  for (const QJsonValue& value : runLog)
+  {
+    QJsonObject entry = value.toObject();
+    // with one script in the folder every line has the same source, so it is not repeated on each line
+    if (folderScripts <= 1) entry.remove(QStringLiteral("prim"));
+    lines << logLine(entry);
+    m_logFiles << entry.value("file").toString();
+  }
   if (run.value("log_truncated").toBool()) lines << tr("(the log was cut here: the run wrote more than it keeps)");
   const QString logText = lines.join(QLatin1Char('\n'));
   if (m_runLog->toPlainText() != logText) m_runLog->setPlainText(logText);
@@ -1624,6 +1734,9 @@ void ScriptLabPanel::refreshLive()
     return;
   }
   const int runNumber = last.value("run").toInt();
+  // a folder of several scripts is named as the object; a folder of one script by its file, as before
+  const QString objectName = folder.value("linkset").toObject().value("object").toString();
+  const QString subject = linkset && folderScripts > 1 ? tr("the object %1").arg(objectName) : file;
   if (last.contains("read_error"))
   {
     setLiveStatus(tr("Error: %1 was not run (run %2). %3").arg(file).arg(runNumber).arg(last.value("read_error").toString()), 2);
@@ -1634,6 +1747,23 @@ void ScriptLabPanel::refreshLive()
   {
     setLiveStatus(tr("Error: %1 has %n error(s) and was not run (run %2). Fix the line shown below and save.", nullptr, errors)
                     .arg(file).arg(runNumber), 2);
+    return;
+  }
+  if (linkset && !folder.value("ok").toBool())
+  {
+    // the shown script is fine, but the folder did not run: a limit, or another script that does not compile
+    const int limits = int(folder.value("linkset").toObject().value("problems").toArray().size());
+    QStringList broken;
+    for (const QJsonValue& v : folder.value("check").toObject().value("scripts").toArray())
+      if (!v.toObject().value("valid").toBool()) broken << v.toObject().value("file").toString();
+    if (limits > 0)
+      setLiveStatus(tr("Error: the object %1 was not run (run %2): it breaks %n limit(s) or rule(s), listed under Errors and warnings.", nullptr, limits)
+                      .arg(objectName).arg(runNumber), 2);
+    else if (!broken.isEmpty())
+      setLiveStatus(tr("Error: the object %1 was not run (run %2): %3 does not compile. Pick it in the tree to see why.")
+                      .arg(objectName).arg(runNumber).arg(broken.join(QStringLiteral(", "))), 2);
+    else
+      setLiveStatus(tr("Error: the object %1 was not run (run %2). %3").arg(objectName).arg(runNumber).arg(folder.value("error").toString()), 2);
     return;
   }
   QString rlvText;
@@ -1652,11 +1782,11 @@ void ScriptLabPanel::refreshLive()
   }
   if (run.value("stopped").toBool())
   {
-    setLiveStatus(tr("Error: %1 ran and was stopped (run %2): %3").arg(file).arg(runNumber).arg(run.value("stop_reason").toString()) + rlvText, 2);
+    setLiveStatus(tr("Error: %1 ran and was stopped (run %2): %3").arg(subject).arg(runNumber).arg(run.value("stop_reason").toString()) + rlvText, 2);
     return;
   }
   setLiveStatus(tr("OK: %1 ran without errors (run %2), %n log line(s).", nullptr, int(run.value("log").toArray().size()))
-                  .arg(file).arg(runNumber) + rlvText, 1);
+                  .arg(subject).arg(runNumber) + rlvText, 1);
 }
 
 // --- Script Lab step 7 (issue 293): effects in the 3D view
@@ -1695,8 +1825,19 @@ void ScriptLabPanel::connectEffectsToWatcher()
   }
 }
 
+void ScriptLabPanel::updatePropTints()
+{
+  // props as prims (lane 1 job E): only while the effects are shown and the object is watched
+  const bool show = m_effectsBox && m_effectsBox->isChecked() && m_watcher && m_watcher->watching() && m_watcher->linkset();
+  const QList<LabTint::Tint> tints = show ? LabTint::fromFolder(m_watcher->folderResult()) : QList<LabTint::Tint>();
+  if (tints == m_propTints) return;
+  m_propTints = tints;
+  emit propTintsChanged();
+}
+
 void ScriptLabPanel::effectsToggled(bool on)
 {
+  updatePropTints();
   if (!m_effects) return;
   m_effects->setEnabled(on);
   // ticked: show the newest run at once, without waiting for the next save
