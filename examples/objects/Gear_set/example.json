@@ -1,0 +1,331 @@
+{
+  "format": 1,
+  "order": 2,
+  "object": "Gear_set",
+  "title": "Gear set",
+  "works_now": false,
+  "props": [
+    {
+      "name": "Root",
+      "shape": "box",
+      "joint": "",
+      "position": [
+        -20,
+        45,
+        0
+      ],
+      "scale": [
+        8,
+        8,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Wrist_left",
+      "shape": "torus",
+      "joint": "lHand",
+      "position": [
+        -1,
+        0,
+        0
+      ],
+      "scale": [
+        2.8,
+        2.8,
+        1.2
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ]
+    },
+    {
+      "name": "Wrist_right",
+      "shape": "torus",
+      "joint": "rHand",
+      "position": [
+        1,
+        0,
+        0
+      ],
+      "scale": [
+        2.8,
+        2.8,
+        1.2
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ]
+    },
+    {
+      "name": "Ankle_left",
+      "shape": "torus",
+      "joint": "lFoot",
+      "position": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        3.4,
+        3.4,
+        1.2
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Ankle_right",
+      "shape": "torus",
+      "joint": "rFoot",
+      "position": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        3.4,
+        3.4,
+        1.2
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Collar",
+      "shape": "torus",
+      "joint": "neck",
+      "position": [
+        0,
+        1.5,
+        0
+      ],
+      "scale": [
+        5,
+        5,
+        1.6
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Hood",
+      "shape": "cone",
+      "joint": "head",
+      "position": [
+        0,
+        4,
+        0
+      ],
+      "scale": [
+        9,
+        9,
+        10
+      ],
+      "rotation": [
+        -90,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Gag",
+      "shape": "sphere",
+      "joint": "head",
+      "position": [
+        0,
+        0.9,
+        3.6
+      ],
+      "scale": [
+        1.6,
+        1.6,
+        1.6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Blindfold",
+      "shape": "torus",
+      "joint": "head",
+      "position": [
+        0,
+        3.1,
+        0.6
+      ],
+      "scale": [
+        8.2,
+        8.2,
+        1.4
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ]
+    }
+  ],
+  "guide": [
+    {
+      "id": "EXGEAR-01",
+      "part": "what",
+      "text": "A full set of gear in one object, with one HUD."
+    },
+    {
+      "id": "EXGEAR-02",
+      "part": "what",
+      "text": "Eight pieces: wrist cuffs, ankle cuffs, a collar, hood, gag and blindfold."
+    },
+    {
+      "id": "EXGEAR-03",
+      "part": "what",
+      "text": "Each piece is a folder with its own script and prop."
+    },
+    {
+      "id": "EXGEAR-04",
+      "part": "what",
+      "text": "The HUD tells every piece what to do. Each piece answers."
+    },
+    {
+      "id": "EXGEAR-05",
+      "part": "piece",
+      "text": "Root: the flat box beside the figure. It is the HUD."
+    },
+    {
+      "id": "EXGEAR-06",
+      "part": "piece",
+      "text": "Wrist_left and Wrist_right: the rings at the wrists."
+    },
+    {
+      "id": "EXGEAR-07",
+      "part": "piece",
+      "text": "Ankle_left and Ankle_right: the rings at the ankles."
+    },
+    {
+      "id": "EXGEAR-08",
+      "part": "piece",
+      "text": "Collar: the ring at the neck."
+    },
+    {
+      "id": "EXGEAR-09",
+      "part": "piece",
+      "text": "Hood: the cone over the head."
+    },
+    {
+      "id": "EXGEAR-10",
+      "part": "piece",
+      "text": "Gag: the small ball at the mouth."
+    },
+    {
+      "id": "EXGEAR-11",
+      "part": "piece",
+      "text": "Blindfold: the flat ring at the eyes."
+    },
+    {
+      "id": "EXGEAR-12",
+      "part": "word",
+      "text": "Root: the main prim of an object. Here it holds the HUD."
+    },
+    {
+      "id": "EXGEAR-13",
+      "part": "word",
+      "text": "Link message: how the prims of one object talk to each other."
+    },
+    {
+      "id": "EXGEAR-14",
+      "part": "word",
+      "text": "RLV: commands a script sends to your viewer, such as @detach=n."
+    },
+    {
+      "id": "EXGEAR-15",
+      "part": "word",
+      "text": "@detach=n: you cannot take the object off. The collar sends it."
+    },
+    {
+      "id": "EXGEAR-16",
+      "part": "word",
+      "text": "@sendchat=n: you cannot talk in open chat. The gag sends it."
+    },
+    {
+      "id": "EXGEAR-17",
+      "part": "step",
+      "text": "Press Watch folder. Pick examples, then objects, then Gear_set.",
+      "control": "Watch folder..."
+    },
+    {
+      "id": "EXGEAR-18",
+      "part": "step",
+      "text": "Tick Show effects in 3D view. Every piece turns green.",
+      "control": "Show effects in 3D view"
+    },
+    {
+      "id": "EXGEAR-19",
+      "part": "step",
+      "text": "Press Touch under Send input. The dialog buttons appear there.",
+      "control": "Touch"
+    },
+    {
+      "id": "EXGEAR-20",
+      "part": "step",
+      "text": "Press Lock all in the dialog.",
+      "control": "Lock all"
+    },
+    {
+      "id": "EXGEAR-21",
+      "part": "step",
+      "text": "Press Free all to open everything again.",
+      "control": "Free all"
+    },
+    {
+      "id": "EXGEAR-22",
+      "part": "see",
+      "text": "After Lock all, every piece turns red, and the HUD too."
+    },
+    {
+      "id": "EXGEAR-23",
+      "part": "see",
+      "text": "The log says: All 8 pieces are locked."
+    },
+    {
+      "id": "EXGEAR-24",
+      "part": "see",
+      "text": "RLV restrictions now lists detach and sendchat."
+    },
+    {
+      "id": "EXGEAR-25",
+      "part": "see",
+      "text": "After Free all, everything turns green and the list is empty."
+    },
+    {
+      "id": "EXGEAR-26",
+      "part": "next",
+      "text": "Open hood.lsl and change the red <1.0, 0.0, 0.0> to blue."
+    },
+    {
+      "id": "EXGEAR-27",
+      "part": "next",
+      "text": "Blue is <0.0, 0.0, 1.0>. Save, then press Touch and Lock all again."
+    }
+  ]
+}

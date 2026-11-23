@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "order": 3,
+  "object": "Timed_lock",
+  "title": "Timed lock",
+  "works_now": false,
+  "props": [
+    {
+      "name": "Timed_lock",
+      "shape": "torus",
+      "joint": "lHand",
+      "position": [
+        -1,
+        0,
+        0
+      ],
+      "scale": [
+        2.8,
+        2.8,
+        1.2
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ]
+    }
+  ],
+  "guide": [
+    {
+      "id": "EXTIMER-01",
+      "part": "what",
+      "text": "A cuff that locks when you touch it. It opens by itself after 5 seconds."
+    },
+    {
+      "id": "EXTIMER-02",
+      "part": "word",
+      "text": "State: a mode of the script. This one has default and locked."
+    },
+    {
+      "id": "EXTIMER-03",
+      "part": "word",
+      "text": "Timer: wakes the script every second, here to count down."
+    },
+    {
+      "id": "EXTIMER-04",
+      "part": "step",
+      "text": "Press Watch folder. Pick examples, then objects, then Timed_lock.",
+      "control": "Watch folder..."
+    },
+    {
+      "id": "EXTIMER-05",
+      "part": "step",
+      "text": "Tick Show effects in 3D view.",
+      "control": "Show effects in 3D view"
+    },
+    {
+      "id": "EXTIMER-06",
+      "part": "step",
+      "text": "Press Touch under Send input.",
+      "control": "Touch"
+    },
+    {
+      "id": "EXTIMER-07",
+      "part": "see",
+      "text": "The ring at the left wrist turns red."
+    },
+    {
+      "id": "EXTIMER-08",
+      "part": "see",
+      "text": "The log counts down: 4 seconds left, 3 seconds left."
+    },
+    {
+      "id": "EXTIMER-09",
+      "part": "see",
+      "text": "After 5 seconds the ring turns green again."
+    },
+    {
+      "id": "EXTIMER-10",
+      "part": "next",
+      "text": "Change SECONDS = 5 to SECONDS = 10 and save. Touch it again."
+    }
+  ]
+}

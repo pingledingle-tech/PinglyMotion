@@ -1,0 +1,91 @@
+{
+  "format": 1,
+  "order": 0,
+  "object": "First_colour",
+  "title": "First colour",
+  "works_now": true,
+  "props": [
+    {
+      "name": "Box 0",
+      "shape": "box",
+      "joint": "",
+      "position": [
+        10,
+        40,
+        10
+      ],
+      "scale": [
+        10,
+        10,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "guide": [
+    {
+      "id": "EXCOLOUR-01",
+      "part": "what",
+      "text": "The smallest example. It works with what the program has now."
+    },
+    {
+      "id": "EXCOLOUR-02",
+      "part": "what",
+      "text": "The script in folder Box 0 turns the prop Box 0 red."
+    },
+    {
+      "id": "EXCOLOUR-03",
+      "part": "word",
+      "text": "Prim: one part of an object. Each folder is one prim."
+    },
+    {
+      "id": "EXCOLOUR-04",
+      "part": "step",
+      "text": "Start with no props. Pick Props in the Joints panel.",
+      "control": "Props"
+    },
+    {
+      "id": "EXCOLOUR-05",
+      "part": "step",
+      "text": "On Props, press the box button, the first shape button. It is Box 0.",
+      "control": "Props"
+    },
+    {
+      "id": "EXCOLOUR-06",
+      "part": "step",
+      "text": "Open Script Lab and pick Live scripts.",
+      "control": "Live scripts"
+    },
+    {
+      "id": "EXCOLOUR-07",
+      "part": "step",
+      "text": "Press Watch folder. Pick examples, then objects, then First_colour.",
+      "control": "Watch folder..."
+    },
+    {
+      "id": "EXCOLOUR-08",
+      "part": "step",
+      "text": "Tick Show effects in 3D view.",
+      "control": "Show effects in 3D view"
+    },
+    {
+      "id": "EXCOLOUR-09",
+      "part": "see",
+      "text": "The box turns red. The log says: Box 0 is red now."
+    },
+    {
+      "id": "EXCOLOUR-10",
+      "part": "next",
+      "text": "Open colour.lsl. Change <1.0, 0.0, 0.0> to <0.0, 1.0, 0.0> and save."
+    },
+    {
+      "id": "EXCOLOUR-11",
+      "part": "next",
+      "text": "The box turns green. The three numbers are red, green and blue."
+    }
+  ]
+}

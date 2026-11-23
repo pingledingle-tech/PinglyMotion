@@ -366,6 +366,19 @@ The look (the grey figure, the tags, the Figures box, the header rows) goes to t
 - Whole-pose buttons (Flip, T-pose, Reset all) in one small row at the bottom of the Joints panel, matching the mockup and the UX phase 2a queue item (issue 74): every joint of the current frame, not only the selected one. L→R, R→L and a "Poses…" picker from an earlier draft of this page are not built: a single Flip already only changes a joint whose source rotation moved from rest, so a separate L→R/R→L pair would do the same thing with an extra click; a pose picker overlaps the later reference library browser step (track 1, [PRODUCT.md](PRODUCT.md)), left for that step to decide.
 - Plus "Paste mirrored" on the timeline (see 5).
 
+## 6n. Script Lab example objects and their guides (job E1, 23 November 2026)
+
+Approved by the project owner, 23 November 2026, 21:02 (no mockup), with his notes of 21:06 to 21:30 in the jobs list (issue 74). Details: [EXAMPLES.md](EXAMPLES.md).
+
+- **One folder is one object, one subfolder one prim, one prim one prop of the same name.** So the folder tree, the props and the guide use the same names (`Wrist_left`, `Collar`, ...). The HUD sits in `Root`; its prop is a flat box beside the figure.
+- **The program's four shapes only:** a cuff, a collar and the blindfold are rings (torus), the hood a cone, the gag a small sphere, a HUD and a board a flat box.
+- **One visible result first:** the main example's first real action, Lock all, turns every piece red at once; Free all turns them green. Colour is never the only sign: the log line and the RLV restrictions list say it in words (charter P10).
+- **Inside one object, prims talk with link messages,** not chat: one object does not hear its own chat. The guide explains the word in one line.
+- **Guides:** at most five steps, each a verb with a control that exists; then what you should see, what to change next, and one-line meanings of the new words. Stored as data (`example.json`) so the program can show them; the same texts in EXAMPLES.md, checked by `tools/check_texts.py`.
+- **A first example that works today:** First colour uses the name the program gives the first box, `Box 0`, because a prop cannot be renamed yet.
+- **Honest limits, said in the guide data too** ("What the program can do now"): props are not made from prims, a click in the 3D view is not a touch, props do not move with scripts, and Send input does not yet reach a watched folder.
+- **The joint is stored as a name** (`lHand`), not as the number a `.prp` file uses, because that number changes with the skeleton.
+
 ## 8. Beginner and expert
 
 - Starts in Beginner mode by default; Expert mode can be switched on (shows curves, IK, all tracks and so on).

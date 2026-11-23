@@ -1,0 +1,150 @@
+{
+  "format": 1,
+  "order": 5,
+  "object": "Work_system",
+  "title": "Work system",
+  "works_now": false,
+  "props": [
+    {
+      "name": "Root",
+      "shape": "box",
+      "joint": "",
+      "position": [
+        -20,
+        45,
+        0
+      ],
+      "scale": [
+        8,
+        8,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Bottle",
+      "shape": "cone",
+      "joint": "",
+      "position": [
+        20,
+        5,
+        10
+      ],
+      "scale": [
+        6,
+        6,
+        12
+      ],
+      "rotation": [
+        -90,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Score_board",
+      "shape": "box",
+      "joint": "",
+      "position": [
+        20,
+        30,
+        10
+      ],
+      "scale": [
+        10,
+        6,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "guide": [
+    {
+      "id": "EXWORK-01",
+      "part": "what",
+      "text": "One HUD drives two other parts, a bottle and a score board."
+    },
+    {
+      "id": "EXWORK-02",
+      "part": "what",
+      "text": "Each press of Work fills the bottle a quarter. A full bottle scores a point."
+    },
+    {
+      "id": "EXWORK-03",
+      "part": "piece",
+      "text": "Root: the flat box beside the figure. It is the HUD."
+    },
+    {
+      "id": "EXWORK-04",
+      "part": "piece",
+      "text": "Bottle: the cone standing on the floor."
+    },
+    {
+      "id": "EXWORK-05",
+      "part": "piece",
+      "text": "Score_board: the flat box above the bottle."
+    },
+    {
+      "id": "EXWORK-06",
+      "part": "word",
+      "text": "Alpha: how solid a prim is. 1 is solid, 0 is clear."
+    },
+    {
+      "id": "EXWORK-07",
+      "part": "step",
+      "text": "Press Watch folder. Pick examples, then objects, then Work_system.",
+      "control": "Watch folder..."
+    },
+    {
+      "id": "EXWORK-08",
+      "part": "step",
+      "text": "Tick Show effects in 3D view.",
+      "control": "Show effects in 3D view"
+    },
+    {
+      "id": "EXWORK-09",
+      "part": "step",
+      "text": "Press Touch under Send input. The dialog buttons appear there.",
+      "control": "Touch"
+    },
+    {
+      "id": "EXWORK-10",
+      "part": "step",
+      "text": "Press Work in the dialog four times.",
+      "control": "Work"
+    },
+    {
+      "id": "EXWORK-11",
+      "part": "see",
+      "text": "The bottle gets more solid with every press."
+    },
+    {
+      "id": "EXWORK-12",
+      "part": "see",
+      "text": "At the fourth press the score board turns gold for a second."
+    },
+    {
+      "id": "EXWORK-13",
+      "part": "see",
+      "text": "The log says: Score: 1. The bottle starts almost clear again."
+    },
+    {
+      "id": "EXWORK-14",
+      "part": "next",
+      "text": "Open bottle.lsl and change quarters == 4 to quarters == 2."
+    },
+    {
+      "id": "EXWORK-15",
+      "part": "next",
+      "text": "Now two presses fill the bottle."
+    }
+  ]
+}

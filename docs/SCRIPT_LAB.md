@@ -1033,6 +1033,10 @@ Code: `src/scriptlab/lsl/lsl2slua.*` (the entry, `Lsl2Slua::convert()`), `sluale
 - **Bad input:** a script that does not compile gives its LSL errors and no text. The lexer and parser limit size and nesting; the output is limited to 4 MB. Nothing is run.
 - **Not built:** a panel or button for it (the language choice in the editor stays only a choice), running Lua, level 2 "real Lua style". **The output is not tested in Second Life** (not in a Lua beta region); the tests check the exact text the converter writes, not that Second Life runs it.
 
+## Example objects (job E1)
+
+Six example objects in `examples/objects/`, each one folder in the folder model with props of the same names and a plain-words guide stored as data (`example.json`): First colour, Button HUD, Gear set (the main example: HUD, wrist and ankle cuffs, collar, hood, gag and blindfold), Timed lock, a simple RLV relay and a work system. Everything about them, the guide texts, a recipe of what the program can do now and what a later example button must do: [EXAMPLES.md](EXAMPLES.md). Tests: `tests/tst_examples.cpp`, `tests/test_examples.py`. **Try the example scripts** still watches the loose scripts in `examples/scriptlab/`, one at a time.
+
 ## Later
 
 A description of a separate repository for the owner's RLV tools (template, examples, `.rlvtest` scenarios in CI; not created, the scenario runner does not exist) is in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md). Ideas that come after the planned steps (not planned yet, nothing is being built): see "Script Lab: later" in [ROADMAP.md](ROADMAP.md).

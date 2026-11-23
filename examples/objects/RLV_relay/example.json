@@ -1,0 +1,99 @@
+{
+  "format": 1,
+  "order": 4,
+  "object": "RLV_relay",
+  "title": "Simple RLV relay",
+  "works_now": false,
+  "props": [
+    {
+      "name": "RLV_relay",
+      "shape": "sphere",
+      "joint": "chest",
+      "position": [
+        0,
+        0,
+        4
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "guide": [
+    {
+      "id": "EXRELAY-01",
+      "part": "what",
+      "text": "A relay lets other objects, like a chair, send you RLV commands."
+    },
+    {
+      "id": "EXRELAY-02",
+      "part": "what",
+      "text": "This simple relay says yes to every object. A real relay asks first."
+    },
+    {
+      "id": "EXRELAY-03",
+      "part": "word",
+      "text": "Relay: passes RLV commands from other objects to your viewer."
+    },
+    {
+      "id": "EXRELAY-04",
+      "part": "word",
+      "text": "The long key of only f letters means every relay."
+    },
+    {
+      "id": "EXRELAY-05",
+      "part": "step",
+      "text": "Press Watch folder. Pick examples, then objects, then RLV_relay.",
+      "control": "Watch folder..."
+    },
+    {
+      "id": "EXRELAY-06",
+      "part": "step",
+      "text": "Tick Show effects in 3D view.",
+      "control": "Show effects in 3D view"
+    },
+    {
+      "id": "EXRELAY-07",
+      "part": "step",
+      "text": "Type the channel and text shown below into Channel and Text.",
+      "control": "Channel",
+      "values": {
+        "Channel": "-1812221819",
+        "Text": "trap,ffffffff-ffff-ffff-ffff-ffffffffffff,@detach=n"
+      }
+    },
+    {
+      "id": "EXRELAY-08",
+      "part": "step",
+      "text": "Press Say.",
+      "control": "Say"
+    },
+    {
+      "id": "EXRELAY-09",
+      "part": "see",
+      "text": "The small ball on the chest turns red."
+    },
+    {
+      "id": "EXRELAY-10",
+      "part": "see",
+      "text": "RLV restrictions now lists detach. The answer in the log ends with ok."
+    },
+    {
+      "id": "EXRELAY-11",
+      "part": "next",
+      "text": "Say the same line with !release in place of @detach=n."
+    },
+    {
+      "id": "EXRELAY-12",
+      "part": "next",
+      "text": "The relay lets go of everything and turns green."
+    }
+  ]
+}
