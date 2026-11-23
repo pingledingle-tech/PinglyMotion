@@ -28,7 +28,7 @@ TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
 # Script Lab Live (issue 292): the folder watch behind lab_watch and the panel
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labwatcher.cpp)
 # Script Lab lane 1, job B: the folder is the object (one linkset per folder)
-TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labfolder.cpp)
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labfolder.cpp scriptlab/labtint.cpp)
 # Script Lab lane 1, job F2: the editor's suggestion engine and help texts (QtCore only)
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labsuggest.cpp scriptlab/rlvsuggest.cpp)
 # Script Lab step 7 (issue 293): what a run does to the avatar, and the preview the 3D view draws
@@ -75,6 +75,7 @@ SET (PINGLYMOTION_SHARED_SRC
               retargetmapping.cpp
               screenshotsheet.cpp
               scriptlab/labeditor.cpp
+              scriptlab/labtree.cpp
               scriptlab/lslhighlighter.cpp
               scriptlab/objectsview.cpp
               scriptlab/scriptlabpanel.cpp

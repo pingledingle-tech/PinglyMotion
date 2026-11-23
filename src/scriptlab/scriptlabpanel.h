@@ -19,6 +19,11 @@
  * notecard lines), the last part of the Live page.
  * Lane 1 job F1: the Script part is an editor in our own text box (labeditor.h);
  * Save writes the file and the folder watch runs it at once.
+ * Lane 1 job D: Watch folder watches the folder as one object (LabFolder, the
+ * watcher's "linkset" mode); the "Object" part shows it as a tree (labtree.h)
+ * with a colour dot, the sums and the memory per script, and a click on a
+ * script shows it. "How to lay out the folder" is the short maker guide. The
+ * example scripts stay separate examples (each runs on its own).
  *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
@@ -41,6 +46,7 @@
 #include "viewmodesoverride.h"
 #include "effectspreview.h"
 #include "labeditor.h"
+#include "labtint.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
@@ -55,6 +61,7 @@ class ScriptLabObjectsView;
 class ScriptLabFrame;
 class ScriptLabSection;
 class SphereControls;
+class LabFolderTree;
 namespace lsl { class Session; }
 class QLabel;
 class QLineEdit;
@@ -113,8 +120,24 @@ class ScriptLabPanel : public QWidget
     void setWatcher(LabWatcher* watcher);
     LabWatcher* watcher() const { return m_watcher; }
     // starts watching a folder, as Watch folder does after the folder is
-    // chosen; false when refused (the status line says why)
+    // chosen; false when refused (the status line says why). The folder is
+    // one object (lane 1 job D): every save runs all its scripts together.
     bool watchFolder(const QString& folder);
+    // --- the folder as one object (lane 1 job D)
+    // the tree of the "Object" part (object, prims, scripts, notecards)
+    LabFolderTree* folderTree() const { return m_folderTree; }
+    // the maker guide's text and its example folder, in the "How to lay out the folder" part
+    QLabel* guideText() const { return m_guideText; }
+    QLabel* guideExample() const { return m_guideExample; }
+    // shows one script of the watched object in the editor, as a click on it in the tree does;
+    // false when the folder is not watched as one object or the script is not in it
+    bool showScript(const QString& file);
+    // the script the Script part shows ("" when none), relative to the folder
+    QString shownScript() const { return m_shownFile; }
+    // --- props as prims (lane 1 job E): the colour and transparency the scripts of the watched
+    // object gave its prims, while "Show effects in 3D view" is ticked; empty otherwise. The
+    // window gives each tint to the prop of the same name (Prop::setTint) and clears the rest.
+    QList<LabTint::Tint> propTints() const { return m_propTints; }
     // stops watching, as Stop watching does
     void stopWatching();
     // watches the example scripts that come with the program (examples/scriptlab), as
@@ -229,7 +252,7 @@ class ScriptLabPanel : public QWidget
     QPushButton* exampleButton() const { return m_example; }
     QTreeWidget* liveRestrictionList() const { return m_liveRestrictions; }
     QLabel* liveRestrictionsEmpty() const { return m_liveRestrictionsEmpty; }
-    // the folding parts, by key: "script", "problems", "log", "restrictionsNow", "objects", "input",
+    // the folding parts, by key: "tree", "guide", "script", "problems", "log", "restrictionsNow", "objects", "input",
     // "inventory" (Live scripts) and "restrictions", "actions", "replies" (Type commands)
     ScriptLabSection* section(const QString& key) const;
     QList<ScriptLabSection*> sections() const { return m_sections; }
@@ -263,6 +286,10 @@ class ScriptLabPanel : public QWidget
     static QString inventoryTypeText(int type, int lines);
     // the "N items" count
     static QString itemCount(int items);
+
+  signals:
+    // propTints() changed (lane 1 job E)
+    void propTintsChanged();
 
   public slots:
     // reads the state again (connected to RlvState::changed)
@@ -310,6 +337,7 @@ class ScriptLabPanel : public QWidget
     void applyStyle();
     void buildLivePage();
     void chooseFolder();
+    bool watchWith(const QString& folder, const QJsonObject& options);
     void openInEditor();
     void showProblem(int index);
     void showScriptPlace(int line, int column);   // line and column from 1
@@ -398,6 +426,16 @@ class ScriptLabPanel : public QWidget
     void runSavedScript(const QString& path);
     QListWidget* m_problems = nullptr;
     QPlainTextEdit* m_runLog = nullptr;
+    QStringList m_logFiles;            // folder mode: the script file of each event log line ("" for none)
+    ScriptLabSection* m_treeSection = nullptr;
+    LabFolderTree* m_folderTree = nullptr;
+    ScriptLabSection* m_guideSection = nullptr;
+    QLabel* m_guideText = nullptr;
+    QLabel* m_guideExample = nullptr;
+    QString m_pickedFile;              // the script picked in the tree, for the run m_pickedRun
+    int m_pickedRun = -1;
+    QList<LabTint::Tint> m_propTints;
+    void updatePropTints();
     QString m_shownFile;               // the script shown in the view (relative to the folder)
     QList<QJsonObject> m_shownProblems;
     QList<QMetaObject::Connection> m_watcherConnections;

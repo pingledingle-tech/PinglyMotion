@@ -24,6 +24,7 @@ private slots:
   void initTestCase();
 
   void propValues();
+  void propTint();
   void propNamesAndIds();
   void propLookUp();
   void propDeleteFreesName();
@@ -63,6 +64,32 @@ Animation* SceneTest::newAnimation(int frames)
 
 // ---------------------------------------------------------------------------
 // Prop
+
+// a script's colour and transparency on a prop (Script Lab, lane 1 job E)
+void SceneTest::propTint()
+{
+  Prop prop(3, Prop::Box, "Lid", m_mesh);
+  QVERIFY(!prop.hasTint());
+  QCOMPARE(prop.drawColour(), QColor::fromRgbF(0.3f, 0.4f, 1.0f));   // the prop's own colour
+  QCOMPARE(prop.drawAlpha(), 1.0f);
+  prop.setTint(QColor::fromRgbF(1.0f, 0.0f, 0.0f), 0.5f);
+  QVERIFY(prop.hasTint());
+  QCOMPARE(prop.tintColour(), QColor::fromRgbF(1.0f, 0.0f, 0.0f));
+  QCOMPARE(prop.drawColour(), QColor::fromRgbF(1.0f, 0.0f, 0.0f));
+  QCOMPARE(prop.drawAlpha(), 0.5f);
+  // alpha is kept from 0 (clear) to 1 (solid)
+  prop.setTint(Qt::green, 2.0f);
+  QCOMPARE(prop.tintAlpha(), 1.0f);
+  prop.setTint(Qt::green, -1.0f);
+  QCOMPARE(prop.tintAlpha(), 0.0f);
+  // no valid colour: white, as a prim without a colour
+  prop.setTint(QColor(), 1.0f);
+  QCOMPARE(prop.tintColour(), QColor(Qt::white));
+  prop.clearTint();
+  QVERIFY(!prop.hasTint());
+  QCOMPARE(prop.drawColour(), QColor::fromRgbF(0.3f, 0.4f, 1.0f));
+  QCOMPARE(prop.drawAlpha(), 1.0f);
+}
 
 void SceneTest::propValues()
 {

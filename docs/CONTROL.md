@@ -1235,8 +1235,9 @@ Limits and safety (the folder may hold anything):
 its scripts together, so `llMessageLinked` and `link_message` reach the scripts of the other prims. The
 code is `src/scriptlab/labfolder.*` (the folder model) and the linkset mode of `labwatcher.*`; the layout
 and the maker guide are in [SCRIPT_LAB.md](SCRIPT_LAB.md), "The folder model". Without `linkset` (or with
-`false`) every script runs on its own, as above; the Script Lab panel still watches that way until the panel
-tree (job D) switches it.
+`false`) every script runs on its own, as above. Since lane 1 job D the Script Lab panel's **Watch folder...**
+watches with `linkset: true`, and its tree shows the object; **Try the example scripts** still watches without
+it, because the examples are separate scripts. The panel follows whichever mode the last watch used.
 
 - The object is named after the folder. Scripts and notecards right in the folder, and in a subfolder named
   `Root` (any case), are in the root prim, link 1. Every other subfolder is one child prim, links 2, 3, ...

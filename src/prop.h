@@ -25,6 +25,7 @@
   @author Zi Ree
 */
 
+#include <QColor>
 #include <QStandardItem>
 
 #include "meshmodel.h"
@@ -80,6 +81,18 @@ class Prop : public QStandardItem
 
     void draw(State state) const;
 
+    // Script Lab, lane 1 job E: a script can give the prim of the same name a colour and a
+    // transparency, and the prop then shows them in place of its own colour. clearTint() gives the
+    // prop its own colour back. Alpha 1 is solid, 0 is fully clear (as in Second Life).
+    void setTint(const QColor& colour, float alpha);
+    void clearTint();
+    bool hasTint() const { return m_hasTint; }
+    QColor tintColour() const { return m_tintColour; }
+    float tintAlpha() const { return m_tintAlpha; }
+    // the colour and alpha the prop is drawn with in the Normal state
+    QColor drawColour() const;
+    float drawAlpha() const;
+
     void attach(unsigned int where);
 
   private:
@@ -95,6 +108,10 @@ class Prop : public QStandardItem
     unsigned int m_attachmentPoint;
 
     MeshModel m_meshModel;
+
+    bool m_hasTint = false;
+    QColor m_tintColour;
+    float m_tintAlpha = 1.0f;
 };
 
 #endif

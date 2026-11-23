@@ -176,12 +176,21 @@ void Prop::draw(State state) const
   SceneState::rotate(m_rotation.y(), 0, 1, 0);
   SceneState::rotate(m_rotation.z(), 0, 0, 1);
 
+  // a tint from a script (lane 1 job E) replaces the prop's own colour; picked and hovered props
+  // keep their colours so they can still be told apart, with the tint's transparency
+  const float alpha=drawAlpha();
+  // the 3D view blends already; turned on here only if it was off, and back off after
+  const bool blendOn=alpha<1.0f && !glIsEnabled(GL_BLEND);
+  if(blendOn) glEnable(GL_BLEND);
   if(state==Normal)
-    SceneState::setColor(0.3,0.4,1.0, 1);
+  {
+    const QColor colour=drawColour();
+    SceneState::setColor(colour.redF(), colour.greenF(), colour.blueF(), alpha);
+  }
   else if(state==Highlighted)
-    SceneState::setColor(0.4, 0.5, 0.3, 1);
+    SceneState::setColor(0.4, 0.5, 0.3, alpha);
   else
-    SceneState::setColor(0.6, 0.3, 0.3, 1);
+    SceneState::setColor(0.6, 0.3, 0.3, alpha);
 
   // each prop type has its own base sizes and positions
   if(m_propType == Box)
@@ -207,6 +216,32 @@ void Prop::draw(State state) const
   }
 
   SceneState::popMatrix();
+  if(blendOn) glDisable(GL_BLEND);
+}
+
+void Prop::setTint(const QColor& colour, float alpha)
+{
+  m_hasTint = true;
+  m_tintColour = colour.isValid() ? colour.toRgb() : QColor(Qt::white);
+  m_tintAlpha = qBound(0.0f, alpha, 1.0f);
+}
+
+void Prop::clearTint()
+{
+  m_hasTint = false;
+  m_tintColour = QColor();
+  m_tintAlpha = 1.0f;
+}
+
+QColor Prop::drawColour() const
+{
+  // the prop's own colour, as before tints existed
+  return m_hasTint ? m_tintColour : QColor::fromRgbF(0.3f, 0.4f, 1.0f);
+}
+
+float Prop::drawAlpha() const
+{
+  return m_hasTint ? m_tintAlpha : 1.0f;
 }
 
 void Prop::attach(unsigned int where)
