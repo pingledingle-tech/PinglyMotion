@@ -67,6 +67,9 @@ enum class Fn
   // step 9b-7: sensors and the detected data
   Sensor, SensorRepeat, SensorRemove, DetectedPos, DetectedRot, DetectedVel, DetectedType, DetectedGroup, DetectedOwner,
   // step 9b-8: more record-only functions, and the animation override
+  // land and parcel: canned answers for the one parcel of the sandbox
+  GetLandOwnerAt, OverMyLand, GetParcelFlags, GetParcelPrimCount, GetParcelMaxPrims, GetParcelPrimOwners, GetParcelDetails,
+  SetParcelMusicURL, GetParcelMusicURL, ReturnObjects,
   RecordOnly, SetAnimationOverride, ResetAnimationOverride, GetAnimationOverride,
   // step 9b-9: HTTP requests with canned replies (never on the network)
   HTTPRequest,
@@ -83,7 +86,8 @@ enum class Fn
   // second gap list, step 6, part 3: a simple motion model (llMoveToTarget stays record-only, a later job)
   ApplyImpulse, SetBuoyancy,
   // second round of pure functions: JSON, llListRandomize, llLog, llAcos and three rotation helpers
-  JsonGetValue, JsonSetValue, JsonValueType, List2Json, Json2List, ListRandomize, Log, Acos, Axes2Rot, AngleBetween, Rot2Axis
+  JsonGetValue, JsonSetValue, JsonValueType, List2Json, Json2List, ListRandomize, Log, Acos, Axes2Rot, AngleBetween, Rot2Axis,
+  Asin, Log10
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -203,7 +207,16 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llPassTouches", Fn::RecordOnly},
   {"llPassCollisions", Fn::RecordOnly},
   {"llSetRemoteScriptAccessPin", Fn::RecordOnly},
-  {"llSetParcelMusicURL", Fn::RecordOnly},
+  {"llSetParcelMusicURL", Fn::SetParcelMusicURL},
+  // land and parcel (second Script Lab gap list): ban and pass lists, map and eject record only; reads give canned answers
+  {"llAddToLandBanList", Fn::RecordOnly}, {"llRemoveFromLandBanList", Fn::RecordOnly}, {"llResetLandBanList", Fn::RecordOnly},
+  {"llAddToLandPassList", Fn::RecordOnly}, {"llRemoveFromLandPassList", Fn::RecordOnly}, {"llResetLandPassList", Fn::RecordOnly},
+  {"llMapDestination", Fn::RecordOnly}, {"llEjectFromLand", Fn::RecordOnly},
+  {"llGetLandOwnerAt", Fn::GetLandOwnerAt}, {"llOverMyLand", Fn::OverMyLand}, {"llGetParcelFlags", Fn::GetParcelFlags},
+  {"llGetParcelPrimCount", Fn::GetParcelPrimCount}, {"llGetParcelMaxPrims", Fn::GetParcelMaxPrims},
+  {"llGetParcelPrimOwners", Fn::GetParcelPrimOwners}, {"llGetParcelDetails", Fn::GetParcelDetails},
+  {"llGetParcelMusicURL", Fn::GetParcelMusicURL},
+  {"llReturnObjectsByOwner", Fn::ReturnObjects}, {"llReturnObjectsByID", Fn::ReturnObjects},
   {"llRefreshPrimURL", Fn::RecordOnly},
   {"llSetPrimURL", Fn::RecordOnly},
   // gap list 2, step 6, part 1: own-object movement and physics that need no motion model
@@ -225,6 +238,7 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   // second round of pure functions
   {"llJsonGetValue", Fn::JsonGetValue}, {"llJsonSetValue", Fn::JsonSetValue}, {"llJsonValueType", Fn::JsonValueType},
   {"llList2Json", Fn::List2Json}, {"llJson2List", Fn::Json2List}, {"llListRandomize", Fn::ListRandomize},
+  {"llAsin", Fn::Asin}, {"llLog10", Fn::Log10},
   {"llLog", Fn::Log}, {"llAcos", Fn::Acos}, {"llAxes2Rot", Fn::Axes2Rot}, {"llAngleBetween", Fn::AngleBetween},
   {"llRot2Axis", Fn::Rot2Axis},
 };
@@ -1071,6 +1085,17 @@ enum
 };
 
 // the arguments of a record-only call as plain data: numbers, clipped text, vectors and rotations as arrays, a list as its length
+// the sandbox's one parcel covers the whole region: a vector with x and y from 0 up to (not including) 256 is on it
+bool onParcel(const Value& position)
+{
+  return position.f[0] >= 0.0f && position.f[0] < RegionSettings::SIZE && position.f[1] >= 0.0f && position.f[1] < RegionSettings::SIZE;
+}
+
+QString parcelOwnerKey(const World& w)
+{
+  return w.region().parcelOwner.isEmpty() ? w.ownerKey() : w.region().parcelOwner;
+}
+
 QJsonArray recordArgs(const std::vector<Value>& a)
 {
   QJsonArray out;
@@ -3116,6 +3141,81 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       m_controlsAccept = m_controlsPassOn = false;
       return Value();
 
+    // -------------------------------------------- land and parcel: the whole region is one canned parcel
+    case Fn::GetLandOwnerAt:
+      return Value::key(onParcel(a[0]) ? parcelOwnerKey(m_world) : QString("00000000-0000-0000-0000-000000000000"));
+    case Fn::OverMyLand:
+    {
+      // TRUE for an object or avatar the sandbox knows (all of them are in the region) while the parcel belongs to the
+      // objects' owner; FALSE for an unknown key (not in the region)
+      ObjectDetails d;
+      return Value::integer(m_world.details(a[0].s, d) && parcelOwnerKey(m_world) == m_world.ownerKey() ? 1 : 0);
+    }
+    case Fn::GetParcelFlags: return Value::integer(onParcel(a[0]) ? m_world.region().parcelFlags : 0);
+    case Fn::GetParcelPrimCount:
+    {
+      // only this object's prims exist in the sandbox: they are the owner's, so TOTAL (0) and OWNER (1) give the count of
+      // this object, every other category (group, other, selected, temp) and a position off the region give 0
+      if (!onParcel(a[0]) && !a[2].i) return Value::integer(0);
+      return Value::integer((a[1].i == 0 || a[1].i == 1) ? qMax(1, m_world.numberOfPrims()) : 0);
+    }
+    case Fn::GetParcelMaxPrims:
+      return Value::integer((onParcel(a[0]) || a[1].i) ? m_world.region().parcelMaxPrims : 0);
+    case Fn::GetParcelPrimOwners:
+    {
+      std::vector<Value> out;
+      if (onParcel(a[0]))
+      {
+        out.push_back(Value::key(m_world.ownerKey()));
+        out.push_back(Value::integer(qMax(1, m_world.numberOfPrims())));
+      }
+      return Value::makeList(std::move(out));
+    }
+    case Fn::GetParcelDetails:
+    {
+      // a position off the region gives []; an unknown PARCEL_DETAILS_* value is skipped (as llGetObjectDetails does)
+      std::vector<Value> out;
+      if (onParcel(a[0]))
+      {
+        const RegionSettings& r = m_world.region();
+        for (const Value& p : a[1].list)
+        {
+          if (p.type != Type::Integer) continue;
+          switch (p.i)
+          {
+            case 0: out.push_back(Value::string(r.parcelName)); break;                       // PARCEL_DETAILS_NAME
+            case 1: out.push_back(Value::string(r.parcelDescription)); break;                // PARCEL_DETAILS_DESC
+            case 2: out.push_back(Value::key(parcelOwnerKey(m_world))); break;                      // PARCEL_DETAILS_OWNER
+            case 3: out.push_back(Value::key(World::GROUP_KEY)); break;                      // PARCEL_DETAILS_GROUP
+            case 4: out.push_back(Value::integer(r.parcelArea)); break;                      // PARCEL_DETAILS_AREA
+            case 5: out.push_back(Value::key(r.parcelId)); break;                            // PARCEL_DETAILS_ID
+            case 6: out.push_back(Value::integer(r.parcelSeeAvatars)); break;                // PARCEL_DETAILS_SEE_AVATARS
+            case 7: out.push_back(Value::integer(r.parcelMaxPrims)); break;                  // PARCEL_DETAILS_PRIM_CAPACITY
+            case 8: out.push_back(Value::integer(qMax(1, m_world.numberOfPrims()))); break;  // PARCEL_DETAILS_PRIM_USED
+            case 9: out.push_back(Value::vector(0.0f, 0.0f, 0.0f)); break;                   // PARCEL_DETAILS_LANDING_POINT: none set
+            case 10: out.push_back(Value::vector(0.0f, 0.0f, 0.0f)); break;                  // PARCEL_DETAILS_LANDING_LOOKAT: none set
+            case 11: out.push_back(Value::integer(r.parcelTpRouting)); break;                // PARCEL_DETAILS_TP_ROUTING
+            case 12: out.push_back(Value::integer(r.parcelFlags)); break;                    // PARCEL_DETAILS_FLAGS
+            case 13: out.push_back(Value::integer(r.parcelScriptDanger)); break;             // PARCEL_DETAILS_SCRIPT_DANGER
+            default: break;
+          }
+        }
+      }
+      m_steps += qint64(a[1].list.size());
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
+    case Fn::SetParcelMusicURL:
+      m_world.recordOnly(m_now, name, recordArgs(a));
+      m_world.setParcelMusicUrl(a[0].s);
+      return Value();
+    case Fn::GetParcelMusicURL: return Value::string(m_world.parcelMusicUrl());
+    case Fn::ReturnObjects:
+      // nothing of anyone else's is in the sandbox, so nothing is returned: recorded, and 0 (no error) is the answer
+      m_world.recordOnly(m_now, name, recordArgs(a));
+      return Value::integer(0);
+
     // -------------------------------------------- more record-only functions and the animation override (step 9b-8)
     case Fn::RecordOnly:
       m_world.recordOnly(m_now, name, recordArgs(a));
@@ -3535,6 +3635,8 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
     case Fn::Atan2: return Value::number(std::atan2(a[0].f[0], a[1].f[0]));
     case Fn::Frand: return Value::number(nextRandom() * a[0].f[0]);
     case Fn::Log: return Value::number(a[0].f[0] > 0.0f ? std::log(a[0].f[0]) : 0.0f);   // the wiki: 0 for a value of 0 or less
+    case Fn::Asin: return Value::number(std::asin(a[0].f[0]));   // outside -1..1 the answer is NaN, as for llAcos
+    case Fn::Log10: return Value::number(a[0].f[0] > 0.0f ? std::log10(a[0].f[0]) : 0.0f);   // 0 for a value of 0 or less, as llLog
     case Fn::Acos: return Value::number(std::acos(a[0].f[0]));   // outside -1..1 the answer is NaN, as in Second Life
     case Fn::VecMag: return Value::number(std::sqrt(a[0].f[0] * a[0].f[0] + a[0].f[1] * a[0].f[1] + a[0].f[2] * a[0].f[2]));
     case Fn::VecNorm:
