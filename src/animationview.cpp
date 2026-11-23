@@ -1958,7 +1958,7 @@ void AnimationView::drawCircle(int axis,float radius,bool strong)
     static const float dirs[3][2]={{1.0f,-0.35f},{-1.0f,-0.35f},{0.25f,1.0f}};
     const QVector4D clip=m_ringMatrix[axis]*QVector4D(0,0,0,1);
     const float w=clip.w()!=0.0f ? clip.w() : 1.0f;
-    const QPointF centre((clip.x()/w*0.5f+0.5f)*width(),(0.5f-clip.y()/w*0.5f)*height());
+    const QPointF centre((double(clip.x())/w*0.5+0.5)*width(),(0.5-double(clip.y())/w*0.5)*height());
     float bestValue=-1e9f;
     for(int i=0;i<=48;i++)
     {
@@ -2182,7 +2182,7 @@ QPointF AnimationView::toScreen(const QVector3D& world,float* depth) const
   const QVector4D clip=m_lastProjection*m_viewMatrix*QVector4D(world,1.0f);
   const float w=clip.w()!=0.0f ? clip.w() : 1.0f;
   if(depth) *depth=clip.z()/w;
-  return QPointF((clip.x()/w*0.5f+0.5f)*width(),(0.5f-clip.y()/w*0.5f)*height());
+  return QPointF((double(clip.x())/w*0.5+0.5)*width(),(0.5-double(clip.y())/w*0.5)*height());
 }
 
 QVector3D AnimationView::fromScreen(const QPointF& point,float depth) const
