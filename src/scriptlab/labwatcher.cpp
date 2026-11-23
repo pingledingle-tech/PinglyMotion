@@ -10,6 +10,7 @@
 #include <QFileInfo>
 
 #include "lsl/control.h"
+#include "labfolder.h"
 #include "labwatcher.h"
 
 #include <QCoreApplication>
@@ -21,6 +22,11 @@ namespace
   bool inside(const QString& root, const QString& canonical)
   {
     return canonical == root || canonical.startsWith(root.endsWith('/') ? root : root + '/');
+  }
+
+  bool isNotecard(const QString& name)
+  {
+    return name.endsWith(QLatin1String(".txt"), Qt::CaseInsensitive) || name.endsWith(QLatin1String(".notecard"), Qt::CaseInsensitive);
   }
 
   bool isLink(const QFileInfo& info)
@@ -44,7 +50,8 @@ LabWatcher::LabWatcher(QObject* parent) :
   {
     // the exact file is known: run it even if its time and size look the same
     const QString relative = QDir(m_folder).relativeFilePath(path);
-    if (m_snapshot.contains(relative) && !m_pending.contains(relative)) m_pending.append(relative);
+    const bool known = m_snapshot.contains(relative) || (m_linkset && m_notecards.contains(relative));
+    if (known && !m_pending.contains(relative)) m_pending.append(relative);
     scheduleRescan();
   });
 }
@@ -65,9 +72,14 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
   // seconds and inputs are checked the way lsl_run checks them: an empty
   // script never compiles, so an answer with "errors" means the options are fine
   for (auto it = runOptions.begin(); it != runOptions.end(); ++it)
-    if (it.key() != QLatin1String("seconds") && it.key() != QLatin1String("inputs") && it.key() != QLatin1String("keep_rlv"))
-      return {"Unknown run option \"" + it.key().left(40) + "\". Options: seconds, inputs, keep_rlv."};
+    if (it.key() != QLatin1String("seconds") && it.key() != QLatin1String("inputs") && it.key() != QLatin1String("keep_rlv")
+        && it.key() != QLatin1String("linkset"))
+      return {"Unknown run option \"" + it.key().left(40) + "\". Options: seconds, inputs, keep_rlv, linkset."};
+  if (runOptions.contains("linkset") && !runOptions.value("linkset").isBool())
+    return {"\"linkset\" must be true (the folder is one object) or false (every script on its own)."};
+  const bool linkset = runOptions.value("linkset").toBool(false);
   QJsonObject probe = runOptions;
+  probe.remove("linkset");
   probe["command"] = "lsl_run";
   probe["source"] = QString();
   const QJsonObject answer = lsl::Control::run(probe);
@@ -76,9 +88,11 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
   unwatch();
   m_folder = canonical;
   m_options = runOptions;
+  m_options.remove("linkset");
+  m_linkset = linkset;
   m_pending.clear();
   QStringList folders;
-  m_snapshot = scan(&folders);
+  m_snapshot = scan(&folders, m_linkset ? &m_notecards : nullptr);
   updateWatchedPaths(folders);
   emit watchChanged();
 
@@ -103,6 +117,9 @@ bool LabWatcher::unwatch()
   m_results.clear();
   m_last = QJsonObject();
   m_truncated = false;
+  m_linkset = false;
+  m_notecards.clear();
+  m_folderResult = QJsonObject();
   emit watchChanged();
   emit resultChanged();
   return true;
@@ -114,8 +131,9 @@ QString LabWatcher::absolutePath(const QString& relative) const
   return QDir(m_folder).filePath(relative);
 }
 
-QMap<QString, LabWatcher::Entry> LabWatcher::scan(QStringList* folders)
+QMap<QString, LabWatcher::Entry> LabWatcher::scan(QStringList* folders, QMap<QString, Entry>* notecards)
 {
+  if (notecards) notecards->clear();
   QMap<QString, Entry> found;
   m_truncated = false;
   if (m_folder.isEmpty()) return found;
@@ -150,10 +168,17 @@ QMap<QString, LabWatcher::Entry> LabWatcher::scan(QStringList* folders)
         queue.append({info.absoluteFilePath(), current.depth + 1});
         continue;
       }
-      if (info.suffix().compare(QLatin1String("lsl"), Qt::CaseInsensitive) != 0) continue;
+      const bool script = info.suffix().compare(QLatin1String("lsl"), Qt::CaseInsensitive) == 0;
+      if (!script && !(notecards && isNotecard(info.fileName()))) continue;
       // a linked file counts only when its target is inside the folder
       const QString target = info.canonicalFilePath();
       if (target.isEmpty() || !inside(m_folder, target)) continue;
+      if (!script)
+      {
+        // linkset mode: a notecard of the object, watched so that saving it runs the folder again
+        if (notecards->size() < MAX_SCRIPTS) notecards->insert(root.relativeFilePath(info.absoluteFilePath()), Entry{info.lastModified(), info.size()});
+        continue;
+      }
       if (found.size() >= MAX_SCRIPTS)
       {
         m_truncated = true;
@@ -174,6 +199,7 @@ void LabWatcher::updateWatchedPaths(const QStringList& folders)
   if (!old.isEmpty()) m_watcher->removePaths(old);
   QStringList paths = folders;
   for (auto it = m_snapshot.constBegin(); it != m_snapshot.constEnd(); ++it) paths << QDir(m_folder).filePath(it.key());
+  for (auto it = m_notecards.constBegin(); it != m_notecards.constEnd(); ++it) paths << QDir(m_folder).filePath(it.key());
   if (!paths.isEmpty()) m_watcher->addPaths(paths);
 }
 
@@ -186,7 +212,20 @@ void LabWatcher::rescan()
 {
   if (m_folder.isEmpty()) return;
   QStringList folders;
-  const QMap<QString, Entry> now = scan(&folders);
+  QMap<QString, Entry> notecards;
+  const QMap<QString, Entry> now = scan(&folders, m_linkset ? &notecards : nullptr);
+  // linkset mode: a notecard that was saved, added or removed runs the folder again too
+  QString notecardChanged;
+  if (m_linkset)
+  {
+    for (auto it = notecards.constBegin(); it != notecards.constEnd(); ++it)
+    {
+      const auto before = m_notecards.constFind(it.key());
+      if (before == m_notecards.constEnd() || before->modified != it.value().modified || before->size != it.value().size) notecardChanged = it.key();
+    }
+    if (notecardChanged.isEmpty() && notecards.keys() != m_notecards.keys()) notecardChanged = QStringLiteral(".");
+    m_notecards = notecards;
+  }
   for (auto it = now.constBegin(); it != now.constEnd(); ++it)
   {
     const auto before = m_snapshot.constFind(it.key());
@@ -199,16 +238,33 @@ void LabWatcher::rescan()
   for (const QString& gone : m_results.keys())
     if (!m_snapshot.contains(gone)) m_results.remove(gone);
   for (int i = m_pending.size() - 1; i >= 0; --i)
-    if (!m_snapshot.contains(m_pending[i])) m_pending.removeAt(i);
+    if (!m_snapshot.contains(m_pending[i]) && !(m_linkset && m_notecards.contains(m_pending[i]))) m_pending.removeAt(i);
   // an editor that saves by writing a new file and renaming it drops the old
   // file from the watch list, so the list is made again each time
   updateWatchedPaths(folders);
   if (listChanged) emit watchChanged();
+  if (m_linkset)
+  {
+    // one run of the whole folder for every change, however many files changed
+    if (m_pending.isEmpty() && notecardChanged.isEmpty() && !listChanged) return;
+    const QString trigger = !m_pending.isEmpty() ? m_pending.first() : (notecardChanged == QLatin1String(".") ? QString() : notecardChanged);
+    m_pending.clear();
+    runFolder(trigger);
+    return;
+  }
   runPending();
 }
 
 void LabWatcher::runPending()
 {
+  if (m_linkset)
+  {
+    if (m_pending.isEmpty()) return;
+    const QString trigger = m_pending.first();
+    m_pending.clear();
+    runFolder(trigger);
+    return;
+  }
   int runs = 0;
   while (!m_pending.isEmpty() && runs < MAX_RUNS_PER_BATCH)
   {
@@ -219,10 +275,74 @@ void LabWatcher::runPending()
   if (!m_pending.isEmpty()) QTimer::singleShot(0, this, &LabWatcher::runPending);
 }
 
+void LabWatcher::runFolder(const QString& trigger)
+{
+  if (m_folder.isEmpty()) return;
+  const LabFolder::Linkset linkset = LabFolder::open(m_folder);
+  QJsonObject folder = LabFolder::run(linkset, m_options, m_rlv);
+  const int run = ++m_runs;
+  folder["run"] = run;
+  folder["file"] = trigger;
+  m_folderResult = folder;
+
+  // every script's own check, and the shared run (or why the folder did not run)
+  QMap<QString, QJsonObject> checks;
+  for (const QJsonValue& v : folder.value("check").toObject().value("scripts").toArray()) checks.insert(v.toObject().value("file").toString(), v.toObject());
+  QMap<QString, QString> left;   // a script that is not part of the object, and why
+  for (const LabFolder::Problem& p : linkset.problems)
+    if (!p.file.isEmpty() && !left.contains(p.file)) left.insert(p.file, p.message);
+  for (const LabFolder::Problem& p : linkset.notes)
+    if (!p.file.isEmpty() && !left.contains(p.file)) left.insert(p.file, p.message);
+  const QJsonArray problems = folder.value("linkset").toObject().value("problems").toArray();
+  m_results.clear();
+  for (auto it = m_snapshot.constBegin(); it != m_snapshot.constEnd(); ++it)
+  {
+    const QString& file = it.key();
+    QJsonObject result{{"file", file}, {"linkset", true}, {"run", run}};
+    const auto check = checks.constFind(file);
+    if (check != checks.constEnd())
+    {
+      result["script"] = check->value("script");
+      result["prim"] = check->value("prim");
+      result["link"] = check->value("link");
+      result["valid"] = check->value("valid");
+      result["errors"] = check->value("errors");
+      result["warnings"] = check->value("warnings");
+    }
+    else
+    {
+      // inside a folder that is not a prim (nested, linked), or a file that broke a limit
+      QString why = left.value(file);
+      if (why.isEmpty())
+        for (auto l = left.constBegin(); l != left.constEnd() && why.isEmpty(); ++l)
+          if (file.startsWith(l.key() + '/')) why = l.value();
+      if (why.isEmpty()) why = QStringLiteral("The script is not part of the object.");
+      result["valid"] = false;
+      result["read_error"] = why;
+    }
+    if (folder.value("ok").toBool())
+      result["result"] = folder.value("result");
+    else
+    {
+      result["not_run"] = folder.value("error");
+      if (!problems.isEmpty()) result["problems"] = problems;
+    }
+    m_results.insert(file, result);
+  }
+  m_last = m_results.value(trigger);
+  if (m_last.isEmpty() && !m_results.isEmpty()) m_last = m_results.first();
+  emit resultChanged();
+}
+
 void LabWatcher::runScript(const QString& relative)
 {
   const QString path = absolutePath(relative);
   if (path.isEmpty()) return;
+  if (m_linkset)
+  {
+    runFolder(relative);
+    return;
+  }
 
   QJsonObject result{{"file", relative}};
   QString problem;

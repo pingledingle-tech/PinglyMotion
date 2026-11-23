@@ -1229,6 +1229,43 @@ Limits and safety (the folder may hold anything):
   forever is stopped and the program keeps answering. When several scripts change at once, at most 4
   are run in a row before the program draws and answers again; the rest follow.
 
+#### The folder is one object: `"linkset": true` (Script Lab lane 1, job B)
+
+`lab_watch {path, linkset: true}` watches the folder as one Second Life object (one linkset) and runs all
+its scripts together, so `llMessageLinked` and `link_message` reach the scripts of the other prims. The
+code is `src/scriptlab/labfolder.*` (the folder model) and the linkset mode of `labwatcher.*`; the layout
+and the maker guide are in [SCRIPT_LAB.md](SCRIPT_LAB.md), "The folder model". Without `linkset` (or with
+`false`) every script runs on its own, as above; the Script Lab panel still watches that way until the panel
+tree (job D) switches it.
+
+- The object is named after the folder. Scripts and notecards right in the folder, and in a subfolder named
+  `Root` (any case), are in the root prim, link 1. Every other subfolder is one child prim, links 2, 3, ...
+  in name order (upper and lower case alike). A folder inside a prim's folder is not read (prims are not
+  nested); this is a note, not a problem. A script's name (`llGetScriptName`) is its file name without
+  `.lsl`; a notecard is a `.txt` or `.notecard` file, named without the extension, one line per text line.
+- Every saved script or notecard runs the whole folder again, once (also when files are added or removed).
+  `runs` counts these folder runs.
+- All scripts are checked at once. The folder runs only when every script compiles and no limit is broken:
+  at most 32 scripts (the sandbox's limit for one object) and 256 prims, at most 262 144 bytes per file and
+  524 288 bytes for all scripts and notecards together, notecards as in `lsl_run`'s `inventory`, paths
+  inside the folder up to 255 characters, object, prim, script and notecard names up to 63 characters, and
+  every script and notecard name used once in the object (the sandbox keeps one inventory per object).
+  The 5 000-entry and link rules above apply too.
+- Every log entry names its source: an entry of a script has `script`, `prim` (the prim's folder name; the
+  root prim without a `Root` folder has the object's name) and `file`; an entry no script made (an input,
+  the sandbox itself) has `prim` (the prim an input went to, else the root) and `source: "sandbox"`. The
+  scripts in the answer's `objects` have `file` and `prim` too.
+- Endless loops: every script has `lsl_run`'s limits. The 2 seconds of real time count from when the
+  scripts are made, which is the same moment for all scripts of a run, so a folder full of endless loops
+  stops after about 2 seconds, each stop in the log with its script and prim.
+- In `lab_result`, `linkset` is `true` and every script's result has `script`, `prim`, `link`, its own
+  `valid`, `errors` and `warnings` (each with `file`, `script`, `prim` and `link` as well), and either
+  `result` (the run of the whole folder, the same for every script) or `not_run` (why the folder did not
+  run) with `problems`. A script that is not part of the object (below a prim's folder, or a file that
+  breaks a limit) has `read_error` with the reason. `folder_result` is the whole folder's answer: `linkset`
+  (`object`, `folder`, `prims` with their `scripts` and `notecards`, `problems`, `notes`), `check` (every
+  script's errors and warnings), `result` or `error`, `run` and `file` (the file whose change started it).
+
 ## Set up an AI assistant
 
 There is one MCP server, `tools/mcp/pinglymotion_mcp.js` (Node, built-in modules only). The Windows zip and

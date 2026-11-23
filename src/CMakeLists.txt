@@ -27,6 +27,8 @@ ADD_LIBRARY (pinglymotion_core STATIC ${PINGLYMOTION_CORE_SRC})
 TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
 # Script Lab Live (issue 292): the folder watch behind lab_watch and the panel
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labwatcher.cpp)
+# Script Lab lane 1, job B: the folder is the object (one linkset per folder)
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labfolder.cpp)
 # Script Lab step 7 (issue 293): what a run does to the avatar, and the preview the 3D view draws
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labeffects.cpp scriptlab/effectspreview.cpp)
 # Script Lab job 7b: the RLV camera limits the 3D view can keep to (uses only the CameraConstraint struct of camera.h)

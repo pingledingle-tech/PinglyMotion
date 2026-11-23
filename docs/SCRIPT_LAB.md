@@ -924,19 +924,19 @@ Not tested automatically (gaps):
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;
   the final test is always in Second Life.
 
-## The folder model and a short maker guide (planned; not in the program yet)
+## The folder model and a short maker guide (lane 1, job B: the core is built)
 
 Plan: [ROADMAP.md](ROADMAP.md), "Script Lab: folder, editor, converter".
 
-**What exists today:** Live watches one folder and runs each `.lsl` file in it on its own, as its own object (step 6 above). Several scripts in one object only run through the control commands (`lsl_run`, step 9a). Notecards and a prim tree are not read from the folder yet. The limits of Live (200 scripts, 262 144 bytes, 5 000 entries, 4 folder levels) are real today.
+**What exists now:** the folder model is built in the core (`src/scriptlab/labfolder.*`, tests `tests/tst_labfolder.cpp` and the linkset part of `tests/tst_labwatcher.cpp` and `tests/tst_control.cpp`). An AI assistant uses it with `lab_watch` and `"linkset": true` ([CONTROL.md](CONTROL.md), "The folder is one object"). The panel's Live page still runs each `.lsl` file on its own, as its own object (step 6 above), until the panel tree (job D) switches it to the folder model; the example scripts next to the program are separate examples, not one object.
 
-**What is planned (step B of the plan):**
+- A top folder is one object (one linkset), named after the folder. Scripts and notecards right in the top folder, and in a subfolder named `Root` (any case), are in the root prim (link 1). Every other subfolder is one child prim, links 2, 3, ... in name order. All scripts run together in one simulated object, so `llMessageLinked` and `link_message` work between the scripts of different prims.
+- A script's name is its file name without `.lsl`. A notecard is a `.txt` or `.notecard` file, named without the extension; `llGetNotecardLine` reads it.
+- All scripts are checked at once. Nothing runs while one script does not compile or a limit is broken; every error names its file, script and prim. Every line of the event log names its source: the script, the prim and the file, or the prim and `sandbox` for an input.
+- Limits for the whole folder: the path rules of Live (whole path, no network folder, at most 4 096 characters), at most 5 000 entries, 32 scripts and 256 prims, at most 262 144 bytes per file and 524 288 bytes in all, paths inside the folder up to 255 characters, names up to 63 characters, and every script and notecard name used once. Endless loops are stopped by the interpreter's limits; the 2 seconds of real time are shared by all scripts of a run, so a folder of endless loops stops after about 2 seconds and the log says which script in which prim stopped.
+- Not as in Second Life (the sandbox's choices): one inventory per object, so a script or notecard name may be used only once in the whole object (Second Life allows the same name in different prims); `llGetLinkName` does not give the folder names yet; a folder inside a prim's folder is not read (Second Life prims are not nested either); the scripts run one after the other in a fixed order (link order, then file name).
 
-- A top folder is one object (one linkset). A subfolder is one prim. A prim's scripts and notecards are in its folder. Live will run the whole top folder as one linkset, so `llMessageLinked` and `link_message` work between the scripts of different prims.
-- Import will check all scripts at once. The event log and the limits will show which script and which prim each line came from.
-- Limits for path length, size and endless loops will apply to the whole folder.
-
-**Maker guide (the layout to use once the folder model is built):**
+**Maker guide:**
 
 ```
 MyObject/            one object
@@ -947,9 +947,10 @@ MyObject/            one object
     cuff.lsl
 ```
 
-- One top folder per object; one subfolder per prim; scripts (`.lsl`) and notecards (text files) in that prim's folder.
+- One top folder per object; one subfolder per prim; scripts (`.lsl`) and notecards (`.txt`) in that prim's folder. A single-prim object can keep its files right in the top folder.
+- Give every script and notecard its own name in the whole object.
 - Copy scripts out of Second Life by hand: open the script in the viewer, select all, copy, paste into a file. The tool cannot read your inventory.
-- Warnings you can expect: a script that cannot be checked, a limit that was reached, and a script or prim that stopped. The panel will name the script and the prim.
+- Warnings you can expect: a script that cannot be checked, a limit that was reached, and a script or prim that stopped. Each one names the script and the prim.
 - The sandbox is never identical to Second Life; the final test is always in Second Life.
 
 ## Later

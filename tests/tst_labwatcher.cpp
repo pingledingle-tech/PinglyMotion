@@ -7,7 +7,10 @@
  * refusals (relative path, missing folder, a file, a network path, bad run
  * options); the limits (file size, hidden folders, depth, links out of the
  * folder); a script that loops forever is stopped by the interpreter's
- * limits and the watch keeps working.
+ * limits and the watch keeps working. Linkset mode (lane 1, job B): the
+ * folder runs as one object, a saved script or notecard runs the whole
+ * folder again, and every script's result has its own errors and the shared
+ * run or the reason the folder did not run.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -70,6 +73,8 @@ class TestLabWatcher : public QObject
     void linksDoNotLeaveTheFolder();
     void endlessLoopIsStopped();
     void rlvLinesReachTheSharedState();
+    void linksetRunsTheWholeFolder();
+    void linksetBrokenScriptStopsTheRun();
 };
 
 void TestLabWatcher::refusals()
@@ -95,7 +100,9 @@ void TestLabWatcher::runOptionsAreChecked()
   LabWatcher w;
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"seconds", -1}}).error,
            QString("\"seconds\" must be between 0 and 3600 (simulated seconds)."));
-  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv, linkset."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"linkset", "yes"}}).error,
+           QString("\"linkset\" must be true (the folder is one object) or false (every script on its own)."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"inputs", QJsonArray{QJsonObject{{"type", "wave"}}}}}).error,
            QString("Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
                    "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\"."));
@@ -328,6 +335,91 @@ void TestLabWatcher::rlvLinesReachTheSharedState()
   QVERIFY(!rlv.has("sendim"));
   // keep_rlv is checked like lsl_run checks it
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"keep_rlv", "yes"}}).error, QString("\"keep_rlv\" must be true or false."));
+}
+
+// lane 1, job B: "linkset": true makes the folder one object; every change runs all its scripts together
+void TestLabWatcher::linksetRunsTheWholeFolder()
+{
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
+  LabWatcher w;
+  QVERIFY(writeFile(dir.filePath("main.lsl"),
+                    "default { state_entry() { llMessageLinked(LINK_ALL_OTHERS, 0, \"hello\", NULL_KEY); } }"));
+  QVERIFY(QDir(dir.path()).mkpath("Arm"));
+  QVERIFY(writeFile(dir.filePath("Arm/arm.lsl"),
+                    "key q;\ndefault { link_message(integer s, integer n, string t, key k) { llOwnerSay(\"arm \" + t); q = llGetNotecardLine(\"words\", 0); }\n"
+                    "  dataserver(key id, string data) { llOwnerSay(\"note \" + data); } }"));
+  QVERIFY(writeFile(dir.filePath("Arm/words.txt"), "one\n"));
+  QVERIFY(w.watch(dir.path(), QJsonObject{{"linkset", true}, {"seconds", 2}}).ok());
+  QCOMPARE(w.linkset(), true);
+  QVERIFY(!w.runOptions().contains("linkset"));
+  QCOMPARE(w.scripts(), QStringList({"Arm/arm.lsl", "main.lsl"}));
+  QCOMPARE(w.runCount(), 1);   // one run of the whole folder
+  QCOMPARE(ownerSays(w.result("Arm/arm.lsl")), QStringList({"arm hello", "note one"}));
+  QCOMPARE(w.result("main.lsl").value("result"), w.result("Arm/arm.lsl").value("result"));
+  QCOMPARE(w.result("Arm/arm.lsl").value("prim").toString(), QString("Arm"));
+  QCOMPARE(w.result("Arm/arm.lsl").value("link").toInt(), 2);
+  QCOMPARE(w.result("Arm/arm.lsl").value("script").toString(), QString("arm"));
+  QCOMPARE(w.result("Arm/arm.lsl").value("linkset").toBool(), true);
+  QCOMPARE(w.folderResult().value("ok").toBool(), true);
+  QCOMPARE(w.folderResult().value("run").toInt(), 1);
+
+  // saving one script runs the whole folder again, once
+  nextSecond();
+  QVERIFY(writeFile(dir.filePath("main.lsl"),
+                    "default { state_entry() { llMessageLinked(LINK_ALL_OTHERS, 0, \"again\", NULL_KEY); } }"));
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
+  QCOMPARE(w.lastResult().value("file").toString(), QString("main.lsl"));
+  QCOMPARE(ownerSays(w.lastResult()), QStringList({"arm again", "note one"}));
+  QCOMPARE(w.folderResult().value("file").toString(), QString("main.lsl"));
+
+  // saving a notecard runs it again too
+  nextSecond();
+  QVERIFY(writeFile(dir.filePath("Arm/words.txt"), "two\n"));
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 3, 10000);
+  QCOMPARE(w.folderResult().value("file").toString(), QString("Arm/words.txt"));
+  QCOMPARE(ownerSays(w.result("Arm/arm.lsl")), QStringList({"arm again", "note two"}));
+  QTest::qWait(1000);
+  QCOMPARE(w.runCount(), 3);   // nothing else changed
+
+  QVERIFY(w.unwatch());
+  QCOMPARE(w.linkset(), false);
+  QCOMPARE(w.folderResult(), QJsonObject());
+}
+
+void TestLabWatcher::linksetBrokenScriptStopsTheRun()
+{
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
+  LabWatcher w;
+  QVERIFY(writeFile(dir.filePath("good.lsl"), Hello));
+  QVERIFY(QDir(dir.path()).mkpath("Lid/Deeper"));
+  QVERIFY(writeFile(dir.filePath("Lid/bad.lsl"), Broken));
+  QVERIFY(writeFile(dir.filePath("Lid/Deeper/lost.lsl"), Hello));
+  QVERIFY(w.watch(dir.path(), QJsonObject{{"linkset", true}}).ok());
+  QCOMPARE(w.runCount(), 1);
+  const QString notRun = "The folder was not run: 1 script(s) do not compile (Lid/bad.lsl). Every error names its script and prim.";
+  const QJsonObject bad = w.result("Lid/bad.lsl");
+  QCOMPARE(bad.value("valid").toBool(), false);
+  QCOMPARE(bad.value("errors").toArray().size(), 1);
+  QCOMPARE(bad.value("errors").toArray().at(0).toObject().value("prim").toString(), QString("Lid"));
+  QCOMPARE(bad.value("errors").toArray().at(0).toObject().value("column").toInt(), 38);
+  QCOMPARE(bad.value("not_run").toString(), notRun);
+  QVERIFY(!bad.contains("result"));
+  const QJsonObject good = w.result("good.lsl");
+  QCOMPARE(good.value("valid").toBool(), true);
+  QCOMPARE(good.value("not_run").toString(), notRun);
+  QVERIFY(!good.contains("result"));
+  // a script below a prim's folder is not part of the object, and says why
+  const QJsonObject lost = w.result("Lid/Deeper/lost.lsl");
+  QCOMPARE(lost.value("valid").toBool(), false);
+  QCOMPARE(lost.value("read_error").toString(), QString("\"Lid/Deeper\" is a folder inside a prim's folder. Prims are not nested, so it was not read."));
+  QCOMPARE(w.folderResult().value("error").toString(), notRun);
+
+  // fixing the script runs the folder
+  nextSecond();
+  QVERIFY(writeFile(dir.filePath("Lid/bad.lsl"), Bye));
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
+  QCOMPARE(ownerSays(w.lastResult()), QStringList({"hello", "bye"}));
+  QCOMPARE(w.lastResult().value("file").toString(), QString("Lid/bad.lsl"));
 }
 
 QTEST_GUILESS_MAIN(TestLabWatcher)
