@@ -267,6 +267,13 @@ QString World::giveInventory(double, const QString& to, const InventoryItem&)
   return to == ownerKey() ? "given" : "unknown_target";
 }
 
+QString World::giveInventoryList(double time, const QString& to, const std::vector<InventoryItem>& items, QStringList& refused)
+{
+  Q_UNUSED(time); Q_UNUSED(items);
+  refused.clear();
+  return to == ownerKey() ? "given" : "unknown_target";
+}
+
 QString World::nameOf(const QString& key) const
 {
   if (key == ownerKey()) return ownerName();

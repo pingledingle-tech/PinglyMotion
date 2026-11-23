@@ -64,6 +64,9 @@ class Interpreter
     // enters the default state and runs state_entry (and what it queues at time 0); with run false
     // state_entry only waits in the queue (the Sandbox starts every object first, then runs them)
     void start(bool run = true);
+    // Several-objects job: a script put into the object by llRemoteLoadScriptPin. Enters the default state with state_entry
+    // waiting (no on_rez: the object was not rezzed); not running, the script waits with state_entry until it is set running.
+    void startLoaded(bool running);
     // runs events until the simulated clock reaches the given time, or nothing is left to do
     void runUntil(double seconds);
     // chat or touch at a simulated time (sorted in; an input in the past is taken at once)

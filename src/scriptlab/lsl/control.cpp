@@ -335,10 +335,10 @@ namespace
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
     static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email",
-                                       "collision", "land_collision", "moving", "at_target", "not_at_target", "step"};
+                                       "collision", "land_collision", "moving", "at_target", "not_at_target", "step", "drop"};
     if (!types.contains(in.type))
       return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                      "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\" or \"step\".";
+                      "\"email\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\" or \"drop\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -386,6 +386,21 @@ namespace
         return where + QString("\"dt\" must be a number of seconds from 0 to %1.").arg(Sandbox::MAX_STEP_SECONDS);
     }
     else if (in.type == "step") return where + "a step input needs \"dt\": the seconds the motion model advances.";
+    // several-objects job: an avatar drops an item into the object ("item": its name, "item_type": its type, default notecard)
+    for (const char* field : {"item", "item_type"})
+      if (o.contains(field) && in.type != "drop") return where + "\"" + field + "\" is only for drop.";
+    if (in.type == "drop")
+    {
+      if (!o.value("item").isString() || !validName(o.value("item").toString()))
+        return where + "a drop input needs \"item\": the name of the item dropped, text of 1 to 63 characters.";
+      in.item = o.value("item").toString();
+      if (o.contains("item_type"))
+      {
+        in.itemType = o.value("item_type").isString() ? Inventory::typeFromName(o.value("item_type").toString()) : -2;
+        if (in.itemType == -2)
+          return where + "\"item_type\" must be one of texture, sound, landmark, clothing, object, notecard, script, bodypart, animation, gesture, setting, material.";
+      }
+    }
     if (in.type == "changed")
     {
       if (!o.contains("change")) return where + "a changed input needs \"change\": what changed, such as \"inventory\", \"owner\", \"link\" or \"region_start\".";
@@ -420,7 +435,8 @@ namespace
     static const int MAX_GIVEN = Inventory::MAX_ITEMS - Sandbox::MAX_SCRIPTS_PER_OBJECT;
     static const int MAX_OBJECT_CHARS = 131072;   // all notecard lines of one object together
     const QString shape = where + "\"inventory\" must be a list of items, each {\"name\", \"type\" (texture, sound, landmark, clothing, object, notecard, script, "
-                                   "bodypart, animation, gesture, setting or material), \"key\" (optional), \"lines\" (a notecard's lines)}.";
+                                   "bodypart, animation, gesture, setting or material), \"key\" (optional), \"lines\" (a notecard's lines), \"creator\" and "
+                                   "\"description\" (optional)}.";
     if (!v.isArray()) return shape;
     const QJsonArray list = v.toArray();
     if (list.size() > MAX_GIVEN) return where + QString("\"inventory\" holds at most %1 items (an object holds %2 with its scripts).").arg(MAX_GIVEN).arg(Inventory::MAX_ITEMS);
@@ -430,7 +446,7 @@ namespace
       const QString at = where + QString("inventory item %1: ").arg(i + 1);
       if (!list[i].isObject()) return shape;
       const QJsonObject e = list[i].toObject();
-      static const QStringList fields = {"name", "type", "key", "lines"};
+      static const QStringList fields = {"name", "type", "key", "lines", "creator", "description"};
       for (auto it = e.begin(); it != e.end(); ++it)
         if (!fields.contains(it.key())) return at + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
       InventoryItem item;
@@ -447,6 +463,17 @@ namespace
       {
         if (!e.value("key").isString() || !validKey(e.value("key").toString())) return at + "\"key\" must be a key: 1 to 36 letters, digits or \"-\".";
         item.key = e.value("key").toString();
+      }
+      if (e.contains("creator"))
+      {
+        if (!e.value("creator").isString() || !validKey(e.value("creator").toString())) return at + "\"creator\" must be a key: 1 to 36 letters, digits or \"-\".";
+        item.creator = e.value("creator").toString();
+      }
+      if (e.contains("description"))
+      {
+        if (!e.value("description").isString() || e.value("description").toString().size() > 127)
+          return at + "\"description\" must be text of at most 127 characters.";
+        item.description = e.value("description").toString();
       }
       if (e.contains("lines"))
       {
@@ -864,7 +891,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     const QJsonArray list = request.value("inputs").toArray();
     if (list.size() > MAX_INPUTS) return fail(QString("At most %1 inputs.").arg(MAX_INPUTS));
     static const QStringList known = {"at", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                       "amount", "url", "method", "body", "headers", "address", "subject", "phase", "pos", "tnum", "targetpos", "ourpos", "dt"};
+                                       "amount", "url", "method", "body", "headers", "address", "subject", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Input %1: ").arg(i + 1);
@@ -972,7 +999,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
 {
   Sandbox* sandbox = session ? session->sandbox() : nullptr;
   static const QStringList known = {"command", "type", "object", "channel", "kind", "name", "id", "text", "button", "point", "link", "hold", "change", "levels", "edges",
-                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos", "dt"};
+                                    "amount", "url", "method", "body", "headers", "address", "subject", "seconds", "phase", "pos", "tnum", "targetpos", "ourpos", "dt", "item", "item_type"};
   SandboxInput in;
   const QString problem = readInput(request, known, QString(), in);
   if (!problem.isEmpty())
@@ -984,7 +1011,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
   }
   if (!request.contains("type"))
     return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, collision, land_collision, "
-                "moving, at_target, not_at_target or step.");
+                "moving, at_target, not_at_target, step or drop.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {

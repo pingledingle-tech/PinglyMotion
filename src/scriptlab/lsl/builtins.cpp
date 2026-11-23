@@ -60,6 +60,8 @@ enum class Fn
   // step 9b-4: simulated inventory, notecards, rezzing
   GetInventoryNumber, GetInventoryName, GetInventoryType, GetInventoryKey, GiveInventory, RemoveInventory,
   GetNotecardLine, GetNumberOfNotecardLines, RezObject, RezAtRoot,
+  // several objects (Script Lab gap list): giving a list, remote script load, inventory drop, item creator and description
+  GiveInventoryList, RemoteLoadScriptPin, SetRemoteScriptAccessPin, AllowInventoryDrop, GetInventoryCreator, GetInventoryDesc,
   // step 9b-5: sitting and pose balls
   SitTarget, LinkSitTarget, AvatarOnSitTarget, AvatarOnLinkSitTarget, UnSit, GetAnimationList, GetAnimation, GetAgentInfo,
   // step 9b-6: controls
@@ -153,6 +155,9 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llGetInventoryKey", Fn::GetInventoryKey}, {"llGiveInventory", Fn::GiveInventory}, {"llRemoveInventory", Fn::RemoveInventory},
   {"llGetNotecardLine", Fn::GetNotecardLine}, {"llGetNumberOfNotecardLines", Fn::GetNumberOfNotecardLines},
   {"llRezObject", Fn::RezObject}, {"llRezAtRoot", Fn::RezAtRoot},
+  {"llGiveInventoryList", Fn::GiveInventoryList}, {"llRemoteLoadScriptPin", Fn::RemoteLoadScriptPin},
+  {"llSetRemoteScriptAccessPin", Fn::SetRemoteScriptAccessPin}, {"llAllowInventoryDrop", Fn::AllowInventoryDrop},
+  {"llGetInventoryCreator", Fn::GetInventoryCreator}, {"llGetInventoryDesc", Fn::GetInventoryDesc},
   {"llSitTarget", Fn::SitTarget}, {"llLinkSitTarget", Fn::LinkSitTarget}, {"llAvatarOnSitTarget", Fn::AvatarOnSitTarget},
   {"llAvatarOnLinkSitTarget", Fn::AvatarOnLinkSitTarget}, {"llUnSit", Fn::UnSit}, {"llGetAnimationList", Fn::GetAnimationList},
   {"llGetAnimation", Fn::GetAnimation}, {"llGetAgentInfo", Fn::GetAgentInfo},
@@ -216,7 +221,6 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llCollisionFilter", Fn::RecordOnly},
   {"llPassTouches", Fn::RecordOnly},
   {"llPassCollisions", Fn::RecordOnly},
-  {"llSetRemoteScriptAccessPin", Fn::RecordOnly},
   {"llSetParcelMusicURL", Fn::SetParcelMusicURL},
   // land and parcel (second Script Lab gap list): ban and pass lists, map and eject record only; reads give canned answers
   {"llAddToLandBanList", Fn::RecordOnly}, {"llRemoveFromLandBanList", Fn::RecordOnly}, {"llResetLandBanList", Fn::RecordOnly},
@@ -3170,12 +3174,102 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       QString result = "not_found";
       if (found)
       {
-        const InventoryItem item = *found;
+        InventoryItem item = *found;
+        if (item.creator.isEmpty()) item.creator = m_world.ownerKey();   // made by the giver's owner, also in the receiver
         result = keyIsValid(a[0].s) ? m_world.giveInventory(m_now, a[0].s, item) : QString("unknown_target");
       }
       if (!m_world.logFull())
         m_world.log(m_now, QJsonObject{{"type", "give_inventory"}, {"to", a[0].s}, {"item", World::clip(a[1].s)}, {"result", result}});
       return Value();
+    }
+    case Fn::GiveInventoryList:
+    {
+      // every item named in the list that this object has; the missing ones are named in the entry (Second Life shouts an
+      // error on DEBUG_CHANNEL, its text is not documented). An object gets no folder; an avatar's folder is only logged.
+      std::vector<InventoryItem> items;
+      QJsonArray given, missing;
+      for (const Value& v : a[2].list)
+      {
+        if (v.type != Type::String && v.type != Type::Key) continue;
+        const InventoryItem* found = m_world.inventory().find(v.s);
+        if (!found)
+        {
+          missing.append(World::clip(v.s));
+          continue;
+        }
+        bool twice = false;
+        for (const InventoryItem& other : items) twice = twice || other.name == found->name;
+        if (twice) continue;
+        InventoryItem item = *found;
+        if (item.creator.isEmpty()) item.creator = m_world.ownerKey();
+        items.push_back(item);
+        given.append(World::clip(item.name));
+      }
+      QStringList refused;
+      QString result = "not_found";
+      if (!items.empty()) result = keyIsValid(a[0].s) ? m_world.giveInventoryList(m_now, a[0].s, items, refused) : QString("unknown_target");
+      if (!m_world.logFull())
+      {
+        QJsonObject entry{{"type", "give_inventory_list"}, {"to", a[0].s}, {"folder", World::clip(a[1].s)}, {"items", given}, {"result", result}};
+        if (!missing.isEmpty()) entry["missing"] = missing;
+        if (!refused.isEmpty()) entry["name_exists"] = QJsonArray::fromStringList(refused);
+        m_world.log(m_now, entry);
+      }
+      return Value();
+    }
+    case Fn::SetRemoteScriptAccessPin:
+      m_world.setRemoteScriptPin(a[0].i);
+      if (!m_world.logFull()) m_world.log(m_now, QJsonObject{{"type", "remote_pin"}, {"enabled", a[0].i != 0}});
+      return Value();
+    case Fn::RemoteLoadScriptPin:
+    {
+      QJsonObject entry{{"type", "remote_load"}, {"target", a[0].s}, {"item", World::clip(a[1].s)}, {"running", a[3].i != 0}, {"param", a[4].i}};
+      if (a[0].s == m_world.objectKey())
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "Unable to add item!"}});
+        return Value();
+      }
+      const InventoryItem* item = m_world.inventory().find(a[1].s);
+      if (!item || item->type != 10)
+      {
+        // Second Life shouts an error here; the wiki does not give its text, this is the sandbox's own
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "Couldn't find script '" + World::clip(a[1].s) + "'"}});
+        return Value();
+      }
+      const QString result = keyIsValid(a[0].s) ? m_world.remoteLoadScript(m_now, a[0].s, a[1].s, a[2].i, a[3].i != 0, a[4].i) : QString("unknown_target");
+      entry["result"] = result;
+      if (!m_world.logFull()) m_world.log(m_now, entry);
+      if (result == "wrong_pin")
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Task " + m_world.objectName() + " trying to illegally load script onto task " + m_world.nameOf(a[0].s) + "!"}});
+      return Value();
+    }
+    case Fn::AllowInventoryDrop:
+    {
+      // Second Life: in a linkset only the root prim's call counts (others fail without a word)
+      const bool root = m_world.linkNumber() <= 1;
+      if (root) m_world.setAllowDrop(a[0].i != 0);
+      if (!m_world.logFull())
+      {
+        QJsonObject entry{{"type", "allow_drop"}, {"allow", a[0].i != 0}};
+        if (!root) entry["note"] = "Ignored: only the root prim's call counts in a linkset.";
+        m_world.log(m_now, entry);
+      }
+      return Value();
+    }
+    case Fn::GetInventoryCreator:
+    case Fn::GetInventoryDesc:
+    {
+      const InventoryItem* item = m_world.inventory().find(a[0].s);
+      const bool creator = *it == Fn::GetInventoryCreator;
+      if (!item)
+      {
+        // Second Life shouts an error; the wiki gives neither its text nor the return value: NULL_KEY or ""
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "No item named '" + World::clip(a[0].s) + "'"}});
+        return creator ? Value::key(NULL_KEY) : Value::string(QString());
+      }
+      if (creator) return Value::key(item->creator.isEmpty() ? m_world.ownerKey() : item->creator);
+      return Value::string(item->description);
     }
     case Fn::RemoveInventory:
     {

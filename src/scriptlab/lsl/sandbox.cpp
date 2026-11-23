@@ -60,7 +60,20 @@ class ObjectWorld : public RlvWorld
     void scale(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = spec().scale[i]; }
     void setScale(const float s[3]) override { for (int i = 0; i < 3; ++i) state().spec.scale[i] = s[i]; }
     int numberOfPrims() const override { return spec().prims; }
-    int startParameter() const override { return spec().startParameter; }
+    int startParameter() const override
+    {
+      const Sandbox::Slot& slot = m_sandbox.m_slots[size_t(m_slot)];
+      return slot.ownStartParameter ? slot.startParameter : spec().startParameter;
+    }
+    // several-objects job: the start parameter of llRemoteLoadScriptPin lasts until the script resets (then 0)
+    void scriptReset() override
+    {
+      Sandbox::Slot& slot = m_sandbox.m_slots[size_t(m_slot)];
+      if (slot.ownStartParameter) slot.startParameter = 0;
+    }
+    // a script added before this one moves it in the Sandbox's list
+    void setSlot(int slot) { m_slot = slot; }
+    int slot() const { return m_slot; }
     QString scriptName() const override { return m_sandbox.m_slots[size_t(m_slot)].name; }
     int linkNumber() const override { return m_sandbox.linkNumber(m_slot); }
 
@@ -127,6 +140,18 @@ class ObjectWorld : public RlvWorld
       return true;
     }
     QString giveInventory(double time, const QString& to, const InventoryItem& item) override { return m_sandbox.giveInventory(m_slot, time, to, item); }
+    QString giveInventoryList(double time, const QString& to, const std::vector<InventoryItem>& items, QStringList& refused) override
+    {
+      return m_sandbox.giveInventoryList(m_slot, time, to, items, refused);
+    }
+    int remoteScriptPin() const override { return state().remotePin; }
+    void setRemoteScriptPin(int pin) override { state().remotePin = pin; }
+    QString remoteLoadScript(double time, const QString& target, const QString& name, int pin, bool running, int param) override
+    {
+      return m_sandbox.remoteLoadScript(m_slot, time, target, name, pin, running, param);
+    }
+    bool allowDrop() const override { return state().allowDrop; }
+    void setAllowDrop(bool allow) override { state().allowDrop = allow; }
     int attachPoint() const override { return spec().attached; }
     QString nameOf(const QString& key) const override { return m_sandbox.nameOf(key); }
     QString ownerOf(const QString& key) const override { return m_sandbox.ownerOf(key); }
@@ -286,6 +311,7 @@ QString Sandbox::add(const ObjectSpec& spec, const std::vector<ScriptEntry>& scr
   o.name = s.name;
   o.description = s.description.left(127);
   o.tagScripts = tagScripts;
+  o.limits = limits;
   for (const InventoryItem& item : s.inventory) o.inventory.add(item, s.key);
   for (const ScriptEntry& entry : scripts)
   {
@@ -376,6 +402,7 @@ void Sandbox::runQueues()
     again = false;
     for (Slot& slot : m_slots)
       if (slot.interp->hasQueued()) slot.interp->runQueue();
+    if (applyLoads()) again = true;
     for (Slot& slot : m_slots)
     {
       slot.interp->checkRealTime();
@@ -536,7 +563,7 @@ void Sandbox::deliver(const SandboxInput& input)
   if (input.type == "touch" || input.type == "attach" || input.type == "detach" || input.type == "dialog" || input.type == "changed" ||
       input.type == "sit" || input.type == "stand" || input.type == "control" || input.type == "money" || input.type == "email" ||
       input.type == "collision" || input.type == "land_collision" || input.type == "moving" || input.type == "at_target" || input.type == "not_at_target" ||
-      input.type == "step")
+      input.type == "step" || input.type == "drop")
   {
     // a stand input without an object finds the object the avatar sits on
     if (input.type == "stand" && input.object.isEmpty())
@@ -593,6 +620,12 @@ void Sandbox::deliver(const SandboxInput& input)
       entry["edges"] = input.edges;
       m_log.log(t, entry);
       for (int i = 0; i < o.slotCount; ++i) m_slots[size_t(o.firstSlot + i)].interp->controlEvent(key, input.levels, input.edges);
+      return;
+    }
+    if (input.type == "drop")
+    {
+      entry["id"] = key;
+      dropInventory(input, target, entry, t);
       return;
     }
     if (input.type == "sit")
@@ -1012,6 +1045,197 @@ QString Sandbox::giveInventory(int, double time, const QString& to, const Invent
   for (const Object& o : m_objects)
     if (!o.spec.ownerKey.isEmpty() && o.spec.ownerKey == to) return "given";
   return "unknown_target";
+}
+
+QString Sandbox::giveInventoryList(int, double time, const QString& to, const std::vector<InventoryItem>& items, QStringList& refused)
+{
+  refused.clear();
+  for (Object& o : m_objects)
+  {
+    if (o.spec.key != to || o.dead) continue;
+    // an object: no folder is made (Second Life wiki); each item it does not have yet goes into its inventory
+    int added = 0;
+    for (const InventoryItem& item : items)
+    {
+      if (o.inventory.add(item, o.spec.key)) ++added;
+      else refused << item.name;
+    }
+    if (added > 0)
+      for (int i = 0; i < o.slotCount; ++i)
+      {
+        Slot& slot = m_slots[size_t(o.firstSlot + i)];
+        slot.interp->syncTo(time);
+        slot.interp->changedEvent(1);   // CHANGED_INVENTORY, once for the whole list
+      }
+    return "given";
+  }
+  if (to == OWNER_KEY) return "given";
+  for (const Object& o : m_objects)
+    if (!o.spec.ownerKey.isEmpty() && o.spec.ownerKey == to) return "given";
+  return "unknown_target";
+}
+
+QString Sandbox::remoteLoadScript(int from, double time, const QString& target, const QString& name, int pin, bool running, int param)
+{
+  const Slot& caller = m_slots[size_t(from)];
+  const Object& source = m_objects[size_t(caller.object)];
+  int index = -1;
+  for (size_t i = 0; i < m_objects.size(); ++i)
+    if (m_objects[i].spec.key == target && !m_objects[i].dead) index = int(i);
+  if (index < 0) return "unknown_target";
+  const Object& o = m_objects[size_t(index)];
+  const QString sourceOwner = source.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : source.spec.ownerKey;
+  const QString targetOwner = o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+  // Second Life wiki: on an attachment of another owner the call fails without a word
+  if (o.spec.attached > 0 && sourceOwner != targetOwner) return "other_owner_attachment";
+  if (o.remotePin == 0 || o.remotePin != pin) return "wrong_pin";
+  // the code: only the object's own scripts have code in the sandbox (an inventory item of type script has none)
+  std::shared_ptr<const Script> code;
+  for (int i = 0; i < source.slotCount; ++i)
+  {
+    const Slot& s = m_slots[size_t(source.firstSlot + i)];
+    if (s.name == name) code = s.script;
+  }
+  if (!code) return "no_source";
+  bool replace = false;
+  for (int i = 0; i < o.slotCount; ++i)
+    if (m_slots[size_t(o.firstSlot + i)].name == name) replace = true;
+  for (const PendingLoad& load : m_loads)
+    if (load.object == index && load.name == name) replace = true;
+  if (!replace)
+  {
+    int waiting = 0, waitingHere = 0;
+    for (const PendingLoad& load : m_loads)
+    {
+      ++waiting;
+      if (load.object == index) ++waitingHere;
+    }
+    if (o.slotCount + waitingHere >= MAX_SCRIPTS_PER_OBJECT || int(m_slots.size()) + waiting >= MAX_SCRIPTS) return "too_many_scripts";
+  }
+  PendingLoad load;
+  load.object = index;
+  load.name = name;
+  load.script = code;
+  load.running = running;
+  load.param = param;
+  load.time = time;
+  m_loads.push_back(load);
+  return replace ? "replaced" : "loaded";
+}
+
+bool Sandbox::applyLoads()
+{
+  if (m_loads.empty()) return false;
+  const std::vector<PendingLoad> loads = std::move(m_loads);
+  m_loads.clear();
+  for (const PendingLoad& load : loads)
+  {
+    Object& o = m_objects[size_t(load.object)];
+    if (o.dead) continue;
+    int at = -1;
+    for (int i = 0; i < o.slotCount; ++i)
+      if (m_slots[size_t(o.firstSlot + i)].name == load.name) at = o.firstSlot + i;
+    if (at >= 0)
+    {
+      // a script of that name is replaced: it loses its memory, events and place (Second Life wiki)
+      Slot& slot = m_slots[size_t(at)];
+      slot.interp->syncTo(load.time);
+      slot.world->releaseAllUrls();
+      slot.interp.reset();
+      slot.script = load.script;
+      slot.interp.reset(new Interpreter(*slot.script, *slot.world, o.limits));
+      slot.world->attach(slot.interp.get());
+    }
+    else
+    {
+      // a new script in the root prim, after the object's other scripts; every later script moves one place on
+      at = o.firstSlot + o.slotCount;
+      for (size_t i = size_t(at); i < m_slots.size(); ++i) m_slots[i].world->setSlot(int(i) + 1);
+      for (Object& other : m_objects)
+        if (&other != &o && other.firstSlot >= at) ++other.firstSlot;
+      for (UrlEntry& url : m_urls)
+        if (url.slot >= at) ++url.slot;
+      Slot slot;
+      slot.object = load.object;
+      slot.name = load.name;
+      slot.link = 1;
+      slot.script = load.script;
+      m_slots.insert(m_slots.begin() + at, std::move(slot));
+      ++o.slotCount;
+      Slot& added = m_slots[size_t(at)];
+      added.world.reset(new ObjectWorld(*this, at, m_rlv));
+      added.world->forwardLog(&m_log, m_tag ? o.spec.name : QString(), o.tagScripts ? load.name : QString());
+      added.interp.reset(new Interpreter(*added.script, *added.world, o.limits));
+      added.world->attach(added.interp.get());
+      o.inventory.remove(load.name);   // an item of that name (a script without code) is replaced
+      InventoryItem script;
+      script.name = load.name;
+      script.type = 10;
+      o.inventory.add(script, o.spec.key);
+    }
+    Slot& slot = m_slots[size_t(at)];
+    slot.ownStartParameter = true;
+    slot.startParameter = load.param;
+    slot.interp->syncTo(load.time);
+    slot.interp->startLoaded(load.running);
+    // the object's inventory changed: its other scripts get changed with CHANGED_INVENTORY
+    for (int i = 0; i < o.slotCount; ++i)
+    {
+      if (o.firstSlot + i == at) continue;
+      Slot& other = m_slots[size_t(o.firstSlot + i)];
+      other.interp->syncTo(load.time);
+      other.interp->changedEvent(1);
+    }
+  }
+  return true;
+}
+
+void Sandbox::dropInventory(const SandboxInput& input, int target, QJsonObject& entry, double t)
+{
+  Object& o = m_objects[size_t(target)];
+  QString name, key;
+  avatar(input, name, key);
+  const QString owner = o.spec.ownerKey.isEmpty() ? QString(OWNER_KEY) : o.spec.ownerKey;
+  const bool modify = key == owner;   // the owner may change the object; the sandbox gives no one else modify rights
+  entry["item"] = World::clip(input.item);
+  entry["item_type"] = input.itemType;
+  if (!modify && !o.allowDrop)
+  {
+    entry["result"] = "refused";
+    entry["error"] = "The object does not allow inventory drop (llAllowInventoryDrop), so only its owner can drop items into it.";
+    m_log.log(t, entry);
+    return;
+  }
+  if (!modify && input.itemType == 10)
+  {
+    // Second Life wiki, llAllowInventoryDrop: a script from someone without modify rights is refused
+    entry["result"] = "refused";
+    entry["error"] = "Not permitted to edit this!";
+    m_log.log(t, entry);
+    return;
+  }
+  InventoryItem item;
+  item.name = input.item;
+  item.type = input.itemType;
+  item.creator = key;
+  if (!o.inventory.add(item, o.spec.key))
+  {
+    entry["result"] = "name_exists";
+    entry["error"] = "The object already has an item of that name (Second Life would rename the new one), or its inventory is full.";
+    m_log.log(t, entry);
+    return;
+  }
+  // with modify rights changed says CHANGED_INVENTORY, without them CHANGED_ALLOWED_DROP (Second Life wiki)
+  const int change = modify ? 0x1 : 0x40;
+  entry["result"] = "dropped";
+  entry["change"] = change;
+  m_log.log(t, entry);
+  for (int i = 0; i < o.slotCount; ++i)
+  {
+    Slot& slot = m_slots[size_t(o.firstSlot + i)];
+    slot.interp->syncTo(t);
+    slot.interp->changedEvent(change);
+  }
 }
 
 QString Sandbox::addAvatar(const AvatarSpec& avatar)
