@@ -1,6 +1,6 @@
 Branch: job/ux-3b-timeline-editing
 Status: active
-Pull request: pending
+Pull request: #400
 Files:
 - src/timelineclip.*
 - src/timeline.*
