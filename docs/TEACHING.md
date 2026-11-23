@@ -2,7 +2,7 @@
 
 This page is the home of every text that teaches a beginner inside the program. It holds the goal, the places where the program teaches, the writing rules, and a register (a list) of all texts. It is step 1 of issue #54.
 
-**All 45 texts in this register were reviewed by the project owner on 19 November 2026 and approved unchanged.** They are final wording. The six easing hints (`EASE-01` to `EASE-06`) are in the program (the tile row, #53 step 5); the wave notes (`WAVE-01` to `WAVE-06`) are stored in `examples/wave.dingle`; the rest is not yet.
+**All 45 texts in this register were reviewed by the project owner on 19 November 2026 and approved unchanged.** They are final wording. The six easing hints (`EASE-01` to `EASE-06`) are in the program (the tile row, #53 step 5); the wave notes (`WAVE-01` to `WAVE-06`) are stored in `examples/wave.dingle` and shown in the notes line under the timeline (UX phase 3c); the rest is not yet.
 
 **Review note:** the owner, a beginner, asked what the welcome button "Standing" means; the label alone did not say it is a ready-made starting pose. The texts were approved as they are, but the welcome card should make clear that the three buttons are ready-made starting points.
 
@@ -80,7 +80,7 @@ The six choices come from #53. The hint shows under the tiles when the mouse res
 
 ### Place 6: notes in the example wave
 
-The wave is a short loop with five keys, one saved pose each. Each pose change uses a different choice from place 5, and the note says which. The last pose matches the first, so the loop has no jump. The example is our own: `examples/wave.dingle`, made by `tools/wave_example.py` (#53 step 6). The notes are stored in the file under `extensions` and listed in [FIRST_ANIMATION.md](FIRST_ANIMATION.md); the program does not show them yet (where they show is part of the timeline redesign, #14).
+The wave is a short loop with five keys, one saved pose each. Each pose change uses a different choice from place 5, and the note says which. The last pose matches the first, so the loop has no jump. The example is our own: `examples/wave.dingle`, made by `tools/wave_example.py` (#53 step 6). The notes are stored in the file under `extensions` and listed in [FIRST_ANIMATION.md](FIRST_ANIMATION.md); the program shows them in the notes line under the timeline (UX phase 3c, [UX_DECISIONS.md, 4](UX_DECISIONS.md#4-teaching-notes-like-wave-01-to-wave-06)).
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|

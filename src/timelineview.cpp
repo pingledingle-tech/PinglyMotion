@@ -34,6 +34,7 @@
 #include "easingtiles.h"
 #include "jointgroups.h"
 #include "timeline.h"
+#include "timelinenotes.h"
 #include "transportlook.h"
 
 #include "timelineview.h"
@@ -153,6 +154,11 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   });
   connect(easingTiles_,&EasingTiles::customCurveRequested,this,&TimelineView::editCustomCurve);
 
+  // the notes line under the tiles (UX phase 3c, the mockup's .note)
+  notesLine_=new NotesLine(this);
+  layout->addWidget(notesLine_,0);
+  connect(notesLine_,&NotesLine::hidden,this,&TimelineView::notesHidden);
+
   connect(timeline, &Timeline::animationChanged, this, &TimelineView::setAnimation);
   connect(timeline, &Timeline::trackClicked, this, &TimelineView::selectTrack);
   connect(timeline, &Timeline::rowsChanged, this, &TimelineView::rowsChanged);
@@ -175,6 +181,29 @@ void TimelineView::setAnimation(Animation* anim)
   timelineTracks->setAnimation(anim);
   animation_=anim;
   rowsChanged();
+
+  // the notes line follows this animation's notes and frame
+  disconnect(notesFrame_);
+  notesLine_->setNotes(anim ? NotesSpec::fromExtensions(anim->extensions()) : NotesSpec::Notes());
+  if(anim) notesFrame_=connect(anim,&Animation::currentFrame,this,[this]() { updateNotes(); });
+  updateNotes();
+}
+
+void TimelineView::updateNotes()
+{
+  notesLine_->setAnimationOpen(animation_ && !none_);
+  if(animation_) notesLine_->setFrame(animation_->getFrame(),animation_->getNumberOfFrames(),playing_);
+}
+
+void TimelineView::setHintsOn(bool on)
+{
+  notesLine_->setHintsOn(on);
+}
+
+void TimelineView::setPlaying(bool playing)
+{
+  playing_=playing;
+  updateNotes();
 }
 
 const TimelineRows& TimelineView::rows() const
@@ -232,6 +261,7 @@ void TimelineView::setNoAnimation(bool none)
   none_=none;
   updateEmptyState();
   fitRowHeight();
+  updateNotes();
 }
 
 void TimelineView::setFirstKeyBlocked(const QString& why)

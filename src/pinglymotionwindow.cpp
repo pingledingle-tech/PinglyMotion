@@ -93,6 +93,7 @@
 #include "pinglymotion.h"
 #include "scene.h"
 #include "timeline.h"
+#include "timelinenotes.h"
 #include "timelinerows.h"
 #include "timelineview.h"
 #include "updatersettings.h"
@@ -578,10 +579,17 @@ PinglyMotionWindow::PinglyMotionWindow() :
   statusBar()->addPermanentWidget(m_tipsSwitch);
   // the hint under the easing tiles follows the setting; more tips come with #88
   ui->timelineView->easingTiles()->setTipsOn(UserSettings::tipsOn());
+  // the notes line under the timeline follows the hints too (UX phase 3c)
+  ui->timelineView->setHintsOn(UserSettings::tipsOn());
+  connect(ui->timelineView,&TimelineView::notesHidden,this,[this]()
+  {
+    statusBar()->showMessage(NotesSpec::text(NotesSpec::hiddenMessage),5000);
+  });
   connect(m_tipsSwitch,&TipsSwitch::toggled,this,[this](bool on)
   {
     UserSettings::setTipsOn(on);
     ui->timelineView->easingTiles()->setTipsOn(on);
+    ui->timelineView->setHintsOn(on);
     m_scriptLabPanel->setHintsOn(on);   // the Script Lab panel's explanation line
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);   // the Selected joint panel's hint line
     if(m_hintsAction) m_hintsAction->setChecked(on);   // Help > Show hints follows the switch
@@ -1148,6 +1156,7 @@ void PinglyMotionWindow::buildMenus()
   {
     UserSettings::setTipsOn(on);
     ui->timelineView->easingTiles()->setTipsOn(on);
+    ui->timelineView->setHintsOn(on);
     m_scriptLabPanel->setHintsOn(on);
     if(m_selectedJoint) m_selectedJoint->setHintsOn(on);
     m_tipsSwitch->setOn(on);

@@ -38,6 +38,7 @@ class Animation;
 class EasingTiles;
 class BVHNode;
 class TimelineRows;
+class NotesLine;
 
 class TimelineTracks : public QWidget
 {
@@ -104,10 +105,19 @@ class TimelineView : public QFrame
     void setNoAnimation(bool none);
     // Set the first key is greyed with this reason; empty: it can be clicked
     void setFirstKeyBlocked(const QString& why);
+    // UX phase 3c: the notes line under the easing tiles, with the note of
+    // the current frame (src/timelinenotes.*)
+    NotesLine* notesLine() const { return notesLine_; }
+    // Help > Show hints: the notes line shows only while it is on
+    void setHintsOn(bool on);
+    // the window plays or stops: stopped at the last frame the line shows the task
+    void setPlaying(bool playing);
 
   signals:
     // "Set the first key" was clicked: the window sets a key like Set key
     void setKeyRequested();
+    // Hide notes was clicked on the notes line
+    void notesHidden();
 
   public slots:
     void selectTrack(int track);
@@ -148,6 +158,11 @@ class TimelineView : public QFrame
     QPushButton* firstKeyButton_=nullptr;
     QLabel* noAnimation_=nullptr;
     QWidget* rowsArea_=nullptr;
+    NotesLine* notesLine_=nullptr;
+    QMetaObject::Connection notesFrame_;
+    bool playing_=false;
+    // the notes of the open animation, its frame and frames, to the notes line
+    void updateNotes();
     bool none_=false;
 
     // the selected joint, the pose change ending at the current frame:

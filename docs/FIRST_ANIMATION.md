@@ -60,7 +60,7 @@ To see all of this in a finished animation, pick **File > Open** and then `wave.
 
 Your turn: make the arm stop more softly.
 
-The program does not show these notes yet. The file is made by `tools/wave_example.py`.
+The notes line under the timeline shows the note of the current frame, and the task when you stop at the last frame. **Hide notes** hides it; Help > Show hints brings it back. The file is made by `tools/wave_example.py`.
 
 To watch a real example slowly, pick **File > Open** and then `jump_slow.dingle` in the `examples` folder. It is the bundled `jump.dingle` with every key 2.5 times later, so the same jump runs at 40 % of the speed. The file is made by `tools/slow_example.py`, and the original is unchanged.
 

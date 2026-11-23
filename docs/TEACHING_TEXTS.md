@@ -270,7 +270,7 @@ The AI assistant guide (`docs/ASSISTANT_GUIDE.md`) is for assistants, not for be
 
 ### 3.10 Texts that are planned but not in the program yet
 
-The 45 register texts (`docs/TEACHING.md`) have no screen yet, except the six easing hints. Three notes for the screen jobs:
+The 45 register texts (`docs/TEACHING.md`) have no screen yet, except the six easing hints and the six wave notes (the notes line under the timeline, UX phase 3c). Three notes for the screen jobs:
 
 - **Welcome card.** The owner asked what "Standing" means. Proposal to put in front of him: WELCOME-05 becomes "Pick a ready-made pose to start. You can change it later." This changes an approved text, so it needs his ok.
 - **Control names in the register** ("Set key", "Play") are placeholders. The real key and play buttons have icons and no words. The tips TIP-01 and TIP-02 describe them correctly. The next-step texts (NEXT-03 to NEXT-06) say "Set a key" and "Press Play". The screen job should either add the words to the buttons or change the texts to "Click the key button" and "Click the play button". Update: since the transport buttons (UX step 1), the single play button is gone; there are buttons with the words Start, Stop and Replay from start. TIP-02 ("Press it again to stop") no longer fits and needs a new text for the Start button, which needs the owner's ok.

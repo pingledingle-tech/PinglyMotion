@@ -22,8 +22,9 @@ Files:
 - docs/DESIGN_SYSTEM.md
 - docs/TEACHING.md
 - docs/TEACHING_TEXTS.md
-- docs/DINGLE_FORMAT.md
 - docs/FIRST_ANIMATION.md
+- docs/EASING.md
+- tools/wave_example.py
 
 ## What
 

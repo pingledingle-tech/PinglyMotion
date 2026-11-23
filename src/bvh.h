@@ -112,6 +112,9 @@ class BVH
     // they are lost when it is saved again (set by animRead, 0 and false for other files)
     int lastLoadedIgnoredKeys=0;
     bool lastLoadedNewerVersion=false;
+    // the "extensions" object of a .dingle file (the wave example's notes, UX phase 3c);
+    // empty for other files
+    QJsonObject lastLoadedExtensions;
     int lastLoadedLoopIn;
     int lastLoadedLoopOut;
     float lastLoadedAvatarScale;

@@ -311,6 +311,8 @@ void PinglyMotionWindow::setPlaystate(PlayState state)
 
   // Start only while stopped, Stop only while playing
   if(m_transport) m_transport->setPlaystate(state);
+  // the notes line shows the task only while stopped (UX phase 3c)
+  ui->timelineView->setPlaying(state!=PLAYSTATE_STOPPED);
   updateEditActions();
 }
 

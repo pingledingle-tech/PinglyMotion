@@ -16,8 +16,9 @@ default when a file is opened; so the first pose change also stores its choice
 as "curve" ("ease-in-out"), which survives that. The last key equals the
 first, so the loop has no jump. The notes for the keys (WAVE-01 to WAVE-06 in
 docs/TEACHING.md, reviewed by the project owner) are kept in "extensions" under
-"pinglymotion.exampleNotes"; the program does not show them yet and does not
-write them back when the file is saved (docs/FIRST_ANIMATION.md lists them).
+"pinglymotion.exampleNotes"; the program shows them in the notes line under
+the timeline and keeps them when the file is saved (UX phase 3c;
+docs/FIRST_ANIMATION.md lists them).
 
 Usage: python3 tools/wave_example.py bin/data/Relaxed.dingle examples/wave.dingle
 
