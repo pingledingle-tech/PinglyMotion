@@ -52,7 +52,7 @@ page (step 6, below). Since step 4 (issue 290) scripts talk to the RLV core.
   a script does into the event log (step 7 plays the animations). `rlvworld.*` (step 4) sends `llOwnerSay("@...")` to
   the RLV core and brings its replies back as listen events.
 - `src/scriptlab/lslbuiltins_data.inc`: every LSL function with its signature, every event and the constants, made by
-  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 271 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list); the others give "not supported yet".
+  `tools/gen_lsl_builtins.py` from the viewer's keyword list. 282 functions run (72 from step 3, five more from step 5, nine from step 9a, 25 from step 9b-1, 36 from step 9b-3, ten from step 9b-4, eight from step 9b-5, two from step 9b-6, nine from step 9b-7, 40 from step 9b-8, one from step 9b-9, 17 from step 2, 12 from step 3, nine from step 4, three from step 5, seven from step 6 and six from step 7 of the second gap list, and eleven from the second round of pure functions); the others give "not supported yet".
 - Control commands `lsl_check` (errors and warnings with line and column) and `lsl_run` (the event log) over the local
   HTTP interface and the MCP server ([CONTROL.md](CONTROL.md), "Script Lab: lsl_check and lsl_run": what runs, the log
   entries and the limits).
@@ -281,6 +281,14 @@ A deliberately small slice, not a physics engine: one more `inputs` type and two
 ## What exists now (second gap list, step 7): vehicle function stubs
 
 - Six more functions run: `llSetVehicleType`, `llSetVehicleFloatParam`, `llSetVehicleVectorParam`, `llSetVehicleRotationParam`, `llSetVehicleFlags` and `llRemoveVehicleFlags`. Record only, the same pattern as the step 6 part 1 movement stubs: each call writes a `recorded_only` entry with its exact arguments, and no vehicle physics is simulated. Details: [CONTROL.md](CONTROL.md), "Recorded only". Tests: `tests/tst_lslmovement.cpp`.
+
+## What exists now (second round of pure functions): JSON, llListRandomize and maths
+
+- Eleven more pure functions run: `llJsonGetValue`, `llJsonSetValue`, `llJsonValueType`, `llList2Json`, `llJson2List`, `llListRandomize`, `llLog`, `llAcos`, `llAxes2Rot`, `llAngleBetween` and `llRot2Axis`. No side effects and no log entries.
+- JSON follows the Second Life wiki ("Json usage in LSL" and the function pages): the `JSON_*` constants, `JSON_APPEND` and `JSON_DELETE`; the reader is lenient like Second Life's (an empty value such as `[ , ]` or `{"a":,}` is `JSON_NULL`, the last of two equal keys wins, a number reads back as the text it was written with); `llJsonSetValue` and `llList2Json` take `"true"`, `"false"`, `"null"`, numbers, objects, arrays and text already in quotes as JSON, and anything else as a JSON string; a changed object or array is written again without spaces. Sandbox choices where the wiki says nothing: NaN and infinity go into `llList2Json` as strings, a malformed object or array gives `[JSON_INVALID]` from `llJson2List`, a whole-number value too large for an integer comes out of `llJson2List` as a float, and nesting deeper than 100 levels counts as invalid JSON.
+- `llListRandomize` uses the sandbox's random numbers, the same in every run, so a test gets the same order each time; a stride under 1 counts as 1, and a list whose length is no multiple of the stride comes back unchanged (the wiki).
+- `llLog` gives 0 for a value of 0 or less, `llAcos` gives NaN outside -1..1, `llRot2Axis(ZERO_ROTATION)` gives `ZERO_VECTOR`, and `llAngleBetween` is 0 to PI (the wiki's reference code).
+- `Parser::eventIsRaised` already listed `transaction_result`; nothing changed in the parser. Tests: `tests/tst_lslpure.cpp`.
 
 ## What exists now (step 9b-9): HTTP requests with canned replies
 
@@ -755,7 +763,7 @@ Not tested automatically (gaps):
 - LSL: up to 16 objects and 64 scripts (32 per object) in one run, at most 100 RLV lines per script and run, the
   events `state_entry`, `state_exit`, `timer`, `listen`, `touch_start`, `touch`, `touch_end`, `run_time_permissions`, `attach`,
   `link_message`, `linkset_data`, `on_rez`, `changed` and the events of step 9b (`dataserver`, `object_rez`, `control`, `sensor`, `no_sensor`,
-  `http_response`, `transaction_result`), `money`, `http_request` and `email` (second gap list, step 4), and 271 built-in functions; HTTP
+  `http_response`, `transaction_result`), `money`, `http_request` and `email` (second gap list, step 4), and 282 built-in functions; HTTP
   only with canned replies and a fake web server, never on the network; no L$ and no mail; hard limits on
   steps, memory, nesting and time per script (and per `lsl_event`). Avatars other than the owner exist only as names
   and keys in inputs, and every avatar stands where the owner stands. The sandbox is never identical to Second Life;

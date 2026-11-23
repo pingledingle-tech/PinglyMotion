@@ -1,12 +1,10 @@
 Branch: job/lsl-pure-functions-2
-Status: active
+Status: done
 Pull request: #386
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - tests/tst_lslpure.cpp
 - docs/SCRIPT_LAB.md
-- docs/ROADMAP.md
-- CREDITS.md
 
 ## What
 
