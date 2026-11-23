@@ -1,6 +1,6 @@
 Branch: job/throne-seat
-Status: active
-Pull request: pending
+Status: done
+Pull request: #444
 Files:
 - examples/throne.prp
 - tests/tst_animation.cpp
