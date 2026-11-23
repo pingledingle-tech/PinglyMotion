@@ -1,5 +1,5 @@
 Branch: job/ux-phase6a-guidance
-Status: active
+Status: done
 Pull request: #425
 Files:
 - src/welcomedialog.*
