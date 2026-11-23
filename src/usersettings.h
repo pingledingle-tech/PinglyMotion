@@ -85,6 +85,11 @@ class UserSettings
     static bool tipsOn();
     // Beginner (default, false) or Expert (true) mode, docs/UX_DECISIONS.md section 8.
     // Stored only; no part of the program reads it yet.
+    // which parts of the Script Lab panel are open or folded: "key=open,key=folded";
+    // a part not named keeps its first state (docs/UX_DECISIONS.md, 6d)
+    static void setScriptLabParts(const QString& value);
+    static QString scriptLabParts();
+
     static void setExpertMode(bool on);
     static bool expertMode();
     // camera habit: one of cameraHabits(), default "pinglymotion"; anything else becomes the default.
@@ -158,6 +163,8 @@ private:
     static const QString m_hideJointsInListsKey;
     static bool m_tipsOn;
     static const QString m_tipsOnKey;
+    static QString m_scriptLabParts;
+    static const QString m_scriptLabPartsKey;
     static bool m_expertMode;
     static const QString m_expertModeKey;
     static QString m_cameraHabit;

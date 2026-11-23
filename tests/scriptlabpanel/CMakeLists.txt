@@ -29,7 +29,9 @@ SET_TESTS_PROPERTIES (scriptlabinput PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=off
 
 # The panel in the new design, slice 1: Viewer rules switch and held chip, the two pages, the empty state,
 # the folding parts with their counts, the keyboard and both themes
-ADD_EXECUTABLE (pinglymotion_scriptlabdesign_tests tst_scriptlabdesign.cpp)
+# Slice 2: the summary line, Try:, Run again, remembered parts, the explanation, the dialog inside Objects,
+# and the top bar's Script Lab button that opens the docked panel (src/topbar.cpp)
+ADD_EXECUTABLE (pinglymotion_scriptlabdesign_tests tst_scriptlabdesign.cpp ${CMAKE_SOURCE_DIR}/src/topbar.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_scriptlabdesign_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
 TARGET_COMPILE_DEFINITIONS (pinglymotion_scriptlabdesign_tests PRIVATE
   PINGLYMOTION_DOCS_DIR="${CMAKE_SOURCE_DIR}/docs"

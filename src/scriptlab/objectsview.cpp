@@ -45,7 +45,8 @@ ScriptLabObjectsView::ScriptLabObjectsView(QWidget* parent) :
   layout->setContentsMargins(0, SpacingS, 0, 0);
   layout->setSpacing(SpacingS);
 
-  layout->addWidget(sectionLabel(tr("Objects"), this));
+  m_heading = sectionLabel(tr("Objects"), this);
+  layout->addWidget(m_heading);
 
   m_list = new QTreeWidget(this);
   m_list->setObjectName("scriptLabObjects");
@@ -59,7 +60,8 @@ ScriptLabObjectsView::ScriptLabObjectsView(QWidget* parent) :
   m_list->setMinimumHeight(4 * m_list->fontMetrics().height() + 2 * SpacingS);
   layout->addWidget(m_list, 1);
 
-  layout->addWidget(sectionLabel(tr("Dialog"), this));
+  m_dialogHeading = sectionLabel(tr("Dialog"), this);
+  layout->addWidget(m_dialogHeading);
   m_dialog = new QLabel(this);
   m_dialog->setObjectName("scriptLabDialog");
   m_dialog->setWordWrap(true);
@@ -138,4 +140,12 @@ void ScriptLabObjectsView::refresh()
                       .arg(dialog["object"].toString(), dialog["message"].toString(), buttons.join(QStringLiteral(", ")))
                       .arg(dialog["channel"].toInt()));
   m_dialog->setPalette(palette());
+}
+
+void ScriptLabObjectsView::setEmbedded(bool embedded)
+{
+  m_embedded = embedded;
+  for (QWidget* w : QList<QWidget*>{m_heading, m_dialogHeading, m_dialog}) w->setVisible(!embedded);
+  // the part's body already has its own margin
+  if (layout()) layout()->setContentsMargins(0, embedded ? 0 : SpacingS, 0, 0);
 }

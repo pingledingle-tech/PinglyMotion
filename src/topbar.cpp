@@ -61,7 +61,9 @@ TopBar::TopBar(QToolBar* bar, const Sources& sources, QObject* parent) : QObject
         button->setCheckable(true);
         button->setChecked(source->isChecked());
         connect(source, &QAction::toggled, button, &QAction::setChecked);
-        connect(button, &QAction::toggled, source, [source](bool on) { if (source->isChecked() != on) source->setChecked(on); });
+        // trigger, not setChecked: a panel's toggleViewAction shows or hides its panel only on
+        // triggered, so setChecked alone left the button pressed and the Script Lab panel hidden
+        connect(button, &QAction::triggered, source, [source](bool on) { if (source->isChecked() != on) source->trigger(); });
       }
     }
     index++;
