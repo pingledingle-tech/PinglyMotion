@@ -4,20 +4,18 @@ Pull request: #420
 Files:
 - src/handstab.*
 - src/handpose.*
-- src/jointlist.*
 - src/pinglymotionwindow.*
-- src/pinglymotionwindow.ui
 - src/CMakeLists.txt
 - tests/handstab/**
-- tests/handpose/**
-- tests/CMakeLists.txt
-- tests/uirender/**
+- CMakeLists.txt
+- src/lucideicons.cpp
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/PRODUCT.md
 - docs/ROADMAP.md
-- docs/RELEASE_NOTES.md
 - CREDITS.md
+- src/jointinfo.h
+- bin/data/firestorm/README.md
 
 ## What
 

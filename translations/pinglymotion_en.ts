@@ -1210,6 +1210,237 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>HandsPanel</name>
+    <message>
+        <source>Left hand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right hand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The other hand copies it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only this hand changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pose: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pose: open, nothing changed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pose: changed from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pose: your own</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a ready-made pose. Then bend each finger below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an animation first. Then shape the hands here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an animation first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ready-made finger poses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter or Space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shapes the fingers of both hands.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shapes the fingers of the left hand.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shapes the fingers of the right hand.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arrow keys move. Enter or Space picks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bend each finger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Thumb</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Index</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Middle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pinky</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: from open to closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arrow keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 percent closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset hand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset both hands</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset left hand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset right hand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back to the open hand.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This hand is not changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Each joint, in degrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Index Finger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Middle Finger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ring Finger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pinky Finger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type a number, or drag a cell sideways. Page Up and Page Down change it by 5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Each finger joint, X, Y and Z in degrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type a number, or Page Up / Page Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expert mode shows every finger joint as numbers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 on both hands.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 on the left hand.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 on the right hand.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: %2 percent closed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2: %3 degrees.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type a number, for example -40.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Both hands back to open.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left hand back to open.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right hand back to open.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Key set at frame %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Key set at frame %1 for %2 joints.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ImportOptions</name>
     <message>
         <source>Make it 30 frames a second</source>
