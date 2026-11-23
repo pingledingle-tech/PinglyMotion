@@ -87,8 +87,30 @@ ctest --test-dir build --output-on-failure
 
 PinglyMotion has an open local interface (HTTP with JSON, and an MCP server) so an AI tool or script can
 pose the figure, look at it and save the animation. See [docs/CONTROL.md](docs/CONTROL.md).
-The Windows download has `PinglyMotion.mcpb`, an extension for the Claude app (the only way to connect an AI assistant; it runs on Node, no Python needed), added in its Settings > Extensions (steps in `START HERE - Claude.txt` next to it)
-(see [docs/CONTROL.md](docs/CONTROL.md#quick-way-the-claude-desktop-extension)).
+
+To connect an AI, click **AI Assistant off** in the status bar at the bottom of the window. The first time it
+asks "Which AI do you use?" (Claude, ChatGPT or Other) and shows only the steps for that AI; after that it opens a
+small menu: Turn on / Turn off, who is connected and when each was last active, and "Connect another AI...". The
+button is grey when off, yellow while it waits, green with the AI's name (or "2 AI connected") and red after a
+request with a wrong key.
+
+The Windows download has a folder `mcp` with `PinglyMotion.mcpb` (the extension for the Claude app),
+`pinglymotion_mcp.js` (the Node helper for ChatGPT and other AI tools) and a `README.txt` with all three guides in
+plain text, so they work offline (see [docs/CONTROL.md](docs/CONTROL.md#set-up-an-ai-assistant)). Claude is
+tested; ChatGPT is not yet tested and other AI tools are not tested by us. If you connected another AI, tell us
+what worked in [issue 414, "Connect another AI: tell us what worked"](https://github.com/pingledingle-tech/PinglyMotion/issues/414).
+
+### How it's kept safe
+
+- It only works on your own PC: it listens on `127.0.0.1`, so nothing on the network or the internet can reach it.
+- It is off each time PinglyMotion starts.
+- There is a new secret key each time you turn it on.
+- Requests from web pages are refused.
+- Turn off locks every AI out and deletes the key.
+
+It has been through a security review and is tested automatically on every change: see the
+[security report](docs/SECURITY_AUDIT_21NOV.md).
+
 Every assistant that connects can read [docs/ASSISTANT_GUIDE.md](docs/ASSISTANT_GUIDE.md) with the `read_guide` tool: Second Life's rules for animations, joint names, which way each turn goes, typical poses and a work rhythm.
 
 ## Live preview in the Aurora viewer

@@ -1,9 +1,10 @@
 /*
  * PinglyMotion - the items of the status bar
  *
- * ControlIndicator (issue #43): a coloured dot and a short text: is remote
- * control on, is an assistant connected, which one, and what it did last.
- * Clicking the dot turns remote control on or off.
+ * ControlIndicator (issues #43 and #7): the "AI Assistant" button, a
+ * coloured dot and a short text: off, waiting, which AI is connected (or how
+ * many), or a wrong key refused. Clicking it opens the setup dialog the
+ * first time and a small menu after that (the window decides).
  *
  * AuroraIndicator (#88): the live link to Aurora: off, connecting or live.
  * Clicking the dot turns the link on or off.
@@ -19,10 +20,13 @@
 #ifndef CONTROLINDICATOR_H
 #define CONTROLINDICATOR_H
 
+#include <QHash>
 #include <QString>
+#include <QStringList>
 #include <QWidget>
 
 class QLabel;
+class QMenu;
 class QTimer;
 class QToolButton;
 
@@ -54,11 +58,21 @@ class ControlIndicator : public StatusPill
 
     // pure helpers, used by the widget and the tests; -1 = never
     static State stateFor(bool running, qint64 msSinceContact, qint64 msSinceRefused);
-    static QString textFor(State state, const QString& client, const QString& command, qint64 msSinceCommand);
-    static QString ago(qint64 ms);
+    // "AI Assistant off", "AI Assistant: Claude", "AI Assistant: 2 AI connected", ...
+    static QString textFor(State state, const QStringList& connected);
+    static QString tipFor(const QString& command, qint64 msSinceCommand);
 
     State state() const;
     QString text() const;
+    bool running() const;
+    QToolButton* button() const;
+    // the AIs that talked in the last CONTACT_TIMEOUT_MS, sorted by name
+    QStringList connectedNames() const;
+    // friendly name -> time of the last contact in this session
+    QHash<QString, qint64> sessionContacts() const;
+
+    // the button's menu (AiAssistant::menuLines): its actions send the signals below
+    QMenu* buildMenu(QWidget* parent);
 
   public slots:
     void setRunning(bool running);
@@ -66,23 +80,26 @@ class ControlIndicator : public StatusPill
     void onRefused();
 
   signals:
-    void toggleRequested();
+    void clicked();
+    void turnOnRequested();
+    void turnOffRequested();
+    void connectAnotherRequested();
 
   private:
     void refresh();
     qint64 since(qint64 time) const;
 
-    QToolButton* m_led;
-    QLabel* m_label;
+    QToolButton* m_button;
     QTimer* m_timer;
 
     bool m_running = false;
     qint64 m_lastContact = -1;
     qint64 m_lastRefused = -1;
     qint64 m_lastCommandTime = -1;
-    QString m_client;
     QString m_command;
     bool m_commandOk = true;
+    QHash<QString, qint64> m_contacts;    // this session
+    QHash<QString, qint64> m_remembered;  // when each name was last written to the settings
 };
 
 class AuroraIndicator : public StatusPill

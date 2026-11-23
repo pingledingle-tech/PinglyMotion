@@ -209,8 +209,8 @@ void TestStatusBar::itemsSitOnPills()
   QVERIFY(qobject_cast<StatusPill*>(&control));
   QVERIFY(qobject_cast<StatusPill*>(&aurora));
   QVERIFY(qobject_cast<StatusPill*>(&tips));
-  // the remote-control indicator keeps its texts from #43
-  QCOMPARE(control.text(), ControlIndicator::textFor(ControlIndicator::Off, QString(), QString(), -1));
+  // the AI Assistant button (issue 7) starts off
+  QCOMPARE(control.text(), QStringLiteral("AI Assistant off"));
 }
 
 QTEST_MAIN(TestStatusBar)

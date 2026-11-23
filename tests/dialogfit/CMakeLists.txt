@@ -1,5 +1,5 @@
-# Dialogs that fit the screen, text size steps and the remote control box (src/dialogfit.*,
-# src/textsize.*, src/controlserver.*): every dialog at 100 and 200 percent text on a small
+# Dialogs that fit the screen and text size steps (src/dialogfit.*,
+# src/textsize.*; the AI Assistant's dialog src/aiconnectdialog.* is one of them): every dialog at 100 and 200 percent text on a small
 # screen, Setup while the text size changes, the pictures in tests/uirender style (set
 # PINGLYMOTION_UI_OUT to a folder to get them). Added from the top CMakeLists.txt.
 FIND_PACKAGE (Qt6 REQUIRED COMPONENTS Test Widgets)

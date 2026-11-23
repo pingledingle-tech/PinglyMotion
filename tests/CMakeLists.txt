@@ -96,8 +96,11 @@ SET_TESTS_PROPERTIES (camera PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 # UX phase 4a: the camera follows the chosen habit, the view keys
 ADD_SUBDIRECTORY (camerahabits)
 
-# Dialogs fit the screen, text size steps, the remote control box
+# Dialogs fit the screen, text size steps
 ADD_SUBDIRECTORY (dialogfit)
+
+# The AI Assistant button, its menu and dialog, the ChatGPT config.toml entry (issue 7)
+ADD_SUBDIRECTORY (aiassistant)
 
 # UX phase 4b part 1: the view toolbar, the view-direction widget, the view name, the ring hint
 ADD_SUBDIRECTORY (viewtools)

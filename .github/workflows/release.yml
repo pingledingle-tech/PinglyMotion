@@ -120,10 +120,9 @@ jobs:
           cp bin/NEWS LICENSE "$DIR/"
           # the same examples/ and library/ folders as the zip of every pull request (build.yml)
           bash tools/ci/package_examples.sh "$DIR"
-          # the Claude Desktop extension: in the zip and as its own download (issue #7)
-          python tools/mcp/build_mcpb.py PinglyMotion.mcpb
-          cp PinglyMotion.mcpb "$DIR/"
-          cp "tools/mcp/START_HERE_CLAUDE.txt" "$DIR/START HERE - Claude.txt"
+          # the mcp folder in the zip (extension, Node server, README with all guides), and the extension as its own download (issue #7)
+          bash tools/ci/package_mcp.sh "$DIR"
+          cp "$DIR/mcp/PinglyMotion.mcpb" PinglyMotion.mcpb
           "$QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations "$DIR/PinglyMotion.exe"
           cp "$IQTA_TOOLS"/mingw1310_64/bin/{libgcc_s_seh-1,libstdc++-6,libwinpthread-1}.dll "$DIR/"
           7z a "$DIR.zip" "$DIR"

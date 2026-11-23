@@ -1,5 +1,5 @@
 /*
- * PinglyMotion - the items of the status bar (issues #43 and #88)
+ * PinglyMotion - the items of the status bar (issues #43, #88 and #7)
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -8,10 +8,12 @@
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMenu>
 #include <QPainter>
 #include <QTimer>
 #include <QToolButton>
 
+#include "aiassistant.h"
 #include "controlindicator.h"
 
 namespace
@@ -35,6 +37,20 @@ namespace
   void setDotColour(QToolButton* dot, const char* colour)
   {
     dot->setStyleSheet(QStringLiteral("QToolButton { color: %1; font-size: 14px; padding: 0 2px; border: none; background: transparent; }").arg(colour));
+  }
+
+  // the coloured dot of the AI Assistant button, drawn as an icon so the dot and the words are one button
+  QIcon dotIcon(const char* colour)
+  {
+    QPixmap pixmap(QSize(24, 24));
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(QLatin1String(colour)));
+    painter.drawEllipse(QRectF(2.0, 2.0, 20.0, 20.0));
+    painter.end();
+    return QIcon(pixmap);
   }
 
   QHBoxLayout* pillLayout(QWidget* pill)
@@ -77,20 +93,24 @@ void StatusPill::leaveEvent(QEvent* event)
 
 ControlIndicator::ControlIndicator(QWidget* parent) :
   StatusPill(parent),
-  m_led(makeDot(this)),
-  m_label(new QLabel(this)),
+  m_button(new QToolButton(this)),
   m_timer(new QTimer(this))
 {
   QHBoxLayout* layout = pillLayout(this);
-  layout->addWidget(m_led);
-  layout->addWidget(m_label);
+  layout->setContentsMargins(4, 1, 8, 1);
+  layout->addWidget(m_button);
 
-  m_led->setToolTip(tr("Remote control. Click to turn it on or off.\n"
-                       "Grey: off\nYellow: on, no assistant connected\n"
-                       "Green: assistant connected\nRed: a request with a wrong key was refused"));
-  connect(m_led, &QToolButton::clicked, this, &ControlIndicator::toggleRequested);
+  // one button: the dot and the words; reachable with Tab, Space or Enter clicks it (charter P8)
+  m_button->setObjectName(QStringLiteral("aiAssistantButton"));
+  m_button->setAutoRaise(true);
+  m_button->setCursor(Qt::PointingHandCursor);
+  m_button->setFocusPolicy(Qt::TabFocus);
+  m_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  m_button->setIconSize(QSize(12, 12));
+  m_button->setStyleSheet(QStringLiteral("QToolButton { border: none; background: transparent; padding: 0 2px; }"));
+  connect(m_button, &QToolButton::clicked, this, &ControlIndicator::clicked);
 
-  // the "3 s ago" text and the timeout need a tick while remote control is on
+  // the "3 s ago" text and the timeout need a tick while it is on
   m_timer->setInterval(1000);
   connect(m_timer, &QTimer::timeout, this, &ControlIndicator::refresh);
 
@@ -107,27 +127,30 @@ ControlIndicator::State ControlIndicator::stateFor(bool running, qint64 msSinceC
   return Waiting;
 }
 
-QString ControlIndicator::ago(qint64 ms)
-{
-  const qint64 seconds = qMax<qint64>(0, ms / 1000);
-  if (seconds < 60) return tr("%1 s ago").arg(seconds);
-  if (seconds < 3600) return tr("%1 min ago").arg(seconds / 60);
-  return tr("%1 h ago").arg(seconds / 3600);
-}
-
-QString ControlIndicator::textFor(State state, const QString& client, const QString& command, qint64 msSinceCommand)
+QString ControlIndicator::textFor(State state, const QStringList& connected)
 {
   switch (state)
   {
-    case Off: return tr("Remote control off");
-    case Waiting: return tr("Remote control on, no assistant connected");
-    case Problem: return tr("Remote control: request with a wrong key refused");
+    case Off: return tr("AI Assistant off");
+    case Waiting: return tr("AI Assistant on, waiting for an AI");
+    case Problem: return tr("AI Assistant: a wrong key was refused");
     case Connected: break;
   }
-  QString text = tr("%1 connected").arg(client.isEmpty() ? tr("A program") : client);
+  if (connected.size() > 1) return tr("AI Assistant: %1 AI connected").arg(connected.size());
+  return tr("AI Assistant: %1").arg(connected.isEmpty() ? AiAssistant::friendlyName(QString()) : connected.first());
+}
+
+QString ControlIndicator::tipFor(const QString& command, qint64 msSinceCommand)
+{
+  QString tip = tr("AI Assistant: lets an AI on this PC pose and play the animation.\n"
+                   "Click to set it up, or to turn it on or off.\n"
+                   "Grey: off (it is off each time PinglyMotion starts)\n"
+                   "Yellow: on, waiting for an AI\n"
+                   "Green: an AI is connected\n"
+                   "Red: a request with a wrong key was refused");
   if (!command.isEmpty() && msSinceCommand >= 0)
-    text += QStringLiteral(" · ") + command + " (" + ago(msSinceCommand) + ")";
-  return text;
+    tip += QLatin1Char('\n') + tr("Last command: %1 (%2)").arg(command, AiAssistant::ago(msSinceCommand));
+  return tip;
 }
 
 ControlIndicator::State ControlIndicator::state() const
@@ -137,7 +160,61 @@ ControlIndicator::State ControlIndicator::state() const
 
 QString ControlIndicator::text() const
 {
-  return m_label->text();
+  return m_button->text();
+}
+
+bool ControlIndicator::running() const
+{
+  return m_running;
+}
+
+QToolButton* ControlIndicator::button() const
+{
+  return m_button;
+}
+
+QStringList ControlIndicator::connectedNames() const
+{
+  QStringList names;
+  const qint64 now = QDateTime::currentMSecsSinceEpoch();
+  if (m_running)
+    for (auto it = m_contacts.constBegin(); it != m_contacts.constEnd(); ++it)
+      if (now - it.value() < CONTACT_TIMEOUT_MS) names << it.key();
+  names.sort();
+  return names;
+}
+
+QHash<QString, qint64> ControlIndicator::sessionContacts() const
+{
+  return m_contacts;
+}
+
+QMenu* ControlIndicator::buildMenu(QWidget* parent)
+{
+  QMenu* menu = new QMenu(parent);
+  menu->setObjectName(QStringLiteral("aiAssistantMenu"));
+  menu->setAttribute(Qt::WA_DeleteOnClose);
+  const QList<AiAssistant::MenuLine> lines =
+    AiAssistant::menuLines(m_running, AiAssistant::knownAis(), m_contacts, QDateTime::currentMSecsSinceEpoch());
+  for (const AiAssistant::MenuLine& line : lines)
+  {
+    if (line.kind == AiAssistant::MenuLine::Separator)
+    {
+      menu->addSeparator();
+      continue;
+    }
+    QAction* action = menu->addAction(line.text);
+    action->setObjectName(line.id);
+    if (line.kind == AiAssistant::MenuLine::Info)
+    {
+      action->setEnabled(false);
+      continue;
+    }
+    if (line.id == QLatin1String("aiTurnOnAction")) connect(action, &QAction::triggered, this, &ControlIndicator::turnOnRequested);
+    else if (line.id == QLatin1String("aiTurnOffAction")) connect(action, &QAction::triggered, this, &ControlIndicator::turnOffRequested);
+    else if (line.id == QLatin1String("aiConnectAnotherAction")) connect(action, &QAction::triggered, this, &ControlIndicator::connectAnotherRequested);
+  }
+  return menu;
 }
 
 void ControlIndicator::setRunning(bool running)
@@ -147,7 +224,6 @@ void ControlIndicator::setRunning(bool running)
   if (!running)
   {
     m_lastContact = m_lastRefused = m_lastCommandTime = -1;
-    m_client.clear();
     m_command.clear();
     m_timer->stop();
   }
@@ -158,9 +234,17 @@ void ControlIndicator::setRunning(bool running)
 
 void ControlIndicator::onContact(const QString& client, const QString& command, bool ok)
 {
+  if (!m_running) return;   // nothing can talk to a stopped server; a late signal changes nothing
   m_lastContact = QDateTime::currentMSecsSinceEpoch();
   m_lastRefused = -1;   // a good request clears the problem
-  if (!client.isEmpty()) m_client = client;
+  const QString name = AiAssistant::friendlyName(client);
+  m_contacts.insert(name, m_lastContact);
+  // the name is remembered (never the key); written at most once a minute per name
+  if (!client.trimmed().isEmpty() && (!m_remembered.contains(name) || m_lastContact - m_remembered.value(name) > 60000))
+  {
+    AiAssistant::remember(name, m_lastContact);
+    m_remembered.insert(name, m_lastContact);
+  }
   if (!command.isEmpty())
   {
     m_command = command;
@@ -172,6 +256,7 @@ void ControlIndicator::onContact(const QString& client, const QString& command, 
 
 void ControlIndicator::onRefused()
 {
+  if (!m_running) return;
   m_lastRefused = QDateTime::currentMSecsSinceEpoch();
   refresh();
 }
@@ -185,10 +270,11 @@ void ControlIndicator::refresh()
 {
   const State current = state();
   static const char* const colours[] = { GREY, YELLOW, GREEN, RED };
-  setDotColour(m_led, colours[current]);
-
+  m_button->setIcon(dotIcon(colours[current]));
+  m_button->setText(textFor(current, connectedNames()));
   const QString command = m_commandOk || m_command.isEmpty() ? m_command : tr("%1 failed").arg(m_command);
-  m_label->setText(textFor(current, m_client, command, since(m_lastCommandTime)));
+  m_button->setToolTip(tipFor(command, since(m_lastCommandTime)));
+  m_button->setAccessibleName(m_button->text());
 }
 
 AuroraIndicator::AuroraIndicator(QWidget* parent) :
