@@ -211,10 +211,15 @@ void UxColoursTest::viewColoursAreTokens()
       QCOMPARE(ViewColours::ring(axis, false, dark),
                Theme::mix(ViewColours::axis(axis, dark), Theme::color(Token::Background, dark), 0.2));
     }
-    QCOMPARE(ViewColours::jointBall(ViewColours::Joint::Selected, dark), Theme::color(Token::DangerFill, dark));
-    QCOMPARE(ViewColours::jointBall(ViewColours::Joint::Highlighted, dark), Theme::color(Token::Accent, dark));
-    QCOMPARE(ViewColours::jointBall(ViewColours::Joint::Other, dark), Theme::color(Token::Success, dark));
-    QCOMPARE(ViewColours::bone(dark), Theme::color(Token::AreaOther, dark));
+    // the joint rings and bones (src/jointrings.h; all states in tests/jointrings)
+    QCOMPARE(ViewColours::jointRingEdge(false, false, dark), Theme::color(Token::Text, dark));
+    QCOMPARE(ViewColours::jointRingEdge(true, false, dark), Theme::color(Token::OnAccent, dark));
+    QCOMPARE(ViewColours::jointRingEdge(false, true, dark), Theme::color(Token::AccentText, dark));
+    QVERIFY(!ViewColours::jointRingFill(false, false, 0, dark).isValid());
+    QCOMPARE(ViewColours::jointRingFill(true, false, 0, dark), Theme::color(Token::Selection, dark));
+    QCOMPARE(ViewColours::jointRingFill(false, true, 2, dark), Theme::color(Token::AreaHands, dark));
+    QCOMPARE(ViewColours::bone(false, dark), Theme::color(Token::TextMuted, dark));
+    QCOMPARE(ViewColours::bone(true, dark), Theme::color(Token::AccentText, dark));
     QCOMPARE(ViewColours::objectMarker(dark), Theme::color(Token::Accent, dark));
     QCOMPARE(ViewColours::lockMarker(dark), Theme::color(Token::DangerFill, dark));
   }
@@ -222,7 +227,7 @@ void UxColoursTest::viewColoursAreTokens()
   Theme::apply(false);
   QCOMPARE(ViewColours::axis(0), Theme::color(Token::AxisX, false));
   QCOMPARE(ViewColours::ring(2, true), Theme::color(Token::AxisZ, false));
-  QCOMPARE(ViewColours::jointBall(ViewColours::Joint::Other), Theme::color(Token::Success, false));
+  QCOMPARE(ViewColours::bone(false), Theme::color(Token::TextMuted, false));
   QCOMPARE(ViewColours::lockMarker(), Theme::color(Token::DangerFill, false));
   Theme::apply(true);
   QCOMPARE(ViewColours::axis(0), Theme::color(Token::AxisX, true));

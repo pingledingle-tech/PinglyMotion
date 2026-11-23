@@ -4,13 +4,14 @@ Pull request: #434
 Files:
 - src/animationview.*
 - src/viewcolours.h
-- src/jointrings.*
-- src/CMakeLists.txt
-- tests/CMakeLists.txt
+- src/jointrings.h
+- src/viewprojection.h
+- CMakeLists.txt
 - tests/jointrings/**
+- tests/uxcolours/**
 - docs/RENDERING.md
-- docs/PRODUCT.md
-- docs/ROADMAP.md
+- docs/DESIGN_SYSTEM.md
+- docs/UX_DECISIONS.md
 
 ## What
 
