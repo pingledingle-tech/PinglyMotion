@@ -261,6 +261,7 @@ void LslOwnObjectTest::objectDetailsOfItself()
     list all;
     integer i;
     for (i = 1; i <= 49; ++i) all += i;
+    // 50 (health) and 56 (volume detect) have canned values now; 99 is unknown
     all += [50, 56, 99, "x", -1, 1.0];
     list d = llGetObjectDetails(llGetKey(), all);
     llOwnerSay((string)llGetListLength(d));
@@ -273,7 +274,7 @@ void LslOwnObjectTest::objectDetailsOfItself()
     QString("Object||<128.00000, 128.00000, 20.00000>|<0.00000, 0.00000, 0.00000, 1.00000>|<0.00000, 0.00000, 0.00000>|%1|%2|%1|1|1|65536"
             "|0.000000|1|1.000000|1.000000|1.000000|0.000000|%3|0|0|0|0|0|0|0.000000").arg(OWNER, GROUP, OBJECT),
     QString("-1.000000|%1|0|<0.00000, 0.00000, 0.00000>|1|1|%2||0|0|2026-01-01T00:00:00.000000Z|0|0|0|0|-1|3|1.250000|"
-            "|2026-01-01T00:00:00.000000Z|0|<0.50000, 0.50000, 0.50000>|<1.00000, 1.00000, 1.00000>|1.000000|-1|-1|-1|-1").arg(NULL_KEY, OWNER),
+            "|2026-01-01T00:00:00.000000Z|0|<0.50000, 0.50000, 0.50000>|<1.00000, 1.00000, 1.00000>|1.000000|0.000000|0|-1|-1").arg(NULL_KEY, OWNER),
     "5, 6, 2, 1, 4"});
   QCOMPARE(said(a), expected14);
 }

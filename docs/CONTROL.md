@@ -637,8 +637,8 @@ with the owner's key is listed. Avatars do not move: a scan always sees them whe
   of 0 or less (or `NaN`) removes it (sandbox choice); `llSensorRemove` removes it; a state change removes it. They write `sensor_set` and `sensor_remove` entries.
 - `llDetectedName`, `llDetectedKey`, `llDetectedOwner` (an avatar is its own owner), `llDetectedType` (1 or 8, not the combinations Second Life reports for moving or physical objects), `llDetectedPos`, `llDetectedRot`
   (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
-  gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated).
-- Not done: the touch data (`llDetectedTouch*`), `llDetectedGrab`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
+  gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated; the touch data `llDetectedTouch*` is canned, see "Leftover reads and media").
+- Not done: `llDetectedGrab`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
 
 #### Controls (Script Lab step 9b-6)
 
@@ -742,8 +742,7 @@ are in the inventory too, as type `script` (an item may not have a script's name
 - A touch held past the end of `lsl_run` (or of `lsl_event` with `seconds`) goes on in the next `lsl_event`. `lsl_event`
   with `hold` and without `seconds` runs on at least until the touch is let go.
 - `{"command": "lsl_event", "type": "touch", "hold": 1.5}` holds the touch 1.5 seconds: `touch_start`, 15 `touch` events and `touch_end`.
-- Not done: the touch data (`llDetectedTouchFace`, `llDetectedTouchPos`, `llDetectedTouchUV`, `llDetectedTouchST`,
-  `llDetectedTouchNormal`, `llDetectedTouchBinormal`; not supported yet), several avatars touching at once, and the Live
+- Not done: where on the face a click lands (the touch data is canned, see "Leftover reads and media"), several avatars touching at once, and the Live
   page's Touch button holding a touch (it sends a click).
 
 #### Reads and state of the object itself (Script Lab, second gap list, step 2)
@@ -794,9 +793,7 @@ sandbox chooses, and [SCRIPT_LAB.md](SCRIPT_LAB.md) lists those doubts.
   single script's object entry) have `running: false` while a script is not running.
 - **`llGetObjectDetails(id, params)`** knows the objects of the world (their root prim; not child prim keys and not deleted
   objects) and the avatars (the owner, the `avatars` of the request, sitters). An unknown key gives an empty list.
-  Entries of `params` that are not integers are skipped; each unknown flag, and the flags 50 to 56 (`OBJECT_HEALTH`,
-  `OBJECT_DAMAGE`, `OBJECT_DAMAGE_TYPE`, `OBJECT_PERMS`, `OBJECT_PERMS_COMBINED`, `OBJECT_LOCKED`,
-  `OBJECT_VOLUME_DETECT`, not simulated yet), give `OBJECT_UNKNOWN_DETAIL` (-1). For an object: name, description,
+  Entries of `params` that are not integers are skipped; each unknown flag gives `OBJECT_UNKNOWN_DETAIL` (-1); the flags 50 to 56 give canned values, see "Leftover reads and media". For an object: name, description,
   position, rotation (the root's), velocity and omega zero, owner, group (the sandbox group), creator and rezzer (the
   owner), running and total script counts, script memory 65536 per running script, script and character time 0.0,
   prim equivalence and prim count the prims, server, streaming and physics cost 1.0 per prim (canned), root (its own
@@ -916,7 +913,7 @@ New input types, in `inputs` of `lsl_run` and in `lsl_event`:
 - Doubts, written down instead of guessed (the sandbox chose): the wording of the `debug` lines, the order of an
   email's header lines, the 100 emails a mailbox holds, that every script of the prim with a `money` event gets a
   payment, and that an email arrives without an event (the `email` event comes only from `llGetNextEmail`).
-- Not done: `llSetContentType` and the content type of the answer, emails between objects of the world (an `llEmail`
+- Not done: the content type of the answer (`llSetContentType` is only recorded), emails between objects of the world (an `llEmail`
   to `<object key>@lsl.secondlife.com` is only recorded), the pay price dialog (`llSetPayPrice` stays recorded only),
   the URLs lost when an object is taken and rezzed again, and the forced delays of other functions.
 
@@ -947,8 +944,18 @@ back what it set. Every call writes a `prim_media` entry. No forced delay is sim
 - Doubts, written down instead of guessed (the sandbox chose): the defaults (`AUTO_SCALE` 1, `PERMS_INTERACT` 7), that
   the answers for a wrong `llGetPrimMediaParams` call are a one-element list, that clearing a face without media is
   `STATUS_OK`, that the whitelist compares hosts only, and that a prim has exactly 6 faces.
-- Not done: `llSetLinkMedia`, `llGetLinkMedia`, `llClearLinkMedia` (they stay "not supported yet"), permission
+- Not done: permission
   checks of the media (who may set it), and the 1 second sleep.
+
+#### Leftover reads and media (Script Lab, second gap list)
+Canned answers and record-only functions; nothing is fetched, played or shown. Where the Second Life wiki is unclear the function gives its documented return type with a harmless value.
+- **Display names:** `llGetDisplayName(id)` gives the avatar's name without the last name `Resident` (`Guest Resident` gives `Guest`, `Ann Smith` stays); `""` for a key that is no avatar of the sandbox. `llRequestDisplayName(id)` and `llRequestUsername(id)` return a query key, write a `dataserver_request` entry (`function`, `avatar`, `query`) and, for an avatar of the sandbox, raise `dataserver` at once with the display name or the user name (as `llGetUsername`); any other key gets no event.
+- **`llRequestSimulatorData(region, data)`** returns a query key and writes a `dataserver_request` entry (`function`, `region`, `data`, `query`). Only the sandbox's own region is known (name compared without regard to case): `DATA_SIM_POS` gives its corner as a vector text, `DATA_SIM_STATUS` `up`, `DATA_SIM_RATING` `PG`. For another region the status is `unknown` and the rating `UNKNOWN` (the wiki), and `DATA_SIM_POS` gets no event. Any other number gets no event.
+- **`llGetGMTclock()`** gives whole seconds since midnight UTC of the simulated clock (the region's start time plus the simulated seconds). **`llGetEnv(key)`** gives the wiki's keys with canned values (for example `sim_channel` `Second Life Server`, `sim_version` `10.11.30.215699`, `dynamic_pathfinding` `enabled`, `agent_limit` `40`, `region_start_time` the region's `unix_start`, `frame_number` 1 plus 45 per simulated second); `""` for any other key (`region_name` is not on the wiki's list). **`llSetContentType`** writes a `recorded_only` entry.
+- **Link media:** `llSetLinkMedia(link, face, params)`, `llGetLinkMedia(link, face, params)` and `llClearLinkMedia(link, face)` use the storage and the rules of `llSetPrimMediaParams`, `llGetPrimMediaParams` and `llClearPrimMedia`, so media set with one family reads back with the other. `llSetLinkMedia` and `llClearLinkMedia` take a link number, `LINK_THIS` or a set of links, and `ALL_SIDES`; no such link gives `STATUS_NOT_FOUND` (1003), a face outside 0 to 5 `STATUS_BOUNDS_ERROR`. A whitelist that refuses the address changes no face. `llGetLinkMedia` takes one link and one face (`ALL_SIDES` is `STATUS_BOUNDS_ERROR`); a set of links gives the empty list, a missing link `[STATUS_NOT_FOUND]`. A `prim_media` entry with `op` `set`, `get` or `clear` and the `link` as given.
+- **Touch data:** inside `touch_start`, `touch` and `touch_end`, `llDetectedTouchFace` gives 0, `llDetectedTouchUV` and `llDetectedTouchST` `<0.5, 0.5, 0>`, `llDetectedTouchNormal` `<0, 0, 1>`, `llDetectedTouchBinormal` `<1, 0, 0>` and `llDetectedTouchPos` the touched prim's position (a sandbox choice: where a click lands is not simulated). Anywhere else, and for an index with nobody, they give `TOUCH_INVALID_FACE`, `TOUCH_INVALID_TEXCOORD` or `TOUCH_INVALID_VECTOR`.
+- **`llGetObjectDetails` flags 50 to 56:** `OBJECT_HEALTH` and `OBJECT_DAMAGE` 0.0, `OBJECT_DAMAGE_TYPE` 0 (`DAMAGE_TYPE_GENERIC`), `OBJECT_LOCKED` and `OBJECT_VOLUME_DETECT` 0 (`llVolumeDetect` is record only). `OBJECT_PERMS` and `OBJECT_PERMS_COMBINED` give five integers each (base, owner, group, everyone, next owner), the same as `llGetObjectPermMask` (`2147483647, 2147483647, 0, 0, 532480`), five zeros for an avatar.
+- Not done: the forced delays, a display name that differs from the user name, `DATA_SIM_RELEASE`, other regions in `llRequestSimulatorData`.
 
 #### Pure functions and object state (Script Lab step 9b-1, issue 310)
 

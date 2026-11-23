@@ -179,6 +179,7 @@ struct Detected
   int type = 1;                     // AGENT (1) for an avatar, SCRIPTED (8) for an object
   int group = 0;                    // llDetectedGroup: 1 when it shares the active group of the sensing object
   int link = 0;
+  bool touch = false;               // made by a touch event: llDetectedTouchFace and friends answer with canned values
 };
 
 // Step 9b-9: a canned answer to llHTTPRequest, given in the lsl_run input ("http"). The sandbox never goes on the

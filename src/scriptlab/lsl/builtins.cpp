@@ -87,7 +87,11 @@ enum class Fn
   ApplyImpulse, SetBuoyancy,
   // second round of pure functions: JSON, llListRandomize, llLog, llAcos and three rotation helpers
   JsonGetValue, JsonSetValue, JsonValueType, List2Json, Json2List, ListRandomize, Log, Acos, Axes2Rot, AngleBetween, Rot2Axis,
-  Asin, Log10
+  Asin, Log10,
+  // leftover reads and media: display names, simulator data, environment, clock, link media, touch face data
+  GetDisplayName, RequestDisplayName, RequestUsername, RequestSimulatorData, GetGMTclock, GetEnv,
+  SetLinkMedia, GetLinkMedia, ClearLinkMedia,
+  DetectedTouchFace, DetectedTouchUV, DetectedTouchST, DetectedTouchNormal, DetectedTouchBinormal, DetectedTouchPos
 };
 
 const struct { const char* name; Fn fn; } SUPPORTED[] =
@@ -241,6 +245,14 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llAsin", Fn::Asin}, {"llLog10", Fn::Log10},
   {"llLog", Fn::Log}, {"llAcos", Fn::Acos}, {"llAxes2Rot", Fn::Axes2Rot}, {"llAngleBetween", Fn::AngleBetween},
   {"llRot2Axis", Fn::Rot2Axis},
+  // leftover reads and media: canned answers, record only where nothing can happen
+  {"llGetDisplayName", Fn::GetDisplayName}, {"llRequestDisplayName", Fn::RequestDisplayName}, {"llRequestUsername", Fn::RequestUsername},
+  {"llRequestSimulatorData", Fn::RequestSimulatorData}, {"llGetGMTclock", Fn::GetGMTclock}, {"llGetEnv", Fn::GetEnv},
+  {"llSetContentType", Fn::RecordOnly},
+  {"llSetLinkMedia", Fn::SetLinkMedia}, {"llGetLinkMedia", Fn::GetLinkMedia}, {"llClearLinkMedia", Fn::ClearLinkMedia},
+  {"llDetectedTouchFace", Fn::DetectedTouchFace}, {"llDetectedTouchUV", Fn::DetectedTouchUV}, {"llDetectedTouchST", Fn::DetectedTouchST},
+  {"llDetectedTouchNormal", Fn::DetectedTouchNormal}, {"llDetectedTouchBinormal", Fn::DetectedTouchBinormal},
+  {"llDetectedTouchPos", Fn::DetectedTouchPos},
 };
 
 struct RawFunction { const char* name; const char* ret; const char* args; const char* argNames; int deprecated; };
@@ -1127,7 +1139,7 @@ enum
 };
 enum
 {
-  STATUS_OK = 0, STATUS_MALFORMED_PARAMS = 1000, STATUS_TYPE_MISMATCH = 1001, STATUS_BOUNDS_ERROR = 1002,
+  STATUS_OK = 0, STATUS_MALFORMED_PARAMS = 1000, STATUS_TYPE_MISMATCH = 1001, STATUS_BOUNDS_ERROR = 1002, STATUS_NOT_FOUND = 1003,
   STATUS_WHITELIST_FAILED = 2001
 };
 const int MEDIA_MAX_URL = 1024, MEDIA_MAX_PIXELS = 2048, MEDIA_MAX_WHITELIST_COUNT = 64, MEDIA_MAX_WHITELIST_SIZE = 1024;
@@ -1140,6 +1152,7 @@ const char* mediaStatusName(int code)
     case STATUS_MALFORMED_PARAMS: return "STATUS_MALFORMED_PARAMS";
     case STATUS_TYPE_MISMATCH: return "STATUS_TYPE_MISMATCH";
     case STATUS_BOUNDS_ERROR: return "STATUS_BOUNDS_ERROR";
+    case STATUS_NOT_FOUND: return "STATUS_NOT_FOUND";
     case STATUS_WHITELIST_FAILED: return "STATUS_WHITELIST_FAILED";
     default: return "STATUS_ERROR";
   }
@@ -1575,9 +1588,36 @@ QString usernameOf(const QString& name)
   return parts.join('.').toLower();
 }
 
+// llGetDisplayName: the display name of a new account is its name without the last name Resident ("Ann Smith" stays,
+// "Ann Resident" gives "Ann"); the sandbox has no way to change it
+QString displayNameOf(const QString& name)
+{
+  QStringList parts = name.trimmed().split(' ', Qt::SkipEmptyParts);
+  if (parts.size() >= 2 && parts.last().compare("Resident", Qt::CaseInsensitive) == 0) parts.removeLast();
+  return parts.join(' ');
+}
+
+// llGetEnv: the canned answer for a key of the Second Life wiki's list; "" for any other key.
+// Values are the wiki's examples or defaults where it gives one, the sandbox's own choice where it does not.
+QString envValue(const QString& key, const RegionSettings& r, double now)
+{
+  static const QHash<QString, QString> fixed = {
+    {"agent_limit", "40"}, {"agent_limit_max", "100"}, {"agent_reserved", "0"}, {"agent_unreserved", "40"},
+    {"estate_id", "1"}, {"estate_name", "mainland"}, {"region_idle", "0"}, {"region_cpu_ratio", "1"},
+    {"region_max_prims", "15000"}, {"region_object_bonus", "1.0"}, {"region_product_name", "Estate / Full Region"},
+    {"region_product_sku", "0"}, {"region_rating", "PG"}, {"dynamic_pathfinding", "enabled"},
+    {"sim_channel", "Second Life Server"}, {"sim_version", "10.11.30.215699"}, {"simulator_hostname", "sandbox.invalid"},
+    {"whisper_range", "10"}, {"chat_range", "20"}, {"shout_range", "100"}, {"death_action", "0"},
+    {"invulnerability_time", "0.0"}, {"damage_throttle", "0.0"}, {"health_regen_rate", "0.166667"}, {"damage_limit", "0"},
+    {"allow_damage_adjust", "1"}, {"restrict_combat_log", "1"}, {"restore_health", "1"}};
+  if (key == "region_start_time") return QString::number(r.unixStart);
+  if (key == "frame_number") return QString::number(qint64(std::floor(now * 45.0)) + 1);   // 45 frames a second
+  return fixed.value(key);
+}
+
 
 // one value of llGetObjectDetails for an object or an avatar; OBJECT_UNKNOWN_DETAIL (-1) for a flag the sandbox does
-// not know (also 50 to 56: health, damage, the permission lists, locked, volume detect are not simulated yet)
+// not know (50 to 56 give canned values; 53 and 54 give five integers and are made in llGetObjectDetails)
 // made: when every sandbox object was made, the start of the run (gap list 2, step 3: the region's start time)
 Value objectDetail(const ObjectDetails& d, int flag, const QString& made)
 {
@@ -1633,6 +1673,11 @@ Value objectDetail(const ObjectDetails& d, int flag, const QString& made)
     case 47: return av ? Value::vector(0.0f, 0.0f, 0.0f) : vec(d.scale);             // OBJECT_SCALE
     case 48: return av ? Value::vector(0.0f, 0.0f, 0.0f) : vec(d.textColor);         // OBJECT_TEXT_COLOR
     case 49: return Value::number(av ? 0.0f : d.textAlpha);                          // OBJECT_TEXT_ALPHA
+    case 50: return Value::number(0.0f);                                             // OBJECT_HEALTH: no damage in the sandbox region
+    case 51: return Value::number(0.0f);                                             // OBJECT_DAMAGE: collision damage output
+    case 52: return Value::integer(0);                                               // OBJECT_DAMAGE_TYPE: DAMAGE_TYPE_GENERIC
+    case 55: return Value::integer(0);                                               // OBJECT_LOCKED
+    case 56: return Value::integer(0);                                               // OBJECT_VOLUME_DETECT: llVolumeDetect is record only
     default: return Value::integer(-1);                                              // OBJECT_UNKNOWN_DETAIL
   }
 }
@@ -2115,6 +2160,150 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       }
       queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
       return Value::key(id);
+    }
+
+    case Fn::GetDisplayName:
+    {
+      // the display name of an avatar in the sandbox; "" for any other key (the wiki: not in the region, not cached)
+      ObjectDetails d;
+      return Value::string(m_world.details(a[0].s, d) && d.avatar ? displayNameOf(d.name) : QString());
+    }
+    case Fn::RequestDisplayName:
+    case Fn::RequestUsername:
+    {
+      // answered at once through dataserver for an avatar the sandbox knows; for any other key no dataserver event
+      // comes (the wiki does not say what the grid answers; the query key is still returned)
+      const QString id = nextKey();
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"avatar", World::clip(a[0].s)}, {"query", id}});
+      ObjectDetails d;
+      if (!m_world.details(a[0].s, d) || !d.avatar) return Value::key(id);
+      queueEvent(Event{"dataserver", {Value::key(id), Value::string(*it == Fn::RequestDisplayName ? displayNameOf(d.name) : usernameOf(d.name))},
+                       QString(), QString()});
+      return Value::key(id);
+    }
+    case Fn::RequestSimulatorData:
+    {
+      // only the sandbox's own region is known (names compare without regard to case). DATA_SIM_POS: its corner;
+      // DATA_SIM_STATUS: "up"; DATA_SIM_RATING: "PG". For another region the wiki says status "unknown" and rating
+      // "UNKNOWN" and gives no position, so DATA_SIM_POS gets no answer; any other DATA_SIM_* number gets none either
+      const QString id = nextKey();
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"region", World::clip(a[0].s)}, {"data", a[1].i}, {"query", id}});
+      const RegionSettings& r = m_world.region();
+      const bool known = a[0].s.compare(r.name, Qt::CaseInsensitive) == 0;
+      QString data;
+      switch (a[1].i)
+      {
+        case 5:
+          if (!known) return Value::key(id);
+          data = castValue(Value::vector(r.corner[0], r.corner[1], r.corner[2]), Type::String).s;
+          break;
+        case 6: data = known ? "up" : "unknown"; break;
+        case 7: data = known ? "PG" : "UNKNOWN"; break;
+        default: return Value::key(id);
+      }
+      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      return Value::key(id);
+    }
+    case Fn::GetGMTclock:
+      // whole seconds since midnight UTC of the simulated clock (the region's start time plus the simulated seconds)
+      return Value::number(float(std::fmod(double(m_world.region().unixStart) + std::floor(m_now), 86400.0)));
+    case Fn::GetEnv: return Value::string(envValue(a[0].s, m_world.region(), m_now));
+
+    // -------------------------------------------- the media of a link (record only: nothing is fetched or played)
+    case Fn::SetLinkMedia:
+    case Fn::ClearLinkMedia:
+    case Fn::GetLinkMedia:
+    {
+      const bool get = *it == Fn::GetLinkMedia, set = *it == Fn::SetLinkMedia;
+      const int link = a[0].i, face = a[1].i;
+      auto note = [&](QJsonObject e) { if (!m_world.logFull()) { e["type"] = "prim_media"; e["link"] = link; e["face"] = face; m_world.log(m_now, e); } };
+      auto status = [&](int code) { return QJsonValue(mediaStatusName(code)); };
+      const std::vector<int> prims = primLinks(m_world, link);
+      if (get)
+      {
+        // one link and one face; a set of links gives an empty list (as llGetLinkPrimitiveParams), a link that does not
+        // exist, or a face the prim does not have, a single error code
+        std::vector<Value> out;
+        if (link == LINK_SET || link == LINK_ALL_OTHERS || link == LINK_ALL_CHILDREN)
+        {
+          note(QJsonObject{{"op", "get"}, {"params", recordArgs(a[2].list)}, {"result", "link_set"}});
+          return Value::makeList(out);
+        }
+        int code = prims.empty() ? STATUS_NOT_FOUND : (face >= 0 && face < PrimState::FACES ? STATUS_OK : STATUS_BOUNDS_ERROR);
+        const MediaState media = code == STATUS_OK ? primOf(m_world, prims[0]).faces[face].media : MediaState();
+        if (code == STATUS_OK && media.present)
+          for (const Value& id : a[2].list)
+          {
+            if (id.type != Type::Integer) { code = STATUS_TYPE_MISMATCH; break; }
+            if (id.i < 0 || id.i > PRIM_MEDIA_PERMS_CONTROL) { code = STATUS_MALFORMED_PARAMS; break; }
+            out.push_back(mediaValue(media, id.i));
+          }
+        if (code != STATUS_OK) out = {Value::integer(code)};
+        note(QJsonObject{{"op", "get"}, {"params", recordArgs(a[2].list)}, {"result", code != STATUS_OK ? status(code) : QJsonValue(media.present ? "ok" : "no_media")}});
+        return Value::makeList(out);
+      }
+      const std::vector<int> faces = facesOf(face);
+      int code = prims.empty() ? STATUS_NOT_FOUND : (faces.empty() ? STATUS_BOUNDS_ERROR : STATUS_OK);
+      if (set && code == STATUS_OK) code = checkMediaRules(a[2].list);
+      if (code == STATUS_OK)
+      {
+        // all or nothing: a whitelist that refuses the address on any face changes no face
+        std::vector<MediaState> next;
+        for (int prim : prims)
+          for (int f : faces)
+          {
+            MediaState m = set ? primOf(m_world, prim).faces[f].media : MediaState();
+            if (set)
+            {
+              applyMediaRules(m, a[2].list);
+              if (m.whitelistEnable && !m.currentUrl.isEmpty() && !mediaWhitelistAllows(m.whitelist, m.currentUrl)) code = STATUS_WHITELIST_FAILED;
+              m.present = true;
+            }
+            next.push_back(m);
+          }
+        if (code == STATUS_OK)
+        {
+          size_t k = 0;
+          for (int prim : prims)
+            for (int f : faces) primOf(m_world, prim).faces[f].media = next[k++];
+        }
+      }
+      QJsonObject e{{"op", set ? "set" : "clear"}, {"result", status(code)}, {"note", set ? "Simulated: nothing is fetched or played." : "Simulated: no media was ever loaded."}};
+      if (set) e["params"] = recordArgs(a[2].list);
+      note(e);
+      return Value::integer(code);
+    }
+
+    // -------------------------------------------- where a touch hit (canned: the sandbox does not simulate the click's position)
+    case Fn::DetectedTouchFace:
+    case Fn::DetectedTouchUV:
+    case Fn::DetectedTouchST:
+    case Fn::DetectedTouchNormal:
+    case Fn::DetectedTouchBinormal:
+    case Fn::DetectedTouchPos:
+    {
+      // inside touch_start, touch and touch_end the touch hit the middle of face 0 of the prim touched: UV and ST
+      // <0.5, 0.5, 0>, normal <0, 0, 1>, binormal <1, 0, 0>, position the prim's position. Anywhere else (a sensor, a
+      // collision, an index with nobody) the answer is TOUCH_INVALID_FACE, TOUCH_INVALID_TEXCOORD or TOUCH_INVALID_VECTOR
+      const bool valid = a[0].i >= 0 && a[0].i < qint32(m_detected.size()) && m_detected[size_t(a[0].i)].touch;
+      switch (*it)
+      {
+        case Fn::DetectedTouchFace: return Value::integer(valid ? 0 : -1);
+        case Fn::DetectedTouchUV:
+        case Fn::DetectedTouchST: return valid ? Value::vector(0.5f, 0.5f, 0.0f) : Value::vector(-1.0f, -1.0f, 0.0f);
+        case Fn::DetectedTouchNormal: return valid ? Value::vector(0.0f, 0.0f, 1.0f) : Value::vector(0.0f, 0.0f, 0.0f);
+        case Fn::DetectedTouchBinormal: return valid ? Value::vector(1.0f, 0.0f, 0.0f) : Value::vector(0.0f, 0.0f, 0.0f);
+        default:
+        {
+          if (!valid) return Value::vector(0.0f, 0.0f, 0.0f);
+          float p[3];
+          const int link = m_detected[size_t(a[0].i)].link;
+          primWorldPosition(m_world, link > 0 ? link : qMax(1, m_world.linkNumber()), p);
+          return Value::vector(p[0], p[1], p[2]);
+        }
+      }
     }
 
     // -------------------------------------------- object and owner
@@ -3551,7 +3740,17 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       const QString made = m_world.region().timestamp(0.0);
       if (m_world.details(a[0].s, d))
         for (const Value& p : a[1].list)
-          if (p.type == Type::Integer) out.push_back(objectDetail(d, p.i, made));   // other types are skipped, as in Second Life
+        {
+          if (p.type != Type::Integer) continue;   // other types are skipped, as in Second Life
+          if (p.i == 53 || p.i == 54)
+          {
+            // OBJECT_PERMS and OBJECT_PERMS_COMBINED: five integers (base, owner, group, everyone, next owner), the same as
+            // llGetObjectPermMask gives for MASK_BASE to MASK_NEXT (the inventory is full permission too, so both are alike);
+            // an avatar has none
+            for (int mask : {0, 1, 2, 3, 4}) out.push_back(Value::integer(d.avatar ? 0 : permMask(mask)));
+          }
+          else out.push_back(objectDetail(d, p.i, made));
+        }
       m_steps += qint64(a[1].list.size());
       Value result = Value::makeList(std::move(out));
       checkSize(result);

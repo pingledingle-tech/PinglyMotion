@@ -187,6 +187,12 @@ FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv lslworld lsllink lslpure l
   ADD_TEST (NAME ${LSL_TEST} COMMAND pinglymotion_${LSL_TEST}_tests)
 ENDFOREACH ()
 
+# Script Lab: leftover reads and media functions
+ADD_EXECUTABLE (pinglymotion_lslrest_tests tst_lslrest.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslrest_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_lslrest_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME lslrest COMMAND pinglymotion_lslrest_tests)
+
 # Script Lab: static warnings (lint) and lsl_lint; the examples and the fuzz corpus must be lint clean
 ADD_EXECUTABLE (pinglymotion_lsllint_tests tst_lsllint.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lsllint_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
