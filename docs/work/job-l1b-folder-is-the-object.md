@@ -1,6 +1,6 @@
 Branch: job/l1b-folder-is-the-object
 Status: active
-Pull request: pending
+Pull request: #427
 Files:
 - src/scriptlab/labfolder.*
 - src/scriptlab/labwatcher.*
