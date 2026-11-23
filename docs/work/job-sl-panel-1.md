@@ -1,5 +1,5 @@
 Branch: job/sl-panel-1
-Status: active
+Status: done
 Pull request: #387
 Files:
 - src/scriptlab/scriptlabpanel.*
