@@ -1852,6 +1852,14 @@ Pick the ones you want.</source>
         <source>Press Down to pick, then Enter or Tab. Esc closes the list.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>%1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Enter puts in the example: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LabEditor</name>
@@ -2132,6 +2140,161 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Command</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LabSuggest::RlvProvider</name>
+    <message>
+        <source>A key (UUID): 36 letters and digits with dashes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A key (UUID), or a distance in metres.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A key (UUID), or a number.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A number, such as 1.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A whole number, such as 2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A chat channel number, 1 or higher.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Three numbers with slashes, such as 0/0/1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Four numbers with slashes, such as 8/6/0/0.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An attachment point on the avatar.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A clothing layer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A camera mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A channel number. Add ; and part of a rule name to filter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An example value. Change it to what you need.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restriction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>force</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>reply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLV and RLVa</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLVa only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLV only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> (=force RLVa only)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Group: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Option: %1, needed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Option: %1, optional</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;setting&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lifts every rule this object holds.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear · RLV and RLVa · @clear=&lt;part of a name&gt; lifts only those</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Option of %1 · %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turns the rule on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lifts the rule again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The same as n: turns the rule on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The same as y: lifts the rule again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Does it once, right now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A channel number. The answer comes back on it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reply · any channel from 1, here 2222</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Form of %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5567,15 +5730,7 @@ Buttons: %3 (channel %4)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Press Enter or double-click a line to show it in the script</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Event log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>What the script did in the last run: what it said, its listens, timers and RLV commands. Times are simulated seconds.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6075,6 +6230,18 @@ Error: %2</source>
     </message>
     <message>
         <source>the folder watch did not find the file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag to change the size of the Script Lab window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a line, or press Enter, to show it in the script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What the script did in the last run, in simulated seconds. Click an error or RLV line to show it in the script.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

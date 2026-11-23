@@ -14,7 +14,7 @@
  * problem or on a log line showing the code line, and the viewer rule reaching the editor.
  *
  * Set PINGLYMOTION_RLVSUGGEST_SHOT to a PNG path to save pictures of the list
- * ("-beginner", "-expert", "-rlv" are added before ".png").
+ * ("-beginner", "-expert", "-rlv", "-floating" are added before ".png").
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -23,6 +23,9 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QDockWidget>
+#include <QMainWindow>
+#include <QSizeGrip>
 #include <QFile>
 #include <QFrame>
 #include <QLabel>
@@ -160,6 +163,8 @@ class TestRlvSuggest : public QObject
     void warningInTheEditor();
     void clickShowsTheCodeLine();
     void viewerRuleReachesTheEditor();
+    void windowSize();
+    void windowSizeRemembered();
     void textsAreShort();
 
   private:
@@ -655,6 +660,109 @@ void TestRlvSuggest::viewerRuleReachesTheEditor()
   QCOMPARE(panel.scriptView()->rlvMode(), Rlv::Mode::Rlv);
   panel.setMode(Rlv::Mode::Rlva);
   QCOMPARE(panel.scriptView()->rlvMode(), Rlv::Mode::Rlva);
+}
+
+// the project owner, 23 Nov 2026, 17:48: the window could not be resized and needs more room
+void TestRlvSuggest::windowSize()
+{
+  QMainWindow window;
+  window.setCentralWidget(new QWidget);
+  window.resize(1600, 1000);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  ScriptLabPanel* panel = new ScriptLabPanel;
+  QDockWidget* dock = ScriptLabPanel::makeDock(&window, panel);
+  dock->show();
+  QTest::qWait(50);
+  // more room at start, and a sensible smallest size (both at 100 percent text size)
+  QCOMPARE(ScriptLabPanel::defaultSize(), QSize(480, 720));
+  QCOMPARE(ScriptLabPanel::minimumPanelSize(), QSize(300, 240));
+  QCOMPARE(panel->sizeHint(), QSize(480, 720));
+  QCOMPARE(panel->minimumSize(), QSize(300, 240));
+  QCOMPARE(dock->width(), 480);
+  // docked: the side can be dragged wider and narrower, down to the smallest size
+  window.resizeDocks({dock}, {900}, Qt::Horizontal);
+  QTest::qWait(50);
+  QCOMPARE(dock->width(), 900);
+  window.resizeDocks({dock}, {100}, Qt::Horizontal);
+  QTest::qWait(50);
+  QCOMPARE(panel->width(), 300);
+  window.resizeDocks({dock}, {600}, Qt::Horizontal);
+  QTest::qWait(50);
+  // docked: no grip (the splitter between the panels does it)
+  QVERIFY(panel->sizeGrip()->isHidden());
+  // floating: the window has no system frame (custom title bar), so a size grip shows in the corner
+  dock->setFloating(true);
+  QTest::qWait(50);
+  QVERIFY(dock->isFloating());
+  QVERIFY(dock->windowFlags() & Qt::FramelessWindowHint);
+  QVERIFY(panel->sizeGrip()->isVisible());
+  QVERIFY(qobject_cast<QSizeGrip*>(panel->sizeGrip()));
+  QCOMPARE(panel->sizeGrip()->toolTip(), QString("Drag to change the size of the Script Lab window"));
+  const QRect grip = panel->sizeGrip()->geometry();
+  QCOMPARE(grip.bottomRight(), panel->rect().bottomRight());
+  dock->resize(700, 800);
+  QTest::qWait(50);
+  QCOMPARE(dock->size(), QSize(700, 800));
+  shot(*dock, "-floating");
+  QCOMPARE(panel->sizeGrip()->geometry().bottomRight(), panel->rect().bottomRight());   // follows the corner
+  dock->resize(100, 100);
+  QTest::qWait(50);
+  QVERIFY(panel->width() >= 300 && panel->height() >= 240);
+  // docked again: the grip goes
+  dock->setFloating(false);
+  QTest::qWait(50);
+  QVERIFY(panel->sizeGrip()->isHidden());
+}
+
+// the size is part of the saved panel layout (QMainWindow::saveState, written at close and read at start)
+void TestRlvSuggest::windowSizeRemembered()
+{
+  QByteArray saved;
+  {
+    QMainWindow window;
+    window.setCentralWidget(new QWidget);
+    window.resize(1600, 1000);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QDockWidget* dock = ScriptLabPanel::makeDock(&window, new ScriptLabPanel);
+    dock->show();
+    window.resizeDocks({dock}, {640}, Qt::Horizontal);
+    QTest::qWait(50);
+    QCOMPARE(dock->width(), 640);
+    saved = window.saveState(1);
+  }
+  {
+    QMainWindow window;
+    window.setCentralWidget(new QWidget);
+    window.resize(1600, 1000);
+    QDockWidget* dock = ScriptLabPanel::makeDock(&window, new ScriptLabPanel);
+    QVERIFY(window.restoreState(saved, 1));
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QTest::qWait(50);
+    QVERIFY(dock->isVisible());
+    QCOMPARE(dock->width(), 640);
+    // floating with a size of its own
+    dock->setFloating(true);
+    dock->resize(620, 540);   // inside the test screen, so restoring does not have to shrink it
+    QTest::qWait(50);
+    saved = window.saveState(1);
+  }
+  {
+    QMainWindow window;
+    window.setCentralWidget(new QWidget);
+    window.resize(1600, 1000);
+    ScriptLabPanel* panel = new ScriptLabPanel;
+    QDockWidget* dock = ScriptLabPanel::makeDock(&window, panel);
+    QVERIFY(window.restoreState(saved, 1));
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QTest::qWait(50);
+    QVERIFY(dock->isFloating());
+    QCOMPARE(dock->size(), QSize(620, 540));
+    QVERIFY(panel->sizeGrip()->isVisible());
+  }
 }
 
 void TestRlvSuggest::textsAreShort()

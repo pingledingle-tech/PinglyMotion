@@ -79,6 +79,18 @@ class ScriptLabPanel : public QWidget
     // the two pages, in the mockup's order
     enum Page { LivePage = 0, CommandsPage = 1 };
 
+    // Size (the project owner, 23 Nov 2026, 17:48: the window could not be resized and needs
+    // more room). The panel starts at defaultSize() when docked or floated for the first time,
+    // never gets smaller than minimumPanelSize(), and a floating panel has a size grip in its
+    // bottom right corner (the custom title bar leaves the floating window without a system
+    // frame, so its edges cannot be dragged). Both sizes follow the text size.
+    static QSize defaultSize();
+    static QSize minimumPanelSize();
+    QSize sizeHint() const override { return defaultSize(); }
+    // the grip: shown only while the panel floats
+    QWidget* sizeGrip() const { return m_sizeGrip; }
+    void setFloatingGrip(bool floating);
+
     explicit ScriptLabPanel(QWidget* parent = nullptr);
 
     // The RLV state to show and change. The panel does not own it (the
@@ -285,6 +297,7 @@ class ScriptLabPanel : public QWidget
 
   protected:
     void changeEvent(QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
     bool eventFilter(QObject* watched, QEvent* event) override;
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;
@@ -379,6 +392,8 @@ class ScriptLabPanel : public QWidget
     QPushButton* m_openEditor = nullptr;
     LabCodeEdit* m_scriptView = nullptr;
     LabEditor* m_editor = nullptr;
+    QWidget* m_sizeGrip = nullptr;
+    void placeSizeGrip();
     int m_runAtSave = 0;               // the watch's run count when the editor saved
     void runSavedScript(const QString& path);
     QListWidget* m_problems = nullptr;

@@ -5,6 +5,8 @@
  */
 
 #include <QCheckBox>
+#include <QResizeEvent>
+#include <QSizeGrip>
 #include <QMouseEvent>
 #include <QRegularExpression>
 #include <QTextDocument>
@@ -50,6 +52,7 @@
 #include "objectsview.h"
 #include "paneltitlebar.h"
 #include "rlvbehaviours.h"
+#include "textsize.h"
 #include "rlvstate.h"
 #include "scriptlabsection.h"
 #include "spherecontrols.h"
@@ -181,6 +184,12 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   QWidget(parent)
 {
   setObjectName("scriptLabPanel");
+  setMinimumSize(minimumPanelSize());
+  // the grip for a floating panel (not in a layout: it sits in the bottom right corner)
+  m_sizeGrip = new QSizeGrip(this);
+  m_sizeGrip->setObjectName("scriptLabSizeGrip");
+  m_sizeGrip->setToolTip(tr("Drag to change the size of the Script Lab window"));
+  m_sizeGrip->hide();
 
   QVBoxLayout* outer = new QVBoxLayout(this);
   outer->setContentsMargins(0, 0, 0, 0);
@@ -747,6 +756,12 @@ void ScriptLabPanel::hideEvent(QHideEvent* event)
 void ScriptLabPanel::changeEvent(QEvent* event)
 {
   QWidget::changeEvent(event);
+  // the text size changed: the sizes follow it
+  if (event->type() == QEvent::FontChange)
+  {
+    setMinimumSize(minimumPanelSize());
+    updateGeometry();
+  }
   // the theme was switched: new token colours
   if (event->type() == QEvent::PaletteChange)
   {
@@ -873,7 +888,40 @@ QDockWidget* ScriptLabPanel::makeDock(QMainWindow* window, ScriptLabPanel* panel
   // hidden until asked for: someone who only animates never sees it
   window->addDockWidget(Qt::RightDockWidgetArea, dock);
   dock->hide();
+  // the size grip shows while the panel floats (the custom title bar takes the system frame away)
+  connect(dock, &QDockWidget::topLevelChanged, panel, [panel](bool floating) { panel->setFloatingGrip(floating); });
   return dock;
+}
+
+QSize ScriptLabPanel::defaultSize()
+{
+  // room for the suggestion list with its help and the warnings side by side with the script
+  return QSize(TextSize::scaled(480), TextSize::scaled(720));
+}
+
+QSize ScriptLabPanel::minimumPanelSize()
+{
+  return QSize(TextSize::scaled(300), TextSize::scaled(240));
+}
+
+void ScriptLabPanel::setFloatingGrip(bool floating)
+{
+  m_sizeGrip->setVisible(floating);
+  placeSizeGrip();
+}
+
+void ScriptLabPanel::placeSizeGrip()
+{
+  if (!m_sizeGrip) return;
+  const QSize hint = m_sizeGrip->sizeHint();
+  m_sizeGrip->setGeometry(width() - hint.width(), height() - hint.height(), hint.width(), hint.height());
+  m_sizeGrip->raise();
+}
+
+void ScriptLabPanel::resizeEvent(QResizeEvent* event)
+{
+  QWidget::resizeEvent(event);
+  placeSizeGrip();
 }
 
 // --- Live (issue 292) -------------------------------------------------------

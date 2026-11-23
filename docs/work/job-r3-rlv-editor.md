@@ -1,5 +1,5 @@
 Branch: job/r3-rlv-editor
-Status: active
+Status: done
 Pull request: #433
 Files:
 - src/scriptlab/labsuggest.*

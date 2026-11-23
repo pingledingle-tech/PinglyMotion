@@ -184,6 +184,7 @@ Built in pull request 433 (23 Nov 2026). The texts are in `src/scriptlab/rlvsugg
 | LABRLV-18 | 8 Warning | A command the chosen viewer does not know | @setcam=n: setcam is RLVa only. RLV viewers do not know it. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
 | LABRLV-19 | 2 Tip on hover | The tip of Errors and warnings | Click a line, or press Enter, to show it in the script | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
 | LABRLV-20 | 2 Tip on hover | The tip of the event log | What the script did in the last run, in simulated seconds. Click an error or RLV line to show it in the script. | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
+| LABRLV-21 | 2 Tip on hover | The size grip in the corner of the floating Script Lab window | Drag to change the size of the Script Lab window | in the program (pull request 433, 23 Nov 2026) | lane 1 job R3 |
 
 ### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
 
