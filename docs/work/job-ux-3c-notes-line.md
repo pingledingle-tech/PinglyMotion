@@ -1,6 +1,6 @@
 Branch: job/ux-3c-notes-line
 Status: active
-Pull request: pending
+Pull request: #402
 Files:
 - src/timelinenotes.*
 - src/timelineview.*
