@@ -5,6 +5,7 @@ Files:
 - src/viewtoolspec.h
 - src/viewtoolbar.*
 - src/viewgizmo.*
+- src/lucideicons.cpp
 - src/camera.*
 - src/camerahabitspec.h
 - src/animationview.*
@@ -12,12 +13,12 @@ Files:
 - src/pinglymotionwindow.h
 - src/keysmousedialog.*
 - src/usersettings.*
-- src/scene.*
 - src/CMakeLists.txt
 - tests/viewtools/**
 - tests/camerahabits/**
 - tests/setupdialog/**
 - tests/tst_camera.cpp
+- tests/transportbar/tst_transportbar.cpp
 - tests/CMakeLists.txt
 - translations/*.ts
 - docs/UX_DECISIONS.md

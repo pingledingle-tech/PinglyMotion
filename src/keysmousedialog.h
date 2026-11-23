@@ -52,6 +52,9 @@ namespace KeysMouseSpec
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Frame the whole figure"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Shift+F")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Look around with keys"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Alt + arrow keys in the 3D view")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Zoom with keys"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Page Up, Page Down")},
+    // UX phase 4b part 1: the rings around the picked joint and the view toolbar's tools
+    {QT_TRANSLATE_NOOP("KeysMouseDialog", "Turn on one axis"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Drag the red X, green Y or blue Z ring around the picked joint")},
+    {QT_TRANSLATE_NOOP("KeysMouseDialog", "View tools: pick, look around, move the view, zoom"), QT_TRANSLATE_NOOP("KeysMouseDialog", "V, O, M, Z")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Front view"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Numpad 1")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Side view"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Numpad 3")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Top view"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Numpad 7")},

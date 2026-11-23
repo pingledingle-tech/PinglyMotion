@@ -76,6 +76,8 @@ SET (PINGLYMOTION_SHARED_SRC
               timelineview.cpp
               transportbar.cpp
               transportlook.cpp
+              viewgizmo.cpp
+              viewtoolbar.cpp
 )
 ADD_LIBRARY (pinglymotion_shared STATIC ${PINGLYMOTION_SHARED_SRC})
 TARGET_LINK_LIBRARIES (pinglymotion_shared PUBLIC pinglymotion_core ${PINGLYMOTION_QT_LIBS})

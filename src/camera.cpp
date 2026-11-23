@@ -158,6 +158,66 @@ CameraGesture Camera::gestureFor(CameraHabit habit, Qt::MouseButton button, Qt::
   return gesture;
 }
 
+CameraGesture Camera::gestureFor(CameraHabit habit, ViewTool tool, Qt::MouseButton button, Qt::KeyboardModifiers keys)
+{
+  if (tool != ViewTool::Pick && button == Qt::LeftButton && !(keys & (Qt::AltModifier | Qt::ControlModifier)))
+  {
+    CameraGesture gesture;
+    gesture.drag = tool == ViewTool::Orbit ? CameraDrag::Orbit : tool == ViewTool::Pan ? CameraDrag::Pan : CameraDrag::Zoom;
+    return gesture;
+  }
+  return gestureFor(habit, button, keys);
+}
+
+bool Camera::toolForKey(int key, Qt::KeyboardModifiers keys, ViewTool* tool)
+{
+  if ((keys & ~Qt::ShiftModifier) != Qt::NoModifier) return false;
+  ViewTool t;
+  switch (key)
+  {
+    case Qt::Key_V: t = ViewTool::Pick; break;
+    case Qt::Key_O: t = ViewTool::Orbit; break;
+    case Qt::Key_M: t = ViewTool::Pan; break;
+    case Qt::Key_Z: t = ViewTool::Zoom; break;
+    default: return false;
+  }
+  if (tool) *tool = t;
+  return true;
+}
+
+const char* Camera::toolId(ViewTool tool)
+{
+  switch (tool)
+  {
+    case ViewTool::Orbit: return "orbit";
+    case ViewTool::Pan: return "pan";
+    case ViewTool::Zoom: return "zoom";
+    case ViewTool::Pick: break;
+  }
+  return "pick";
+}
+
+ViewTool Camera::toolFor(const QString& id)
+{
+  for (ViewTool tool : {ViewTool::Orbit, ViewTool::Pan, ViewTool::Zoom})
+    if (id == QLatin1String(toolId(tool))) return tool;
+  return ViewTool::Pick;
+}
+
+ViewName Camera::viewNameFor(float height, float angle)
+{
+  if (height >= 89.5f) return ViewName::Top;
+  if (height <= -89.5f) return ViewName::Below;
+  if (std::fabs(height) > 10.5f) return ViewName::Free;
+  float around = std::fmod(angle, 360.0f);
+  if (around < 0) around += 360.0f;
+  struct Side { float angle; ViewName name; };
+  for (const Side& side : {Side{0, ViewName::Front}, Side{90, ViewName::RightSide}, Side{180, ViewName::Back},
+                           Side{270, ViewName::LeftSide}, Side{360, ViewName::Front}})
+    if (std::fabs(around - side.angle) <= 0.5f) return side.name;
+  return ViewName::Free;
+}
+
 bool Camera::viewForKey(int key, Qt::KeyboardModifiers keys, float* height, float* angle)
 {
   // the number pad (with Num Lock off it sends the arrow block keys), or the
@@ -288,6 +348,19 @@ void Camera::setView(float height, float angle)
 {
   const QVector3D centre = pivot();
   rotX = qBound(0.0f, height, 90.0f);
+  rotY = std::fmod(angle, 360.0f);
+  if (rotY < 0) rotY += 360;
+  const QVector3D c = toCamera(centre);
+  panX = c.x();
+  panY = c.y();
+  panZ = c.z() + pivotDistance;
+  applyConstraint();
+}
+
+void Camera::lookFrom(float height, float angle)
+{
+  const QVector3D centre = pivot();
+  rotX = qBound(-90.0f, height, 90.0f);
   rotY = std::fmod(angle, 360.0f);
   if (rotY < 0) rotY += 360;
   const QVector3D c = toCamera(centre);

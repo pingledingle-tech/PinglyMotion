@@ -38,6 +38,7 @@
 #include "prop.h"
 #include "timelineclip.h"
 #include "updatechecker.h"
+#include "viewtoolspec.h"
 
 class QCloseEvent;
 class QResizeEvent;
@@ -65,6 +66,7 @@ class TransportBar;
 class TopBar;
 class ReasonLine;
 class EmptyState;
+class ViewToolbar;
 class ScriptLabPanel;
 class AuroraLink;
 class WindowControlHost;
@@ -549,6 +551,18 @@ class PinglyMotionWindow : public QMainWindow
     // UX phase 4a: store the camera habit, let the 3D view follow it at once and say so
     // in the status line ("Camera and keys like Maya.")
     void chooseCameraHabit(const QString& habit);
+
+    // UX phase 4b: the view toolbar in the 3D view (src/viewtoolbar.*). Every choice goes through
+    // these, from the toolbar and from the keys alike: they store it, pass it to the 3D view and
+    // the toolbar, and say so in the status line (the mockup's words, src/viewtoolspec.h).
+    ViewToolbar* m_viewToolbar = nullptr;
+    void setupViewToolbar();
+    void chooseViewTool(ViewTool tool);
+    void chooseViewPart(ViewToolSpec::Part part, bool shown);
+    void focusPickedJoint();
+    // the hint about what is under the mouse in the 3D view, in the status line while hints are on
+    void showHoverHint(const QString& hint);
+    QString m_shownHoverHint;
 };
 
 #endif
