@@ -16,6 +16,7 @@ Files:
 - tools/mcp/commands.json
 - tools/mcp/pinglymotion_mcp.js
 - fuzz/control.dict
+- fuzz/CMakeLists.txt
 - fuzz/corpus/control/
 - docs/ASSISTANT_GUIDE.md
 - docs/CONTROL.md
