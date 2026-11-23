@@ -300,6 +300,7 @@ namespace
     {&MenuSpec::viewTop, "viewTopAction", "Top", "Numpad 7", ""},
     {&MenuSpec::viewHome, "viewHomeAction", "Home view", "0", ""},
     {&MenuSpec::viewScriptLab, "viewScriptLabAction", "Script Lab", "Ctrl+Shift+L", ""},
+    {&MenuSpec::viewLibrary, "viewLibraryAction", "Library", "Ctrl+Shift+B", ""},
     {&MenuSpec::viewHidePanels, "viewHidePanelsAction", "Hide panels", "Tab", ""},
     {&MenuSpec::viewResetLayout, "viewResetLayoutAction", "Reset layout", "", ""},
     {&MenuSpec::viewNextArea, "viewNextAreaAction", "Next area", "F6",

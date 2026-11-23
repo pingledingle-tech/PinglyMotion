@@ -104,18 +104,19 @@ namespace PanelWindow
 
   // ---- Rearranging at large text or in a small window (docs/UX_DECISIONS.md, 6c) ----
 
-  // The panels the rearranging moves. scriptLab may be null.
+  // The panels the rearranging moves. scriptLab and library may be null.
   struct Docks
   {
     QDockWidget* joints=nullptr;
     QDockWidget* jointCard=nullptr;
     QDockWidget* timeline=nullptr;
     QDockWidget* scriptLab=nullptr;
+    QDockWidget* library=nullptr;
 
     QList<QDockWidget*> all() const
     {
       QList<QDockWidget*> list;
-      for (QDockWidget* dock : {joints,jointCard,scriptLab,timeline})
+      for (QDockWidget* dock : {joints,jointCard,scriptLab,library,timeline})
         if (dock) list << dock;
       return list;
     }
@@ -135,7 +136,7 @@ namespace PanelWindow
   //    the right (or next to Script Lab, or alone on the right when neither is
   //    docked there), and Selected joint stays in front;
   //  - Narrow: every panel is docked (nothing floats), one under the other
-  //    below the 3D view: Joints, Selected joint, Script Lab, Timeline; and no
+  //    below the 3D view: Joints, Selected joint, Script Lab, Library, Timeline; and no
   //    panel may float until there is room again.
   // A closed panel stays closed. Floating is allowed again by restoreUsual().
   inline void applyReflow(QMainWindow* window,const Docks& docks,PanelLayout::Reflow reflow)
@@ -145,11 +146,11 @@ namespace PanelWindow
     {
       if (docks.joints->isFloating()) return;
       QDockWidget* partner=nullptr;
-      for (QDockWidget* dock : {docks.jointCard,docks.scriptLab})
+      for (QDockWidget* dock : {docks.jointCard,docks.scriptLab,docks.library})
         if (dock && !dock->isFloating() && !dock->isHidden() && window->dockWidgetArea(dock)==Qt::RightDockWidgetArea)
         { partner=dock; break; }
       if (!partner)
-        for (QDockWidget* dock : {docks.jointCard,docks.scriptLab})
+        for (QDockWidget* dock : {docks.jointCard,docks.scriptLab,docks.library})
           if (dock && !dock->isFloating() && window->dockWidgetArea(dock)==Qt::RightDockWidgetArea)
           { partner=dock; break; }
       // the tabs above the panels, as in the clickable mockup

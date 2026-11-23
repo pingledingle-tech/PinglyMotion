@@ -64,6 +64,9 @@ SET (PINGLYMOTION_SHARED_SRC
               handstab.cpp
               importoptions.cpp
               jointinfo.cpp
+              libraryindex.cpp
+              librarypanel.cpp
+              librarypreview.cpp
               lucideicons.cpp
               mesh.cpp
               motioncleanup.cpp

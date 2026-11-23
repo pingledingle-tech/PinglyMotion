@@ -60,6 +60,8 @@ namespace MenuSpec
   // View: Panels
   inline constexpr const char* panelsHeading = QT_TRANSLATE_NOOP("MenuSpec", "Panels");
   inline constexpr Item viewScriptLab = {"viewScriptLabAction", QT_TRANSLATE_NOOP("MenuSpec", "Script Lab"), "Ctrl+Shift+L", ""};
+  // built with the Library panel (roadmap item 6, docs/UX_DECISIONS.md 6l)
+  inline constexpr Item viewLibrary = {"viewLibraryAction", QT_TRANSLATE_NOOP("MenuSpec", "Library"), "Ctrl+Shift+B", ""};
   inline constexpr Item viewHidePanels = {"viewHidePanelsAction", QT_TRANSLATE_NOOP("MenuSpec", "Hide panels"), "Tab", ""};
   inline constexpr Item viewResetLayout = {"viewResetLayoutAction", QT_TRANSLATE_NOOP("MenuSpec", "Reset layout"), "", ""};
   inline constexpr Item viewNextArea = {"viewNextAreaAction", QT_TRANSLATE_NOOP("MenuSpec", "Next area"), "F6",
@@ -91,12 +93,12 @@ namespace MenuSpec
     &fileNew, &fileExport, &fileClose,
     &editUndo, &editRedo, &editSetKey, &editPasteMirrored,
     &viewFront, &viewSide, &viewTop, &viewHome,
-    &viewScriptLab, &viewHidePanels, &viewResetLayout, &viewNextArea,
+    &viewScriptLab, &viewLibrary, &viewHidePanels, &viewResetLayout, &viewNextArea,
     &viewLightTheme, &viewExpertMode, &viewTextSize, &viewTextSmaller, &viewTextReset, &viewSetup,
     &helpSetup, &helpWelcome, &helpHints, &helpKeys, &helpCamera, &helpCharter};
 
   // The top bar (UX phase 1b), left to right as in the mockup: Undo, Redo | Save, Export | Script Lab,
-  // Setup, theme. A button with no text shows only its icon; its name is its tip. The tip is the
+  // Library, Setup, theme. A button with no text shows only its icon; its name is its tip. The tip is the
   // name, then the key, then the reason when it is greyed, then the tip line.
   struct Button
   {
@@ -119,6 +121,8 @@ namespace MenuSpec
     QT_TRANSLATE_NOOP("MenuSpec", "Export for Second Life"), "Ctrl+Shift+E", "", "", "upload"};
   inline constexpr Button topScriptLab = {"topScriptLabAction", QT_TRANSLATE_NOOP("MenuSpec", "Script Lab"),
     QT_TRANSLATE_NOOP("MenuSpec", "Script Lab: test RLV and LSL scripts"), "Ctrl+Shift+L", "", "", "flask-conical"};
+  inline constexpr Button topLibrary = {"topLibraryAction", QT_TRANSLATE_NOOP("MenuSpec", "Library"),
+    QT_TRANSLATE_NOOP("MenuSpec", "Library: ready-made moves to start from"), "Ctrl+Shift+B", "", "", "library-big"};
   inline constexpr Button topSetup = {"topSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup"), QT_TRANSLATE_NOOP("MenuSpec", "Setup"), "",
     QT_TRANSLATE_NOOP("MenuSpec", "Beginner or experienced, mouse and keys habits, theme, text size and hints."),
     viewSetup.reason, "settings"};
@@ -128,7 +132,7 @@ namespace MenuSpec
   inline constexpr const char* themeToLight = QT_TRANSLATE_NOOP("MenuSpec", "Switch to the light theme");
   inline constexpr const char* themeToDark = QT_TRANSLATE_NOOP("MenuSpec", "Switch to the dark theme");
 
-  inline constexpr const Button* topBar[] = {&topUndo, &topRedo, &topSave, &topExport, &topScriptLab, &topSetup, &topTheme};
+  inline constexpr const Button* topBar[] = {&topUndo, &topRedo, &topSave, &topExport, &topScriptLab, &topLibrary, &topSetup, &topTheme};
   // a divider stands after the second and the fourth button
   inline constexpr int topBarDividers[] = {2, 4};
 

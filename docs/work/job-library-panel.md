@@ -1,6 +1,6 @@
 Branch: job/library-panel
 Status: active
-Pull request: pending
+Pull request: #437
 Files:
 - src/librarypanel.*
 - src/libraryindex.*
@@ -17,7 +17,9 @@ Files:
 - tests/CMakeLists.txt
 - tests/menutexts/**
 - tests/paneldocks/**
-- tests/topbar/**
+- tests/emptystate/**
+- tests/setupdialog/**
+- CMakeLists.txt
 - translations/**
 - docs/UX_DECISIONS.md
 - docs/TEACHING.md

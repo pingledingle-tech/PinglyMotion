@@ -39,6 +39,7 @@ class TopBar : public QObject
       QAction* save = nullptr;
       QAction* exportAnim = nullptr;
       QAction* scriptLab = nullptr;   // checkable: the button shows it pressed
+      QAction* library = nullptr;     // checkable, like scriptLab
     };
 
     // fills the bar (it is emptied first); the bar is not movable

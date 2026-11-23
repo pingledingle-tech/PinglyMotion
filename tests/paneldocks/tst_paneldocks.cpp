@@ -79,6 +79,7 @@ struct ReflowWindow
   QDockWidget* jointCard;
   QDockWidget* timeline;
   QDockWidget* scriptLab;
+  QDockWidget* library;
   PanelWindow::Reflower reflower;
 
   ReflowWindow()
@@ -92,6 +93,10 @@ struct ReflowWindow
     PanelWindow::applyDefaultLayout(&window,joints,jointCard,timeline);
     window.addDockWidget(Qt::RightDockWidgetArea,scriptLab);
     scriptLab->hide();
+    // the Library panel (roadmap item 6): another closed panel of the right side
+    library=makeDock("Library","libraryDock",Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    window.addDockWidget(Qt::RightDockWidgetArea,library);
+    library->hide();
     window.resize(1440,900);
     window.show();
   }
@@ -103,6 +108,7 @@ struct ReflowWindow
     d.jointCard=jointCard;
     d.timeline=timeline;
     d.scriptLab=scriptLab;
+    d.library=library;
     return d;
   }
 
@@ -691,10 +697,12 @@ void TestPanelDocks::narrowStacksEveryPanelInOneColumn()
   ReflowWindow w;
   QVERIFY(QTest::qWaitForWindowExposed(&w.window));
   w.scriptLab->show();
+  w.library->show();
   QCoreApplication::processEvents();
   w.go(Reflow::Narrow);
   QCOMPARE(w.reflower.mode(),Reflow::Narrow);
-  const QList<QDockWidget*> column={w.joints,w.jointCard,w.scriptLab,w.timeline};
+  // the Library panel stands between Script Lab and the timeline (docs/UX_DECISIONS.md 6l)
+  const QList<QDockWidget*> column={w.joints,w.jointCard,w.scriptLab,w.library,w.timeline};
   for (QDockWidget* dock : column)
   {
     QCOMPARE(w.window.dockWidgetArea(dock),Qt::BottomDockWidgetArea);
