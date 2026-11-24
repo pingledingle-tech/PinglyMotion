@@ -1,5 +1,5 @@
 Branch: job/scriptlab-record-replay
-Status: active
+Status: done
 Pull request: #450
 Files:
 - src/scriptlab/labrecipe.*
