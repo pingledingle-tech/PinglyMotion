@@ -110,6 +110,8 @@ SET (PINGLYMOTION_SHARED_SRC
 )
 ADD_LIBRARY (pinglymotion_shared STATIC ${PINGLYMOTION_SHARED_SRC})
 TARGET_LINK_LIBRARIES (pinglymotion_shared PUBLIC pinglymotion_core ${PINGLYMOTION_QT_LIBS})
+# editing a picked prop as in Second Life (Mockup 2): the handles' arithmetic, the Edit prop card and the Selected prop page
+TARGET_SOURCES (pinglymotion_shared PRIVATE propedit.cpp propeditcard.cpp selectedproppanel.cpp)
 
 # Sources
 SET (PINGLYMOTION_SRC aboutcredits.cpp

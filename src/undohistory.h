@@ -19,8 +19,14 @@
  *
  * What a step holds: the keys of every joint and of the Avatar Position, with
  * their easing and curves, the number of frames, frames per second and the
- * loop (Animation::Snapshot). Not in it: the figure choice and size, props,
+ * loop (Animation::Snapshot). Not in it: the figure choice and size,
  * adding or removing a figure, the picked joint and the current frame.
+ *
+ * Other edits (a prop moved, turned or sized in the 3D view or its fields,
+ * its shape changed) come as their own steps with recordStep(): two
+ * functions, one that puts the old state back and one that puts the new
+ * state again. Undo and Redo take the steps of the active animation and
+ * these in the order they were made.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -56,6 +62,9 @@ class UndoHistory
     // a new state after an edit: true and one more Undo step (Redo is cleared)
     // when it differs from the state now; false and nothing changes otherwise
     bool record(const Animation::Snapshot& state);
+
+    // Redo is no longer possible (another kind of edit came after the undone steps)
+    void clearRedo() { m_redo.clear(); }
 
     bool canUndo() const { return !m_undo.isEmpty(); }
     bool canRedo() const { return !m_redo.isEmpty(); }
@@ -108,6 +117,14 @@ class UndoController : public QObject
 
     // takes the steps of edits that are over now (also done by itself after an edit)
     void recordPending();
+    // one step of another kind of edit (a prop): `undo` puts the state before
+    // back, `redo` the state after; a new step clears Redo
+    void recordStep(const std::function<void()>& undo,const std::function<void()>& redo);
+    // forgets these steps (the props they belong to are gone)
+    void clearSteps();
+    int stepCount() const { return m_steps.count(); }
+    int redoStepCount() const { return m_redoSteps.count(); }
+
     // Edit > Undo and Edit > Redo; false when there was nothing to do
     bool undo();
     bool redo();
@@ -124,7 +141,19 @@ class UndoController : public QObject
     void message(const QString& text);
 
   private:
+    struct Step
+    {
+      quint64 order=0;
+      std::function<void()> undo;
+      std::function<void()> redo;
+    };
+
     void startHistory(Animation* anim);
+    // takes a step of the animation and gives it its place in the order of all steps
+    void recordAnimation(Animation* anim);
+    // the place in the order of the active animation's last Undo or next Redo step (0: none)
+    quint64 animationUndoOrder() const;
+    quint64 animationRedoOrder() const;
     void edited(Animation* anim,bool changed);
     void queueCheck();
     void updateActions();
@@ -139,6 +168,12 @@ class UndoController : public QObject
     bool m_checkQueued=false;
     bool m_restoring=false;
     std::function<bool()> m_busy;
+    QList<Step> m_steps;
+    QList<Step> m_redoSteps;
+    // the order of each animation's Undo and Redo steps, as long as its history keeps them
+    QHash<Animation*,QList<quint64>> m_animationOrder;
+    QHash<Animation*,QList<quint64>> m_animationRedoOrder;
+    quint64 m_order=0;
 };
 
 #endif

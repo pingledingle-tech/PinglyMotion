@@ -35,6 +35,8 @@ class MeshModel : public QObject
     explicit MeshModel(QSharedPointer<Mesh> mesh);
 
     void scale(float x, float y, float z);
+    // another shape (a prop's Shape choice)
+    void setMesh(QSharedPointer<Mesh> mesh) { m_mesh = mesh; }
 
     void draw() const;
 

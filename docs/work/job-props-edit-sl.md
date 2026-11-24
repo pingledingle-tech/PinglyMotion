@@ -4,21 +4,24 @@ Pull request: #459
 Files:
 - src/propedit.*
 - src/propeditcard.*
+- src/selectedproppanel.*
 - src/prop.*
-- src/propmanager.*
+- src/meshmodel.h
+- src/propfile.*
+- src/undohistory.*
+- src/lucideicons.cpp
 - src/animationview.*
-- src/viewcolours.h
+- src/panelcontent.h
 - src/pinglymotionwindowprops.cpp
+- src/pinglymotionwindowfile.cpp
 - src/pinglymotionwindow.h
-- src/pinglymotionwindow.ui
 - src/pinglymotionwindow.cpp
 - src/CMakeLists.txt
+- CMakeLists.txt
 - tests/propedit/**
-- tests/CMakeLists.txt
-- translations/pinglymotion_en.ts
 - docs/DECISIONS.md
-- docs/PRODUCT.md
-- docs/CHANGELOG.md
+- docs/POSING_UX.md
+- docs/DESIGN_SYSTEM.md
 
 ## What
 

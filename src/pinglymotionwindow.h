@@ -37,6 +37,7 @@
 #include "panelwindow.h"
 #include "playstate.h"
 #include "prop.h"
+#include "propedit.h"
 #include "timelineclip.h"
 #include "updatechecker.h"
 #include "viewtoolspec.h"
@@ -46,6 +47,7 @@ class QMenu;
 class QResizeEvent;
 class MainPanels;
 class SelectedJointPanel;
+class SelectedPropPanel;
 class QFileInfo;
 class QButtonGroup;
 class QLineEdit;
@@ -122,9 +124,6 @@ class PinglyMotionWindow : public QMainWindow
     void partClicked(BVHNode* node, QVector3D rotation, RotationLimits rotLimits, QVector3D position);
     void partDragged(BVHNode* node,double changeX,double changeY,double changeZ);
     void propClicked(Prop* prop);
-    void propDragged(Prop* prop,double x,double y,double z);
-    void propScaled(Prop* prop,double x,double y,double z);
-    void propRotated(Prop* prop,double x,double y,double z);
     void backgroundClicked();
 
     void frameTimeout();
@@ -516,6 +515,18 @@ class PinglyMotionWindow : public QMainWindow
     void onSelectProp(bool isSelected, int attachmentPoint);
     void onDeleteProp(const QString propName);
     void onClearProps();
+
+  private:
+    // editing a picked prop (Mockup 2): the Selected prop page, the handles in the 3D view, Undo
+    void setupPropEditing();
+    // the Selected prop page shows the picked prop, or the empty card
+    void showSelectedProp();
+    // one Undo step that puts the prop with this id back to `before` (Redo: `after`)
+    void recordPropStep(unsigned int propId, const PropEdit::State& before, const PropEdit::State& after);
+    void applyPropStep(unsigned int propId, const PropEdit::State& state);
+    SelectedPropPanel* m_selectedProp = nullptr;
+
+  private slots:
 
 
   private:
