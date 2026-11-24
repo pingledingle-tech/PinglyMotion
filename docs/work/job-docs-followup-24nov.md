@@ -1,6 +1,6 @@
 Branch: job/docs-followup-24nov
-Status: active
-Pull request: pending
+Status: done
+Pull request: #482
 Files:
 - docs/DEV.md
 - docs/DECISIONS.md
