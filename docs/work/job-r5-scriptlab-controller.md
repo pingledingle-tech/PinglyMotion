@@ -1,6 +1,6 @@
 Branch: job/r5-scriptlab-controller
 Status: active
-Pull request: pending
+Pull request: #478
 Files:
 - src/scriptlabcontroller.*
 - src/pinglymotionwindow.cpp
