@@ -445,63 +445,51 @@ void main()
 }
 )";
 
+static const char* mainMeshVert = R"(#version 330 core
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec4 vertexColor;
+uniform mat4 modelview;
+uniform mat4 projection;
+uniform mat3 normalMatrix;
+uniform vec4 color;
+uniform bool perVertexColor;
+out vec4 baseColor;
+out vec3 eyePosition;
+out vec3 eyeNormal;
+out float eyeDepth;
+void main()
+{
+  vec4 eye = modelview * vec4(position, 1.0);
+  eyePosition = eye.xyz;
+  eyeNormal = normalMatrix * normal;
+  baseColor = perVertexColor ? vertexColor : color;
+  eyeDepth = abs(eye.z);
+  gl_Position = projection * eye;
+}
+)";
+
 void TestLineDraw::diagnose()
 {
   if (!m_haveGl) QSKIP(qPrintable(m_glReason));
   QOpenGLExtraFunctions* gl = m_context.extraFunctions();
-  QString frag;
-  QString lineVert;
+  QByteArray frag, meshVert;
   for (const auto& sh : SkinRenderer::shaderSources(false))
   {
-    if (sh.name == "body.frag") frag = QString::fromLatin1(sh.source);
-    if (sh.name == "line.vert") lineVert = QString::fromLatin1(sh.source);
+    if (sh.name == "body.frag") frag = sh.source;
+    if (sh.name == "mesh.vert") meshVert = sh.source;
   }
+  QByteArray fragNoPrim = frag;
+  fragNoPrim.replace("gl_PrimitiveID", "0");
   QMatrix4x4 camera;
   camera.translate(0.0f, 0.0f, -5.0f);
-  const QVector4D colour(0.2f, 0.6f, 1.0f, 1.0f);
-  auto centre = [&](const char* what) {
-    const QImage image = end();
-    const QRgb c = image.pixel(WIDTH / 2, HEIGHT / 2);
-    int drawn = 0;
-    for (int y = 0; y < HEIGHT; y++)
-      for (int x = 0; x < WIDTH; x++)
-        if (qAlpha(image.pixel(x, y))) drawn++;
-    qInfo("DIAG %s: centre %d %d %d %d, drawn %d, glError 0x%x", what, qRed(c), qGreen(c), qBlue(c), qAlpha(c), drawn,
-          m_context.functions()->glGetError());
-  };
-  auto setCommon = [&](QOpenGLShaderProgram& p) {
-    p.bind();
-    p.setUniformValue("modelview", camera);
-    p.setUniformValue("projection", projection());
-    p.setUniformValue("normalMatrix", camera.normalMatrix());
-    p.setUniformValue("unlit", true);
-    p.setUniformValue("picking", false);
-    p.setUniformValue("shadow", false);
-    p.setUniformValue("fogOn", false);
-    p.setUniformValue("exposure", 1.0f);
-    p.setUniformValue("tint", QVector3D(1, 1, 1));
-    p.setUniformValue("viewportSize", QVector2D(WIDTH, HEIGHT));
-    p.setUniformValue("lineWidth", 6.0f);
-  };
-
-  // 1: the renderer
-  begin(QVector4D(0, 0, 0, 0));
-  m_renderer->drawGeometry(GL_LINES, {{-1, 0, 0}, {1, 0, 0}}, {}, QVector<QVector4D>(2, colour), camera, projection(),
-                           SkinRenderer::Fog(), 6.0f);
-  centre("renderer lines");
-  begin(QVector4D(0, 0, 0, 0));
-  m_renderer->drawGeometry(GL_TRIANGLES, {{-1, -0.5f, 0}, {1, -0.5f, 0}, {0, 0.5f, 0}}, {}, QVector<QVector4D>(3, colour),
-                           camera, projection(), SkinRenderer::Fog(), 1.0f);
-  centre("renderer triangles");
-
-  // 2: the old geometry shader, raw GL
-  {
+  auto run = [&](const char* what, const QByteArray& vert, const QByteArray& fr) {
     QOpenGLShaderProgram p;
-    const bool ok = p.addShaderFromSourceCode(QOpenGLShader::Vertex, oldVert)
-                    && p.addShaderFromSourceCode(QOpenGLShader::Geometry, oldGeom)
-                    && p.addShaderFromSourceCode(QOpenGLShader::Fragment, frag) && p.link();
-    qInfo("DIAG old program ok %d %s", ok, qPrintable(p.log()));
-    const float data[] = {-1, 0, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1, 1, 0, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1};
+    const bool ok = p.addShaderFromSourceCode(QOpenGLShader::Vertex, vert)
+                    && p.addShaderFromSourceCode(QOpenGLShader::Fragment, fr) && p.link();
+    const float data[] = {-1, -0.5f, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1,
+                          1, -0.5f, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1,
+                          0, 0.5f, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1};
     GLuint vao = 0, vbo = 0;
     gl->glGenVertexArrays(1, &vao);
     gl->glBindVertexArray(vao);
@@ -513,71 +501,35 @@ void TestLineDraw::diagnose()
     gl->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(12));
     gl->glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(24));
     begin(QVector4D(0, 0, 0, 0));
-    setCommon(p);
+    p.bind();
+    p.setUniformValue("modelview", camera);
+    p.setUniformValue("projection", projection());
+    p.setUniformValue("normalMatrix", camera.normalMatrix());
+    p.setUniformValue("unlit", true);
+    p.setUniformValue("perVertexColor", true);
+    p.setUniformValue("picking", false);
+    p.setUniformValue("shadow", false);
+    p.setUniformValue("fogOn", false);
+    p.setUniformValue("exposure", 1.0f);
+    p.setUniformValue("tint", QVector3D(1, 1, 1));
     gl->glBindVertexArray(vao);
-    gl->glDrawArrays(GL_LINES, 0, 2);
+    gl->glDrawArrays(GL_TRIANGLES, 0, 3);
     gl->glBindVertexArray(0);
     p.release();
-    centre("old geometry shader");
+    const QImage image = end();
+    const QRgb c = image.pixel(WIDTH / 2, HEIGHT / 2);
+    qInfo("DIAG %s: link %d, centre %d %d %d %d %s", what, ok, qRed(c), qGreen(c), qBlue(c), qAlpha(c),
+          qPrintable(p.log().left(300)));
     gl->glDeleteBuffers(1, &vbo);
     gl->glDeleteVertexArrays(1, &vao);
-  }
-
-  // 3: the new line shader, raw GL, with glDrawArrays and with an index buffer
-  {
-    QOpenGLShaderProgram p;
-    const bool ok = p.addShaderFromSourceCode(QOpenGLShader::Vertex, lineVert)
-                    && p.addShaderFromSourceCode(QOpenGLShader::Fragment, frag) && p.link();
-    qInfo("DIAG new program ok %d %s", ok, qPrintable(p.log()));
-    QVector<float> d;
-    const float A[3] = {-1, 0, 0}, B[3] = {1, 0, 0};
-    auto corner = [&](const float* self, const float* other, float side) {
-      d << self[0] << self[1] << self[2] << 0 << 0 << 1 << 0.2f << 0.6f << 1 << 1 << other[0] << other[1] << other[2] << side;
-    };
-    corner(A, B, 1); corner(A, B, -1); corner(B, A, -1); corner(B, A, 1);
-    QVector<float> flat;
-    const int order[6] = {0, 1, 2, 2, 1, 3};
-    for (int i : order) for (int k = 0; k < 14; k++) flat << d[i * 14 + k];
-    GLuint vao = 0, vbo = 0, ibo = 0;
-    gl->glGenVertexArrays(1, &vao);
-    gl->glBindVertexArray(vao);
-    gl->glGenBuffers(1, &vbo);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    for (int i = 0; i < 5; i++) gl->glEnableVertexAttribArray(i);
-    auto pointers = [&]() {
-      gl->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(0));
-      gl->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(12));
-      gl->glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(24));
-      gl->glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(40));
-      gl->glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(52));
-    };
-    gl->glBufferData(GL_ARRAY_BUFFER, flat.size() * 4, flat.constData(), GL_STATIC_DRAW);
-    pointers();
-    begin(QVector4D(0, 0, 0, 0));
-    setCommon(p);
-    gl->glBindVertexArray(vao);
-    gl->glDrawArrays(GL_TRIANGLES, 0, 6);
-    p.release();
-    centre("new shader, glDrawArrays");
-
-    gl->glBindVertexArray(vao);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    gl->glBufferData(GL_ARRAY_BUFFER, d.size() * 4, d.constData(), GL_STATIC_DRAW);
-    const GLuint idx[6] = {0, 1, 2, 2, 1, 3};
-    gl->glGenBuffers(1, &ibo);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
-    begin(QVector4D(0, 0, 0, 0));
-    setCommon(p);
-    gl->glBindVertexArray(vao);
-    gl->glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-    gl->glBindVertexArray(0);
-    p.release();
-    centre("new shader, glDrawElements");
-    gl->glDeleteBuffers(1, &vbo);
-    gl->glDeleteBuffers(1, &ibo);
-    gl->glDeleteVertexArrays(1, &vao);
-  }
+  };
+  run("main mesh vert + frag", mainMeshVert, frag);
+  run("main mesh vert + frag without gl_PrimitiveID", mainMeshVert, fragNoPrim);
+  run("new mesh vert + frag", meshVert, frag);
+  run("new mesh vert + frag without gl_PrimitiveID", meshVert, fragNoPrim);
+  QOpenGLShader probe(QOpenGLShader::Vertex);
+  const bool probeOk = probe.compileSourceCode("#version 330 core\n#ifdef GL_ES\n#error GL_ES is defined\n#endif\nvoid main() { gl_Position = vec4(0.0); }\n");
+  qInfo("DIAG GL_ES probe compiles (GL_ES not defined): %d %s", probeOk, qPrintable(probe.log()));
 }
 
 QTEST_MAIN(TestLineDraw)
