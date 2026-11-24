@@ -1,7 +1,8 @@
 name: Work board
 
 # Warns when two active jobs claim the same files (docs/work/, tools/work.py).
-# Not a required check: red means "look at the overlap", it does not block.
+# Not a required check. An overlap is shown as a yellow warning, not red
+# (the project owner, 24 Nov 2026); the script's own tests still fail red.
 on:
   pull_request:
     branches: [main]
@@ -29,7 +30,13 @@ jobs:
       - name: No overlapping jobs
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 tools/work.py check --mine
+        run: |
+          if ! out=$(python3 tools/work.py check --mine 2>&1); then
+            printf '%s\n' "$out"
+            echo "::warning title=Work board::Two active jobs claim the same files. Look at the overlap; this does not block."
+          else
+            printf '%s\n' "$out"
+          fi
 
   # Warning only: checks that the queue in the jobs list (issue 74) names no
   # merged or closed pull request. Read-only, never fails, never writes to GitHub.

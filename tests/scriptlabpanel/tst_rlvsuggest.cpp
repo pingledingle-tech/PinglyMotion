@@ -670,16 +670,20 @@ void TestRlvSuggest::windowSize()
   window.resize(1600, 1000);
   window.show();
   QVERIFY(QTest::qWaitForWindowExposed(&window));
+  UserSettings::setScriptLabSized(0);   // the first open of Script Lab (job UX-B: it opens big)
   ScriptLabPanel* panel = new ScriptLabPanel;
   QDockWidget* dock = ScriptLabPanel::makeDock(&window, panel);
-  dock->show();
+  dock->toggleViewAction()->trigger();   // opened by the user, as View > Script Lab does
   QTest::qWait(50);
-  // more room at start, and a sensible smallest size (both at 100 percent text size)
-  QCOMPARE(ScriptLabPanel::defaultSize(), QSize(480, 720));
+  // more room at start, and a sensible smallest size (both at 100 percent text size); job UX-B: the
+  // first size has room for the four tabs and Pop out side by side
+  QCOMPARE(ScriptLabPanel::defaultSize(), QSize(600, 720));
   QCOMPARE(ScriptLabPanel::minimumPanelSize(), QSize(300, 240));
-  QCOMPARE(panel->sizeHint(), QSize(480, 720));
+  QCOMPARE(panel->sizeHint(), QSize(600, 720));
   QCOMPARE(panel->minimumSize(), QSize(300, 240));
-  QCOMPARE(dock->width(), 480);
+  // job UX-B: the first open docked gives most of the main window (three fifths of 1600)
+  QCOMPARE(ScriptLabPanel::bigDockedWidth(window.size()), 960);
+  QCOMPARE(dock->width(), 960);
   // docked: the side can be dragged wider and narrower, down to the smallest size
   window.resizeDocks({dock}, {900}, Qt::Horizontal);
   QTest::qWait(50);

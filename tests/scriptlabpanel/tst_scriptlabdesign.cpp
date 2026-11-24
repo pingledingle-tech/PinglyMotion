@@ -270,13 +270,21 @@ void TestScriptLabDesign::switchFollowsControlCommand()
   QVERIFY(second.modeRlvButton()->isChecked());
 }
 
-// two pages, Live scripts first, with their tips and icons
+// the pages, Live scripts first, with their tips and icons (job UX-B: four tabs)
 void TestScriptLabDesign::pages()
 {
   ScriptLabPanel panel;
-  QCOMPARE(panel.tabs()->count(), 2);
+  QCOMPARE(panel.tabs()->count(), 4);
   QCOMPARE(int(ScriptLabPanel::LivePage), 0);
   QCOMPARE(int(ScriptLabPanel::CommandsPage), 1);
+  QCOMPARE(int(ScriptLabPanel::MapPage), 2);
+  QCOMPARE(int(ScriptLabPanel::PlayerPage), 3);
+  QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::MapPage), QString("Who talks to whom"));
+  QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::PlayerPage), QString("Player"));
+  QCOMPARE(panel.tabs()->tabToolTip(ScriptLabPanel::MapPage), QString("Arrows between the parts: who sends what to whom."));
+  QCOMPARE(panel.tabs()->tabToolTip(ScriptLabPanel::PlayerPage), QString("Step back and forth through your recorded steps."));
+  QVERIFY(!panel.tabs()->tabIcon(ScriptLabPanel::MapPage).isNull());
+  QVERIFY(!panel.tabs()->tabIcon(ScriptLabPanel::PlayerPage).isNull());
   QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::LivePage), QString("Live scripts"));
   QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::CommandsPage), QString("Type commands"));
   QCOMPARE(panel.tabs()->tabToolTip(ScriptLabPanel::LivePage), QString("Live: your .lsl scripts run each time you save them"));

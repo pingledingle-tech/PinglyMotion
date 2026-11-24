@@ -486,8 +486,14 @@ PinglyMotionWindow::PinglyMotionWindow() :
   const PanelLayout::StartupChoice startup=PanelLayout::chooseStartup(
     UserSettings::panelLayoutFor(UserSettings::expertMode()),UserSettings::panelLayoutVersion(),size(),true);
   // each mode has its own layout (UX-E); a mode without one starts with its default, which in
-  // Beginner mode has the Joints list closed
-  if(startup.useSavedLayout) restoreState(UserSettings::panelLayoutFor(UserSettings::expertMode()),PanelLayout::CurrentVersion);
+  // Beginner mode has the Joints list closed. A floating Script Lab keeps its saved place and size
+  // (job UX-B: it opens big only the first time)
+  if(startup.useSavedLayout)
+  {
+    ScriptLabPanel::setLayoutRestoring(true);
+    restoreState(UserSettings::panelLayoutFor(UserSettings::expertMode()),PanelLayout::CurrentVersion);
+    ScriptLabPanel::setLayoutRestoring(false);
+  }
   else if(!BeginnerView::jointsListInDefaultLayout(UserSettings::expertMode())) m_jointsDock->hide();
   // a floating panel whose place is on no screen any more (second screen
   // unplugged) is pulled back onto one (job P3)
@@ -1972,6 +1978,8 @@ void PinglyMotionWindow::resetPanelLayout()
   m_scriptLabDock->setFloating(false);
   addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
   m_scriptLabDock->hide();
+  // its tabs back in it, Live scripts in front, and big again the next time it opens (job UX-B)
+  m_scriptLabPanel->resetWindows();
   // the library too: a closed tab next to Selected joint
   m_libraryDock->setFloating(false);
   tabifyDockWidget(m_jointCardDock,m_libraryDock);
@@ -2012,7 +2020,9 @@ bool PinglyMotionWindow::switchPanelLayoutForMode(bool expert)
   m_applyingTab=true;
   if(PanelLayout::isLayoutUsable(saved,UserSettings::panelLayoutVersion(),size()))
   {
+    ScriptLabPanel::setLayoutRestoring(true);   // a floating Script Lab keeps its saved place (UX-B)
     restoreState(saved,PanelLayout::CurrentVersion);
+    ScriptLabPanel::setLayoutRestoring(false);
     PanelWindow::pullFloatingPanelsOntoScreen(panelDocks(),PanelWindow::screenRects());
     // the timeline stands visible, as at every start; the Library only opens when asked for
     PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);

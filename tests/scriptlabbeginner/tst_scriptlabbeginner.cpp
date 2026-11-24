@@ -1052,9 +1052,16 @@ void TestScriptLabBeginner::recordAndReplay()
   panel.show();
   QPushButton* record = panel.recordButton();
   QVERIFY(record);
+  // job UX-B: record, recipe and player are on the Player tab
+  panel.showPage(ScriptLabPanel::PlayerPage);
+  QVERIFY(panel.page(ScriptLabPanel::PlayerPage)->isAncestorOf(record));
   QVERIFY(!record->isVisibleTo(&panel));   // nothing watched: no recipe
+  QVERIFY(panel.playerEmpty()->isVisibleTo(&panel));
   QVERIFY(panel.watchFolder(top));
+  QCOMPARE(panel.currentPage(), ScriptLabPanel::LivePage);   // a watch that starts shows Live scripts
+  panel.showPage(ScriptLabPanel::PlayerPage);
   QVERIFY(record->isVisibleTo(&panel));
+  QVERIFY(!panel.playerEmpty()->isVisibleTo(&panel));
   // Beginner mode: one button and the line, no recipe part (charter P5)
   QVERIFY(!panel.recipeSection()->isVisibleTo(&panel));
   QCOMPARE(record->text(), QString("Record what I do"));
@@ -1152,6 +1159,7 @@ void TestScriptLabBeginner::recordAndReplay()
   QVERIFY(panel.setRecording(true));
   panel.stopWatching();
   QVERIFY(!watcher.recording());
+  panel.showPage(ScriptLabPanel::PlayerPage);
   QVERIFY(!record->isVisibleTo(&panel));
   QVERIFY(!panel.recipeSection()->isVisibleTo(&panel));
 }
@@ -1195,12 +1203,19 @@ void TestScriptLabBeginner::channelMap()
   ScriptLabPanel panel;
   FakeScene scene;
   setUpPanel(panel, watcher, state, dir.path(), scene);
+  // job UX-B: the map is the tab Who talks to whom
+  panel.showPage(ScriptLabPanel::MapPage);
+  QVERIFY(panel.page(ScriptLabPanel::MapPage)->isAncestorOf(panel.mapSection()));
   QVERIFY(!panel.mapSection()->isVisibleTo(&panel));   // nothing watched: no map
+  QVERIFY(panel.mapEmpty()->isVisibleTo(&panel));
+  QCOMPARE(panel.mapEmpty()->text(), QString("Watch a folder as one object on Live scripts. Then this page shows who talks to whom."));
   QVERIFY(panel.watchFolder(top));
+  panel.showPage(ScriptLabPanel::MapPage);
   ScriptLabSection* map = panel.mapSection();
   QCOMPARE(map->key(), QString("map"));
   QCOMPARE(map->title(), QString("Who talks to whom"));
   QVERIFY(map->isVisibleTo(&panel));
+  QVERIFY(!panel.mapEmpty()->isVisibleTo(&panel));
   QVERIFY(!map->isExpanded());   // Beginner mode: folded
   QCOMPARE(map->count(), QString("4 messages, 1 problem"));
   QCOMPARE(panel.mapLine()->text(), QString("Each box is a part. Each arrow is a message, with its channel."));
@@ -1232,6 +1247,9 @@ void TestScriptLabBeginner::channelMap()
   QCOMPARE(panel.shownScript(), QString("Root/hub.lsl"));
   QCOMPARE(panel.scriptView()->textCursor().blockNumber(), 9);
   QCOMPARE(panel.scriptView()->textCursor().positionInBlock(), 8);
+  // job UX-B: the editor is on Live scripts, so that tab comes to the front; back to the map
+  QCOMPARE(panel.currentPage(), ScriptLabPanel::LivePage);
+  panel.showPage(ScriptLabPanel::MapPage);
   // the arrow to nobody: collar.lsl at line 5, column 9
   QVERIFY(panel.activateMapArrow(0));
   QCOMPARE(panel.shownScript(), QString("Collar/collar.lsl"));
@@ -1269,7 +1287,14 @@ void TestScriptLabBeginner::channelMap()
   const QRect box = view->partRect(1, ChannelMapView::FromPart);
   QCOMPARE(image.pixelColor(box.left() + 3, box.center().y()), Theme::color(Theme::Token::SurfaceRaised));
 
-  // the word tips by the map: channel first, then listener (after the others are closed)
+  // the word tips by the map: channel first, then listener (after the others are closed); only
+  // while the map's tab is in front (job UX-B: the word must be on screen)
+  panel.showPage(ScriptLabPanel::LivePage);
+  UserSettings::setScriptLabTipsClosed("prim,rootPrim,notecard,sandbox,viewerRules,rlv,rlva,held");
+  panel.setHintsOn(false);
+  panel.setHintsOn(true);
+  QVERIFY(!panel.shownTip() || panel.shownTip()->key() != QString("channel"));
+  panel.showPage(ScriptLabPanel::MapPage);
   UserSettings::setScriptLabTipsClosed("prim,rootPrim,notecard,sandbox,viewerRules,rlv,rlva,held");
   panel.setHintsOn(false);
   panel.setHintsOn(true);
@@ -1303,7 +1328,9 @@ void TestScriptLabBeginner::channelMap()
 
   // Stop watching: no map
   panel.stopWatching();
+  panel.showPage(ScriptLabPanel::MapPage);
   QVERIFY(!map->isVisibleTo(&panel));
+  QVERIFY(panel.mapEmpty()->isVisibleTo(&panel));
   QVERIFY(view->map().arrows.isEmpty());
 }
 

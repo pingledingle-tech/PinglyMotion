@@ -65,6 +65,10 @@ QString UserSettings::m_scriptLabTipsClosed;
 const QString UserSettings::m_scriptLabTipsClosedKey = "scriptlab_tips_closed";
 bool UserSettings::m_scriptLabFollowSelection = true;
 const QString UserSettings::m_scriptLabFollowSelectionKey = "scriptlab_follow_selection";
+QString UserSettings::m_scriptLabWindows;
+const QString UserSettings::m_scriptLabWindowsKey = "scriptlab_windows";
+int UserSettings::m_scriptLabSized = 0;
+const QString UserSettings::m_scriptLabSizedKey = "scriptlab_sized";
 bool UserSettings::m_pullLimbOnDrag = true;
 const QString UserSettings::m_pullLimbOnDragKey = "pull_limb_on_drag";
 bool UserSettings::m_jointMoreOptions = false;
@@ -169,6 +173,10 @@ void UserSettings::setScriptLabTipsClosed(const QString& value) { m_scriptLabTip
 QString UserSettings::scriptLabTipsClosed()                    { return m_scriptLabTipsClosed; }
 void UserSettings::setScriptLabFollowSelection(bool on)        { m_scriptLabFollowSelection = on; }
 bool UserSettings::scriptLabFollowSelection()                  { return m_scriptLabFollowSelection; }
+void UserSettings::setScriptLabWindows(const QString& value)    { m_scriptLabWindows = value.left(1000); }
+QString UserSettings::scriptLabWindows()                        { return m_scriptLabWindows; }
+void UserSettings::setScriptLabSized(int flags)                 { m_scriptLabSized = flags & 3; }
+int UserSettings::scriptLabSized()                              { return m_scriptLabSized; }
 void UserSettings::setPullLimbOnDrag(bool on)        { m_pullLimbOnDrag = on; }
 bool UserSettings::pullLimbOnDrag()                  { return m_pullLimbOnDrag; }
 void UserSettings::setJointMoreOptions(bool open)    { m_jointMoreOptions = open; }
@@ -370,6 +378,8 @@ void UserSettings::readSettings()
     setScriptLabParts(settings.value(m_scriptLabPartsKey).toString());
     setScriptLabTipsClosed(settings.value(m_scriptLabTipsClosedKey).toString());
     setScriptLabFollowSelection(settings.value(m_scriptLabFollowSelectionKey, true).toBool());
+    setScriptLabWindows(settings.value(m_scriptLabWindowsKey).toString());
+    setScriptLabSized(settings.value(m_scriptLabSizedKey, 0).toInt());
     setPullLimbOnDrag(settings.value(m_pullLimbOnDragKey, true).toBool());
     setJointMoreOptions(settings.value(m_jointMoreOptionsKey, false).toBool());
     // only true/false (or 1/0) count; anything else gives Beginner mode
@@ -457,6 +467,8 @@ void UserSettings::writeSettings()
   settings.setValue(m_scriptLabPartsKey, scriptLabParts());
   settings.setValue(m_scriptLabTipsClosedKey, scriptLabTipsClosed());
   settings.setValue(m_scriptLabFollowSelectionKey, scriptLabFollowSelection());
+  settings.setValue(m_scriptLabWindowsKey, scriptLabWindows());
+  settings.setValue(m_scriptLabSizedKey, scriptLabSized());
   settings.setValue(m_pullLimbOnDragKey, pullLimbOnDrag());
   settings.setValue(m_jointMoreOptionsKey, jointMoreOptions());
   settings.setValue(m_expertModeKey, expertMode());

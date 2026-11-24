@@ -258,7 +258,7 @@ Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| LABREC-01 | 1 Label | Live page: the button that starts recording, under Show effects in 3D view | Record what I do | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-01 | 1 Label | The Player tab (job UX-B; it was the Live page under Show effects in 3D view): the button that starts recording | Record what I do | in the program (pull request 450, 24 Nov 2026) | job A3 |
 | LABREC-02 | 1 Label | The same button while recording | Stop recording | in the program (pull request 450, 24 Nov 2026) | job A3 |
 | LABREC-03 | 2 Tip on hover | Record what I do | Records your clicks on props, menu buttons and RLV lines. After every save, the program repeats them and says what changed. | in the program (pull request 450, 24 Nov 2026) | job A3 |
 | LABREC-04 | 3 Empty state | The line under the button: no recipe in the folder yet | No recipe yet. Press Record what I do, then click your props. | in the program (pull request 450, 24 Nov 2026) | job A3 |
@@ -292,7 +292,7 @@ Built in pull request 453 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| LABMAP-01 | 1 Label | Live page: the folding part after the event log, while a folder is watched as one object | Who talks to whom | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-01 | 1 Label | The tab Who talks to whom (job UX-B; it was a folding part of the Live page), and the folding part on it while a folder is watched as one object | Who talks to whom | in the program (pull request 453, 24 Nov 2026) | job A4 |
 | LABMAP-02 | 4 What to do next | Channel map: the line over the map | Each box is a part. Each arrow is a message, with its channel. | in the program (pull request 453, 24 Nov 2026) | job A4 |
 | LABMAP-03 | 2 Tip on hover | Channel map: the map itself | Click a box to pick it in the tree. Click an arrow to see the line that sent it. | in the program (pull request 453, 24 Nov 2026) | job A4 |
 | LABMAP-04 | 3 Empty state | Channel map: the run sent no message | Nothing talked yet. Save a script or click a prop. | in the program (pull request 453, 24 Nov 2026) | job A4 |
@@ -321,7 +321,7 @@ Built in pull request 454 (24 Nov 2026). The texts are in `src/scriptlab/labplay
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| LABPLAY-01 | 1 Label | Live page: the player's title, under the recipe line | Player: watch your steps again | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-01 | 1 Label | The Player tab (job UX-B; it was the Live page): the player's title, under the recipe line | Player: watch your steps again | in the program (pull request 454, 24 Nov 2026) | job B3 |
 | LABPLAY-02 | 1 Label | Player: the back button of the bar | Step back | in the program (pull request 454, 24 Nov 2026) | job B3 |
 | LABPLAY-03 | 1 Label | Player: the forward button of the bar | Step forward | in the program (pull request 454, 24 Nov 2026) | job B3 |
 | LABPLAY-04 | 1 Label | Player: the button that jumps to where the replay first differed | Go to first difference | in the program (pull request 454, 24 Nov 2026) | job B3 |
@@ -429,12 +429,12 @@ Drafts for everything drawn in Mockup 2 in `docs/mockup/index.html` (the project
 | LABTWO-01 | Script Lab | The line beside Viewer rules; the program puts in RLV or RLVa | Now: %1 rules. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-02 | 2 Tip on hover | The ? button in the Script Lab title (its name) | Help for Script Lab | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-03 | 2 Tip on hover | The ? button in the Script Lab title | Explanations, pictures and the examples, in a bigger view. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-04 | Script Lab | Page tab | Player | draft | Mockup 2 (pull request 456), proposal |
+| LABTWO-04 | Script Lab | Page tab | Player | in the program (pull request 464, 24 Nov 2026) | Mockup 2 (pull request 456); job UX-B |
 | LABTWO-05 | Script Lab | Page tab | Improve a setup | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-06 | Script Lab | Page tab | HUD | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-07 | 2 Tip on hover | A folding part's header on the Live scripts page | Opening one part folds the others, so the page stays short. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-08 | 2 Tip on hover | Page tab Who talks to whom | Arrows between the parts: who sends what to whom. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-09 | 2 Tip on hover | Page tab Player | Step back and forth through your recorded steps. | draft | Mockup 2 (pull request 456), proposal |
+| LABTWO-08 | 2 Tip on hover | Page tab Who talks to whom | Arrows between the parts: who sends what to whom. | in the program (pull request 464, 24 Nov 2026) | Mockup 2 (pull request 456); job UX-B |
+| LABTWO-09 | 2 Tip on hover | Page tab Player | Step back and forth through your recorded steps. | in the program (pull request 464, 24 Nov 2026) | Mockup 2 (pull request 456); job UX-B |
 | LABTWO-10 | 2 Tip on hover | Page tab Improve a setup | Check a setup you made before and see what can be better. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-11 | 2 Tip on hover | Page tab HUD | Try your HUD on screen, as in Second Life. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-12 | Script Lab | Improve a setup page: heading | Improve a finished setup | draft | Mockup 2 (pull request 456), proposal |
@@ -540,6 +540,24 @@ Built in pull request 458 (the project owner, 24 Nov 2026, 11:29-11:42: «Alt b�
 | UXFIX-13 | Help view | Hints: the text | Hints are small cards next to the part they talk about.<br>The cross closes a hint. Turn Help > Show hints off and on for the next one.<br>A closed word tip in Script Lab does not come back. All the words are under Words here. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
 | UXFIX-14 | Help view | The headings of an example topic, over its guide texts from example.json | What it is<br>Steps<br>The pieces<br>New words<br>You should see<br>Then try | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
 | UXFIX-15 | Help view | The button at the bottom | Close | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+
+### Script Lab as one window with its own tabs (job UX-B, 24 Nov 2026)
+
+Built in pull request 464 (the project owner, 24 Nov 2026, 13:26: «Fiks dette og legg i køer»). The texts are in `src/scriptlab/scriptlabpanel.cpp` and `src/scriptlab/labtabs.cpp`; `tests/scriptlabwindow/tst_scriptlabwindow.cpp` checks them letter for letter. The tab names and tips are LABNEW and LABTWO rows (Live scripts, Type commands, LABMAP-01, LABTWO-04, LABTWO-08, LABTWO-09).
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| UXB-01 | 2 Tip on hover | The Script Lab tabs, for screen readers | Script Lab pages | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-02 | 1 Label | The button beside the tabs | Pop out | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-03 | 2 Tip on hover | Pop out, for screen readers | Pop out this tab | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-04 | 2 Tip on hover | Pop out; the program puts in the tab in front | Pop out "%1" into a window of its own. Close that window, or press Put back, to bring it back. | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-05 | 2 Tip on hover | Pop out while only one tab is left in Script Lab | The last tab stays in Script Lab. Put another tab back first. | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-06 | 1 Label | The title of a popped tab's window; the program puts in the tab's name | Script Lab: %1 | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-07 | 1 Label | The button at the top of a popped tab's window | Put back | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-08 | 2 Tip on hover | Put back, for screen readers | Put this tab back into Script Lab | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-09 | 2 Tip on hover | Put back | Put this tab back into Script Lab. Closing this window does the same. | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-10 | 1 Label | The tab Who talks to whom while no folder is watched as one object | Watch a folder as one object on Live scripts. Then this page shows who talks to whom. | in the program (pull request 464, 24 Nov 2026) | job UX-B |
+| UXB-11 | 1 Label | The Player tab while no folder is watched as one object | Watch a folder as one object on Live scripts. Then press Record what I do here, and watch your steps again. | in the program (pull request 464, 24 Nov 2026) | job UX-B |
 
 ### AI notice (job K, 23 Nov 2026)
 
