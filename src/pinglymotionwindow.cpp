@@ -118,6 +118,7 @@
 #include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "menuspec.h"
+#include "viewmenuspec.h"
 #include "emptystate.h"
 #include "guidancespec.h"
 #include "hintcard.h"
@@ -376,15 +377,16 @@ PinglyMotionWindow::PinglyMotionWindow() :
 
   ui->optionsLoopAction->setChecked(UserSettings::loop());
   m_transport->setLoop(UserSettings::loop());
-  ui->optionsSkeletonAction->setChecked(UserSettings::skeleton());
   ui->optionsJointLimitsAction->setChecked(UserSettings::jointLimits());
 
   ui->optionsProtectFirstFrameAction->setChecked(UserSettings::protectFirstFrame());
 
-  // Options > Body: which avatar the 3D view shows (only what you see, not the animation)
-  QMenu* bodyMenu=new QMenu(tr("Body"),this);
+  // View > Body (Options > Body before UX job U2): which avatar the 3D view shows (only what
+  // you see, not the animation); buildMenus() puts it into the View menu
+  QMenu* bodyMenu=new QMenu(ViewMenuSpec::tr(ViewMenuSpec::bodyMenu),this);
+  bodyMenu->setObjectName(QStringLiteral("viewBodyMenu"));
   bodyMenu->setToolTipsVisible(true);
-  ui->menuOptions->addMenu(bodyMenu);
+  m_bodyMenu=bodyMenu;
   QActionGroup* bodyGroup=new QActionGroup(this);
   struct BodyChoice { const char* key; AvatarSkin::Body body; QString text; QString tip; };
   const BodyChoice bodyChoices[]={
@@ -412,19 +414,17 @@ PinglyMotionWindow::PinglyMotionWindow() :
     bodyActions.value(current,bodyActions.value(QStringLiteral("ruth2")))->setChecked(true);
   }
 
-  // Options > Joints: show or hide groups of Bento joints (display only)
-  QMenu* jointsMenu=ui->menuOptions->addMenu(tr("Joints"));
-  const struct { int group; const char* text; } groups[]=
+  // View > Joint groups (Options > Joints before UX job U2): show or hide groups of Bento
+  // joints (display only); buildMenus() puts it into the View menu
+  QMenu* jointsMenu=new QMenu(ViewMenuSpec::tr(ViewMenuSpec::jointGroupsMenu),this);
+  jointsMenu->setObjectName(QStringLiteral("viewJointGroupsMenu"));
+  jointsMenu->menuAction()->setToolTip(ViewMenuSpec::tr(ViewMenuSpec::jointGroupsTip));
+  jointsMenu->menuAction()->setStatusTip(ViewMenuSpec::tr(ViewMenuSpec::jointGroupsTip));
+  m_jointGroupsMenu=jointsMenu;
+  for(const ViewMenuSpec::Group& entry : ViewMenuSpec::groups)
   {
-    {JointGroups::Wings,QT_TR_NOOP("Wings")},
-    {JointGroups::Tail,QT_TR_NOOP("Tail")},
-    {JointGroups::HindLimbs,QT_TR_NOOP("Hind limbs")},
-    {JointGroups::Face,QT_TR_NOOP("Face")},
-    {JointGroups::FingersToes,QT_TR_NOOP("Fingers and toes")}
-  };
-  for(const auto& entry : groups)
-  {
-    QAction* action=jointsMenu->addAction(tr(entry.text));
+    QAction* action=jointsMenu->addAction(ViewMenuSpec::tr(entry.text));
+    action->setObjectName(QLatin1String(entry.id));
     action->setCheckable(true);
     action->setChecked(!(UserSettings::hiddenJointGroups() & entry.group));
     const int group=entry.group;
@@ -437,9 +437,10 @@ PinglyMotionWindow::PinglyMotionWindow() :
     });
   }
   jointsMenu->addSeparator();
-  QAction* hideInListsAction=jointsMenu->addAction(tr("Hide in lists"));
+  QAction* hideInListsAction=jointsMenu->addAction(ViewMenuSpec::tr(ViewMenuSpec::viewHideInLists.text));
+  hideInListsAction->setObjectName(QLatin1String(ViewMenuSpec::viewHideInLists.id));
   hideInListsAction->setCheckable(true);
-  hideInListsAction->setToolTip(tr("Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed."));
+  hideInListsAction->setToolTip(ViewMenuSpec::tr(ViewMenuSpec::hideInListsTip));
   hideInListsAction->setChecked(UserSettings::hideJointsInLists());
   connect(hideInListsAction,&QAction::toggled,this,[this](bool on)
   {
@@ -468,9 +469,11 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // Options > Lighting...: brightness, shine and warmth of the body light
   ui->animationView->setBodyLight(UserSettings::lightBrightness(),UserSettings::lightShine(),
                                   UserSettings::lightWarmth(),UserSettings::floorShadow());
-  QAction* lightAction=new QAction(tr("Lighting..."),this);
-  lightAction->setToolTip(tr("Change how the body is lit: brightness, shine, warmth and the shadow on the floor."));
-  ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction);
+  // View > Lighting... (Options before UX job U2); buildMenus() puts it into the View menu
+  QAction* lightAction=new QAction(ViewMenuSpec::tr(ViewMenuSpec::viewLighting.text),this);
+  lightAction->setObjectName(QLatin1String(ViewMenuSpec::viewLighting.id));
+  lightAction->setToolTip(ViewMenuSpec::tr(ViewMenuSpec::lightingTip));
+  m_lightingAction=lightAction;
   connect(lightAction,&QAction::triggered,this,&PinglyMotionWindow::showLightDialog);
 
   // panel layout from last time (size, place, floating panels). Only a layout
@@ -1272,6 +1275,36 @@ void PinglyMotionWindow::buildMenus()
   connect(homeAction,&QAction::triggered,this,&PinglyMotionWindow::on_resetCameraAction_triggered);
   ui->menuView->addAction(homeAction);
 
+  // UX job U2: every view setting in the View menu (src/viewmenuspec.h): the view toolbar's
+  // Show items (the same settings), Click and bend, Joint groups, Body and Lighting
+  ui->menuView->addSection(ViewMenuSpec::tr(ViewMenuSpec::showHeading));
+  for(ViewToolSpec::Part part : ViewToolSpec::parts)
+  {
+    const Item& item=*ViewMenuSpec::partItems[int(part)];
+    QAction* action=specAction(this,item,false);
+    action->setCheckable(true);
+    if(part==ViewToolSpec::Part::JointDots)
+    {
+      action->setToolTip(ViewMenuSpec::tr(ViewMenuSpec::jointDotsTip));
+      action->setStatusTip(ViewMenuSpec::tr(ViewMenuSpec::jointDotsTip));
+    }
+    action->setChecked(viewPartShown(part));
+    connect(action,&QAction::toggled,this,[this,part](bool on) { chooseViewPart(part,on); });
+    m_viewPartActions[int(part)]=action;
+    ui->menuView->addAction(action);
+  }
+  m_clickAndBendAction=specAction(this,ViewMenuSpec::viewClickAndBend,false);
+  m_clickAndBendAction->setCheckable(true);
+  m_clickAndBendAction->setChecked(UserSettings::clickAndBend());
+  m_clickAndBendAction->setToolTip(ViewMenuSpec::tr(ViewMenuSpec::clickAndBendTip));
+  m_clickAndBendAction->setStatusTip(ViewMenuSpec::tr(ViewMenuSpec::clickAndBendTip));
+  keyInView(m_clickAndBendAction,view);
+  connect(m_clickAndBendAction,&QAction::toggled,this,&PinglyMotionWindow::setClickAndBend);
+  ui->menuView->addAction(m_clickAndBendAction);
+  if(m_jointGroupsMenu) ui->menuView->addMenu(m_jointGroupsMenu);
+  if(m_bodyMenu) ui->menuView->addMenu(m_bodyMenu);
+  if(m_lightingAction) ui->menuView->addAction(m_lightingAction);
+
   ui->menuView->addSection(QCoreApplication::translate("MenuSpec",panelsHeading));
   ui->menuView->addAction(showJointsAction);
   ui->menuView->addAction(showJointCardAction);
@@ -1315,6 +1348,8 @@ void PinglyMotionWindow::buildMenus()
     if(m_panels && m_panels->pasteMirrored) m_panels->pasteMirrored->setVisible(on);
     // and the Hands tab's joint grid (UX phase 2c)
     refreshHandsPanel();
+    // the timeline's Only changed joints switch (UX job U2)
+    ui->timelineView->setExpert(on);
     // two figures (6m): the add commands, the Figures box, Make active and Remove
     refreshFigures();
     // the Edit curve button follows through UserSettings::watchExpertMode; the mockup's sentences
@@ -1322,6 +1357,18 @@ void PinglyMotionWindow::buildMenus()
                                 : GuidanceSpec::tr(GuidanceSpec::expertOffMessage,"GuidanceSpec"),5000);
   });
   ui->menuView->addAction(m_expertModeAction);
+
+  // UX job U2: the timeline's row filter, as it was left last time
+  ui->timelineView->setExpert(UserSettings::expertMode());
+  ui->timelineView->setRowFilter(TimelineSpec::areaFromKey(UserSettings::timelineArea()),UserSettings::timelineChangedOnly());
+  connect(ui->timelineView,&TimelineView::rowFilterChosen,this,[this](int area,bool changedOnly)
+  {
+    const bool areaChanged=TimelineSpec::areaKey(area)!=UserSettings::timelineArea();
+    UserSettings::setTimelineArea(TimelineSpec::areaKey(area));
+    UserSettings::setTimelineChangedOnly(changedOnly);
+    statusBar()->showMessage(areaChanged ? TimelineSpec::areaMessage(area)
+                                         : TimelineSpec::changedOnlyMessage(changedOnly),5000);
+  });
 
   m_textSizeAction=specAction(this,viewTextSize,false,text(viewTextSize).arg(UserSettings::textSizePercent()));
   // every keyboard layout's keys (TextSize::biggerKeys: Ctrl and the plus key next to 0 on a
@@ -1627,19 +1674,16 @@ void PinglyMotionWindow::setupViewToolbar()
   m_viewToolbar->setTool(tool);
   view->setShowFloor(UserSettings::showFloor());
   view->setShowRings(UserSettings::showRings());
+  view->setShowJointDots(UserSettings::showJointDots());
+  view->setClickAndBend(UserSettings::clickAndBend());
   m_viewToolbar->setPartShown(Part::Floor,UserSettings::showFloor());
   m_viewToolbar->setPartShown(Part::Rings,UserSettings::showRings());
-  m_viewToolbar->setPartShown(Part::JointDots,UserSettings::skeleton());
+  m_viewToolbar->setPartShown(Part::JointDots,UserSettings::showJointDots());
   m_viewToolbar->setPartShown(Part::ToolNames,UserSettings::viewToolNames());
 
   connect(m_viewToolbar,&ViewToolbar::toolChosen,this,&PinglyMotionWindow::chooseViewTool);
   connect(view,&AnimationView::viewToolRequested,this,&PinglyMotionWindow::chooseViewTool);
   connect(m_viewToolbar,&ViewToolbar::partToggled,this,&PinglyMotionWindow::chooseViewPart);
-  // Joint dots is Options > Show skeleton: either one changes both
-  connect(ui->optionsSkeletonAction,&QAction::toggled,m_viewToolbar,[this](bool on)
-  {
-    m_viewToolbar->setPartShown(ViewToolSpec::Part::JointDots,on);
-  });
   connect(m_viewToolbar,&ViewToolbar::focusRequested,this,&PinglyMotionWindow::focusPickedJoint);
   connect(m_viewToolbar,&ViewToolbar::wholeFigureRequested,this,[this,view]()
   {
@@ -1727,6 +1771,33 @@ void PinglyMotionWindow::chooseViewTool(ViewTool tool)
   statusBar()->showMessage(ViewToolSpec::toolChosenMessage(tool),5000);
 }
 
+// the saved choice of a Show item of the view toolbar (and View > Show)
+bool PinglyMotionWindow::viewPartShown(ViewToolSpec::Part part)
+{
+  using Part=ViewToolSpec::Part;
+  switch(part)
+  {
+    case Part::Floor: return UserSettings::showFloor();
+    case Part::Rings: return UserSettings::showRings();
+    case Part::JointDots: return UserSettings::showJointDots();
+    case Part::ToolNames: return UserSettings::viewToolNames();
+  }
+  return true;
+}
+
+// View > Click and bend on the figure (UX job U2): remembered, and said in the status line
+void PinglyMotionWindow::setClickAndBend(bool on)
+{
+  UserSettings::setClickAndBend(on);
+  ui->animationView->setClickAndBend(on);
+  if(m_clickAndBendAction && m_clickAndBendAction->isChecked()!=on)
+  {
+    QSignalBlocker block(m_clickAndBendAction);
+    m_clickAndBendAction->setChecked(on);
+  }
+  statusBar()->showMessage(ViewMenuSpec::clickAndBendMessage(on),5000);
+}
+
 void PinglyMotionWindow::chooseViewPart(ViewToolSpec::Part part,bool shown)
 {
   using Part=ViewToolSpec::Part;
@@ -1741,14 +1812,21 @@ void PinglyMotionWindow::chooseViewPart(ViewToolSpec::Part part,bool shown)
       ui->animationView->setShowRings(shown);
       break;
     case Part::JointDots:
-      // the same setting as Options > Show skeleton, through its own action
-      ui->optionsSkeletonAction->setChecked(shown);
+      // View > Joint dots (Options > Show skeleton before UX job U2)
+      UserSettings::setShowJointDots(shown);
+      ui->animationView->setShowJointDots(shown);
       break;
     case Part::ToolNames:
       UserSettings::setViewToolNames(shown);
       break;
   }
   if(m_viewToolbar) m_viewToolbar->setPartShown(part,shown);
+  // the same item in View > Show (UX job U2) follows
+  if(QAction* action=m_viewPartActions[int(part)])
+  {
+    QSignalBlocker block(action);
+    action->setChecked(shown);
+  }
   statusBar()->showMessage(ViewToolSpec::shownMessage(part,shown),5000);
 }
 
@@ -3016,12 +3094,6 @@ void PinglyMotionWindow::toolsOptimizeBVH()
   updateInputs();
 }
 
-// Menu Action: Options / Skeleton
-void PinglyMotionWindow::setSkeleton(bool on)
-{
-  UserSettings::setSkeleton(on);
-}
-
 // Menu Action: Options / Loop
 void PinglyMotionWindow::setLoop(bool on)
 {
@@ -3353,7 +3425,6 @@ void PinglyMotionWindow::selectAnimation(Animation* animation)
 // options, window place and panel layout, remembered for next time
 void PinglyMotionWindow::saveUserSettings()
 {
-  UserSettings::setSkeleton(ui->optionsSkeletonAction->isChecked());
   UserSettings::setJointLimits(ui->optionsJointLimitsAction->isChecked());
   UserSettings::setProtectFirstFrame(ui->optionsProtectFirstFrameAction->isChecked());
 
@@ -3435,11 +3506,6 @@ void PinglyMotionWindow::on_toolsMirrorAction_triggered()
   Animation* anim=scene->getAnimation();
   anim->mirror(currentPart);
   updateInputs();
-}
-
-void PinglyMotionWindow::on_optionsSkeletonAction_toggled(bool on)
-{
-  setSkeleton(on);
 }
 
 void PinglyMotionWindow::on_optionsJointLimitsAction_toggled(bool on)

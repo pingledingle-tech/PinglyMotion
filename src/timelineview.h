@@ -30,6 +30,8 @@
 
 #include <functional>
 
+class QCheckBox;
+class QComboBox;
 class QLabel;
 class QPushButton;
 class QScrollArea;
@@ -106,6 +108,21 @@ class TimelineView : public QFrame
     QLabel* noAnimationLine() const { return noAnimation_; }
     // no animation is open (the window's empty state): the rows give way to one line
     void setNoAnimation(bool none);
+
+    // UX job U2: the row filter above the rows. area -1 shows every body area
+    // (JointGroups::Tab otherwise); changedOnly off gives every joint a row, in
+    // Expert mode only: Beginner mode hides the switch and shows only the
+    // changed joints, without moving the area choice. Setting it here sends
+    // no rowFilterChosen.
+    void setRowFilter(int area,bool changedOnly);
+    void setExpert(bool expert);
+    int rowFilterArea() const;
+    bool changedOnly() const;
+    QComboBox* areaFilter() const { return areaFilter_; }
+    QCheckBox* changedOnlyBox() const { return changedOnly_; }
+    // "No changed joints in Face." with its line, while the area hides every change
+    QWidget* areaEmpty() const { return areaEmpty_; }
+    QLabel* areaEmptyTitle() const { return areaEmptyTitle_; }
     // Set the first key is greyed with this reason; empty: it can be clicked
     void setFirstKeyBlocked(const QString& why);
     // UX phase 3c: the notes line under the easing tiles, with the note of
@@ -134,6 +151,8 @@ class TimelineView : public QFrame
   signals:
     // "Set the first key" was clicked: the window sets a key like Set key
     void setKeyRequested();
+    // the user changed the row filter (U2): the window saves it and says so
+    void rowFilterChosen(int area,bool changedOnly);
     // Hide notes was clicked on the notes line
     void notesHidden();
     // two figures: Make active or Remove was clicked on a figure's header row (0-based)
@@ -175,6 +194,13 @@ class TimelineView : public QFrame
     // the row area is as high as its rows; laid out at once, so scrolling knows the height
     void fitRowHeight();
 
+    // the row filter (U2) and what the timeline gets from it
+    void applyRowFilter();
+    QComboBox* areaFilter_=nullptr;
+    QCheckBox* changedOnly_=nullptr;
+    QWidget* areaEmpty_=nullptr;
+    QLabel* areaEmptyTitle_=nullptr;
+    bool expert_=false;
     QWidget* noKeys_=nullptr;
     QLabel* noKeysTitle_=nullptr;
     QLabel* noKeysLine_=nullptr;

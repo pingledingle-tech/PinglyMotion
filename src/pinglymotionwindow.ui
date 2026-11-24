@@ -1332,7 +1332,6 @@
     <property name="title">
      <string>Options</string>
     </property>
-    <addaction name="optionsSkeletonAction"/>
     <addaction name="optionsJointLimitsAction"/>
     <addaction name="optionsLoopAction"/>
     <addaction name="optionsProtectFirstFrameAction"/>
@@ -1495,14 +1494,6 @@
    </property>
    <property name="toolTip">
     <string>Removes keys that change nothing.</string>
-   </property>
-  </action>
-  <action name="optionsSkeletonAction">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show skeleton</string>
    </property>
   </action>
   <action name="optionsJointLimitsAction">

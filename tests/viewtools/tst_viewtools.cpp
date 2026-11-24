@@ -806,7 +806,7 @@ void TestViewTools::viewAndWindowWiring()
   QVERIFY(!view.contains(QStringLiteral("Camera::gestureFor(m_cameraHabit,event->button()")));
   QVERIFY(view.contains(QStringLiteral("Camera::toolForKey(event->key(),event->modifiers(),&tool)")));
   QVERIFY(view.contains(QStringLiteral("emit viewToolRequested(tool);")));
-  QVERIFY(view.contains(QStringLiteral("partSelected==selectName && m_showRings")));
+  QVERIFY(view.contains(QStringLiteral("partSelected==selectName && ViewMenuSpec::ringsShown(m_showRings,m_clickAndBend)")));
   QVERIFY(view.contains(QStringLiteral("if(m_showFloor)")));
   QVERIFY(view.contains(QStringLiteral("ViewToolSpec::ringHoverHint(ring)")));
   QVERIFY(view.contains(QStringLiteral("ViewToolSpec::toolHoverHint(m_viewTool)")));
@@ -819,7 +819,7 @@ void TestViewTools::viewAndWindowWiring()
   QVERIFY(window.contains(QStringLiteral("statusBar()->showMessage(ViewToolSpec::toolChosenMessage(tool),5000);")));
   QVERIFY(window.contains(QStringLiteral("view->camera()->lookFrom(spec.height,spec.angle);")));
   QVERIFY(window.contains(QStringLiteral("m_viewToolbar->setCameraAngles(view->camera()->xRotation(),view->camera()->yRotation());")));
-  QVERIFY(window.contains(QStringLiteral("ui->optionsSkeletonAction->setChecked(shown);")));
+  QVERIFY(window.contains(QStringLiteral("UserSettings::setShowJointDots(shown);")));
   QVERIFY(window.contains(QStringLiteral("statusBar()->showMessage(ViewToolSpec::shownMessage(part,shown),5000);")));
   QVERIFY(window.contains(QStringLiteral("if(m_viewToolbar) m_viewToolbar->setVisible(!empty);")));
   QVERIFY(window.contains(QStringLiteral("if(m_viewToolbar) m_viewToolbar->applyLook();")));

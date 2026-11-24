@@ -7,6 +7,8 @@ Files:
 - src/timelineview.*
 - src/animationview.*
 - src/viewmenuspec.h
+- src/viewtoolspec.h
+- src/jointrings.h
 - src/usersettings.*
 - src/pinglymotionwindow.*
 - src/pinglymotionwindow.ui
@@ -16,12 +18,14 @@ Files:
 - tests/menutexts/**
 - tests/timelinerows/**
 - tests/viewtools/**
+- tests/jointrings/**
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/DECISIONS.md
 - docs/ROADMAP.md
 - docs/PRODUCT.md
 - docs/TEACHING_TEXTS.md
+- docs/RENDERING.md
 
 ## What
 

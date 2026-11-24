@@ -43,8 +43,6 @@ class UserSettings
 
     static void setLoop(bool value);
     static bool loop();
-    static void setSkeleton(bool value);
-    static bool skeleton();
     static void setJointLimits(bool value);
     static bool jointLimits();
     static void setProtectFirstFrame(bool value);
@@ -155,6 +153,20 @@ class UserSettings
     static bool showRings();
     static void setViewToolNames(bool on);
     static bool viewToolNames();
+    // UX job U2 (docs/UX_DECISIONS.md, 6q): View > Joint dots, the same switch as Show > Joint dots
+    // ("show_joint_dots", on by default; it replaces Options > Show skeleton, "skeleton", which did
+    // nothing any more), View > Click and bend on the figure ("click_and_bend", on by default), and
+    // the timeline's row filter: the body area ("timeline_area": "all", "body", "face", "hands" or
+    // "other"; anything else becomes "all") and Only changed joints ("timeline_changed_only", on)
+    static void setShowJointDots(bool on);
+    static bool showJointDots();
+    static void setClickAndBend(bool on);
+    static bool clickAndBend();
+    static void setTimelineArea(const QString& value);
+    static QString timelineArea();
+    static QStringList timelineAreas();  // "all", "body", "face", "hands", "other"
+    static void setTimelineChangedOnly(bool on);
+    static bool timelineChangedOnly();
     // text size in percent, 100 (default) to 200; applied to the whole program
     // by src/textsize.* (main() at start, PinglyMotionWindow::setTextSizePercent).
     // A value outside the range is cut to the nearest end.
@@ -188,8 +200,6 @@ private:
 
     static bool m_loop;
     static const QString m_loopKey;
-    static bool m_skeleton;
-    static const QString m_skeletonKey;
     static bool m_jointLimits;
     static const QString m_jointLimitsKey;
     static bool m_protectFirstFrame;
@@ -255,6 +265,14 @@ private:
     static const QString m_showRingsKey;
     static bool m_viewToolNames;
     static const QString m_viewToolNamesKey;
+    static bool m_showJointDots;
+    static const QString m_showJointDotsKey;
+    static bool m_clickAndBend;
+    static const QString m_clickAndBendKey;
+    static QString m_timelineArea;
+    static const QString m_timelineAreaKey;
+    static bool m_timelineChangedOnly;
+    static const QString m_timelineChangedOnlyKey;
     static int m_textSizePercent;
     static const QString m_textSizePercentKey;
 
