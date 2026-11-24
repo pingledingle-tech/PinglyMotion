@@ -48,7 +48,8 @@ No code was taken from these; they showed us what is worth building.
 |---|---|---|---|
 | Aurora Viewer (Rust Second Life viewer) | Ideas for the poser and animation editor interface (design only). The live link uses Aurora's LiveMesh interface as a client | GPL 3 | https://github.com/Aurora-Viewer/Aurora-Viewer |
 | Firestorm poser | How a poser handles joint groups, mirroring and hand presets | LGPL 2.1 | https://github.com/FirestormViewer/phoenix-firestorm |
-| Blender | Navigation habits (middle-drag, number pad views) and the export route described in `docs/BLENDER.md` | GPL | https://www.blender.org |
+| Blender | Navigation habits (middle-drag, number pad views) and the export route described in `docs/BLENDER.md`; the upright tabs of its sidebar, drawn as side tabs in Mockup 2 of `docs/mockup/index.html` (design only) | GPL | https://www.blender.org |
+| Second Life build tools (Linden Research, Inc.) | How props are edited in Mockup 2 of `docs/mockup/index.html`: move arrows, Ctrl for turning rings, Ctrl+Shift for size, and the shape fields cut, hollow and twist (design only) | Design reference, no code | https://secondlife.com |
 | sketchpunklabs/threejs_proto | The swing-twist retargeter that Mesh2Motion builds on | ISC (per its `package.json`) | https://github.com/sketchpunklabs/threejs_proto |
 | anim-to-bvh | Table of Second Life joint names and BVH aliases, used as a reference for `.anim` import | MIT (per its `package.json`) | see `docs/archive/OPEN_SOURCE_CHECK.md` |
 | PoseForge, Black Dragon viewer, tanimbomb | Ideas only (no code read or copied); see `docs/archive/REUSE_REFERENCES.md` and `docs/archive/OPEN_SOURCE_CHECK.md` | Various | see those documents |
