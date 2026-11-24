@@ -520,12 +520,6 @@ PinglyMotionWindow::PinglyMotionWindow() :
 
   connect(ui->animationView, &AnimationView::propClicked, this, &PinglyMotionWindow::propClicked);
 
-  connect(ui->animationView, &AnimationView::propDragged, this, &PinglyMotionWindow::propDragged);
-
-  connect(ui->animationView, &AnimationView::propScaled, this, &PinglyMotionWindow::propScaled);
-
-  connect(ui->animationView, &AnimationView::propRotated, this, &PinglyMotionWindow::propRotated);
-
   connect(ui->animationView, &AnimationView::backgroundClicked, this, &PinglyMotionWindow::backgroundClicked);
   connect(ui->animationView, &AnimationView::animationSelected, this, &PinglyMotionWindow::selectAnimation);
 
@@ -1031,36 +1025,6 @@ void PinglyMotionWindow::propClicked(Prop* prop)
   selectProp();
 }
 
-// slot gets called by AnimationView::mouseMoveEvent()
-void PinglyMotionWindow::propDragged(Prop* prop,double x,double y,double z)
-{
-  double newX = prop->xPosition() + x;
-  double newY = prop->yPosition() + y;
-  double newZ = prop->zPosition() + z;
-  prop->setPosition(newX, newY, newZ);
-  updatePropSpins(prop->position(), prop->rotation(), prop->scale());
-}
-
-// slot gets called by AnimationView::mouseMoveEvent()
-void PinglyMotionWindow::propScaled(Prop* prop,double x,double y,double z)
-{
-  double newX = prop->xScale() + x;
-  double newY = prop->yScale() + y;
-  double newZ = prop->zScale() + z;
-  prop->setScale(newX, newY, newZ);
-  updatePropSpins(prop->position(), prop->rotation(), prop->scale());
-}
-
-// slot gets called by AnimationView::mouseMoveEvent()
-void PinglyMotionWindow::propRotated(Prop* prop,double x,double y,double z)
-{
-  double newX = prop->xRotation() + x;
-  double newY = prop->yRotation() + y;
-  double newZ = prop->zRotation() + z;
-  prop->setRotation(newX, newY, newZ);
-  updatePropSpins(prop->position(), prop->rotation(), prop->scale());
-}
-
 // slot gets called by AnimationView::mouseButtonClicked()
 void PinglyMotionWindow::backgroundClicked()
 {
@@ -1098,6 +1062,8 @@ void PinglyMotionWindow::buildDocks()
   // the Selected joint panel (UX phase 2b): the limits switch is the same
   // setting as Options > Stop joints at their furthest turn
   m_selectedJoint=m_panels->selectedJoint;
+  // the Selected prop page and the prop handles in the 3D view (Mockup 2, pinglymotionwindowprops.cpp)
+  setupPropEditing();
   connect(m_selectedJoint,&SelectedJointPanel::limitsToggled,ui->optionsJointLimitsAction,&QAction::setChecked);
   connect(m_selectedJoint,&SelectedJointPanel::resetRequested,this,&PinglyMotionWindow::resetJointClicked);
   connect(m_selectedJoint,&SelectedJointPanel::pickDemoRequested,this,&PinglyMotionWindow::pickDemoJoint);

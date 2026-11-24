@@ -50,6 +50,11 @@ namespace PropFile
 
   // reads all props, or none when a line is not a valid prop
   Result parse(const QByteArray& data);
+
+  // the whole file for these props (bytes out, docs/DEV.md "Web-ready code"): one line per prop,
+  // "type x y z width height depth turnX turnY turnZ attachment", numbers with 9 significant
+  // digits, so a prop's float values come back exactly from parse()
+  QByteArray write(const QList<PropRecord>& props);
 }
 
 #endif

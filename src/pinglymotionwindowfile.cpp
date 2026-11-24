@@ -776,28 +776,26 @@ void PinglyMotionWindow::fileSaveProps()
     // Obsolete for Qt 4.x
     if(!checkFileOverwrite(fileInfo)) return;
 
+    // the whole file in one go (PropFile::write; docs/DEV.md "Web-ready code"), the dialog only names it
+    QList<PropRecord> records;
+    for(int index=0;index<ui->propNameCombo->count();index++)
+    {
+      const Prop* prop=scene->getPropByName(ui->propNameCombo->itemText(index));
+      if(!prop) continue;
+      PropRecord record;
+      record.type=int(prop->propType());
+      for(int i=0;i<3;i++)
+      {
+        record.position[i]=prop->position()[i];
+        record.scale[i]=prop->scale()[i];
+        record.rotation[i]=prop->rotation()[i];
+      }
+      record.attachment=int(prop->isAttached());
+      records << record;
+    }
     QFile file(fileName);
     if(file.open(QIODevice::WriteOnly))
-    {
-      for(int index=0;index<ui->propNameCombo->count();index++)
-      {
-        Prop* prop=scene->getPropByName(ui->propNameCombo->itemText(index));
-        QStringList properties;
-        properties.append(QString::number(prop->propType()));
-        properties.append(QString::number(prop->xPosition()));
-        properties.append(QString::number(prop->yPosition()));
-        properties.append(QString::number(prop->zPosition()));
-        properties.append(QString::number(prop->xScale()));
-        properties.append(QString::number(prop->yScale()));
-        properties.append(QString::number(prop->zScale()));
-        properties.append(QString::number(prop->xRotation()));
-        properties.append(QString::number(prop->yRotation()));
-        properties.append(QString::number(prop->zRotation()));
-        properties.append(QString::number(prop->isAttached()));
-        QString line=properties.join(" ")+"\n";
-        file.write(line.toLatin1().constData(),line.length());
-      } // for
-    }
+      file.write(PropFile::write(records));
   }
 }
 

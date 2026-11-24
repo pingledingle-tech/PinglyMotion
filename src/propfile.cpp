@@ -62,3 +62,20 @@ PropFile::Result PropFile::parse(const QByteArray& data)
   result.props = props;
   return result;
 }
+
+QByteArray PropFile::write(const QList<PropRecord>& props)
+{
+  QByteArray out;
+  for (const PropRecord& prop : props)
+  {
+    QStringList values;
+    values << QString::number(prop.type);
+    const double* numbers[9] = {&prop.position[0], &prop.position[1], &prop.position[2],
+                                &prop.scale[0], &prop.scale[1], &prop.scale[2],
+                                &prop.rotation[0], &prop.rotation[1], &prop.rotation[2]};
+    for (const double* number : numbers) values << QString::number(*number, 'g', 9);
+    values << QString::number(prop.attachment);
+    out += values.join(QLatin1Char(' ')).toLatin1() + '\n';
+  }
+  return out;
+}

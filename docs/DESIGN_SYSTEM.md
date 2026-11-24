@@ -108,9 +108,11 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   `border` line on top, the Lucide `book-open` icon in `area_other`, the note
   in `text`, and Hide notes as a normal button with the Lucide `eye-off` icon;
   padding `spacing.s` and `spacing.m`, gap `spacing.s` (`tests/timelinenotes`).
-- **3D view** (`src/viewcolours.h`): rotation rings and prop axis lines in the
-  axis tokens (a ring that is not in use is 20 percent toward `background`, a
-  highlighted prop handle 20 percent toward `text`), joint rings
+- **3D view** (`src/viewcolours.h`): rotation rings and the picked prop's
+  handles (arrows, rings, size squares, `src/propedit.h`) in the axis tokens (a
+  ring or handle that is not in use is 20 percent toward `background`), the
+  handles' letter badges in the full axis colour with the letter in `on_axis`,
+  the size squares with a 2 pixel `surface` edge, joint rings
   (`src/jointrings.h`, the mockup's `.jt`: 8 pixels outer radius, hollow with a
   2 pixel `text` edge, filled with the body area colour when the joint has
   changed, `selection` with a 3 pixel `on_accent` edge when selected, a 3 pixel

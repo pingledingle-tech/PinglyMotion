@@ -35,6 +35,7 @@
 #include "panellayout.h"
 #include "paneltitlebar.h"
 #include "selectedjointpanel.h"
+#include "selectedproppanel.h"
 #include "timelineclip.h"
 #include "timelinerows.h"
 #include "timelineview.h"
@@ -55,6 +56,8 @@ public:
   QScrollArea* jointCardScroll=nullptr;
   // the joint page of the Selected joint panel (UX phase 2b)
   SelectedJointPanel* selectedJoint=nullptr;
+  // the prop page of the Selected joint panel (Mockup 2, src/selectedproppanel.h)
+  SelectedPropPanel* selectedProp=nullptr;
   TransportBar* transport=nullptr;
   TimelineView* timelineView=nullptr;
   // Set key, the main button of the timeline panel (UX phase 3a)
@@ -198,13 +201,17 @@ public:
       old->hide();
     }
     QWidget* jointCard=selectedJoint;
-    QWidget* propCard=new QWidget;
-    QVBoxLayout* propCardLayout=new QVBoxLayout(propCard);
-    propCardLayout->setContentsMargins(0,0,0,0);
-    propCardLayout->addWidget(ui->propPositionGroup);
-    propCardLayout->addWidget(ui->propScaleGroup);
-    propCardLayout->addWidget(ui->propRotationGroup);
-    propCardLayout->addStretch(1);
+    // the prop page: Selected prop with Shape, Place, Turn and Size (Mockup 2); the designer
+    // file's old prop boxes are kept, hidden, for its own code
+    selectedProp=new SelectedPropPanel;
+    for(QWidget* old : {static_cast<QWidget*>(ui->propPositionGroup),static_cast<QWidget*>(ui->propScaleGroup),
+                        static_cast<QWidget*>(ui->propRotationGroup)})
+    {
+      old->hide();
+      old->setParent(selectedProp);
+      old->hide();
+    }
+    QWidget* propCard=selectedProp;
     QStackedWidget* cardStack=new QStackedWidget;
     cardStack->setObjectName("jointCardStack");
     cardStack->addWidget(jointCard);

@@ -73,6 +73,11 @@
 #include "sliderscale.h"
 #include <QStatusBar>
 #include "prop.h"
+#include "propedit.h"
+#include "propmanager.h"
+#include "panelcontent.h"
+#include "selectedproppanel.h"
+#include "undohistory.h"
 #include "jointgroups.h"
 #include "jointinfo.h"
 #include "jointlist.h"
@@ -103,6 +108,7 @@
 
 void PinglyMotionWindow::enableProps(bool state)
 {
+  if(m_selectedProp) m_selectedProp->setEnabled(state);
   ui->propPositionGroup->setEnabled(state);
   ui->propScaleGroup->setEnabled(state);
   ui->propRotationGroup->setEnabled(state);
@@ -121,43 +127,11 @@ void PinglyMotionWindow::enableAvatarPosition(bool state)
   if(m_selectedJoint) m_selectedJoint->setMoveBlocked(state ? QString() : jointBlockedReason());
 }
 
-void PinglyMotionWindow::updatePropSpins(const QVector3D& position, const QVector3D& rotation, const QVector3D& scale)
+// the prop's place, turn and size changed somewhere (a click, a script, Undo): the Selected prop
+// page follows (Mockup 2; the designer file's old prop boxes are no longer shown)
+void PinglyMotionWindow::updatePropSpins(const QVector3D&, const QVector3D&, const QVector3D&)
 {
-  ui->propXPosSpin->blockSignals(true);
-  ui->propYPosSpin->blockSignals(true);
-  ui->propZPosSpin->blockSignals(true);
-
-  ui->propXPosSpin->setValue(static_cast<int>(position.x()));
-  ui->propYPosSpin->setValue(static_cast<int>(position.y()));
-  ui->propZPosSpin->setValue(static_cast<int>(position.z()));
-
-  ui->propXPosSpin->blockSignals(false);
-  ui->propYPosSpin->blockSignals(false);
-  ui->propZPosSpin->blockSignals(false);
-
-  ui->propXRotSpin->blockSignals(true);
-  ui->propYRotSpin->blockSignals(true);
-  ui->propZRotSpin->blockSignals(true);
-
-  ui->propXRotSpin->setValue((360 + static_cast<int>(rotation.x())) % 360);
-  ui->propYRotSpin->setValue((360 + static_cast<int>(rotation.y())) % 360);
-  ui->propZRotSpin->setValue((360 + static_cast<int>(rotation.z())) % 360);
-
-  ui->propXRotSpin->blockSignals(false);
-  ui->propYRotSpin->blockSignals(false);
-  ui->propZRotSpin->blockSignals(false);
-
-  ui->propXScaleSpin->blockSignals(true);
-  ui->propYScaleSpin->blockSignals(true);
-  ui->propZScaleSpin->blockSignals(true);
-
-  ui->propXScaleSpin->setValue(static_cast<int>(scale.x()));
-  ui->propYScaleSpin->setValue(static_cast<int>(scale.y()));
-  ui->propZScaleSpin->setValue(static_cast<int>(scale.z()));
-
-  ui->propXScaleSpin->blockSignals(false);
-  ui->propYScaleSpin->blockSignals(false);
-  ui->propZScaleSpin->blockSignals(false);
+  showSelectedProp();
 }
 
 void PinglyMotionWindow::onNewProp(const QString& propName)
@@ -177,6 +151,7 @@ void PinglyMotionWindow::onSelectProp(bool isSelected, int attachmentPoint)
     ui->attachToComboBox->setCurrentIndex(attachmentPoint);
   }
   ui->animationView->selectProp();
+  showSelectedProp();
 }
 
 void PinglyMotionWindow::onDeleteProp(const QString propName)
@@ -189,11 +164,15 @@ void PinglyMotionWindow::onDeleteProp(const QString propName)
       selectProp();
     }
   }
+  showSelectedProp();
 }
 
 void PinglyMotionWindow::onClearProps()
 {
   ui->propNameCombo->clear();
+  // the props are gone, and so are their Undo steps
+  if(m_undo) m_undo->clearSteps();
+  showSelectedProp();
 }
 
 void PinglyMotionWindow::selectProp()
@@ -284,4 +263,87 @@ void PinglyMotionWindow::on_propYRotSpin_valueChanged(int)
 void PinglyMotionWindow::on_propZRotSpin_valueChanged(int)
 {
   emit propRotationChanged(ui->propXRotSpin->value(), ui->propYRotSpin->value(), ui->propZRotSpin->value());
+}
+
+// ------------------------------------------------- editing a picked prop (Mockup 2, src/propedit.h)
+
+void PinglyMotionWindow::setupPropEditing()
+{
+  m_selectedProp=m_panels->selectedProp;
+  // while a handle is dragged the number fields follow
+  connect(ui->animationView,&AnimationView::propChanged,this,[this](Prop* prop)
+  {
+    if(m_selectedProp && prop && scene && scene->propManager()->getSelectedPropId()==prop->id())
+      m_selectedProp->setState(AnimationView::propState(prop));
+  });
+  // a drag or a key ended: one Undo step, and the status line says what happened (PROPED-07)
+  connect(ui->animationView,&AnimationView::propEdited,this,
+          [this](Prop* prop,const PropEdit::State& before,const PropEdit::State& after,PropEdit::Mode mode)
+  {
+    if(!prop) return;
+    recordPropStep(prop->id(),before,after);
+    showSelectedProp();
+    statusBar()->showMessage(PropEdit::doneText(mode,prop->name()),5000);
+  });
+  // a number field: the prop and the 3D view follow, one Undo step
+  connect(m_selectedProp,&SelectedPropPanel::stateEdited,this,[this](const PropEdit::State& before,const PropEdit::State& after)
+  {
+    Prop* prop=scene ? scene->getPropById(scene->propManager()->getSelectedPropId()) : nullptr;
+    if(!prop) return;
+    AnimationView::applyPropState(prop,after);
+    recordPropStep(prop->id(),before,after);
+    ui->animationView->update();
+  });
+  // the Shape choice: the prop gets the other shape, one Undo step
+  connect(m_selectedProp,&SelectedPropPanel::shapeChosen,this,[this](int type)
+  {
+    Prop* prop=scene ? scene->getPropById(scene->propManager()->getSelectedPropId()) : nullptr;
+    if(!prop) return;
+    const unsigned int id=prop->id();
+    const int old=int(prop->propType());
+    auto apply=[this,id](int shape)
+    {
+      Prop* p=scene ? scene->getPropById(id) : nullptr;
+      if(!p) return;
+      QSharedPointer<Mesh> mesh=cubeMesh;
+      if(shape==Prop::Sphere) mesh=sphereMesh;
+      else if(shape==Prop::Cone) mesh=coneMesh;
+      else if(shape==Prop::Torus) mesh=torusMesh;
+      p->setShape(static_cast<Prop::PropType>(shape),mesh);
+      showSelectedProp();
+      ui->animationView->update();
+    };
+    apply(type);
+    if(m_undo) m_undo->recordStep([apply,old]() { apply(old); },[apply,type]() { apply(type); });
+  });
+  // the page starts with its empty card; the scene does not exist yet here
+}
+
+void PinglyMotionWindow::showSelectedProp()
+{
+  if(!m_selectedProp) return;
+  const Prop* prop=scene ? scene->getPropById(scene->propManager()->getSelectedPropId()) : nullptr;
+  if(!prop)
+  {
+    m_selectedProp->showNothing();
+    return;
+  }
+  m_selectedProp->showProp(prop->name(),int(prop->propType()),AnimationView::propState(prop));
+}
+
+void PinglyMotionWindow::applyPropStep(unsigned int propId,const PropEdit::State& state)
+{
+  Prop* prop=scene ? scene->getPropById(propId) : nullptr;
+  // the prop was deleted since: nothing to put back
+  if(!prop) return;
+  AnimationView::applyPropState(prop,state);
+  showSelectedProp();
+  ui->animationView->update();
+}
+
+void PinglyMotionWindow::recordPropStep(unsigned int propId,const PropEdit::State& before,const PropEdit::State& after)
+{
+  if(!m_undo || before==after) return;
+  m_undo->recordStep([this,propId,before]() { applyPropStep(propId,before); },
+                     [this,propId,after]() { applyPropStep(propId,after); });
 }

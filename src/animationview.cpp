@@ -71,6 +71,7 @@
 #include "viewcolours.h"
 #include "viewmenuspec.h"
 #include "viewtoolspec.h"
+#include "propeditcard.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
  : QOpenGLWidget(parent),
@@ -82,7 +83,6 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */)
 
   // init
   partHighlighted=0;
-  propDragging=0;
   partSelected=0;
   mirrorSelected=0;
   dragX=0;
@@ -133,6 +133,10 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */)
     m_ringLabel[axis]->setAlignment(Qt::AlignCenter);
     m_ringLabel[axis]->hide();
   }
+  // editing a picked prop (Mockup 2): the card in the top right corner
+  m_propCard=new PropEditCard(this);
+  m_propCard->hide();
+  connect(m_propCard,&PropEditCard::modeChosen,this,&AnimationView::setPropEditMode);
 }
 
 AnimationView::~AnimationView()
@@ -340,8 +344,13 @@ void AnimationView::drawProp(const Prop* prop) const
   prop->draw(state);
   // job A4: where the prop's centre was drawn, for a chain line to it
   if(!isPicking()) m_propEye.insert(prop->name(),(SceneState::modelview()*QVector4D(prop->position(),1.0f)).toVector3D());
-  if(propManager()->getSelectedPropId() == prop->id())
-    drawDragHandles(prop);
+  // the picked prop's handles are drawn over the picture later, with the camera of this picture
+  // (an attached prop is drawn in its joint's space: the handles use that space too)
+  if(!isPicking() && !m_renderSize.isValid() && propManager()->getSelectedPropId()==prop->id())
+  {
+    m_propClip=SceneState::projection()*SceneState::modelview();
+    m_havePropClip=true;
+  }
 }
 
 void AnimationView::drawProps()
@@ -421,6 +430,7 @@ void AnimationView::paintGL()
   {
     // the chain words (job A4) and the ring letters are widgets over the picture: moved after it is drawn
     QMetaObject::invokeMethod(this,&AnimationView::placeChainLabels,Qt::QueuedConnection);
+    QMetaObject::invokeMethod(this,&AnimationView::placeGizmoLabels,Qt::QueuedConnection);
     QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);
     emit viewDrawn();
   }
@@ -540,6 +550,7 @@ void AnimationView::draw()
     m_jointPositions.clear();
     m_jointFrames.clear();
     m_ringLabelShown[0]=m_ringLabelShown[1]=m_ringLabelShown[2]=false;
+    if(!m_renderSize.isValid()) m_havePropClip=false;
   }
   m_ringVisible[0]=m_ringVisible[1]=m_ringVisible[2]=false;
   if(!isValid()) initializeGL();
@@ -588,6 +599,7 @@ void AnimationView::draw()
     drawShadows();
   }
   drawProps();
+  drawGizmo();
   drawChainLines();
   drawPullLine();
   drawSphere();
@@ -907,6 +919,43 @@ void AnimationView::mouseMoveEvent(QMouseEvent* event)
     return;
   }
 
+  // a prop handle: the prop follows the mouse (src/propedit.h)
+  if(m_mouseDrag==MouseDrag::Prop)
+  {
+    Prop* prop=selectedProp();
+    if(prop && m_propDrag.active())
+    {
+      applyPropState(prop,m_propDrag.moveTo(event->position()));
+      emit propChanged(prop);
+      showPropDragLabel();
+      update();
+    }
+    return;
+  }
+
+  if(m_mouseDrag==MouseDrag::None && m_gizmo.valid())
+  {
+    // over a handle of the picked prop: it lights up, and nothing under it does
+    const int hover=m_gizmo.hit(event->position());
+    if(hover!=m_gizmoHover)
+    {
+      m_gizmoHover=hover;
+      update();
+    }
+    if(hover>=0)
+    {
+      setCursor(QCursor(m_gizmo.mode()==PropEdit::Mode::Size ? Qt::SizeFDiagCursor : Qt::OpenHandCursor));
+      if(partHighlighted)
+      {
+        partHighlighted=0;
+        QToolTip::hideText();
+      }
+      updateHoverHint();
+      return;
+    }
+    setCursor(Qt::ArrowCursor);
+  }
+
   if(m_mouseDrag==MouseDrag::None || m_mouseDrag==MouseDrag::Ring)
   {
     unsigned int oldPart=partHighlighted;
@@ -962,53 +1011,6 @@ void AnimationView::mouseMoveEvent(QMouseEvent* event)
   if(m_mouseDrag==MouseDrag::Camera)
   {
     moveCamera(m_cameraDrag,dragX,dragY);
-    update();
-  }
-  else if(m_mouseDrag==MouseDrag::Prop && propDragging)
-  {
-    float rot=camera()->yRotation();
-    Prop* prop=m_scene->getPropById(propManager()->getSelectedPropId());
-
-    if (propDragging == static_cast<int>(OpenGlIds::DragHandleX))
-    {
-      if(rot>90 && rot<270) dragX=-dragX;
-      emit propDragged(prop,(double) dragX/10.0,0,0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::DragHandleY))
-    {
-      emit propDragged(prop,0,(double) -dragY/10.0,0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::DragHandleZ))
-    {
-      if(rot>90 && rot<270) dragY=-dragY;
-      emit propDragged(prop,0,0,(double) dragY/10.0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleX))
-    {
-      if(rot>90 && rot<270) dragX=-dragX;
-      emit propScaled(prop,(double) dragX/10.0,0,0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleY))
-    {
-      if(rot>90 && rot<270) dragY=-dragY;
-      emit propScaled(prop,0,(double) -dragY/10.0,0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::ScaleHandleZ))
-    {
-      emit propScaled(prop,0,0,(double) dragY/10.0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleX))
-    {
-      emit propRotated(prop,(double) dragX/5.0,0,0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleY))
-    {
-      emit propRotated(prop,0,(double) -dragY/5.0,0);
-    }
-    else if (propDragging == static_cast<int>(OpenGlIds::RotateHandleZ))
-    {
-      emit propRotated(prop,0,0,(double) dragY/5.0);
-    }
     update();
   }
 }
@@ -1083,6 +1085,24 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
     return;
   }
 
+  // a handle of the picked prop (Move arrows, Turn rings, Size squares; Ctrl and Ctrl+Shift choose
+  // which ones, as in Second Life): drag it to edit the prop
+  if(event->button()==Qt::LeftButton && selectedProp())
+  {
+    rebuildGizmo();
+    const int handle=m_gizmo.hit(event->position());
+    if(handle>=0 && m_propDrag.start(m_gizmo,handle,event->position(),propState(selectedProp())))
+    {
+      m_mouseDrag=MouseDrag::Prop;
+      m_gizmoHover=handle;
+      QToolTip::hideText();
+      setCursor(QCursor(m_propDrag.mode()==PropEdit::Mode::Size ? Qt::SizeFDiagCursor : Qt::ClosedHandCursor));
+      showPropDragLabel();
+      update();
+      return;
+    }
+  }
+
   // left button: check out which part or prop has been clicked
   const unsigned int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
 
@@ -1111,24 +1131,6 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
     return;
   }
 
-  // drag handle of a prop clicked
-  if (selected == static_cast<unsigned int>(OpenGlIds::DragHandleX) ||
-      selected == static_cast<unsigned int>(OpenGlIds::DragHandleY) ||
-      selected == static_cast<unsigned int>(OpenGlIds::DragHandleZ) ||
-      selected == static_cast<unsigned int>(OpenGlIds::ScaleHandleX) ||
-      selected == static_cast<unsigned int>(OpenGlIds::ScaleHandleY) ||
-      selected == static_cast<unsigned int>(OpenGlIds::ScaleHandleZ) ||
-      selected == static_cast<unsigned int>(OpenGlIds::RotateHandleX) ||
-      selected == static_cast<unsigned int>(OpenGlIds::RotateHandleY) ||
-      selected == static_cast<unsigned int>(OpenGlIds::RotateHandleZ))
-  {
-    m_mouseDrag=MouseDrag::Prop;
-    propDragging=selected;
-    changeX = changeY = changeZ = 0;
-    // hide mouse cursor to avoid confusion
-    setCursor(QCursor(Qt::BlankCursor));
-    return;
-  }
 
   // a joint: a click picks it, a drag pulls the limb (UX phase 4b part 2, 6a); a joint of a
   // figure that is not active only takes a click, which makes that figure active (6m)
@@ -1161,7 +1163,6 @@ void AnimationView::clickSelect(unsigned int selected)
     partSelected=0;
     mirrorSelected=0;
     propManager()->selectProp(0);
-    propDragging=0;
     emit backgroundClicked();
   }
   // body part clicked
@@ -1174,7 +1175,6 @@ void AnimationView::clickSelect(unsigned int selected)
     partSelected=selected;
     m_scene->selectAnimation(selected / static_cast<int>(OpenGlIds::AnimationIncrement));
     propManager()->selectProp(0);
-    propDragging=0;
 
     BVHNode* part=getSelectedPart();
     changeX = changeY = changeZ = 0;
@@ -1192,6 +1192,7 @@ void AnimationView::clickSelect(unsigned int selected)
     emit propClicked(m_scene->getPropById(selected));
     propManager()->selectProp(selected);
   }
+  updatePropCard();
   update();
 }
 
@@ -1203,9 +1204,24 @@ void AnimationView::mouseReleaseEvent(QMouseEvent* event)
   m_mouseDrag=MouseDrag::None;
   m_dragButton=Qt::NoButton;
   m_cameraDrag=CameraDrag::None;
-  propDragging=0;
   // show mouse cursor again
   setCursor(Qt::ArrowCursor);
+
+  if(ended==MouseDrag::Prop)
+  {
+    // release keeps it: one Undo step, and the status line says what happened
+    m_pullLabel->hide();
+    Prop* prop=selectedProp();
+    const bool changed=m_propDrag.active() && m_propDrag.changed();
+    const PropEdit::State before=m_propDrag.before(), after=m_propDrag.now();
+    const PropEdit::Mode mode=m_propDrag.mode();
+    m_propDrag.finish();
+    m_gizmoHover=-1;
+    propModeChanged();
+    if(prop && changed) emit propEdited(prop,before,after,mode);
+    update();
+    return;
+  }
 
   if(ended==MouseDrag::Click && m_pressBlocked)
   {
@@ -1306,7 +1322,7 @@ bool AnimationView::event(QEvent* event)
   {
     QKeyEvent* key=static_cast<QKeyEvent*>(event);
     // while a joint is pulled every key goes to the pull (keyPressEvent())
-    if(m_pull.active && (key->key()==Qt::Key_Tab || key->key()==Qt::Key_Backtab))
+    if((m_pull.active || m_propDrag.active()) && (key->key()==Qt::Key_Tab || key->key()==Qt::Key_Backtab))
     {
       keyPressEvent(key);
       return true;
@@ -1325,6 +1341,12 @@ bool AnimationView::event(QEvent* event)
     event->accept();
     return true;
   }
+  // the same while a prop handle is dragged: Esc goes to the drag
+  if(event->type()==QEvent::ShortcutOverride && m_propDrag.active())
+  {
+    event->accept();
+    return true;
+  }
   return QOpenGLWidget::event(event);
 }
 
@@ -1332,6 +1354,15 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
 {
   int num=-1;
   float height,angle;
+
+  // a prop handle is dragged: Esc cancels and puts the prop back; other keys wait for the release
+  if(m_propDrag.active())
+  {
+    event->accept();
+    if(event->key()==Qt::Key_Escape) cancelPropDrag();
+    else if(modifier!=event->modifiers()) modifier=event->modifiers();
+    return;
+  }
 
   // pulling a joint (UX phase 4b part 2): Esc cancels; with the keys the arrow keys move it and
   // Enter sets the key; every other key waits until the pull ends (the mockup's keydown handler)
@@ -1378,11 +1409,31 @@ void AnimationView::keyPressEvent(QKeyEvent* event)
     return;
   }
 
-  // Shift / Ctrl show the scale / rotate handles of a selected prop
+  // Ctrl / Ctrl+Shift show the Turn / Size handles of a picked prop (as in Second Life)
   if(modifier!=event->modifiers())
   {
     modifier=event->modifiers();
+    propModeChanged();
     update();
+  }
+
+  // a picked prop with the keys only (charter P8): arrows along X and Y, comma and period along Z
+  if(Prop* prop=selectedProp())
+  {
+    PropEdit::Mode mode;
+    const PropEdit::State before=propState(prop);
+    if(const std::optional<PropEdit::State> after=PropEdit::keyStep(m_propChosenMode,event->key(),event->modifiers(),before,&mode))
+    {
+      event->accept();
+      if(*after!=before)
+      {
+        applyPropState(prop,*after);
+        emit propChanged(prop);
+        emit propEdited(prop,before,*after,mode);
+        update();
+      }
+      return;
+    }
   }
 
   ViewTool tool;
@@ -1475,6 +1526,7 @@ void AnimationView::keyReleaseEvent(QKeyEvent* event)
   if(modifier!=event->modifiers())
   {
     modifier=event->modifiers();
+    propModeChanged();
     update();
   }
   event->ignore();
@@ -1525,6 +1577,13 @@ void AnimationView::updateHoverHint()
     return;
   }
   if(m_pull.active) return;
+  // a picked prop: what a drag does in the mode in use (PROPED-20 to PROPED-22), unless a joint
+  // is under the mouse
+  if(selectedProp() && (m_gizmoHover>=0 || !partHighlighted || partHighlighted>=static_cast<unsigned int>(OpenGlIds::ObjectStart)))
+  {
+    setHoverHint(PropEdit::hintText(currentPropEditMode()));
+    return;
+  }
   const int ring=static_cast<int>(partHighlighted)-static_cast<int>(OpenGlIds::RotateRingX);
   if(ring>=0 && ring<=2 && partSelected && ViewMenuSpec::ringsShown(m_showRings,m_clickAndBend))
   {
@@ -1950,162 +2009,6 @@ void AnimationView::drawSkin()
   }
 }
 
-void AnimationView::drawDragHandles(const Prop* prop) const
-{
-  // get prop's position
-  double x=prop->xPosition();
-  double y=prop->yPosition();
-  double z=prop->zPosition();
- // get prop's scale
-  double xs=prop->xScale() / 2.0;
-  double ys=prop->yScale() / 2.0;
-  double zs=prop->zScale() / 2.0;
-
-  QColor xRGB=ViewColours::axis(0);
-  QColor yRGB=ViewColours::axis(1);
-  QColor zRGB=ViewColours::axis(2);
-
-  int xLineWidth=1;
-  int yLineWidth=1;
-  int zLineWidth=1;
-
-  switch(partHighlighted)
-  {
-    case static_cast<int>(OpenGlIds::ScaleHandleX):
-    case static_cast<int>(OpenGlIds::RotateHandleX):
-    case static_cast<int>(OpenGlIds::DragHandleX):
-      xRGB=Theme::mix(xRGB,Theme::color(Theme::Token::Text),0.2);
-      xLineWidth=3;
-      break;
-    case static_cast<int>(OpenGlIds::ScaleHandleY):
-    case static_cast<int>(OpenGlIds::RotateHandleY):
-    case static_cast<int>(OpenGlIds::DragHandleY):
-      yRGB=Theme::mix(yRGB,Theme::color(Theme::Token::Text),0.2);
-      yLineWidth=3;
-      break;
-    case static_cast<int>(OpenGlIds::ScaleHandleZ):
-    case static_cast<int>(OpenGlIds::RotateHandleZ):
-    case static_cast<int>(OpenGlIds::DragHandleZ):
-      zRGB=Theme::mix(zRGB,Theme::color(Theme::Token::Text),0.2);
-      zLineWidth=3;
-      break;
-    default:
-      break;
-  }
-
-  // remember drawing matrix on stack
-  SceneState::pushMatrix();
-  // set matrix origin to our object's center
-  SceneState::translate(x,y,z);
-
-  if (modifier & Qt::ShiftModifier)
-  {
-    // now draw the scale cubes with proper depth sorting
-    glEnable(GL_DEPTH_TEST);
-
-    SceneState::rotate(prop->xRotation(),1,0,0);
-    SceneState::rotate(prop->yRotation(),0,1,0);
-    SceneState::rotate(prop->zRotation(),0,0,1);
-
-    pickName(static_cast<int>(OpenGlIds::ScaleHandleX));
-    SceneState::setColor(xRGB.redF(),xRGB.greenF(),xRGB.blueF(),1);
-    SceneState::translate(-xs,0,0);
-    m_cubeMeshModel->draw();
-    SceneState::translate(xs*2,0,0);
-    m_cubeMeshModel->draw();
-
-    pickName(static_cast<int>(OpenGlIds::ScaleHandleY));
-    SceneState::setColor(yRGB.redF(),yRGB.greenF(),yRGB.blueF(),1);
-    SceneState::translate(-xs,-ys,0);
-    m_cubeMeshModel->draw();
-    SceneState::translate(0,ys*2,0);
-    m_cubeMeshModel->draw();
-
-    pickName(static_cast<int>(OpenGlIds::ScaleHandleZ));
-    SceneState::setColor(zRGB.redF(),zRGB.greenF(),zRGB.blueF(),1);
-    SceneState::translate(0,-ys,-zs);
-    m_cubeMeshModel->draw();
-    SceneState::translate(0,0,zs*2);
-    m_cubeMeshModel->draw();
-  }
-  else if (modifier & Qt::ControlModifier)
-  {
-    // now draw the rotate spheres with proper depth sorting
-    glEnable(GL_DEPTH_TEST);
-
-    pickName(static_cast<int>(OpenGlIds::RotateHandleX));
-    SceneState::setColor(xRGB.redF(),xRGB.greenF(),xRGB.blueF(),1);
-    SceneState::translate(-xs-5,0,0);
-    m_sphereMeshModel->draw();
-    SceneState::translate(2*(xs+5),0,0);
-    m_sphereMeshModel->draw();
-
-    pickName(static_cast<int>(OpenGlIds::RotateHandleY));
-    SceneState::setColor(yRGB.redF(),yRGB.greenF(),yRGB.blueF(),1);
-    SceneState::translate(-xs-5,-ys-5,0);
-    m_sphereMeshModel->draw();
-    SceneState::translate(0,2*(ys+5),0);
-    m_sphereMeshModel->draw();
-
-    pickName(static_cast<int>(OpenGlIds::RotateHandleZ));
-    SceneState::setColor(zRGB.redF(),zRGB.greenF(),zRGB.blueF(),1);
-    SceneState::translate(0,-ys-5,-zs-5);
-    m_sphereMeshModel->draw();
-    SceneState::translate(0,0,2*(zs+5));
-    m_sphereMeshModel->draw();
-  }
-  else
-  {
-    // first draw the crosshair lines without depth testing, so they are always visible
-    glDisable(GL_DEPTH_TEST);
-
-    SceneState::setLineWidth(xLineWidth);
-    drawWithShader(GL_LINES,{QVector3D(-xs-5,0,0),QVector3D(xs+5,0,0)},QVector4D(xRGB.redF(),xRGB.greenF(),xRGB.blueF(),1));
-
-    SceneState::setLineWidth(yLineWidth);
-    drawWithShader(GL_LINES,{QVector3D(0,-ys-5,0),QVector3D(0,ys+5,0)},QVector4D(yRGB.redF(),yRGB.greenF(),yRGB.blueF(),1));
-
-    SceneState::setLineWidth(zLineWidth);
-    drawWithShader(GL_LINES,{QVector3D(0,0,-zs-5),QVector3D(0,0,zs+5)},QVector4D(zRGB.redF(),zRGB.greenF(),zRGB.blueF(),1));
-
-    // now draw the drag handle arrows with proper depth sorting
-    glEnable(GL_DEPTH_TEST);
-
-    pickName(static_cast<int>(OpenGlIds::DragHandleX));
-    SceneState::setColor(xRGB.redF(),xRGB.greenF(),xRGB.blueF(),1);
-    SceneState::translate(-xs-5,0,0);
-    SceneState::rotate(270,0,1,0);
-    m_coneMeshModel->draw();
-    SceneState::rotate(90,0,1,0);
-    SceneState::translate(2*(xs+5),0,0);
-    SceneState::rotate(90,0,1,0);
-    m_coneMeshModel->draw();
-    SceneState::rotate(270,0,1,0);
-
-    pickName(static_cast<int>(OpenGlIds::DragHandleY));
-    SceneState::setColor(yRGB.redF(),yRGB.greenF(),yRGB.blueF(),1);
-    SceneState::translate(-xs-5,-ys-5,0);
-    SceneState::rotate(90,1,0,0);
-    m_coneMeshModel->draw();
-    SceneState::rotate(270,1,0,0);
-    SceneState::translate(0,2*(ys+5),0);
-    SceneState::rotate(270,1,0,0);
-    m_coneMeshModel->draw();
-    SceneState::rotate(90,1,0,0);
-
-    pickName(static_cast<int>(OpenGlIds::DragHandleZ));
-    SceneState::setColor(zRGB.redF(),zRGB.greenF(),zRGB.blueF(),1);
-    SceneState::translate(0,-ys-5,-zs-5);
-    SceneState::rotate(180,1,0,0);
-    m_coneMeshModel->draw();
-    SceneState::rotate(180,1,0,0);
-    SceneState::translate(0,0,2*(zs+5));
-    m_coneMeshModel->draw();
-  }
-  // restore drawing matrix
-  SceneState::popMatrix();
-}
-
 // a point on a rotation ring; angle in radians
 static QVector3D ringPoint(int axis,float radius,float angle)
 {
@@ -2306,8 +2209,8 @@ void AnimationView::selectPart(int partNum)
     partSelected=0;
     mirrorSelected=0;
     propManager()->selectProp(0);
-    propDragging=0;
     emit backgroundClicked();
+    updatePropCard();
     update();
   }
   else selectPart(node);
@@ -2323,7 +2226,7 @@ void AnimationView::selectPart(BVHNode* node)
 
   // make sure no prop is selected anymore
   propManager()->selectProp(0);
-  propDragging=0;
+  updatePropCard();
 
   // find out the index count of the animation we're working with currently
   int animationIndex=m_scene->getIndexOfAnimation(m_scene->getAnimation());
@@ -2345,6 +2248,7 @@ void AnimationView::selectProp()
   // make sure no part is selected anymore
   partSelected=0;
   mirrorSelected=0;
+  updatePropCard();
   update();
 }
 
@@ -2725,4 +2629,210 @@ bool AnimationView::figureTagPoint(int index,QPoint* point) const
   const double y=(1.0-double(clip.y()/clip.w()))/2.0*height();
   *point=QPoint(int(qBound(-1.0e6,x,1.0e6)),int(qBound(-1.0e6,y,1.0e6)));
   return true;
+}
+
+// ------------------------------------------------- editing a picked prop (Mockup 2, src/propedit.h)
+
+PropEdit::State AnimationView::propState(const Prop* prop)
+{
+  PropEdit::State state;
+  if(!prop) return state;
+  state.position=prop->position();
+  state.rotation=prop->rotation();
+  state.scale=prop->scale();
+  return state;
+}
+
+void AnimationView::applyPropState(Prop* prop,const PropEdit::State& state)
+{
+  if(!prop) return;
+  prop->setPosition(state.position.x(),state.position.y(),state.position.z());
+  prop->setRotation(state.rotation.x(),state.rotation.y(),state.rotation.z());
+  prop->setScale(state.scale.x(),state.scale.y(),state.scale.z());
+}
+
+Prop* AnimationView::selectedProp() const
+{
+  if(!m_scene) return nullptr;
+  const unsigned int id=propManager()->getSelectedPropId();
+  return id ? m_scene->getPropById(id) : nullptr;
+}
+
+void AnimationView::setPropEditMode(PropEdit::Mode mode)
+{
+  m_propChosenMode=mode;
+  propModeChanged();
+  update();
+}
+
+void AnimationView::rebuildGizmo()
+{
+  Prop* prop=selectedProp();
+  if(!prop || !m_havePropClip || m_hideMarkers)
+  {
+    m_gizmo.clear();
+    return;
+  }
+  // during a drag its handles stay, whatever the keys do
+  const PropEdit::Mode mode=m_propDrag.active() ? m_propDrag.mode() : currentPropEditMode();
+  m_gizmo.build(mode,propState(prop),m_propClip,size(),TextSize::scaled(100)/100.0);
+}
+
+// The handles over the picture, in clip space without depth (always seen, as in the mockup and in
+// Second Life): triangles only, no wide lines (docs/DEV.md "Web-ready code")
+void AnimationView::drawGizmo()
+{
+  if(isPicking() || m_renderSize.isValid()) return;
+  rebuildGizmo();
+  if(!m_gizmo.valid() || !m_skinRenderer.isReady()) return;
+  const int active=m_propDrag.active() ? m_gizmoHover : -1;
+  const double w=qMax(1,width()), h=qMax(1,height());
+  QVector<QVector3D> positions;
+  QVector<QVector4D> colours;
+  for(const PropEdit::Piece& piece : m_gizmo.pieces(m_gizmoHover,active,Theme::isDark()))
+  {
+    const QVector4D colour=ViewColours::vector(piece.colour);
+    for(const QPointF& p : piece.triangles)
+    {
+      positions << QVector3D(float(p.x()/w*2.0-1.0),float(1.0-p.y()/h*2.0),0.0f);
+      colours << colour;
+    }
+  }
+  if(positions.isEmpty()) return;
+  glDisable(GL_DEPTH_TEST);
+  m_skinRenderer.drawGeometry(GL_TRIANGLES,positions,QVector<QVector3D>(),colours,
+                              QMatrix4x4(),QMatrix4x4(),SceneState::Fog(),1.0f);
+  glEnable(GL_DEPTH_TEST);
+}
+
+// the letters on the handles' badges and squares: widgets over the picture, as the ring letters
+void AnimationView::placeGizmoLabels()
+{
+  updatePropCard();
+  const int count=(m_gizmo.valid() && selectedProp()) ? int(m_gizmo.handles().size()) : 0;
+  while(m_gizmoLabels.size()<count)
+  {
+    QLabel* label=new QLabel(this);
+    label->setObjectName(QStringLiteral("propHandleLabel%1").arg(m_gizmoLabels.size()));
+    label->setAttribute(Qt::WA_TransparentForMouseEvents);
+    label->setAlignment(Qt::AlignCenter);
+    m_gizmoLabels << label;
+  }
+  const int side=TextSize::scaled(PropEdit::Look::badge);
+  const QString style=QStringLiteral("QLabel { background: transparent; color: %1; font-weight: 700; }")
+                      .arg(Theme::color(Theme::Token::OnAxis).name());
+  for(int i=0;i<m_gizmoLabels.size();i++)
+  {
+    QLabel* label=m_gizmoLabels.at(i);
+    if(i>=count)
+    {
+      if(label->isVisible()) label->hide();
+      continue;
+    }
+    const PropEdit::Handle& handle=m_gizmo.handles().at(i);
+    const QString letter=PropEdit::axisLetter(handle.axis);
+    if(label->text()!=letter) label->setText(letter);
+    if(label->styleSheet()!=style) label->setStyleSheet(style);
+    const QRect place(int(handle.label.x())-side/2,int(handle.label.y())-side/2,side,side);
+    if(label->geometry()!=place) label->setGeometry(place);
+    if(!label->isVisible()) label->show();
+  }
+  if(m_propCard->isVisible()) m_propCard->raise();
+}
+
+void AnimationView::updatePropCard()
+{
+  Prop* prop=selectedProp();
+  const bool shown=prop && !m_hideMarkers;
+  const bool wasShown=m_propCard->isVisible();
+  if(!shown)
+  {
+    if(wasShown)
+    {
+      m_propCard->hide();
+      for(QLabel* label : m_gizmoLabels) label->hide();
+      m_gizmo.clear();
+      m_gizmoHover=-1;
+      updateHoverHint();
+    }
+    return;
+  }
+  m_propCard->setPropName(prop->name());
+  m_propCard->showMode(m_propDrag.active() ? m_propDrag.mode() : currentPropEditMode());
+  m_propCard->adjustSize();
+  const int margin=TextSize::scaled(Theme::Size::spacingS);
+  const QPoint place(qMax(0,width()-m_propCard->width()-margin),margin);
+  if(m_propCard->pos()!=place) m_propCard->move(place);
+  if(!wasShown)
+  {
+    m_propCard->show();
+    m_propCard->raise();
+    updateHoverHint();
+  }
+}
+
+void AnimationView::propModeChanged()
+{
+  if(!selectedProp()) return;
+  if(m_propCard->isVisible()) m_propCard->showMode(m_propDrag.active() ? m_propDrag.mode() : currentPropEditMode());
+  if(!m_propDrag.active()) updateHoverHint();
+}
+
+// the label next to the pointer while a handle is dragged (the mockup's dragtip, PROPED-04 to 06, 25)
+void AnimationView::showPropDragLabel()
+{
+  Prop* prop=selectedProp();
+  if(!prop || !m_propDrag.active())
+  {
+    m_pullLabel->hide();
+    return;
+  }
+  const QString first=PropEdit::dragText(m_propDrag.mode(),prop->name(),m_propDrag.axis());
+  const QString second=PropEdit::tr(PropEdit::dragKeys);
+  setHoverHint(first+QStringLiteral(" · ")+second);
+  m_pullLabel->setText(QStringLiteral("<b>%1</b><br>%2").arg(first.toHtmlEscaped(),second.toHtmlEscaped()));
+  m_pullLabel->setStyleSheet(QStringLiteral("QLabel { background: %1; color: %2; border: 1px solid %3; border-radius: %4px; padding: %5px %6px; }")
+                             .arg(Theme::color(Theme::Token::Surface).name(),Theme::color(Theme::Token::Text).name(),
+                                  Theme::color(Theme::Token::Border).name())
+                             .arg(Theme::Size::radiusControl).arg(Theme::Size::spacingXs).arg(Theme::Size::spacingS));
+  m_pullLabel->adjustSize();
+  const QPointF anchor=QPointF(mapFromGlobal(QCursor::pos()))+QPointF(16,16);
+  const int x=qBound(8,int(anchor.x()),qMax(8,width()-m_pullLabel->width()-8));
+  const int y=qBound(8,int(anchor.y()),qMax(8,height()-m_pullLabel->height()-8));
+  m_pullLabel->move(x,y);
+  m_pullLabel->show();
+  m_pullLabel->raise();
+}
+
+// Esc during a drag: the prop goes back to where it was, nothing is kept (PROPED-24)
+void AnimationView::cancelPropDrag()
+{
+  Prop* prop=selectedProp();
+  const PropEdit::State before=m_propDrag.cancel();
+  if(prop)
+  {
+    applyPropState(prop,before);
+    emit propChanged(prop);
+  }
+  m_mouseDrag=MouseDrag::None;
+  m_dragButton=Qt::NoButton;
+  m_gizmoHover=-1;
+  m_pullLabel->hide();
+  setCursor(Qt::ArrowCursor);
+  // the hint line first, then the status line says what happened (it would hide the message)
+  propModeChanged();
+  emit statusMessage(PropEdit::tr(PropEdit::cancelled));
+  update();
+}
+
+void AnimationView::focusOutEvent(QFocusEvent* event)
+{
+  // the keys were let go somewhere else: Ctrl no longer counts (the mockup's blur)
+  if(modifier!=Qt::NoModifier && !m_propDrag.active())
+  {
+    modifier=Qt::NoModifier;
+    propModeChanged();
+    update();
+  }
+  QOpenGLWidget::focusOutEvent(event);
 }

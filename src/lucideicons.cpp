@@ -83,6 +83,12 @@ namespace
       "M21.79796 11 A 10 5 0 1 0 19 15.57071"}},
     {"mouse-pointer-2",{"M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"}},
     {"move-3d",{"M5 3v16h16","m5 19 6-6","m2 6 3-3 3 3","m18 16 3 3-3 3"}},
+    // editing a prop as in Second Life (Mockup 2): the Edit prop card's title and Move, Size, and the
+    // Selected prop card's heading; from the mockup, <circle> and <rect> written as paths
+    {"move",{"M12 2v20","m15 19-3 3-3-3","m19 9 3 3-3 3","M2 12h20","m5 9-3 3 3 3","m9 5 3-3 3 3"}},
+    {"scale-3d",{"M5 7v11a1 1 0 0 0 1 1h11","M5.293 18.707 11 13","M21 19a2 2 0 1 0-4 0a2 2 0 1 0 4 0z","M7 5a2 2 0 1 0-4 0a2 2 0 1 0 4 0z"}},
+    {"shapes",{"M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z",
+      "M4 14h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1z","M21 17.5a3.5 3.5 0 1 0-7 0a3.5 3.5 0 1 0 7 0z"}},
     {"diamond",{"M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"}},
     // the limit warning; the release above has no file of this name, so the path
     // is Lucide's triangle-alert as the approved mockup carries it (docs/mockup/index.html)

@@ -49,6 +49,7 @@
 #include "bvh.h"
 #include "limbpull.h"
 #include "chainlines.h"
+#include "propedit.h"
 
 #include <functional>
 
@@ -64,6 +65,7 @@ class EffectsPreview;
 class PropManager;
 class Scene;
 class QLabel;
+class PropEditCard;
 
 class AnimationView : public QOpenGLWidget
 {
@@ -147,6 +149,21 @@ class AnimationView : public QOpenGLWidget
     // figure that is not active is drawn in text_disabled with no joint dots and no rings
     void setFigureOffset(const Animation* anim, float x);
     float figureOffset(const Animation* anim) const;
+    // Editing a picked prop as in Second Life (Mockup 2, src/propedit.h): the mode chosen on the
+    // "Edit prop" card (Ctrl gives Turn and Ctrl+Shift gives Size on top of it), the card, and the
+    // handles as they are on the screen now (for the tests and the control commands)
+    void setPropEditMode(PropEdit::Mode mode);
+    PropEdit::Mode propEditMode() const { return m_propChosenMode; }
+    // the mode in use now: the chosen one, or what Ctrl / Ctrl+Shift give
+    PropEdit::Mode currentPropEditMode() const { return PropEdit::effectiveMode(m_propChosenMode,modifier); }
+    PropEditCard* propEditCard() const { return m_propCard; }
+    const PropEdit::Gizmo& propGizmo() const { return m_gizmo; }
+    // true while a prop is dragged by one of its handles
+    bool propDragActive() const { return m_propDrag.active(); }
+    // a prop's place, turn and size, and the same put back on it
+    static PropEdit::State propState(const Prop* prop);
+    static void applyPropState(Prop* prop, const PropEdit::State& state);
+
     // a click on another figure asks this first; false keeps everything as it is (Beginner mode)
     void setFigureGuard(const std::function<bool(int)>& guard) { m_figureGuard = guard; }
     // where a figure's name tag goes (a little over its head, widget pixels), from the last picture
@@ -159,9 +176,11 @@ class AnimationView : public QOpenGLWidget
 
     void partDragged(BVHNode* node,double changeX,double changeY,double changeZ);
 
-    void propDragged(Prop* prop,double changeX,double changeY,double changeZ);
-    void propRotated(Prop* prop,double changeX,double changeY,double changeZ);
-    void propScaled(Prop* prop,double changeX,double changeY,double changeZ);
+    // a prop changed while one of its handles is dragged (its number fields follow)
+    void propChanged(Prop* prop);
+    // a drag or a key on a prop ended with a change: the window makes it one Undo step and says
+    // "<name> moved. Ctrl+Z undoes it." (PROPED-07)
+    void propEdited(Prop* prop, const PropEdit::State& before, const PropEdit::State& after, PropEdit::Mode mode);
 
     void backgroundClicked();
     void animationSelected(Animation* animation);
@@ -243,6 +262,7 @@ class AnimationView : public QOpenGLWidget
     virtual void keyPressEvent(QKeyEvent* event);
     virtual void keyReleaseEvent(QKeyEvent* event);
     void leaveEvent(QEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
 
     QSize m_renderSize;   // set while renderImage() draws
     // true while renderImage() draws a picture without the Bento markers
@@ -266,10 +286,31 @@ class AnimationView : public QOpenGLWidget
     void drawSkin();
     void drawProps();
     void drawProp(const Prop* prop) const;
-    void drawDragHandles(const Prop* prop) const;
 
-    // keys held down, for the prop handles (Shift: scale, Ctrl: rotate)
+    // keys held down, for the prop handles (Ctrl: Turn, Ctrl+Shift: Size)
     Qt::KeyboardModifiers modifier;
+
+    // editing the picked prop (src/propedit.h)
+    PropEdit::Mode m_propChosenMode=PropEdit::Mode::Move;
+    PropEdit::Gizmo m_gizmo;
+    PropEdit::Drag m_propDrag;
+    int m_gizmoHover=-1;
+    // projection * modelview where the picked prop was drawn in the last picture
+    mutable QMatrix4x4 m_propClip;
+    mutable bool m_havePropClip=false;
+    PropEditCard* m_propCard=nullptr;
+    QList<QLabel*> m_gizmoLabels;
+    Prop* selectedProp() const;
+    // the handles of the picked prop with the camera of the last picture and the mode in use
+    void rebuildGizmo();
+    void drawGizmo();
+    void placeGizmoLabels();
+    // the card in the top right corner: shown while a prop is picked
+    void updatePropCard();
+    void showPropDragLabel();
+    void cancelPropDrag();
+    // the hint line follows the mode in use (PROPED-20 to PROPED-22)
+    void propModeChanged();
 
     // what the mouse is doing between press and release
     enum class MouseDrag
@@ -330,7 +371,6 @@ class AnimationView : public QOpenGLWidget
     bool faceFocus() const;
     unsigned int partSelected;
     unsigned int mirrorSelected;
-    unsigned int propDragging;  // holds the drag handle id
 
     int dragX, dragY;           // holds the last mouse drag offset
     int oldDragX, oldDragY;     // holds the mouse position before the last drag

@@ -66,6 +66,12 @@ void Prop::setPropType(PropType propType)
   m_propType = propType;
 }
 
+void Prop::setShape(PropType propType, QSharedPointer<Mesh> mesh)
+{
+  m_propType = propType;
+  if (mesh) m_meshModel.setMesh(mesh);
+}
+
 unsigned int Prop::id() const
 {
   return m_id;

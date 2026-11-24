@@ -107,6 +107,8 @@ void UndoController::watch(Animation* anim)
   {
     m_histories.remove(anim);
     m_pending.remove(anim);
+    m_animationOrder.remove(anim);
+    m_animationRedoOrder.remove(anim);
     if(m_current==anim) m_current=nullptr;
     updateActions();
   });
@@ -122,6 +124,8 @@ void UndoController::startHistory(Animation* anim)
 {
   UndoHistory& history=m_histories[anim];
   history.start(anim->snapshot());
+  m_animationOrder.remove(anim);
+  m_animationRedoOrder.remove(anim);
   if(!anim->dirty()) history.markSaved();
   updateActions();
 }
@@ -165,7 +169,7 @@ void UndoController::edited(Animation* anim,bool changed)
     return;
   }
   // saved: what is there now is the saved state, and the history stays
-  h->record(anim->snapshot());
+  recordAnimation(anim);
   m_pending.remove(anim);
   h->markSaved();
   updateActions();
@@ -196,12 +200,63 @@ void UndoController::recordPending()
 {
   const QSet<Animation*> pending=m_pending;
   m_pending.clear();
-  for(Animation* anim : pending)
-    if(UndoHistory* h=history(anim))
-    {
-      if(!h->started()) startHistory(anim);
-      else h->record(anim->snapshot());
-    }
+  for(Animation* anim : pending) recordAnimation(anim);
+  updateActions();
+}
+
+void UndoController::recordAnimation(Animation* anim)
+{
+  UndoHistory* h=history(anim);
+  if(!h) return;
+  if(!h->started())
+  {
+    startHistory(anim);
+    return;
+  }
+  if(!h->record(anim->snapshot())) return;
+  QList<quint64>& order=m_animationOrder[anim];
+  order.append(++m_order);
+  while(order.count()>h->undoCount()) order.removeFirst();
+  m_animationRedoOrder.remove(anim);
+  // a new edit: the undone prop steps cannot come back
+  m_redoSteps.clear();
+}
+
+quint64 UndoController::animationUndoOrder() const
+{
+  auto it=m_histories.constFind(m_current);
+  if(!m_current || it==m_histories.constEnd() || !it->canUndo()) return 0;
+  const QList<quint64> order=m_animationOrder.value(m_current);
+  return order.isEmpty() ? 1 : order.last();
+}
+
+quint64 UndoController::animationRedoOrder() const
+{
+  auto it=m_histories.constFind(m_current);
+  if(!m_current || it==m_histories.constEnd() || !it->canRedo()) return 0;
+  const QList<quint64> order=m_animationRedoOrder.value(m_current);
+  return order.isEmpty() ? 1 : order.last();
+}
+
+void UndoController::recordStep(const std::function<void()>& undo,const std::function<void()>& redo)
+{
+  Step step;
+  step.order=++m_order;
+  step.undo=undo;
+  step.redo=redo;
+  m_steps.append(step);
+  while(m_steps.count()>UndoHistory::maxSteps) m_steps.removeFirst();
+  m_redoSteps.clear();
+  // a new edit: the undone animation steps cannot come back either
+  for(auto it=m_histories.begin();it!=m_histories.end();++it) it->clearRedo();
+  m_animationRedoOrder.clear();
+  updateActions();
+}
+
+void UndoController::clearSteps()
+{
+  m_steps.clear();
+  m_redoSteps.clear();
   updateActions();
 }
 
@@ -219,9 +274,24 @@ bool UndoController::undo()
     emit message(why);
     return false;
   }
+  // the newest step first: a prop step or the active animation's
+  if(!m_steps.isEmpty() && m_steps.last().order>animationUndoOrder())
+  {
+    const Step step=m_steps.takeLast();
+    m_redoSteps.append(step);
+    m_restoring=true;
+    if(step.undo) step.undo();
+    m_restoring=false;
+    updateActions();
+    emit message(QCoreApplication::translate("MenuSpec",MenuSpec::undone));
+    return true;
+  }
   UndoHistory* h=history(m_current);
+  if(!h) return false;
   const std::optional<Animation::Snapshot> state=h->undo();
   if(!state) return false;
+  if(!m_animationOrder.value(m_current).isEmpty())
+    m_animationRedoOrder[m_current].append(m_animationOrder[m_current].takeLast());
   m_restoring=true;
   m_current->restore(*state);
   m_current->setDirty(!h->atSaved());
@@ -246,9 +316,25 @@ bool UndoController::redo()
     emit message(why);
     return false;
   }
+  // the step undone last first: the one with the lowest place among the two
+  const quint64 animationOrder=animationRedoOrder();
+  if(!m_redoSteps.isEmpty() && (!animationOrder || m_redoSteps.last().order<animationOrder))
+  {
+    const Step step=m_redoSteps.takeLast();
+    m_steps.append(step);
+    m_restoring=true;
+    if(step.redo) step.redo();
+    m_restoring=false;
+    updateActions();
+    emit message(QCoreApplication::translate("MenuSpec",MenuSpec::redone));
+    return true;
+  }
   UndoHistory* h=history(m_current);
+  if(!h) return false;
   const std::optional<Animation::Snapshot> state=h->redo();
   if(!state) return false;
+  if(!m_animationRedoOrder.value(m_current).isEmpty())
+    m_animationOrder[m_current].append(m_animationRedoOrder[m_current].takeLast());
   m_restoring=true;
   m_current->restore(*state);
   m_current->setDirty(!h->atSaved());
@@ -262,6 +348,7 @@ bool UndoController::redo()
 QString UndoController::undoBlocked() const
 {
   if(!m_blocked.isEmpty()) return m_blocked;
+  if(!m_steps.isEmpty()) return QString();
   if(!m_current) return QCoreApplication::translate("MenuSpec",MenuSpec::openFirst);
   auto it=m_histories.constFind(m_current);
   // an edit not yet taken as a step can be undone too
@@ -272,6 +359,8 @@ QString UndoController::undoBlocked() const
 QString UndoController::redoBlocked() const
 {
   if(!m_blocked.isEmpty()) return m_blocked;
+  // a new edit (not yet a step) clears Redo
+  if(!m_redoSteps.isEmpty() && !(m_current && m_pending.contains(m_current))) return QString();
   if(!m_current) return QCoreApplication::translate("MenuSpec",MenuSpec::openFirst);
   auto it=m_histories.constFind(m_current);
   // a new edit (not yet a step) clears Redo

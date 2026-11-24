@@ -55,6 +55,8 @@ class Prop : public QStandardItem
 
     PropType propType() const;
     void setPropType(PropType propType);
+    // another shape with its mesh (the Selected prop panel's Shape choice)
+    void setShape(PropType propType, QSharedPointer<Mesh> mesh);
 
     unsigned int id() const;
     const QString& name() const;
