@@ -456,7 +456,19 @@ No mockup (the project owner, 23 November 2026, 23:38): built from the design ch
 - **Keys:** the button is one Tab stop; Space starts and stops (P8).
 - **For the combined taste round (look, not blocking):** whether the button and the line sit well under the effects button, how long the line may grow (all facts the first time), the `video` icon for recording, and whether "Before: ... Now: it is ..." reads well.
 
-## 6r. Script Lab: the player (job B3, built, 24 November 2026)
+## 6r. Script Lab: the channel map (job A4, built, 24 November 2026)
+
+No mockup (the project owner, 23 November 2026, 23:38): built from the design charter and the design system; the look goes to the combined taste round. Behaviour and texts: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The channel map: who talks to whom"; text rows LABMAP-01 to LABMAP-20 in [TEACHING.md](TEACHING.md).
+
+- **Main view: a part in the Script Lab panel**, as the plan proposed: **Who talks to whom**, right after the Event log. Chosen over lines in the 3D view because messages have no place in the scene (a channel is not between two props), the panel already holds the log the map is made from, and a list of rows reads at any width and with the keyboard. Lines in the 3D view are kept for links a script makes between two parts (chains and ribbons, the second part of job A4), not for messages; no switch for message lines was built.
+- **Rows, not a free diagram:** one row per arrow, sender box on the left, receiver box on the right, the arrow in the middle with its words over it. A free diagram with crossing lines and overlapping words would not read for nine parts and a HUD; rows scale down and grow with the text size (P9).
+- **Boxes:** `surface_raised` fill, a 1 px `border`, `radius.control`, the name in `text`, elided with the full name in the tooltip; a box outside the object (You, Your viewer (RLV), Web server) has a dashed border; a hub has "(hub)" after its name and an `accent` border. Box width follows the longest name, at most a quarter of the map's width.
+- **Arrows:** a 2 px line in `text_muted` with a filled head; its words in `text`. An arrow that reached nobody: a dashed 2 px line in `danger` ending in a bar, the Lucide `circle-x` icon and the reason in `danger` where the box would be. The words carry the meaning; colour and dashes only back it up (P10).
+- **Folded for beginners, open for experts** (P5): switching the mode folds or opens the part and moves nothing (P12). The header counts messages and problems ("4 messages, 1 problem").
+- **Keys** (P8): the map is one Tab stop; Up and Down between rows, Left and Right between sender, arrow and receiver, Home and End, Enter or Space does the click; the focused part has the 2 px `focus_ring`.
+- **Word tips:** Channel and Listener, in the map part, the same cards as the other word tips (P4).
+- **For the combined taste round (look, not blocking):** whether rows read better than a drawing with boxes spread out, the box width, the dashed border for boxes outside the object, the `accent` border of a hub, and whether the error words fit beside a narrow panel.
+## 6s. Script Lab: the player (job B3, built, 24 November 2026)
 
 No mockup: built from the design charter and the design system, reusing the timeline's transport bar; the look goes to the combined taste round. Behaviour and texts: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The player"; text rows LABPLAY-01 to LABPLAY-40 in [TEACHING.md](TEACHING.md).
 

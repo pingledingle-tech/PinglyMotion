@@ -30,6 +30,8 @@ TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labwatcher.cpp)
 # Script Lab lane 1, job B: the folder is the object (one linkset per folder)
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labfolder.cpp scriptlab/labtint.cpp scriptlab/labprimprops.cpp scriptlab/labrecipe.cpp)
+# Script Lab job A4: the channel map (who talks to whom in a run)
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labchannelmap.cpp)
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labrestrictionchoice.cpp)
 # Script Lab lane 1, job F2: the editor's suggestion engine and help texts (QtCore only)
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labsuggest.cpp scriptlab/rlvsuggest.cpp)
@@ -83,6 +85,7 @@ SET (PINGLYMOTION_SHARED_SRC
               retargetdialog.cpp
               retargetmapping.cpp
               screenshotsheet.cpp
+              scriptlab/channelmapview.cpp
               scriptlab/labbeginner.cpp
               scriptlab/labeditor.cpp
               scriptlab/labtree.cpp

@@ -286,6 +286,32 @@ Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 | LABREC-26 | 2 Tip on hover | Recipe part: the recipe's text | The recipe file. You may edit it in your own editor. | in the program (pull request 450, 24 Nov 2026) | job A3 |
 | LABREC-27 | 4 What to do next | One change since last time; the program puts in the part, the old state and the new state | Before: %1 was %2. Now: it is %3. | in the program (pull request 450, 24 Nov 2026) | job A3 |
 
+### Script Lab: the channel map (job A4)
+
+Built in pull request 453 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`, `src/scriptlab/channelmapview.cpp`, `src/scriptlab/labchannelmap.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labchannelmap.cpp` check them letter for letter. The arrows' own words ("say on channel 7", "link message 5", "menu on channel -77") are built from the run and are not in this list.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABMAP-01 | 1 Label | Live page: the folding part after the event log, while a folder is watched as one object | Who talks to whom | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-02 | 4 What to do next | Channel map: the line over the map | Each box is a part. Each arrow is a message, with its channel. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-03 | 2 Tip on hover | Channel map: the map itself | Click a box to pick it in the tree. Click an arrow to see the line that sent it. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-04 | 3 Empty state | Channel map: the run sent no message | Nothing talked yet. Save a script or click a prop. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-05 | 8 Warning | Channel map: an arrow on a channel nobody listens on; the program puts in the channel | Nobody listens on channel %1. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-06 | 8 Warning | Channel map: a menu answer nobody hears; the program puts in the channel | Nobody listens on channel %1, so the menu answer is lost. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-07 | 8 Warning | Channel map: llRegionSayTo to a key that does not hear it; the program puts in the channel | Nobody with that key listens on channel %1. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-08 | 8 Warning | Channel map: a link message no script gets; the program puts in its number | No script gets link message %1. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-09 | 8 Warning | Channel map: an RLV line the viewer refused; the program puts in the reason | Your viewer refused this line: %1 | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-10 | 4 What to do next | Word tip by the channel map: Channel | A number that scripts talk on. Only listeners on it hear. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-11 | 4 What to do next | Word tip by the channel map: Listener | A script that waits for messages on one channel. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-12 | 8 Warning | Channel map: under the map, one arrow reached nobody | 1 arrow reached nobody. It has a cross and says why. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-13 | 8 Warning | Channel map: under the map, several arrows reached nobody; the program puts in the number | %1 arrows reached nobody. Each has a cross and says why. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-14 | 8 Warning | Channel map: under the map, more arrows than it shows; the program puts in the number | The map shows the first %1 arrows only. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-15 | 2 Tip on hover | Channel map: the box You | You, the avatar. You see menus and open chat, and you click. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-16 | 2 Tip on hover | Channel map: the box Your viewer (RLV) | Your viewer. It gets the RLV lines a script sends. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-17 | 2 Tip on hover | Channel map: the box Web server | A web server outside Second Life. The sandbox never goes online. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-18 | 2 Tip on hover | Channel map: a box that hears messages and passes them on (its name ends in "(hub)") | This part listens and passes messages on, like a server. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-19 | 2 Tip on hover | Channel map: an arrow from a script | Click to see the script line that sent it. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-20 | 2 Tip on hover | Channel map: an arrow from outside the scripts (a click, a menu answer, a viewer answer) | It came from outside the scripts. | in the program (pull request 453, 24 Nov 2026) | job A4 |
 ### Script Lab: the player (job B3)
 
 Built in pull request 454 (24 Nov 2026). The texts are in `src/scriptlab/labplayer.cpp` (and the moment "Start." in `src/scriptlab/labrecipe.cpp`); `tests/scriptlabplayer/tst_scriptlabplayer.cpp` checks them letter for letter. The rows put in part names, actions and facts from the replay. The Start, Stop and Replay from start labels are the timeline's (`TransportBar`).

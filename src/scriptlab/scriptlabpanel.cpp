@@ -53,6 +53,7 @@
 #include "labbeginner.h"
 #include "labeditor.h"
 #include "labtree.h"
+#include "channelmapview.h"
 #include "labwatcher.h"
 #include "lsl/control.h"
 #include "lsl/session.h"
@@ -531,6 +532,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
 
   // each part opens or folds as it was last time; a change is saved at once in the settings
   applyPartsState(UserSettings::scriptLabParts());
+  m_mapSection->setExpanded(m_expert);   // job A4: folded for beginners, open for experts
   for (ScriptLabSection* s : m_sections)
     connect(s, &ScriptLabSection::expandedChanged, this, [this]() { UserSettings::setScriptLabParts(partsState()); refreshTips(); });
   updateWorkLayout();
@@ -1327,6 +1329,27 @@ void ScriptLabPanel::buildLivePage()
   m_runLog->setMinimumHeight(6 * m_runLog->fontMetrics().height() + 2 * SpacingS);
   m_logSection->bodyLayout()->addWidget(m_runLog);
 
+  // --- job A4: the channel map, who talks to whom in the run (LabChannelMap). Folded in Beginner
+  // mode and open in Expert mode (charter P5); a click on a box picks its prim in the tree, a click
+  // on an arrow shows the script line that sent it
+  m_mapSection = addSection(QStringLiteral("map"), tr("Who talks to whom"), false, page, layout);
+  m_mapLine = new QLabel(tr("Each box is a part. Each arrow is a message, with its channel."), m_mapSection->body());
+  m_mapLine->setObjectName("scriptLabChannelMapLine");
+  m_mapLine->setWordWrap(true);
+  m_mapLine->setTextFormat(Qt::PlainText);
+  m_mapSection->bodyLayout()->addWidget(m_mapLine);
+  m_mapView = new ChannelMapView(m_mapSection->body());
+  m_mapView->setToolTip(tr("Click a box to pick it in the tree. Click an arrow to see the line that sent it."));
+  m_mapSection->bodyLayout()->addWidget(m_mapView);
+  m_mapProblems = new QLabel(m_mapSection->body());
+  m_mapProblems->setObjectName("scriptLabChannelMapProblems");
+  m_mapProblems->setWordWrap(true);
+  m_mapProblems->setTextFormat(Qt::PlainText);
+  m_mapProblems->hide();
+  m_mapSection->bodyLayout()->addWidget(m_mapProblems);
+  connect(m_mapView, &ChannelMapView::boxActivated, this, [this](int box) { activateMapBox(box); });
+  connect(m_mapView, &ChannelMapView::arrowActivated, this, [this](int arrow) { activateMapArrow(arrow); });
+
   // --- the RLV restrictions now (the same state as the Type commands page)
   m_liveRestrictionsSection = addSection(QStringLiteral("restrictionsNow"), tr("RLV restrictions now"), true, page, layout);
   m_liveRestrictionsEmpty = new QLabel(tr("No restrictions. A script that says @detach=n holds one."), m_liveRestrictionsSection->body());
@@ -1954,6 +1977,7 @@ void ScriptLabPanel::refreshLive()
   if (last.isEmpty()) m_logSection->setCount(tr("none"));
   else if (!last.contains("result")) m_logSection->setCount(tr("not run"));
   else m_logSection->setCount(runLog.size() == 1 ? tr("1 line") : tr("%1 lines").arg(runLog.size()));
+  refreshChannelMap(linkset ? folder : QJsonObject());
 
   // the status line, a word first; with no folder the empty state says what to do
   m_liveStatus->setVisible(watching || !m_refusal.isEmpty());
@@ -2978,7 +3002,9 @@ bool ScriptLabPanel::replayNow()
 
 void ScriptLabPanel::setExpertMode(bool expert)
 {
+  const bool changed = m_expert != expert;
   m_expert = expert;
+  if (changed && m_mapSection) m_mapSection->setExpanded(expert);
   refreshRecipe();
 }
 
@@ -3326,6 +3352,11 @@ void ScriptLabPanel::buildTips()
       card->setParent(m_treeSection->body());
       m_treeSection->bodyLayout()->insertWidget(1, card);   // under the line on what the tree shows
     }
+    else if (key == QLatin1String("channel") || key == QLatin1String("listener"))
+    {
+      card->setParent(m_mapSection->body());
+      m_mapSection->bodyLayout()->insertWidget(1, card);   // job A4: under the line on what the map shows
+    }
     else
     {
       // in a row with the panel's side margins, as the rows around it; a hidden card leaves no gap
@@ -3382,9 +3413,74 @@ void ScriptLabPanel::refreshTips()
       bool anchored = true;
       if (key == QLatin1String("prim") || key == QLatin1String("rootPrim")) anchored = treeShown;
       else if (key == QLatin1String("notecard")) anchored = treeShown && notecards;
+      else if (key == QLatin1String("channel") || key == QLatin1String("listener"))
+        anchored = m_mapSection->isVisibleTo(this) && m_mapSection->isExpanded() && !m_mapView->map().arrows.isEmpty();
       if (!anchored) continue;
       due = card;
       break;
     }
   for (LabTipCard* card : m_tipCards) card->setVisible(card == due);
+}
+
+// --- job A4: the channel map ------------------------------------------------------------------
+
+void ScriptLabPanel::refreshChannelMap(const QJsonObject& folder)
+{
+  if (!m_mapSection) return;
+  const bool shown = !folder.isEmpty();
+  m_mapSection->setVisible(shown);
+  // made again only when the run or its log changed (a click on a prop adds lines to the same run)
+  const QString key = shown ? QStringLiteral("%1|%2|%3").arg(m_watcher ? m_watcher->folder() : QString())
+                                .arg(folder.value("run").toInt())
+                                .arg(folder.value("result").toObject().value("log").toArray().size())
+                            : QString();
+  if (shown && key == m_mapKey) return;
+  m_mapKey = key;
+  QPointer<LabWatcher> watcher = m_watcher;
+  const LabChannelMap::Map map = shown ? LabChannelMap::fromFolderResult(folder, [watcher](const QString& file) -> QString
+  {
+    // only a script the watch knows: never a path out of the folder
+    const QString path = watcher ? watcher->absolutePath(file) : QString();
+    QFile in(path);
+    if (path.isEmpty() || QFileInfo(path).size() > LabWatcher::MAX_FILE_BYTES || !in.open(QIODevice::ReadOnly)) return QString();
+    return QString::fromUtf8(in.read(LabWatcher::MAX_FILE_BYTES));
+  }) : LabChannelMap::Map();
+  m_mapView->setMap(map);
+  const int messages = map.messages();
+  const int unheard = map.unheard();
+  QString count = messages == 0 ? tr("none") : messages == 1 ? tr("1 message") : tr("%1 messages").arg(messages);
+  if (unheard > 0) count = tr("%1, %2").arg(count, unheard == 1 ? tr("1 problem") : tr("%1 problems").arg(unheard));
+  m_mapSection->setCount(count);
+  QStringList problems;
+  if (unheard > 0)
+    problems << (unheard == 1 ? tr("1 arrow reached nobody. It has a cross and says why.")
+                              : tr("%1 arrows reached nobody. Each has a cross and says why.").arg(unheard));
+  if (map.truncated) problems << tr("The map shows the first %1 arrows only.").arg(LabChannelMap::MAX_ARROWS);
+  m_mapProblems->setText(problems.join(QLatin1Char(' ')));
+  QPalette p = m_mapProblems->palette();
+  p.setColor(QPalette::WindowText, unheard > 0 ? dangerColour(isDark(palette())) : mutedColour(isDark(palette())));
+  m_mapProblems->setPalette(p);
+  m_mapProblems->setVisible(!problems.isEmpty());
+}
+
+bool ScriptLabPanel::activateMapBox(int box)
+{
+  const LabChannelMap::Map& map = m_mapView->map();
+  if (box < 0 || box >= map.boxes.size() || map.boxes[box].kind != LabChannelMap::BoxKind::Part) return false;
+  const QString name = map.boxes[box].name;
+  if (!m_folderTree->selectPrim(name)) return false;
+  // as a click on the row: the prop lights up when selection follows (job U3)
+  if (m_followBox->isChecked() && m_hooks.selectProp) m_hooks.selectProp(name);
+  return true;
+}
+
+bool ScriptLabPanel::activateMapArrow(int arrow)
+{
+  const LabChannelMap::Map& map = m_mapView->map();
+  if (arrow < 0 || arrow >= map.arrows.size()) return false;
+  const LabChannelMap::Arrow& a = map.arrows[arrow];
+  if (a.file.isEmpty() || a.line <= 0) return false;
+  if (a.file != m_shownFile && !showScript(a.file)) return false;
+  showScriptPlace(a.line, a.column);
+  return true;
 }

@@ -797,6 +797,41 @@ Green: live, the pose shows on your avatar</source>
     </message>
 </context>
 <context>
+    <name>ChannelMapView</name>
+    <message>
+        <source>Who talks to whom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing talked yet. Save a script or click a prop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1. %2 Click to pick it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nobody</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 to %2: %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It came from outside the scripts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to see the script line that sent it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CodexConfig</name>
     <message>
         <source>ChatGPT&apos;s settings file already names PinglyMotion, or its MCP servers, in a form this button cannot change safely.</source>
@@ -2572,6 +2607,10 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Go to step %1, where this replay first differed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>This is the first replay, so there is nothing to compare with.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2589,10 +2628,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>%1 (changed at this step)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go to step %1, where this replay first differed</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6670,6 +6705,158 @@ Try a BVH file for a person with arms and legs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Channel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A number that scripts talk on. Only listeners on it hear.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Listener</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A script that waits for messages on one channel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (hub)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You, the avatar. You see menus and open chat, and you click.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your viewer. It gets the RLV lines a script sends.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A web server outside Second Life. The sandbox never goes online.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This part listens and passes messages on, like a server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A part of the object (prim %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An object in the run.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whisper on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>shout on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>region say on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>say to one on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>say on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>link message %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>menu on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>menu answer on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you say on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>click</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>message to you</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>owner say</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RLV line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>answer on channel %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>web request</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>web request in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: &quot;%2&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2 times)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nobody with that key listens on channel %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nobody listens on channel %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No script gets link message %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your viewer (RLV)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your viewer refused this line: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nobody listens on channel %1, so the menu answer is lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>%1 s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7918,6 +8105,50 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>Record what you do first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Who talks to whom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Each box is a part. Each arrow is a message, with its channel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a box to pick it in the tree. Click an arrow to see the line that sent it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 message</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 messages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 problem</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 problems</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 arrow reached nobody. It has a cross and says why.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 arrows reached nobody. Each has a cross and says why.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The map shows the first %1 arrows only.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
