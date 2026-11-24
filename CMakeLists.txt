@@ -197,6 +197,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/scriptlabpanel)
   # Script Lab for beginners (job U3): example project, steps, selection between tree and 3D view, tips
   ADD_SUBDIRECTORY (tests/scriptlabbeginner)
+  # the guide page of the Help view (job UX-D)
+  ADD_SUBDIRECTORY (tests/scriptlabguide)
   # the Script Lab player (job B3): a replay step by step, the props follow the chosen moment
   ADD_SUBDIRECTORY (tests/scriptlabplayer)
   # Script Lab as one window with its own tabs (job UX-B): pop out, put back, remembered, big by default

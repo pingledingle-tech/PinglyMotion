@@ -88,6 +88,7 @@ SET (PINGLYMOTION_SHARED_SRC
               scriptlab/channelmapview.cpp
               scriptlab/labbeginner.cpp
               scriptlab/labeditor.cpp
+              scriptlab/labguideview.cpp
               scriptlab/labhelpview.cpp
               scriptlab/labtree.cpp
               scriptlab/lslhighlighter.cpp

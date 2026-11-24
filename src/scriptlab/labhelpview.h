@@ -28,10 +28,13 @@
 #include <QStringList>
 #include <QWidget>
 
+#include "labguideview.h"
+
 class QLabel;
 class QListWidget;
 class QPushButton;
 class QTextBrowser;
+
 
 class LabHelpView : public QDialog
 {
@@ -57,9 +60,17 @@ class LabHelpView : public QDialog
     QTextBrowser* textView() const { return m_text; }
     QLabel* headingLabel() const { return m_heading; }
     QPushButton* closeButton() const { return m_close; }
+    // the guide page (job UX-D, labguideview.h): a view of its own, opened with this button
+    QPushButton* guideButton() const { return m_guideButton; }
+    LabGuideView* guideView() const { return m_guideView; }
+    void showGuide();
 
     // colours again after the theme changed
     void applyStyle(bool dark);
+
+  signals:
+    // the guide page made the example folder and the user pressed "Open in Script Lab"
+    void openFolderRequested(const QString& folder);
 
   protected:
     void changeEvent(QEvent* event) override;
@@ -74,6 +85,8 @@ class LabHelpView : public QDialog
     QLabel* m_heading = nullptr;
     QTextBrowser* m_text = nullptr;
     QPushButton* m_close = nullptr;
+    QPushButton* m_guideButton = nullptr;
+    QPointer<LabGuideView> m_guideView;
     bool m_dark = true;
     bool m_styling = false;
 };
