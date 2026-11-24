@@ -178,7 +178,11 @@ void TestScriptLabPanel::menuEntry()
   QVERIFY(timeline > 0);
   QVERIFY(entry > timeline);
   QVERIFY(hide > entry);
-  QVERIFY(window.contains("m_scriptLabPanel->setState(&m_controlApi->rlv());"));
+  // the Script Lab controller (job R5) makes the panel and connects it
+  QVERIFY(window.contains("m_scriptLab=new ScriptLabController(this);"));
+  QVERIFY(window.contains("m_scriptLab->connectControl(m_controlApi.data());"));
+  const QString controller = readFile(PINGLYMOTION_SOURCE_DIR "/scriptlabcontroller.cpp");
+  QVERIFY(controller.contains("m_scriptLabPanel->setState(&m_controlApi->rlv());"));
   QVERIFY(window.contains("return {m_jointsDock,m_jointCardDock,m_timelineDock,m_scriptLabDock,m_libraryDock};"));
   const QString ui = readFile(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.ui");
   QVERIFY(ui.contains("<widget class=\"QMenu\" name=\"menuView\">\n    <property name=\"title\">\n     <string>View</string>"));

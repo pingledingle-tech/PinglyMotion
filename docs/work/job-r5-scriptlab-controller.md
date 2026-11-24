@@ -1,13 +1,16 @@
 Branch: job/r5-scriptlab-controller
-Status: active
+Status: done
 Pull request: #478
 Files:
 - src/scriptlabcontroller.*
+- src/scriptlabcontrollerview.cpp
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindow.h
 - src/CMakeLists.txt
 - CMakeLists.txt
 - tests/scriptlabcontroller/**
+- tests/scriptlabpanel/tst_scriptlabpanel.cpp
+- tests/scriptlabbeginner/tst_scriptlabbeginner.cpp
 - docs/DEV.md
 
 ## What
