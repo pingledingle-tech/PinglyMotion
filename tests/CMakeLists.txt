@@ -430,3 +430,22 @@ ADD_EXECUTABLE (pinglymotion_labchains_tests tst_labchains.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_labchains_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_labchains_tests pinglymotion_shared pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
 ADD_TEST (NAME labchains COMMAND pinglymotion_labchains_tests)
+
+# Test stability (job T2): with -DPINGLYMOTION_REPEAT_TESTS=<runs> every test named in
+# PINGLYMOTION_REPEAT_TEST_NAMES gets a second test "<name>_repeat" that runs the same
+# program that many times in a row and prints the Qt Test output of every failed run
+# (tests/repeat/repeat.cmake). Off (0) by default; used to prove that a test does not fail
+# now and then, for example on the Windows runner.
+SET (PINGLYMOTION_REPEAT_TESTS 0 CACHE STRING "Runs per repeated test (0: no repeat tests)")
+SET (PINGLYMOTION_REPEAT_TEST_NAMES
+     "labeditor;labwatcher;labrecipe;labeffects;scriptlabeffects;labtree;scriptlabpanel;scriptlabdesign;rlvsuggest;scriptlabbeginner;scriptlabplayer;scriptlabwindow"
+     CACHE STRING "Tests that get a repeat test (the program is pinglymotion_<name>_tests)")
+IF (PINGLYMOTION_REPEAT_TESTS GREATER 0)
+  FOREACH (name IN LISTS PINGLYMOTION_REPEAT_TEST_NAMES)
+    # the programs of tests in later folders do not exist yet here; the generator expression finds them
+    ADD_TEST (NAME ${name}_repeat WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+              COMMAND ${CMAKE_COMMAND} -DEXE=$<TARGET_FILE:pinglymotion_${name}_tests> -DCOUNT=${PINGLYMOTION_REPEAT_TESTS}
+                      -DNAME=${name} -DOUT=${CMAKE_CURRENT_BINARY_DIR}/repeat -P ${CMAKE_CURRENT_SOURCE_DIR}/repeat/repeat.cmake)
+    SET_TESTS_PROPERTIES (${name}_repeat PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 5400)
+  ENDFOREACH ()
+ENDIF ()
