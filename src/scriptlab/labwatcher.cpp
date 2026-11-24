@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QSaveFile>
+#include <QCryptographicHash>
 
 #include "lsl/control.h"
 #include "lsl/session.h"
@@ -52,15 +53,58 @@ LabWatcher::LabWatcher(QObject* parent) :
   m_debounce.setSingleShot(true);
   m_debounce.setInterval(DEBOUNCE_MS);
   connect(&m_debounce, &QTimer::timeout, this, &LabWatcher::rescan);
+  m_retry.setInterval(RETRY_MS);
+  connect(&m_retry, &QTimer::timeout, this, &LabWatcher::rescan);
+  // a folder notice (also "removed" when the system dropped the folder): look again; the
+  // rescan builds the watch list anew, so a dropped folder is watched again
   connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, [this](const QString&) { scheduleRescan(); });
-  connect(m_watcher, &QFileSystemWatcher::fileChanged, this, [this](const QString& path)
+  connect(m_watcher, &QFileSystemWatcher::fileChanged, this, &LabWatcher::fileNotice);
+}
+
+QByteArray LabWatcher::contentHash(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly)) return QByteArray();
+  QCryptographicHash hash(QCryptographicHash::Sha1);
+  hash.addData(file.read(MAX_FILE_BYTES + 1));
+  return hash.result();
+}
+
+void LabWatcher::fileNotice(const QString& path)
+{
+  if (m_folder.isEmpty()) return;
+  // the exact file is known: run it even if its time and size look the same, but only when
+  // its content is not the content that already ran (the same save seen twice, or a watch
+  // that the system dropped, is not a change)
+  const QString relative = QDir(m_folder).relativeFilePath(path);
+  const bool known = m_snapshot.contains(relative) || (m_linkset && m_notecards.contains(relative));
+  if (known && !m_pending.contains(relative))
   {
-    // the exact file is known: run it even if its time and size look the same
-    const QString relative = QDir(m_folder).relativeFilePath(path);
-    const bool known = m_snapshot.contains(relative) || (m_linkset && m_notecards.contains(relative));
-    if (known && !m_pending.contains(relative)) m_pending.append(relative);
-    scheduleRescan();
-  });
+    const QByteArray hash = contentHash(path);
+    if (hash.isEmpty() || hash != m_seen.value(relative))
+    {
+      m_seen.insert(relative, hash);
+      m_pending.append(relative);
+    }
+  }
+  scheduleRescan();
+}
+
+QStringList LabWatcher::watchedPaths() const
+{
+  QStringList paths = m_watcher->files() + m_watcher->directories();
+  paths.sort();
+  return paths;
+}
+
+void LabWatcher::simulateLostWatchForTests()
+{
+  const QStringList files = m_watcher->files();
+  const QStringList folders = m_watcher->directories();
+  if (!files.isEmpty()) m_watcher->removePaths(files);
+  if (!folders.isEmpty()) m_watcher->removePaths(folders);
+  for (const QString& file : files) fileNotice(file);
+  if (!folders.isEmpty()) scheduleRescan();
 }
 
 LabWatcher::~LabWatcher() = default;
@@ -102,6 +146,9 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
   m_pending.clear();
   QStringList folders;
   m_snapshot = scan(&folders, m_linkset ? &m_notecards : nullptr);
+  // job T2: the content as it is now, so a later notice with the same content is not a change
+  for (auto it = m_snapshot.constBegin(); it != m_snapshot.constEnd(); ++it) m_seen.insert(it.key(), contentHash(QDir(m_folder).filePath(it.key())));
+  for (auto it = m_notecards.constBegin(); it != m_notecards.constEnd(); ++it) m_seen.insert(it.key(), contentHash(QDir(m_folder).filePath(it.key())));
   updateWatchedPaths(folders);
   emit watchChanged();
 
@@ -117,6 +164,8 @@ bool LabWatcher::unwatch()
 {
   if (m_folder.isEmpty()) return false;
   m_debounce.stop();
+  m_retry.stop();
+  m_seen.clear();
   const QStringList paths = m_watcher->files() + m_watcher->directories();
   if (!paths.isEmpty()) m_watcher->removePaths(paths);
   m_folder.clear();
@@ -216,6 +265,11 @@ void LabWatcher::updateWatchedPaths(const QStringList& folders)
   for (auto it = m_snapshot.constBegin(); it != m_snapshot.constEnd(); ++it) paths << QDir(m_folder).filePath(it.key());
   for (auto it = m_notecards.constBegin(); it != m_notecards.constEnd(); ++it) paths << QDir(m_folder).filePath(it.key());
   if (!paths.isEmpty()) m_watcher->addPaths(paths);
+  // job T2: when the folder itself cannot be watched (it is gone, or the system refused the
+  // watch), look at it every RETRY_MS until it can; stop looking once the watch is back
+  const bool watched = !m_folder.isEmpty() && m_watcher->directories().contains(m_folder);
+  if (m_folder.isEmpty() || watched) m_retry.stop();
+  else if (!m_retry.isActive()) m_retry.start();
 }
 
 void LabWatcher::scheduleRescan()
@@ -236,7 +290,11 @@ void LabWatcher::rescan()
     for (auto it = notecards.constBegin(); it != notecards.constEnd(); ++it)
     {
       const auto before = m_notecards.constFind(it.key());
-      if (before == m_notecards.constEnd() || before->modified != it.value().modified || before->size != it.value().size) notecardChanged = it.key();
+      if (before == m_notecards.constEnd() || before->modified != it.value().modified || before->size != it.value().size)
+      {
+        notecardChanged = it.key();
+        m_seen.insert(it.key(), contentHash(QDir(m_folder).filePath(it.key())));
+      }
     }
     if (notecardChanged.isEmpty() && notecards.keys() != m_notecards.keys()) notecardChanged = QStringLiteral(".");
     m_notecards = notecards;
@@ -246,12 +304,15 @@ void LabWatcher::rescan()
     const auto before = m_snapshot.constFind(it.key());
     const bool changed = before == m_snapshot.constEnd() || before->modified != it.value().modified || before->size != it.value().size;
     if (changed && !m_pending.contains(it.key())) m_pending.append(it.key());
+    if (changed) m_seen.insert(it.key(), contentHash(QDir(m_folder).filePath(it.key())));
   }
   const bool listChanged = now.keys() != m_snapshot.keys();
   m_snapshot = now;
   // a script that was removed has no result any more
   for (const QString& gone : m_results.keys())
     if (!m_snapshot.contains(gone)) m_results.remove(gone);
+  for (const QString& gone : m_seen.keys())
+    if (!m_snapshot.contains(gone) && !m_notecards.contains(gone)) m_seen.remove(gone);
   for (int i = m_pending.size() - 1; i >= 0; --i)
     if (!m_snapshot.contains(m_pending[i]) && !(m_linkset && m_notecards.contains(m_pending[i]))) m_pending.removeAt(i);
   // an editor that saves by writing a new file and renaming it drops the old
@@ -384,7 +445,10 @@ void LabWatcher::runScript(const QString& relative)
     if (bytes.size() > MAX_FILE_BYTES)
       problem = QCoreApplication::translate("LabWatcher","The file is larger than %1 bytes, so it was not read.").arg(MAX_FILE_BYTES);
     else
+    {
       source = QString::fromUtf8(bytes);
+      m_seen.insert(relative, QCryptographicHash::hash(bytes, QCryptographicHash::Sha1));
+    }
   }
 
   if (problem.isEmpty())

@@ -38,6 +38,7 @@
 #include <QTextBlock>
 #include <QVBoxLayout>
 
+#include "../laterfile.h"
 #include "scriptlab/labeditor.h"
 #include "scriptlab/labsuggest.h"
 #include "scriptlab/labwatcher.h"
@@ -558,8 +559,7 @@ void TestRlvSuggest::unsavedEditsNeverOverwritten()
   const QString mine = s.edit()->toPlainText();
   QVERIFY(s.editor->isModified());
   // the file changes on disk (an outside editor, or Live): the typed text stays, the question shows
-  QTest::qWait(1100);
-  QVERIFY(writeFile(s.dir.filePath("a.lsl"), "default { state_entry() { llOwnerSay(\"theirs\"); } }\n"));
+  QVERIFY(LaterFile::write(s.dir.filePath("a.lsl"), "default { state_entry() { llOwnerSay(\"theirs\"); } }\n"));
   QVERIFY(s.editor->checkDisk());
   QCOMPARE(s.edit()->toPlainText(), mine);
   QVERIFY(s.editor->outsideChangePending());
@@ -674,7 +674,6 @@ void TestRlvSuggest::windowSize()
   ScriptLabPanel* panel = new ScriptLabPanel;
   QDockWidget* dock = ScriptLabPanel::makeDock(&window, panel);
   dock->toggleViewAction()->trigger();   // opened by the user, as View > Script Lab does
-  QTest::qWait(50);
   // more room at start, and a sensible smallest size (both at 100 percent text size); job UX-B: the
   // first size has room for the four tabs and Pop out side by side
   QCOMPARE(ScriptLabPanel::defaultSize(), QSize(600, 720));
@@ -683,40 +682,34 @@ void TestRlvSuggest::windowSize()
   QCOMPARE(panel->minimumSize(), QSize(300, 240));
   // job UX-B: the first open docked gives most of the main window (three fifths of 1600)
   QCOMPARE(ScriptLabPanel::bigDockedWidth(window.size()), 960);
-  QCOMPARE(dock->width(), 960);
+  QTRY_COMPARE(dock->width(), 960);
   // docked: the side can be dragged wider and narrower, down to the smallest size
   window.resizeDocks({dock}, {900}, Qt::Horizontal);
-  QTest::qWait(50);
-  QCOMPARE(dock->width(), 900);
+  QTRY_COMPARE(dock->width(), 900);
   window.resizeDocks({dock}, {100}, Qt::Horizontal);
-  QTest::qWait(50);
-  QCOMPARE(panel->width(), 300);
+  QTRY_COMPARE(panel->width(), 300);
   window.resizeDocks({dock}, {600}, Qt::Horizontal);
-  QTest::qWait(50);
+  QTRY_VERIFY(dock->width() > 300);
   // docked: no grip (the splitter between the panels does it)
   QVERIFY(panel->sizeGrip()->isHidden());
   // floating: the window has no system frame (custom title bar), so a size grip shows in the corner
   dock->setFloating(true);
-  QTest::qWait(50);
-  QVERIFY(dock->isFloating());
+  QTRY_VERIFY(dock->isFloating());
   QVERIFY(dock->windowFlags() & Qt::FramelessWindowHint);
-  QVERIFY(panel->sizeGrip()->isVisible());
+  QTRY_VERIFY(panel->sizeGrip()->isVisible());
   QVERIFY(qobject_cast<QSizeGrip*>(panel->sizeGrip()));
   QCOMPARE(panel->sizeGrip()->toolTip(), QString("Drag to change the size of the Script Lab window"));
-  const QRect grip = panel->sizeGrip()->geometry();
-  QCOMPARE(grip.bottomRight(), panel->rect().bottomRight());
+  QTRY_COMPARE(panel->sizeGrip()->geometry().bottomRight(), panel->rect().bottomRight());
   dock->resize(700, 800);
-  QTest::qWait(50);
-  QCOMPARE(dock->size(), QSize(700, 800));
+  QTRY_COMPARE(dock->size(), QSize(700, 800));
   shot(*dock, "-floating");
-  QCOMPARE(panel->sizeGrip()->geometry().bottomRight(), panel->rect().bottomRight());   // follows the corner
+  QTRY_COMPARE(panel->sizeGrip()->geometry().bottomRight(), panel->rect().bottomRight());   // follows the corner
   dock->resize(100, 100);
-  QTest::qWait(50);
+  QTRY_VERIFY(dock->size() != QSize(700, 800));   // the new size has arrived
   QVERIFY(panel->width() >= 300 && panel->height() >= 240);
   // docked again: the grip goes
   dock->setFloating(false);
-  QTest::qWait(50);
-  QVERIFY(panel->sizeGrip()->isHidden());
+  QTRY_VERIFY(panel->sizeGrip()->isHidden());
 }
 
 // the size is part of the saved panel layout (QMainWindow::saveState, written at close and read at start)
@@ -732,8 +725,7 @@ void TestRlvSuggest::windowSizeRemembered()
     QDockWidget* dock = ScriptLabPanel::makeDock(&window, new ScriptLabPanel);
     dock->show();
     window.resizeDocks({dock}, {640}, Qt::Horizontal);
-    QTest::qWait(50);
-    QCOMPARE(dock->width(), 640);
+    QTRY_COMPARE(dock->width(), 640);
     saved = window.saveState(1);
   }
   {
@@ -744,13 +736,13 @@ void TestRlvSuggest::windowSizeRemembered()
     QVERIFY(window.restoreState(saved, 1));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
-    QTest::qWait(50);
-    QVERIFY(dock->isVisible());
-    QCOMPARE(dock->width(), 640);
+    QTRY_VERIFY(dock->isVisible());
+    QTRY_COMPARE(dock->width(), 640);
     // floating with a size of its own
     dock->setFloating(true);
     dock->resize(620, 540);   // inside the test screen, so restoring does not have to shrink it
-    QTest::qWait(50);
+    QTRY_VERIFY(dock->isFloating());
+    QTRY_COMPARE(dock->size(), QSize(620, 540));
     saved = window.saveState(1);
   }
   {
@@ -762,10 +754,9 @@ void TestRlvSuggest::windowSizeRemembered()
     QVERIFY(window.restoreState(saved, 1));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
-    QTest::qWait(50);
-    QVERIFY(dock->isFloating());
-    QCOMPARE(dock->size(), QSize(620, 540));
-    QVERIFY(panel->sizeGrip()->isVisible());
+    QTRY_VERIFY(dock->isFloating());
+    QTRY_COMPARE(dock->size(), QSize(620, 540));
+    QTRY_VERIFY(panel->sizeGrip()->isVisible());
   }
 }
 

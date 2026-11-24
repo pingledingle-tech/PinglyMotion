@@ -35,6 +35,7 @@
 #include <QTextBlock>
 #include <QVBoxLayout>
 
+#include "../laterfile.h"
 #include "scriptlab/labeditor.h"
 #include "scriptlab/labwatcher.h"
 #include "scriptlab/lslhighlighter.h"
@@ -287,13 +288,13 @@ void TestLabEditor::saveButtonReason()
 // in the panel: Ctrl+S saves, the folder watch runs it at once, and the line says how it went
 void TestLabEditor::saveAndRunMessage()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   RlvState state;
   LabWatcher watcher;
   watcher.setRlvState(&state);
   ScriptLabPanel panel;
   panel.setState(&state);
   panel.setWatcher(&watcher);
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("collar.lsl"), Collar));
   QVERIFY(panel.watchFolder(dir.path()));
   QCOMPARE(panel.editor()->fileName(), QString("collar.lsl"));
@@ -331,10 +332,10 @@ void TestLabEditor::saveAndRunMessage()
 // the core rule: a run from outside never replaces what the owner is typing
 void TestLabEditor::liveNeverOverwritesTyping()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher watcher;
   ScriptLabPanel panel;
   panel.setWatcher(&watcher);
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("collar.lsl"), Collar));
   QVERIFY(panel.watchFolder(dir.path()));
   LabCodeEdit* edit = panel.scriptView();
@@ -343,8 +344,7 @@ void TestLabEditor::liveNeverOverwritesTyping()
   const QString mine = QString::fromUtf8(Collar) + QStringLiteral("// mine");
 
   // another program writes the file: it runs, but the text stays as typed, and the question shows once
-  QTest::qWait(1100);
-  QVERIFY(writeFile(dir.filePath("collar.lsl"), "default { state_entry() { llOwnerSay(\"theirs\"); } }\n"));
+  QVERIFY(LaterFile::write(dir.filePath("collar.lsl"), "default { state_entry() { llOwnerSay(\"theirs\"); } }\n"));
   watcher.rescan();
   QCOMPARE(edit->toPlainText(), mine);
   QVERIFY(panel.editor()->isModified());
@@ -465,10 +465,10 @@ void TestLabEditor::unchangedFileFollowsDisk()
 // a run of another script never takes the editor away from unsaved edits
 void TestLabEditor::otherFileWaitsForSave()
 {
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher watcher;
   ScriptLabPanel panel;
   panel.setWatcher(&watcher);
-  QTemporaryDir dir;
   QVERIFY(writeFile(dir.filePath("a.lsl"), "default { state_entry() { } }\n"));
   QVERIFY(panel.watchFolder(dir.path()));
   QCOMPARE(panel.editor()->fileName(), QString("a.lsl"));
