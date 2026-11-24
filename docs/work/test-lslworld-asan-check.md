@@ -1,6 +1,6 @@
 Branch: test/lslworld-asan-check
 Status: active
-Pull request: pending
+Pull request: #452
 Files:
 - tests/tst_lslworld.cpp
 
