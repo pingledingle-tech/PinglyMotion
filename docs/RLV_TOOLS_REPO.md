@@ -56,4 +56,4 @@ Idea: a workflow in the tools repository downloads a released PinglyMotion build
 
 ## Not included
 
-No repository is created. No code is changed. Notecard recipes, the stand-in for a closed third-party HUD product and the other ideas in the "Script Lab: later" list ([ROADMAP.md](ROADMAP.md)) are not part of this description.
+No repository is created. No code is changed. Notecard recipes, the stand-in for a closed third-party HUD product and the other ideas in the parked items ([ROADMAP.md](ROADMAP.md), [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md)) are not part of this description.
