@@ -239,7 +239,7 @@ namespace
       if (before == after && beforeFrame == afterFrame && !UiRender::outDir().isEmpty())
         w->window()->grab().save(QDir(UiRender::outDir()).filePath(QStringLiteral("nofocus_%1.png").arg(where.left(30).replace(QLatin1Char(' '), QLatin1Char('_')) + QString::number(out.size()))));
       if (before == after && beforeFrame == afterFrame)
-        out << QStringLiteral("%1: %2 shows no sign of the keyboard focus").arg(where, label(w));
+        out << QStringLiteral("%1: %2 shows no sign of the keyboard focus (window active: %3, has focus: %4, keyboard-focus mark: %5, qt %6)").arg(where, label(w)).arg(w->window()->isActiveWindow()).arg(w->hasFocus()).arg(w->window()->testAttribute(Qt::WA_KeyboardFocusChange)).arg(QLatin1String(qVersion()));
     }
     if (QApplication::focusWidget()) QApplication::focusWidget()->clearFocus();
     return out;
@@ -520,7 +520,7 @@ void TestKeyboardFocus::everyControlInEveryDialogIsReachableNamedAndShowsFocus()
     {
       std::unique_ptr<QDialog> dialog(maker.make());
       dialog->show();
-      dialog->activateWindow();
+      if (!qEnvironmentVariableIsSet("KEYBOARD_NOACTIVE")) dialog->activateWindow();
       (void)QTest::qWaitForWindowActive(dialog.get());
       settle();
       problems << wholeWindowProblems(dialog.get(), QStringLiteral("%1 %2").arg(QLatin1String(maker.name), variant.name()), variant.percent == 100);
