@@ -1,6 +1,6 @@
 Branch: job/ux-a-windows
 Status: active
-Pull request: pending
+Pull request: #460
 Files:
 - src/topbar.*
 - src/menuspec.h
