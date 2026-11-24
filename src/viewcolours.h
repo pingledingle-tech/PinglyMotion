@@ -76,6 +76,19 @@ namespace ViewColours
   inline QColor background(bool dark) { return Theme::color(Theme::Token::Background,dark); }
   inline QColor background() { return background(Theme::isDark()); }
 
+  // the floor's two kinds of squares (src/floor.cpp): a quiet checkerboard made from the theme
+  // itself, so it reads in both themes without shouting: background with 12 percent (the
+  // fainter square) or 28 percent (the stronger) text_muted mixed in. While the frame is
+  // protected (the first frame) the same two shares of danger_fill are mixed into the
+  // background instead. Asked for at every picture, so a theme switch shows at once.
+  inline QColor floorTile(bool strong,bool protectedFrame,bool dark)
+  {
+    using Theme::Token;
+    const QColor from=Theme::color(protectedFrame ? Token::DangerFill : Token::TextMuted,dark);
+    return Theme::mix(Theme::color(Token::Background,dark),from,strong ? 0.28 : 0.12);
+  }
+  inline QColor floorTile(bool strong,bool protectedFrame) { return floorTile(strong,protectedFrame,Theme::isDark()); }
+
   // the avatar's body in the 3D view (the base colour the shader lights; the
   // light itself and Options > Light... are the same in both themes):
   // Normal text_muted (as the bones, at least 4.5:1 on the background in both

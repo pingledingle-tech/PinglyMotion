@@ -50,6 +50,8 @@ private slots:
   void viewBackgroundFollowsTheTheme();
   void bodyShadingFollowsTheTheme();
   void viewDrawsNoHandMadeColour();
+  void floorFollowsTheTheme();
+  void floorDrawsNoHandMadeColour();
 };
 
 // a timeline with a loaded skeleton and 30 frames
@@ -348,6 +350,66 @@ void UxColoursTest::viewDrawsNoHandMadeColour()
   QVERIFY(!source.contains(QStringLiteral("darkTheme()?0.20f:0.5f")));
   for (const char* old : {"setColor(1.0,0.635,0.059,1)", "setColor(0.6,0.3,0.3,1)",
                           "setColor(0.4,0.5,0.3,1)", "setColor(0.6,0.5,0.5,1)", "color.z()+0.3f"})
+    QVERIFY2(!source.contains(QLatin1String(old)), old);
+}
+
+// one colour channel (0 to 255) of "a with the share t of b mixed in", exact arithmetic
+static double channel(int a, int b, double t) { return a + (b - a) * t; }
+
+void UxColoursTest::floorFollowsTheTheme()
+{
+  for (bool dark : {true, false})
+  {
+    const QColor bg = Theme::color(Token::Background, dark);
+    for (bool prot : {false, true})
+      for (bool strong : {false, true})
+      {
+        const QColor from = Theme::color(prot ? Token::DangerFill : Token::TextMuted, dark);
+        const double t = strong ? 0.28 : 0.12;
+        const QColor got = ViewColours::floorTile(strong, prot, dark);
+        QVERIFY2(qAbs(got.red() - channel(bg.red(), from.red(), t)) <= 1.0, "red");
+        QVERIFY2(qAbs(got.green() - channel(bg.green(), from.green(), t)) <= 1.0, "green");
+        QVERIFY2(qAbs(got.blue() - channel(bg.blue(), from.blue(), t)) <= 1.0, "blue");
+        // the stronger square lies further from the background than the fainter one
+        QVERIFY(got != bg);
+      }
+    // quiet but visible: the two squares differ, in lightness by between 6 and 40 percent of the range
+    for (bool prot : {false, true})
+    {
+      const int diff = qAbs(ViewColours::floorTile(true, prot, dark).lightness() -
+                            ViewColours::floorTile(false, prot, dark).lightness());
+      QVERIFY2(diff >= 15 && diff <= 100, qPrintable(QString::number(diff)));
+    }
+  }
+  // exact numbers: dark, ordinary squares
+  QCOMPARE(ViewColours::floorTile(false, false, true), QColor(47, 49, 52));
+  QCOMPARE(ViewColours::floorTile(true, false, true), QColor(70, 72, 77));
+  // exact numbers: light, ordinary squares
+  QCOMPARE(ViewColours::floorTile(false, false, false), QColor(224, 225, 228));
+  QCOMPARE(ViewColours::floorTile(true, false, false), QColor(198, 201, 205));
+  // the floats the shader gets
+  const QVector4D v = ViewColours::vector(ViewColours::floorTile(false, false, true));
+  QCOMPARE(v.x(), 47.0f / 255.0f);
+  // a theme switch changes what the floor asks for, at the next picture
+  Theme::apply(true);
+  const QColor darkTile = ViewColours::floorTile(false, false);
+  Theme::apply(false);
+  const QColor lightTile = ViewColours::floorTile(false, false);
+  QVERIFY(darkTile != lightTile);
+  QCOMPARE(lightTile, ViewColours::floorTile(false, false, false));
+  QVERIFY(lightTile.lightness() > darkTile.lightness());
+  Theme::apply(true);
+  QCOMPARE(ViewColours::floorTile(false, false), darkTile);
+}
+
+void UxColoursTest::floorDrawsNoHandMadeColour()
+{
+  QFile file(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/floor.cpp"));
+  QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.fileName()));
+  const QString source = QString::fromUtf8(file.readAll()).remove(QLatin1Char(' '));
+  QVERIFY(source.contains(QStringLiteral("ViewColours::floorTile(")));
+  for (const char* old : {"QVector4D(0.3,0.0,0.0", "QVector4D(0.8,0.0,0.0", "QVector4D(0.1,0.1,0.1",
+                          "QVector4D(0.6,0.6,0.6"})
     QVERIFY2(!source.contains(QLatin1String(old)), old);
 }
 
