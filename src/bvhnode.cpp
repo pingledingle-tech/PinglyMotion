@@ -629,6 +629,13 @@ FrameData::FrameData(int num, QVector3D position, QVector3D rotation)
   m_easeOut=false;
 }
 
+bool FrameData::operator==(const FrameData& other) const
+{
+  return m_frameNumber==other.m_frameNumber && m_rotation==other.m_rotation && m_position==other.m_position &&
+         m_easeIn==other.m_easeIn && m_easeOut==other.m_easeOut && m_curve==other.m_curve &&
+         m_customCurve==other.m_customCurve;
+}
+
 int FrameData::frameNumber() const
 {
   return m_frameNumber;

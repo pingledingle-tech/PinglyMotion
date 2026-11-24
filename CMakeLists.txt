@@ -200,6 +200,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/twofigures)
   # Setup, Camera and keys, and Keys and mouse dialogs (UX phase 1d)
   ADD_SUBDIRECTORY (tests/setupdialog)
+  # Undo and Redo for the animation editing (job B1, src/undohistory.*)
+  ADD_SUBDIRECTORY (tests/undo)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

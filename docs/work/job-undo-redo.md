@@ -9,6 +9,7 @@ Files:
 - src/viewtoolspec.h
 - src/pinglymotionwindow.*
 - src/pinglymotionwindowfile.cpp
+- src/pinglymotionwindowundo.cpp
 - src/CMakeLists.txt
 - CMakeLists.txt
 - tests/undo/**

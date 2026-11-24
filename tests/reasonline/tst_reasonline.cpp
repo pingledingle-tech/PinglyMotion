@@ -67,9 +67,9 @@ namespace
     {
       bar = window.addToolBar(QStringLiteral("top"));
       undo.setEnabled(false);
-      undo.setStatusTip(MenuSpec::reason(MenuSpec::editUndo));
+      undo.setStatusTip(QCoreApplication::translate("MenuSpec", MenuSpec::nothingToUndo));
       redo.setEnabled(false);
-      redo.setStatusTip(MenuSpec::reason(MenuSpec::editRedo));
+      redo.setStatusTip(QCoreApplication::translate("MenuSpec", MenuSpec::nothingToRedo));
       scriptLab.setCheckable(true);
       TopBar::Sources sources;
       sources.undo = &undo;
@@ -140,12 +140,12 @@ void TestReasonLine::greyedTopBarButtonsSayWhy()
 {
   Window w;
   enter(w.button("topUndoAction"));
-  QCOMPARE(w.line->text(), QStringLiteral("Undo: Undo is not built yet. Save a copy before big changes."));
+  QCOMPARE(w.line->text(), QStringLiteral("Undo: Nothing to undo yet."));
   QCOMPARE(w.line->textLabel()->text(), w.line->text());
   QVERIFY(!w.line->iconLabel()->isHidden());
   leave(w.button("topUndoAction"));
   enter(w.button("topRedoAction"));
-  QCOMPARE(w.line->text(), QStringLiteral("Redo: Redo is not built yet. It comes with Undo."));
+  QCOMPARE(w.line->text(), QStringLiteral("Redo: Nothing to redo. Redo works after Undo."));
   leave(w.button("topRedoAction"));
 }
 
@@ -275,7 +275,7 @@ void TestReasonLine::menuPointerOverGreyedItems()
   QMenu* menu = w.window.menuBar()->addMenu(QStringLiteral("&Edit"));
   QAction* redo = menu->addAction(QStringLiteral("Redo\tCtrl+Shift+Z"));
   redo->setEnabled(false);
-  redo->setStatusTip(MenuSpec::reason(MenuSpec::editRedo));
+  redo->setStatusTip(QCoreApplication::translate("MenuSpec", MenuSpec::nothingToRedo));
   QAction* setKey = menu->addAction(QStringLiteral("Set key"));
   w.line->watchMenus();
   menu->popup(QPoint(20, 20));
@@ -288,7 +288,7 @@ void TestReasonLine::menuPointerOverGreyedItems()
     QApplication::sendEvent(menu, &event);
   };
   move(redo);
-  QCOMPARE(w.line->text(), QStringLiteral("Redo: Redo is not built yet. It comes with Undo."));
+  QCOMPARE(w.line->text(), QStringLiteral("Redo: Nothing to redo. Redo works after Undo."));
   move(setKey);
   QCOMPARE(w.line->text(), QString());
   move(redo);
@@ -304,10 +304,10 @@ void TestReasonLine::menuStatusTipIsNotShownTwice()
   Window w;
   enter(w.button("topUndoAction"));
   QVERIFY(w.line->showing());
-  QStatusTipEvent tip(MenuSpec::reason(MenuSpec::editUndo));
+  QStatusTipEvent tip(QCoreApplication::translate("MenuSpec", MenuSpec::nothingToUndo));
   QApplication::sendEvent(&w.window, &tip);
   QCOMPARE(w.window.statusBar()->currentMessage(), QString());
-  QCOMPARE(w.line->text(), QStringLiteral("Undo: Undo is not built yet. Save a copy before big changes."));
+  QCOMPARE(w.line->text(), QStringLiteral("Undo: Nothing to undo yet."));
 }
 
 void TestReasonLine::noReasonWithoutStatusTip()

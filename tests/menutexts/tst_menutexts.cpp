@@ -290,8 +290,9 @@ namespace
     {&MenuSpec::fileExport, "fileExportAnimAction", "Export for Second Life (.anim)...", "Ctrl+Shift+E", ""},
     {&MenuSpec::fileClose, "fileCloseAction", "Close animation", "Ctrl+W", ""},
     // UX phase 1b: Edit
-    {&MenuSpec::editUndo, "editUndoAction", "Undo", "Ctrl+Z", "Undo is not built yet. Save a copy before big changes."},
-    {&MenuSpec::editRedo, "editRedoAction", "Redo", "Ctrl+Shift+Z", "Redo is not built yet. It comes with Undo."},
+    // built in job B1: their reasons come from the history (src/undohistory.h)
+    {&MenuSpec::editUndo, "editUndoAction", "Undo", "Ctrl+Z", ""},
+    {&MenuSpec::editRedo, "editRedoAction", "Redo", "Ctrl+Shift+Z", ""},
     {&MenuSpec::editSetKey, "editSetKeyAction", "Set key", "K", ""},
     // built in UX phase 3b: its reasons come from the state (ClipSpec::pasteBlocked)
     {&MenuSpec::editPasteMirrored, "editPasteMirroredAction", "Paste mirrored", "Ctrl+Shift+V", ""},
@@ -505,8 +506,10 @@ void TestMenuTexts::phase1bEditMenuInTheWindow()
   const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::buildEditMenu()"));
   QVERIFY(begin >= 0);
   const QString body = source.mid(begin, source.indexOf(QStringLiteral("void PinglyMotionWindow::setKeyFromMenu()"), begin) - begin);
-  QVERIFY(body.contains(QStringLiteral("specAction(this,editUndo,true)")));
-  QVERIFY(body.contains(QStringLiteral("specAction(this,editRedo,true)")));
+  // Undo and Redo are real shortcuts since job B1 (buildUndo() gives them all their keys)
+  QVERIFY(body.contains(QStringLiteral("specAction(this,editUndo,false)")));
+  QVERIFY(body.contains(QStringLiteral("specAction(this,editRedo,false)")));
+  QVERIFY(body.contains(QStringLiteral("buildUndo();")));
   QVERIFY(body.contains(QStringLiteral("specAction(this,editSetKey,false)")));
   QVERIFY(body.contains(QStringLiteral("specAction(this,editPasteMirrored,false)")));
   QVERIFY(body.contains(QStringLiteral("connect(m_pasteMirroredAction,&QAction::triggered,this,&PinglyMotionWindow::pasteMirroredFromMenu);")));

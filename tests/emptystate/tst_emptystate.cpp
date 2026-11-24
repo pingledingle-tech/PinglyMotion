@@ -77,9 +77,9 @@ namespace
     Fixture()
     {
       undo.setEnabled(false);
-      undo.setStatusTip(MenuSpec::reason(MenuSpec::editUndo));
+      undo.setStatusTip(QCoreApplication::translate("MenuSpec", MenuSpec::nothingToUndo));
       redo.setEnabled(false);
-      redo.setStatusTip(MenuSpec::reason(MenuSpec::editRedo));
+      redo.setStatusTip(QCoreApplication::translate("MenuSpec", MenuSpec::nothingToRedo));
       scriptLab.setCheckable(true);
       library.setCheckable(true);
       TopBar::Sources sources;
@@ -239,8 +239,8 @@ void TestEmptyState::topTableIsExact()
   struct Expected { const MenuSpec::Button* button; const char* id; const char* text; const char* name; const char* key;
                     const char* tipline; const char* reason; const char* icon; };
   const Expected expected[] = {
-    {&MenuSpec::topUndo, "topUndoAction", "", "Undo", "Ctrl+Z", "", "Undo is not built yet. Save a copy before big changes.", "undo-2"},
-    {&MenuSpec::topRedo, "topRedoAction", "", "Redo", "Ctrl+Shift+Z", "", "Redo is not built yet. It comes with Undo.", "redo-2"},
+    {&MenuSpec::topUndo, "topUndoAction", "", "Undo", "Ctrl+Z", "", "", "undo-2"},
+    {&MenuSpec::topRedo, "topRedoAction", "", "Redo", "Ctrl+Shift+Z", "", "", "redo-2"},
     {&MenuSpec::topSave, "topSaveAction", "Save", "Save", "Ctrl+S", "Saves your animation to a file. You can open it again later.", "", "save"},
     {&MenuSpec::topExport, "topExportAction", "Export", "Export for Second Life", "Ctrl+Shift+E", "", "", "upload"},
     {&MenuSpec::topScriptLab, "topScriptLabAction", "Script Lab", "Script Lab: test RLV and LSL scripts", "Ctrl+Shift+L", "", "", "flask-conical"},
@@ -332,8 +332,8 @@ void TestEmptyState::topTextsAndTips()
     QCOMPARE(f.top->button(it.key().toLatin1().constData())->text(), it.value());
 
   const QMap<QString, QString> tips = {
-    {"topUndoAction", "Undo  (Ctrl+Z)\nUndo is not built yet. Save a copy before big changes."},
-    {"topRedoAction", "Redo  (Ctrl+Shift+Z)\nRedo is not built yet. It comes with Undo."},
+    {"topUndoAction", "Undo  (Ctrl+Z)\nNothing to undo yet."},
+    {"topRedoAction", "Redo  (Ctrl+Shift+Z)\nNothing to redo. Redo works after Undo."},
     {"topSaveAction", "Save  (Ctrl+S)\nSaves your animation to a file. You can open it again later."},
     {"topExportAction", "Export for Second Life  (Ctrl+Shift+E)"},
     {"topScriptLabAction", "Script Lab: test RLV and LSL scripts  (Ctrl+Shift+L)"},
@@ -347,7 +347,7 @@ void TestEmptyState::topTextsAndTips()
     QCOMPARE(button->toolTip(), it.value());
   }
   // a greyed button says why in the status line too; a working one says its name
-  QCOMPARE(f.top->button("topUndoAction")->statusTip(), QStringLiteral("Undo is not built yet. Save a copy before big changes."));
+  QCOMPARE(f.top->button("topUndoAction")->statusTip(), QStringLiteral("Nothing to undo yet."));
   QCOMPARE(f.top->button("topSetupAction")->statusTip(), QStringLiteral("Setup"));
   QCOMPARE(f.top->button("topSaveAction")->statusTip(), QStringLiteral("Save"));
   QCOMPARE(f.top->button("topThemeAction")->statusTip(), QStringLiteral("Switch to the light theme"));
@@ -377,8 +377,8 @@ void TestEmptyState::topEnabledWithoutAnimation()
   QCOMPARE(f.top->button("topSaveAction")->statusTip(), QStringLiteral("Open an animation first."));
   QCOMPARE(f.top->button("topExportAction")->toolTip(), QStringLiteral("Export for Second Life  (Ctrl+Shift+E)\nOpen an animation first."));
   QCOMPARE(f.top->button("topExportAction")->statusTip(), QStringLiteral("Open an animation first."));
-  // Undo keeps its own reason
-  QCOMPARE(f.top->button("topUndoAction")->statusTip(), QStringLiteral("Undo is not built yet. Save a copy before big changes."));
+  // Undo keeps its own reason (the one of its menu item)
+  QCOMPARE(f.top->button("topUndoAction")->statusTip(), QStringLiteral("Nothing to undo yet."));
   // an animation again: the buttons work again, tips as before
   f.top->setAnimationOpen(true);
   QVERIFY(f.top->button("topSaveAction")->isEnabled());

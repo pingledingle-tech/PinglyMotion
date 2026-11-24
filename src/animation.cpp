@@ -964,6 +964,8 @@ void Animation::moveKeyFrame(int jointNumber,int from,int to,bool copy)
   joint->setCustomCurve(to,frameData.customCurve());
   // now re-enable signals so we get updates on screen
   blockSignals(false);
+  // the change mark (and Undo, src/undohistory.h) hear of the move only now
+  setDirty(true);
 
   // tell timeline where we are now
   emit currentFrame(frame);
@@ -1141,6 +1143,55 @@ void Animation::resetAllToFrameZero()
     setRotation(joint,rest.x(),rest.y(),rest.z());
   });
   setDirty(true);
+}
+
+QList<BVHNode*> Animation::partNodes() const
+{
+  QList<BVHNode*> nodes;
+  if(positionNode) nodes.append(positionNode);
+  std::function<void(BVHNode*)> walk=[&](BVHNode* node)
+  {
+    if(!node) return;
+    nodes.append(node);
+    for(int i=0;i<node->numChildren();i++) walk(node->child(i));
+  };
+  walk(frames);
+  return nodes;
+}
+
+Animation::Snapshot Animation::snapshot() const
+{
+  Snapshot state;
+  for(const BVHNode* node : partNodes()) state.keys.append(node->keyframeMap());
+  state.frames=totalFrames;
+  state.fps=framesPerSecond;
+  state.loopIn=loopInPoint;
+  state.loopOut=loopOutPoint;
+  return state;
+}
+
+void Animation::restore(const Snapshot& state)
+{
+  const QList<BVHNode*> nodes=partNodes();
+  // a snapshot of another skeleton cannot be put back
+  if(nodes.count()!=state.keys.count()) return;
+  QList<int> changed;
+  for(int i=0;i<nodes.count();i++)
+  {
+    if(nodes.at(i)->keyframeMap()==state.keys.at(i)) continue;
+    nodes.at(i)->setKeyframeMap(state.keys.at(i));
+    changed.append(i);
+  }
+  const bool framesChanged=totalFrames!=state.frames;
+  totalFrames=state.frames;
+  framesPerSecond=state.fps;
+  loopInPoint=state.loopIn;
+  loopOutPoint=state.loopOut;
+  if(frame>=totalFrames) frame=qMax(0,totalFrames-1);
+
+  if(framesChanged) emit numberOfFrames(totalFrames);
+  for(int track : changed) emit redrawTrack(track);
+  emit frameChanged();
 }
 
 bool Animation::dirty() const
