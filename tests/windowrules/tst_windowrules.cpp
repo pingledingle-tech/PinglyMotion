@@ -510,8 +510,12 @@ void TestWindowRules::theWindowKeepsThePicksAndTheWaysBack()
   const QString change = body(QStringLiteral("bool PinglyMotionWindow::switchPanelLayoutForMode("));
   QVERIFY(change.contains(QStringLiteral("UserSettings::setPanelLayoutFor(!expert,")));
   QVERIFY(change.contains(QStringLiteral("restoreState(saved,")));
-  // the layout is saved to the slot of the mode that is on
-  QVERIFY(source.contains(QStringLiteral("UserSettings::setPanelLayoutFor(UserSettings::expertMode(),m_reflower.layoutToSave(this));")));
+  // the layout is saved to the slot of the mode that is on (on the Animate side; UX-F moved this into
+  // src/workmode.h, which keeps the Script side in its own slot)
+  QVERIFY(source.contains(QStringLiteral("m_workMode->saveCurrentLayout();")));
+  QFile work(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/workmode.h"));
+  QVERIFY(work.open(QIODevice::ReadOnly | QIODevice::Text));
+  QVERIFY(QString::fromUtf8(work.readAll()).contains(QStringLiteral("UserSettings::setPanelLayoutFor(expert(), layout)")));
   // Reset layout gives the mode's default
   QVERIFY(body(QStringLiteral("void PinglyMotionWindow::resetPanelLayout()")).contains(QStringLiteral("applyModeLayout(")));
 }

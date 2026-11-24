@@ -1,15 +1,16 @@
 Branch: job/ux-f-animate-script-switch
-Status: active
-Pull request: pending
+Status: done
+Pull request: #469
 Files:
 - src/workmode.h
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindow.h
 - src/usersettings.*
 - src/panellayout.h
+- src/keysmousedialog.h
+- tests/usersettings/**
 - tests/workmode/**
 - CMakeLists.txt
-- translations/pinglymotion_en.ts
 - docs/DECISIONS.md
 - docs/PRODUCT.md
 

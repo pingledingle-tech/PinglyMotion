@@ -63,6 +63,10 @@ class UserSettings
     static void setPanelLayoutBeginner(const QByteArray& value);
     static QByteArray panelLayoutBeginner();
     // the layout of the mode asked for, and putting one away
+    // the layout of the Script side of the Animate / Script switch (UX-F, src/workmode.h); empty
+    // until the Script side has been left once. The Animate side uses panelLayoutFor above.
+    static void setPanelLayoutScript(const QByteArray& value);
+    static QByteArray panelLayoutScript();
     static QByteArray panelLayoutFor(bool expert) { return expert ? panelLayout() : panelLayoutBeginner(); }
     static void setPanelLayoutFor(bool expert,const QByteArray& value)
     { if(expert) setPanelLayout(value); else setPanelLayoutBeginner(value); }
@@ -223,6 +227,7 @@ private:
     static bool m_darkTheme;
     static QByteArray m_panelLayout;
     static QByteArray m_panelLayoutBeginner;
+    static QByteArray m_panelLayoutScript;
     static const QString m_panelLayoutKey;
     static int m_panelLayoutVersion;
     static const QString m_panelLayoutVersionKey;
