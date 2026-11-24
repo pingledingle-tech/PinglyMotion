@@ -1,6 +1,6 @@
 Branch: job/props-from-prims
 Status: active
-Pull request: pending
+Pull request: #447
 Files:
 - src/scriptlab/labprimprops.*
 - src/scriptlab/labwatcher.*
