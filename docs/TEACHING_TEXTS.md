@@ -94,6 +94,7 @@ Where: `src/pinglymotionwindow.ui`.
 | A28 | Allow remote control (AI and other programs) / "Lets programs on this computer pose and play the animation. Off every time PinglyMotion starts, unless started with --control." | Turn on the control link | Removed from Options (issue 7). The **AI Assistant** button in the status bar replaces it: "AI Assistant off" (label decided by the project owner, 23 Nov 2026); see [UX_DECISIONS.md, 6j](UX_DECISIONS.md#6j-the-ai-assistant-button-and-connect-an-ai-built-issue-7-23-november-2026). | yes |
 | A29 | Live link to Aurora / "Shows the pose on your avatar in the Aurora viewer while you work." | Turn on the live link | no change | no |
 | A30 | Hide in lists / "Leave hidden joints out of the timeline and the part list. Off: they are listed dimmed." | Joint list option | Tip: "Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed." | yes |
+| A31 | Show all joints / Show curves and finger grid (Beginner mode buttons above Selected joint, UX-E) | Beginner animation view | Show all joints: tip "Open the Joints list with every joint, the Hands tab and the Avatar / Props switch. View > Joints does the same." Show curves and finger grid: tip "Turn on Expert mode: Edit curve, the finger grid and more. View > Expert mode turns it off again." Status line after a mode change: "The Joints list is closed, so the figure has more room. Show all joints opens it." / "The panels are as you left them in Expert mode." | no |
 
 ### 3.2 Main window: labels and panels
 

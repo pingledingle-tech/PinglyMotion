@@ -452,6 +452,37 @@ Green: live, the pose shows on your avatar</source>
     </message>
 </context>
 <context>
+    <name>BeginnerView</name>
+    <message>
+        <source>Show all joints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the Joints list with every joint, the Hands tab and the Avatar / Props switch. View &gt; Joints does the same.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show curves and finger grid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn on Expert mode: Edit curve, the finger grid and more. View &gt; Expert mode turns it off again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Joints list is closed, so the figure has more room. Show all joints opens it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The panels are as you left them in Expert mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Layout reset. The figure has most of the window; Show all joints opens the Joints list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CameraHabitSpec</name>
     <message>
         <source>PinglyMotion</source>
@@ -4524,6 +4555,89 @@ Pick a smaller file, then try again.</source>
         <source>Add a second figure...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The Joints list is open. View &gt; Joints closes it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PropEdit</name>
+    <message>
+        <source>Edit prop: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl turns it, Ctrl+Shift changes its size. This works as in Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keys: arrows for X and Y, comma and period for Z.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Moving %1 along %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turning %1 around %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Changing the size of %1 along %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release: keep it · Esc: cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 moved. Ctrl+Z undoes it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 turned. Ctrl+Z undoes it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 changed size. Ctrl+Z undoes it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change cancelled. Nothing changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag an arrow to move the prop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag a ring to turn the prop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag a small square to change the size.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -8558,6 +8672,93 @@ Error: %2</source>
     </message>
     <message>
         <source>Dragging a joint turns only that joint.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SelectedPropPanel</name>
+    <message>
+        <source>Selected prop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a prop in the 3D view or in the list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Place</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ball</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left or right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Up or down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward or back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tilt forward or back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn left or right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lean to the side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Height</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Depth</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> m</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>°</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

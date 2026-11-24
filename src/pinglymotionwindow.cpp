@@ -94,6 +94,7 @@
 #include "dialogfit.h"
 #include "panelcontent.h"
 #include "selectedjointpanel.h"
+#include "beginnerview.h"
 #include "panellayout.h"
 #include "panelwindow.h"
 #include "paneltitlebar.h"
@@ -483,8 +484,11 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // the old window_state with the Properties panel is left alone, so the
   // default layout is used once after the move to three panels.
   const PanelLayout::StartupChoice startup=PanelLayout::chooseStartup(
-    UserSettings::panelLayout(),UserSettings::panelLayoutVersion(),size(),true);
-  if(startup.useSavedLayout) restoreState(UserSettings::panelLayout(),PanelLayout::CurrentVersion);
+    UserSettings::panelLayoutFor(UserSettings::expertMode()),UserSettings::panelLayoutVersion(),size(),true);
+  // each mode has its own layout (UX-E); a mode without one starts with its default, which in
+  // Beginner mode has the Joints list closed
+  if(startup.useSavedLayout) restoreState(UserSettings::panelLayoutFor(UserSettings::expertMode()),PanelLayout::CurrentVersion);
+  else if(!BeginnerView::jointsListInDefaultLayout(UserSettings::expertMode())) m_jointsDock->hide();
   // a floating panel whose place is on no screen any more (second screen
   // unplugged) is pulled back onto one (job P3)
   PanelWindow::pullFloatingPanelsOntoScreen(panelDocks(),PanelWindow::screenRects());
@@ -1324,7 +1328,10 @@ void PinglyMotionWindow::buildMenus()
   keyInView(m_expertModeAction,view);
   connect(m_expertModeAction,&QAction::toggled,this,[this](bool on)
   {
+    // the panels of the mode we leave are put away, those of the new mode come back (UX-E)
+    const bool layoutChanged=switchPanelLayoutForMode(on);
     UserSettings::setExpertMode(on);
+    updateBeginnerRow();
     // the timeline's Paste mirrored button is an Expert mode control (UX phase 3b, the mockup)
     if(m_panels && m_panels->pasteMirrored) m_panels->pasteMirrored->setVisible(on);
     // and the Hands tab's joint grid (UX phase 2c)
@@ -1334,10 +1341,27 @@ void PinglyMotionWindow::buildMenus()
     // two figures (6m): the add commands, the Figures box, Make active and Remove
     refreshFigures();
     // the Edit curve button follows through UserSettings::watchExpertMode; the mockup's sentences
-    statusBar()->showMessage(on ? GuidanceSpec::tr(GuidanceSpec::expertOnMessage,"GuidanceSpec")
-                                : GuidanceSpec::tr(GuidanceSpec::expertOffMessage,"GuidanceSpec"),5000);
+    QString message=on ? GuidanceSpec::tr(GuidanceSpec::expertOnMessage,"GuidanceSpec")
+                       : GuidanceSpec::tr(GuidanceSpec::expertOffMessage,"GuidanceSpec");
+    // P12: the panels that opened or closed are named, so nothing changes without a word
+    if(layoutChanged) message+=QLatin1Char(' ')+BeginnerView::tr(on ? BeginnerView::expertLayoutMessage
+                                                                    : BeginnerView::beginnerLayoutMessage);
+    statusBar()->showMessage(message,8000);
   });
   ui->menuView->addAction(m_expertModeAction);
+  // Beginner mode's two buttons above the Selected joint panel (UX-E)
+  connect(m_panels->showJointsButton,&QPushButton::clicked,this,[this]()
+  {
+    m_jointsDock->show();
+    m_jointsDock->raise();
+    statusBar()->showMessage(tr("The Joints list is open. View > Joints closes it."),5000);
+  });
+  connect(m_panels->showMoreButton,&QPushButton::clicked,this,[this]()
+  {
+    if(m_expertModeAction) m_expertModeAction->setChecked(true);
+  });
+  connect(m_jointsDock,&QDockWidget::visibilityChanged,this,[this](bool){ updateBeginnerRow(); });
+  updateBeginnerRow();
 
   // UX job U2: the timeline's row filter, as it was left last time
   ui->timelineView->setExpert(UserSettings::expertMode());
@@ -1942,7 +1966,8 @@ void PinglyMotionWindow::resetPanelLayout()
 {
   m_applyingTab=true;
   m_tabState.reset();
-  PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
+  // the default layout of the mode: in Beginner mode the Joints list is closed (UX-E)
+  PanelWindow::applyModeLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock,UserSettings::expertMode());
   // the Script Lab goes back to its side and closes, as at the first start
   m_scriptLabDock->setFloating(false);
   addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
@@ -1956,7 +1981,49 @@ void PinglyMotionWindow::resetPanelLayout()
   m_applyingTab=false;
   m_hidePanelsAction->setChecked(false);
   ui->optionsShowTimelineAction->setChecked(true);
-  statusBar()->showMessage(tr("Layout reset. The panels are back where they were at the first start."),5000);
+  statusBar()->showMessage(UserSettings::expertMode()
+                             ? tr("Layout reset. The panels are back where they were at the first start.")
+                             : BeginnerView::tr(BeginnerView::resetBeginnerMessage),5000);
+}
+
+// The Joints list's button and Show curves and finger grid are shown in Beginner mode only; the
+// first also only while the Joints list is closed (src/beginnerview.h)
+void PinglyMotionWindow::updateBeginnerRow()
+{
+  if(!m_panels || !m_panels->beginnerRow) return;
+  const bool expert=UserSettings::expertMode();
+  m_panels->showJointsButton->setVisible(BeginnerView::showJointsButtonVisible(expert,!m_jointsDock->isHidden()));
+  m_panels->showMoreButton->setVisible(BeginnerView::showMoreButtonVisible(expert));
+  m_panels->beginnerRow->setVisible(!m_panels->showJointsButton->isHidden() || !m_panels->showMoreButton->isHidden());
+}
+
+// Beginner and Expert mode each keep their own panel layout (UX-E, the saving of UX-A): the
+// layout of the mode that is left is put away, the one of the mode that starts is restored. A
+// mode that has none yet keeps the panels where they are and only opens or closes the Joints
+// list, so nothing else jumps. Answers true when the Joints list opened or closed.
+bool PinglyMotionWindow::switchPanelLayoutForMode(bool expert)
+{
+  if(expert==UserSettings::expertMode()) return false;
+  if(m_tabState.isHidden()) togglePanelsHidden();
+  UserSettings::setPanelLayoutFor(!expert,m_reflower.layoutToSave(this));
+  UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
+  const bool jointsWereOpen=!m_jointsDock->isHidden();
+  const QByteArray saved=UserSettings::panelLayoutFor(expert);
+  m_applyingTab=true;
+  if(PanelLayout::isLayoutUsable(saved,UserSettings::panelLayoutVersion(),size()))
+  {
+    restoreState(saved,PanelLayout::CurrentVersion);
+    PanelWindow::pullFloatingPanelsOntoScreen(panelDocks(),PanelWindow::screenRects());
+    // the timeline stands visible, as at every start; the Library only opens when asked for
+    PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
+    m_libraryDock->hide();
+  }
+  else
+    m_jointsDock->setVisible(BeginnerView::jointsListInDefaultLayout(expert));
+  m_reflower.wideLayoutChanged(this,reflowDocks());
+  m_applyingTab=false;
+  m_hidePanelsAction->setChecked(false);
+  return jointsWereOpen!=!m_jointsDock->isHidden();
 }
 
 // Tab, or View > Hide panels: every open panel goes away (docked and
@@ -3425,7 +3492,7 @@ void PinglyMotionWindow::saveUserSettings()
   if(m_tabState.isHidden()) togglePanelsHidden();
   UserSettings::setMainWindowGeometry(saveGeometry());
   // the user's own wide layout, also while the panels are rearranged (docs/UX_DECISIONS.md, 6c)
-  UserSettings::setPanelLayout(m_reflower.layoutToSave(this));
+  UserSettings::setPanelLayoutFor(UserSettings::expertMode(),m_reflower.layoutToSave(this));
   UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
 
   UserSettings::writeSettings();

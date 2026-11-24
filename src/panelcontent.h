@@ -37,6 +37,7 @@
 #include "selectedjointpanel.h"
 #include "selectedproppanel.h"
 #include "timelineclip.h"
+#include "beginnerview.h"
 #include "timelinerows.h"
 #include "timelineview.h"
 #include "transportlook.h"
@@ -65,6 +66,11 @@ public:
   // Paste mirrored, beside Set key, shown in Expert mode (UX phase 3b, the mockup's
   // expert-only button); the window connects it and greys it with its reason
   QPushButton* pasteMirrored=nullptr;
+  // the two ways back to what Beginner mode hides (UX-E, src/beginnerview.h), above the
+  // Selected joint panel: the Joints list, and Edit curve with the finger grid (Expert mode)
+  QWidget* beginnerRow=nullptr;
+  QPushButton* showJointsButton=nullptr;
+  QPushButton* showMoreButton=nullptr;
   // the loop points, frame and speed row of the timeline panel
   QBoxLayout* rangeRow=nullptr;
   // the "(10%)" labels after the loop points
@@ -221,6 +227,25 @@ public:
     QWidget* cardPanel=new QWidget;
     QVBoxLayout* cardPanelLayout=new QVBoxLayout(cardPanel);
     cardPanelLayout->setContentsMargins(4,4,4,4);
+    // Beginner mode (UX-E): plain buttons that bring back what the mode hides; the window
+    // shows and hides them with the mode (BeginnerView::showJointsButtonVisible)
+    beginnerRow=new QWidget;
+    beginnerRow->setObjectName("beginnerRow");
+    QVBoxLayout* beginnerLayout=new QVBoxLayout(beginnerRow);
+    beginnerLayout->setContentsMargins(0,0,0,4);
+    beginnerLayout->setSpacing(4);
+    showJointsButton=new QPushButton(BeginnerView::tr(BeginnerView::showJointsButton),beginnerRow);
+    showJointsButton->setObjectName("showJointsButton");
+    showJointsButton->setToolTip(BeginnerView::tr(BeginnerView::showJointsTip));
+    showMoreButton=new QPushButton(BeginnerView::tr(BeginnerView::showMoreButton),beginnerRow);
+    showMoreButton->setObjectName("showMoreButton");
+    showMoreButton->setToolTip(BeginnerView::tr(BeginnerView::showMoreTip));
+    for(QPushButton* button : {showJointsButton,showMoreButton})
+    {
+      button->setStatusTip(button->toolTip());
+      beginnerLayout->addWidget(button);
+    }
+    cardPanelLayout->addWidget(beginnerRow);
     cardPanelLayout->addWidget(cardStack,1);
     jointCardDock=makeTallPanel(window,text(QT_TRANSLATE_NOOP("PinglyMotionWindow","Selected joint")),PanelLayout::JointCardDock,cardPanel,jointCardScroll);
 

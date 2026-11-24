@@ -30,6 +30,7 @@ class TestUserSettings : public QObject
     void unknownCameraHabitBecomesDefault();
     void windowPlacesSurviveSaveAndReload();
     void badWindowPlacesAreLeftOut();
+    void eachModeKeepsItsOwnPanelLayout();
     void expertModeWatchers();
     void welcomeAndHintCardAreRemembered();
 
@@ -196,6 +197,30 @@ void TestUserSettings::windowPlacesSurviveSaveAndReload()
   UserSettings::writeSettings();
   UserSettings::readSettings();
   QCOMPARE(UserSettings::windowPlace(QStringLiteral("edit_curve_window")), QRect());
+}
+
+// UX-E: Beginner and Expert mode each remember their own panel layout through a restart; the
+// Expert layout is the key every earlier version wrote, the Beginner layout is empty until used
+void TestUserSettings::eachModeKeepsItsOwnPanelLayout()
+{
+  UserSettings::readSettings();
+  QVERIFY(UserSettings::panelLayoutBeginner().isEmpty());
+  UserSettings::setPanelLayoutFor(true, QByteArray("expert-layout"));
+  UserSettings::setPanelLayoutFor(false, QByteArray("beginner-layout"));
+  QCOMPARE(UserSettings::panelLayout(), QByteArray("expert-layout"));
+  QCOMPARE(UserSettings::panelLayoutBeginner(), QByteArray("beginner-layout"));
+  UserSettings::writeSettings();
+  UserSettings::setPanelLayoutFor(true, QByteArray("other"));
+  UserSettings::setPanelLayoutFor(false, QByteArray("other"));
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::panelLayoutFor(true), QByteArray("expert-layout"));
+  QCOMPARE(UserSettings::panelLayoutFor(false), QByteArray("beginner-layout"));
+  // the old key (panel_layout) is the Expert layout
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                     Constants::organizationName(), Constants::applicationName());
+  QVERIFY(settings.allKeys().contains(QStringLiteral("user_settings/1.0/panel_layout")) ||
+          settings.allKeys().join(QLatin1Char(' ')).contains(QStringLiteral("panel_layout")));
+  QVERIFY(settings.allKeys().join(QLatin1Char(' ')).contains(QStringLiteral("panel_layout_beginner")));
 }
 
 void TestUserSettings::badWindowPlacesAreLeftOut()
