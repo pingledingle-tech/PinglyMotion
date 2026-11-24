@@ -436,6 +436,10 @@ ADD_TEST (NAME labchains COMMAND pinglymotion_labchains_tests)
 # program that many times in a row and prints the Qt Test output of every failed run
 # (tests/repeat/repeat.cmake). Off (0) by default; used to prove that a test does not fail
 # now and then, for example on the Windows runner.
+# TEMPORARY (T2 diagnosis on the Windows runner; removed again before the merge)
+IF (WIN32 AND NOT DEFINED CACHE{PINGLYMOTION_REPEAT_TESTS})
+  SET (PINGLYMOTION_REPEAT_TESTS 40 CACHE STRING "Runs per repeated test (0: no repeat tests)")
+ENDIF ()
 SET (PINGLYMOTION_REPEAT_TESTS 0 CACHE STRING "Runs per repeated test (0: no repeat tests)")
 SET (PINGLYMOTION_REPEAT_TEST_NAMES
      "labeditor;labwatcher;labrecipe;labeffects;scriptlabeffects;labtree;scriptlabpanel;scriptlabdesign;rlvsuggest;scriptlabbeginner;scriptlabplayer;scriptlabwindow"
