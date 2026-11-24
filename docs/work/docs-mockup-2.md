@@ -1,6 +1,6 @@
 Branch: docs/mockup-2
 Status: active
-Pull request: pending
+Pull request: #456
 Files:
 - docs/mockup/index.html
 - docs/UX_DECISIONS.md
