@@ -1336,7 +1336,13 @@ bool AnimationView::event(QEvent* event)
   }
   // while a joint is pulled no menu key may act: the key comes to keyPressEvent(), which says
   // "Finish or cancel the pull first: Esc cancels."
-  if(event->type()==QEvent::ShortcutOverride && (m_pull.active || m_propDrag.active()))
+  if(event->type()==QEvent::ShortcutOverride && m_pull.active)
+  {
+    event->accept();
+    return true;
+  }
+  // the same while a prop handle is dragged: Esc goes to the drag
+  if(event->type()==QEvent::ShortcutOverride && m_propDrag.active())
   {
     event->accept();
     return true;
