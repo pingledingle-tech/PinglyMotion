@@ -2813,8 +2813,9 @@ void AnimationView::cancelPropDrag()
   m_gizmoHover=-1;
   m_pullLabel->hide();
   setCursor(Qt::ArrowCursor);
-  emit statusMessage(PropEdit::tr(PropEdit::cancelled));
+  // the hint line first, then the status line says what happened (it would hide the message)
   propModeChanged();
+  emit statusMessage(PropEdit::tr(PropEdit::cancelled));
   update();
 }
 

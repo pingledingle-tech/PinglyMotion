@@ -1,5 +1,5 @@
 Branch: job/props-edit-sl
-Status: active
+Status: done
 Pull request: #459
 Files:
 - src/propedit.*

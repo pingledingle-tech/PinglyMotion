@@ -67,7 +67,11 @@ SelectedPropPanel::SelectedPropPanel(QWidget* parent) : QWidget(parent)
 
 QWidget* SelectedPropPanel::buildNothingPage()
 {
-  QFrame* card=new QFrame(this);
+  // the card at the top of its page, as the joint page's empty card (not stretched to the panel)
+  QWidget* page=new QWidget(this);
+  QVBoxLayout* outer=new QVBoxLayout(page);
+  outer->setContentsMargins(0,0,0,0);
+  QFrame* card=new QFrame(page);
   card->setObjectName(QStringLiteral("selectedPropNothing"));
   QVBoxLayout* column=new QVBoxLayout(card);
   column->setSpacing(Theme::Size::spacingS);
@@ -84,7 +88,9 @@ QWidget* SelectedPropPanel::buildNothingPage()
   m_nothingLine->setObjectName(QStringLiteral("selectedPropNothingLine"));
   m_nothingLine->setWordWrap(true);
   column->addWidget(m_nothingLine);
-  return card;
+  outer->addWidget(card);
+  outer->addStretch(1);
+  return page;
 }
 
 QDoubleSpinBox* SelectedPropPanel::addRow(QWidget* parent,QGridLayout* grid,int row,int axis,const char* label)
