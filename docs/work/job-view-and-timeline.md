@@ -1,5 +1,5 @@
 Branch: job/view-and-timeline
-Status: active
+Status: done
 Pull request: #449
 Files:
 - src/timelinerows.*
@@ -19,6 +19,8 @@ Files:
 - tests/timelinerows/**
 - tests/viewtools/**
 - tests/jointrings/**
+- tests/twofigures/**
+- tests/tst_timelineview.cpp
 - translations/pinglymotion_en.ts
 - docs/UX_DECISIONS.md
 - docs/DECISIONS.md

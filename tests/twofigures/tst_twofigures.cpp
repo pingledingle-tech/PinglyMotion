@@ -549,7 +549,11 @@ class TestTwoFigures : public QObject
       QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
       QVERIFY(view.findChildren<FigureHeader*>().isEmpty());
       QVERIFY(view.findChildren<FigureRows*>().isEmpty());
-      QCOMPARE(view.activeRowsArea()->y(), 0);
+      // the rows stand right under the row filter (job U2), as with one figure from the start
+      QWidget* filterRow = view.findChild<QWidget*>(QStringLiteral("timelineFilterRow"));
+      QVERIFY(filterRow);
+      QCOMPARE(filterRow->y(), 0);
+      QCOMPARE(view.activeRowsArea()->y(), filterRow->height());
     }
 
     // switching figures: the timeline takes the length of the figure it shows now

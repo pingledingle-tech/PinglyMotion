@@ -94,7 +94,8 @@ struct Fixture
   const TimelineRows& rows() const { return view.rows(); }
   QVector<int> shown() const { return rows().tracks(); }
   QScrollBar* bar() { return view.rowScroller()->verticalScrollBar(); }
-  static int rowTop(int row) { return row * Constants::lineHeight() + 2; }
+  // the rows stand under the row filter of job U2
+  int rowTop(int row) const { return view.activeRowsArea()->y() + row * Constants::lineHeight() + 2; }
   bool rowVisible(int track)
   {
     const int row = rows().rowOfTrack(track);

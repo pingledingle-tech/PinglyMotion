@@ -62,10 +62,29 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   layout->setContentsMargins(0,0,0,0);
   layout->setSpacing(0);
 
+  // Bento has far more tracks than fit on screen, so track names and key
+  // frames scroll up and down together in an outer scroll area
+  QScrollArea* outer=new TrackScrollArea(this);
+  outer->setWidgetResizable(true);
+  outer->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  outer->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  outer->setFrameShape(QFrame::NoFrame);
+  outerView_=outer;
+
+  // the rows on top, the empty states under them (UX phase 3a)
+  QWidget* content=new QWidget(outer);
+  QVBoxLayout* contentColumn=new QVBoxLayout(content);
+  contentColumn_=contentColumn;
+  contentColumn->setContentsMargins(0,0,0,0);
+  contentColumn->setSpacing(0);
+
   // UX job U2: the row filter above the rows: "Show rows for" a body area, and in
-  // Expert mode Only changed joints (at the right end, so hiding it moves nothing)
-  QWidget* filterRow=new QWidget(this);
+  // Expert mode Only changed joints (at the right end, so hiding it moves nothing).
+  // It is the first thing in the scrolled content, so it takes no height from the
+  // easing tiles under the rows; with two figures the header rows come after it
+  QWidget* filterRow=new QWidget(content);
   filterRow->setObjectName(QStringLiteral("timelineFilterRow"));
+  filterRow->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
   QHBoxLayout* filterLayout=new QHBoxLayout(filterRow);
   filterLayout->setContentsMargins(Theme::Size::spacingM,Theme::Size::spacingXs,Theme::Size::spacingM,Theme::Size::spacingXs);
   filterLayout->setSpacing(Theme::Size::spacingS);
@@ -89,7 +108,7 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   filterLayout->addWidget(areaFilter_);
   filterLayout->addStretch(1);
   filterLayout->addWidget(changedOnly_);
-  layout->addWidget(filterRow,0);
+  contentColumn->addWidget(filterRow,0);
   connect(areaFilter_,&QComboBox::activated,this,[this]()
   {
     applyRowFilter();
@@ -102,21 +121,6 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
     emit rowFilterChosen(rowFilterArea(),changedOnly());
   });
 
-  // Bento has far more tracks than fit on screen, so track names and key
-  // frames scroll up and down together in an outer scroll area
-  QScrollArea* outer=new TrackScrollArea(this);
-  outer->setWidgetResizable(true);
-  outer->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  outer->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  outer->setFrameShape(QFrame::NoFrame);
-  outerView_=outer;
-
-  // the rows on top, the empty states under them (UX phase 3a)
-  QWidget* content=new QWidget(outer);
-  QVBoxLayout* contentColumn=new QVBoxLayout(content);
-  contentColumn_=contentColumn;
-  contentColumn->setContentsMargins(0,0,0,0);
-  contentColumn->setSpacing(0);
 
   rowsArea_=new QWidget(content);
   QHBoxLayout* contentLayout=new QHBoxLayout(rowsArea_);
@@ -312,7 +316,8 @@ void TimelineView::setFigures(const QList<Animation*>& animations,const QStringL
   contentColumn_->removeWidget(noKeys_);
   contentColumn_->removeWidget(areaEmpty_);
   contentColumn_->removeWidget(noAnimation_);
-  int at=0;
+  // the row filter (U2) stays the first thing
+  int at=1;
   const int count=int(std::min(animations.size(),paths.size()));
   if(count<2)
   {

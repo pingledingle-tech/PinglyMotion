@@ -34,6 +34,7 @@
 #include "bvh.h"
 #include "bvhnode.h"
 #include "constants.h"
+#include "figures.h"
 #include "jointgroups.h"
 #include "timeline.h"
 #include "timelinerows.h"
@@ -126,6 +127,7 @@ private slots:
   void choosingAnAreaTellsTheWindow();
   void changedOnlyIsAnExpertSwitch();
   void filterClearsTheSelectedStretch();
+  void filterRowStaysFirstWithTwoFigures();
 
   // the View menu
   void viewMenuTable();
@@ -441,6 +443,31 @@ void ViewTimelineTest::filterClearsTheSelectedStretch()
   QVERIFY(line->hasSelection());
   line->setRowFilter(JointGroups::BodyTab, false);
   QVERIFY(!line->hasSelection());
+}
+
+void ViewTimelineTest::filterRowStaysFirstWithTwoFigures()
+{
+  Fixture f;
+  Animation second(&f.bvh);
+  f.view.resize(600, 400);
+  f.view.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&f.view));
+  QWidget* filterRow = f.view.findChild<QWidget*>(QStringLiteral("timelineFilterRow"));
+  QVERIFY(filterRow);
+  // one figure: the rows stand right under the filter
+  QCOMPARE(filterRow->y(), 0);
+  QCOMPARE(f.view.activeRowsArea()->y(), filterRow->height());
+  // two figures: the filter stays on top, the header rows come after it
+  f.view.setFigures({&f.anim, &second}, {QStringLiteral("/x/a.dingle"), QStringLiteral("/x/b.dingle")}, 0, true);
+  QCoreApplication::processEvents();
+  QCOMPARE(f.view.figureCount(), 2);
+  QCOMPARE(filterRow->y(), 0);
+  QVERIFY(f.view.figureHeader(0)->y() >= filterRow->height());
+  QVERIFY(f.view.figureHeader(0)->y() < f.view.activeRowsArea()->y());
+  f.view.setFigures({&f.anim}, {QStringLiteral("/x/a.dingle")}, 0, true);
+  QCoreApplication::processEvents();
+  QCOMPARE(filterRow->y(), 0);
+  QCOMPARE(f.view.activeRowsArea()->y(), filterRow->height());
 }
 
 // ---- the View menu ----
