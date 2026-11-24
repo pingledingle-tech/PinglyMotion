@@ -24,6 +24,7 @@
 
 #include "dialogfit.h"
 #include "labbeginner.h"
+#include "labguideview.h"
 #include "theme.h"
 
 namespace
@@ -117,6 +118,12 @@ LabHelpView::LabHelpView(const QString& examplesFolder, QWidget* parent) :
   layout->addLayout(row, 1);
 
   QHBoxLayout* buttons = new QHBoxLayout;
+  m_guideButton = new QPushButton(tr("Guide page"), this);
+  m_guideButton->setObjectName(QStringLiteral("scriptLabHelpGuide"));
+  m_guideButton->setMinimumHeight(Theme::Size::controlDefault);
+  m_guideButton->setToolTip(tr("A page with steps, samples and the example folder, in plain words."));
+  connect(m_guideButton, &QPushButton::clicked, this, [this]() { showGuide(); });
+  buttons->addWidget(m_guideButton);
   buttons->addStretch(1);
   m_close = new QPushButton(tr("Close"), this);
   m_close->setObjectName(QStringLiteral("scriptLabHelpClose"));
@@ -272,6 +279,21 @@ QString LabHelpView::topicHtml(const QString& key) const
   return QString();
 }
 
+void LabHelpView::showGuide()
+{
+  if (!m_guideView)
+  {
+    m_guideView = new LabGuideView(m_examplesFolder, this);
+    m_guideView->setWindowFlag(Qt::Window, true);
+    connect(m_guideView, &LabGuideView::openRequested, this, &LabHelpView::openFolderRequested);
+  }
+  m_guideView->applyStyle(m_dark);
+  m_guideView->show();
+  m_guideView->raise();
+  m_guideView->activateWindow();
+  if (m_guideView->makeButton()) m_guideView->makeButton()->setFocus(Qt::OtherFocusReason);
+}
+
 void LabHelpView::applyStyle(bool dark)
 {
   if (m_styling) return;
@@ -301,6 +323,7 @@ void LabHelpView::applyStyle(bool dark)
   headingFont.setWeight(QFont::DemiBold);
   if (headingFont.pointSizeF() > 0) headingFont.setPointSizeF(headingFont.pointSizeF() * 20.0 / 13.0);
   m_heading->setFont(headingFont);
+  if (m_guideView) m_guideView->applyStyle(dark);
   // the list is as wide as its longest topic, so no topic is cut
   int widest = 0;
   for (int i = 0; i < m_list->count(); ++i)

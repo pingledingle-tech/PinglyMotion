@@ -3399,6 +3399,10 @@ void ScriptLabPanel::showHelp(const QString& topic)
   {
     m_helpView = new LabHelpView(exampleObjectsFolder(), this);
     m_helpView->setWindowFlag(Qt::Window, true);
+    // the guide page's button: watch the folder it made (job UX-D)
+    connect(m_helpView, &LabHelpView::openFolderRequested, this, [this](const QString& folder) {
+      if (watchFolder(folder)) showPage(LivePage);
+    });
   }
   m_helpView->applyStyle(isDark(palette()));
   if (!m_helpView->showTopic(topic)) m_helpView->showTopic(QStringLiteral("start"));
