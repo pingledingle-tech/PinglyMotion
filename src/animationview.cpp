@@ -102,7 +102,8 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */)
   {
     QString model(figureFiles[i]);
     qCDebug(lcView,"Reading reference model '%s'",model.toLatin1().constData());
-    joints[i]=reader.animRead(model,limFile);
+    // the reference skeletons need no position node: the result drops it
+    joints[i]=reader.animOpen(model,limFile).root.release();
   }
 
   const AvatarSkin::Result skinResult=m_avatarSkin.load(Constants::pinglyMotionDataPath());
@@ -1155,7 +1156,7 @@ void AnimationView::clickSelect(unsigned int selected)
 {
   m_lastClicked=selected;
   // if another part than the current one has been clicked, switch off mirror mode
-  if(selected!=partSelected) m_scene->getAnimation()->setMirrored(false);
+  if(selected!=partSelected && m_scene->getAnimation()) m_scene->getAnimation()->setMirrored(false);
 
   // background clicked, reset all
   if(!selected)
@@ -1276,7 +1277,7 @@ void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
   // FIXME: With multiple avatars, double-clicking
   //  other avatars may require a different
   //  animation than what getAnimation() returns
-  if (m_scene->getAnimation()->getNode(selected) == 0) return;
+  if (!m_scene->getAnimation() || m_scene->getAnimation()->getNode(selected) == 0) return;
 
   // the first click of the double click selected the joint already
   if(partSelected!=selected) clickSelect(selected);
@@ -2175,7 +2176,8 @@ Camera* AnimationView::camera() const
 
 BVHNode* AnimationView::getSelectedPart()
 {
-  return m_scene->getAnimation()->getNode(partSelected % static_cast<int>(OpenGlIds::AnimationIncrement));
+  Animation* current=m_scene->getAnimation();
+  return current ? current->getNode(partSelected % static_cast<int>(OpenGlIds::AnimationIncrement)) : nullptr;
 }
 
 unsigned int AnimationView::getSelectedPartIndex()
@@ -2196,7 +2198,8 @@ void AnimationView::setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<
 }
 void AnimationView::selectPart(int partNum)
 {
-  BVHNode* node=m_scene->getAnimation()->getNode(partNum);
+  Animation* current=m_scene->getAnimation();
+  BVHNode* node=current ? current->getNode(partNum) : nullptr;
 
   if(!node)
   {

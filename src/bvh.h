@@ -23,6 +23,7 @@
 #define BVH_H
 
 #include <QtCore>
+#include <memory>
 #include <QTextStream>
 
 #include "bvhnode.h"
@@ -78,6 +79,18 @@ class BVH
     // so a caller that has checked the bytes parses exactly what it checked.
     BVHNode* animRead(const QString& file,const QString& limFile,const QByteArray* data=nullptr);
 
+    // what a read gives back, and owns: the joint tree and the position pseudo node.
+    // A failed read has both empty, so nothing is left behind (code audit item C16).
+    struct ReadResult
+    {
+      std::unique_ptr<BVHNode> root;
+      std::unique_ptr<BVHNode> position;
+      bool ok() const { return root!=nullptr; }
+    };
+    // like animRead(), but the result owns the nodes: lastLoadedPositionNode is then
+    // empty, the other lastLoaded... values are set as after animRead()
+    ReadResult animOpen(const QString& file,const QString& limFile,const QByteArray* data=nullptr);
+
     bool dingleWrite(Animation* root,const QString& file,QString& error);
     bool animWrite(Animation* root,const QString& file,QString& error);
     void bvhDelete(BVHNode* node);
@@ -128,6 +141,9 @@ class BVH
     QVector3D positionCopyBuffer;
 
   protected:
+    // animRead() and animOpen() read the file with this; the position node stays in lastLoadedPositionNode
+    BVHNode* readFile(const QString& file,const QString& limFile,const QByteArray* data);
+
     // remember if the loaded animation is in old or new AVM format
     bool havePositionKeys;
 

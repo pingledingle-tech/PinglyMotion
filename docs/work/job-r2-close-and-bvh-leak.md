@@ -6,9 +6,10 @@ Files:
 - src/animation.*
 - src/animationview.cpp
 - src/pinglymotionwindow*.cpp
-- src/animationmanager.*
+- src/pinglymotionwindow.h
+- src/pinglymotionwindowplayback.cpp
 - tests/animfile/**
-- tests/smoke_control.py
+- tests/smoke_close.py
 - .github/workflows/build.yml
 - docs/DEV.md
 

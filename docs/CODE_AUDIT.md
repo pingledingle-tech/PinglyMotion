@@ -222,4 +222,4 @@ One issue per task, label `cleanup`. A job starts only when the project owner sa
 | C13 Error handling in the .obj mesh reader (done, pull request #210) | #204 | S | no |
 | C14 Logging categories instead of 110 qDebug calls (done, pull request #235) | #205 | M | no |
 | C15 Run the two Python tests that CI never runs (done, pull request #243) | #206 | S | no |
-| C16 One error-reporting convention for new and old code (started, issue open: convention in docs/DEV.md, pull request #214; the private mesh loader, pull request #272; `PropFile::parse` converted, pull request #256; `AvatarSkin::load`, pull request #274; `BVH::checkFile`, pull request #278) | #207 | M | no |
+| C16 One error-reporting convention for new and old code (started, issue open: convention in docs/DEV.md, pull request #214; the private mesh loader, pull request #272; `PropFile::parse` converted, pull request #256; `AvatarSkin::load`, pull request #274; `BVH::checkFile`, pull request #278; `BVH::animOpen` gives a result that owns its nodes, pull request #466) | #207 | M | no |

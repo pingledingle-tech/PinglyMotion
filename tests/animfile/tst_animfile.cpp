@@ -234,6 +234,8 @@ class AnimFileTest : public QObject
     void openRefusesAuditFiles_data();
     void openRefusesAuditFiles();
     void openErrorTellsTheLine();
+    void failedOpenLeavesNoNodeBehind();
+    void openResultOwnsTheNodes();
     void openDingleGivesTheSameAnimation_data();
     void openDingleGivesTheSameAnimation();
     void openRefusesBrokenDingleFiles_data();
@@ -686,6 +688,44 @@ void AnimFileTest::openRefusesAuditFiles()
   QVERIFY(!bvh.animRead(file, Constants::limitsFilePath()));
   delete bvh.lastLoadedPositionNode;
   QCOMPARE(bvh.lastError, error);
+}
+
+// a file that is refused must not leave the position node behind (code audit item C16);
+// under the leak sanitizer (ASAN_OPTIONS=detect_leaks=1) the old code also fails the run
+void AnimFileTest::failedOpenLeavesNoNodeBehind()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString file = writeFile(dir, "broken.bvh", "HIERARCHY\nROOT hip\n{\n  OFFSET 0 zero 0\n");
+  QVERIFY(!file.isEmpty());
+  for (int round = 0; round < 3; round++)
+  {
+    BVH bvh;
+    QVERIFY(!bvh.animRead(file, Constants::limitsFilePath()));
+    QVERIFY2(!bvh.lastError.isEmpty(), "a failed open must say why");
+    QVERIFY2(bvh.lastLoadedPositionNode == nullptr, "a failed open left its position node behind");
+  }
+}
+
+// animOpen() gives nodes that the result owns: nothing for a refused file, both for a good one
+void AnimFileTest::openResultOwnsTheNodes()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString bad = writeFile(dir, "broken.bvh", "HIERARCHY\nROOT hip\n{\n  OFFSET 0 zero 0\n");
+  QVERIFY(!bad.isEmpty());
+  BVH bvh;
+  BVH::ReadResult refused = bvh.animOpen(bad, Constants::limitsFilePath());
+  QVERIFY(!refused.ok());
+  QVERIFY(!refused.position);
+  QVERIFY(bvh.lastLoadedPositionNode == nullptr);
+  QVERIFY(!bvh.lastError.isEmpty());
+
+  BVH::ReadResult good = bvh.animOpen(Constants::femaleBvhPath(), Constants::limitsFilePath());
+  QVERIFY(good.ok());
+  QVERIFY(good.position);
+  QVERIFY(bvh.lastLoadedPositionNode == nullptr);
+  bvh.bvhDelete(good.root.release());
 }
 
 // the error for the user names the line, like "Line 3: ..."

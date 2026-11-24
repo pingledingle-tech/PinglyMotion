@@ -498,12 +498,12 @@ class PinglyMotionWindow : public QMainWindow
     TransportBar* m_transport=nullptr;
 
     // holds the current playing status
-    PlayState playstate;
+    PlayState playstate=PLAYSTATE_STOPPED;
 
     // the stretch of the timeline Copy or Cut took last (UX phase 3b)
     TimelineClip m_clip;
     // will be true if a frame is protected
-    bool protect;
+    bool protect=false;
 
     // holds the longest running time of all currently opened animations
     double longestRunningTime;

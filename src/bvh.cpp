@@ -431,6 +431,28 @@ BVHNode* BVH::buildTree(const AnimFile::Animation& anim,bool storedPositions)
 // file with the reader in src/dingle.* (issue #26)
 BVHNode* BVH::animRead(const QString& file,const QString& limFile,const QByteArray* given)
 {
+  BVHNode* root=readFile(file,limFile,given);
+  // a failed read leaves no position node behind
+  if(!root)
+  {
+    delete lastLoadedPositionNode;
+    lastLoadedPositionNode=nullptr;
+  }
+  return root;
+}
+
+BVH::ReadResult BVH::animOpen(const QString& file,const QString& limFile,const QByteArray* given)
+{
+  ReadResult result;
+  result.root.reset(readFile(file,limFile,given));
+  result.position.reset(lastLoadedPositionNode);
+  lastLoadedPositionNode=nullptr;
+  if(!result.root) result.position.reset();
+  return result;
+}
+
+BVHNode* BVH::readFile(const QString& file,const QString& limFile,const QByteArray* given)
+{
   startRead();
 
   const bool dingle=file.endsWith(QLatin1String(".dingle"),Qt::CaseInsensitive);
@@ -522,11 +544,10 @@ BVHNode* BVH::animRead(const QString& file,const QString& limFile,const QByteArr
 BVH::CheckResult BVH::checkFile(const QString& file,const QByteArray* data)
 {
   BVH test;
-  BVHNode* root=test.animRead(file,QString(),data);
-  delete test.lastLoadedPositionNode;
+  ReadResult read=test.animOpen(file,QString(),data);
   // a failed read always gives a reason, so ok() cannot say yes to a file that was refused
-  if(!root) return {test.lastError.isEmpty() ? QCoreApplication::translate("BVH","The file could not be read.") : test.lastError};
-  test.bvhDelete(root);
+  if(!read.ok()) return {test.lastError.isEmpty() ? QCoreApplication::translate("BVH","The file could not be read.") : test.lastError};
+  test.bvhDelete(read.root.release());
   return {};
 }
 
