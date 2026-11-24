@@ -1,6 +1,6 @@
 Branch: chore/workboard-tidy
 Status: done
-Pull request: pending
+Pull request: #462
 Files:
 - docs/work/chore-workboard-tidy.md
 - docs/work/archive/
