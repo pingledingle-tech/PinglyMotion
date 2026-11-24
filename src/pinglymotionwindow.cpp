@@ -109,6 +109,7 @@
 #include "panelvisibility.h"
 #include "propmanager.h"
 #include "pinglymotionwindow.h"
+#include "undohistory.h"
 #include "playback.h"
 #include "scriptlab/scriptlabpanel.h"
 #include "librarypanel.h"
@@ -1401,17 +1402,19 @@ void PinglyMotionWindow::buildMenus()
   ui->menuHelp->addAction(ui->helpAboutAction);
 }
 
-// UX phase 1b: Edit as in the mockup: Undo, Redo, Set key, Paste mirrored. Undo and Redo are not
-// built yet and are greyed with a reason; Set key presses the key button. Cut, Copy and Paste (the
-// timeline's selected stretch, UX phase 3b) stay below them: the mockup has no such items yet.
+// UX phase 1b: Edit as in the mockup: Undo, Redo, Set key, Paste mirrored. Undo and Redo work
+// since job B1 (buildUndo(), src/pinglymotionwindowundo.cpp); Set key presses the key button. Cut,
+// Copy and Paste (the timeline's selected stretch, UX phase 3b) stay below them: the mockup has no
+// such items yet.
 void PinglyMotionWindow::buildEditMenu()
 {
   using namespace MenuSpec;
   ui->menuEdit->setToolTipsVisible(true);
   ui->menuEdit->clear();
 
-  m_undoAction=specAction(this,editUndo,true);
-  m_redoAction=specAction(this,editRedo,true);
+  m_undoAction=specAction(this,editUndo,false);
+  m_redoAction=specAction(this,editRedo,false);
+  buildUndo();
   m_setKeyAction=specAction(this,editSetKey,false);
   keyInView(m_setKeyAction,ui->animationView);
   connect(m_setKeyAction,&QAction::triggered,this,&PinglyMotionWindow::setKeyFromMenu);
@@ -1467,6 +1470,10 @@ void PinglyMotionWindow::updateEditActions()
   m_setKeyAction->setEnabled(why.isEmpty());
   m_setKeyAction->setToolTip(why);
   m_setKeyAction->setStatusTip(why);
+  // Undo and Redo need an open animation that is not playing
+  if(m_undo)
+    m_undo->setBlocked(m_empty ? QCoreApplication::translate("MenuSpec",MenuSpec::openFirst)
+                               : (playstate!=PLAYSTATE_STOPPED ? QCoreApplication::translate("MenuSpec",MenuSpec::setKeyStopPlaying) : QString()));
   // the timeline's Set key button and "Set the first key" are greyed the same way,
   // and the reason line shows why (src/reasonline.h)
   ui->keyframeButton->setEnabled(why.isEmpty());
@@ -3333,6 +3340,8 @@ void PinglyMotionWindow::selectAnimation(Animation* animation)
   // update timeline
   timeline->setAnimation(animation);
   updateInputs();
+  // Undo and Redo work on this animation's own history
+  if(m_undo) m_undo->setAnimation(animation);
 
   // enable export to second life if current file name is not the default untitled name
   if(!m_empty) ui->fileExportForSecondLifeAction->setEnabled(currentFile != m_untitledName);

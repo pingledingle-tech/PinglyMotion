@@ -90,6 +90,7 @@
 
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
+#include "undohistory.h"
 #include "playback.h"
 #include "theme.h"
 #include "ui_pinglymotionwindow.h"
@@ -136,6 +137,8 @@ void PinglyMotionWindow::showLoadProblems(Animation* anim)
 void PinglyMotionWindow::connectAnimation(Animation* anim)
 {
   connect(anim, &Animation::currentFrame, this, &PinglyMotionWindow::setCurrentFrame);
+  // its Undo history starts once it is open (src/undohistory.h)
+  if(m_undo) m_undo->watch(anim);
 }
 
 // Menu action: File / New

@@ -67,6 +67,10 @@ class FrameData
     std::optional<Easing::Bezier> customCurve() const;
     void setCustomCurve(const std::optional<Easing::Bezier>& curve);
 
+    // every field the same (Undo and Redo use this to see whether an edit changed anything)
+    bool operator==(const FrameData& other) const;
+    bool operator!=(const FrameData& other) const { return !(*this==other); }
+
     // for debugging purposes, dumps all frame data to debug console
 
   protected:
@@ -97,6 +101,9 @@ class BVHNode
     const FrameData frameData(int frame) const;
     const FrameData keyframeDataByIndex(int index) const;
     const QList<int> keyframeList() const;
+    // all key frames of this joint at once, for Undo and Redo (src/undohistory.h)
+    const QMap<int,FrameData>& keyframeMap() const { return keyframes; }
+    void setKeyframeMap(const QMap<int,FrameData>& map) { keyframes=map; }
 
     void addKeyframe(int frame, QVector3D position, QVector3D rotation);
     void deleteKeyframe(int frame);

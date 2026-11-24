@@ -133,69 +133,43 @@ void BVHNode::deleteKeyframe(int frame)
 
 void BVHNode::insertFrame(int frame)
 {
-  QMap<int,FrameData>::iterator itCurrent;
-  if(isKeyframe(frame))
-    // if this actually is a keyframe, use this
-    itCurrent=keyframes.find(frame);
-  else
+  // every key at this frame or later moves one frame further. Built as a new list: the old
+  // loop copied from one fixed frame and erased the key its iterator stood on, which read freed
+  // memory and mixed keys up when two or more keys came after the frame (found by job B1's test)
+  QMap<int,FrameData> moved;
+  for(auto it=keyframes.cbegin();it!=keyframes.cend();++it)
   {
-    // find next keyframe number
-    frame=getKeyframeNumberAfter(frame);
-    // past the end? then do nothing
-    if(frame==-1) return;
-    // get current iterator
-    itCurrent=keyframes.find(frame);
+    FrameData data=it.value();
+    int number=it.key();
+    if(number>=frame)
+    {
+      number++;
+      data.setFrameNumber(number);
+    }
+    moved.insert(number,data);
   }
-  // step back one key
-  itCurrent--;
-
-  // start looking for keys at the end
-  QMap<int,FrameData>::iterator itLook=keyframes.end();
-  // step back to get the last keyframe
-  itLook--;
-
-  do
-  {
-    // get current keyframe's position
-    int oldFrame=(*itLook).frameNumber();
-    // increment frame number in frame data
-    (*itLook).setFrameNumber(oldFrame+1);
-    // decrement iterator here already, so it does not get invalidated by remove() later
-    itLook--;
-    // copy frame data into next frame
-    keyframes[frame+1]=keyframes[frame];
-    // remove old frame
-    keyframes.remove(frame);
-  } while(itLook!=itCurrent);
+  keyframes=moved;
 }
 
 // delete a frame and move all keys back one frame
 void BVHNode::deleteFrame(int frame)
 {
-  // if this is a keyframe, remove it
-  if(isKeyframe(frame)) deleteKeyframe(frame);
-
-  // find next keyframe number
-  frame=getKeyframeNumberAfter(frame);
-  // past the end? then do nothing
-  if(frame==-1) return;
-  // set up iterator with the following keyframe
-  QMap<int,FrameData>::iterator itCurrent=keyframes.find(frame);
-
-  // loop until we reach the end of the keyframe list
-  while(itCurrent!=keyframes.end())
+  // a key on this frame goes, every later key moves one frame back (built as a new list,
+  // for the same reason as insertFrame())
+  QMap<int,FrameData> moved;
+  for(auto it=keyframes.cbegin();it!=keyframes.cend();++it)
   {
-    // get current keyframe's position
-    int oldFrame=(*itCurrent).frameNumber();
-    // decrement frame number in frame data
-    (*itCurrent).setFrameNumber(oldFrame-1);
-    // increment iterator here already, so it does not get invalidated by remove() later
-    itCurrent++;
-    // copy frame data into previous frame
-    keyframes[frame-1]=keyframes[frame];
-    // remove old frame
-    keyframes.remove(frame);
+    int number=it.key();
+    if(number==frame) continue;
+    FrameData data=it.value();
+    if(number>frame)
+    {
+      number--;
+      data.setFrameNumber(number);
+    }
+    moved.insert(number,data);
   }
+  keyframes=moved;
 }
 
 bool BVHNode::isKeyframe(int frame) const
@@ -627,6 +601,13 @@ FrameData::FrameData(int num, QVector3D position, QVector3D rotation)
   m_position = position;
   m_easeIn=false;
   m_easeOut=false;
+}
+
+bool FrameData::operator==(const FrameData& other) const
+{
+  return m_frameNumber==other.m_frameNumber && m_rotation==other.m_rotation && m_position==other.m_position &&
+         m_easeIn==other.m_easeIn && m_easeOut==other.m_easeOut && m_curve==other.m_curve &&
+         m_customCurve==other.m_customCurve;
 }
 
 int FrameData::frameNumber() const

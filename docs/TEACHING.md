@@ -103,12 +103,15 @@ Built in pull request 371 (22 Nov 2026). The texts are in `src/menuspec.h` and `
 | EMPTY-04 | 4 Empty state | Line under the choice Sitting | A calm seated pose. Good for a quiet scene. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EMPTY-05 | 4 Empty state | Line under the choice Dance example | A short, simple dance. Change it to learn. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EMPTY-06 | 4 Empty state | Reason: a control needs an animation | Open an animation first. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
-| EDIT-01 | 3 Edit menu | Undo is greyed | Undo is not built yet. Save a copy before big changes. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
-| EDIT-02 | 3 Edit menu | Redo is greyed | Redo is not built yet. It comes with Undo. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-01 | 3 Edit menu | Undo is greyed: nothing to undo | Nothing to undo yet. | in the program (pull request 446, job B1; the mockup's text) | job B1 Undo and Redo |
+| EDIT-02 | 3 Edit menu | Redo is greyed: nothing to redo | Nothing to redo. Redo works after Undo. | in the program (pull request 446, job B1; the mockup's text) | job B1 Undo and Redo |
 | EDIT-03 | 3 Edit menu | Paste mirrored is greyed | Paste mirrored is not built yet. Use Tools > Mirror to swap left and right. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EDIT-04 | 3 Edit menu | Set key: no joint is picked | Pick a joint first. Click it on the figure or in the list. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EDIT-05 | 3 Edit menu | Set key: the animation is playing | Stop playing first. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EDIT-06 | 3 Edit menu | Set key: the first frame is locked | The first frame is locked. Turn off Lock the first frame to set a key. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-07 | 4 What to do next | After Undo | Undone. | in the program (pull request 446, job B1; the mockup's text) | job B1 Undo and Redo |
+| EDIT-08 | 4 What to do next | After Redo | Redone. | in the program (pull request 446, job B1; the mockup's text) | job B1 Undo and Redo |
+| EDIT-09 | 4 What to do next | Undo or Redo while a drag or a pull runs | Finish the change you are making first. | in the program (pull request 446, job B1) | job B1 Undo and Redo |
 | TOPBAR-01 | 2 Tip on hover | Mouse rests on Script Lab in the top bar | Script Lab: test RLV and LSL scripts | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | TOPBAR-02 | 2 Tip on hover | Mouse rests on Setup in the top bar | Beginner or experienced, mouse and keys habits, theme, text size and hints. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | TOPBAR-03 | 2 Tip on hover | Mouse rests on the theme button in the dark theme | Switch to the light theme | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |

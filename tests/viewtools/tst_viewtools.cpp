@@ -871,12 +871,13 @@ void TestViewTools::pullTextsMatchTheMockup()
            QStringList({"Turning only Abdomen (it holds the body)", "Release: set key · Esc: cancel"}));
   QCOMPARE(ViewToolSpec::pullLines(QStringLiteral("Right Hand"), false, false, true),
            QStringList({"Pulling Right Hand", "Arrow keys move it · Enter: set key · Esc: cancel"}));
-  // the status line at the end (finishJointDrag() without "Ctrl+Z undoes it.": Undo is not built)
+  // the status line at the end, as finishJointDrag() in the mockup (Undo works since job B1)
   QVERIFY(page.contains(QStringLiteral("(d.turnOnly ? \"Turned \" + fullName(d.id) : \"Pulled \" + fullName(d.id)) + \". Key set at frame \"")));
+  QVERIFY(page.contains(QStringLiteral("names + \" and \" + fullName(d.id)) + \". Ctrl+Z undoes it.\");")));
   QCOMPARE(ViewToolSpec::pullDoneMessage(QStringLiteral("Right Hand"), {"Right Forearm", "Right Upper Arm", "Right Collar"}, 5, false),
-           QStringLiteral("Pulled Right Hand. Key set at frame 5 for Right Forearm, Right Upper Arm, Right Collar and Right Hand."));
+           QStringLiteral("Pulled Right Hand. Key set at frame 5 for Right Forearm, Right Upper Arm, Right Collar and Right Hand. Ctrl+Z undoes it."));
   QCOMPARE(ViewToolSpec::pullDoneMessage(QStringLiteral("Right Forearm"), {}, 12, true),
-           QStringLiteral("Turned Right Forearm. Key set at frame 12 for Right Forearm."));
+           QStringLiteral("Turned Right Forearm. Key set at frame 12 for Right Forearm. Ctrl+Z undoes it."));
   // cancel and the reasons
   for (const char* text : {ViewToolSpec::pullCancelled, ViewToolSpec::keysNoJoint, ViewToolSpec::finishFirst, ViewToolSpec::jointHover})
     QVERIFY2(page.contains(QString::fromUtf8(text)), text);

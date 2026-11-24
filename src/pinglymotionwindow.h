@@ -74,6 +74,7 @@ class ViewToolbar;
 class ScriptLabPanel;
 class LibraryPanel;
 class FiguresBox;
+class UndoController;
 class FigureTag;
 class AuroraLink;
 class WindowControlHost;
@@ -589,6 +590,11 @@ class PinglyMotionWindow : public QMainWindow
     bool m_empty = false;
     QAction* m_undoAction = nullptr;
     QAction* m_redoAction = nullptr;
+    // Undo and Redo (job B1, src/undohistory.h; window side in pinglymotionwindowundo.cpp)
+    UndoController* m_undo = nullptr;
+    void buildUndo();
+    // a step was put back: the fields, the timeline and the view show the animation again
+    void undoRestored(Animation* anim);
     QAction* m_setKeyAction = nullptr;
     QAction* m_pasteMirroredAction = nullptr;
     QAction* m_lightThemeAction = nullptr;

@@ -3093,15 +3093,7 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Undo is not built yet. Save a copy before big changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Redo is not built yet. It comes with Undo.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3182,6 +3174,26 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Library: ready-made moves to start from</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to undo yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to redo. Redo works after Undo.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Undone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Redone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finish the change you are making first.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8343,14 +8355,6 @@ Click to turn them on or off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Pulled %1. Key set at frame %2 for %3 and %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Turned %1. Key set at frame %2 for %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Pull cancelled. Nothing changed.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8368,6 +8372,14 @@ Click to turn them on or off.</source>
     </message>
     <message>
         <source>Finish or cancel the pull first: Esc cancels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pulled %1. Key set at frame %2 for %3 and %1. Ctrl+Z undoes it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turned %1. Key set at frame %2 for %1. Ctrl+Z undoes it.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

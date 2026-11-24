@@ -181,10 +181,10 @@ namespace ViewToolSpec
   inline constexpr const char* pullHowMouse = QT_TRANSLATE_NOOP("ViewToolSpec", "Release: set key · Esc: cancel");
   inline constexpr const char* pullHowKeys = QT_TRANSLATE_NOOP("ViewToolSpec", "Arrow keys move it · Enter: set key · Esc: cancel");
   inline constexpr const char* pullShift = QT_TRANSLATE_NOOP("ViewToolSpec", "Shift when you press: turn only this joint");
-  // the status line when it ends. The mockup adds "Ctrl+Z undoes it.": Undo is not built yet,
-  // so the program leaves that sentence out.
-  inline constexpr const char* pulled = QT_TRANSLATE_NOOP("ViewToolSpec", "Pulled %1. Key set at frame %2 for %3 and %1.");
-  inline constexpr const char* turned = QT_TRANSLATE_NOOP("ViewToolSpec", "Turned %1. Key set at frame %2 for %1.");
+  // the status line when it ends, with the mockup's "Ctrl+Z undoes it." (Undo works since job B1:
+  // the whole pull is one step)
+  inline constexpr const char* pulled = QT_TRANSLATE_NOOP("ViewToolSpec", "Pulled %1. Key set at frame %2 for %3 and %1. Ctrl+Z undoes it.");
+  inline constexpr const char* turned = QT_TRANSLATE_NOOP("ViewToolSpec", "Turned %1. Key set at frame %2 for %1. Ctrl+Z undoes it.");
   inline constexpr const char* pullCancelled = QT_TRANSLATE_NOOP("ViewToolSpec", "Pull cancelled. Nothing changed.");
   // why a pull cannot start or go on
   inline constexpr const char* pullBlocked = QT_TRANSLATE_NOOP("ViewToolSpec", "Pull a joint: %1");
