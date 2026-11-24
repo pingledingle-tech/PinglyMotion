@@ -431,6 +431,15 @@ No mockup (the project owner, 23 November 2026, 23:38): built from the design ch
 - **Restriction choice:** the Now cell of each row is a drop-down (Allowed, Blocked); a blocked row has its words and the drop-down in the `danger` colour and bold, with the word Blocked. The box under the list shows the line in a fixed-width face, the plain sentences one per line, the value field with Apply when the command takes a distance or a channel, and Use in script with its greyed reason in a `text_muted` line beside it.
 - **For the combined taste round (look, not blocking):** the box's width (336 pixels) and place by the click, whether it should rather stand by the prop than by the pointer, the button order (the panel's top-down order is kept; Second Life fills from the bottom row), the drop-down in every row, and how much the box under the list says.
 
+## 6q. Script Lab: record and replay (job A3, built, 24 November 2026)
+
+No mockup (the project owner, 23 November 2026, 23:38): built from the design charter and the design system; the look goes to the combined taste round. Behaviour and texts: [SCRIPT_LAB.md](SCRIPT_LAB.md), "Record and replay"; text rows LABREC-01 to LABREC-27 in [TEACHING.md](TEACHING.md).
+
+- **One button, one line:** **Record what I do** under **Show effects in 3D view**, shown only while a folder is watched as one object; the same on/off look as the effects button (normal button with the Lucide `video` icon; on: `selection` fill, `on_accent` text, the word **Stop recording** and the `square` icon, as Stop elsewhere). Under it one plain-text line that counts the steps while recording and, after a replay, says what changed; errors in `danger` with the word Error (charter P10).
+- **Expert only:** a folded part **Recipe** right under the line: the file's name, the recipe's text read only in a fixed-width face, and **Replay now** (a compact normal button, greyed with its reason in the tip). Beginner mode never shows it (charter P5); switching modes moves nothing else (P12).
+- **Keys:** the button is one Tab stop; Space starts and stops (P8).
+- **For the combined taste round (look, not blocking):** whether the button and the line sit well under the effects button, how long the line may grow (all facts the first time), the `video` icon for recording, and whether "Before: ... Now: it is ..." reads well.
+
 ## 8. Beginner and expert
 
 - Starts in Beginner mode by default; Expert mode can be switched on (shows curves, IK, all tracks and so on).

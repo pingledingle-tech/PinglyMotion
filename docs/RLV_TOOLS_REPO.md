@@ -10,7 +10,7 @@ The scripts the project owner writes with Claude Code (a HUD, restraints, helper
 
 Exists (merged): the RLV core, the LSL interpreter, `lsl_check`, `lsl_run`, `lsl_event`, the folder watch with `lab_watch`, `lab_unwatch` and `lab_result`, and the control interface that starts with `PinglyMotion --control`. Examples that ship with the program are in `examples/scriptlab/`.
 
-Does not exist yet: the `.rlvtest` format and a runner for it. The plan's module layout names `rlvscenario.*` and `tests/data/rlv/*.rlvtest`, but neither is built. Nothing runs scenario files today. The CI part of this description therefore needs one small technical job in PinglyMotion first (see "What has to be built first").
+Exists since job A3 (record and replay, pull request 450): a first `.rlvtest` reader and runner, for the recipe `recipe.rlvtest` in a watched object folder ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Record and replay"; `src/scriptlab/labrecipe.*`, the control command `lab_replay`, the fuzz target `fuzz_recipe`). It reads `#`, `object` and `send` lines as proposed below, adds `touch`, `menu` and `wait`, and answers in plain facts and changes since last time. Does not exist yet: `expect` lines (they are refused), a pass or fail result, and a runner for a whole folder of scenarios. The CI part of this description therefore still needs one small technical job in PinglyMotion first (see "What has to be built first").
 
 ## Proposed layout
 

@@ -90,7 +90,7 @@ Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key
 `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
 `save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
 `export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_lint`, `lsl_run`,
-`lab_watch`, `lab_unwatch`, `lab_result`. `screenshot` has options for several views, frames and labels (below).
+`lab_watch`, `lab_unwatch`, `lab_result`, `lab_replay`. `screenshot` has options for several views, frames and labels (below).
 
 ### Files
 
@@ -1219,7 +1219,9 @@ file and renaming it over the old one.
 
 Limits and safety (the folder may hold anything):
 
-- The folder is only read, never written. Only `.lsl` files are read (any upper or lower case).
+- The folder is only read, never written, except the two files of record and replay at its top (`recipe.rlvtest` while
+  the user records in the panel, `recipe.rlvresult` after a replay; below), never through a link. Only `.lsl` files
+  are read as scripts (any upper or lower case).
 - At most 200 scripts of at most 262 144 bytes each; the scan stops after 5 000 entries and 4 folder
   levels below the watched folder. Names that start with a dot (`.git` and the like, folders and files) are
   skipped on every system.
@@ -1266,6 +1268,40 @@ it, because the examples are separate scripts. The panel follows whichever mode 
   breaks a limit) has `read_error` with the reason. `folder_result` is the whole folder's answer: `linkset`
   (`object`, `folder`, `prims` with their `scripts` and `notecards`, `problems`, `notes`), `check` (every
   script's errors and warnings), `result` or `error`, `run` and `file` (the file whose change started it).
+
+#### Record and replay: `lab_replay` (job A3)
+
+The user's clicks on props, menu answers and typed RLV lines can be saved as a recipe in the object folder
+(**Record what I do** in the Script Lab panel). After every save of a script the program replays the recipe and
+says in plain words what changed since last time. `lab_replay` does the same replay on request, so an assistant
+can use the same recipe; it may also write the file itself. The code is `src/scriptlab/labrecipe.*` and the
+recording and replay part of `labwatcher.*`; the panel part is in [SCRIPT_LAB.md](SCRIPT_LAB.md), "Record and replay".
+
+- The recipe is `recipe.rlvtest` at the top of the folder watched with `linkset: true`, plain text, one step per
+  line (the scenario format proposed in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)): `touch <prim name>` (a click on
+  that prim), `menu <button text>` (presses that button in the newest open `llDialog`, or sends the text to an
+  `llTextBox`), `send <RLV line>` (from the object named by the last `object <name>` line, `panel` at first),
+  `wait <seconds>` (0.1 to 60). Lines that start with `#` are notes. At most 200 steps, lines of at most 1 024
+  characters, files of at most 65 536 bytes. `expect` lines of the proposal are not built and are refused.
+- `lab_replay` takes no options. It runs the whole folder from the start in a world of its own with an RLV state
+  of its own (the panel, `rlv_state` and the world `lsl_event` talks to are not touched), with the `seconds` and
+  `inputs` of `lab_watch`, then each step one simulated second after the one before (a wait adds its seconds).
+  A step that cannot be done (no prim of that name, no menu open, every script stopped, an RLV line refused) is
+  skipped and listed as a fact.
+- The answer has `ran` (`false` with `error` when the folder did not run), `steps`, `done`, `facts` (plain
+  sentences of what is true at the end: an object that holds `@detach` is locked, every blocked action, the colour
+  of each prim a script coloured, the last line each prim said to the owner or on channel 0, a menu still open,
+  every script stopped), `changes` (one sentence each, for example `Before: Cuffs was locked. Now: it is not
+  locked.`; empty when nothing changed), `first` (`true` when there was nothing to compare with), `run`,
+  `recipe`, `steps_text` and `log` (the replay's event log, with a `step` line before each step).
+- The facts and the changes are written to `recipe.rlvresult` next to the recipe (`[key] sentence` lines and `#`
+  notes); that file is the "before" of the next replay. The sandbox is deterministic, so the same scripts and the
+  same recipe give the same facts.
+- Refused: no folder watched as one object, no recipe, a recipe with no steps, and a recipe with a mistake (the
+  line and the reason).
+- `lab_result` (with `linkset: true`) also answers `recording` (`true` while the user records), `recipe`
+  (`recipe.rlvtest` when the folder has one, else `null`) and `replay` (the newest replay, as `lab_replay`
+  answers it, or `null`).
 
 ## Set up an AI assistant
 

@@ -1170,7 +1170,7 @@ void ScriptLabPanel::buildLivePage()
   m_recordButton->setMinimumHeight(ControlHeight);
   m_recordButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
   m_recordButton->setToolTip(tr("Records your clicks on props, menu buttons and RLV lines. "
-                                "After every save the program does them again and says what changed."));
+                                "After every save, the program repeats them and says what changed."));
   recipeRow->addWidget(m_recordButton);
   m_recipeStatus = new QLabel(m_recipeRow);
   m_recipeStatus->setObjectName("scriptLabRecipeStatus");
@@ -1198,7 +1198,7 @@ void ScriptLabPanel::buildLivePage()
   m_replayButton->setObjectName("scriptLabReplayNow");
   m_replayButton->setMinimumHeight(ControlCompact);
   m_replayButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-  m_replayButton->setToolTip(tr("Does the recipe's steps again now, without a save"));
+  m_replayButton->setToolTip(tr("Repeats the recipe's steps now, without a save."));
   m_recipeSection->bodyLayout()->addWidget(m_replayButton);
   connect(m_replayButton, &QPushButton::clicked, this, [this] { replayNow(); });
   m_expert = UserSettings::expertMode();
@@ -3054,7 +3054,7 @@ void ScriptLabPanel::refreshRecipe()
   }
   if (m_recipeText->toPlainText() != text) m_recipeText->setPlainText(text);
   m_replayButton->setEnabled(m_watcher->hasRecipe() && !recording);
-  m_replayButton->setToolTip(m_replayButton->isEnabled() ? tr("Does the recipe's steps again now, without a save")
+  m_replayButton->setToolTip(m_replayButton->isEnabled() ? tr("Repeats the recipe's steps now, without a save.")
                                                          : recording ? tr("Stop recording first.") : tr("Record what you do first."));
 }
 

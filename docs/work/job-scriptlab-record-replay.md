@@ -12,10 +12,11 @@ Files:
 - tests/tst_control.cpp
 - tests/CMakeLists.txt
 - tests/scriptlabbeginner/**
-- tests/data/recipe/**
-- fuzz/fuzz_labrecipe.cpp
+- fuzz/fuzz_recipe.cpp
+- fuzz/recipe.dict
+- fuzz/README.md
 - fuzz/CMakeLists.txt
-- fuzz/corpus/labrecipe/**
+- fuzz/corpus/recipe/**
 - .github/workflows/fuzz.yml
 - tools/mcp/commands.json
 - translations/pinglymotion_en.ts
