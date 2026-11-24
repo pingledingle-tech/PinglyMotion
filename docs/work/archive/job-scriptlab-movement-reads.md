@@ -1,6 +1,6 @@
 Branch: job/scriptlab-movement-reads
 Status: done
-Pull request: pending
+Pull request: #377
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - tests/tst_lslmovement.cpp
