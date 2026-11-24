@@ -55,7 +55,6 @@ class TestLineDraw : public QObject
     void pickColourLineGivesName();
     void lineBehindCameraDrawsNothing();
     void shadersBuildForDesktopAndWeb();
-    void diagnose();
 
   private:
     bool m_haveGl = false;
@@ -323,8 +322,8 @@ void TestLineDraw::lineBehindCameraDrawsNothing()
 
 // Every shader with its desktop header and with its web header goes through
 // glslangValidator (the Khronos reference compiler): each stage on its own,
-// then each program linked (the body, mesh and line programs share one
-// fragment shader). So the web variant is known to build without a web build.
+// then each program linked (the mesh and line programs share a fragment
+// shader without gl_PrimitiveID). So the web variant is known to build without a web build.
 void TestLineDraw::shadersBuildForDesktopAndWeb()
 {
   QVERIFY(SkinRenderer::shaderHeader(false).startsWith("#version 330 core\n"));
@@ -332,13 +331,17 @@ void TestLineDraw::shadersBuildForDesktopAndWeb()
   for (bool web : {false, true})
   {
     const QVector<SkinRenderer::ShaderSource> sources = SkinRenderer::shaderSources(web);
-    QCOMPARE(sources.size(), 4);
+    QCOMPARE(sources.size(), 5);
     for (const SkinRenderer::ShaderSource& shader : sources)
     {
       QVERIFY2(shader.source.startsWith(SkinRenderer::shaderHeader(web)), qPrintable(shader.name));
       // the header is the only #version line, and no geometry shader is left
       QCOMPARE(shader.source.count("#version"), 1);
       QVERIFY2(!shader.source.contains("EmitVertex"), qPrintable(shader.name));
+      // Mesa's llvmpipe 26 draws nothing with gl_PrimitiveID and no geometry
+      // shader, so only the body program may pick by it
+      if (shader.name == "plain.frag")
+        QVERIFY(!shader.source.contains("#define PICK_BY_PRIMITIVE"));
     }
   }
 
@@ -368,8 +371,8 @@ void TestLineDraw::shadersBuildForDesktopAndWeb()
       files.insert(shader.name, path);
     }
     const QList<QStringList> programs = {{"body.vert", "body.frag"},
-                                         {"mesh.vert", "body.frag"},
-                                         {"line.vert", "body.frag"}};
+                                         {"mesh.vert", "plain.frag"},
+                                         {"line.vert", "plain.frag"}};
     for (const QStringList& program : programs)
     {
       QStringList arguments = {"-l"};
@@ -382,154 +385,6 @@ void TestLineDraw::shadersBuildForDesktopAndWeb()
                qPrintable(variant + " " + program.join(" + ") + ":\n" + output));
     }
   }
-}
-
-// TEMPORARY: find out why CI's Mesa draws nothing
-static const char* oldVert = R"(#version 330 core
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 normal;
-layout(location = 2) in vec4 vertexColor;
-uniform mat4 modelview;
-uniform mat4 projection;
-uniform mat3 normalMatrix;
-out vec4 lineColor;
-out vec3 lineEyePosition;
-out vec3 lineEyeNormal;
-void main()
-{
-  vec4 eye = modelview * vec4(position, 1.0);
-  lineEyePosition = eye.xyz;
-  lineEyeNormal = normalMatrix * normal;
-  lineColor = vertexColor;
-  gl_Position = projection * eye;
-}
-)";
-static const char* oldGeom = R"(#version 330 core
-layout(lines) in;
-layout(triangle_strip, max_vertices = 4) out;
-in vec4 lineColor[];
-in vec3 lineEyePosition[];
-in vec3 lineEyeNormal[];
-uniform vec2 viewportSize;
-uniform float lineWidth;
-out vec4 baseColor;
-out vec3 eyePosition;
-out vec3 eyeNormal;
-out float eyeDepth;
-void corner(int i, vec2 offset)
-{
-  baseColor = lineColor[i];
-  eyePosition = lineEyePosition[i];
-  eyeNormal = lineEyeNormal[i];
-  eyeDepth = abs(lineEyePosition[i].z);
-  vec4 p = gl_in[i].gl_Position;
-  gl_Position = vec4(p.xy + offset * p.w, p.zw);
-  EmitVertex();
-}
-void main()
-{
-  vec4 a = gl_in[0].gl_Position;
-  vec4 b = gl_in[1].gl_Position;
-  if (a.w <= 0.0 || b.w <= 0.0) return;
-  vec2 screenA = a.xy / a.w * viewportSize;
-  vec2 screenB = b.xy / b.w * viewportSize;
-  vec2 along = screenB - screenA;
-  if (dot(along, along) < 1e-8) along = vec2(1.0, 0.0);
-  vec2 across = normalize(vec2(-along.y, along.x));
-  vec2 offset = across * lineWidth / viewportSize;
-  corner(0, offset);
-  corner(0, -offset);
-  corner(1, offset);
-  corner(1, -offset);
-  EndPrimitive();
-}
-)";
-
-static const char* mainMeshVert = R"(#version 330 core
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 normal;
-layout(location = 2) in vec4 vertexColor;
-uniform mat4 modelview;
-uniform mat4 projection;
-uniform mat3 normalMatrix;
-uniform vec4 color;
-uniform bool perVertexColor;
-out vec4 baseColor;
-out vec3 eyePosition;
-out vec3 eyeNormal;
-out float eyeDepth;
-void main()
-{
-  vec4 eye = modelview * vec4(position, 1.0);
-  eyePosition = eye.xyz;
-  eyeNormal = normalMatrix * normal;
-  baseColor = perVertexColor ? vertexColor : color;
-  eyeDepth = abs(eye.z);
-  gl_Position = projection * eye;
-}
-)";
-
-void TestLineDraw::diagnose()
-{
-  if (!m_haveGl) QSKIP(qPrintable(m_glReason));
-  QOpenGLExtraFunctions* gl = m_context.extraFunctions();
-  QByteArray frag, meshVert;
-  for (const auto& sh : SkinRenderer::shaderSources(false))
-  {
-    if (sh.name == "body.frag") frag = sh.source;
-    if (sh.name == "mesh.vert") meshVert = sh.source;
-  }
-  QByteArray fragNoPrim = frag;
-  fragNoPrim.replace("gl_PrimitiveID", "0");
-  QMatrix4x4 camera;
-  camera.translate(0.0f, 0.0f, -5.0f);
-  auto run = [&](const char* what, const QByteArray& vert, const QByteArray& fr) {
-    QOpenGLShaderProgram p;
-    const bool ok = p.addShaderFromSourceCode(QOpenGLShader::Vertex, vert)
-                    && p.addShaderFromSourceCode(QOpenGLShader::Fragment, fr) && p.link();
-    const float data[] = {-1, -0.5f, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1,
-                          1, -0.5f, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1,
-                          0, 0.5f, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1};
-    GLuint vao = 0, vbo = 0;
-    gl->glGenVertexArrays(1, &vao);
-    gl->glBindVertexArray(vao);
-    gl->glGenBuffers(1, &vbo);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-    for (int i = 0; i < 3; i++) gl->glEnableVertexAttribArray(i);
-    gl->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(0));
-    gl->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(12));
-    gl->glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(24));
-    begin(QVector4D(0, 0, 0, 0));
-    p.bind();
-    p.setUniformValue("modelview", camera);
-    p.setUniformValue("projection", projection());
-    p.setUniformValue("normalMatrix", camera.normalMatrix());
-    p.setUniformValue("unlit", true);
-    p.setUniformValue("perVertexColor", true);
-    p.setUniformValue("picking", false);
-    p.setUniformValue("shadow", false);
-    p.setUniformValue("fogOn", false);
-    p.setUniformValue("exposure", 1.0f);
-    p.setUniformValue("tint", QVector3D(1, 1, 1));
-    gl->glBindVertexArray(vao);
-    gl->glDrawArrays(GL_TRIANGLES, 0, 3);
-    gl->glBindVertexArray(0);
-    p.release();
-    const QImage image = end();
-    const QRgb c = image.pixel(WIDTH / 2, HEIGHT / 2);
-    qInfo("DIAG %s: link %d, centre %d %d %d %d %s", what, ok, qRed(c), qGreen(c), qBlue(c), qAlpha(c),
-          qPrintable(p.log().left(300)));
-    gl->glDeleteBuffers(1, &vbo);
-    gl->glDeleteVertexArrays(1, &vao);
-  };
-  run("main mesh vert + frag", mainMeshVert, frag);
-  run("main mesh vert + frag without gl_PrimitiveID", mainMeshVert, fragNoPrim);
-  run("new mesh vert + frag", meshVert, frag);
-  run("new mesh vert + frag without gl_PrimitiveID", meshVert, fragNoPrim);
-  QOpenGLShader probe(QOpenGLShader::Vertex);
-  const bool probeOk = probe.compileSourceCode("#version 330 core\n#ifdef GL_ES\n#error GL_ES is defined\n#endif\nvoid main() { gl_Position = vec4(0.0); }\n");
-  qInfo("DIAG GL_ES probe compiles (GL_ES not defined): %d %s", probeOk, qPrintable(probe.log()));
 }
 
 QTEST_MAIN(TestLineDraw)

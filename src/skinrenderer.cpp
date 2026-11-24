@@ -171,7 +171,9 @@ vec4 jointTexel(int joint, int texel) { return texelFetch(jointData, ivec2(texel
 flat in int pickJoint;
 #else
 uniform samplerBuffer jointData;
+#ifdef PICK_BY_PRIMITIVE
 uniform isamplerBuffer triangleJoints;
+#endif
 vec4 jointTexel(int joint, int texel) { return texelFetch(jointData, joint * TEXELS + texel); }
 #endif
 
@@ -187,10 +189,12 @@ void main()
   if (picking)
   {
     // the pick name of the joint this triangle mostly belongs to, as a colour
-#ifdef GL_ES
+#if defined(GL_ES)
     int joint = pickJoint;
-#else
+#elif defined(PICK_BY_PRIMITIVE)
     int joint = texelFetch(triangleJoints, gl_PrimitiveID).r;
+#else
+    int joint = 0;   // meshes and lines are never picked here: they are drawn in their pick colour
 #endif
     int name = int(jointTexel(joint, 8).r + 0.5);
     fragColor = vec4(float(name & 255), float((name >> 8) & 255), float((name >> 16) & 255), 255.0) / 255.0;
@@ -312,6 +316,14 @@ QByteArray shaderSource(const char* body, bool web)
 {
   return SkinRenderer::shaderHeader(web) + body;
 }
+
+// The fragment shader of the body program picks by gl_PrimitiveID. The mesh
+// and line programs leave that out: Mesa's llvmpipe 26 draws nothing at all
+// when a fragment shader uses gl_PrimitiveID without a geometry shader.
+QByteArray bodyFragmentSource(bool web)
+{
+  return SkinRenderer::shaderHeader(web) + "#define PICK_BY_PRIMITIVE\n" + fragmentShader;
+}
 }
 
 QByteArray SkinRenderer::shaderHeader(bool web)
@@ -327,7 +339,8 @@ QByteArray SkinRenderer::shaderHeader(bool web)
 QVector<SkinRenderer::ShaderSource> SkinRenderer::shaderSources(bool web)
 {
   return {{"body.vert", shaderSource(vertexShader, web)},
-          {"body.frag", shaderSource(fragmentShader, web)},
+          {"body.frag", bodyFragmentSource(web)},
+          {"plain.frag", shaderSource(fragmentShader, web)},
           {"mesh.vert", shaderSource(meshVertexShader, web)},
           {"line.vert", shaderSource(lineVertexShader, web)}};
 }
@@ -381,7 +394,7 @@ bool SkinRenderer::init()
   const bool web = false;
   m_program = std::make_unique<QOpenGLShaderProgram>();
   if (!m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, shaderSource(vertexShader, web))
-      || !m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, shaderSource(fragmentShader, web))
+      || !m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, bodyFragmentSource(web))
       || !m_program->link())
   {
     m_status = "the body shader did not build: " + m_program->log().trimmed();

@@ -97,7 +97,8 @@ class SkinRenderer
     // "#version 300 es" with precisions for WebGL 2 (the later web version).
     static QByteArray shaderHeader(bool web);
     // every shader with its header, for checks (tests/linedraw): name with a
-    // .vert or .frag ending, and the source
+    // .vert or .frag ending, and the source. The programs: body.vert with
+    // body.frag, mesh.vert and line.vert each with plain.frag.
     struct ShaderSource
     {
       QString name;
