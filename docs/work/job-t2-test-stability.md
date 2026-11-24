@@ -1,6 +1,6 @@
 Branch: job/t2-test-stability
 Status: active
-Pull request: pending
+Pull request: #470
 Files:
 - src/scriptlab/labwatcher.*
 - tests/tst_labwatcher.cpp
