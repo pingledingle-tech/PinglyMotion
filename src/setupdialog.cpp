@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSignalBlocker>
 #include <QVBoxLayout>
 
 #include "camerahabitspec.h"
@@ -174,6 +175,24 @@ SetupDialog::SetupDialog(QWidget* parent) :
   connect(m_luaSwitchCheck, &QCheckBox::toggled, this, [this](bool on) { emit luaSwitchRequested(on); });
   outer->addWidget(m_luaSwitchCheck, 0, Qt::AlignLeft);
 
+  // Connections (docs/UX_DECISIONS.md 6h): added last, so nothing above moves (charter P12). Both
+  // start unchecked and the window sets the real state; a click only sends a request.
+  outer->addWidget(sectionLabel(this, tr2(SetupText::connectionsLabel)));
+  m_aiCheck = new QCheckBox(tr2(SetupText::aiAssistantChoice), this);
+  m_aiCheck->setObjectName(QStringLiteral("setupAiAssistant"));
+  connect(m_aiCheck, &QCheckBox::clicked, this, [this](bool on) { emit aiAssistantRequested(on); });
+  outer->addWidget(m_aiCheck, 0, Qt::AlignLeft);
+  m_aiStatus = captionLabel(this, QString());
+  m_aiStatus->setObjectName(QStringLiteral("setupAiAssistantStatus"));
+  outer->addWidget(m_aiStatus);
+  m_auroraCheck = new QCheckBox(tr2(SetupText::auroraChoice), this);
+  m_auroraCheck->setObjectName(QStringLiteral("setupAuroraLink"));
+  connect(m_auroraCheck, &QCheckBox::clicked, this, [this](bool on) { emit auroraLinkRequested(on); });
+  outer->addWidget(m_auroraCheck, 0, Qt::AlignLeft);
+  m_auroraStatus = captionLabel(this, QString());
+  m_auroraStatus->setObjectName(QStringLiteral("setupAuroraLinkStatus"));
+  outer->addWidget(m_auroraStatus);
+
   QHBoxLayout* actions = new QHBoxLayout();
   actions->addStretch(1);
   QPushButton* done = new QPushButton(tr2(SetupText::doneButton), this);
@@ -204,3 +223,22 @@ int SetupDialog::textSizeChecked() const
 bool SetupDialog::hintsChecked() const { return m_hintsCheck && m_hintsCheck->isChecked(); }
 bool SetupDialog::suggestOnRequestChecked() const { return m_suggestOnRequestCheck && m_suggestOnRequestCheck->isChecked(); }
 bool SetupDialog::luaSwitchChecked() const { return m_luaSwitchCheck && m_luaSwitchCheck->isChecked(); }
+
+void SetupDialog::setAiAssistant(bool running, const QString& statusText)
+{
+  QSignalBlocker block(m_aiCheck);
+  m_aiCheck->setChecked(running);
+  m_aiStatus->setText(statusText);
+}
+
+void SetupDialog::setAuroraLink(bool enabled, const QString& statusText)
+{
+  QSignalBlocker block(m_auroraCheck);
+  m_auroraCheck->setChecked(enabled);
+  m_auroraStatus->setText(statusText);
+}
+
+bool SetupDialog::aiAssistantChecked() const { return m_aiCheck && m_aiCheck->isChecked(); }
+bool SetupDialog::auroraLinkChecked() const { return m_auroraCheck && m_auroraCheck->isChecked(); }
+QString SetupDialog::aiAssistantStatus() const { return m_aiStatus ? m_aiStatus->text() : QString(); }
+QString SetupDialog::auroraLinkStatus() const { return m_auroraStatus ? m_auroraStatus->text() : QString(); }

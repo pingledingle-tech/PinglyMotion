@@ -1,5 +1,5 @@
 Branch: job/setup-ai-aurora
-Status: active
+Status: done
 Pull request: pending
 Files:
 - src/setupdialog.*

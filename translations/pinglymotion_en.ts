@@ -9237,6 +9237,18 @@ Error: %2</source>
         <source>Lua is not checked or run yet. Scripts stay LSL.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Connections</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AI Assistant</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Live link to Aurora</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SphereControls</name>

@@ -11,12 +11,16 @@
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTableWidget>
+#include <QFile>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QTemporaryDir>
 #include <QtTest>
 
 #include "camerahabitspec.h"
 #include "camerakeysdialog.h"
 #include "constants.h"
+#include "controlindicator.h"
 #include "keysmousedialog.h"
 #include "menuspec.h"
 #include "setupdialog.h"
@@ -47,6 +51,14 @@ class TestSetupDialog : public QObject
     // Script editor (lane 1, jobs F2 and F3): suggestions only with Ctrl+Space and the Lua switch,
     // at the end of the dialog, so nothing above them moves; both emit and are remembered
     void scriptEditorChoices();
+
+    // Connections (docs/UX_DECISIONS.md 6h): AI Assistant and live link to Aurora
+    void connectionsStartOffByDefault();
+    void connectionsShowTheStateTheWindowGives();
+    void connectionsClicksSendRequestsAndNothingElse();
+    void connectionsStayAfterEverythingElse();
+    void connectionsStringsAreTheStatusBarsOwn();
+    void windowConnectsSetupToTheSameCodeAsTheStatusBar();
 
     // the Camera and keys dialog: one radio per habit, the table matches the habit exactly,
     // switching the radio switches the table and remembers the choice
@@ -392,6 +404,149 @@ void TestSetupDialog::welcomeButtonAsksForTheWelcomeCard()
   // the same words as Help > Show the welcome card again
   QCOMPARE(MenuSpec::text(MenuSpec::helpWelcome), dialog.welcomeButton()->text());
   QVERIFY(QString::fromLatin1(MenuSpec::helpWelcome.reason).isEmpty());
+}
+
+void TestSetupDialog::connectionsStartOffByDefault()
+{
+  SetupDialog dialog;
+  QVERIFY(dialog.aiAssistantBox() && dialog.auroraLinkBox());
+  QCOMPARE(dialog.aiAssistantChecked(), false);
+  QCOMPARE(dialog.auroraLinkChecked(), false);
+  // nothing was requested by opening the dialog
+  QSignalSpy aiSpy(&dialog, &SetupDialog::aiAssistantRequested);
+  QSignalSpy auroraSpy(&dialog, &SetupDialog::auroraLinkRequested);
+  dialog.setAiAssistant(false, ControlIndicator::textFor(ControlIndicator::Off, QStringList()));
+  dialog.setAuroraLink(false, AuroraIndicator::textFor(AuroraIndicator::Off));
+  QCOMPARE(aiSpy.count(), 0);
+  QCOMPARE(auroraSpy.count(), 0);
+}
+
+void TestSetupDialog::connectionsShowTheStateTheWindowGives()
+{
+  SetupDialog dialog;
+  // on, then off again: the switch and the line follow the window both ways, with no request
+  QSignalSpy aiSpy(&dialog, &SetupDialog::aiAssistantRequested);
+  QSignalSpy auroraSpy(&dialog, &SetupDialog::auroraLinkRequested);
+  dialog.setAiAssistant(true, ControlIndicator::textFor(ControlIndicator::Waiting, QStringList()));
+  QCOMPARE(dialog.aiAssistantChecked(), true);
+  QCOMPARE(dialog.aiAssistantStatus(), QStringLiteral("AI Assistant on, waiting for an AI"));
+  dialog.setAiAssistant(true, ControlIndicator::textFor(ControlIndicator::Connected, QStringList{QStringLiteral("Claude")}));
+  QCOMPARE(dialog.aiAssistantStatus(), QStringLiteral("AI Assistant: Claude"));
+  dialog.setAiAssistant(false, ControlIndicator::textFor(ControlIndicator::Off, QStringList()));
+  QCOMPARE(dialog.aiAssistantChecked(), false);
+  QCOMPARE(dialog.aiAssistantStatus(), QStringLiteral("AI Assistant off"));
+
+  dialog.setAuroraLink(true, AuroraIndicator::textFor(AuroraIndicator::Connecting));
+  QCOMPARE(dialog.auroraLinkChecked(), true);
+  QCOMPARE(dialog.auroraLinkStatus(), QStringLiteral("Waiting for Aurora"));
+  dialog.setAuroraLink(true, AuroraIndicator::textFor(AuroraIndicator::Live));
+  QCOMPARE(dialog.auroraLinkChecked(), true);
+  QCOMPARE(dialog.auroraLinkStatus(), QStringLiteral("Aurora live"));
+  dialog.setAuroraLink(false, AuroraIndicator::textFor(AuroraIndicator::Off));
+  QCOMPARE(dialog.auroraLinkChecked(), false);
+  QCOMPARE(dialog.auroraLinkStatus(), QStringLiteral("Aurora off"));
+  QCOMPARE(aiSpy.count(), 0);
+  QCOMPARE(auroraSpy.count(), 0);
+}
+
+void TestSetupDialog::connectionsClicksSendRequestsAndNothingElse()
+{
+  SetupDialog dialog;
+  QSignalSpy aiSpy(&dialog, &SetupDialog::aiAssistantRequested);
+  QSignalSpy auroraSpy(&dialog, &SetupDialog::auroraLinkRequested);
+  QSignalSpy expertSpy(&dialog, &SetupDialog::expertModeRequested);
+  QSignalSpy hintsSpy(&dialog, &SetupDialog::hintsRequested);
+  dialog.aiAssistantBox()->click();
+  QCOMPARE(aiSpy.count(), 1);
+  QCOMPARE(aiSpy.at(0).at(0).toBool(), true);
+  QCOMPARE(auroraSpy.count(), 0);
+  dialog.aiAssistantBox()->click();
+  QCOMPARE(aiSpy.count(), 2);
+  QCOMPARE(aiSpy.at(1).at(0).toBool(), false);
+  dialog.auroraLinkBox()->click();
+  QCOMPARE(auroraSpy.count(), 1);
+  QCOMPARE(auroraSpy.at(0).at(0).toBool(), true);
+  dialog.auroraLinkBox()->click();
+  QCOMPARE(auroraSpy.count(), 2);
+  QCOMPARE(auroraSpy.at(1).at(0).toBool(), false);
+  QCOMPARE(aiSpy.count(), 2);
+  QCOMPARE(expertSpy.count(), 0);
+  QCOMPARE(hintsSpy.count(), 0);
+  // a request the window could not carry out (the AI Assistant could not start): the window
+  // shows the real state, which is off, and the switch goes back
+  dialog.aiAssistantBox()->click();
+  QCOMPARE(dialog.aiAssistantChecked(), true);
+  dialog.setAiAssistant(false, ControlIndicator::textFor(ControlIndicator::Off, QStringList()));
+  QCOMPARE(dialog.aiAssistantChecked(), false);
+  QCOMPARE(aiSpy.count(), 3);
+}
+
+void TestSetupDialog::connectionsStayAfterEverythingElse()
+{
+  SetupDialog dialog;
+  dialog.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+  QVERIFY(dialog.aiAssistantBox()->geometry().top() > dialog.luaSwitchBox()->geometry().bottom());
+  QVERIFY(dialog.auroraLinkBox()->geometry().top() > dialog.aiAssistantBox()->geometry().bottom());
+  QList<QRect> before;
+  for (QWidget* w : dialog.findChildren<QWidget*>()) if (w->objectName().isEmpty() || !w->objectName().startsWith(QLatin1String("setupAi"))) before << w->geometry();
+  dialog.setAiAssistant(true, ControlIndicator::textFor(ControlIndicator::Waiting, QStringList()));
+  QCoreApplication::processEvents();
+  QList<QRect> after;
+  for (QWidget* w : dialog.findChildren<QWidget*>()) if (w->objectName().isEmpty() || !w->objectName().startsWith(QLatin1String("setupAi"))) after << w->geometry();
+  QCOMPARE(after.size(), before.size());
+  // the dialog fits the screen
+  const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+  QVERIFY(dialog.height() <= screen.height());
+}
+
+void TestSetupDialog::connectionsStringsAreTheStatusBarsOwn()
+{
+  SetupDialog dialog;
+  QCOMPARE(dialog.aiAssistantBox()->text(), QStringLiteral("AI Assistant"));
+  QCOMPARE(dialog.auroraLinkBox()->text(), QStringLiteral("Live link to Aurora"));
+  QCOMPARE(QString::fromLatin1(SetupText::connectionsLabel), QStringLiteral("Connections"));
+  // the status lines are exactly the words of the status bar for every state
+  const QList<ControlIndicator::State> aiStates{ControlIndicator::Off, ControlIndicator::Waiting, ControlIndicator::Problem};
+  for (ControlIndicator::State state : aiStates)
+  {
+    dialog.setAiAssistant(state != ControlIndicator::Off, ControlIndicator::textFor(state, QStringList()));
+    QCOMPARE(dialog.aiAssistantStatus(), ControlIndicator::textFor(state, QStringList()));
+  }
+  QCOMPARE(ControlIndicator::textFor(ControlIndicator::Off, QStringList()), QStringLiteral("AI Assistant off"));
+  for (AuroraIndicator::State state : {AuroraIndicator::Off, AuroraIndicator::Connecting, AuroraIndicator::Live})
+  {
+    dialog.setAuroraLink(state != AuroraIndicator::Off, AuroraIndicator::textFor(state));
+    QCOMPARE(dialog.auroraLinkStatus(), AuroraIndicator::textFor(state));
+  }
+}
+
+// the window itself cannot be started in a test; its source must connect the two switches to the
+// code the status bar switches call, and show the real state again after every request
+void TestSetupDialog::windowConnectsSetupToTheSameCodeAsTheStatusBar()
+{
+  QFile file(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  const QString source = QString::fromUtf8(file.readAll());
+  const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::openSetupDialog()"));
+  QVERIFY(begin > 0);
+  const QString body = source.mid(begin, source.indexOf(QStringLiteral("\n}\n"), begin) - begin);
+  // AI Assistant: the code behind the status bar button (turn on and off, key file, title)
+  QVERIFY(body.contains(QStringLiteral("&SetupDialog::aiAssistantRequested")));
+  QVERIFY(body.contains(QStringLiteral("setRemoteControl(on);")));
+  QVERIFY(source.contains(QStringLiteral("connect(m_controlIndicator,&ControlIndicator::turnOnRequested,this,[this](){ setRemoteControl(true); });")));
+  // Aurora: the action the status bar switch toggles, which drives AuroraLink::setEnabled
+  QVERIFY(body.contains(QStringLiteral("&SetupDialog::auroraLinkRequested")));
+  QVERIFY(body.contains(QStringLiteral("m_auroraAction->setChecked(on);")));
+  QVERIFY(source.contains(QStringLiteral("connect(m_auroraIndicator,&AuroraIndicator::toggleRequested,m_auroraAction,&QAction::toggle);")));
+  QVERIFY(source.contains(QStringLiteral("m_auroraLink->setEnabled(on); updateWindowTitle();")));
+  // the real state, read from the server, the link and the status bar's own text
+  QVERIFY(body.contains(QStringLiteral("dialog.setAiAssistant(m_controlServer->running(),m_controlIndicator->text());")));
+  QVERIFY(body.contains(QStringLiteral("dialog.setAuroraLink(m_auroraLink->enabled(),m_auroraIndicator->text());")));
+  QVERIFY(body.contains(QStringLiteral("AuroraLink::connectedChanged")));
+  QVERIFY(body.contains(QStringLiteral("ControlServer::contact")));
+  // and the switches never turn on by themselves: setRemoteControl(true) only for --control
+  QCOMPARE(body.count(QStringLiteral("setRemoteControl(true)")), 0);
 }
 
 QTEST_MAIN(TestSetupDialog)
