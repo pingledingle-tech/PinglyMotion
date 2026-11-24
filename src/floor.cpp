@@ -21,6 +21,7 @@
 #include <qopengl.h>
 
 #include "usersettings.h"
+#include "viewcolours.h"
 
 #include "floor.h"
 
@@ -48,6 +49,11 @@ void Floor::draw()
   if (s_drawHook)
   {
     // 20 x 20 tiles of 40 units, two triangles each, facing up
+    // the theme's colours, asked for at every picture (src/viewcolours.h)
+    QVector4D strong = ViewColours::vector(ViewColours::floorTile(true, frameProtected));
+    QVector4D faint = ViewColours::vector(ViewColours::floorTile(false, frameProtected));
+    strong.setW(alpha);
+    faint.setW(alpha);
     QVector<QVector3D> positions;
     QVector<QVector3D> normals;
     QVector<QVector4D> colors;
@@ -56,11 +62,7 @@ void Floor::draw()
     {
       for (int j = -10; j < 10; j++)
       {
-        QVector4D color;
-        if ((i + j) % 2)
-          color = frameProtected ? QVector4D(0.3, 0.0, 0.0, alpha) : QVector4D(0.1, 0.1, 0.1, alpha);
-        else
-          color = frameProtected ? QVector4D(0.8, 0.0, 0.0, alpha) : QVector4D(0.6, 0.6, 0.6, alpha);
+        QVector4D color = (i + j) % 2 ? faint : strong;
         const QVector3D a(i * 40, 0, j * 40);
         const QVector3D b(i * 40, 0, (j + 1) * 40);
         const QVector3D c((i + 1) * 40, 0, (j + 1) * 40);
