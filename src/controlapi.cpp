@@ -369,7 +369,7 @@ bool ControlApi::checkNotProtected(QString& error)
 {
   if (UserSettings::protectFirstFrame() && m_host->animation()->getFrame() == 0)
   {
-    error = "Frame 1 is protected: it holds the reference pose that Second Life compares the other frames against. Use frame 2 or later, or turn off Options > Protect first frame.";
+    error = "Frame 1 is protected: it holds the reference pose that Second Life compares the other frames against. Use frame 2 or later, or turn off Edit > Lock the first frame.";
     return false;
   }
   return true;

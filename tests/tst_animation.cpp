@@ -15,6 +15,7 @@
 #include "propfile.h"
 #include "bvh.h"
 #include "bvhnode.h"
+#include "usersettings.h"
 
 namespace
 {
@@ -36,6 +37,7 @@ class AnimationTest : public QObject
     void init();
     void cleanup();
 
+    void newKeysStartSmooth();
     void flipMirrorsAJointThatMoved();
     void flipLeavesAJointAtRestUntouchedWhenItsPartnerIsAtRest();
     void flipMirrorsAJointWithNoPartnerInPlace();
@@ -68,6 +70,30 @@ void AnimationTest::cleanup()
 // the default pose (data/TPose.dingle) has every joint's rotation at zero
 // (the T-pose comes from the skeleton's own bone offsets, not from a turn);
 // this is the base every test here starts from
+// a new key starts smooth, slow in and out (docs/DECISIONS.md, 24 Nov 2026), and the choice can
+// still be changed for that one key
+void AnimationTest::newKeysStartSmooth()
+{
+  BVHNode* lShldr=findNode(m_anim->getMotion(),"lShldr");
+  QVERIFY(lShldr);
+  m_anim->setFrame(3);
+  QVERIFY(!lShldr->isKeyframe(3));
+  m_anim->setRotation(lShldr,10.0,20.0,30.0);
+  QVERIFY(lShldr->isKeyframe(3));
+  QVERIFY(lShldr->easeIn(3));
+  QVERIFY(lShldr->easeOut(3));
+  // a key set through Set key (addKeyFrame) starts smooth too
+  m_anim->setFrame(5);
+  m_anim->addKeyFrame(lShldr);
+  QVERIFY(lShldr->easeIn(5));
+  QVERIFY(lShldr->easeOut(5));
+  // changed for this key only
+  m_anim->setEaseIn(lShldr,3,false);
+  QVERIFY(!lShldr->easeIn(3));
+  QVERIFY(lShldr->easeOut(3));
+  QVERIFY(lShldr->easeIn(5));
+}
+
 void AnimationTest::flipMirrorsAJointThatMoved()
 {
   BVHNode* lShldr=findNode(m_anim->getMotion(),"lShldr");

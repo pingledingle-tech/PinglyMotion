@@ -34,6 +34,8 @@ class TestUserSettings : public QObject
     void theScriptSideKeepsItsOwnPanelLayout();
     void expertModeWatchers();
     void welcomeAndHintCardAreRemembered();
+    void fogAndNewKeyEaseStartAsDecided();
+    void fogAndFloorStateRoundTrips();
 
   private:
     void writeVersionGroup(const QVariantMap& values);
@@ -93,6 +95,12 @@ void TestUserSettings::defaultsOnFirstStart()
   QCOMPARE(UserSettings::cameraHabit(), QStringLiteral("pinglymotion"));
   QCOMPARE(UserSettings::textSizePercent(), 100);
   QCOMPARE(UserSettings::darkTheme(), true);
+  // fog is off, the floor is 33 percent see-through, and a new key is smooth (slow in and out);
+  // nothing has read or changed them yet in this program
+  QCOMPARE(UserSettings::fog(), false);
+  QCOMPARE(UserSettings::floorTranslucency(), 33);
+  QCOMPARE(UserSettings::easeIn(), true);
+  QCOMPARE(UserSettings::easeOut(), true);
 }
 
 void TestUserSettings::defaultsWhenKeysAreMissing()
@@ -318,6 +326,51 @@ void TestUserSettings::welcomeAndHintCardAreRemembered()
   writeVersionGroup({{QStringLiteral("hint_card"), QStringLiteral("-3")}});
   UserSettings::readSettings();
   QCOMPARE(UserSettings::hintCard(), 0);
+}
+
+// the project owner, 24 Nov 2026: fog off at the start, new keys smooth. The old Settings window wrote
+// "fog", "ease_in" and "ease_out" for everybody; those old values must not decide any more.
+void TestUserSettings::fogAndNewKeyEaseStartAsDecided()
+{
+  writeVersionGroup({});
+  UserSettings::setFog(true);
+  UserSettings::setFloorTranslucency(0);
+  UserSettings::setEaseIn(false);
+  UserSettings::setEaseOut(false);
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::fog(), false);
+  QCOMPARE(UserSettings::floorTranslucency(), 33);
+  QCOMPARE(UserSettings::easeIn(), true);
+  QCOMPARE(UserSettings::easeOut(), true);
+
+  writeVersionGroup({{QStringLiteral("fog"), true}, {QStringLiteral("ease_in"), false}, {QStringLiteral("ease_out"), false}});
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::fog(), false);
+  QCOMPARE(UserSettings::easeIn(), true);
+  QCOMPARE(UserSettings::easeOut(), true);
+}
+
+void TestUserSettings::fogAndFloorStateRoundTrips()
+{
+  UserSettings::setFog(true);
+  UserSettings::setFloorTranslucency(75);
+  UserSettings::setEaseIn(false);
+  UserSettings::setEaseOut(true);
+  UserSettings::writeSettings();
+  UserSettings::setFog(false);
+  UserSettings::setFloorTranslucency(33);
+  UserSettings::setEaseIn(true);
+  UserSettings::setEaseOut(false);
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::fog(), true);
+  QCOMPARE(UserSettings::floorTranslucency(), 75);
+  QCOMPARE(UserSettings::easeIn(), false);
+  QCOMPARE(UserSettings::easeOut(), true);
+
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                     Constants::organizationName(), Constants::applicationName());
+  QCOMPARE(settings.value(group + QStringLiteral("fog_on")).toString(), QStringLiteral("true"));
+  QCOMPARE(settings.value(group + QStringLiteral("floor_translucency")).toInt(), 75);
 }
 
 QTEST_MAIN(TestUserSettings)

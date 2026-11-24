@@ -138,13 +138,11 @@ void TestMenuTexts::mainMenus()
     {QStringLiteral("fileSavePropsAction"), QStringLiteral("Save props...")},                          // A4
     {QStringLiteral("fileExportAnimAction"), QStringLiteral("Export for Second Life (.anim)...")},     // A9
     {QStringLiteral("fileExportForSecondLifeAction"), QStringLiteral("Export BVH")},                   // A10
-    {QStringLiteral("toolsOptimizeBVHAction"), QStringLiteral("Remove extra keys")},                   // A13
     {QStringLiteral("optionsJointLimitsAction"), QStringLiteral("Stop joints at their furthest turn")}, // A14
     {QStringLiteral("optionsProtectFirstFrameAction"), QStringLiteral("Lock the first frame")},        // A15
     {QStringLiteral("optionsLoopAction"), QStringLiteral("Loop playback")},                            // A16
     // A17 Show skeleton moved to View > Joint dots (UX job U2, src/viewmenuspec.h, tests/viewtimeline)
     {QStringLiteral("optionsShowTimelineAction"), QStringLiteral("Show timeline")},                    // A18
-    {QStringLiteral("optionsConfigurePinglyMotionAction"), QStringLiteral("Settings...")},             // A19
     {QStringLiteral("resetCameraAction"), QStringLiteral("Reset view")},                               // A20
     {QStringLiteral("helpWhatsNewAction"), QStringLiteral("What's new...")},                           // A22
     // unchanged rows that the new wording must not have touched
@@ -152,7 +150,6 @@ void TestMenuTexts::mainMenus()
     {QStringLiteral("fileImportBvhAction"), QStringLiteral("Import BVH from another skeleton...")},    // A7
     {QStringLiteral("fileImportAnimAction"), QStringLiteral("Import Second Life .anim...")},           // A8
     {QStringLiteral("fileImportGltfAction"), QStringLiteral("Import glTF animation...")},              // A6
-    {QStringLiteral("toolsMirrorAction"), QStringLiteral("Mirror")},                                   // A12
     {QStringLiteral("helpAboutAction"), QStringLiteral("About...")},                                   // A21
   };
   for (auto it = expected.cbegin(); it != expected.cend(); ++it)
@@ -167,8 +164,6 @@ void TestMenuTexts::mainMenuTips()
   const QMap<QString, QString> expected = {
     {QStringLiteral("fileImportBvhAction"), QStringLiteral("Fits a BVH made for another skeleton onto this figure.")},              // A7
     {QStringLiteral("fileExportForSecondLifeAction"), QStringLiteral("Makes a BVH file. For Second Life use Export for Second Life (.anim).")}, // A10
-    {QStringLiteral("toolsMirrorAction"), QStringLiteral("Swaps left and right in the whole animation or in one joint.")},         // A12
-    {QStringLiteral("toolsOptimizeBVHAction"), QStringLiteral("Removes keys that change nothing.")},                                // A13
     {QStringLiteral("optionsProtectFirstFrameAction"), QStringLiteral("Keeps frame 0 as it is, so the loop has no jump.")},          // A15
     {QStringLiteral("resetCameraAction"), QStringLiteral("Puts the camera back where it started.")},                                // A20
   };
@@ -592,8 +587,7 @@ void TestMenuTexts::phase1bEmptyStateInTheWindow()
   QVERIFY(empty >= 0);
   const QString mode = source.mid(empty, 2600);
   for (const char* action : {"ui->fileSaveAction", "ui->fileSaveAsAction", "ui->fileExportAnimAction", "ui->fileExportForSecondLifeAction",
-                             "ui->fileCloseAction", "ui->fileAddAction", "ui->editCutAction", "ui->editCopyAction", "ui->editPasteAction",
-                             "ui->toolsMirrorAction", "ui->toolsOptimizeBVHAction"})
+                             "ui->fileCloseAction", "ui->fileAddAction", "ui->editCutAction", "ui->editCopyAction", "ui->editPasteAction"})
     QVERIFY2(mode.contains(QLatin1String(action)), action);
   QVERIFY(mode.contains(QStringLiteral("MenuSpec::openFirst")));
   QVERIFY(mode.contains(QStringLiteral("m_beforeEmpty.take(action)")));

@@ -157,14 +157,10 @@ class PinglyMotionWindow : public QMainWindow
     void on_editCopyAction_triggered();
     void on_editPasteAction_triggered();
 
-    void on_toolsOptimizeBVHAction_triggered();
-    void on_toolsMirrorAction_triggered();
-
     void on_optionsJointLimitsAction_toggled(bool on);
     void on_optionsLoopAction_toggled(bool on);
     void on_optionsProtectFirstFrameAction_toggled(bool on);
     void on_optionsShowTimelineAction_toggled(bool on);
-    void on_optionsConfigurePinglyMotionAction_triggered();
 
     void on_helpAboutAction_triggered();
     void on_helpWhatsNewAction_triggered();
@@ -295,13 +291,13 @@ class PinglyMotionWindow : public QMainWindow
     void pasteMirroredFromMenu();
     void pasteClip(bool mirrored);
 
-    void toolsOptimizeBVH();
-    void toolsMirror();
-
     void setJointLimits(bool on);
     void setLoop(bool on);
     void setProtectFirstFrame(bool on);
     void showTimeline(bool state);
+    void setFog(bool on);
+    void setFloorTransparency(int percent);
+    void updateFloorTransparencyChecks();
     void configure();
 
     void helpAbout();
@@ -631,6 +627,8 @@ class PinglyMotionWindow : public QMainWindow
     QAction* m_lightingAction = nullptr;
     QAction* m_viewPartActions[4] = {nullptr, nullptr, nullptr, nullptr};
     QAction* m_clickAndBendAction = nullptr;
+    QAction* m_fogAction = nullptr;
+    QMenu* m_floorTransparencyMenu = nullptr;
     // what the actions that need an animation were before the empty state greyed them
     struct ActionState { bool enabled; QString tip; QString status; };
     QMap<QAction*,ActionState> m_beforeEmpty;

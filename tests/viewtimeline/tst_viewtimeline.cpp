@@ -623,13 +623,12 @@ void ViewTimelineTest::optionsLostTheViewSettings()
   QVERIFY(!window.contains(QStringLiteral("ui->menuOptions->addMenu(tr(\"Joints\"))")));
   QVERIFY(!window.contains(QStringLiteral("ui->menuOptions->insertAction(bodyMenu->menuAction(),lightAction)")));
   QVERIFY(!source("usersettings.h").contains(QStringLiteral("skeleton()")));
-  // what stays in Options
-  const int options = ui.indexOf(QStringLiteral("<widget class=\"QMenu\" name=\"menuOptions\">"));
-  QVERIFY(options >= 0);
-  const QString optionsMenu = ui.mid(options, ui.indexOf(QStringLiteral("</widget>"), options) - options);
-  QVERIFY(optionsMenu.contains(QStringLiteral("optionsJointLimitsAction")));
-  QVERIFY(optionsMenu.contains(QStringLiteral("optionsLoopAction")));
-  QVERIFY(optionsMenu.contains(QStringLiteral("optionsProtectFirstFrameAction")));
+  // the Options menu is gone altogether (job "remove old menus", tests/oldmenus); the switches
+  // it held are still actions of the window, but in no menu
+  QVERIFY(!ui.contains(QStringLiteral("name=\"menuOptions\"")));
+  QVERIFY(ui.contains(QStringLiteral("name=\"optionsJointLimitsAction\"")));
+  QVERIFY(ui.contains(QStringLiteral("name=\"optionsLoopAction\"")));
+  QVERIFY(ui.contains(QStringLiteral("name=\"optionsProtectFirstFrameAction\"")));
 }
 
 void ViewTimelineTest::windowWiresTheTimelineFilter()

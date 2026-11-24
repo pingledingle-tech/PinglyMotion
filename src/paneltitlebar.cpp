@@ -40,8 +40,8 @@ PanelTitleBar::PanelTitleBar(QDockWidget* dock)
     button->setFocusPolicy(Qt::StrongFocus);
     button->setCursor(Qt::ArrowCursor);
   }
-  m_closeButton->setToolTip(tr("Close this panel (bring it back from the Options menu)"));
-  m_closeButton->setAccessibleName(tr("Close this panel (bring it back from the Options menu)"));
+  m_closeButton->setToolTip(tr("Close this panel (bring it back from the View menu)"));
+  m_closeButton->setAccessibleName(tr("Close this panel (bring it back from the View menu)"));
 
   QHBoxLayout* layout = new QHBoxLayout(this);
   layout->setContentsMargins(8, 3, 4, 3);

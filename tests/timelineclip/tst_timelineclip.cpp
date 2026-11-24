@@ -212,19 +212,36 @@ void TimelineClipTest::pasteFromTheCurrentFrameOnTheSameJoints()
   QCOMPARE(f.node("rThigh")->keyframeList(), QList<int>({0}));
 }
 
+// With keys that move evenly the pasted stretch is the copied one at every frame. With the keys a new
+// animation now starts with (smooth, slow in and out; 24 Nov 2026) a copy that starts or ends
+// between two keys cuts a curve into two, so the pasted stretch is the same from the first inner key
+// to the last inner key (frames 3 to 9 here), and the two ends follow the cut curves.
 void TimelineClipTest::pastedStretchPlaysLikeTheCopiedOne()
 {
-  Fixture f;
-  const int thigh = f.track("lThigh");
-  f.turn(thigh, 3, 25, 5);
-  f.turn(thigh, 9, -15);
-  f.turn(thigh, 14, 40);
-  TimelineClip clip;
-  clip.copy(&f.anim, TimelineRange{2, 12, {thigh}});
-  clip.paste(&f.anim, 25, false);
-  for (int k = 0; k <= 10; ++k)
-    QVERIFY2(same(f.node(thigh)->frameData(25 + k).rotation(), f.node(thigh)->frameData(2 + k).rotation()),
-             qPrintable(QStringLiteral("frame %1").arg(25 + k)));
+  for (const bool smooth : {false, true})
+  {
+    Fixture f;
+    const int thigh = f.track("lThigh");
+    f.turn(thigh, 3, 25, 5);
+    f.turn(thigh, 9, -15);
+    f.turn(thigh, 14, 40);
+    if (!smooth)
+      for (const int key : f.node(thigh)->keyframeList())
+      {
+        f.node(thigh)->setEaseIn(key, false);
+        f.node(thigh)->setEaseOut(key, false);
+      }
+    else
+      QVERIFY(f.node(thigh)->easeIn(3) && f.node(thigh)->easeOut(3));
+    TimelineClip clip;
+    clip.copy(&f.anim, TimelineRange{2, 12, {thigh}});
+    clip.paste(&f.anim, 25, false);
+    const int from = smooth ? 1 : 0;
+    const int to = smooth ? 7 : 10;
+    for (int k = from; k <= to; ++k)
+      QVERIFY2(same(f.node(thigh)->frameData(25 + k).rotation(), f.node(thigh)->frameData(2 + k).rotation()),
+               qPrintable(QStringLiteral("%1 frame %2").arg(smooth ? "smooth" : "even").arg(25 + k)));
+  }
 }
 
 void TimelineClipTest::pasteMirroredLeftStepBecomesRightStep()

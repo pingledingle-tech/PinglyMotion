@@ -62,11 +62,21 @@ namespace ViewMenuSpec
   inline constexpr const char* bodyMenu = QT_TRANSLATE_NOOP("MenuSpec", "Body");
   inline constexpr Item viewLighting = {"viewLightingAction", QT_TRANSLATE_NOOP("MenuSpec", "Lighting..."), "", ""};
 
+  // Fog and the floor's transparency, from the old Settings window (job "remove old menus",
+  // docs/UX_DECISIONS.md 6h). Fog is off at the first start. The floor's see-through share is
+  // picked from the list below; the default is 33 percent, as the old window had it.
+  inline constexpr Item viewFog = {"viewFogAction", QT_TRANSLATE_NOOP("MenuSpec", "Fog"), "", ""};
+  inline constexpr const char* floorTransparencyMenu = QT_TRANSLATE_NOOP("MenuSpec", "Floor transparency");
+  inline constexpr int floorTransparencyChoices[] = {0, 25, 33, 50, 75};
+  inline constexpr int floorTransparencyDefault = 33;
+
   // the tips (charter P3); at most 12 words a sentence
   inline constexpr const char* jointDotsTip = QT_TRANSLATE_NOOP("MenuSpec", "A dot on each joint you can pick. Off: you can still click them.");
   inline constexpr const char* clickAndBendTip = QT_TRANSLATE_NOOP("MenuSpec", "Pick and bend joints by clicking them on the figure. Off: use the Joints list and the sliders.");
   inline constexpr const char* jointGroupsTip = QT_TRANSLATE_NOOP("MenuSpec", "Show or hide groups of extra joints. Hiding changes only what you see.");
   inline constexpr const char* hideInListsTip = QT_TRANSLATE_NOOP("MenuSpec", "Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed.");
+  inline constexpr const char* fogTip = QT_TRANSLATE_NOOP("MenuSpec", "Fades the far end of the floor into the background. Off at the start.");
+  inline constexpr const char* floorTransparencyTip = QT_TRANSLATE_NOOP("MenuSpec", "How much you see through the floor. 0% is solid.");
   inline constexpr const char* lightingTip = QT_TRANSLATE_NOOP("MenuSpec", "Change the light on the body: brightness, shine, warmth, floor shadow.");
 
   // the status line after Click and bend was switched, and when the figure is clicked while it is off
