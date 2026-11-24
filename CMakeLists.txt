@@ -219,6 +219,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/undo)
   # View and timeline: the timeline's row filter, the view settings in View (UX job U2)
   ADD_SUBDIRECTORY (tests/viewtimeline)
+  # The old Tools and Options menus and the old Settings menu entry are gone (6h)
+  ADD_SUBDIRECTORY (tests/oldmenus)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

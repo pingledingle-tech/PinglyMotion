@@ -20,6 +20,7 @@
 
 #include <QScopedValueRollback>
 #include <QActionGroup>
+#include <cstdlib>
 #include <QCursor>
 #include <QButtonGroup>
 #include <QMap>
@@ -684,7 +685,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_auroraAction->setCheckable(true);
   m_auroraAction->setToolTip(tr("Shows the pose on your avatar in the Aurora viewer while you work. "
                                 "In Aurora, open LiveMesh and click Enable preview."));
-  ui->menuOptions->addAction(m_auroraAction);
+  // no menu entry: the Aurora switch in Setup and in the status bar work this action (the old Options menu is gone)
   connect(m_auroraAction,&QAction::toggled,m_auroraLink,[this](bool on){ m_auroraLink->setEnabled(on); updateWindowTitle(); });
   connect(m_auroraLink,&AuroraLink::connectedChanged,this,[this](bool){ updateWindowTitle(); });
   connect(m_auroraLink,&AuroraLink::errorReceived,this,[this](const QString& message)
@@ -1222,6 +1223,32 @@ void PinglyMotionWindow::buildMenus()
   if(m_jointGroupsMenu) ui->menuView->addMenu(m_jointGroupsMenu);
   if(m_bodyMenu) ui->menuView->addMenu(m_bodyMenu);
   if(m_lightingAction) ui->menuView->addAction(m_lightingAction);
+  // Fog and the floor's transparency (from the old Settings window); fog is off at the start
+  m_fogAction=specAction(this,ViewMenuSpec::viewFog,false);
+  m_fogAction->setCheckable(true);
+  m_fogAction->setChecked(UserSettings::fog());
+  m_fogAction->setToolTip(ViewMenuSpec::tr(ViewMenuSpec::fogTip));
+  m_fogAction->setStatusTip(ViewMenuSpec::tr(ViewMenuSpec::fogTip));
+  connect(m_fogAction,&QAction::toggled,this,&PinglyMotionWindow::setFog);
+  ui->menuView->addAction(m_fogAction);
+  m_floorTransparencyMenu=new QMenu(ViewMenuSpec::tr(ViewMenuSpec::floorTransparencyMenu),this);
+  m_floorTransparencyMenu->setObjectName(QStringLiteral("viewFloorTransparencyMenu"));
+  m_floorTransparencyMenu->setToolTipsVisible(true);
+  m_floorTransparencyMenu->menuAction()->setToolTip(ViewMenuSpec::tr(ViewMenuSpec::floorTransparencyTip));
+  {
+    QActionGroup* group=new QActionGroup(this);
+    for(int percent : ViewMenuSpec::floorTransparencyChoices)
+    {
+      QAction* choice=m_floorTransparencyMenu->addAction(tr("%1%").arg(percent));
+      choice->setObjectName(QStringLiteral("viewFloorTransparency%1Action").arg(percent));
+      choice->setCheckable(true);
+      choice->setData(percent);
+      choice->setActionGroup(group);
+      connect(choice,&QAction::triggered,this,[this,percent](){ setFloorTransparency(percent); });
+    }
+  }
+  updateFloorTransparencyChecks();
+  ui->menuView->addMenu(m_floorTransparencyMenu);
 
   ui->menuView->addSection(QCoreApplication::translate("MenuSpec",panelsHeading));
   ui->menuView->addAction(showJointsAction);
@@ -1408,6 +1435,9 @@ void PinglyMotionWindow::buildEditMenu()
   ui->menuEdit->addAction(ui->editCutAction);
   ui->menuEdit->addAction(ui->editCopyAction);
   ui->menuEdit->addAction(ui->editPasteAction);
+  // Lock the first frame was in Options (gone): it stays as a choice, next to Set key's reasons
+  ui->menuEdit->addSeparator();
+  ui->menuEdit->addAction(ui->optionsProtectFirstFrameAction);
   updateEditActions();
 }
 
@@ -1915,7 +1945,7 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
 
   const QList<QAction*> needing={ui->fileSaveAction,ui->fileSaveAsAction,ui->fileExportAnimAction,
     ui->fileExportForSecondLifeAction,ui->fileCloseAction,ui->fileAddAction,ui->editCutAction,
-    ui->editCopyAction,ui->editPasteAction,ui->toolsMirrorAction,ui->toolsOptimizeBVHAction};
+    ui->editCopyAction,ui->editPasteAction};
   const QString why=QCoreApplication::translate("MenuSpec",MenuSpec::openFirst);
   for(QAction* action : needing)
   {
@@ -3193,13 +3223,6 @@ void PinglyMotionWindow::pasteMirroredFromMenu()
   pasteClip(true);
 }
 
-// Menu Action: Edit / Paste
-void PinglyMotionWindow::toolsOptimizeBVH()
-{
-  scene->getAnimation()->optimize();
-  updateInputs();
-}
-
 // Menu Action: Options / Loop
 void PinglyMotionWindow::setLoop(bool on)
 {
@@ -3242,13 +3265,41 @@ void PinglyMotionWindow::setProtectFirstFrame(bool on)
   updateInputs();
 }
 
+// Menu Action: View / Fog
+void PinglyMotionWindow::setFog(bool on)
+{
+  UserSettings::setFog(on);
+  ui->animationView->update();
+}
+
+// Menu Action: View / Floor transparency
+void PinglyMotionWindow::setFloorTransparency(int percent)
+{
+  UserSettings::setFloorTranslucency(percent);
+  updateFloorTransparencyChecks();
+  ui->animationView->update();
+}
+
+// the check mark goes to the choice nearest to the stored value (an old value that is not in the list)
+void PinglyMotionWindow::updateFloorTransparencyChecks()
+{
+  if(!m_floorTransparencyMenu) return;
+  const int now=UserSettings::floorTranslucency();
+  int best=ViewMenuSpec::floorTransparencyChoices[0];
+  for(int percent : ViewMenuSpec::floorTransparencyChoices)
+    if(std::abs(percent-now)<std::abs(best-now)) best=percent;
+  for(QAction* choice : m_floorTransparencyMenu->actions())
+    choice->setChecked(choice->data().toInt()==best);
+}
+
 // Menu Action: View / Timeline
 void PinglyMotionWindow::showTimeline(bool on)
 {
   m_timelineDock->setVisible(on);
 }
 
-// Menu Action: Options / Settings
+// The old Settings window. No menu entry opens it any more (docs/UX_DECISIONS.md 6h); the code stays
+// so nothing already built is lost.
 void PinglyMotionWindow::configure()
 {
   UserSettingsDialog* dialog=new UserSettingsDialog(this);
@@ -3602,18 +3653,6 @@ void PinglyMotionWindow::on_editPasteAction_triggered()
   editPaste();
 }
 
-void PinglyMotionWindow::on_toolsOptimizeBVHAction_triggered()
-{
-  toolsOptimizeBVH();
-}
-
-void PinglyMotionWindow::on_toolsMirrorAction_triggered()
-{
-  Animation* anim=scene->getAnimation();
-  anim->mirror(currentPart);
-  updateInputs();
-}
-
 void PinglyMotionWindow::on_optionsJointLimitsAction_toggled(bool on)
 {
   setJointLimits(on);
@@ -3633,11 +3672,6 @@ void PinglyMotionWindow::on_optionsProtectFirstFrameAction_toggled(bool on)
 void PinglyMotionWindow::on_optionsShowTimelineAction_toggled(bool on)
 {
   showTimeline(on);
-}
-
-void PinglyMotionWindow::on_optionsConfigurePinglyMotionAction_triggered()
-{
-  configure();
 }
 
 void PinglyMotionWindow::on_helpAboutAction_triggered()

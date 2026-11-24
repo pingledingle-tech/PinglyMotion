@@ -124,15 +124,20 @@ const QString UserSettings::m_mainWindowHeightKey = PanelLayout::LegacyHeight;
 QString UserSettings::m_lastPath = QString();
 const QString UserSettings::m_lastPathKey = "last_path";
 
-bool UserSettings::m_fog = true;
-const QString UserSettings::m_fogKey = "fog";
+// fog is off at the start (the project owner, 24 Nov 2026, 22:26: "Av som standard"); a new key name,
+// so a value the old Settings window wrote earlier does not turn it on again
+bool UserSettings::m_fog = false;
+const QString UserSettings::m_fogKey = "fog_on";
 int  UserSettings::m_floorTranslucency = 33;
 const QString UserSettings::m_floorTranslucencyKey = "floor_translucency";
 
-bool UserSettings::m_easeIn = false;
-const QString UserSettings::m_easeInKey = "ease_in";
-bool UserSettings::m_easeOut = false;
-const QString UserSettings::m_easeOutKey = "ease_out";
+// a new key starts smooth, slow in and out (docs/DECISIONS.md, 24 Nov 2026); new key names, so the
+// "off" the old Settings window wrote for everybody does not decide it. The choice is changed per key
+// with the easing tiles.
+bool UserSettings::m_easeIn = true;
+const QString UserSettings::m_easeInKey = "new_key_ease_in";
+bool UserSettings::m_easeOut = true;
+const QString UserSettings::m_easeOutKey = "new_key_ease_out";
 
 
 void UserSettings::setLoop(bool on)               { m_loop = on; }
@@ -433,12 +438,12 @@ void UserSettings::readSettings()
     setLastPath(settings.value(m_lastPathKey).toString());
 
     // OpenGL settings
-    setFog(settings.value(m_fogKey).toBool());
-    setFloorTranslucency(settings.value(m_floorTranslucencyKey).toInt());
+    setFog(settings.value(m_fogKey, false).toBool());
+    setFloorTranslucency(settings.value(m_floorTranslucencyKey, 33).toInt());
 
     // settings for ease in/ease outFrame
-    setEaseIn(settings.value(m_easeInKey).toBool());
-    setEaseOut(settings.value(m_easeOutKey).toBool());
+    setEaseIn(settings.value(m_easeInKey, true).toBool());
+    setEaseOut(settings.value(m_easeOutKey, true).toBool());
 
     settings.endGroup();
   }

@@ -75,14 +75,14 @@ Where: `src/pinglymotionwindow.ui`.
 | A9 | Export as Second Life .anim... | Export for Second Life | Export for Second Life (.anim)... | yes |
 | A10 | Export For Second Life | Old BVH export | Export BVH... Tip: "Makes a BVH file. For Second Life use Export for Second Life (.anim)." | yes, verify |
 | A11 | Undo / Redo / Cut / Copy / Paste | Edit | no change | no |
-| A12 | Mirror, tip "Mirror Animation or Track" | Swap left and right | Mirror. Tip: "Swaps left and right in the whole animation or in one joint." | yes, verify |
-| A13 | Optimize BVH | Tools | Remove extra keys. Tip: "Removes keys that change nothing." | yes, verify |
+| A12 | Mirror, tip "Mirror Animation or Track" | Swap left and right | Gone (24 Nov 2026): Paste mirrored and Flip / Left / Right / Mirror cover it. | no |
+| A13 | Optimize BVH | Tools | Gone (24 Nov 2026, the project owner: remove it). | no |
 | A14 | Joint Limits | Option | Stop joints at their furthest turn | yes, verify |
-| A15 | Protect First Frame | Option | Lock the first frame. Tip: "Keeps frame 0 as it is, so the loop has no jump." | yes |
+| A15 | Protect First Frame | Option | Lock the first frame (Edit menu since 24 Nov 2026, the Options menu is gone). Tip: "Keeps frame 0 as it is, so the loop has no jump." | yes |
 | A16 | Loop | Option | Loop playback | yes, verify |
 | A17 | Skeleton | View option | Joint dots (moved from Options > Show skeleton to View in job U2, [UX_DECISIONS.md](UX_DECISIONS.md) 6q) | yes, verify |
 | A18 | Timeline | View option | Show timeline | yes |
-| A19 | Configure PinglyMotion... | Settings | Settings... | yes |
+| A19 | Configure PinglyMotion... | Settings | Gone from the menus (24 Nov 2026); the window's code stays. Fog and Floor transparency are in the View menu. | no |
 | A20 | Reset Camera, tip "Reset camera view to default position" | Reset the 3D view | Reset view. Tip: "Puts the camera back where it started." | yes |
 | A21 | About... | Credits | no change | no |
 | A22 | What's New... | Release notes | What's new... | yes |
@@ -115,7 +115,7 @@ Where: `src/pinglymotionwindow.ui`, `src/pinglymotionwindow.cpp`, `src/jointlist
 | B11 | Body, Face, Hands, Other (joint groups) | Joint list | no change | no |
 | B12 | Search joints / "Type part of a joint name, for example "elbow" or "left hand"." | Joint search | no change | no |
 | B13 | Second Life name: %1 / Name in the animation file: %1 / Moves the whole avatar. | Joint list tips | Second Life name: %1 / Name in the file: %1 / Moves the whole figure. | yes |
-| B14 | Close this panel (bring it back from the Options menu) / Put this panel back into the main window / Make this panel a window of its own | Panel buttons | no change | no |
+| B14 | Close this panel (bring it back from the View menu) / Put this panel back into the main window / Make this panel a window of its own | Panel buttons | no change | no |
 | B15 | Start / Stop / Replay from start, tips "Play the animation from where the playhead is" / "Stop playing; the playhead stays on this frame" / "Go back to the first frame and play"; when a button cannot be clicked: "It is already playing. Click Stop to stop it." / "It is not playing. Click Start to play it." (`src/transportbar.cpp`) | Transport buttons and the reason a button cannot be clicked (charter P6) | no change | no |
 | B16 | Pop-out button greyed out while the panels stand in one column: "The window is too small to float panels. Make it bigger or the text smaller." (`src/paneltitlebar.cpp`, wording from the clickable mockup) | Why a panel cannot float now (charter P6) | no change | no |
 | B17 | Selected joint panel (UX phase 2b, `src/selectedjointpanel.h`): "Nothing to turn yet", "Pick a joint" with three steps and "Pick the right shoulder for me", the axis names "Tilt forward or back" / "Turn left or right" / "Lean to the side", "allowed range" / "no limits", "Near its limit: X (tilt forward or back)." with WARN-01 and "Turn limits off", "Warn near the joint's limits", Reset joint, Pull with keys, the drag choice, More options with Change: Turn / Move, and the greyed reasons | Turn one joint; replaces B2, B3 and B4 on screen (the old labels are hidden) | wording from the clickable mockup; the differences are listed in UX_DECISIONS.md, 6 | no |

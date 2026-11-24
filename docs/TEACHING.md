@@ -105,7 +105,7 @@ Built in pull request 371 (22 Nov 2026). The texts are in `src/menuspec.h` and `
 | EMPTY-06 | 4 Empty state | Reason: a control needs an animation | Open an animation first. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EDIT-01 | 3 Edit menu | Undo is greyed: nothing to undo | Nothing to undo yet. | in the program (pull request 446, job B1; the mockup's text) | job B1 Undo and Redo |
 | EDIT-02 | 3 Edit menu | Redo is greyed: nothing to redo | Nothing to redo. Redo works after Undo. | in the program (pull request 446, job B1; the mockup's text) | job B1 Undo and Redo |
-| EDIT-03 | 3 Edit menu | Paste mirrored is greyed | Paste mirrored is not built yet. Use Tools > Mirror to swap left and right. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
+| EDIT-03 | 3 Edit menu | Paste mirrored is greyed | Paste mirrored is not built yet. Use Tools > Mirror to swap left and right. (History: Paste mirrored is built and Tools > Mirror is gone since 24 Nov 2026.) | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EDIT-04 | 3 Edit menu | Set key: no joint is picked | Pick a joint first. Click it on the figure or in the list. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EDIT-05 | 3 Edit menu | Set key: the animation is playing | Stop playing first. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |
 | EDIT-06 | 3 Edit menu | Set key: the first frame is locked | The first frame is locked. Turn off Lock the first frame to set a key. | in the program (pull request 371, 22 Nov 2026) | #14 UX phase 1b |

@@ -2498,6 +2498,10 @@ Pick the ones you want.</source>
         <source>Lua is a trial. No Lua suggestions or checks yet.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>the file could not be written</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LabFolderTree</name>
@@ -3982,6 +3986,22 @@ Pick the ones you want.</source>
         <source>Click and bend is off. Press B or use the View menu to turn it on.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Fog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floor transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fades the far end of the floor into the background. Off at the start.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How much you see through the floor. 0% is solid.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PMMesh</name>
@@ -3997,10 +4017,6 @@ Pick the ones you want.</source>
 <context>
     <name>PanelTitleBar</name>
     <message>
-        <source>Close this panel (bring it back from the Options menu)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The window is too small to float panels. Make it bigger or the text smaller.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4010,6 +4026,10 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Make this panel a window of its own</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close this panel (bring it back from the View menu)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4244,19 +4264,11 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4332,14 +4344,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove extra keys</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Removes keys that change nothing.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Stop joints at their furthest turn</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4357,10 +4361,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Show timeline</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4417,10 +4417,6 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Mirror</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Swaps left and right in the whole animation or in one joint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4898,6 +4894,10 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source>Current frame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1%</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

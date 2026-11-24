@@ -16,7 +16,7 @@ The figure holds one pose, a T-pose. It has 30 frames. A frame is one step in ti
 1. Find the slider under the timeline. It is the time marker.
 2. Drag it to the middle, about frame 15.
 
-Frame 0 is locked. Do not pose there. To unlock it, turn off **Options > Lock the first frame**.
+Frame 0 is locked. Do not pose there. To unlock it, turn off **Edit > Lock the first frame**.
 
 ## 3. Pose the figure
 
