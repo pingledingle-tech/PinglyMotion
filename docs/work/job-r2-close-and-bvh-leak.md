@@ -1,5 +1,5 @@
 Branch: job/r2-close-and-bvh-leak
-Status: active
+Status: done
 Pull request: #466
 Files:
 - src/bvh.*
