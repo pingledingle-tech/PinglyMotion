@@ -1,8 +1,9 @@
 Branch: job/ux-a-windows
-Status: active
+Status: done
 Pull request: #460
 Files:
 - src/topbar.*
+- src/lucideicons.cpp
 - src/menuspec.h
 - src/panelwindow.h
 - src/panelcontent.h
