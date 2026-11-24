@@ -59,7 +59,7 @@ GitHub is the truth, not a chat: what is running is the open pull requests and t
    - The jobs list (issue 74) gets no "merged" summary: the job left the queue when its pull request opened, and the report comment (step 7) is the record. If the job is somehow still in the queue, take it out.
    - Run `python3 tools/work.py check-lists` (needs `gh`; it warns about queue entries whose pull request is already merged or closed) and fix what it reports in issue 74.
    - Clean up your checkout: `git switch main && git pull && git branch -D <branch>`. The squash commit on `main` is a different commit, so the session's stop check otherwise reports your old local commits as "unpushed" (a false alarm). Do not edit the stop hook.
-7. **Report on the pull request, last.** Every job's last step posts its final report as a comment on its own pull request (on its issue if it has no pull request), also when it stops blocked: what was done, merged or not, the checks, what is left or blocked, and any test that must go on the test page with its steps. Then report to the chat in one line (number, what, checks green). A new job chat reads the open pull requests and their latest comments and issue 74, not handover notes.
+7. **Report on the pull request, last.** Every job's last step posts its final report as a comment on its own pull request (on its issue if it has no pull request), also when it stops blocked: what was done, merged or not, the checks, what is left or blocked, any test that must go on the test page with its steps, and one line `Model: <model>` (and whether the job had to be rerun on the strong model). Then report to the chat in one line (number, what, checks green). A new job chat reads the open pull requests and their latest comments and issue 74, not handover notes.
 
 A merged pull request whose job file still says `Status: active` is a mistake.
 
@@ -81,7 +81,7 @@ Only for visible changes needing taste or judgment (step 5 above), not for ordin
 
 `main` is protected by a ruleset: changes only through a pull request, squash merge only, and the checks `linux`, `windows`, `asan-ubsan`, `privacy`, `analyze` and `dependency-review` must be green (skipped counts as passed). GitHub's own auto-merge needs GraphQL, so merging is done as in step 5, by hand or with the `auto-merge` label. The branch is deleted automatically after the merge. What runs on a pull request, after a merge, at night and before a release is in `docs/DEV.md`, "What runs where".
 
-The `work-board` check (`tools/work.py check`) is not a required check: if it is red, two active jobs claim the same files. Talk to the user; it does not block a merge by itself.
+The `work-board` check (`tools/work.py check`) is not a required check: when two active jobs claim the same files it shows a yellow warning (not red, the project owner, 24 November 2026). Look at the overlap; it does not block a merge. It is red only when the work board script's own tests fail.
 
 ## Between chats
 
