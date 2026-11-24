@@ -20,6 +20,7 @@
 #include <QListWidget>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryDir>
@@ -143,6 +144,7 @@ class TestScriptLabPlayer : public QObject
     void keyboard();
     void emptyPlayer();
     void panelFollowsTheMoment();
+    void textsInRegister();
 
   private:
     QTemporaryDir m_settingsDir;
@@ -383,7 +385,7 @@ void TestScriptLabPlayer::firstDifferenceButton()
   LabPlayer player;
   player.setReplay(fakeReplay(2));
   QVERIFY(player.firstDifferenceButton()->isEnabled());
-  QCOMPARE(player.firstDifferenceButton()->toolTip(), QString("Go to step 2, where this replay first differed from the one before"));
+  QCOMPARE(player.firstDifferenceButton()->toolTip(), QString("Go to step 2, where this replay first differed"));
   QCOMPARE(player.momentList()->item(2)->text(), QString("Step 2: Press \"Lock\" in the menu. First difference."));
   player.firstDifferenceButton()->click();
   QCOMPARE(player.current(), 2);
@@ -544,6 +546,37 @@ void TestScriptLabPlayer::panelFollowsTheMoment()
   // stop watching: no player
   panel.stopWatching();
   QVERIFY(!player->isVisibleTo(&panel));
+}
+
+// every text of the player is a row of docs/TEACHING.md (charter P13), with at most 12 words a sentence
+void TestScriptLabPlayer::textsInRegister()
+{
+  QFile file(QStringLiteral(PINGLYMOTION_DOCS_DIR "/TEACHING.md"));
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  const QString teaching = QString::fromUtf8(file.readAll());
+  QVERIFY(teaching.contains("### Script Lab: the player (job B3)"));
+  const QStringList texts = {
+    "Player: watch your steps again", "Step back", "Step forward", "Go to first difference", "Show now",
+    "True at this moment:", "Log up to this moment:", "| Start |", "Step %1: %2", " Not done.", " First difference.",
+    "Start, at %1.", "Step %1 of %2, at %3: %4", " It could not be done.",
+    "No replay yet. Press Record what I do, click your props, then stop recording.", "%1 s",
+    "Locked: %1", "Free: %1", "Blocked: %1", "Allowed: %1", "%1 (changed at this step)", "Nothing locked, coloured or said yet.",
+    "The props in the 3D view show this moment. Press Show now to see now again.",
+    "The props in the 3D view show now. Pick a moment to see it there.",
+    "Pick a moment to see what was true then. The arrow keys move one step.",
+    "Play the steps one by one, one each second", "Stop playing; the player stays on this step",
+    "Go back to the start and play the steps", "Go to the step before", "Go to the next step",
+    "This is the start. There is no step before it.", "This is the last step. Click Replay from start to see it again.",
+    "No replay yet. Record what you do first.", "Go to step %1, where this replay first differed",
+    "Go to the start: it already differed from the replay before", "This is the first replay, so there is nothing to compare with.",
+    "Every step gave the same as the replay before.", "Show the props as they are now, not at this moment",
+    "The 3D view already shows now.", "--- Step %1: %2 ---"};
+  for (const QString& t : texts)
+  {
+    QVERIFY2(teaching.contains(t), qPrintable(t));
+    for (const QString& sentence : t.split(QRegularExpression("[.!?:;](\\s|$)"), Qt::SkipEmptyParts))
+      QVERIFY2(sentence.split(' ', Qt::SkipEmptyParts).size() <= 12, qPrintable(sentence));
+  }
 }
 
 QTEST_MAIN(TestScriptLabPlayer)

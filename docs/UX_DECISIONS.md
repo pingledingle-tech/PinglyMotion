@@ -456,6 +456,17 @@ No mockup (the project owner, 23 November 2026, 23:38): built from the design ch
 - **Keys:** the button is one Tab stop; Space starts and stops (P8).
 - **For the combined taste round (look, not blocking):** whether the button and the line sit well under the effects button, how long the line may grow (all facts the first time), the `video` icon for recording, and whether "Before: ... Now: it is ..." reads well.
 
+## 6r. Script Lab: the player (job B3, built, 24 November 2026)
+
+No mockup: built from the design charter and the design system, reusing the timeline's transport bar; the look goes to the combined taste round. Behaviour and texts: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The player"; text rows LABPLAY-01 to LABPLAY-40 in [TEACHING.md](TEACHING.md).
+
+- **Place:** under the recipe line of 6q, in Beginner mode too (first meeting: 3D, menu, player, step list). A title "Player: watch your steps again" (`label_weight`), the line saying where it is, the bar, the list of moments, **Go to first difference** and **Show now** (compact normal buttons), a muted line saying what the 3D view shows, and "True at this moment:".
+- **The bar** is `TransportBar` itself (Start as the main button, Stop as the danger button, Replay from start, the Lucide icons and focus ring of `transportlook.*`), with the words **Step back** and **Step forward**; no Loop switch (P5). It wraps into two lines when the panel is narrow, as under the timeline.
+- **Colours with words and shapes (P10):** "Locked:" and "Blocked:" rows in `danger` with `circle-x` and `ban`; "Free:" and "Allowed:" in `success` with `circle-check`; a step not done in `warning` with `triangle-alert`; the rest in `text` with `info`. A row that changed at this step is bold and ends with "(changed at this step)". The first difference has the `crosshair` icon and the words "First difference.".
+- **Expert only:** the log up to the moment, read only, fixed width (P5). Switching modes moves nothing above it (P12).
+- **Keys (P8):** the list is a Tab stop and the arrow keys, Home and End move between moments; every button is a Tab stop, with a tip, and greyed buttons say why (P6).
+- **For the combined taste round (look, not blocking):** the place under the recipe line, the height of the two lists, one moment per second while playing, the icons chosen for locked and free, and whether "(changed at this step)" reads well.
+
 ## 8. Beginner and expert
 
 - Starts in Beginner mode by default; Expert mode can be switched on (shows curves, IK, all tracks and so on).

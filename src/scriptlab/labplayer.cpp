@@ -474,7 +474,7 @@ void LabPlayer::refreshButtons()
   m_firstDifference->setEnabled(m_firstDiff >= 0);
   if (m_firstDiff >= 0)
     tip(m_firstDifference, m_firstDiff == 0 ? tr("Go to the start: it already differed from the replay before")
-                                            : tr("Go to step %1, where this replay first differed from the one before").arg(m_firstDiff));
+                                            : tr("Go to step %1, where this replay first differed").arg(m_firstDiff));
   else if (!any)
     tip(m_firstDifference, tr("No replay yet. Record what you do first."));
   else if (m_replay.value("first").toBool())

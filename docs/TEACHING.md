@@ -286,6 +286,53 @@ Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 | LABREC-26 | 2 Tip on hover | Recipe part: the recipe's text | The recipe file. You may edit it in your own editor. | in the program (pull request 450, 24 Nov 2026) | job A3 |
 | LABREC-27 | 4 What to do next | One change since last time; the program puts in the part, the old state and the new state | Before: %1 was %2. Now: it is %3. | in the program (pull request 450, 24 Nov 2026) | job A3 |
 
+### Script Lab: the player (job B3)
+
+Built in pull request 454 (24 Nov 2026). The texts are in `src/scriptlab/labplayer.cpp` (and the moment "Start." in `src/scriptlab/labrecipe.cpp`); `tests/scriptlabplayer/tst_scriptlabplayer.cpp` checks them letter for letter. The rows put in part names, actions and facts from the replay. The Start, Stop and Replay from start labels are the timeline's (`TransportBar`).
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABPLAY-01 | 1 Label | Live page: the player's title, under the recipe line | Player: watch your steps again | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-02 | 1 Label | Player: the back button of the bar | Step back | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-03 | 1 Label | Player: the forward button of the bar | Step forward | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-04 | 1 Label | Player: the button that jumps to where the replay first differed | Go to first difference | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-05 | 1 Label | Player: the button that shows the live run in the 3D view again | Show now | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-06 | 1 Label | Player: heading over the rows | True at this moment: | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-07 | 1 Label | Player, Expert mode: heading over the log | Log up to this moment: | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-08 | 1 Label | Player: the first moment in the list | Start | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-09 | 1 Label | Player: a step in the list; the program puts in the number and the step in plain words | Step %1: %2 | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-10 | 8 Warning | Player: added to a step in the list that could not be done |  Not done. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-11 | 4 What to do next | Player: added to the moment where the replay first differed |  First difference. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-12 | 4 What to do next | Player: where it is, on the start; the program puts in the time | Start, at %1. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-13 | 4 What to do next | Player: where it is, on a step; the program puts in the step, the number of steps, the time and the step | Step %1 of %2, at %3: %4 | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-14 | 8 Warning | Player: added to the line when the step could not be done |  It could not be done. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-15 | 3 Empty state | Player: no replay yet | No replay yet. Press Record what I do, click your props, then stop recording. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-16 | 4 What to do next | Player: a time; the program puts in the seconds | %1 s | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-17 | 8 Warning | Player row, in the danger colour: a part that holds @detach; the program puts in the name | Locked: %1 | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-18 | 4 What to do next | Player row, in the success colour: a part locked at another moment, not now | Free: %1 | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-19 | 8 Warning | Player row, in the danger colour: a blocked action | Blocked: %1 | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-20 | 4 What to do next | Player row, in the success colour: an action blocked at another moment, not now | Allowed: %1 | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-21 | 4 What to do next | Player row: added to a row that changed at this step (also bold) | %1 (changed at this step) | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-22 | 3 Empty state | Player rows: nothing true at this moment | Nothing locked, coloured or said yet. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-23 | 4 What to do next | Player: the line while a moment is shown | The props in the 3D view show this moment. Press Show now to see now again. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-24 | 4 What to do next | Player: the line while now is shown | The props in the 3D view show now. Pick a moment to see it there. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-25 | 2 Tip on hover | Player: the list of moments | Pick a moment to see what was true then. The arrow keys move one step. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-26 | 2 Tip on hover | Player: Start | Play the steps one by one, one each second | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-27 | 2 Tip on hover | Player: Stop | Stop playing; the player stays on this step | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-28 | 2 Tip on hover | Player: Replay from start | Go back to the start and play the steps | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-29 | 2 Tip on hover | Player: Step back | Go to the step before | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-30 | 2 Tip on hover | Player: Step forward | Go to the next step | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-31 | 8 Warning | Player: Step back greyed, as its tip | This is the start. There is no step before it. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-32 | 8 Warning | Player: Step forward greyed, as its tip | This is the last step. Click Replay from start to see it again. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-33 | 8 Warning | Player: every button greyed without a replay, as its tip | No replay yet. Record what you do first. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-34 | 2 Tip on hover | Player: Go to first difference; the program puts in the step | Go to step %1, where this replay first differed | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-35 | 2 Tip on hover | Player: Go to first difference when the start already differed | Go to the start: it already differed from the replay before | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-36 | 8 Warning | Player: Go to first difference greyed after a first replay | This is the first replay, so there is nothing to compare with. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-37 | 8 Warning | Player: Go to first difference greyed when nothing differed | Every step gave the same as the replay before. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-38 | 2 Tip on hover | Player: Show now | Show the props as they are now, not at this moment | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-39 | 8 Warning | Player: Show now greyed, as its tip | The 3D view already shows now. | in the program (pull request 454, 24 Nov 2026) | job B3 |
+| LABPLAY-40 | 4 What to do next | Player, Expert mode: the log line before a step; the program puts in the number and the step's line | --- Step %1: %2 --- | in the program (pull request 454, 24 Nov 2026) | job B3 |
+
 ### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
 
 Drafts for the library panel (roadmap item 6, issue 19) and for two figures in one scene (Expert mode only), drawn in `docs/mockup/index.html` and described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6l and 6m. Nothing is built yet; the project owner looks at the mockup first. `<clip name>` and `<file name>` stand for the real name. The mockup's own helper texts (for example "Mockup: no library folder") are not program texts and are not listed.

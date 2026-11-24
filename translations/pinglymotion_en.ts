@@ -2572,10 +2572,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Go to step %1, where this replay first differed from the one before</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>This is the first replay, so there is nothing to compare with.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2593,6 +2589,10 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>%1 (changed at this step)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to step %1, where this replay first differed</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
