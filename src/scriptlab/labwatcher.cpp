@@ -527,7 +527,8 @@ namespace
   {
     if (!usableFile(path, false)) return false;
     QSaveFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+    // plain "\n" line ends on every system, so the files are the same everywhere (the reader takes "\r\n" too)
+    if (!file.open(QIODevice::WriteOnly)) return false;
     file.write(text.toUtf8());
     return file.commit();
   }
