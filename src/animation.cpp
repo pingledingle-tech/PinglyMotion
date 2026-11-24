@@ -1013,7 +1013,9 @@ void Animation::insertFrame(int track,int pos)
   else
   {
     BVHNode* joint=getNode(track);
-    if(joint) joint->insertFrame(frame);
+    // at the frame asked for (it used the current frame, which is the same only when called
+    // from the timeline's selected frame)
+    if(joint) joint->insertFrame(pos);
   }
   setDirty(true);
   emit frameChanged();

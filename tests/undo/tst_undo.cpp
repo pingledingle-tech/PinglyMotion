@@ -107,6 +107,7 @@ private slots:
   void snapshotRestoreKeepsJointsAndIsExact();
   void eachEditUndoesAndRedoesExactly_data();
   void eachEditUndoesAndRedoesExactly();
+  void insertAndDeleteFrameMoveTheKeys();
   void newEditClearsRedo();
   void editWithoutChangeIsNoStep();
   void dragIsOneStep();
@@ -330,6 +331,46 @@ void UndoTest::eachEditUndoesAndRedoesExactly()
   COMPARE_STATE(f.anim.snapshot(), before);
   QVERIFY(f.undo.redo());
   COMPARE_STATE(f.anim.snapshot(), after);
+}
+
+// Inserting or deleting a frame on one joint moves its later keys (fixed in job B1: the old
+// code read freed memory when two or more keys followed, and used the current frame instead of
+// the frame asked for)
+void UndoTest::insertAndDeleteFrameMoveTheKeys()
+{
+  Fixture f;
+  f.turn("lThigh", 10, 30, 10, 5);
+  f.turn("lThigh", 20, -10, 2, 1);
+  f.turn("lThigh", 25, 4, 5, 6);
+  f.anim.setCurve(f.node("lThigh"), 20, Easing::Preset::SlowStart);
+  BVHNode* thigh = f.node("lThigh");
+  const int track = f.track("lThigh");
+  // the current frame is somewhere else on purpose
+  f.anim.setFrame(3);
+  f.anim.insertFrame(track, 12);
+  QCOMPARE(thigh->keyframeList(), QList<int>({0, 10, 21, 26}));
+  for (int key : thigh->keyframeList()) QCOMPARE(int(thigh->keyframeMap().value(key).frameNumber()), key);
+  QCOMPARE(thigh->frameData(21).rotation(), QVector3D(-10, 2, 1));
+  QCOMPARE(thigh->frameData(26).rotation(), QVector3D(4, 5, 6));
+  QCOMPARE(thigh->curve(21), std::optional<Easing::Preset>(Easing::Preset::SlowStart));
+  // a key on the frame itself moves too
+  f.anim.insertFrame(track, 10);
+  QCOMPARE(thigh->keyframeList(), QList<int>({0, 11, 22, 27}));
+  QCOMPARE(thigh->frameData(11).rotation(), QVector3D(30, 10, 5));
+  // deleting a frame with a key takes the key away and moves the later ones back
+  f.anim.deleteFrame(track, 11);
+  QCOMPARE(thigh->keyframeList(), QList<int>({0, 21, 26}));
+  f.anim.deleteFrame(track, 5);
+  QCOMPARE(thigh->keyframeList(), QList<int>({0, 20, 25}));
+  for (int key : thigh->keyframeList()) QCOMPARE(int(thigh->keyframeMap().value(key).frameNumber()), key);
+  QCOMPARE(thigh->frameData(20).rotation(), QVector3D(-10, 2, 1));
+  QCOMPARE(thigh->curve(20), std::optional<Easing::Preset>(Easing::Preset::SlowStart));
+  // past the last key: nothing moves
+  f.anim.insertFrame(track, 30);
+  f.anim.deleteFrame(track, 30);
+  QCOMPARE(thigh->keyframeList(), QList<int>({0, 20, 25}));
+  // the other joints are left alone
+  QCOMPARE(f.node("rThigh")->keyframeList(), QList<int>({0}));
 }
 
 void UndoTest::newEditClearsRedo()
