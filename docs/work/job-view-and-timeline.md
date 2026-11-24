@@ -1,6 +1,6 @@
 Branch: job/view-and-timeline
 Status: active
-Pull request: pending
+Pull request: #449
 Files:
 - src/timelinerows.*
 - src/timeline.*
