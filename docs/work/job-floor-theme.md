@@ -1,6 +1,6 @@
 Branch: job/floor-theme
-Status: active
-Pull request: pending
+Status: done
+Pull request: #477
 Files:
 - src/viewcolours.h
 - src/floor.cpp
