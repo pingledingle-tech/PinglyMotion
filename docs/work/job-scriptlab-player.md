@@ -14,6 +14,10 @@ Files:
 - tests/scriptlabplayer/**
 - fuzz/fuzz_recipe.cpp
 - fuzz/recipe.dict
+- src/retargetmapping.cpp
+- docs/RETARGET_MAPPING.md
+- tests/retargetmapping/tst_retargetmapping.cpp
+- fuzz/corpus/retargetmapping/bad_lone_surrogate.jointmap
 - src/controlapi.*
 - tools/mcp/commands.json
 - translations/pinglymotion_en.ts
