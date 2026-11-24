@@ -40,6 +40,7 @@ class TopBar : public QObject
       QAction* exportAnim = nullptr;
       QAction* scriptLab = nullptr;   // checkable: the button shows it pressed
       QAction* library = nullptr;     // checkable, like scriptLab
+      QAction* resetLayout = nullptr; // View > Reset layout
     };
 
     // fills the bar (it is emptied first); the bar is not movable

@@ -3331,6 +3331,10 @@ Pick the ones you want.</source>
 <context>
     <name>MenuSpec</name>
     <message>
+        <source>Puts all panels back where they were at the first start.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>New animation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4153,6 +4157,10 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Put the panels back where they were at the first start.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Layout reset. The panels are back where they were at the first start.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

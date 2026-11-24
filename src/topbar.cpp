@@ -41,7 +41,7 @@ TopBar::TopBar(QToolBar* bar, const Sources& sources, QObject* parent) : QObject
   const QHash<const MenuSpec::Button*, QAction*> follow = {
     {&MenuSpec::topUndo, sources.undo}, {&MenuSpec::topRedo, sources.redo}, {&MenuSpec::topSave, sources.save},
     {&MenuSpec::topExport, sources.exportAnim}, {&MenuSpec::topScriptLab, sources.scriptLab},
-    {&MenuSpec::topLibrary, sources.library}};
+    {&MenuSpec::topLibrary, sources.library}, {&MenuSpec::topResetLayout, sources.resetLayout}};
 
   int index = 0;
   for (const MenuSpec::Button* spec : MenuSpec::topBar)

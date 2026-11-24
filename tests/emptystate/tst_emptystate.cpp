@@ -72,6 +72,7 @@ namespace
     QAction exportAnim{QStringLiteral("Export")};
     QAction scriptLab{QStringLiteral("Script Lab")};
     QAction library{QStringLiteral("Library")};
+    QAction resetLayout{QStringLiteral("Reset layout")};
     TopBar* top = nullptr;
 
     Fixture()
@@ -89,6 +90,7 @@ namespace
       sources.exportAnim = &exportAnim;
       sources.scriptLab = &scriptLab;
       sources.library = &library;
+      sources.resetLayout = &resetLayout;
       top = new TopBar(&bar, sources, &bar);
     }
   };
@@ -245,12 +247,14 @@ void TestEmptyState::topTableIsExact()
     {&MenuSpec::topExport, "topExportAction", "Export", "Export for Second Life", "Ctrl+Shift+E", "", "", "upload"},
     {&MenuSpec::topScriptLab, "topScriptLabAction", "Script Lab", "Script Lab: test RLV and LSL scripts", "Ctrl+Shift+L", "", "", "flask-conical"},
     {&MenuSpec::topLibrary, "topLibraryAction", "Library", "Library: ready-made moves to start from", "Ctrl+Shift+B", "", "", "library-big"},
+    {&MenuSpec::topResetLayout, "topResetLayoutAction", "Reset layout", "Reset layout", "",
+     "Puts all panels back where they were at the first start.", "", "layout-template"},
     {&MenuSpec::topSetup, "topSetupAction", "Setup", "Setup", "",
      "Beginner or experienced, mouse and keys habits, theme, text size and hints.", "", "settings"},
     {&MenuSpec::topTheme, "topThemeAction", "", "Switch theme", "T", "", "", "sun"},
   };
-  QCOMPARE(int(sizeof(MenuSpec::topBar) / sizeof(MenuSpec::topBar[0])), 8);
-  for (int i = 0; i < 8; i++)
+  QCOMPARE(int(sizeof(MenuSpec::topBar) / sizeof(MenuSpec::topBar[0])), 9);
+  for (int i = 0; i < 9; i++)
   {
     const MenuSpec::Button& b = *MenuSpec::topBar[i];
     QCOMPARE(&b, expected[i].button);
@@ -298,6 +302,7 @@ void TestEmptyState::topMatchesMockup()
                              "<span class=\"divider\">",
                              "data-name=\"Script Lab: test RLV and LSL scripts\" data-key=\"Ctrl+Shift+L\"", "</svg>Script Lab</button>",
                              "data-name=\"Library: ready-made moves to start from\" data-key=\"Ctrl+Shift+B\"", "</svg>Library</button>",
+                             "data-cmd=\"resetlayout\" data-name=\"Reset layout\"", "</svg>Reset layout</button>",
                              "data-cmd=\"setup\" data-name=\"Setup\"",
                              "data-tipline=\"Beginner or experienced, mouse and keys habits, theme, text size and hints.\"", "</svg>Setup</button>",
                              "data-cmd=\"theme\" data-name=\"Switch theme\" data-key=\"T\""})
@@ -307,7 +312,7 @@ void TestEmptyState::topMatchesMockup()
     last = at;
   }
   // the icons
-  for (const char* icon : {"undo-2", "redo-2", "save", "upload", "flask-conical", "library-big", "settings", "sun"})
+  for (const char* icon : {"undo-2", "redo-2", "save", "upload", "flask-conical", "library-big", "layout-template", "settings", "sun"})
     QVERIFY2(bar.contains(QStringLiteral("data-i=\"%1\"").arg(QLatin1String(icon))), icon);
   // the theme button's names and icons
   QVERIFY(html.contains(QStringLiteral("theme === \"dark\" ? \"Switch to the light theme\" : \"Switch to the dark theme\"")));
@@ -318,8 +323,8 @@ void TestEmptyState::topOrderAndDividers()
 {
   Fixture f;
   QCOMPARE(layout(&f.bar), QStringList({"spacer", "topUndoAction", "topRedoAction", "|", "topSaveAction", "topExportAction", "|",
-                                        "topScriptLabAction", "topLibraryAction", "topSetupAction", "topThemeAction"}));
-  QCOMPARE(f.top->buttons().size(), 8);
+                                        "topScriptLabAction", "topLibraryAction", "topResetLayoutAction", "topSetupAction", "topThemeAction"}));
+  QCOMPARE(f.top->buttons().size(), 9);
   QVERIFY(!f.bar.isMovable());
 }
 
@@ -327,7 +332,7 @@ void TestEmptyState::topTextsAndTips()
 {
   Fixture f;
   const QMap<QString, QString> text = {{"topUndoAction", ""}, {"topRedoAction", ""}, {"topSaveAction", "Save"},
-    {"topExportAction", "Export"}, {"topScriptLabAction", "Script Lab"}, {"topLibraryAction", "Library"}, {"topSetupAction", "Setup"}, {"topThemeAction", ""}};
+    {"topExportAction", "Export"}, {"topScriptLabAction", "Script Lab"}, {"topLibraryAction", "Library"}, {"topResetLayoutAction", "Reset layout"}, {"topSetupAction", "Setup"}, {"topThemeAction", ""}};
   for (auto it = text.cbegin(); it != text.cend(); ++it)
     QCOMPARE(f.top->button(it.key().toLatin1().constData())->text(), it.value());
 
@@ -338,6 +343,7 @@ void TestEmptyState::topTextsAndTips()
     {"topExportAction", "Export for Second Life  (Ctrl+Shift+E)"},
     {"topScriptLabAction", "Script Lab: test RLV and LSL scripts  (Ctrl+Shift+L)"},
     {"topLibraryAction", "Library: ready-made moves to start from  (Ctrl+Shift+B)"},
+    {"topResetLayoutAction", "Reset layout\nPuts all panels back where they were at the first start."},
     {"topSetupAction", "Setup\nBeginner or experienced, mouse and keys habits, theme, text size and hints."},
     {"topThemeAction", "Switch to the light theme  (T)"},
   };
@@ -358,7 +364,7 @@ void TestEmptyState::topEnabledWithAnimation()
   Fixture f;
   f.top->setAnimationOpen(true);
   const QMap<QString, bool> enabled = {{"topUndoAction", false}, {"topRedoAction", false}, {"topSaveAction", true},
-    {"topExportAction", true}, {"topScriptLabAction", true}, {"topLibraryAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
+    {"topExportAction", true}, {"topScriptLabAction", true}, {"topLibraryAction", true}, {"topResetLayoutAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
   for (auto it = enabled.cbegin(); it != enabled.cend(); ++it)
     QVERIFY2(f.top->button(it.key().toLatin1().constData())->isEnabled() == it.value(), qPrintable(it.key()));
 }
@@ -369,7 +375,7 @@ void TestEmptyState::topEnabledWithoutAnimation()
   f.top->setAnimationOpen(false);
   QVERIFY(!f.top->animationOpen());
   const QMap<QString, bool> enabled = {{"topUndoAction", false}, {"topRedoAction", false}, {"topSaveAction", false},
-    {"topExportAction", false}, {"topScriptLabAction", true}, {"topLibraryAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
+    {"topExportAction", false}, {"topScriptLabAction", true}, {"topLibraryAction", true}, {"topResetLayoutAction", true}, {"topSetupAction", true}, {"topThemeAction", true}};
   for (auto it = enabled.cbegin(); it != enabled.cend(); ++it)
     QVERIFY2(f.top->button(it.key().toLatin1().constData())->isEnabled() == it.value(), qPrintable(it.key()));
   QCOMPARE(f.top->button("topSaveAction")->toolTip(),
@@ -426,6 +432,13 @@ void TestEmptyState::topClicksFollowTheActions()
   QVERIFY(library->isChecked());
   f.library.setChecked(false);
   QVERIFY(!library->isChecked());
+
+  // Reset layout (UX-A): a click does what View > Reset layout does
+  QSignalSpy reset(&f.resetLayout, &QAction::triggered);
+  f.top->button("topResetLayoutAction")->trigger();
+  QCOMPARE(reset.size(), 1);
+  QVERIFY(!f.top->button("topResetLayoutAction")->isCheckable());
+  QVERIFY(!f.top->button("topResetLayoutAction")->icon().isNull());
 
   // Setup works: a click asks for the dialog
   QSignalSpy setup(f.top, &TopBar::setupRequested);
