@@ -1,5 +1,5 @@
 Branch: job/t2-test-stability
-Status: active
+Status: done
 Pull request: #470
 Files:
 - src/scriptlab/labwatcher.*
