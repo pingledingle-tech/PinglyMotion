@@ -7,6 +7,10 @@
  * replay must stay inside its limits, its facts must survive the result file (writeResult, then
  * parseResult) and compare equal to themselves. The input is also read as a result file
  * (LabRecipe::parseResult) and compared with the replay's facts. Nothing may crash.
+ * Job B3 (the player): the input is also read as the moments' fingerprints (parseFingerprints); the
+ * replay keeps one moment after the start and after every step, in order, inside the log; the
+ * fingerprints written to the result file read back the same, and firstDifference stays inside the
+ * moments.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -51,6 +55,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   // the input as a result file: any lines, never a crash
   const QVector<LabRecipe::Fact> asResult = LabRecipe::parseResult(text);
   check(asResult.size() <= LabRecipe::MAX_FACTS);
+  const QStringList keptMoments = LabRecipe::parseFingerprints(text);
+  check(keptMoments.size() <= LabRecipe::MAX_STEPS + 1);
 
   const LabRecipe::Result parsed = LabRecipe::parse(text);
   check(parsed.ok() == parsed.value.has_value());
@@ -89,6 +95,25 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   const QStringList changes = LabRecipe::compare(asResult, replay.facts);
   const QString file = LabRecipe::writeResult(replay, changes, false);
   check(LabRecipe::compare(LabRecipe::parseResult(file), replay.facts).isEmpty());
-  LabRecipe::toJson(replay, changes, false);
+
+  // the player's moments: the start and every step, in order, each inside the log
+  check(replay.frames.size() == replay.steps + 1);
+  int lastEnd = 0;
+  for (int i = 0; i < replay.frames.size(); ++i)
+  {
+    const LabRecipe::Frame& f = replay.frames.at(i);
+    check(f.step == i);
+    check(f.logEnd >= lastEnd && f.logEnd <= replay.log.size());
+    check(f.facts.size() <= LabRecipe::MAX_FACTS);
+    lastEnd = f.logEnd;
+  }
+  check(replay.frames.last().facts == replay.facts);
+  QStringList fingerprints;
+  for (const LabRecipe::Frame& f : replay.frames) fingerprints << LabRecipe::frameFingerprint(f);
+  check(LabRecipe::parseFingerprints(file) == fingerprints);
+  check(LabRecipe::firstDifference(fingerprints, replay.frames) == -1);
+  const int first = LabRecipe::firstDifference(keptMoments, replay.frames);
+  check(first >= -1 && first < replay.frames.size());
+  LabRecipe::toJson(replay, changes, false, first);
   return 0;
 }
