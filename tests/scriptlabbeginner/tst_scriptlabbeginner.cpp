@@ -1265,6 +1265,23 @@ void TestScriptLabBeginner::channelMap()
   QCOMPARE(panel.shownTip()->key(), QString("listener"));
   QCOMPARE(panel.shownTip()->textLabel()->text(), QString("A script that waits for messages on one channel."));
 
+  // every text of the map is in the register (docs/TEACHING.md, LABMAP-01 to LABMAP-20), in short sentences
+  const QString teaching = readFile(QStringLiteral(PINGLYMOTION_DOCS_DIR "/TEACHING.md"));
+  QVERIFY(teaching.contains("### Script Lab: the channel map (job A4)"));
+  const QStringList texts = {
+    map->title(), panel.mapLine()->text(), view->toolTip(), ChannelMapView::emptyText(), "Nobody listens on channel %1.",
+    "Nobody listens on channel %1, so the menu answer is lost.", "Nobody with that key listens on channel %1.",
+    "No script gets link message %1.", "Your viewer refused this line: %1", "1 arrow reached nobody. It has a cross and says why.",
+    "%1 arrows reached nobody. Each has a cross and says why.", "The map shows the first %1 arrows only.",
+    "You, the avatar. You see menus and open chat, and you click.", "Your viewer. It gets the RLV lines a script sends.",
+    "A web server outside Second Life. The sandbox never goes online.", "This part listens and passes messages on, like a server.",
+    "Click to see the script line that sent it.", "It came from outside the scripts."};
+  for (const QString& text : texts)
+  {
+    QVERIFY2(teaching.contains("| " + text + " |"), qPrintable(text));
+    verifyShortSentences(text);
+  }
+
   // Stop watching: no map
   panel.stopWatching();
   QVERIFY(!map->isVisibleTo(&panel));
