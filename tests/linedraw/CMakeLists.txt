@@ -21,3 +21,6 @@ ELSE ()
   ADD_TEST (NAME linedraw WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_linedraw_tests)
 ENDIF ()
 SET_TESTS_PROPERTIES (linedraw PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+# TEMPORARY diagnosis run without Mesa's GL thread
+ADD_TEST (NAME linedraw_noglthread WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_linedraw_tests)
+SET_TESTS_PROPERTIES (linedraw_noglthread PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;mesa_glthread=false")

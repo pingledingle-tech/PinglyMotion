@@ -55,6 +55,7 @@ class TestLineDraw : public QObject
     void pickColourLineGivesName();
     void lineBehindCameraDrawsNothing();
     void shadersBuildForDesktopAndWeb();
+    void diagnose();
 
   private:
     bool m_haveGl = false;
@@ -380,6 +381,202 @@ void TestLineDraw::shadersBuildForDesktopAndWeb()
       QVERIFY2(process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0,
                qPrintable(variant + " " + program.join(" + ") + ":\n" + output));
     }
+  }
+}
+
+// TEMPORARY: find out why CI's Mesa draws nothing
+static const char* oldVert = R"(#version 330 core
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec4 vertexColor;
+uniform mat4 modelview;
+uniform mat4 projection;
+uniform mat3 normalMatrix;
+out vec4 lineColor;
+out vec3 lineEyePosition;
+out vec3 lineEyeNormal;
+void main()
+{
+  vec4 eye = modelview * vec4(position, 1.0);
+  lineEyePosition = eye.xyz;
+  lineEyeNormal = normalMatrix * normal;
+  lineColor = vertexColor;
+  gl_Position = projection * eye;
+}
+)";
+static const char* oldGeom = R"(#version 330 core
+layout(lines) in;
+layout(triangle_strip, max_vertices = 4) out;
+in vec4 lineColor[];
+in vec3 lineEyePosition[];
+in vec3 lineEyeNormal[];
+uniform vec2 viewportSize;
+uniform float lineWidth;
+out vec4 baseColor;
+out vec3 eyePosition;
+out vec3 eyeNormal;
+out float eyeDepth;
+void corner(int i, vec2 offset)
+{
+  baseColor = lineColor[i];
+  eyePosition = lineEyePosition[i];
+  eyeNormal = lineEyeNormal[i];
+  eyeDepth = abs(lineEyePosition[i].z);
+  vec4 p = gl_in[i].gl_Position;
+  gl_Position = vec4(p.xy + offset * p.w, p.zw);
+  EmitVertex();
+}
+void main()
+{
+  vec4 a = gl_in[0].gl_Position;
+  vec4 b = gl_in[1].gl_Position;
+  if (a.w <= 0.0 || b.w <= 0.0) return;
+  vec2 screenA = a.xy / a.w * viewportSize;
+  vec2 screenB = b.xy / b.w * viewportSize;
+  vec2 along = screenB - screenA;
+  if (dot(along, along) < 1e-8) along = vec2(1.0, 0.0);
+  vec2 across = normalize(vec2(-along.y, along.x));
+  vec2 offset = across * lineWidth / viewportSize;
+  corner(0, offset);
+  corner(0, -offset);
+  corner(1, offset);
+  corner(1, -offset);
+  EndPrimitive();
+}
+)";
+
+void TestLineDraw::diagnose()
+{
+  if (!m_haveGl) QSKIP(qPrintable(m_glReason));
+  QOpenGLExtraFunctions* gl = m_context.extraFunctions();
+  QString frag;
+  QString lineVert;
+  for (const auto& sh : SkinRenderer::shaderSources(false))
+  {
+    if (sh.name == "body.frag") frag = QString::fromLatin1(sh.source);
+    if (sh.name == "line.vert") lineVert = QString::fromLatin1(sh.source);
+  }
+  QMatrix4x4 camera;
+  camera.translate(0.0f, 0.0f, -5.0f);
+  const QVector4D colour(0.2f, 0.6f, 1.0f, 1.0f);
+  auto centre = [&](const char* what) {
+    const QImage image = end();
+    const QRgb c = image.pixel(WIDTH / 2, HEIGHT / 2);
+    int drawn = 0;
+    for (int y = 0; y < HEIGHT; y++)
+      for (int x = 0; x < WIDTH; x++)
+        if (qAlpha(image.pixel(x, y))) drawn++;
+    qInfo("DIAG %s: centre %d %d %d %d, drawn %d, glError 0x%x", what, qRed(c), qGreen(c), qBlue(c), qAlpha(c), drawn,
+          m_context.functions()->glGetError());
+  };
+  auto setCommon = [&](QOpenGLShaderProgram& p) {
+    p.bind();
+    p.setUniformValue("modelview", camera);
+    p.setUniformValue("projection", projection());
+    p.setUniformValue("normalMatrix", camera.normalMatrix());
+    p.setUniformValue("unlit", true);
+    p.setUniformValue("picking", false);
+    p.setUniformValue("shadow", false);
+    p.setUniformValue("fogOn", false);
+    p.setUniformValue("exposure", 1.0f);
+    p.setUniformValue("tint", QVector3D(1, 1, 1));
+    p.setUniformValue("viewportSize", QVector2D(WIDTH, HEIGHT));
+    p.setUniformValue("lineWidth", 6.0f);
+  };
+
+  // 1: the renderer
+  begin(QVector4D(0, 0, 0, 0));
+  m_renderer->drawGeometry(GL_LINES, {{-1, 0, 0}, {1, 0, 0}}, {}, QVector<QVector4D>(2, colour), camera, projection(),
+                           SkinRenderer::Fog(), 6.0f);
+  centre("renderer lines");
+  begin(QVector4D(0, 0, 0, 0));
+  m_renderer->drawGeometry(GL_TRIANGLES, {{-1, -0.5f, 0}, {1, -0.5f, 0}, {0, 0.5f, 0}}, {}, QVector<QVector4D>(3, colour),
+                           camera, projection(), SkinRenderer::Fog(), 1.0f);
+  centre("renderer triangles");
+
+  // 2: the old geometry shader, raw GL
+  {
+    QOpenGLShaderProgram p;
+    const bool ok = p.addShaderFromSourceCode(QOpenGLShader::Vertex, oldVert)
+                    && p.addShaderFromSourceCode(QOpenGLShader::Geometry, oldGeom)
+                    && p.addShaderFromSourceCode(QOpenGLShader::Fragment, frag) && p.link();
+    qInfo("DIAG old program ok %d %s", ok, qPrintable(p.log()));
+    const float data[] = {-1, 0, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1, 1, 0, 0, 0, 0, 1, 0.2f, 0.6f, 1, 1};
+    GLuint vao = 0, vbo = 0;
+    gl->glGenVertexArrays(1, &vao);
+    gl->glBindVertexArray(vao);
+    gl->glGenBuffers(1, &vbo);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
+    for (int i = 0; i < 3; i++) gl->glEnableVertexAttribArray(i);
+    gl->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(0));
+    gl->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(12));
+    gl->glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 40, reinterpret_cast<void*>(24));
+    begin(QVector4D(0, 0, 0, 0));
+    setCommon(p);
+    gl->glBindVertexArray(vao);
+    gl->glDrawArrays(GL_LINES, 0, 2);
+    gl->glBindVertexArray(0);
+    p.release();
+    centre("old geometry shader");
+    gl->glDeleteBuffers(1, &vbo);
+    gl->glDeleteVertexArrays(1, &vao);
+  }
+
+  // 3: the new line shader, raw GL, with glDrawArrays and with an index buffer
+  {
+    QOpenGLShaderProgram p;
+    const bool ok = p.addShaderFromSourceCode(QOpenGLShader::Vertex, lineVert)
+                    && p.addShaderFromSourceCode(QOpenGLShader::Fragment, frag) && p.link();
+    qInfo("DIAG new program ok %d %s", ok, qPrintable(p.log()));
+    QVector<float> d;
+    const float A[3] = {-1, 0, 0}, B[3] = {1, 0, 0};
+    auto corner = [&](const float* self, const float* other, float side) {
+      d << self[0] << self[1] << self[2] << 0 << 0 << 1 << 0.2f << 0.6f << 1 << 1 << other[0] << other[1] << other[2] << side;
+    };
+    corner(A, B, 1); corner(A, B, -1); corner(B, A, -1); corner(B, A, 1);
+    QVector<float> flat;
+    const int order[6] = {0, 1, 2, 2, 1, 3};
+    for (int i : order) for (int k = 0; k < 14; k++) flat << d[i * 14 + k];
+    GLuint vao = 0, vbo = 0, ibo = 0;
+    gl->glGenVertexArrays(1, &vao);
+    gl->glBindVertexArray(vao);
+    gl->glGenBuffers(1, &vbo);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    for (int i = 0; i < 5; i++) gl->glEnableVertexAttribArray(i);
+    auto pointers = [&]() {
+      gl->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(0));
+      gl->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(12));
+      gl->glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(24));
+      gl->glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(40));
+      gl->glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, 56, reinterpret_cast<void*>(52));
+    };
+    gl->glBufferData(GL_ARRAY_BUFFER, flat.size() * 4, flat.constData(), GL_STATIC_DRAW);
+    pointers();
+    begin(QVector4D(0, 0, 0, 0));
+    setCommon(p);
+    gl->glBindVertexArray(vao);
+    gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+    p.release();
+    centre("new shader, glDrawArrays");
+
+    gl->glBindVertexArray(vao);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    gl->glBufferData(GL_ARRAY_BUFFER, d.size() * 4, d.constData(), GL_STATIC_DRAW);
+    const GLuint idx[6] = {0, 1, 2, 2, 1, 3};
+    gl->glGenBuffers(1, &ibo);
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
+    begin(QVector4D(0, 0, 0, 0));
+    setCommon(p);
+    gl->glBindVertexArray(vao);
+    gl->glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    gl->glBindVertexArray(0);
+    p.release();
+    centre("new shader, glDrawElements");
+    gl->glDeleteBuffers(1, &vbo);
+    gl->glDeleteBuffers(1, &ibo);
+    gl->glDeleteVertexArrays(1, &vao);
   }
 }
 
