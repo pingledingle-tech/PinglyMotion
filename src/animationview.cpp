@@ -430,8 +430,8 @@ void AnimationView::paintGL()
   {
     // the chain words (job A4) and the ring letters are widgets over the picture: moved after it is drawn
     QMetaObject::invokeMethod(this,&AnimationView::placeChainLabels,Qt::QueuedConnection);
-    QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);
     QMetaObject::invokeMethod(this,&AnimationView::placeGizmoLabels,Qt::QueuedConnection);
+    QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);
     emit viewDrawn();
   }
 }
