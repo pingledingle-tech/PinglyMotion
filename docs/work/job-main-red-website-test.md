@@ -1,6 +1,6 @@
 Branch: job/main-red-website-test
-Status: active
-Pull request: pending
+Status: done
+Pull request: #471
 Files:
 - tests/test_site_mockup_m2.py
 
