@@ -1,6 +1,6 @@
 Branch: docs/web-ready-rule
-Status: active
-Pull request: pending
+Status: done
+Pull request: #457
 Files:
 - docs/ROADMAP.md
 - docs/DECISIONS.md
