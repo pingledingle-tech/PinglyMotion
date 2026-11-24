@@ -4,7 +4,7 @@
 
 # UX decisions: timeline and poser as one design
 
-Status: agreed with the project owner on 20 November 2026. Each step starts only when the owner says start. Merged: step 1 (Start, Stop, Replay from start, Loop; pull request 251) and step 2 (Frame back and Frame forward; pull request 271). Built, open pull requests waiting for the owner's Windows test: step 3 (easing tiles, pull request 269), the timeline scrolling to the selected joint (pull request 273) and the transport buttons in the design system (pull request 275). Steps 4 to 13 are not built yet. Issue #14 tracks the work. Where this page and [POSING_UX.md](POSING_UX.md) differ, this page wins.
+Status: agreed with the project owner on 20 November 2026. Each step starts only when the owner says start. Merged: step 1 (Start, Stop, Replay from start, Loop; pull request 251), step 2 (Frame back and Frame forward; pull request 271), step 3 (easing tiles, pull request 269), the timeline scrolling to the selected joint (pull request 273) and the transport buttons in the design system (pull request 275), all by 22 November 2026. Most later steps were built in the UX phases of 22 to 24 November 2026 (sections 6 to 6y; section 9 lists the steps). All owner tests are optional since 24 November 2026 (the project owner, 19:34). Issue #14 tracks the work. Where this page and [POSING_UX.md](POSING_UX.md) differ, this page wins.
 
 ## General rules
 
@@ -21,7 +21,7 @@ Status: agreed with the project owner on 20 November 2026. Each step starts only
 - Step 2 (built and merged, pull request 271): **Frame back** and **Frame forward** buttons right of Replay from start, with the same look as the other transport buttons. Each goes one frame and stops at the ends, never wrapping around: Frame back cannot be clicked on the first frame, Frame forward not on the last. While playing, a click stops playing first. The left / right arrow keys do the same when no field, list or slider has the keyboard focus. Clicking a transport button does not take the keyboard focus, so the arrow keys keep working afterwards. A modern button look (Start green, Stop red, a replay icon) is a separate later item.
 - Speed control: not now. Add it later if it is missed.
 - Colours (the project owner, 22 November 2026): Start green (`go_fill`), Replay from start violet (`replay_fill`), Stop red (`danger_fill`), each with its icon and word. Shown in the clickable mockup; the built transport bar still has the older look until a job changes it ([DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), "Shape").
-- Look (built, waiting for the owner's test; redone in the design system of 21 November 2026): Start is the main button (accent colour) with a play icon, Stop a danger button (danger colour) with a square icon, Replay from start a normal button with a round arrow, all with the same shape and Lucide icons in the colour of their text, from the theme tokens in the dark and the light theme. A button that cannot be clicked is pale and says why in its tip and the status line ("It is already playing. Click Stop to stop it."). Keyboard focus shows a ring; when Start or Stop can no longer be clicked, the focus moves to the other one, so Space starts and stops. The buttons are drawn by the program (`src/transportlook.*`, icons `src/lucideicons.*`), grow with the text size and need no picture files. Texts, order and behaviour are unchanged.
+- Look (built and merged, pull request 275; redone in the design system of 21 November 2026): Start is the main button (accent colour) with a play icon, Stop a danger button (danger colour) with a square icon, Replay from start a normal button with a round arrow, all with the same shape and Lucide icons in the colour of their text, from the theme tokens in the dark and the light theme. A button that cannot be clicked is pale and says why in its tip and the status line ("It is already playing. Click Stop to stop it."). Keyboard focus shows a ring; when Start or Stop can no longer be clicked, the focus moves to the other one, so Space starts and stops. The buttons are drawn by the program (`src/transportlook.*`, icons `src/lucideicons.*`), grow with the text size and need no picture files. Texts, order and behaviour are unchanged.
 
 ## 2. Easing tiles
 
@@ -214,7 +214,7 @@ The File, View and Help menus follow the mockup (`docs/mockup/index.html`). One 
 - **Difference from the mockup, on purpose:** the mockup shows the line also for keyboard focus, because its greyed controls keep the focus. Qt never gives keyboard focus to a greyed-out widget, so here the line follows the mouse and the menus, not the Tab key. Giving greyed controls focus would mean drawing them greyed without disabling them; that is a separate step.
 - Test: `tests/reasonline` (exact lines, none for working controls, gone on leave, dark and light theme, and the format against the mockup file).
 
-## 6h. File menu, Add..., status bar toggles and the old Settings window (decided 23 Nov 2026, not yet built)
+## 6h. File menu, Add..., status bar toggles and the old Settings window (decided 23 Nov 2026; partly built: Add a second figure and the AI and Aurora switches in Setup are built; the old Tools and Options menus and the old Settings menu entry are not removed yet, checked 24 Nov 2026)
 
 Decided after comparing the mockup's File menu (five items) against the program's current menus, which still also have Tools and Options.
 
@@ -407,7 +407,7 @@ From the approved plan "Script Lab: for beginners" (the project owner, 23 Novemb
 - Whole-pose buttons (Flip, T-pose, Reset all) in one small row at the bottom of the Joints panel, matching the mockup and the UX phase 2a queue item (issue 74): every joint of the current frame, not only the selected one. L→R, R→L and a "Poses…" picker from an earlier draft of this page are not built: a single Flip already only changes a joint whose source rotation moved from rest, so a separate L→R/R→L pair would do the same thing with an extra click; a pose picker overlaps the later reference library browser step (track 1, [PRODUCT.md](PRODUCT.md)), left for that step to decide.
 - Plus "Paste mirrored" on the timeline (see 5).
 
-## 6n. Script Lab example objects and their guides (job E1, 23 November 2026)
+## 6z. Script Lab example objects and their guides (job E1, 23 November 2026)
 
 Approved by the project owner, 23 November 2026, 21:02 (no mockup), with his notes of 21:06 to 21:30 in the jobs list (issue 74). Details: [EXAMPLES.md](EXAMPLES.md).
 
@@ -439,7 +439,7 @@ Approved by the project owner, 23 November 2026, 21:02 («Se på disse samlet da
 - **Not built (outside the job):** props made from prims by themselves, a click in the 3D view as a touch, props that move (all three built since in job A1, pull request 447: [SCRIPT_LAB.md](SCRIPT_LAB.md), "Props from prims, click as touch, moving props"; the click works only while Show effects in 3D view is on, and the log line is "You clicked <name>."; since job A2, pull request 448, a menu the click opens is a box over the 3D view whose buttons do reach the watched folder: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The menu box over the 3D view"), and Touch, Say and the panel's dialog buttons under Send input reaching a watched folder ([EXAMPLES.md](EXAMPLES.md), "For the example button", point 4). So only the first example (First colour) works from start to end; the Gear set's Lock all step is greyed with its reason. Nothing here was tested in Second Life.
 - **For the combined taste round (look, not blocking):** the steps card's spacing and place, the four empty-state buttons, the 760-pixel point for side by side, the folded-part fill, the tip cards' place by their words, and the effects button's on look.
 
-## 6p. Script Lab: the menu box and the restriction choice (job A2, built, 24 November 2026)
+## 6za. Script Lab: the menu box and the restriction choice (job A2, built, 24 November 2026)
 
 No mockup (the project owner, 23 November 2026, 23:38): built from the design charter and the design system; the look goes to the combined taste round. Behaviour and texts: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The menu box over the 3D view" and "Choose a restriction from the list".
 
@@ -447,7 +447,7 @@ No mockup (the project owner, 23 November 2026, 23:38): built from the design ch
 - **Restriction choice:** the Now cell of each row is a drop-down (Allowed, Blocked); a blocked row has its words and the drop-down in the `danger` colour and bold, with the word Blocked. The box under the list shows the line in a fixed-width face, the plain sentences one per line, the value field with Apply when the command takes a distance or a channel, and Use in script with its greyed reason in a `text_muted` line beside it.
 - **For the combined taste round (look, not blocking):** the box's width (336 pixels) and place by the click, whether it should rather stand by the prop than by the pointer, the button order (the panel's top-down order is kept; Second Life fills from the bottom row), the drop-down in every row, and how much the box under the list says.
 
-## 6q. Script Lab: record and replay (job A3, built, 24 November 2026)
+## 6zb. Script Lab: record and replay (job A3, built, 24 November 2026)
 
 No mockup (the project owner, 23 November 2026, 23:38): built from the design charter and the design system; the look goes to the combined taste round. Behaviour and texts: [SCRIPT_LAB.md](SCRIPT_LAB.md), "Record and replay"; text rows LABREC-01 to LABREC-27 in [TEACHING.md](TEACHING.md).
 
@@ -473,7 +473,7 @@ No mockup (the project owner, 23 November 2026, 23:38): built from the design ch
 
 No mockup: built from the design charter and the design system, reusing the timeline's transport bar; the look goes to the combined taste round. Behaviour and texts: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The player"; text rows LABPLAY-01 to LABPLAY-40 in [TEACHING.md](TEACHING.md).
 
-- **Place:** under the recipe line of 6q, in Beginner mode too (first meeting: 3D, menu, player, step list). A title "Player: watch your steps again" (`label_weight`), the line saying where it is, the bar, the list of moments, **Go to first difference** and **Show now** (compact normal buttons, the panel's normal button style, with the Lucide `crosshair` and `eye` icons), a muted line saying what the 3D view shows, and "True at this moment:".
+- **Place:** under the recipe line of 6zb, in Beginner mode too (first meeting: 3D, menu, player, step list). A title "Player: watch your steps again" (`label_weight`), the line saying where it is, the bar, the list of moments, **Go to first difference** and **Show now** (compact normal buttons, the panel's normal button style, with the Lucide `crosshair` and `eye` icons), a muted line saying what the 3D view shows, and "True at this moment:".
 - **The bar** is `TransportBar` itself (Start as the main button, Stop as the danger button, Replay from start, the Lucide icons and focus ring of `transportlook.*`), with the words **Step back** and **Step forward**; no Loop switch (P5). It wraps into two lines when the panel is narrow, as under the timeline.
 - **Colours with words and shapes (P10):** "Locked:" and "Blocked:" rows in `danger` with `circle-x` and `ban`; "Free:" and "Allowed:" in `success` with `circle-check`; a step not done in `warning` with `triangle-alert`; the rest in `text` with `info`. A row that changed at this step is bold and ends with "(changed at this step)". The first difference has the `crosshair` icon and the words "First difference.".
 - **Expert only:** the log up to the moment, read only, fixed width (P5). Switching modes moves nothing above it (P12).

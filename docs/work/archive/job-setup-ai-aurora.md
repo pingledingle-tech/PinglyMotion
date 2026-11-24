@@ -1,6 +1,6 @@
 Branch: job/setup-ai-aurora
 Status: done
-Pull request: pending
+Pull request: #476
 Files:
 - src/setupdialog.*
 - src/pinglymotionwindow.cpp

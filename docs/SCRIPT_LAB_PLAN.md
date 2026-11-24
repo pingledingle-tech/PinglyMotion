@@ -1,6 +1,6 @@
 # Script Lab plan
 
-Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b is in progress (9b-1 to 9b-9 merged on 22 Nov 2026); 9c is planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Order and status: [ROADMAP.md](ROADMAP.md), section "Script Lab: folder, editor, converter". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
+Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b is done (9b-1 to 9b-9 merged on 22 Nov 2026) and the gap lists (9c) are built; the later parts A to G (folder, editor, converter) are done, see [ROADMAP.md](ROADMAP.md). Left: «improve a finished setup» waits for the project owner's decision, and Lua comes last. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Order and status: [ROADMAP.md](ROADMAP.md), section "Script Lab: folder, editor, converter". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
 
 ## 1. Goal
 
