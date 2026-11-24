@@ -109,6 +109,7 @@ int UserSettings::m_textSizePercent = 100;
 const QString UserSettings::m_textSizePercentKey = "text_size_percent";
 QByteArray UserSettings::m_panelLayout;
 QByteArray UserSettings::m_panelLayoutBeginner;
+QByteArray UserSettings::m_panelLayoutScript;
 const QString UserSettings::m_panelLayoutKey = PanelLayout::SettingLayout;
 int UserSettings::m_panelLayoutVersion = 0;
 const QString UserSettings::m_panelLayoutVersionKey = PanelLayout::SettingLayoutVersion;
@@ -327,6 +328,8 @@ void UserSettings::setPanelLayoutVersion(int value)  { m_panelLayoutVersion = va
 int UserSettings::panelLayoutVersion()               { return m_panelLayoutVersion; }
 void UserSettings::setPanelLayoutBeginner(const QByteArray& state) { m_panelLayoutBeginner = state; }
 QByteArray UserSettings::panelLayoutBeginner()       { return m_panelLayoutBeginner; }
+void UserSettings::setPanelLayoutScript(const QByteArray& state) { m_panelLayoutScript = state; }
+QByteArray UserSettings::panelLayoutScript()        { return m_panelLayoutScript; }
 void UserSettings::setMainWindowGeometry(const QByteArray& value) { m_mainWindowGeometry = value; }
 QByteArray UserSettings::mainWindowGeometry()        { return m_mainWindowGeometry; }
 
@@ -420,6 +423,7 @@ void UserSettings::readSettings()
     setPanelLayout(settings.value(m_panelLayoutKey).toByteArray());
     setPanelLayoutVersion(settings.value(m_panelLayoutVersionKey, 0).toInt());
     setPanelLayoutBeginner(settings.value(PanelLayout::SettingLayoutBeginner).toByteArray());
+    setPanelLayoutScript(settings.value(PanelLayout::SettingLayoutScript).toByteArray());
     setMainWindowGeometry(settings.value(m_mainWindowGeometryKey).toByteArray());
 
     // the old width and height: read once, used only while main_window_geometry is empty
@@ -495,6 +499,7 @@ void UserSettings::writeSettings()
   settings.setValue(m_panelLayoutKey, panelLayout());
   settings.setValue(m_panelLayoutVersionKey, panelLayoutVersion());
   settings.setValue(PanelLayout::SettingLayoutBeginner, panelLayoutBeginner());
+  settings.setValue(PanelLayout::SettingLayoutScript, panelLayoutScript());
   settings.setValue(m_mainWindowGeometryKey, mainWindowGeometry());
   // show_timeline_panel, main_window_width and main_window_height are retired:
   // read once above, never written again (docs/archive/PANELS_PLAN.md, section 7)
