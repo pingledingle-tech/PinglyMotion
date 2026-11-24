@@ -521,12 +521,29 @@ void LabPlayer::refreshState()
 
 void LabPlayer::applyStyle()
 {
+  const bool dark = palette().color(QPalette::Window).lightness() < 128;
   QFont f = m_title->font();
   f.setWeight(QFont::Weight(Theme::Size::labelWeight));
   m_title->setFont(f);
   QPalette muted = m_view->palette();
-  muted.setColor(QPalette::WindowText, Theme::color(Theme::Token::TextMuted, palette().color(QPalette::Window).lightness() < 128));
+  muted.setColor(QPalette::WindowText, Theme::color(Theme::Token::TextMuted, dark));
   m_view->setPalette(muted);
+  // the two buttons are normal buttons, as the panel's (docs/DESIGN_SYSTEM.md, "Shape"): surface_raised
+  // fill, border, text; greyed: text_muted and a half border; focus: the focus_ring border
+  auto hex = [dark](Theme::Token token) { return Theme::color(token, dark).name(QColor::HexRgb).toUpper(); };
+  const QString halfBorder = Theme::mix(Theme::color(Theme::Token::SurfaceRaised, dark), Theme::color(Theme::Token::Border, dark), 0.5)
+                               .name(QColor::HexRgb).toUpper();
+  const QString normal = QStringLiteral(
+    "QPushButton { background: %1; color: %2; border: 1px solid %3; border-radius: %4px; padding: 0 %5px; }"
+    "QPushButton:disabled { color: %6; border: 1px solid %8; }"
+    "QPushButton:focus { border: 2px solid %7; }")
+    .arg(hex(Theme::Token::SurfaceRaised), hex(Theme::Token::Text), hex(Theme::Token::Border))
+    .arg(Theme::Size::radiusControl).arg(Theme::Size::spacingM)
+    .arg(hex(Theme::Token::TextMuted), hex(Theme::Token::FocusRing), halfBorder);
+  m_firstDifference->setStyleSheet(normal);
+  m_now->setStyleSheet(normal);
+  m_firstDifference->setIcon(LucideIcons::icon(QStringLiteral("crosshair"), Theme::color(Theme::Token::Text, dark), Theme::color(Theme::Token::TextMuted, dark)));
+  m_now->setIcon(LucideIcons::icon(QStringLiteral("eye"), Theme::color(Theme::Token::Text, dark), Theme::color(Theme::Token::TextMuted, dark)));
 }
 
 void LabPlayer::changeEvent(QEvent* event)

@@ -291,6 +291,16 @@ void TestScriptLabPlayer::buttonsAndReasons()
   QVERIFY(player.stateList()->item(1)->font().bold());
   QVERIFY(!player.stateList()->item(0)->font().bold());
   QVERIFY(!player.stateList()->item(0)->icon().isNull());
+  // the two buttons are normal buttons in the design system's colours, with their icons
+  const QString css = player.nowButton()->styleSheet();
+  QVERIFY2(css.contains("QPushButton { background: " + Theme::color(Theme::Token::SurfaceRaised, true).name().toUpper() + "; color: "
+                        + Theme::color(Theme::Token::Text, true).name().toUpper() + "; border: 1px solid "
+                        + Theme::color(Theme::Token::Border, true).name().toUpper() + "; border-radius: 6px; padding: 0 12px; }"), qPrintable(css));
+  QVERIFY(css.contains("QPushButton:focus { border: 2px solid " + Theme::color(Theme::Token::FocusRing, true).name().toUpper() + "; }"));
+  QCOMPARE(player.firstDifferenceButton()->styleSheet(), css);
+  QVERIFY(!player.nowButton()->icon().isNull());
+  QVERIFY(!player.firstDifferenceButton()->icon().isNull());
+  QCOMPARE(player.nowButton()->minimumHeight(), Theme::Size::controlCompact);
   // a first replay: nothing to compare with
   player.setReplay(fakeReplay(QJsonValue(), true));
   QCOMPARE(player.firstDifferenceButton()->toolTip(), QString("This is the first replay, so there is nothing to compare with."));
