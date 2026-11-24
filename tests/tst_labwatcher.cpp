@@ -76,6 +76,7 @@ class TestLabWatcher : public QObject
     void linksetRunsTheWholeFolder();
     void linksetBrokenScriptStopsTheRun();
     void touchGoesToThePrim();
+    void dialogAnswerGoesToTheMenu();
 };
 
 void TestLabWatcher::refusals()
@@ -496,6 +497,50 @@ void TestLabWatcher::touchGoesToThePrim()
 
   QVERIFY(w.unwatch());
   QCOMPARE(w.touch(2).error, QString("No folder is watched as one object."));
+}
+
+// job A2: a menu shown after a click is answered in the same world, on the menu's channel
+void TestLabWatcher::dialogAnswerGoesToTheMenu()
+{
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
+  LabWatcher w;
+  QVERIFY(QDir(dir.path()).mkpath("Root"));
+  QVERIFY(writeFile(dir.filePath("Root/menu.lsl"),
+                    "default {\n"
+                    "  touch_start(integer n) { llListen(-5, \"\", NULL_KEY, \"\"); llDialog(llGetOwner(), \"Pick\", [\"Red\", \"Blue\"], -5); }\n"
+                    "  listen(integer c, string name, key id, string m) { llOwnerSay(\"heard \" + m + \" on \" + (string)c); }\n"
+                    "}\n"));
+  QCOMPARE(w.answerDialog("Red").error, QString("No folder is watched as one object."));
+  QVERIFY(w.watch(dir.path(), QJsonObject{{"linkset", true}}).ok());
+  QVERIFY(w.dialog().isEmpty());
+  QCOMPARE(w.answerDialog("Red").error, QString("No menu is open. Click a part that shows one first."));
+  QVERIFY(w.touch(1).ok());
+  const QJsonObject menu = w.dialog();
+  QCOMPARE(menu.value("message").toString(), QString("Pick"));
+  QCOMPARE(menu.value("channel").toInt(), -5);
+  QCOMPARE(menu.value("buttons").toArray(), QJsonArray({"Red", "Blue"}));
+  // the input is the one the panel's menu sends
+  QCOMPARE(LabWatcher::dialogAnswer(menu, "Blue"),
+           QJsonObject({{"type", "dialog"}, {"object", menu.value("object").toString()}, {"button", "Blue"}}));
+  QSignalSpy changed(&w, &LabWatcher::resultChanged);
+  QVERIFY(w.answerDialog("Blue").ok());
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(ownerSays(w.lastResult()), QStringList({"heard Blue on -5"}));
+  const QJsonArray log = w.folderResult().value("result").toObject().value("log").toArray();
+  int clicked = -1, heard = -1;
+  for (int i = 0; i < log.size(); ++i)
+  {
+    const QJsonObject e = log[i].toObject();
+    if (e.value("type").toString() == "clicked" && e.contains("button"))
+    {
+      clicked = i;
+      QCOMPARE(e.value("button").toString(), QString("Blue"));
+      QCOMPARE(e.value("channel").toInt(), -5);
+    }
+    if (e.value("type").toString() == "owner_say") heard = i;
+  }
+  QVERIFY(clicked >= 0);
+  QVERIFY(heard > clicked);
 }
 
 QTEST_GUILESS_MAIN(TestLabWatcher)

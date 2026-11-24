@@ -86,6 +86,7 @@ SET (PINGLYMOTION_SHARED_SRC
               scriptlab/labtree.cpp
               scriptlab/lslhighlighter.cpp
               scriptlab/objectsview.cpp
+              scriptlab/labdialogbox.cpp
               scriptlab/scriptlabpanel.cpp
               scriptlab/scriptlabsection.cpp
               scriptlab/spherecontrols.cpp

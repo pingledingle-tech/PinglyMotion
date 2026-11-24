@@ -61,6 +61,7 @@
 #include "labeditor.h"
 #include "labprimprops.h"
 #include "labtint.h"
+#include "labdialogbox.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
@@ -166,7 +167,17 @@ class ScriptLabPanel : public QWidget
     // a click on the prop of that name, as the 3D view sends it: a touch to the scripts in that prim
     // (LabWatcher::touch), with "You clicked <name>." in the event log. False when the props are not
     // shown, no prim has that name, or the touch was refused (the status line says why).
-    bool touchPrim(const QString& name);
+    // at: where the click was in the menu box's host (the 3D view), for the menu box (job A2)
+    bool touchPrim(const QString& name, const QPoint& at = QPoint(-1, -1));
+    // --- the menu box over the 3D view (job A2): when a script of the watched object shows a menu
+    // (llDialog, llTextBox) while the props are shown, a LabDialogBox shows it over the host (the
+    // window gives the 3D view) next to the last click. A button answers through LabWatcher::answerDialog
+    // (the panel's own menu sends the same input to the world of the last lsl_run). The box closes
+    // after an answer, after Ignore, when the effects go off and when the folder runs again.
+    void setMenuBoxHost(QWidget* host);
+    LabDialogBox* menuBox() const { return m_menuBox; }
+    // answers the menu the box shows, as a click on its button does; false when nothing was sent
+    bool answerMenu(const QString& button);
     // stops watching, as Stop watching does
     void stopWatching();
     // watches the example scripts that come with the program (examples/scriptlab), as
@@ -531,6 +542,8 @@ class ScriptLabPanel : public QWidget
     void updatePropTints(bool force = false);
     // job A1: makes the missing props, places the moved ones, then updates the tints
     void updatePrimProps();
+    // shows or hides the menu box for the newest menu of the watched object (job A2)
+    void refreshMenuBox();
     QList<LabPrimProps::Move> m_primMoves;
     QMap<QString, LabExample::Prop> m_primBase;   // where each moved prop stood before a script moved it
     QString m_primExampleFolder;                  // the folder m_primExample was read from
@@ -562,6 +575,10 @@ class ScriptLabPanel : public QWidget
     QGridLayout* m_dialogGrid = nullptr;
     QPlainTextEdit* m_inputLog = nullptr;
     QString m_shownDialogKey;          // the dialog the buttons were made for
+    QPointer<LabDialogBox> m_menuBox;  // job A2: the menu over the 3D view (owned by its host)
+    QPoint m_menuAnchor{-1, -1};       // the last click on a prop, in the host's coordinates
+    QString m_menuKey;                 // the menu the box was made for
+    QString m_menuDone;                // the menu answered or ignored last: not shown again
     int m_inputTone = 0;
     bool m_effectsFromSession = false;   // the newest run came from lsl_run or lsl_event, not Live
     QPointer<CameraOverride> m_camera;

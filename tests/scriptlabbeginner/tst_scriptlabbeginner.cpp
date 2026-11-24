@@ -24,6 +24,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QMap>
 #include <QPushButton>
 #include <QSettings>
@@ -37,6 +39,7 @@
 
 #include "propmanager.h"
 #include "scriptlab/labbeginner.h"
+#include "scriptlab/labdialogbox.h"
 #include "scriptlab/labeditor.h"
 #include "scriptlab/labtree.h"
 #include "scriptlab/labwatcher.h"
@@ -136,6 +139,8 @@ class TestScriptLabBeginner : public QObject
     void textsInRegister();
     void windowWiring();
     void propsFromPrims();
+    void menuBoxAtTheClick();
+    void menuBoxTextBox();
 
   private:
     void setUpPanel(ScriptLabPanel& panel, LabWatcher& watcher, RlvState& state, const QString& root, FakeScene& scene);
@@ -797,7 +802,9 @@ void TestScriptLabBeginner::windowWiring()
   QVERIFY(source.contains("m_scriptLabPanel->makeStepsAction(this)"));
   QVERIFY(source.contains("scene->addProp(type,mesh,attach,"));
   // job A1: a click on a prop is a touch, and the panel can read and set where a prop stands
-  QVERIFY(source.contains("m_scriptLabPanel->touchPrim(prop->name());"));
+  QVERIFY(source.contains("m_scriptLabPanel->touchPrim(prop->name(),ui->animationView->mapFromGlobal(QCursor::pos()));"));
+  // job A2: the menu box stands over the 3D view
+  QVERIFY(source.contains("m_scriptLabPanel->setMenuBoxHost(ui->animationView);"));
   QVERIFY(source.contains("hooks.propPlace="));
   QVERIFY(source.contains("hooks.placeProp="));
 }
@@ -855,6 +862,142 @@ void TestScriptLabBeginner::propsFromPrims()
   QCOMPARE(scene.places["Collar"].position, QVector3D(0, 1.5f, 0));
   QVERIFY(panel.primMoves().isEmpty());
   QCOMPARE(scene.props, QStringList({"Root", "Collar"}));
+}
+
+// job A2: a menu a script shows after a click on a prop stands next to the click, and a button answers it
+void TestScriptLabBeginner::menuBoxAtTheClick()
+{
+  QTemporaryDir dir;
+  const QString top = dir.filePath("Set");
+  QVERIFY(writeFile(top + "/Root/hud.lsl", "default { state_entry() { } }\n"));
+  QVERIFY(writeFile(top + "/Collar/collar.lsl",
+                    "default {\n"
+                    "  touch_start(integer n) {\n"
+                    "    llListen(-77, \"\", llGetOwner(), \"\");\n"
+                    "    llDialog(llGetOwner(), \"Lock the collar?\", [\"Lock\", \"Unlock\", \"Cancel\", \"A & B\"], -77);\n"
+                    "  }\n"
+                    "  listen(integer channel, string name, key id, string message) {\n"
+                    "    llOwnerSay(\"picked \" + message);\n"
+                    "    if (message == \"Lock\") llOwnerSay(\"@detach=n\");\n"
+                    "  }\n"
+                    "}\n"));
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  QWidget host;   // stands in for the 3D view
+  host.resize(800, 600);
+  host.show();
+  panel.setMenuBoxHost(&host);
+  LabDialogBox* box = panel.menuBox();
+  QVERIFY(box);
+  QCOMPARE(box->parentWidget(), &host);
+  QVERIFY(panel.watchFolder(top));
+  QVERIFY(!panel.answerMenu("Lock"));   // no menu yet: nothing is sent
+  QCOMPARE(panel.liveStatusText(), QString("Error: the menu answer \"Lock\" was not sent. No menu is open. Click a part that shows one first."));
+  panel.effectsBox()->setChecked(true);
+  QVERIFY(!box->isVisible());
+
+  // a click on the collar at (100, 200): the menu stands to the right of it
+  QVERIFY(panel.touchPrim("Collar", QPoint(100, 200)));
+  QVERIFY(box->isVisible());
+  QCOMPARE(box->title()->text(), QString("Menu from Set"));
+  QCOMPARE(box->message()->text(), QString("Lock the collar?"));
+  QCOMPARE(box->channelLine()->text(), QString("A button says its text on channel -77. Only the script hears it."));
+  QCOMPARE(box->buttons().size(), 4);
+  QStringList texts;
+  for (QPushButton* b : box->buttons()) texts << b->property("button").toString();
+  QCOMPARE(texts, QStringList({"Lock", "Unlock", "Cancel", "A & B"}));
+  QCOMPARE(box->buttons()[3]->text(), QString("A && B"));   // "&" shows as itself, not as a shortcut
+  QVERIFY(!box->textField()->isVisible());
+  // rows of three, the first row on top
+  QCOMPARE(box->buttons()[0]->y(), box->buttons()[2]->y());
+  QVERIFY(box->buttons()[0]->x() < box->buttons()[1]->x());
+  QVERIFY(box->buttons()[3]->y() > box->buttons()[0]->y());
+  QCOMPARE(box->buttons()[3]->x(), box->buttons()[0]->x());
+  QCOMPARE(box->x(), 100 + LabDialogBox::Gap);
+  QCOMPARE(box->y(), qMax(LabDialogBox::Margin, 200 - box->height() / 2));
+  QVERIFY(host.rect().contains(box->geometry()));
+  QVERIFY(box->buttons()[0]->hasFocus() || !QApplication::focusWidget());   // the keys go to the menu
+  QVERIFY(panel.runLog()->toPlainText().contains("You clicked Collar."));
+
+  // the same menu shows in the panel's world list too? No: the panel's menu belongs to lsl_run's world
+  // a click on Lock: the avatar says it on -77, the script hears it and locks
+  QTest::mouseClick(box->buttons()[0], Qt::LeftButton);
+  QVERIFY(!box->isVisible());
+  const QString log = panel.runLog()->toPlainText();
+  QVERIFY2(log.contains(" s  You clicked \"Lock\" in the menu (channel -77).\n"), qPrintable(log));
+  QVERIFY2(log.contains("collar (Collar): owner_say: picked Lock"), qPrintable(log));
+  QVERIFY(log.indexOf("in the menu (channel -77)") < log.indexOf("picked Lock"));
+  QCOMPARE(state.actions().value("detach"), false);
+  // the menu does not come back by itself
+  panel.effectsBox()->setChecked(false);
+  panel.effectsBox()->setChecked(true);
+  QVERIFY(!box->isVisible());
+
+  // a click near the right edge: the menu stands to the left of the click, inside the view
+  QVERIFY(panel.touchPrim("Collar", QPoint(780, 10)));
+  QVERIFY(box->isVisible());
+  QCOMPARE(box->x(), 780 - LabDialogBox::Gap - box->width());
+  QCOMPARE(box->y(), LabDialogBox::Margin);
+  // Ignore: the box closes and nothing is said
+  const QString before = panel.runLog()->toPlainText();
+  QTest::mouseClick(box->ignoreButton(), Qt::LeftButton);
+  QVERIFY(!box->isVisible());
+  QCOMPARE(panel.runLog()->toPlainText(), before);
+
+  // Esc ignores it too; turning the effects off hides an open menu
+  QVERIFY(panel.touchPrim("Collar", QPoint(-1, -1)));
+  QVERIFY(box->isVisible());
+  QCOMPARE(box->x(), 800 - LabDialogBox::Margin - box->width());   // no click point: the top right corner
+  QCOMPARE(box->y(), LabDialogBox::Margin);
+  QTest::keyClick(box, Qt::Key_Escape);
+  QVERIFY(!box->isVisible());
+  QVERIFY(panel.touchPrim("Collar", QPoint(300, 300)));
+  QVERIFY(box->isVisible());
+  panel.effectsBox()->setChecked(false);
+  QVERIFY(!box->isVisible());
+  // the panel's own menu (for the world of lsl_run) is untouched: it still has no dialog
+  QCOMPARE(panel.dialogButtons().size(), 0);
+}
+
+// job A2: llTextBox shows a field; Send says the typed text on the channel
+void TestScriptLabBeginner::menuBoxTextBox()
+{
+  QTemporaryDir dir;
+  const QString top = dir.filePath("Pet");
+  QVERIFY(writeFile(top + "/Collar/collar.lsl",
+                    "default {\n"
+                    "  touch_start(integer n) { llListen(-88, \"\", NULL_KEY, \"\"); llTextBox(llGetOwner(), \"Name your pet\", -88); }\n"
+                    "  listen(integer channel, string name, key id, string message) { llOwnerSay(\"name \" + message); }\n"
+                    "}\n"));
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  QWidget host;
+  host.resize(640, 480);
+  host.show();
+  panel.setMenuBoxHost(&host);
+  QVERIFY(panel.watchFolder(top));
+  panel.effectsBox()->setChecked(true);
+  QVERIFY(panel.touchPrim(scene.props.last(), QPoint(50, 50)));
+  LabDialogBox* box = panel.menuBox();
+  QVERIFY(box->isVisible());
+  QCOMPARE(box->message()->text(), QString("Name your pet"));
+  QCOMPARE(box->buttons().size(), 0);
+  QVERIFY(box->textField()->isVisible());
+  QCOMPARE(box->channelLine()->text(), QString("What you type is said on channel -88. Only the script hears it."));
+  QVERIFY(!box->sendButton()->isEnabled());   // nothing typed yet
+  QTest::keyClicks(box->textField(), "Rex");
+  QVERIFY(box->sendButton()->isEnabled());
+  QTest::keyClick(box->textField(), Qt::Key_Return);
+  QVERIFY(!box->isVisible());
+  const QString log = panel.runLog()->toPlainText();
+  QVERIFY2(log.contains("You clicked \"Rex\" in the menu (channel -88)."), qPrintable(log));
+  QVERIFY2(log.contains("owner_say: name Rex"), qPrintable(log));
 }
 
 QTEST_MAIN(TestScriptLabBeginner)

@@ -117,6 +117,18 @@ class LabWatcher : public QObject
     // the link of the prim of that name in the last folder run (0 when there is none)
     int linkOf(const QString& prim) const;
 
+    // Linkset mode (job A2, the menu box over the 3D view): the newest menu (llDialog or llTextBox)
+    // a script of the last folder run showed, as lsl::Sandbox::lastDialog gives it (object, message,
+    // buttons, channel, "text_box"); empty when there is none or the folder did not run.
+    QJsonObject dialog() const;
+    // Presses a button of that menu (or sends the typed text of a text box): the same lsl_event
+    // "dialog" input the panel's menu sends, so the avatar says the text on the menu's channel, and
+    // the world runs on for one simulated second. A "clicked" line with the button and the channel
+    // comes first in the log. Refused, with the reason, when no menu is open.
+    Result answerDialog(const QString& button);
+    // the lsl_event input that answers this dialog with this button (shared with the panel's menu)
+    static QJsonObject dialogAnswer(const QJsonObject& dialog, const QString& button);
+
     // Reads, checks and runs one script now (also used by the tests and the
     // first run after watch). relative is a path from scripts(). In linkset
     // mode it runs the whole folder, with relative as the file that changed.
@@ -140,6 +152,8 @@ class LabWatcher : public QObject
 
     QMap<QString, Entry> scan(QStringList* folders, QMap<QString, Entry>* notecards = nullptr);
     void runFolder(const QString& trigger);
+    // sends one lsl_event input to the world of the last folder run, with "clicked" first in the log
+    Result sendEvent(const QJsonObject& request, QJsonObject clicked);
     void scheduleRescan();
     void runPending();
     void updateWatchedPaths(const QStringList& folders);

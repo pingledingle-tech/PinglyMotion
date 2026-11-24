@@ -65,6 +65,7 @@
 #include "spherecontrols.h"
 #include "lsl/lint.h"
 #include "lucideicons.h"
+#include "labdialogbox.h"
 #include "theme.h"
 #include "usersettings.h"
 
@@ -1425,6 +1426,8 @@ void ScriptLabPanel::setWatcher(LabWatcher* watcher)
   {
     m_watcherConnections << connect(watcher, &LabWatcher::resultChanged, this, &ScriptLabPanel::refreshLive);
     m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshLive);
+    m_watcherConnections << connect(watcher, &LabWatcher::resultChanged, this, &ScriptLabPanel::refreshMenuBox);
+    m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshMenuBox);
   }
   m_refusal.clear();
   connectEffectsToWatcher();
@@ -1605,6 +1608,8 @@ QString ScriptLabPanel::logLine(const QJsonObject& entry)
   // a folder run (lane 1 job D) names the source of each line: "main (Root): " or, for an input, "Root: "
   const bool tagged = entry.contains("prim");
   // job A1: a click on a prop in the 3D view, before the touch it sends
+  if (type == QLatin1String("clicked") && entry.contains("button"))   // job A2: a button of the menu box
+    return time + tr("You clicked \"%1\" in the menu (channel %2).").arg(entry.value("button").toString(), fieldText(entry.value("channel")));
   if (type == QLatin1String("clicked")) return time + tr("You clicked %1.").arg(entry.value("prim").toString());
   if (tagged)
     time += entry.contains("script") ? QStringLiteral("%1 (%2): ").arg(entry.value("script").toString(), entry.value("prim").toString())
@@ -2003,11 +2008,12 @@ void ScriptLabPanel::updatePrimProps()
   updatePropTints(added);
 }
 
-bool ScriptLabPanel::touchPrim(const QString& name)
+bool ScriptLabPanel::touchPrim(const QString& name, const QPoint& at)
 {
   if (!primPropsShown()) return false;
   const int link = m_watcher->linkOf(name);
   if (link < 1) return false;
+  m_menuAnchor = at;   // a menu the touch makes stands next to the click (job A2)
   const LabWatcher::Result result = m_watcher->touch(link);
   if (!result.ok())
   {
@@ -2032,6 +2038,7 @@ void ScriptLabPanel::effectsToggled(bool on)
   styleEffectsButton();
   refreshSteps();   // the step "Show effects" follows the button
   updatePrimProps();
+  refreshMenuBox();   // job A2: the menu box shows only with the props
   if (!m_effects) return;
   m_effects->setEnabled(on);
   // ticked: show the newest run at once, without waiting for the next save
@@ -2308,21 +2315,9 @@ void ScriptLabPanel::refreshInput()
   if (key != m_shownDialogKey)
   {
     m_shownDialogKey = key;
-    for (QPushButton* old : dialogButtons())
-    {
-      m_dialogGrid->removeWidget(old);
-      old->deleteLater();
-      old->setParent(nullptr);
-    }
-    for (int i = 0; i < buttons.size(); ++i)
-    {
-      QPushButton* button = new QPushButton(QString(buttons[i]).replace(QLatin1Char('&'), QStringLiteral("&&")), m_dialogButtonBox);
-      button->setObjectName("scriptLabDialogButton");
-      button->setProperty("button", buttons[i]);
-      button->setMinimumHeight(ControlHeight);
-      connect(button, &QPushButton::clicked, this, [this, text = buttons[i]]() { answerDialog(text); });
-      m_dialogGrid->addWidget(button, i / 3, i % 3);
-    }
+    // the same grid as the menu box over the 3D view (job A2): rows of three, the first row on top
+    LabDialogBox::fillButtonGrid(m_dialogGrid, m_dialogButtonBox, buttons, QStringLiteral("scriptLabDialogButton"),
+                                 [this](const QString& text) { answerDialog(text); });
     applyStyle();
   }
   if (dialog.isEmpty()) m_inputDialog->setText(tr("No dialog yet. When a script shows one, its buttons appear here."));
@@ -2469,8 +2464,57 @@ bool ScriptLabPanel::answerDialog(const QString& button)
     setInputResult(tr("Error: the dialog answer was not sent. No script has shown a dialog yet."), 2);
     return false;
   }
-  QJsonObject request{{"type", "dialog"}, {"object", dialog.value("object").toString()}, {"button", button}};
+  QJsonObject request = LabWatcher::dialogAnswer(dialog, button);   // the same input as the menu box (job A2)
   return sendInput(request, tr("Dialog answer \"%1\" to %2").arg(button, dialog.value("object").toString()));
+}
+
+// --- The menu box over the 3D view (job A2) -------------------------------------
+
+void ScriptLabPanel::setMenuBoxHost(QWidget* host)
+{
+  if (m_menuBox) m_menuBox->deleteLater();
+  m_menuBox = nullptr;
+  m_menuKey.clear();
+  if (!host) return;
+  m_menuBox = new LabDialogBox(host);
+  connect(m_menuBox, &LabDialogBox::answered, this, [this](const QString& text) { answerMenu(text); });
+  connect(m_menuBox, &LabDialogBox::ignored, this, [this]()
+  {
+    m_menuDone = m_menuKey;
+    if (m_menuBox && m_menuBox->parentWidget()) m_menuBox->parentWidget()->setFocus(Qt::OtherFocusReason);
+  });
+  refreshMenuBox();
+}
+
+void ScriptLabPanel::refreshMenuBox()
+{
+  if (!m_menuBox) return;
+  const QJsonObject dialog = primPropsShown() ? m_watcher->dialog() : QJsonObject();
+  // the time is part of the key: the same menu shown again after an answer is a new menu
+  const QString key = dialog.isEmpty() ? QString() : dialogKey(dialog) + QChar(0x1f) + QString::number(dialog.value("t").toDouble(), 'f', 3);
+  if (key.isEmpty() || key == m_menuDone)
+  {
+    m_menuKey = key;
+    m_menuBox->hide();
+    return;
+  }
+  if (key == m_menuKey && m_menuBox->isVisible()) return;
+  m_menuKey = key;
+  m_menuBox->showDialog(dialog, m_menuAnchor);
+}
+
+bool ScriptLabPanel::answerMenu(const QString& button)
+{
+  if (!m_watcher) return false;
+  m_menuDone = m_menuKey;
+  if (m_menuBox) m_menuBox->hide();
+  const LabWatcher::Result result = m_watcher->answerDialog(button);
+  if (!result.ok())
+  {
+    setLiveStatus(tr("Error: the menu answer \"%1\" was not sent. %2").arg(button, result.error), 2);
+    return false;
+  }
+  return true;
 }
 
 // --- Script Lab for beginners (job U3) ----------------------------------------
