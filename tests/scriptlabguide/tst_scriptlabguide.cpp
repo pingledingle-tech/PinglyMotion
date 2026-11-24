@@ -190,7 +190,8 @@ void TestScriptLabGuide::neverOverwrites()
   QVERIFY(kept.open(QIODevice::ReadOnly));
   QCOMPARE(kept.readAll(), QByteArray("keep"));
   // a place that cannot be written gives an error in words and makes nothing
-  QVERIFY(!guide.makeIn(QStringLiteral("/proc/no/such/place")));
+  // (a place below a plain file cannot be made on any system)
+  QVERIFY(!guide.makeIn(dir.path() + "/First_colour 3/below"));
   QVERIFY(guide.statusLabel()->text().startsWith("Error: "));
   // nothing to copy when the example is missing
   QTemporaryDir empty;
