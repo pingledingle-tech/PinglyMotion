@@ -54,6 +54,7 @@
 #include "labeditor.h"
 #include "labtree.h"
 #include "channelmapview.h"
+#include "labchains.h"
 #include "labwatcher.h"
 #include "lsl/control.h"
 #include "lsl/session.h"
@@ -535,6 +536,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   for (ScriptLabSection* s : m_sections)
     connect(s, &ScriptLabSection::expandedChanged, this, [this]() { UserSettings::setScriptLabParts(partsState()); refreshTips(); });
   updateWorkLayout();
+  m_chainsReady = true;
 }
 
 QStringList ScriptLabPanel::tryLines()
@@ -823,6 +825,8 @@ void ScriptLabPanel::changeEvent(QEvent* event)
 void ScriptLabPanel::refresh()
 {
   const bool dark = isDark(palette());
+  // job A4: a lock or an unlock turns the chains red or green at once
+  if (m_chainsReady) updateChains();
 
   QVector<RlvState::Restriction> held;
   if (m_state) held = m_state->restrictions();
@@ -2130,6 +2134,21 @@ void ScriptLabPanel::updatePrimProps()
   }
   // a new prop gets its tint at once
   updatePropTints(added);
+  updateChains();
+}
+
+void ScriptLabPanel::updateChains()
+{
+  // job A4, part 2: chains and ribbons between two prims, while the props are shown
+  QVector<LabChains::Chain> chains;
+  if (primPropsShown())
+  {
+    const QJsonObject folder = m_watcher->folderResult();
+    chains = LabChains::fromFolderResult(folder, m_state && LabChains::objectLocked(folder, *m_state));
+  }
+  if (chains == m_chains) return;
+  m_chains = chains;
+  emit chainsChanged();
 }
 
 bool ScriptLabPanel::touchPrim(const QString& name, const QPoint& at)

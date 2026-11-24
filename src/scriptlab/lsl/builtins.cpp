@@ -3849,11 +3849,46 @@ Value Interpreter::callBuiltin(const QString& name, std::vector<Value>& a)
       return Value::key(id);
     }
     case Fn::ParticleSystem:
-      m_world.recordOnly(m_now, "llParticleSystem", QJsonArray{int(a[0].list.size())});
-      return Value();
     case Fn::LinkParticleSystem:
-      m_world.recordOnly(m_now, "llLinkParticleSystem", QJsonArray{a[0].i, int(a[1].list.size())});
+    {
+      const bool own = *it == Fn::ParticleSystem;
+      const std::vector<Value>& rules = own ? a[0].list : a[1].list;
+      const QJsonArray args = own ? QJsonArray{int(rules.size())} : QJsonArray{a[0].i, int(rules.size())};
+      const char* function = own ? "llParticleSystem" : "llLinkParticleSystem";
+      // job A4: a chain or ribbon (PSYS_SRC_TARGET_KEY, rule 20) names its target, and particles turned off (an empty
+      // list) name the prim that stops, so the 3D view can draw or remove a line between two parts. The prim that
+      // emits: the script's own for llParticleSystem, the one link of llLinkParticleSystem (none for LINK_SET and
+      // the other groups). The target's link when it is a prim of the same object (llGetKey, llGetLinkKey).
+      QString target;
+      for (size_t i = 0; i + 1 < rules.size(); i += 2)
+        if (rules[i].type == Type::Integer && rules[i].i == 20) target = toLslString(rules[i + 1]);
+      if (target.isEmpty() && !rules.empty())
+      {
+        m_world.recordOnly(m_now, function, args);
+        return Value();
+      }
+      if (m_world.logFull()) return Value();
+      const int prims = qMax(1, m_world.numberOfPrims());
+      int emitter = 0;
+      if (own) emitter = qMax(1, m_world.linkNumber());
+      else if (a[0].i == LINK_THIS) emitter = qMax(1, m_world.linkNumber());
+      else if (a[0].i >= 1 && a[0].i <= prims) emitter = a[0].i;
+      else if (a[0].i == 0 && prims == 1) emitter = 1;
+      QJsonObject entry{{"type", "recorded_only"}, {"function", function}, {"args", args},
+                        {"note", "Recorded only: the sandbox plays and shows nothing for this."}};
+      if (emitter > 0) entry["emitter_link"] = emitter;
+      if (!target.isEmpty())
+      {
+        entry["target"] = World::clip(target);
+        const QString objectKey = m_world.objectKey();
+        int targetLink = target == objectKey ? 1 : 0;
+        for (int link = 2; link <= prims && targetLink == 0; ++link)
+          if (target == Inventory::derivedKey(objectKey, "link/" + QString::number(link))) targetLink = link;
+        if (targetLink > 0) entry["target_link"] = targetLink;
+      }
+      m_world.log(m_now, entry);
       return Value();
+    }
     case Fn::TriggerSound:
     case Fn::PlaySound:
     case Fn::LoopSound:

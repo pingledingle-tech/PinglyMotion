@@ -144,6 +144,7 @@ class TestScriptLabBeginner : public QObject
     void recordAndReplay();
     void menuBoxTextBox();
     void channelMap();
+    void chainLines();
 
   private:
     void setUpPanel(ScriptLabPanel& panel, LabWatcher& watcher, RlvState& state, const QString& root, FakeScene& scene);
@@ -808,6 +809,10 @@ void TestScriptLabBeginner::windowWiring()
   QVERIFY(source.contains("m_scriptLabPanel->touchPrim(prop->name(),ui->animationView->mapFromGlobal(QCursor::pos()));"));
   // job A2: the menu box stands over the 3D view
   QVERIFY(source.contains("m_scriptLabPanel->setMenuBoxHost(ui->animationView);"));
+  // job A4, part 2: the chains go to the 3D view
+  QVERIFY(source.contains("connect(m_scriptLabPanel,&ScriptLabPanel::chainsChanged,this,[this]()"));
+  QVERIFY(source.contains("lines.append(ChainLines::Line{chain.from,chain.to,chain.locked,chain.word()});"));
+  QVERIFY(source.contains("ui->animationView->setChainLines(lines);"));
   QVERIFY(source.contains("hooks.propPlace="));
   QVERIFY(source.contains("hooks.placeProp="));
 }
@@ -1286,6 +1291,43 @@ void TestScriptLabBeginner::channelMap()
   panel.stopWatching();
   QVERIFY(!map->isVisibleTo(&panel));
   QVERIFY(view->map().arrows.isEmpty());
+}
+
+// job A4, part 2: a chain a script makes between two prims, shown while the props are, red and the word
+// Locked while the object holds @detach, green and Free when it does not
+void TestScriptLabBeginner::chainLines()
+{
+  QTemporaryDir dir;
+  const QString top = dir.filePath("Set");
+  QVERIFY(writeFile(top + "/Root/hud.lsl",
+                    "default { touch_start(integer n) { llOwnerSay(\"@detach=n\"); } }\n"));
+  QVERIFY(writeFile(top + "/Collar/collar.lsl", "default { state_entry() { } }\n"));
+  QVERIFY(writeFile(top + "/Cuff_left/cuff.lsl", "default { state_entry() { llParticleSystem([PSYS_SRC_TARGET_KEY, llGetLinkKey(2)]); } }\n"));
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  QSignalSpy changed(&panel, &ScriptLabPanel::chainsChanged);
+  QVERIFY(panel.watchFolder(top));
+  QVERIFY(panel.chains().isEmpty());   // effects off: no lines
+  panel.effectsBox()->setChecked(true);
+  QCOMPARE(panel.chains().size(), 1);
+  QVERIFY(changed.count() >= 1);
+  QCOMPARE(panel.chains()[0].from, QString("Cuff_left"));
+  QCOMPARE(panel.chains()[0].to, QString("Collar"));
+  QVERIFY(!panel.chains()[0].locked);
+  QCOMPARE(panel.chains()[0].word(), QString("Free"));
+  // a click on the HUD locks the object: the chain is locked at once
+  QVERIFY(panel.touchPrim("Root"));
+  QVERIFY(panel.chains()[0].locked);
+  QCOMPARE(panel.chains()[0].word(), QString("Locked"));
+  // Reset in the panel lifts the lock
+  panel.resetAll();
+  QVERIFY(!panel.chains()[0].locked);
+  // effects off: the line goes
+  panel.effectsBox()->setChecked(false);
+  QVERIFY(panel.chains().isEmpty());
 }
 
 QTEST_MAIN(TestScriptLabBeginner)
