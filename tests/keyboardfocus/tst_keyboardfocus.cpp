@@ -58,6 +58,10 @@
 #include "dialogfit.h"
 #include "easing.h"
 #include "easingtiles.h"
+#include "figures.h"
+#include "labguideview.h"
+#include "labhelpview.h"
+#include "welcomedialog.h"
 #include "gltfimport.h"
 #include "gltfimportdialog.h"
 #include "keysmousedialog.h"
@@ -363,6 +367,10 @@ namespace
       {"whatsnew", []() -> QDialog* { return new WhatsNewDialog(QStringLiteral("What is new in this version.\n")); }},
       {"updatenotification", []() -> QDialog* { return new UpdateNotificationDialog; }},
       {"curveeditor", []() -> QDialog* { return new CurveEditorDialog(Easing::Bezier()); }},
+      {"welcome", []() -> QDialog* { return new WelcomeDialog; }},
+      {"addfigure", []() -> QDialog* { return new AddFigureDialog; }},
+      {"labhelp", []() -> QDialog* { return new LabHelpView(QStringLiteral(PINGLYMOTION_EXAMPLES_DIR "/objects")); }},
+      {"labguide", []() -> QDialog* { return new LabGuideView(QStringLiteral(PINGLYMOTION_EXAMPLES_DIR "/objects")); }},
       {"aiconnect", []() -> QDialog* { return new AiConnectDialog(false); }},
       {"aiconnect_claude", []() -> QDialog* { AiConnectDialog* d = new AiConnectDialog(false); d->showPage(AiConnectDialog::Claude); return d; }},
       {"aiconnect_chatgpt", []() -> QDialog* { AiConnectDialog* d = new AiConnectDialog(false); d->showPage(AiConnectDialog::ChatGpt); return d; }},

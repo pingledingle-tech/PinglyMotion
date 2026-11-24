@@ -14,6 +14,16 @@ example and test-motion file, not a judgement of whether an animation looks natu
 left out and counted in the report; the control protocol has no command to open those
 and this job does not add one.
 
+--roundtrip-dir saves each file found under that folder as a new .dingle, opens the saved
+file again and checks that frames, speed and figure are the same (save and reopen, job B4).
+--setting key=value (Linux only, repeat) starts the program with that user setting in a
+scratch home, for example dark_theme=false, tips_on=false (helper off) or text_size_percent=200,
+so the run shows the program in that theme and text size.
+
+The program's own output is scanned at the end: a line that points at a real bug (a Qt warning
+about a broken connection, layout, painter, style sheet or font, a sanitizer report, an assertion)
+fails the run; the report lists the lines. Known harmless lines are not in the list.
+
 Only the Python standard library is used (the Python on the GitHub runner is enough).
 
 Usage:
@@ -34,6 +44,7 @@ import base64
 import collections
 import json
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -47,6 +58,30 @@ import zlib
 
 class SmokeFailure(Exception):
     """The program crashed, did not answer, or the run timed out: the step fails."""
+
+
+# Lines of the program's output that point at a real bug (job B4). Only these fail a run; every other
+# line (information, the library's notes about the platform, our own category lines) is left alone.
+SUSPICIOUS_LOG = [
+    r"QObject::(connect|disconnect|setParent|startTimer|killTimer|moveToThread)",
+    r"QWidget::(setLayout|setParent|render|paintEngine)",
+    r"QLayout:",
+    r"QPainter::",
+    r"QStyleSheetStyle|Could not parse (application )?stylesheet|Unknown property",
+    r"QFont::|QFontDatabase:",
+    r"QPixmap::|QImage::|QIcon::",
+    r"QTimer::|QBasicTimer::|QSocketNotifier:",
+    r"QAction::|QMenu::|QDockWidget::|QMainWindow::|QTabBar::",
+    r"QGLShader|GL_INVALID|glGetError|shader (compile|link)",
+    r"runtime error:|AddressSanitizer|LeakSanitizer|ThreadSanitizer",
+    r"Assertion|ASSERT|Q_ASSERT|Qt has caught an exception|terminate called",
+]
+SUSPICIOUS_LOG_RE = re.compile("|".join("(?:%s)" % pattern for pattern in SUSPICIOUS_LOG))
+
+
+def scan_log(lines):
+    """The lines of the program's output that point at a real bug: see SUSPICIOUS_LOG."""
+    return [line.strip() for line in lines if SUSPICIOUS_LOG_RE.search(line)]
 
 
 # file types the control command 'open_file' can open (src/controlapi.cpp); a file with
@@ -173,6 +208,7 @@ class Run:
         self.timed_out = False
         self.terminated_by_us = False
         self.program_log = os.path.join(self.out, "program.log")
+        self.problems = []       # what the run found wrong without crashing (save and reopen, the log)
 
     def say(self, line):
         print(line, flush=True)
@@ -205,6 +241,23 @@ class Run:
                    PINGLYMOTION_CONTROL_FOLDER=folder,
                    QT_LOGGING_TO_CONSOLE="1",
                    QT_FORCE_STDERR_LOGGING="1")
+        if self.options.setting:
+            if sys.platform.startswith("win"):
+                raise SmokeFailure("--setting is for Linux only")
+            home = os.path.join(work, "home")
+            config = os.path.join(home, ".config", "PinglyMotion")
+            os.makedirs(config)
+            lines = ["[user_settings]", "1.0\\welcome_seen=true", "1.0\\expert_mode=true"]
+            for item in self.options.setting:
+                key, _, value = item.partition("=")
+                lines = [line for line in lines if not line.startswith("1.0\\" + key + "=")]
+                lines.append("1.0\\%s=%s" % (key, value))
+            # the development and the release build keep their settings under different names
+            for name in ("PinglyMotion-Development.ini", "PinglyMotion.ini"):
+                with open(os.path.join(config, name), "w") as ini:
+                    ini.write("\n".join(lines) + "\n")
+            env["HOME"] = home
+            env["XDG_CONFIG_HOME"] = os.path.join(home, ".config")
         if sys.platform.startswith("win"):
             # the runner has no graphics card: Qt's software OpenGL (opengl32sw.dll from the zip)
             env.setdefault("QT_OPENGL", "software")
@@ -347,12 +400,28 @@ class Run:
             self.picture(name, relative)
             # an old .avm file opens under its new .dingle name and counts as changed, so the
             # next open_file would be refused: save it once to a scratch file (removed at the end)
-            if state.get("unsaved_changes"):
+            roundtrip = any(directory in (".", "") or relative == directory or relative.startswith(directory.rstrip("/") + "/")
+                            for directory in self.options.roundtrip_dir)
+            if state.get("unsaved_changes") or roundtrip:
                 scratch = "smoke-scratch-%d.dingle" % number
                 self.scratch.append(os.path.join(self.folder, scratch))
                 answer = self.command({"command": "save_file", "path": scratch})
                 if not answer.get("ok"):
                     self.say("  save to a scratch file failed: %s" % answer.get("error", "?"))
+                    if roundtrip:
+                        self.problems.append("%s: save failed: %s" % (relative, answer.get("error", "?")))
+                elif roundtrip:
+                    # save and reopen: the saved file must open and say the same about the animation
+                    again = self.command({"command": "open_file", "path": scratch})
+                    if not again.get("ok"):
+                        self.say("  reopen of the saved file failed: %s" % again.get("error", "?"))
+                        self.problems.append("%s: the saved file does not open: %s" % (relative, again.get("error", "?")))
+                    else:
+                        after = self.command({"command": "state"})
+                        for field in ("frames", "fps", "figure"):
+                            if after.get(field) != state.get(field):
+                                self.problems.append("%s: after save and reopen %s is %r, was %r" % (relative, field, after.get(field), state.get(field)))
+                        self.say("  saved and reopened: " + self.state_line(after))
 
         for path in self.scratch:
             try:
@@ -396,6 +465,13 @@ class Run:
         for line in program_lines:
             if "3D view" in line or "OpenGL" in line:
                 self.say("program says: " + line.strip())
+        suspicious = scan_log(program_lines)
+        for line in suspicious[:20]:
+            self.say("log: " + line)
+        if suspicious:
+            self.problems.append("%d line(s) in the program's output point at a real bug (listed as 'log:' above)" % len(suspicious))
+        if self.problems and not failure:
+            failure = "; ".join(self.problems[:5]) + (" (and %d more)" % (len(self.problems) - 5) if len(self.problems) > 5 else "")
         drawn = [name for name, empty in self.pictures if not empty]
         if self.pictures:
             self.say("pictures: %d of %d show something%s" % (len(drawn), len(self.pictures),
@@ -418,6 +494,8 @@ def main():
     parser.add_argument("--folder", required=True, help="folder remote control may open files from")
     parser.add_argument("--open", action="append", default=[], help="file to open, relative to --folder (repeat)")
     parser.add_argument("--open-dir", action="append", default=[], help="folder, relative to --folder, to open every .dingle/.bvh/.avm file from, recursively (repeat)")
+    parser.add_argument("--roundtrip-dir", action="append", default=[], help="folder (relative to --folder): each file opened from it is saved as .dingle, reopened and compared (repeat)")
+    parser.add_argument("--setting", action="append", default=[], help="key=value user setting for the run, Linux only (repeat), for example dark_theme=false")
     parser.add_argument("--out", default="smoke", help="output folder for PNGs, answers and the report")
     parser.add_argument("--cwd", default=None, help="where the program starts (default: its own folder)")
     parser.add_argument("--timeout", type=int, default=240, help="seconds for the whole run")

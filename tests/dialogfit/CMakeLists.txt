@@ -15,11 +15,14 @@ ADD_EXECUTABLE (pinglymotion_dialogfit_tests tst_dialogfit.cpp
                 ${CMAKE_SOURCE_DIR}/src/updatenotificationdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/usersettingsdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/updatersettings.cpp
+                ${CMAKE_SOURCE_DIR}/src/welcomedialog.cpp
+                ${CMAKE_SOURCE_DIR}/src/hintcard.cpp
                 ${CMAKE_SOURCE_DIR}/tests/uirender/uirender.cpp)
-TARGET_INCLUDE_DIRECTORIES (pinglymotion_dialogfit_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests/uirender ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_dialogfit_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_SOURCE_DIR}/tests/uirender ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_DEFINITIONS (pinglymotion_dialogfit_tests PRIVATE
   PINGLYMOTION_DATA="${CMAKE_SOURCE_DIR}/bin/data"
-  PINGLYMOTION_MOTIONS="${CMAKE_SOURCE_DIR}/tests/motions")
+  PINGLYMOTION_MOTIONS="${CMAKE_SOURCE_DIR}/tests/motions"
+  PINGLYMOTION_EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples")
 TARGET_LINK_LIBRARIES (pinglymotion_dialogfit_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Test)
 ADD_TEST (NAME dialogfit WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_dialogfit_tests)
 SET_TESTS_PROPERTIES (dialogfit PROPERTIES ENVIRONMENT

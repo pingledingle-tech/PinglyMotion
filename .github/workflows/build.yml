@@ -302,12 +302,28 @@ jobs:
         # the same run as in the Windows job, under Xvfb, but over every example and test-motion
         # file (recursively); fails only when the program crashes or does not answer
         timeout-minutes: 10
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tools/ci/smoke_screenshots.py --app build/src/PinglyMotion --cwd bin --folder . --open-dir examples --open-dir tests/motions --open-dir tests/data/generated --out smoke --timeout 480 --preview-width 0
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tools/ci/smoke_screenshots.py --app build/src/PinglyMotion --cwd bin --folder . --open-dir examples --open-dir tests/motions --open-dir tests/data/generated --roundtrip-dir examples --out smoke --timeout 480 --preview-width 0
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: PinglyMotion-linux-smoke
           path: smoke
+          if-no-files-found: ignore
+      - name: Smoke run in other settings (job B4)
+        # the program started with the light theme, with 200 percent text and with the helper off, each
+        # opening the examples, saving and reopening them, and scanning its own output for warnings that
+        # point at a real bug (tools/ci/smoke_screenshots.py)
+        timeout-minutes: 10
+        run: |
+          set -e
+          xvfb-run -a -s "-screen 0 1280x1000x24" python3 tools/ci/smoke_screenshots.py --app build/src/PinglyMotion --cwd bin --folder . --open-dir examples --roundtrip-dir examples --setting dark_theme=false --out smoke-variants/light --timeout 150 --preview-width 0
+          xvfb-run -a -s "-screen 0 1280x1000x24" python3 tools/ci/smoke_screenshots.py --app build/src/PinglyMotion --cwd bin --folder . --open-dir examples --roundtrip-dir examples --setting text_size_percent=200 --out smoke-variants/text200 --timeout 150 --preview-width 0
+          xvfb-run -a -s "-screen 0 1280x1000x24" python3 tools/ci/smoke_screenshots.py --app build/src/PinglyMotion --cwd bin --folder . --open-dir examples --roundtrip-dir examples --setting tips_on=false --setting dark_theme=false --setting text_size_percent=200 --out smoke-variants/light200-helper-off --timeout 150 --preview-width 0
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: PinglyMotion-linux-smoke-variants
+          path: smoke-variants
           if-no-files-found: ignore
 
   asan-ubsan:

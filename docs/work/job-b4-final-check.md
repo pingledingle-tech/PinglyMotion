@@ -24,6 +24,11 @@ Files:
 - docs/mockup/index.html
 - docs/site.css
 - docs/DEV.md
+- tests/test_smoke_scan.py
+- .github/workflows/build.yml
+- src/figures.cpp
+- src/bvh.cpp
+- src/scriptlab/labhelpview.cpp
 
 ## What
 

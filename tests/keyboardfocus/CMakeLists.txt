@@ -15,6 +15,8 @@ ADD_EXECUTABLE (pinglymotion_keyboardfocus_tests tst_keyboardfocus.cpp
                 ${CMAKE_SOURCE_DIR}/src/updatenotificationdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/usersettingsdialog.cpp
                 ${CMAKE_SOURCE_DIR}/src/updatersettings.cpp
+                ${CMAKE_SOURCE_DIR}/src/welcomedialog.cpp
+                ${CMAKE_SOURCE_DIR}/src/hintcard.cpp
                 ${CMAKE_SOURCE_DIR}/tests/uirender/uirender.cpp)
 # the designer files of the dialogs and of the main window are found in src/
 SET_TARGET_PROPERTIES (pinglymotion_keyboardfocus_tests PROPERTIES AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/src)
@@ -24,7 +26,8 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_keyboardfocus_tests PRIVATE ${CMAKE_SOU
   ${CMAKE_SOURCE_DIR}/tests/uirender ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_COMPILE_DEFINITIONS (pinglymotion_keyboardfocus_tests PRIVATE
   PINGLYMOTION_DATA="${CMAKE_SOURCE_DIR}/bin/data"
-  PINGLYMOTION_MOTIONS="${CMAKE_SOURCE_DIR}/tests/motions")
+  PINGLYMOTION_MOTIONS="${CMAKE_SOURCE_DIR}/tests/motions"
+  PINGLYMOTION_EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples")
 TARGET_LINK_LIBRARIES (pinglymotion_keyboardfocus_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME keyboardfocus WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin COMMAND pinglymotion_keyboardfocus_tests)
 SET_TESTS_PROPERTIES (keyboardfocus PROPERTIES ENVIRONMENT
