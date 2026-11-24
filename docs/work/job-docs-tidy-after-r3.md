@@ -1,6 +1,6 @@
 Branch: job/docs-tidy-after-r3
-Status: active
-Pull request: pending
+Status: done
+Pull request: #475
 Files:
 - docs/PRODUCT.md
 - docs/SCRIPT_LAB_PLAN.md
