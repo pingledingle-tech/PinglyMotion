@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QSaveFile>
 
 #include "lsl/control.h"
 #include "lsl/session.h"
@@ -130,7 +131,11 @@ bool LabWatcher::unwatch()
   m_folderResult = QJsonObject();
   m_lastLinkset = LabFolder::Linkset();
   m_world->clear();
+  m_recording = false;
+  m_recorded.clear();
+  m_replay = QJsonObject();
   emit watchChanged();
+  emit recipeChanged();
   emit resultChanged();
   return true;
 }
@@ -351,6 +356,8 @@ void LabWatcher::runFolder(const QString& trigger)
   m_last = m_results.value(trigger);
   if (m_last.isEmpty() && !m_results.isEmpty()) m_last = m_results.first();
   emit resultChanged();
+  // job A3: every run of the folder (a save) replays the recipe, unless the user is recording one
+  if (!m_recording && hasRecipe()) replayRecipe();
 }
 
 void LabWatcher::runScript(const QString& relative)
@@ -430,7 +437,15 @@ LabWatcher::Result LabWatcher::touch(int link)
   QJsonObject request{{"command", "lsl_event"}, {"type", "touch"}};
   // a single prim is link 0 in the sandbox; the touch goes to it without a link
   if (m_lastLinkset.prims.size() > 1) request["link"] = link;
-  return sendEvent(request, QJsonObject{{"type", "clicked"}, {"link", link}, {"prim", prim}, {"source", "sandbox"}});
+  const Result sent = sendEvent(request, QJsonObject{{"type", "clicked"}, {"link", link}, {"prim", prim}, {"source", "sandbox"}});
+  if (sent.ok())
+  {
+    LabRecipe::Step step;
+    step.kind = LabRecipe::Step::Kind::Touch;
+    step.text = prim;
+    recordStep(step);
+  }
+  return sent;
 }
 
 QJsonObject LabWatcher::dialog() const
@@ -451,8 +466,16 @@ LabWatcher::Result LabWatcher::answerDialog(const QString& button)
   if (shown.isEmpty()) return {tr("No menu is open. Click a part that shows one first.")};
   QJsonObject request = dialogAnswer(shown, button);
   request["command"] = QStringLiteral("lsl_event");
-  return sendEvent(request, QJsonObject{{"type", "clicked"}, {"button", button}, {"channel", shown.value("channel").toInt()},
-                                        {"source", "sandbox"}});
+  const Result sent = sendEvent(request, QJsonObject{{"type", "clicked"}, {"button", button}, {"channel", shown.value("channel").toInt()},
+                                                      {"source", "sandbox"}});
+  if (sent.ok())
+  {
+    LabRecipe::Step step;
+    step.kind = LabRecipe::Step::Kind::Menu;
+    step.text = button;
+    recordStep(step);
+  }
+  return sent;
 }
 
 LabWatcher::Result LabWatcher::sendEvent(const QJsonObject& request, QJsonObject clicked)
@@ -484,5 +507,137 @@ LabWatcher::Result LabWatcher::sendEvent(const QJsonObject& request, QJsonObject
     if (it->contains("result")) (*it)["result"] = run;
   if (m_last.contains("result")) m_last["result"] = run;
   emit resultChanged();
+  return {};
+}
+
+// --- record and replay (job A3)
+
+namespace
+{
+  // a file at the top of the folder that may be read and written: not a link, not a folder
+  bool usableFile(const QString& path, bool mustExist)
+  {
+    const QFileInfo info(path);
+    if (isLink(info)) return false;
+    if (!info.exists()) return !mustExist;
+    return info.isFile();
+  }
+
+  bool writeText(const QString& path, const QString& text)
+  {
+    if (!usableFile(path, false)) return false;
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+    file.write(text.toUtf8());
+    return file.commit();
+  }
+
+  // the text of a file of at most LabRecipe::MAX_FILE_BYTES; null when it cannot be read
+  QString readText(const QString& path, QString* why)
+  {
+    if (!usableFile(path, true))
+    {
+      *why = QCoreApplication::translate("LabWatcher", "There is no recipe yet. Record what you do first.");
+      return QString();
+    }
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+      *why = QCoreApplication::translate("LabWatcher", "The recipe cannot be read: %1").arg(file.errorString());
+      return QString();
+    }
+    const QByteArray bytes = file.read(LabRecipe::MAX_FILE_BYTES + 1);
+    if (bytes.size() > LabRecipe::MAX_FILE_BYTES)
+    {
+      *why = QCoreApplication::translate("LabWatcher", "The recipe is larger than %1 bytes.").arg(LabRecipe::MAX_FILE_BYTES);
+      return QString();
+    }
+    return QString::fromUtf8(bytes);
+  }
+}
+
+QString LabWatcher::recipePath() const
+{
+  if (!watching() || !m_linkset) return QString();
+  return QDir(m_folder).filePath(LabRecipe::recipeFile());
+}
+
+bool LabWatcher::hasRecipe() const
+{
+  const QString path = recipePath();
+  return !path.isEmpty() && usableFile(path, true);
+}
+
+LabWatcher::Result LabWatcher::startRecording()
+{
+  if (!watching() || !m_linkset) return {tr("No folder is watched as one object.")};
+  m_recording = true;
+  m_recorded.clear();
+  emit recipeChanged();
+  return {};
+}
+
+bool LabWatcher::stopRecording()
+{
+  if (!m_recording) return false;
+  m_recording = false;
+  if (!m_recorded.isEmpty()) replayRecipe(true);
+  emit recipeChanged();
+  return true;
+}
+
+void LabWatcher::recordLine(const QString& object, const QString& line)
+{
+  if (!m_recording || !line.trimmed().startsWith('@') || !RlvState::validObjectId(object)) return;
+  if (line.size() > LabRecipe::MAX_LINE_CHARS - 5 || line.contains('\n') || line.contains('\r')) return;
+  LabRecipe::Step step;
+  step.kind = LabRecipe::Step::Kind::Send;
+  step.text = line.trimmed();
+  step.object = object;
+  recordStep(step);
+}
+
+void LabWatcher::recordStep(const LabRecipe::Step& step)
+{
+  if (!m_recording || m_recorded.size() >= LabRecipe::MAX_STEPS) return;
+  // a name or text the file cannot hold on one line is left out
+  if (step.text.contains('\n') || step.text.contains('\r') || step.text.trimmed() != step.text || step.text.isEmpty()) return;
+  m_recorded.append(step);
+  LabRecipe::Recipe recipe;
+  recipe.steps = m_recorded;
+  writeText(recipePath(), LabRecipe::write(recipe));
+  emit recipeChanged();
+}
+
+LabWatcher::Result LabWatcher::replayRecipe(bool first)
+{
+  if (!watching() || !m_linkset) return {tr("No folder is watched as one object.")};
+  QString why;
+  const QString text = readText(recipePath(), &why);
+  if (!why.isEmpty()) return {why};
+  const LabRecipe::Result parsed = LabRecipe::parse(text);
+  if (!parsed.ok()) return {tr("The recipe has a mistake. %1").arg(parsed.error)};
+  if (parsed.value->steps.isEmpty()) return {tr("The recipe has no steps. Record what you do first.")};
+
+  const LabFolder::Linkset linkset = m_lastLinkset.name.isEmpty() ? LabFolder::open(m_folder) : m_lastLinkset;
+  const Rlv::Mode mode = m_rlv ? m_rlv->mode() : Rlv::Mode::Rlva;
+  const LabRecipe::Replay replay = LabRecipe::replay(linkset, m_options, *parsed.value, mode);
+
+  // compare with the facts kept from last time, then keep the new ones
+  const QString resultPath = QDir(m_folder).filePath(LabRecipe::resultFile());
+  QString ignored;
+  const QString before = first ? QString() : readText(resultPath, &ignored);
+  const bool nothingBefore = first || !ignored.isEmpty();
+  const QStringList changes = nothingBefore ? QStringList() : LabRecipe::compare(LabRecipe::parseResult(before), replay.facts);
+  QJsonObject out = LabRecipe::toJson(replay, changes, nothingBefore);
+  out["run"] = m_runs;
+  out["recipe"] = LabRecipe::recipeFile();
+  QStringList lines;
+  for (const LabRecipe::Step& s : parsed.value->steps) lines << LabRecipe::stepLine(s);
+  out["steps_text"] = QJsonArray::fromStringList(lines);
+  if (!writeText(resultPath, LabRecipe::writeResult(replay, changes, nothingBefore)))
+    out["note"] = tr("The result could not be kept in %1.").arg(LabRecipe::resultFile());
+  m_replay = out;
+  emit recipeChanged();
   return {};
 }
