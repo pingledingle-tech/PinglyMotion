@@ -38,6 +38,13 @@ for test in info.get("tests", []):
         result = subprocess.run(full, cwd=cwd, env=env, capture_output=True, text=True, timeout=600)
         print(result.stdout[-20000:], result.stderr[-20000:], sep="\n")
         print(f"exit code {result.returncode} ({result.returncode & 0xffffffff:#x})")
+        if result.returncode == 0:
+            # the output of the failed ctest run itself is lost on the Windows runner, so a test that
+            # fails only now and then shows a passing run here (job T2); say so instead of leaving it
+            # looking like "all passed but exit code 1"
+            print(f"NOTE: this re-run of {test['name']} PASSED, so the failure in the ctest run above did not happen "
+                  "again and its output is lost. The test fails only now and then: run it many times "
+                  "(cmake -DPINGLYMOTION_REPEAT_TESTS=40, tests/repeat/repeat.cmake) to see the failure.")
     except subprocess.TimeoutExpired:
         print("timed out")
     if os.path.exists(out):

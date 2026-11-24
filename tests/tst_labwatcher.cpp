@@ -17,14 +17,17 @@
 
 #include <QtTest>
 
+#include <QDateTime>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
+#include "laterfile.h"
 #include "scriptlab/labwatcher.h"
 #include "scriptlab/rlvstate.h"
 
@@ -50,8 +53,8 @@ namespace
     return out;
   }
 
-  // waits for file times to move on, so a second write is seen as a change
-  void nextSecond() { QTest::qWait(1100); }
+  // a write that is a change at once, without waiting for the clock (tests/laterfile.h)
+  bool writeLater(const QString& path, const QByteArray& text) { return LaterFile::write(path, text); }
 }
 
 class TestLabWatcher : public QObject
@@ -77,6 +80,9 @@ class TestLabWatcher : public QObject
     void linksetBrokenScriptStopsTheRun();
     void touchGoesToThePrim();
     void dialogAnswerGoesToTheMenu();
+    void lostWatchIsBuiltAgain();
+    void sameContentDoesNotRunTwice();
+    void folderGoneAndBack();
 };
 
 void TestLabWatcher::refusals()
@@ -179,14 +185,12 @@ void TestLabWatcher::savingAgainRunsAgain()
   QVERIFY(writeFile(dir.filePath("s.lsl"), Hello));
   QVERIFY(w.watch(dir.path()).ok());
   QCOMPARE(w.runCount(), 1);   // the newest script runs at once
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("s.lsl"), Bye));
+  QVERIFY(writeLater(dir.filePath("s.lsl"), Bye));
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QCOMPARE(ownerSays(w.lastResult()), QStringList{"bye"});
   QCOMPARE(w.lastResult().value("run").toInt(), 2);
   // an editor that saves by writing a new file and renaming it over the old one
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("s.lsl.tmp"), Hello));
+  QVERIFY(writeLater(dir.filePath("s.lsl.tmp"), Hello));
   QFile::remove(dir.filePath("s.lsl"));
   QVERIFY(QFile::rename(dir.filePath("s.lsl.tmp"), dir.filePath("s.lsl")));
   QTRY_COMPARE_WITH_TIMEOUT(ownerSays(w.lastResult()), QStringList{"hello"}, 10000);
@@ -205,8 +209,7 @@ void TestLabWatcher::unwatchStopsReloading()
   QVERIFY(!w.watching());
   QCOMPARE(w.folder(), QString());
   QVERIFY(w.lastResult().isEmpty());
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("s.lsl"), Bye));
+  QVERIFY(writeLater(dir.filePath("s.lsl"), Bye));
   QVERIFY(writeFile(dir.filePath("t.lsl"), Bye));
   QTest::qWait(1500);
   QCOMPARE(w.runCount(), 1);
@@ -217,8 +220,7 @@ void TestLabWatcher::newestScriptRunsAtWatch()
   QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
   LabWatcher w;
   QVERIFY(writeFile(dir.filePath("old.lsl"), Hello));
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("new.lsl"), Bye));
+  QVERIFY(writeLater(dir.filePath("new.lsl"), Bye));
   QVERIFY(w.watch(dir.path()).ok());
   QCOMPARE(w.scripts(), (QStringList{"new.lsl", "old.lsl"}));
   QCOMPARE(w.runCount(), 1);
@@ -311,8 +313,7 @@ void TestLabWatcher::endlessLoopIsStopped()
   QVERIFY2(run.value("stop_reason").toString().contains("steps") || run.value("stop_reason").toString().contains("real time"),
            qPrintable(run.value("stop_reason").toString()));
   // the watch still works after it
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("loop.lsl"), Hello));
+  QVERIFY(writeLater(dir.filePath("loop.lsl"), Hello));
   QTRY_COMPARE_WITH_TIMEOUT(ownerSays(w.lastResult()), QStringList{"hello"}, 10000);
 }
 
@@ -330,8 +331,7 @@ void TestLabWatcher::rlvLinesReachTheSharedState()
   const QJsonObject state = w.lastResult().value("result").toObject().value("rlv").toObject().value("state").toObject();
   QCOMPARE(state.value("blocked").toArray(), (QJsonArray{"detach", "sendim"}));
   // the next run starts from an empty state
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("lock.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n\"); } }"));
+  QVERIFY(writeLater(dir.filePath("lock.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n\"); } }"));
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QVERIFY(rlv.has("detach"));
   QVERIFY(!rlv.has("sendim"));
@@ -366,17 +366,15 @@ void TestLabWatcher::linksetRunsTheWholeFolder()
   QCOMPARE(w.folderResult().value("run").toInt(), 1);
 
   // saving one script runs the whole folder again, once
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("main.lsl"),
-                    "default { state_entry() { llMessageLinked(LINK_ALL_OTHERS, 0, \"again\", NULL_KEY); } }"));
+  QVERIFY(writeLater(dir.filePath("main.lsl"),
+                     "default { state_entry() { llMessageLinked(LINK_ALL_OTHERS, 0, \"again\", NULL_KEY); } }"));
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QCOMPARE(w.lastResult().value("file").toString(), QString("main.lsl"));
   QCOMPARE(ownerSays(w.lastResult()), QStringList({"arm again", "note one"}));
   QCOMPARE(w.folderResult().value("file").toString(), QString("main.lsl"));
 
   // saving a notecard runs it again too
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("Arm/words.txt"), "two\n"));
+  QVERIFY(writeLater(dir.filePath("Arm/words.txt"), "two\n"));
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 3, 10000);
   QCOMPARE(w.folderResult().value("file").toString(), QString("Arm/words.txt"));
   QCOMPARE(ownerSays(w.result("Arm/arm.lsl")), QStringList({"arm again", "note two"}));
@@ -417,8 +415,7 @@ void TestLabWatcher::linksetBrokenScriptStopsTheRun()
   QCOMPARE(w.folderResult().value("error").toString(), notRun);
 
   // fixing the script runs the folder
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("Lid/bad.lsl"), Bye));
+  QVERIFY(writeLater(dir.filePath("Lid/bad.lsl"), Bye));
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QCOMPARE(ownerSays(w.lastResult()), QStringList({"hello", "bye"}));
   QCOMPARE(w.lastResult().value("file").toString(), QString("Lid/bad.lsl"));
@@ -481,17 +478,15 @@ void TestLabWatcher::touchGoesToThePrim()
   QCOMPARE(w.touch(0).error, QString("The object has no prim with link 0."));
 
   // a save runs the folder again from the start
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("Lid/lid.lsl"),
-                    "integer count;\ndefault { touch_start(integer n) { count++; llOwnerSay(\"lid again \" + (string)count); } }"));
+  QVERIFY(writeLater(dir.filePath("Lid/lid.lsl"),
+                     "integer count;\ndefault { touch_start(integer n) { count++; llOwnerSay(\"lid again \" + (string)count); } }"));
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QVERIFY(ownerSays(w.lastResult()).isEmpty());
   QVERIFY(w.touch(2).ok());
   QCOMPARE(ownerSays(w.lastResult()), QStringList({"lid again 1"}));
 
   // a folder that does not compile cannot be touched
-  nextSecond();
-  QVERIFY(writeFile(dir.filePath("Lid/lid.lsl"), "default { touch_start(integer n) { llOwnerSay(\"x\") } }"));
+  QVERIFY(writeLater(dir.filePath("Lid/lid.lsl"), "default { touch_start(integer n) { llOwnerSay(\"x\") } }"));
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 3, 10000);
   QCOMPARE(w.touch(2).error, QString("The object did not run, so it cannot be touched. Fix it and save."));
 
@@ -541,6 +536,101 @@ void TestLabWatcher::dialogAnswerGoesToTheMenu()
   }
   QVERIFY(clicked >= 0);
   QVERIFY(heard > clicked);
+}
+
+
+// job T2: when the system stops watching the folder (on Windows "FindNextChangeNotification failed
+// ... Access is denied"), Qt drops the folder and its files; the watcher builds its watch list again
+// at once and does not run an unchanged script because of it
+void TestLabWatcher::lostWatchIsBuiltAgain()
+{
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
+  LabWatcher w;
+  QVERIFY(QDir(dir.path()).mkpath("sub"));
+  QVERIFY(writeFile(dir.filePath("s.lsl"), Hello));
+  QVERIFY(writeFile(dir.filePath("sub/t.lsl"), Bye));
+  QVERIFY(w.watch(dir.path()).ok());
+  QCOMPARE(w.runCount(), 1);
+  const QString root = w.folder();
+  const QStringList watched = w.watchedPaths();
+  QCOMPARE(watched, (QStringList{root, root + "/s.lsl", root + "/sub", root + "/sub/t.lsl"}));
+  QVERIFY(!w.retrying());
+
+  w.simulateLostWatchForTests();
+  QVERIFY(w.watchedPaths().isEmpty());
+  QTRY_COMPARE_WITH_TIMEOUT(w.watchedPaths(), watched, 10000);
+  QCOMPARE(w.runCount(), 1);   // nothing changed, so nothing ran
+  QVERIFY(!w.retrying());
+
+  // and a save after it is seen again
+  QVERIFY(writeLater(dir.filePath("sub/t.lsl"), Hello));
+  w.rescan();
+  QCOMPARE(w.runCount(), 2);
+  QCOMPARE(w.lastResult().value("file").toString(), QString("sub/t.lsl"));
+  QCOMPARE(ownerSays(w.lastResult()), QStringList{"hello"});
+}
+
+// job T2: a notice for a file whose content already ran (the same save seen twice) does not run it
+// again; a real change runs it even when the time and size look the same
+void TestLabWatcher::sameContentDoesNotRunTwice()
+{
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
+  LabWatcher w;
+  QVERIFY(writeFile(dir.filePath("s.lsl"), Hello));
+  QVERIFY(w.watch(dir.path()).ok());
+  QCOMPARE(w.runCount(), 1);
+  QVERIFY(writeLater(dir.filePath("s.lsl"), Bye));
+  w.rescan();
+  QCOMPARE(w.runCount(), 2);
+  // the notice for that same save comes late: no second run
+  w.simulateLostWatchForTests();
+  QTRY_VERIFY_WITH_TIMEOUT(!w.watchedPaths().isEmpty(), 10000);
+  QCOMPARE(w.runCount(), 2);
+
+  // other content of the same size, with the old file time put back: only the notice can see it
+  const QDateTime time = QFileInfo(dir.filePath("s.lsl")).lastModified();
+  QByteArray other(Bye);
+  other.replace("bye", "eyb");
+  QVERIFY(writeFile(dir.filePath("s.lsl"), other));
+  {
+    QFile file(dir.filePath("s.lsl"));
+    QVERIFY(file.open(QIODevice::ReadWrite));
+    QVERIFY(file.setFileTime(time, QFileDevice::FileModificationTime));
+  }
+  w.rescan();
+  QCOMPARE(w.runCount(), 2);   // time and size look the same
+  w.simulateLostWatchForTests();
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 3, 10000);
+  QCOMPARE(ownerSays(w.lastResult()), QStringList{"eyb"});
+}
+
+// job T2: a watched folder that goes away is looked at every RETRY_MS, and watched again when it is back
+void TestLabWatcher::folderGoneAndBack()
+{
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
+  LabWatcher w;
+  const QString sub = dir.filePath("object");
+  QVERIFY(QDir().mkpath(sub));
+  QVERIFY(writeFile(sub + "/s.lsl", Hello));
+  QVERIFY(w.watch(sub).ok());
+  QCOMPARE(w.runCount(), 1);
+
+  QVERIFY(QDir(sub).removeRecursively());
+  w.rescan();
+  QTRY_VERIFY_WITH_TIMEOUT(!QFileInfo::exists(sub), 10000);
+  w.rescan();
+  QCOMPARE(w.scripts(), QStringList());
+  QVERIFY(w.watching());
+  QVERIFY(w.retrying());
+
+  // back again (Windows may need a moment before the old folder is really gone)
+  QTRY_VERIFY_WITH_TIMEOUT(QDir().mkpath(sub), 10000);
+  QVERIFY(writeFile(sub + "/s.lsl", Bye));
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
+  QCOMPARE(w.scripts(), QStringList{"s.lsl"});
+  QCOMPARE(ownerSays(w.lastResult()), QStringList{"bye"});
+  QTRY_VERIFY_WITH_TIMEOUT(!w.retrying(), 10000);
+  QVERIFY(w.watchedPaths().contains(w.folder()));
 }
 
 QTEST_GUILESS_MAIN(TestLabWatcher)

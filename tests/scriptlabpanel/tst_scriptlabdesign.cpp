@@ -53,6 +53,7 @@
 #include <QTemporaryDir>
 #include <QTreeWidget>
 
+#include "../laterfile.h"
 #include "controlapi.h"
 #include "lucideicons.h"
 #include "scriptlab/labwatcher.h"
@@ -457,15 +458,16 @@ void TestScriptLabDesign::sectionsOnLiveScripts()
 
   // an error: not run
   QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
   QCOMPARE(panel.section("script")->title(), QString("Script: collar.lsl"));
   QCOMPARE(panel.section("problems")->count(), QString("1 error"));
   QCOMPARE(panel.section("log")->count(), QString("not run"));
 
   // fixed, with an unused local: the lint warning shows in the panel, in the warning colour
-  QTest::qWait(1100);   // a new file time
-  QVERIFY(writeScript(dir.filePath("collar.lsl"),
-                      "default\n{\n    state_entry()\n    {\n        integer unused;\n        llOwnerSay(\"@detach=n\");\n    }\n}\n"));
+  QVERIFY(LaterFile::write(dir.filePath("collar.lsl"),
+                           "default\n{\n    state_entry()\n    {\n        integer unused;\n        llOwnerSay(\"@detach=n\");\n    }\n}\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
   QCOMPARE(listTexts(panel.problemList()), QStringList{"Warning, line 5, column 17: The local variable unused is never used."});
   const bool dark = ScriptLabPanel::isDark(panel.palette());
@@ -482,8 +484,8 @@ void TestScriptLabDesign::sectionsOnLiveScripts()
   saveShot(panel, "-live", 900);
 
   // two errors and a warning from another script
-  QTest::qWait(1100);
-  QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); llOwnerSay(2); }\n}\n"));
+  QVERIFY(LaterFile::write(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); llOwnerSay(2); }\n}\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 3, 10000);
   QCOMPARE(panel.section("problems")->count(), QString("2 errors"));
 
@@ -722,6 +724,7 @@ void TestScriptLabDesign::summaryLine()
 
     // OK, in green with the circle-check
     QVERIFY(writeScript(dir.filePath("hello.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"@detach=n\"); }\n}\n"));
+    watcher.rescan();   // the change is looked at now, not when the system's notice comes
     QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
     QCOMPARE(panel.liveStatusText(), QString("OK: hello.lsl ran without errors (run 1), 3 log line(s). RLV restrictions at the end: detach."));
     QCOMPARE(panel.liveStatusTone(), 1);
@@ -737,8 +740,8 @@ void TestScriptLabDesign::summaryLine()
     QCOMPARE(panel.liveStatusFrame()->accessibleName(), panel.liveStatusText());
 
     // Error, in red with the circle-x; a name with < and & is shown as written
-    QTest::qWait(1100);
-    QVERIFY(writeScript(dir.filePath("hello.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
+    QVERIFY(LaterFile::write(dir.filePath("hello.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
+    watcher.rescan();   // the change is looked at now, not when the system's notice comes
     QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
     QCOMPARE(panel.liveStatusText(), QString("Error: hello.lsl has 1 error(s) and was not run (run 2). Fix the line shown below and save."));
     QCOMPARE(panel.liveStatusTone(), 2);
@@ -823,6 +826,7 @@ void TestScriptLabDesign::runAgain()
   QVERIFY(!panel.runAgain());
 
   QVERIFY(writeScript(dir.filePath("again.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"hi\"); }\n}\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
   QVERIFY(panel.runAgainButton()->isEnabled());
   QCOMPARE(panel.runAgainButton()->toolTip(), QString("Runs the last saved script again from the start, with a fresh clock."));
@@ -853,6 +857,7 @@ void TestScriptLabDesign::runAgainWithoutScript()
   // each file on its own, as lab_watch without "linkset" (the panel follows that watch)
   QVERIFY(watcher.watch(dir.path()).ok());
   QVERIFY(writeScript(dir.filePath("gone.lsl"), "default { state_entry() { } }\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
   QVERIFY(panel.runAgainButton()->isEnabled());
   QVERIFY(QFile::remove(dir.filePath("gone.lsl")));
@@ -866,6 +871,7 @@ void TestScriptLabDesign::runAgainWithoutScript()
   QTemporaryDir object;
   QVERIFY(panel.watchFolder(object.path()));
   QVERIFY(writeScript(object.filePath("gone.lsl"), "default { state_entry() { } }\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
   QVERIFY(panel.runAgainButton()->isEnabled());
   QVERIFY(QFile::remove(object.filePath("gone.lsl")));

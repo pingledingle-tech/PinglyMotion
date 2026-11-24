@@ -30,6 +30,7 @@
 #include <unistd.h>
 #endif
 
+#include "laterfile.h"
 #include "animation.h"
 #include "animexport.h"
 #include "animexportdialog.h"
@@ -3319,6 +3320,7 @@ void ControlTest::scriptLabLiveCommands()
     QVERIFY(file.open(QIODevice::WriteOnly));
     file.write("default { state_entry() { llOwnerSay(1); } }");
   }
+  m_api->lab().rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 1, 10000);
   answer = run(R"({"command":"lab_result"})");
   QCOMPARE(answer["watching"].toBool(), true);
@@ -3330,12 +3332,8 @@ void ControlTest::scriptLabLiveCommands()
   QCOMPARE(result["errors"].toArray().first().toObject()["line"].toInt(), 1);
   QCOMPARE(result["errors"].toArray().first().toObject()["column"].toInt(), 38);
 
-  QTest::qWait(1100);   // a new file time
-  {
-    QFile file(dir.filePath("collar.lsl"));
-    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
-    file.write("default { state_entry() { llOwnerSay(\"locked\"); } }");
-  }
+  QVERIFY(LaterFile::write(dir.filePath("collar.lsl"), "default { state_entry() { llOwnerSay(\"locked\"); } }"));
+  m_api->lab().rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(run(R"({"command":"lab_result"})")["runs"].toInt(), 2, 10000);
   result = m_api->execute(QJsonObject{{"command", "lab_result"}, {"file", "collar.lsl"}})["result"].toObject();
   QCOMPARE(result["valid"].toBool(), true);
@@ -3354,13 +3352,9 @@ void ControlTest::scriptLabLiveCommands()
   // after lab_unwatch a saved change is not run
   QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), true);
   QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), false);
-  QTest::qWait(1100);
-  {
-    QFile file(dir.filePath("collar.lsl"));
-    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
-    file.write("default { state_entry() { llOwnerSay(\"again\"); } }");
-  }
-  QTest::qWait(1000);
+  QVERIFY(LaterFile::write(dir.filePath("collar.lsl"), "default { state_entry() { llOwnerSay(\"again\"); } }"));
+  m_api->lab().rescan();   // not watched any more: nothing runs
+  QTest::qWait(1000);   // nor later, when a notice could still come
   answer = run(R"({"command":"lab_result"})");
   QCOMPARE(answer["watching"].toBool(), false);
   QCOMPARE(answer["runs"].toInt(), 2);

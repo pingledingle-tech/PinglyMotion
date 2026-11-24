@@ -131,8 +131,11 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   `text_muted` on the mirror side while Mirror is on, and a joint moved by IK
   has 30 percent `accent` mixed in. The lights and Light... are the same in
   both themes. The view asks for these at every picture, so a theme switch
-  shows at once (`tests/uxcolours`). The floor's squares do not follow the
-  theme yet.
+  shows at once (`tests/uxcolours`). The floor's squares (job "the floor
+  follows the theme", 24 November 2026) are `background` with 12 percent
+  (the fainter square) or 28 percent (the stronger) `text_muted` mixed in, a
+  quiet checkerboard in both themes; on the protected first frame the same
+  shares of `danger_fill` are mixed in instead. Fog is unchanged.
 
 ## Code colours (Script Lab editor)
 

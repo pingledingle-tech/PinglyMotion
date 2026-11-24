@@ -534,7 +534,17 @@ void AnimationView::initializeGL()
     if(m_viewModesOverride && m_viewModesOverride->plainFloor())
     {
       QVector<QVector4D> plain(colors.size());
-      for(int i=0;i<colors.size();i++) plain[i]=ViewModesOverride::plainFloorColour(colors.at(i));
+      // the plain colour keeps its own two answers: a protected-frame tile or an ordinary one
+      const QVector4D protectedTile=ViewColours::vector(ViewColours::floorTile(false,true));
+      const QVector4D protectedTileStrong=ViewColours::vector(ViewColours::floorTile(true,true));
+      for(int i=0;i<colors.size();i++)
+      {
+        const QVector4D tile=colors.at(i);
+        const QVector4D rgb(tile.x(),tile.y(),tile.z(),1.0f);
+        const bool isProtected=(rgb==protectedTile || rgb==protectedTileStrong);
+        plain[i]=ViewModesOverride::plainFloorColour(isProtected ? QVector4D(0.3f,0.0f,0.0f,tile.w())
+                                                                 : QVector4D(0.1f,0.1f,0.1f,tile.w()));
+      }
       return drawWithShader(GL_TRIANGLES,positions,normals,plain);
     }
     return drawWithShader(GL_TRIANGLES,positions,normals,colors);
