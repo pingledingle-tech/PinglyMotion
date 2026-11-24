@@ -1,5 +1,5 @@
 Branch: job/remove-old-menus
-Status: active
+Status: done
 Pull request: #483
 Files:
 - src/pinglymotionwindow.ui
