@@ -1,5 +1,5 @@
 Branch: docs/mockup-2
-Status: active
+Status: done
 Pull request: #456
 Files:
 - docs/mockup/index.html
