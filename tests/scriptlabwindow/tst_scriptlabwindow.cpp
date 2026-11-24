@@ -1,5 +1,5 @@
 /*
- * PinglyMotion - Script Lab as one window with its own tabs (job UX-B, docs/UX_DECISIONS.md 6w)
+ * PinglyMotion - Script Lab as one window with its own tabs (job UX-B, docs/UX_DECISIONS.md 6x)
  *
  * The project owner, 24 November 2026, 13:26: no tabs on the screen edges; the tabs live inside
  * Script Lab, one window, big by default, it can be the main focus or float anywhere, and each tab

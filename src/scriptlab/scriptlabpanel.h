@@ -39,7 +39,7 @@
  * the keys. The chosen RLV or RLVa button has a tick and bold text beside its
  * fill, as Show effects and Record do when on (not by colour alone).
  *
- * Job UX-B, one window with its own tabs (the project owner, 24 Nov 2026, 13:26; docs/UX_DECISIONS.md 6w):
+ * Job UX-B, one window with its own tabs (the project owner, 24 Nov 2026, 13:26; docs/UX_DECISIONS.md 6x):
  * the pages are the tabs Live scripts, Type commands, Who talks to whom and Player (the channel map and
  * record, recipe and player moved out of the long Live page into tabs of their own). Script Lab opens
  * big, docks on any side or floats, and each tab can be popped out into a window of its own (labtabs.h)

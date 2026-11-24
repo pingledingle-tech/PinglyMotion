@@ -126,6 +126,7 @@ class TestMainPanels : public QObject
     void timelineRowsBreakOnlyWhenTheyDoNotFit();
     void selectedJointPageFitsItsPanel();
     void expertModeMovesNothing();
+    void beginnerViewFitsAtEverySize();
     void panelEdgesAreEasyToGrab();
     void jointsPanelCanBeMadeWider();
 };
@@ -319,6 +320,35 @@ void TestMainPanels::expertModeMovesNothing()
       for (auto it = beginner.cbegin(); it != beginner.cend(); ++it)
         QVERIFY2(expert.value(it.key()) == it.value(),
                  qPrintable(QStringLiteral("%1 (%2 wide, %3) moved when Expert mode was switched").arg(it.key()).arg(width).arg(v.name())));
+    }
+}
+
+// UX-E: Beginner mode closes the Joints list; Show all joints and Show curves and finger grid
+// stand above the Selected joint panel and are not clipped, in both themes at 100 and 200 percent
+void TestMainPanels::beginnerViewFitsAtEverySize()
+{
+  for (const UiRender::Variant& v : UiRender::variants())
+    for (int width : {1920, 1100, 700})
+    {
+      UiRender::Scope scope(v);
+      MainWindow w;
+      PanelWindow::applyModeLayout(&w.window, w.panels.jointsDock, w.panels.jointCardDock, w.panels.timelineDock, false);
+      w.arrange(width);
+      const QString where = QStringLiteral("%1 wide, %2").arg(width).arg(v.name());
+      QVERIFY2(w.panels.jointsDock->isHidden(), qPrintable(where));
+      QVERIFY2(w.panels.beginnerRow->isVisibleTo(&w.window), qPrintable(where));
+      for (QPushButton* button : {w.panels.showJointsButton, w.panels.showMoreButton})
+      {
+        QVERIFY2(button->isVisibleTo(&w.window) && !button->text().isEmpty(), qPrintable(where));
+        QVERIFY2(button->width() >= button->minimumSizeHint().width(), qPrintable(where + QStringLiteral(": ") + button->text()));
+      }
+      if (!UiRender::outDir().isEmpty())
+        UiRender::save(w.window.grab().toImage(), QStringLiteral("beginner_%1").arg(width), v);
+      QStringList problems;
+      for (QDockWidget* dock : {w.panels.jointCardDock, w.panels.timelineDock})
+        if (dock->isVisible() && !dock->visibleRegion().isEmpty())
+          problems << panelProblems(dock);
+      QVERIFY2(problems.isEmpty(), qPrintable(where + QLatin1Char('\n') + problems.join('\n')));
     }
 }
 

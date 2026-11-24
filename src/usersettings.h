@@ -56,6 +56,16 @@ class UserSettings
     static QByteArray panelLayout();
     static void setPanelLayoutVersion(int value);
     static int panelLayoutVersion();
+    // the layout of Beginner mode (UX-E): each mode keeps its own. panelLayout() is the
+    // Expert layout (the one every earlier version saved); this one is empty until the user
+    // has used Beginner mode with a window of this version, and then the mode's default is used.
+    // It is saved with the same version as panelLayout().
+    static void setPanelLayoutBeginner(const QByteArray& value);
+    static QByteArray panelLayoutBeginner();
+    // the layout of the mode asked for, and putting one away
+    static QByteArray panelLayoutFor(bool expert) { return expert ? panelLayout() : panelLayoutBeginner(); }
+    static void setPanelLayoutFor(bool expert,const QByteArray& value)
+    { if(expert) setPanelLayout(value); else setPanelLayoutBeginner(value); }
     // the window's place, size, maximised state and screen
     // (QMainWindow::saveGeometry), docs/archive/PANELS_PLAN.md job P3
     static void setMainWindowGeometry(const QByteArray& value);
@@ -212,6 +222,7 @@ private:
     static const QString m_protectFirstFrameKey;
     static bool m_darkTheme;
     static QByteArray m_panelLayout;
+    static QByteArray m_panelLayoutBeginner;
     static const QString m_panelLayoutKey;
     static int m_panelLayoutVersion;
     static const QString m_panelLayoutVersionKey;

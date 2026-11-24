@@ -20,14 +20,19 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QMainWindow>
+#include <QSettings>
+#include <QStandardPaths>
+#include <QTemporaryDir>
 #include <QtTest>
 
+#include "beginnerview.h"
 #include "librarypanel.h"
 #include "panelcontent.h"
 #include "panellayout.h"
 #include "panelwindow.h"
 #include "scriptlabpanel.h"
 #include "textsize.h"
+#include "usersettings.h"
 #include "theme.h"
 #include "uirender.h"
 
@@ -94,6 +99,11 @@ class TestWindowRules : public QObject
     void placeAndSizeComeBackAtAnotherTextSize();
     void resetLayoutPutsTheThreePanelsBack();
     void theLibraryIsClosedUntilAskedFor();
+    void beginnerViewGivesTheFigureMostOfTheWindow();
+    void jointsListCanBeOpenedAgain();
+    void resetLayoutGivesTheModesOwnDefault();
+    void eachModeKeepsItsLayoutThroughARestart();
+    void theWindowKeepsThePicksAndTheWaysBack();
 };
 
 void TestWindowRules::noPanelHasAFixedSize()
@@ -323,7 +333,7 @@ void TestWindowRules::theLibraryIsClosedUntilAskedFor()
   QFile file(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   QVERIFY(file.open(QIODevice::ReadOnly));
   const QString source = QString::fromUtf8(file.readAll());
-  const int restore = source.indexOf(QStringLiteral("restoreState(UserSettings::panelLayout()"));
+  const int restore = source.indexOf(QStringLiteral("restoreState(UserSettings::panelLayoutFor(UserSettings::expertMode())"));
   const int hide = source.indexOf(QStringLiteral("m_libraryDock->hide();"), restore);
   QVERIFY(restore > 0 && hide > restore);
   QVERIFY(hide - restore < 3000);
@@ -331,3 +341,177 @@ void TestWindowRules::theLibraryIsClosedUntilAskedFor()
 
 QTEST_MAIN(TestWindowRules)
 #include "tst_windowrules.moc"
+
+
+// ---- UX-E: the beginner animation view ----
+
+namespace
+{
+  // the width the 3D view (the middle of the window) has in a mode's default layout
+  int figureWidth(Program& p, bool expert)
+  {
+    PanelWindow::applyModeLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock, expert);
+    p.settle();
+    return p.window.centralWidget()->width();
+  }
+}
+
+void TestWindowRules::beginnerViewGivesTheFigureMostOfTheWindow()
+{
+  Program p;
+  const int expertWidth = figureWidth(p, true);
+  // Expert mode: today's layout, all three panels open
+  for (QDockWidget* dock : {p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock})
+    QVERIFY2(!dock->isHidden() && !dock->isFloating(), qPrintable(dock->objectName()));
+  QCOMPARE(p.window.dockWidgetArea(p.panels.jointsDock), Qt::LeftDockWidgetArea);
+
+  const int beginnerWidth = figureWidth(p, false);
+  // Beginner mode: the Joints list is closed, Selected joint and the timeline stay
+  QVERIFY(p.panels.jointsDock->isHidden());
+  QVERIFY(!p.panels.jointCardDock->isHidden() && !p.panels.timelineDock->isHidden());
+  // the 3D view's share of the window is larger, by at least the Joints panel's width
+  const int jointsWidth = p.panels.jointsDock->widget()->minimumSizeHint().width();
+  QVERIFY2(beginnerWidth > expertWidth && beginnerWidth - expertWidth >= jointsWidth / 2,
+           qPrintable(QStringLiteral("3D view %1 px in Beginner mode, %2 px in Expert mode (Joints panel needs %3)")
+                          .arg(beginnerWidth).arg(expertWidth).arg(jointsWidth)));
+  QVERIFY(double(beginnerWidth) / p.window.width() > double(expertWidth) / p.window.width());
+  // and back: Expert mode shows the Joints list again, in the same place
+  figureWidth(p, true);
+  QVERIFY(!p.panels.jointsDock->isHidden());
+  QCOMPARE(p.window.dockWidgetArea(p.panels.jointsDock), Qt::LeftDockWidgetArea);
+}
+
+void TestWindowRules::jointsListCanBeOpenedAgain()
+{
+  Program p;
+  figureWidth(p, false);
+  QVERIFY(p.panels.jointsDock->isHidden());
+  // View > Joints (the item the Show all joints button follows) opens it
+  QVERIFY(!p.panels.jointsDock->toggleViewAction()->isChecked());
+  p.panels.jointsDock->toggleViewAction()->trigger();
+  p.settle();
+  QVERIFY(!p.panels.jointsDock->isHidden());
+  QVERIFY(p.panels.jointsDock->toggleViewAction()->isChecked());
+  // the button's rules: shown in Beginner mode while the Joints list is closed, never in Expert mode
+  QVERIFY(BeginnerView::showJointsButtonVisible(false, false));
+  QVERIFY(!BeginnerView::showJointsButtonVisible(false, true));
+  QVERIFY(!BeginnerView::showJointsButtonVisible(true, false));
+  QVERIFY(BeginnerView::showMoreButtonVisible(false));
+  QVERIFY(!BeginnerView::showMoreButtonVisible(true));
+  // the buttons exist in the Selected joint panel, with plain words and a tip each
+  QVERIFY(p.panels.beginnerRow && p.panels.showJointsButton && p.panels.showMoreButton);
+  QCOMPARE(p.panels.showJointsButton->text(), BeginnerView::tr(BeginnerView::showJointsButton));
+  QCOMPARE(p.panels.showMoreButton->text(), BeginnerView::tr(BeginnerView::showMoreButton));
+  QVERIFY(!p.panels.showJointsButton->toolTip().isEmpty() && !p.panels.showMoreButton->toolTip().isEmpty());
+  QVERIFY(p.panels.jointCardDock->widget()->isAncestorOf(p.panels.beginnerRow));
+}
+
+void TestWindowRules::resetLayoutGivesTheModesOwnDefault()
+{
+  Program p;
+  for (bool expert : {false, true})
+  {
+    // the user moved things around: the Timeline floats, the Joints panel is on the other state
+    p.panels.timelineDock->setFloating(true);
+    p.panels.jointsDock->setVisible(!BeginnerView::jointsListInDefaultLayout(expert));
+    p.settle();
+    // what PinglyMotionWindow::resetPanelLayout does
+    PanelWindow::applyModeLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock, expert);
+    p.settle();
+    QCOMPARE(p.panels.jointsDock->isHidden(), !expert);
+    QVERIFY(!p.panels.jointCardDock->isHidden() && !p.panels.timelineDock->isHidden());
+    QVERIFY(!p.panels.timelineDock->isFloating());
+    QCOMPARE(p.window.dockWidgetArea(p.panels.timelineDock), Qt::BottomDockWidgetArea);
+  }
+}
+
+// what PinglyMotionWindow::switchPanelLayoutForMode and the start do: the layout of the mode
+// that is left goes into its own slot of the settings, the other mode's slot is restored
+void TestWindowRules::eachModeKeepsItsLayoutThroughARestart()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  QStandardPaths::setTestModeEnabled(true);
+  QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, dir.path());
+  UserSettings::setPanelLayout(QByteArray());
+  UserSettings::setPanelLayoutBeginner(QByteArray());
+
+  QByteArray beginnerMarked;
+  {
+    Program p;
+    // Expert mode: the Timeline floats; Beginner mode: the Joints list was opened and made wide
+    PanelWindow::applyModeLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock, true);
+    p.panels.timelineDock->setFloating(true);
+    p.settle();
+    UserSettings::setPanelLayoutFor(true, p.window.saveState(PanelLayout::CurrentVersion));
+    PanelWindow::applyModeLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock, false);
+    p.panels.jointsDock->show();
+    p.window.resizeDocks({p.panels.jointsDock}, {420}, Qt::Horizontal);
+    p.settle();
+    beginnerMarked = p.window.saveState(PanelLayout::CurrentVersion);
+    UserSettings::setPanelLayoutFor(false, beginnerMarked);
+    UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
+    UserSettings::writeSettings();
+  }
+  UserSettings::setPanelLayout(QByteArray());
+  UserSettings::setPanelLayoutBeginner(QByteArray());
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::panelLayoutFor(false), beginnerMarked);
+  QVERIFY(UserSettings::panelLayoutFor(true) != beginnerMarked);
+
+  // a new window, started in Beginner mode: the Joints list is open as it was left
+  {
+    Program p;
+    QVERIFY(PanelLayout::isLayoutUsable(UserSettings::panelLayoutFor(false), UserSettings::panelLayoutVersion(), p.window.size()));
+    p.window.restoreState(UserSettings::panelLayoutFor(false), PanelLayout::CurrentVersion);
+    p.settle();
+    QVERIFY(!p.panels.jointsDock->isHidden());
+    QVERIFY(!p.panels.timelineDock->isFloating());
+  }
+  // and in Expert mode: the Timeline floats as it was left, the Joints list is open
+  {
+    Program p;
+    p.window.restoreState(UserSettings::panelLayoutFor(true), PanelLayout::CurrentVersion);
+    p.settle();
+    QVERIFY(p.panels.timelineDock->isFloating());
+    QVERIFY(!p.panels.jointsDock->isHidden());
+  }
+}
+
+// the window's code that cannot run without the 3D view: a click on the figure picks the joint
+// without the Joints list, the buttons are wired, the layout is saved and restored per mode
+void TestWindowRules::theWindowKeepsThePicksAndTheWaysBack()
+{
+  QFile file(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  const QString source = QString::fromUtf8(file.readAll());
+  auto body = [&](const QString& head)
+  {
+    const int begin = source.indexOf(head);
+    if (begin < 0) return QString();
+    const int end = source.indexOf(QStringLiteral("\n}\n"), begin);
+    return source.mid(begin, end - begin);
+  };
+  // a click on the figure sets the joint and its sliders; it never opens or needs a panel
+  const QString clicked = body(QStringLiteral("void PinglyMotionWindow::partClicked("));
+  QVERIFY(!clicked.isEmpty());
+  QVERIFY(clicked.contains(QStringLiteral("currentPart=node;")));
+  QVERIFY(clicked.contains(QStringLiteral("setX(rotation.x());")));
+  QVERIFY(!clicked.contains(QStringLiteral("m_jointsDock")));
+  // both buttons are connected, and Show curves and finger grid is the Expert switch
+  QVERIFY(source.contains(QStringLiteral("connect(m_panels->showJointsButton,&QPushButton::clicked")));
+  QVERIFY(source.contains(QStringLiteral("connect(m_panels->showMoreButton,&QPushButton::clicked")));
+  QVERIFY(body(QStringLiteral("connect(m_panels->showMoreButton,&QPushButton::clicked")).contains(QStringLiteral("m_expertModeAction->setChecked(true)")));
+  // the mode switch puts the old layout away and restores the new one, and says what changed
+  const QString toggled = body(QStringLiteral("connect(m_expertModeAction,&QAction::toggled"));
+  QVERIFY(toggled.contains(QStringLiteral("switchPanelLayoutForMode(on)")));
+  QVERIFY(toggled.contains(QStringLiteral("BeginnerView::beginnerLayoutMessage")));
+  QVERIFY(toggled.contains(QStringLiteral("BeginnerView::expertLayoutMessage")));
+  const QString change = body(QStringLiteral("bool PinglyMotionWindow::switchPanelLayoutForMode("));
+  QVERIFY(change.contains(QStringLiteral("UserSettings::setPanelLayoutFor(!expert,")));
+  QVERIFY(change.contains(QStringLiteral("restoreState(saved,")));
+  // the layout is saved to the slot of the mode that is on
+  QVERIFY(source.contains(QStringLiteral("UserSettings::setPanelLayoutFor(UserSettings::expertMode(),m_reflower.layoutToSave(this));")));
+  // Reset layout gives the mode's default
+  QVERIFY(body(QStringLiteral("void PinglyMotionWindow::resetPanelLayout()")).contains(QStringLiteral("applyModeLayout(")));
+}

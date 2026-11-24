@@ -1,7 +1,7 @@
 /*
  * PinglyMotion Script Lab - the tabs inside the Script Lab window (job UX-B)
  *
- * The new UX direction (the project owner, 24 Nov 2026, 13:26, docs/UX_DECISIONS.md 6w): Script Lab is
+ * The new UX direction (the project owner, 24 Nov 2026, 13:26, docs/UX_DECISIONS.md 6x): Script Lab is
  * one window with its own tabs, never tabs on the screen edges. Each tab can be pulled out into a
  * window of its own (for people who script a lot: the editor, the map and the player side by side,
  * maybe on two screens) and put back; a beginner keeps everything in one window.

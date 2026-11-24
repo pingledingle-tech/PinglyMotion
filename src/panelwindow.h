@@ -24,6 +24,7 @@
 
 #include <algorithm>
 
+#include "beginnerview.h"
 #include "panellayout.h"
 
 namespace PanelWindow
@@ -50,6 +51,17 @@ namespace PanelWindow
     window->setCorner(Qt::BottomRightCorner,Qt::RightDockWidgetArea);
     for (QDockWidget* dock : {joints,jointCard,timeline}) dock->show();
     window->resizeDocks({timeline},{DefaultTimelineHeight},Qt::Vertical);
+  }
+
+  // The default layout of a mode (UX-E): Expert mode is the default layout above. Beginner
+  // mode is the same with the Joints panel closed, so the 3D view gets most of the window;
+  // the Joints panel stays docked on the left and opens in its place from View > Joints or
+  // Show all joints.
+  inline void applyModeLayout(QMainWindow* window,QDockWidget* joints,QDockWidget* jointCard,
+                              QDockWidget* timeline,bool expert)
+  {
+    applyDefaultLayout(window,joints,jointCard,timeline);
+    if (!BeginnerView::jointsListInDefaultLayout(expert)) joints->hide();
   }
 
   // The usable part of every screen, for pullFloatingPanelsOntoScreen.
