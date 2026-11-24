@@ -147,7 +147,7 @@ What does not work: the control commands cannot click a menu, select a joint in 
 
 ## The combined test build
 
-The rules for `test/combined` (what goes in, when it is rebuilt, that it is the only branch that may be force-pushed) are in `CLAUDE.md`, "Testing by the project owner". The commands:
+All owner tests are optional and block nothing (the project owner, 24 November 2026, 19:34: «Jeg vil ha alle tester på valgfri»), so a job never waits for this build. `test/combined` is only used when the owner wants to try something before it merges. Where he does, the rules in `CLAUDE.md`, "Testing by the project owner" apply (what goes in, when it is rebuilt, that it is the only branch that may be force-pushed). The commands:
 
 `tools/update_combined.sh 120 121 122 --push` rebuilds `test/combined` from `main` plus the given pull requests (it stops on a conflict with a message). Start the build: `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/build.yml/dispatches -f ref=test/combined`. The build label then shows the branch name `test/combined`. Drop merged or closed pull requests from the list when you rebuild. The branch gets no job file.
 
