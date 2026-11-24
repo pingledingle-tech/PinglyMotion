@@ -4,9 +4,8 @@ Pull request: #484
 Files:
 - src/skinrenderer.cpp
 - src/skinrenderer.h
-- src/main.cpp
 - tests/linedraw/**
-- tests/CMakeLists.txt
+- CMakeLists.txt
 - docs/DEV.md
 - .github/workflows/build.yml
 

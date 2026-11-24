@@ -33,8 +33,15 @@ const int TEXELS_PER_JOINT = 9;
 const int FLOATS_PER_VERTEX = 11;
 // ints per vertex in the int buffer: influence joints 4, colour joints 2
 const int INTS_PER_VERTEX = 6;
+// floats per corner of a line: this end 3, normal 3, colour 4, other end 3, side 1
+const int LINE_FLOATS_PER_CORNER = 14;
 
-const char* vertexShader = R"(#version 330 core
+// The shader sources have no #version line: shaderHeader() puts it in front,
+// GLSL 3.30 core on the desktop and GLSL ES 3.00 for WebGL 2 (the later web
+// version, docs/DEV.md, "Web-ready code"). Parts that differ are inside
+// #ifdef GL_ES (GL_ES is set by every GLSL ES compiler).
+
+const char* vertexShader = R"(
 layout(location = 0) in vec3 restPosition;
 layout(location = 1) in vec3 restNormal;
 layout(location = 2) in ivec4 joints;      // up to four joints per vertex
@@ -42,7 +49,6 @@ layout(location = 3) in vec4 weights;
 layout(location = 4) in ivec2 colorJoints; // the two strongest joints, for the colour
 layout(location = 5) in float colorBlend;  // how far the colour leans to the second
 
-uniform samplerBuffer jointData;
 uniform bool eye;
 uniform mat4 projection;
 uniform bool shadow;             // flatten onto the floor
@@ -57,6 +63,18 @@ out float eyeDepth;
 
 const int TEXELS = 9;
 
+#ifdef GL_ES
+// WebGL 2 has no buffer textures: there the joint data is a 2D texture with
+// one row of TEXELS texels per joint, and no gl_PrimitiveID: picking uses the
+// strongest joint of the triangle's last corner
+uniform sampler2D jointData;
+vec4 jointTexel(int joint, int texel) { return texelFetch(jointData, ivec2(texel, joint), 0); }
+flat out int pickJoint;
+#else
+uniform samplerBuffer jointData;
+vec4 jointTexel(int joint, int texel) { return texelFetch(jointData, joint * TEXELS + texel); }
+#endif
+
 void main()
 {
   // skinning, the same sums as AvatarSkin::skin()
@@ -66,11 +84,9 @@ void main()
   {
     float w = weights[k];
     if (w <= 0.0) continue;
-    int base = joints[k] * TEXELS;
-    mat4 m = mat4(texelFetch(jointData, base), texelFetch(jointData, base + 1),
-                  texelFetch(jointData, base + 2), texelFetch(jointData, base + 3));
-    mat3 n = mat3(texelFetch(jointData, base + 4).xyz, texelFetch(jointData, base + 5).xyz,
-                  texelFetch(jointData, base + 6).xyz);
+    int joint = joints[k];
+    mat4 m = mat4(jointTexel(joint, 0), jointTexel(joint, 1), jointTexel(joint, 2), jointTexel(joint, 3));
+    mat3 n = mat3(jointTexel(joint, 4).xyz, jointTexel(joint, 5).xyz, jointTexel(joint, 6).xyz);
     position += (m * vec4(restPosition, 1.0)).xyz * w;
     direction += (n * restNormal) * w;
   }
@@ -85,8 +101,7 @@ void main()
   }
 
   // each vertex gets the colour of its joints, so a selected part shows
-  vec4 color = mix(texelFetch(jointData, colorJoints.x * TEXELS + 7),
-                   texelFetch(jointData, colorJoints.y * TEXELS + 7), colorBlend);
+  vec4 color = mix(jointTexel(colorJoints.x, 7), jointTexel(colorJoints.y, 7), colorBlend);
   // eyeballs are lighter than skin
   if (eye) color.rgb = 0.5 + color.rgb * 0.5;
 
@@ -94,11 +109,14 @@ void main()
   eyePosition = position;
   eyeNormal = direction;
   eyeDepth = abs(position.z);
+#ifdef GL_ES
+  pickJoint = colorJoints.x;
+#endif
   gl_Position = projection * vec4(position, 1.0);
 }
 )";
 
-const char* fragmentShader = R"(#version 330 core
+const char* fragmentShader = R"(
 in vec4 baseColor;
 in vec3 eyePosition;
 in vec3 eyeNormal;
@@ -108,8 +126,6 @@ uniform bool fogOn;
 uniform float fogDensity;
 uniform vec3 fogColor;
 uniform bool picking;
-uniform samplerBuffer jointData;
-uniform isamplerBuffer triangleJoints;
 uniform bool unlit;     // plain colour, no light
 uniform bool shadow;
 uniform float shadowStrength;
@@ -149,6 +165,16 @@ vec3 shade(vec3 albedo, vec3 n, vec3 v)
 
 const int TEXELS = 9;
 
+#ifdef GL_ES
+uniform sampler2D jointData;   // see the vertex shader
+vec4 jointTexel(int joint, int texel) { return texelFetch(jointData, ivec2(texel, joint), 0); }
+flat in int pickJoint;
+#else
+uniform samplerBuffer jointData;
+uniform isamplerBuffer triangleJoints;
+vec4 jointTexel(int joint, int texel) { return texelFetch(jointData, joint * TEXELS + texel); }
+#endif
+
 void main()
 {
   if (shadow)
@@ -161,8 +187,12 @@ void main()
   if (picking)
   {
     // the pick name of the joint this triangle mostly belongs to, as a colour
+#ifdef GL_ES
+    int joint = pickJoint;
+#else
     int joint = texelFetch(triangleJoints, gl_PrimitiveID).r;
-    int name = int(texelFetch(jointData, joint * TEXELS + 8).r + 0.5);
+#endif
+    int name = int(jointTexel(joint, 8).r + 0.5);
     fragColor = vec4(float(name & 255), float((name >> 8) & 255), float((name >> 16) & 255), 255.0) / 255.0;
     return;
   }
@@ -187,11 +217,10 @@ void main()
   fragColor = vec4(rgb, baseColor.a);
 }
 )";
-}
 
 // Bento balls, props and handles: same outputs as the body's vertex shader,
 // so they share its fragment shader and light
-const char* meshVertexShader = R"(#version 330 core
+const char* meshVertexShader = R"(
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec4 vertexColor;
@@ -206,6 +235,9 @@ out vec4 baseColor;
 out vec3 eyePosition;
 out vec3 eyeNormal;
 out float eyeDepth;
+#ifdef GL_ES
+flat out int pickJoint;   // only the body picks by joint
+#endif
 
 void main()
 {
@@ -214,44 +246,28 @@ void main()
   eyeNormal = normalMatrix * normal;
   baseColor = perVertexColor ? vertexColor : color;
   eyeDepth = abs(eye.z);
+#ifdef GL_ES
+  pickJoint = 0;
+#endif
   gl_Position = projection * eye;
 }
 )";
 
-// Lines: the same as the mesh shader, then a geometry shader turns every
-// line into a strip of lineWidth pixels facing the screen (modern OpenGL
-// does not promise wide lines)
-const char* lineVertexShader = R"(#version 330 core
+// Lines: every line is a strip of lineWidth pixels facing the screen, made
+// of two triangles (modern OpenGL does not promise wide lines, and WebGL 2
+// has no geometry shader). drawGeometry() gives each line four corners; each
+// corner knows its own end, the line's other end and its side (+1 or -1),
+// and is moved half the width sideways here.
+const char* lineVertexShader = R"(
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec4 vertexColor;
+layout(location = 3) in vec3 otherPosition;   // the line's other end
+layout(location = 4) in float side;           // which side of the line this corner is on
 
 uniform mat4 modelview;
 uniform mat4 projection;
 uniform mat3 normalMatrix;
-
-out vec4 lineColor;
-out vec3 lineEyePosition;
-out vec3 lineEyeNormal;
-
-void main()
-{
-  vec4 eye = modelview * vec4(position, 1.0);
-  lineEyePosition = eye.xyz;
-  lineEyeNormal = normalMatrix * normal;
-  lineColor = vertexColor;
-  gl_Position = projection * eye;
-}
-)";
-
-const char* lineGeometryShader = R"(#version 330 core
-layout(lines) in;
-layout(triangle_strip, max_vertices = 4) out;
-
-in vec4 lineColor[];
-in vec3 lineEyePosition[];
-in vec3 lineEyeNormal[];
-
 uniform vec2 viewportSize;
 uniform float lineWidth;
 
@@ -259,23 +275,28 @@ out vec4 baseColor;
 out vec3 eyePosition;
 out vec3 eyeNormal;
 out float eyeDepth;
-
-void corner(int i, vec2 offset)
-{
-  baseColor = lineColor[i];
-  eyePosition = lineEyePosition[i];
-  eyeNormal = lineEyeNormal[i];
-  eyeDepth = abs(lineEyePosition[i].z);
-  vec4 p = gl_in[i].gl_Position;
-  gl_Position = vec4(p.xy + offset * p.w, p.zw);
-  EmitVertex();
-}
+#ifdef GL_ES
+flat out int pickJoint;   // only the body picks by joint
+#endif
 
 void main()
 {
-  vec4 a = gl_in[0].gl_Position;
-  vec4 b = gl_in[1].gl_Position;
-  if (a.w <= 0.0 || b.w <= 0.0) return;   // behind the camera
+  vec4 eye = modelview * vec4(position, 1.0);
+  baseColor = vertexColor;
+  eyePosition = eye.xyz;
+  eyeNormal = normalMatrix * normal;
+  eyeDepth = abs(eye.z);
+#ifdef GL_ES
+  pickJoint = 0;
+#endif
+  vec4 a = projection * eye;
+  vec4 b = projection * (modelview * vec4(otherPosition, 1.0));
+  if (a.w <= 0.0 || b.w <= 0.0)
+  {
+    // behind the camera: all four corners on one point outside the picture
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    return;
+  }
   vec2 screenA = a.xy / a.w * viewportSize;
   vec2 screenB = b.xy / b.w * viewportSize;
   vec2 along = screenB - screenA;
@@ -283,13 +304,33 @@ void main()
   vec2 across = normalize(vec2(-along.y, along.x));
   // half the width, in normalised device units
   vec2 offset = across * lineWidth / viewportSize;
-  corner(0, offset);
-  corner(0, -offset);
-  corner(1, offset);
-  corner(1, -offset);
-  EndPrimitive();
+  gl_Position = vec4(a.xy + side * offset * a.w, a.zw);
 }
 )";
+
+QByteArray shaderSource(const char* body, bool web)
+{
+  return SkinRenderer::shaderHeader(web) + body;
+}
+}
+
+QByteArray SkinRenderer::shaderHeader(bool web)
+{
+  if (web)
+    return "#version 300 es\n"
+           "precision highp float;\n"
+           "precision highp int;\n"
+           "precision highp sampler2D;\n";
+  return "#version 330 core\n";
+}
+
+QVector<SkinRenderer::ShaderSource> SkinRenderer::shaderSources(bool web)
+{
+  return {{"body.vert", shaderSource(vertexShader, web)},
+          {"body.frag", shaderSource(fragmentShader, web)},
+          {"mesh.vert", shaderSource(meshVertexShader, web)},
+          {"line.vert", shaderSource(lineVertexShader, web)}};
+}
 
 bool SkinRenderer::init()
 {
@@ -302,6 +343,10 @@ bool SkinRenderer::init()
   m_meshes.clear();
   m_geometryVao.reset();
   m_geometryBuffer.reset();
+  m_lineVao.reset();
+  m_lineBuffer.reset();
+  m_lineIndexBuffer.reset();
+  m_lineIndexCount = 0;
   m_parts.clear();
   m_restSkin = nullptr;
   m_restRevision = -1;
@@ -332,9 +377,11 @@ bool SkinRenderer::init()
     return false;
   }
 
+  // the desktop build; a web build would ask for shaderSource(..., true)
+  const bool web = false;
   m_program = std::make_unique<QOpenGLShaderProgram>();
-  if (!m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader)
-      || !m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader)
+  if (!m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, shaderSource(vertexShader, web))
+      || !m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, shaderSource(fragmentShader, web))
       || !m_program->link())
   {
     m_status = "the body shader did not build: " + m_program->log().trimmed();
@@ -343,8 +390,8 @@ bool SkinRenderer::init()
   }
 
   m_meshProgram = std::make_unique<QOpenGLShaderProgram>();
-  if (!m_meshProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, meshVertexShader)
-      || !m_meshProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader)
+  if (!m_meshProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, shaderSource(meshVertexShader, web))
+      || !m_meshProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, shaderSource(fragmentShader, web))
       || !m_meshProgram->link())
   {
     m_status = "the mesh shader did not build: " + m_meshProgram->log().trimmed();
@@ -358,9 +405,8 @@ bool SkinRenderer::init()
   m_meshProgram->release();
 
   m_lineProgram = std::make_unique<QOpenGLShaderProgram>();
-  if (!m_lineProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, lineVertexShader)
-      || !m_lineProgram->addShaderFromSourceCode(QOpenGLShader::Geometry, lineGeometryShader)
-      || !m_lineProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader)
+  if (!m_lineProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, shaderSource(lineVertexShader, web))
+      || !m_lineProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, shaderSource(fragmentShader, web))
       || !m_lineProgram->link())
   {
     m_status = "the line shader did not build: " + m_lineProgram->log().trimmed();
@@ -404,6 +450,10 @@ void SkinRenderer::cleanup()
   m_meshes.clear();
   m_geometryVao.reset();
   m_geometryBuffer.reset();
+  m_lineVao.reset();
+  m_lineBuffer.reset();
+  m_lineIndexBuffer.reset();
+  m_lineIndexCount = 0;
   m_lineProgram.reset();
   m_meshProgram.reset();
   m_program.reset();
@@ -419,6 +469,11 @@ void SkinRenderer::drawGeometry(GLenum mode, const QVector<QVector3D>& positions
   const int count = positions.size();
   const bool lit = !normals.isEmpty();
   if (count == 0 || colors.size() != count || (lit && normals.size() != count)) return;
+  if (mode == GL_LINES)
+  {
+    drawLines(positions, normals, colors, modelview, projection, fog, lineWidth);
+    return;
+  }
 
   if (!m_geometryVao)
   {
@@ -457,27 +512,127 @@ void SkinRenderer::drawGeometry(GLenum mode, const QVector<QVector3D>& positions
   m_geometryBuffer->allocate(m_geometryData.constData(), m_geometryData.size() * int(sizeof(float)));
   m_geometryBuffer->release();
 
-  const bool lines = (mode == GL_LINES);
-  QOpenGLShaderProgram* program = lines ? m_lineProgram.get() : m_meshProgram.get();
+  QOpenGLShaderProgram* program = m_meshProgram.get();
   program->bind();
   program->setUniformValue("modelview", modelview);
   program->setUniformValue("projection", projection);
   program->setUniformValue("normalMatrix", modelview.normalMatrix());
   program->setUniformValue("unlit", !lit);
-  if (lines)
-  {
-    GLint viewport[4];
-    m_gl.glGetIntegerv(GL_VIEWPORT, viewport);
-    program->setUniformValue("viewportSize", QVector2D(qMax(1, viewport[2]), qMax(1, viewport[3])));
-    program->setUniformValue("lineWidth", qMax(1.0f, lineWidth));
-  }
-  else
-    program->setUniformValue("perVertexColor", true);
+  program->setUniformValue("perVertexColor", true);
   setLookUniforms(program, fog);
   m_geometryVao->bind();
   m_gl.glDrawArrays(mode, 0, count);
   m_geometryVao->release();
-  if (!lines) program->setUniformValue("perVertexColor", false);
+  program->setUniformValue("perVertexColor", false);
+  program->release();
+}
+
+void SkinRenderer::drawLines(const QVector<QVector3D>& positions, const QVector<QVector3D>& normals,
+                             const QVector<QVector4D>& colors, const QMatrix4x4& modelview,
+                             const QMatrix4x4& projection, const Fog& fog, float lineWidth)
+{
+  const int lineCount = positions.size() / 2;   // an odd last point is left out, as GL_LINES does
+  if (lineCount == 0) return;
+  const bool lit = !normals.isEmpty();
+
+  if (!m_lineVao)
+  {
+    m_lineVao = std::make_unique<QOpenGLVertexArrayObject>();
+    m_lineBuffer = std::make_unique<QOpenGLBuffer>(QOpenGLBuffer::VertexBuffer);
+    m_lineIndexBuffer = std::make_unique<QOpenGLBuffer>(QOpenGLBuffer::IndexBuffer);
+    if (!m_lineVao->create() || !m_lineBuffer->create() || !m_lineIndexBuffer->create())
+    {
+      m_lineVao.reset();
+      m_lineBuffer.reset();
+      m_lineIndexBuffer.reset();
+      return;
+    }
+    m_lineIndexCount = 0;
+    m_lineBuffer->setUsagePattern(QOpenGLBuffer::StreamDraw);
+    m_lineIndexBuffer->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    m_lineVao->bind();
+    m_lineBuffer->bind();
+    m_lineIndexBuffer->bind();   // stays with the vertex array
+    const GLsizei stride = LINE_FLOATS_PER_CORNER * sizeof(float);
+    auto attribute = [&](GLuint location, GLint size, int offset) {
+      m_gl.glEnableVertexAttribArray(location);
+      m_gl.glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride,
+                                 reinterpret_cast<void*>(offset * sizeof(float)));
+    };
+    attribute(0, 3, 0);    // this end
+    attribute(1, 3, 3);    // normal at this end
+    attribute(2, 4, 6);    // colour at this end
+    attribute(3, 3, 10);   // the other end
+    attribute(4, 1, 13);   // side
+    m_lineVao->release();
+    m_lineBuffer->release();
+    m_lineIndexBuffer->release();
+  }
+
+  // four corners per line, in the order the geometry shader made them:
+  // first end to one side and the other, then the second end the same
+  // way. Seen from the second end the line runs backwards, so its sides
+  // are turned round.
+  m_lineData.resize(lineCount * 4 * LINE_FLOATS_PER_CORNER);
+  float* d = m_lineData.data();
+  for (int line = 0; line < lineCount; line++)
+  {
+    const int ends[2] = {line * 2, line * 2 + 1};
+    for (int corner = 0; corner < 4; corner++)
+    {
+      const int self = ends[corner / 2];
+      const int other = ends[1 - corner / 2];
+      const float side = (corner == 0 || corner == 3) ? 1.0f : -1.0f;
+      const QVector3D& p = positions[self];
+      const QVector3D n = lit ? normals[self] : QVector3D(0, 0, 1);
+      const QVector4D& c = colors[self];
+      const QVector3D& o = positions[other];
+      d[0] = p.x(); d[1] = p.y(); d[2] = p.z();
+      d[3] = n.x(); d[4] = n.y(); d[5] = n.z();
+      d[6] = c.x(); d[7] = c.y(); d[8] = c.z(); d[9] = c.w();
+      d[10] = o.x(); d[11] = o.y(); d[12] = o.z();
+      d[13] = side;
+      d += LINE_FLOATS_PER_CORNER;
+    }
+  }
+  m_lineBuffer->bind();
+  m_lineBuffer->allocate(m_lineData.constData(), m_lineData.size() * int(sizeof(float)));
+  m_lineBuffer->release();
+
+  // two triangles per line, wound as the old triangle strip: 0 1 2, 2 1 3
+  const int indexCount = lineCount * 6;
+  if (indexCount > m_lineIndexCount)
+  {
+    QVector<GLuint> indices(indexCount);
+    for (int line = 0; line < lineCount; line++)
+    {
+      const GLuint base = GLuint(line * 4);
+      GLuint* i = indices.data() + line * 6;
+      i[0] = base; i[1] = base + 1; i[2] = base + 2;
+      i[3] = base + 2; i[4] = base + 1; i[5] = base + 3;
+    }
+    m_lineVao->bind();
+    m_lineIndexBuffer->bind();
+    m_lineIndexBuffer->allocate(indices.constData(), indexCount * int(sizeof(GLuint)));
+    m_lineVao->release();
+    m_lineIndexBuffer->release();
+    m_lineIndexCount = indexCount;
+  }
+
+  QOpenGLShaderProgram* program = m_lineProgram.get();
+  program->bind();
+  program->setUniformValue("modelview", modelview);
+  program->setUniformValue("projection", projection);
+  program->setUniformValue("normalMatrix", modelview.normalMatrix());
+  program->setUniformValue("unlit", !lit);
+  GLint viewport[4];
+  m_gl.glGetIntegerv(GL_VIEWPORT, viewport);
+  program->setUniformValue("viewportSize", QVector2D(qMax(1, viewport[2]), qMax(1, viewport[3])));
+  program->setUniformValue("lineWidth", qMax(1.0f, lineWidth));
+  setLookUniforms(program, fog);
+  m_lineVao->bind();
+  m_gl.glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+  m_lineVao->release();
   program->release();
 }
 
