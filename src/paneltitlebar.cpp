@@ -36,10 +36,12 @@ PanelTitleBar::PanelTitleBar(QDockWidget* dock)
   for (QToolButton* button : {m_floatButton, m_closeButton})
   {
     button->setAutoRaise(true);
-    button->setFocusPolicy(Qt::NoFocus);
+    // reached by Tab and used with Space or Enter (charter P8, job B4); the focus ring is the style's
+    button->setFocusPolicy(Qt::StrongFocus);
     button->setCursor(Qt::ArrowCursor);
   }
   m_closeButton->setToolTip(tr("Close this panel (bring it back from the Options menu)"));
+  m_closeButton->setAccessibleName(tr("Close this panel (bring it back from the Options menu)"));
 
   QHBoxLayout* layout = new QHBoxLayout(this);
   layout->setContentsMargins(8, 3, 4, 3);
@@ -90,6 +92,7 @@ void PanelTitleBar::updateButtons()
   m_floatButton->setToolTip(tip);
   m_floatButton->setStatusTip(tip);
   m_floatButton->setAccessibleDescription(tip);
+  m_floatButton->setAccessibleName(floating ? tr("Put this panel back into the main window") : tr("Make this panel a window of its own"));
   // the name the reason line shows with the reason (src/reasonline.h)
   m_floatButton->setProperty("reasonName",tr("Make this panel a window of its own"));
   m_closeButton->setIcon(symbolIcon(Symbol::Close));

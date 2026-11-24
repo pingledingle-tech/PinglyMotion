@@ -1,17 +1,29 @@
 Branch: job/b4-final-check
 Status: active
-Pull request: pending
+Pull request: #480
 Files:
-- tests/contrast/**
+- tests/test_contrast.py
 - tests/CMakeLists.txt
+- tests/keyboardfocus/**
 - tests/dialogfit/**
 - tests/smoke_gui.sh
 - tests/smoke_scriptlab.py
 - tests/smoke_close.py
-- tests/keyboardfocus/**
-- docs/DEV.md
+- tools/ci/smoke_screenshots.py
+- src/theme.cpp
+- src/paneltitlebar.cpp
+- src/panelcontent.h
+- src/retargetdialog.cpp
+- src/keysmousedialog.cpp
+- src/camerakeysdialog.cpp
+- src/whatsnewdialog.ui
+- src/scriptlab/scriptlabpanel.cpp
+- translations/pinglymotion_en.ts
+- docs/design_tokens.json
 - docs/DESIGN_SYSTEM.md
-- src/**
+- docs/mockup/index.html
+- docs/site.css
+- docs/DEV.md
 
 ## What
 

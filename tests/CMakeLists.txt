@@ -99,6 +99,7 @@ ADD_SUBDIRECTORY (camerahabits)
 
 # Dialogs fit the screen, text size steps
 ADD_SUBDIRECTORY (dialogfit)
+ADD_SUBDIRECTORY (keyboardfocus)
 
 # The AI Assistant button, its menu and dialog, the ChatGPT config.toml entry (issue 7)
 ADD_SUBDIRECTORY (aiassistant)
@@ -195,6 +196,8 @@ IF (Python3_Interpreter_FOUND)
   # the Script Lab interpreter against Linden Lab's lsl-definitions (tools/lsl_definition_check.py, docs/LSL_DEFINITION_CHECK.md)
   ADD_TEST (NAME lsl_definition_check COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_lsl_definition_check.py)
   # the SLua table of the LSL-to-SLua converter is what tools/gen_slua_data.py makes from the definitions (job G)
+  # contrast of every pair in docs/design_tokens.json, light and dark (job B4, charter P9)
+  ADD_TEST (NAME contrast COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_contrast.py)
   ADD_TEST (NAME gen_slua_data COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_gen_slua_data.py)
 ENDIF ()
 

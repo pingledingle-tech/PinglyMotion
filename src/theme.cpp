@@ -2,11 +2,14 @@
  * PinglyMotion - light and dark look for the whole program
  * Licensed under the GNU General Public License version 2 or later.
  */
+#include <QAbstractScrollArea>
 #include <QApplication>
+#include <QPainter>
 #include <QPalette>
 #include <QProxyStyle>
 #include <QStyle>
 #include <QStyleFactory>
+#include <QStyleOption>
 
 #include "textsize.h"
 #include "theme.h"
@@ -37,6 +40,45 @@ namespace
             return QProxyStyle::pixelMetric(metric,option,widget);
         }
       }
+
+      // The keyboard focus ring (charter P8, job B4): Fusion shows the focus on a push button only
+      // by a faint outline, and not at all on the default button of a dialog (it is already drawn
+      // as focused), nor on a text area or a list. A button the keyboard has reached, and a text
+      // area or list that has the focus, get the focus_ring colour, focus_ring.width wide, inside
+      // their edge.
+      void drawControl(ControlElement element,const QStyleOption* option,QPainter* painter,const QWidget* widget=nullptr) const override
+      {
+        QProxyStyle::drawControl(element,option,painter,widget);
+        if(element==CE_PushButton && option && (option->state & State_HasFocus) && (option->state & State_KeyboardFocusChange))
+          drawRing(option->rect,painter,Theme::Size::radiusControl);
+      }
+
+      void drawComplexControl(ComplexControl control,const QStyleOptionComplex* option,QPainter* painter,const QWidget* widget=nullptr) const override
+      {
+        QProxyStyle::drawComplexControl(control,option,painter,widget);
+        if(control==CC_ToolButton && option && (option->state & State_HasFocus) && (option->state & State_KeyboardFocusChange))
+          drawRing(option->rect,painter,Theme::Size::radiusControl);
+      }
+
+      void drawPrimitive(PrimitiveElement element,const QStyleOption* option,QPainter* painter,const QWidget* widget=nullptr) const override
+      {
+        QProxyStyle::drawPrimitive(element,option,painter,widget);
+        if(element==PE_Frame && option && (option->state & State_HasFocus) && qobject_cast<const QAbstractScrollArea*>(widget))
+          drawRing(option->rect,painter,Theme::Size::radiusSmall);
+      }
+
+    private:
+      static void drawRing(const QRect& rect,QPainter* painter,int radius)
+      {
+        const int width=Theme::Size::focusRingWidth;
+        painter->save();
+        painter->setRenderHint(QPainter::Antialiasing,true);
+        painter->setPen(QPen(Theme::color(Theme::Token::FocusRing),width));
+        painter->setBrush(Qt::NoBrush);
+        const double inset=width/2.0;
+        painter->drawRoundedRect(QRectF(rect).adjusted(inset,inset,-inset,-inset),radius,radius);
+        painter->restore();
+      }
   };
 
   struct TokenValue
@@ -53,7 +95,7 @@ namespace
     {"background",QColor(QRgb(0x1E1F22u)),QColor(QRgb(0xF3F4F6u))},
     {"surface",QColor(QRgb(0x2A2B2Fu)),QColor(QRgb(0xFFFFFFu))},
     {"surface_raised",QColor(QRgb(0x35373Cu)),QColor(QRgb(0xE9EBEFu))},
-    {"border",QColor(QRgb(0x767B85u)),QColor(QRgb(0x7A808Au))},
+    {"border",QColor(QRgb(0x7C818Bu)),QColor(QRgb(0x7A808Au))},
     {"text",QColor(QRgb(0xE6E7EAu)),QColor(QRgb(0x1C1E22u))},
     {"text_muted",QColor(QRgb(0xAEB2BAu)),QColor(QRgb(0x535963u))},
     {"text_disabled",QColor(QRgb(0x868A93u)),QColor(QRgb(0x7A808Au))},

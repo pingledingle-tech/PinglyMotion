@@ -104,7 +104,7 @@ namespace
     const char* text;
     const char* textDisabled;
   };
-  const Tokens DarkTokens = {"#56D39A", "#FF7B72", "#C93A32", "#AEB2BA", "#3272DD", "#FFFFFF", "#767B85", "#9CC2FF", "#F2C14E",
+  const Tokens DarkTokens = {"#56D39A", "#FF7B72", "#C93A32", "#AEB2BA", "#3272DD", "#FFFFFF", "#7C818B", "#9CC2FF", "#F2C14E",
                              "#35373C", "#E6E7EA", "#868A93"};
   const Tokens LightTokens = {"#18794E", "#B42318", "#B42318", "#535963", "#1F63C9", "#FFFFFF", "#7A808A", "#1F63C9", "#8A5A00",
                               "#E9EBEF", "#1C1E22", "#7A808A"};

@@ -82,6 +82,20 @@ public:
   // yet (PanelWindow::applyDefaultLayout does that).
   void build(QMainWindow* window,Ui::PinglyMotionWindow* ui)
   {
+    // the buttons and the slider that have only a picture or only a position get a name and a tip
+    // (charter P3 and P8, job B4), so a screen reader and the mouse hover both say what they do
+    const auto name=[](QWidget* widget,const char* source)
+    {
+      const QString words=text(source);
+      widget->setAccessibleName(words);
+      if(widget->toolTip().isEmpty()) widget->setToolTip(words);
+    };
+    name(ui->newBoxPropButton,QT_TRANSLATE_NOOP("PinglyMotionWindow","New box prop"));
+    name(ui->newSpherePropButton,QT_TRANSLATE_NOOP("PinglyMotionWindow","New sphere prop"));
+    name(ui->newConePropButton,QT_TRANSLATE_NOOP("PinglyMotionWindow","New cone prop"));
+    name(ui->newTorusPropButton,QT_TRANSLATE_NOOP("PinglyMotionWindow","New torus prop"));
+    name(ui->deletePropButton,QT_TRANSLATE_NOOP("PinglyMotionWindow","Delete the selected prop"));
+    name(ui->currentFrameSlider,QT_TRANSLATE_NOOP("PinglyMotionWindow","Current frame"));
     // --- timeline panel: tracks, frame slider, play and key frame buttons,
     // loop in / out, frame count and FPS
     QWidget* timelinePanel=new QWidget;
