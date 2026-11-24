@@ -16,6 +16,7 @@ Files:
 - tests/viewtimeline/**
 - tests/usersettings/**
 - tests/oldmenus/**
+- tests/timelineclip/**
 - CMakeLists.txt
 - tests/tst_animation.cpp
 - translations/pinglymotion_en.ts
