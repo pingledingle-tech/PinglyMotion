@@ -121,8 +121,18 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   effect markers `accent` (box, object) and `danger_fill` (ball, lock), Script Lab chain lines
   (job A4, `src/chainlines.h`) `danger` and solid when locked, `success` and dashed (8 on, 6 off,
   3 pixels wide, scaled with the text size) when free, each with a word tag (the line's colour as
-  text and 1 pixel border on `surface`, `radius.small`). The 3D
-  view's background and the avatar's own body shading do not follow the theme yet.
+  text and 1 pixel border on `surface`, `radius.small`). Since
+  the job "the 3D view follows the theme" (24 November 2026) the view's
+  background, and the fog that fades toward it, is `background`, the same as
+  the window behind the panels; the avatar's body (the base colour the lights
+  shine on) is `text_muted`, the same as the bones and at least 4.5:1 on
+  `background` in both themes, `accent_text` under the mouse and in a pulled
+  limb, `selection` on the picked joint, halfway from `selection` to
+  `text_muted` on the mirror side while Mirror is on, and a joint moved by IK
+  has 30 percent `accent` mixed in. The lights and Light... are the same in
+  both themes. The view asks for these at every picture, so a theme switch
+  shows at once (`tests/uxcolours`). The floor's squares do not follow the
+  theme yet.
 
 ## Code colours (Script Lab editor)
 

@@ -12,10 +12,15 @@
  *    it calls (src/viewcolours.h) are checked to answer the token of each
  *    theme for the rings, the axis lines, the joint balls, the bones and the
  *    effect markers.
+ * 5. The 3D view's background and the avatar's body colours (normal,
+ *    hovered, selected, the mirror side, a pulled limb, IK) are the tokens of
+ *    each theme as exact numbers, switching the theme changes what the view
+ *    asks for, and src/animationview.cpp writes none of them by hand.
  */
 #include <QtTest>
 #include <QApplication>
 #include <QPalette>
+#include <QFile>
 #include <QStandardPaths>
 
 #include "animation.h"
@@ -42,6 +47,9 @@ private slots:
   void timelineLookAnswers();
   void viewColoursAreTokens();
   void ringsAreNotPlainRgb();
+  void viewBackgroundFollowsTheTheme();
+  void bodyShadingFollowsTheTheme();
+  void viewDrawsNoHandMadeColour();
 };
 
 // a timeline with a loaded skeleton and 30 frames
@@ -248,6 +256,99 @@ void UxColoursTest::ringsAreNotPlainRgb()
       const QColor c = ViewColours::ring(axis, true, dark);
       QVERIFY(c != QColor(255, 0, 0) && c != QColor(0, 255, 0) && c != QColor(0, 0, 255));
     }
+}
+
+
+void UxColoursTest::viewBackgroundFollowsTheTheme()
+{
+  // the background token, the same as the window behind the panels
+  QCOMPARE(ViewColours::background(true), QColor("#1E1F22"));
+  QCOMPARE(ViewColours::background(false), QColor("#F3F4F6"));
+  QCOMPARE(ViewColours::background(true), Theme::color(Token::Background, true));
+  QCOMPARE(ViewColours::background(false), Theme::color(Token::Background, false));
+  // as the floats glClearColor and the fog get
+  const QVector4D dark = ViewColours::vector(ViewColours::background(true));
+  QCOMPARE(dark.x(), float(0x1E) / 255.0f);
+  QCOMPARE(dark.y(), float(0x1F) / 255.0f);
+  QCOMPARE(dark.z(), float(0x22) / 255.0f);
+  const QVector4D light = ViewColours::vector(ViewColours::background(false));
+  QCOMPARE(light.x(), float(0xF3) / 255.0f);
+  QCOMPARE(light.y(), float(0xF4) / 255.0f);
+  QCOMPARE(light.z(), float(0xF6) / 255.0f);
+  // the view asks without a theme argument, for every picture: a theme switch changes the answer
+  Theme::apply(false);
+  QCOMPARE(ViewColours::background(), QColor("#F3F4F6"));
+  Theme::apply(true);
+  QCOMPARE(ViewColours::background(), QColor("#1E1F22"));
+  // the old greys (0.20 dark, 0.5 light) are gone
+  QVERIFY(ViewColours::background(true) != QColor::fromRgbF(0.2f, 0.2f, 0.2f));
+  QVERIFY(ViewColours::background(false) != QColor::fromRgbF(0.5f, 0.5f, 0.5f));
+}
+
+void UxColoursTest::bodyShadingFollowsTheTheme()
+{
+  using ViewColours::BodyPart;
+  // plain states: one token each, exact
+  QCOMPARE(ViewColours::body(BodyPart::Normal, false, true), QColor("#AEB2BA"));     // text_muted
+  QCOMPARE(ViewColours::body(BodyPart::Normal, false, false), QColor("#535963"));
+  QCOMPARE(ViewColours::body(BodyPart::Hovered, false, true), QColor("#7FB0FF"));    // accent_text
+  QCOMPARE(ViewColours::body(BodyPart::Hovered, false, false), QColor("#1A56B0"));
+  QCOMPARE(ViewColours::body(BodyPart::Selected, false, true), QColor("#3272DD"));   // selection
+  QCOMPARE(ViewColours::body(BodyPart::Selected, false, false), QColor("#1F63C9"));
+  QCOMPARE(ViewColours::body(BodyPart::Pulled, false, true), QColor("#7FB0FF"));     // accent_text
+  QCOMPARE(ViewColours::body(BodyPart::Pulled, false, false), QColor("#1A56B0"));
+  for (bool dark : {true, false})
+  {
+    QCOMPARE(ViewColours::body(BodyPart::Normal, false, dark), Theme::color(Token::TextMuted, dark));
+    QCOMPARE(ViewColours::body(BodyPart::Normal, false, dark), ViewColours::bone(false, dark));
+    QCOMPARE(ViewColours::body(BodyPart::Hovered, false, dark), Theme::color(Token::AccentText, dark));
+    QCOMPARE(ViewColours::body(BodyPart::Selected, false, dark), Theme::color(Token::Selection, dark));
+    // the mirror side: halfway from selection to the body colour
+    QCOMPARE(ViewColours::body(BodyPart::MirrorPartner, false, dark),
+             Theme::mix(Theme::color(Token::Selection, dark), Theme::color(Token::TextMuted, dark), 0.5));
+    // IK: 30 percent accent mixed in, for every state
+    for (BodyPart part : {BodyPart::Normal, BodyPart::Hovered, BodyPart::Selected,
+                          BodyPart::MirrorPartner, BodyPart::Pulled})
+      QCOMPARE(ViewColours::body(part, true, dark),
+               Theme::mix(ViewColours::body(part, false, dark), Theme::color(Token::Accent, dark), 0.3));
+    // every state can be told from the normal body (also by the joint ring, charter P10)
+    for (BodyPart part : {BodyPart::Hovered, BodyPart::Selected, BodyPart::MirrorPartner})
+      QVERIFY(ViewColours::body(part, false, dark) != ViewColours::body(BodyPart::Normal, false, dark));
+  }
+  // the mixed ones as numbers
+  QCOMPARE(ViewColours::body(BodyPart::MirrorPartner, false, true), QColor("#7092CC"));
+  QCOMPARE(ViewColours::body(BodyPart::MirrorPartner, false, false), QColor("#395E96"));
+  QCOMPARE(ViewColours::body(BodyPart::Normal, true, true), QColor("#899FC5"));
+  QCOMPARE(ViewColours::body(BodyPart::Normal, true, false), QColor("#435C82"));
+  // the old colours (pink grey body, red selected, green hovered, orange mirror) are gone
+  for (bool dark : {true, false})
+  {
+    QVERIFY(ViewColours::body(BodyPart::Normal, false, dark) != QColor::fromRgbF(0.6f, 0.5f, 0.5f));
+    QVERIFY(ViewColours::body(BodyPart::Selected, false, dark) != QColor::fromRgbF(0.6f, 0.3f, 0.3f));
+    QVERIFY(ViewColours::body(BodyPart::Hovered, false, dark) != QColor::fromRgbF(0.4f, 0.5f, 0.3f));
+    QVERIFY(ViewColours::body(BodyPart::MirrorPartner, false, dark) != QColor::fromRgbF(1.0f, 0.635f, 0.059f));
+  }
+  // without a theme argument: the current theme, so a switch changes the body at the next picture
+  Theme::apply(false);
+  QCOMPARE(ViewColours::body(BodyPart::Normal, false), QColor("#535963"));
+  QCOMPARE(ViewColours::body(BodyPart::Selected, false), QColor("#1F63C9"));
+  Theme::apply(true);
+  QCOMPARE(ViewColours::body(BodyPart::Normal, false), QColor("#AEB2BA"));
+  QCOMPARE(ViewColours::body(BodyPart::Selected, false), QColor("#3272DD"));
+}
+
+void UxColoursTest::viewDrawsNoHandMadeColour()
+{
+  // the 3D view takes the background and the body colour from src/viewcolours.h, not from numbers
+  QFile file(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/animationview.cpp"));
+  QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.fileName()));
+  const QString source = QString::fromUtf8(file.readAll()).remove(QLatin1Char(' '));
+  QVERIFY(source.contains(QStringLiteral("ViewColours::background()")));
+  QVERIFY(source.contains(QStringLiteral("ViewColours::body(")));
+  QVERIFY(!source.contains(QStringLiteral("darkTheme()?0.20f:0.5f")));
+  for (const char* old : {"setColor(1.0,0.635,0.059,1)", "setColor(0.6,0.3,0.3,1)",
+                          "setColor(0.4,0.5,0.3,1)", "setColor(0.6,0.5,0.5,1)", "color.z()+0.3f"})
+    QVERIFY2(!source.contains(QLatin1String(old)), old);
 }
 
 QTEST_MAIN(UxColoursTest)

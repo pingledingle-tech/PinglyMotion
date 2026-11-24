@@ -7,6 +7,7 @@ Files:
 - tests/uxcolours/**
 - docs/DESIGN_SYSTEM.md
 - docs/DECISIONS.md
+- docs/RENDERING.md
 
 ## What
 
