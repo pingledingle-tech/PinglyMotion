@@ -1,6 +1,6 @@
 Branch: job/web-line-drawing
 Status: active
-Pull request: pending
+Pull request: #484
 Files:
 - src/skinrenderer.cpp
 - src/skinrenderer.h
