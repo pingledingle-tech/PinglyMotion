@@ -1,5 +1,5 @@
 Branch: job/web-line-drawing
-Status: active
+Status: done
 Pull request: #484
 Files:
 - src/skinrenderer.cpp
