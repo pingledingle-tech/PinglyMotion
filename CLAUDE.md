@@ -34,6 +34,7 @@ GitHub is the truth, not a chat: what is running is the open pull requests and t
 - Work only on your own branch. Never push to `main`.
 - Stay inside the files you listed. If you need another file, add it to `Files:` first and run `python3 tools/work.py check` to see whether another active job claims it.
 - Keep the job small: one feature or fix per branch.
+- **Web-ready:** there will be a web version later (the project owner, 24 November 2026). New and changed code, above all the 3D view and file open or save, follows `docs/DEV.md`, "Web-ready code", so nothing has to be built twice.
 - **Credits:** when a job uses or learns from a new outside project, dataset, paper or tool, add it to `CREDITS.md` in the same pull request.
 - **Docs in the same pull request:** when your change makes a document wrong (`docs/PRODUCT.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, release notes, the issue it belongs to), fix it in the same pull request and tick the docs box in the template. A job is not done while a document still says the old thing.
 - **Fuzzing:** after changing a parser or the control commands, start the fuzz workflow on your branch (command in `docs/DEV.md`) and tell the user the result. It must be green before the merge.

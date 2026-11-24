@@ -103,6 +103,7 @@ Start with a manual pose or animation; in the future also investigate AI-generat
 | Files and SL export | Preserve existing BVH/AVM work, replace the parser and data model with regression and fuzz tests, a new working format `.dingle` ([#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26)), then native .anim export. | [#9](https://github.com/pingledingle-tech/PinglyMotion/issues/9), [#10](https://github.com/pingledingle-tech/PinglyMotion/issues/10), [#26](https://github.com/pingledingle-tech/PinglyMotion/issues/26) |
 | Import and retargeting | Explore glTF, Blender, an own rigged avatar and an SL Bento bridge. | [#12](https://github.com/pingledingle-tech/PinglyMotion/issues/12), [#13](https://github.com/pingledingle-tech/PinglyMotion/issues/13) |
 | New motion sources | Ordinary video and Mesh2Motion, subject to technical and licence checks. Eight CC0 Mesh2Motion clips are already test motions (in the Windows zip: `examples/mesh2motion`), credited in Help > About and the README. | [IDEAS.md](IDEAS.md) |
+| Web version | Decided by the project owner (24 November 2026), time not set: the editor will also run in a web browser. Until then new code, above all the 3D view, is web-ready ([DEV.md](DEV.md), "Web-ready code"). Remote control is not part of the web version. | [ROADMAP.md](ROADMAP.md), [DECISIONS.md](DECISIONS.md) |
 | Use and reuse | Pose and motion libraries, editable recipes, LSL templates and an own AO. | [IDEAS.md](IDEAS.md), [README roadmap](../README.md#where-pinglymotion-is-going) |
 
 ## Proposed roadmap

@@ -34,6 +34,8 @@ Last, not queued: a Luau trial build (MinGW is also not checked yet), convert le
 
 Not confirmed: that RLV works the same in SLua (to be tested last, in a Lua Beta region, in a viewer that has both RLV and Lua saving), and that Luau builds with MinGW.
 
+**Web version (decided, time not set).** The project owner, 24 November 2026, 12:10: PinglyMotion will also run in a web browser, but when is not decided («Det er besluttet vi skal ha web, men usikker på når»). No web job runs now. Until then every job, and above all every job on the 3D view, is built so that it does not have to be done twice when the web version comes: the rules are in [DEV.md](DEV.md), "Web-ready code", and the decision in [DECISIONS.md](DECISIONS.md) (Technology, 24 Nov 2026). The web version itself (a trial build with Qt for WebAssembly, the 3D view in WebGL 2, open and save as upload and download, remote control and the Aurora link left out) gets its own place in this order when the project owner decides the time.
+
 Notes for the order: D, E and F touch the same file and run one after another. A change to a parser or the control commands needs a green fuzz run.
 
 ## Later (not planned)
