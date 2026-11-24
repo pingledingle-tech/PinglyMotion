@@ -1,6 +1,6 @@
 Branch: job/ux-small-fixes-2
 Status: active
-Pull request: pending
+Pull request: #458
 Files:
 - src/dialogfit.*
 - src/textsize.*
