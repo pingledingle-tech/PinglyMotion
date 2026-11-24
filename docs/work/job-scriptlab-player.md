@@ -1,6 +1,6 @@
 Branch: job/scriptlab-player
 Status: active
-Pull request: pending
+Pull request: #454
 Files:
 - src/scriptlab/labplayer.*
 - src/scriptlab/labrecipe.*
