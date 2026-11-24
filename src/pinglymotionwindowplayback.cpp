@@ -55,6 +55,8 @@
 #include <QTableWidget>
 
 #include "aboutdialog.h"
+#include "helperspec.h"
+#include "helpermode.h"
 #include "animexportdialog.h"
 #include "animimportconvert.h"
 #include "dinglesave.h"
@@ -90,6 +92,8 @@
 
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
+#include "helpermode.h"
+#include "helperspec.h"
 #include "playback.h"
 #include "transportbar.h"
 #include "theme.h"
@@ -201,6 +205,8 @@ void PinglyMotionWindow::beginPlaying(Animation* anim)
 
   timer.start((int)(1.0/anim->fps()*1000.0));
   updateInputs();
+  // the lesson step "Press Start" goes on (job UX-C)
+  if(m_helper) m_helper->notify(QLatin1String(HelperSpec::played));
 }
 
 void PinglyMotionWindow::setFPS(int fps)
@@ -234,6 +240,7 @@ void PinglyMotionWindow::numFramesChanged(int num)
 {
   if(num<1) num=1;
   Animation* anim=scene->getAnimation();
+  if(!anim) return;
   anim->setNumberOfFrames(num);
   calculateLongestRunningTime();
 
@@ -249,7 +256,9 @@ void PinglyMotionWindow::numFramesChanged(int num)
 
 void PinglyMotionWindow::updateFps()
 {
-  int fps=scene->getAnimation()->fps();
+  Animation* anim=scene->getAnimation();
+  if(!anim) return;
+  int fps=anim->fps();
 
   // guard against division by zero
   if(fps)
@@ -290,6 +299,8 @@ void PinglyMotionWindow::setLoopInPoint(int inFrame)
 void PinglyMotionWindow::setLoopOutPoint(int outFrame)
 {
   Animation* anim=scene->getAnimation();
+  // as setLoopInPoint(): no animation, nothing to set
+  if(!anim) return;
   int numOfFrames=anim->getNumberOfFrames();
   int inFrame=anim->getLoopInPoint();
 

@@ -1696,6 +1696,133 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>HelperMode</name>
+    <message>
+        <source>Helper</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Helper is on: tips and short lessons beside the tool. Click to turn it off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Helper is off: a clean tool. Click to turn on tips and short lessons.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Helper on. Tips and lessons are in the helper at the bottom right.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Helper off. The Helper button at the top turns it on again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn the helper off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lessons</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop lesson</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop this lesson and go back to the lessons (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lesson done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back to lessons</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open an animation first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This part is not on screen now. View &gt; Reset layout brings it back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a joint on the figure to pick it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn the picked joint: drag one of the coloured rings around it, or move a slider in Selected joint.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Set key. It saves the pose you see now as a key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Start to watch your animation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Library at the top. The ready-made moves open in a window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Reset layout at the top. Every window goes back to its first place and the Library closes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Script at the top (F8). The Script Lab gets most of the window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Animate (F7). Your animation panels come back as you left them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make your first move</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a joint, turn it, save a key and watch it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your first key is saved. Go to another frame and make more keys to build a move.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arrange the windows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the Library, then put every window back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can move and resize every window. Reset layout always puts them back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try the Script Lab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to Script and back to Animate.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch any time. Each side keeps its own layout.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>HintCard</name>
     <message>
         <source>Pick a joint</source>
@@ -2056,6 +2183,14 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>Ctrl++ bigger, Ctrl+- smaller, Ctrl+0 back to 100%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Animate side, Script side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F7, F8</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2540,6 +2675,161 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabGuideView</name>
+    <message>
+        <source>Guide page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose where to make the example folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This page is for you if you are new to animation and to scripts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Animation: you pose a figure at a few moments. The program fills in the rest.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab: you test a Second Life script on your PC. Nothing reaches Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Animate in five steps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose File &gt; New. A figure appears.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the time marker to the middle of the timeline.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click an arm. Drag a coloured ring to turn it. A key is saved at once.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the time marker to a later frame. Turn the arm again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Start. The arm moves between your two keys.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Samples to look at: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose File &gt; Open. The dialog starts in the examples folder next to the program.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab in five steps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make the example folder below, or press Make example project in Script Lab.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the folder in Script Lab. It watches the folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Show effects in 3D view, so it shows a tick.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a prop in the 3D view. Its script runs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change a number in the script and save. Look at the 3D view.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The example folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The example is not next to the program.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the folder the button makes. Every file has a label.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data file %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make the example folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a place. The program makes the folder there. It never replaces a folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Result of making the folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open it in Script Lab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make the folder first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Help view has the words, the hints and a guide for every example.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Esc to close this page.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Made the folder %1. Nothing was replaced.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watches the folder in Script Lab.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabHelpView</name>
     <message>
         <source>Script Lab help</source>
@@ -2690,6 +2980,14 @@ Pick the ones you want.</source>
         <source>Then try</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Guide page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A page with steps, samples and the example folder, in plain words.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LabPlayer</name>
@@ -2815,6 +3113,25 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>%1 (changed at this step)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LabPopWindow</name>
+    <message>
+        <source>Script Lab: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put this tab back into Script Lab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put this tab back into Script Lab. Closing this window does the same.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7202,6 +7519,38 @@ Try a BVH file for a person with arms and legs.</source>
         <source>Start.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The guide and the props of this example. The program reads it. You do not change it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The script. It changes the colour of its prim. Open it and change a number.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A script. It runs on its prim.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A notecard. A text file that a script can read.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The object. One folder is one object. Script Lab watches this folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A prim, one part of the object. It has a prop of the same name in 3D view.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The example is not next to the program.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Too many folders with this name are there. Pick another place.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RetargetDialog</name>
@@ -8418,6 +8767,46 @@ Error: %2</source>
     </message>
     <message>
         <source>Not chosen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out this tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watch a folder as one object on Live scripts. Then this page shows who talks to whom.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watch a folder as one object on Live scripts. Then press Record what I do here, and watch your steps again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Player</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arrows between the parts: who sends what to whom.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step back and forth through your recorded steps.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out &quot;%1&quot; into a window of its own. Close that window, or press Put back, to bring it back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The last tab stays in Script Lab. Put another tab back first.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9667,6 +10056,29 @@ Click to turn them on or off.</source>
     <name>WhatsNewDialog</name>
     <message>
         <source>What&apos;s new</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WorkMode</name>
+    <message>
+        <source>Animate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Animate: the figure, the joints and the timeline.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script: the Script Lab window, big. Animate brings the animation panels back as you left them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Layout reset. The Script Lab has most of the window; Animate brings the animation panels back.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

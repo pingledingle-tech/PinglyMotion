@@ -1,6 +1,6 @@
 # Script Lab plan
 
-Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b is in progress (9b-1 to 9b-9 merged on 22 Nov 2026); 9c is planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Track: [ROADMAP.md](ROADMAP.md), "Script Lab track". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
+Status: steps 1 to 7, 9 and 9a are built and merged, see [SCRIPT_LAB.md](SCRIPT_LAB.md); step 8 is a description ([RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)); 9b is in progress (9b-1 to 9b-9 merged on 22 Nov 2026); 9c is planned. Decision: [DECISIONS.md](DECISIONS.md), "Script Lab". Order and status: [ROADMAP.md](ROADMAP.md), section "Script Lab: folder, editor, converter". This page is a plan only; no code is changed by it. Each step below is its own issue and its own job, started only when the project owner says "start" or names the job.
 
 ## 1. Goal
 
@@ -75,7 +75,7 @@ The original plan:
 
 - PinglyMotion watches a folder (a cloned repository) and reloads a script when it changes.
 - Control commands `lsl_check` (errors with line and column), `lsl_run` (event log plus final RLV state), `lsl_event`. `lsl_check` and `lsl_run` came early, with step 3 (issue 289, [CONTROL.md](CONTROL.md)); this step adds `lsl_event` and the final RLV state.
-- The panel shows the script read-only with line numbers and error marks, and a button "Open in editor" that opens the file in the user's own editor. No built-in editor yet; a small one is planned (see ROADMAP.md). (Since lane 1 job F1 the script is shown in a built-in editor: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The editor".)
+- The panel shows the script read-only with line numbers and error marks, and a button "Open in editor" that opens the file in the user's own editor. No built-in editor yet; a small one is planned (see [ROADMAP.md](ROADMAP.md), "Script Lab: folder, editor, converter"). (Since lane 1 job F1 the script is shown in a built-in editor: [SCRIPT_LAB.md](SCRIPT_LAB.md), "The editor".)
 - Done (issue 292): the folder watch, the Live page with the script, errors and log, "Open in editor", and the control commands `lab_watch`, `lab_unwatch` and `lab_result` ([SCRIPT_LAB.md](SCRIPT_LAB.md)). The watch's runs take their chat and touches from the `inputs` option of `lab_watch`, because each run starts fresh with a simulated clock; `lsl_event` came with step 5 (issue 291) and sends an event to the world of the last `lsl_run`. The final RLV state of a run comes from step 4 (issue 290).
 
 ### Step 7: Effects in the 3D view (visible)

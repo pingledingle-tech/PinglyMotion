@@ -1,8 +1,9 @@
 /*
  * PinglyMotion - colours of the 3D view's own drawing, from the design tokens
  *
- * The rotation rings, the axis lines of a prop, the joint rings, the bones
- * and the effect markers are drawn in these colours (src/animationview.cpp).
+ * The background, the avatar's body, the rotation rings, the axis lines of a
+ * prop, the joint rings, the bones and the effect markers are drawn in these
+ * colours (src/animationview.cpp).
  * Every colour is a token of docs/design_tokens.json in the current theme or
  * the theme given; nothing is written by hand (design charter P1, P7).
  * tests/uxcolours checks each answer against the token for both themes.
@@ -68,6 +69,38 @@ namespace ViewColours
     return Theme::color(strong ? Theme::Token::AccentText : Theme::Token::TextMuted,dark);
   }
   inline QColor bone(bool strong) { return bone(strong,Theme::isDark()); }
+
+  // the 3D view's background, and the colour the fog fades toward: the
+  // background token, the same as the window behind the panels (the mockup's
+  // .view lies on the page's background)
+  inline QColor background(bool dark) { return Theme::color(Theme::Token::Background,dark); }
+  inline QColor background() { return background(Theme::isDark()); }
+
+  // the avatar's body in the 3D view (the base colour the shader lights; the
+  // light itself and Options > Light... are the same in both themes):
+  // Normal text_muted (as the bones, at least 4.5:1 on the background in both
+  // themes), Hovered accent_text (as a joint ring under the mouse), Selected
+  // selection, MirrorPartner (the other side while Mirror is on) halfway from
+  // selection to the body colour, Pulled (a limb being pulled) accent_text.
+  // A joint moved by IK has 30 percent accent mixed in.
+  enum class BodyPart { Normal, Hovered, Selected, MirrorPartner, Pulled };
+  inline QColor body(BodyPart part,bool ik,bool dark)
+  {
+    using Theme::Token;
+    QColor colour;
+    switch(part)
+    {
+      case BodyPart::Hovered: colour=Theme::color(Token::AccentText,dark); break;
+      case BodyPart::Selected: colour=Theme::color(Token::Selection,dark); break;
+      case BodyPart::MirrorPartner:
+        colour=Theme::mix(Theme::color(Token::Selection,dark),Theme::color(Token::TextMuted,dark),0.5);
+        break;
+      case BodyPart::Pulled: colour=Theme::color(Token::AccentText,dark); break;
+      case BodyPart::Normal: default: colour=Theme::color(Token::TextMuted,dark); break;
+    }
+    return ik ? Theme::mix(colour,Theme::color(Token::Accent,dark),0.3) : colour;
+  }
+  inline QColor body(BodyPart part,bool ik) { return body(part,ik,Theme::isDark()); }
 
   // effect preview markers: a box for an object, a ball for a lock
   inline QColor objectMarker(bool dark) { return Theme::color(Theme::Token::Accent,dark); }

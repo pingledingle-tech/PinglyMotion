@@ -40,6 +40,7 @@
 #include "propedit.h"
 #include "timelineclip.h"
 #include "updatechecker.h"
+#include "workmode.h"
 #include "viewtoolspec.h"
 
 class QCloseEvent;
@@ -73,6 +74,7 @@ class TopBar;
 class ReasonLine;
 class EmptyState;
 class HintCards;
+class HelperMode;
 class ViewToolbar;
 class ScriptLabPanel;
 class LibraryPanel;
@@ -483,6 +485,8 @@ class PinglyMotionWindow : public QMainWindow
     bool m_applyingTab=false;
     // the layout the panels stand in now, and the wide layout to go back to
     PanelWindow::Reflower m_reflower;
+    // the Animate / Script switch at the top (UX-F, src/workmode.h)
+    WorkMode::Switcher* m_workMode=nullptr;
     // the contents of the three panels and how wide they must be (src/panelcontent.h)
     QScopedPointer<MainPanels> m_panels;
     bool m_reflowPending=false;
@@ -498,12 +502,12 @@ class PinglyMotionWindow : public QMainWindow
     TransportBar* m_transport=nullptr;
 
     // holds the current playing status
-    PlayState playstate;
+    PlayState playstate=PLAYSTATE_STOPPED;
 
     // the stretch of the timeline Copy or Cut took last (UX phase 3b)
     TimelineClip m_clip;
     // will be true if a frame is protected
-    bool protect;
+    bool protect=false;
 
     // holds the longest running time of all currently opened animations
     double longestRunningTime;
@@ -597,6 +601,12 @@ class PinglyMotionWindow : public QMainWindow
     HintCards* m_hintCards = nullptr;
     bool m_startedWithFileOrControl = false;
     void buildHintCards();
+    // helper mode (job UX-C, src/helpermode.h): the Helper switch at the top, the helper panel
+    // with the hint cards and the lessons, and the ring around the control they talk about
+    HelperMode* m_helper = nullptr;
+    void buildHelper();
+    QWidget* helperTarget(const QString& name) const;
+    bool helperAlreadyDone(const QString& event) const;
     // true while no animation is open: a clean untitled animation stays behind the empty state
     // so the old code never meets "no animation"; the commands see none (see WindowControlHost)
     bool m_empty = false;

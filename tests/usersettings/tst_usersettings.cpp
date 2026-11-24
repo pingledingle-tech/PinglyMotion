@@ -31,6 +31,7 @@ class TestUserSettings : public QObject
     void windowPlacesSurviveSaveAndReload();
     void badWindowPlacesAreLeftOut();
     void eachModeKeepsItsOwnPanelLayout();
+    void theScriptSideKeepsItsOwnPanelLayout();
     void expertModeWatchers();
     void welcomeAndHintCardAreRemembered();
 
@@ -221,6 +222,32 @@ void TestUserSettings::eachModeKeepsItsOwnPanelLayout()
   QVERIFY(settings.allKeys().contains(QStringLiteral("user_settings/1.0/panel_layout")) ||
           settings.allKeys().join(QLatin1Char(' ')).contains(QStringLiteral("panel_layout")));
   QVERIFY(settings.allKeys().join(QLatin1Char(' ')).contains(QStringLiteral("panel_layout_beginner")));
+}
+
+// UX-F: the Script side of the Animate / Script switch has a layout slot of its own, empty until
+// used, saved under panel_layout_script, and independent of the two mode slots
+void TestUserSettings::theScriptSideKeepsItsOwnPanelLayout()
+{
+  UserSettings::setPanelLayoutScript(QByteArray());
+  UserSettings::setPanelLayoutFor(true, QByteArray("expert-layout"));
+  UserSettings::setPanelLayoutFor(false, QByteArray("beginner-layout"));
+  UserSettings::readSettings();
+  UserSettings::setPanelLayoutScript(QByteArray("script-layout"));
+  QCOMPARE(UserSettings::panelLayoutFor(true), QByteArray("expert-layout"));
+  QCOMPARE(UserSettings::panelLayoutFor(false), QByteArray("beginner-layout"));
+  UserSettings::writeSettings();
+  UserSettings::setPanelLayoutScript(QByteArray("other"));
+  UserSettings::readSettings();
+  QCOMPARE(UserSettings::panelLayoutScript(), QByteArray("script-layout"));
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                     Constants::organizationName(), Constants::applicationName());
+  QVERIFY(settings.allKeys().join(QLatin1Char(' ')).contains(QStringLiteral("panel_layout_script")));
+  // forgetting it (Reset layout) is saved too
+  UserSettings::setPanelLayoutScript(QByteArray());
+  UserSettings::writeSettings();
+  UserSettings::setPanelLayoutScript(QByteArray("other"));
+  UserSettings::readSettings();
+  QVERIFY(UserSettings::panelLayoutScript().isEmpty());
 }
 
 void TestUserSettings::badWindowPlacesAreLeftOut()

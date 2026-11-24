@@ -30,7 +30,10 @@ Smoke tests (need `xvfb`, `xdotool`):
 ```
 xvfb-run -a -s "-screen 0 1280x1024x24" python3 tests/smoke_control.py /tmp/build/src/PinglyMotion
 QT_QPA_PLATFORM=xcb xvfb-run -a bash tests/smoke_gui.sh /tmp/build/src/PinglyMotion
+xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_close.py /tmp/build/src/PinglyMotion
 ```
+
+`tests/smoke_close.py` adds a second figure, removes figure 1 of 2, closes the last animation and sends control commands after each step, with mouse clicks through xdotool (no window manager, so no key reaches the main window; the positions fit the default window). `PINGLYMOTION_SHOTS=<folder>` saves a picture after each close.
 
 Sanitizers (as the `asan-ubsan` check):
 
@@ -39,6 +42,8 @@ cmake -S . -B /tmp/asan -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS=ON \
   -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
   -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
 ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/asan --output-on-failure
+# the file code leaves nothing behind, so it runs with the leak sanitizer on (a step of the asan-ubsan check)
+ASAN_OPTIONS=detect_leaks=1 ctest --test-dir /tmp/asan -R '^(animfile|generated|dingle|dingle_conversion|roundtrip)$' --output-on-failure
 ```
 
 Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch and tell the user the result (rule: `CLAUDE.md`, "While you work"): `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/fuzz.yml/dispatches -f ref=<branch>`. All fuzz targets run at the same time, 2 minutes each on a branch (about 10 minutes in all), 10 minutes each at night and before a release; a longer run on a branch: add `-f inputs[seconds]=600`.
@@ -186,6 +191,7 @@ Drawbacks: one more download in CI (ccache, from the Chocolatey community feed, 
 ## Definition check (Script Lab)
 
 `python3 tools/lsl_definition_check.py` prints what the Script Lab interpreter lacks compared with Linden Lab's lsl-definitions (copy in `tests/data/lsl-definitions/`): functions, events and constants, in three levels (unknown, known only, runs). Standard-library Python, nothing is built. `--markdown docs/LSL_DEFINITION_CHECK.md` rewrites the report; do it in the same pull request when a job adds or removes a function or event that runs. `--check` exits with 1 on a mistake. The ctest test `lsl_definition_check` (`tests/test_lsl_definition_check.py`) fails if a function in the `SUPPORTED` table of `builtins.cpp` or an event in `Parser::eventIsRaised` is not in the definitions. To take a newer copy of the definitions, replace the three files and the commit line in `tests/data/lsl-definitions/README.md`, then run the tool and the test.
+The LSL built-in functions that run in the Script Lab sandbox live in `src/scriptlab/lsl/builtins_<family>.cpp` (comm, region, physics, media, object, lists, strings, math, prims), one `Interpreter::callBuiltin<Family>` member each; `builtins.cpp` holds the tables (the `SUPPORTED` list that `tools/lsl_definition_check.py` reads) and `Interpreter::callBuiltin`, which hands a call on to the family that runs it. The `Fn` enum and the helpers all families share are in `builtins_internal.h` (inline, for the `builtins_*.cpp` files only). A new function: add its `Fn` entry and `SUPPORTED` line, then its `case` in the family file where it belongs.
 
 ## What runs where
 

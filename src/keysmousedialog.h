@@ -71,6 +71,7 @@ namespace KeysMouseSpec
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Hide panels"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Tab")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Script Lab"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+Shift+L")},
     {QT_TRANSLATE_NOOP("KeysMouseDialog", "Library"), QT_TRANSLATE_NOOP("KeysMouseDialog", "Ctrl+Shift+B")},
+    {QT_TRANSLATE_NOOP("KeysMouseDialog", "Animate side, Script side"), QT_TRANSLATE_NOOP("KeysMouseDialog", "F7, F8")},
   };
 
   inline QString action(const Row& row) { return QCoreApplication::translate("KeysMouseDialog", row.action); }

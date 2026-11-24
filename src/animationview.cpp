@@ -102,7 +102,8 @@ AnimationView::AnimationView(QWidget* parent, const char* /* name */)
   {
     QString model(figureFiles[i]);
     qCDebug(lcView,"Reading reference model '%s'",model.toLatin1().constData());
-    joints[i]=reader.animRead(model,limFile);
+    // the reference skeletons need no position node: the result drops it
+    joints[i]=reader.animOpen(model,limFile).root.release();
   }
 
   const AvatarSkin::Result skinResult=m_avatarSkin.load(Constants::pinglyMotionDataPath());
@@ -555,18 +556,20 @@ void AnimationView::draw()
   m_ringVisible[0]=m_ringVisible[1]=m_ringVisible[2]=false;
   if(!isValid()) initializeGL();
 
-  const GLfloat clearValue=UserSettings::darkTheme() ? 0.20f : 0.5f;
+  // the background token of the current theme (src/viewcolours.h); asked for every picture,
+  // so switching the theme shows at the next one
+  const QVector3D background=ViewColours::vector(ViewColours::background()).toVector3D();
   if(!m_skinRenderer.isReady())
   {
     // no OpenGL 3.3: nothing can be drawn (the user got a message)
-    glClearColor(clearValue,clearValue,clearValue,1.0f);
+    glClearColor(background.x(),background.y(),background.z(),1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     return;
   }
 
   // fog towards the background colour, the shaders use it (exponential)
   EnvironmentOverride::Scene look;
-  look.background=QVector3D(clearValue,clearValue,clearValue);
+  look.background=background;
   look.fogOn=UserSettings::fog();
   look.fogDensity=0.005f;
   look.fogColour=look.background;
@@ -1155,7 +1158,7 @@ void AnimationView::clickSelect(unsigned int selected)
 {
   m_lastClicked=selected;
   // if another part than the current one has been clicked, switch off mirror mode
-  if(selected!=partSelected) m_scene->getAnimation()->setMirrored(false);
+  if(selected!=partSelected && m_scene->getAnimation()) m_scene->getAnimation()->setMirrored(false);
 
   // background clicked, reset all
   if(!selected)
@@ -1276,7 +1279,7 @@ void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
   // FIXME: With multiple avatars, double-clicking
   //  other avatars may require a different
   //  animation than what getAnimation() returns
-  if (m_scene->getAnimation()->getNode(selected) == 0) return;
+  if (!m_scene->getAnimation() || m_scene->getAnimation()->getNode(selected) == 0) return;
 
   // the first click of the double click selected the joint already
   if(partSelected!=selected) clickSelect(selected);
@@ -1841,29 +1844,19 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
         }
       }
       if(selecting) pickName(selectName);
-      if(anim->getMirrored() &&
-          (mirrorSelected==colorName || partSelected==colorName)
-	)
-      {
-        SceneState::setColor(1.0,0.635,0.059,1);
-      }
-      else if(partSelected==colorName)
-        SceneState::setColor(0.6,0.3,0.3,1);
+      // the body's colour from the tokens of the current theme (src/viewcolours.h)
+      using ViewColours::BodyPart;
+      BodyPart bodyPart=BodyPart::Normal;
+      if(partSelected==colorName)
+        bodyPart=BodyPart::Selected;
+      else if(anim->getMirrored() && mirrorSelected==colorName)
+        bodyPart=BodyPart::MirrorPartner;
       else if(m_pull.active && m_pullPreview.contains(motion))
-      {
-        // the pulled limb is highlighted (accent_text, as the mockup's pulled bones)
-        const QVector4D pulled=ViewColours::vector(Theme::color(Theme::Token::AccentText));
-        SceneState::setColor(pulled.x(),pulled.y(),pulled.z(),1);
-      }
+        bodyPart=BodyPart::Pulled;   // as the mockup's pulled bones
       else if(partHighlighted==colorName)
-        SceneState::setColor(0.4,0.5,0.3,1);
-      else
-        SceneState::setColor(0.6,0.5,0.5,1);
-      if(anim->getIK(motion))
-      {
-        const QVector4D color=SceneState::color();
-        SceneState::setColor(color.x(),color.y(),color.z()+0.3f,color.w());
-      }
+        bodyPart=BodyPart::Hovered;
+      const QVector4D bodyColour=ViewColours::vector(ViewColours::body(bodyPart,anim->getIK(motion)));
+      SceneState::setColor(bodyColour.x(),bodyColour.y(),bodyColour.z(),bodyColour.w());
 
       if(mode==MODE_COLLECT)
       {
@@ -2175,7 +2168,8 @@ Camera* AnimationView::camera() const
 
 BVHNode* AnimationView::getSelectedPart()
 {
-  return m_scene->getAnimation()->getNode(partSelected % static_cast<int>(OpenGlIds::AnimationIncrement));
+  Animation* current=m_scene->getAnimation();
+  return current ? current->getNode(partSelected % static_cast<int>(OpenGlIds::AnimationIncrement)) : nullptr;
 }
 
 unsigned int AnimationView::getSelectedPartIndex()
@@ -2196,7 +2190,8 @@ void AnimationView::setMeshModels(QSharedPointer<Mesh> cubeMesh, QSharedPointer<
 }
 void AnimationView::selectPart(int partNum)
 {
-  BVHNode* node=m_scene->getAnimation()->getNode(partNum);
+  Animation* current=m_scene->getAnimation();
+  BVHNode* node=current ? current->getNode(partNum) : nullptr;
 
   if(!node)
   {

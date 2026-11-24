@@ -338,7 +338,7 @@ jobs:
         run: |
           mkdir -p /home/runner/apt-archives/partial
           sudo apt-get update
-          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-l10n-tools libqt6opengl6-dev libgl-dev xvfb
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-l10n-tools libqt6opengl6-dev libgl-dev xvfb xdotool
           sudo chown -R "$USER" /home/runner/apt-archives
       - name: Cache compiler output (ccache)
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -367,3 +367,13 @@ jobs:
         run: xvfb-run -a -s "-screen 0 1280x1000x24" tests/smoke_gui.sh build-sanitize/src/PinglyMotion
       - name: Remote control from start to finish (under sanitizers)
         run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_control.py build-sanitize/src/PinglyMotion
+      - name: Closing an animation and removing a figure (under sanitizers)
+        env:
+          PINGLYMOTION_REQUIRE_XDOTOOL: '1'
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" python3 tests/smoke_close.py build-sanitize/src/PinglyMotion
+      - name: File readers and writers with the leak sanitizer
+        # detect_leaks is off above because Qt and the GUI tests leave some behind on purpose; the tests of
+        # the file code leave none, so a reader that loses a node on a refused file fails here (audit item C16)
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:abort_on_error=1
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" ctest --test-dir build-sanitize -R '^(animfile|generated|dingle|dingle_conversion|roundtrip)$' --output-on-failure
