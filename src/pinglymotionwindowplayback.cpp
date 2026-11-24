@@ -55,6 +55,8 @@
 #include <QTableWidget>
 
 #include "aboutdialog.h"
+#include "helperspec.h"
+#include "helpermode.h"
 #include "animexportdialog.h"
 #include "animimportconvert.h"
 #include "dinglesave.h"
@@ -90,6 +92,8 @@
 
 #include "panelvisibility.h"
 #include "pinglymotionwindow.h"
+#include "helpermode.h"
+#include "helperspec.h"
 #include "playback.h"
 #include "transportbar.h"
 #include "theme.h"
@@ -201,6 +205,8 @@ void PinglyMotionWindow::beginPlaying(Animation* anim)
 
   timer.start((int)(1.0/anim->fps()*1000.0));
   updateInputs();
+  // the lesson step "Press Start" goes on (job UX-C)
+  if(m_helper) m_helper->notify(QLatin1String(HelperSpec::played));
 }
 
 void PinglyMotionWindow::setFPS(int fps)

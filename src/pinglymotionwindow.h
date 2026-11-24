@@ -74,6 +74,7 @@ class TopBar;
 class ReasonLine;
 class EmptyState;
 class HintCards;
+class HelperMode;
 class ViewToolbar;
 class ScriptLabPanel;
 class LibraryPanel;
@@ -600,6 +601,12 @@ class PinglyMotionWindow : public QMainWindow
     HintCards* m_hintCards = nullptr;
     bool m_startedWithFileOrControl = false;
     void buildHintCards();
+    // helper mode (job UX-C, src/helpermode.h): the Helper switch at the top, the helper panel
+    // with the hint cards and the lessons, and the ring around the control they talk about
+    HelperMode* m_helper = nullptr;
+    void buildHelper();
+    QWidget* helperTarget(const QString& name) const;
+    bool helperAlreadyDone(const QString& event) const;
     // true while no animation is open: a clean untitled animation stays behind the empty state
     // so the old code never meets "no animation"; the commands see none (see WindowControlHost)
     bool m_empty = false;

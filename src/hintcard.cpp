@@ -297,6 +297,21 @@ void HintCards::refresh()
   m_refreshing = true;
   refreshNow();
   m_refreshing = false;
+  emit changed();
+}
+
+void HintCards::setHolder(QWidget* holder)
+{
+  m_embedded = holder != nullptr;
+  m_card->setParent(holder ? holder : m_host);
+  m_card->hide();
+  refresh();
+}
+
+QWidget* HintCards::currentTarget() const
+{
+  if (!cardShown() || m_index >= GuidanceSpec::cardCount || !m_targetFor) return nullptr;
+  return m_targetFor(QLatin1String(GuidanceSpec::cards[m_index].target));
 }
 
 void HintCards::refreshNow()
@@ -320,6 +335,11 @@ void HintCards::refreshNow()
   }
   m_card->setCard(m_index, GuidanceSpec::cardCount, QCoreApplication::translate("HintCard", spec.title),
                   QCoreApplication::translate("HintCard", spec.text));
+  if (m_embedded)
+  {
+    m_card->show();
+    return;
+  }
   place(QLatin1String(spec.target));
   m_card->show();
   m_card->raise();

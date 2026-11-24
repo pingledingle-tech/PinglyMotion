@@ -1,5 +1,5 @@
 Branch: job/ux-c-helper-mode
-Status: active
+Status: done
 Pull request: #474
 Files:
 - src/helpermode.*
@@ -16,7 +16,6 @@ Files:
 - docs/UX_DECISIONS.md
 - docs/DECISIONS.md
 - docs/PRODUCT.md
-- docs/TEACHING_TEXTS.md
 
 ## What
 
