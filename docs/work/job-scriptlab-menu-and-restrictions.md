@@ -1,5 +1,5 @@
 Branch: job/scriptlab-menu-and-restrictions
-Status: active
+Status: done
 Pull request: #448
 Files:
 - src/scriptlab/labdialogbox.*

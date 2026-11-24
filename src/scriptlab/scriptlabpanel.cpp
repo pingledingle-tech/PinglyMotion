@@ -384,26 +384,16 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_actions->header()->setStretchLastSection(false);
   m_actions->header()->setSectionResizeMode(0, QHeaderView::Stretch);
   m_actions->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-  m_actions->setToolTip(tr("What the avatar may do now: Allowed or Blocked"));
+  m_actions->setToolTip(tr("What the avatar may do now. Choose Allowed or Blocked, or press Space on a row."));
   for (const Rlv::Action& action : Rlv::actions())
   {
     QTreeWidgetItem* item = new QTreeWidgetItem(m_actions);
     item->setText(0, action.label);
     item->setData(0, Qt::UserRole, action.id);
-    // job A2: choose Allowed or Blocked in the row itself; the word stays in the cell under it
-    QComboBox* choice = new QComboBox(m_actions);
-    choice->setObjectName("scriptLabActionChoice");
-    choice->addItem(tr("Allowed"));
-    choice->addItem(tr("Blocked"));
-    choice->setProperty("action", action.id);
-    choice->setAccessibleName(action.label);
-    choice->setAutoFillBackground(true);
-    choice->setMinimumHeight(ControlCompact);
-    choice->setFocusPolicy(Qt::StrongFocus);
-    m_actions->setItemWidget(item, 1, choice);
-    connect(choice, QOverload<int>::of(&QComboBox::activated), this, [this, id = action.id](int index) { chooseAction(id, index == 1); });
   }
   m_actions->setMinimumHeight(6 * m_actions->fontMetrics().height() + 2 * SpacingS);
+  m_actions->installEventFilter(this);
+  m_actions->setCurrentItem(m_actions->topLevelItem(0));
   m_actionsSection->bodyLayout()->addWidget(m_actions);
   buildChoiceBox(m_actionsSection->body(), m_actionsSection->bodyLayout());
 
@@ -515,10 +505,8 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_restrictions, m_actionsSection->header());
   setTabOrder(m_actionsSection->header(), m_actions);
   {
-    // job A2: the row choices, then the choice box, in screen order
+    // job A2: then the choice box, in screen order
     QWidget* before = m_actions;
-    for (int i = 0; i < m_actions->topLevelItemCount(); ++i)
-      if (QWidget* w = m_actions->itemWidget(m_actions->topLevelItem(i), 1)) { setTabOrder(before, w); before = w; }
     for (QWidget* w : {static_cast<QWidget*>(m_choiceValue), static_cast<QWidget*>(m_choiceApply), static_cast<QWidget*>(m_useInScript)})
     {
       setTabOrder(before, w);
@@ -533,6 +521,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_viewModesBox, m_repliesSection->header());
   setTabOrder(m_repliesSection->header(), m_log);
 
+  addActionChoices();   // job A2
   applyStyle();
   refresh();
   refreshMode();
@@ -1582,6 +1571,19 @@ bool ScriptLabPanel::eventFilter(QObject* watched, QEvent* event)
     if (mouse->button() == Qt::LeftButton && !m_runLog->textCursor().hasSelection())
       showLogLine(m_runLog->cursorForPosition(mouse->position().toPoint()).blockNumber());
   }
+  // job A2: in "What the avatar may do" the arrow keys pick a row, and Space or Enter switches it
+  // between Allowed and Blocked, so the list is one Tab stop (charter P8)
+  if (m_actions && watched == m_actions && event->type() == QEvent::KeyPress)
+  {
+    const QKeyEvent* key = static_cast<QKeyEvent*>(event);
+    QTreeWidgetItem* item = m_actions->currentItem();
+    if (item && key->modifiers() == Qt::NoModifier &&
+        (key->key() == Qt::Key_Space || key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter))
+    {
+      chooseAction(item->data(0, Qt::UserRole).toString(), item->data(1, Qt::UserRole).toBool());
+      return true;
+    }
+  }
   return QWidget::eventFilter(watched, event);
 }
 
@@ -2515,6 +2517,29 @@ bool ScriptLabPanel::answerDialog(const QString& button)
 }
 
 // --- Choose a restriction from the list (job A2) --------------------------------
+
+void ScriptLabPanel::addActionChoices()
+{
+  // made last in the constructor, so the choices sit at the end of the focus chain; they take no
+  // keys anyway (the list does: Space or Enter)
+  for (int i = 0; i < m_actions->topLevelItemCount(); ++i)
+  {
+    QTreeWidgetItem* item = m_actions->topLevelItem(i);
+    const Rlv::Action action{item->data(0, Qt::UserRole).toString(), item->text(0)};
+    // job A2: choose Allowed or Blocked in the row itself; the word stays in the cell under it
+    QComboBox* choice = new QComboBox(m_actions);
+    choice->setObjectName("scriptLabActionChoice");
+    choice->addItem(tr("Allowed"));
+    choice->addItem(tr("Blocked"));
+    choice->setProperty("action", action.id);
+    choice->setAccessibleName(action.label);
+    choice->setAutoFillBackground(true);
+    choice->setMinimumHeight(ControlCompact);
+    choice->setFocusPolicy(Qt::NoFocus);   // the keys go through the list itself (Space or Enter), one Tab stop
+    m_actions->setItemWidget(item, 1, choice);
+    connect(choice, QOverload<int>::of(&QComboBox::activated), this, [this, id = action.id](int index) { chooseAction(id, index == 1); });
+  }
+}
 
 void ScriptLabPanel::buildChoiceBox(QWidget* parent, QVBoxLayout* layout)
 {

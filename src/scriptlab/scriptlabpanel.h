@@ -514,6 +514,7 @@ class ScriptLabPanel : public QWidget
     QString m_choiceAction;            // the row the box speaks of
     QString m_choiceRlvLine;           // the line the box shows ("" when none)
     void buildChoiceBox(QWidget* parent, QVBoxLayout* layout);
+    void addActionChoices();
     void showChoice(const QString& actionId, bool blocked, const QString& line, const QStringList& words, const QString& result, int tone);
     void setChoiceResult(const QString& text, int tone);
     void refreshUseInScript();

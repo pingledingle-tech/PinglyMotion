@@ -667,6 +667,17 @@ void TestScriptLabPanel::chooseRestriction()
   QVERIFY(!panel.chooseAction("jump", true));
   QVERIFY(panel.actionChoice("sendim")->isEnabled());
 
+  // keys: the list is one Tab stop; Space or Enter on a row switches it
+  QCOMPARE(int(panel.actionChoice("sendim")->focusPolicy()), int(Qt::NoFocus));
+  list->setCurrentItem(row);
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Allowed"));
+  QTest::keyClick(list, Qt::Key_Space);
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Blocked"));
+  QCOMPARE(panel.choiceLine()->text(), QString("@sendim=n"));
+  QTest::keyClick(list, Qt::Key_Return);
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Allowed"));
+  QCOMPARE(panel.choiceLine()->text(), QString("@sendim=y"));
+
   // the Command field and Try: still work as before
   typeAndEnter(panel, "@fly=n");
   QCOMPARE(shownStates(panel).value("fly"), QString("Blocked"));

@@ -6405,10 +6405,6 @@ Buttons: %3 (channel %4)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>What the avatar may do now: Allowed or Blocked</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show camera limits in 3D view</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7296,6 +7292,10 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>Error: the menu answer &quot;%1&quot; was not sent. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What the avatar may do now. Choose Allowed or Blocked, or press Space on a row.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
