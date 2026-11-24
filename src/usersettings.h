@@ -109,6 +109,12 @@ class UserSettings
     static QString scriptLabTipsClosed();
     static void setScriptLabFollowSelection(bool on);
     static bool scriptLabFollowSelection();
+    // job UX-B: the Script Lab window's tabs (the tab in front, the popped tabs and their places,
+    // LabTabState), and which first sizes were given (1: docked big, 2: floating big)
+    static void setScriptLabWindows(const QString& value);
+    static QString scriptLabWindows();
+    static void setScriptLabSized(int flags);
+    static int scriptLabSized();
     // the Selected joint panel (docs/UX_DECISIONS.md, 6): what a drag in the 3D view
     // does, Pull the limb (true, default) or Turn only this joint (read by the drag of
     // UX phase 4b), and whether its More options part is open (default folded)
@@ -248,6 +254,10 @@ private:
     static const QString m_scriptLabTipsClosedKey;
     static bool m_scriptLabFollowSelection;
     static const QString m_scriptLabFollowSelectionKey;
+    static QString m_scriptLabWindows;
+    static const QString m_scriptLabWindowsKey;
+    static int m_scriptLabSized;
+    static const QString m_scriptLabSizedKey;
     static bool m_pullLimbOnDrag;
     static const QString m_pullLimbOnDragKey;
     static bool m_jointMoreOptions;

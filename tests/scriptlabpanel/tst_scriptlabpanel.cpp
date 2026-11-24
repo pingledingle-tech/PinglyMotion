@@ -437,15 +437,18 @@ namespace
   }
 }
 
-// two pages, Live scripts and Type commands; the Live page says what to do when no folder is watched
+// the pages, Live scripts and Type commands first (job UX-B: then Who talks to whom and Player);
+// the Live page says what to do when no folder is watched
 void TestScriptLabPanel::liveTabAndEmptyState()
 {
   ScriptLabPanel panel;
   LabWatcher watcher;
   panel.setWatcher(&watcher);
-  QCOMPARE(panel.tabs()->count(), 2);
+  QCOMPARE(panel.tabs()->count(), 4);
   QCOMPARE(panel.tabs()->tabText(0), QString("Live scripts"));
   QCOMPARE(panel.tabs()->tabText(1), QString("Type commands"));
+  QCOMPARE(panel.tabs()->tabText(2), QString("Who talks to whom"));
+  QCOMPARE(panel.tabs()->tabText(3), QString("Player"));
   QCOMPARE(panel.tabs()->currentIndex(), 0);
   QCOMPARE(panel.watchButton()->text(), QString("Watch folder..."));
   QCOMPARE(panel.unwatchButton()->text(), QString("Stop watching"));

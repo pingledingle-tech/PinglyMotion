@@ -559,6 +559,18 @@ The project owner, 24 November 2026, 13:26: «Fiks dette og legg i køer». In B
 - Not in this part: the Animate / Script switch, helper mode, the guide page and the Script Lab window.
 - Code: `src/beginnerview.h` (the rules and texts), `src/panelwindow.h` (`applyModeLayout`), `src/panelcontent.h` (the two buttons), `src/usersettings.*`, `src/pinglymotionwindow.cpp`. Tests: `tests/windowrules` (the view's share of the window in each mode, the Joints list closed and reopened from its View item, Reset layout per mode, each mode's layout through a restart, a click on the figure and the wiring), `tests/uirender` (the buttons are not clipped at 100 and 200 percent in the dark and the light theme), `tests/usersettings` (the two layout slots), and the existing `tests/easingtiles` and `tests/handstab` (Edit curve and the finger grid hidden in Beginner mode).
 
+## 6x. New UX direction, part B: Script Lab as one window with its own tabs (built, job UX-B, 24 November 2026)
+
+The project owner, 24 November 2026, 13:26: «Fiks dette og legg i køer» (the new direction from his voice talk; [DECISIONS.md](DECISIONS.md), "New UX direction"). No tabs on the screen edges: the tabs live inside Script Lab. He found Mockup 2's Script Lab small and stuck; this replaces it where they differ. Details: [SCRIPT_LAB.md](SCRIPT_LAB.md), "One window with its own tabs".
+
+- **One window, four tabs:** Live scripts, Type commands, Who talks to whom, Player. The channel map and record, recipe and player left the long Live page for tabs of their own; every other part stays where it was. Improve a setup and HUD get tabs when they exist.
+- **Big by default:** three fifths of the main window the first time it opens docked, four fifths of the screen the first time it floats; after that as the user left it. It docks on any side or floats.
+- **Each tab can be popped out** into a window of its own (Pop out beside the tabs, or drag the tab out of the bar) and put back (Put back, or close that window). For people who script a lot: editor, map and player side by side, maybe on two screens. A beginner keeps everything in one window and never has to pop anything out.
+- **Remembered:** the tab in front, the popped tabs and their places and sizes. Reset layout puts everything back.
+- **Keys:** Ctrl+Tab and Ctrl+Shift+Tab go round the tabs from anywhere in Script Lab; Pop out and Put back are in the Tab order with names for screen readers.
+- **Same icons for the same action:** Pop out uses the panel title bar's "window of its own" symbol and Put back its "back into the frame" symbol.
+- **For the combined taste round (look, not blocking):** the place and look of Pop out beside the tabs, the popped window's top row, and whether the map tab should open its part at once in Beginner mode (it keeps today's folding rule: folded for beginners, open for experts).
+
 ## 9. Build order
 
 This is the one numbered list of interface steps ("UX step N" in issues and pull requests means step N here). Other documents name a step by its name and link here; old numbers from other documents are in the table under the list. Small steps, each tested on Windows. Steps that touch the main window run one after another. Tests already waiting (pop-out panels P6, example wave, curve editor step 1, import clean-up options) come first.

@@ -138,6 +138,8 @@ namespace PanelWindow
   inline Qt::DockWidgetAreas usualAreas(const Docks& docks,const QDockWidget* dock)
   {
     if (dock==docks.timeline) return Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea;
+    // job UX-B: Script Lab docks on any side (it can be the main focus)
+    if (dock==docks.scriptLab) return Qt::AllDockWidgetAreas;
     return Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea;
   }
 

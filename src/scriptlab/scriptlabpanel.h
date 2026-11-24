@@ -39,6 +39,13 @@
  * the keys. The chosen RLV or RLVa button has a tick and bold text beside its
  * fill, as Show effects and Record do when on (not by colour alone).
  *
+ * Job UX-B, one window with its own tabs (the project owner, 24 Nov 2026, 13:26; docs/UX_DECISIONS.md 6x):
+ * the pages are the tabs Live scripts, Type commands, Who talks to whom and Player (the channel map and
+ * record, recipe and player moved out of the long Live page into tabs of their own). Script Lab opens
+ * big, docks on any side or floats, and each tab can be popped out into a window of its own (labtabs.h)
+ * with "Pop out" or by dragging it out of the bar, and put back with "Put back" or by closing that
+ * window. The tab in front, the popped tabs and their places are remembered (UserSettings).
+ *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
  *
@@ -54,6 +61,7 @@
 #include <QList>
 #include <QMap>
 #include <QPointer>
+#include <QRect>
 #include <QSet>
 #include <QWidget>
 
@@ -70,6 +78,7 @@
 #include "labdialogbox.h"
 #include "labhelpview.h"
 #include "labchains.h"
+#include "labtabs.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
@@ -113,8 +122,9 @@ class ScriptLabPanel : public QWidget
     static const char* const ViewActionName;  // "viewScriptLabAction"
     // the object id lines typed in the panel are sent from
     static const char* const DefaultObject;   // "panel"
-    // the two pages, in the mockup's order
-    enum Page { LivePage = 0, CommandsPage = 1 };
+    // the pages, in the order of their tabs (job UX-B); a page's number is also its tab's place
+    // while no tab is popped out (tabIndex() gives the place at any time)
+    enum Page { LivePage = 0, CommandsPage = 1, MapPage = 2, PlayerPage = 3, PageCount = 4 };
 
     // Size (the project owner, 23 Nov 2026, 17:48: the window could not be resized and needs
     // more room). The panel starts at defaultSize() when docked or floated for the first time,
@@ -124,6 +134,47 @@ class ScriptLabPanel : public QWidget
     static QSize defaultSize();
     static QSize minimumPanelSize();
     QSize sizeHint() const override { return defaultSize(); }
+    // --- job UX-B: one window with its own tabs
+    // big by default: the width a docked Script Lab gets the first time it opens (most of the main
+    // window), and the size of a floating one (most of the screen); never bigger than there is room
+    static int bigDockedWidth(const QSize& window);
+    static QSize bigFloatingSize(const QRect& screen);
+    // gives the dock its big first size once (docked and floating each once, remembered); the
+    // dock calls it when it is shown or floated. Answers true when it changed the size.
+    static bool openBig(QMainWindow* window, QDockWidget* dock);
+    // the window puts its saved layout back: a floating Script Lab keeps its saved place and size
+    static void setLayoutRestoring(bool restoring) { s_layoutRestoring = restoring; }
+    // the page of a tab (its scroll area), its key ("live", "commands", "map", "player") and name
+    QWidget* page(Page page) const { return page >= 0 && page < PageCount ? m_pages[page] : nullptr; }
+    static QString pageKey(Page page);
+    QString pageName(Page page) const;
+    // the tab of a page in the bar, -1 while it is popped out
+    int tabIndex(Page page) const;
+    // the page in front in the Script Lab window
+    Page currentPage() const;
+    // brings a page to the front: its tab, or its own window when it is popped out
+    void showPage(Page page);
+    // pops a page out into a window of its own, as "Pop out" does (at: where a dragged tab was let
+    // go, or nowhere); false when it is out already or it is the last tab in the window
+    bool popOut(Page page, const QPoint& at = QPoint());
+    // puts a popped page back as its tab, as "Put back" or closing its window does; false when it is in
+    bool putBack(Page page);
+    bool isPoppedOut(Page page) const { return popWindow(page) != nullptr; }
+    LabPopWindow* popWindow(Page page) const;
+    // the Pop out button beside the tabs (it pops out the tab in front)
+    QToolButton* popOutButton() const { return m_popOutButton; }
+    // the empty lines of the map and player tabs while no folder is watched as one object
+    QLabel* mapEmpty() const { return m_mapEmpty; }
+    QLabel* playerEmpty() const { return m_playerEmpty; }
+    // what is remembered (LabTabState text) and back; a restart reads it in the constructor
+    QString windowState() const;
+    void applyWindowState(const QString& state);
+    // View > Reset layout: every tab back in the window, Live scripts in front, the first sizes again
+    void resetWindows();
+    // the popped windows show while Script Lab is open and hide while it is closed (the dock's
+    // View item); without a dock they follow the panel
+    void setPopWindowsShown(bool shown);
+
     // the grip: shown only while the panel floats
     QWidget* sizeGrip() const { return m_sizeGrip; }
     void setFloatingGrip(bool floating);
@@ -622,7 +673,22 @@ class ScriptLabPanel : public QWidget
     void updateChains();
     QVector<LabChains::Chain> m_chains;
     bool m_chainsReady = false;
-    QTabWidget* m_tabs = nullptr;
+    LabTabWidget* m_tabs = nullptr;
+    static bool s_layoutRestoring;
+    // --- job UX-B
+    QWidget* m_pages[PageCount] = {};
+    LabPopWindow* m_popWindows[PageCount] = {};
+    QMap<QString, QRect> m_popPlaces;     // the last place of each tab's own window
+    QToolButton* m_popOutButton = nullptr;
+    QLabel* m_mapEmpty = nullptr;
+    QLabel* m_playerEmpty = nullptr;
+    bool m_windowStateReady = false;      // false while building and restoring: nothing is saved
+    bool m_popWindowsShown = false;
+    void addPageTab(Page page);
+    void saveWindowState();
+    void refreshPopOutButton();
+    void stylePageTabs();
+    QWidget* makePageScroll(QWidget* content, const char* name);
     QLineEdit* m_liveFolder = nullptr;
     QPushButton* m_watch = nullptr;
     QPushButton* m_unwatch = nullptr;
