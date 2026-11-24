@@ -33,14 +33,23 @@ namespace MenuSpec
   inline constexpr Item fileExport = {"fileExportAnimAction", QT_TRANSLATE_NOOP("MenuSpec", "Export for Second Life (.anim)..."), "Ctrl+Shift+E", ""};
   inline constexpr Item fileClose = {"fileCloseAction", QT_TRANSLATE_NOOP("MenuSpec", "Close animation"), "Ctrl+W", ""};
 
-  // Edit (UX phase 1b). Undo and Redo are not built yet, so they are greyed with a reason;
+  // Edit (UX phase 1b). Undo and Redo work since job B1 (src/undohistory.h): they are greyed
+  // with the reasons below while there is nothing to undo or redo. Redo also has Ctrl+Y (redoKeys).
   // Set key works through the key button and its reasons come from the state of the
   // window (the setKey* texts below). Paste mirrored is built since UX phase 3b; its
   // reasons come from the state too (ClipSpec::pasteBlocked, src/timelineclip.h).
-  inline constexpr Item editUndo = {"editUndoAction", QT_TRANSLATE_NOOP("MenuSpec", "Undo"), "Ctrl+Z",
-    QT_TRANSLATE_NOOP("MenuSpec", "Undo is not built yet. Save a copy before big changes.")};
-  inline constexpr Item editRedo = {"editRedoAction", QT_TRANSLATE_NOOP("MenuSpec", "Redo"), "Ctrl+Shift+Z",
-    QT_TRANSLATE_NOOP("MenuSpec", "Redo is not built yet. It comes with Undo.")};
+  inline constexpr Item editUndo = {"editUndoAction", QT_TRANSLATE_NOOP("MenuSpec", "Undo"), "Ctrl+Z", ""};
+  inline constexpr Item editRedo = {"editRedoAction", QT_TRANSLATE_NOOP("MenuSpec", "Redo"), "Ctrl+Shift+Z", ""};
+  // every key that does Undo and Redo, the first is the one the menu shows (the mockup's keys)
+  inline constexpr const char* undoKeys[] = {"Ctrl+Z"};
+  inline constexpr const char* redoKeys[] = {"Ctrl+Shift+Z", "Ctrl+Y"};
+  // why Undo and Redo are greyed, and what the status line says after them (the mockup's texts)
+  inline constexpr const char* nothingToUndo = QT_TRANSLATE_NOOP("MenuSpec", "Nothing to undo yet.");
+  inline constexpr const char* nothingToRedo = QT_TRANSLATE_NOOP("MenuSpec", "Nothing to redo. Redo works after Undo.");
+  inline constexpr const char* undone = QT_TRANSLATE_NOOP("MenuSpec", "Undone.");
+  inline constexpr const char* redone = QT_TRANSLATE_NOOP("MenuSpec", "Redone.");
+  // Undo or Redo pressed while a drag or a pull still runs
+  inline constexpr const char* undoWait = QT_TRANSLATE_NOOP("MenuSpec", "Finish the change you are making first.");
   inline constexpr Item editSetKey = {"editSetKeyAction", QT_TRANSLATE_NOOP("MenuSpec", "Set key"), "K", ""};
   inline constexpr Item editPasteMirrored = {"editPasteMirroredAction", QT_TRANSLATE_NOOP("MenuSpec", "Paste mirrored"), "Ctrl+Shift+V", ""};
 

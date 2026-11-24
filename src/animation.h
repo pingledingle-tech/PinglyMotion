@@ -24,6 +24,7 @@
 
 #include <QJsonObject>
 #include <QList>
+#include <QMap>
 #include <QString>
 #include <QTimer>
 #include <QVector3D>
@@ -202,6 +203,30 @@ class Animation : public QObject
 
     void optimize();
 
+    // Everything Undo and Redo bring back (src/undohistory.h): the key frames of
+    // every joint and of the Avatar Position (with their easing and curves), the
+    // number of frames, frames per second and the loop. keys[i] belongs to the part
+    // with index i (0 is the Avatar Position, as getNode() counts).
+    struct Snapshot
+    {
+      QList<QMap<int,FrameData>> keys;
+      int frames=0;
+      int fps=0;
+      int loopIn=-1;
+      int loopOut=-1;
+      bool operator==(const Snapshot& other) const
+      {
+        return frames==other.frames && fps==other.fps && loopIn==other.loopIn && loopOut==other.loopOut &&
+               keys==other.keys;
+      }
+      bool operator!=(const Snapshot& other) const { return !(*this==other); }
+    };
+    Snapshot snapshot() const;
+    // puts a snapshot back: the joints stay the same objects, so pointers to them
+    // stay valid. Tells the timeline (numberOfFrames, redrawTrack) and the view
+    // (frameChanged); it does not change the dirty mark, the caller does.
+    void restore(const Snapshot& state);
+
     enum { MAX_PARTS=512 };
 
   public slots:
@@ -255,6 +280,9 @@ class Animation : public QObject
     // not the position pseudo-track); used by flipPose(), tPose() and
     // resetAllToFrameZero()
     void forEachJoint(BVHNode* joint,const std::function<void(BVHNode*)>& fn);
+    // every node in part index order (0 the Avatar Position, then the skeleton
+    // depth first, End Sites included), for snapshot() and restore()
+    QList<BVHNode*> partNodes() const;
 
     void calcPartMirrors();
     void setIK(IKPartType part, bool flag);

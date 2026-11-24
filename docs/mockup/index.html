@@ -502,6 +502,8 @@ body[data-layout="narrow"] .dock > .panel:not(.floating) { flex:none; } /* one c
 .key.dim { background:var(--text_disabled); cursor:default; width:10px; height:10px; margin:-5px 0 0 -5px; }
 body:not(.expert) .figx, body:not(.expert) .figs { display:none !important; }
 body:not(.expert) .figctl { visibility:hidden; }
+/* Expert-only buttons (Paste mirrored, Edit curve): hidden in Beginner mode, keeping their room as the program does (charter P12) */
+body:not(.expert) .expert-only { visibility:hidden; }
 
 /* ---- Status line ---- */
 .status { grid-area:status; display:flex; align-items:center; gap:var(--l); padding:0 var(--m); min-height:var(--h-default);

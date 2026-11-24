@@ -1,6 +1,7 @@
 # The core of the program: model, file formats and settings. Built once as a static
 # library that the program, the automatic tests and the tools link against.
 SET (PINGLYMOTION_CORE_SRC animation.cpp
+              undohistory.cpp
               applog.cpp
               animfile.cpp
               avatarskin.cpp
@@ -123,6 +124,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowfile.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp
+              pinglymotionwindowundo.cpp
               emptystate.cpp
               topbar.cpp
               reasonline.cpp
