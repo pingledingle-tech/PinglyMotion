@@ -1,5 +1,5 @@
 Branch: job/props-from-prims
-Status: active
+Status: done
 Pull request: #447
 Files:
 - src/scriptlab/labprimprops.*
