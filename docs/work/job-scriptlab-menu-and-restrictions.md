@@ -1,6 +1,6 @@
 Branch: job/scriptlab-menu-and-restrictions
 Status: active
-Pull request: pending
+Pull request: #448
 Files:
 - src/scriptlab/labdialogbox.*
 - src/scriptlab/labrestrictionchoice.*
