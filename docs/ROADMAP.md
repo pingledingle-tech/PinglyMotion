@@ -6,20 +6,20 @@ Where the details are: running work is the open pull requests; what a job did is
 
 **Rule:** a job changes this file only when the order or the status word of a step changes, never to log what was built (`CLAUDE.md`, "While you work").
 
-Status words: done, running, next, waiting, parked.
+Status words (six, each with a short reason, the project owner, 24 Nov 2026, 23:00): done, running, next, waiting, parked, dropped.
 
 ## Order
 
 | # | Step | Status | Details |
 |---|---|---|---|
-| 1 | GitHub setup and process (stable tests, `auto-merge` label, process review) | running | [DEV.md](DEV.md), [DECISIONS.md](DECISIONS.md), "Working method and repository" |
-| 2 | RLV tool (Script Lab): functions, lint, whole-tool tests, the panel as in the mockup. Takes priority over step 4 (the project owner, 23 Nov 2026). The panel and parts A to G are built; «improve a finished setup» (Script Lab plan) waits for the project owner's decision | waiting | [SCRIPT_LAB.md](SCRIPT_LAB.md), [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md), [UX_DECISIONS.md](UX_DECISIONS.md) 6d |
-| 3 | Website: text and content, the download page (issue 147); runs in parallel, touches only website files; no open pull request now, the website chat starts its jobs | waiting | issue 147 |
-| 4 | New UX design in the rest of the program, built step by step from the clickable mockup, including the UX direction of 24 Nov 2026 (windows, helper mode, beginner animation view). The final check runs; the old Tools and Options menus are still to be removed ([UX_DECISIONS.md](UX_DECISIONS.md) 6h) | running | [UX_DECISIONS.md](UX_DECISIONS.md), `docs/DESIGN_CHARTER.md`, `docs/DESIGN_SYSTEM.md`, [DECISIONS.md](DECISIONS.md) |
-| 5 | Easing per joint (issue 11) | done | [EASING.md](EASING.md) |
-| 6 | Reference library browser (issue 19) and two figures in one scene | done (an optional look test is on the test list) | [UX_DECISIONS.md](UX_DECISIONS.md) 6l, 6m |
-| 7 | Teaching texts (issue 54), once the texts are stable | waiting | [TEACHING.md](TEACHING.md) |
-| 8 | Translations and the language choice in Settings (the plumbing is built, no translation exists) | waiting | [TRANSLATION.md](TRANSLATION.md) |
+| 1 | GitHub setup and process (stable tests, `auto-merge` label, process review) | next, approved, starts when the queue runs | [DEV.md](DEV.md), [DECISIONS.md](DECISIONS.md), "Working method and repository" |
+| 2 | RLV tool (Script Lab): functions, lint, whole-tool tests, the panel as in the mockup. Takes priority over step 4 (the project owner, 23 Nov 2026). The panel and parts A to G are built; «improve a finished setup» (Script Lab plan) waits for a study of the OpenCollar scripts (the project owner, 24 Nov 2026, 22:19) | waiting, approved 24 Nov 2026 but a study of the OpenCollar scripts comes first | [SCRIPT_LAB.md](SCRIPT_LAB.md), [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md), [UX_DECISIONS.md](UX_DECISIONS.md) 6d |
+| 3 | Website: text and content, the download page (issue 147); runs in parallel, touches only website files; no open pull request now, the website chat starts its jobs | parked, the website chat owns its text jobs and none is open | issue 147 |
+| 4 | New UX design in the rest of the program, built step by step from the clickable mockup, including the UX direction of 24 Nov 2026 (windows, helper mode, beginner animation view). The final check runs; the old Tools and Options menus are still to be removed ([UX_DECISIONS.md](UX_DECISIONS.md) 6h) | running, has open pull requests | [UX_DECISIONS.md](UX_DECISIONS.md), `docs/DESIGN_CHARTER.md`, `docs/DESIGN_SYSTEM.md`, [DECISIONS.md](DECISIONS.md) |
+| 5 | Easing per joint (issue 11) | done, merged | [EASING.md](EASING.md) |
+| 6 | Reference library browser (issue 19) and two figures in one scene | done, merged (an optional look test is on the test list) | [UX_DECISIONS.md](UX_DECISIONS.md) 6l, 6m |
+| 7 | Teaching texts (issue 54), once the texts are stable. Most of it is built (the project owner, 24 Nov 2026, 22:55; see [TEACHING.md](TEACHING.md)) | waiting, the rest needs the texts to be stable | [TEACHING.md](TEACHING.md) |
+| 8 | Translations and the language choice in Settings (the plumbing is built, no translation exists) | parked, the texts must be stable first or everything is translated twice | [TRANSLATION.md](TRANSLATION.md) |
 
 ## Script Lab: folder, editor, converter
 
@@ -41,7 +41,7 @@ A change to a parser or the control commands needs a green fuzz run.
 
 ## Web version
 
-Decided, time not set (the project owner, 24 Nov 2026, 12:10). No web job runs. Until then new code is web-ready ([DEV.md](DEV.md), "Web-ready code"); the decision is in [DECISIONS.md](DECISIONS.md), Technology, 24 Nov 2026. Status: waiting.
+Decided, time not set (the project owner, 24 Nov 2026, 12:10). No web job runs. Until then new code is web-ready ([DEV.md](DEV.md), "Web-ready code"); the decision is in [DECISIONS.md](DECISIONS.md), Technology, 24 Nov 2026. Status: waiting, the owner has not set a time.
 
 ## Parked, later and not doing
 
