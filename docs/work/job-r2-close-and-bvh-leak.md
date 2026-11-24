@@ -1,6 +1,6 @@
 Branch: job/r2-close-and-bvh-leak
 Status: active
-Pull request: pending
+Pull request: #466
 Files:
 - src/bvh.*
 - src/animation.*
