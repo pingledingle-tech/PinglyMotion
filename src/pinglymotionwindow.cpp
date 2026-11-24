@@ -501,6 +501,9 @@ PinglyMotionWindow::PinglyMotionWindow() :
     tabifyDockWidget(m_jointCardDock,m_libraryDock);
   // the timeline stands visible at every start; hiding it lasts for this session only
   PanelVisibility::showAtStart(m_timelineDock,ui->optionsShowTimelineAction);
+  // the Library never opens by itself (UX-A): it keeps its saved place and size and shows
+  // when asked for (View > Library, Ctrl+Shift+B, the Library button)
+  m_libraryDock->hide();
   // at large text or in a small window the panels rearrange (docs/UX_DECISIONS.md, 6c);
   // decided once the window has its size
   scheduleReflow();
@@ -1542,6 +1545,7 @@ void PinglyMotionWindow::buildTopBar()
   sources.exportAnim=ui->fileExportAnimAction;
   sources.scriptLab=m_scriptLabDock->toggleViewAction();
   sources.library=m_libraryDock->toggleViewAction();
+  sources.resetLayout=findChild<QAction*>(QLatin1String(MenuSpec::viewResetLayout.id));
   m_topBar=new TopBar(ui->toolBar,sources,this);
   m_topBar->setDark(UserSettings::darkTheme());
   connect(m_topBar,&TopBar::themeRequested,this,[this]()
@@ -1952,6 +1956,7 @@ void PinglyMotionWindow::resetPanelLayout()
   m_applyingTab=false;
   m_hidePanelsAction->setChecked(false);
   ui->optionsShowTimelineAction->setChecked(true);
+  statusBar()->showMessage(tr("Layout reset. The panels are back where they were at the first start."),5000);
 }
 
 // Tab, or View > Hide panels: every open panel goes away (docked and

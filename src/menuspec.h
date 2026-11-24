@@ -108,7 +108,7 @@ namespace MenuSpec
     &helpSetup, &helpWelcome, &helpHints, &helpKeys, &helpCamera, &helpCharter};
 
   // The top bar (UX phase 1b), left to right as in the mockup: Undo, Redo | Save, Export | Script Lab,
-  // Library, Setup, theme. A button with no text shows only its icon; its name is its tip. The tip is the
+  // Library, Reset layout, Setup, theme. A button with no text shows only its icon; its name is its tip. The tip is the
   // name, then the key, then the reason when it is greyed, then the tip line.
   struct Button
   {
@@ -133,6 +133,10 @@ namespace MenuSpec
     QT_TRANSLATE_NOOP("MenuSpec", "Script Lab: test RLV and LSL scripts"), "Ctrl+Shift+L", "", "", "flask-conical"};
   inline constexpr Button topLibrary = {"topLibraryAction", QT_TRANSLATE_NOOP("MenuSpec", "Library"),
     QT_TRANSLATE_NOOP("MenuSpec", "Library: ready-made moves to start from"), "Ctrl+Shift+B", "", "", "library-big"};
+  // UX-A: always in sight, so a lost or too small panel is one click away from the first layout
+  inline constexpr Button topResetLayout = {"topResetLayoutAction", QT_TRANSLATE_NOOP("MenuSpec", "Reset layout"),
+    QT_TRANSLATE_NOOP("MenuSpec", "Reset layout"), "",
+    QT_TRANSLATE_NOOP("MenuSpec", "Puts all panels back where they were at the first start."), "", "layout-template"};
   inline constexpr Button topSetup = {"topSetupAction", QT_TRANSLATE_NOOP("MenuSpec", "Setup"), QT_TRANSLATE_NOOP("MenuSpec", "Setup"), "",
     QT_TRANSLATE_NOOP("MenuSpec", "Beginner or experienced, mouse and keys habits, theme, text size and hints."),
     viewSetup.reason, "settings"};
@@ -142,7 +146,7 @@ namespace MenuSpec
   inline constexpr const char* themeToLight = QT_TRANSLATE_NOOP("MenuSpec", "Switch to the light theme");
   inline constexpr const char* themeToDark = QT_TRANSLATE_NOOP("MenuSpec", "Switch to the dark theme");
 
-  inline constexpr const Button* topBar[] = {&topUndo, &topRedo, &topSave, &topExport, &topScriptLab, &topLibrary, &topSetup, &topTheme};
+  inline constexpr const Button* topBar[] = {&topUndo, &topRedo, &topSave, &topExport, &topScriptLab, &topLibrary, &topResetLayout, &topSetup, &topTheme};
   // a divider stands after the second and the fourth button
   inline constexpr int topBarDividers[] = {2, 4};
 
