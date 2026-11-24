@@ -11,7 +11,7 @@ When documents disagree, use this order:
 3. **Numbering of interface steps** ("UX step N"): [UX_DECISIONS.md, "Build order"](UX_DECISIONS.md#9-build-order).
 4. **Words shown to users:** the glossary in [TEACHING_TEXTS.md](TEACHING_TEXTS.md#glossary-the-words-to-use).
 
-Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running work is the open pull requests, the job queue is the jobs list (issue 74) and the owner's tests are the owner test list (issue 47), on GitHub, not in files.
+The order of the work and a status word per step are in [ROADMAP.md](ROADMAP.md); what a job did is the report comment on its pull request; running work is the open pull requests, the job queue is the jobs list (issue 74) and the owner's tests are the owner test list (issue 47), on GitHub, not in files.
 
 ## Start here
 
@@ -84,7 +84,7 @@ Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running wo
 
 | Document | What it is | For | Status |
 |---|---|---|---|
-| [ROADMAP.md](ROADMAP.md) | Order of the open work and the one place for progress status | AI session, developer | plan |
+| [ROADMAP.md](ROADMAP.md) | Order of the work and one status word per step (no build history) | AI session, developer | plan |
 | [IDEAS.md](IDEAS.md) | Possibilities, not promises | developer, AI session | plan |
 | [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md) | Plan and steps of the Script Lab | AI session, developer | plan |
 | [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md) | Description of a separate repository for the owner's RLV tools (not created) | AI session | plan |

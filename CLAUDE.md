@@ -37,7 +37,7 @@ GitHub is the truth, not a chat: what is running is the open pull requests and t
 - Keep the job small: one feature or fix per branch.
 - **Web-ready:** there will be a web version later (the project owner, 24 November 2026). New and changed code, above all the 3D view and file open or save, follows `docs/DEV.md`, "Web-ready code", so nothing has to be built twice.
 - **Credits:** when a job uses or learns from a new outside project, dataset, paper or tool, add it to `CREDITS.md` in the same pull request.
-- **Docs in the same pull request:** when your change makes a document wrong (`docs/PRODUCT.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, release notes, the issue it belongs to), fix it in the same pull request and tick the docs box in the template. A job is not done while a document still says the old thing.
+- **Docs in the same pull request:** when your change makes a document wrong (`docs/PRODUCT.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, release notes, the issue it belongs to), fix it in the same pull request and tick the docs box in the template. A job is not done while a document still says the old thing. A job changes `docs/ROADMAP.md` only when the order or the status word of a step changes, never to log what was built: the build record is the report comment on the pull request.
 - **Fuzzing:** after changing a parser or the control commands, start the fuzz workflow on your branch (command in `docs/DEV.md`) and tell the user the result. It must be green before the merge.
 
 ## When you are done

@@ -1148,7 +1148,7 @@ Built 23 November 2026, pull request 443. For someone who has never scripted: **
 
 ## Later
 
-A description of a separate repository for the owner's RLV tools (template, examples, `.rlvtest` scenarios in CI; not created) is in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md). Since job A3 the program reads and replays `.rlvtest` recipes in a watched object folder ("Record and replay" above), but without `expect` lines. Ideas that come after the planned steps (not planned yet, nothing is being built): see "Script Lab: later" in [ROADMAP.md](ROADMAP.md).
+A description of a separate repository for the owner's RLV tools (template, examples, `.rlvtest` scenarios in CI; not created) is in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md). Since job A3 the program reads and replays `.rlvtest` recipes in a watched object folder ("Record and replay" above), but without `expect` lines. Ideas that come after the planned steps (not planned yet, nothing is being built): see [SCRIPT_LAB_PLAN.md](SCRIPT_LAB_PLAN.md) and the parked items in [ROADMAP.md](ROADMAP.md).
 
 ## Licence
 
