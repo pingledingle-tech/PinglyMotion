@@ -316,7 +316,7 @@ void PinglyMotionWindow::setupPropEditing()
     apply(type);
     if(m_undo) m_undo->recordStep([apply,old]() { apply(old); },[apply,type]() { apply(type); });
   });
-  showSelectedProp();
+  // the page starts with its empty card; the scene does not exist yet here
 }
 
 void PinglyMotionWindow::showSelectedProp()
