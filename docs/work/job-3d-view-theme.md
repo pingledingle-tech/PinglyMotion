@@ -1,6 +1,6 @@
 Branch: job/3d-view-theme
 Status: active
-Pull request: pending
+Pull request: #472
 Files:
 - src/viewcolours.h
 - src/animationview.cpp
