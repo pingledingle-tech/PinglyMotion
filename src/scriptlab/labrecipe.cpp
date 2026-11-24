@@ -5,6 +5,7 @@
  */
 
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QObject>
 #include <QMap>
 #include <QRegularExpression>
@@ -335,6 +336,19 @@ LabRecipe::Replay LabRecipe::replay(const LabFolder::Linkset& linkset, const QJs
   lsl::Sandbox* sandbox = session.sandbox();
   QVector<Fact> stepFacts;
   double lastAnswer = -1.0;
+  for (const Step& step : recipe.steps) out.stepTexts << stepWords(step);
+  // job B3: one moment after the start and after every step, for the player
+  auto keepFrame = [&](int step, bool done)
+  {
+    Frame frame;
+    frame.step = step;
+    frame.t = std::round(sandbox->now() * 1000.0) / 1000.0;
+    frame.logEnd = out.log.size();
+    frame.done = done;
+    frame.facts = factsOf(linkset, linksetJson, out.log, rlv, sandbox, lastAnswer, stepFacts);
+    out.frames.append(frame);
+  };
+  keepFrame(0, true);
   for (int i = 0; i < recipe.steps.size(); ++i)
   {
     const Step& step = recipe.steps.at(i);
@@ -405,8 +419,10 @@ LabRecipe::Replay LabRecipe::replay(const LabFolder::Linkset& linkset, const QJs
       stepFacts.append({QStringLiteral("step:%1").arg(i + 1), QObject::tr("step %1 (%2)").arg(i + 1).arg(stepLine(step)),
                         QObject::tr("not done: %1").arg(clipped(problem, 160))});
     }
+    keepFrame(i + 1, problem.isEmpty());
   }
-  out.facts = factsOf(linkset, linksetJson, out.log, rlv, sandbox, lastAnswer, stepFacts);
+  // the facts at the end are the last moment's facts
+  out.facts = out.frames.last().facts;
   return out;
 }
 
@@ -462,6 +478,12 @@ QString LabRecipe::writeResult(const Replay& replay, const QStringList& changes,
                                "# The program writes this file after every replay. Do not edit it.\n");
   if (replay.ran) out += QStringLiteral("# %1 of %2 steps done.\n").arg(replay.done).arg(replay.steps);
   for (const Fact& f : replay.facts) out += '[' + f.key + QStringLiteral("] ") + f.sentence() + '\n';
+  // job B3: a fingerprint per moment, so the next replay can say at which step it first differed
+  if (!replay.frames.isEmpty())
+  {
+    out += QStringLiteral("# Moments (the start and every step), for the player:\n");
+    for (int i = 0; i < replay.frames.size(); ++i) out += QStringLiteral("@%1 %2\n").arg(i).arg(frameFingerprint(replay.frames.at(i)));
+  }
   if (first) out += QStringLiteral("# This was the first replay. There was nothing to compare with.\n");
   else if (changes.isEmpty()) out += QStringLiteral("# Nothing changed since the time before.\n");
   else
@@ -498,13 +520,59 @@ QVector<LabRecipe::Fact> LabRecipe::parseResult(const QString& text)
   return facts;
 }
 
-QJsonObject LabRecipe::toJson(const Replay& replay, const QStringList& changes, bool first)
+QJsonObject LabRecipe::toJson(const Replay& replay, const QStringList& changes, bool first, int firstDifference)
 {
   QJsonArray facts;
   for (const Fact& f : replay.facts) facts.append(f.sentence());
+  // job B3: the moments for the player
+  QJsonArray frames;
+  for (const Frame& frame : replay.frames)
+  {
+    QJsonArray frameFacts;
+    for (const Fact& f : frame.facts) frameFacts.append(QJsonObject{{"key", f.key}, {"text", f.sentence()}});
+    const QString text = frame.step == 0 ? QObject::tr("Start.") : replay.stepTexts.value(frame.step - 1);
+    frames.append(QJsonObject{{"step", frame.step}, {"t", frame.t}, {"log_end", frame.logEnd}, {"done", frame.done},
+                              {"text", text}, {"facts", frameFacts}});
+  }
   QJsonObject out{{"ran", replay.ran}, {"steps", replay.steps}, {"done", replay.done}, {"facts", facts},
                   {"changes", QJsonArray::fromStringList(changes)}, {"first", first}, {"log", replay.log},
-                  {"log_truncated", replay.logTruncated}};
+                  {"log_truncated", replay.logTruncated}, {"frames", frames},
+                  {"first_difference", firstDifference >= 0 ? QJsonValue(firstDifference) : QJsonValue()}};
   if (!replay.ran) out["error"] = replay.error;
   return out;
+}
+
+QString LabRecipe::frameFingerprint(const Frame& frame)
+{
+  QByteArray data = QByteArray::number(frame.step) + (frame.done ? "\tdone\n" : "\tskipped\n");
+  for (const Fact& f : frame.facts) data += f.key.toUtf8() + '\t' + f.sentence().toUtf8() + '\n';
+  return QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex().left(16));
+}
+
+QStringList LabRecipe::parseFingerprints(const QString& text)
+{
+  static const QRegularExpression line(QStringLiteral("^@(\\d{1,3}) ([0-9a-f]{16})\r?$"));
+  QStringList out;
+  for (const QString& l : text.left(int(MAX_FILE_BYTES)).split('\n'))
+  {
+    if (!l.startsWith('@')) continue;
+    const QRegularExpressionMatch m = line.match(l);
+    if (!m.hasMatch()) continue;
+    const int moment = m.captured(1).toInt();
+    if (moment > MAX_STEPS) continue;
+    while (out.size() <= moment) out << QString();
+    out[moment] = m.captured(2);
+  }
+  return out;
+}
+
+int LabRecipe::firstDifference(const QStringList& kept, const QVector<Frame>& now)
+{
+  if (kept.isEmpty() || now.isEmpty()) return -1;
+  const int shared = qMin(int(kept.size()), int(now.size()));
+  for (int i = 0; i < shared; ++i)
+    if (!kept.at(i).isEmpty() && kept.at(i) != frameFingerprint(now.at(i))) return i;
+  if (kept.size() == now.size()) return -1;
+  // the recipe got longer: the first new moment; shorter: the last moment there is now
+  return now.size() > kept.size() ? shared : int(now.size()) - 1;
 }

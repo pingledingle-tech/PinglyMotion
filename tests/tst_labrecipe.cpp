@@ -11,6 +11,7 @@
 #include <QtTest>
 #include <QDir>
 #include <QFile>
+#include <QRegularExpression>
 #include <QTemporaryDir>
 
 #include "scriptlab/labrecipe.h"
@@ -79,6 +80,21 @@ namespace
     "Cuff is saying \"Locked.\".",
   };
 
+  // a result file with every moment's fingerprint (16 hex digits) as "<fingerprint>"
+  QString withoutFingerprints(QString text)
+  {
+    static const QRegularExpression fingerprint(QStringLiteral("^(@\\d+) [0-9a-f]{16}$"), QRegularExpression::MultilineOption);
+    return text.replace(fingerprint, QStringLiteral("\\1 <fingerprint>"));
+  }
+
+  // the facts of one moment of LabRecipe::toJson's "frames", as sentences
+  QStringList frameFacts(const QJsonObject& frame)
+  {
+    QStringList out;
+    for (const QJsonValue& f : frame.value("facts").toArray()) out << f.toObject().value("text").toString();
+    return out;
+  }
+
   QStringList strings(const QJsonValue& v)
   {
     QStringList out;
@@ -104,6 +120,12 @@ class TestLabRecipe : public QObject
     void compareWords();
     void resultFileRoundTrip();
     void objectThatDoesNotRun();
+    // job B3: the moments for the player
+    void momentsOfAReplay();
+    void momentEqualsAShorterReplay();
+    void fingerprintsRoundTrip();
+    void firstDifferenceRules();
+    void firstDifferenceAfterAChangedScript();
 };
 
 void TestLabRecipe::parseAndWrite()
@@ -221,7 +243,7 @@ void TestLabRecipe::recordClicksMenuAndLines()
   QCOMPARE(strings(replay.value("facts")), CuffFacts);
   QCOMPARE(strings(replay.value("steps_text")), QStringList({"touch Root", "menu Lock", "send @sendim=n"}));
   QCOMPARE(replay.value("recipe").toString(), QString("recipe.rlvtest"));
-  QCOMPARE(readFile(object + "/recipe.rlvresult"),
+  QCOMPARE(withoutFingerprints(readFile(object + "/recipe.rlvresult")),
            QString("# PinglyMotion: what the recipe gave the last time it was replayed.\n"
                    "# The program writes this file after every replay. Do not edit it.\n"
                    "# 3 of 3 steps done.\n"
@@ -230,6 +252,11 @@ void TestLabRecipe::recordClicksMenuAndLines()
                    "[colour:Cuff] Cuff is red.\n"
                    "[said:Root] Root is saying \"Ready.\".\n"
                    "[said:Cuff] Cuff is saying \"Locked.\".\n"
+                   "# Moments (the start and every step), for the player:\n"
+                   "@0 <fingerprint>\n"
+                   "@1 <fingerprint>\n"
+                   "@2 <fingerprint>\n"
+                   "@3 <fingerprint>\n"
                    "# This was the first replay. There was nothing to compare with.\n"));
   // the replay has its own world and RLV state: the panel's state is what the clicks made, no more
   QVERIFY(!rlv.has("sendim"));
@@ -380,6 +407,176 @@ void TestLabRecipe::objectThatDoesNotRun()
   QCOMPARE(replay.value("ran").toBool(), false);
   QCOMPARE(strings(replay.value("changes")).size(), 1);
   QVERIFY(strings(replay.value("changes")).first().startsWith("Before: the object ran. Now: it is not running: "));
+}
+
+void TestLabRecipe::momentsOfAReplay()
+{
+  QTemporaryDir dir;
+  const QString object = makeCuffs(dir);
+  QVERIFY(writeFile(object + "/recipe.rlvtest", RecipeText));
+  LabWatcher w;
+  QVERIFY(w.watch(object, QJsonObject{{"linkset", true}}).ok());
+  const QJsonObject replay = w.lastReplay();
+  const QJsonArray frames = replay.value("frames").toArray();
+  // the start and one moment after every step
+  QCOMPARE(frames.size(), 4);
+  QCOMPARE(replay.value("first_difference").isNull(), true);
+  const QStringList texts = {"Start.", "Click Root.", "Press \"Lock\" in the menu.", "panel sends @sendim=n."};
+  const QList<double> times = {10, 11, 12, 13};
+  const QList<int> logEnds = {7, 11, 19, 20};
+  for (int i = 0; i < frames.size(); ++i)
+  {
+    const QJsonObject f = frames.at(i).toObject();
+    QCOMPARE(f.value("step").toInt(), i);
+    QCOMPARE(f.value("text").toString(), texts.at(i));
+    QCOMPARE(f.value("t").toDouble(), times.at(i));
+    QCOMPARE(f.value("log_end").toInt(), logEnds.at(i));
+    QCOMPARE(f.value("done").toBool(), true);
+  }
+  // the moment ends right before the next step's line in the log
+  const QJsonArray log = replay.value("log").toArray();
+  for (int i = 0; i + 1 < frames.size(); ++i)
+  {
+    const QJsonObject next = log.at(frames.at(i).toObject().value("log_end").toInt()).toObject();
+    QCOMPARE(next.value("type").toString(), QString("step"));
+    QCOMPARE(next.value("step").toInt(), i + 1);
+  }
+  QCOMPARE(frames.last().toObject().value("log_end").toInt(), log.size());
+  // what was true at each moment
+  QCOMPARE(frameFacts(frames.at(0).toObject()), QStringList({"Cuff is green.", "Root is saying \"Ready.\"."}));
+  QCOMPARE(frameFacts(frames.at(1).toObject()),
+           QStringList({"Cuff is green.", "Root is saying \"Ready.\".", "The menu is open: \"Cuffs\" with Lock, Free."}));
+  QCOMPARE(frameFacts(frames.at(2).toObject()),
+           QStringList({"Cuffs is locked.", "Cuff is red.", "Root is saying \"Ready.\".", "Cuff is saying \"Locked.\"."}));
+  QCOMPARE(frameFacts(frames.at(3).toObject()), CuffFacts);
+  // the keys are there for the player (red for locked, green for free)
+  QCOMPARE(frames.at(2).toObject().value("facts").toArray().at(0).toObject().value("key").toString(), QString("lock:Cuffs"));
+  // the facts at the end are the last moment's facts
+  QCOMPARE(strings(replay.value("facts")), frameFacts(frames.last().toObject()));
+}
+
+void TestLabRecipe::momentEqualsAShorterReplay()
+{
+  // the state at a moment is what a run that stops there has: moment k of the whole recipe gives the
+  // same facts as the end of the same recipe cut after step k
+  QTemporaryDir dir;
+  const QString object = makeCuffs(dir);
+  const LabFolder::Linkset linkset = LabFolder::open(object);
+  const LabRecipe::Result whole = LabRecipe::parse(RecipeText + QString("wait 2\ntouch Root\nmenu Free\n"));
+  QVERIFY(whole.ok());
+  const LabRecipe::Replay all = LabRecipe::replay(linkset, QJsonObject(), *whole.value, Rlv::Mode::Rlva);
+  QVERIFY(all.ran);
+  QCOMPARE(all.frames.size(), whole.value->steps.size() + 1);
+  for (int k = 0; k <= whole.value->steps.size(); ++k)
+  {
+    LabRecipe::Recipe cut;
+    cut.steps = whole.value->steps.mid(0, k);
+    const LabRecipe::Replay part = LabRecipe::replay(linkset, QJsonObject(), cut, Rlv::Mode::Rlva);
+    QCOMPARE(part.frames.size(), k + 1);
+    QCOMPARE(all.frames.at(k).facts, part.facts);
+    QCOMPARE(all.frames.at(k).t, part.frames.last().t);
+    QCOMPARE(all.frames.at(k).logEnd, int(part.log.size()));
+    QCOMPARE(LabRecipe::frameFingerprint(all.frames.at(k)), LabRecipe::frameFingerprint(part.frames.last()));
+  }
+  // the last steps free the cuff again: free at the end, locked at moment 2
+  QVERIFY(all.frames.at(2).facts.contains(LabRecipe::Fact{"lock:Cuffs", "Cuffs", "locked"}));
+  QVERIFY(!all.frames.last().facts.contains(LabRecipe::Fact{"lock:Cuffs", "Cuffs", "locked"}));
+  // the same recipe gives the same moments every time
+  const LabRecipe::Replay again = LabRecipe::replay(linkset, QJsonObject(), *whole.value, Rlv::Mode::Rlva);
+  for (int k = 0; k < all.frames.size(); ++k)
+    QCOMPARE(LabRecipe::frameFingerprint(again.frames.at(k)), LabRecipe::frameFingerprint(all.frames.at(k)));
+}
+
+void TestLabRecipe::fingerprintsRoundTrip()
+{
+  LabRecipe::Replay r;
+  r.ran = true;
+  r.steps = 2;
+  r.done = 1;
+  LabRecipe::Frame a;
+  a.facts = {{"colour:Cuff", "Cuff", "green"}};
+  LabRecipe::Frame b = a;
+  b.step = 1;
+  b.facts.append({"lock:Cuffs", "Cuffs", "locked"});
+  LabRecipe::Frame c = b;
+  c.step = 2;
+  c.done = false;
+  r.frames = {a, b, c};
+  r.facts = c.facts;
+  // a fingerprint is 16 hex digits, and differs when the step, done or a fact differs
+  QCOMPARE(LabRecipe::frameFingerprint(a).size(), 16);
+  QVERIFY(QRegularExpression("^[0-9a-f]{16}$").match(LabRecipe::frameFingerprint(a)).hasMatch());
+  QVERIFY(LabRecipe::frameFingerprint(a) != LabRecipe::frameFingerprint(b));
+  LabRecipe::Frame d = c;
+  d.done = true;
+  QVERIFY(LabRecipe::frameFingerprint(c) != LabRecipe::frameFingerprint(d));
+  QCOMPARE(LabRecipe::frameFingerprint(c), LabRecipe::frameFingerprint(LabRecipe::Frame(c)));
+
+  const QString text = LabRecipe::writeResult(r, QStringList(), true);
+  QCOMPARE(LabRecipe::parseFingerprints(text),
+           QStringList({LabRecipe::frameFingerprint(a), LabRecipe::frameFingerprint(b), LabRecipe::frameFingerprint(c)}));
+  // the facts at the end are read as before; the moment lines are not facts
+  QCOMPARE(LabRecipe::parseResult(text), r.facts);
+  // a file from before the player has no moments
+  QCOMPARE(LabRecipe::parseFingerprints("[lock:A] A is locked.\n# note\n"), QStringList());
+  // lines that cannot be read are skipped; a missing moment is empty
+  QCOMPARE(LabRecipe::parseFingerprints("@0 0123456789abcdef\n@2 fedcba9876543210\r\n@1 xyz\n@x 0123456789abcdef\n"
+                                        "@3 0123456789ABCDEF\n@4 0123456789abcdef0\n@201 0123456789abcdef\n @5 0123456789abcdef\n"),
+           QStringList({"0123456789abcdef", "", "fedcba9876543210"}));
+  // at most MAX_STEPS + 1 moments
+  QCOMPARE(LabRecipe::parseFingerprints("@200 0123456789abcdef\n").size(), LabRecipe::MAX_STEPS + 1);
+}
+
+void TestLabRecipe::firstDifferenceRules()
+{
+  LabRecipe::Frame a;
+  a.facts = {{"colour:Cuff", "Cuff", "green"}};
+  LabRecipe::Frame b = a;
+  b.step = 1;
+  b.facts.append({"lock:Cuffs", "Cuffs", "locked"});
+  LabRecipe::Frame b2 = b;
+  b2.facts.removeLast();
+  LabRecipe::Frame c = b;
+  c.step = 2;
+  const QVector<LabRecipe::Frame> now = {a, b, c};
+  const QStringList same = {LabRecipe::frameFingerprint(a), LabRecipe::frameFingerprint(b), LabRecipe::frameFingerprint(c)};
+  QCOMPARE(LabRecipe::firstDifference(same, now), -1);
+  // nothing kept: nothing to compare with
+  QCOMPARE(LabRecipe::firstDifference(QStringList(), now), -1);
+  QCOMPARE(LabRecipe::firstDifference(same, QVector<LabRecipe::Frame>()), -1);
+  // the moment where the facts first differ
+  QCOMPARE(LabRecipe::firstDifference(same, {a, b2, c}), 1);
+  QCOMPARE(LabRecipe::firstDifference({LabRecipe::frameFingerprint(b), same.at(1), same.at(2)}, now), 0);
+  // a moment the kept file has no line for is not counted as a difference
+  QCOMPARE(LabRecipe::firstDifference({same.at(0), QString(), same.at(2)}, now), -1);
+  // the recipe got longer: the first new moment; shorter: the last moment there is now
+  QCOMPARE(LabRecipe::firstDifference(same.mid(0, 2), now), 2);
+  QCOMPARE(LabRecipe::firstDifference(same, {a, b}), 1);
+}
+
+void TestLabRecipe::firstDifferenceAfterAChangedScript()
+{
+  QTemporaryDir dir;
+  const QString object = makeCuffs(dir);
+  QVERIFY(writeFile(object + "/recipe.rlvtest", RecipeText));
+  LabWatcher w;
+  QVERIFY(w.watch(object, QJsonObject{{"linkset", true}}).ok());
+  QCOMPARE(w.lastReplay().value("first_difference").isNull(), true);
+  // nothing changed: no difference
+  QVERIFY(w.replayRecipe().ok());
+  QCOMPARE(w.lastReplay().value("first_difference").isNull(), true);
+  // the cuff no longer locks: the moments agree until "menu Lock" (moment 2)
+  QVERIFY(writeFile(object + "/Cuff/cuff.lsl", cuff(false)));
+  w.runScript("Cuff/cuff.lsl");
+  QCOMPARE(strings(w.lastReplay().value("changes")), QStringList({"Before: Cuffs was locked. Now: it is not locked."}));
+  QCOMPARE(w.lastReplay().value("first_difference").toInt(-1), 2);
+  // the cuff starts red: the very start differs
+  QVERIFY(writeFile(object + "/Cuff/cuff.lsl", cuff(false).replace("<0.0, 1.0, 0.0>, ALL_SIDES); }\n  link", "<1.0, 0.0, 0.0>, ALL_SIDES); }\n  link")));
+  w.runScript("Cuff/cuff.lsl");
+  QCOMPARE(w.lastReplay().value("first_difference").toInt(-1), 0);
+  // a first replay (recording stopped) has nothing to compare with
+  QVERIFY(w.replayRecipe(true).ok());
+  QCOMPARE(w.lastReplay().value("first_difference").isNull(), true);
 }
 
 QTEST_GUILESS_MAIN(TestLabRecipe)

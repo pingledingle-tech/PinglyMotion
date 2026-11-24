@@ -2505,6 +2505,133 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabPlayer</name>
+    <message>
+        <source>Player: watch your steps again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Moments of the replay</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a moment to see what was true then. The arrow keys move one step.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to first difference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>True at this moment:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>True at this moment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log up to this moment:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log up to this moment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> First difference.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The props in the 3D view show this moment. Press Show now to see now again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The props in the 3D view show now. Pick a moment to see it there.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No replay yet. Record what you do first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play the steps one by one, one each second</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It is already playing. Click Stop to stop it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop playing; the player stays on this step</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It is not playing. Click Start to play it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go back to the start and play the steps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the step before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the start. There is no step before it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the next step</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the last step. Click Replay from start to see it again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the start: it already differed from the replay before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to step %1, where this replay first differed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the first replay, so there is nothing to compare with.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every step gave the same as the replay before.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the props as they are now, not at this moment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The 3D view already shows now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (changed at this step)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabStepCard</name>
     <message>
         <source>Close the steps. Help, Script Lab steps shows them again.</source>
@@ -6735,6 +6862,66 @@ Try a BVH file for a person with arms and legs.</source>
     </message>
     <message>
         <source>Free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Blocked: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allowed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Not done.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No replay yet. Press Record what I do, click your props, then stop recording.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start, at %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Step %1 of %2, at %3: %4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> It could not be done.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing locked, coloured or said yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>--- Step %1: %2 ---</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

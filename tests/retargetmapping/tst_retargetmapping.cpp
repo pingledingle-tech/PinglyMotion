@@ -325,6 +325,14 @@ void TestRetargetMapping::roundTrip()
   QVERIFY(*back.mapping==m);
   QCOMPARE(RetargetMapping::write(*back.mapping),written);
 
+  // a whole UTF-16 pair (a character outside the first plane) is fine and reads back the same
+  Mapping pair=m;
+  pair.generator=QString::fromUtf8("rig \xF0\x9F\xA6\x8A");
+  QVERIFY(RetargetMapping::validate(pair).isEmpty());
+  const RetargetMapping::Result pairBack=RetargetMapping::parse(RetargetMapping::write(pair));
+  QVERIFY2(pairBack.ok(),qPrintable(pairBack.error));
+  QVERIFY(*pairBack.mapping==pair);
+
   // without the optional fields and without entries
   Mapping bare;
   const QByteArray bareText=RetargetMapping::write(bare);
@@ -395,6 +403,10 @@ void TestRetargetMapping::refused_data()
   QTest::newRow("duplicate target") << QByteArray(head+"\"mapping\":[{\"source\":\"A\",\"target\":\"mHead\"},{\"source\":\"B\",\"target\":\"head\"}]}") << "used twice";
   QTest::newRow("duplicate source") << QByteArray(head+"\"mapping\":[{\"source\":\"A\",\"target\":\"mHead\"},{\"source\":\"A\",\"target\":\"mNeck\"}]}") << "listed twice";
   QTest::newRow("control character") << QByteArray(head+"\"mapping\":[{\"source\":\"A\\u0007B\",\"target\":\"mHead\"}]}") << "control characters";
+  // half of a UTF-16 pair cannot be written as UTF-8: refused, so a read file always writes back the same (found by fuzz_retargetmapping)
+  QTest::newRow("lone high surrogate in generator") << QByteArray(head+"\"generator\":\"\\ud800\",\"mapping\":[]}") << "generator";
+  QTest::newRow("lone low surrogate in source") << QByteArray(head+"\"mapping\":[{\"source\":\"\\udc00a\",\"target\":null}]}") << "control characters";
+  QTest::newRow("lone surrogate in root") << QByteArray(head+"\"skeleton\":{\"root\":\"x\\ud800\"},\"mapping\":[]}") << "root";
   QTest::newRow("source too long") << QByteArray(head+"\"mapping\":[{\"source\":\""+QByteArray(257,'x')+"\",\"target\":\"mHead\"}]}") << "longer than";
   QTest::newRow("target too long") << QByteArray(head+"\"mapping\":[{\"source\":\"A\",\"target\":\""+QByteArray(65,'m')+"\"}]}") << "too long";
   QTest::newRow("skeleton not object") << QByteArray(head+"\"skeleton\":3,\"mapping\":[]}") << "skeleton";

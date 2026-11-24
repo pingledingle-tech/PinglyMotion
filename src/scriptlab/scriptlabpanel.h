@@ -90,6 +90,7 @@ class ScriptLabSection;
 class SphereControls;
 class LabFolderTree;
 class LabHelpView;
+class LabPlayer;
 class ChannelMapView;
 namespace lsl { class Session; }
 class QLabel;
@@ -200,6 +201,10 @@ class ScriptLabPanel : public QWidget
     bool setRecording(bool on);
     // replays the recipe now, as Replay now does; false when refused (the line says why)
     bool replayNow();
+    // --- the player (job B3, labplayer.h): under the recipe line, the newest replay as a film. While
+    // the user looks at a moment (LabPlayer::showing), the props show that moment's colours and places
+    // instead of now; a click on a prop goes back to now first (it is an input to the world of now).
+    LabPlayer* player() const { return m_player; }
     // --- the channel map (job A4): who talks to whom in the last folder run (LabChannelMap), in the
     // folding part "Who talks to whom" after the event log. Shown while a folder is watched as one
     // object; folded in Beginner mode, open in Expert mode (switching the mode folds or opens it).
@@ -670,6 +675,9 @@ class ScriptLabPanel : public QWidget
     QLabel* m_recipeFileLine = nullptr;
     QPlainTextEdit* m_recipeText = nullptr;
     QPushButton* m_replayButton = nullptr;
+    LabPlayer* m_player = nullptr;   // job B3
+    // the folder run the props show: the player's moment while it shows one, else the newest run
+    QJsonObject shownFolder() const;
     QString m_recipeNote;    // a one-off line (recording stopped without steps, a refused replay)
     bool m_recipeNoteIsError = false;
     bool m_expert = false;

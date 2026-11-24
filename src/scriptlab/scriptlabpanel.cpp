@@ -69,6 +69,7 @@
 #include "lsl/lint.h"
 #include "lucideicons.h"
 #include "labdialogbox.h"
+#include "labplayer.h"
 #include "labrestrictionchoice.h"
 #include "theme.h"
 #include "usersettings.h"
@@ -1241,6 +1242,10 @@ void ScriptLabPanel::buildLivePage()
   m_replayButton->setToolTip(tr("Repeats the recipe's steps now, without a save."));
   m_recipeSection->bodyLayout()->addWidget(m_replayButton);
   connect(m_replayButton, &QPushButton::clicked, this, [this] { replayNow(); });
+  // --- job B3: the player, the newest replay as a film; shown in Beginner mode too
+  m_player = new LabPlayer(page);
+  layout->addWidget(m_player);
+  connect(m_player, &LabPlayer::momentChanged, this, [this] { updatePrimProps(); });
   m_expert = UserSettings::expertMode();
   UserSettings::watchExpertMode(this, [this](bool on) { setExpertMode(on); });
 
@@ -2091,7 +2096,7 @@ void ScriptLabPanel::updatePrimProps()
 {
   // props from prims (job A1): every prim of the watched object gets a prop of its name
   const bool show = primPropsShown();
-  const QJsonObject folder = show ? m_watcher->folderResult() : QJsonObject();
+  const QJsonObject folder = show ? shownFolder() : QJsonObject();
   bool added = false;
   if (show && m_hooks.addProp && m_hooks.hasProp)
   {
@@ -2147,9 +2152,17 @@ void ScriptLabPanel::updateChains()
   emit chainsChanged();
 }
 
+QJsonObject ScriptLabPanel::shownFolder() const
+{
+  if (!m_watcher) return QJsonObject();
+  return m_player && m_player->showing() ? m_player->folderAt(m_watcher->folderResult()) : m_watcher->folderResult();
+}
+
 bool ScriptLabPanel::touchPrim(const QString& name, const QPoint& at)
 {
   if (!primPropsShown()) return false;
+  // job B3: a click is an input to the world of now, so the props show now again first
+  if (m_player) m_player->showNow();
   const int link = m_watcher->linkOf(name);
   if (link < 1) return false;
   m_menuAnchor = at;   // a menu the touch makes stands next to the click (job A2)
@@ -2166,7 +2179,7 @@ void ScriptLabPanel::updatePropTints(bool force)
 {
   // props as prims (lane 1 job E): only while the effects are shown and the object is watched
   const bool show = primPropsShown();
-  const QList<LabTint::Tint> tints = show ? LabTint::fromFolder(m_watcher->folderResult()) : QList<LabTint::Tint>();
+  const QList<LabTint::Tint> tints = show ? LabTint::fromFolder(shownFolder()) : QList<LabTint::Tint>();
   if (tints == m_propTints && !force) return;
   m_propTints = tints;
   emit propTintsChanged();
@@ -3022,6 +3035,10 @@ void ScriptLabPanel::refreshRecipe()
   const bool object = m_watcher && m_watcher->watching() && m_watcher->linkset();
   m_recipeRow->setVisible(object);
   m_recipeSection->setVisible(object && m_expert);
+  // job B3: the player shows the newest replay, when it has moments
+  m_player->setExpertMode(m_expert);
+  m_player->setReplay(object ? m_watcher->lastReplay() : QJsonObject());
+  m_player->setVisible(object && m_player->momentCount() > 0);
   if (!object)
   {
     m_recordButton->setChecked(false);

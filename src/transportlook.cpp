@@ -114,8 +114,10 @@ namespace
           return false;
         }
 
+        // only the buttons of this bar: the filter on the application sees the
+        // events of every object, and other buttons keep their own look
         QPushButton* button=qobject_cast<QPushButton*>(watched);
-        if(!button) return false;
+        if(!button || !m_watched.contains(button)) return false;
         switch(event->type())
         {
           case QEvent::FocusIn:

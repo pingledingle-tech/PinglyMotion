@@ -630,7 +630,9 @@ LabWatcher::Result LabWatcher::replayRecipe(bool first)
   const QString before = first ? QString() : readText(resultPath, &ignored);
   const bool nothingBefore = first || !ignored.isEmpty();
   const QStringList changes = nothingBefore ? QStringList() : LabRecipe::compare(LabRecipe::parseResult(before), replay.facts);
-  QJsonObject out = LabRecipe::toJson(replay, changes, nothingBefore);
+  // job B3: the moment the player can jump to, where this replay first differed from the kept one
+  const int firstDifference = nothingBefore ? -1 : LabRecipe::firstDifference(LabRecipe::parseFingerprints(before), replay.frames);
+  QJsonObject out = LabRecipe::toJson(replay, changes, nothingBefore, firstDifference);
   out["run"] = m_runs;
   out["recipe"] = LabRecipe::recipeFile();
   QStringList lines;
