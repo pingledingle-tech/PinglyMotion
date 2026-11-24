@@ -28,11 +28,13 @@
 #include <QStringList>
 #include <QWidget>
 
+#include "labguideview.h"
+
 class QLabel;
 class QListWidget;
 class QPushButton;
 class QTextBrowser;
-class LabGuideView;
+
 
 class LabHelpView : public QDialog
 {

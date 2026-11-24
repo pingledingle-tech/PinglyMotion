@@ -346,6 +346,7 @@ void LabGuideView::chooseAndMake()
 
 bool LabGuideView::makeIn(const QString& root)
 {
+  if (!m_status || !m_open) return false;   // no example, so no page for it
   QString error;
   const QString made = LabGuide::makeExampleFolder(m_example, root, &error);
   if (made.isEmpty())

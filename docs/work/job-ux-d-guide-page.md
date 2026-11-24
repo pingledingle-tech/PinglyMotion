@@ -1,6 +1,6 @@
 Branch: job/ux-d-guide-page
-Status: active
-Pull request: pending
+Status: done
+Pull request: #467
 Files:
 - src/scriptlab/labguideview.*
 - src/scriptlab/labhelpview.*
@@ -8,8 +8,6 @@ Files:
 - src/CMakeLists.txt
 - CMakeLists.txt
 - tests/scriptlabguide/**
-- translations/pinglymotion_en.ts
-- docs/PRODUCT.md
 - docs/DECISIONS.md
 - docs/SCRIPT_LAB.md
 
