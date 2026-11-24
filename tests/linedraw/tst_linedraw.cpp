@@ -10,6 +10,7 @@
 
 #include "skinrenderer.h"
 
+#include <QBuffer>
 #include <QDir>
 #include <QFile>
 #include <QImage>
@@ -26,6 +27,21 @@ namespace
 {
 const int WIDTH = 320;
 const int HEIGHT = 240;
+
+// On a CI machine the saved picture cannot be opened, so a failing test
+// writes it into the log as base64 PNG (decode with base64 -d).
+void dumpPicture(const char* name, const QImage& image)
+{
+  if (!qEnvironmentVariableIsSet("CI")) return;
+  QByteArray png;
+  QBuffer buffer(&png);
+  buffer.open(QIODevice::WriteOnly);
+  image.save(&buffer, "PNG");
+  const QByteArray text = png.toBase64();
+  qInfo("PICTURE %s BEGIN", name);
+  for (int i = 0; i < text.size(); i += 4000) qInfo("%s", text.mid(i, 4000).constData());
+  qInfo("PICTURE %s END", name);
+}
 }
 
 class TestLineDraw : public QObject
@@ -242,6 +258,7 @@ void TestLineDraw::linesLookAsBefore()
   {
     const QString out = QDir::temp().filePath("linedraw_actual.png");
     image.save(out);
+    dumpPicture("linesLookAsBefore", image);
     QFAIL(qPrintable(QString("%1 of %2 pixels differ from the reference (picture saved to %3)")
                        .arg(different).arg(WIDTH * HEIGHT).arg(out)));
   }
@@ -270,6 +287,12 @@ void TestLineDraw::pickColourLineGivesName()
     const unsigned char rgba[4] = {uchar(qRed(c)), uchar(qGreen(c)), uchar(qBlue(c)), uchar(qAlpha(c))};
     return SkinRenderer::decodePickName(rgba);
   };
+  if (nameAt(cx, cy) != name)
+  {
+    const QRgb c = image.pixel(cx, cy);
+    qInfo("centre pixel %d %d %d %d", qRed(c), qGreen(c), qBlue(c), qAlpha(c));
+    dumpPicture("pickColourLineGivesName", image);
+  }
   QCOMPARE(nameAt(cx, cy), name);
   QCOMPARE(nameAt(cx, cy - 2), name);
   QCOMPARE(nameAt(cx, cy + 1), name);
