@@ -1,6 +1,6 @@
 Branch: job/ux-e-beginner-view
 Status: active
-Pull request: pending
+Pull request: #463
 Files:
 - src/panelwindow.h
 - src/panelcontent.h
