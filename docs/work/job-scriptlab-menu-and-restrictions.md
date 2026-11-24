@@ -6,7 +6,6 @@ Files:
 - src/scriptlab/labrestrictionchoice.*
 - src/scriptlab/labwatcher.*
 - src/scriptlab/scriptlabpanel.*
-- src/scriptlab/rlvbehaviours.*
 - src/CMakeLists.txt
 - src/pinglymotionwindow.cpp
 - tests/tst_labrestrictionchoice.cpp

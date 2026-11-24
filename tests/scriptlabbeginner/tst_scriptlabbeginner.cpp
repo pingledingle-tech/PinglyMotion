@@ -921,6 +921,8 @@ void TestScriptLabBeginner::menuBoxAtTheClick()
   QVERIFY(host.rect().contains(box->geometry()));
   QVERIFY(box->buttons()[0]->hasFocus() || !QApplication::focusWidget());   // the keys go to the menu
   QVERIFY(panel.runLog()->toPlainText().contains("You clicked Collar."));
+  if (!qEnvironmentVariableIsEmpty("PINGLYMOTION_UI_OUT"))   // a picture for a session to look at
+    host.grab().save(qEnvironmentVariable("PINGLYMOTION_UI_OUT") + "/menubox.png");
 
   // the same menu shows in the panel's world list too? No: the panel's menu belongs to lsl_run's world
   // a click on Lock: the avatar says it on -77, the script hears it and locks

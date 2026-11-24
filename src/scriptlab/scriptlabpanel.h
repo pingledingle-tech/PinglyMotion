@@ -322,6 +322,29 @@ class ScriptLabPanel : public QWidget
     QLineEdit* objectField() const { return m_object; }
     QTreeWidget* restrictionList() const { return m_restrictions; }
     QTreeWidget* actionList() const { return m_actions; }
+    // --- choose a restriction from the list (job A2): every row of "What the avatar may do" has an
+    // Allowed / Blocked choice (column 1). Blocked makes the line (LabRestrictionChoice::blockLine,
+    // with the value field for a distance or an open channel) and runs it from the Object field's
+    // object, as the Command field does; Allowed lifts what that object holds. The box under the list
+    // shows the line, says it in plain words and has "Use in script". False when nothing was run.
+    bool chooseAction(const QString& actionId, bool blocked);
+    // the choice in a row (nullptr for an unknown action)
+    QComboBox* actionChoice(const QString& actionId) const;
+    // the value field's text is used again: the old limit is lifted and the new line runs
+    bool applyChoiceValue();
+    // puts the line shown into the script of the Live page with llOwnerSay (one undo step) and shows
+    // the Live page; false, with the reason under the button, when there is no line or no script
+    bool useChoiceInScript();
+    QFrame* choiceBox() const { return m_choiceBox; }
+    QLabel* choiceTitle() const { return m_choiceTitle; }
+    QLabel* choiceLine() const { return m_choiceLine; }
+    QLabel* choiceExplain() const { return m_choiceExplain; }
+    QLabel* choiceValueLabel() const { return m_choiceValueLabel; }
+    QLineEdit* choiceValue() const { return m_choiceValue; }
+    QPushButton* choiceApply() const { return m_choiceApply; }
+    QPushButton* useInScriptButton() const { return m_useInScript; }
+    QLabel* useInScriptReason() const { return m_useInScriptReason; }
+    QLabel* choiceResult() const { return m_choiceResult; }
     QPlainTextEdit* log() const { return m_log; }
     QPushButton* runButton() const { return m_run; }
     QPushButton* resetButton() const { return m_reset; }
@@ -476,6 +499,24 @@ class ScriptLabPanel : public QWidget
     QTreeWidget* m_restrictions = nullptr;
     QLabel* m_empty = nullptr;
     QTreeWidget* m_actions = nullptr;
+    // job A2: the choice box under the list
+    QFrame* m_choiceBox = nullptr;
+    QLabel* m_choiceTitle = nullptr;
+    QLabel* m_choiceLine = nullptr;
+    QLabel* m_choiceExplain = nullptr;
+    QWidget* m_choiceValueRow = nullptr;
+    QLabel* m_choiceValueLabel = nullptr;
+    QLineEdit* m_choiceValue = nullptr;
+    QPushButton* m_choiceApply = nullptr;
+    QPushButton* m_useInScript = nullptr;
+    QLabel* m_useInScriptReason = nullptr;
+    QLabel* m_choiceResult = nullptr;
+    QString m_choiceAction;            // the row the box speaks of
+    QString m_choiceRlvLine;           // the line the box shows ("" when none)
+    void buildChoiceBox(QWidget* parent, QVBoxLayout* layout);
+    void showChoice(const QString& actionId, bool blocked, const QString& line, const QStringList& words, const QString& result, int tone);
+    void setChoiceResult(const QString& text, int tone);
+    void refreshUseInScript();
     QPlainTextEdit* m_log = nullptr;
     QMetaObject::Connection m_changedConnection;
     QMetaObject::Connection m_modeConnection;
