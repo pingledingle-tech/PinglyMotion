@@ -145,6 +145,7 @@ class ControlApi
     QJsonObject labWatch(const QJsonObject&);
     QJsonObject labUnwatch(const QJsonObject&);
     QJsonObject labResult(const QJsonObject&);
+    QJsonObject labReplay(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
     QStringList jointNames();
