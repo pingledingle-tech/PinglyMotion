@@ -8,6 +8,16 @@
  * lsl_run does (with the RLV state the panel shows). The result is kept per file; the panel and the control
  * command lab_result show the latest one.
  *
+ * Lost watch (job T2): Windows sometimes stops watching a folder ("Access is
+ * denied", for example while something else deletes or locks a file in it) and
+ * Qt then drops the folder and its files from the watch list. Each change
+ * notice makes the watcher look at the folder again and build the watch list
+ * anew; when the folder cannot be watched at all (it is gone, or the watch is
+ * refused), the watcher looks at the folder itself every RETRY_MS until it can
+ * watch it again. A notice for a file whose content is the same as the content
+ * that last ran (the same save seen twice, or a dropped watch) does not run it
+ * again; a real change always does, also when the time and size look the same.
+ *
  * Safety: the folder is only read, never written. At most MAX_SCRIPTS
  * scripts of at most MAX_FILE_BYTES each are watched, the scan stops after
  * MAX_ENTRIES entries and MAX_DEPTH folder levels, hidden folders (.git) are
@@ -37,6 +47,7 @@
 #define LABWATCHER_H
 
 #include <QDateTime>
+#include <QHash>
 #include <QFileSystemWatcher>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -65,6 +76,8 @@ class LabWatcher : public QObject
     static constexpr int MAX_DEPTH = 4;
     static constexpr int MAX_RUNS_PER_BATCH = 4;
     static constexpr int DEBOUNCE_MS = 300;
+    // how often the folder is looked at while it cannot be watched (job T2)
+    static constexpr int RETRY_MS = 1000;
     static constexpr int MAX_PATH_CHARS = 4096;
 
     explicit LabWatcher(QObject* parent = nullptr);
@@ -101,6 +114,14 @@ class LabWatcher : public QObject
     QString absolutePath(const QString& relative) const;
     // true when the scan stopped at a limit (too many entries or scripts)
     bool scanTruncated() const { return m_truncated; }
+    // the folders and files the system watches for us now (absolute paths, sorted)
+    QStringList watchedPaths() const;
+    // true while the folder is watched but the system does not watch it for us, so the
+    // watcher looks at it itself every RETRY_MS (job T2)
+    bool retrying() const { return m_retry.isActive(); }
+    // for the tests: does what Qt does when Windows stops watching a folder with "Access is
+    // denied": the folder and its files are dropped from the watch list and reported removed
+    void simulateLostWatchForTests();
 
     // the run options given to watch()
     QJsonObject runOptions() const { return m_options; }
@@ -191,12 +212,18 @@ class LabWatcher : public QObject
     void scheduleRescan();
     void runPending();
     void updateWatchedPaths(const QStringList& folders);
+    // a change notice for a watched file (also "removed", when the system dropped it)
+    void fileNotice(const QString& path);
+    // the SHA-1 of a file's content (at most MAX_FILE_BYTES + 1 bytes); empty when it cannot be read
+    static QByteArray contentHash(const QString& path);
 
     QString m_folder;
     QJsonObject m_options;
     RlvState* m_rlv = nullptr;
     QFileSystemWatcher* m_watcher;
     QTimer m_debounce;
+    QTimer m_retry;                    // job T2: looks at the folder while it cannot be watched
+    QHash<QString, QByteArray> m_seen; // job T2: the content hash of each file when it last changed or ran
     QMap<QString, Entry> m_snapshot;
     QMap<QString, Entry> m_notecards;  // linkset mode: notecards, so a saved notecard runs the folder again
     bool m_linkset = false;

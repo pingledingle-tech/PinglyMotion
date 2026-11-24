@@ -39,6 +39,7 @@
 #include <QPushButton>
 #include <QTreeWidget>
 
+#include "../laterfile.h"
 #include "controlapi.h"
 #include "panellayout.h"
 #include "scriptlab/labeditor.h"
@@ -489,6 +490,7 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QVERIFY(panel.unwatchButton()->isEnabled());
 
   QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(1); }\n}\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 1, 10000);
   QCOMPARE(panel.liveStatusText(), QString("Error: collar.lsl has 1 error(s) and was not run (run 1). Fix the line shown below and save."));
   QCOMPARE(listTexts(panel.problemList()), QStringList{"Error, line 3, column 32: Argument 1 of llOwnerSay must be a string, not an integer."});
@@ -507,8 +509,8 @@ void TestScriptLabPanel::liveShowsErrorsAndRuns()
   QCOMPARE(panel.scriptView()->textCursor().positionInBlock(), 31);
   saveShot(panel, "-error");
 
-  QTest::qWait(1100);   // a new file time
-  QVERIFY(writeScript(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"locked\"); }\n}\n"));
+  QVERIFY(LaterFile::write(dir.filePath("collar.lsl"), "default\n{\n    state_entry() { llOwnerSay(\"locked\"); }\n}\n"));
+  watcher.rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(watcher.runCount(), 2, 10000);
   QCOMPARE(panel.problemList()->count(), 0);
   QCOMPARE(panel.scriptView()->extraSelections().size(), 0);
@@ -542,8 +544,8 @@ void TestScriptLabPanel::liveFollowsControlCommands()
   QCOMPARE(panel.runLog()->toPlainText(), QString("0.000 s  state: default\n0.000 s  event: state_entry()\n0.000 s  owner_say: hi"));
   // a script with RLV lines: the restrictions show in the status line and on both pages
   panel.setState(&api.rlv());
-  QTest::qWait(1100);   // a new file time
-  QVERIFY(writeScript(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));
+  QVERIFY(LaterFile::write(dir.filePath("hello.lsl"), "default { state_entry() { llOwnerSay(\"@detach=n,sendim=n\"); } }"));
+  api.lab().rescan();   // the change is looked at now, not when the system's notice comes
   QTRY_COMPARE_WITH_TIMEOUT(api.lab().runCount(), 2, 10000);
   QCOMPARE(panel.liveStatusText(),
            QString("OK: hello.lsl ran without errors (run 2), 3 log line(s). RLV restrictions at the end: detach, sendim."));
