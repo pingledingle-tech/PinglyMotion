@@ -920,6 +920,8 @@ bool ScriptLabPanel::runLine(const QString& text)
   }
   for (const RlvState::Reply& reply : result.replies)
     appendLog(tr("  Reply on channel %1: %2").arg(reply.channel).arg(reply.text));
+  // job A3: a typed or chosen line is a step of the recipe while recording
+  if (m_watcher) m_watcher->recordLine(object, text);
   return true;
 }
 
@@ -1154,6 +1156,53 @@ void ScriptLabPanel::buildLivePage()
   m_effectsStatus->hide();
   layout->addWidget(m_effectsStatus);
   connect(m_effectsBox, &QPushButton::toggled, this, &ScriptLabPanel::effectsToggled);
+
+  // --- job A3: record what I do, and replay it after every save. One button and one line in
+  // Beginner mode; the recipe file and Replay now only in Expert mode (charter P5)
+  m_recipeRow = new QWidget(page);
+  m_recipeRow->setObjectName("scriptLabRecipeRow");
+  QVBoxLayout* recipeRow = new QVBoxLayout(m_recipeRow);
+  recipeRow->setContentsMargins(0, 0, 0, 0);
+  recipeRow->setSpacing(SpacingXs);
+  m_recordButton = new QPushButton(tr("Record what I do"), m_recipeRow);
+  m_recordButton->setObjectName("scriptLabRecord");
+  m_recordButton->setCheckable(true);
+  m_recordButton->setMinimumHeight(ControlHeight);
+  m_recordButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+  m_recordButton->setToolTip(tr("Records your clicks on props, menu buttons and RLV lines. "
+                                "After every save, the program repeats them and says what changed."));
+  recipeRow->addWidget(m_recordButton);
+  m_recipeStatus = new QLabel(m_recipeRow);
+  m_recipeStatus->setObjectName("scriptLabRecipeStatus");
+  m_recipeStatus->setWordWrap(true);
+  m_recipeStatus->setTextFormat(Qt::PlainText);
+  m_recipeStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  recipeRow->addWidget(m_recipeStatus);
+  layout->addWidget(m_recipeRow);
+  connect(m_recordButton, &QPushButton::clicked, this, [this](bool on) { setRecording(on); });
+  m_recipeSection = addSection(QStringLiteral("recipe"), tr("Recipe"), false, page, layout);
+  m_recipeFileLine = new QLabel(m_recipeSection->body());
+  m_recipeFileLine->setObjectName("scriptLabRecipeFile");
+  m_recipeFileLine->setWordWrap(true);
+  m_recipeFileLine->setTextFormat(Qt::PlainText);
+  m_recipeFileLine->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_recipeSection->bodyLayout()->addWidget(m_recipeFileLine);
+  m_recipeText = new QPlainTextEdit(m_recipeSection->body());
+  m_recipeText->setObjectName("scriptLabRecipeText");
+  m_recipeText->setReadOnly(true);
+  m_recipeText->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+  m_recipeText->setToolTip(tr("The recipe file. You may edit it in your own editor."));
+  m_recipeText->setMinimumHeight(5 * m_recipeText->fontMetrics().height() + 2 * SpacingS);
+  m_recipeSection->bodyLayout()->addWidget(m_recipeText);
+  m_replayButton = new QPushButton(tr("Replay now"), m_recipeSection->body());
+  m_replayButton->setObjectName("scriptLabReplayNow");
+  m_replayButton->setMinimumHeight(ControlCompact);
+  m_replayButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+  m_replayButton->setToolTip(tr("Repeats the recipe's steps now, without a save."));
+  m_recipeSection->bodyLayout()->addWidget(m_replayButton);
+  connect(m_replayButton, &QPushButton::clicked, this, [this] { replayNow(); });
+  m_expert = UserSettings::expertMode();
+  UserSettings::watchExpertMode(this, [this](bool on) { setExpertMode(on); });
 
   // --- job U3: the tree on the left and the editor on the right when the panel is wide, stacked when narrow
   m_workArea = new QWidget(page);
@@ -1463,10 +1512,13 @@ void ScriptLabPanel::setWatcher(LabWatcher* watcher)
     m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshLive);
     m_watcherConnections << connect(watcher, &LabWatcher::resultChanged, this, &ScriptLabPanel::refreshMenuBox);
     m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshMenuBox);
+    m_watcherConnections << connect(watcher, &LabWatcher::recipeChanged, this, &ScriptLabPanel::refreshRecipe);
+    m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshRecipe);
   }
   m_refusal.clear();
   connectEffectsToWatcher();
   refreshLive();
+  refreshRecipe();
 }
 
 bool ScriptLabPanel::watchFolder(const QString& folder)
@@ -2846,6 +2898,164 @@ void ScriptLabPanel::styleEffectsButton()
   m_effectsBox->setIcon(LucideIcons::icon(on ? QStringLiteral("check") : QStringLiteral("eye"),
                                           QColor(QLatin1String(on ? t.onAccent : t.text)), QColor(QLatin1String(t.textMuted))));
   m_effectsBox->setAccessibleDescription(on ? tr("On: the 3D view shows what the scripts do.") : tr("Off."));
+  styleRecordButton();
+}
+
+// --- record and replay (job A3) -------------------------------------------------------------
+
+void ScriptLabPanel::styleRecordButton()
+{
+  if (!m_recordButton) return;
+  const bool dark = isDark(palette());
+  const Tokens& t = tokens(dark);
+  const QString selection = Theme::color(Theme::Token::Selection, dark).name(QColor::HexRgb).toUpper();
+  // the same on/off look as Show effects in 3D view: on has the selection fill, the word and a square
+  m_recordButton->setStyleSheet(QStringLiteral(
+    "QPushButton { background: %1; color: %2; border: 1px solid %3; border-radius: %4px; padding: 0 %5px; }"
+    "QPushButton:checked { background: %6; color: %7; border: 1px solid %6; }"
+    "QPushButton:focus { border: 2px solid %8; }")
+    .arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.border))
+    .arg(RadiusControl).arg(SpacingM)
+    .arg(selection, QLatin1String(t.onAccent), QLatin1String(t.focusRing)));
+  const bool on = m_recordButton->isChecked();
+  m_recordButton->setIcon(LucideIcons::icon(on ? QStringLiteral("square") : QStringLiteral("video"),
+                                            QColor(QLatin1String(on ? t.onAccent : t.text)), QColor(QLatin1String(t.textMuted))));
+}
+
+bool ScriptLabPanel::setRecording(bool on)
+{
+  if (!m_watcher) return false;
+  bool changed = false;
+  m_recipeNote.clear();
+  m_recipeNoteIsError = false;
+  if (on && !m_watcher->recording())
+  {
+    const LabWatcher::Result result = m_watcher->startRecording();
+    if (!result.ok())
+    {
+      m_recipeNote = tr("Error: %1").arg(result.error);
+      m_recipeNoteIsError = true;
+    }
+    changed = result.ok();
+  }
+  else if (!on && m_watcher->recording())
+  {
+    const bool none = m_watcher->recordedSteps().isEmpty();
+    changed = m_watcher->stopRecording();
+    if (none) m_recipeNote = tr("Recording stopped. No steps were recorded, so the recipe stays as it was.");
+  }
+  refreshRecipe();
+  return changed;
+}
+
+bool ScriptLabPanel::replayNow()
+{
+  if (!m_watcher) return false;
+  m_recipeNote.clear();
+  m_recipeNoteIsError = false;
+  const LabWatcher::Result result = m_watcher->replayRecipe();
+  if (!result.ok())
+  {
+    m_recipeNote = tr("Error: %1").arg(result.error);
+    m_recipeNoteIsError = true;
+  }
+  refreshRecipe();
+  return result.ok();
+}
+
+void ScriptLabPanel::setExpertMode(bool expert)
+{
+  m_expert = expert;
+  refreshRecipe();
+}
+
+void ScriptLabPanel::refreshRecipe()
+{
+  if (!m_recipeRow) return;
+  const bool object = m_watcher && m_watcher->watching() && m_watcher->linkset();
+  m_recipeRow->setVisible(object);
+  m_recipeSection->setVisible(object && m_expert);
+  if (!object)
+  {
+    m_recordButton->setChecked(false);
+    styleRecordButton();
+    return;
+  }
+  const bool recording = m_watcher->recording();
+  m_recordButton->setChecked(recording);
+  m_recordButton->setText(recording ? tr("Stop recording") : tr("Record what I do"));
+  m_recordButton->setAccessibleDescription(recording ? tr("Recording.") : tr("Not recording."));
+  styleRecordButton();
+
+  QStringList lines;
+  bool bad = m_recipeNoteIsError;
+  const QJsonObject replay = m_watcher->lastReplay();
+  auto strings = [](const QJsonValue& v)
+  {
+    QStringList out;
+    for (const QJsonValue& s : v.toArray()) out << s.toString();
+    return out;
+  };
+  if (recording)
+  {
+    lines << tr("Recording. Click props and menu buttons. Steps so far: %1.").arg(m_watcher->recordedSteps().size());
+    if (!primPropsShown()) lines << tr("Turn on Show effects in 3D view to click props.");
+  }
+  else if (!m_recipeNote.isEmpty())
+    lines << m_recipeNote;
+  else if (!replay.isEmpty())
+  {
+    const int steps = replay.value("steps").toInt();
+    const int done = replay.value("done").toInt();
+    if (!replay.value("ran").toBool())
+    {
+      bad = true;
+      lines << tr("The object did not run, so your steps were not replayed.");
+      lines << strings(replay.value("changes"));
+    }
+    else
+    {
+      lines << (done == steps ? tr("Replayed your %n step(s).", nullptr, steps) : tr("Replayed %1 of %2 steps.").arg(done).arg(steps));
+      const QStringList changes = strings(replay.value("changes"));
+      if (replay.value("first").toBool())
+      {
+        lines << tr("This is the first time, so there is nothing to compare.");
+        lines << tr("Now:");
+        for (const QString& f : strings(replay.value("facts"))) lines << QStringLiteral("  ") + f;
+      }
+      else if (changes.isEmpty())
+        lines << tr("Nothing changed since last time.");
+      else
+      {
+        lines << tr("What changed since last time:");
+        for (const QString& c : changes) lines << QStringLiteral("  ") + c;
+      }
+    }
+  }
+  else if (m_watcher->hasRecipe())
+    lines << tr("The recipe is replayed after the next save.");
+  else
+    lines << tr("No recipe yet. Press Record what I do, then click your props.");
+  m_recipeStatus->setText(lines.join(QLatin1Char('\n')));
+  const bool dark = isDark(palette());
+  QPalette p = m_recipeStatus->palette();
+  p.setColor(QPalette::WindowText, bad ? dangerColour(dark) : palette().color(QPalette::WindowText));
+  m_recipeStatus->setPalette(p);
+
+  // Expert: the file and its text
+  m_recipeFileLine->setText(m_watcher->hasRecipe()
+                              ? tr("File: %1 in the object folder. %2 is kept next to it.").arg(LabRecipe::recipeFile(), LabRecipe::resultFile())
+                              : tr("No recipe file yet. Recording makes %1 in the object folder.").arg(LabRecipe::recipeFile()));
+  QString text;
+  if (m_watcher->hasRecipe())
+  {
+    QFile file(m_watcher->recipePath());
+    if (file.open(QIODevice::ReadOnly)) text = QString::fromUtf8(file.read(LabRecipe::MAX_FILE_BYTES));
+  }
+  if (m_recipeText->toPlainText() != text) m_recipeText->setPlainText(text);
+  m_replayButton->setEnabled(m_watcher->hasRecipe() && !recording);
+  m_replayButton->setToolTip(m_replayButton->isEnabled() ? tr("Repeats the recipe's steps now, without a save.")
+                                                         : recording ? tr("Stop recording first.") : tr("Record what you do first."));
 }
 
 int ScriptLabPanel::sideBySideWidth()

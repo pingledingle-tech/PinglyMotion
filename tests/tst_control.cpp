@@ -3400,7 +3400,39 @@ void ControlTest::scriptLabLiveCommands()
   QCOMPARE(folderResult["run"].toInt(), 3);
   QCOMPARE(folderResult["linkset"].toObject()["object"].toString(), QFileInfo(objectDir.path()).fileName());
   QCOMPARE(folderResult["linkset"].toObject()["prims"].toArray().size(), 2);
+
+  // job A3: lab_replay replays recipe.rlvtest in a world of its own and says what changed since last time
+  QCOMPARE(run(R"({"command":"lab_replay","fast":true})")["error"].toString(), QString("lab_replay takes no options."));
+  QCOMPARE(run(R"({"command":"lab_replay"})")["error"].toString(), QString("lab_replay: There is no recipe yet. Record what you do first."));
+  answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["recording"].toBool(), false);
+  QVERIFY(answer["recipe"].isNull());
+  QVERIFY(answer["replay"].isNull());
+  {
+    QFile recipe(objectDir.filePath("recipe.rlvtest"));
+    QVERIFY(recipe.open(QIODevice::WriteOnly));
+    recipe.write("# made by the test\nsend @fly=n\nwait 1\n");
+  }
+  answer = run(R"({"command":"lab_replay"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["ran"].toBool(), true);
+  QCOMPARE(answer["steps"].toInt(), 2);
+  QCOMPARE(answer["done"].toInt(), 2);
+  QCOMPARE(answer["first"].toBool(), true);
+  QCOMPARE(answer["facts"].toArray(), QJsonArray({"Fly is blocked.", "Cuff is saying \"cuff lock\"."}));
+  QCOMPARE(answer["steps_text"].toArray(), QJsonArray({"send @fly=n", "wait 1"}));
+  QVERIFY(QFile::exists(objectDir.filePath("recipe.rlvresult")));
+  // the replay's RLV state is its own: rlv_state does not hold the recipe's line
+  QVERIFY(!m_api->rlv().has("fly"));
+  answer = run(R"({"command":"lab_replay"})");
+  QCOMPARE(answer["first"].toBool(), false);
+  QCOMPARE(answer["changes"].toArray(), QJsonArray());
+  answer = run(R"({"command":"lab_result"})");
+  QCOMPARE(answer["recipe"].toString(), QString("recipe.rlvtest"));
+  QCOMPARE(answer["replay"].toObject()["facts"].toArray().size(), 2);
   QCOMPARE(run(R"({"command":"lab_unwatch"})")["was_watching"].toBool(), true);
+  QCOMPARE(run(R"({"command":"lab_replay"})")["error"].toString(),
+           QString("lab_replay: no folder is watched as one object. Start with lab_watch, the folder's path and \"linkset\": true."));
   QCOMPARE(m_animation->getNumberOfFrames(), frames);
 }
 

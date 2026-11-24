@@ -252,6 +252,40 @@ Built in pull request 447 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 | LABPRIM-01 | 4 What to do next | Event log: a click on a prop in the 3D view, before the touch it sends | You clicked %1. | in the program (pull request 447, 24 Nov 2026) | job A1 |
 | LABPRIM-02 | 8 Warning | Status line: the touch from a click could not be sent | Error: the touch on %1 was not sent. %2 | in the program (pull request 447, 24 Nov 2026) | job A1 |
 
+### Script Lab: record and replay (job A3)
+
+Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`, `src/scriptlab/labwatcher.cpp` and `src/scriptlab/labrecipe.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labrecipe.cpp` check them letter for letter. The facts and changes put in part names, button texts and colours from the run.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABREC-01 | 1 Label | Live page: the button that starts recording, under Show effects in 3D view | Record what I do | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-02 | 1 Label | The same button while recording | Stop recording | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-03 | 2 Tip on hover | Record what I do | Records your clicks on props, menu buttons and RLV lines. After every save, the program repeats them and says what changed. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-04 | 3 Empty state | The line under the button: no recipe in the folder yet | No recipe yet. Press Record what I do, then click your props. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-05 | 4 What to do next | The line while recording; the program puts in the number of steps | Recording. Click props and menu buttons. Steps so far: %1. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-06 | 4 What to do next | The line while recording and the effects are off | Turn on Show effects in 3D view to click props. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-07 | 4 What to do next | The line after stopping without a step | Recording stopped. No steps were recorded, so the recipe stays as it was. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-08 | 4 What to do next | The line after a replay with every step done | Replayed your %n step(s). | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-09 | 8 Warning | The line after a replay where steps were skipped | Replayed %1 of %2 steps. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-10 | 4 What to do next | The line after the first replay of new steps | This is the first time, so there is nothing to compare. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-11 | 1 Label | Heading over the facts after the first replay | Now: | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-12 | 1 Label | Heading over the changes after a replay | What changed since last time: | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-13 | 4 What to do next | The line after a replay that changed nothing | Nothing changed since last time. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-14 | 8 Warning | The line when the object did not run, in the danger colour | The object did not run, so your steps were not replayed. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-15 | 4 What to do next | The line when a recipe is there but not replayed yet | The recipe is replayed after the next save. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-16 | 1 Label | Expert mode: the folded part with the recipe file | Recipe | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-17 | 1 Label | Expert mode: the button in the Recipe part | Replay now | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-18 | 2 Tip on hover | Replay now | Repeats the recipe's steps now, without a save. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-19 | 4 What to do next | Recipe part: the file line; the program puts in the two file names | File: %1 in the object folder. %2 is kept next to it. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-20 | 3 Empty state | Recipe part: no recipe file yet; the program puts in the file name | No recipe file yet. Recording makes %1 in the object folder. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-21 | 8 Warning | Replay now greyed while recording, as its tip | Stop recording first. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-22 | 8 Warning | Replay now greyed without a recipe, as its tip | Record what you do first. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-23 | 8 Warning | Error line: Replay now without a recipe file | There is no recipe yet. Record what you do first. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-24 | 8 Warning | Error line: a recipe with only notes | The recipe has no steps. Record what you do first. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-25 | 8 Warning | Error line: a recipe the program cannot read; the program puts in the line and the reason | The recipe has a mistake. %1 | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-26 | 2 Tip on hover | Recipe part: the recipe's text | The recipe file. You may edit it in your own editor. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+| LABREC-27 | 4 What to do next | One change since last time; the program puts in the part, the old state and the new state | Before: %1 was %2. Now: it is %3. | in the program (pull request 450, 24 Nov 2026) | job A3 |
+
 ### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
 
 Drafts for the library panel (roadmap item 6, issue 19) and for two figures in one scene (Expert mode only), drawn in `docs/mockup/index.html` and described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6l and 6m. Nothing is built yet; the project owner looks at the mockup first. `<clip name>` and `<file name>` stand for the real name. The mockup's own helper texts (for example "Mockup: no library folder") are not program texts and are not listed.

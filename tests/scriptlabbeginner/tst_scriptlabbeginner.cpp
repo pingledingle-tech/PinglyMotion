@@ -140,6 +140,7 @@ class TestScriptLabBeginner : public QObject
     void windowWiring();
     void propsFromPrims();
     void menuBoxAtTheClick();
+    void recordAndReplay();
     void menuBoxTextBox();
 
   private:
@@ -1000,6 +1001,138 @@ void TestScriptLabBeginner::menuBoxTextBox()
   const QString log = panel.runLog()->toPlainText();
   QVERIFY2(log.contains("You clicked \"Rex\" in the menu (channel -88)."), qPrintable(log));
   QVERIFY2(log.contains("owner_say: name Rex"), qPrintable(log));
+}
+
+// job A3: Record what I do saves clicks, menu answers and typed lines; every save replays them
+void TestScriptLabBeginner::recordAndReplay()
+{
+  QTemporaryDir dir;
+  const QString top = dir.filePath("Set");
+  QVERIFY(writeFile(top + "/Root/hud.lsl", "default { state_entry() { } }\n"));
+  const QByteArray collar =
+    "default {\n"
+    "  touch_start(integer n) {\n"
+    "    llListen(-77, \"\", llGetOwner(), \"\");\n"
+    "    llDialog(llGetOwner(), \"Lock the collar?\", [\"Lock\", \"Unlock\"], -77);\n"
+    "  }\n"
+    "  listen(integer channel, string name, key id, string message) {\n"
+    "    llOwnerSay(\"picked \" + message);\n"
+    "    if (message == \"Lock\") llOwnerSay(\"@detach=n\");\n"
+    "  }\n"
+    "}\n";
+  QVERIFY(writeFile(top + "/Collar/collar.lsl", collar));
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  panel.setExpertMode(false);
+  panel.resize(700, 900);
+  panel.show();
+  QPushButton* record = panel.recordButton();
+  QVERIFY(record);
+  QVERIFY(!record->isVisibleTo(&panel));   // nothing watched: no recipe
+  QVERIFY(panel.watchFolder(top));
+  QVERIFY(record->isVisibleTo(&panel));
+  // Beginner mode: one button and the line, no recipe part (charter P5)
+  QVERIFY(!panel.recipeSection()->isVisibleTo(&panel));
+  QCOMPARE(record->text(), QString("Record what I do"));
+  QVERIFY(!record->isChecked());
+  QCOMPARE(panel.recipeStatus()->text(), QString("No recipe yet. Press Record what I do, then click your props."));
+  QVERIFY(!record->toolTip().isEmpty());
+  QVERIFY(record->focusPolicy() != Qt::NoFocus);   // charter P8
+
+  // start with the keyboard: Space presses the button
+  record->setFocus();
+  QTest::keyClick(record, Qt::Key_Space);
+  QVERIFY(watcher.recording());
+  QVERIFY(record->isChecked());
+  QCOMPARE(record->text(), QString("Stop recording"));
+  QCOMPARE(panel.recipeStatus()->text(), QString("Recording. Click props and menu buttons. Steps so far: 0.\n"
+                                                 "Turn on Show effects in 3D view to click props."));
+  panel.effectsBox()->setChecked(true);
+  QVERIFY(panel.touchPrim("Collar", QPoint(100, 200)));
+  QVERIFY(panel.answerMenu("Lock"));
+  QVERIFY(panel.runLine("@sendim=n"));   // typed in the Command field, from "panel"
+  QCOMPARE(panel.recipeStatus()->text(), QString("Recording. Click props and menu buttons. Steps so far: 3."));
+  QCOMPARE(readFile(top + "/recipe.rlvtest"),
+           QString("# PinglyMotion recipe: what you did, one step per line.\n"
+                   "# The program replays it after every save of a script.\n"
+                   "# Steps: touch <part>, menu <button>, send <RLV line>, wait <seconds>.\n"
+                   "# \"object <name>\" says who sends the next RLV lines. Lines with # are notes.\n"
+                   "touch Collar\n"
+                   "menu Lock\n"
+                   "send @sendim=n\n"));
+
+  // stop: the steps are replayed once, and the line says what is true now
+  record->click();
+  QVERIFY(!watcher.recording());
+  QCOMPARE(record->text(), QString("Record what I do"));
+  QCOMPARE(panel.recipeStatus()->text(), QString("Replayed your 3 step(s).\n"
+                                                 "This is the first time, so there is nothing to compare.\n"
+                                                 "Now:\n"
+                                                 "  Set is locked.\n"
+                                                 "  Send instant messages is blocked.\n"
+                                                 "  Collar is saying \"picked Lock\"."));
+  verifyShortSentences(panel.recipeStatus()->text());
+  if (!qEnvironmentVariableIsEmpty("PINGLYMOTION_UI_OUT"))   // a picture for a session to look at
+  {
+    QTest::qWait(50);
+    panel.grab().save(qEnvironmentVariable("PINGLYMOTION_UI_OUT") + "/recordreplay.png");
+  }
+
+  // a save of a changed script: the recipe is replayed and the line says what changed
+  QByteArray noLock = collar;
+  noLock.replace("    if (message == \"Lock\") llOwnerSay(\"@detach=n\");\n", "");
+  QVERIFY(writeFile(top + "/Collar/collar.lsl", noLock));
+  watcher.runScript("Collar/collar.lsl");
+  QCOMPARE(panel.recipeStatus()->text(), QString("Replayed your 3 step(s).\n"
+                                                 "What changed since last time:\n"
+                                                 "  Before: Set was locked. Now: it is not locked."));
+  watcher.runScript("Collar/collar.lsl");
+  QCOMPARE(panel.recipeStatus()->text(), QString("Replayed your 3 step(s).\nNothing changed since last time."));
+  QVERIFY(readFile(top + "/recipe.rlvresult").endsWith("# Nothing changed since the time before.\n"));
+
+  // Expert mode: the recipe part with the file and Replay now; nothing else moves (charter P12)
+  const QPoint recordAt = record->mapTo(&panel, QPoint(0, 0));
+  panel.setExpertMode(true);
+  QVERIFY(panel.recipeSection()->isVisibleTo(&panel));
+  QCOMPARE(record->mapTo(&panel, QPoint(0, 0)), recordAt);
+  QCOMPARE(panel.recipeFileLine()->text(), QString("File: recipe.rlvtest in the object folder. recipe.rlvresult is kept next to it."));
+  QCOMPARE(panel.recipeText()->toPlainText(), readFile(top + "/recipe.rlvtest"));
+  QVERIFY(panel.replayButton()->isEnabled());
+  panel.replayButton()->click();
+  QCOMPARE(panel.recipeStatus()->text(), QString("Replayed your 3 step(s).\nNothing changed since last time."));
+
+  // recording again and stopping without a step keeps the recipe
+  QVERIFY(panel.setRecording(true));
+  QVERIFY(!panel.replayButton()->isEnabled());
+  QCOMPARE(panel.replayButton()->toolTip(), QString("Stop recording first."));
+  QVERIFY(panel.setRecording(false));
+  QCOMPARE(panel.recipeStatus()->text(), QString("Recording stopped. No steps were recorded, so the recipe stays as it was."));
+  QVERIFY(readFile(top + "/recipe.rlvtest").endsWith("send @sendim=n\n"));
+
+  // a recipe with a mistake: Replay now says so in words, in the danger colour
+  QVERIFY(writeFile(top + "/recipe.rlvtest", "dance\n"));
+  QVERIFY(!panel.replayNow());
+  QCOMPARE(panel.recipeStatus()->text(),
+           QString("Error: The recipe has a mistake. Line 1: unknown word \"dance\". Use touch, menu, send, object or wait."));
+  QCOMPARE(panel.recipeStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::dangerColour(true));
+
+  // no recipe file: Replay now is greyed with its reason
+  QVERIFY(QFile::remove(top + "/recipe.rlvtest"));
+  QVERIFY(panel.setRecording(true));
+  QVERIFY(panel.setRecording(false));
+  QVERIFY(!panel.replayButton()->isEnabled());
+  QCOMPARE(panel.replayButton()->toolTip(), QString("Record what you do first."));
+  QCOMPARE(panel.recipeFileLine()->text(), QString("No recipe file yet. Recording makes recipe.rlvtest in the object folder."));
+
+  // Stop watching hides the button and ends a recording
+  QVERIFY(panel.setRecording(true));
+  panel.stopWatching();
+  QVERIFY(!watcher.recording());
+  QVERIFY(!record->isVisibleTo(&panel));
+  QVERIFY(!panel.recipeSection()->isVisibleTo(&panel));
 }
 
 QTEST_MAIN(TestScriptLabBeginner)
