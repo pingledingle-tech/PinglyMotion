@@ -115,6 +115,8 @@ class LabPlayer : public QWidget
     void setReplay(const QJsonObject& replay);
     // Expert mode adds the event log up to the moment (charter P5)
     void setExpertMode(bool expert);
+    // the time between two moments while playing (PLAY_INTERVAL_MS; tests make it shorter)
+    void setPlayInterval(int ms) { m_timer.setInterval(ms); }
 
     int momentCount() const { return m_moments.size(); }
     int current() const { return m_current; }

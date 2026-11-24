@@ -7,10 +7,9 @@ Files:
 - src/scriptlab/labwatcher.*
 - src/scriptlab/scriptlabpanel.*
 - src/CMakeLists.txt
-- tests/tst_labplayer.cpp
+- CMakeLists.txt
 - tests/tst_labrecipe.cpp
 - tests/scriptlabplayer/**
-- tests/CMakeLists.txt
 - fuzz/fuzz_recipe.cpp
 - fuzz/recipe.dict
 - src/controlapi.*
