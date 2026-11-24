@@ -101,7 +101,7 @@ namespace JointRings
   }
 
   // Which joints get a bone line from their parent: always, whatever
-  // Options > Show skeleton says; not to the hip (it has no parent joint), not
+  // View > Joint dots says; not to the hip (it has no parent joint), not
   // to End Sites, not to joints of hidden groups, to face joints only while
   // the face is in focus, never in a picture taken without markers.
   inline bool hasBone(bool root,bool endSite,bool groupShown,bool faceJoint,bool faceFocus,bool hideMarkers)

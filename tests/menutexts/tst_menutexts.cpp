@@ -142,7 +142,7 @@ void TestMenuTexts::mainMenus()
     {QStringLiteral("optionsJointLimitsAction"), QStringLiteral("Stop joints at their furthest turn")}, // A14
     {QStringLiteral("optionsProtectFirstFrameAction"), QStringLiteral("Lock the first frame")},        // A15
     {QStringLiteral("optionsLoopAction"), QStringLiteral("Loop playback")},                            // A16
-    {QStringLiteral("optionsSkeletonAction"), QStringLiteral("Show skeleton")},                        // A17
+    // A17 Show skeleton moved to View > Joint dots (UX job U2, src/viewmenuspec.h, tests/viewtimeline)
     {QStringLiteral("optionsShowTimelineAction"), QStringLiteral("Show timeline")},                    // A18
     {QStringLiteral("optionsConfigurePinglyMotionAction"), QStringLiteral("Settings...")},             // A19
     {QStringLiteral("resetCameraAction"), QStringLiteral("Reset view")},                               // A20
@@ -218,15 +218,17 @@ void TestMenuTexts::windowSourceTexts()
   const QString source = readSource("pinglymotionwindow.cpp");
   QVERIFY(!source.isEmpty());
   for (const char* now : {
-         "tr(\"Lighting...\")",
          "tr(\"The open source Ruth2 avatar, with fingers and a face that follow the extra Second Life bones.\")",
          "tr(\"The open source Max avatar, with fingers and a face that follow the extra Second Life bones.\")",
-         "tr(\"Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed.\")",
          "tr(\"(not attached)\")",
          "tr(\"Second Life name: %1\")",
          "tr(\"Name in the file: %1\")",
          "tr(\"Moves the whole figure.\")"})
     QVERIFY2(source.contains(QLatin1String(now)), now);
+  // View > Lighting... and View > Joint groups > Hide in lists (UX job U2) keep their texts in the view table
+  const QString viewTable = readSource("viewmenuspec.h");
+  for (const char* now : {"\"Lighting...\"", "\"Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed.\""})
+    QVERIFY2(viewTable.contains(QLatin1String(now)), now);
   for (const char* old : {"tr(\"Light...\")", "Bento bones", "Off every time PinglyMotion starts",
                           "the part list", "tr(\"* not attached *\")", "Name in the animation file",
                           "Moves the whole avatar.",

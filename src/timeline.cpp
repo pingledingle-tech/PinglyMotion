@@ -76,6 +76,20 @@ void Timeline::layoutChanged()
   if(moved) emit rowsChanged();
 }
 
+void Timeline::setRowFilter(int area,bool allJoints)
+{
+  if(rows_.filterArea()==area && rows_.allJoints()==allJoints) return;
+  rows_.setFilter(area,allJoints);
+  // a selected stretch may lose rows: it goes, as with another animation
+  clearSelection();
+  fitSize();
+  if(offscreen) offscreen->fill(TimelineLook::row(false,Theme::isDark()));
+  fullRepaint=true;
+  update();
+  // also when the rows stayed the same: the line over them may change
+  emit rowsChanged();
+}
+
 void Timeline::fitSize()
 {
   // as wide as the frames, as high as the rows (no rows: no height)

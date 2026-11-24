@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <QCheckBox>
+#include <QComboBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -76,6 +78,50 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   contentColumn->setContentsMargins(0,0,0,0);
   contentColumn->setSpacing(0);
 
+  // UX job U2: the row filter above the rows: "Show rows for" a body area, and in
+  // Expert mode Only changed joints (at the right end, so hiding it moves nothing).
+  // It is the first thing in the scrolled content, so it takes no height from the
+  // easing tiles under the rows; with two figures the header rows come after it
+  QWidget* filterRow=new QWidget(content);
+  filterRow->setObjectName(QStringLiteral("timelineFilterRow"));
+  filterRow->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+  QHBoxLayout* filterLayout=new QHBoxLayout(filterRow);
+  filterLayout->setContentsMargins(Theme::Size::spacingM,Theme::Size::spacingXs,Theme::Size::spacingM,Theme::Size::spacingXs);
+  filterLayout->setSpacing(Theme::Size::spacingS);
+  QLabel* filterLabel=new QLabel(TimelineSpec::text(TimelineSpec::filterLabel),filterRow);
+  filterLabel->setObjectName(QStringLiteral("timelineFilterLabel"));
+  areaFilter_=new QComboBox(filterRow);
+  areaFilter_->setObjectName(QStringLiteral("timelineAreaFilter"));
+  areaFilter_->addItem(TimelineSpec::text(TimelineSpec::allAreas),-1);
+  for(int area=0;area<int(JointGroups::TAB_COUNT);area++)
+    areaFilter_->addItem(TimelineSpec::areaName(area),area);
+  areaFilter_->setToolTip(TimelineSpec::text(TimelineSpec::filterTip));
+  areaFilter_->setStatusTip(TimelineSpec::text(TimelineSpec::filterTip));
+  filterLabel->setBuddy(areaFilter_);
+  changedOnly_=new QCheckBox(TimelineSpec::text(TimelineSpec::changedOnly),filterRow);
+  changedOnly_->setObjectName(QStringLiteral("timelineChangedOnly"));
+  changedOnly_->setChecked(true);
+  changedOnly_->setToolTip(TimelineSpec::text(TimelineSpec::changedOnlyTip));
+  changedOnly_->setStatusTip(TimelineSpec::text(TimelineSpec::changedOnlyTip));
+  changedOnly_->setVisible(false);
+  filterLayout->addWidget(filterLabel);
+  filterLayout->addWidget(areaFilter_);
+  filterLayout->addStretch(1);
+  filterLayout->addWidget(changedOnly_);
+  contentColumn->addWidget(filterRow,0);
+  connect(areaFilter_,&QComboBox::activated,this,[this]()
+  {
+    applyRowFilter();
+    emit rowFilterChosen(rowFilterArea(),changedOnly());
+  });
+  connect(changedOnly_,&QCheckBox::toggled,this,[this]()
+  {
+    if(changedOnly_->signalsBlocked()) return;
+    applyRowFilter();
+    emit rowFilterChosen(rowFilterArea(),changedOnly());
+  });
+
+
   rowsArea_=new QWidget(content);
   QHBoxLayout* contentLayout=new QHBoxLayout(rowsArea_);
   contentLayout->setContentsMargins(0,0,0,0);
@@ -127,6 +173,24 @@ TimelineView::TimelineView(QWidget* parent,Qt::WindowFlags f) : QFrame(parent,f)
   noKeysLayout->addWidget(noKeysLine_);
   noKeysLayout->addWidget(buttonRow);
   contentColumn->addWidget(noKeys_,0);
+
+  // U2: the area filter hides every changed joint: say so, and how to see them
+  areaEmpty_=new QWidget(content);
+  areaEmpty_->setObjectName(QStringLiteral("timelineAreaEmpty"));
+  QVBoxLayout* areaEmptyLayout=new QVBoxLayout(areaEmpty_);
+  areaEmptyLayout->setContentsMargins(Theme::Size::spacingM,Theme::Size::spacingS,Theme::Size::spacingM,Theme::Size::spacingS);
+  areaEmptyLayout->setSpacing(Theme::Size::spacingXs);
+  areaEmptyTitle_=new QLabel(areaEmpty_);
+  areaEmptyTitle_->setObjectName(QStringLiteral("timelineAreaEmptyTitle"));
+  areaEmptyTitle_->setFont(titleFont);
+  QLabel* areaEmptyLine=new QLabel(TimelineSpec::text(TimelineSpec::areaEmptyLine),areaEmpty_);
+  areaEmptyLine->setObjectName(QStringLiteral("timelineAreaEmptyLine"));
+  areaEmptyLine->setForegroundRole(QPalette::PlaceholderText);
+  areaEmptyLine->setWordWrap(true);
+  areaEmptyLayout->addWidget(areaEmptyTitle_);
+  areaEmptyLayout->addWidget(areaEmptyLine);
+  areaEmpty_->hide();
+  contentColumn->addWidget(areaEmpty_,0);
   connect(firstKeyButton_,&QPushButton::clicked,this,&TimelineView::setKeyRequested);
 
   // no animation open: one line instead of the rows
@@ -250,14 +314,17 @@ void TimelineView::setFigures(const QList<Animation*>& animations,const QStringL
 
   contentColumn_->removeWidget(rowsArea_);
   contentColumn_->removeWidget(noKeys_);
+  contentColumn_->removeWidget(areaEmpty_);
   contentColumn_->removeWidget(noAnimation_);
-  int at=0;
+  // the row filter (U2) stays the first thing
+  int at=1;
   const int count=int(std::min(animations.size(),paths.size()));
   if(count<2)
   {
     // one figure: exactly as before
     contentColumn_->insertWidget(at++,rowsArea_,0);
     contentColumn_->insertWidget(at++,noKeys_,0);
+    contentColumn_->insertWidget(at++,areaEmpty_,0);
   }
   else
   {
@@ -276,6 +343,7 @@ void TimelineView::setFigures(const QList<Animation*>& animations,const QStringL
         figureRows_ << nullptr;
         contentColumn_->insertWidget(at++,rowsArea_,0);
         contentColumn_->insertWidget(at++,noKeys_,0);
+        contentColumn_->insertWidget(at++,areaEmpty_,0);
         continue;
       }
       FigureRows* rows=new FigureRows(content);
@@ -344,10 +412,46 @@ void TimelineView::updateEmptyState()
 {
   const bool noKeys=!none_ && animation_ && !timeline->rows().anyChanged();
   noKeys_->setVisible(noKeys);
+  const bool areaEmpty=!none_ && animation_ && timeline->rows().areaHidesChanges();
+  if(areaEmpty) areaEmptyTitle_->setText(TimelineSpec::areaEmptyTitle(timeline->rows().filterArea()));
+  areaEmpty_->setVisible(areaEmpty);
   noAnimation_->setVisible(none_);
   rowsArea_->setVisible(!none_);
   if(outerView_ && outerView_->widget()) outerView_->widget()->layout()->activate();
   easingTiles_->refreshNoKey();
+}
+
+void TimelineView::setRowFilter(int area,bool changedOnly)
+{
+  const int index=areaFilter_->findData(area);
+  areaFilter_->setCurrentIndex(index>=0 ? index : 0);
+  changedOnly_->blockSignals(true);
+  changedOnly_->setChecked(changedOnly);
+  changedOnly_->blockSignals(false);
+  applyRowFilter();
+}
+
+void TimelineView::setExpert(bool expert)
+{
+  expert_=expert;
+  changedOnly_->setVisible(expert);
+  applyRowFilter();
+}
+
+int TimelineView::rowFilterArea() const
+{
+  return areaFilter_->currentData().toInt();
+}
+
+bool TimelineView::changedOnly() const
+{
+  return changedOnly_->isChecked();
+}
+
+void TimelineView::applyRowFilter()
+{
+  // Beginner mode shows only the changed joints, whatever the switch says
+  timeline->setRowFilter(rowFilterArea(),expert_ && !changedOnly_->isChecked());
 }
 
 void TimelineView::setNoAnimation(bool none)

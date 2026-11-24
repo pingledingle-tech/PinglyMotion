@@ -62,8 +62,9 @@ struct Fixture
   }
   QScrollBar* bar() { return view.rowScroller()->verticalScrollBar(); }
   const TimelineRows& rows() const { return view.rows(); }
-  // the top of the row of a joint inside the scrolled content
-  int rowTop(int track) const { return rows().rowOfTrack(track) * Constants::lineHeight() + 2; }
+  // the top of the row of a joint inside the scrolled content (the rows stand under the
+  // row filter of job U2)
+  int rowTop(int track) const { return view.activeRowsArea()->y() + rows().rowOfTrack(track) * Constants::lineHeight() + 2; }
   // the whole row lies inside the visible part
   bool rowVisible(int track)
   {

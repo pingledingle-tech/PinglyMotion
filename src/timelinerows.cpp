@@ -57,6 +57,36 @@ namespace TimelineSpec
     if(firstFrameLocked) return menu(MenuSpec::setKeyLocked);
     return QString();
   }
+
+  QString areaMessage(int area)
+  {
+    if(area<0 || area>=int(JointGroups::TAB_COUNT)) return text(showsAllAreas);
+    return text(showsArea).arg(areaName(area));
+  }
+
+  QString changedOnlyMessage(bool changedOnly)
+  {
+    return text(changedOnly ? showsChanged : showsEvery);
+  }
+
+  QString areaEmptyTitle(int area)
+  {
+    if(area<0 || area>=int(JointGroups::TAB_COUNT)) return QString();
+    return text(areaEmpty).arg(areaName(area));
+  }
+
+  QString areaKey(int area)
+  {
+    if(area<0 || area>=int(JointGroups::TAB_COUNT)) return QStringLiteral("all");
+    return QLatin1String(areaKeys[area]);
+  }
+
+  int areaFromKey(const QString& key)
+  {
+    for(int area=0;area<int(JointGroups::TAB_COUNT);area++)
+      if(key==QLatin1String(areaKeys[area])) return area;
+    return -1;
+  }
 }
 
 int TimelineRows::areaOf(const QString& name)
@@ -139,6 +169,25 @@ bool TimelineRows::updateTrack(Animation* anim,int track)
   return true;
 }
 
+bool TimelineRows::setFilter(int area,bool allJoints)
+{
+  if(area<0 || area>=int(JointGroups::TAB_COUNT)) area=-1;
+  if(area==m_filterArea && allJoints==m_allJoints) return false;
+  m_filterArea=area;
+  m_allJoints=allJoints;
+  const QVector<int> before=m_rows;
+  build();
+  return before!=m_rows;
+}
+
+bool TimelineRows::areaHidesChanges() const
+{
+  if(m_filterArea<0 || m_allJoints || !anyChanged()) return false;
+  for(int track : m_rows)
+    if(m_changed[track]) return false;
+  return true;
+}
+
 bool TimelineRows::setSelected(int selectedTrack)
 {
   if(selectedTrack==m_selected) return false;
@@ -153,10 +202,12 @@ void TimelineRows::build()
   m_rows.clear();
   m_rowOfTrack.fill(-1,m_changed.count());
   // the changed joints in the order of the skeleton, then the selected joint
-  // when it has not changed (the mockup's editedTracks())
+  // when it has not changed (the mockup's editedTracks()); the filter (U2) cuts
+  // them to one body area, or gives every joint a row
   for(int track=0;track<m_changed.count();track++)
   {
-    if(!m_listed[track] || !m_changed[track]) continue;
+    if(!m_listed[track] || !(m_changed[track] || m_allJoints)) continue;
+    if(m_filterArea>=0 && m_area[track]!=m_filterArea) continue;
     m_rowOfTrack[track]=m_rows.count();
     m_rows << track;
   }

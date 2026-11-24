@@ -42,6 +42,7 @@
 #include "viewtoolspec.h"
 
 class QCloseEvent;
+class QMenu;
 class QResizeEvent;
 class MainPanels;
 class SelectedJointPanel;
@@ -157,7 +158,6 @@ class PinglyMotionWindow : public QMainWindow
     void on_toolsOptimizeBVHAction_triggered();
     void on_toolsMirrorAction_triggered();
 
-    void on_optionsSkeletonAction_toggled(bool on);
     void on_optionsJointLimitsAction_toggled(bool on);
     void on_optionsLoopAction_toggled(bool on);
     void on_optionsProtectFirstFrameAction_toggled(bool on);
@@ -296,7 +296,6 @@ class PinglyMotionWindow : public QMainWindow
     void toolsOptimizeBVH();
     void toolsMirror();
 
-    void setSkeleton(bool on);
     void setJointLimits(bool on);
     void setLoop(bool on);
     void setProtectFirstFrame(bool on);
@@ -599,6 +598,13 @@ class PinglyMotionWindow : public QMainWindow
     QAction* m_pasteMirroredAction = nullptr;
     QAction* m_lightThemeAction = nullptr;
     QAction* m_expertModeAction = nullptr;
+    // UX job U2: the view settings in the View menu (src/viewmenuspec.h). Body, Joint groups
+    // and Lighting come from Options; the four Show items are the view toolbar's settings.
+    QMenu* m_bodyMenu = nullptr;
+    QMenu* m_jointGroupsMenu = nullptr;
+    QAction* m_lightingAction = nullptr;
+    QAction* m_viewPartActions[4] = {nullptr, nullptr, nullptr, nullptr};
+    QAction* m_clickAndBendAction = nullptr;
     // what the actions that need an animation were before the empty state greyed them
     struct ActionState { bool enabled; QString tip; QString status; };
     QMap<QAction*,ActionState> m_beforeEmpty;
@@ -619,6 +625,9 @@ class PinglyMotionWindow : public QMainWindow
     void setupViewToolbar();
     void chooseViewTool(ViewTool tool);
     void chooseViewPart(ViewToolSpec::Part part, bool shown);
+    static bool viewPartShown(ViewToolSpec::Part part);
+    // View > Click and bend on the figure (UX job U2)
+    void setClickAndBend(bool on);
     void focusPickedJoint();
     // UX phase 4b part 2: a pull of a joint in the 3D view was released; sets the keys
     void pullFinished(BVHNode* pulled,const QList<QPair<BVHNode*,QVector3D>>& turns,bool turnOnly);

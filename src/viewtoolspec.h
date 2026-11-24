@@ -100,7 +100,7 @@ namespace ViewToolSpec
   {
     Floor,      // "show_floor"
     Rings,      // "show_rings"
-    JointDots,  // the same setting as Options > Show skeleton
+    JointDots,  // "show_joint_dots", also View > Joint dots (Options > Show skeleton before job U2)
     ToolNames   // "view_tool_names"
   };
   inline constexpr const char* partText[] = {

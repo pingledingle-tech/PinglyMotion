@@ -80,7 +80,7 @@ Where: `src/pinglymotionwindow.ui`.
 | A14 | Joint Limits | Option | Stop joints at their furthest turn | yes, verify |
 | A15 | Protect First Frame | Option | Lock the first frame. Tip: "Keeps frame 0 as it is, so the loop has no jump." | yes |
 | A16 | Loop | Option | Loop playback | yes, verify |
-| A17 | Skeleton | View option | Show skeleton | yes, verify |
+| A17 | Skeleton | View option | Joint dots (moved from Options > Show skeleton to View in job U2, [UX_DECISIONS.md](UX_DECISIONS.md) 6q) | yes, verify |
 | A18 | Timeline | View option | Show timeline | yes |
 | A19 | Configure PinglyMotion... | Settings | Settings... | yes |
 | A20 | Reset Camera, tip "Reset camera view to default position" | Reset the 3D view | Reset view. Tip: "Puts the camera back where it started." | yes |

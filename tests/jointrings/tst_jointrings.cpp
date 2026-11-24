@@ -151,9 +151,10 @@ void JointRingsTest::whichJointsGetARing()
 void JointRingsTest::bonesDoNotNeedTheSkeletonSetting()
 {
   // hasBone(root, endSite, groupShown, faceJoint, faceFocus, hideMarkers)
-  for(bool skeleton : {false,true})
+  // View > Joint dots (Options > Show skeleton before UX job U2) does not change the bones
+  for(bool dots : {false,true})
   {
-    UserSettings::setSkeleton(skeleton);
+    UserSettings::setShowJointDots(dots);
     QVERIFY(JointRings::hasBone(false,false,true,false,false,false));
     QVERIFY(!JointRings::hasBone(true,false,true,false,false,false));   // the hip
     QVERIFY(!JointRings::hasBone(false,true,true,false,false,false));   // End Site

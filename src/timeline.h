@@ -48,6 +48,8 @@ class Timeline : public QFrame
     void layoutChanged();
     // the joints that have a row (UX phase 3a: changed joints and the selected one)
     const TimelineRows& rows() const { return rows_; }
+    // the row filter (UX job U2, TimelineRows::setFilter): area -1 is every area
+    void setRowFilter(int area,bool allJoints);
 
     // UX phase 3b: a stretch of the timeline (frames and rows) is selected
     // with Shift and a drag or click, or Shift and the arrow keys; Copy, Cut
