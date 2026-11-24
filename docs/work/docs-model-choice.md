@@ -1,6 +1,6 @@
 Branch: docs/model-choice
 Status: done
-Pull request: pending
+Pull request: #461
 Files:
 - CLAUDE.md
 - docs/work/docs-model-choice.md
