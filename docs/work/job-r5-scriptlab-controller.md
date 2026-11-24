@@ -9,7 +9,6 @@ Files:
 - CMakeLists.txt
 - tests/scriptlabcontroller/**
 - docs/DEV.md
-- docs/CODE_AUDIT.md
 
 ## What
 

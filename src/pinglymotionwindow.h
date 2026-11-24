@@ -77,6 +77,7 @@ class HintCards;
 class HelperMode;
 class ViewToolbar;
 class ScriptLabPanel;
+class ScriptLabController;
 class LibraryPanel;
 class FiguresBox;
 class UndoController;
@@ -470,7 +471,9 @@ class PinglyMotionWindow : public QMainWindow
     QDockWidget* m_timelineDock=nullptr;
     QDockWidget* m_jointsDock=nullptr;
     QDockWidget* m_jointCardDock=nullptr;
-    // Script Lab (issue 288): hidden until View > Script Lab
+    // Script Lab (issue 288): hidden until View > Script Lab. The controller makes the panel and
+    // its dock and connects them (job R5, src/scriptlabcontroller.h); the two pointers below are its panel and dock
+    ScriptLabController* m_scriptLab=nullptr;
     QDockWidget* m_scriptLabDock=nullptr;
     ScriptLabPanel* m_scriptLabPanel=nullptr;
     // the Library panel (roadmap item 6, issue 19): hidden until View > Library
