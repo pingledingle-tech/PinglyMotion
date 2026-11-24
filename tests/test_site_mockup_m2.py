@@ -14,6 +14,10 @@ DOCS = os.path.join(HERE, "..", "docs")
 MARK = "PROPOSAL, not approved until the project owner says so"
 
 
+# The statuses the register allows (the "Status" line in docs/TEACHING.md).
+STATUSES = ("draft", "reviewed by the owner", "in the program")
+
+
 def read(*parts):
     with open(os.path.join(DOCS, *parts), encoding="utf-8") as f:
         return f.read()
@@ -54,7 +58,10 @@ class MockupTwo(unittest.TestCase):
             self.assertIn(rid, rows, rid)
             self.assertEqual(html.unescape(rows[rid][3]), text, rid)
             self.assertEqual(rows[rid][1], place, rid)
-            self.assertTrue(rows[rid][4].startswith("draft"), rid)
+            self.assertTrue(rows[rid][4].startswith(STATUSES), rid)
+
+    def test_register_defines_the_statuses(self):
+        self.assertIn("`draft`, `reviewed by the owner`, or `in the program`", read("TEACHING.md"))
 
     def test_register_has_no_extra_mockup_two_rows(self):
         texts = mockup_texts()
