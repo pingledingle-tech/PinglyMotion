@@ -1,5 +1,5 @@
 Branch: job/ux-b-scriptlab-window
-Status: active
+Status: done
 Pull request: #464
 Files:
 - src/scriptlab/scriptlabpanel.*
