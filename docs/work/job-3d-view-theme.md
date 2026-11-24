@@ -1,5 +1,5 @@
 Branch: job/3d-view-theme
-Status: active
+Status: done
 Pull request: #472
 Files:
 - src/viewcolours.h
