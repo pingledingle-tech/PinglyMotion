@@ -1,6 +1,6 @@
 Branch: ci/work-board-warning
 Status: done
-Pull request: pending
+Pull request: #465
 Files:
 - .github/workflows/work-board.yml
 - CLAUDE.md
