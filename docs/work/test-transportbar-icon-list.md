@@ -1,6 +1,6 @@
 Branch: test/transportbar-icon-list
-Status: active
-Pull request: pending
+Status: done
+Pull request: #451
 Files:
 - tests/transportbar/tst_transportbar.cpp
 
