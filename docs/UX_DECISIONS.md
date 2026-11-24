@@ -508,7 +508,7 @@ What was drawn, and what it answers in the owner's notes:
 10. HUD on screen: should a HUD show in a corner of the 3D view and take clicks as touches?
 11. Improve a setup: should improving a finished setup be its own page, as drawn?
 
-Not drawn: the web version (waiting for the owner), text-size polish of the new parts beyond what the mockup's own scale does, and the look of each part in the program, which goes to the combined review once built. Checked in a browser (Chrome, headless) on the branch: wide, medium and one-column layouts, dark and light themes, text at 100 and 200 percent, the side tabs with the mouse and the arrow keys, the Script Lab place switch, the menu box, Lock all with the chain lines, recording and the player, the restriction drop-downs, the help view with Show me, the hint card that stays closed, the prop arrows, Ctrl rings and Ctrl+Shift squares, and switching back to the approved mockup.
+Not drawn: the web version (decided on 24 November 2026, 12:10, time not set; [DECISIONS.md](DECISIONS.md)), text-size polish of the new parts beyond what the mockup's own scale does, and the look of each part in the program, which goes to the combined review once built. Checked in a browser (Chrome, headless) on the branch: wide, medium and one-column layouts, dark and light themes, text at 100 and 200 percent, the side tabs with the mouse and the arrow keys, the Script Lab place switch, the menu box, Lock all with the chain lines, recording and the player, the restriction drop-downs, the help view with Show me, the hint card that stays closed, the prop arrows, Ctrl rings and Ctrl+Shift squares, and switching back to the approved mockup.
 
 ## 9. Build order
 
