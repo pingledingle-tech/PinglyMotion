@@ -22,7 +22,6 @@ Files:
 - tests/guidance/**
 - tests/scriptlabpanel/**
 - tests/scriptlabbeginner/**
-- tests/CMakeLists.txt
 - translations/pinglymotion_en.ts
 - docs/SCRIPT_LAB.md
 - docs/UX_DECISIONS.md
