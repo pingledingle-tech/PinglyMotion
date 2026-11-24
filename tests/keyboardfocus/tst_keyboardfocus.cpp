@@ -216,6 +216,11 @@ namespace
       const QImage before = w->grab().toImage();
       focusOwner->setFocus(Qt::TabFocusReason);
       settle();
+      // what a Tab key press sets: the styles draw their focus marks. Newer Qt takes the mark away again
+      // when the focus moves, so it is set once more now that the control has the focus
+      w->window()->setAttribute(Qt::WA_KeyboardFocusChange, true);
+      w->update();
+      settle();
       if (!focusOwner->hasFocus())
       {
         out << QStringLiteral("%1: %2 does not take the focus").arg(where, label(w));
