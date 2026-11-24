@@ -80,6 +80,7 @@ class ScriptLabFrame;
 class ScriptLabSection;
 class SphereControls;
 class LabFolderTree;
+class ChannelMapView;
 namespace lsl { class Session; }
 class QLabel;
 class QLineEdit;
@@ -192,6 +193,18 @@ class ScriptLabPanel : public QWidget
     bool setRecording(bool on);
     // replays the recipe now, as Replay now does; false when refused (the line says why)
     bool replayNow();
+    // --- the channel map (job A4): who talks to whom in the last folder run (LabChannelMap), in the
+    // folding part "Who talks to whom" after the event log. Shown while a folder is watched as one
+    // object; folded in Beginner mode, open in Expert mode (switching the mode folds or opens it).
+    ScriptLabSection* mapSection() const { return m_mapSection; }
+    ChannelMapView* channelMap() const { return m_mapView; }
+    QLabel* mapLine() const { return m_mapLine; }
+    QLabel* mapProblems() const { return m_mapProblems; }
+    // a box: picks its prim in the tree (and lights its prop when selection follows); false for a
+    // box that is not a prim of the object
+    bool activateMapBox(int box);
+    // an arrow: shows the script line that sent it in the editor; false when it came from outside
+    bool activateMapArrow(int arrow);
     // Expert mode (View > Expert mode): the panel starts with UserSettings and follows it
     void setExpertMode(bool expert);
     bool expertMode() const { return m_expert; }
@@ -573,6 +586,13 @@ class ScriptLabPanel : public QWidget
     ScriptLabObjectsView* m_objectsView = nullptr;
 
     QPointer<LabWatcher> m_watcher;
+    // job A4
+    void refreshChannelMap(const QJsonObject& folder);
+    ScriptLabSection* m_mapSection = nullptr;
+    ChannelMapView* m_mapView = nullptr;
+    QLabel* m_mapLine = nullptr;
+    QLabel* m_mapProblems = nullptr;
+    QString m_mapKey;
     QTabWidget* m_tabs = nullptr;
     QLineEdit* m_liveFolder = nullptr;
     QPushButton* m_watch = nullptr;

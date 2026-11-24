@@ -259,7 +259,7 @@ QString LabBeginner::copyExample(const LabExample& example, const QString& root,
 
 QList<LabBeginner::Tip> LabBeginner::jargonTips()
 {
-  // docs/TEACHING.md, LABNEW-30 to LABNEW-37, in the order they show (one at a time)
+  // docs/TEACHING.md, LABNEW-30 to LABNEW-37 and LABMAP-10 and LABMAP-11, in the order they show (one at a time)
   return {
     {"prim", QObject::tr("Prim"), QObject::tr("One part of an object. Each folder is one prim.")},
     {"rootPrim", QObject::tr("Root prim"), QObject::tr("The main part of the object. It is the folder Root.")},
@@ -269,6 +269,9 @@ QList<LabBeginner::Tip> LabBeginner::jargonTips()
     {"rlv", QObject::tr("RLV"), QObject::tr("Rules a script sends to your viewer, like no detaching.")},
     {"rlva", QObject::tr("RLVa"), QObject::tr("A newer kind of RLV, used in Firestorm and other viewers.")},
     {"held", QObject::tr("N held"), QObject::tr("How many RLV rules hold the avatar right now.")},
+    // job A4, LABMAP-10 and LABMAP-11: by the channel map
+    {"channel", QObject::tr("Channel"), QObject::tr("A number that scripts talk on. Only listeners on it hear.")},
+    {"listener", QObject::tr("Listener"), QObject::tr("A script that waits for messages on one channel.")},
   };
 }
 

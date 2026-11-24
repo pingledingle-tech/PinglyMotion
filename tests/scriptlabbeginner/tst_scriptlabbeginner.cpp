@@ -38,6 +38,7 @@
 #include <cmath>
 
 #include "propmanager.h"
+#include "scriptlab/channelmapview.h"
 #include "scriptlab/labbeginner.h"
 #include "scriptlab/labdialogbox.h"
 #include "scriptlab/labeditor.h"
@@ -142,6 +143,7 @@ class TestScriptLabBeginner : public QObject
     void menuBoxAtTheClick();
     void recordAndReplay();
     void menuBoxTextBox();
+    void channelMap();
 
   private:
     void setUpPanel(ScriptLabPanel& panel, LabWatcher& watcher, RlvState& state, const QString& root, FakeScene& scene);
@@ -571,8 +573,8 @@ void TestScriptLabBeginner::jargonTips()
   const QList<LabBeginner::Tip> tips = LabBeginner::jargonTips();
   QStringList keys, words;
   for (const LabBeginner::Tip& t : tips) { keys << QLatin1String(t.key); words << t.word; verifyShortSentences(t.text); }
-  QCOMPARE(keys, QStringList({"prim", "rootPrim", "notecard", "sandbox", "viewerRules", "rlv", "rlva", "held"}));
-  QCOMPARE(words, QStringList({"Prim", "Root prim", "Notecard", "Sandbox", "Viewer rules", "RLV", "RLVa", "N held"}));
+  QCOMPARE(keys, QStringList({"prim", "rootPrim", "notecard", "sandbox", "viewerRules", "rlv", "rlva", "held", "channel", "listener"}));
+  QCOMPARE(words, QStringList({"Prim", "Root prim", "Notecard", "Sandbox", "Viewer rules", "RLV", "RLVa", "N held", "Channel", "Listener"}));
   QCOMPARE(LabBeginner::jargonTip("prim").text, QString("One part of an object. Each folder is one prim."));
   QCOMPARE(LabBeginner::jargonTip("held").text, QString("How many RLV rules hold the avatar right now."));
 
@@ -583,7 +585,7 @@ void TestScriptLabBeginner::jargonTips()
   FakeScene scene;
   setUpPanel(panel, watcher, state, dir.path(), scene);
   panel.setHintsOn(true);
-  QCOMPARE(panel.tipCards().size(), 8);
+  QCOMPARE(panel.tipCards().size(), 10);
   QVERIFY(!panel.shownTip());   // value first: nothing explained before something is watched
   QVERIFY(panel.makeExampleProject());
   QVERIFY(panel.shownTip());
@@ -1133,6 +1135,140 @@ void TestScriptLabBeginner::recordAndReplay()
   QVERIFY(!watcher.recording());
   QVERIFY(!record->isVisibleTo(&panel));
   QVERIFY(!panel.recipeSection()->isVisibleTo(&panel));
+}
+
+// job A4: the channel map of a watched folder: its boxes and arrows, the error for a channel nobody
+// listens on, a click on an arrow shows the line that sent it, a click on a box picks its prim, the
+// keys, folded for beginners and open for experts, the word tips by the map, and the theme colours
+void TestScriptLabBeginner::channelMap()
+{
+  QTemporaryDir dir;
+  const QString top = dir.filePath("Gear");
+  QVERIFY(writeFile(top + "/Root/hub.lsl",
+                    "integer CMD = -77;\n"
+                    "default\n"
+                    "{\n"
+                    "    state_entry()\n"
+                    "    {\n"
+                    "        llListen(CMD, \"\", NULL_KEY, \"\");\n"
+                    "    }\n"
+                    "    listen(integer channel, string name, key id, string message)\n"
+                    "    {\n"
+                    "        llMessageLinked(LINK_ALL_OTHERS, 5, message, NULL_KEY);\n"
+                    "    }\n"
+                    "}\n"));
+  QVERIFY(writeFile(top + "/Collar/collar.lsl",
+                    "default\n"
+                    "{\n"
+                    "    state_entry()\n"
+                    "    {\n"
+                    "        llSay(7, \"hello\");\n"
+                    "        llSay(-77, \"lock\");\n"
+                    "    }\n"
+                    "    link_message(integer sender, integer num, string str, key id)\n"
+                    "    {\n"
+                    "        llOwnerSay(\"@detach=n\");\n"
+                    "    }\n"
+                    "}\n"));
+  UserSettings::setExpertMode(false);
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  QVERIFY(!panel.mapSection()->isVisibleTo(&panel));   // nothing watched: no map
+  QVERIFY(panel.watchFolder(top));
+  ScriptLabSection* map = panel.mapSection();
+  QCOMPARE(map->key(), QString("map"));
+  QCOMPARE(map->title(), QString("Who talks to whom"));
+  QVERIFY(map->isVisibleTo(&panel));
+  QVERIFY(!map->isExpanded());   // Beginner mode: folded
+  QCOMPARE(map->count(), QString("4 messages, 1 problem"));
+  QCOMPARE(panel.mapLine()->text(), QString("Each box is a part. Each arrow is a message, with its channel."));
+  QCOMPARE(panel.mapProblems()->text(), QString("1 arrow reached nobody. It has a cross and says why."));
+  ChannelMapView* view = panel.channelMap();
+  QCOMPARE(view->toolTip(), QString("Click a box to pick it in the tree. Click an arrow to see the line that sent it."));
+  const LabChannelMap::Map& m = view->map();
+  QStringList boxes;
+  for (const LabChannelMap::Box& b : m.boxes) boxes << b.label();
+  QCOMPARE(boxes, QStringList({"Root", "Collar", "Your viewer (RLV)"}));
+  QCOMPARE(m.arrows.size(), 4);
+  QCOMPARE(m.arrows[0].error, QString("Nobody listens on channel 7."));
+  QCOMPARE(m.arrows[0].label(), QString("say on channel 7: \"hello\""));
+  QCOMPARE(view->partText(0, ChannelMapView::ArrowPart),
+           QString("Collar to nobody: say on channel 7: \"hello\". Nobody listens on channel 7. Click to see the script line that sent it."));
+  QCOMPARE(view->partText(1, ChannelMapView::ToPart), QString("Root. A part of the object (prim 1). Click to pick it."));
+
+  // Expert mode opens it, Beginner mode folds it again
+  panel.setExpertMode(true);
+  QVERIFY(map->isExpanded());
+  panel.setExpertMode(false);
+  QVERIFY(!map->isExpanded());
+  map->setExpanded(true);
+
+  // a click on the arrow of the link message shows hub.lsl at its line 10
+  view->resize(800, view->sizeHint().height());
+  QCOMPARE(view->hitAt(view->partRect(2, ChannelMapView::ArrowPart).center()).row, 2);
+  QTest::mouseClick(view, Qt::LeftButton, Qt::NoModifier, view->partRect(2, ChannelMapView::ArrowPart).center());
+  QCOMPARE(panel.shownScript(), QString("Root/hub.lsl"));
+  QCOMPARE(panel.scriptView()->textCursor().blockNumber(), 9);
+  QCOMPARE(panel.scriptView()->textCursor().positionInBlock(), 8);
+  // the arrow to nobody: collar.lsl at line 5, column 9
+  QVERIFY(panel.activateMapArrow(0));
+  QCOMPARE(panel.shownScript(), QString("Collar/collar.lsl"));
+  QCOMPARE(panel.scriptView()->textCursor().blockNumber(), 4);
+  QCOMPARE(panel.scriptView()->textCursor().positionInBlock(), 8);
+  QVERIFY(!panel.activateMapArrow(99));
+
+  // a click on a box picks its prim in the tree and lights up its prop
+  scene.props << "Collar";
+  QTest::mouseClick(view, Qt::LeftButton, Qt::NoModifier, view->partRect(1, ChannelMapView::FromPart).center());
+  QVERIFY(panel.folderTree()->currentItem());
+  QCOMPARE(panel.folderTree()->currentItem(), panel.folderTree()->itemForPrim("Collar"));
+  QCOMPARE(scene.selected, QStringList({"Collar"}));
+  // the viewer is not a prim: nothing to pick
+  QVERIFY(!panel.activateMapBox(2));
+
+  // keys: Up and Down move between rows, Left and Right between the parts, Enter does the click
+  view->setFocus();
+  view->setCurrent(0, ChannelMapView::ArrowPart);
+  QTest::keyClick(view, Qt::Key_Down);
+  QCOMPARE(view->currentRow(), 1);
+  QTest::keyClick(view, Qt::Key_Right);
+  QCOMPARE(view->currentPart(), ChannelMapView::ToPart);
+  QTest::keyClick(view, Qt::Key_Return);
+  QCOMPARE(panel.folderTree()->currentItem(), panel.folderTree()->itemForPrim("Root"));
+  QTest::keyClick(view, Qt::Key_End);
+  QCOMPARE(view->currentRow(), 3);
+  QTest::keyClick(view, Qt::Key_Home);
+  QCOMPARE(view->currentRow(), 0);
+
+  // the theme: a box is filled with surface_raised, its words in text
+  view->setFocus();
+  view->clearFocus();
+  const QImage image = view->grab().toImage();
+  const QRect box = view->partRect(1, ChannelMapView::FromPart);
+  QCOMPARE(image.pixelColor(box.left() + 3, box.center().y()), Theme::color(Theme::Token::SurfaceRaised));
+
+  // the word tips by the map: channel first, then listener (after the others are closed)
+  UserSettings::setScriptLabTipsClosed("prim,rootPrim,notecard,sandbox,viewerRules,rlv,rlva,held");
+  panel.setHintsOn(false);
+  panel.setHintsOn(true);
+  QVERIFY(panel.shownTip());
+  QCOMPARE(panel.shownTip()->key(), QString("channel"));
+  QVERIFY(map->isAncestorOf(panel.shownTip()));
+  QCOMPARE(panel.shownTip()->textLabel()->text(), QString("A number that scripts talk on. Only listeners on it hear."));
+  map->setExpanded(false);
+  QVERIFY(!panel.shownTip());   // folded: the word is not on screen
+  map->setExpanded(true);
+  panel.closeTip("channel");
+  QCOMPARE(panel.shownTip()->key(), QString("listener"));
+  QCOMPARE(panel.shownTip()->textLabel()->text(), QString("A script that waits for messages on one channel."));
+
+  // Stop watching: no map
+  panel.stopWatching();
+  QVERIFY(!map->isVisibleTo(&panel));
+  QVERIFY(view->map().arrows.isEmpty());
 }
 
 QTEST_MAIN(TestScriptLabBeginner)
