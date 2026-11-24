@@ -56,9 +56,18 @@ def key(*keys):
         time.sleep(0.4)
 
 
-def close_animation():
+def file_menu(ups=0):
+    """Opens the File menu with a click and picks an item with the keys, counted from the bottom
+    (Up from nothing selected goes to the last item: Exit, then Close animation, Save props, Open
+    props, Add a second figure) or, with ups=0, the first item: the menu's pixels change with the fonts"""
     click(19, 8)
-    click(80, 313)  # File > Close animation
+    key(*(["Up"] * ups if ups else ["Down"]))
+    key("Return")
+    time.sleep(1.5)
+
+
+def close_animation():
+    file_menu(2)  # File > Close animation
 
 
 def main():
@@ -147,8 +156,7 @@ def main():
         shot("start")
 
         # File > Add a second figure... > From a file... > the file dialog
-        click(19, 8)
-        click(80, 241)
+        file_menu(5)  # File > Add a second figure...
         click(682, 302)
         time.sleep(1)
         xdo("type", "--delay", "40", second)
@@ -173,8 +181,7 @@ def main():
                     shot("after_second_close")
                     if alive("after the last animation was closed"):
                         use("in the empty state", False)
-                        click(19, 8)
-                        click(75, 31)  # File > New animation
+                        file_menu()  # File > New animation
                         time.sleep(2)
                         alive("after a new animation")
         return 0 if not failed else 1
