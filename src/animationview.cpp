@@ -556,18 +556,20 @@ void AnimationView::draw()
   m_ringVisible[0]=m_ringVisible[1]=m_ringVisible[2]=false;
   if(!isValid()) initializeGL();
 
-  const GLfloat clearValue=UserSettings::darkTheme() ? 0.20f : 0.5f;
+  // the background token of the current theme (src/viewcolours.h); asked for every picture,
+  // so switching the theme shows at the next one
+  const QVector3D background=ViewColours::vector(ViewColours::background()).toVector3D();
   if(!m_skinRenderer.isReady())
   {
     // no OpenGL 3.3: nothing can be drawn (the user got a message)
-    glClearColor(clearValue,clearValue,clearValue,1.0f);
+    glClearColor(background.x(),background.y(),background.z(),1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     return;
   }
 
   // fog towards the background colour, the shaders use it (exponential)
   EnvironmentOverride::Scene look;
-  look.background=QVector3D(clearValue,clearValue,clearValue);
+  look.background=background;
   look.fogOn=UserSettings::fog();
   look.fogDensity=0.005f;
   look.fogColour=look.background;
@@ -1842,29 +1844,19 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
         }
       }
       if(selecting) pickName(selectName);
-      if(anim->getMirrored() &&
-          (mirrorSelected==colorName || partSelected==colorName)
-	)
-      {
-        SceneState::setColor(1.0,0.635,0.059,1);
-      }
-      else if(partSelected==colorName)
-        SceneState::setColor(0.6,0.3,0.3,1);
+      // the body's colour from the tokens of the current theme (src/viewcolours.h)
+      using ViewColours::BodyPart;
+      BodyPart bodyPart=BodyPart::Normal;
+      if(partSelected==colorName)
+        bodyPart=BodyPart::Selected;
+      else if(anim->getMirrored() && mirrorSelected==colorName)
+        bodyPart=BodyPart::MirrorPartner;
       else if(m_pull.active && m_pullPreview.contains(motion))
-      {
-        // the pulled limb is highlighted (accent_text, as the mockup's pulled bones)
-        const QVector4D pulled=ViewColours::vector(Theme::color(Theme::Token::AccentText));
-        SceneState::setColor(pulled.x(),pulled.y(),pulled.z(),1);
-      }
+        bodyPart=BodyPart::Pulled;   // as the mockup's pulled bones
       else if(partHighlighted==colorName)
-        SceneState::setColor(0.4,0.5,0.3,1);
-      else
-        SceneState::setColor(0.6,0.5,0.5,1);
-      if(anim->getIK(motion))
-      {
-        const QVector4D color=SceneState::color();
-        SceneState::setColor(color.x(),color.y(),color.z()+0.3f,color.w());
-      }
+        bodyPart=BodyPart::Hovered;
+      const QVector4D bodyColour=ViewColours::vector(ViewColours::body(bodyPart,anim->getIK(motion)));
+      SceneState::setColor(bodyColour.x(),bodyColour.y(),bodyColour.z(),bodyColour.w());
 
       if(mode==MODE_COLLECT)
       {

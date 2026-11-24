@@ -29,7 +29,7 @@ The 3D view (`AnimationView`) draws everything with **OpenGL 3.3 core shaders**.
 - Studio lights that move with the camera: a warm key light, a soft fill, light from above and a darker bounce from below; soft "wrap" shadow edge for skin, a wide soft highlight and a thin rim light. Lighting is done per pixel in linear colour, gamma 2.2 at the end.
 - Options > Light… changes brightness, shine and warmth (`SkinRenderer::Look`, settings `light_brightness`, `light_shine`, `light_warmth`; 50 = standard).
 - Meshes (props, handles, effect markers), lines, rings and the floor share the body's fragment shader, so they get the same light. With `SceneState::setLighting(false)` the plain colour is drawn.
-- Fog: exponential, density 0.005, towards the background colour ("Use fog" in Options > Settings…).
+- Fog: exponential, density 0.005, towards the background colour ("Use fog" in the old Settings window). The background is the `background` token of the current theme and the body's base colour comes from `ViewColours::body` (`src/viewcolours.h`, [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)).
 
 ## Lines
 
