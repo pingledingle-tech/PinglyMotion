@@ -30,10 +30,14 @@
 #ifndef DIALOGFIT_H
 #define DIALOGFIT_H
 
+#include <QList>
+#include <QPointer>
 #include <QRect>
 #include <QSize>
 
 class QDialog;
+class QDockWidget;
+class QMainWindow;
 class QLayout;
 class QScrollArea;
 class QScreen;
@@ -75,6 +79,26 @@ namespace DialogFit
 
   // tests only: pretend every screen has this available area (a null rect: the real screen)
   void setAreaForTests(const QRect& area);
+
+  // Panels (dock widgets) follow the text size too. A docked panel whose smallest width grows at a
+  // larger text size is pushed wider, and the main window used to keep it that wide after Ctrl+0.
+  // measurePanels() notes each panel's size and its smallest size before the text size changes;
+  // followTextSize() then gives each panel its new smallest size plus the room the user had given
+  // it beyond the old smallest size. So 100 -> 200 -> 100 percent ends with every panel exactly as
+  // big as it was at 100 percent. Docked on the left or right: the width; at the top or bottom: the
+  // height; floating: both. A hidden panel, or one that moved in between, is left alone.
+  struct PanelSize
+  {
+    QPointer<QDockWidget> dock;
+    bool floating = false;
+    int area = 0;        // Qt::DockWidgetArea while docked
+    QSize size;
+    QSize least;         // the smallest size its content allowed then
+  };
+  QList<PanelSize> measurePanels(QMainWindow* window, const QList<QDockWidget*>& docks);
+  void followTextSize(QMainWindow* window, const QList<PanelSize>& before);
+  // a panel's smallest size now, at the current text size (its layouts measured again)
+  QSize leastPanelSize(QDockWidget* dock);
 }
 
 #endif

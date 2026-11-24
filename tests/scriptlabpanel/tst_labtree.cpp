@@ -28,8 +28,11 @@
 #include <QTreeWidget>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QTextBrowser>
+#include <QToolButton>
 
 #include "lucideicons.h"
+#include "scriptlab/labhelpview.h"
 #include "scriptlab/labtint.h"
 #include "scriptlab/labtree.h"
 #include "scriptlab/labwatcher.h"
@@ -417,7 +420,7 @@ void TestLabTree::exampleScriptsStaySeparate()
   QVERIFY(panel.tryExampleScripts());
   QVERIFY(!watcher.linkset());
   QVERIFY(panel.section("tree")->isHidden());
-  QVERIFY(panel.section("guide")->isHidden());
+  QVERIFY(!panel.section("guide"));   // the maker guide is in the help view now (UX small fixes)
   QVERIFY(panel.liveStatusText().startsWith("OK: rlv_lock.lsl ran without errors"));
   QCOMPARE(panel.folderTree()->topLevelItemCount(), 0);
   // Watch folder afterwards switches to the folder as one object
@@ -430,7 +433,8 @@ void TestLabTree::exampleScriptsStaySeparate()
   QCOMPARE(panel.folderTree()->topLevelItemCount(), 0);
 }
 
-// the maker guide: folded at first, on the empty page and while the object is watched
+// the maker guide moved out of the Live scripts page to the help view behind the ? button (UX small
+// fixes, the project owner, 24 Nov 2026: "How to lay out this folder" looked like a function)
 void TestLabTree::guide()
 {
   RlvState state;
@@ -438,33 +442,41 @@ void TestLabTree::guide()
   ScriptLabPanel panel;
   panel.setState(&state);
   panel.setWatcher(&watcher);
-  ScriptLabSection* guide = panel.section("guide");
-  QVERIFY(guide);
-  QVERIFY(!guide->isHidden());
-  QVERIFY(!guide->isExpanded());
-  QCOMPARE(guide->title(), QString("How to lay out the folder"));
-  // job U3: the guide in two parts, the rules and the warnings, each with its heading
-  QCOMPARE(panel.guideRulesHeading()->text(), QString("Rules"));
-  QCOMPARE(panel.guideText()->text(), QString("One folder is one object. Each subfolder is one prim.\n"
-                                              "Files in the top folder or in Root form the root prim.\n"
-                                              "Put scripts (.lsl) and notecards (.txt) in their prim's folder.\n"
-                                              "Give every script and notecard its own name."));
-  QCOMPARE(panel.guideWarningsHeading()->text(), QString("Warnings"));
-  QCOMPARE(panel.guideWarnings()->text(), QString("Copy scripts from Second Life by hand: select all, copy, paste.\n"
-                                                  "The sandbox is never the same as Second Life. Test there last."));
-  QCOMPARE(panel.guideWarningsHeading()->palette().color(QPalette::WindowText),
-           Theme::color(Theme::Token::Warning, ScriptLabPanel::isDark(panel.palette())));
-  for (QLabel* part : {panel.guideText(), panel.guideWarnings()})
-    for (const QString& line : part->text().split('\n'))
-      for (const QString& sentence : line.split(". "))
+  panel.setExampleObjectsFolder(QStringLiteral(PINGLYMOTION_EXAMPLES_DIR "/objects"));
+  // no folding part for it on the page any more, before or while a folder is watched
+  QVERIFY(!panel.section("guide"));
+  QTemporaryDir dir;
+  QVERIFY(panel.watchFolder(makeObject(dir)));
+  QVERIFY(!panel.section("guide"));
+  // the ? button opens the help view; its topic "How to lay out a folder" has the guide
+  QVERIFY(panel.helpButton());
+  QCOMPARE(panel.helpButton()->accessibleName(), QString("Help for Script Lab"));
+  QTest::mouseClick(panel.helpButton(), Qt::LeftButton);
+  LabHelpView* help = panel.helpView();
+  QVERIFY(help);
+  QVERIFY(help->isVisible());
+  QCOMPARE(help->windowTitle(), QString("Script Lab help"));
+  QVERIFY(help->showTopic("folder"));
+  QCOMPARE(help->topicHeading(), QString("How to lay out a folder"));
+  const QString text = help->topicText();
+  for (const QString& line : {QString("Rules"),
+                              QString("One folder is one object. Each subfolder is one prim."),
+                              QString("Files in the top folder or in Root form the root prim."),
+                              QString("Put scripts (.lsl) and notecards (.txt) in their prim's folder."),
+                              QString("Give every script and notecard its own name."),
+                              QString("Warnings"),
+                              QString("Copy scripts from Second Life by hand: select all, copy, paste."),
+                              QString("The sandbox is never the same as Second Life. Test there last."),
+                              QString("MyObject/        one object"),
+                              QString("  Root/          the root prim")})
+    QVERIFY2(text.contains(line), qPrintable(line + "\n---\n" + text));
+  // the warnings heading has the warning colour; the example is in a fixed-width block
+  const QString html = help->textView()->toHtml();
+  QVERIFY(html.contains(Theme::color(Theme::Token::Warning, ScriptLabPanel::isDark(panel.palette())).name(), Qt::CaseInsensitive));
+  for (const QString& line : text.split('\n'))
+    for (const QString& sentence : line.split(". "))
+      if (!line.startsWith(' ') && !line.contains('/'))
         QVERIFY2(sentence.split(' ', Qt::SkipEmptyParts).size() <= 12, qPrintable(sentence));
-  QVERIFY(panel.guideExample()->text().startsWith("MyObject/        one object\n  Root/          the root prim\n"));
-  QCOMPARE(panel.guideExample()->font().family(), QFontDatabase::systemFont(QFontDatabase::FixedFont).family());   // the system's fixed-width font
-  QTest::mouseClick(guide->header(), Qt::LeftButton);
-  QVERIFY(guide->isExpanded());
-  QVERIFY(UserSettings::scriptLabParts().contains("guide=open"));
-  ScriptLabPanel next;
-  QVERIFY(next.section("guide")->isExpanded());   // remembered
 }
 
 // the dots follow the theme
@@ -487,7 +499,7 @@ void TestLabTree::dotsInBothThemes()
   }
 }
 
-// keyboard: after Show effects comes the Object part, its tree, then the guide, then the Script part
+// keyboard: after Show effects comes the Object part, its tree, then the Script part
 void TestLabTree::tabOrder()
 {
   ScriptLabPanel panel;
@@ -501,8 +513,7 @@ void TestLabTree::tabOrder()
   // job U3: the switch that links the tree with the 3D view comes before the tree
   QCOMPARE(next(panel.section("tree")->header()), static_cast<QWidget*>(panel.followSelectionBox()));
   QCOMPARE(next(panel.followSelectionBox()), static_cast<QWidget*>(panel.folderTree()));
-  QCOMPARE(next(panel.folderTree()), static_cast<QWidget*>(panel.section("guide")->header()));
-  QCOMPARE(next(panel.section("guide")->header()), static_cast<QWidget*>(panel.section("script")->header()));
+  QCOMPARE(next(panel.folderTree()), static_cast<QWidget*>(panel.section("script")->header()));
 }
 
 // props as prims (job E): the tints follow the "Show effects in 3D view" box and the folder runs

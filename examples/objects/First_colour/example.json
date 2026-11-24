@@ -57,7 +57,7 @@
     {
       "id": "EXCOLOUR-06",
       "part": "step",
-      "text": "Open Script Lab and pick Live scripts.",
+      "text": "Open Script Lab with its button in the top bar. Live scripts is its first tab.",
       "control": "Live scripts"
     },
     {
@@ -69,7 +69,7 @@
     {
       "id": "EXCOLOUR-08",
       "part": "step",
-      "text": "Tick Show effects in 3D view.",
+      "text": "Press Show effects in 3D view, so it shows a tick.",
       "control": "Show effects in 3D view"
     },
     {

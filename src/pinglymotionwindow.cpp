@@ -91,6 +91,7 @@
 #include "jointlist.h"
 #include "lucideicons.h"
 #include "textsize.h"
+#include "dialogfit.h"
 #include "panelcontent.h"
 #include "selectedjointpanel.h"
 #include "panellayout.h"
@@ -1613,6 +1614,11 @@ void PinglyMotionWindow::buildHintCards()
     if(m_hintsAction) m_hintsAction->setChecked(false);
     statusBar()->showMessage(GuidanceSpec::tr(GuidanceSpec::hintsOffMessage,"HintCard"),8000);
   });
+  // the close button or Esc on a card closes it; the next card waits (UX small fixes)
+  connect(m_hintCards,&HintCards::cardClosed,this,[this]()
+  {
+    statusBar()->showMessage(GuidanceSpec::tr(GuidanceSpec::closedMessage,"HintCard"),8000);
+  });
   // turning a joint with a slider also counts, as dragging a ring does (partDragged)
   for(QSlider* slider : {ui->xRotationSlider,ui->yRotationSlider,ui->zRotationSlider})
   {
@@ -2153,6 +2159,8 @@ void PinglyMotionWindow::changeEvent(QEvent* event)
 void PinglyMotionWindow::setTextSizePercent(int percent)
 {
   UserSettings::setTextSizePercent(percent);
+  // the panels' sizes at the old text size, so Ctrl+0 brings them back exactly (UX small fixes)
+  const QList<DialogFit::PanelSize> panels=DialogFit::measurePanels(this,panelDocks());
   // every widget gets a font change event; this window's changeEvent fits the panels
   TextSize::apply(UserSettings::textSizePercent());
   if(m_textSizeAction)
@@ -2160,6 +2168,9 @@ void PinglyMotionWindow::setTextSizePercent(int percent)
   // rearranged at once, before the window is laid out for the new size, so a
   // layout that no longer fits never makes the window grow
   updateReflow();
+  // then each panel gets its new smallest size plus the room the user gave it: a panel pushed
+  // wider at 200 percent is as wide again as before when the text goes back (DialogFit::followTextSize)
+  QTimer::singleShot(0,this,[this,panels]() { DialogFit::followTextSize(this,panels); });
 }
 
 // UX phase 1d: Setup, reachable from the gear button in the top bar, View > Setup and Help >

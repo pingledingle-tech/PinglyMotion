@@ -3,7 +3,7 @@
  * docs/mockup/index.html, #hintcard and CARDS)
  *
  * One small card at a time stands by the part of the window it talks about
- * ("Pick a joint", "Pull a limb", ...), with Next and "Turn hints off". It
+ * ("Pick a joint", "Pull a limb", ...), with Next, a close button and "Turn hints off". It
  * shows only while hints are on (Help > Show hints, Setup, the Tips switch),
  * an animation is open and the part it talks about is on screen. A card
  * whose job is already done (a joint picked, a limb pulled, a joint turned)
@@ -53,8 +53,10 @@ class HintCard : public QFrame
     QWidget* dots() const { return m_dots; }
 
   signals:
-    // Next, the close button and Esc on the card all go to the next card
+    // Next goes to the next card
     void nextRequested();
+    // the close button and Esc on the card close it; no next card shows by itself (UX small fixes)
+    void closeRequested();
     void hintsOffRequested();
 
   protected:
@@ -98,8 +100,14 @@ class HintCards : public QObject
     void setPicked(bool picked);
     void markPulled();
     void markTurned();
-    // the next card (Next, the close button, Esc on the card)
+    // the next card (Next on the card)
     void next();
+    // the close button or Esc on the card: this card counts as seen, and no card shows again until
+    // hints are turned off and on (Help > Show hints) or the program starts again (UX small fixes;
+    // the project owner, 24 Nov 2026: the cross went on to the next hint instead of closing)
+    void close();
+    // true after close(), until hints are turned off and on again
+    bool closed() const { return m_closed; }
     // start again from the first card (not used by the program yet; tests)
     void restart();
     // decide again which card shows and where; called after anything that may change it
@@ -108,6 +116,8 @@ class HintCards : public QObject
   signals:
     // "Turn hints off" was pressed: the window turns hints off everywhere
     void hintsOffRequested();
+    // the card was closed with its close button or Esc: the window says so in the status line
+    void cardClosed();
 
   protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -127,6 +137,7 @@ class HintCards : public QObject
     bool m_pulled = false;
     bool m_turned = false;
     bool m_refreshing = false;
+    bool m_closed = false;
 };
 
 #endif

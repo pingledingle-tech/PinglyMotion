@@ -5,6 +5,8 @@
  */
 #include "aiconnectdialog.h"
 
+#include <algorithm>
+
 #include <QButtonGroup>
 #include <QClipboard>
 #include <QDir>
@@ -24,6 +26,42 @@
 
 namespace
 {
+  // The pages on top of each other, measured by the page that shows only. QStackedWidget leaves
+  // a page with an Ignored height out of its size hint, but its height for a given width (used
+  // as soon as a page has wrapping text) takes the tallest page of all. After a text size change
+  // that made the dialog as tall as the tallest page, also after Ctrl+0 (UX small fixes).
+  class ShownPageStack : public QStackedWidget
+  {
+    public:
+      using QStackedWidget::QStackedWidget;
+
+      QSize sizeHint() const override
+      {
+        QSize s = QStackedWidget::sizeHint();
+        if (const QWidget* page = currentWidget()) s.setHeight(pageHeight(page, s.width()));
+        return s;
+      }
+
+      bool hasHeightForWidth() const override
+      {
+        return currentWidget() && currentWidget()->hasHeightForWidth();
+      }
+
+      int heightForWidth(int width) const override
+      {
+        const QWidget* page = currentWidget();
+        return page ? pageHeight(page, width) : QStackedWidget::heightForWidth(width);
+      }
+
+    private:
+      int pageHeight(const QWidget* page, int width) const
+      {
+        const int frame = 2 * frameWidth();
+        const int h = page->hasHeightForWidth() ? page->heightForWidth(width - frame) : page->sizeHint().height();
+        return std::max(h, page->minimumSizeHint().height()) + frame;
+      }
+  };
+
   QIcon icon(const char* name)
   {
     return LucideIcons::icon(QLatin1String(name), Theme::color(Theme::Token::Text), Theme::color(Theme::Token::TextDisabled));
@@ -99,7 +137,7 @@ namespace
 
 AiConnectDialog::AiConnectDialog(bool running, QWidget* parent) :
   QDialog(parent),
-  m_pages(new QStackedWidget(this)),
+  m_pages(new ShownPageStack(this)),
   m_claudeRadio(nullptr), m_chatGptRadio(nullptr), m_otherRadio(nullptr),
   m_turnOn(nullptr), m_chatGptResult(nullptr), m_claudeMessage(nullptr), m_otherMessage(nullptr)
 {
@@ -361,8 +399,15 @@ void AiConnectDialog::showPage(Page page)
 {
   m_pages->setCurrentIndex(page);
   // only the shown page counts for the size: each AI shows only its own steps
+  // (only the height policy changes: a page of wrapping text keeps its height-for-width, so the
+  // dialog measures the same before and after a text size change)
   for (int i = 0; i < m_pages->count(); ++i)
-    m_pages->widget(i)->setSizePolicy(QSizePolicy::Preferred, i == page ? QSizePolicy::Preferred : QSizePolicy::Ignored);
+  {
+    QSizePolicy policy = m_pages->widget(i)->sizePolicy();
+    policy.setHorizontalPolicy(QSizePolicy::Preferred);
+    policy.setVerticalPolicy(i == page ? QSizePolicy::Preferred : QSizePolicy::Ignored);
+    m_pages->widget(i)->setSizePolicy(policy);
+  }
   QRadioButton* radio = page == Claude ? m_claudeRadio : page == ChatGpt ? m_chatGptRadio : page == Other ? m_otherRadio : nullptr;
   if (radio && !radio->isChecked()) radio->setChecked(true);
   m_pages->adjustSize();

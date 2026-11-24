@@ -133,6 +133,7 @@ class TestGuidance : public QObject
     void cardsGoInOrderAndAreRemembered();
     void cardsSkipWhatIsDone();
     void cardButtons();
+    void cardCloseStops();
     void cardStaysByItsPartAndMovesNothing();
     void cardIsDrawnInTheDesignSystemAtEveryTextSize();
 
@@ -528,21 +529,61 @@ void TestGuidance::cardButtons()
   QCOMPARE(card->hintsOffButton()->toolTip(), QStringLiteral("Turn all hints off (Help > Show hints)"));
   QCOMPARE(card->closeButton()->toolTip(), QStringLiteral("Close this hint"));
   QVERIFY(!card->closeButton()->icon().isNull());
-  // Next, the close button and Esc on the card all go to the next card
+  // Next goes to the next card, which shows at once
   card->nextButton()->click();
   QCOMPARE(host.cards->index(), 1);
-  card->closeButton()->click();
-  QCOMPARE(host.cards->index(), 2);
-  card->setFocus();
-  QTest::keyClick(card, Qt::Key_Escape);
-  QCOMPARE(host.cards->index(), 3);
+  QVERIFY(host.cards->cardShown());
+  QCOMPARE(card->titleLabel()->text(), QStringLiteral("Pull a limb"));
   // Turn hints off tells the window; the window turns the setting off, which hides the card
   QSignalSpy spy(host.cards, &HintCards::hintsOffRequested);
   card->hintsOffButton()->click();
   QCOMPARE(spy.count(), 1);
-  QCOMPARE(host.cards->index(), 3);   // it does not use up a card
+  QCOMPARE(host.cards->index(), 1);   // it does not use up a card
   host.cards->setHintsOn(false);
   QVERIFY(!host.cards->cardShown());
+}
+
+// the close button closes the card and stops: no next card shows by itself (the project owner,
+// 24 Nov 2026). Esc on the card does the same. Turning hints off and on shows the next card.
+void TestGuidance::cardCloseStops()
+{
+  Host host;
+  host.cards->setHintsOn(true);
+  host.cards->setAnimationOpen(true);
+  HintCard* card = host.cards->card();
+  QSignalSpy closed(host.cards, &HintCards::cardClosed);
+  QVERIFY(host.cards->cardShown());
+  QCOMPARE(card->titleLabel()->text(), QStringLiteral("Pick a joint"));
+  card->closeButton()->click();
+  QVERIFY(!host.cards->cardShown());
+  QVERIFY(host.cards->closed());
+  QCOMPARE(closed.count(), 1);
+  // the closed card counts as seen
+  QCOMPARE(host.cards->index(), 1);
+  QCOMPARE(UserSettings::hintCard(), 1);
+  // nothing the user does brings a card back by itself
+  host.cards->setPicked(true);
+  host.cards->markPulled();
+  host.cards->setAnimationOpen(false);
+  host.cards->setAnimationOpen(true);
+  host.cards->refresh();
+  QVERIFY(!host.cards->cardShown());
+  // hints off and on (Help > Show hints twice): the next card waiting shows
+  host.cards->setHintsOn(false);
+  host.cards->setHintsOn(true);
+  QVERIFY(host.cards->cardShown());
+  QCOMPARE(card->titleLabel()->text(), QStringLiteral("Turn it"));
+  QVERIFY(!host.cards->closed());
+  // Esc on the card closes it too
+  card->setFocus();
+  QTest::keyClick(card, Qt::Key_Escape);
+  QVERIFY(!host.cards->cardShown());
+  QCOMPARE(host.cards->index(), 3);
+  QCOMPARE(closed.count(), 2);
+  // the status line text
+  QCOMPARE(QString::fromLatin1(GuidanceSpec::closedMessage),
+           QStringLiteral("Hint closed. Turn Help > Show hints off and on for the next one."));
+  UserSettings::setHintCard(0);
 }
 
 void TestGuidance::cardStaysByItsPartAndMovesNothing()
@@ -689,6 +730,12 @@ void TestGuidance::windowWiringIsInPlace()
   QVERIFY(source.contains(QStringLiteral("m_hintCards->markPulled();")));
   QVERIFY(source.contains(QStringLiteral("m_hintCards->markTurned();")));
   QVERIFY(source.contains(QStringLiteral("if(m_hintsAction) m_hintsAction->setChecked(false);")));
+  // a closed card says so in the status line (UX small fixes)
+  QVERIFY(source.contains(QStringLiteral("connect(m_hintCards,&HintCards::cardClosed,this,[this]()")));
+  QVERIFY(source.contains(QStringLiteral("GuidanceSpec::closedMessage")));
+  // the panels follow the text size, so Ctrl+0 brings back their size at 100 percent (UX small fixes)
+  QVERIFY(source.contains(QStringLiteral("DialogFit::measurePanels(this,panelDocks())")));
+  QVERIFY(source.contains(QStringLiteral("DialogFit::followTextSize(this,panels)")));
   // Expert mode shows Paste mirrored and says the mockup's sentence
   QVERIFY(source.contains(QStringLiteral("m_panels->pasteMirrored->setVisible(on);")));
   QVERIFY(source.contains(QStringLiteral("GuidanceSpec::expertOnMessage")));

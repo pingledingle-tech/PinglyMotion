@@ -72,9 +72,9 @@ Guide:
 | EXCOLOUR-03 | Example guide | Word | Prim: one part of an object. Each folder is one prim. | draft | E1, shown by U3 |
 | EXCOLOUR-04 | Example guide | Step 1 (Props) | Start with no props. Pick Props in the Joints panel. | draft | E1, shown by U3 |
 | EXCOLOUR-05 | Example guide | Step 2 (Props) | On Props, press the box button, the first shape button. It is Box 0. | draft | E1, shown by U3 |
-| EXCOLOUR-06 | Example guide | Step 3 (Live scripts) | Open Script Lab and pick Live scripts. | draft | E1, shown by U3 |
+| EXCOLOUR-06 | Example guide | Step 3 (Live scripts) | Open Script Lab with its button in the top bar. Live scripts is its first tab. | draft | E1, shown by U3 |
 | EXCOLOUR-07 | Example guide | Step 4 (Watch folder...) | Press Watch folder. Pick your copy of First_colour. | draft | E1, shown by U3 |
-| EXCOLOUR-08 | Example guide | Step 5 (Show effects in 3D view) | Tick Show effects in 3D view. | draft | E1, shown by U3 |
+| EXCOLOUR-08 | Example guide | Step 5 (Show effects in 3D view) | Press Show effects in 3D view, so it shows a tick. | draft | E1, shown by U3 |
 | EXCOLOUR-09 | Example guide | What you should see | The box turns red. The log says: Box 0 is red now. | draft | E1, shown by U3 |
 | EXCOLOUR-10 | Example guide | What to change next | Open colour.lsl. Change <1.0, 0.0, 0.0> to <0.0, 1.0, 0.0> and save. | draft | E1, shown by U3 |
 | EXCOLOUR-11 | Example guide | What to change next | The box turns green. The three numbers are red, green and blue. | draft | E1, shown by U3 |
@@ -104,8 +104,8 @@ Guide:
 | EXBUTTON-03 | Example guide | Word | Dialog: the small window of buttons a script shows you. | draft | E1, shown by U3 |
 | EXBUTTON-04 | Example guide | Word | Channel: a number scripts use to talk, like a radio channel. | draft | E1, shown by U3 |
 | EXBUTTON-05 | Example guide | Step 1 (Watch folder...) | Press Watch folder. Pick examples, then objects, then Button_HUD. | draft | E1, shown by U3 |
-| EXBUTTON-06 | Example guide | Step 2 (Show effects in 3D view) | Tick Show effects in 3D view. | draft | E1, shown by U3 |
-| EXBUTTON-07 | Example guide | Step 3 (Touch) | Press Touch under Send input. The dialog buttons appear there. | draft | E1, shown by U3 |
+| EXBUTTON-06 | Example guide | Step 2 (Show effects in 3D view) | Press Show effects in 3D view, so it shows a tick. | draft | E1, shown by U3 |
+| EXBUTTON-07 | Example guide | Step 3 (Touch) | Open Send input, low on Live scripts, and press Touch. The dialog buttons appear there. | draft | E1, shown by U3 |
 | EXBUTTON-08 | Example guide | Step 4 (Red) | Press Red in the dialog. | draft | E1, shown by U3 |
 | EXBUTTON-09 | Example guide | What you should see | The flat box beside the figure turns red. The log says: Now red. | draft | E1, shown by U3 |
 | EXBUTTON-10 | Example guide | What to change next | Add a third button, Blue, to the list in llDialog. | draft | E1, shown by U3 |
@@ -175,8 +175,8 @@ Guide:
 | EXGEAR-15 | Example guide | Word | @detach=n: you cannot take the object off. The collar sends it. | draft | E1, shown by U3 |
 | EXGEAR-16 | Example guide | Word | @sendchat=n: you cannot talk in open chat. The gag sends it. | draft | E1, shown by U3 |
 | EXGEAR-17 | Example guide | Step 1 (Watch folder...) | Press Watch folder. Pick examples, then objects, then Gear_set. | draft | E1, shown by U3 |
-| EXGEAR-18 | Example guide | Step 2 (Show effects in 3D view) | Tick Show effects in 3D view. Every piece turns green. | draft | E1, shown by U3 |
-| EXGEAR-19 | Example guide | Step 3 (Touch) | Press Touch under Send input. The dialog buttons appear there. | draft | E1, shown by U3 |
+| EXGEAR-18 | Example guide | Step 2 (Show effects in 3D view) | Press Show effects in 3D view, so it shows a tick. Every piece turns green. | draft | E1, shown by U3 |
+| EXGEAR-19 | Example guide | Step 3 (Touch) | Open Send input, low on Live scripts, and press Touch. The dialog buttons appear there. | draft | E1, shown by U3 |
 | EXGEAR-20 | Example guide | Step 4 (Lock all) | Press Lock all in the dialog. | draft | E1, shown by U3 |
 | EXGEAR-21 | Example guide | Step 5 (Free all) | Press Free all to open everything again. | draft | E1, shown by U3 |
 | EXGEAR-22 | Example guide | What you should see | After Lock all, every piece turns red, and the HUD too. | draft | E1, shown by U3 |
@@ -212,8 +212,8 @@ Guide:
 | EXTIMER-02 | Example guide | Word | State: a mode of the script. This one has default and locked. | draft | E1, shown by U3 |
 | EXTIMER-03 | Example guide | Word | Timer: wakes the script every second, here to count down. | draft | E1, shown by U3 |
 | EXTIMER-04 | Example guide | Step 1 (Watch folder...) | Press Watch folder. Pick examples, then objects, then Timed_lock. | draft | E1, shown by U3 |
-| EXTIMER-05 | Example guide | Step 2 (Show effects in 3D view) | Tick Show effects in 3D view. | draft | E1, shown by U3 |
-| EXTIMER-06 | Example guide | Step 3 (Touch) | Press Touch under Send input. | draft | E1, shown by U3 |
+| EXTIMER-05 | Example guide | Step 2 (Show effects in 3D view) | Press Show effects in 3D view, so it shows a tick. | draft | E1, shown by U3 |
+| EXTIMER-06 | Example guide | Step 3 (Touch) | Open Send input, low on Live scripts, and press Touch. | draft | E1, shown by U3 |
 | EXTIMER-07 | Example guide | What you should see | The ring at the left wrist turns red. | draft | E1, shown by U3 |
 | EXTIMER-08 | Example guide | What you should see | The log counts down: 4 seconds left, 3 seconds left. | draft | E1, shown by U3 |
 | EXTIMER-09 | Example guide | What you should see | After 5 seconds the ring turns green again. | draft | E1, shown by U3 |
@@ -246,8 +246,8 @@ Guide:
 | EXRELAY-03 | Example guide | Word | Relay: passes RLV commands from other objects to your viewer. | draft | E1, shown by U3 |
 | EXRELAY-04 | Example guide | Word | The long key of only f letters means every relay. | draft | E1, shown by U3 |
 | EXRELAY-05 | Example guide | Step 1 (Watch folder...) | Press Watch folder. Pick examples, then objects, then RLV_relay. | draft | E1, shown by U3 |
-| EXRELAY-06 | Example guide | Step 2 (Show effects in 3D view) | Tick Show effects in 3D view. | draft | E1, shown by U3 |
-| EXRELAY-07 | Example guide | Step 3 (Channel) | Type the channel and text shown below into Channel and Text. | draft | E1, shown by U3 |
+| EXRELAY-06 | Example guide | Step 2 (Show effects in 3D view) | Press Show effects in 3D view, so it shows a tick. | draft | E1, shown by U3 |
+| EXRELAY-07 | Example guide | Step 3 (Channel) | Open Send input. Type the RELAY number from relay.lsl into Channel. Type chair,ffffffff-ffff-ffff-ffff-ffffffffffff,@detach=n into Text. | draft | E1, shown by U3 |
 | EXRELAY-08 | Example guide | Step 4 (Say) | Press Say. | draft | E1, shown by U3 |
 | EXRELAY-09 | Example guide | What you should see | The small ball on the chest turns red. | draft | E1, shown by U3 |
 | EXRELAY-10 | Example guide | What you should see | RLV restrictions now lists detach. The answer in the log ends with ok. | draft | E1, shown by U3 |
@@ -295,8 +295,8 @@ Guide:
 | EXWORK-05 | Example guide | Which piece is which | Score_board: the flat box above the bottle. | draft | E1, shown by U3 |
 | EXWORK-06 | Example guide | Word | Alpha: how solid a prim is. 1 is solid, 0 is clear. | draft | E1, shown by U3 |
 | EXWORK-07 | Example guide | Step 1 (Watch folder...) | Press Watch folder. Pick examples, then objects, then Work_system. | draft | E1, shown by U3 |
-| EXWORK-08 | Example guide | Step 2 (Show effects in 3D view) | Tick Show effects in 3D view. | draft | E1, shown by U3 |
-| EXWORK-09 | Example guide | Step 3 (Touch) | Press Touch under Send input. The dialog buttons appear there. | draft | E1, shown by U3 |
+| EXWORK-08 | Example guide | Step 2 (Show effects in 3D view) | Press Show effects in 3D view, so it shows a tick. | draft | E1, shown by U3 |
+| EXWORK-09 | Example guide | Step 3 (Touch) | Open Send input, low on Live scripts, and press Touch. The dialog buttons appear there. | draft | E1, shown by U3 |
 | EXWORK-10 | Example guide | Step 4 (Work) | Press Work in the dialog four times. | draft | E1, shown by U3 |
 | EXWORK-11 | Example guide | What you should see | The bottle gets more solid with every press. | draft | E1, shown by U3 |
 | EXWORK-12 | Example guide | What you should see | At the fourth press the score board turns gold for a second. | draft | E1, shown by U3 |

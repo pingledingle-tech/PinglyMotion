@@ -1766,6 +1766,10 @@ Pick the ones you want.</source>
         <source>Hints off. Turn them on again in Setup or Help &gt; Show hints.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Hint closed. Turn Help &gt; Show hints off and on for the next one.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ImportOptions</name>
@@ -2501,6 +2505,158 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>in %1 prims</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LabHelpView</name>
+    <message>
+        <source>Script Lab help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help topics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How to lay out a folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Words</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Examples</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Example: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script Lab tests Second Life scripts safely on your PC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make the example project first. It shows a result at once.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Then follow the steps of an example.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Make example project on the Live scripts tab.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Show effects in 3D view, so it shows a tick.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click a prop in the 3D view.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help, Script Lab steps shows the steps of the example again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One folder is one object. Each subfolder is one prim.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Files in the top folder or in Root form the root prim.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put scripts (.lsl) and notecards (.txt) in their prim&apos;s folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Give every script and notecard its own name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy scripts from Second Life by hand: select all, copy, paste.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The sandbox is never the same as Second Life. Test there last.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Example</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MyObject/        one object
+  Root/          the root prim
+    main.lsl
+    settings.txt   a notecard
+  Cuff_left/     another prim
+    cuff.lsl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The words Script Lab uses, in plain words.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hints are small cards next to the part they talk about.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The cross closes a hint. Turn Help &gt; Show hints off and on for the next one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A closed word tip in Script Lab does not come back. All the words are under Words here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What it is</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Steps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The pieces</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New words</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You should see</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Then try</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7745,19 +7901,6 @@ Error: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>How to lay out the folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>MyObject/        one object
-  Root/          the root prim
-    main.lsl
-    settings.txt   a notecard
-  Cuff_left/     another prim
-    cuff.lsl</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Folder error: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7822,26 +7965,6 @@ Error: %2</source>
     </message>
     <message>
         <source>Click a piece here to light up its prop in 3D view. Click a prop and its row is picked here.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rules</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>One folder is one object. Each subfolder is one prim.
-Files in the top folder or in Root form the root prim.
-Put scripts (.lsl) and notecards (.txt) in their prim&apos;s folder.
-Give every script and notecard its own name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Warnings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy scripts from Second Life by hand: select all, copy, paste.
-The sandbox is never the same as Second Life. Test there last.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8157,6 +8280,22 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>The map shows the first %1 arrows only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help for Script Lab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Explanations, the words and every example, in a bigger view.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Chosen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not chosen.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
