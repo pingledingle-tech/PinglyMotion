@@ -484,7 +484,13 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // default layout is used once after the move to three panels.
   const PanelLayout::StartupChoice startup=PanelLayout::chooseStartup(
     UserSettings::panelLayout(),UserSettings::panelLayoutVersion(),size(),true);
-  if(startup.useSavedLayout) restoreState(UserSettings::panelLayout(),PanelLayout::CurrentVersion);
+  if(startup.useSavedLayout)
+  {
+    // a floating Script Lab keeps its saved place and size (job UX-B: it opens big only the first time)
+    ScriptLabPanel::setLayoutRestoring(true);
+    restoreState(UserSettings::panelLayout(),PanelLayout::CurrentVersion);
+    ScriptLabPanel::setLayoutRestoring(false);
+  }
   // a floating panel whose place is on no screen any more (second screen
   // unplugged) is pulled back onto one (job P3)
   PanelWindow::pullFloatingPanelsOntoScreen(panelDocks(),PanelWindow::screenRects());
@@ -1943,6 +1949,8 @@ void PinglyMotionWindow::resetPanelLayout()
   m_scriptLabDock->setFloating(false);
   addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
   m_scriptLabDock->hide();
+  // its tabs back in it, Live scripts in front, and big again the next time it opens (job UX-B)
+  m_scriptLabPanel->resetWindows();
   // the library too: a closed tab next to Selected joint
   m_libraryDock->setFloating(false);
   tabifyDockWidget(m_jointCardDock,m_libraryDock);

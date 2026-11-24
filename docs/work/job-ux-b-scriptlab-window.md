@@ -21,8 +21,6 @@ Files:
 - docs/SCRIPT_LAB.md
 - docs/UX_DECISIONS.md
 - docs/TEACHING.md
-- docs/DESIGN_SYSTEM.md
-- docs/ROADMAP.md
 
 ## What
 

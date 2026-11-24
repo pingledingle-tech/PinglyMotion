@@ -125,6 +125,12 @@ namespace
     // two figures (docs/UX_DECISIONS.md 6m), from the approved mockup: add and remove a figure
     {"user-plus",{"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M13 7a4 4 0 1 0-8 0a4 4 0 1 0 8 0z","M19 8L19 14","M22 11L16 11"}},
     {"user-minus",{"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M13 7a4 4 0 1 0-8 0a4 4 0 1 0 8 0z","M22 11L16 11"}},
+    // three <rect width="6" height="6" rx="1" /> as paths: the Script Lab tab "Who talks to whom" (job UX-B,
+    // as Mockup 2 draws it)
+    {"network",{"M17 16h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z",
+      "M3 16h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z",
+      "M10 2h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z",
+      "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3","M12 12V8"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

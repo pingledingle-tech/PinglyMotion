@@ -8,6 +8,11 @@
 #include <QCheckBox>
 #include <QInputDialog>
 #include <QScopeGuard>
+#include <QTimer>
+#include <QGuiApplication>
+#include <QKeySequence>
+#include <QScreen>
+#include <QShortcut>
 #include <QResizeEvent>
 #include <QSizeGrip>
 #include <QMouseEvent>
@@ -298,9 +303,11 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   connect(m_modeRlv, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlv); });
   connect(m_modeRlva, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlva); });
 
-  m_tabs = new QTabWidget(this);
+  // job UX-B: one window with its own tabs; each tab can be popped out into a window of its own
+  m_tabs = new LabTabWidget(this);
   m_tabs->setObjectName("scriptLabTabs");
   m_tabs->setDocumentMode(true);
+  m_tabs->setAccessibleName(tr("Script Lab pages"));
   outer->addWidget(m_tabs, 1);
 
   // --- the page "Type commands": RLV lines typed by hand (issue 288)
@@ -508,13 +515,56 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   commandsScroll->setFrameShape(QFrame::NoFrame);
   commandsScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   commandsScroll->setWidget(commandsPage);
+  m_pages[CommandsPage] = commandsScroll;
 
-  // the Live page first, as in the mockup
+  // the Live page first, as in the mockup; then Type commands, Who talks to whom and Player (job UX-B)
   buildLivePage();
   buildTips();
-  m_tabs->insertTab(CommandsPage, commandsScroll, tr("Type commands"));
-  m_tabs->setTabToolTip(CommandsPage, tr("Commands: type RLV lines by hand"));
+  for (int p = 0; p < PageCount; ++p) addPageTab(Page(p));
   m_tabs->setCurrentIndex(LivePage);
+
+  // --- job UX-B: Pop out beside the tabs (the tab in front gets a window of its own), dragging a
+  // tab out of the bar does the same; Ctrl+Tab and Ctrl+Shift+Tab go round the tabs from anywhere
+  // in the window, also from a text box
+  m_popOutButton = new QToolButton(m_tabs);
+  m_popOutButton->setObjectName("scriptLabPopOut");
+  m_popOutButton->setText(tr("Pop out"));
+  m_popOutButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  m_popOutButton->setAutoRaise(true);
+  m_popOutButton->setFocusPolicy(Qt::StrongFocus);
+  m_popOutButton->setMinimumHeight(ControlCompact);
+  m_popOutButton->setAccessibleName(tr("Pop out this tab"));
+  m_tabs->setCornerWidget(m_popOutButton, Qt::TopRightCorner);
+  connect(m_popOutButton, &QToolButton::clicked, this, [this]() { popOut(currentPage()); });
+  connect(m_tabs->labTabBar(), &LabTabBar::popOutRequested, this, [this](int index, const QPoint& at)
+  {
+    for (int p = 0; p < PageCount; ++p)
+      if (m_tabs->widget(index) == m_pages[p]) { popOut(Page(p), at); return; }
+  });
+  connect(m_tabs, &QTabWidget::currentChanged, this, [this]()
+  {
+    saveWindowState();
+    refreshPopOutButton();
+    refreshTips();   // a word tip shows only on the page in front
+  });
+  auto stepTabs = [this](int step)
+  {
+    const int n = m_tabs->count();
+    if (n > 1) m_tabs->setCurrentIndex((m_tabs->currentIndex() + step + n) % n);
+  };
+  for (const QKeySequence& keys : {QKeySequence(Qt::CTRL | Qt::Key_Tab), QKeySequence(Qt::CTRL | Qt::Key_PageDown)})
+  {
+    QShortcut* next = new QShortcut(keys, this);
+    next->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(next, &QShortcut::activated, this, [stepTabs]() { stepTabs(1); });
+  }
+  for (const QKeySequence& keys : {QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Backtab), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Tab),
+                                   QKeySequence(Qt::CTRL | Qt::Key_PageUp)})
+  {
+    QShortcut* previous = new QShortcut(keys, this);
+    previous->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(previous, &QShortcut::activated, this, [stepTabs]() { stepTabs(-1); });
+  }
 
   connect(m_command, &QLineEdit::returnPressed, this, &ScriptLabPanel::runCommandField);
   connect(m_run, &QPushButton::clicked, this, &ScriptLabPanel::runCommandField);
@@ -562,6 +612,11 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
     connect(s, &ScriptLabSection::expandedChanged, this, [this]() { UserSettings::setScriptLabParts(partsState()); refreshTips(); });
   updateWorkLayout();
   m_chainsReady = true;
+
+  // job UX-B: the tab in front and the popped tabs as last time (their windows show with the panel)
+  applyWindowState(UserSettings::scriptLabWindows());
+  m_windowStateReady = true;
+  refreshPopOutButton();
 }
 
 QStringList ScriptLabPanel::tryLines()
@@ -810,9 +865,9 @@ void ScriptLabPanel::applyStyle()
   m_folderTree->applyStyle(dark);
   m_stepCard->applyStyle(dark);
   for (LabTipCard* tip : m_tipCards) tip->applyStyle(dark);
-  m_tabs->setTabIcon(LivePage, LucideIcons::icon(QStringLiteral("file-code"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
-  if (m_tabs->count() > CommandsPage)
-    m_tabs->setTabIcon(CommandsPage, LucideIcons::icon(QStringLiteral("terminal"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
+  stylePageTabs();
+  m_mapEmpty->setPalette(muted);
+  m_playerEmpty->setPalette(muted);
   for (ScriptLabSection* section : m_sections) section->applyStyle(dark);
   m_sphereControls->applyStyle(dark);
   m_touch->setStyleSheet(normal);
@@ -844,6 +899,9 @@ void ScriptLabPanel::showEvent(QShowEvent* event)
   if (event->spontaneous()) return;   // the window came back from being minimised
   m_hiddenByUser = false;
   applyViewEffects();
+  // job UX-B: without a dock (the tests) the popped tabs follow the panel; in the program they
+  // follow the dock's View item (makeDock)
+  if (!qobject_cast<QDockWidget*>(parentWidget())) setPopWindowsShown(true);
 }
 
 void ScriptLabPanel::hideEvent(QHideEvent* event)
@@ -852,6 +910,7 @@ void ScriptLabPanel::hideEvent(QHideEvent* event)
   if (event->spontaneous()) return;   // the window was minimised: the panel is still "shown"
   m_hiddenByUser = true;
   applyViewEffects();
+  if (!qobject_cast<QDockWidget*>(parentWidget())) setPopWindowsShown(false);
 }
 
 void ScriptLabPanel::changeEvent(QEvent* event)
@@ -1003,7 +1062,8 @@ QDockWidget* ScriptLabPanel::makeDock(QMainWindow* window, ScriptLabPanel* panel
   dock->setObjectName(QString::fromLatin1(DockName));
   dock->setWidget(panel);
   dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
-  dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  // job UX-B: it docks on any side or floats anywhere (the owner: it can be the main focus)
+  dock->setAllowedAreas(Qt::AllDockWidgetAreas);
   dock->setTitleBarWidget(new PanelTitleBar(dock));
 
   QAction* action = dock->toggleViewAction();
@@ -1017,13 +1077,30 @@ QDockWidget* ScriptLabPanel::makeDock(QMainWindow* window, ScriptLabPanel* panel
   dock->hide();
   // the size grip shows while the panel floats (the custom title bar takes the system frame away)
   connect(dock, &QDockWidget::topLevelChanged, panel, [panel](bool floating) { panel->setFloatingGrip(floating); });
+  // job UX-B: big the first time it opens docked and the first time it floats (remembered); the
+  // tabs popped out of it show while it is open and hide while it is closed
+  // Docked: when the user opens it (View, the top bar, Ctrl+Shift+L), not when a saved layout
+  // shows it, after the main window has laid it out (a size given while it is being shown is lost).
+  // Floating: when it becomes a window, at once, so a place the user or the saved layout gives
+  // right after wins; never while the saved layout is being put back (setLayoutRestoring).
+  connect(action, &QAction::triggered, panel, [window, dock](bool open)
+  {
+    if (open) QTimer::singleShot(0, dock, [window, dock]() { if (!dock->isFloating()) openBig(window, dock); });
+  });
+  connect(dock, &QDockWidget::topLevelChanged, panel, [window, dock](bool floating)
+  {
+    if (floating && !s_layoutRestoring) openBig(window, dock);
+  });
+  connect(action, &QAction::toggled, panel, [panel](bool open) { panel->setPopWindowsShown(open); });
+  panel->setPopWindowsShown(action->isChecked());
   return dock;
 }
 
 QSize ScriptLabPanel::defaultSize()
 {
-  // room for the suggestion list with its help and the warnings side by side with the script
-  return QSize(TextSize::scaled(480), TextSize::scaled(720));
+  // room for the suggestion list with its help and the warnings side by side with the script;
+  // job UX-B: and for the four tabs with Pop out beside them, without scroll arrows
+  return QSize(TextSize::scaled(600), TextSize::scaled(720));
 }
 
 QSize ScriptLabPanel::minimumPanelSize()
@@ -1074,6 +1151,25 @@ void ScriptLabPanel::buildLivePage()
   QVBoxLayout* layout = new QVBoxLayout(page);
   layout->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
   layout->setSpacing(SpacingS);
+  // job UX-B: the channel map and record, recipe and player are tabs of their own now
+  QWidget* mapPage = new QWidget(m_tabs);
+  mapPage->setObjectName("scriptLabMapPage");
+  QVBoxLayout* mapLayout = new QVBoxLayout(mapPage);
+  mapLayout->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
+  mapLayout->setSpacing(SpacingS);
+  m_mapEmpty = new QLabel(tr("Watch a folder as one object on Live scripts. Then this page shows who talks to whom."), mapPage);
+  m_mapEmpty->setObjectName("scriptLabMapEmpty");
+  m_mapEmpty->setWordWrap(true);
+  mapLayout->addWidget(m_mapEmpty);
+  QWidget* playerPage = new QWidget(m_tabs);
+  playerPage->setObjectName("scriptLabPlayerPage");
+  QVBoxLayout* playerLayout = new QVBoxLayout(playerPage);
+  playerLayout->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
+  playerLayout->setSpacing(SpacingS);
+  m_playerEmpty = new QLabel(tr("Watch a folder as one object on Live scripts. Then press Record what I do here, and watch your steps again."), playerPage);
+  m_playerEmpty->setObjectName("scriptLabPlayerEmpty");
+  m_playerEmpty->setWordWrap(true);
+  playerLayout->addWidget(m_playerEmpty);
 
   // --- the example's steps (job U3): shown after Make example project and from Help > Script Lab steps
   m_stepCard = new LabStepCard(page);
@@ -1221,7 +1317,7 @@ void ScriptLabPanel::buildLivePage()
 
   // --- job A3: record what I do, and replay it after every save. One button and one line in
   // Beginner mode; the recipe file and Replay now only in Expert mode (charter P5)
-  m_recipeRow = new QWidget(page);
+  m_recipeRow = new QWidget(playerPage);
   m_recipeRow->setObjectName("scriptLabRecipeRow");
   QVBoxLayout* recipeRow = new QVBoxLayout(m_recipeRow);
   recipeRow->setContentsMargins(0, 0, 0, 0);
@@ -1240,9 +1336,9 @@ void ScriptLabPanel::buildLivePage()
   m_recipeStatus->setTextFormat(Qt::PlainText);
   m_recipeStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   recipeRow->addWidget(m_recipeStatus);
-  layout->addWidget(m_recipeRow);
+  playerLayout->addWidget(m_recipeRow);
   connect(m_recordButton, &QPushButton::clicked, this, [this](bool on) { setRecording(on); });
-  m_recipeSection = addSection(QStringLiteral("recipe"), tr("Recipe"), false, page, layout);
+  m_recipeSection = addSection(QStringLiteral("recipe"), tr("Recipe"), false, playerPage, playerLayout);
   m_recipeFileLine = new QLabel(m_recipeSection->body());
   m_recipeFileLine->setObjectName("scriptLabRecipeFile");
   m_recipeFileLine->setWordWrap(true);
@@ -1264,8 +1360,9 @@ void ScriptLabPanel::buildLivePage()
   m_recipeSection->bodyLayout()->addWidget(m_replayButton);
   connect(m_replayButton, &QPushButton::clicked, this, [this] { replayNow(); });
   // --- job B3: the player, the newest replay as a film; shown in Beginner mode too
-  m_player = new LabPlayer(page);
-  layout->addWidget(m_player);
+  m_player = new LabPlayer(playerPage);
+  playerLayout->addWidget(m_player);
+  playerLayout->addStretch(1);
   connect(m_player, &LabPlayer::momentChanged, this, [this] { updatePrimProps(); });
   m_expert = UserSettings::expertMode();
   UserSettings::watchExpertMode(this, [this](bool on) { setExpertMode(on); });
@@ -1355,7 +1452,7 @@ void ScriptLabPanel::buildLivePage()
   // --- job A4: the channel map, who talks to whom in the run (LabChannelMap). Folded in Beginner
   // mode and open in Expert mode (charter P5); a click on a box picks its prim in the tree, a click
   // on an arrow shows the script line that sent it
-  m_mapSection = addSection(QStringLiteral("map"), tr("Who talks to whom"), false, page, layout);
+  m_mapSection = addSection(QStringLiteral("map"), tr("Who talks to whom"), false, mapPage, mapLayout);
   m_mapLine = new QLabel(tr("Each box is a part. Each arrow is a message, with its channel."), m_mapSection->body());
   m_mapLine->setObjectName("scriptLabChannelMapLine");
   m_mapLine->setWordWrap(true);
@@ -1372,6 +1469,7 @@ void ScriptLabPanel::buildLivePage()
   m_mapSection->bodyLayout()->addWidget(m_mapProblems);
   connect(m_mapView, &ChannelMapView::boxActivated, this, [this](int box) { activateMapBox(box); });
   connect(m_mapView, &ChannelMapView::arrowActivated, this, [this](int arrow) { activateMapArrow(arrow); });
+  mapLayout->addStretch(1);
 
   // --- the RLV restrictions now (the same state as the Type commands page)
   m_liveRestrictionsSection = addSection(QStringLiteral("restrictionsNow"), tr("RLV restrictions now"), true, page, layout);
@@ -1441,14 +1539,11 @@ void ScriptLabPanel::buildLivePage()
   layout->addStretch(1);
 
   // the page is taller than a small docked panel: it scrolls instead of forcing the panel's height up
-  QScrollArea* scroll = new QScrollArea(m_tabs);
-  scroll->setObjectName("scriptLabLiveScroll");
-  scroll->setWidgetResizable(true);
-  scroll->setFrameShape(QFrame::NoFrame);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scroll->setWidget(page);
-  m_tabs->insertTab(LivePage, scroll, tr("Live scripts"));
-  m_tabs->setTabToolTip(LivePage, tr("Live: your .lsl scripts run each time you save them"));
+  m_pages[LivePage] = makePageScroll(page, "scriptLabLiveScroll");
+  m_pages[MapPage] = makePageScroll(mapPage, "scriptLabMapScroll");
+  m_pages[PlayerPage] = makePageScroll(playerPage, "scriptLabPlayerScroll");
+  // the tree beside the editor follows the Live page's own width (it may be a window of its own)
+  m_pages[LivePage]->installEventFilter(this);
 
   connect(m_watch, &QPushButton::clicked, this, &ScriptLabPanel::chooseFolder);
   connect(m_makeExample, &QPushButton::clicked, this, &ScriptLabPanel::makeExampleProject);
@@ -1666,6 +1761,8 @@ bool ScriptLabPanel::showLogLine(int logLine)
 
 bool ScriptLabPanel::eventFilter(QObject* watched, QEvent* event)
 {
+  // job UX-B: the Live page changed its width (in the window or in a window of its own)
+  if (watched == m_pages[LivePage] && event->type() == QEvent::Resize) updateWorkLayout();
   // a click on a log line shows its code line (job R3)
   if (m_runLog && watched == m_runLog->viewport() && event->type() == QEvent::MouseButtonRelease)
   {
@@ -1817,7 +1914,8 @@ void ScriptLabPanel::refreshLive()
 
   m_liveFolder->setText(watching ? QDir::toNativeSeparators(m_watcher->folder()) : QString());
   // a folder watch that just started (here or through lab_watch) brings the Live page to the front
-  if (watching && !m_wasWatching) m_tabs->setCurrentIndex(LivePage);
+  // (in the window: a popped-out Live page is not pulled to the front of other programs)
+  if (watching && !m_wasWatching && tabIndex(LivePage) >= 0) m_tabs->setCurrentIndex(tabIndex(LivePage));
   m_wasWatching = watching;
   m_unwatch->setEnabled(watching);
   m_unwatch->setToolTip(watching ? tr("Stop running the scripts when they change")
@@ -2894,7 +2992,7 @@ bool ScriptLabPanel::useChoiceInScript()
   cursor.insertText(in.added);
   cursor.setPosition(in.position + int(code.size()));
   edit->setTextCursor(cursor);
-  m_tabs->setCurrentIndex(LivePage);
+  showPage(LivePage);
   edit->ensureCursorVisible();
   edit->setFocus(Qt::OtherFocusReason);
   setChoiceResult(tr("Put in the script at line %1. Save to run it.").arg(in.line), 1);
@@ -3055,6 +3153,7 @@ void ScriptLabPanel::refreshRecipe()
   if (!m_recipeRow) return;
   const bool object = m_watcher && m_watcher->watching() && m_watcher->linkset();
   m_recipeRow->setVisible(object);
+  m_playerEmpty->setVisible(!object);   // job UX-B: the tab says what fills it
   m_recipeSection->setVisible(object && m_expert);
   // job B3: the player shows the newest replay, when it has moments
   m_player->setExpertMode(m_expert);
@@ -3152,7 +3251,9 @@ int ScriptLabPanel::sideBySideWidth()
 void ScriptLabPanel::updateWorkLayout()
 {
   if (!m_workLayout) return;
-  const bool wide = width() >= sideBySideWidth();
+  // job UX-B: the width of the Live page's own window while it is popped out
+  const int room = m_pages[LivePage] && isPoppedOut(LivePage) ? m_pages[LivePage]->width() : width();
+  const bool wide = room >= sideBySideWidth();
   if (wide == m_sideBySide && m_workLayout->direction() == (wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom)) return;
   m_sideBySide = wide;
   m_workLayout->setDirection(wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom);
@@ -3213,7 +3314,7 @@ bool ScriptLabPanel::makeExampleProject()
     if (steps.at(i).control == QLatin1String("Props") || steps.at(i).control == QLatin1String("Live scripts")) m_doneSteps.insert(i);
   m_stepsShown = true;
   if (!watchFolder(folder)) return false;
-  m_tabs->setCurrentIndex(LivePage);
+  showPage(LivePage);
   m_effectsBox->setChecked(true);
   refreshLive();
   return true;
@@ -3256,13 +3357,13 @@ void ScriptLabPanel::showSteps()
   // no example made yet: the steps of the first example, whose Watch step makes the project
   if (!m_stepExample.isValid()) m_stepExample = LabBeginner::firstExample(exampleObjectsFolder());
   m_stepsShown = true;
-  m_tabs->setCurrentIndex(LivePage);
+  showPage(LivePage);
   refreshSteps();
   if (m_stepCard->isVisible())
   {
     for (QPushButton* b : m_stepCard->stepButtons())
       if (b->isEnabled()) { b->setFocus(Qt::OtherFocusReason); break; }
-    if (QScrollArea* scroll = qobject_cast<QScrollArea*>(m_tabs->widget(LivePage))) scroll->ensureWidgetVisible(m_stepCard);
+    if (QScrollArea* scroll = qobject_cast<QScrollArea*>(m_pages[LivePage])) scroll->ensureWidgetVisible(m_stepCard);
   }
 }
 
@@ -3270,14 +3371,14 @@ void ScriptLabPanel::showLiveScripts()
 {
   // the Live scripts tab to the front; its page from the top, where the folder (or the empty
   // state with Watch folder) is
-  m_tabs->setCurrentIndex(LivePage);
-  QScrollArea* scroll = qobject_cast<QScrollArea*>(m_tabs->widget(LivePage));
+  showPage(LivePage);
+  QScrollArea* scroll = qobject_cast<QScrollArea*>(m_pages[LivePage]);
   if (scroll) scroll->verticalScrollBar()->setValue(0);
   // a short frame round the tab and round the top of the page, so the press always shows
   // something, also when the page was open already (the project owner, 24 Nov 2026)
   const bool dark = isDark(palette());
   QTabBar* bar = m_tabs->tabBar();
-  LabHighlight::show(bar, bar->tabRect(LivePage), dark);
+  if (tabIndex(LivePage) >= 0) LabHighlight::show(bar, bar->tabRect(tabIndex(LivePage)), dark);
   QWidget* top = m_liveEmpty && !m_liveEmpty->isHidden() ? static_cast<QWidget*>(m_liveEmpty) : m_liveFolder;
   if (scroll && top && scroll->widget())
   {
@@ -3286,8 +3387,10 @@ void ScriptLabPanel::showLiveScripts()
     if (top == m_liveFolder) area = QRect(QPoint(0, at.y()), QSize(scroll->widget()->width(), top->height()));
     LabHighlight::show(scroll->widget(), area.adjusted(-SpacingXs, -SpacingXs, SpacingXs, SpacingXs), dark);
   }
-  // the keys go to the tab, so Left and Right move between the pages from here
-  bar->setFocus(Qt::OtherFocusReason);
+  // the keys go to the tab, so Left and Right move between the pages from here (job UX-B: to the
+  // page itself when it is a window of its own)
+  if (tabIndex(LivePage) >= 0) bar->setFocus(Qt::OtherFocusReason);
+  else m_pages[LivePage]->setFocus(Qt::OtherFocusReason);
 }
 
 void ScriptLabPanel::showHelp(const QString& topic)
@@ -3510,6 +3613,7 @@ void ScriptLabPanel::refreshChannelMap(const QJsonObject& folder)
   if (!m_mapSection) return;
   const bool shown = !folder.isEmpty();
   m_mapSection->setVisible(shown);
+  m_mapEmpty->setVisible(!shown);   // job UX-B: the tab says what fills it
   // made again only when the run or its log changed (a click on a prop adds lines to the same run)
   const QString key = shown ? QStringLiteral("%1|%2|%3").arg(m_watcher ? m_watcher->folder() : QString())
                                 .arg(folder.value("run").toInt())
@@ -3562,6 +3666,299 @@ bool ScriptLabPanel::activateMapArrow(int arrow)
   const LabChannelMap::Arrow& a = map.arrows[arrow];
   if (a.file.isEmpty() || a.line <= 0) return false;
   if (a.file != m_shownFile && !showScript(a.file)) return false;
+  // job UX-B: the editor is on Live scripts; that tab comes to the front unless it is in sight
+  // already (popped out beside the map)
+  if (!isPoppedOut(LivePage)) showPage(LivePage);
   showScriptPlace(a.line, a.column);
+  return true;
+}
+
+// --- job UX-B: one window with its own tabs ----------------------------------------------------
+
+QWidget* ScriptLabPanel::makePageScroll(QWidget* content, const char* name)
+{
+  QScrollArea* scroll = new QScrollArea(m_tabs);
+  scroll->setObjectName(QString::fromLatin1(name));
+  scroll->setWidgetResizable(true);
+  scroll->setFrameShape(QFrame::NoFrame);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scroll->setWidget(content);
+  return scroll;
+}
+
+QString ScriptLabPanel::pageKey(Page page)
+{
+  switch (page)
+  {
+    case LivePage: return QStringLiteral("live");
+    case CommandsPage: return QStringLiteral("commands");
+    case MapPage: return QStringLiteral("map");
+    case PlayerPage: return QStringLiteral("player");
+    default: return QString();
+  }
+}
+
+QString ScriptLabPanel::pageName(Page page) const
+{
+  switch (page)
+  {
+    case LivePage: return tr("Live scripts");
+    case CommandsPage: return tr("Type commands");
+    case MapPage: return tr("Who talks to whom");
+    case PlayerPage: return tr("Player");
+    default: return QString();
+  }
+}
+
+void ScriptLabPanel::addPageTab(Page page)
+{
+  // in the order of the pages: after every page before it that is in the window
+  int at = 0;
+  for (int p = 0; p < page; ++p)
+    if (tabIndex(Page(p)) >= 0) ++at;
+  const int index = m_tabs->insertTab(at, m_pages[page], pageName(page));
+  // the tips: Live and Type commands as before, the map and player as in the mockup (LABTWO-08, -09)
+  static const char* const tips[PageCount] = {
+    QT_TR_NOOP("Live: your .lsl scripts run each time you save them"), QT_TR_NOOP("Commands: type RLV lines by hand"),
+    QT_TR_NOOP("Arrows between the parts: who sends what to whom."), QT_TR_NOOP("Step back and forth through your recorded steps.")};
+  m_tabs->setTabToolTip(index, tr(tips[page]));
+  m_tabs->setTabWhatsThis(index, tr(tips[page]));
+  stylePageTabs();
+}
+
+void ScriptLabPanel::stylePageTabs()
+{
+  if (!m_tabs) return;
+  const bool dark = isDark(palette());
+  const Tokens& t = tokens(dark);
+  // Lucide icons, in the text colour: as the mockup draws the tabs (file-code, terminal, network, rotate-ccw)
+  static const char* const icons[PageCount] = {"file-code", "terminal", "network", "rotate-ccw"};
+  for (int p = 0; p < PageCount; ++p)
+  {
+    const int index = tabIndex(Page(p));
+    if (index < 0) continue;
+    m_tabs->setTabIcon(index, LucideIcons::icon(QString::fromLatin1(icons[p]), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
+  }
+  if (m_popOutButton)
+  {
+    const int icon = TextSize::scaled(16);
+    QPalette ink = palette();
+    ink.setColor(QPalette::WindowText, QColor(QLatin1String(t.text)));
+    ink.setColor(QPalette::Disabled, QPalette::WindowText, QColor(QLatin1String(t.textDisabled)));
+    m_popOutButton->setIconSize(QSize(icon, icon));
+    m_popOutButton->setIcon(PanelTitleBar::drawSymbol(PanelTitleBar::Symbol::Float, ink, icon, devicePixelRatioF()));
+    m_popOutButton->setStyleSheet(QStringLiteral("QToolButton { border: none; border-radius: %1px; padding: 0 %2px; color: %4; }"
+                                                 "QToolButton:hover { background: %3; }"
+                                                 "QToolButton:disabled { color: %5; }"
+                                                 "QToolButton:focus { border: 2px solid %6; }")
+                                  .arg(RadiusControl).arg(SpacingS)
+                                  .arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.textMuted), QLatin1String(t.focusRing)));
+  }
+  for (LabPopWindow* window : m_popWindows)
+    if (window) window->applyStyle(dark);
+}
+
+int ScriptLabPanel::tabIndex(Page page) const
+{
+  if (!m_tabs || page < 0 || page >= PageCount || !m_pages[page]) return -1;
+  return m_tabs->indexOf(m_pages[page]);
+}
+
+ScriptLabPanel::Page ScriptLabPanel::currentPage() const
+{
+  QWidget* current = m_tabs ? m_tabs->currentWidget() : nullptr;
+  for (int p = 0; p < PageCount; ++p)
+    if (current && m_pages[p] == current) return Page(p);
+  return LivePage;
+}
+
+LabPopWindow* ScriptLabPanel::popWindow(Page page) const
+{
+  return page >= 0 && page < PageCount ? m_popWindows[page] : nullptr;
+}
+
+void ScriptLabPanel::showPage(Page page)
+{
+  if (page < 0 || page >= PageCount) return;
+  if (LabPopWindow* window = m_popWindows[page])
+  {
+    if (m_popWindowsShown) window->show();
+    window->raise();
+    window->activateWindow();
+    return;
+  }
+  m_tabs->setCurrentIndex(tabIndex(page));
+}
+
+bool ScriptLabPanel::popOut(Page page, const QPoint& at)
+{
+  if (page < 0 || page >= PageCount || m_popWindows[page] || m_tabs->count() <= 1) return false;
+  const QString key = pageKey(page);
+  QWidget* content = m_pages[page];
+  m_tabs->removeTab(m_tabs->indexOf(content));
+  LabPopWindow* window = new LabPopWindow(key, pageName(page), this);
+  m_popWindows[page] = window;
+  window->setMinimumSize(minimumPanelSize());
+  window->setPage(content);
+  // where it was last time, else big beside the main window (or where a dragged tab was let go)
+  QRect place = m_popPlaces.value(key);
+  if (!place.isValid())
+  {
+    QScreen* screen = at.isNull() ? this->screen() : QGuiApplication::screenAt(at);
+    if (!screen) screen = QGuiApplication::primaryScreen();
+    const QRect area = screen ? screen->availableGeometry() : QRect(0, 0, 1024, 768);
+    place = QRect(QPoint(), LabPopWindow::firstSize(area).expandedTo(minimumPanelSize()));
+    if (at.isNull()) place.moveCenter(area.center());
+    else place.moveTopLeft(at - QPoint(TextSize::scaled(40), TextSize::scaled(16)));
+  }
+  window->setGeometry(LabPopWindow::fitOnScreen(place));
+  m_popPlaces.insert(key, window->geometry());
+  connect(window, &LabPopWindow::putBackRequested, this, [this, page]() { putBack(page); });
+  connect(window, &LabPopWindow::placeChanged, this, [this, page]()
+  {
+    if (LabPopWindow* w = m_popWindows[page]; w && w->isVisible()) { m_popPlaces.insert(pageKey(page), w->geometry()); saveWindowState(); }
+  });
+  if (m_popWindowsShown)
+  {
+    window->show();
+    window->raise();
+    if (m_windowStateReady) window->activateWindow();
+  }
+  stylePageTabs();
+  saveWindowState();
+  refreshPopOutButton();
+  updateWorkLayout();
+  refreshTips();
+  return true;
+}
+
+bool ScriptLabPanel::putBack(Page page)
+{
+  if (page < 0 || page >= PageCount || !m_popWindows[page]) return false;
+  LabPopWindow* window = m_popWindows[page];
+  m_popWindows[page] = nullptr;
+  if (window->isVisible()) m_popPlaces.insert(pageKey(page), window->geometry());
+  window->takePage();
+  window->hide();
+  window->deleteLater();
+  addPageTab(page);
+  m_tabs->setCurrentIndex(tabIndex(page));
+  saveWindowState();
+  refreshPopOutButton();
+  updateWorkLayout();
+  refreshTips();
+  return true;
+}
+
+void ScriptLabPanel::refreshPopOutButton()
+{
+  if (!m_popOutButton) return;
+  const bool can = m_tabs->count() > 1;
+  m_popOutButton->setEnabled(can);
+  // greyed, it says why (charter P6)
+  const QString tip = can ? tr("Pop out \"%1\" into a window of its own. Close that window, or press Put back, to bring it back.")
+                                .arg(pageName(currentPage()))
+                          : tr("The last tab stays in Script Lab. Put another tab back first.");
+  m_popOutButton->setToolTip(tip);
+  m_popOutButton->setStatusTip(tip);
+  m_popOutButton->setAccessibleDescription(tip);
+}
+
+void ScriptLabPanel::setPopWindowsShown(bool shown)
+{
+  m_popWindowsShown = shown;
+  for (LabPopWindow* window : m_popWindows)
+    if (window) window->setVisible(shown);
+}
+
+QString ScriptLabPanel::windowState() const
+{
+  LabTabState::State state;
+  state.current = pageKey(currentPage());
+  for (int p = 0; p < PageCount; ++p)
+    if (m_popWindows[p]) state.popped << pageKey(Page(p));
+  state.places = m_popPlaces;
+  return LabTabState::format(state);
+}
+
+void ScriptLabPanel::applyWindowState(const QString& text)
+{
+  QStringList known;
+  for (int p = 0; p < PageCount; ++p) known << pageKey(Page(p));
+  const LabTabState::State state = LabTabState::parse(text, known);
+  const bool ready = m_windowStateReady;
+  m_windowStateReady = false;   // nothing is saved half way
+  for (int p = 0; p < PageCount; ++p)
+    if (m_popWindows[p] && !state.popped.contains(pageKey(Page(p)))) putBack(Page(p));
+  m_popPlaces = state.places;
+  for (const QString& key : state.popped)
+  {
+    const int p = int(known.indexOf(key));
+    if (p >= 0 && !m_popWindows[p]) popOut(Page(p));
+  }
+  const int current = int(known.indexOf(state.current));
+  if (current >= 0 && tabIndex(Page(current)) >= 0) m_tabs->setCurrentIndex(tabIndex(Page(current)));
+  m_windowStateReady = ready;
+  saveWindowState();
+  refreshPopOutButton();
+}
+
+void ScriptLabPanel::saveWindowState()
+{
+  if (m_windowStateReady) UserSettings::setScriptLabWindows(windowState());
+}
+
+void ScriptLabPanel::resetWindows()
+{
+  for (int p = 0; p < PageCount; ++p) putBack(Page(p));
+  m_popPlaces.clear();
+  m_tabs->setCurrentIndex(tabIndex(LivePage));
+  UserSettings::setScriptLabSized(0);
+  saveWindowState();
+}
+
+int ScriptLabPanel::bigDockedWidth(const QSize& window)
+{
+  // most of the main window (the owner: big by default, so everything can be seen), never less
+  // than the panel's own first size and never more than leaves the 3D view a strip
+  const int wanted = std::max(defaultSize().width(), window.width() * 3 / 5);
+  return std::max(minimumPanelSize().width(), std::min(wanted, window.width() - TextSize::scaled(240)));
+}
+
+QSize ScriptLabPanel::bigFloatingSize(const QRect& screen)
+{
+  const QSize wanted(screen.width() * 4 / 5, screen.height() * 4 / 5);
+  return wanted.expandedTo(minimumPanelSize()).boundedTo(screen.size());
+}
+
+bool ScriptLabPanel::s_layoutRestoring = false;
+
+bool ScriptLabPanel::openBig(QMainWindow* window, QDockWidget* dock)
+{
+  if (!window || !dock || dock->isHidden()) return false;
+  const int sized = UserSettings::scriptLabSized();
+  if (dock->isFloating())
+  {
+    if (sized & 2) return false;
+    UserSettings::setScriptLabSized(sized | 2);
+    QScreen* screen = window->screen() ? window->screen() : QGuiApplication::primaryScreen();
+    if (!screen) return false;
+    const QRect area = screen->availableGeometry();
+    QRect place(QPoint(), bigFloatingSize(area));
+    place.moveCenter(area.center());
+    dock->setGeometry(place);
+    return true;
+  }
+  if (sized & 1) return false;
+  UserSettings::setScriptLabSized(sized | 1);
+  const Qt::DockWidgetArea area = window->dockWidgetArea(dock);
+  if (area == Qt::TopDockWidgetArea || area == Qt::BottomDockWidgetArea)
+    window->resizeDocks({dock}, {std::max(minimumPanelSize().height(), window->height() * 3 / 5)}, Qt::Vertical);
+  else
+  {
+    window->resizeDocks({dock}, {bigDockedWidth(window->size())}, Qt::Horizontal);
+    // sharing its side with another panel (under Selected joint at the first start): most of the height too
+    window->resizeDocks({dock}, {window->height()}, Qt::Vertical);
+  }
   return true;
 }

@@ -478,9 +478,13 @@ void TestScriptLabPlayer::panelFollowsTheMoment()
   panel.show();
   LabPlayer* player = panel.player();
   QVERIFY(player);
+  // job UX-B: the player is on the Player tab
+  panel.showPage(ScriptLabPanel::PlayerPage);
+  QVERIFY(panel.page(ScriptLabPanel::PlayerPage)->isAncestorOf(player));
   QVERIFY(!player->isVisibleTo(&panel));   // nothing watched: no player
   // watching runs the folder, and the run replays the recipe: the player has the start and 3 steps
   QVERIFY(panel.watchFolder(top));
+  panel.showPage(ScriptLabPanel::PlayerPage);
   QVERIFY(player->isVisibleTo(&panel));    // Beginner mode shows the player (first meeting)
   QCOMPARE(player->momentCount(), 4);
   QVERIFY(!player->logView()->isVisibleTo(&panel));   // the log only in Expert mode (charter P5)
@@ -555,6 +559,7 @@ void TestScriptLabPlayer::panelFollowsTheMoment()
 
   // stop watching: no player
   panel.stopWatching();
+  panel.showPage(ScriptLabPanel::PlayerPage);
   QVERIFY(!player->isVisibleTo(&panel));
 }
 

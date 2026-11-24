@@ -98,11 +98,14 @@ void PanelTitleBar::updateButtons()
 // the symbols are drawn in the text colour, so they show in the light and the dark theme
 QIcon PanelTitleBar::symbolIcon(Symbol symbol) const
 {
+  return drawSymbol(symbol, palette(), TextSize::scaled(ICON_SIZE), devicePixelRatioF());
+}
+
+QIcon PanelTitleBar::drawSymbol(Symbol symbol, const QPalette& colours, int size, qreal ratio)
+{
   // drawn on the 16 px grid, scaled with the text size so the lines stay sharp;
   // a greyed-out button shows the symbol in the disabled text colour
-  const int size = TextSize::scaled(ICON_SIZE);
   const qreal scale = size / qreal(ICON_SIZE);
-  const qreal ratio = devicePixelRatioF();
   auto draw = [&](QPalette::ColorGroup group)
   {
     QPixmap pixmap(QSize(size, size) * ratio);
@@ -112,7 +115,7 @@ QIcon PanelTitleBar::symbolIcon(Symbol symbol) const
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.scale(scale, scale);
-    const QColor ink = palette().color(group, QPalette::WindowText);
+    const QColor ink = colours.color(group, QPalette::WindowText);
     QPen pen(ink);
     pen.setWidthF(1.6);
     painter.setPen(pen);
@@ -126,7 +129,7 @@ QIcon PanelTitleBar::symbolIcon(Symbol symbol) const
       case Symbol::Float:
         // two windows, one in front of the other
         painter.drawRect(QRectF(5.5, 2.5, 8, 8));
-        painter.fillRect(QRectF(2.5, 5.5, 8, 8), palette().color(QPalette::Window));
+        painter.fillRect(QRectF(2.5, 5.5, 8, 8), colours.color(QPalette::Window));
         painter.drawRect(QRectF(2.5, 5.5, 8, 8));
         break;
       case Symbol::Dock:
