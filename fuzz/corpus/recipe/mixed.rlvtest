@@ -1,0 +1,8 @@
+# notes
+object collar
+send @detach=n,fly=n
+wait 2
+touch Cuff
+menu Free
+wait 6
+send @clear

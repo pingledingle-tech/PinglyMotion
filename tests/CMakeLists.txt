@@ -412,3 +412,9 @@ ADD_EXECUTABLE (pinglymotion_lslmedia_tests tst_lslmedia.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_lslmedia_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_lslmedia_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME lslmedia COMMAND pinglymotion_lslmedia_tests)
+
+# Script Lab record and replay (job A3): the recipe format, the replay and the plain-words comparison
+ADD_EXECUTABLE (pinglymotion_labrecipe_tests tst_labrecipe.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labrecipe_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_labrecipe_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME labrecipe COMMAND pinglymotion_labrecipe_tests)

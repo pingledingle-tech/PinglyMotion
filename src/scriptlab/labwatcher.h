@@ -22,6 +22,12 @@
  * whole folder again as one linkset; each script's result holds its own
  * check and the shared run, and folderResult() the whole folder's answer.
  *
+ * Record and replay (job A3, labrecipe.h): the only files the watcher ever
+ * writes are recipe.rlvtest (while the user records in the panel) and
+ * recipe.rlvresult (after a replay), both in the top of the watched folder and
+ * never through a link. A folder run started by a save replays the recipe when
+ * there is one.
+ *
  * QtCore only.
  *
  * Licensed under the GNU General Public License version 2 or later.
@@ -43,6 +49,7 @@
 #include <memory>
 
 #include "labfolder.h"
+#include "labrecipe.h"
 
 class RlvState;
 namespace lsl { class Session; }
@@ -129,6 +136,31 @@ class LabWatcher : public QObject
     // the lsl_event input that answers this dialog with this button (shared with the panel's menu)
     static QJsonObject dialogAnswer(const QJsonObject& dialog, const QString& button);
 
+    // --- record and replay (job A3) ----------------------------------------------------------
+    // Starts recording in linkset mode: from now on a touch(), an answerDialog() and a recordLine() that
+    // work are steps of a new recipe. The old recipe file is replaced when the first step comes, so
+    // starting and stopping without a step keeps it. Refused when no folder is watched as one object.
+    Result startRecording();
+    // Stops recording. With steps, the recipe is replayed at once and its facts are kept as the first
+    // result (nothing to compare with yet). False when it was not recording.
+    bool stopRecording();
+    bool recording() const { return m_recording; }
+    // the steps recorded since startRecording()
+    QVector<LabRecipe::Step> recordedSteps() const { return m_recorded; }
+    // an RLV line the user typed or chose in the panel, from that object; a step only while recording
+    void recordLine(const QString& object, const QString& line);
+    // the recipe file of the watched folder ("" when no folder is watched as one object)
+    QString recipePath() const;
+    bool hasRecipe() const;
+    // Replays the recipe file now (as after a save): the folder from the start in a world of its own,
+    // then each step; compares the facts with the result file and writes the new result file.
+    // first: do not compare (the steps are new). Refused, with the reason, when no folder is watched
+    // as one object, there is no recipe, it cannot be read, or the result cannot be written.
+    Result replayRecipe(bool first = false);
+    // the newest replay: LabRecipe::toJson plus "run" (the folder run it followed), "recipe" (the file
+    // name) and "steps_text" (the recipe's step lines); empty when there was none since watching
+    QJsonObject lastReplay() const { return m_replay; }
+
     // Reads, checks and runs one script now (also used by the tests and the
     // first run after watch). relative is a path from scripts(). In linkset
     // mode it runs the whole folder, with relative as the file that changed.
@@ -142,6 +174,8 @@ class LabWatcher : public QObject
     void resultChanged();
     // started or stopped watching, or the list of scripts changed
     void watchChanged();
+    // recording started or stopped, a step was recorded, or a replay finished (job A3)
+    void recipeChanged();
 
   private:
     struct Entry
@@ -175,6 +209,11 @@ class LabWatcher : public QObject
     QJsonObject m_last;
     int m_runs = 0;
     bool m_truncated = false;
+    // job A3
+    void recordStep(const LabRecipe::Step& step);
+    bool m_recording = false;
+    QVector<LabRecipe::Step> m_recorded;
+    QJsonObject m_replay;
 };
 
 #endif

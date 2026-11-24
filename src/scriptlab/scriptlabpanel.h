@@ -178,6 +178,24 @@ class ScriptLabPanel : public QWidget
     LabDialogBox* menuBox() const { return m_menuBox; }
     // answers the menu the box shows, as a click on its button does; false when nothing was sent
     bool answerMenu(const QString& button);
+    // --- record and replay (job A3): "Record what I do" records clicks on props, menu answers and
+    // typed RLV lines as a recipe in the object folder (LabWatcher::startRecording); every save replays
+    // it and the line under the button says what changed since last time. Beginner mode shows only the
+    // button and that line; Expert mode adds the folded "Recipe" part with the file and Replay now.
+    QPushButton* recordButton() const { return m_recordButton; }
+    QLabel* recipeStatus() const { return m_recipeStatus; }
+    ScriptLabSection* recipeSection() const { return m_recipeSection; }
+    QLabel* recipeFileLine() const { return m_recipeFileLine; }
+    QPlainTextEdit* recipeText() const { return m_recipeText; }
+    QPushButton* replayButton() const { return m_replayButton; }
+    // starts or stops recording, as the button does; false when nothing changed (the line says why)
+    bool setRecording(bool on);
+    // replays the recipe now, as Replay now does; false when refused (the line says why)
+    bool replayNow();
+    // Expert mode (View > Expert mode): the panel starts with UserSettings and follows it
+    void setExpertMode(bool expert);
+    bool expertMode() const { return m_expert; }
+
     // stops watching, as Stop watching does
     void stopWatching();
     // watches the example scripts that come with the program (examples/scriptlab), as
@@ -599,6 +617,19 @@ class ScriptLabPanel : public QWidget
     QPointer<EffectsPreview> m_effects;
     QPushButton* m_effectsBox = nullptr;
     void styleEffectsButton();
+    // job A3: record and replay
+    void refreshRecipe();
+    void styleRecordButton();
+    QWidget* m_recipeRow = nullptr;
+    QPushButton* m_recordButton = nullptr;
+    QLabel* m_recipeStatus = nullptr;
+    ScriptLabSection* m_recipeSection = nullptr;
+    QLabel* m_recipeFileLine = nullptr;
+    QPlainTextEdit* m_recipeText = nullptr;
+    QPushButton* m_replayButton = nullptr;
+    QString m_recipeNote;    // a one-off line (recording stopped without steps, a refused replay)
+    bool m_recipeNoteIsError = false;
+    bool m_expert = false;
     QLabel* m_effectsStatus = nullptr;
     QList<QMetaObject::Connection> m_effectsConnections;
     QList<QMetaObject::Connection> m_effectsWatcherConnections;

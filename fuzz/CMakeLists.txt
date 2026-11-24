@@ -1,7 +1,7 @@
 # PinglyMotion fuzz targets (libFuzzer). Needs clang:
 #   CC=clang CXX=clang++ cmake -S . -B build-fuzz -DPINGLYMOTION_FUZZ=ON
 #   cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping \
-#     fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_rlv fuzz_lsl
+#     fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_rlv fuzz_lsl fuzz_recipe
 # See fuzz/README.md for how to run them.
 
 SET (FUZZ_FLAGS -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g)
@@ -137,10 +137,21 @@ SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE
 TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LSL_FILES})
 TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
 # Script Lab Live (issue 292): the folder watch behind lab_watch, used by controlapi.cpp
-TARGET_SOURCES (fuzz_control PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labfolder.cpp)
-TARGET_SOURCES (fuzz_controlserver PRIVATE ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labfolder.cpp)
+# and record and replay (job A3): the watcher replays recipe.rlvtest, lab_replay reaches it
+SET (FUZZ_LAB_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labfolder.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/labrecipe.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labtint.cpp)
+TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LAB_FILES})
+TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LAB_FILES})
 ADD_EXECUTABLE (fuzz_lsl fuzz_lsl.cpp ${FUZZ_LSL_FILES})
 TARGET_INCLUDE_DIRECTORIES (fuzz_lsl PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_lsl PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_lsl PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_lsl fuzz_core Qt6::Core)
+
+# Script Lab record and replay (job A3): the recipe reader, the replay and the result file
+ADD_EXECUTABLE (fuzz_recipe fuzz_recipe.cpp ${FUZZ_LSL_FILES} ${CMAKE_SOURCE_DIR}/src/scriptlab/labfolder.cpp
+                ${CMAKE_SOURCE_DIR}/src/scriptlab/labrecipe.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labtint.cpp)
+TARGET_INCLUDE_DIRECTORIES (fuzz_recipe PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_COMPILE_OPTIONS (fuzz_recipe PRIVATE ${FUZZ_FLAGS})
+TARGET_LINK_OPTIONS (fuzz_recipe PRIVATE ${FUZZ_LINK})
+TARGET_LINK_LIBRARIES (fuzz_recipe fuzz_core Qt6::Core)

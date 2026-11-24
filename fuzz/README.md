@@ -18,6 +18,7 @@ The targets, all built with libFuzzer, AddressSanitizer and UndefinedBehaviorSan
 | `fuzz_controlserver` | The control server's HTTP framing (issue 250): any bytes over a real local connection, in two pieces, to `ControlServer` (request line, headers, limits, Host, Origin, key, Content-Length, body); `@KEY@` and `@PORT@` in an input become the real key and port | Any program on the computer can connect to the server |
 | `fuzz_rlv` | The Script Lab's RLV core (`src/scriptlab/`, issue 287): each line `<object>|<text>` goes to `Rlv::parseLine()` and `RlvState::apply()`; after every line the limits hold, the counters match the held restrictions, replies stay within 1023 characters and blocked actions follow the plain restrictions | LSL scripts and AI clients send RLV lines through the control command `rlv_command` |
 | `fuzz_lsl` | The Script Lab LSL interpreter (`src/scriptlab/lsl/`, issue 289): any bytes as an LSL script through the lexer, parser and checker (what `lsl_check` does) and the static checker (what `lsl_lint` does); every error and warning has a line, a column and a message, and every lint warning a known id; a script that compiles is then run with small limits, one chat and one touch (what `lsl_run` does; `llOwnerSay("@...")` goes to the RLV core) and must stay inside the limits; the LSL-to-SLua converter (`src/scriptlab/lsl/lsl2slua.*`, lane 1 job G) converts every input: only a script that compiles gives SLua text, the text and the warnings stay inside their limits, and every error and warning has a place and a message | An AI client writes the scripts and sends them over the control commands |
+| `fuzz_recipe` | The Script Lab recipe (`src/scriptlab/labrecipe.*`, job A3, record and replay): any bytes as a `recipe.rlvtest` file through `LabRecipe::parse`; a recipe that is read is written and read back to the same steps, then replayed (at most 12 steps) on a small object held in memory, a HUD with a menu and a cuff that locks, and must stay inside its limits; its facts survive the result file (`writeResult`, `parseResult`) and compare equal to themselves; the input is also read as a `recipe.rlvresult` file | The user or an AI client writes the recipe in the object folder; `lab_replay` and every save replay it |
 
 Not fuzzed here: `SL.lim` and the `.pmm` body meshes (read only from PinglyMotion's own data folder). The old BVH/AVM token parser is gone: the program reads files through the new parser (`AnimFile::parse`, issue #62 finished, old parser removed in pull request 43 on 18 Nov 2026), which `fuzz_animfile` fuzzes, and `fuzz_openfile` fuzzes opening a file end to end.
 
@@ -38,7 +39,7 @@ Needs clang and its sanitizer runtime (Ubuntu: `sudo apt-get install clang libcl
 ```
 CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_FUZZ=ON
 cmake --build build-fuzz --target fuzz_prop fuzz_control fuzz_animfile fuzz_dingle fuzz_anim fuzz_gltf fuzz_retargetmapping \
-  fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_rlv fuzz_lsl -j 2
+  fuzz_openfile fuzz_retargetbvh fuzz_controlserver fuzz_rlv fuzz_lsl fuzz_recipe -j 2
 
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 QT_QPA_PLATFORM=offscreen
 mkdir -p /tmp/prop /tmp/control
