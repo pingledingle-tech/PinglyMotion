@@ -1,6 +1,6 @@
 Branch: job/props-edit-sl
 Status: active
-Pull request: pending
+Pull request: #459
 Files:
 - src/propedit.*
 - src/propeditcard.*
