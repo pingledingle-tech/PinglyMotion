@@ -34,8 +34,6 @@ const QString UserSettings::m_userSettingsVersionGroup = "1.0";
 
 bool UserSettings::m_loop = true;
 const QString UserSettings::m_loopKey = "loop";
-bool UserSettings::m_skeleton = false;
-const QString UserSettings::m_skeletonKey = "skeleton";
 bool UserSettings::m_jointLimits = true;
 const QString UserSettings::m_jointLimitsKey = "joint_limits";
 bool UserSettings::m_protectFirstFrame = true;
@@ -95,6 +93,14 @@ bool UserSettings::m_showRings = true;
 const QString UserSettings::m_showRingsKey = "show_rings";
 bool UserSettings::m_viewToolNames = true;
 const QString UserSettings::m_viewToolNamesKey = "view_tool_names";
+bool UserSettings::m_showJointDots = true;
+const QString UserSettings::m_showJointDotsKey = "show_joint_dots";
+bool UserSettings::m_clickAndBend = true;
+const QString UserSettings::m_clickAndBendKey = "click_and_bend";
+QString UserSettings::m_timelineArea = "all";
+const QString UserSettings::m_timelineAreaKey = "timeline_area";
+bool UserSettings::m_timelineChangedOnly = true;
+const QString UserSettings::m_timelineChangedOnlyKey = "timeline_changed_only";
 int UserSettings::m_textSizePercent = 100;
 const QString UserSettings::m_textSizePercentKey = "text_size_percent";
 QByteArray UserSettings::m_panelLayout;
@@ -125,8 +131,6 @@ const QString UserSettings::m_easeOutKey = "ease_out";
 
 void UserSettings::setLoop(bool on)               { m_loop = on; }
 bool UserSettings::loop()                            { return m_loop; }
-void UserSettings::setSkeleton(bool on)           { m_skeleton = on; }
-bool UserSettings::skeleton()                        { return m_skeleton; }
 void UserSettings::setJointLimits(bool on)        { m_jointLimits = on; }
 bool UserSettings::jointLimits()                     { return m_jointLimits; }
 void UserSettings::setProtectFirstFrame(bool on)  { m_protectFirstFrame = on; }
@@ -291,6 +295,21 @@ void UserSettings::setShowRings(bool on)             { m_showRings = on; }
 bool UserSettings::showRings()                       { return m_showRings; }
 void UserSettings::setViewToolNames(bool on)         { m_viewToolNames = on; }
 bool UserSettings::viewToolNames()                   { return m_viewToolNames; }
+void UserSettings::setShowJointDots(bool on)         { m_showJointDots = on; }
+bool UserSettings::showJointDots()                   { return m_showJointDots; }
+void UserSettings::setClickAndBend(bool on)          { m_clickAndBend = on; }
+bool UserSettings::clickAndBend()                    { return m_clickAndBend; }
+QStringList UserSettings::timelineAreas()
+{
+  return {"all", "body", "face", "hands", "other"};
+}
+void UserSettings::setTimelineArea(const QString& value)
+{
+  m_timelineArea = timelineAreas().contains(value) ? value : QString("all");
+}
+QString UserSettings::timelineArea()                 { return m_timelineArea; }
+void UserSettings::setTimelineChangedOnly(bool on)   { m_timelineChangedOnly = on; }
+bool UserSettings::timelineChangedOnly()             { return m_timelineChangedOnly; }
 void UserSettings::setTextSizePercent(int value)     { m_textSizePercent = qBound(100, value, 200); }
 int UserSettings::textSizePercent()                  { return m_textSizePercent; }
 void UserSettings::setPanelLayout(const QByteArray& state) { m_panelLayout = state; }
@@ -327,7 +346,6 @@ void UserSettings::readSettings()
 
     // Loop is on by default (docs/UX_DECISIONS.md section 1)
     setLoop(settings.value(m_loopKey, true).toBool());
-    setSkeleton(settings.value(m_skeletonKey).toBool());
     setJointLimits(settings.value(m_jointLimitsKey).toBool());
     setProtectFirstFrame(settings.value(m_protectFirstFrameKey).toBool());
     setDarkTheme(settings.value(m_darkThemeKey, true).toBool());
@@ -377,6 +395,10 @@ void UserSettings::readSettings()
     setShowFloor(settings.value(m_showFloorKey, true).toBool());
     setShowRings(settings.value(m_showRingsKey, true).toBool());
     setViewToolNames(settings.value(m_viewToolNamesKey, true).toBool());
+    setShowJointDots(settings.value(m_showJointDotsKey, true).toBool());
+    setClickAndBend(settings.value(m_clickAndBendKey, true).toBool());
+    setTimelineArea(settings.value(m_timelineAreaKey, "all").toString());
+    setTimelineChangedOnly(settings.value(m_timelineChangedOnlyKey, true).toBool());
     // a stored value that is not a whole number gives 100
     bool sizeOk = false;
     const int size = settings.value(m_textSizePercentKey, 100).toInt(&sizeOk);
@@ -413,7 +435,8 @@ void UserSettings::writeSettings()
   settings.beginGroup(m_userSettingsVersionGroup);
 
   settings.setValue(m_loopKey, loop());
-  settings.setValue(m_skeletonKey, skeleton());
+  // Options > Show skeleton is View > Joint dots now (UX job U2): the old key is not kept
+  settings.remove(QStringLiteral("skeleton"));
   settings.setValue(m_jointLimitsKey, jointLimits());
   settings.setValue(m_protectFirstFrameKey, protectFirstFrame());
   settings.setValue(m_darkThemeKey, darkTheme());
@@ -448,6 +471,10 @@ void UserSettings::writeSettings()
   settings.setValue(m_showFloorKey, showFloor());
   settings.setValue(m_showRingsKey, showRings());
   settings.setValue(m_viewToolNamesKey, viewToolNames());
+  settings.setValue(m_showJointDotsKey, showJointDots());
+  settings.setValue(m_clickAndBendKey, clickAndBend());
+  settings.setValue(m_timelineAreaKey, timelineArea());
+  settings.setValue(m_timelineChangedOnlyKey, timelineChangedOnly());
   settings.setValue(m_textSizePercentKey, textSizePercent());
   settings.setValue(m_panelLayoutKey, panelLayout());
   settings.setValue(m_panelLayoutVersionKey, panelLayoutVersion());

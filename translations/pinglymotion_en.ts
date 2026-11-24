@@ -3220,6 +3220,98 @@ Pick the ones you want.</source>
         <source>Finish the change you are making first.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floor grid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rotation rings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Joint dots</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tool names in the view toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click and bend on the figure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Joint groups</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hind limbs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Face</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fingers and toes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide in lists</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Body</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lighting...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A dot on each joint you can pick. Off: you can still click them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick and bend joints by clicking them on the figure. Off: use the Joints list and the sliders.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show or hide groups of extra joints. Hiding changes only what you see.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change the light on the body: brightness, shine, warmth, floor shadow.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click and bend is on. Click a joint to pick it, drag to bend.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click and bend is off. Clicks on the figure do nothing now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click and bend is off. Press B or use the View menu to turn it on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PMMesh</name>
@@ -3578,10 +3670,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show skeleton</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Stop joints at their furthest turn</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3706,43 +3794,11 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Wings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tail</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hind limbs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Face</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Fingers and toes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hide in lists</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Leaves hidden joints out of the timeline and the joint list. Off: they show dimmed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The avatar could not be loaded. Showing %1 instead.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Lighting...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change how the body is lit: brightness, shine, warmth and the shadow on the floor.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8236,6 +8292,50 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>Paste mirrored</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show rows for</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All body areas</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show only the joints of one body area.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only changed joints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show only the joints you have turned or keyed. Off: every joint gets a row.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The timeline shows all body areas.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The timeline shows the %1 joints only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The timeline shows only the changed joints.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The timeline shows every joint.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No changed joints in %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose All body areas to see the other rows.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

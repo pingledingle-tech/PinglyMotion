@@ -111,6 +111,13 @@ class AnimationView : public QOpenGLWidget
     bool showRings() const { return m_showRings; }
     void setShowFloor(bool on);
     bool showFloor() const { return m_showFloor; }
+    // View > Joint dots (UX job U2): the dots on the joints; picking still finds them when off
+    void setShowJointDots(bool on);
+    bool showJointDots() const { return m_showJointDots; }
+    // View > Click and bend on the figure (UX job U2): off, a click or drag on a joint or a
+    // rotation ring does nothing but say so in the status line (src/viewmenuspec.h)
+    void setClickAndBend(bool on);
+    bool clickAndBend() const { return m_clickAndBend; }
     // what the hint line says about what is under the mouse: a rotation ring, or the view tool
     // when it is not Pick (src/viewtoolspec.h); empty for nothing
     QString hoverHint() const { return m_hoverHint; }
@@ -277,6 +284,10 @@ class AnimationView : public QOpenGLWidget
     ViewTool m_viewTool=ViewTool::Pick;
     bool m_showRings=true;
     bool m_showFloor=true;
+    bool m_showJointDots=true;
+    bool m_clickAndBend=true;
+    // the press was on a joint or ring while Click and bend is off
+    bool m_pressBlocked=false;
     QString m_hoverHint;
     // the hint for what is highlighted now (a ring) and the view tool
     void updateHoverHint();

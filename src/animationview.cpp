@@ -69,6 +69,7 @@
 #include "scriptlab/viewmodesoverride.h"
 #include "scriptlab/effectspreview.h"
 #include "viewcolours.h"
+#include "viewmenuspec.h"
 #include "viewtoolspec.h"
 
 AnimationView::AnimationView(QWidget* parent, const char* /* name */)
@@ -1048,6 +1049,7 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
   m_dragButton=event->button();
   m_pressPos=event->pos();
   m_pressSelected=0;
+  m_pressBlocked=false;
 
   // remember mouse position for dragging (screen pixels, see mouseMoveEvent())
   returnPos=QCursor::pos();
@@ -1079,6 +1081,20 @@ void AnimationView::mousePressEvent(QMouseEvent* event)
 
   // left button: check out which part or prop has been clicked
   const unsigned int selected=pickPart(event->position().toPoint().x(),event->position().toPoint().y());
+
+  // View > Click and bend on the figure is off (UX job U2): a joint or a rotation ring does
+  // nothing; a click says so on release, a drag still turns the camera where the habit does
+  {
+    const int ringHit=static_cast<int>(selected)-static_cast<int>(OpenGlIds::RotateRingX);
+    const bool onRing=ringHit>=0 && ringHit<=2 && partSelected && m_ringVisible[ringHit];
+    const bool onJoint=selected && selected<static_cast<unsigned int>(OpenGlIds::ObjectStart);
+    if(ViewMenuSpec::pressBlocked(m_clickAndBend,onJoint,onRing))
+    {
+      m_mouseDrag=MouseDrag::Click;
+      m_pressBlocked=true;
+      return;
+    }
+  }
 
   // a rotation ring of the selected part was grabbed: drag it to turn the joint
   const int ring=static_cast<int>(selected)-static_cast<int>(OpenGlIds::RotateRingX);
@@ -1187,7 +1203,12 @@ void AnimationView::mouseReleaseEvent(QMouseEvent* event)
   // show mouse cursor again
   setCursor(Qt::ArrowCursor);
 
-  if(ended==MouseDrag::Click || ended==MouseDrag::Joint)
+  if(ended==MouseDrag::Click && m_pressBlocked)
+  {
+    m_pressBlocked=false;
+    emit statusMessage(ViewMenuSpec::tr(ViewMenuSpec::clickAndBendBlocked));
+  }
+  else if(ended==MouseDrag::Click || ended==MouseDrag::Joint)
     clickSelect(m_pressSelected);
   else if(ended==MouseDrag::Pull)
   {
@@ -1205,6 +1226,13 @@ void AnimationView::mouseDoubleClickEvent(QMouseEvent* event)
 {
   // a camera gesture of the habit (Alt in Second Life: the press already focused)
   if(!Camera::gestureFor(m_cameraHabit,m_viewTool,event->button(),event->modifiers()).picks)
+  {
+    mousePressEvent(event);
+    return;
+  }
+
+  // Click and bend off (UX job U2): a double click is two blocked clicks
+  if(!m_clickAndBend)
   {
     mousePressEvent(event);
     return;
@@ -1472,6 +1500,19 @@ void AnimationView::setShowFloor(bool on)
   update();
 }
 
+void AnimationView::setShowJointDots(bool on)
+{
+  m_showJointDots=on;
+  update();
+}
+
+void AnimationView::setClickAndBend(bool on)
+{
+  m_clickAndBend=on;
+  if(underMouse()) updateHoverHint();
+  update();
+}
+
 void AnimationView::updateHoverHint()
 {
   if(m_viewTool!=ViewTool::Pick)
@@ -1481,14 +1522,21 @@ void AnimationView::updateHoverHint()
   }
   if(m_pull.active) return;
   const int ring=static_cast<int>(partHighlighted)-static_cast<int>(OpenGlIds::RotateRingX);
-  if(ring>=0 && ring<=2 && partSelected && m_showRings)
+  if(ring>=0 && ring<=2 && partSelected && ViewMenuSpec::ringsShown(m_showRings,m_clickAndBend))
   {
     setHoverHint(ViewToolSpec::ringHoverHint(ring));
     return;
   }
-  // over a joint: a click picks it, a drag pulls it (the mockup's HINT-02)
+  // over a joint: a click picks it, a drag pulls it (the mockup's HINT-02); with Click and
+  // bend off it says how to turn that on (UX job U2)
   const QString name=selectionName(partHighlighted);
-  setHoverHint(!name.isEmpty() && name!=QLatin1String("Site") ? ViewToolSpec::tr(ViewToolSpec::jointHover) : QString());
+  const bool overJoint=!name.isEmpty() && name!=QLatin1String("Site");
+  if(overJoint && !m_clickAndBend)
+  {
+    setHoverHint(ViewMenuSpec::tr(ViewMenuSpec::clickAndBendBlocked));
+    return;
+  }
+  setHoverHint(overJoint ? ViewToolSpec::tr(ViewToolSpec::jointHover) : QString());
 }
 
 void AnimationView::setHoverHint(const QString& hint)
@@ -1653,7 +1701,8 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       SceneState::setLighting(lighting);
       SceneState::setLineWidth(1);
     }
-    if(mode==MODE_RINGS &&
+    // View > Joint dots off: not drawn, but still there while picking (UX job U2)
+    if(mode==MODE_RINGS && ViewMenuSpec::dotsDrawn(m_showJointDots,selecting) &&
        JointRings::hasRing(motion->type==BVH_END,JointGroups::shown(motion->name()),
                            isFaceBone(motion->name()),faceFocus(),m_hideMarkers))
       drawJointRing(anim,motion);
@@ -1693,7 +1742,7 @@ void AnimationView::drawPart(Animation* anim,unsigned int currentAnimationIndex,
       }
 
       // rotation rings: also drawn while picking, so they can be grabbed
-      if(mode==MODE_ROT_AXES && partSelected==selectName && m_showRings)
+      if(mode==MODE_ROT_AXES && partSelected==selectName && ViewMenuSpec::ringsShown(m_showRings,m_clickAndBend))
       {
         const int ringX=static_cast<int>(OpenGlIds::RotateRingX);
         const int hovered=static_cast<int>(partHighlighted)-ringX;
