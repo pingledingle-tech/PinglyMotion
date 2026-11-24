@@ -1,6 +1,6 @@
 Branch: job/scriptlab-chain-lines
 Status: active
-Pull request: pending
+Pull request: #455
 Files:
 - src/chainlines.h
 - src/scriptlab/labchains.*
