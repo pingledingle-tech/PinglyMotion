@@ -35,6 +35,17 @@
 #include <QTextBlock>
 #include <QVBoxLayout>
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 #include "../laterfile.h"
 #include "scriptlab/labeditor.h"
 #include "scriptlab/labwatcher.h"
@@ -108,6 +119,7 @@ class TestLabEditor : public QObject
     void highlightInDocument();
     void typeSaveAndUndo();
     void saveKeepsLineEnds();
+    void saveWaitsForABriefLock();
     void saveButtonReason();
     void saveAndRunMessage();
     void liveNeverOverwritesTyping();
@@ -253,6 +265,45 @@ void TestLabEditor::typeSaveAndUndo()
   editor.codeEdit()->redo();
   QCOMPARE(editor.codeEdit()->toPlainText(), typed);
   QVERIFY(!editor.isModified());   // back where it was saved
+}
+
+// job T2: on Windows another program often holds a file open for a moment right after it was written
+// (a virus scanner, the search indexer), and replacing it then fails with "Access is denied"; Save tries
+// again a few times before it gives up, so such a moment does not lose the save
+void TestLabEditor::saveWaitsForABriefLock()
+{
+  QTemporaryDir dir;
+  const QString path = dir.filePath("collar.lsl");
+  QVERIFY(writeFile(path, Collar));
+  LabEditor editor;
+  QVERIFY(editor.openFile(path, "collar.lsl"));
+  editor.codeEdit()->moveCursor(QTextCursor::End);
+  QTest::keyClicks(editor.codeEdit(), "// x");
+
+  // another "program" holds the file for 60 ms without letting anyone replace it (Windows); elsewhere
+  // an open file never stops a save, so there the save simply works
+  std::atomic<bool> held{false};
+  std::thread other([&]() {
+#ifdef Q_OS_WIN
+    HANDLE handle = CreateFileW(reinterpret_cast<const wchar_t*>(QDir::toNativeSeparators(path).utf16()), GENERIC_READ,
+                                FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    held = true;
+    std::this_thread::sleep_for(std::chrono::milliseconds(60));
+    if (handle != INVALID_HANDLE_VALUE) CloseHandle(handle);
+#else
+    QFile file(path);
+    const bool open = file.open(QIODevice::ReadOnly);
+    Q_UNUSED(open);
+    held = true;
+    std::this_thread::sleep_for(std::chrono::milliseconds(60));
+#endif
+  });
+  while (!held) std::this_thread::yield();
+  const bool saved = editor.save();
+  other.join();
+  QVERIFY2(saved, qPrintable(editor.message()->text()));
+  QCOMPARE(readFile(path), QString::fromUtf8(Collar) + QStringLiteral("// x"));
+  QCOMPARE(editor.message()->text(), QString("Saved 15:30. Running it now."));
 }
 
 // a file with Windows line ends keeps them when saved
@@ -481,7 +532,7 @@ void TestLabEditor::otherFileWaitsForSave()
   QCOMPARE(panel.scriptView()->toPlainText(), QString("default { state_entry() { } }\n// typing"));
   QCOMPARE(panel.section("script")->title(), QString("Script: a.lsl"));
   // saved, the editor follows the runs again
-  QVERIFY(panel.editor()->save());
+  QVERIFY2(panel.editor()->save(), qPrintable(panel.editor()->message()->text()));
   QCOMPARE(panel.editor()->message()->text(), QString("Saved and run 15:30. 0 errors."));
   QVERIFY(writeFile(dir.filePath("c.lsl"), "default { state_entry() { } }\n"));
   watcher.rescan();

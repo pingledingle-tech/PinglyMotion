@@ -24,11 +24,13 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QThread>
 #include <QScrollBar>
 #include <QTextBlock>
 #include <QToolTip>
 #include <QVBoxLayout>
 
+#include "logging.h"
 #include "lslhighlighter.h"
 #include "rlvsuggest.h"
 #include "lucideicons.h"
@@ -1477,6 +1479,34 @@ QString LabEditor::differenceText(const QString& mine, const QString& theirs)
   return out.join(QLatin1Char('\n'));
 }
 
+namespace
+{
+  // Writes the whole file through a temporary file that replaces it (QSaveFile); "" when it worked,
+  // otherwise the reason. On Windows another program (a virus scanner, the search indexer, a cloud
+  // sync tool) often holds a file open for a moment right after it was written, and then replacing
+  // it fails with "Access is denied"; so a failed attempt is tried again a few times, a little
+  // later each time (about a third of a second in all), before the save counts as failed (job T2).
+  QString saveWhole(const QString& path, const QByteArray& bytes)
+  {
+    const int attempts = 5;
+    QString error;
+    for (int attempt = 1; attempt <= attempts; ++attempt)
+    {
+      QSaveFile file(path);
+      file.setDirectWriteFallback(true);
+      if (file.open(QIODevice::WriteOnly) && file.write(bytes) == bytes.size() && file.commit()) return QString();
+      error = file.errorString();
+      if (error.isEmpty()) error = QCoreApplication::translate("LabEditor", "the file could not be written");
+      if (attempt < attempts)
+      {
+        qCWarning(lcFile).noquote() << "Script Lab: saving a script failed (attempt" << attempt << "of" << attempts << "):" << error << "Trying again.";
+        QThread::msleep(20u << (attempt - 1));   // 20, 40, 80, 160 ms
+      }
+    }
+    return error;
+  }
+}
+
 bool LabEditor::save()
 {
   if (m_path.isEmpty())
@@ -1488,11 +1518,10 @@ bool LabEditor::save()
   const QString text = m_edit->toPlainText();
   QString out = text;
   if (crlf) out.replace(QLatin1Char('\n'), QStringLiteral("\r\n"));   // keep the file's own line ends
-  QSaveFile file(m_path);
-  file.setDirectWriteFallback(true);
-  if (!file.open(QIODevice::WriteOnly) || file.write(out.toUtf8()) < 0 || !file.commit())
+  const QString error = saveWhole(m_path, out.toUtf8());
+  if (!error.isEmpty())
   {
-    setMessage(tr("Not saved: %1. Check the folder and try again.").arg(file.errorString()), 2);
+    setMessage(tr("Not saved: %1. Check the folder and try again.").arg(error), 2);
     return false;
   }
   m_saved = text;

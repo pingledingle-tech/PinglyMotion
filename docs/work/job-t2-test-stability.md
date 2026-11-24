@@ -3,6 +3,7 @@ Status: active
 Pull request: #470
 Files:
 - src/scriptlab/labwatcher.*
+- src/scriptlab/labeditor.cpp
 - tests/tst_labwatcher.cpp
 - tests/tst_labrecipe.cpp
 - tests/tst_scriptlabeffects.cpp
