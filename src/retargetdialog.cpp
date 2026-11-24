@@ -185,6 +185,7 @@ RetargetDialog::RetargetDialog(const AnimFile::Animation& source,const AnimFile:
   m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_table->setSelectionMode(QAbstractItemView::NoSelection);
   m_table->verticalHeader()->setVisible(false);
+  m_table->setTabKeyNavigation(false);   // Tab would go from cell to cell for ever and never reach the buttons (charter P8)
   layout->addWidget(m_table,1);
 
   m_startsInPose=new QCheckBox(tr("My file starts in a T-pose or A-pose"),this);
@@ -312,6 +313,15 @@ void RetargetDialog::fillTable()
   }
   m_table->resizeColumnsToContents();
   m_table->horizontalHeader()->setStretchLastSection(true);
+  // Tab goes down the list of joint choices and then on to the boxes below it (the choices are made
+  // after the boxes, so they would come last, and in a loop with the table; charter P8)
+  QWidget* before=m_table;
+  for(QComboBox* combo : m_combos)
+  {
+    setTabOrder(before,combo);
+    before=combo;
+  }
+  if(m_startsInPose) setTabOrder(before,m_startsInPose);
 }
 
 void RetargetDialog::updateTable()

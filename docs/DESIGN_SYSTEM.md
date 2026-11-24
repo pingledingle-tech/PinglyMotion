@@ -22,7 +22,7 @@ replacing the token values.
 | `background` | `#1E1F22` | `#F3F4F6` | Window background, behind panels |
 | `surface` | `#2A2B2F` | `#FFFFFF` | Panels, dialogs, fields |
 | `surface_raised` | `#35373C` | `#E9EBEF` | Normal buttons, tiles, hover rows |
-| `border` | `#767B85` | `#7A808A` | Control and field borders, dividers |
+| `border` | `#7C818B` | `#7A808A` | Control and field borders, dividers |
 | `text` | `#E6E7EA` | `#1C1E22` | Normal text and icons |
 | `text_muted` | `#AEB2BA` | `#535963` | Secondary text, hints, units |
 | `text_disabled` | `#868A93` | `#7A808A` | Text and icons of disabled controls |
@@ -60,7 +60,10 @@ Contrast (WCAG 2.2, charter P9), checked for these values:
   work as text, rings and slider fills. `on_axis` is at least 5.3:1 on all
   three axis colours.
 - `border`, `focus_ring`, `accent` and the four area colours are at least
-  3:1 on `surface` and `background`.
+  3:1 on `surface` and `background`; `border`, `focus_ring` and `text_disabled`
+  also on `surface_raised` (dark `border` was raised from `#767B85` to
+  `#7C818B` for this, job B4). `tests/test_contrast.py` computes all of this
+  from `design_tokens.json` in both themes.
 - `text_disabled` is at least 3:1 on every surface, so the reason a control is
   disabled can still be read.
 

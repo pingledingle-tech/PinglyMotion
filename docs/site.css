@@ -18,14 +18,14 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --background:#1E1F22;--surface:#2A2B2F;--surface-raised:#35373C;--border:#767B85;
+    --background:#1E1F22;--surface:#2A2B2F;--surface-raised:#35373C;--border:#7C818B;
     --text:#E6E7EA;--text-muted:#AEB2BA;--accent:#3272DD;--on-accent:#FFFFFF;
     --accent-text:#7FB0FF;--focus-ring:#9CC2FF;--selection:#3272DD;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --background:#1E1F22;--surface:#2A2B2F;--surface-raised:#35373C;--border:#767B85;
+  --background:#1E1F22;--surface:#2A2B2F;--surface-raised:#35373C;--border:#7C818B;
   --text:#E6E7EA;--text-muted:#AEB2BA;--accent:#3272DD;--on-accent:#FFFFFF;
   --accent-text:#7FB0FF;--focus-ring:#9CC2FF;--selection:#3272DD;
 }

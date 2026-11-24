@@ -110,7 +110,7 @@ LabHelpView::LabHelpView(const QString& examplesFolder, QWidget* parent) :
   m_text = new QTextBrowser(this);
   m_text->setObjectName(QStringLiteral("scriptLabHelpText"));
   m_text->setOpenLinks(false);
-  m_text->setFrameShape(QFrame::NoFrame);
+  m_text->setFrameShape(QFrame::StyledPanel);   // a frame, so the keyboard focus can show on it (charter P8, job B4)
   m_text->setMinimumWidth(Theme::Size::controlDefault * 12);
   m_text->setMinimumHeight(Theme::Size::controlDefault * 10);
   right->addWidget(m_text, 1);

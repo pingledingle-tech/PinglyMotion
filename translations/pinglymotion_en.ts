@@ -4876,6 +4876,30 @@ Pick a smaller file, then try again.</source>
         <source>The Joints list is open. View &gt; Joints closes it.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>New box prop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New sphere prop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New cone prop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New torus prop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected prop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current frame</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PropEdit</name>

@@ -52,7 +52,8 @@ KeysMouseDialog::KeysMouseDialog(QWidget* parent) : QDialog(parent), m_table(nul
   m_table->horizontalHeader()->setStretchLastSection(true);
   m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_table->setSelectionMode(QAbstractItemView::NoSelection);
-  m_table->setFocusPolicy(Qt::NoFocus);
+  m_table->setTabKeyNavigation(false);   // a table takes Tab for its cells and never lets go (charter P8)
+  m_table->setFocusPolicy(Qt::StrongFocus);   // Tab reaches it, the arrow keys scroll it (charter P8)
   m_table->setWordWrap(true);
   setMinimumWidth(520);
   for (int row = 0; row < rowCount; ++row)

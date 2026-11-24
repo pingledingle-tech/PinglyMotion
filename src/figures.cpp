@@ -27,6 +27,7 @@
 #include "animation.h"
 #include "bvhnode.h"
 #include "constants.h"
+#include "dialogfit.h"
 #include "lucideicons.h"
 #include "menuspec.h"
 #include "textsize.h"
@@ -150,7 +151,9 @@ AddFigureDialog::AddFigureDialog(QWidget* parent)
   using namespace FigureSpec;
   setObjectName(QStringLiteral("addFigureDialog"));
   setWindowTitle(FigureSpec::tr(dialogTitle));
-  QVBoxLayout* layout = new QVBoxLayout(this);
+  // in a scroll area that fits the screen, with the buttons under it (src/dialogfit.h; job B4: the
+  // window was cut off on a small screen at 200 percent text)
+  QVBoxLayout* layout = DialogFit::contentLayout(this);
   layout->setContentsMargins(Size::spacingXl, Size::spacingXl, Size::spacingXl, Size::spacingXl);
   layout->setSpacing(Size::spacingM);
 
@@ -207,9 +210,10 @@ AddFigureDialog::AddFigureDialog(QWidget* parent)
   m_cancel->setAutoDefault(false);
   m_cancel->setStyleSheet(buttonStyle(false, false));
   actions->addWidget(m_cancel);
-  layout->addLayout(actions);
+  DialogFit::finish(this, actions);
 
-  setStyleSheet(QStringLiteral("QDialog#addFigureDialog { background: %1; } QLabel { color: %2; }")
+  // the scroll area's body is the same colour as the dialog, so the window looks as before
+  setStyleSheet(QStringLiteral("QDialog#addFigureDialog, QDialog#addFigureDialog QWidget#dialogFitBody { background: %1; } QLabel { color: %2; }")
                   .arg(hex(Token::Surface), hex(Token::Text)));
 
   connect(m_library, &QToolButton::clicked, this, [this]() { m_choice = Choice::Library; accept(); });

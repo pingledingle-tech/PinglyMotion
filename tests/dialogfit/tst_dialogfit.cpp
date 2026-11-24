@@ -21,6 +21,7 @@
 #include <QScrollBar>
 #include <QSettings>
 #include <QTemporaryDir>
+#include <QToolButton>
 #include <QtTest>
 
 #include <functional>
@@ -34,6 +35,10 @@
 #include "dialogfit.h"
 #include "easing.h"
 #include "easingtiles.h"
+#include "figures.h"
+#include "labguideview.h"
+#include "labhelpview.h"
+#include "welcomedialog.h"
 #include "gltfimport.h"
 #include "gltfimportdialog.h"
 #include "keysmousedialog.h"
@@ -88,6 +93,10 @@ namespace
       {"whatsnew", [news]() -> QDialog* { return new WhatsNewDialog(news); }},
       {"updatenotification", []() -> QDialog* { return new UpdateNotificationDialog; }},
       {"curveeditor", []() -> QDialog* { return new CurveEditorDialog(Easing::Bezier()); }},
+      {"welcome", []() -> QDialog* { return new WelcomeDialog; }},
+      {"addfigure", []() -> QDialog* { return new AddFigureDialog; }},
+      {"labhelp", []() -> QDialog* { return new LabHelpView(QStringLiteral(PINGLYMOTION_EXAMPLES_DIR "/objects")); }},
+      {"labguide", []() -> QDialog* { return new LabGuideView(QStringLiteral(PINGLYMOTION_EXAMPLES_DIR "/objects")); }},
       {"aiconnect", []() -> QDialog* { return new AiConnectDialog(false); }},
       {"aiconnect_claude", []() -> QDialog* { AiConnectDialog* d = new AiConnectDialog(false); d->showPage(AiConnectDialog::Claude); return d; }},
       {"aiconnect_chatgpt", []() -> QDialog* { AiConnectDialog* d = new AiConnectDialog(false); d->showPage(AiConnectDialog::ChatGpt); return d; }},
@@ -109,7 +118,7 @@ namespace
     const QList<QScrollArea*> scrolls = dialog.findChildren<QScrollArea*>();
     for (QAbstractButton* button : dialog.findChildren<QAbstractButton*>())
     {
-      if (!qobject_cast<QPushButton*>(button)) continue;
+      if (!qobject_cast<QPushButton*>(button) && !qobject_cast<QToolButton*>(button)) continue;   // the Welcome card's buttons are tool buttons
       bool inside = false;
       for (QScrollArea* scroll : scrolls)
         if (scroll->isAncestorOf(button)) inside = true;

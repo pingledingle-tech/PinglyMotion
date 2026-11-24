@@ -88,6 +88,13 @@ The Windows job of every pull request also runs the packed program once (step "S
 
 Locally (Linux): `xvfb-run -a python3 tools/ci/smoke_screenshots.py --app /tmp/build/src/PinglyMotion --cwd bin --folder . --open-dir examples --open-dir tests/motions --out /tmp/smoke`.
 
+**The final check of the program (job B4, phase 7)** is kept up by tests that run with everything else:
+
+- `tests/test_contrast.py` (`ctest -R contrast`) computes the contrast of every colour pair in `docs/design_tokens.json`, light and dark, and compares `src/theme.cpp` with the file. A new colour token has to pass it.
+- `tests/keyboardfocus` (`ctest -R keyboardfocus`) goes through the main window (Animate and Script side, every tab and page) and every dialog, dark and light, at 100 and 200 percent text: every control can be reached by Tab, has a name, shows the keyboard focus (its picture differs with and without it), the Tab chain visits all of them and comes round (no keyboard trap), Shift+Tab goes back, and no shortcut key is used twice. A new dialog goes into `makers()` in this test and in `tests/dialogfit`.
+- `tests/dialogfit` also fits every dialog on a small and a tiny screen at 200 percent.
+- The Linux smoke run saves and reopens each example (`--roundtrip-dir examples`), scans the program's own output for warnings that point at a real bug (`SUSPICIOUS_LOG` in `tools/ci/smoke_screenshots.py`, tested by `tests/test_smoke_scan.py`) and runs again with the light theme, with 200 percent text and with the helper off (`--setting dark_theme=false`, `text_size_percent=200`, `tips_on=false`; Linux only, the program starts in a scratch home). Locally: `xvfb-run -a python3 tools/ci/smoke_screenshots.py --app /tmp/build/src/PinglyMotion --cwd bin --folder . --open-dir examples --roundtrip-dir examples --setting dark_theme=false --out /tmp/smoke`.
+
 ## Evaluation set for the AI assistant
 
 `tests/assistant/` measures how well an AI assistant animates through the control commands (issue 129). Plain standard-library Python; it needs the built program and a display (`xvfb-run -a`), never a network or a key, except the manual driver.

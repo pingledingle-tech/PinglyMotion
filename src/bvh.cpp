@@ -267,7 +267,9 @@ Animation::LoadProblem BVH::parseLimFile(BVHNode* root,const QString& limFile) c
       } // for
     }
     else
-      qCWarning(lcFile,"parseLimFile(): Node '%s' not in animation. This will lead to problems!",name.toLatin1().constData());
+      // a classic file has no wing, tail or hind limb joints: normal, so only a debug line (it was a warning
+      // that came about 110 times at every open and hid the real ones; job B4)
+      qCDebug(lcFile,"parseLimFile(): the file has no joint '%s', its limits are skipped",name.toLatin1().constData());
   }
   limit.close();
   return {};
