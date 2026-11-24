@@ -1,8 +1,10 @@
 Branch: job/ux-e-beginner-view
-Status: active
+Status: done
 Pull request: #463
 Files:
+- src/beginnerview.h
 - src/panelwindow.h
+- src/panellayout.h
 - src/panelcontent.h
 - src/usersettings.*
 - src/pinglymotionwindow.cpp
@@ -13,7 +15,7 @@ Files:
 - tests/guidance/**
 - tests/uirender/**
 - docs/UX_DECISIONS.md
-- docs/TEACHING.md
+- docs/TEACHING_TEXTS.md
 - docs/ROADMAP.md
 
 ## What

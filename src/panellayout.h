@@ -22,6 +22,8 @@ namespace PanelLayout
   // Setting names (docs/archive/PANELS_PLAN.md, section 7).
   inline const char* const SettingLayout="panel_layout";
   inline const char* const SettingLayoutVersion="panel_layout_version";
+  // the Beginner mode's own layout (UX-E); panel_layout stays the Expert layout
+  inline const char* const SettingLayoutBeginner="panel_layout_beginner";
   inline const char* const SettingWindowGeometry="main_window_geometry";
   // Retired: read once for the move, never written again.
   inline const char* const LegacyWindowState="window_state";

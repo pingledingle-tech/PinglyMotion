@@ -449,6 +449,8 @@ class PinglyMotionWindow : public QMainWindow
     void buildDocks();
     void buildMenus();
     void resetPanelLayout();
+    void updateBeginnerRow();
+    bool switchPanelLayoutForMode(bool expert);
     // Tab, or View > Hide panels: hides every open panel, or shows again the
     // ones Tab hid (docs/archive/PANELS_PLAN.md, job P4)
     void togglePanelsHidden();
