@@ -288,7 +288,7 @@ Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 
 ### Script Lab: the channel map (job A4)
 
-Built in pull request 453 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`, `src/scriptlab/channelmapview.cpp`, `src/scriptlab/labchannelmap.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labchannelmap.cpp` check them letter for letter. The arrows' own words ("say on channel 7", "link message 5", "menu on channel -77") are built from the run and are not in this list.
+Built in pull request 453 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`, `src/scriptlab/channelmapview.cpp`, `src/scriptlab/labchannelmap.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labchannelmap.cpp` check them letter for letter; the chain tags (LABMAP-21 and 22) are in `src/scriptlab/labchains.cpp` and `tests/tst_labchains.cpp` checks them. The arrows' own words ("say on channel 7", "link message 5", "menu on channel -77") are built from the run and are not in this list.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
@@ -312,6 +312,9 @@ Built in pull request 453 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 | LABMAP-18 | 2 Tip on hover | Channel map: a box that hears messages and passes them on (its name ends in "(hub)") | This part listens and passes messages on, like a server. | in the program (pull request 453, 24 Nov 2026) | job A4 |
 | LABMAP-19 | 2 Tip on hover | Channel map: an arrow from a script | Click to see the script line that sent it. | in the program (pull request 453, 24 Nov 2026) | job A4 |
 | LABMAP-20 | 2 Tip on hover | Channel map: an arrow from outside the scripts (a click, a menu answer, a viewer answer) | It came from outside the scripts. | in the program (pull request 453, 24 Nov 2026) | job A4 |
+| LABMAP-21 | 1 Label | 3D view: the tag in the middle of a chain line while the object holds @detach | Locked | in the program (pull request 455, 24 Nov 2026) | job A4 |
+| LABMAP-22 | 1 Label | 3D view: the tag in the middle of a chain line while the object is free | Free | in the program (pull request 455, 24 Nov 2026) | job A4 |
+
 ### Script Lab: the player (job B3)
 
 Built in pull request 454 (24 Nov 2026). The texts are in `src/scriptlab/labplayer.cpp` (and the moment "Start." in `src/scriptlab/labrecipe.cpp`); `tests/scriptlabplayer/tst_scriptlabplayer.cpp` checks them letter for letter. The rows put in part names, actions and facts from the replay. The Start, Stop and Replay from start labels are the timeline's (`TransportBar`).

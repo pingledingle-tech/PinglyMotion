@@ -467,6 +467,7 @@ No mockup (the project owner, 23 November 2026, 23:38): built from the design ch
 - **Folded for beginners, open for experts** (P5): switching the mode folds or opens the part and moves nothing (P12). The header counts messages and problems ("4 messages, 1 problem").
 - **Keys** (P8): the map is one Tab stop; Up and Down between rows, Left and Right between sender, arrow and receiver, Home and End, Enter or Space does the click; the focused part has the 2 px `focus_ring`.
 - **Word tips:** Channel and Listener, in the map part, the same cards as the other word tips (P4).
+- **Chain and ribbon lines (part 2, pull request 455):** a straight line in the 3D view between the two props a script links with particles (`PSYS_SRC_TARGET_KEY`), drawn on top of the figure so it is never hidden; locked: solid, `danger`, tag **Locked**; free: dashed, `success`, tag **Free**. The tag is a small label in the middle of the line (the line's colour as text and border, on `surface`, `radius.small`), placed like the ring letters. Shown only with the effects and the props from prims; nothing to click.
 - **For the combined taste round (look, not blocking):** whether rows read better than a drawing with boxes spread out, the box width, the dashed border for boxes outside the object, the `accent` border of a hub, and whether the error words fit beside a narrow panel.
 ## 6s. Script Lab: the player (job B3, built, 24 November 2026)
 

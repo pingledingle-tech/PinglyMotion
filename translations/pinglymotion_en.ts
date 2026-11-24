@@ -6857,6 +6857,14 @@ Try a BVH file for a person with arms and legs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>%1 s</source>
         <translation type="unfinished"></translation>
     </message>

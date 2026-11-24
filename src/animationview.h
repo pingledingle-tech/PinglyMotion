@@ -48,6 +48,7 @@
 #include "prop.h"
 #include "bvh.h"
 #include "limbpull.h"
+#include "chainlines.h"
 
 #include <functional>
 
@@ -82,6 +83,10 @@ class AnimationView : public QOpenGLWidget
     // Script Lab effects (issue 293): while the preview has an animation it is drawn instead of the
     // scene's animations (and cannot be clicked); its markers are drawn on the figure. Not owned.
     void setEffectsPreview(EffectsPreview* preview);
+    // Script Lab chains and ribbons (job A4, part 2): straight lines between two props by name,
+    // drawn while the list is not empty (the Script Lab panel gives it while its props are shown)
+    void setChainLines(const QList<ChainLines::Line>& lines);
+    QList<ChainLines::Line> chainLines() const { return m_chainLines; }
     // Script Lab camera limits (job 7b): while the override is active the camera keeps to its
     // constraint; when it stops, the camera from before is put back exactly. Not owned.
     void setCameraOverride(CameraOverride* cameraOverride);
@@ -505,6 +510,13 @@ class AnimationView : public QOpenGLWidget
     QPointF m_ringLabelPos[3];
     bool m_ringLabelShown[3]={false,false,false};
     void placeRingLabels();
+    // job A4: the chain lines, and the word tags beside them (placed after the picture, as the ring letters)
+    void drawChainLines();
+    void placeChainLabels();
+    QList<ChainLines::Line> m_chainLines;
+    mutable QHash<QString,QVector3D> m_propEye;   // each prop's centre in eye space, as last drawn
+    QList<QPointF> m_chainMiddles;                // where each line's word goes (-1,-1: not on screen)
+    QList<QLabel*> m_chainLabels;
 };
 
 #endif

@@ -62,6 +62,7 @@
 #include "labprimprops.h"
 #include "labtint.h"
 #include "labdialogbox.h"
+#include "labchains.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
@@ -210,6 +211,10 @@ class ScriptLabPanel : public QWidget
     bool activateMapBox(int box);
     // an arrow: shows the script line that sent it in the editor; false when it came from outside
     bool activateMapArrow(int arrow);
+    // --- chain and ribbon lines (job A4, part 2): the chains (llParticleSystem with PSYS_SRC_TARGET_KEY
+    // from one prim to another) at the end of the last folder run, while the props are shown; each
+    // locked when the object holds @detach. The window gives them to the 3D view (chainsChanged).
+    QVector<LabChains::Chain> chains() const { return m_chains; }
     // Expert mode (View > Expert mode): the panel starts with UserSettings and follows it
     void setExpertMode(bool expert);
     bool expertMode() const { return m_expert; }
@@ -453,6 +458,8 @@ class ScriptLabPanel : public QWidget
   signals:
     // propTints() changed (lane 1 job E)
     void propTintsChanged();
+    // chains() changed (job A4, part 2)
+    void chainsChanged();
 
   public slots:
     // reads the state again (connected to RlvState::changed)
@@ -598,6 +605,9 @@ class ScriptLabPanel : public QWidget
     QLabel* m_mapLine = nullptr;
     QLabel* m_mapProblems = nullptr;
     QString m_mapKey;
+    void updateChains();
+    QVector<LabChains::Chain> m_chains;
+    bool m_chainsReady = false;
     QTabWidget* m_tabs = nullptr;
     QLineEdit* m_liveFolder = nullptr;
     QPushButton* m_watch = nullptr;

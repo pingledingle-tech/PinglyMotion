@@ -338,6 +338,8 @@ void AnimationView::drawProp(const Prop* prop) const
   else if(partHighlighted==prop->id()) state=Prop::Highlighted;
   if(isPicking()) pickName(prop->id());
   prop->draw(state);
+  // job A4: where the prop's centre was drawn, for a chain line to it
+  if(!isPicking()) m_propEye.insert(prop->name(),(SceneState::modelview()*QVector4D(prop->position(),1.0f)).toVector3D());
   if(propManager()->getSelectedPropId() == prop->id())
     drawDragHandles(prop);
 }
@@ -417,7 +419,8 @@ void AnimationView::paintGL()
   // only the picture on screen, not one renderImage() draws from another side
   if(!m_renderSize.isValid())
   {
-    // the ring letters are widgets over the picture: moved after it is drawn
+    // the chain words (job A4) and the ring letters are widgets over the picture: moved after it is drawn
+    QMetaObject::invokeMethod(this,&AnimationView::placeChainLabels,Qt::QueuedConnection);
     QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);
     emit viewDrawn();
   }
@@ -585,6 +588,7 @@ void AnimationView::draw()
     drawShadows();
   }
   drawProps();
+  drawChainLines();
   drawPullLine();
   drawSphere();
   drawOverlay();
@@ -2598,6 +2602,83 @@ void AnimationView::drawPullLine()
   m_skinRenderer.drawGeometry(GL_TRIANGLES,dot,QVector<QVector3D>(),QVector<QVector4D>(dot.size(),colour),
                               QMatrix4x4(),QMatrix4x4(),SceneState::Fog(),1.0f);
   glEnable(GL_DEPTH_TEST);
+}
+
+void AnimationView::setChainLines(const QList<ChainLines::Line>& lines)
+{
+  m_chainLines=lines;
+  update();
+}
+
+void AnimationView::drawChainLines()
+{
+  if(isPicking()) return;
+  m_chainMiddles.clear();
+  if(m_chainLines.isEmpty() || !m_skinRenderer.isReady()) return;
+  // in clip space, as the pull line: a straight line between the two props' centres, solid when
+  // locked and dashed when free, in the danger or success colour (src/chainlines.h)
+  const double w=qMax(1,width()), h=qMax(1,height());
+  const auto screen=[&](const QVector3D& eye,QPointF* out)
+  {
+    const QVector4D clip=SceneState::projection()*QVector4D(eye,1.0f);
+    if(clip.w()<=0.0f) return false;
+    *out=QPointF((double(clip.x()/clip.w())+1.0)/2.0*w,(1.0-double(clip.y()/clip.w()))/2.0*h);
+    return true;
+  };
+  const auto clip=[&](const QPointF& p) { return QVector3D(float(p.x()/w*2.0-1.0),float(1.0-p.y()/h*2.0),0.0f); };
+  const qreal scale=TextSize::scaled(100)/100.0;
+  const bool dark=Theme::isDark();
+  glDisable(GL_DEPTH_TEST);
+  for(const ChainLines::Line& line : m_chainLines)
+  {
+    QPointF a,b;
+    const auto from=m_propEye.constFind(line.from);
+    const auto to=m_propEye.constFind(line.to);
+    if(from==m_propEye.constEnd() || to==m_propEye.constEnd() || !screen(from.value(),&a) || !screen(to.value(),&b))
+    {
+      m_chainMiddles << QPointF(-1,-1);
+      continue;
+    }
+    QVector<QVector3D> pieces;
+    for(const QPointF& p : ChainLines::pieces(a,b,line.locked,scale)) pieces << clip(p);
+    const QVector4D colour=ViewColours::vector(ChainLines::colour(line.locked,dark));
+    m_skinRenderer.drawGeometry(GL_LINES,pieces,QVector<QVector3D>(),QVector<QVector4D>(pieces.size(),colour),
+                                QMatrix4x4(),QMatrix4x4(),SceneState::Fog(),float(ChainLines::Width*devicePixelRatioF()*scale));
+    m_chainMiddles << ChainLines::middle(a,b);
+  }
+  glEnable(GL_DEPTH_TEST);
+}
+
+void AnimationView::placeChainLabels()
+{
+  // one word tag per line, in its middle: Locked or Free (charter P10: not colour alone)
+  while(m_chainLabels.size()<m_chainLines.size())
+  {
+    QLabel* label=new QLabel(this);
+    label->setObjectName(QStringLiteral("chainLabel%1").arg(m_chainLabels.size()));
+    label->setAttribute(Qt::WA_TransparentForMouseEvents);
+    label->setAlignment(Qt::AlignCenter);
+    m_chainLabels << label;
+  }
+  const bool dark=Theme::isDark();
+  for(int i=0;i<m_chainLabels.size();i++)
+  {
+    QLabel* label=m_chainLabels.at(i);
+    const QPointF middle=i<m_chainMiddles.size() ? m_chainMiddles.at(i) : QPointF(-1,-1);
+    if(i>=m_chainLines.size() || middle.x()<0)
+    {
+      if(label->isVisible()) label->hide();
+      continue;
+    }
+    const ChainLines::Line& line=m_chainLines.at(i);
+    if(label->text()!=line.word) label->setText(line.word);
+    const QString style=ChainLines::tagStyle(line.locked,dark,TextSize::scaled(Theme::Size::radiusSmall));
+    if(label->styleSheet()!=style) label->setStyleSheet(style);
+    label->adjustSize();
+    const QRect place(int(middle.x())-label->width()/2,int(middle.y())-label->height()/2,label->width(),label->height());
+    if(label->geometry()!=place) label->setGeometry(place);
+    if(!label->isVisible()) label->show();
+  }
 }
 
 void AnimationView::placeRingLabels()
