@@ -125,6 +125,8 @@
 #include "emptystate.h"
 #include "guidancespec.h"
 #include "hintcard.h"
+#include "helpermode.h"
+#include "helperspec.h"
 #include "welcomedialog.h"
 #include "topbar.h"
 #include "reasonline.h"
@@ -950,6 +952,7 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
   {
     currentPart=node;
     if(m_hintCards) m_hintCards->setPicked(true);
+    if(m_helper) m_helper->notify(QLatin1String(HelperSpec::picked));
 
     // show the joint in the joint table, on its tab
     const int track=ui->animationView->partNames().indexOf(currentPart->name());
@@ -1002,6 +1005,7 @@ void PinglyMotionWindow::partClicked(BVHNode* node, QVector3D rotation, Rotation
 void PinglyMotionWindow::partDragged(BVHNode* node,double x,double y,double z)
 {
   if(m_hintCards) m_hintCards->markTurned();
+  if(m_helper) m_helper->notify(QLatin1String(HelperSpec::turned));
   if(node)
   {
     // check if this frame is protected
@@ -1339,6 +1343,7 @@ void PinglyMotionWindow::buildMenus()
     Theme::apply(!light);
     if(m_topBar) m_topBar->setDark(!light);
     if(m_workMode) m_workMode->applyLook();
+    if(m_helper) m_helper->applyLook();
     if(m_emptyState) m_emptyState->applyLook();
     if(m_viewToolbar) m_viewToolbar->applyLook();
     if(m_reasonLine) m_reasonLine->applyLook();
@@ -1461,6 +1466,7 @@ void PinglyMotionWindow::buildMenus()
     refreshHandsPanel();
     m_tipsSwitch->setOn(on);
     if(m_hintCards) m_hintCards->setHintsOn(on);   // the hint cards follow the setting (UX phase 6a)
+    if(m_helper) m_helper->setOn(on);   // the helper is the same setting (job UX-C)
   });
   ui->menuHelp->addAction(m_hintsAction);
   ui->menuHelp->addSeparator();
@@ -1525,6 +1531,7 @@ void PinglyMotionWindow::setKeyFromMenu()
     updateKeyBtn();
   }
   statusBar()->showMessage(TimelineSpec::setKeyMessage(added,anim->getFrame(),jointDisplayName(currentPart->name())),5000);
+  if(m_helper) m_helper->notify(QLatin1String(HelperSpec::keySet));
 }
 
 // the name of a joint as the Joints list shows it ("Left Shoulder"), or its file name
@@ -1617,6 +1624,7 @@ void PinglyMotionWindow::buildTopBar()
   connect(m_emptyState,&EmptyState::newChosen,this,[this](){ fileNew(); });
 
   buildHintCards();
+  buildHelper();
 }
 
 // UX phase 6a: the hint cards (src/hintcard.h), one at a time by the part of the window they talk about
@@ -1654,6 +1662,79 @@ void PinglyMotionWindow::buildHintCards()
     if(dock) connect(dock,&QDockWidget::visibilityChanged,m_hintCards,[this](bool){ m_hintCards->refresh(); });
   m_hintCards->setHintsOn(UserSettings::tipsOn());
   m_hintCards->setAnimationOpen(!m_empty);
+}
+
+// Job UX-C: helper mode (src/helpermode.h). The Helper switch at the top is the same setting as
+// Help > Show hints, the status bar switch and Setup; the hint cards move into the helper panel.
+void PinglyMotionWindow::buildHelper()
+{
+  m_helper=new HelperMode(this,m_hintCards,
+    [this](const QString& name){ return helperTarget(name); },
+    [this](const QString& event){ return helperAlreadyDone(event); },
+    [this](){ return centralWidget() ? centralWidget()->geometry() : QRect(); });
+  // the switch stands right of Animate / Script, before the divider that follows them
+  const QList<QAction*> barActions=ui->toolBar->actions();
+  m_helper->addToBar(ui->toolBar,barActions.value(barActions.indexOf(m_workMode->scriptAction())+1));
+  connect(m_helper,&HelperMode::switchClicked,this,[this](bool on)
+  {
+    if(m_hintsAction) m_hintsAction->setChecked(on);
+    statusBar()->showMessage(HelperSpec::tr(on ? HelperSpec::onMessage : HelperSpec::offMessage),8000);
+  });
+  connect(m_helper,&HelperMode::offRequested,this,[this]()
+  {
+    if(m_hintsAction) m_hintsAction->setChecked(false);
+    statusBar()->showMessage(HelperSpec::tr(HelperSpec::offMessage),8000);
+  });
+  // what the user does that a lesson step waits for (picking, turning, Set key and Start are sent
+  // where they happen)
+  connect(m_libraryDock->toggleViewAction(),&QAction::toggled,m_helper,[this](bool on)
+  {
+    if(on) m_helper->notify(QLatin1String(HelperSpec::libraryShown));
+  });
+  connect(m_workMode->scriptAction(),&QAction::toggled,m_helper,[this](bool on)
+  {
+    if(on) m_helper->notify(QLatin1String(HelperSpec::scriptSide));
+  });
+  connect(m_workMode->animateAction(),&QAction::toggled,m_helper,[this](bool on)
+  {
+    if(on) m_helper->notify(QLatin1String(HelperSpec::animateSide));
+  });
+  for(QSlider* slider : {ui->xRotationSlider,ui->yRotationSlider,ui->zRotationSlider})
+  {
+    connect(slider,&QAbstractSlider::sliderMoved,m_helper,[this](){ m_helper->notify(QLatin1String(HelperSpec::turned)); });
+    connect(slider,&QAbstractSlider::actionTriggered,m_helper,[this](){ m_helper->notify(QLatin1String(HelperSpec::turned)); });
+  }
+  // a step's control may come or go with its panel
+  for(QDockWidget* dock : {m_jointsDock,m_jointCardDock,m_timelineDock,m_libraryDock,m_scriptLabDock})
+    if(dock) connect(dock,&QDockWidget::visibilityChanged,m_helper,[this](bool){ m_helper->refresh(); });
+  m_helper->setAnimationOpen(!m_empty);
+  m_helper->setOn(UserSettings::tipsOn());
+}
+
+// the controls the hint cards and the lesson steps talk about (HelperSpec targets)
+QWidget* PinglyMotionWindow::helperTarget(const QString& name) const
+{
+  if(name==QLatin1String("view")) return ui->animationView;
+  if(name==QLatin1String("selected")) return m_selectedJoint;
+  if(name==QLatin1String("setKey")) return m_panels ? m_panels->setKey : nullptr;
+  if(name==QLatin1String("start")) return m_panels && m_panels->transport ? m_panels->transport->startButton() : nullptr;
+  if(name==QLatin1String("tiles")) return ui->timelineView->easingTiles();
+  if(name==QLatin1String("joints")) return m_jointsDock;
+  if(name==QLatin1String("setup")) return m_topBar ? m_topBar->setupWidget() : nullptr;
+  if(name==QLatin1String("library") && m_topBar) return m_topBar->widgetFor(m_topBar->button(MenuSpec::topLibrary.id));
+  if(name==QLatin1String("resetLayout") && m_topBar) return m_topBar->widgetFor(m_topBar->button(MenuSpec::topResetLayout.id));
+  if(name==QLatin1String("scriptSwitch") && m_workMode) return m_workMode->widgetFor(m_workMode->scriptAction());
+  if(name==QLatin1String("animateSwitch") && m_workMode) return m_workMode->widgetFor(m_workMode->animateAction());
+  return nullptr;
+}
+
+// a lesson step whose thing is already so is skipped
+bool PinglyMotionWindow::helperAlreadyDone(const QString& event) const
+{
+  if(event==QLatin1String(HelperSpec::picked)) return currentPart!=nullptr;
+  if(event==QLatin1String(HelperSpec::libraryShown)) return m_libraryDock && !m_libraryDock->isHidden();
+  if(event==QLatin1String(HelperSpec::scriptSide)) return m_workMode && m_workMode->side()==WorkMode::Side::Script;
+  return false;
 }
 
 // Two figures in one scene, Expert mode only (docs/UX_DECISIONS.md 6m): the Figures box at the
@@ -1975,6 +2056,7 @@ void PinglyMotionWindow::setEmptyMode(bool empty)
   }
   if(m_topBar) m_topBar->setAnimationOpen(!empty);
   if(m_hintCards) m_hintCards->setAnimationOpen(!empty);
+  if(m_helper) m_helper->setAnimationOpen(!empty);
   // the view toolbar has nothing to look at while the empty state covers the 3D view
   if(m_viewToolbar) m_viewToolbar->setVisible(!empty);
   // the timeline shows one line instead of its rows (UX phase 3a)
@@ -1994,6 +2076,8 @@ QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
 // docked and shown. Panels hidden by Tab count as shown again.
 void PinglyMotionWindow::resetPanelLayout()
 {
+  // the lesson step "Press Reset layout" goes on (job UX-C)
+  if(m_helper) m_helper->notify(QLatin1String(HelperSpec::layoutReset));
   // hiding the Script Lab here is not a switch to Animate (UX-F)
   WorkMode::Switcher::Hold hold(m_workMode);
   m_applyingTab=true;

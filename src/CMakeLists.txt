@@ -144,6 +144,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               setupdialog.cpp
               welcomedialog.cpp
               hintcard.cpp
+              helpermode.cpp
               camerakeysdialog.cpp
               keysmousedialog.cpp
               scene.cpp

@@ -9,7 +9,9 @@
  * whose job is already done (a joint picked, a limb pulled, a joint turned)
  * is skipped. Which card comes next is remembered between sessions
  * (UserSettings::hintCard). The card floats over the window, so it never
- * moves another control (charter P12).
+ * moves another control (charter P12). In the program the card lives inside
+ * the helper panel since job UX-C (src/helpermode.h, setHolder): the helper
+ * draws a ring around the part instead.
  *
  * HintCard is the widget; HintCards decides which card shows where.
  *
@@ -113,11 +115,21 @@ class HintCards : public QObject
     // decide again which card shows and where; called after anything that may change it
     void refresh();
 
+    // Helper mode (job UX-C): the card lives inside the helper panel instead of floating by its
+    // part. The holder takes the card (the caller puts it in a layout); the card is no longer
+    // placed, and the helper draws a highlight around the part instead (currentTarget()).
+    void setHolder(QWidget* holder);
+    bool embedded() const { return m_embedded; }
+    // the part the card now due talks about, while the card is shown; null otherwise
+    QWidget* currentTarget() const;
+
   signals:
     // "Turn hints off" was pressed: the window turns hints off everywhere
     void hintsOffRequested();
     // the card was closed with its close button or Esc: the window says so in the status line
     void cardClosed();
+    // the card or its part may have changed (after every refresh)
+    void changed();
 
   protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -138,6 +150,7 @@ class HintCards : public QObject
     bool m_turned = false;
     bool m_refreshing = false;
     bool m_closed = false;
+    bool m_embedded = false;
 };
 
 #endif
