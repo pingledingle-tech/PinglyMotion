@@ -24,6 +24,7 @@
 #include <QDialog>
 
 class QCheckBox;
+class QLabel;
 class QPushButton;
 class QRadioButton;
 
@@ -54,6 +55,11 @@ namespace SetupText
   inline constexpr const char* luaSwitchChoice = QT_TRANSLATE_NOOP("SetupDialog", "Lua (trial): show the language choice in the editor");
   inline constexpr const char* luaSwitchTip = QT_TRANSLATE_NOOP("SetupDialog",
     "Lua is not checked or run yet. Scripts stay LSL.");
+  // Connections (docs/UX_DECISIONS.md 6h): the same two switches as the status bar. The state line
+  // under each one is the status bar's own text (ControlIndicator::text, AuroraIndicator::text).
+  inline constexpr const char* connectionsLabel = QT_TRANSLATE_NOOP("SetupDialog", "Connections");
+  inline constexpr const char* aiAssistantChoice = QT_TRANSLATE_NOOP("SetupDialog", "AI Assistant");
+  inline constexpr const char* auroraChoice = QT_TRANSLATE_NOOP("SetupDialog", "Live link to Aurora");
   inline constexpr const char* doneButton = QT_TRANSLATE_NOOP("SetupDialog", "Done");
 
   // the five text size choices (docs/UX_DECISIONS.md, section 8: 100 to 200, steps of 25)
@@ -79,6 +85,17 @@ class SetupDialog : public QDialog
     QCheckBox* luaSwitchBox() const { return m_luaSwitchCheck; }
     QPushButton* welcomeButton() const { return m_welcomeButton; }
 
+    // Connections: the dialog opens with both off and shows what the window tells it (the real
+    // state of the AI Assistant and the Aurora link). Setting the state never sends a request.
+    void setAiAssistant(bool running, const QString& statusText);
+    void setAuroraLink(bool enabled, const QString& statusText);
+    bool aiAssistantChecked() const;
+    bool auroraLinkChecked() const;
+    QCheckBox* aiAssistantBox() const { return m_aiCheck; }
+    QCheckBox* auroraLinkBox() const { return m_auroraCheck; }
+    QString aiAssistantStatus() const;
+    QString auroraLinkStatus() const;
+
   signals:
     // the user changed a choice; PinglyMotionWindow stores it and applies it (same path as its
     // own menu actions, so the window and the dialog never disagree)
@@ -91,6 +108,10 @@ class SetupDialog : public QDialog
     void suggestOnRequestRequested(bool on);
     void luaSwitchRequested(bool on);
     void showCameraKeysRequested();
+    // Connections: the user clicked a switch. The window calls the code the status bar switches
+    // use (setRemoteControl, the Aurora action) and then shows the real state again.
+    void aiAssistantRequested(bool on);
+    void auroraLinkRequested(bool on);
     // "Show the welcome card again": the window closes Setup and shows the card (UX phase 6a)
     void welcomeRequested();
 
@@ -105,6 +126,10 @@ class SetupDialog : public QDialog
     QCheckBox* m_suggestOnRequestCheck = nullptr;
     QCheckBox* m_luaSwitchCheck = nullptr;
     QPushButton* m_welcomeButton = nullptr;
+    QCheckBox* m_aiCheck = nullptr;
+    QCheckBox* m_auroraCheck = nullptr;
+    QLabel* m_aiStatus = nullptr;
+    QLabel* m_auroraStatus = nullptr;
 };
 
 #endif

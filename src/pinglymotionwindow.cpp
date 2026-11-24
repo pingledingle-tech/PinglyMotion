@@ -2371,6 +2371,28 @@ void PinglyMotionWindow::openSetupDialog()
   connect(&dialog,&SetupDialog::luaSwitchRequested,this,[](bool on) { UserSettings::setLuaSwitch(on); });
   connect(&dialog,&SetupDialog::cameraHabitRequested,this,&PinglyMotionWindow::chooseCameraHabit);
   connect(&dialog,&SetupDialog::showCameraKeysRequested,this,&PinglyMotionWindow::openCameraKeysDialog);
+  // AI Assistant and Aurora link (docs/UX_DECISIONS.md 6h): the same code as the status bar
+  // switches. After every request, and whenever the real state changes, the dialog shows the real
+  // state again (a failed start leaves the switch off, with the warning from setRemoteControl).
+  const auto showConnections=[this,&dialog]()
+  {
+    dialog.setAiAssistant(m_controlServer->running(),m_controlIndicator->text());
+    dialog.setAuroraLink(m_auroraLink->enabled(),m_auroraIndicator->text());
+  };
+  showConnections();
+  connect(&dialog,&SetupDialog::aiAssistantRequested,&dialog,[this,showConnections](bool on)
+  {
+    setRemoteControl(on);
+    showConnections();
+  });
+  connect(&dialog,&SetupDialog::auroraLinkRequested,&dialog,[this,showConnections](bool on)
+  {
+    if(m_auroraAction) m_auroraAction->setChecked(on);
+    showConnections();
+  });
+  connect(m_auroraLink,&AuroraLink::connectedChanged,&dialog,[showConnections](bool){ showConnections(); });
+  connect(m_controlServer.data(),&ControlServer::contact,&dialog,[showConnections](){ showConnections(); });
+  connect(m_controlServer.data(),&ControlServer::refused,&dialog,[showConnections](){ showConnections(); });
   bool welcomeAgain=false;
   connect(&dialog,&SetupDialog::welcomeRequested,this,[&dialog,&welcomeAgain]() { welcomeAgain=true; dialog.accept(); });
   dialog.exec();
