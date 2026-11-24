@@ -116,7 +116,10 @@ tokens in both themes (`src/theme.cpp`). Each answer has an automatic test
   changed, `selection` with a 3 pixel `on_accent` edge when selected, a 3 pixel
   `accent_text` edge under the mouse), bones `text_muted` (to the selected joint
   and in a pulled limb `accent_text`),
-  effect markers `accent` (box, object) and `danger_fill` (ball, lock). The 3D
+  effect markers `accent` (box, object) and `danger_fill` (ball, lock), Script Lab chain lines
+  (job A4, `src/chainlines.h`) `danger` and solid when locked, `success` and dashed (8 on, 6 off,
+  3 pixels wide, scaled with the text size) when free, each with a word tag (the line's colour as
+  text and 1 pixel border on `surface`, `radius.small`). The 3D
   view's background and the avatar's own body shading do not follow the theme yet.
 
 ## Code colours (Script Lab editor)

@@ -106,7 +106,6 @@ void TestLabChains::chainsOfAFolder()
   QCOMPARE(chains[0].toLink, 2);
   QCOMPARE(chains[0].file, QString("Cuff_left/cuff_left.lsl"));
   QCOMPARE(chains[0].word(), QString("Free"));
-  QCOMPARE(chains[0].words(), QString("Cuff_left to Collar: free."));
   QCOMPARE(chains[1].from, QString("Cuff_right"));
   QCOMPARE(chains[1].to, QString("Cuff_left"));
   QVERIFY(LabChains::fromFolderResult(QJsonObject(), false).isEmpty());
@@ -126,7 +125,6 @@ void TestLabChains::lockedWithDetach()
   QCOMPARE(chains.size(), 1);
   QVERIFY(chains[0].locked);
   QCOMPARE(chains[0].word(), QString("Locked"));
-  QCOMPARE(chains[0].words(), QString("Cuff to Root: locked."));
   // @detach=y frees it
   const QString key = result.value("result").toObject().value("objects").toArray().first().toObject().value("key").toString();
   rlv.apply(key, "@detach=y");

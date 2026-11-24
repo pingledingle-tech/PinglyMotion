@@ -20,11 +20,6 @@ QString Chain::word() const
   return locked ? QObject::tr("Locked") : QObject::tr("Free");
 }
 
-QString Chain::words() const
-{
-  return locked ? QObject::tr("%1 to %2: locked.").arg(from, to) : QObject::tr("%1 to %2: free.").arg(from, to);
-}
-
 QVector<Chain> fromLog(const QJsonArray& log, const QList<QPair<int, QString>>& prims, bool locked)
 {
   QMap<int, QString> names;

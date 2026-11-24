@@ -41,8 +41,6 @@ namespace LabChains
     QString file;          // the script that made it
     // "Locked" or "Free": the word drawn beside the line
     QString word() const;
-    // "Cuff_left to Collar: locked."
-    QString words() const;
     bool operator==(const Chain& o) const
     {
       return fromLink == o.fromLink && from == o.from && toLink == o.toLink && to == o.to && locked == o.locked && file == o.file;

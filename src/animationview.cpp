@@ -419,9 +419,9 @@ void AnimationView::paintGL()
   // only the picture on screen, not one renderImage() draws from another side
   if(!m_renderSize.isValid())
   {
-    // the ring letters are widgets over the picture: moved after it is drawn
-    QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);
+    // the chain words (job A4) and the ring letters are widgets over the picture: moved after it is drawn
     QMetaObject::invokeMethod(this,&AnimationView::placeChainLabels,Qt::QueuedConnection);
+    QMetaObject::invokeMethod(this,&AnimationView::placeRingLabels,Qt::QueuedConnection);
     emit viewDrawn();
   }
 }
