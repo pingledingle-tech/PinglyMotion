@@ -31,6 +31,8 @@
 namespace lsl
 {
 
+namespace builtin_detail { enum class Fn; }   // the built-in functions that run (builtins_internal.h)
+
 struct Limits
 {
   qint64 maxSteps = 500000;        // statements and expressions run, whole run
@@ -327,6 +329,17 @@ class Interpreter
     Value call(const Expr& e);
     Value callUser(const Function& f, std::vector<Value>& args);
     Value callBuiltin(const QString& name, std::vector<Value>& args);
+    // the built-in functions by family, one file each (builtins_<family>.cpp); handled is false when
+    // the function is not one of that family's
+    Value callBuiltinComm(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinRegion(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinPhysics(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinMedia(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinObject(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinLists(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinStrings(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinMath(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
+    Value callBuiltinPrims(builtin_detail::Fn fn, const QString& name, std::vector<Value>& a, bool& handled);
 
     // variables
     Var* find(const QString& name);

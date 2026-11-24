@@ -125,6 +125,15 @@ TARGET_LINK_LIBRARIES (fuzz_rlv fuzz_core Qt6::Core)
 # Script Lab: the LSL interpreter (issue 289); lsl_check and lsl_run reach it through the control commands
 SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/lexer.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/parser.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_comm.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_region.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_physics.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_media.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_object.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_lists.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_strings.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_math.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/builtins_prims.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/lint.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/interp.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/world.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/rlvworld.cpp

@@ -1,6 +1,6 @@
 Branch: job/r4-split-lsl-builtins
 Status: active
-Pull request: pending
+Pull request: #473
 Files:
 - src/scriptlab/lsl/builtins.cpp
 - src/scriptlab/lsl/builtins_*.cpp
@@ -9,6 +9,8 @@ Files:
 - src/CMakeLists.txt
 - fuzz/CMakeLists.txt
 - docs/SCRIPT_LAB.md
+- docs/CONTROL.md
+- docs/DEV.md
 
 ## What
 
