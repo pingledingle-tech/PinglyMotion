@@ -551,7 +551,24 @@ void TestTransportBar::lookDrawnInTheTokenColours()
 void TestTransportBar::lookLucidePaths()
 {
   QCOMPARE(QString::fromLatin1(LucideIcons::version()), QStringLiteral("1.77.0"));
-  QCOMPARE(LucideIcons::names(), QStringList({"play", "square", "rotate-ccw", "undo-2", "redo-2", "save", "upload", "flask-conical", "settings", "sun", "moon", "sparkles", "x", "lightbulb", "info", "keyboard", "video", "flip-horizontal-2", "chevron-right", "chevron-down", "ban", "folder-open", "file-code", "terminal", "circle-check", "circle-x", "refresh-cw", "notebook-text", "box", "rotate-3d", "mouse-pointer-2", "move-3d", "diamond", "triangle-alert", "diamond-plus", "book-open", "eye-off", "orbit", "hand", "zoom-in", "crosshair", "maximize", "house", "axis-3d", "eye", "check", "sliders-horizontal", "library-big", "search", "import", "user-plus", "user-minus"}));
+  // every icon the program has (the list comes from src/lucideicons.cpp, not from a copy here, so
+  // two jobs that add an icon no longer conflict): a unique name, an outline, and a drawing
+  const QStringList iconNames = LucideIcons::names();
+  QVERIFY(!iconNames.isEmpty());
+  QStringList unique = iconNames;
+  unique.removeDuplicates();
+  QCOMPARE(unique.size(), iconNames.size());
+  for (const QString& iconName : iconNames)
+  {
+    QVERIFY2(!iconName.isEmpty(), "an icon without a name");
+    QVERIFY2(!LucideIcons::path(iconName).isEmpty(), qPrintable(iconName));
+    const QIcon drawn = LucideIcons::icon(iconName, Qt::white, Qt::gray);
+    QVERIFY2(!drawn.isNull(), qPrintable(iconName));
+    QVERIFY2(share(drawn, Qt::white) > 0.0, qPrintable(iconName));
+  }
+  // the icons the transport buttons and the tests below use
+  for (const char* used : {"play", "square", "rotate-ccw", "user-plus", "user-minus", "search", "library-big"})
+    QVERIFY2(iconNames.contains(QLatin1String(used)), used);
   // two figures (docs/UX_DECISIONS.md 6m): the head is the circle round 9,7 with radius 4, the
   // shoulders reach from x 2 to 16 at the bottom; user-plus has its cross out to x 22
   const QRectF plus = LucideIcons::path(QStringLiteral("user-plus")).boundingRect();
