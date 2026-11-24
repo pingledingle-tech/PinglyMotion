@@ -20,6 +20,7 @@
 
 #include <QScopedValueRollback>
 #include <QActionGroup>
+#include <QCursor>
 #include <QButtonGroup>
 #include <QMap>
 #include <QMenu>
@@ -663,8 +664,10 @@ PinglyMotionWindow::PinglyMotionWindow() :
   {
     if(!prop) return;
     m_scriptLabPanel->selectPrim(prop->name());
-    m_scriptLabPanel->touchPrim(prop->name());   // job A1: a click on a prim's prop is a touch
+    // job A1: a click on a prim's prop is a touch; job A2: a menu it shows stands next to the click
+    m_scriptLabPanel->touchPrim(prop->name(),ui->animationView->mapFromGlobal(QCursor::pos()));
   });
+  m_scriptLabPanel->setMenuBoxHost(ui->animationView);
   // and lets the RLV camera limits limit the 3D view's camera, off until its box is ticked (job 7b)
   CameraOverride* cameraOverride=new CameraOverride(this);
   cameraOverride->setState(&m_controlApi->rlv());

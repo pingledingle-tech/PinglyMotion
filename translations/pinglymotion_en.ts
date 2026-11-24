@@ -2009,6 +2009,53 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabDialogBox</name>
+    <message>
+        <source>Menu from a script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type your answer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your answer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send the text, as the owner&apos;s avatar types it in the box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the menu and send nothing (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Menu from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What you type is said on channel %1. Only the script hears it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A button says its text on channel %1. Only the script hears it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press this button, as the owner&apos;s avatar (channel %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabEditor</name>
     <message>
         <source>No script open</source>
@@ -2729,6 +2776,10 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>The object has no prim with link %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No menu is open. Click a part that shows one first.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6115,6 +6166,62 @@ Try a BVH file for a person with arms and legs.</source>
         <source>How many RLV rules hold the avatar right now.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The sandbox does not know this action.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No RLV line blocks this on its own.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only RLVa has this. Switch Viewer rules to RLVa.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only plain RLV has this. Switch Viewer rules to RLV.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type a distance in metres, such as 1.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type a channel number from 1, such as 5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This line blocks: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>@ starts an RLV line, and %1 is the command.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>:%1 is the distance in metres.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>=n means no: the avatar may not do this.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1:%2=add keeps channel %2 open.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This line lifts the block again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>=y means yes: the avatar may do this again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>=rem closes a channel that was kept open.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RetargetDialog</name>
@@ -6307,10 +6414,6 @@ Buttons: %3 (channel %4)</source>
     </message>
     <message>
         <source>Action</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>What the avatar may do now: Allowed or Blocked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7101,6 +7204,110 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>Error: the touch on %1 was not sent. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allowed now. Choose Blocked to make and run the RLV line.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Blocked now. Choose Allowed to lift it again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You clicked &quot;%1&quot; in the menu (channel %2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The RLV line that was made and run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make the line again with this value, and run it (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use in script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: Blocked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: Allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Farther than (metres)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty: the viewer&apos;s own limit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Blocks it only farther away than this. Empty uses the viewer&apos;s own limit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Still allow channel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty: none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This channel stays open while the others are blocked.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There is no line to use yet. Choose Blocked first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open a script on the Live scripts page first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put %1 into the script, so the script sends this line.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ran from %1. Blocked now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refused. Replies and messages says why.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Still blocked, because %1 holds it too.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to lift. %1 held nothing of it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ran from %1. Allowed now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put in the script at line %1. Save to run it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: the menu answer &quot;%1&quot; was not sent. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What the avatar may do now. Choose Allowed or Blocked, or press Space on a row.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

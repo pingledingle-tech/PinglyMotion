@@ -301,6 +301,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_labprimprops_tests PRIVATE ${CMAKE_SOUR
 TARGET_LINK_LIBRARIES (pinglymotion_labprimprops_tests pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
 ADD_TEST (NAME labprimprops COMMAND pinglymotion_labprimprops_tests)
 
+# Script Lab job A2: choose a restriction from the list (the RLV line, its words, the script line)
+ADD_EXECUTABLE (pinglymotion_labrestrictionchoice_tests tst_labrestrictionchoice.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labrestrictionchoice_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_labrestrictionchoice_tests pinglymotion_core Qt6::Core Qt6::Test)
+ADD_TEST (NAME labrestrictionchoice COMMAND pinglymotion_labrestrictionchoice_tests)
+
 # Script Lab example folders (job E1, docs/EXAMPLES.md): each example opens, compiles and runs with exact answers
 ADD_EXECUTABLE (pinglymotion_examples_tests tst_examples.cpp ${CMAKE_SOURCE_DIR}/src/prop.cpp ${CMAKE_SOURCE_DIR}/src/meshmodel.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_examples_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

@@ -23,6 +23,7 @@
 
 #include <QtTest>
 
+#include <QComboBox>
 #include <QDockWidget>
 #include <QFile>
 #include <QJsonArray>
@@ -40,6 +41,7 @@
 
 #include "controlapi.h"
 #include "panellayout.h"
+#include "scriptlab/labeditor.h"
 #include "scriptlab/labwatcher.h"
 #include "scriptlab/rlvbehaviours.h"
 #include "scriptlab/rlvstate.h"
@@ -138,6 +140,8 @@ class TestScriptLabPanel : public QObject
     void resetButton();
     void replyAndRefusedLine();
     void controlCommandUpdatesPanel();
+    void chooseRestriction();
+    void useInScript();
     void colourTokens();
     void floatingPlaceRoundTrip();
     void dockedAndHiddenRoundTrip();
@@ -545,6 +549,174 @@ void TestScriptLabPanel::liveFollowsControlCommands()
   QVERIFY(panel.runLog()->toPlainText().endsWith("rlv_command: @detach=n,sendim=n"));
   QVERIFY(api.execute(QJsonObject{{"command", "lab_unwatch"}})["ok"].toBool());
   QCOMPARE(panel.liveFolderField()->text(), QString());
+}
+
+// job A2: every row of "What the avatar may do" has an Allowed / Blocked choice
+void TestScriptLabPanel::chooseRestriction()
+{
+  RlvState state;
+  ScriptLabPanel panel;
+  panel.setState(&state);
+  QTreeWidget* list = panel.actionList();
+  // every row has the choice, on Allowed at start
+  for (int i = 0; i < list->topLevelItemCount(); ++i)
+  {
+    QComboBox* combo = qobject_cast<QComboBox*>(list->itemWidget(list->topLevelItem(i), 1));
+    QVERIFY(combo);
+    QCOMPARE(combo->count(), 2);
+    QCOMPARE(combo->itemText(0), QString("Allowed"));
+    QCOMPARE(combo->itemText(1), QString("Blocked"));
+    QCOMPARE(combo->currentIndex(), 0);
+  }
+  QVERIFY(panel.choiceBox()->isHidden());
+  QVERIFY(!panel.actionChoice("nothing"));
+
+  // Blocked on "Send instant messages", chosen as a user does: the line runs, the row turns red
+  QComboBox* sendim = panel.actionChoice("sendim");
+  sendim->setFocus();
+  QTest::keyClick(sendim, Qt::Key_Down);   // the next item is chosen and "activated"
+  QCOMPARE(sendim->currentIndex(), 1);
+  QCOMPARE(state.restrictions().size(), 1);
+  QCOMPARE(state.restrictions()[0].object, QString("panel"));
+  QCOMPARE(state.restrictions()[0].behaviour, QString("sendim"));
+  QCOMPARE(state.actions().value("sendim"), false);
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Blocked"));
+  QTreeWidgetItem* row = nullptr;
+  for (int i = 0; i < list->topLevelItemCount(); ++i)
+    if (list->topLevelItem(i)->data(0, Qt::UserRole).toString() == "sendim") row = list->topLevelItem(i);
+  QVERIFY(row);
+  const bool dark = ScriptLabPanel::isDark(panel.palette());
+  QCOMPARE(row->foreground(0).color(), ScriptLabPanel::dangerColour(dark));
+  QCOMPARE(row->foreground(1).color(), ScriptLabPanel::dangerColour(dark));
+  QCOMPARE(sendim->palette().color(QPalette::ButtonText), ScriptLabPanel::dangerColour(dark));
+  QCOMPARE(sendim->font().weight(), QFont::DemiBold);
+  // the box shows the line and says it in plain words
+  QVERIFY(!panel.choiceBox()->isHidden());
+  QCOMPARE(panel.choiceTitle()->text(), QString("Send instant messages: Blocked"));
+  QCOMPARE(panel.choiceLine()->text(), QString("@sendim=n"));
+  QCOMPARE(panel.choiceExplain()->text(),
+           QString("This line blocks: Send instant messages.\n") + Rlv::findHelp("sendim")->sentence +
+           "\n@ starts an RLV line, and sendim is the command.\n=n means no: the avatar may not do this.");
+  QCOMPARE(panel.choiceResult()->text(), QString("Ran from panel. Blocked now."));
+  QVERIFY(panel.choiceValueLabel()->isHidden() || !panel.choiceValue()->isVisibleTo(panel.choiceBox()));
+  QVERIFY(panel.log()->toPlainText().contains("panel: @sendim=n"));
+  // no script open: Use in script is greyed with the reason
+  QVERIFY(!panel.useInScriptButton()->isEnabled());
+  QCOMPARE(panel.useInScriptButton()->toolTip(), QString("Open a script on the Live scripts page first."));
+  QCOMPARE(panel.useInScriptReason()->text(), QString("Open a script on the Live scripts page first."));
+  QVERIFY(!panel.useChoiceInScript());
+  QCOMPARE(panel.choiceResult()->text(), QString("Open a script on the Live scripts page first."));
+
+  // Allowed lifts it again
+  QVERIFY(panel.chooseAction("sendim", false));
+  QVERIFY(state.restrictions().isEmpty());
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Allowed"));
+  QCOMPARE(sendim->currentIndex(), 0);
+  QCOMPARE(panel.choiceTitle()->text(), QString("Send instant messages: Allowed"));
+  QCOMPARE(panel.choiceLine()->text(), QString("@sendim=y"));
+  QCOMPARE(panel.choiceExplain()->text(), QString("This line lifts the block again.\n=y means yes: the avatar may do this again."));
+  QCOMPARE(panel.choiceResult()->text(), QString("Ran from panel. Allowed now."));
+
+  // a restriction another object holds: Allowed cannot lift it, and says who holds it
+  QVERIFY(state.apply("collar", "@detach=n").ok());
+  QCOMPARE(panel.actionChoice("detach")->currentIndex(), 1);
+  QVERIFY(!panel.chooseAction("detach", false));
+  QCOMPARE(panel.actionChoice("detach")->currentIndex(), 1);
+  QCOMPARE(panel.choiceResult()->text(), QString("Still blocked, because collar holds it too."));
+  QCOMPARE(panel.choiceResult()->palette().color(QPalette::WindowText), ScriptLabPanel::dangerColour(dark));
+
+  // a value: Blocked on "Touch objects farther away" shows the distance field
+  QVERIFY(panel.chooseAction("touchfar", true));
+  QCOMPARE(panel.choiceLine()->text(), QString("@touchfar=n"));
+  QVERIFY(panel.choiceValue()->isVisibleTo(panel.choiceBox()));
+  QCOMPARE(panel.choiceValueLabel()->text(), QString("Farther than (metres)"));
+  panel.choiceValue()->setText("3");
+  QTest::keyClick(panel.choiceValue(), Qt::Key_Return);
+  QCOMPARE(panel.choiceLine()->text(), QString("@touchfar:3=n"));
+  QStringList held;
+  for (const RlvState::Restriction& r : state.restrictions()) held << r.object + ":" + r.behaviour + ":" + r.option;
+  QCOMPARE(held, QStringList({"collar:detach:", "panel:touchfar:3"}));   // the old limit was lifted first
+  QCOMPARE(shownStates(panel).value("touchfar"), QString("Blocked"));      // blocked farther than 3 m
+  QVERIFY(panel.choiceExplain()->text().contains(":3 is the distance in metres."));
+  panel.choiceValue()->setText("far");
+  QVERIFY(!panel.applyChoiceValue());
+  QCOMPARE(panel.choiceResult()->text(), QString("Type a distance in metres, such as 1.5."));
+  QCOMPARE(state.restrictions().size(), 2);   // nothing changed
+  QVERIFY(panel.chooseAction("touchfar", false));
+  QCOMPARE(panel.choiceLine()->text(), QString("@touchfar:3=y"));
+  QCOMPARE(shownStates(panel).value("touchfar"), QString("Allowed"));
+
+  // a channel that stays open
+  QVERIFY(panel.chooseAction("sendchannel", true));
+  QCOMPARE(panel.choiceValueLabel()->text(), QString("Still allow channel"));
+  panel.choiceValue()->setText("5");
+  QVERIFY(panel.applyChoiceValue());
+  QCOMPARE(panel.choiceLine()->text(), QString("@sendchannel=n,sendchannel:5=add"));
+  if (!qEnvironmentVariableIsEmpty("PINGLYMOTION_UI_OUT"))   // a picture for a session to look at
+  {
+    panel.resize(520, 1400);
+    panel.tabs()->setCurrentIndex(ScriptLabPanel::CommandsPage);
+    panel.grab().save(qEnvironmentVariable("PINGLYMOTION_UI_OUT") + "/choice.png");
+  }
+  QCOMPARE(state.actions().value("sendchannel"), false);
+
+  // plain RLV mode: an RLVa-only row cannot be chosen, and says why
+  panel.setMode(Rlv::Mode::Rlv);
+  QVERIFY(!panel.actionChoice("jump")->isEnabled());
+  QCOMPARE(panel.actionChoice("jump")->toolTip(), QString("Only RLVa has this. Switch Viewer rules to RLVa."));
+  QVERIFY(!panel.chooseAction("jump", true));
+  QVERIFY(panel.actionChoice("sendim")->isEnabled());
+
+  // keys: the list is one Tab stop; Space or Enter on a row switches it
+  QCOMPARE(int(panel.actionChoice("sendim")->focusPolicy()), int(Qt::NoFocus));
+  list->setCurrentItem(row);
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Allowed"));
+  QTest::keyClick(list, Qt::Key_Space);
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Blocked"));
+  QCOMPARE(panel.choiceLine()->text(), QString("@sendim=n"));
+  QTest::keyClick(list, Qt::Key_Return);
+  QCOMPARE(shownStates(panel).value("sendim"), QString("Allowed"));
+  QCOMPARE(panel.choiceLine()->text(), QString("@sendim=y"));
+
+  // the Command field and Try: still work as before
+  typeAndEnter(panel, "@fly=n");
+  QCOMPARE(shownStates(panel).value("fly"), QString("Blocked"));
+  QCOMPARE(panel.actionChoice("fly")->currentIndex(), 1);
+}
+
+// job A2: "Use in script" puts the line into the script of the Live page with llOwnerSay
+void TestScriptLabPanel::useInScript()
+{
+  RlvState state;
+  LabWatcher watcher;
+  watcher.setRlvState(&state);
+  ScriptLabPanel panel;
+  panel.setState(&state);
+  panel.setWatcher(&watcher);
+  QTemporaryDir dir;
+  QFile file(dir.filePath("lock.lsl"));
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  file.write("default\n{\n    state_entry()\n    {\n        llOwnerSay(\"hi\");\n    }\n}\n");
+  file.close();
+  QVERIFY(panel.watchFolder(dir.path()));
+  QCOMPARE(panel.shownScript(), QString("lock.lsl"));
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::CommandsPage);
+  QVERIFY(panel.chooseAction("sendim", true));
+  QVERIFY(panel.useInScriptButton()->isEnabled());
+  QVERIFY(panel.useInScriptReason()->isHidden());
+  QCOMPARE(panel.useInScriptButton()->toolTip(), QString("Put llOwnerSay(\"@sendim=n\"); into the script, so the script sends this line."));
+  QTest::mouseClick(panel.useInScriptButton(), Qt::LeftButton);
+  QCOMPARE(panel.editor()->codeEdit()->toPlainText(),
+           QString("default\n{\n    state_entry()\n    {\n        llOwnerSay(\"@sendim=n\");\n        llOwnerSay(\"hi\");\n    }\n}\n"));
+  QCOMPARE(panel.choiceResult()->text(), QString("Put in the script at line 5. Save to run it."));
+  QCOMPARE(panel.tabs()->currentIndex(), int(ScriptLabPanel::LivePage));
+  QCOMPARE(panel.editor()->codeEdit()->textCursor().blockNumber(), 4);
+  // one undo step takes it out again; nothing is saved by itself
+  panel.editor()->codeEdit()->undo();
+  QCOMPARE(panel.editor()->codeEdit()->toPlainText(), QString("default\n{\n    state_entry()\n    {\n        llOwnerSay(\"hi\");\n    }\n}\n"));
+  QFile again(dir.filePath("lock.lsl"));
+  QVERIFY(again.open(QIODevice::ReadOnly));
+  QVERIFY(!QString::fromUtf8(again.readAll()).contains("sendim"));
 }
 
 QTEST_MAIN(TestScriptLabPanel)

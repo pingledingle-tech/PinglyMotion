@@ -65,6 +65,8 @@
 #include "spherecontrols.h"
 #include "lsl/lint.h"
 #include "lucideicons.h"
+#include "labdialogbox.h"
+#include "labrestrictionchoice.h"
 #include "theme.h"
 #include "usersettings.h"
 
@@ -382,7 +384,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_actions->header()->setStretchLastSection(false);
   m_actions->header()->setSectionResizeMode(0, QHeaderView::Stretch);
   m_actions->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-  m_actions->setToolTip(tr("What the avatar may do now: Allowed or Blocked"));
+  m_actions->setToolTip(tr("What the avatar may do now. Choose Allowed or Blocked, or press Space on a row."));
   for (const Rlv::Action& action : Rlv::actions())
   {
     QTreeWidgetItem* item = new QTreeWidgetItem(m_actions);
@@ -390,7 +392,10 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
     item->setData(0, Qt::UserRole, action.id);
   }
   m_actions->setMinimumHeight(6 * m_actions->fontMetrics().height() + 2 * SpacingS);
+  m_actions->installEventFilter(this);
+  m_actions->setCurrentItem(m_actions->topLevelItem(0));
   m_actionsSection->bodyLayout()->addWidget(m_actions);
+  buildChoiceBox(m_actionsSection->body(), m_actionsSection->bodyLayout());
 
   // --- camera limits in the 3D view (job 7b), off at start
   m_cameraBox = new QCheckBox(tr("Show camera limits in 3D view"), commandsPage);
@@ -499,7 +504,16 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_restrictionsSection->header(), m_restrictions);
   setTabOrder(m_restrictions, m_actionsSection->header());
   setTabOrder(m_actionsSection->header(), m_actions);
-  setTabOrder(m_actions, m_cameraBox);
+  {
+    // job A2: then the choice box, in screen order
+    QWidget* before = m_actions;
+    for (QWidget* w : {static_cast<QWidget*>(m_choiceValue), static_cast<QWidget*>(m_choiceApply), static_cast<QWidget*>(m_useInScript)})
+    {
+      setTabOrder(before, w);
+      before = w;
+    }
+    setTabOrder(before, m_cameraBox);
+  }
   setTabOrder(m_cameraBox, m_environmentBox);
   setTabOrder(m_environmentBox, m_sphereSection->header());
   setTabOrder(m_sphereSection->header(), m_sphereControls->innerSlider());
@@ -507,6 +521,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_viewModesBox, m_repliesSection->header());
   setTabOrder(m_repliesSection->header(), m_log);
 
+  addActionChoices();   // job A2
   applyStyle();
   refresh();
   refreshMode();
@@ -830,16 +845,37 @@ void ScriptLabPanel::refresh()
 
   QMap<QString, bool> allowed;
   if (m_state) allowed = m_state->actions();
+  const Rlv::Mode mode = m_state ? m_state->mode() : Rlv::Mode::Rlva;
   for (int i = 0; i < m_actions->topLevelItemCount(); ++i)
   {
     QTreeWidgetItem* item = m_actions->topLevelItem(i);
-    const bool ok = allowed.value(item->data(0, Qt::UserRole).toString(), true);
+    const QString id = item->data(0, Qt::UserRole).toString();
+    // job A2: a distance limit ("@touchfar:3=n") blocks the action farther away, so the row says Blocked too
+    const LabRestrictionChoice::Choice choice = LabRestrictionChoice::forAction(id, mode);
+    const bool ok = allowed.value(id, true) && LabRestrictionChoice::heldDistance(choice, held).isEmpty();
     item->setText(1, ok ? tr("Allowed") : tr("Blocked"));
     item->setData(1, Qt::UserRole, ok);
     item->setForeground(1, ok ? successColour(dark) : dangerColour(dark));
     QFont font = item->font(1);
     font.setWeight(ok ? QFont::Normal : QFont::DemiBold);   // a second signal besides the word
     item->setFont(1, font);
+    // the whole row turns red while blocked, and the word says it too (charter P10)
+    item->setForeground(0, ok ? m_actions->palette().color(QPalette::Text) : dangerColour(dark));
+    item->setFont(0, font);
+    if (QComboBox* combo = qobject_cast<QComboBox*>(m_actions->itemWidget(item, 1)))
+    {
+      combo->setCurrentIndex(ok ? 0 : 1);
+      QPalette p = combo->palette();
+      p.setColor(QPalette::ButtonText, ok ? successColour(dark) : dangerColour(dark));
+      p.setColor(QPalette::Text, ok ? successColour(dark) : dangerColour(dark));
+      combo->setPalette(p);
+      combo->setFont(font);
+      combo->setEnabled(choice.ok());
+      combo->setToolTip(choice.ok() ? (ok ? tr("Allowed now. Choose Blocked to make and run the RLV line.")
+                                          : tr("Blocked now. Choose Allowed to lift it again."))
+                                    : choice.reason);
+      combo->setAccessibleDescription(item->text(1));
+    }
   }
 }
 
@@ -1425,6 +1461,8 @@ void ScriptLabPanel::setWatcher(LabWatcher* watcher)
   {
     m_watcherConnections << connect(watcher, &LabWatcher::resultChanged, this, &ScriptLabPanel::refreshLive);
     m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshLive);
+    m_watcherConnections << connect(watcher, &LabWatcher::resultChanged, this, &ScriptLabPanel::refreshMenuBox);
+    m_watcherConnections << connect(watcher, &LabWatcher::watchChanged, this, &ScriptLabPanel::refreshMenuBox);
   }
   m_refusal.clear();
   connectEffectsToWatcher();
@@ -1533,6 +1571,19 @@ bool ScriptLabPanel::eventFilter(QObject* watched, QEvent* event)
     if (mouse->button() == Qt::LeftButton && !m_runLog->textCursor().hasSelection())
       showLogLine(m_runLog->cursorForPosition(mouse->position().toPoint()).blockNumber());
   }
+  // job A2: in "What the avatar may do" the arrow keys pick a row, and Space or Enter switches it
+  // between Allowed and Blocked, so the list is one Tab stop (charter P8)
+  if (m_actions && watched == m_actions && event->type() == QEvent::KeyPress)
+  {
+    const QKeyEvent* key = static_cast<QKeyEvent*>(event);
+    QTreeWidgetItem* item = m_actions->currentItem();
+    if (item && key->modifiers() == Qt::NoModifier &&
+        (key->key() == Qt::Key_Space || key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter))
+    {
+      chooseAction(item->data(0, Qt::UserRole).toString(), item->data(1, Qt::UserRole).toBool());
+      return true;
+    }
+  }
   return QWidget::eventFilter(watched, event);
 }
 
@@ -1605,6 +1656,8 @@ QString ScriptLabPanel::logLine(const QJsonObject& entry)
   // a folder run (lane 1 job D) names the source of each line: "main (Root): " or, for an input, "Root: "
   const bool tagged = entry.contains("prim");
   // job A1: a click on a prop in the 3D view, before the touch it sends
+  if (type == QLatin1String("clicked") && entry.contains("button"))   // job A2: a button of the menu box
+    return time + tr("You clicked \"%1\" in the menu (channel %2).").arg(entry.value("button").toString(), fieldText(entry.value("channel")));
   if (type == QLatin1String("clicked")) return time + tr("You clicked %1.").arg(entry.value("prim").toString());
   if (tagged)
     time += entry.contains("script") ? QStringLiteral("%1 (%2): ").arg(entry.value("script").toString(), entry.value("prim").toString())
@@ -1656,7 +1709,7 @@ void ScriptLabPanel::refreshLive()
 {
   if (!m_liveStatus || !m_editor) return;
   // job U3: the steps' ticks and the word tips follow every change, also after an early return below
-  const auto followUp = qScopeGuard([this]() { refreshSteps(); refreshTips(); });
+  const auto followUp = qScopeGuard([this]() { refreshSteps(); refreshTips(); refreshUseInScript(); });
   const bool dark = isDark(palette());
   const bool watching = m_watcher && m_watcher->watching();
 
@@ -2003,11 +2056,12 @@ void ScriptLabPanel::updatePrimProps()
   updatePropTints(added);
 }
 
-bool ScriptLabPanel::touchPrim(const QString& name)
+bool ScriptLabPanel::touchPrim(const QString& name, const QPoint& at)
 {
   if (!primPropsShown()) return false;
   const int link = m_watcher->linkOf(name);
   if (link < 1) return false;
+  m_menuAnchor = at;   // a menu the touch makes stands next to the click (job A2)
   const LabWatcher::Result result = m_watcher->touch(link);
   if (!result.ok())
   {
@@ -2032,6 +2086,7 @@ void ScriptLabPanel::effectsToggled(bool on)
   styleEffectsButton();
   refreshSteps();   // the step "Show effects" follows the button
   updatePrimProps();
+  refreshMenuBox();   // job A2: the menu box shows only with the props
   if (!m_effects) return;
   m_effects->setEnabled(on);
   // ticked: show the newest run at once, without waiting for the next save
@@ -2308,21 +2363,9 @@ void ScriptLabPanel::refreshInput()
   if (key != m_shownDialogKey)
   {
     m_shownDialogKey = key;
-    for (QPushButton* old : dialogButtons())
-    {
-      m_dialogGrid->removeWidget(old);
-      old->deleteLater();
-      old->setParent(nullptr);
-    }
-    for (int i = 0; i < buttons.size(); ++i)
-    {
-      QPushButton* button = new QPushButton(QString(buttons[i]).replace(QLatin1Char('&'), QStringLiteral("&&")), m_dialogButtonBox);
-      button->setObjectName("scriptLabDialogButton");
-      button->setProperty("button", buttons[i]);
-      button->setMinimumHeight(ControlHeight);
-      connect(button, &QPushButton::clicked, this, [this, text = buttons[i]]() { answerDialog(text); });
-      m_dialogGrid->addWidget(button, i / 3, i % 3);
-    }
+    // the same grid as the menu box over the 3D view (job A2): rows of three, the first row on top
+    LabDialogBox::fillButtonGrid(m_dialogGrid, m_dialogButtonBox, buttons, QStringLiteral("scriptLabDialogButton"),
+                                 [this](const QString& text) { answerDialog(text); });
     applyStyle();
   }
   if (dialog.isEmpty()) m_inputDialog->setText(tr("No dialog yet. When a script shows one, its buttons appear here."));
@@ -2469,8 +2512,317 @@ bool ScriptLabPanel::answerDialog(const QString& button)
     setInputResult(tr("Error: the dialog answer was not sent. No script has shown a dialog yet."), 2);
     return false;
   }
-  QJsonObject request{{"type", "dialog"}, {"object", dialog.value("object").toString()}, {"button", button}};
+  QJsonObject request = LabWatcher::dialogAnswer(dialog, button);   // the same input as the menu box (job A2)
   return sendInput(request, tr("Dialog answer \"%1\" to %2").arg(button, dialog.value("object").toString()));
+}
+
+// --- Choose a restriction from the list (job A2) --------------------------------
+
+void ScriptLabPanel::addActionChoices()
+{
+  // made last in the constructor, so the choices sit at the end of the focus chain; they take no
+  // keys anyway (the list does: Space or Enter)
+  for (int i = 0; i < m_actions->topLevelItemCount(); ++i)
+  {
+    QTreeWidgetItem* item = m_actions->topLevelItem(i);
+    const Rlv::Action action{item->data(0, Qt::UserRole).toString(), item->text(0)};
+    // job A2: choose Allowed or Blocked in the row itself; the word stays in the cell under it
+    QComboBox* choice = new QComboBox(m_actions);
+    choice->setObjectName("scriptLabActionChoice");
+    choice->addItem(tr("Allowed"));
+    choice->addItem(tr("Blocked"));
+    choice->setProperty("action", action.id);
+    choice->setAccessibleName(action.label);
+    choice->setAutoFillBackground(true);
+    choice->setMinimumHeight(ControlCompact);
+    choice->setFocusPolicy(Qt::NoFocus);   // the keys go through the list itself (Space or Enter), one Tab stop
+    m_actions->setItemWidget(item, 1, choice);
+    connect(choice, QOverload<int>::of(&QComboBox::activated), this, [this, id = action.id](int index) { chooseAction(id, index == 1); });
+  }
+}
+
+void ScriptLabPanel::buildChoiceBox(QWidget* parent, QVBoxLayout* layout)
+{
+  m_choiceBox = new QFrame(parent);
+  m_choiceBox->setObjectName("scriptLabChoiceBox");
+  m_choiceBox->setFrameShape(QFrame::StyledPanel);
+  QVBoxLayout* box = new QVBoxLayout(m_choiceBox);
+  box->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
+  box->setSpacing(SpacingS);
+
+  m_choiceTitle = new QLabel(m_choiceBox);
+  m_choiceTitle->setObjectName("scriptLabChoiceTitle");
+  m_choiceTitle->setTextFormat(Qt::PlainText);
+  m_choiceTitle->setWordWrap(true);
+  QFont titleFont = m_choiceTitle->font();
+  titleFont.setWeight(QFont::DemiBold);
+  m_choiceTitle->setFont(titleFont);
+  box->addWidget(m_choiceTitle);
+
+  m_choiceLine = new QLabel(m_choiceBox);
+  m_choiceLine->setObjectName("scriptLabChoiceLine");
+  m_choiceLine->setTextFormat(Qt::PlainText);
+  m_choiceLine->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_choiceLine->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+  m_choiceLine->setToolTip(tr("The RLV line that was made and run"));
+  box->addWidget(m_choiceLine);
+
+  m_choiceExplain = new QLabel(m_choiceBox);
+  m_choiceExplain->setObjectName("scriptLabChoiceExplain");
+  m_choiceExplain->setTextFormat(Qt::PlainText);
+  m_choiceExplain->setWordWrap(true);
+  m_choiceExplain->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  box->addWidget(m_choiceExplain);
+
+  // a distance or a channel that stays open: a field, used again with Apply or Enter
+  m_choiceValueRow = new QWidget(m_choiceBox);
+  QHBoxLayout* valueRow = new QHBoxLayout(m_choiceValueRow);
+  valueRow->setContentsMargins(0, 0, 0, 0);
+  valueRow->setSpacing(SpacingS);
+  m_choiceValueLabel = new QLabel(m_choiceValueRow);
+  m_choiceValueLabel->setObjectName("scriptLabChoiceValueLabel");
+  m_choiceValue = new QLineEdit(m_choiceValueRow);
+  m_choiceValue->setObjectName("scriptLabChoiceValue");
+  m_choiceValue->setMinimumHeight(ControlHeight);
+  m_choiceValue->setMaxLength(16);
+  m_choiceValueLabel->setBuddy(m_choiceValue);
+  m_choiceApply = new QPushButton(tr("Apply"), m_choiceValueRow);
+  m_choiceApply->setObjectName("scriptLabChoiceApply");
+  m_choiceApply->setMinimumHeight(ControlHeight);
+  m_choiceApply->setToolTip(tr("Make the line again with this value, and run it (Enter)"));
+  valueRow->addWidget(m_choiceValueLabel);
+  valueRow->addWidget(m_choiceValue, 1);
+  valueRow->addWidget(m_choiceApply);
+  box->addWidget(m_choiceValueRow);
+  connect(m_choiceApply, &QPushButton::clicked, this, [this]() { applyChoiceValue(); });
+  connect(m_choiceValue, &QLineEdit::returnPressed, this, [this]() { applyChoiceValue(); });
+
+  m_useInScript = new QPushButton(tr("Use in script"), m_choiceBox);
+  m_useInScript->setObjectName("scriptLabUseInScript");
+  m_useInScript->setMinimumHeight(ControlHeight);
+  QHBoxLayout* buttons = new QHBoxLayout;
+  buttons->setSpacing(SpacingS);
+  buttons->addWidget(m_useInScript);
+  // why the button is greyed, readable without hovering (charter P6)
+  m_useInScriptReason = new QLabel(m_choiceBox);
+  m_useInScriptReason->setObjectName("scriptLabUseInScriptReason");
+  m_useInScriptReason->setTextFormat(Qt::PlainText);
+  m_useInScriptReason->setWordWrap(true);
+  buttons->addWidget(m_useInScriptReason, 1);
+  box->addLayout(buttons);
+  connect(m_useInScript, &QPushButton::clicked, this, [this]() { useChoiceInScript(); });
+
+  m_choiceResult = new QLabel(m_choiceBox);
+  m_choiceResult->setObjectName("scriptLabChoiceResult");
+  m_choiceResult->setTextFormat(Qt::PlainText);
+  m_choiceResult->setWordWrap(true);
+  m_choiceResult->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  box->addWidget(m_choiceResult);
+
+  m_choiceBox->hide();
+  layout->addWidget(m_choiceBox);
+}
+
+QComboBox* ScriptLabPanel::actionChoice(const QString& actionId) const
+{
+  for (int i = 0; i < m_actions->topLevelItemCount(); ++i)
+  {
+    QTreeWidgetItem* item = m_actions->topLevelItem(i);
+    if (item->data(0, Qt::UserRole).toString() == actionId) return qobject_cast<QComboBox*>(m_actions->itemWidget(item, 1));
+  }
+  return nullptr;
+}
+
+void ScriptLabPanel::setChoiceResult(const QString& text, int tone)
+{
+  m_choiceResult->setText(text);
+  m_choiceResult->setVisible(!text.isEmpty());
+  const bool dark = isDark(palette());
+  QPalette p = m_choiceResult->palette();
+  p.setColor(QPalette::WindowText, tone == 1 ? successColour(dark) : tone == 2 ? dangerColour(dark) : mutedColour(dark));
+  m_choiceResult->setPalette(p);
+}
+
+void ScriptLabPanel::showChoice(const QString& actionId, bool blocked, const QString& line, const QStringList& words,
+                                const QString& result, int tone)
+{
+  const LabRestrictionChoice::Choice choice = LabRestrictionChoice::forAction(actionId, m_state ? m_state->mode() : Rlv::Mode::Rlva);
+  if (m_choiceAction != actionId) m_choiceValue->clear();   // the field belongs to one row
+  m_choiceAction = actionId;
+  m_choiceRlvLine = line;
+  m_choiceTitle->setText(blocked ? tr("%1: Blocked").arg(choice.label) : tr("%1: Allowed").arg(choice.label));
+  m_choiceLine->setText(line);
+  m_choiceLine->setVisible(!line.isEmpty());
+  m_choiceExplain->setText(words.join(QLatin1Char('\n')));
+  m_choiceExplain->setVisible(!words.isEmpty());
+  const bool field = choice.value != LabRestrictionChoice::ValueKind::None && blocked;
+  m_choiceValueRow->setVisible(field);
+  if (choice.value == LabRestrictionChoice::ValueKind::Distance)
+  {
+    m_choiceValueLabel->setText(tr("Farther than (metres)"));
+    m_choiceValue->setPlaceholderText(tr("Empty: the viewer's own limit"));
+    m_choiceValue->setToolTip(tr("Blocks it only farther away than this. Empty uses the viewer's own limit."));
+  }
+  else if (choice.value == LabRestrictionChoice::ValueKind::ExceptChannel)
+  {
+    m_choiceValueLabel->setText(tr("Still allow channel"));
+    m_choiceValue->setPlaceholderText(tr("Empty: none"));
+    m_choiceValue->setToolTip(tr("This channel stays open while the others are blocked."));
+  }
+  setChoiceResult(result, tone);
+  m_choiceBox->show();
+  refreshUseInScript();
+}
+
+void ScriptLabPanel::refreshUseInScript()
+{
+  if (!m_useInScript) return;
+  QString reason;
+  if (m_choiceRlvLine.isEmpty()) reason = tr("There is no line to use yet. Choose Blocked first.");
+  else if (!m_editor || m_editor->filePath().isEmpty()) reason = tr("Open a script on the Live scripts page first.");
+  m_useInScript->setEnabled(reason.isEmpty());
+  m_useInScriptReason->setText(reason);
+  m_useInScriptReason->setVisible(!reason.isEmpty());
+  QPalette muted = m_useInScriptReason->palette();
+  muted.setColor(QPalette::WindowText, mutedColour(isDark(palette())));
+  m_useInScriptReason->setPalette(muted);
+  m_useInScript->setToolTip(reason.isEmpty() ? tr("Put %1 into the script, so the script sends this line.")
+                                                 .arg(LabRestrictionChoice::scriptLine(m_choiceRlvLine))
+                                             : reason);
+}
+
+bool ScriptLabPanel::chooseAction(const QString& actionId, bool blocked)
+{
+  if (!m_state || !actionChoice(actionId)) return false;
+  const LabRestrictionChoice::Choice choice = LabRestrictionChoice::forAction(actionId, m_state->mode());
+  QString object = m_object->text().trimmed();
+  if (object.isEmpty()) object = QString::fromLatin1(DefaultObject);
+  const auto followUp = qScopeGuard([this]() { refresh(); });   // the row shows the state again, whatever happened
+  if (!choice.ok())
+  {
+    showChoice(actionId, blocked, QString(), QStringList(), choice.reason, 2);
+    return false;
+  }
+  if (blocked)
+  {
+    const QString value = m_choiceAction == actionId ? m_choiceValue->text() : QString();
+    const LabRestrictionChoice::Line line = LabRestrictionChoice::blockLine(choice, value);
+    if (!line.ok())
+    {
+      showChoice(actionId, true, QString(), QStringList(), line.error, 2);
+      return false;
+    }
+    const bool ran = runLine(line.text);
+    showChoice(actionId, true, line.text, LabRestrictionChoice::explainBlock(choice, value),
+               ran ? tr("Ran from %1. Blocked now.").arg(object) : tr("Refused. Replies and messages says why."), ran ? 1 : 2);
+    return ran;
+  }
+  const QString lift = LabRestrictionChoice::allowLine(choice, m_state->restrictions(), object);
+  const bool ran = !lift.isEmpty() && runLine(lift);
+  const QStringList others = LabRestrictionChoice::otherHolders(choice, m_state->restrictions(), object);
+  QString result;
+  int tone = 1;
+  if (!others.isEmpty())
+  {
+    result = tr("Still blocked, because %1 holds it too.").arg(others.join(QStringLiteral(", ")));
+    tone = 2;
+  }
+  else if (lift.isEmpty()) result = tr("Nothing to lift. %1 held nothing of it.").arg(object);
+  else result = ran ? tr("Ran from %1. Allowed now.").arg(object) : tr("Refused. Replies and messages says why.");
+  if (!lift.isEmpty() && !ran) tone = 2;
+  showChoice(actionId, false, lift, lift.isEmpty() ? QStringList() : LabRestrictionChoice::explainAllow(choice), result, tone);
+  return ran;
+}
+
+bool ScriptLabPanel::applyChoiceValue()
+{
+  if (!m_state || m_choiceAction.isEmpty()) return false;
+  const LabRestrictionChoice::Choice choice = LabRestrictionChoice::forAction(m_choiceAction, m_state->mode());
+  const LabRestrictionChoice::Line line = LabRestrictionChoice::blockLine(choice, m_choiceValue->text());
+  if (!line.ok())
+  {
+    setChoiceResult(line.error, 2);
+    return false;
+  }
+  // the old limit of this object goes first, so only the new one is held
+  QString object = m_object->text().trimmed();
+  if (object.isEmpty()) object = QString::fromLatin1(DefaultObject);
+  const QString lift = LabRestrictionChoice::allowLine(choice, m_state->restrictions(), object);
+  if (!lift.isEmpty()) runLine(lift);
+  return chooseAction(m_choiceAction, true);
+}
+
+bool ScriptLabPanel::useChoiceInScript()
+{
+  refreshUseInScript();
+  if (!m_useInScript->isEnabled())
+  {
+    setChoiceResult(m_useInScript->toolTip(), 2);
+    return false;
+  }
+  LabCodeEdit* edit = m_editor->codeEdit();
+  const QString code = LabRestrictionChoice::scriptLine(m_choiceRlvLine);
+  const LabRestrictionChoice::Insertion in = LabRestrictionChoice::insert(edit->toPlainText(), edit->textCursor().position(), code);
+  // one undo step, so Ctrl+Z takes it out again
+  QTextCursor cursor(edit->document());
+  cursor.setPosition(in.at);
+  cursor.insertText(in.added);
+  cursor.setPosition(in.position + int(code.size()));
+  edit->setTextCursor(cursor);
+  m_tabs->setCurrentIndex(LivePage);
+  edit->ensureCursorVisible();
+  edit->setFocus(Qt::OtherFocusReason);
+  setChoiceResult(tr("Put in the script at line %1. Save to run it.").arg(in.line), 1);
+  return true;
+}
+
+// --- The menu box over the 3D view (job A2) -------------------------------------
+
+void ScriptLabPanel::setMenuBoxHost(QWidget* host)
+{
+  if (m_menuBox) m_menuBox->deleteLater();
+  m_menuBox = nullptr;
+  m_menuKey.clear();
+  if (!host) return;
+  m_menuBox = new LabDialogBox(host);
+  connect(m_menuBox, &LabDialogBox::answered, this, [this](const QString& text) { answerMenu(text); });
+  connect(m_menuBox, &LabDialogBox::ignored, this, [this]()
+  {
+    m_menuDone = m_menuKey;
+    if (m_menuBox && m_menuBox->parentWidget()) m_menuBox->parentWidget()->setFocus(Qt::OtherFocusReason);
+  });
+  refreshMenuBox();
+}
+
+void ScriptLabPanel::refreshMenuBox()
+{
+  if (!m_menuBox) return;
+  const QJsonObject dialog = primPropsShown() ? m_watcher->dialog() : QJsonObject();
+  // the time is part of the key: the same menu shown again after an answer is a new menu
+  const QString key = dialog.isEmpty() ? QString() : dialogKey(dialog) + QChar(0x1f) + QString::number(dialog.value("t").toDouble(), 'f', 3);
+  if (key.isEmpty() || key == m_menuDone)
+  {
+    m_menuKey = key;
+    m_menuBox->hide();
+    return;
+  }
+  if (key == m_menuKey && m_menuBox->isVisible()) return;
+  m_menuKey = key;
+  m_menuBox->showDialog(dialog, m_menuAnchor);
+}
+
+bool ScriptLabPanel::answerMenu(const QString& button)
+{
+  if (!m_watcher) return false;
+  m_menuDone = m_menuKey;
+  if (m_menuBox) m_menuBox->hide();
+  const LabWatcher::Result result = m_watcher->answerDialog(button);
+  if (!result.ok())
+  {
+    setLiveStatus(tr("Error: the menu answer \"%1\" was not sent. %2").arg(button, result.error), 2);
+    return false;
+  }
+  return true;
 }
 
 // --- Script Lab for beginners (job U3) ----------------------------------------

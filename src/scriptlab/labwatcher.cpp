@@ -430,6 +430,33 @@ LabWatcher::Result LabWatcher::touch(int link)
   QJsonObject request{{"command", "lsl_event"}, {"type", "touch"}};
   // a single prim is link 0 in the sandbox; the touch goes to it without a link
   if (m_lastLinkset.prims.size() > 1) request["link"] = link;
+  return sendEvent(request, QJsonObject{{"type", "clicked"}, {"link", link}, {"prim", prim}, {"source", "sandbox"}});
+}
+
+QJsonObject LabWatcher::dialog() const
+{
+  if (!watching() || !m_linkset || !m_folderResult.value("ok").toBool() || !m_world->sandbox()) return QJsonObject();
+  return m_world->sandbox()->lastDialog();
+}
+
+QJsonObject LabWatcher::dialogAnswer(const QJsonObject& dialog, const QString& button)
+{
+  return QJsonObject{{"type", "dialog"}, {"object", dialog.value("object").toString()}, {"button", button}};
+}
+
+LabWatcher::Result LabWatcher::answerDialog(const QString& button)
+{
+  if (!watching() || !m_linkset) return {tr("No folder is watched as one object.")};
+  const QJsonObject shown = dialog();
+  if (shown.isEmpty()) return {tr("No menu is open. Click a part that shows one first.")};
+  QJsonObject request = dialogAnswer(shown, button);
+  request["command"] = QStringLiteral("lsl_event");
+  return sendEvent(request, QJsonObject{{"type", "clicked"}, {"button", button}, {"channel", shown.value("channel").toInt()},
+                                        {"source", "sandbox"}});
+}
+
+LabWatcher::Result LabWatcher::sendEvent(const QJsonObject& request, QJsonObject clicked)
+{
   const double at = std::round(m_world->sandbox()->now() * 1000.0) / 1000.0;
   QJsonObject answer = lsl::Control::event(request, m_world);
   if (!answer.value("ok").toBool()) return {answer.value("error").toString()};
@@ -438,7 +465,8 @@ LabWatcher::Result LabWatcher::touch(int link)
   QJsonObject run = m_folderResult.value("result").toObject();
   QJsonArray log = run.value("log").toArray();
   bool truncated = run.value("log_truncated").toBool() || answer.value("log_truncated").toBool();
-  QJsonArray added{QJsonObject{{"t", at}, {"type", "clicked"}, {"link", link}, {"prim", prim}, {"source", "sandbox"}}};
+  clicked["t"] = at;
+  QJsonArray added{clicked};
   for (const QJsonValue& v : answer.value("log").toArray()) added.append(v);
   for (const QJsonValue& v : added)
   {
