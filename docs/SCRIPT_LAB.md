@@ -219,7 +219,7 @@ an RLV relay, a store), and they talk to each other.
   in one object"; reasons: [DECISIONS.md](DECISIONS.md).
 - A touch can name the prim (`link`); a prim without a touch handler (`touch_start`, `touch` or `touch_end`) passes it to the root.
 - Code: `src/scriptlab/lsl/sandbox.*` (scripts, prims, link messages), `world.*` (the Linkset Data store),
-  `builtins.cpp`. Tests: `tests/tst_lsllink.cpp`. Fuzz: `fuzz_lsl` also runs every script as three scripts in one
+  `builtins_comm.cpp`. Tests: `tests/tst_lsllink.cpp`. Fuzz: `fuzz_lsl` also runs every script as three scripts in one
   object of two prims and drives the Linkset Data store from the input.
 
 ## What exists now (step 9b-1, issue 310): the signature table and pure functions
@@ -1122,7 +1122,7 @@ Built 24 November 2026, pull request 453 (plan "Script Lab: see and understand",
 
 ## Chain and ribbon lines in the 3D view (job A4, part 2)
 
-Built 24 November 2026, pull request 455 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his question of 23 November: «kart som streker i 3D?»). Part 1 of job A4 is the channel map above. Code: the particle entries in `src/scriptlab/lsl/builtins.cpp`, `src/scriptlab/labchains.*` (QtCore: which chains a run leaves, and whether the object is locked), `src/chainlines.h` (the line's pieces, colour and word tag), `ScriptLabPanel::chains` and `chainsChanged`, and `AnimationView::setChainLines`, `drawChainLines` and `placeChainLabels` in `src/animationview.*`. Tests: `tests/tst_labchains.cpp` (the exact log entries, the chains of a folder run, locked and free, replaced and removed chains, the dashes, colours and tag) and `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`chainLines`, and the window's wiring in `windowWiring`).
+Built 24 November 2026, pull request 455 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his question of 23 November: «kart som streker i 3D?»). Part 1 of job A4 is the channel map above. Code: the particle entries in `src/scriptlab/lsl/builtins_prims.cpp`, `src/scriptlab/labchains.*` (QtCore: which chains a run leaves, and whether the object is locked), `src/chainlines.h` (the line's pieces, colour and word tag), `ScriptLabPanel::chains` and `chainsChanged`, and `AnimationView::setChainLines`, `drawChainLines` and `placeChainLabels` in `src/animationview.*`. Tests: `tests/tst_labchains.cpp` (the exact log entries, the chains of a folder run, locked and free, replaced and removed chains, the dashes, colours and tag) and `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`chainLines`, and the window's wiring in `windowWiring`).
 
 - **What makes a chain.** A script in a prim calls `llParticleSystem` (or `llLinkParticleSystem` for one link) with `PSYS_SRC_TARGET_KEY` and the key of another prim of the same object (`llGetKey()` for the root, `llGetLinkKey(n)`), as LockGuard and LockMeister style chains do. The sandbox logs the prim that emits (`emitter_link`), the key (`target`) and, when it is a prim of the object, its link (`target_link`). A newer particle system of the same prim replaces its chain; an empty rule list removes it ([CONTROL.md](CONTROL.md), "Prim state, L$ and recorded-only functions").
 - **What the 3D view shows.** While **Show effects in 3D view** is on and the props from prims are shown (job A1), a straight line between the centres of the two props, on top of the figure. No physics, no sag, no particles.
