@@ -14,7 +14,11 @@
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
+#include <algorithm>
+
 #include <QApplication>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QMainWindow>
 #include <QtTest>
 
@@ -54,7 +58,9 @@ namespace
       libraryDock = LibraryPanel::makeDock(&window, library);
       window.tabifyDockWidget(panels.jointCardDock, libraryDock);
       panels.fit(PanelLayout::Reflow::Wide);
-      window.resize(1700, 1000);
+      // no bigger than the screen, or restoring the place would cut it down
+      const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+      window.resize(std::min(1700, screen.width() - 80), std::min(1000, screen.height() - 80));
       window.show();
       settle();
     }
@@ -184,17 +190,18 @@ namespace
 
   void arrange(Program& p)
   {
-    // (every place and size fits the offscreen screen, which is 800 pixels high, so nothing is pulled in)
-    // Joints floats, Script Lab floats and stays open, Library floats and stays open,
-    // Selected joint is made wider, the Timeline is made taller
+    // (every place and size fits the screen, so restoring pulls nothing in)
+    const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+    const int height = std::min(650, screen.height() - 150);
+    const int top = screen.top() + 40;
     p.panels.jointsDock->setFloating(true);
-    p.panels.jointsDock->setGeometry(QRect(100, 60, 420, 600));
+    p.panels.jointsDock->setGeometry(QRect(screen.left() + 60, top, 380, height));
     p.labDock->show();
     p.labDock->setFloating(true);
-    p.labDock->setGeometry(QRect(330, 40, 440, 700));
+    p.labDock->setGeometry(QRect(screen.left() + 300, top + 20, 400, height));
     p.libraryDock->show();
     p.libraryDock->setFloating(true);
-    p.libraryDock->setGeometry(QRect(250, 100, 460, 650));
+    p.libraryDock->setGeometry(QRect(screen.left() + 220, top + 50, 420, height - 40));
     p.settle();
     p.window.resizeDocks({p.panels.jointCardDock}, {520}, Qt::Horizontal);
     p.window.resizeDocks({p.panels.timelineDock}, {330}, Qt::Vertical);
