@@ -92,7 +92,7 @@ class ScriptLabController : public QObject
     void connectView(AnimationView* view);
 
     // the scene: example props by name, prop tints, props a script moves (job U3, lane 1 job E, job A1)
-    void connectScene(Scene* scene, const Meshes& meshes, const WindowHooks& hooks);
+    void connectScene(Scene* scene, const Meshes& meshes, const WindowHooks& windowHooks);
 
     // the Script Lab's chains as lines for the 3D view (job A4, part 2)
     QList<ChainLines::Line> chainLines() const;

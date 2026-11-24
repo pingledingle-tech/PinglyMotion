@@ -77,21 +77,21 @@ void ScriptLabController::applyPropTints()
   if(m_hooks.redraw) m_hooks.redraw();
 }
 
-void ScriptLabController::connectScene(Scene* scene,const Meshes& meshes,const WindowHooks& hooks)
+void ScriptLabController::connectScene(Scene* scene,const Meshes& meshes,const WindowHooks& windowHooks)
 {
   m_scene=scene;
   m_meshes=meshes;
-  m_hooks=hooks;
+  m_hooks=windowHooks;
   // props as prims (lane 1 job E): a prop named like a prim of the watched object shows the
   // colour and transparency its scripts gave that prim; the other props keep their own colour
   connect(m_scriptLabPanel,&ScriptLabPanel::propTintsChanged,this,&ScriptLabController::applyPropTints);
   // Script Lab for beginners (job U3): the panel puts an example's props in the scene by name, lights
   // up the prop of a piece picked in its tree (the existing prop selection), and a click on a prop in
   // the 3D view picks its piece in the tree (connectView)
-  ScriptLabPanel::SceneHooks sceneHooks;
-  sceneHooks.hasProp=[this](const QString& name) { return m_scene->getPropByName(name)!=nullptr; };
-  sceneHooks.addProp=[this](const LabExample::Prop& p) { return addExampleProp(p); };
-  sceneHooks.selectProp=[this](const QString& name)
+  ScriptLabPanel::SceneHooks hooks;
+  hooks.hasProp=[this](const QString& name) { return m_scene->getPropByName(name)!=nullptr; };
+  hooks.addProp=[this](const LabExample::Prop& p) { return addExampleProp(p); };
+  hooks.selectProp=[this](const QString& name)
   {
     Prop* prop=m_scene->getPropByName(name);
     if(!prop) return false;
@@ -99,9 +99,9 @@ void ScriptLabController::connectScene(Scene* scene,const Meshes& meshes,const W
     if(m_hooks.redraw) m_hooks.redraw();
     return true;
   };
-  sceneHooks.showPropsTab=[this]() { if(m_hooks.showPropsTab) m_hooks.showPropsTab(); };
+  hooks.showPropsTab=[this]() { if(m_hooks.showPropsTab) m_hooks.showPropsTab(); };
   // job A1, props that move: the panel reads where a prop stands and puts it where a script moved its prim
-  sceneHooks.propPlace=[this](const QString& name,LabExample::Prop& out)
+  hooks.propPlace=[this](const QString& name,LabExample::Prop& out)
   {
     const Prop* prop=m_scene->getPropByName(name);
     if(!prop) return false;
@@ -111,8 +111,8 @@ void ScriptLabController::connectScene(Scene* scene,const Meshes& meshes,const W
     out.rotation=prop->rotation();
     return true;
   };
-  sceneHooks.placeProp=[this](const LabExample::Prop& p) { return placeProp(p); };
-  m_scriptLabPanel->setSceneHooks(sceneHooks);
+  hooks.placeProp=[this](const LabExample::Prop& p) { return placeProp(p); };
+  m_scriptLabPanel->setSceneHooks(hooks);
 }
 
 bool ScriptLabController::addExampleProp(const LabExample::Prop& p)
