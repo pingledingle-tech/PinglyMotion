@@ -1,0 +1,29 @@
+name: Weekly report
+
+# A short plain-English report on the repository, written to the run's job
+# summary once a week (Monday, early morning UTC) or on request. Read-only:
+# the token cannot write anything, and the script only reads. The logic is in
+# tools/weekly_report.py (tests: tests/test_weekly_report.py).
+on:
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+  actions: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Report to the job summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/weekly_report.py >> "$GITHUB_STEP_SUMMARY"

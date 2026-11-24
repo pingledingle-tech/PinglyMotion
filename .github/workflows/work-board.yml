@@ -27,6 +27,8 @@ jobs:
           fetch-depth: 0
       - name: Tests for the work board script
         run: python3 tests/test_work.py
+      - name: Tests for the weekly report script
+        run: python3 tests/test_weekly_report.py
       - name: No overlapping jobs
         env:
           GH_TOKEN: ${{ github.token }}
