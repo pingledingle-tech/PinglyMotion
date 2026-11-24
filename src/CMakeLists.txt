@@ -138,6 +138,8 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp
               pinglymotionwindowundo.cpp
+              scriptlabcontroller.cpp
+              scriptlabcontrollerview.cpp
               emptystate.cpp
               topbar.cpp
               reasonline.cpp

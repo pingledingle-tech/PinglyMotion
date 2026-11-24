@@ -814,19 +814,26 @@ void TestScriptLabBeginner::textsInRegister()
 // window itself is too large for a unit test; the panel's side is tested above)
 void TestScriptLabBeginner::windowWiring()
 {
-  const QString source = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  // the wiring is in the Script Lab controller since job R5 (src/scriptlabcontroller.*); the window
+  // gives it the 3D view and the scene
+  const QString window = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  QVERIFY(window.contains("m_scriptLab->connectView(ui->animationView);"));
+  QVERIFY(window.contains("m_scriptLab->connectScene(scene,meshes,hooks);"));
+  QVERIFY(window.contains("m_scriptLab->makeStepsAction(this)"));
+  const QString source = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/scriptlabcontroller.cpp"));
+  const QString view = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/scriptlabcontrollerview.cpp"));
   QVERIFY(source.contains("m_scriptLabPanel->setSceneHooks(hooks);"));
-  QVERIFY(source.contains("m_scriptLabPanel->selectPrim(prop->name());"));
-  QVERIFY(source.contains("m_scriptLabPanel->makeStepsAction(this)"));
+  QVERIFY(view.contains("m_scriptLabPanel->selectPrim(prop->name());"));
+  QVERIFY(source.contains("m_scriptLabPanel->makeStepsAction(parent)"));
   QVERIFY(source.contains("scene->addProp(type,mesh,attach,"));
   // job A1: a click on a prop is a touch, and the panel can read and set where a prop stands
-  QVERIFY(source.contains("m_scriptLabPanel->touchPrim(prop->name(),ui->animationView->mapFromGlobal(QCursor::pos()));"));
+  QVERIFY(view.contains("m_scriptLabPanel->touchPrim(prop->name(),view->mapFromGlobal(QCursor::pos()));"));
   // job A2: the menu box stands over the 3D view
-  QVERIFY(source.contains("m_scriptLabPanel->setMenuBoxHost(ui->animationView);"));
+  QVERIFY(view.contains("m_scriptLabPanel->setMenuBoxHost(view);"));
   // job A4, part 2: the chains go to the 3D view
-  QVERIFY(source.contains("connect(m_scriptLabPanel,&ScriptLabPanel::chainsChanged,this,[this]()"));
+  QVERIFY(view.contains("connect(m_scriptLabPanel,&ScriptLabPanel::chainsChanged,this,[this,view]()"));
   QVERIFY(source.contains("lines.append(ChainLines::Line{chain.from,chain.to,chain.locked,chain.word()});"));
-  QVERIFY(source.contains("ui->animationView->setChainLines(lines);"));
+  QVERIFY(view.contains("view->setChainLines(chainLines());"));
   QVERIFY(source.contains("hooks.propPlace="));
   QVERIFY(source.contains("hooks.placeProp="));
 }

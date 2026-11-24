@@ -207,6 +207,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/scriptlabplayer)
   # Script Lab as one window with its own tabs (job UX-B): pop out, put back, remembered, big by default
   ADD_SUBDIRECTORY (tests/scriptlabwindow)
+  # the Script Lab controller (job R5): the Script Lab's wiring to the window, out of its constructor
+  ADD_SUBDIRECTORY (tests/scriptlabcontroller)
   # the Library panel (roadmap item 6, issue 19)
   ADD_SUBDIRECTORY (tests/librarypanel)
   # two figures in one scene, Expert mode only (docs/UX_DECISIONS.md 6m)

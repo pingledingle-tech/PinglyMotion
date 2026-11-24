@@ -114,11 +114,8 @@
 #include "undohistory.h"
 #include "playback.h"
 #include "scriptlab/scriptlabpanel.h"
+#include "scriptlabcontroller.h"
 #include "librarypanel.h"
-#include "scriptlab/cameraoverride.h"
-#include "scriptlab/environmentoverride.h"
-#include "scriptlab/viewmodesoverride.h"
-#include "scriptlab/effectspreview.h"
 #include "theme.h"
 #include "menuspec.h"
 #include "viewmenuspec.h"
@@ -610,121 +607,24 @@ PinglyMotionWindow::PinglyMotionWindow() :
   m_controlHost.reset(new WindowControlHost(this));
   m_controlApi.reset(new ControlApi(m_controlHost.data()));
   m_controlServer.reset(new ControlServer(m_controlApi.data()));
-  // the Script Lab panel shows and changes the same RLV state as rlv_command (issue 288)
-  m_scriptLabPanel->setState(&m_controlApi->rlv());
-  m_scriptLabPanel->setSession(&m_controlApi->lslSession());
-  // and the same folder watch as lab_watch (issue 292)
-  m_scriptLabPanel->setWatcher(&m_controlApi->lab());
-  // and shows what a Live run does in the 3D view, off until its box is ticked (issue 293)
-  EffectsPreview* effects=new EffectsPreview(this);
-  ui->animationView->setEffectsPreview(effects);
-  m_scriptLabPanel->setEffects(effects);
-  // and props as prims (lane 1 job E): a prop named like a prim of the watched object shows the
-  // colour and transparency its scripts gave that prim; the other props keep their own colour
-  connect(m_scriptLabPanel,&ScriptLabPanel::propTintsChanged,this,[this]()
+  // the Script Lab: the same RLV state, LSL session and folder watch as the control commands, its
+  // effects and overrides in the 3D view, and the scene's props (job R5, src/scriptlabcontroller.h)
+  m_scriptLab->connectControl(m_controlApi.data());
+  m_scriptLab->connectView(ui->animationView);
   {
-    const QList<LabTint::Tint> tints=m_scriptLabPanel->propTints();
-    PropManager* props=scene->propManager();
-    for(int i=0;i<props->count();++i)
+    ScriptLabController::Meshes meshes{cubeMesh,sphereMesh,coneMesh,torusMesh};
+    ScriptLabController::WindowHooks hooks;
+    hooks.jointNames=[this]() { return ui->animationView->partNames(); };
+    hooks.propAdded=[this](const Prop* prop) { ui->propNameCombo->addItem(prop->name()); };
+    hooks.selectProp=[this](Prop* prop) { propClicked(prop); };
+    hooks.showPropsTab=[this]() { ui->avatarPropsTab->setCurrentIndex(1); };
+    hooks.propMoved=[this](const Prop* prop)
     {
-      Prop* prop=props->at(i);
-      prop->clearTint();
-      for(const LabTint::Tint& tint : tints)
-      {
-        if(tint.prim!=prop->name()) continue;
-        const QColor colour=tint.hasColour ? QColor::fromRgbF(tint.colour[0],tint.colour[1],tint.colour[2]) : prop->drawColour();
-        prop->setTint(colour,tint.hasAlpha ? tint.alpha : 1.0f);
-      }
-    }
-    ui->animationView->update();
-  });
-  // Script Lab chains and ribbons (job A4, part 2): a line in the 3D view between two props a script links
-  connect(m_scriptLabPanel,&ScriptLabPanel::chainsChanged,this,[this]()
-  {
-    QList<ChainLines::Line> lines;
-    for(const LabChains::Chain& chain : m_scriptLabPanel->chains())
-      lines.append(ChainLines::Line{chain.from,chain.to,chain.locked,chain.word()});
-    ui->animationView->setChainLines(lines);
-  });
-  // Script Lab for beginners (job U3): the panel puts an example's props in the scene by name, lights
-  // up the prop of a piece picked in its tree (the existing prop selection), and a click on a prop in
-  // the 3D view picks its piece in the tree
-  ScriptLabPanel::SceneHooks hooks;
-  hooks.hasProp=[this](const QString& name) { return scene->getPropByName(name)!=nullptr; };
-  hooks.addProp=[this](const LabExample::Prop& p)
-  {
-    if(scene->getPropByName(p.name)) return true;   // there already: nothing is added twice
-    Prop::PropType type=Prop::Box;
-    QSharedPointer<Mesh> mesh=cubeMesh;
-    if(p.shape==QLatin1String("sphere")) { type=Prop::Sphere; mesh=sphereMesh; }
-    else if(p.shape==QLatin1String("cone")) { type=Prop::Cone; mesh=coneMesh; }
-    else if(p.shape==QLatin1String("torus")) { type=Prop::Torus; mesh=torusMesh; }
-    // the joint by name: its place in the Attach to list (0 is not attached)
-    const int attach=p.joint.isEmpty() ? 0 : qMax(0,int(ui->animationView->partNames().indexOf(p.joint)));
-    const Prop* prop=scene->addProp(type,mesh,attach,
-                                    p.position.x(),p.position.y(),p.position.z(),
-                                    p.scale.x(),p.scale.y(),p.scale.z(),
-                                    p.rotation.x(),p.rotation.y(),p.rotation.z(),p.name);
-    if(!prop) return false;
-    ui->propNameCombo->addItem(prop->name());
-    ui->animationView->update();
-    return prop->name()==p.name;
-  };
-  hooks.selectProp=[this](const QString& name)
-  {
-    Prop* prop=scene->getPropByName(name);
-    if(!prop) return false;
-    propClicked(prop);
-    ui->animationView->update();
-    return true;
-  };
-  hooks.showPropsTab=[this]() { ui->avatarPropsTab->setCurrentIndex(1); };
-  // job A1, props that move: the panel reads where a prop stands and puts it where a script moved its prim
-  hooks.propPlace=[this](const QString& name,LabExample::Prop& out)
-  {
-    const Prop* prop=scene->getPropByName(name);
-    if(!prop) return false;
-    out.name=prop->name();
-    out.position=prop->position();
-    out.scale=prop->scale();
-    out.rotation=prop->rotation();
-    return true;
-  };
-  hooks.placeProp=[this](const LabExample::Prop& p)
-  {
-    Prop* prop=scene->getPropByName(p.name);
-    if(!prop) return false;
-    prop->setPosition(p.position.x(),p.position.y(),p.position.z());
-    prop->setScale(p.scale.x(),p.scale.y(),p.scale.z());
-    prop->setRotation(p.rotation.x(),p.rotation.y(),p.rotation.z());
-    if(scene->propManager()->getSelectedPropId()==prop->id()) updatePropSpins(prop->position(),prop->rotation(),prop->scale());
-    ui->animationView->update();
-    return true;
-  };
-  m_scriptLabPanel->setSceneHooks(hooks);
-  connect(ui->animationView,&AnimationView::propClicked,this,[this](Prop* prop)
-  {
-    if(!prop) return;
-    m_scriptLabPanel->selectPrim(prop->name());
-    // job A1: a click on a prim's prop is a touch; job A2: a menu it shows stands next to the click
-    m_scriptLabPanel->touchPrim(prop->name(),ui->animationView->mapFromGlobal(QCursor::pos()));
-  });
-  m_scriptLabPanel->setMenuBoxHost(ui->animationView);
-  // and lets the RLV camera limits limit the 3D view's camera, off until its box is ticked (job 7b)
-  CameraOverride* cameraOverride=new CameraOverride(this);
-  cameraOverride->setState(&m_controlApi->rlv());
-  ui->animationView->setCameraOverride(cameraOverride);
-  m_scriptLabPanel->setCameraOverride(cameraOverride);
-  // and shows the sky and draw distance a script asks for as the background and fog, off until its box is ticked (job 7c)
-  EnvironmentOverride* environmentOverride=new EnvironmentOverride(this);
-  environmentOverride->setState(&m_controlApi->rlv());
-  ui->animationView->setEnvironmentOverride(environmentOverride);
-  m_scriptLabPanel->setEnvironmentOverride(environmentOverride);
-  // and the view modes a script holds (hidden avatar, plain textures, overlay), off until its box is ticked (job 7c)
-  ViewModesOverride* viewModesOverride=new ViewModesOverride(this);
-  viewModesOverride->setState(&m_controlApi->rlv());
-  ui->animationView->setViewModesOverride(viewModesOverride);
-  m_scriptLabPanel->setViewModesOverride(viewModesOverride);
+      if(scene->propManager()->getSelectedPropId()==prop->id()) updatePropSpins(prop->position(),prop->rotation(),prop->scale());
+    };
+    hooks.redraw=[this]() { ui->animationView->update(); };
+    m_scriptLab->connectScene(scene,meshes,hooks);
+  }
 
   // status bar (#88): "Tips on" switch, remote control and Aurora link, left to right;
   // messages still show on the left
@@ -1143,9 +1043,11 @@ void PinglyMotionWindow::buildDocks()
 
   // --- Script Lab panel (issue 288): RLV commands and what the avatar may
   // still do. Hidden until View > Script Lab; place, size and visibility
-  // are saved with the layout like the other panels.
-  m_scriptLabPanel=new ScriptLabPanel;
-  m_scriptLabDock=ScriptLabPanel::makeDock(this,m_scriptLabPanel);
+  // are saved with the layout like the other panels. The controller makes it
+  // and connects it to the rest of the window (job R5, src/scriptlabcontroller.h).
+  m_scriptLab=new ScriptLabController(this);
+  m_scriptLabPanel=m_scriptLab->panel();
+  m_scriptLabDock=m_scriptLab->dock();
 
   // --- Library panel (roadmap item 6, issue 19; docs/UX_DECISIONS.md 6l):
   // ready-made moves to start from. Hidden until View > Library; a tab next
@@ -1443,14 +1345,7 @@ void PinglyMotionWindow::buildMenus()
   connect(helpWelcomeAction,&QAction::triggered,this,&PinglyMotionWindow::showWelcomeCard);
   ui->menuHelp->addAction(helpWelcomeAction);
   // the steps of the Script Lab example project again (job U3); the panel opens with them
-  QAction* scriptLabStepsAction=m_scriptLabPanel->makeStepsAction(this);
-  connect(scriptLabStepsAction,&QAction::triggered,this,[this]()
-  {
-    m_scriptLabDock->show();
-    m_scriptLabDock->raise();
-    m_scriptLabPanel->showSteps();   // again, now that it is on screen: the first step gets the keys
-  });
-  ui->menuHelp->addAction(scriptLabStepsAction);
+  ui->menuHelp->addAction(m_scriptLab->makeStepsAction(this));
   m_hintsAction=specAction(this,helpHints,false);
   m_hintsAction->setCheckable(true);
   m_hintsAction->setChecked(UserSettings::tipsOn());
@@ -2084,12 +1979,8 @@ void PinglyMotionWindow::resetPanelLayout()
   m_tabState.reset();
   // the default layout of the mode: in Beginner mode the Joints list is closed (UX-E)
   PanelWindow::applyModeLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock,UserSettings::expertMode());
-  // the Script Lab goes back to its side and closes, as at the first start
-  m_scriptLabDock->setFloating(false);
-  addDockWidget(Qt::RightDockWidgetArea,m_scriptLabDock);
-  m_scriptLabDock->hide();
-  // its tabs back in it, Live scripts in front, and big again the next time it opens (job UX-B)
-  m_scriptLabPanel->resetWindows();
+  // the Script Lab goes back to its side and closes, its tabs back in it (job UX-B)
+  m_scriptLab->resetLayout();
   // the library too: a closed tab next to Selected joint
   m_libraryDock->setFloating(false);
   tabifyDockWidget(m_jointCardDock,m_libraryDock);
