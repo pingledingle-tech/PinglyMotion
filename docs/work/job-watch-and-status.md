@@ -1,6 +1,6 @@
 Branch: job/watch-and-status
 Status: active
-Pull request: pending
+Pull request: #485
 Files:
 - .github/workflows/watch.yml
 - .github/workflows/build.yml
