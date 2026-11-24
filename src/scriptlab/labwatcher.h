@@ -40,7 +40,12 @@
 #include <QStringList>
 #include <QTimer>
 
+#include <memory>
+
+#include "labfolder.h"
+
 class RlvState;
+namespace lsl { class Session; }
 
 class LabWatcher : public QObject
 {
@@ -56,6 +61,7 @@ class LabWatcher : public QObject
     static constexpr int MAX_PATH_CHARS = 4096;
 
     explicit LabWatcher(QObject* parent = nullptr);
+    ~LabWatcher() override;
 
     struct Result
     {
@@ -101,6 +107,16 @@ class LabWatcher : public QObject
     // Not owned. Without it each run has a state of its own.
     void setRlvState(RlvState* state) { m_rlv = state; }
 
+    // Linkset mode (job A1, a click on a prop): sends a touch to the prim of that link in the world of
+    // the last folder run and runs the world on for one simulated second. A "clicked" line (with the
+    // prim's name) and the touch's own log lines are added to the log of folderResult() and of every
+    // script's result, and resultChanged() is emitted. Refused, with the reason, when no folder is
+    // watched as one object, the folder did not run, the link is not a prim of it, or every script
+    // has stopped. The next save runs the folder again from the start.
+    Result touch(int link);
+    // the link of the prim of that name in the last folder run (0 when there is none)
+    int linkOf(const QString& prim) const;
+
     // Reads, checks and runs one script now (also used by the tests and the
     // first run after watch). relative is a path from scripts(). In linkset
     // mode it runs the whole folder, with relative as the file that changed.
@@ -137,6 +153,9 @@ class LabWatcher : public QObject
     QMap<QString, Entry> m_notecards;  // linkset mode: notecards, so a saved notecard runs the folder again
     bool m_linkset = false;
     QJsonObject m_folderResult;
+    LabFolder::Linkset m_lastLinkset;   // linkset mode: the folder as the last run read it
+    lsl::Session* m_world;              // linkset mode: the world of the last folder run, for touch()
+    std::unique_ptr<RlvState> m_ownRlv; // the RLV state of that world when no state was given
     QStringList m_pending;             // changed scripts waiting to run
     QMap<QString, QJsonObject> m_results;
     QJsonObject m_last;

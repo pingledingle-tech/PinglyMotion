@@ -24,6 +24,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QMap>
 #include <QPushButton>
 #include <QSettings>
 #include <QStandardPaths>
@@ -90,10 +91,13 @@ namespace
     QList<LabExample::Prop> added;
     QStringList selected;
     int propsTabShown = 0;
+    QMap<QString, LabExample::Prop> places;   // where each prop stands (job A1)
     ScriptLabPanel::SceneHooks hooks()
     {
       ScriptLabPanel::SceneHooks h;
-      h.addProp = [this](const LabExample::Prop& p) { if (!props.contains(p.name)) { props << p.name; added << p; } return true; };
+      h.addProp = [this](const LabExample::Prop& p) { if (!props.contains(p.name)) { props << p.name; added << p; places.insert(p.name, p); } return true; };
+      h.propPlace = [this](const QString& name, LabExample::Prop& out) { if (!places.contains(name)) return false; out = places.value(name); return true; };
+      h.placeProp = [this](const LabExample::Prop& p) { if (!places.contains(p.name)) return false; places[p.name] = p; return true; };
       h.hasProp = [this](const QString& name) { return props.contains(name); };
       h.selectProp = [this](const QString& name) { if (!props.contains(name)) return false; selected << name; return true; };
       h.showPropsTab = [this]() { ++propsTabShown; };
@@ -131,6 +135,7 @@ class TestScriptLabBeginner : public QObject
     void propNamesForExamples();
     void textsInRegister();
     void windowWiring();
+    void propsFromPrims();
 
   private:
     void setUpPanel(ScriptLabPanel& panel, LabWatcher& watcher, RlvState& state, const QString& root, FakeScene& scene);
@@ -772,7 +777,8 @@ void TestScriptLabBeginner::textsInRegister()
     "Use only letters, digits, spaces, - and _ in the name.", "Windows keeps this name for itself. Pick another name.",
     "A folder with this name is already there. Pick another name.", "The folder path would be too long. Use a shorter name.",
     "Could not make the folder. Check that Documents can be written.", "The example objects are not next to the program.",
-    "The example could not be read.", "On: the 3D view shows what the scripts do."};
+    "The example could not be read.", "On: the 3D view shows what the scripts do.",
+    "You clicked %1.", "Error: the touch on %1 was not sent. %2"};
   for (const LabBeginner::Tip& tip : LabBeginner::jargonTips()) texts << tip.text;
   for (const QString& text : texts)
   {
@@ -790,6 +796,65 @@ void TestScriptLabBeginner::windowWiring()
   QVERIFY(source.contains("m_scriptLabPanel->selectPrim(prop->name());"));
   QVERIFY(source.contains("m_scriptLabPanel->makeStepsAction(this)"));
   QVERIFY(source.contains("scene->addProp(type,mesh,attach,"));
+  // job A1: a click on a prop is a touch, and the panel can read and set where a prop stands
+  QVERIFY(source.contains("m_scriptLabPanel->touchPrim(prop->name());"));
+  QVERIFY(source.contains("hooks.propPlace="));
+  QVERIFY(source.contains("hooks.placeProp="));
+}
+
+// job A1: with the effects shown, every prim gets a prop; a click on a prop is a touch to that prim's
+// scripts, with a line in the event log; a prop jumps where a script moves its prim, and back when
+// the effects are turned off
+void TestScriptLabBeginner::propsFromPrims()
+{
+  QTemporaryDir dir;
+  const QString top = dir.filePath("Set");
+  QVERIFY(writeFile(top + "/Root/hud.lsl", "default { state_entry() { llSetScale(<1.0, 1.0, 0.5>); } }\n"));
+  QVERIFY(writeFile(top + "/Collar/collar.lsl",
+                    "default { touch_start(integer n) { llOwnerSay(\"collar touched\"); llSetPos(<0.0, 0.0, 1.0>); } }\n"));
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  QVERIFY(panel.watchFolder(top));
+  // effects off: no props, and a click sends nothing
+  QVERIFY(!panel.primPropsShown());
+  QVERIFY(scene.props.isEmpty());
+  QVERIFY(!panel.touchPrim("Collar"));
+
+  panel.effectsBox()->setChecked(true);
+  QVERIFY(panel.primPropsShown());
+  QCOMPARE(scene.props, QStringList({"Root", "Collar"}));
+  QCOMPARE(scene.added[0].shape, QString("box"));
+  QCOMPARE(scene.added[0].joint, QString());
+  QCOMPARE(scene.added[1].shape, QString("torus"));
+  QCOMPARE(scene.added[1].joint, QString("neck"));
+  // the HUD script made its prim half as high: the box is half as deep, at once
+  QCOMPARE(scene.places["Root"].scale, QVector3D(16, 16, 1));
+  QCOMPARE(scene.places["Collar"].position, QVector3D(0, 1.5f, 0));
+  QCOMPARE(panel.primMoves().size(), 1);
+
+  // a click on the collar: a touch to collar.lsl, which says so and moves the collar 1 m up
+  QVERIFY(panel.touchPrim("Collar"));
+  const QString log = panel.runLog()->toPlainText();
+  QVERIFY2(log.contains(" s  You clicked Collar.\n"), qPrintable(log));
+  QVERIFY2(log.contains("collar (Collar): owner_say: collar touched"), qPrintable(log));
+  QVERIFY(log.indexOf("You clicked Collar.") < log.indexOf("collar touched"));
+  QCOMPARE(scene.places["Collar"].position, QVector3D(0, 40.87f, 0));
+  QCOMPARE(scene.places["Collar"].rotation, QVector3D(90, 0, 0));
+  QCOMPARE(panel.primMoves().size(), 2);
+  // no prim of that name: nothing is sent
+  QVERIFY(!panel.touchPrim("Nope"));
+  // a prop that is already there is not made again
+  QCOMPARE(scene.added.size(), 2);
+
+  // effects off: the props go back where they stood, and keep their names
+  panel.effectsBox()->setChecked(false);
+  QCOMPARE(scene.places["Root"].scale, QVector3D(8, 8, 1));
+  QCOMPARE(scene.places["Collar"].position, QVector3D(0, 1.5f, 0));
+  QVERIFY(panel.primMoves().isEmpty());
+  QCOMPARE(scene.props, QStringList({"Root", "Collar"}));
 }
 
 QTEST_MAIN(TestScriptLabBeginner)

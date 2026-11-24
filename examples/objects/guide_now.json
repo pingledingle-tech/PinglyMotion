@@ -114,22 +114,22 @@
     {
       "id": "EXNOW-22",
       "part": "open",
-      "text": "The program cannot make those yet, so their props do not appear."
+      "text": "Show effects in 3D view makes those props from the prim folders."
     },
     {
       "id": "EXNOW-23",
       "part": "not",
-      "text": "Props are not made from the prim folders by themselves."
+      "text": "A made prop is a simple shape. Its place is a guess."
     },
     {
       "id": "EXNOW-24",
       "part": "not",
-      "text": "Clicking a prop in the 3D view is not a touch."
+      "text": "Clicking a prop is a touch only while Show effects is on."
     },
     {
       "id": "EXNOW-25",
       "part": "not",
-      "text": "Props do not move when a script moves its prim."
+      "text": "A prop jumps to its new place. It does not glide there."
     },
     {
       "id": "EXNOW-26",

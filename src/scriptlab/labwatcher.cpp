@@ -4,14 +4,19 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <cmath>
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 
 #include "lsl/control.h"
+#include "lsl/session.h"
+#include "lsl/world.h"
 #include "labfolder.h"
 #include "labwatcher.h"
+#include "rlvstate.h"
 
 #include <QCoreApplication>
 
@@ -40,6 +45,7 @@ namespace
 
 LabWatcher::LabWatcher(QObject* parent) :
   QObject(parent),
+  m_world(new lsl::Session(this)),
   m_watcher(new QFileSystemWatcher(this))
 {
   m_debounce.setSingleShot(true);
@@ -55,6 +61,8 @@ LabWatcher::LabWatcher(QObject* parent) :
     scheduleRescan();
   });
 }
+
+LabWatcher::~LabWatcher() = default;
 
 LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& runOptions)
 {
@@ -120,6 +128,8 @@ bool LabWatcher::unwatch()
   m_linkset = false;
   m_notecards.clear();
   m_folderResult = QJsonObject();
+  m_lastLinkset = LabFolder::Linkset();
+  m_world->clear();
   emit watchChanged();
   emit resultChanged();
   return true;
@@ -279,7 +289,16 @@ void LabWatcher::runFolder(const QString& trigger)
 {
   if (m_folder.isEmpty()) return;
   const LabFolder::Linkset linkset = LabFolder::open(m_folder);
-  QJsonObject folder = LabFolder::run(linkset, m_options, m_rlv);
+  // the world is kept for touch() (job A1); it needs an RLV state that outlives it
+  RlvState* rlv = m_rlv;
+  if (!rlv)
+  {
+    if (!m_ownRlv) m_ownRlv.reset(new RlvState);
+    rlv = m_ownRlv.get();
+  }
+  QJsonObject folder = LabFolder::run(linkset, m_options, rlv, m_world);
+  if (!folder.value("ok").toBool()) m_world->clear();
+  m_lastLinkset = linkset;
   const int run = ++m_runs;
   folder["run"] = run;
   folder["file"] = trigger;
@@ -391,4 +410,51 @@ void LabWatcher::runScript(const QString& relative)
   m_results.insert(relative, result);
   m_last = result;
   emit resultChanged();
+}
+
+int LabWatcher::linkOf(const QString& prim) const
+{
+  if (prim.isEmpty()) return 0;
+  for (const LabFolder::Prim& p : m_lastLinkset.prims)
+    if (p.name == prim) return p.link;
+  return 0;
+}
+
+LabWatcher::Result LabWatcher::touch(int link)
+{
+  if (!watching() || !m_linkset) return {tr("No folder is watched as one object.")};
+  if (!m_folderResult.value("ok").toBool() || !m_world->sandbox())
+    return {tr("The object did not run, so it cannot be touched. Fix it and save.")};
+  const QString prim = m_lastLinkset.primName(link);
+  if (link < 1 || prim.isEmpty()) return {tr("The object has no prim with link %1.").arg(link)};
+  QJsonObject request{{"command", "lsl_event"}, {"type", "touch"}};
+  // a single prim is link 0 in the sandbox; the touch goes to it without a link
+  if (m_lastLinkset.prims.size() > 1) request["link"] = link;
+  const double at = std::round(m_world->sandbox()->now() * 1000.0) / 1000.0;
+  QJsonObject answer = lsl::Control::event(request, m_world);
+  if (!answer.value("ok").toBool()) return {answer.value("error").toString()};
+  LabFolder::tagLog(m_lastLinkset, answer);
+
+  QJsonObject run = m_folderResult.value("result").toObject();
+  QJsonArray log = run.value("log").toArray();
+  bool truncated = run.value("log_truncated").toBool() || answer.value("log_truncated").toBool();
+  QJsonArray added{QJsonObject{{"t", at}, {"type", "clicked"}, {"link", link}, {"prim", prim}, {"source", "sandbox"}}};
+  for (const QJsonValue& v : answer.value("log").toArray()) added.append(v);
+  for (const QJsonValue& v : added)
+  {
+    // the log of one run keeps as many lines as the sandbox does
+    if (log.size() >= lsl::World::MAX_LOG_ENTRIES) { truncated = true; break; }
+    log.append(v);
+  }
+  run["log"] = log;
+  run["log_truncated"] = truncated;
+  for (const char* key : {"stopped", "time", "objects", "rlv"})
+    if (answer.contains(key)) run[key] = answer.value(key);
+  if (answer.contains("dialog")) run["dialog"] = answer.value("dialog");
+  m_folderResult["result"] = run;
+  for (auto it = m_results.begin(); it != m_results.end(); ++it)
+    if (it->contains("result")) (*it)["result"] = run;
+  if (m_last.contains("result")) m_last["result"] = run;
+  emit resultChanged();
+  return {};
 }

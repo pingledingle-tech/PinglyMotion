@@ -45,6 +45,7 @@
 #include <QStringList>
 
 class RlvState;
+namespace lsl { class Session; }
 
 namespace LabFolder
 {
@@ -127,7 +128,10 @@ namespace LabFolder
   // Checks and, when the folder breaks no limit and every script compiles, runs it as one object.
   // {"ok", "linkset" (toJson), "check" (as check()), "result" (the lsl_run answer, with every log entry
   // tagged with its source) only when it ran, "error" when it did not}. rlv: as lsl::Control::run.
-  QJsonObject run(const Linkset& linkset, const QJsonObject& options = QJsonObject(), RlvState* rlv = nullptr);
+  // With rlv and session the world of the run is kept in session, so a touch can be sent to it later
+  // (job A1: a click on a prop); a folder that did not run leaves session as it was.
+  QJsonObject run(const Linkset& linkset, const QJsonObject& options = QJsonObject(), RlvState* rlv = nullptr,
+                  lsl::Session* session = nullptr);
 
   // Adds the source of every log entry of an lsl_run answer of this linkset (used by run()).
   void tagLog(const Linkset& linkset, QJsonObject& answer);

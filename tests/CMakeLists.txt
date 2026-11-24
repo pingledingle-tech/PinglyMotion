@@ -295,6 +295,12 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_labtint_tests PRIVATE ${CMAKE_SOURCE_DI
 TARGET_LINK_LIBRARIES (pinglymotion_labtint_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME labtint COMMAND pinglymotion_labtint_tests)
 
+# Script Lab job A1: props made from the prims, and props that move with their prims
+ADD_EXECUTABLE (pinglymotion_labprimprops_tests tst_labprimprops.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labprimprops_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_labprimprops_tests pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
+ADD_TEST (NAME labprimprops COMMAND pinglymotion_labprimprops_tests)
+
 # Script Lab example folders (job E1, docs/EXAMPLES.md): each example opens, compiles and runs with exact answers
 ADD_EXECUTABLE (pinglymotion_examples_tests tst_examples.cpp ${CMAKE_SOURCE_DIR}/src/prop.cpp ${CMAKE_SOURCE_DIR}/src/meshmodel.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_examples_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})

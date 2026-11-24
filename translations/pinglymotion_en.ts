@@ -2719,6 +2719,18 @@ Pick the ones you want.</source>
         <source>The file cannot be read: %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No folder is watched as one object.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The object did not run, so it cannot be touched. Fix it and save.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The object has no prim with link %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LibraryPanel</name>
@@ -7069,6 +7081,14 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>Show effects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You clicked %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: the touch on %1 was not sent. %2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
