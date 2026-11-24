@@ -20,6 +20,7 @@ Files:
 - tests/dialogfit/tst_dialogfit.cpp
 - tests/repeat/**
 - tests/laterfile.h
+- tools/ci/rerun_failed_tests.py
 
 ## What
 
