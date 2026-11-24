@@ -1422,6 +1422,10 @@ void TestScriptLabBeginner::activeChoiceIsClear()
       QVERIFY(off->icon().isNull());
       QCOMPARE(on->font().weight(), QFont::DemiBold);
       QCOMPARE(off->font().weight(), QFont::Normal);
+      // never cut: the chosen look (bold word and tick) fits in both buttons
+      for (QPushButton* b : {on, off})
+        QVERIFY2(b->minimumWidth() >= QFontMetrics(on->font()).horizontalAdvance(b->text()) + 14 + 2 * Theme::Size::spacingM,
+                 qPrintable(b->text()));
       QVERIFY(on->accessibleDescription().startsWith("Chosen."));
       QVERIFY(off->accessibleDescription().startsWith("Not chosen."));
       // the fill: the selection colour behind the chosen one, the raised surface behind the other

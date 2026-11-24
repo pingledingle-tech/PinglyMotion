@@ -227,13 +227,20 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_explainFrame->setVisible(m_hintsOn);
 
   // --- Viewer rules: RLV or RLVa, and how many restrictions are held (the mockup's top row)
-  QHBoxLayout* rules = new QHBoxLayout;
+  // in a row that wraps (UX small fixes): the chosen RLV or RLVa has a tick and bold text, which
+  // need room, and the ? button stands at the end; in a narrow panel the chip and ? go to a second line
+  QWidget* rulesRow = new QWidget(this);
+  rulesRow->setObjectName("scriptLabRulesRow");
+  FlowLayout* rules = new FlowLayout(rulesRow, SpacingS);
   rules->setContentsMargins(SpacingM, SpacingS, SpacingM, 0);
-  rules->setSpacing(SpacingS);
   m_modeLabel = sectionLabel(tr("Viewer rules"), this);
+  m_modeLabel->setMinimumHeight(ControlCompact);
+  m_modeLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   m_modeLabel->setObjectName("scriptLabModeLabel");
   rules->addWidget(m_modeLabel);
-  QHBoxLayout* segment = new QHBoxLayout;
+  QWidget* segmentBox = new QWidget(rulesRow);
+  segmentBox->setObjectName("scriptLabModeSegment");
+  QHBoxLayout* segment = new QHBoxLayout(segmentBox);
   segment->setContentsMargins(0, 0, 0, 0);
   segment->setSpacing(0);
   const QString relog = tr("Switching removes every restriction, as after a relog.");
@@ -252,8 +259,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
     segment->addWidget(b);
   }
   m_modeRlva->setChecked(true);   // RLVa is the default (RlvState)
-  rules->addLayout(segment);
-  rules->addStretch(1);
+  rules->addWidget(segmentBox);
   m_heldChipFrame = new ScriptLabFrame(this);
   m_heldChipFrame->setObjectName("scriptLabHeldChip");
   m_heldChipFrame->setMinimumHeight(HeldChipHeight);
@@ -270,7 +276,13 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   if (caption.pointSizeF() > 0) caption.setPointSizeF(caption.pointSizeF() * 11.0 / 13.0);
   m_heldChip->setFont(caption);
   chip->addWidget(m_heldChip);
-  rules->addWidget(m_heldChipFrame);
+  // the chip (20 pixels high) in the middle of a box as high as the buttons
+  QWidget* chipBox = new QWidget(rulesRow);
+  QHBoxLayout* chipRow = new QHBoxLayout(chipBox);
+  chipRow->setContentsMargins(0, 0, 0, 0);
+  chipRow->addWidget(m_heldChipFrame, 0, Qt::AlignVCenter);
+  chipBox->setMinimumHeight(ControlCompact);
+  rules->addWidget(chipBox);
   // UX small fixes: help out of the working parts, behind one ? button (labhelpview.h)
   m_helpButton = new QToolButton(this);
   m_helpButton->setObjectName("scriptLabHelpButton");
@@ -282,7 +294,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
                            + tr("Explanations, the words and every example, in a bigger view."));
   rules->addWidget(m_helpButton);
   connect(m_helpButton, &QToolButton::clicked, this, [this]() { showHelp(); });
-  outer->addLayout(rules);
+  outer->addWidget(rulesRow);
   connect(m_modeRlv, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlv); });
   connect(m_modeRlva, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlva); });
 
@@ -663,6 +675,14 @@ void ScriptLabPanel::styleModeButtons()
     b->setIconSize(QSize(14, 14));
     b->setProperty("chosen", on);
   }
+  // both as wide as the chosen look needs (bold text and the tick), so switching never cuts the
+  // word or moves the row (charter P12)
+  QFont bold = m_modeRlv->font();
+  bold.setWeight(QFont::DemiBold);
+  const QFontMetrics fm(bold);
+  const int width = qMax(fm.horizontalAdvance(m_modeRlv->text()), fm.horizontalAdvance(m_modeRlva->text()))
+                    + 14 + SpacingXs + 2 * SpacingM + 4 * Theme::Size::borderWidth;
+  for (QPushButton* b : {m_modeRlv, m_modeRlva}) b->setMinimumWidth(width);
   const QString relog = tr("Switching removes every restriction, as after a relog.");
   for (QPushButton* b : {m_modeRlv, m_modeRlva})
     b->setAccessibleDescription((b->isChecked() ? tr("Chosen.") : tr("Not chosen.")) + QLatin1Char(' ') + relog);
@@ -841,6 +861,7 @@ void ScriptLabPanel::changeEvent(QEvent* event)
   if (event->type() == QEvent::FontChange)
   {
     setMinimumSize(minimumPanelSize());
+    styleModeButtons();   // RLV and RLVa as wide as their bold word needs at the new size
     updateGeometry();
   }
   // the theme was switched: new token colours
