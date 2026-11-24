@@ -1,6 +1,6 @@
 Branch: job/scriptlab-record-replay
 Status: active
-Pull request: pending
+Pull request: #450
 Files:
 - src/scriptlab/labrecipe.*
 - src/scriptlab/labwatcher.*
