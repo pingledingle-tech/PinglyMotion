@@ -1299,8 +1299,14 @@ recording and replay part of `labwatcher.*`; the panel part is in [SCRIPT_LAB.md
   every script stopped), `changes` (one sentence each, for example `Before: Cuffs was locked. Now: it is not
   locked.`; empty when nothing changed), `first` (`true` when there was nothing to compare with), `run`,
   `recipe`, `steps_text` and `log` (the replay's event log, with a `step` line before each step).
-- The facts and the changes are written to `recipe.rlvresult` next to the recipe (`[key] sentence` lines and `#`
-  notes); that file is the "before" of the next replay. The sandbox is deterministic, so the same scripts and the
+- For the Script Lab player (job B3): `frames`, one moment right after the start and one right after every step,
+  each with `step` (0 for the start), `t` (simulated seconds), `log_end` (the entries of `log` before it had
+  happened by then), `done`, `text` (the step in plain words, `Start.` for the start) and `facts` (objects with
+  `key`, such as `lock:Cuffs`, and `text`, the sentence true at that moment); and `first_difference`, the first
+  moment whose facts differ from the replay before, or `null` (nothing differs, or nothing to compare with).
+- The facts, a fingerprint of every moment (`@<moment> <16 hex digits>` lines, job B3) and the changes are
+  written to `recipe.rlvresult` next to the recipe (`[key] sentence` lines and `#` notes); that file is the
+  "before" of the next replay. The sandbox is deterministic, so the same scripts and the
   same recipe give the same facts.
 - Refused: no folder watched as one object, no recipe, a recipe with no steps, and a recipe with a mistake (the
   line and the reason).

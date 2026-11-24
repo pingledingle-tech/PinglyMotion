@@ -120,7 +120,7 @@ A saved file always has `skeleton.fingerprint`. Loading checks that it equals th
 Files from other people, and files written by an AI client, are untrusted. The reader refuses, with a reason and never a crash:
 
 - an empty file, a file over 1 MB, a byte order mark, JSON nested deeper than 4 levels, anything that is not one JSON object;
-- more than 256 entries; a source name over 256 bytes; a target name over 64 bytes; `generator` or `root` over 128 bytes; control characters in any name;
+- more than 256 entries; a source name over 256 bytes; a target name over 64 bytes; `generator` or `root` over 128 bytes; control characters in any name, or half of a UTF-16 pair (a lone `\ud800` escape, which UTF-8 cannot hold; found by the fuzz target on 24 Nov 2026);
 - a source joint listed twice, a Second Life joint used twice, a target that is not a Second Life joint, an unknown key, a wrong `format`, a missing or non-whole `version`.
 
 The writer (`RetargetMapping::write`) has a fixed key order and layout, so the same mapping gives the same bytes every time; `write(parse(x))` reads back equal. The fuzz target `fuzz_retargetmapping` checks all of this with random input (`fuzz/README.md`).

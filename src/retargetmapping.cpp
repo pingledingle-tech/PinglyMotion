@@ -180,10 +180,22 @@ bool validFingerprint(const QString& text)
 
 namespace
 {
+  // no control characters, and no half of a UTF-16 pair (a lone \ud800 in the JSON): such a
+  // character cannot be written as UTF-8, so the file would not read back the same (found by
+  // fuzz_retargetmapping)
   bool cleanText(const QString& text)
   {
-    for(QChar c : text)
+    for(int i=0;i<text.size();i++)
+    {
+      const QChar c=text[i];
       if(c.unicode()<0x20 || c.unicode()==0x7f) return false;
+      if(c.isHighSurrogate())
+      {
+        if(i+1>=text.size() || !text[i+1].isLowSurrogate()) return false;
+        i++;
+      }
+      else if(c.isLowSurrogate()) return false;
+    }
     return true;
   }
 

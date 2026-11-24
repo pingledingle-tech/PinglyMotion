@@ -103,15 +103,29 @@ namespace LabRecipe
     bool operator==(const Fact& other) const { return key == other.key && subject == other.subject && state == other.state; }
   };
 
+  // One moment of a replay, for the player (job B3): what was true right after the start (step 0) or
+  // right after step n. The sandbox is deterministic, so the moments are taken once, while the replay
+  // runs (docs/PLAYER_CHECK.md, recommendation (b)), and the player steps between them.
+  struct Frame
+  {
+    int step = 0;              // 0: after the start; n: after step n (from 1)
+    double t = 0.0;            // simulated seconds since the start
+    int logEnd = 0;            // the log entries [0, logEnd) of Replay::log happened by this moment
+    bool done = true;          // the step was done (false: it was skipped, see the fact "step:<n>")
+    QVector<Fact> facts;       // the facts at this moment, as facts at the end are made
+  };
+
   struct Replay
   {
     bool ran = false;          // the folder ran (every script compiled, no limit broken)
     QString error;             // why the folder did not run
     int steps = 0;             // steps in the recipe
     int done = 0;              // steps that were done (the others are facts "step:<n>")
-    QVector<Fact> facts;
+    QVector<Fact> facts;       // the facts at the end (the last frame's facts)
     QJsonArray log;            // the whole replay's event log, a "step" line before each step
     bool logTruncated = false;
+    QVector<Frame> frames;     // the start and every step, in order (empty when the folder did not run)
+    QStringList stepTexts;     // every step in plain words (stepWords), for the player's list
   };
 
   // Runs the linkset from the start with options (as lsl_run: seconds, inputs) in a world of its own,
@@ -124,19 +138,35 @@ namespace LabRecipe
   // facts that went away: "Before: Collar was green. Now: it is red." Empty when nothing changed.
   QStringList compare(const QVector<Fact>& before, const QVector<Fact>& now);
 
-  // The result file: notes, the facts (one "[key] sentence" line each), then the changes as notes.
+  // The result file: notes, the facts (one "[key] sentence" line each), the fingerprint of every
+  // moment (one "@<moment> <fingerprint>" line each, job B3), then the changes as notes.
   // first: there was nothing to compare with.
   QString writeResult(const Replay& replay, const QStringList& changes, bool first);
   // The facts of a result file (lines that start with "["); other lines are skipped. A line that cannot
   // be read is skipped too: the file is the program's own memory of last time, not something to refuse.
   QVector<Fact> parseResult(const QString& text);
 
+  // --- the player (job B3): which moment first differed from the kept result
+  // A short fingerprint of a moment: 16 hex digits of the SHA-1 of its step and its facts. Two moments
+  // with the same fingerprint show the same facts.
+  QString frameFingerprint(const Frame& frame);
+  // The fingerprints kept in a result file (lines "@<moment> <fingerprint>", written by writeResult),
+  // by moment; a moment without a line is an empty string. Lines that cannot be read are skipped, and
+  // at most MAX_STEPS + 1 moments are read. Empty for a file from before the player.
+  QStringList parseFingerprints(const QString& text);
+  // The first moment whose facts differ from the kept fingerprints: the first moment where both have a
+  // fingerprint and they differ; or, when all shared moments agree, the first moment only one of them
+  // has (the last moment of now when the kept recipe was longer). -1 when nothing differs or nothing
+  // was kept.
+  int firstDifference(const QStringList& kept, const QVector<Frame>& now);
+
   // the plain name of a colour from red, green and blue between 0 and 1 ("red", "light blue" ...)
   QString colourName(double red, double green, double blue);
 
   // The replay as data for lab_replay and lab_result: steps, done, ran, error, facts (sentences),
-  // changes, first, log.
-  QJsonObject toJson(const Replay& replay, const QStringList& changes, bool first);
+  // changes, first, log, and for the player (job B3) frames (step, t, log_end, done, text, facts as
+  // objects with key and text) and first_difference (a moment, or null).
+  QJsonObject toJson(const Replay& replay, const QStringList& changes, bool first, int firstDifference = -1);
 }
 
 #endif
