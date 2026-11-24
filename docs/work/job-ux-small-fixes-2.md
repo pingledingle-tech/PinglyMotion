@@ -15,7 +15,8 @@ Files:
 - src/scriptlab/labbeginner.*
 - src/scriptlab/labrestrictionchoice.*
 - src/pinglymotionwindow.cpp
-- src/theme.*
+- src/lucideicons.cpp
+- docs/mockup/index.html
 - src/CMakeLists.txt
 - tests/dialogfit/**
 - tests/guidance/**

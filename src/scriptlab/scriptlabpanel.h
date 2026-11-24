@@ -22,8 +22,7 @@
  * Lane 1 job D: Watch folder watches the folder as one object (LabFolder, the
  * watcher's "linkset" mode); the "Object" part shows it as a tree (labtree.h)
  * with a colour dot, the sums and the memory per script, and a click on a
- * script shows it. "How to lay out the folder" is the short maker guide. The
- * example scripts stay separate examples (each runs on its own).
+ * script shows it. The example scripts stay separate examples (each runs on its own).
  *
  * Job U3, Script Lab for beginners (docs/UX_DECISIONS.md, 6o): the tree on the
  * left and the editor on the right when the panel is wide, an empty state in
@@ -32,6 +31,13 @@
  * effects and the steps), "New folder", the example's steps with ticks and a
  * button each, selection that follows between the tree and the 3D view, short
  * explanations of the jargon words, and clearer states.
+ *
+ * UX small fixes (24 Nov 2026): help is out of the working parts. The ? button
+ * in the top row opens the bigger help view (labhelpview.h) with the maker
+ * guide, the words, the hints and every example's guide. The step "Show Live
+ * scripts" shows the Live scripts tab with a short frame round it and gives it
+ * the keys. The chosen RLV or RLVa button has a tick and bold text beside its
+ * fill, as Show effects and Record do when on (not by colour alone).
  *
  * Colours are the success and danger tokens of docs/design_tokens.json; the
  * state is always written as a word as well (design charter P10).
@@ -62,6 +68,7 @@
 #include "labprimprops.h"
 #include "labtint.h"
 #include "labdialogbox.h"
+#include "labhelpview.h"
 #include "labchains.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
@@ -69,6 +76,7 @@
 
 class QAbstractButton;
 class QAction;
+class QToolButton;
 class QBoxLayout;
 class QCheckBox;
 class QComboBox;
@@ -81,6 +89,7 @@ class ScriptLabFrame;
 class ScriptLabSection;
 class SphereControls;
 class LabFolderTree;
+class LabHelpView;
 class ChannelMapView;
 namespace lsl { class Session; }
 class QLabel;
@@ -146,9 +155,6 @@ class ScriptLabPanel : public QWidget
     // --- the folder as one object (lane 1 job D)
     // the tree of the "Object" part (object, prims, scripts, notecards)
     LabFolderTree* folderTree() const { return m_folderTree; }
-    // the maker guide's text and its example folder, in the "How to lay out the folder" part
-    QLabel* guideText() const { return m_guideText; }
-    QLabel* guideExample() const { return m_guideExample; }
     // shows one script of the watched object in the editor, as a click on it in the tree does;
     // false when the folder is not watched as one object or the script is not in it
     bool showScript(const QString& file);
@@ -262,6 +268,16 @@ class ScriptLabPanel : public QWidget
     bool doStep(int index);
     // the Help menu's "Script Lab steps" item (the window adds it and shows the panel)
     QAction* makeStepsAction(QObject* parent);
+    // --- UX small fixes: the step "Show Live scripts" brings the Live scripts tab to the front,
+    // scrolls its page to the top, puts a short frame (LabHighlight) round the tab and round the top
+    // of the page, and gives the tab the keys, so a press always shows something
+    void showLiveScripts();
+    // --- help out of the working parts: the ? button in the top row opens the help view
+    // (labhelpview.h) at a topic ("start", "folder", "words", "hints", "example:<object>").
+    // One view per panel; a second press brings it to the front.
+    void showHelp(const QString& topic = QStringLiteral("start"));
+    QToolButton* helpButton() const { return m_helpButton; }
+    LabHelpView* helpView() const { return m_helpView; }
     // the empty state's buttons
     QPushButton* makeExampleButton() const { return m_makeExample; }
     QPushButton* newFolderButton() const { return m_newFolder; }
@@ -281,10 +297,6 @@ class ScriptLabPanel : public QWidget
     QList<LabTipCard*> tipCards() const { return m_tipCards; }
     LabTipCard* shownTip() const;
     void closeTip(const QString& key);
-    // the maker guide in two parts: rules (guideText) and warnings
-    QLabel* guideWarnings() const { return m_guideWarnings; }
-    QLabel* guideRulesHeading() const { return m_guideRulesHeading; }
-    QLabel* guideWarningsHeading() const { return m_guideWarningsHeading; }
     // why Run again and Open in editor are greyed, as a readable line under them
     QLabel* scriptButtonsReason() const { return m_scriptButtonsReason; }
 
@@ -415,7 +427,7 @@ class ScriptLabPanel : public QWidget
     QPushButton* exampleButton() const { return m_example; }
     QTreeWidget* liveRestrictionList() const { return m_liveRestrictions; }
     QLabel* liveRestrictionsEmpty() const { return m_liveRestrictionsEmpty; }
-    // the folding parts, by key: "tree", "guide", "script", "problems", "log", "restrictionsNow", "objects", "input",
+    // the folding parts, by key: "tree", "script", "problems", "log", "restrictionsNow", "objects", "input",
     // "inventory" (Live scripts) and "restrictions", "actions", "replies" (Type commands)
     ScriptLabSection* section(const QString& key) const;
     QList<ScriptLabSection*> sections() const { return m_sections; }
@@ -562,6 +574,8 @@ class ScriptLabPanel : public QWidget
     QLabel* m_modeLabel = nullptr;
     QPushButton* m_modeRlv = nullptr;
     QPushButton* m_modeRlva = nullptr;
+    QToolButton* m_helpButton = nullptr;
+    QPointer<LabHelpView> m_helpView;
     ScriptLabFrame* m_heldChipFrame = nullptr;
     QLabel* m_heldIcon = nullptr;
     QLabel* m_heldChip = nullptr;
@@ -623,9 +637,6 @@ class ScriptLabPanel : public QWidget
     QStringList m_logFiles;            // folder mode: the script file of each event log line ("" for none)
     ScriptLabSection* m_treeSection = nullptr;
     LabFolderTree* m_folderTree = nullptr;
-    ScriptLabSection* m_guideSection = nullptr;
-    QLabel* m_guideText = nullptr;
-    QLabel* m_guideExample = nullptr;
     QString m_pickedFile;              // the script picked in the tree, for the run m_pickedRun
     int m_pickedRun = -1;
     QList<LabTint::Tint> m_propTints;
@@ -650,6 +661,8 @@ class ScriptLabPanel : public QWidget
     // job A3: record and replay
     void refreshRecipe();
     void styleRecordButton();
+    // RLV and RLVa: the chosen one has a tick and bold text besides its fill (UX small fixes)
+    void styleModeButtons();
     QWidget* m_recipeRow = nullptr;
     QPushButton* m_recordButton = nullptr;
     QLabel* m_recipeStatus = nullptr;
@@ -724,9 +737,6 @@ class ScriptLabPanel : public QWidget
     QWidget* m_treeColumn = nullptr;
     QWidget* m_editorColumn = nullptr;
     QList<LabTipCard*> m_tipCards;
-    QLabel* m_guideRulesHeading = nullptr;
-    QLabel* m_guideWarningsHeading = nullptr;
-    QLabel* m_guideWarnings = nullptr;
     QLabel* m_scriptButtonsReason = nullptr;
     bool watchingProject() const;
 };

@@ -78,7 +78,7 @@ namespace GuidanceSpec
     "Hints off. Turn them on again in Setup or Help > Show hints.");
   // the close button or Esc on a hint card (UX small fixes, docs/TEACHING.md HINT-CLOSED-01)
   inline constexpr const char* closedMessage = QT_TRANSLATE_NOOP("HintCard",
-    "Hint closed. To see the next one, turn Help > Show hints off and on.");
+    "Hint closed. Turn Help > Show hints off and on for the next one.");
 
   // Expert and Beginner (the mockup's feedback lines)
   inline constexpr const char* expertOnMessage = QT_TRANSLATE_NOOP("GuidanceSpec", "Expert mode: more controls, nothing moved.");

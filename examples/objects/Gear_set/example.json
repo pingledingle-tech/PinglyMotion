@@ -276,13 +276,13 @@
     {
       "id": "EXGEAR-18",
       "part": "step",
-      "text": "Tick Show effects in 3D view. Every piece turns green.",
+      "text": "Press Show effects in 3D view, so it shows a tick. Every piece turns green.",
       "control": "Show effects in 3D view"
     },
     {
       "id": "EXGEAR-19",
       "part": "step",
-      "text": "Press Touch under Send input. The dialog buttons appear there.",
+      "text": "Open Send input, low on Live scripts, and press Touch. The dialog buttons appear there.",
       "control": "Touch"
     },
     {

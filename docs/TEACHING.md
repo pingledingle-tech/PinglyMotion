@@ -472,6 +472,28 @@ Drafts for everything drawn in Mockup 2 in `docs/mockup/index.html` (the project
 | HELPV-22 | Help view | An example topic: caption of the picture | The picture shows the example with its props. | draft | Mockup 2 (pull request 456), proposal |
 | HELPV-23 | Help view | The heading over the example topics | Examples | draft | Mockup 2 (pull request 456), proposal |
 
+### UX small fixes (24 Nov 2026)
+
+Built in pull request 458 (the project owner, 24 Nov 2026, 11:29-11:42: «Alt bør inn som en»). The texts are in `src/guidancespec.h`, `src/scriptlab/scriptlabpanel.cpp` and `src/scriptlab/labhelpview.cpp`. The help view's topics follow Mockup 2's help view (HELPV rows above, a proposal) where the program does the same thing, and say what the program really does where it differs (no pictures and no Show me buttons yet; the next hint comes back with Help > Show hints off and on, as Help has no "Show the next hint" item). The example guide steps were checked against the program and changed in [EXAMPLES.md](EXAMPLES.md): "press" Show effects in 3D view (it is a button with a tick, not a tick box), "open Send input" first (it is folded at first), "Live scripts is its first tab", and the relay's line written out, with where its channel number is.
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| UXFIX-01 | 4 What to do next | Status line after the close button or Esc on a hint card | Hint closed. Turn Help > Show hints off and on for the next one. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-02 | 2 Tip on hover | The ? button in the Script Lab panel's top row: its name, the first line of its tip | Help for Script Lab | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-03 | 2 Tip on hover | The ? button: the second line of its tip | Explanations, the words and every example, in a bigger view. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-04 | 2 Tip on hover | RLV or RLVa, for screen readers, before the line on switching | Chosen.<br>Not chosen. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-05 | Help view | The window title | Script Lab help | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-06 | Help view | The topic list, for screen readers | Help topics | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-07 | Help view | The topics on the left, then the heading over the examples | Start here<br>How to lay out a folder<br>Words<br>Hints<br>Examples | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-08 | Help view | A topic for each example; the program puts in its title | Example: %1 | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-09 | Help view | Start here: the text | Script Lab tests Second Life scripts safely on your PC.<br>Make the example project first. It shows a result at once.<br>Then follow the steps of an example. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-10 | Help view | Start here: the three steps, then the last line | Press Make example project on the Live scripts tab.<br>Press Show effects in 3D view, so it shows a tick.<br>Click a prop in the 3D view.<br>Help, Script Lab steps shows the steps of the example again. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-11 | Help view | How to lay out a folder: the headings (Rules and Warnings as LABNEW-44 and LABNEW-45; the old folding part's six lines and example folder, word for word) | Rules<br>Warnings<br>Example | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-12 | Help view | Words: the first line, then every word tip (LABNEW-35 to LABNEW-42, LABMAP) | The words Script Lab uses, in plain words. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-13 | Help view | Hints: the text | Hints are small cards next to the part they talk about.<br>The cross closes a hint. Turn Help > Show hints off and on for the next one.<br>A closed word tip in Script Lab does not come back. All the words are under Words here. | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-14 | Help view | The headings of an example topic, over its guide texts from example.json | What it is<br>Steps<br>The pieces<br>New words<br>You should see<br>Then try | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+| UXFIX-15 | Help view | The button at the bottom | Close | in the program (pull request 458, 24 Nov 2026) | UX small fixes |
+
 ### AI notice (job K, 23 Nov 2026)
 
 What the AI Assistant window will say about what a connected AI can see and do, below its "How it's kept safe" list (`src/aiconnectdialog.cpp`; keep `tools/mcp/README.txt` in step). Every line was checked against the code first; the proof for each is in [SECURITY_PRIVACY.md](SECURITY_PRIVACY.md), section 2 (for AI-08, section 1). Not built yet: the project owner reads the texts first. "It is off each time PinglyMotion starts" is already in the program's safety list, so it is not repeated here.

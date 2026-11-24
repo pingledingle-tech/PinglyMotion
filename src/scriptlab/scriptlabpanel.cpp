@@ -28,6 +28,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSet>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTextBlock>
 #include <QTextEdit>
@@ -269,6 +270,17 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_heldChip->setFont(caption);
   chip->addWidget(m_heldChip);
   rules->addWidget(m_heldChipFrame);
+  // UX small fixes: help out of the working parts, behind one ? button (labhelpview.h)
+  m_helpButton = new QToolButton(this);
+  m_helpButton->setObjectName("scriptLabHelpButton");
+  m_helpButton->setAutoRaise(true);
+  m_helpButton->setFixedSize(ControlCompact, ControlCompact);
+  m_helpButton->setIconSize(QSize(16, 16));
+  m_helpButton->setAccessibleName(tr("Help for Script Lab"));
+  m_helpButton->setToolTip(tr("Help for Script Lab") + QLatin1Char('\n')
+                           + tr("Explanations, the words and every example, in a bigger view."));
+  rules->addWidget(m_helpButton);
+  connect(m_helpButton, &QToolButton::clicked, this, [this]() { showHelp(); });
   outer->addLayout(rules);
   connect(m_modeRlv, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlv); });
   connect(m_modeRlva, &QPushButton::clicked, this, [this]() { setMode(Rlv::Mode::Rlva); });
@@ -624,16 +636,35 @@ void ScriptLabPanel::refreshMode()
   const bool rlv = m_state && m_state->mode() == Rlv::Mode::Rlv;
   m_modeRlv->setChecked(rlv);
   m_modeRlva->setChecked(!rlv);
-  for (QPushButton* b : {m_modeRlv, m_modeRlva})
-  {
-    QFont font = b->font();
-    font.setWeight(b->isChecked() ? QFont::DemiBold : QFont::Normal);   // a shape besides the fill (P10)
-    b->setFont(font);
-  }
+  styleModeButtons();
   m_modeRlv->setAccessibleName(tr("Viewer rules: RLV"));
   m_modeRlva->setAccessibleName(tr("Viewer rules: RLVa"));
   // the editor marks commands the chosen viewer does not know (job R3)
   if (m_editor) m_editor->codeEdit()->setRlvMode(rlv ? Rlv::Mode::Rlv : Rlv::Mode::Rlva);
+}
+
+// the chosen viewer rules: the selection fill, a tick and bold text; the other has no tick and
+// normal weight (DESIGN_SYSTEM.md, "States"; charter P10: not by colour alone). UX small fixes:
+// the project owner could not tell whether RLV or RLVa was on.
+void ScriptLabPanel::styleModeButtons()
+{
+  if (!m_modeRlv || !m_modeRlva) return;
+  const bool dark = isDark(palette());
+  const Tokens& t = tokens(dark);
+  for (QPushButton* b : {m_modeRlv, m_modeRlva})
+  {
+    const bool on = b->isChecked();
+    QFont font = b->font();
+    font.setWeight(on ? QFont::DemiBold : QFont::Normal);
+    b->setFont(font);
+    b->setIcon(on ? LucideIcons::icon(QStringLiteral("check"), QColor(QLatin1String(t.onAccent)), QColor(QLatin1String(t.textMuted)))
+                  : QIcon());
+    b->setIconSize(QSize(14, 14));
+    b->setProperty("chosen", on);
+  }
+  const QString relog = tr("Switching removes every restriction, as after a relog.");
+  for (QPushButton* b : {m_modeRlv, m_modeRlva})
+    b->setAccessibleDescription((b->isChecked() ? tr("Chosen.") : tr("Not chosen.")) + QLatin1Char(' ') + relog);
 }
 
 void ScriptLabPanel::setState(RlvState* state)
@@ -725,6 +756,14 @@ void ScriptLabPanel::applyStyle()
   m_modeRlva->setStyleSheet(segment.arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.border)).arg(SpacingM)
                             .arg(QStringLiteral("border-top-right-radius: %1px; border-bottom-right-radius: %1px;").arg(RadiusControl))
                             .arg(selection, QLatin1String(t.onAccent), QLatin1String(t.focusRing)));
+  styleModeButtons();
+  m_helpButton->setIcon(LucideIcons::icon(QStringLiteral("circle-help"), Theme::color(Theme::Token::AccentText, dark),
+                                          QColor(QLatin1String(t.textDisabled))));
+  m_helpButton->setStyleSheet(QStringLiteral("QToolButton { border: none; border-radius: %1px; }"
+                                             "QToolButton:hover { background: %2; }"
+                                             "QToolButton:focus { border: 2px solid %3; }")
+                              .arg(RadiusControl).arg(QLatin1String(t.surfaceRaised), QLatin1String(t.focusRing)));
+  if (m_helpView) m_helpView->applyStyle(dark);
 
   // the "held" chip: caption text with the ban icon, a round border, the border token 14 percent on the surface
   const QColor surface = Theme::color(Theme::Token::Surface, dark);
@@ -745,13 +784,8 @@ void ScriptLabPanel::applyStyle()
   m_liveRestrictionsEmpty->setPalette(muted);
   m_inventoryEmpty->setPalette(muted);
   m_inventoryNote->setPalette(muted);
-  m_guideExample->setPalette(muted);
   m_treeLine->setPalette(muted);
   m_scriptButtonsReason->setPalette(muted);
-  // the maker guide: rules in the text colour, the warnings with the warning colour on their heading
-  QPalette warningPalette = m_guideWarningsHeading->palette();
-  warningPalette.setColor(QPalette::WindowText, QColor(QLatin1String(t.warning)));
-  m_guideWarningsHeading->setPalette(warningPalette);
   m_folderTree->applyStyle(dark);
   m_stepCard->applyStyle(dark);
   for (LabTipCard* tip : m_tipCards) tip->applyStyle(dark);
@@ -1253,44 +1287,8 @@ void ScriptLabPanel::buildLivePage()
     if (m_followBox->isChecked() && m_hooks.selectProp) m_hooks.selectProp(prim);
   });
 
-  // --- the short maker guide, folded at first (charter P5); rules and warnings apart (job U3)
-  m_guideSection = addSection(QStringLiteral("guide"), tr("How to lay out the folder"), false, m_treeColumn, treeColumn);
-  m_guideRulesHeading = sectionLabel(tr("Rules"), m_guideSection->body());
-  m_guideRulesHeading->setObjectName("scriptLabGuideRulesHeading");
-  m_guideSection->bodyLayout()->addWidget(m_guideRulesHeading);
-  m_guideText = new QLabel(tr("One folder is one object. Each subfolder is one prim.\n"
-                              "Files in the top folder or in Root form the root prim.\n"
-                              "Put scripts (.lsl) and notecards (.txt) in their prim's folder.\n"
-                              "Give every script and notecard its own name."),
-                           m_guideSection->body());
-  m_guideText->setObjectName("scriptLabGuideText");
-  m_guideText->setWordWrap(true);
-  m_guideText->setTextFormat(Qt::PlainText);
-  m_guideText->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_guideSection->bodyLayout()->addWidget(m_guideText);
-  m_guideWarningsHeading = sectionLabel(tr("Warnings"), m_guideSection->body());
-  m_guideWarningsHeading->setObjectName("scriptLabGuideWarningsHeading");
-  m_guideSection->bodyLayout()->addWidget(m_guideWarningsHeading);
-  m_guideWarnings = new QLabel(tr("Copy scripts from Second Life by hand: select all, copy, paste.\n"
-                                  "The sandbox is never the same as Second Life. Test there last."),
-                               m_guideSection->body());
-  m_guideWarnings->setObjectName("scriptLabGuideWarnings");
-  m_guideWarnings->setWordWrap(true);
-  m_guideWarnings->setTextFormat(Qt::PlainText);
-  m_guideWarnings->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_guideSection->bodyLayout()->addWidget(m_guideWarnings);
-  m_guideExample = new QLabel(tr("MyObject/        one object\n"
-                                 "  Root/          the root prim\n"
-                                 "    main.lsl\n"
-                                 "    settings.txt   a notecard\n"
-                                 "  Cuff_left/     another prim\n"
-                                 "    cuff.lsl"),
-                              m_guideSection->body());
-  m_guideExample->setObjectName("scriptLabGuideExample");
-  m_guideExample->setTextFormat(Qt::PlainText);
-  m_guideExample->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-  m_guideExample->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_guideSection->bodyLayout()->addWidget(m_guideExample);
+  // the short maker guide ("How to lay out the folder") moved to the help view behind the ? button
+  // (UX small fixes, labhelpview.h): help does not sit among the working parts
 
   // --- the script, read only, with line numbers
   m_scriptSection = addSection(QStringLiteral("script"), tr("Script"), true, m_editorColumn, editorColumn);
@@ -1449,8 +1447,7 @@ void ScriptLabPanel::buildLivePage()
   setTabOrder(m_effectsBox, m_treeSection->header());
   setTabOrder(m_treeSection->header(), m_followBox);
   setTabOrder(m_followBox, m_folderTree);
-  setTabOrder(m_folderTree, m_guideSection->header());
-  setTabOrder(m_guideSection->header(), m_scriptSection->header());
+  setTabOrder(m_folderTree, m_scriptSection->header());
   setTabOrder(m_scriptSection->header(), m_editor->exampleButton());
   setTabOrder(m_editor->exampleButton(), m_editor->saveButton());
   setTabOrder(m_editor->saveButton(), m_editor->findButton());
@@ -1821,7 +1818,6 @@ void ScriptLabPanel::refreshLive()
   m_folderTree->setFolderResult(folder);
   m_treeSection->setVisible(linkset);
   m_treeSection->setCount(m_folderTree->countText());
-  m_guideSection->setVisible(!watching || linkset);
   updatePrimProps();
   int folderScripts = 0;
   for (const QJsonValue& p : folder.value("linkset").toObject().value("prims").toArray())
@@ -2938,6 +2934,9 @@ void ScriptLabPanel::styleEffectsButton()
     .arg(RadiusControl).arg(SpacingM)
     .arg(selection, QLatin1String(t.onAccent), QLatin1String(t.focusRing)));
   const bool on = m_effectsBox->isChecked();
+  QFont effectsFont = m_effectsBox->font();   // bold when on: a shape besides the fill (P10)
+  effectsFont.setWeight(on ? QFont::DemiBold : QFont::Normal);
+  m_effectsBox->setFont(effectsFont);
   m_effectsBox->setIcon(LucideIcons::icon(on ? QStringLiteral("check") : QStringLiteral("eye"),
                                           QColor(QLatin1String(on ? t.onAccent : t.text)), QColor(QLatin1String(t.textMuted))));
   m_effectsBox->setAccessibleDescription(on ? tr("On: the 3D view shows what the scripts do.") : tr("Off."));
@@ -2961,6 +2960,9 @@ void ScriptLabPanel::styleRecordButton()
     .arg(RadiusControl).arg(SpacingM)
     .arg(selection, QLatin1String(t.onAccent), QLatin1String(t.focusRing)));
   const bool on = m_recordButton->isChecked();
+  QFont recordFont = m_recordButton->font();   // bold when on, as Show effects in 3D view
+  recordFont.setWeight(on ? QFont::DemiBold : QFont::Normal);
+  m_recordButton->setFont(recordFont);
   m_recordButton->setIcon(LucideIcons::icon(on ? QStringLiteral("square") : QStringLiteral("video"),
                                             QColor(QLatin1String(on ? t.onAccent : t.text)), QColor(QLatin1String(t.textMuted))));
 }
@@ -3226,6 +3228,45 @@ void ScriptLabPanel::showSteps()
   }
 }
 
+void ScriptLabPanel::showLiveScripts()
+{
+  // the Live scripts tab to the front; its page from the top, where the folder (or the empty
+  // state with Watch folder) is
+  m_tabs->setCurrentIndex(LivePage);
+  QScrollArea* scroll = qobject_cast<QScrollArea*>(m_tabs->widget(LivePage));
+  if (scroll) scroll->verticalScrollBar()->setValue(0);
+  // a short frame round the tab and round the top of the page, so the press always shows
+  // something, also when the page was open already (the project owner, 24 Nov 2026)
+  const bool dark = isDark(palette());
+  QTabBar* bar = m_tabs->tabBar();
+  LabHighlight::show(bar, bar->tabRect(LivePage), dark);
+  QWidget* top = m_liveEmpty && !m_liveEmpty->isHidden() ? static_cast<QWidget*>(m_liveEmpty) : m_liveFolder;
+  if (scroll && top && scroll->widget())
+  {
+    const QPoint at = top->mapTo(scroll->widget(), QPoint(0, 0));
+    QRect area(at, top->size());
+    if (top == m_liveFolder) area = QRect(QPoint(0, at.y()), QSize(scroll->widget()->width(), top->height()));
+    LabHighlight::show(scroll->widget(), area.adjusted(-SpacingXs, -SpacingXs, SpacingXs, SpacingXs), dark);
+  }
+  // the keys go to the tab, so Left and Right move between the pages from here
+  bar->setFocus(Qt::OtherFocusReason);
+}
+
+void ScriptLabPanel::showHelp(const QString& topic)
+{
+  if (!m_helpView)
+  {
+    m_helpView = new LabHelpView(exampleObjectsFolder(), this);
+    m_helpView->setWindowFlag(Qt::Window, true);
+  }
+  m_helpView->applyStyle(isDark(palette()));
+  if (!m_helpView->showTopic(topic)) m_helpView->showTopic(QStringLiteral("start"));
+  m_helpView->show();
+  m_helpView->raise();
+  m_helpView->activateWindow();
+  m_helpView->topicList()->setFocus(Qt::OtherFocusReason);
+}
+
 void ScriptLabPanel::closeSteps()
 {
   m_stepsShown = false;
@@ -3317,7 +3358,7 @@ bool ScriptLabPanel::doStep(int index)
     m_hooks.showPropsTab();
   }
   else if (control == QLatin1String("Live scripts"))
-    m_tabs->setCurrentIndex(LivePage);
+    showLiveScripts();
   else if (control == QLatin1String("Watch folder..."))
   {
     // the example project's folder; made first when there is none yet

@@ -582,7 +582,7 @@ void TestGuidance::cardCloseStops()
   QCOMPARE(closed.count(), 2);
   // the status line text
   QCOMPARE(QString::fromLatin1(GuidanceSpec::closedMessage),
-           QStringLiteral("Hint closed. To see the next one, turn Help > Show hints off and on."));
+           QStringLiteral("Hint closed. Turn Help > Show hints off and on for the next one."));
   UserSettings::setHintCard(0);
 }
 

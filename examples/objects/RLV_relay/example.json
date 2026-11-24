@@ -56,13 +56,13 @@
     {
       "id": "EXRELAY-06",
       "part": "step",
-      "text": "Tick Show effects in 3D view.",
+      "text": "Press Show effects in 3D view, so it shows a tick.",
       "control": "Show effects in 3D view"
     },
     {
       "id": "EXRELAY-07",
       "part": "step",
-      "text": "Type the channel and text shown below into Channel and Text.",
+      "text": "Open Send input. Type the RELAY number from relay.lsl into Channel. Type chair,ffffffff-ffff-ffff-ffff-ffffffffffff,@detach=n into Text.",
       "control": "Channel",
       "values": {
         "Channel": "-1812221819",

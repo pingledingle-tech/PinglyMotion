@@ -46,6 +46,8 @@ namespace
     {"x",{"M18 6 6 18","m6 6 12 12"}},
     {"lightbulb",{"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5","M9 18h6","M10 22h4"}},
     {"info",{"M22 12a10 10 0 1 0-20 0a10 10 0 1 0 20 0z","M12 16v-4","M12 8h.01"}},
+    // <circle cx="12" cy="12" r="10" />, the ? button that opens Script Lab help (UX small fixes)
+    {"circle-help",{"M22 12a10 10 0 1 0-20 0a10 10 0 1 0 20 0z","M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3","M12 17h.01"}},
     // <rect width="20" height="16" x="2" y="4" rx="2" />, for the Setup and Camera and keys dialogs
     {"keyboard",{"M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2z",
       "M10 8h.01","M12 12h.01","M14 8h.01","M16 12h.01","M18 8h.01","M6 8h.01","M7 16h10","M8 12h.01"}},

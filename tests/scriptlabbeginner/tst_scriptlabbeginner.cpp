@@ -30,7 +30,12 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QListWidget>
+#include <QScrollArea>
+#include <QScrollBar>
+#include <QTabBar>
 #include <QTabWidget>
+#include <QTextBrowser>
 #include <QTemporaryDir>
 #include <QToolButton>
 #include <QTreeWidget>
@@ -42,6 +47,7 @@
 #include "scriptlab/labbeginner.h"
 #include "scriptlab/labdialogbox.h"
 #include "scriptlab/labeditor.h"
+#include "scriptlab/labhelpview.h"
 #include "scriptlab/labtree.h"
 #include "scriptlab/labwatcher.h"
 #include "scriptlab/rlvstate.h"
@@ -145,6 +151,10 @@ class TestScriptLabBeginner : public QObject
     void menuBoxTextBox();
     void channelMap();
     void chainLines();
+    void showLiveScriptsShowsSomething();
+    void activeChoiceIsClear();
+    void helpViewOutOfThePanel();
+    void guideStepsNameRealControls();
 
   private:
     void setUpPanel(ScriptLabPanel& panel, LabWatcher& watcher, RlvState& state, const QString& root, FakeScene& scene);
@@ -652,7 +662,7 @@ void TestScriptLabBeginner::openAndFoldedParts()
   {
     Theme::apply(dark);
     ScriptLabPanel panel;
-    ScriptLabSection* guide = panel.section("guide");
+    ScriptLabSection* guide = panel.section("input");   // Send input is folded at first
     QVERIFY(!guide->isExpanded());
     QCOMPARE(guide->fillColour(), Theme::color(Theme::Token::SurfaceRaised, dark));
     guide->setExpanded(true);
@@ -787,7 +797,11 @@ void TestScriptLabBeginner::textsInRegister()
     "A folder with this name is already there. Pick another name.", "The folder path would be too long. Use a shorter name.",
     "Could not make the folder. Check that Documents can be written.", "The example objects are not next to the program.",
     "The example could not be read.", "On: the 3D view shows what the scripts do.",
-    "You clicked %1.", "Error: the touch on %1 was not sent. %2"};
+    "You clicked %1.", "Error: the touch on %1 was not sent. %2",
+    // UX small fixes: the ? button and the help view
+    "Help for Script Lab", "Explanations, the words and every example, in a bigger view.", "Script Lab help",
+    "Help topics", "Example: %1", "The words Script Lab uses, in plain words.", "Close"};
+  QVERIFY(teaching.contains("### UX small fixes (24 Nov 2026)"));
   for (const LabBeginner::Tip& tip : LabBeginner::jargonTips()) texts << tip.text;
   for (const QString& text : texts)
   {
@@ -1328,6 +1342,271 @@ void TestScriptLabBeginner::chainLines()
   // effects off: the line goes
   panel.effectsBox()->setChecked(false);
   QVERIFY(panel.chains().isEmpty());
+}
+
+// UX small fixes (the project owner, 24 Nov 2026: pressing Show Live scripts did nothing he could see,
+// because the steps card sits on that page): the step brings the tab to the front, scrolls its page to
+// the top, puts a short frame round the tab and round the top of the page, and gives the tab the keys
+void TestScriptLabBeginner::showLiveScriptsShowsSomething()
+{
+  QTemporaryDir dir;
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  panel.resize(520, 500);
+  panel.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&panel));
+  panel.activateWindow();
+  panel.showSteps();
+  LabStepCard* card = panel.stepCard();
+  QPushButton* show = card->stepButtons().at(2);
+  QCOMPARE(show->text(), QString("Show Live scripts"));
+  // already on the Live scripts page, scrolled down: the case where nothing used to happen
+  QCOMPARE(panel.tabs()->currentIndex(), int(ScriptLabPanel::LivePage));
+  QScrollArea* scroll = qobject_cast<QScrollArea*>(panel.tabs()->widget(ScriptLabPanel::LivePage));
+  QVERIFY(scroll);
+  scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
+  QTabBar* bar = panel.tabs()->tabBar();
+  QVERIFY(!LabHighlight::on(bar));
+  QTest::mouseClick(show, Qt::LeftButton);
+  QCOMPARE(panel.tabs()->currentIndex(), int(ScriptLabPanel::LivePage));
+  QCOMPARE(scroll->verticalScrollBar()->value(), 0);
+  // the frame stands round the Live scripts tab, and round the top of the page (the empty state with
+  // Watch folder, as no folder is watched yet)
+  LabHighlight* frame = LabHighlight::on(bar);
+  QVERIFY(frame);
+  QVERIFY(frame->isVisible());
+  QCOMPARE(frame->area(), bar->tabRect(ScriptLabPanel::LivePage));
+  QCOMPARE(bar->tabText(ScriptLabPanel::LivePage), QString("Live scripts"));
+  LabHighlight* top = LabHighlight::on(scroll->widget());
+  QVERIFY(top);
+  QVERIFY(top->area().contains(QRect(panel.watchButton()->mapTo(scroll->widget(), QPoint(0, 0)), panel.watchButton()->size())));
+  // the keys are on the tab bar, and the step is ticked
+  QTRY_VERIFY(bar->hasFocus());
+  QVERIFY(card->ticks().at(2)->property("done").toBool());
+  // from the other page it comes back too
+  panel.tabs()->setCurrentIndex(ScriptLabPanel::CommandsPage);
+  QVERIFY(panel.doStep(2));
+  QCOMPARE(panel.tabs()->currentIndex(), int(ScriptLabPanel::LivePage));
+  // the frame goes away by itself
+  QTRY_VERIFY_WITH_TIMEOUT(!LabHighlight::on(bar), LabHighlight::ShowMs + 1500);
+}
+
+// UX small fixes (the project owner: it was not clear whether RLV or RLVa was on): the chosen button
+// has the selection fill, a tick and bold text; the other has none of them. Show effects and Record
+// are bold when on as well. Checked in both themes, drawn with the program's theme.
+void TestScriptLabBeginner::activeChoiceIsClear()
+{
+  for (bool dark : {true, false})
+  {
+    Theme::apply(dark);
+    RlvState state;
+    ScriptLabPanel panel;
+    panel.setState(&state);
+    QPushButton* rlv = panel.findChild<QPushButton*>("scriptLabModeRlv");
+    QPushButton* rlva = panel.findChild<QPushButton*>("scriptLabModeRlva");
+    QVERIFY(rlv && rlva);
+    for (int round = 0; round < 2; ++round)
+    {
+      const bool rlvOn = round == 1;
+      panel.setMode(rlvOn ? Rlv::Mode::Rlv : Rlv::Mode::Rlva);
+      QPushButton* on = rlvOn ? rlv : rlva;
+      QPushButton* off = rlvOn ? rlva : rlv;
+      QVERIFY(on->isChecked());
+      QVERIFY(!off->isChecked());
+      QCOMPARE(on->property("chosen").toBool(), true);
+      QCOMPARE(off->property("chosen").toBool(), false);
+      QVERIFY(!on->icon().isNull());   // the tick
+      QVERIFY(off->icon().isNull());
+      QCOMPARE(on->font().weight(), QFont::DemiBold);
+      QCOMPARE(off->font().weight(), QFont::Normal);
+      QVERIFY(on->accessibleDescription().startsWith("Chosen."));
+      QVERIFY(off->accessibleDescription().startsWith("Not chosen."));
+      // the fill: the selection colour behind the chosen one, the raised surface behind the other
+      panel.resize(560, 400);
+      panel.show();
+      QVERIFY(QTest::qWaitForWindowExposed(&panel));
+      const QImage onImage = on->grab().toImage();
+      const QImage offImage = off->grab().toImage();
+      const QPoint corner(4, on->height() / 2);
+      QCOMPARE(onImage.pixelColor(corner).name(), Theme::color(Theme::Token::Selection, dark).name());
+      QCOMPARE(offImage.pixelColor(QPoint(4, off->height() / 2)).name(), Theme::color(Theme::Token::SurfaceRaised, dark).name());
+      panel.hide();
+    }
+    panel.effectsBox()->setChecked(true);
+    QCOMPARE(panel.effectsBox()->font().weight(), QFont::DemiBold);
+    panel.effectsBox()->setChecked(false);
+    QCOMPARE(panel.effectsBox()->font().weight(), QFont::Normal);
+  }
+  Theme::apply(true);
+}
+
+// UX small fixes (the project owner: help and guides should not sit inside the function): the ?
+// button opens one bigger help view with the topics, the words and every example's guide
+void TestScriptLabBeginner::helpViewOutOfThePanel()
+{
+  QTemporaryDir dir;
+  RlvState state;
+  LabWatcher watcher;
+  ScriptLabPanel panel;
+  FakeScene scene;
+  setUpPanel(panel, watcher, state, dir.path(), scene);
+  QToolButton* button = panel.helpButton();
+  QVERIFY(button);
+  QCOMPARE(button->accessibleName(), QString("Help for Script Lab"));
+  QCOMPARE(button->toolTip(), QString("Help for Script Lab\nExplanations, the words and every example, in a bigger view."));
+  QVERIFY(!button->icon().isNull());
+  QVERIFY(button->focusPolicy() & Qt::TabFocus);
+  QVERIFY(!panel.helpView());
+  QTest::mouseClick(button, Qt::LeftButton);
+  LabHelpView* help = panel.helpView();
+  QVERIFY(help);
+  QVERIFY(help->isVisible());
+  QVERIFY(!help->isModal());   // the window stays usable, so a step can be read and done
+  QCOMPARE(help->windowTitle(), QString("Script Lab help"));
+  QCOMPARE(help->currentTopic(), QString("start"));
+  QCOMPARE(help->topicHeading(), QString("Start here"));
+  QCOMPARE(help->topicTitles(), QStringList({"Start here", "How to lay out a folder", "Words", "Hints",
+                                             "Example: First colour", "Example: Button HUD", "Example: Gear set",
+                                             "Example: Timed lock", "Example: Simple RLV relay", "Example: Work system"}));
+  QVERIFY(help->topicText().contains("Script Lab tests Second Life scripts safely on your PC."));
+  QVERIFY(help->topicText().contains("Press Make example project on the Live scripts tab."));
+  verifyShortSentences(help->topicText());
+  // the heading "Examples" stands in the list but cannot be picked
+  const QList<QListWidgetItem*> heads = help->topicList()->findItems("Examples", Qt::MatchExactly);
+  QCOMPARE(heads.size(), 1);
+  QCOMPARE(heads.first()->flags(), Qt::NoItemFlags);
+  // the words: every word tip, with its meaning
+  QVERIFY(help->showTopic("words"));
+  for (const LabBeginner::Tip& tip : LabBeginner::jargonTips())
+    QVERIFY2(help->topicText().contains(tip.word + ": " + tip.text), qPrintable(tip.word));
+  // hints: what the cross does, as the hint cards now do
+  QVERIFY(help->showTopic("hints"));
+  QVERIFY(help->topicText().contains("The cross closes a hint. Turn Help > Show hints off and on for the next one."));
+  // an example: its guide texts from example.json, word for word, with the steps numbered
+  QVERIFY(help->showTopic("example:Gear_set"));
+  QCOMPARE(help->topicHeading(), QString("Example: Gear set"));
+  const LabExample gear = LabBeginner::readExample(examplesDir() + "/Gear_set");
+  QVERIFY(gear.isValid());
+  for (const LabExample::Entry& e : gear.guide)
+    QVERIFY2(help->topicText().contains(e.text), qPrintable(e.id));
+  for (const QString& h : QStringList({"What it is", "Steps", "The pieces", "New words", "You should see", "Then try"}))
+    QVERIFY2(help->topicText().contains(h), qPrintable(h));
+  // Down in the list goes to the next topic
+  QVERIFY(help->showTopic("start"));
+  help->topicList()->setFocus();
+  QTest::keyClick(help->topicList(), Qt::Key_Down);
+  QCOMPARE(help->currentTopic(), QString("folder"));
+  QCOMPARE(help->topicHeading(), QString("How to lay out a folder"));
+  // a second press brings the same view back, at the start
+  help->close();
+  QVERIFY(!help->isVisible());
+  QTest::mouseClick(button, Qt::LeftButton);
+  QCOMPARE(panel.helpView(), help);
+  QVERIFY(help->isVisible());
+  QCOMPARE(help->currentTopic(), QString("start"));
+  QVERIFY(!help->showTopic("nothing"));
+  // the picked topic: selection fill and bold, in the program's tokens
+  QVERIFY(help->topicList()->styleSheet().contains("font-weight: 600"));
+  QVERIFY(help->topicList()->styleSheet().contains(Theme::color(Theme::Token::Selection, true).name()));
+  help->close();
+}
+
+// every step of every example names a control that is really there, with the name the program
+// shows, and in the place the step says (the project owner followed the guide and could not find
+// what it described)
+void TestScriptLabBeginner::guideStepsNameRealControls()
+{
+  ScriptLabPanel panel;
+  const QString ui = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.ui"));
+  QVERIFY(!ui.isEmpty());
+  const QStringList objects = QDir(examplesDir()).entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+  QVERIFY(objects.size() >= 6);
+  int checked = 0;
+  for (const QString& object : objects)
+  {
+    const LabExample example = LabBeginner::readExample(examplesDir() + "/" + object);
+    QVERIFY2(example.isValid(), qPrintable(object));
+    for (const LabExample::Entry& step : example.steps())
+    {
+      const QString what = example.object + " " + step.id + ": " + step.text;
+      const QString c = step.control;
+      if (c == "Watch folder...")
+      {
+        QCOMPARE(panel.watchButton()->text(), QString("Watch folder..."));
+        QVERIFY2(step.text.contains("Press Watch folder."), qPrintable(what));
+      }
+      else if (c == "Show effects in 3D view")
+      {
+        // a button that is on or off (with a tick when on), not a tick box: "press", not "tick"
+        QCOMPARE(panel.effectsBox()->text(), QString("Show effects in 3D view"));
+        QVERIFY(panel.effectsBox()->isCheckable());
+        QVERIFY2(step.text.startsWith("Press Show effects in 3D view, so it shows a tick."), qPrintable(what));
+      }
+      else if (c == "Live scripts")
+      {
+        QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::LivePage), QString("Live scripts"));
+        QCOMPARE(int(ScriptLabPanel::LivePage), 0);   // "its first tab"
+        QVERIFY2(step.text.contains("Live scripts is its first tab."), qPrintable(what));
+      }
+      else if (c == "Touch" || c == "Channel" || c == "Say")
+      {
+        // in the folding part Send input, low on the Live scripts page and folded at first: the step says to open it
+        ScriptLabSection* input = panel.section("input");
+        QVERIFY(input);
+        QCOMPARE(input->title(), QString("Send input"));
+        QVERIFY(!input->isExpanded());
+        QVERIFY(panel.tabs()->widget(ScriptLabPanel::LivePage)->isAncestorOf(input));
+        if (c == "Touch")
+        {
+          QPushButton* touch = panel.findChild<QPushButton*>("scriptLabTouch");
+          QVERIFY(touch);
+          QCOMPARE(touch->text(), QString("Touch"));
+          QVERIFY(input->isAncestorOf(touch));
+          QVERIFY2(step.text.startsWith("Open Send input, low on Live scripts, and press Touch."), qPrintable(what));
+        }
+        else if (c == "Channel")
+        {
+          bool channel = false, text = false;
+          for (QLabel* l : input->findChildren<QLabel*>()) { channel |= l->text() == "Channel"; text |= l->text() == "Text"; }
+          QVERIFY(channel && text);
+          QVERIFY2(step.text.startsWith("Open Send input."), qPrintable(what));
+          QVERIFY2(step.text.contains("into Channel") && step.text.contains("into Text"), qPrintable(what));
+        }
+        else
+        {
+          bool say = false;
+          for (QPushButton* b : input->findChildren<QPushButton*>()) say |= b->text() == "Say";
+          QVERIFY(say);
+        }
+      }
+      else if (c == "Props")
+      {
+        // the Props tab of the Joints panel in the window
+        QVERIFY(ui.contains("<string>Props</string>"));
+        QVERIFY(ui.contains("name=\"newBoxPropButton\""));
+        QVERIFY2(step.text.contains("Props"), qPrintable(what));
+      }
+      else
+      {
+        // a button of the example's own dialog (llDialog in its scripts)
+        bool found = false;
+        for (const QString& file : QDir(examplesDir() + "/" + object).entryList({"*.lsl"}, QDir::Files))
+          found |= readFile(examplesDir() + "/" + object + "/" + file).contains("\"" + c + "\"");
+        for (const QString& sub : QDir(examplesDir() + "/" + object).entryList(QDir::Dirs | QDir::NoDotAndDotDot))
+          for (const QString& file : QDir(examplesDir() + "/" + object + "/" + sub).entryList({"*.lsl"}, QDir::Files))
+            found |= readFile(examplesDir() + "/" + object + "/" + sub + "/" + file).contains("\"" + c + "\"");
+        QVERIFY2(found, qPrintable(what));
+      }
+      // no step tells the user to "tick" a button, and none points at text that is not on screen
+      QVERIFY2(!step.text.contains("Tick "), qPrintable(what));
+      QVERIFY2(!step.text.contains("shown below"), qPrintable(what));
+      ++checked;
+    }
+  }
+  QVERIFY(checked >= 20);
 }
 
 QTEST_MAIN(TestScriptLabBeginner)
