@@ -97,6 +97,7 @@ class TestTransportBar : public QObject
     void lookButtonsAddedLaterGetTheLook();
     void lookDisabledSaysWhy();
     void lookShapeAndSize();
+    void lookLeavesOtherButtonsAlone();
     void lookFocusRingAndKeyboard();
     void lookKeepsTextsAndOrder();
 
@@ -817,6 +818,31 @@ void TestTransportBar::lookKeepsTextsAndOrder()
   QCOMPARE(order.value(0), bar.startButton());
   QCOMPARE(order.value(1), bar.stopButton());
   QCOMPARE(order.value(2), bar.replayButton());
+}
+
+// the look is for the bar's own buttons only: a button elsewhere in the program keeps its size and is
+// drawn by its own style, although the look also listens to the whole application (job B3 found this)
+void TestTransportBar::lookLeavesOtherButtonsAlone()
+{
+  QWidget window;
+  QVBoxLayout* layout = new QVBoxLayout(&window);
+  TransportBar* bar = new TransportBar(&window);
+  layout->addWidget(bar);
+  QPushButton* other = new QPushButton("Watch folder...", &window);
+  other->setMinimumHeight(40);
+  layout->addWidget(other);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  QCoreApplication::processEvents();
+  QCOMPARE(other->minimumHeight(), 40);
+  QFont font = window.font();
+  font.setPointSizeF(font.pointSizeF() * 1.5);
+  window.setFont(font);
+  QCoreApplication::processEvents();
+  QCOMPARE(other->minimumHeight(), 40);
+  QVERIFY(other->font().weight() != QFont::DemiBold);
+  // the bar's own buttons still get the look
+  QCOMPARE(bar->startButton()->minimumSize(), TransportLook::minimumSize(bar->startButton()));
 }
 
 QTEST_MAIN(TestTransportBar)

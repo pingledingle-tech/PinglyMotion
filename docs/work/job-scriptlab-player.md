@@ -7,6 +7,8 @@ Files:
 - src/scriptlab/labwatcher.*
 - src/scriptlab/scriptlabpanel.*
 - src/CMakeLists.txt
+- src/transportlook.cpp
+- tests/transportbar/tst_transportbar.cpp
 - CMakeLists.txt
 - tests/tst_labrecipe.cpp
 - tests/scriptlabplayer/**
