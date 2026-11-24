@@ -1,5 +1,5 @@
 Branch: job/b4-final-check
-Status: active
+Status: done
 Pull request: #480
 Files:
 - tests/test_contrast.py
