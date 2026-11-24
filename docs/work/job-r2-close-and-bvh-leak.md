@@ -12,6 +12,7 @@ Files:
 - tests/smoke_close.py
 - .github/workflows/build.yml
 - docs/DEV.md
+- docs/CODE_AUDIT.md
 
 ## What
 
