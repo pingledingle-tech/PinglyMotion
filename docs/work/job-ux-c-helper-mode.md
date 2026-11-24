@@ -1,6 +1,6 @@
 Branch: job/ux-c-helper-mode
 Status: active
-Pull request: pending
+Pull request: #474
 Files:
 - src/helpermode.*
 - src/helperspec.h
