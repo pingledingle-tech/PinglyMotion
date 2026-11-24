@@ -1,6 +1,6 @@
 Branch: job/remove-old-menus
 Status: active
-Pull request: pending
+Pull request: #483
 Files:
 - src/pinglymotionwindow.ui
 - src/pinglymotionwindow.cpp
