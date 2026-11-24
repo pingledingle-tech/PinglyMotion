@@ -1,5 +1,5 @@
 Branch: job/undo-redo
-Status: active
+Status: done
 Pull request: #446
 Files:
 - src/undohistory.*
