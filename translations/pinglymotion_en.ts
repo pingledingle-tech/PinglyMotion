@@ -2782,6 +2782,30 @@ Pick the ones you want.</source>
         <source>No menu is open. Click a part that shows one first.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>There is no recipe yet. Record what you do first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe cannot be read: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe is larger than %1 bytes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe has a mistake. %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe has no steps. Record what you do first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The result could not be kept in %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LibraryPanel</name>
@@ -6222,6 +6246,246 @@ Try a BVH file for a person with arms and legs.</source>
         <source>=rem closes a channel that was kept open.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The recipe is larger than %1 characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1 is longer than %2 characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;object&quot; needs a name of 1 to 64 letters, digits, spaces, dots, - or _.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;touch&quot; needs the name of a part, at most %2 characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;menu&quot; needs the button&apos;s text, at most %2 characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;send&quot; needs an RLV line that starts with @.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;wait&quot; needs seconds from 0.1 to %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;expect&quot; lines are not built yet. Remove the line.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: unknown word &quot;%2&quot;. Use touch, menu, send, object or wait.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe has more than %1 steps.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press &quot;%1&quot; in the menu.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 sends %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wait %1 seconds.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>without a colour from a script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>silent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>running</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>gone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>black</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>white</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>grey</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>red</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>green</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>blue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>yellow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>cyan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pink</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>orange</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>purple</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>dark green</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>dark blue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>dark red</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>light blue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>brown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>locked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>blocked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invisible</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>see-through</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>solid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> and </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>saying &quot;%1&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>open: &quot;%1&quot; with a text field</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>open: &quot;%1&quot; with %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>every script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The object did not run.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not running: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>there is no part called %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no menu was open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>step %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not done: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Before: the object ran. Now: it is %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Before: the object did not run. Now: it runs again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Before: %1 was %2. Now: it is %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RetargetDialog</name>
@@ -7308,6 +7572,109 @@ The sandbox is never the same as Second Life. Test there last.</source>
     </message>
     <message>
         <source>What the avatar may do now. Choose Allowed or Blocked, or press Space on a row.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record what I do</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Records your clicks on props, menu buttons and RLV lines. After every save, the program repeats them and says what changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recipe</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe file. You may edit it in your own editor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Replay now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Repeats the recipe&apos;s steps now, without a save.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording stopped. No steps were recorded, so the recipe stays as it was.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not recording.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording. Click props and menu buttons. Steps so far: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn on Show effects in 3D view to click props.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The object did not run, so your steps were not replayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>Replayed your %n step(s).</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Replayed %1 of %2 steps.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the first time, so there is nothing to compare.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Now:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing changed since last time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What changed since last time:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe is replayed after the next save.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No recipe yet. Press Record what I do, then click your props.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File: %1 in the object folder. %2 is kept next to it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No recipe file yet. Recording makes %1 in the object folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop recording first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record what you do first.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

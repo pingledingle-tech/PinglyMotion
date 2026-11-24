@@ -12,6 +12,7 @@ Files:
 - tests/tst_control.cpp
 - tests/CMakeLists.txt
 - tests/scriptlabbeginner/**
+- tests/scriptlabpanel/tst_scriptlabdesign.cpp
 - fuzz/fuzz_recipe.cpp
 - fuzz/recipe.dict
 - fuzz/README.md

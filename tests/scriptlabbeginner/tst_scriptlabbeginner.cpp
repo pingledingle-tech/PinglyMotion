@@ -1075,6 +1075,11 @@ void TestScriptLabBeginner::recordAndReplay()
                                                  "  Send instant messages is blocked.\n"
                                                  "  Collar is saying \"picked Lock\"."));
   verifyShortSentences(panel.recipeStatus()->text());
+  if (!qEnvironmentVariableIsEmpty("PINGLYMOTION_UI_OUT"))   // a picture for a session to look at
+  {
+    QTest::qWait(50);
+    panel.grab().save(qEnvironmentVariable("PINGLYMOTION_UI_OUT") + "/recordreplay.png");
+  }
 
   // a save of a changed script: the recipe is replayed and the line says what changed
   QByteArray noLock = collar;
