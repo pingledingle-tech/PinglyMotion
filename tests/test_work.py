@@ -210,5 +210,47 @@ class ArchiveTests(unittest.TestCase):
         })
 
 
+
+class StatusTests(unittest.TestCase):
+    NOW = work.datetime(2026, 11, 25, 12, 0, 0, tzinfo=work.timezone.utc)
+
+    def run_(self, name, status, conclusion=None, start="2026-11-25T11:50:00Z", end=None):
+        return {"name": name, "status": status, "conclusion": conclusion, "started_at": start, "completed_at": end}
+
+    def test_pull_lines_show_checks_with_minutes(self):
+        pull = {"number": 7, "title": "A title", "draft": False, "head": {"ref": "job/x"}, "mergeable_state": "clean"}
+        runs = [self.run_("linux", "completed", "success", end="2026-11-25T11:59:00Z"),
+                self.run_("windows", "in_progress"),
+                self.run_("privacy", "completed", "failure", end="2026-11-25T11:51:00Z")]
+        lines = work.format_pull(pull, runs, 12, "## Report\nBody", self.NOW)
+        self.assertIn("#7 A title | ready | job/x | push 12 min ago | merge: no conflict", lines[0])
+        self.assertIn("linux passed 9 min", lines[1])
+        self.assertIn("windows running 10 min", lines[1])
+        self.assertIn("privacy failed 1 min", lines[1])
+        self.assertIn("asan-ubsan not started", lines[1])
+        self.assertEqual(lines[2], "  latest comment: Report")
+
+    def test_stopped_push_is_marked(self):
+        pull = {"number": 7, "draft": True, "head": {"ref": "b"}}
+        self.assertIn("(stopped?)", work.format_pull(pull, [], 90, None, self.NOW)[0])
+        self.assertIn("draft", work.format_pull(pull, [], 90, None, self.NOW)[0])
+
+    def test_queue_lines_are_numbered_and_cut(self):
+        body = "Intro\n\n## Queue\n\n1. " + "x" * 200 + "\nnot numbered\n2. Two\n\n## Parked\n\n3. Not queue\n"
+        lines = work.queue_lines(body)
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(len(lines[0]), work.LINE_CHARS)
+        self.assertEqual(lines[1], "2. Two")
+
+    def test_test_lines_skip_intro_and_steps(self):
+        body = "Intro text.\n\nOptional: test A, one. 2 steps:\n1. step\n2. step\n\nOptional: test B.\n\n---\n"
+        self.assertEqual(work.test_lines(body), ["Optional: test A, one. 2 steps:", "Optional: test B."])
+
+    def test_build_lines(self):
+        runs = [{"run_number": 5, "status": "completed", "conclusion": "failure", "created_at": "2026-11-25T09:00:00Z"}]
+        self.assertEqual(work.format_builds(runs), ["  Build #5 failed, 2026-11-25 09:00:00 UTC"])
+        self.assertEqual(work.format_builds([]), ["  none found"])
+
+
 if __name__ == "__main__":
     unittest.main()

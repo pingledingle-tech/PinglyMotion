@@ -49,6 +49,7 @@ env:
 jobs:
   version:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       tag: ${{ steps.version.outputs.tag }}
       prerelease: ${{ steps.version.outputs.prerelease }}
@@ -87,6 +88,7 @@ jobs:
   windows:
     needs: version
     runs-on: windows-latest
+    timeout-minutes: 40
     permissions:
       contents: read
       id-token: write       # sign the build provenance
@@ -146,6 +148,7 @@ jobs:
     needs: version
     # the oldest supported Ubuntu, so the AppImage runs on older systems too
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     permissions:
       contents: read
       id-token: write       # sign the build provenance
@@ -262,6 +265,7 @@ jobs:
     needs: [version, windows, linux, checks-build, checks-codeql, checks-fuzz]
     if: github.event_name == 'push' || inputs.publish
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write   # create the release
     env:

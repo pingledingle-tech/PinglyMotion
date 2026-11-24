@@ -11,7 +11,6 @@ Files:
 - tools/work.py
 - tests/test_watch.py
 - tests/test_work.py
-- CLAUDE.md
 - docs/DEV.md
 
 ## What

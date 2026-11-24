@@ -83,6 +83,7 @@ jobs:
     # not after a merge to main (the quick check there is the Linux job)
     if: needs.changes.outputs.code == 'true' && !(github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: windows-latest
+    timeout-minutes: 40
     env:
       # compiler cache (see "Compile faster" in docs/DEV.md): an object is reused only when compiler,
       # flags and source text are identical. The build number and time go into a generated header that
@@ -190,6 +191,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       # compiler cache: an object is reused only when compiler, flags and source text are identical
       CCACHE_DIR: /home/runner/.ccache
