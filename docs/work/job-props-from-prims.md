@@ -17,6 +17,9 @@ Files:
 - docs/DECISIONS.md
 - docs/ROADMAP.md
 - docs/UX_DECISIONS.md
+- docs/TEACHING.md
+- docs/EXAMPLES.md
+- examples/objects/guide_now.json
 
 ## What
 

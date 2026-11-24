@@ -46,6 +46,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
+#include <QMap>
 #include <QPointer>
 #include <QSet>
 #include <QWidget>
@@ -58,6 +59,7 @@
 #include "effectspreview.h"
 #include "labbeginner.h"
 #include "labeditor.h"
+#include "labprimprops.h"
 #include "labtint.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
@@ -153,6 +155,18 @@ class ScriptLabPanel : public QWidget
     // object gave its prims, while "Show effects in 3D view" is ticked; empty otherwise. The
     // window gives each tint to the prop of the same name (Prop::setTint) and clears the rest.
     QList<LabTint::Tint> propTints() const { return m_propTints; }
+    // --- props from prims (job A1): while "Show effects in 3D view" is on and a folder is watched as
+    // one object, every prim gets a prop of its name (LabPrimProps::propFor, through the scene hooks),
+    // and a prop whose prim a script moved, scaled or turned stands where the script put it
+    // (LabPrimProps::moved). Turning the effects off, a run without moves or Stop watching puts the
+    // props back where they stood.
+    bool primPropsShown() const;
+    // the moves of the last run that the props show (empty while primPropsShown() is false)
+    QList<LabPrimProps::Move> primMoves() const { return m_primMoves; }
+    // a click on the prop of that name, as the 3D view sends it: a touch to the scripts in that prim
+    // (LabWatcher::touch), with "You clicked <name>." in the event log. False when the props are not
+    // shown, no prim has that name, or the touch was refused (the status line says why).
+    bool touchPrim(const QString& name);
     // stops watching, as Stop watching does
     void stopWatching();
     // watches the example scripts that come with the program (examples/scriptlab), as
@@ -172,6 +186,10 @@ class ScriptLabPanel : public QWidget
       std::function<bool(const QString&)> hasProp;            // a prop of that name is in the scene
       std::function<bool(const QString&)> selectProp;         // lights up the prop of that name; false when none
       std::function<void()> showPropsTab;                     // shows Props in the Joints panel
+      // job A1, props that move: reads the place of the prop of that name (false when none) and
+      // puts the prop of that name at a place; false when there is no such prop
+      std::function<bool(const QString&, LabExample::Prop&)> propPlace;
+      std::function<bool(const LabExample::Prop&)> placeProp;
     };
     void setSceneHooks(const SceneHooks& hooks) { m_hooks = hooks; refreshSteps(); }
     // "Make example project": copies the first example of exampleObjectsFolder() to scriptsRoot()
@@ -510,7 +528,13 @@ class ScriptLabPanel : public QWidget
     QString m_pickedFile;              // the script picked in the tree, for the run m_pickedRun
     int m_pickedRun = -1;
     QList<LabTint::Tint> m_propTints;
-    void updatePropTints();
+    void updatePropTints(bool force = false);
+    // job A1: makes the missing props, places the moved ones, then updates the tints
+    void updatePrimProps();
+    QList<LabPrimProps::Move> m_primMoves;
+    QMap<QString, LabExample::Prop> m_primBase;   // where each moved prop stood before a script moved it
+    QString m_primExampleFolder;                  // the folder m_primExample was read from
+    QList<LabExample::Prop> m_primExample;        // the props of that folder's example.json, if any
     QString m_shownFile;               // the script shown in the view (relative to the folder)
     QList<QJsonObject> m_shownProblems;
     QList<QMetaObject::Connection> m_watcherConnections;

@@ -1604,6 +1604,8 @@ QString ScriptLabPanel::logLine(const QJsonObject& entry)
   QString time = QString::number(entry.value("t").toDouble(), 'f', 3) + QStringLiteral(" s  ");
   // a folder run (lane 1 job D) names the source of each line: "main (Root): " or, for an input, "Root: "
   const bool tagged = entry.contains("prim");
+  // job A1: a click on a prop in the 3D view, before the touch it sends
+  if (type == QLatin1String("clicked")) return time + tr("You clicked %1.").arg(entry.value("prim").toString());
   if (tagged)
     time += entry.contains("script") ? QStringLiteral("%1 (%2): ").arg(entry.value("script").toString(), entry.value("prim").toString())
                                      : QStringLiteral("%1: ").arg(entry.value("prim").toString());
@@ -1688,7 +1690,7 @@ void ScriptLabPanel::refreshLive()
   m_treeSection->setVisible(linkset);
   m_treeSection->setCount(m_folderTree->countText());
   m_guideSection->setVisible(!watching || linkset);
-  updatePropTints();
+  updatePrimProps();
   int folderScripts = 0;
   for (const QJsonValue& p : folder.value("linkset").toObject().value("prims").toArray())
     folderScripts += int(p.toObject().value("scripts").toArray().size());
@@ -1951,12 +1953,76 @@ void ScriptLabPanel::connectEffectsToWatcher()
   }
 }
 
-void ScriptLabPanel::updatePropTints()
+bool ScriptLabPanel::primPropsShown() const
+{
+  return m_effectsBox && m_effectsBox->isChecked() && m_watcher && m_watcher->watching() && m_watcher->linkset();
+}
+
+void ScriptLabPanel::updatePrimProps()
+{
+  // props from prims (job A1): every prim of the watched object gets a prop of its name
+  const bool show = primPropsShown();
+  const QJsonObject folder = show ? m_watcher->folderResult() : QJsonObject();
+  bool added = false;
+  if (show && m_hooks.addProp && m_hooks.hasProp)
+  {
+    // the props of the folder's example.json (an example project), read once per folder
+    if (m_primExampleFolder != m_watcher->folder())
+    {
+      m_primExampleFolder = m_watcher->folder();
+      m_primExample = LabBeginner::readExample(m_primExampleFolder).props;
+    }
+    for (const LabExample::Prop& prop : LabPrimProps::propsFor(folder, m_primExample))
+      if (!m_hooks.hasProp(prop.name)) added = m_hooks.addProp(prop) || added;
+  }
+  // props that move: a prop stands where the script put its prim; it jumps there, no animation
+  m_primMoves = show ? LabPrimProps::movesFromFolder(folder) : QList<LabPrimProps::Move>();
+  if (m_hooks.placeProp && m_hooks.propPlace)
+  {
+    QSet<QString> moved;
+    for (const LabPrimProps::Move& move : m_primMoves)
+    {
+      if (!m_primBase.contains(move.prim))
+      {
+        LabExample::Prop base;
+        if (!m_hooks.propPlace(move.prim, base)) continue;
+        m_primBase.insert(move.prim, base);
+      }
+      m_hooks.placeProp(LabPrimProps::moved(m_primBase.value(move.prim), move));
+      moved.insert(move.prim);
+    }
+    // a prop that no script moves now goes back to where it stood
+    for (auto it = m_primBase.begin(); it != m_primBase.end();)
+    {
+      if (moved.contains(it.key())) { ++it; continue; }
+      m_hooks.placeProp(it.value());
+      it = m_primBase.erase(it);
+    }
+  }
+  // a new prop gets its tint at once
+  updatePropTints(added);
+}
+
+bool ScriptLabPanel::touchPrim(const QString& name)
+{
+  if (!primPropsShown()) return false;
+  const int link = m_watcher->linkOf(name);
+  if (link < 1) return false;
+  const LabWatcher::Result result = m_watcher->touch(link);
+  if (!result.ok())
+  {
+    setLiveStatus(tr("Error: the touch on %1 was not sent. %2").arg(name, result.error), 2);
+    return false;
+  }
+  return true;
+}
+
+void ScriptLabPanel::updatePropTints(bool force)
 {
   // props as prims (lane 1 job E): only while the effects are shown and the object is watched
-  const bool show = m_effectsBox && m_effectsBox->isChecked() && m_watcher && m_watcher->watching() && m_watcher->linkset();
+  const bool show = primPropsShown();
   const QList<LabTint::Tint> tints = show ? LabTint::fromFolder(m_watcher->folderResult()) : QList<LabTint::Tint>();
-  if (tints == m_propTints) return;
+  if (tints == m_propTints && !force) return;
   m_propTints = tints;
   emit propTintsChanged();
 }
@@ -1965,7 +2031,7 @@ void ScriptLabPanel::effectsToggled(bool on)
 {
   styleEffectsButton();
   refreshSteps();   // the step "Show effects" follows the button
-  updatePropTints();
+  updatePrimProps();
   if (!m_effects) return;
   m_effects->setEnabled(on);
   // ticked: show the newest run at once, without waiting for the next save

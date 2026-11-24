@@ -75,6 +75,7 @@ class TestLabWatcher : public QObject
     void rlvLinesReachTheSharedState();
     void linksetRunsTheWholeFolder();
     void linksetBrokenScriptStopsTheRun();
+    void touchGoesToThePrim();
 };
 
 void TestLabWatcher::refusals()
@@ -420,6 +421,81 @@ void TestLabWatcher::linksetBrokenScriptStopsTheRun()
   QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
   QCOMPARE(ownerSays(w.lastResult()), QStringList({"hello", "bye"}));
   QCOMPARE(w.lastResult().value("file").toString(), QString("Lid/bad.lsl"));
+}
+
+// job A1: a click on a prop sends a touch to the scripts in that prim of the last folder run; the world
+// is kept between clicks, and the log says which prop was clicked
+void TestLabWatcher::touchGoesToThePrim()
+{
+  QTemporaryDir dir;   // made first, so the watch ends before the folder is removed
+  LabWatcher w;
+  QVERIFY(QDir(dir.path()).mkpath("Root"));
+  QVERIFY(QDir(dir.path()).mkpath("Lid"));
+  QVERIFY(writeFile(dir.filePath("Root/main.lsl"), "default { touch_start(integer n) { llOwnerSay(\"root touched\"); } }"));
+  QVERIFY(writeFile(dir.filePath("Lid/lid.lsl"),
+                    "integer count;\ndefault { touch_start(integer n) { count++; llOwnerSay(\"lid touched \" + (string)count); } }"));
+  QCOMPARE(w.touch(2).error, QString("No folder is watched as one object."));
+  QVERIFY(w.watch(dir.path(), QJsonObject{{"linkset", true}}).ok());
+  QCOMPARE(w.linkOf("Root"), 1);
+  QCOMPARE(w.linkOf("Lid"), 2);
+  QCOMPARE(w.linkOf("Nope"), 0);
+  QVERIFY(ownerSays(w.lastResult()).isEmpty());
+
+  QSignalSpy changed(&w, &LabWatcher::resultChanged);
+  QVERIFY(w.touch(2).ok());
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(ownerSays(w.lastResult()), QStringList({"lid touched 1"}));
+  // the same log in every script's result and in the folder's answer
+  QCOMPARE(w.result("Root/main.lsl").value("result"), w.folderResult().value("result"));
+  QCOMPARE(w.result("Lid/lid.lsl").value("result"), w.folderResult().value("result"));
+  const QJsonArray log = w.folderResult().value("result").toObject().value("log").toArray();
+  int clicked = -1, said = -1;
+  for (int i = 0; i < log.size(); ++i)
+  {
+    const QJsonObject e = log[i].toObject();
+    if (e.value("type").toString() == "clicked")
+    {
+      clicked = i;
+      QCOMPARE(e.value("prim").toString(), QString("Lid"));
+      QCOMPARE(e.value("link").toInt(), 2);
+      QCOMPARE(e.value("source").toString(), QString("sandbox"));
+    }
+    if (e.value("type").toString() == "owner_say")
+    {
+      said = i;
+      QCOMPARE(e.value("script").toString(), QString("lid"));
+      QCOMPARE(e.value("prim").toString(), QString("Lid"));
+      QCOMPARE(e.value("file").toString(), QString("Lid/lid.lsl"));
+    }
+  }
+  QVERIFY(clicked >= 0);
+  QVERIFY(said > clicked);
+
+  // the world goes on: the second click counts on, a click on the root reaches the root's script only
+  QVERIFY(w.touch(2).ok());
+  QCOMPARE(ownerSays(w.lastResult()), QStringList({"lid touched 1", "lid touched 2"}));
+  QVERIFY(w.touch(1).ok());
+  QCOMPARE(ownerSays(w.lastResult()), QStringList({"lid touched 1", "lid touched 2", "root touched"}));
+  QCOMPARE(w.touch(9).error, QString("The object has no prim with link 9."));
+  QCOMPARE(w.touch(0).error, QString("The object has no prim with link 0."));
+
+  // a save runs the folder again from the start
+  nextSecond();
+  QVERIFY(writeFile(dir.filePath("Lid/lid.lsl"),
+                    "integer count;\ndefault { touch_start(integer n) { count++; llOwnerSay(\"lid again \" + (string)count); } }"));
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 2, 10000);
+  QVERIFY(ownerSays(w.lastResult()).isEmpty());
+  QVERIFY(w.touch(2).ok());
+  QCOMPARE(ownerSays(w.lastResult()), QStringList({"lid again 1"}));
+
+  // a folder that does not compile cannot be touched
+  nextSecond();
+  QVERIFY(writeFile(dir.filePath("Lid/lid.lsl"), "default { touch_start(integer n) { llOwnerSay(\"x\") } }"));
+  QTRY_COMPARE_WITH_TIMEOUT(w.runCount(), 3, 10000);
+  QCOMPARE(w.touch(2).error, QString("The object did not run, so it cannot be touched. Fix it and save."));
+
+  QVERIFY(w.unwatch());
+  QCOMPARE(w.touch(2).error, QString("No folder is watched as one object."));
 }
 
 QTEST_GUILESS_MAIN(TestLabWatcher)

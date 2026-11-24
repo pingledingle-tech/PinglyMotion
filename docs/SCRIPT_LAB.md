@@ -1022,7 +1022,32 @@ Code: `src/scriptlab/labtint.*`, `Prop::setTint` in `src/prop.*`, wired in `src/
 
 - While **Show effects in 3D view** is ticked and a folder is watched as one object, a prop in the scene with the same name as a prim (the prim's folder name, for example `Lid`) shows the colour and transparency the scripts gave that prim: `llSetColor`, `llSetAlpha`, `llSetLinkColor`, `llSetLinkAlpha` and `PRIM_COLOR`. The last value given to the whole prim (`ALL_SIDES`) or to face 0 counts; a prop has one colour, so other faces are left out. Unticking the box, a run without colours or Stop watching gives the props their own colour back.
 - A colour without an alpha keeps the prop solid; an alpha without a colour keeps the prop's own colour. A hovered or picked prop keeps its highlight colour, with the tint's transparency.
-- Not built (from the wider idea in [DECISIONS.md](DECISIONS.md)): making props from the prims by themselves, a click on a prop as a touch, and moving a prop when a script moves its prim.
+- Built since in job A1 (below, "Props from prims, click as touch, moving props"): props made from the prims by themselves, a click on a prop as a touch, and a prop that moves when a script moves its prim.
+
+## Props from prims, click as touch, moving props (job A1)
+
+Built 24 November 2026, pull request 447 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his choices of 23 November, 23:05 to 23:55). Code: `src/scriptlab/labprimprops.*` (which prop, and where it goes), `LabWatcher::touch` in `src/scriptlab/labwatcher.*` (the kept world), `ScriptLabPanel::updatePrimProps` and `touchPrim` in `src/scriptlab/scriptlabpanel.*`, two more scene hooks and the click in `src/pinglymotionwindow.cpp`. Tests: `tests/tst_labprimprops.cpp` (exact props and places), `tests/tst_labwatcher.cpp` (`touchGoesToThePrim`), `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`propsFromPrims`: the whole chain with a fake scene).
+
+- **Props from prims.** While **Show effects in 3D view** is on and a folder is watched as one object, every prim gets a prop named like the prim (its folder's name; the object's name for a root without a `Root` folder). A prop of that name already in the scene is used as it is; nothing is made twice. A root prim that is only the top folder, with no script or notecard in it, gets no prop (First colour's root). The props stay in the scene after the effects are turned off, like the example props of job U3.
+- **Which prop.** The sandbox knows no shape and no place on the body for a prim, so: (1) the prop of the same name in the folder's `example.json`, when there is one (the example objects); (2) otherwise a word in the prim's name, first match wins (case does not matter; "right", or a name ending in `_r` or starting with `r_`, is the right side, everything else the left):
+
+  | Word in the name | Shape | Attached to | Place | Size | Turn |
+  |---|---|---|---|---|---|
+  | ankle | torus | lFoot / rFoot | 0, 2, 0 | 3.4, 3.4, 1.2 | 90, 0, 0 |
+  | wrist, cuff | torus | lHand / rHand | -1 / 1, 0, 0 | 2.8, 2.8, 1.2 | 0, 90, 0 |
+  | collar, neck | torus | neck | 0, 1.5, 0 | 5, 5, 1.6 | 90, 0, 0 |
+  | blindfold, eye | torus | head | 0, 3.1, 0.6 | 8.2, 8.2, 1.4 | 90, 0, 0 |
+  | gag, ball | sphere | head | 0, 0.9, 3.6 | 1.6, 1.6, 1.6 | 0, 0, 0 |
+  | hood, hat, head | cone | head | 0, 4, 0 | 9, 9, 10 | -90, 0, 0 |
+  | hud, or the name Root | box | not attached | -20, 45, 0 | 8, 8, 1 | 0, 0, 0 |
+  | anything else (the default) | box | not attached | 20, 45, 0, then 6 further along x for each next one | 4, 4, 4 | 0, 0, 0 |
+
+  The values are those of the Gear set example, in the scene's units (inches); "cuff" means a wrist cuff unless the name also says ankle.
+- **Click is touch.** A click on a prop whose name is a prim of the watched object (while the effects are on) sends a touch (`touch_start`, `touch`, `touch_end`, as the Touch input does) to that prim, in the world of the last folder run, and runs it on for one simulated second. The event log first says "You clicked Collar.", then what the scripts did. A prim with no touch handler passes the touch to the root, as in Second Life. The world is kept between clicks (a counter counts on); the next save runs the folder again from the start. The click also picks the prim's row in the tree (job U3), and the prop is picked on the Props tab as before. Touch, Say and the dialog buttons under Send input still go to the world of the last `lsl_run`, not to the watched folder.
+- **Moving props.** When a script changes a prim's position, size or rotation (`llSetPos`, `llSetScale`, `llSetRot`, `llSetLocalRot`, `llScaleByFactor`, `llSetRegionPos`, and `PRIM_POSITION`, `PRIM_POS_LOCAL`, `PRIM_SIZE`, `PRIM_ROTATION` and `PRIM_ROT_LOCAL` in `llSetPrimitiveParams` and the link functions), the prop jumps to its new place, with no animation ("Hopp er greit"). The last value in the run counts, also after a click. A move the sandbox refused (outside the region, worn, physical) is left out.
+- **How a move becomes a place.** The change from the prim's start is added to where the prop stood: position, the change from 0, 0, 0 for a child prim (local to the root) or from 128, 128, 20 for the root (in the region), with Second Life x, y, z as the scene's z, x, y and 1 m as 39.37 units; size, each side of the prop times the prim's side divided by 0.5 m (the prim's own x, y, z to the prop's x, y, z); rotation, the script's turn (renamed to the scene's axes) before the prop's own turn, back as the prop's three angles to a hundredth of a degree. Each prop follows only its own prim: turning the root does not carry the other props along.
+- **Back again.** Turning the effects off, a run in which no script moves that prim, or Stop watching puts each moved prop back where it stood before the first move. While the effects are on, a moved prop's place comes from the script; a prop no script moves is left where the user put it.
+- **Not built:** animated movement, chains and physics, mesh and textures, the llDialog box over the 3D view (job A2), the Send input buttons reaching the watched folder, holding a touch on a prop. Nothing here was tested in Second Life.
 
 ## Convert LSL to SLua (lane 1, job G: level 1 built)
 

@@ -635,10 +635,34 @@ PinglyMotionWindow::PinglyMotionWindow() :
     return true;
   };
   hooks.showPropsTab=[this]() { ui->avatarPropsTab->setCurrentIndex(1); };
+  // job A1, props that move: the panel reads where a prop stands and puts it where a script moved its prim
+  hooks.propPlace=[this](const QString& name,LabExample::Prop& out)
+  {
+    const Prop* prop=scene->getPropByName(name);
+    if(!prop) return false;
+    out.name=prop->name();
+    out.position=prop->position();
+    out.scale=prop->scale();
+    out.rotation=prop->rotation();
+    return true;
+  };
+  hooks.placeProp=[this](const LabExample::Prop& p)
+  {
+    Prop* prop=scene->getPropByName(p.name);
+    if(!prop) return false;
+    prop->setPosition(p.position.x(),p.position.y(),p.position.z());
+    prop->setScale(p.scale.x(),p.scale.y(),p.scale.z());
+    prop->setRotation(p.rotation.x(),p.rotation.y(),p.rotation.z());
+    if(scene->propManager()->getSelectedPropId()==prop->id()) updatePropSpins(prop->position(),prop->rotation(),prop->scale());
+    ui->animationView->update();
+    return true;
+  };
   m_scriptLabPanel->setSceneHooks(hooks);
   connect(ui->animationView,&AnimationView::propClicked,this,[this](Prop* prop)
   {
-    if(prop) m_scriptLabPanel->selectPrim(prop->name());
+    if(!prop) return;
+    m_scriptLabPanel->selectPrim(prop->name());
+    m_scriptLabPanel->touchPrim(prop->name());   // job A1: a click on a prim's prop is a touch
   });
   // and lets the RLV camera limits limit the 3D view's camera, off until its box is ticked (job 7b)
   CameraOverride* cameraOverride=new CameraOverride(this);

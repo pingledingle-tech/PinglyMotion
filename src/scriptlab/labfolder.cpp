@@ -442,7 +442,7 @@ void LabFolder::tagLog(const Linkset& linkset, QJsonObject& answer)
   answer["objects"] = objects;
 }
 
-QJsonObject LabFolder::run(const Linkset& linkset, const QJsonObject& options, RlvState* rlv)
+QJsonObject LabFolder::run(const Linkset& linkset, const QJsonObject& options, RlvState* rlv, lsl::Session* session)
 {
   QJsonObject out{{"linkset", linkset.toJson()}};
   if (!linkset.error.isEmpty())
@@ -476,7 +476,7 @@ QJsonObject LabFolder::run(const Linkset& linkset, const QJsonObject& options, R
                      .arg(broken.size()).arg(broken.join(", "));
     return out;
   }
-  QJsonObject answer = lsl::Control::run(request(linkset, options), rlv);
+  QJsonObject answer = lsl::Control::run(request(linkset, options), rlv, session);
   if (!answer.value("ok").toBool())
   {
     out["ok"] = false;

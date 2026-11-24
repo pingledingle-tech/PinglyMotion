@@ -240,6 +240,15 @@ Built in pull request 443 (23 Nov 2026). The texts are in `src/scriptlab/scriptl
 | LABNEW-46 | 2 Tip on hover | Show effects in 3D view, for screen readers, when on | On: the 3D view shows what the scripts do. | in the program (pull request 443, 23 Nov 2026) | job U3 |
 | LABNEW-47 | 2 Tip on hover | Show effects in 3D view, for screen readers, when off | Off. | in the program (pull request 443, 23 Nov 2026) | job U3 |
 
+### Script Lab: props from prims (job A1)
+
+Built in pull request 447 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` checks them letter for letter. The program puts in the prop's name (%1) and the reason (%2).
+
+| ID | Place | Trigger | Text | Status | Used by |
+|---|---|---|---|---|---|
+| LABPRIM-01 | 4 What to do next | Event log: a click on a prop in the 3D view, before the touch it sends | You clicked %1. | in the program (pull request 447, 24 Nov 2026) | job A1 |
+| LABPRIM-02 | 8 Warning | Status line: the touch from a click could not be sent | Error: the touch on %1 was not sent. %2 | in the program (pull request 447, 24 Nov 2026) | job A1 |
+
 ### Library panel and two figures (drawn in the mockup, 23 Nov 2026)
 
 Drafts for the library panel (roadmap item 6, issue 19) and for two figures in one scene (Expert mode only), drawn in `docs/mockup/index.html` and described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6l and 6m. Nothing is built yet; the project owner looks at the mockup first. `<clip name>` and `<file name>` stand for the real name. The mockup's own helper texts (for example "Mockup: no library folder") are not program texts and are not listed.
