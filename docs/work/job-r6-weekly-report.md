@@ -1,6 +1,6 @@
 Branch: job/r6-weekly-report
-Status: active
-Pull request: pending
+Status: done
+Pull request: #479
 Files:
 - tools/weekly_report.py
 - tests/test_weekly_report.py
