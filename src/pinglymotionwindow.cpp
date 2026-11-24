@@ -607,6 +607,14 @@ PinglyMotionWindow::PinglyMotionWindow() :
     }
     ui->animationView->update();
   });
+  // Script Lab chains and ribbons (job A4, part 2): a line in the 3D view between two props a script links
+  connect(m_scriptLabPanel,&ScriptLabPanel::chainsChanged,this,[this]()
+  {
+    QList<ChainLines::Line> lines;
+    for(const LabChains::Chain& chain : m_scriptLabPanel->chains())
+      lines.append(ChainLines::Line{chain.from,chain.to,chain.locked,chain.word()});
+    ui->animationView->setChainLines(lines);
+  });
   // Script Lab for beginners (job U3): the panel puts an example's props in the scene by name, lights
   // up the prop of a piece picked in its tree (the existing prop selection), and a click on a prop in
   // the 3D view picks its piece in the tree

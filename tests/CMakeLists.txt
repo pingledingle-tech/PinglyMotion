@@ -424,3 +424,9 @@ ADD_EXECUTABLE (pinglymotion_labchannelmap_tests tst_labchannelmap.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_labchannelmap_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES (pinglymotion_labchannelmap_tests pinglymotion_core Qt6::Core Qt6::Test)
 ADD_TEST (NAME labchannelmap COMMAND pinglymotion_labchannelmap_tests)
+
+# Script Lab job A4, part 2: chain and ribbon lines between two parts
+ADD_EXECUTABLE (pinglymotion_labchains_tests tst_labchains.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labchains_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab ${CMAKE_CURRENT_BINARY_DIR})
+TARGET_LINK_LIBRARIES (pinglymotion_labchains_tests pinglymotion_shared pinglymotion_core Qt6::Core Qt6::Gui Qt6::Test)
+ADD_TEST (NAME labchains COMMAND pinglymotion_labchains_tests)
