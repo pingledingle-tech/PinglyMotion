@@ -18,6 +18,7 @@ Files:
 - tests/paneldocks/tst_paneldocks.cpp
 - tests/dialogfit/tst_dialogfit.cpp
 - tests/repeat/**
+- tests/laterfile.h
 
 ## What
 
