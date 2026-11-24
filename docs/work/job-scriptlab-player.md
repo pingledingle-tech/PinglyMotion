@@ -1,5 +1,5 @@
 Branch: job/scriptlab-player
-Status: active
+Status: done
 Pull request: #454
 Files:
 - src/scriptlab/labplayer.*
