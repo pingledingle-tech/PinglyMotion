@@ -1,6 +1,6 @@
 Branch: job/scriptlab-channel-map
 Status: active
-Pull request: pending
+Pull request: #453
 Files:
 - src/scriptlab/labchannelmap.*
 - src/scriptlab/channelmapview.*
