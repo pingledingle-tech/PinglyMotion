@@ -1,6 +1,6 @@
 Branch: docs/cleanup-24nov
-Status: active
-Pull request: pending
+Status: done
+Pull request: #481
 Files:
 - CLAUDE.md
 - docs/ROADMAP.md
