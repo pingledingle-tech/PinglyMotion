@@ -1,6 +1,6 @@
 Branch: job/ux-b-scriptlab-window
 Status: active
-Pull request: pending
+Pull request: #464
 Files:
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/labtabs.*
