@@ -264,10 +264,12 @@ void LabWatcher::updateWatchedPaths(const QStringList& folders)
   QStringList paths = folders;
   for (auto it = m_snapshot.constBegin(); it != m_snapshot.constEnd(); ++it) paths << QDir(m_folder).filePath(it.key());
   for (auto it = m_notecards.constBegin(); it != m_notecards.constEnd(); ++it) paths << QDir(m_folder).filePath(it.key());
-  if (!paths.isEmpty()) m_watcher->addPaths(paths);
+  const QStringList failed = paths.isEmpty() ? QStringList() : m_watcher->addPaths(paths);
   // job T2: when the folder itself cannot be watched (it is gone, or the system refused the
-  // watch), look at it every RETRY_MS until it can; stop looking once the watch is back
-  const bool watched = !m_folder.isEmpty() && m_watcher->directories().contains(m_folder);
+  // watch), look at it every RETRY_MS until it can; stop looking once the watch is back. The
+  // answer of addPaths decides, not the watcher's list: on Windows that list can still hold a
+  // folder the system has already dropped, until the "removed" notice arrives.
+  const bool watched = !m_folder.isEmpty() && folders.contains(m_folder) && !failed.contains(m_folder);
   if (m_folder.isEmpty() || watched) m_retry.stop();
   else if (!m_retry.isActive()) m_retry.start();
 }
