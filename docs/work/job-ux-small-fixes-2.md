@@ -5,11 +5,15 @@ Files:
 - src/dialogfit.*
 - src/textsize.*
 - src/hintcard.*
+- src/guidancespec.h
+- src/aiconnectdialog.cpp
+- src/scriptlab/labhelpview.*
+- examples/objects/**
+- docs/EXAMPLES.md
 - src/scriptlab/scriptlabpanel.*
 - src/scriptlab/scriptlabsection.*
 - src/scriptlab/labbeginner.*
 - src/scriptlab/labrestrictionchoice.*
-- src/scriptlab/labhelp.*
 - src/pinglymotionwindow.cpp
 - src/theme.*
 - src/CMakeLists.txt

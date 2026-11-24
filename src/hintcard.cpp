@@ -126,7 +126,7 @@ HintCard::HintCard(QWidget* parent) : QFrame(parent)
   column->addLayout(foot);
 
   connect(m_next, &QToolButton::clicked, this, &HintCard::nextRequested);
-  connect(m_close, &QToolButton::clicked, this, &HintCard::nextRequested);
+  connect(m_close, &QToolButton::clicked, this, &HintCard::closeRequested);
   connect(m_hintsOff, &QToolButton::clicked, this, &HintCard::hintsOffRequested);
   applyLook();
   fitWidth();
@@ -193,12 +193,12 @@ void HintCard::applyLook()
   m_dots->update();
 }
 
-// Esc on the card goes to the next card, as in the mockup
+// Esc on the card closes it, as its close button does
 void HintCard::keyPressEvent(QKeyEvent* event)
 {
   if (event->key() == Qt::Key_Escape)
   {
-    emit nextRequested();
+    emit closeRequested();
     return;
   }
   QFrame::keyPressEvent(event);
@@ -212,6 +212,7 @@ HintCards::HintCards(QWidget* host, TargetFor targetFor) :
 {
   m_card->hide();
   connect(m_card, &HintCard::nextRequested, this, &HintCards::next);
+  connect(m_card, &HintCard::closeRequested, this, &HintCards::close);
   connect(m_card, &HintCard::hintsOffRequested, this, &HintCards::hintsOffRequested);
   host->installEventFilter(this);
 }
@@ -223,6 +224,8 @@ bool HintCards::cardShown() const
 
 void HintCards::setHintsOn(bool on)
 {
+  // hints turned off: a closed card is forgotten, so turning them on again shows the next card
+  if (!on) m_closed = false;
   m_hintsOn = on;
   refresh();
 }
@@ -258,8 +261,19 @@ void HintCards::next()
   refresh();
 }
 
+void HintCards::close()
+{
+  const bool shown = cardShown();
+  if (m_index < GuidanceSpec::cardCount) ++m_index;
+  UserSettings::setHintCard(m_index);
+  m_closed = true;
+  refresh();
+  if (shown) emit cardClosed();
+}
+
 void HintCards::restart()
 {
+  m_closed = false;
   m_index = 0;
   UserSettings::setHintCard(0);
   refresh();
@@ -292,7 +306,7 @@ void HintCards::refreshNow()
     ++m_index;
     UserSettings::setHintCard(m_index);
   }
-  if (!m_hintsOn || !m_open || m_index >= GuidanceSpec::cardCount)
+  if (m_closed || !m_hintsOn || !m_open || m_index >= GuidanceSpec::cardCount)
   {
     m_card->hide();
     return;

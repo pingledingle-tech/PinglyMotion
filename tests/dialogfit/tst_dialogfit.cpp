@@ -11,6 +11,9 @@
  */
 #include <QAbstractButton>
 #include <QDialog>
+#include <QDockWidget>
+#include <QLabel>
+#include <QMainWindow>
 #include <QDir>
 #include <QFile>
 #include <QPushButton>
@@ -230,6 +233,80 @@ class TestDialogFit : public QObject
       QVERIFY2(problem(dialog, area).isEmpty(), qPrintable(QStringLiteral("100: ") + problem(dialog, area)));
       QVERIFY(dialog.width() < at200.width() || dialog.height() < at200.height());
       QCOMPARE(dialog.size(), at100);
+    }
+
+    // Ctrl+0 after 200 percent: every open dialog goes back to exactly the size it had at 100 percent
+    // (the project owner's test, 24 Nov 2026: the text went back, the windows stayed a little too big)
+    void everyDialogShrinksBackAfterCtrl0()
+    {
+      const QRect area(0, 0, 1920, 1040);
+      DialogFit::setAreaForTests(area);
+      for (const Maker& maker : makers())
+      {
+        TextSize::apply(100);
+        std::unique_ptr<QDialog> dialog(maker.make());
+        dialog->show();
+        settle();
+        const QSize at100 = dialog->size();
+        for (int percent : {125, 150, 175, 200})
+        {
+          TextSize::apply(percent);
+          settle();
+        }
+        TextSize::apply(TextSize::Default);   // what Ctrl+0 does
+        settle();
+        QVERIFY2(dialog->size() == at100,
+                 qPrintable(QStringLiteral("%1: %2x%3 after Ctrl+0, %4x%5 at 100 percent").arg(QLatin1String(maker.name))
+                              .arg(dialog->width()).arg(dialog->height()).arg(at100.width()).arg(at100.height())));
+      }
+    }
+
+    // the panels too: a docked panel pushed wider (or taller) at 200 percent is exactly as big as at
+    // 100 percent again after Ctrl+0, and the room the user gave it beyond its smallest size stays
+    void panelsShrinkBackAfterCtrl0()
+    {
+      QMainWindow window;
+      window.setCentralWidget(new QWidget(&window));
+      window.resize(1600, 1000);
+      auto panel = [&window](const char* name, Qt::DockWidgetArea area) {
+        QDockWidget* dock = new QDockWidget(QString::fromLatin1(name), &window);
+        dock->setObjectName(QString::fromLatin1(name));
+        QLabel* label = new QLabel(QStringLiteral("A panel whose text decides its smallest size"), dock);
+        label->setMinimumHeight(label->sizeHint().height());
+        dock->setWidget(label);
+        window.addDockWidget(area, dock);
+        return dock;
+      };
+      QDockWidget* left = panel("left", Qt::LeftDockWidgetArea);
+      QDockWidget* bottom = panel("bottom", Qt::BottomDockWidgetArea);
+      QDockWidget* floating = panel("floating", Qt::RightDockWidgetArea);
+      floating->setFloating(true);
+      window.show();
+      settle();
+      // the user gave the left panel 40 pixels more than it needs
+      window.resizeDocks({left}, {DialogFit::leastPanelSize(left).width() + 40}, Qt::Horizontal);
+      floating->resize(DialogFit::leastPanelSize(floating) + QSize(30, 20));
+      settle();
+      const QList<QDockWidget*> docks = {left, bottom, floating};
+      QHash<QDockWidget*, QSize> at100;
+      for (QDockWidget* dock : docks) at100[dock] = dock->size();
+
+      auto change = [&](int percent) {
+        const QList<DialogFit::PanelSize> before = DialogFit::measurePanels(&window, docks);
+        TextSize::apply(percent);
+        settle();
+        DialogFit::followTextSize(&window, before);
+        settle();
+      };
+      change(200);
+      // bigger text: the left panel is wider, and still has its 40 pixels of room
+      QVERIFY(left->width() > at100[left].width());
+      QCOMPARE(left->width(), DialogFit::leastPanelSize(left).width() + 40);
+      QVERIFY(floating->width() > at100[floating].width());
+      change(TextSize::Default);   // what Ctrl+0 does
+      QCOMPARE(left->width(), at100[left].width());
+      QCOMPARE(bottom->height(), at100[bottom].height());
+      QCOMPARE(floating->size(), at100[floating]);
     }
 
     // with room on the screen the dialog shows all of its content

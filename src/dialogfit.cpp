@@ -9,6 +9,8 @@
 
 #include <QApplication>
 #include <QDialog>
+#include <QDockWidget>
+#include <QMainWindow>
 #include <QEvent>
 #include <QGuiApplication>
 #include <QHBoxLayout>
@@ -238,6 +240,20 @@ void DialogFit::fit(QDialog* dialog)
     // room for a vertical scroll bar so no sideways scrolling is needed
     want.rwidth() += scroll->verticalScrollBar()->sizeHint().width();
   }
+  want.setWidth(std::max(want.width(), fitter->preferred().width()));
+  if (scroll && scroll->widget() && scroll->widget()->hasHeightForWidth())
+  {
+    // wrapping text: measured at the width the content really gets, not at the width of its own
+    // size hint. Otherwise the height depends on what was measured before, and a dialog that had
+    // been at 200 percent stayed taller after Ctrl+0 (UX small fixes).
+    const QMargins m = dialog->layout()->contentsMargins();
+    const int frame = 2 * scroll->frameWidth();
+    const int bar = scroll->verticalScrollBar()->sizeHint().width();
+    const int width = std::min(want.width(), maxSize.width()) - m.left() - m.right() - frame - bar;
+    const int contentHeight = scroll->widget()->sizeHint().height();
+    const int forWidth = scroll->widget()->heightForWidth(width);
+    if (width > 0 && forWidth > 0) want.rheight() += forWidth - contentHeight;
+  }
   want = want.expandedTo(fitter->preferred());
   // a kept window keeps the size the user gave it (no smaller than its content needs)
   if (fitter->keepsSize()) want = dialog->size();
@@ -265,4 +281,68 @@ void DialogFit::fit(QDialog* dialog)
   y = std::min(y, area.bottom() + 1 - frame.height());
   y = std::max(y, area.top());
   if (x != frame.x() || y != frame.y()) dialog->move(dialog->pos() + QPoint(x - frame.x(), y - frame.y()));
+}
+
+QSize DialogFit::leastPanelSize(QDockWidget* dock)
+{
+  if (!dock) return QSize();
+  // every layout inside forgets what it measured at the old text size
+  for (QLayout* inner : dock->findChildren<QLayout*>()) inner->invalidate();
+  if (dock->layout()) dock->layout()->invalidate();
+  QSize least = dock->minimumSizeHint();
+  if (QWidget* content = dock->widget()) least = least.expandedTo(content->minimumSizeHint().expandedTo(content->minimumSize()));
+  return least.expandedTo(dock->minimumSize());
+}
+
+QList<DialogFit::PanelSize> DialogFit::measurePanels(QMainWindow* window, const QList<QDockWidget*>& docks)
+{
+  QList<PanelSize> out;
+  if (!window) return out;
+  for (QDockWidget* dock : docks)
+  {
+    if (!dock || dock->isHidden()) continue;
+    PanelSize p;
+    p.dock = dock;
+    p.floating = dock->isFloating();
+    p.area = p.floating ? 0 : int(window->dockWidgetArea(dock));
+    p.size = dock->size();
+    p.least = leastPanelSize(dock);
+    out << p;
+  }
+  return out;
+}
+
+void DialogFit::followTextSize(QMainWindow* window, const QList<PanelSize>& before)
+{
+  if (!window) return;
+  QList<QDockWidget*> wide, tall;
+  QList<int> widths, heights;
+  for (const PanelSize& p : before)
+  {
+    QDockWidget* dock = p.dock;
+    // gone, hidden, or moved since it was measured: left as it is
+    if (!dock || dock->isHidden() || dock->isFloating() != p.floating) continue;
+    if (!p.floating && int(window->dockWidgetArea(dock)) != p.area) continue;
+    const QSize least = leastPanelSize(dock);
+    // the room the user gave it beyond the smallest size stays the same
+    const QSize want(least.width() + std::max(0, p.size.width() - p.least.width()),
+                     least.height() + std::max(0, p.size.height() - p.least.height()));
+    if (p.floating)
+    {
+      if (dock->size() != want) dock->resize(want);
+      continue;
+    }
+    if (p.area == Qt::LeftDockWidgetArea || p.area == Qt::RightDockWidgetArea)
+    {
+      wide << dock;
+      widths << want.width();
+    }
+    else if (p.area == Qt::TopDockWidgetArea || p.area == Qt::BottomDockWidgetArea)
+    {
+      tall << dock;
+      heights << want.height();
+    }
+  }
+  if (!wide.isEmpty()) window->resizeDocks(wide, widths, Qt::Horizontal);
+  if (!tall.isEmpty()) window->resizeDocks(tall, heights, Qt::Vertical);
 }
