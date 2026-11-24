@@ -7,6 +7,7 @@ Files:
 - docs/TEACHING.md
 - docs/README.md
 - CREDITS.md
+- tests/test_site_mockup_m2.py
 
 ## What
 

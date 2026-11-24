@@ -64,7 +64,7 @@ Progress (what is done, what is next) is in [ROADMAP.md](ROADMAP.md); running wo
 | [design_tokens.json](design_tokens.json) | The same values for code; must agree with DESIGN_SYSTEM.md | developer | reference |
 | [UX_DECISIONS.md](UX_DECISIONS.md) | Timeline and poser as one design; the "Build order" of interface steps | AI session, developer | current guidance |
 | [POSING_UX.md](POSING_UX.md) | Older posing interface plan: mouse, keys, mockup pictures (`images/posing-ux/`) | developer | plan (older; UX_DECISIONS wins) |
-| [mockup/index.html](mockup/index.html) | Clickable picture of the planned interface (not the program) | developer | plan |
+| [mockup/index.html](mockup/index.html) | Clickable picture of the planned interface (not the program). Since 24 Nov 2026 it opens on Mockup 2, a proposal not approved until the project owner says so ([UX_DECISIONS.md](UX_DECISIONS.md), 6t); its button Approved mockup shows the approved design that GUI jobs build from | developer | plan |
 | [TEACHING_TEXTS.md](TEACHING_TEXTS.md) | Inventory of texts in the program, voice guide, the glossary | developer, AI session | current guidance |
 | [TEACHING.md](TEACHING.md) | Register of the 45 beginner texts (welcome card, tips, hints) | developer, AI session | plan (approved wording) |
 | [EASING.md](EASING.md) | Names, pictures and descriptions of the six easing choices | developer | current guidance |
