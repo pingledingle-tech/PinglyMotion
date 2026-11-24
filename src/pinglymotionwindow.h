@@ -40,6 +40,7 @@
 #include "propedit.h"
 #include "timelineclip.h"
 #include "updatechecker.h"
+#include "workmode.h"
 #include "viewtoolspec.h"
 
 class QCloseEvent;
@@ -483,6 +484,8 @@ class PinglyMotionWindow : public QMainWindow
     bool m_applyingTab=false;
     // the layout the panels stand in now, and the wide layout to go back to
     PanelWindow::Reflower m_reflower;
+    // the Animate / Script switch at the top (UX-F, src/workmode.h)
+    WorkMode::Switcher* m_workMode=nullptr;
     // the contents of the three panels and how wide they must be (src/panelcontent.h)
     QScopedPointer<MainPanels> m_panels;
     bool m_reflowPending=false;

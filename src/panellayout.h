@@ -24,6 +24,8 @@ namespace PanelLayout
   inline const char* const SettingLayoutVersion="panel_layout_version";
   // the Beginner mode's own layout (UX-E); panel_layout stays the Expert layout
   inline const char* const SettingLayoutBeginner="panel_layout_beginner";
+  // the Script side of the Animate / Script switch (UX-F); the program always starts on Animate
+  inline const char* const SettingLayoutScript="panel_layout_script";
   inline const char* const SettingWindowGeometry="main_window_geometry";
   // Retired: read once for the move, never written again.
   inline const char* const LegacyWindowState="window_state";

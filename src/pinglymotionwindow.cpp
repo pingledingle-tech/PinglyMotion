@@ -514,6 +514,27 @@ PinglyMotionWindow::PinglyMotionWindow() :
   // the Library never opens by itself (UX-A): it keeps its saved place and size and shows
   // when asked for (View > Library, Ctrl+Shift+B, the Library button)
   m_libraryDock->hide();
+  // the Animate / Script switch (UX-F, src/workmode.h): the program starts on Animate
+  {
+    WorkMode::Hooks hooks;
+    hooks.before=[this]()
+    {
+      if(m_tabState.isHidden()) togglePanelsHidden();
+      m_applyingTab=true;
+    };
+    hooks.after=[this]()
+    {
+      m_reflower.wideLayoutChanged(this,reflowDocks());
+      m_applyingTab=false;
+      m_hidePanelsAction->setChecked(false);
+      ui->optionsShowTimelineAction->setChecked(!m_timelineDock->isHidden());
+      updateBeginnerRow();
+    };
+    hooks.layoutToSave=[this]() { return m_reflower.layoutToSave(this); };
+    hooks.expert=[]() { return UserSettings::expertMode(); };
+    m_workMode=new WorkMode::Switcher(this,reflowDocks(),hooks,this);
+    m_workMode->normaliseAtStart();
+  }
   // at large text or in a small window the panels rearrange (docs/UX_DECISIONS.md, 6c);
   // decided once the window has its size
   scheduleReflow();
@@ -1317,6 +1338,7 @@ void PinglyMotionWindow::buildMenus()
     UserSettings::setDarkTheme(!light);
     Theme::apply(!light);
     if(m_topBar) m_topBar->setDark(!light);
+    if(m_workMode) m_workMode->applyLook();
     if(m_emptyState) m_emptyState->applyLook();
     if(m_viewToolbar) m_viewToolbar->applyLook();
     if(m_reasonLine) m_reasonLine->applyLook();
@@ -1578,6 +1600,8 @@ void PinglyMotionWindow::buildTopBar()
   sources.resetLayout=findChild<QAction*>(QLatin1String(MenuSpec::viewResetLayout.id));
   m_topBar=new TopBar(ui->toolBar,sources,this);
   m_topBar->setDark(UserSettings::darkTheme());
+  // the Animate / Script switch at the left end of the bar (UX-F)
+  m_workMode->addToBar(ui->toolBar);
   connect(m_topBar,&TopBar::themeRequested,this,[this]()
   {
     if(m_lightThemeAction) m_lightThemeAction->toggle();
@@ -1970,6 +1994,8 @@ QList<QDockWidget*> PinglyMotionWindow::panelDocks() const
 // docked and shown. Panels hidden by Tab count as shown again.
 void PinglyMotionWindow::resetPanelLayout()
 {
+  // hiding the Script Lab here is not a switch to Animate (UX-F)
+  WorkMode::Switcher::Hold hold(m_workMode);
   m_applyingTab=true;
   m_tabState.reset();
   // the default layout of the mode: in Beginner mode the Joints list is closed (UX-E)
@@ -1989,6 +2015,16 @@ void PinglyMotionWindow::resetPanelLayout()
   m_applyingTab=false;
   m_hidePanelsAction->setChecked(false);
   ui->optionsShowTimelineAction->setChecked(true);
+  // both sides start again; on the Script side the Script Lab is rebuilt big and the rest closed
+  m_workMode->layoutsReset();
+  if(m_workMode->side()==WorkMode::Side::Script)
+  {
+    m_reflower.wideLayoutChanged(this,reflowDocks());
+    ui->optionsShowTimelineAction->setChecked(!m_timelineDock->isHidden());
+    updateBeginnerRow();
+    statusBar()->showMessage(WorkMode::tr(WorkMode::resetScriptMessage),5000);
+    return;
+  }
   statusBar()->showMessage(UserSettings::expertMode()
                              ? tr("Layout reset. The panels are back where they were at the first start.")
                              : BeginnerView::tr(BeginnerView::resetBeginnerMessage),5000);
@@ -2012,6 +2048,9 @@ void PinglyMotionWindow::updateBeginnerRow()
 bool PinglyMotionWindow::switchPanelLayoutForMode(bool expert)
 {
   if(expert==UserSettings::expertMode()) return false;
+  // on the Script side the layout is the Script side's own: no slot is touched, the Animate side
+  // of the new mode comes back with the next switch (UX-F)
+  if(m_workMode && m_workMode->side()==WorkMode::Side::Script) return false;
   if(m_tabState.isHidden()) togglePanelsHidden();
   UserSettings::setPanelLayoutFor(!expert,m_reflower.layoutToSave(this));
   UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
@@ -3502,8 +3541,8 @@ void PinglyMotionWindow::saveUserSettings()
   if(m_tabState.isHidden()) togglePanelsHidden();
   UserSettings::setMainWindowGeometry(saveGeometry());
   // the user's own wide layout, also while the panels are rearranged (docs/UX_DECISIONS.md, 6c)
-  UserSettings::setPanelLayoutFor(UserSettings::expertMode(),m_reflower.layoutToSave(this));
-  UserSettings::setPanelLayoutVersion(PanelLayout::CurrentVersion);
+  // Animate and Script each keep their layout: the side shown now is saved into its own slot
+  m_workMode->saveCurrentLayout();
 
   UserSettings::writeSettings();
 }
