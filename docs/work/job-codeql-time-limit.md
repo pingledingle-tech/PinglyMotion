@@ -1,5 +1,5 @@
 Branch: job/codeql-time-limit
-Status: active
+Status: done
 Pull request: #499
 Files:
 - .github/workflows/codeql.yml
