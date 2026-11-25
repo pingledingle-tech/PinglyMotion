@@ -621,7 +621,7 @@ class TestTwoFigures : public QObject
       // unsaved changes: ask first; Cancel removes nothing; Save, then remove saves that figure first
       QVERIFY(remove.contains(QStringLiteral("if(anim->dirty() && !m_quietDialogs)")));
       QVERIFY(remove.contains(QStringLiteral("if(choice==FigureRemove::Choice::Cancel) return false;")));
-      QVERIFY(remove.contains(QStringLiteral("makeFigureActive(index);\n      if(!fileSave() || anim->dirty()) return false;")));
+      QVERIFY(remove.contains(QStringLiteral("makeFigureActive(index);\n      if(!fileSave() || !kept || kept->dirty()) return false;")));
       // the file is never written by Remove; the other figure keeps its place
       QVERIFY(!remove.contains(QStringLiteral("saveBVH")));
       QVERIFY(remove.contains(QStringLiteral("scene->removeAnimation(anim);")));

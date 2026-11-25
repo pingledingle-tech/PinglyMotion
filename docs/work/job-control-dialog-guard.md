@@ -1,14 +1,15 @@
 Branch: job/control-dialog-guard
 Status: active
-Pull request: pending
+Pull request: #514
 Files:
 - src/controlserver.*
 - src/dialogguard.h
+- src/documentwatch.h
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindow.h
 - src/pinglymotionwindowfile.cpp
 - tests/tst_control.cpp
-- tests/windowsource.h
+- tests/twofigures/tst_twofigures.cpp
 - tests/documentsafety/**
 - tests/CMakeLists.txt
 - docs/CONTROL.md

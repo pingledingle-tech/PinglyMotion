@@ -78,6 +78,33 @@ characters); the status bar shows it. `POST /api/heartbeat` (with the key, empty
 the client is still there without doing anything. The MCP server sends the AI tool's name from MCP
 `initialize` and a heartbeat every 10 seconds.
 
+### While a dialog is open
+
+While the user has a dialog, a message box, a file picker or a menu open in PinglyMotion, commands that
+change the document or the window are not run. They get `503` with the header `Retry-After: 2` and
+`{"ok": false, "busy": "dialog", "retry_after": 2, "error": "A dialog is open in PinglyMotion. Close it and try again. ..."}`.
+Nothing changes. Send the command again after a short wait, or ask the user to close the dialog.
+Commands that only read still run:
+
+| Command | While a dialog is open | Why |
+|---|---|---|
+| `state`, `joints`, `keys` | runs | reads only |
+| `describe_motion`, `describe_body` | runs | reads only |
+| `motion_script`, `check_animation` | runs | reads only |
+| `find_reference` | runs | reads the library index, not the animation |
+| `rlv_state`, `lab_result` | runs | read the Script Lab state only |
+| `lsl_check`, `lsl_lint` | runs | check script text, change nothing |
+| `get_pose`, `describe_pose` | `503` | `frame` moves the current frame |
+| `screenshot` | `503` | draws the 3D view and may move the frame |
+| `set_pose`, `set_position`, `delete_key`, `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `set_figure`, `set_camera` | `503` | change the animation or the window |
+| `new_animation`, `open_file`, `load_reference`, `load_motion_script`, `save_file`, `export_anim` | `503` | replace, change or write the animation |
+| `rlv_command`, `rlv_reset`, `lsl_run`, `lsl_event`, `lab_watch`, `lab_unwatch`, `lab_replay` | `503` | change the Script Lab state |
+| any other name | `503` | only what is known to be safe runs |
+
+`GET /api/commands`, `GET /api/hello` and `POST /api/heartbeat` always answer. The MCP server passes the
+`503` answer on as an ordinary error. In the program, a file action whose dialog was open when the
+animation changed stops and says so in the status line, instead of going on with the old animation.
+
 ### Checking that it is PinglyMotion
 
 `control.json` stays behind if PinglyMotion crashes, and another program could then take the port.

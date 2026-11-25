@@ -19,6 +19,7 @@
 #include <QTemporaryDir>
 #include <QSettings>
 #include <QToolButton>
+#include <QDialog>
 
 #include <cmath>
 
@@ -43,6 +44,7 @@
 #include "aiassistant.h"
 #include "controlindicator.h"
 #include "controlserver.h"
+#include "dialogguard.h"
 #include "emptystate.h"
 #include "posedescribe.h"
 #include "scenestate.h"
@@ -276,6 +278,9 @@ class ControlTest : public QObject
     void connectionFileFailureStopsTheServer();
     void connectionFileFailureKeepsTheOldFile();
     void serverReportsClientAndCommand();
+    void serverRefusesChangesWhileADialogIsOpen();
+    void serverRefusesChangesWhileAFilePickerIsOpen();
+    void onlyReadingCommandsRunWhileADialogIsOpen();
     void indicatorShowsTheState();
     void rlvAcceptanceCheck();
     void rlvAnswersEveryCommand();
@@ -3704,6 +3709,121 @@ void ControlTest::projectKeepsBigPicturesExact()
   QCOMPARE(marks.size(), 2);
   QCOMPARE(marks[0].at, QPointF(2000000000.0, 0.0));
   QCOMPARE(marks[1].at, QPointF(0.0, 2000000000.0));
+}
+
+// ------------------------------------------------------------ a dialog is open
+
+// A dialog runs a nested event loop: a command that changes the document gets 503 then, the
+// document stays as it was, and the same command works once the dialog is closed
+void ControlTest::serverRefusesChangesWhileADialogIsOpen()
+{
+  QSignalSpy contact(m_server, &ControlServer::contact);
+  bool sawDialog = false;
+  QByteArray pose, open, fresh, state;
+  QDialog dialog;
+  QTimer::singleShot(0, &dialog, [&]()
+  {
+    sawDialog = ControlServer::dialogOpen();
+    pose = post(R"({"command":"set_pose","frame":3,"joints":{"lShin":[30,0,0]}})", "X-PinglyMotion-Client: Test AI\r\n");
+    open = post(R"({"command":"open_file","path":"walk.dingle"})");
+    fresh = post(R"({"command":"new_animation"})");
+    state = post(R"({"command":"state"})");
+    dialog.reject();
+  });
+  dialog.exec();
+  QVERIFY(sawDialog);
+
+  // the answer: 503, Retry-After 2, and a JSON error that says what to do
+  QCOMPARE(statusOf(pose), 503);
+  QVERIFY(pose.startsWith("HTTP/1.1 503 Service Unavailable\r\n"));
+  QVERIFY(pose.left(pose.indexOf("\r\n\r\n")).contains("\r\nRetry-After: 2\r\n"));
+  const QJsonObject busy = bodyOf(pose);
+  QCOMPARE(busy["ok"].toBool(true), false);
+  QCOMPARE(busy["busy"].toString(), QString("dialog"));
+  QCOMPARE(busy["retry_after"].toInt(), 2);
+  QVERIFY(busy["error"].toString().startsWith("A dialog is open in PinglyMotion. Close it and try again."));
+  QCOMPARE(statusOf(open), 503);
+  QCOMPARE(statusOf(fresh), 503);
+
+  // nothing changed: no key, no file opened
+  BVHNode* shin = findNodeOrNull(m_animation, "lShin");
+  QVERIFY(shin);
+  QVERIFY(!shin->isKeyframe(2));
+  QCOMPARE(m_host->opened, QString());
+  QCOMPARE(m_host->animation(), m_animation);
+
+  // reading works while the dialog is open
+  QCOMPARE(statusOf(state), 200);
+  QCOMPARE(bodyOf(state)["frames"].toInt(), 30);
+
+  // the status bar sees the refused command as a failed one
+  QVERIFY(contact.count() >= 1);
+  QCOMPARE(contact.first().at(0).toString(), QString("Test AI"));
+  QCOMPARE(contact.first().at(1).toString(), QString("set_pose"));
+  QCOMPARE(contact.first().at(2).toBool(), false);
+
+  // the dialog is closed: the same command works
+  QVERIFY(!ControlServer::dialogOpen());
+  const QByteArray again = post(R"({"command":"set_pose","frame":3,"joints":{"lShin":[30,0,0]}})");
+  QCOMPARE(statusOf(again), 200);
+  QVERIFY(bodyOf(again)["ok"].toBool());
+  QVERIFY(!again.contains("Retry-After"));
+  QVERIFY(shin->isKeyframe(2));
+}
+
+// a native file picker is not a Qt window: the DialogGuard around it (src/dialogguard.h) counts
+void ControlTest::serverRefusesChangesWhileAFilePickerIsOpen()
+{
+  QCOMPARE(m_animation->getNumberOfFrames(), 30);
+  {
+    const DialogGuard open;
+    const QByteArray refused = post(R"({"command":"set_frame_count","frames":40})");
+    QCOMPARE(statusOf(refused), 503);
+    QCOMPARE(bodyOf(refused)["busy"].toString(), QString("dialog"));
+    QCOMPARE(m_animation->getNumberOfFrames(), 30);
+    QCOMPARE(statusOf(post(R"({"command":"save_file","path":"guarded.dingle"})")), 503);
+    QCOMPARE(statusOf(post(R"({"command":"export_anim","path":"guarded.anim"})")), 503);
+    QCOMPARE(statusOf(post(R"({"command":"keys"})")), 200);
+  }
+  const QByteArray done = post(R"({"command":"set_frame_count","frames":40})");
+  QCOMPARE(statusOf(done), 200);
+  QVERIFY(bodyOf(done)["ok"].toBool());
+  QCOMPARE(m_animation->getNumberOfFrames(), 40);
+}
+
+// the table in controlserver.cpp and docs/CONTROL.md: only commands that read run during a dialog
+void ControlTest::onlyReadingCommandsRunWhileADialogIsOpen()
+{
+  const QStringList allowed = {"state", "joints", "keys", "describe_motion", "describe_body", "motion_script",
+                               "check_animation", "find_reference", "rlv_state", "lab_result", "lsl_check", "lsl_lint"};
+  QStringList known;
+  for (const QJsonValue& entry : ControlApi::commandList()) known << entry.toObject().value("name").toString();
+  QVERIFY(known.size() >= 30);
+  for (const QString& name : allowed) QVERIFY2(known.contains(name), qPrintable(name));
+  for (const QString& name : known)
+    QVERIFY2(ControlServer::allowedWhileDialogOpen(name) == allowed.contains(name), qPrintable(name));
+  // unknown and missing names are refused too
+  QVERIFY(!ControlServer::allowedWhileDialogOpen(QString()));
+  QVERIFY(!ControlServer::allowedWhileDialogOpen("no_such_command"));
+  QVERIFY(!ControlServer::allowedWhileDialogOpen("STATE"));
+
+  // the 503 error names the same commands
+  {
+    const DialogGuard open;
+    const QString error = bodyOf(post(R"({"command":"play"})"))["error"].toString();
+    for (const QString& name : allowed) QVERIFY2(error.contains(name), qPrintable(name));
+  }
+
+  // docs/CONTROL.md lists the same allowed commands
+  QFile doc(QStringLiteral(PINGLYMOTION_TOOLS "/../docs/CONTROL.md"));
+  QVERIFY(doc.open(QIODevice::ReadOnly));
+  const QString text = QString::fromUtf8(doc.readAll());
+  const int section = text.indexOf("### While a dialog is open");
+  QVERIFY(section > 0);
+  const QString part = text.mid(section, text.indexOf("\n## ", section) - section);
+  for (const QString& name : allowed) QVERIFY2(part.contains("`" + name + "`"), qPrintable(name));
+  QVERIFY(part.contains("`503`"));
+  QVERIFY(part.contains("Retry-After"));
 }
 
 QTEST_MAIN(ControlTest)

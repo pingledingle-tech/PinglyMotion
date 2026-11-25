@@ -61,6 +61,17 @@ class ControlServer : public QObject
     // a client or command name made safe to show: printable ASCII, at most 40 characters
     static QString clientName(const QByteArray& header);
 
+    // While a dialog, message box, file picker or menu is open the program runs a nested event
+    // loop, and a command would run in the middle of the code that opened it. Then only the
+    // commands of allowedWhileDialogOpen() run; every other command gets HTTP 503 with a
+    // Retry-After header (docs/CONTROL.md, "While a dialog is open").
+    // true when a Qt modal window or popup is open, or a DialogGuard exists (src/dialogguard.h)
+    static bool dialogOpen();
+    // the commands that only read and change nothing in the document or the window
+    static bool allowedWhileDialogOpen(const QString& command);
+    // seconds in the Retry-After header of that answer
+    static constexpr int DIALOG_RETRY_SECONDS = 2;
+
   signals:
     // a request with the right key; command is empty for a heartbeat
     void contact(const QString& client, const QString& command, bool ok);
@@ -72,7 +83,7 @@ class ControlServer : public QObject
     void onReadyRead();
 
   private:
-    void respond(QTcpSocket* socket, int status, const QByteArray& body);
+    void respond(QTcpSocket* socket, int status, const QByteArray& body, const QByteArray& extraHeaders = QByteArray());
     // checks Host, Origin and the key as soon as the headers are in, before any body is read;
     // false = refused or already answered (hello)
     bool admit(QTcpSocket* socket, const QByteArray& head);
