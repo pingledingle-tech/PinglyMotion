@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>PinglyMotion User Manual</title>
+<meta name="description" content="The PinglyMotion user manual: install, animate, Script Lab, AI assistants, shortcuts and troubleshooting.">
+<link rel="stylesheet" href="site.css">
+<style>
+.manual{max-width:62rem;margin:0 auto}
+.manual img{max-width:100%;height:auto;border:1px solid var(--border,#8884);border-radius:6px;display:block;margin:.75rem 0}
+.manual .table-wrap{overflow-x:auto;margin:1rem 0}
+.manual table{border-collapse:collapse;width:100%}
+.manual th,.manual td{border:1px solid var(--border,#8886);padding:.35rem .6rem;text-align:left;vertical-align:top}
+.manual pre{overflow-x:auto;padding:.75rem;border:1px solid var(--border,#8886);border-radius:6px}
+.manual h2{margin-top:2.5rem}
+@media print{
+  html,body{background:#fff !important;color:#111 !important}
+  .skip,.top,nav.site{display:none}
+  .manual img{max-height:22cm;width:auto}
+  .manual tr,.manual img{break-inside:avoid}
+  .manual h2,.manual h3{break-after:avoid}
+  a{color:#0645ad}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#manual">Skip to content</a>
+<div class="wrap">
+<nav class="site" aria-label="Site"><ul><li><a href="index.html#en">Home</a></li><li><a href="download.html#en">Download</a></li><li><a href="PinglyMotion-Manual.pdf">Manual as PDF</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues">Report a bug</a></li></ul></nav>
+<main class="manual" id="manual" lang="en">
+<!-- Made by tools/site/build_manual.py from docs/MANUAL.md. Do not edit by hand. -->
+<h1 id="pinglymotion-user-manual">PinglyMotion User Manual</h1>
+<p>For PinglyMotion 0.3.0, an early preview. Written for people who are new to animation and to scripting.</p>
+<p>This manual says what each part of the program does. It says what is finished and what is not. Where something is a trial, or not tested in Second Life, it says so.</p>
+<p>All pictures are real screenshots of the program (Linux build, dark theme). The one picture marked "diagram" was drawn for this manual.</p>
+<p><strong>Contents</strong></p>
+<ul><li><a href="#start-here">Start here</a>: what it is, the big picture, who it is for, where to start</li><li><a href="#quick-start-the-first-five-minutes">Quick start: the first five minutes</a></li><li><a href="#what-is-finished-and-what-is-not">What is finished and what is not</a></li><li><a href="#chapter-1-install-and-start">Chapter 1: Install and start</a></li><li><a href="#chapter-2-the-window-in-one-picture">Chapter 2: The window in one picture</a></li><li><a href="#chapter-3-your-first-animation">Chapter 3: Your first animation</a></li><li><a href="#chapter-4-posing-in-detail">Chapter 4: Posing in detail</a></li><li><a href="#chapter-5-the-timeline-keys-and-playback">Chapter 5: The timeline, keys and playback</a></li><li><a href="#chapter-6-the-3d-view-and-the-camera">Chapter 6: The 3D view and the camera</a></li><li><a href="#chapter-7-props">Chapter 7: Props</a></li><li><a href="#chapter-8-the-library">Chapter 8: The library</a></li><li><a href="#chapter-9-files-and-formats">Chapter 9: Files and formats</a></li><li><a href="#chapter-10-script-lab-for-beginners">Chapter 10: Script Lab for beginners</a></li><li><a href="#chapter-11-ai-assistants">Chapter 11: AI assistants</a></li><li><a href="#chapter-12-the-live-link-to-aurora">Chapter 12: The live link to Aurora</a></li><li><a href="#chapter-13-setup-themes-and-help">Chapter 13: Setup, themes and help</a></li><li><a href="#chapter-14-keyboard-shortcuts-and-mouse">Chapter 14: Keyboard shortcuts and mouse</a></li><li><a href="#chapter-15-every-menu-item">Chapter 15: Every menu item</a></li><li><a href="#chapter-16-troubleshooting-and-feedback">Chapter 16: Troubleshooting and feedback</a></li><li><a href="#chapter-17-credits">Chapter 17: Credits</a></li><li><a href="#glossary">Glossary</a></li></ul>
+<hr>
+<h2 id="start-here">Start here</h2>
+<h3 id="what-pinglymotion-is-for">What PinglyMotion is for</h3>
+<p>Second Life is a virtual world. People there use animations to make their avatars stand, sit, dance and wave. An <strong>animation</strong> is a movement saved in a file.</p>
+<p>PinglyMotion helps you make those movements. It is for free. It is open source, which means anyone can read and improve the program.</p>
+<p>PinglyMotion does three things:</p>
+<ol><li><strong>Animate a figure.</strong> You bend the joints of a 3D figure. You save poses at moments in time. The program fills in the movement between them. You export the result for Second Life.</li><li><strong>Test scripts safely.</strong> Objects in Second Life use scripts. PinglyMotion has a safe sandbox, the <strong>Script Lab</strong>, where you can run RLV and LSL scripts on your own computer. Nothing you do there reaches Second Life.</li><li><strong>Work with an AI helper, if you want.</strong> An AI assistant on your own computer can pose the figure for you. It is off until you turn it on. Everything works without it.</li></ol>
+<p>PinglyMotion is an <strong>early preview</strong>. It is made for trying out and for feedback. Expect rough edges. See <a href="#what-is-finished-and-what-is-not">What is finished and what is not</a>.</p>
+<h3 id="the-big-picture">The big picture</h3>
+<p><img src="manual/img/overview.png" alt="Diagram: the Animate side, the Script side, the AI assistant, the library, props and examples, and your files, all in one window." loading="lazy"></p>
+<p><em>Diagram drawn for this manual.</em></p>
+<p>The program is one window with two sides. You switch with the buttons <strong>Animate</strong> and <strong>Script</strong> at the top left.</p>
+<ul><li><strong>Animate</strong> shows the panels for making an animation: the Joints list, the 3D view, the Selected joint panel and the Timeline.</li><li><strong>Script</strong> gives most of the window to the Script Lab. The 3D view stays on the left.</li></ul>
+<p>Each side remembers its own layout. The 3D view is shared. A prop (a simple 3D shape) or the effect of a script shows up next to the figure.</p>
+<p>Other parts:</p>
+<ul><li>The <strong>Library</strong> holds 106 ready-made moves. You can start from one.</li><li><strong>Props</strong> are simple shapes you can place in the scene.</li><li>The folder <strong>examples</strong> next to the program holds files you can open and follow along with this manual.</li><li>The <strong>AI assistant</strong> is a switch at the bottom right. It is off at every start.</li></ul>
+<h3 id="who-it-is-for">Who it is for</h3>
+<ul><li><strong>Beginners.</strong> You have never made an animation or written a script. The program starts in Beginner mode. It shows a welcome card, hint cards and a Helper panel. This manual explains each word.</li><li><strong>Experienced users.</strong> You know animation tools such as Maya or Blender. Switch on Expert mode (Shift+E). You get more controls, such as curve editing and a second figure. You can choose a mouse and key style from Maya, Blender or Second Life.</li></ul>
+<h3 id="where-do-i-start">Where do I start?</h3>
+<ul><li><strong>I want to make an animation.</strong> Read the <a href="#quick-start-the-first-five-minutes">Quick start</a>. Then follow <a href="#chapter-3-your-first-animation">Chapter 3: Your first animation</a>.</li><li><strong>I want to test scripts.</strong> Go to <a href="#chapter-10-script-lab-for-beginners">Chapter 10: Script Lab for beginners</a>. You need no animation first.</li><li><strong>I want an AI to help.</strong> Read <a href="#chapter-11-ai-assistants">Chapter 11</a>.</li><li><strong>I want to know what works.</strong> Read <a href="#what-is-finished-and-what-is-not">What is finished and what is not</a>.</li></ul>
+<hr>
+<h2 id="quick-start-the-first-five-minutes">Quick start: the first five minutes</h2>
+<ol><li><strong>Download.</strong> Get the Windows zip or the Linux AppImage from the release page (see <a href="#chapter-1-install-and-start">Chapter 1</a>).</li><li><strong>Start.</strong> On Windows, extract the zip. Start <code>PinglyMotion.exe</code>. On Linux, make the AppImage executable and start it.</li><li><p><strong>Welcome card.</strong> The first start shows "Make your first animation". Choose <strong>New to animation</strong>. Press <strong>Standing</strong>.</p><p><img src="manual/img/welcome-card.png" alt="The welcome card with the choices Standing, Sitting, Dance example and Skip." loading="lazy"></p></li><li><strong>Open the Joints list.</strong> Choose <strong>View &gt; Joints</strong>. Click <strong>Left Arm: Whole Arm</strong> in the list. The figure shows rings on that joint.</li><li><strong>Save a first key.</strong> Press <strong>Set the first key</strong> at the bottom of the screen. A key is a saved pose at one moment.</li><li><strong>Pose.</strong> Drag the time marker (the slider above the Start button) to the right. In the panel <strong>Selected joint</strong>, type <code>-60</code> in the box <strong>Lean to the side</strong>. Press Enter. The arm lowers. The program saves a key for you.</li><li><strong>Play.</strong> Press <strong>Start</strong>. Press <strong>Stop</strong> to stop.</li><li><strong>Save.</strong> Press <strong>Save</strong> at the top and choose a name. The file ends in <code>.dingle</code>.</li></ol>
+<p>That is a whole animation. <a href="#chapter-3-your-first-animation">Chapter 3</a> explains each step. To make a file for Second Life, press <strong>Export</strong> (see <a href="#chapter-9-files-and-formats">Chapter 9</a>).</p>
+<p>What is not finished is listed in <a href="#what-is-finished-and-what-is-not">What is finished and what is not</a>.</p>
+<hr>
+<h2 id="what-is-finished-and-what-is-not">What is finished and what is not</h2>
+<p>Each item has one of these words:</p>
+<ul><li><strong>Built.</strong> It works in the program and has automatic tests.</li><li><strong>Partly built.</strong> Some of it works. The text says what is missing.</li><li><strong>Trial.</strong> It exists, but it is a test. It may change or break.</li><li><strong>Not built.</strong> It is planned or only an idea.</li><li><strong>Not tested in Second Life.</strong> The program does what it should on your computer. Nobody has checked yet that Second Life accepts or runs the result.</li></ul>
+<p>Dates are from the project documents of 25 November 2026.</p>
+<div class="table-wrap"><table><thead><tr><th>Part</th><th>Status</th><th>Notes</th></tr></thead><tbody><tr><td>Posing joints, keys, timeline, playback, undo</td><td>Built</td><td>Chapters 3 to 5.</td></tr><tr><td>Save as <code>.dingle</code>, open <code>.dingle</code>, <code>.bvh</code>, <code>.avm</code></td><td>Built</td><td>Old <code>.avm</code> files open and are saved as <code>.dingle</code>.</td></tr><tr><td>Export for Second Life (<code>.anim</code>)</td><td>Built</td><td>Export, upload and playback were validated in Firestorm on 21 November 2026: timing, loop, slow start and finish, hands, easing. Other viewers were not checked.</td></tr><tr><td>Import <code>.anim</code>, BVH from another skeleton, glTF</td><td>Built</td><td>Foot lock (keeping feet from sliding) is <strong>not built</strong>.</td></tr><tr><td>Library of 106 moves</td><td>Built</td><td>The moves come from open sources. Their licences are shown in the panel.</td></tr><tr><td>Props (box, sphere, cone, torus)</td><td>Built</td><td>They are simple shapes. A prop cannot be renamed yet.</td></tr><tr><td>Two figures in one scene (Expert mode)</td><td>Built</td><td>Only in Expert mode.</td></tr><tr><td>Face joints</td><td>Partly built</td><td>Face joints are parked. The Face tab exists, but the face is not a focus.</td></tr><tr><td>Script Lab: RLV commands</td><td>Built</td><td>A sandbox with 206 RLV behaviours. <strong>Not tested in Second Life.</strong> The final test is always in Second Life.</td></tr><tr><td>Script Lab: LSL scripts run in a sandbox</td><td>Partly built</td><td>282 built-in functions, a simulated clock. Some functions only record what they were asked. Many do nothing yet. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Script Lab: Live scripts, tree, props from prims</td><td>Built</td><td>One folder is one object. A prop with the same name as a prim belongs to it.</td></tr><tr><td>Script Lab: Player, Who talks to whom, Record what I do</td><td>Built</td><td><strong>Not tested in Second Life.</strong> Some parts of the 3D view do not follow the player (see Chapter 10).</td></tr><tr><td>Script Lab: Improve a setup</td><td>Partly built</td><td>Memory counts exclude the memory the code itself takes. That needs a measurement in Second Life.</td></tr><tr><td>Script Lab: OpenCollar example</td><td>Built</td><td>A real collar with 23 scripts runs in the sandbox. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Script Lab: Lua (SLua)</td><td><strong>Trial</strong></td><td>Behind a switch that is off at start. The editor gets a language choice and a <strong>Convert to SLua</strong> button. Nothing runs Lua yet. No Lua checks or suggestions. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Web version (in a browser)</td><td><strong>Trial</strong></td><td>There is a trial build only. It does not run well yet. Do not plan to use it.</td></tr><tr><td>AI assistant (local control)</td><td>Built</td><td>Off at every start. Claude: an extension is provided. ChatGPT and other tools: setup is written but <strong>not tested by us</strong>.</td></tr><tr><td>Aurora live link</td><td>Partly built</td><td>Works on Windows with a special build (a fork) of the Aurora viewer. It does not work with the normal Aurora yet.</td></tr><tr><td>Translations</td><td>Not built</td><td>The program is English only. The plumbing exists.</td></tr><tr><td>Windows code signing</td><td>Not built</td><td>Windows may warn about an unknown publisher.</td></tr><tr><td>Installer</td><td>Not built</td><td>The Windows download is a zip file.</td></tr></tbody></table></div>
+<p>Some differences between the program and the clickable mockup on the website are still being fixed. If a screen in the mockup looks different, trust this manual and the program.</p>
+<hr>
+<h2 id="chapter-1-install-and-start">Chapter 1: Install and start</h2>
+<h3 id="windows">Windows</h3>
+<ol><li>Open the release page of the project: <a href="https://github.com/pingledingle-tech/PinglyMotion/releases">https://github.com/pingledingle-tech/PinglyMotion/releases</a>.</li><li>Download the Windows zip. Also download <code>SHA256SUMS</code> if you want to check the download.</li><li>Extract the zip into a folder you choose. Keep the folder <code>data</code> next to the program.</li><li>Start <code>PinglyMotion.exe</code>.</li></ol>
+<p>The zip also holds the folder <code>examples</code> (files used in this manual), the folder <code>library</code> and the folder <code>mcp</code> (for AI assistants).</p>
+<p>There is no installer. To remove the program, delete the folder.</p>
+<h3 id="linux">Linux</h3>
+<ol><li>Download the AppImage from the release page.</li><li>Make it executable: <code>chmod +x PinglyMotion*.AppImage</code>.</li><li>Start it.</li></ol>
+<h3 id="what-you-need">What you need</h3>
+<p>A graphics card and driver with OpenGL 3.3 or newer. If the 3D view stays black, update your graphics driver.</p>
+<h3 id="what-the-program-writes-on-your-computer">What the program writes on your computer</h3>
+<ul><li>Settings: a plain file (<code>%APPDATA%\PinglyMotion</code> on Windows, <code>~/.config/PinglyMotion</code> on Linux).</li><li>An error log and the connection file for the AI assistant: in <code>%LOCALAPPDATA%\PinglyMotion</code> on Windows or <code>~/.local/share/PinglyMotion</code> on Linux.</li><li>Script Lab examples you create: in <code>Documents/PinglyMotion/Scripts</code>.</li></ul>
+<p>PinglyMotion collects no personal data and sends no telemetry. The program does look once at start for a newer version (the "Update check").</p>
+<h3 id="first-start">First start</h3>
+<p>The first start shows the welcome card (see the Quick start). Choose <strong>Skip</strong> if you want an empty figure. You can show the card again with <strong>Help &gt; Show the welcome card again</strong>.</p>
+<p><strong>Example.</strong> Start the program. Press <strong>Skip</strong> on the welcome card. You see a figure in a T-pose (arms straight out to the sides) on a checkered floor.</p>
+<hr>
+<h2 id="chapter-2-the-window-in-one-picture">Chapter 2: The window in one picture</h2>
+<p><img src="manual/img/window.png" alt="The whole window: the menu bar, the top bar, the Joints panel on the left, the 3D view in the middle with the view toolbar, the Selected joint panel on the right, the Timeline below, the status bar at the bottom." loading="lazy"></p>
+<p>From top to bottom:</p>
+<ul><li><strong>Menu bar:</strong> File, Edit, View, Help. Every menu item is listed in <a href="#chapter-15-every-menu-item">Chapter 15</a>.</li><li><p><strong>Top bar.</strong> From left to right:</p><ul><li><strong>Animate</strong> and <strong>Script</strong> switch the two sides (F7 and F8).</li><li><strong>Helper</strong> turns the Helper panel on and off.</li><li>Undo and Redo arrows.</li><li><strong>Save</strong> and <strong>Export</strong>.</li><li><strong>Script Lab</strong> and <strong>Library</strong> open those panels.</li><li><strong>Reset layout</strong> puts every panel back where it started.</li><li><strong>Setup</strong> opens the settings.</li><li>The sun button switches between the dark and the light theme.</li></ul></li><li><strong>Joints panel</strong> (left): the list of joints, with the tabs Avatar and Props.</li><li><strong>3D view</strong> (middle): the figure and the floor. Top left is the <strong>view-direction widget</strong> (click an axis end to look from there). Below it is the <strong>view toolbar</strong> with the tools Pick and pull, Look around, Move the view and Zoom.</li><li><strong>Selected joint panel</strong> (right): turns the joint you picked.</li><li><strong>Timeline</strong> (bottom): keys over time, the easing tiles, the time marker and the play buttons.</li><li><strong>Status bar</strong> (very bottom): a line of help on the left. On the right: <strong>Tips</strong>, <strong>AI Assistant</strong> and <strong>Aurora</strong> switches.</li></ul>
+<h3 id="panels-you-can-move-and-resize">Panels you can move and resize</h3>
+<p>Every panel can be:</p>
+<ul><li>dragged by its title to a new place,</li><li><strong>popped out</strong> into its own window (the small square icon in its title),</li><li>resized by dragging the dividers between panels,</li><li>hidden with the X in its title.</li></ul>
+<p>Press <strong>Tab</strong> to hide or show all panels. <strong>View &gt; Reset layout</strong> (or the <strong>Reset layout</strong> button) puts everything back. Reset layout resets both sides.</p>
+<p><strong>Example.</strong> Drag the Timeline by its title to the right side. Press <strong>Reset layout</strong>. It jumps back to the bottom.</p>
+<h3 id="animate-and-script">Animate and Script</h3>
+<p>Press <strong>Script</strong> (or F8). The Script Lab fills the right side of the window.</p>
+<p><img src="manual/img/scriptlab-start.png" alt="The Script side: the Script Lab on the right, the 3D view on the left. Nothing is watched yet, so it offers Make example project, Watch folder, New folder and Try the example scripts." loading="lazy"></p>
+<p>Press <strong>Animate</strong> (or F7). Your animation panels are back as you left them.</p>
+<h3 id="the-helper">The Helper</h3>
+<p>The <strong>Helper</strong> button shows a small panel at the bottom right of the 3D view. It shows the next hint card, and three short lessons:</p>
+<ul><li><strong>Make your first move:</strong> pick a joint, turn it, save a key and watch it.</li><li><strong>Arrange the windows:</strong> open the Library, then put every window back.</li><li><strong>Try the Script Lab:</strong> switch to Script and back.</li></ul>
+<p>A ring marks the real control that a step talks about. A step goes on when you do it. Press <strong>Turn hints off</strong> to stop the hint cards. Switch the Helper off and the program is clean.</p>
+<p>The Helper button and <strong>Help &gt; Show hints</strong> (Shift+H) are the same setting.</p>
+<h3 id="beginner-and-expert">Beginner and Expert</h3>
+<p><strong>View &gt; Expert mode</strong> (Shift+E) shows more controls. Expert mode adds:</p>
+<ul><li><strong>Paste mirrored</strong>,</li><li><strong>Edit curve</strong> in the timeline,</li><li>a grid of every finger joint in degrees on the Hands tab,</li><li>a switch to show every joint in the timeline,</li><li>the second figure (File &gt; Add a second figure, in the Library panel: Add as a second figure).</li></ul>
+<p>The same switch is in <strong>Setup</strong>.</p>
+<hr>
+<h2 id="chapter-3-your-first-animation">Chapter 3: Your first animation</h2>
+<p>You will make a short arm movement in about ten minutes.</p>
+<p>First, three words.</p>
+<ul><li>A <strong>key</strong> is a saved pose at one moment. The program fills in the movement between two keys.</li><li>A <strong>frame</strong> is one step in time.</li><li>The <strong>time marker</strong> is the slider that picks the moment you see.</li></ul>
+<h3 id="step-1-start">Step 1: Start</h3>
+<ol><li>Choose <strong>File &gt; New animation</strong> (Ctrl+N). A figure appears.</li><li>Or choose <strong>File &gt; Open</strong> and pick <code>wave.dingle</code> in the folder <code>examples</code> next to the program. It is a finished animation to look at.</li></ol>
+<p>The figure stands in a T-pose.</p>
+<h3 id="step-2-open-the-joints-list-and-pick-a-joint">Step 2: Open the Joints list and pick a joint</h3>
+<ol><li>Choose <strong>View &gt; Joints</strong>. The Joints panel opens on the left.</li><li>In the list, click <strong>Whole Arm</strong> under <strong>Left Arm</strong>. Or click the arm on the figure.</li></ol>
+<p><img src="manual/img/pose.png" alt="A pose in progress: Left Arm Whole Arm is picked, the arm is lowered, and the Selected joint panel shows the sliders." loading="lazy"></p>
+<p>The panel <strong>Selected joint</strong> shows the joint's name and three sliders: <strong>Tilt forward or back</strong>, <strong>Turn left or right</strong> and <strong>Lean to the side</strong>. Each shows its allowed range.</p>
+<h3 id="step-3-set-the-first-key">Step 3: Set the first key</h3>
+<p>Press <strong>Set the first key</strong> at the bottom of the screen (or press <strong>K</strong>). The program saves the pose you see now as a key. The timeline now shows a row for this joint.</p>
+<p>A new animation has 30 frames. The first frame is locked, to protect the first pose. So your first key goes at frame 2. To unlock the first frame, turn off <strong>Edit &gt; Lock the first frame</strong>.</p>
+<h3 id="step-4-pick-a-later-moment">Step 4: Pick a later moment</h3>
+<p>Drag the time marker (the slider above the <strong>Start</strong> button) to the right. The text <strong>Frame ... of ...</strong> at the bottom of the timeline shows where you are. The figure keeps the pose of the key before it.</p>
+<p>The Timeline panel is not tall. If you cannot see the slider and the play buttons, scroll inside the Timeline, or drag the divider above it upward.</p>
+<h3 id="step-5-pose">Step 5: Pose</h3>
+<p>Do one of these:</p>
+<ul><li>Type a number in a box of the Selected joint panel, for example <code>-60</code> in <strong>Lean to the side</strong>, and press Enter.</li><li>Drag a slider.</li><li>Drag a coloured ring on the figure. Red turns around X, green around Y and blue around Z.</li><li>Drag the joint itself. The limb follows the pointer. Hold <strong>Shift</strong> to turn only that joint.</li></ul>
+<p>Turning a joint saves a key for that joint at once. The timeline shows it. The status line says "Key set at frame ... for ...".</p>
+<h3 id="step-6-choose-how-the-move-feels">Step 6: Choose how the move feels</h3>
+<p>When a key is picked, the timeline shows six tiles under <strong>How the move feels</strong>:</p>
+<div class="table-wrap"><table><thead><tr><th>Tile</th><th>Meaning</th></tr></thead><tbody><tr><td>Even</td><td>Same speed all the way.</td></tr><tr><td>Slow start</td><td>Starts gently, then speeds up.</td></tr><tr><td>Slow finish</td><td>Moves at speed, then settles. Good for putting a hand down.</td></tr><tr><td>Slow both ends</td><td>Starts and stops softly. This is the default for a new key.</td></tr><tr><td>Overshoot, then settle</td><td>Goes a little too far, then comes back.</td></tr><tr><td>Hold, then snap</td><td>Stays still, then jumps.</td></tr></tbody></table></div>
+<h3 id="step-7-play">Step 7: Play</h3>
+<ol><li>Press <strong>Start</strong>. The animation plays.</li><li>Press <strong>Stop</strong> to stop.</li><li><strong>Replay from start</strong> plays from the first frame.</li><li><strong>Loop</strong> (ticked by default) plays again and again.</li><li><strong>Frame back</strong> and <strong>Frame forward</strong> move one frame.</li></ol>
+<h3 id="step-8-save">Step 8: Save</h3>
+<ol><li>Choose <strong>File &gt; Save as...</strong> (Ctrl+A) or press <strong>Save</strong> at the top.</li><li>Pick a name. The file ends in <code>.dingle</code>. This is the working format. It keeps all your work.</li></ol>
+<h3 id="step-9-export-for-second-life">Step 9: Export for Second Life</h3>
+<ol><li>Press <strong>Export</strong> at the top, or choose <strong>File &gt; Export for Second Life (.anim)...</strong> (Ctrl+Shift+E).</li><li><p>A small box opens.</p><p><img src="manual/img/export-dialog.png" alt="The export box: Length, Priority, Slow start, Slow finish, Play again and again, Hands, Choose file and Cancel." loading="lazy"></p><ul><li><strong>Length</strong> is shown as text. Second Life accepts up to 60 seconds.</li><li><strong>Priority (0 to 6):</strong> when two animations move the same joint, the higher number wins.</li><li><strong>Slow start</strong> and <strong>Slow finish:</strong> how long the animation takes to fade in and out.</li><li><strong>Play again and again:</strong> use the loop points.</li><li><strong>Hands:</strong> how the fingers look while it plays.</li></ul></li><li>Press <strong>Choose file...</strong> and pick a name. The file ends in <code>.anim</code>.</li></ol>
+<p>The program checks the animation against Second Life's rules while you export.</p>
+<h3 id="step-10-upload-to-second-life">Step 10: Upload to Second Life</h3>
+<p>Uploading is done in the Second Life viewer, not in PinglyMotion.</p>
+<ol><li>In the viewer, choose <strong>Build &gt; Upload &gt; Animation</strong>. (The exact menu name depends on your viewer.)</li><li>Pick your <code>.anim</code> file.</li><li>Set the same priority and loop as in the export box. The viewer asks for a small fee.</li><li>Wear or play the animation to see it.</li></ol>
+<p>An honest note: export, upload and playback were validated in Firestorm on 21 November 2026. Other viewers were not tested. Uploading costs a small fee in Second Life.</p>
+<h3 id="if-something-goes-wrong">If something goes wrong</h3>
+<ul><li><strong>The figure does not move.</strong> You may be on the locked first frame. Drag the time marker to a later frame.</li><li><strong>A joint will not turn further.</strong> It is at the furthest it can turn. Turn it back, or press <strong>Turn limits off</strong> in the warning.</li><li><strong>You do not like a key.</strong> Press Ctrl+Z to undo.</li><li><strong>The view is lost.</strong> Press <strong>0</strong> for the home view, or press <strong>Whole figure</strong> (Shift+F).</li><li><strong>Nothing moves when you play.</strong> A joint needs two keys at different frames.</li></ul>
+<hr>
+<h2 id="chapter-4-posing-in-detail">Chapter 4: Posing in detail</h2>
+<h3 id="the-joints-panel">The Joints panel</h3>
+<p>The panel has two tabs: <strong>Avatar</strong> and <strong>Props</strong> (Chapter 7).</p>
+<p>On the Avatar tab, from top to bottom:</p>
+<ul><li><strong>Animation:</strong> the name of the open animation. A new animation is called <code>pingle</code>.</li><li><strong>Figure:</strong> <code>female</code> or <code>male</code>. This only changes what you see.</li><li><strong>Size:</strong> the size of the figure in the view (100% at start).</li><li><strong>Left</strong>, <strong>Right</strong> and <strong>Mirror</strong>: which side the list shows and which side an edit changes. The tip of <strong>Mirror</strong> says: "turning one side turns the other side too". If the other arm moves when you only wanted one, press <strong>Mirror</strong> to turn it off.</li><li>Four tabs: <strong>Body</strong>, <strong>Face</strong>, <strong>Hands</strong> and <strong>Other</strong>.</li><li><strong>Search joints:</strong> type a part of a name.</li><li>The list of joints, in groups: Body, Left Arm, Right Arm, Legs, and more.</li><li><strong>Flip:</strong> flips the whole pose left to right.</li><li><strong>T-pose:</strong> arms straight out to the sides.</li><li><strong>Reset all:</strong> reset every joint.</li></ul>
+<h3 id="the-selected-joint-panel">The Selected joint panel</h3>
+<p>When a joint is picked, the panel shows:</p>
+<ul><li>its name and how many keys it has,</li><li>its Second Life name (for example <code>mShoulderLeft</code>),</li><li>three sliders with number boxes (in degrees) and the <strong>allowed range</strong>,</li><li>a warning when you are near the limit. <strong>Turn limits off</strong> removes the limit. <strong>Warn near the joint's limits</strong> turns the warning off,</li><li><strong>Reset joint</strong> and <strong>Pull with keys</strong>,</li><li><strong>Pull the limb</strong> and <strong>Turn only this joint</strong>: what dragging the joint does,</li><li><strong>More options</strong> with <strong>turn or move</strong>: turn or move the joint,</li><li><strong>Show curves and finger grid</strong>, a button at the top of the panel. It shows the extra controls of Expert mode. A second button, <strong>Show all joints</strong>, shows when nothing is picked.</li></ul>
+<p>When you pick nothing, the panel shows three short steps and a button that picks a joint for you.</p>
+<h3 id="pulling-a-limb">Pulling a limb</h3>
+<p>Press a joint on the figure and drag. The joints above it bend so the limb follows the pointer. This is called IK (inverse kinematics). Let go to set a key. Esc cancels. Hold <strong>Shift</strong> when you press the joint to turn only that joint.</p>
+<p>No mouse? Press <strong>Enter</strong> on the picked joint. Use the arrow keys. Press Enter to set a key. Esc cancels.</p>
+<h3 id="hands">Hands</h3>
+<p>On the <strong>Hands</strong> tab you get:</p>
+<ul><li>nine ready-made finger poses,</li><li>one <strong>Bend</strong> slider for each finger,</li><li><strong>Reset hand</strong>,</li><li>in Expert mode, a grid of every finger joint in degrees.</li></ul>
+<p><strong>Mirror</strong> copies a change to the other hand. The line at the top says which hand you work on, for example "Right hand. The other hand copies it."</p>
+<p><img src="manual/img/hands-tab.png" alt="The Hands tab: ready-made finger poses and one Bend slider for each finger." loading="lazy"></p>
+<p><strong>Example.</strong> Open the <strong>Hands</strong> tab. Pick one of the ready-made poses. Press <strong>Set key</strong>.</p>
+<h3 id="face-and-other">Face and Other</h3>
+<p>The <strong>Face</strong> tab lists the Bento face joints: head, brows, eyes, ears and more. The <strong>Other</strong> tab lists the extra Bento joints: tail, hind limbs and wings. Use <strong>View &gt; Joint groups</strong> to show or hide these groups. <strong>Hide in lists</strong> leaves hidden joints out of the lists.</p>
+<p>Face joints are parked: they are there, but they get no special attention yet.</p>
+<h3 id="joint-limits">Joint limits</h3>
+<p>Each joint has the range Second Life allows. Near the limit the panel warns you. The limits are on by default.</p>
+<hr>
+<h2 id="chapter-5-the-timeline-keys-and-playback">Chapter 5: The timeline, keys and playback</h2>
+<h3 id="rows">Rows</h3>
+<p>The timeline shows a row for each joint with changes, and for the picked joint. Rows are coloured and named by body area. The box <strong>Show rows for</strong> filters by body area. Expert mode adds a switch to show every joint.</p>
+<p>With no keys, the timeline says <strong>No keys yet</strong> and offers <strong>Set the first key</strong>.</p>
+<h3 id="keys">Keys</h3>
+<ul><li><strong>Set key</strong> (K) saves the pose you see now.</li><li>Turning a joint sets a key by itself.</li><li>A mark in the timeline shows each key.</li><li>Pick a key to change its easing (Chapter 3, step 6).</li><li>In Expert mode, <strong>Edit curve...</strong> draws your own speed curve for a movement. The window remembers its place and size.</li></ul>
+<h3 id="select-copy-and-paste">Select, copy and paste</h3>
+<ol><li>Hold <strong>Shift</strong> and drag in the timeline, or use Shift and the arrow keys, to select a stretch.</li><li><strong>Edit &gt; Copy</strong> (Ctrl+C), <strong>Cut</strong> (Ctrl+X) or <strong>Paste</strong> (Ctrl+V).</li><li><strong>Paste mirrored</strong> (Ctrl+Shift+V, Expert mode) pastes with left and right swapped. A left step becomes a right step.</li></ol>
+<h3 id="undo-and-redo">Undo and Redo</h3>
+<p>Ctrl+Z undoes. Ctrl+Shift+Z or Ctrl+Y redoes. Each edit or drag is one step. The history holds up to 100 steps and survives Save.</p>
+<h3 id="loop-points">Loop points</h3>
+<p>At the bottom of the timeline you find:</p>
+<ul><li><strong>Loop starts at</strong> and <strong>Loop ends at</strong>: the two frames the animation loops between, with their place in percent,</li><li><strong>Frame ... of ...</strong>: where you are and how many frames there are,</li><li><strong>Frames per second</strong> (30 at the start).</li></ul>
+<p>The export box uses the loop frames when <strong>Play again and again</strong> is ticked.</p>
+<p><img src="manual/img/timeline.png" alt="The Timeline: the six easing tiles, the time marker, Set key and the play buttons." loading="lazy"></p>
+<h3 id="notes-line">Notes line</h3>
+<p>Some animations carry teaching notes. According to the project documents, a line under the timeline then shows the note of the current frame, with <strong>Hide notes</strong>. (A check of <code>wave.dingle</code> in the Linux build did not show a notes line, so treat this as unverified.)</p>
+<p><strong>Example.</strong> Open <code>wave.dingle</code> from the <code>examples</code> folder. Press <strong>Start</strong>. Watch the figure wave. Press <strong>Stop</strong>.</p>
+<h3 id="slow-example">Slow example</h3>
+<p><code>jump_slow.dingle</code> is <code>jump.dingle</code> with every key 2.5 times later. It runs at 40 percent of the speed, so you can watch the jump slowly.</p>
+<hr>
+<h2 id="chapter-6-the-3d-view-and-the-camera">Chapter 6: The 3D view and the camera</h2>
+<h3 id="mouse-and-keys">Mouse and keys</h3>
+<p>The default style, called PinglyMotion, works like this:</p>
+<div class="table-wrap"><table><thead><tr><th>What</th><th>How</th></tr></thead><tbody><tr><td>Look around (orbit)</td><td>Drag empty space</td></tr><tr><td>Move the view (pan)</td><td>Right-drag</td></tr><tr><td>Zoom</td><td>Mouse wheel</td></tr><tr><td>Pick a joint</td><td>Click it, or its row</td></tr><tr><td>Focus on the picked joint</td><td>F, or double-click it</td></tr></tbody></table></div>
+<p>In <strong>Setup</strong> or <strong>Help &gt; Camera and keys...</strong> you can choose the style of Maya, Blender or Second Life instead. Chapter 14 has the tables.</p>
+<h3 id="the-view-toolbar">The view toolbar</h3>
+<p>At the top left of the 3D view:</p>
+<ul><li>The <strong>view-direction widget:</strong> click an axis end to look from there.</li><li><strong>Pick and pull</strong> (V), <strong>Look around</strong> (O), <strong>Move the view</strong> (M), <strong>Zoom</strong> (Z).</li><li><strong>Picked joint</strong> (F), <strong>Whole figure</strong> (Shift+F), <strong>Home view</strong> (0).</li><li><strong>Look from</strong> (Front, Side, Top).</li><li><strong>Show:</strong> the floor grid, rotation rings, joint dots, and tool names.</li></ul>
+<p>Every setting is also in the <strong>View</strong> menu.</p>
+<h3 id="the-view-menu">The View menu</h3>
+<p><img src="manual/img/menu-view.png" alt="The View menu: Look from, Show, Panels and the display options." loading="lazy"></p>
+<ul><li><strong>Look from:</strong> Front (Numpad 1), Side (Numpad 3), Top (Numpad 7), Home view (0).</li><li><strong>Show:</strong> Floor grid, Rotation rings, Joint dots, Tool names in the view toolbar, <strong>Click and bend on the figure</strong> (B), Joint groups, Body, Lighting..., Fog, Floor transparency.</li><li><strong>Joint groups</strong> shows or hides groups of extra joints: Wings, Tail, Hind limbs, Face, and Fingers and toes. Hiding changes only what you see. <strong>Hide in lists</strong> leaves hidden joints out of the timeline and the joint list. If it is off, they show dimmed.</li><li><strong>Body</strong> picks the body mesh: <strong>Ruth2</strong> or <strong>Max</strong>. It changes only how the figure looks.</li><li><strong>Lighting...</strong> opens a small box with the sliders <strong>Brightness</strong> (Dark to Bright), <strong>Shine</strong> (Matt to Shiny) and <strong>Warmth</strong> (Cool to Warm), a tick <strong>Shadow on the floor</strong>, and the buttons <strong>Reset</strong> and <strong>Close</strong>.</li><li><strong>Fog</strong> fades the far end of the floor. It is off at the start.</li><li><strong>Floor transparency:</strong> 0, 25, 33, 50 or 75 percent.</li><li><strong>Panels:</strong> Joints, Selected joint, Show timeline, Script Lab, Library, Hide panels (Tab), Reset layout, Next area (F6).</li><li><strong>Light theme</strong> (T), <strong>Expert mode</strong> (Shift+E), text size, and <strong>Setup...</strong>.</li></ul>
+<p><strong>Example.</strong> Hover over the 3D view. Press <strong>O</strong> (look around) and drag. Press <strong>M</strong> and drag to move the view. Press <strong>V</strong> to go back to picking joints. Press <strong>0</strong> to come home.</p>
+<h3 id="text-size">Text size</h3>
+<p><strong>Ctrl++</strong> makes the text bigger, <strong>Ctrl+-</strong> smaller and <strong>Ctrl+0</strong> back to 100 percent. Setup offers 100, 125, 150, 175 and 200 percent.</p>
+<h3 id="click-and-bend">Click and bend</h3>
+<p>With <strong>Click and bend</strong> on (B), a click on the figure picks a joint and a drag bends it. With it off, clicks on the figure do nothing. Use the Joints list and the sliders.</p>
+<hr>
+<h2 id="chapter-7-props">Chapter 7: Props</h2>
+<p>A <strong>prop</strong> is a simple 3D shape in the scene. It stands in for an object. A prop can be attached to a joint, so it moves with that joint.</p>
+<p><img src="manual/img/props-tab.png" alt="The Props tab: four shape buttons (box, sphere, cone, torus), the Prop list with a delete button, and Attach to." loading="lazy"></p>
+<ol><li>Choose <strong>View &gt; Joints</strong>. Open the <strong>Props</strong> tab.</li><li>Press a shape button: box, sphere, cone or torus (a ring).</li><li>The program names it, for example <strong>Box 0</strong>. The next box is <strong>Box 1</strong>. A prop cannot be renamed yet.</li><li>Place it with <strong>Place</strong>, <strong>Turn</strong> and <strong>Size</strong> in the panel on the right, which now says <strong>Selected prop</strong>. There you can also change the <strong>Shape</strong>: Box, Ring, Cone or Ball. A small box over the 3D view, <strong>Edit prop</strong>, has the tools <strong>Move</strong>, <strong>Turn</strong> and <strong>Size</strong> for dragging it.</li><li>Pick a joint in <strong>Attach to</strong>. The prop moves with that joint.</li><li>The button with the X deletes the prop.</li></ol>
+<p><strong>File &gt; Save</strong> keeps the props inside the animation file. <strong>File &gt; Open</strong> brings them back. <strong>File &gt; Open props...</strong> and <strong>Save props...</strong> use the older <code>.prp</code> files. Opening a <code>.prp</code> removes the current props first.</p>
+<p><strong>Example.</strong> Open <code>throne.dingle</code> from the <code>examples</code> folder. The figure sits. Choose <strong>File &gt; Open props...</strong> and pick <code>throne.prp</code>. Box shapes appear around the figure. The picked one is blue. Pick another name in the <strong>Prop:</strong> list to select it.</p>
+<hr>
+<h2 id="chapter-8-the-library">Chapter 8: The library</h2>
+<p>The library holds 106 ready-made moves. Use one as a start.</p>
+<p><img src="manual/img/library-panel.png" alt="The Library panel: a search box, kinds of move, the list of clips, and a preview with length, skeleton, source and licence." loading="lazy"></p>
+<ol><li>Press <strong>Library</strong> at the top (or Ctrl+Shift+B, or <strong>View &gt; Library</strong>).</li><li>Search, or pick a kind of move: Walk, Dance, Sit, Stand, Gesture, Idle, Wave.</li><li>Pick a clip. The panel shows a preview on a small figure and <strong>Play preview</strong>.</li><li>It also shows length, skeleton, where it came from and its licence.</li><li>Press <strong>Use this</strong>. The clip opens as your animation. The program asks first if you have unsaved changes. The status line says "Opened Slow walk from the library. Save it under your own name." The clip's own name is the name of the animation until you save it.</li></ol>
+<p>The Library shares the right side with Selected joint. Switch with the tabs at the bottom. In Expert mode, <strong>Add as a second figure</strong> puts a clip next to your figure instead.</p>
+<p><strong>Example.</strong> Press <strong>Library</strong>. Pick <strong>Slow walk</strong>. Press <strong>Use this</strong>. Press <strong>Start</strong>. The Timeline then shows 114 frames.</p>
+<p>The library comes from the CMU motion capture database and from Mesh2Motion. See <a href="#chapter-17-credits">Chapter 17</a>.</p>
+<p>If the panel says <strong>No library found</strong>, the folder <code>library</code> is missing next to the program. Install the program again.</p>
+<hr>
+<h2 id="chapter-9-files-and-formats">Chapter 9: Files and formats</h2>
+<p><img src="manual/img/menu-file.png" alt="The File menu: New animation, Open, three imports, Save, Save as, Export BVH, Export for Second Life, Open props, Save props, Close animation and Exit." loading="lazy"></p>
+<h3 id="the-formats">The formats</h3>
+<div class="table-wrap"><table><thead><tr><th>Ending</th><th>What</th><th>Notes</th></tr></thead><tbody><tr><td><code>.dingle</code></td><td>PinglyMotion's own working format</td><td>Keeps everything. Written as text (JSON).</td></tr><tr><td><code>.anim</code></td><td>Second Life animation</td><td>Export and import.</td></tr><tr><td><code>.bvh</code></td><td>A common motion file</td><td>Export, and open. An opened <code>.bvh</code> is left alone until you save.</td></tr><tr><td><code>.avm</code></td><td>The old format</td><td>Opens. Saved as <code>.dingle</code>.</td></tr><tr><td><code>.prp</code></td><td>Old props file</td><td>Open props and Save props.</td></tr><tr><td><code>.glb</code>, <code>.gltf</code></td><td>3D animation from other tools</td><td>Import only.</td></tr></tbody></table></div>
+<h3 id="file-menu">File menu</h3>
+<ul><li><strong>New animation</strong> (Ctrl+N), <strong>Open...</strong> (Ctrl+O), <strong>Save</strong> (Ctrl+S), <strong>Save as...</strong> (Ctrl+A).</li><li><strong>Import Second Life .anim...</strong> opens an <code>.anim</code> as a new, unsaved animation. A list <strong>What could not be imported</strong> says what was left out.</li><li><strong>Import BVH from another skeleton...</strong> shows which joints were matched and which were left out. Tick <strong>My file starts in a T-pose or A-pose</strong> if the first frame is a standing pose. Press <strong>Open the animation</strong>. A mapping you make can be kept in a small <code>.jointmap</code> file.</li><li><strong>Import glTF animation...</strong> opens <code>.glb</code> or <code>.gltf</code>. If the file has more than one animation, pick the ones you want.</li><li><strong>Export BVH</strong> makes a <code>.bvh</code> file.</li><li><strong>Export for Second Life (.anim)...</strong> (Ctrl+Shift+E).</li><li><strong>Open props...</strong> and <strong>Save props...</strong>.</li><li><strong>Close animation</strong> (Ctrl+W) and <strong>Exit</strong> (Ctrl+Q).</li></ul>
+<p>Every import opens as an untitled animation. Your original file is not changed. Save it to keep it.</p>
+<p><strong>Example.</strong> Choose <strong>File &gt; Open</strong> and pick <code>jump.dingle</code> in <code>examples</code>. Choose <strong>File &gt; Save as...</strong> and save it under a new name. Choose <strong>File &gt; Export for Second Life (.anim)...</strong> and make <code>jump.anim</code>. Choose <strong>File &gt; Import Second Life .anim...</strong> and open it again. A message says "Opened jump.anim." and lists what could not be imported. For this file it says that priority, slow start and finish, and hands are not kept. The movement itself comes back.</p>
+<h3 id="the-folder-for-ai-assistants">The folder for AI assistants</h3>
+<p>An AI assistant can only open and save files in one folder: <code>PinglyMotion</code> in your Documents folder. See <a href="#chapter-11-ai-assistants">Chapter 11</a>.</p>
+<hr>
+<h2 id="chapter-10-script-lab-for-beginners">Chapter 10: Script Lab for beginners</h2>
+<p>Script Lab is a safe sandbox. You can run RLV and LSL scripts on your computer. Nothing reaches Second Life.</p>
+<p>Some words first.</p>
+<ul><li><strong>LSL</strong> is the scripting language of Second Life.</li><li>A <strong>script</strong> is a small program inside an object.</li><li>An <strong>object</strong> is made of <strong>prims</strong>. A prim is one part, such as a box.</li><li><strong>RLV</strong> (Restrained Love Viewer) is a set of commands that a script can send to a viewer. They restrict what an avatar may do, for example <code>@detach=n</code> means "this cannot be taken off".</li><li><strong>RLVa</strong> is a viewer that understands RLV and more.</li><li>A <strong>channel</strong> is a number that scripts use to talk, like a radio channel.</li></ul>
+<p><strong>Honest status.</strong> Script Lab is built in many parts. Nothing in it has been tested in Second Life. The sandbox is never identical to Second Life. See <a href="#what-is-finished-and-what-is-not">What is finished and what is not</a>.</p>
+<p>Open Script Lab with the <strong>Script</strong> button (F8) or the <strong>Script Lab</strong> button (Ctrl+Shift+L).</p>
+<h3 id="the-top-of-the-window">The top of the window</h3>
+<ul><li><strong>Viewer rules:</strong> <strong>RLV</strong> or <strong>RLVa</strong>. The start is RLVa. Switching removes every restriction, as after a new login.</li><li>A chip shows how many restrictions are held ("0 held").</li><li>Five tabs: <strong>Live scripts</strong>, <strong>Type commands</strong>, <strong>Who talks to whom</strong>, <strong>Player</strong>, <strong>Improve a setup</strong>.</li><li><strong>Pop out</strong> moves Script Lab into its own window.</li></ul>
+<h3 id="make-the-example-project">Make the example project</h3>
+<ol><li>Press <strong>Script</strong>.</li><li>Press <strong>Make example project</strong>.</li></ol>
+<p>The program copies the example <strong>First colour</strong> into your own folder (<code>Documents/PinglyMotion/Scripts/First_colour</code>). It adds a box to the scene. It watches the folder. A <strong>Steps</strong> card lists five steps and ticks them.</p>
+<p><img src="manual/img/scriptlab-example.png" alt="The example project: the steps card, the folder, OK, the tree of the object, and the script, with a red box next to the figure." loading="lazy"></p>
+<p>You should see:</p>
+<ul><li>a red box next to the figure,</li><li>the message <strong>OK: Box 0/colour.lsl ran without errors</strong>,</li><li>the log line "Box 0 is red now."</li></ul>
+<h3 id="the-tree">The tree</h3>
+<p>The box <strong>Object</strong> shows your object as a tree. Each folder is one prim. The folder <strong>Box 0</strong> is a prim. The script inside it is the row <strong>LSL script</strong>. The columns are <strong>Name</strong>, <strong>Kind</strong>, <strong>State</strong> and <strong>Memory</strong>.</p>
+<p>Click a row. With <strong>Follow selection in 3D view</strong> ticked, the prop with the same name lights up in the 3D view.</p>
+<h3 id="change-the-script">Change the script</h3>
+<ol><li>The script is open in the editor on the right. (<strong>Open in editor</strong> opens it again.)</li><li>Change <code>&lt;1.0, 0.0, 0.0&gt;</code> to <code>&lt;0.0, 1.0, 0.0&gt;</code>.</li><li>Press <strong>Save</strong>.</li></ol>
+<p>The box turns green. The three numbers are red, green and blue. Each save runs the folder again. Press <strong>Run again</strong> to run it without a change.</p>
+<p>The editor has <strong>Save</strong>, <strong>Find</strong> and <strong>Go to line</strong>. It shows suggestions and help text for LSL functions as you type. It also suggests RLV commands inside <code>llOwnerSay("@...")</code>, with plain warnings. Switch to <strong>Show suggestions only when I press Ctrl+Space</strong> in Setup if you prefer.</p>
+<h3 id="show-effects-in-3d-view">Show effects in 3D view</h3>
+<p>The button <strong>Show effects in 3D view</strong> makes props show what the scripts do: colour and how clear. A prop named like a prim shows the effect of that prim's scripts. Clicking a prop counts as a touch. A menu a script shows (<code>llDialog</code>) appears as a box over the 3D view. Press a button in it, or <strong>Ignore</strong> (Esc).</p>
+<h3 id="other-examples">Other examples</h3>
+<p>The folder <code>examples/objects</code> has six more objects: Button HUD, Gear set, Timed lock, RLV relay and Work system. <code>examples/scriptlab</code> has loose scripts. Press <strong>Try the example scripts</strong> (when no folder is watched) to run <code>rlv_lock.lsl</code>.</p>
+<p><strong>Watch folder...</strong> watches any folder of your own. A folder is an object. <strong>New folder</strong> makes a new one.</p>
+<h3 id="type-commands">Type commands</h3>
+<p>The tab <strong>Type commands</strong> is for RLV lines.</p>
+<p><img src="manual/img/type-commands.png" alt="The Type commands tab after running @detach=n,sendim=n: two restrictions held, and two actions blocked." loading="lazy"></p>
+<ol><li>Open the tab <strong>Type commands</strong>.</li><li>Click the box <strong>Command</strong>, type <code>@detach=n,sendim=n</code> and press Enter.</li><li>The tab shows <strong>Restrictions</strong> (detach and sendim), held by the object <code>panel</code>. In <strong>What the avatar may do</strong>, <strong>Take off locked attachments</strong> and <strong>Send instant messages</strong> now say <strong>Blocked</strong>.</li></ol>
+<p>The chips under <strong>Try</strong> fill a ready example. <strong>Reset all</strong> removes every restriction. Each row in the actions list is an <strong>Allowed / Blocked</strong> choice you can set. The log <strong>Replies and messages</strong> shows the answers a script would hear.</p>
+<p>The tab also has switches for camera limits, environment and view modes in the 3D view, and a part named <strong>Vision sphere</strong>.</p>
+<h3 id="who-talks-to-whom">Who talks to whom</h3>
+<p>The tab <strong>Who talks to whom</strong> draws a map while a folder is watched. Open the part <strong>Who talks to whom</strong> by clicking its header. For the First colour example you see a box <strong>Box 0</strong> with an arrow to the dashed box <strong>You</strong>, labelled <code>owner say: "Box 0 is red now."</code>.</p>
+<p><img src="manual/img/who-talks.png" alt="The map for First colour: Box 0 says a line to You." loading="lazy"></p>
+<p>In bigger setups the boxes are the prims, and also <strong>You</strong>, <strong>Your viewer (RLV)</strong> and <strong>Web server</strong>. Arrows show chat, link messages, menus and RLV lines, with their channel. An arrow that nobody hears is dashed, red and says why. A prim that listens and passes on commands is marked <strong>(hub)</strong>. A click on an arrow shows the script line that sent it.</p>
+<h3 id="player">Player</h3>
+<p>Press <strong>Record what I do</strong> on the tab <strong>Player</strong>. Click props or press menu buttons. Each action is a step. Press <strong>Stop recording</strong>.</p>
+<p><img src="manual/img/player-tab.png" alt="The Player tab with the Record what I do button and its first line of help." loading="lazy"></p>
+<p>The program saves the steps as <code>recipe.rlvtest</code> in the object folder. It replays them and says what changed since last time. The player has the same Start, Stop, Step back and Step forward buttons as the timeline. It lists the moments and what was true at each. <strong>Go to first difference</strong> jumps to the first change.</p>
+<p>Not built: the player does not move the animation, the camera, the environment or the menu box. Those show the live run.</p>
+<h3 id="improve-a-setup">Improve a setup</h3>
+<p><img src="manual/img/improve-tab.png" alt="The Improve a setup tab: Weight with memory per script, what can be better, and Can this run here?" loading="lazy"></p>
+<p>For a finished setup, such as a collar:</p>
+<ol><li>Watch the folder as one object (Live scripts).</li><li>Record what it does (Player).</li><li>Read the tab <strong>Improve a setup</strong>.</li></ol>
+<p>It shows how heavy each script is (<strong>Kept</strong>, <strong>Values</strong>, <strong>Sent</strong>, <strong>Got</strong>, <strong>Not used</strong>), what can be better, and per script whether it can run here. <strong>Import a setup</strong> and <strong>Record today's behaviour</strong> are on the tab.</p>
+<p>The memory of the code itself is not counted yet. That needs a measurement in Second Life.</p>
+<h3 id="the-opencollar-example">The OpenCollar example</h3>
+<p><code>examples/improve/OpenCollar</code> holds the 23 scripts of the public OpenCollar collar. They are copied unchanged, with their licence (GPL 2). Watch the folder. The collar starts and shows its menu when you click it. <strong>Not tested in Second Life.</strong></p>
+<h3 id="lua-a-trial">Lua (a trial)</h3>
+<p>Lua is a newer scripting language in Second Life. It is called SLua.</p>
+<ol><li>Open <strong>Setup</strong>. Tick <strong>Lua (trial): show the language choice in the editor</strong>.</li><li>The editor shows a <strong>Language</strong> box with <strong>LSL</strong> and <strong>SLua (Lua, trial)</strong>.</li><li>Choose SLua. Scroll down in the Live scripts tab. At the right end of the line under the text, press <strong>Convert to SLua</strong>.</li></ol>
+<p><img src="manual/img/convert-slua.png" alt="The Convert to SLua pane showing the converted text, a note that nothing is run, and the buttons Copy SLua and Close." loading="lazy"></p>
+<p>The pane shows the converted text and notes. Your script is not changed. Nothing is run. <strong>Copy SLua</strong> copies the text. <strong>Close</strong> closes the pane.</p>
+<p>Lua is a trial. The converter is checked by tests that compare exact text. It is <strong>not tested in Second Life</strong>. There are no Lua checks or suggestions, and Lua does not run.</p>
+<h3 id="steps-and-the-guide">Steps and the guide</h3>
+<p><strong>Help &gt; Script Lab steps</strong> shows the steps card again.</p>
+<hr>
+<h2 id="chapter-11-ai-assistants">Chapter 11: AI assistants</h2>
+<p>An AI assistant on your own computer can pose the figure, play it, look at it and save it. This is optional. It is <strong>off at every start</strong> and never turns on by itself.</p>
+<p><img src="manual/img/connect-ai.png" alt="The Connect an AI dialog: Which AI do you use? Claude, ChatGPT or Other, a short safety list, and the buttons Turn on AI Assistant and Close." loading="lazy"></p>
+<h3 id="turn-it-on">Turn it on</h3>
+<ol><li>Click the <strong>AI Assistant</strong> button in the status bar (bottom right).</li><li>The dialog <strong>Connect an AI</strong> asks "Which AI do you use?" Choose <strong>Claude</strong>, <strong>ChatGPT</strong> or <strong>Other</strong>. Each shows only its own steps.</li><li>Press <strong>Turn on AI Assistant</strong>.</li></ol>
+<p>The button shows a dot and its state:</p>
+<div class="table-wrap"><table><thead><tr><th>Dot</th><th>Text</th><th>Meaning</th></tr></thead><tbody><tr><td>Grey</td><td>AI Assistant off</td><td>Off.</td></tr><tr><td>Yellow</td><td>AI Assistant on, waiting for an AI</td><td>On, no AI connected.</td></tr><tr><td>Green</td><td>AI Assistant: Claude</td><td>An AI is connected.</td></tr><tr><td>Red</td><td>A wrong key was refused</td><td>Something tried a wrong key.</td></tr></tbody></table></div>
+<p>The window title says "AI Assistant on" while it is on. Click the button again to turn it off. Turning it off locks every AI out.</p>
+<h3 id="how-it-is-kept-safe">How it is kept safe</h3>
+<ul><li>It works only on your own PC. Nothing on the network can reach it.</li><li>It is off each time PinglyMotion starts.</li><li>There is a new secret key each time you turn it on.</li><li>Requests from web pages are refused.</li></ul>
+<h3 id="what-an-assistant-can-do">What an assistant can do</h3>
+<p>An assistant uses the commands of the control interface: look at the state, pose joints, set frames, play, take a screenshot, describe the pose and the movement in words, read and write a whole animation as a small text table, check an animation against Second Life's rules, export <code>.anim</code>, search the library, and use the Script Lab (RLV commands and LSL scripts). The full list is in <code>docs/CONTROL.md</code> and <code>tools/mcp/commands.json</code>.</p>
+<p>The assistant can only open and save files in the folder <code>Documents/PinglyMotion</code>.</p>
+<h3 id="status">Status</h3>
+<ul><li><strong>Claude:</strong> the Windows zip has <code>mcp/PinglyMotion.mcpb</code>, an extension for the Claude app.</li><li><strong>ChatGPT:</strong> setup is written. The button writes the desktop app's configuration. <strong>Not tested by us.</strong></li><li><strong>Other tools:</strong> the file <code>pinglymotion_mcp.js</code> serves other tools that speak MCP. <strong>Not tested by us.</strong></li></ul>
+<p>Manual work always works without any AI. The full status list is in <a href="#what-is-finished-and-what-is-not">What is finished and what is not</a>.</p>
+<hr>
+<p><strong>Example.</strong> Press the <strong>AI Assistant</strong> button. Choose <strong>Claude</strong> and read the steps. Do not press <strong>Turn on AI Assistant</strong> unless you want to connect an AI. Press <strong>Close</strong>. The button still says "AI Assistant off".</p>
+<h3 id="the-control-commands">The control commands</h3>
+<p>The commands an assistant can use are the same ones for any program on your PC that speaks plain HTTP. They are listed by <code>GET /api/commands</code> and in <code>docs/CONTROL.md</code>. In short:</p>
+<div class="table-wrap"><table><thead><tr><th>Group</th><th>Commands</th></tr></thead><tbody><tr><td>Look</td><td><code>state</code>, <code>joints</code>, <code>get_pose</code>, <code>keys</code>, <code>screenshot</code>, <code>describe_pose</code>, <code>describe_motion</code>, <code>describe_body</code></td></tr><tr><td>Pose and time</td><td><code>set_pose</code>, <code>set_position</code>, <code>delete_key</code>, <code>set_frame</code>, <code>set_frame_count</code>, <code>set_fps</code>, <code>set_loop</code>, <code>play</code>, <code>stop</code></td></tr><tr><td>Files</td><td><code>new_animation</code>, <code>open_file</code>, <code>save_file</code>, <code>export_anim</code></td></tr><tr><td>The view</td><td><code>set_figure</code>, <code>set_camera</code></td></tr><tr><td>Whole animations as text</td><td><code>motion_script</code>, <code>load_motion_script</code>, <code>check_animation</code></td></tr><tr><td>Library</td><td><code>find_reference</code>, <code>load_reference</code></td></tr><tr><td>Script Lab</td><td><code>rlv_command</code>, <code>rlv_state</code>, <code>rlv_reset</code>, <code>lsl_check</code>, <code>lsl_lint</code>, <code>lsl_run</code>, <code>lsl_event</code>, <code>lab_watch</code>, <code>lab_unwatch</code>, <code>lab_result</code>, <code>lab_replay</code></td></tr></tbody></table></div>
+<p>You do not need to know these to use PinglyMotion. They are for AI tools and for people who write scripts around the program.</p>
+<hr>
+<h2 id="chapter-12-the-live-link-to-aurora">Chapter 12: The live link to Aurora</h2>
+<p>Aurora is a Second Life viewer. PinglyMotion can show your pose on your own avatar in Aurora while you work. Only you see it. Nothing is uploaded.</p>
+<p><strong>Status.</strong> It works on Windows. It needs Aurora built from the fork named in <code>docs/AURORA_LINK.md</code>. It does not work with the normal Aurora yet.</p>
+<p><strong>Example.</strong> With the Aurora fork running:</p>
+<ol><li>In Aurora, choose <strong>Build &gt; LiveMesh &gt; Enable preview</strong>.</li><li>In PinglyMotion, tick <strong>Live link to Aurora</strong> in <strong>Setup</strong>, or click the dot in the status bar.</li><li>The status bar says "Waiting for Aurora", then "Aurora live".</li><li>Turn a joint. Your avatar takes the pose.</li></ol>
+<p>The link is off at every start.</p>
+<hr>
+<h2 id="chapter-13-setup-themes-and-help">Chapter 13: Setup, themes and help</h2>
+<p>Press <strong>Setup</strong> (the gear at the top right).</p>
+<p><img src="manual/img/setup-dialog.png" alt="The Setup dialog: beginner or expert, mouse and keys, theme, text size, guidance, script editor and connections." loading="lazy"></p>
+<ul><li><strong>Have you made animations before?</strong> New to animation (Beginner mode) or Experienced (Expert mode).</li><li><strong>Mouse and keys like:</strong> PinglyMotion, Maya, Blender or Second Life. <strong>Show all mouse and keys</strong> opens the table.</li><li><strong>Theme:</strong> Dark or Light.</li><li><strong>Text size:</strong> 100, 125, 150, 175 or 200 percent.</li><li><strong>Guidance:</strong> <strong>Show hints, tips and the next-step line</strong>, and <strong>Show the welcome card again</strong>.</li><li><strong>Script editor:</strong> <strong>Show suggestions only when I press Ctrl+Space</strong>, and the <strong>Lua (trial)</strong> switch.</li><li><strong>Connections:</strong> <strong>AI Assistant</strong> and <strong>Live link to Aurora</strong>.</li></ul>
+<p>PinglyMotion remembers these choices.</p>
+<h3 id="help-menu">Help menu</h3>
+<p><img src="manual/img/menu-help.png" alt="The Help menu." loading="lazy"></p>
+<ul><li><strong>Setup: beginner or experienced, mouse and keys...</strong></li><li><strong>Show the welcome card again</strong></li><li><strong>Script Lab steps</strong></li><li><strong>Show hints</strong> (Shift+H)</li><li><strong>Keys and mouse</strong> (?)</li><li><strong>Camera and keys...</strong></li><li><strong>Show charter principles</strong> (C), when available</li><li><strong>Open log</strong> and <strong>Clear log</strong></li><li><strong>About...</strong>: who made the avatar bodies and under which licence.</li></ul>
+<p><strong>Example.</strong> Press <strong>Setup</strong>. Under <strong>Theme</strong> choose <strong>Light</strong>. Under <strong>Text size</strong> choose <strong>150%</strong>. Press <strong>Done</strong>. Both changes are kept the next time you start.</p>
+<h3 id="hints-and-tips">Hints and tips</h3>
+<p>Nine hint cards guide the first moves. <strong>Next</strong> goes on. <strong>Turn hints off</strong> stops them. The status bar switch <strong>Tips on/off</strong> shows or hides short help when the mouse rests on a control.</p>
+<hr>
+<h2 id="chapter-14-keyboard-shortcuts-and-mouse">Chapter 14: Keyboard shortcuts and mouse</h2>
+<h3 id="everywhere">Everywhere</h3>
+<div class="table-wrap"><table><thead><tr><th>Keys</th><th>What</th></tr></thead><tbody><tr><td>Ctrl+N</td><td>New animation</td></tr><tr><td>Ctrl+O</td><td>Open</td></tr><tr><td>Ctrl+S</td><td>Save</td></tr><tr><td>Ctrl+A</td><td>Save as</td></tr><tr><td>Ctrl+Shift+E</td><td>Export for Second Life</td></tr><tr><td>Ctrl+W</td><td>Close animation</td></tr><tr><td>Ctrl+Q</td><td>Exit</td></tr><tr><td>Ctrl+Z</td><td>Undo</td></tr><tr><td>Ctrl+Shift+Z or Ctrl+Y</td><td>Redo</td></tr><tr><td>K</td><td>Set key</td></tr><tr><td>Ctrl+X, Ctrl+C, Ctrl+V</td><td>Cut, copy, paste</td></tr><tr><td>Ctrl+Shift+V</td><td>Paste mirrored (Expert mode)</td></tr><tr><td>F7, F8</td><td>Animate side, Script side</td></tr><tr><td>Ctrl+Shift+L</td><td>Script Lab</td></tr><tr><td>Ctrl+Shift+B</td><td>Library</td></tr><tr><td>Tab</td><td>Hide or show all panels</td></tr><tr><td>F6</td><td>Next area</td></tr><tr><td>T</td><td>Light or dark theme</td></tr><tr><td>Shift+E</td><td>Expert mode</td></tr><tr><td>Shift+H</td><td>Hints on or off</td></tr><tr><td>?</td><td>Keys and mouse</td></tr><tr><td>Ctrl++, Ctrl+-, Ctrl+0</td><td>Text bigger, smaller, back to 100%</td></tr><tr><td>Alt+1, Alt+2</td><td>Pick the first or second figure (Expert mode)</td></tr></tbody></table></div>
+<h3 id="in-the-3d-view">In the 3D view</h3>
+<div class="table-wrap"><table><thead><tr><th>Keys</th><th>What</th></tr></thead><tbody><tr><td>V, O, M, Z</td><td>Tools: pick and pull, look around, move the view, zoom</td></tr><tr><td>F</td><td>Focus on the picked joint</td></tr><tr><td>Shift+F</td><td>Whole figure</td></tr><tr><td>0</td><td>Home view</td></tr><tr><td>Numpad 1, 3, 7 (or 1, 3, 7)</td><td>Front, side, top</td></tr><tr><td>Alt + arrow keys</td><td>Look around with keys</td></tr><tr><td>Page Up, Page Down</td><td>Zoom with keys</td></tr><tr><td>B</td><td>Click and bend on or off</td></tr><tr><td>Esc</td><td>Cancel a drag</td></tr><tr><td>Enter on a picked joint</td><td>Pull with the arrow keys; Enter sets a key</td></tr></tbody></table></div>
+<h3 id="the-camera-styles">The camera styles</h3>
+<div class="table-wrap"><table><thead><tr><th>Action</th><th>PinglyMotion</th><th>Maya</th><th>Blender</th><th>Second Life</th></tr></thead><tbody><tr><td>Look around</td><td>Drag empty space</td><td>Alt + left-drag</td><td>Middle-drag</td><td>Alt + drag (sideways), Ctrl + Alt + drag</td></tr><tr><td>Move the view</td><td>Right-drag</td><td>Alt + middle-drag</td><td>Shift + middle-drag</td><td>Ctrl + Alt + Shift + drag</td></tr><tr><td>Zoom</td><td>Mouse wheel</td><td>Alt + right-drag, or wheel</td><td>Ctrl + middle-drag, or wheel</td><td>Alt + drag up or down, or wheel</td></tr><tr><td>Pick a joint</td><td>Click it, or its row</td><td>Click</td><td>Click</td><td>Click</td></tr><tr><td>Focus on the joint</td><td>F, or double-click</td><td>F</td><td>Numpad .</td><td>Alt + click</td></tr></tbody></table></div>
+<h3 id="joints">Joints</h3>
+<div class="table-wrap"><table><thead><tr><th>What</th><th>How</th></tr></thead><tbody><tr><td>Pull a limb</td><td>Press a joint and drag. Let go to set a key. Esc cancels.</td></tr><tr><td>Turn only that joint</td><td>Hold Shift when you press the joint</td></tr><tr><td>Turn on one axis</td><td>Drag the red X, green Y or blue Z ring</td></tr></tbody></table></div>
+<p>The same table is in the program: <strong>Help &gt; Keys and mouse</strong>.</p>
+<p><strong>Example.</strong> Press <strong>?</strong> to open the table. Close it. Press <strong>Shift+E</strong> to switch Expert mode on and press it again to switch it off.</p>
+<hr>
+<h2 id="chapter-15-every-menu-item">Chapter 15: Every menu item</h2>
+<h3 id="file">File</h3>
+<p>See <a href="#chapter-9-files-and-formats">Chapter 9</a>.</p>
+<h3 id="edit">Edit</h3>
+<p><img src="manual/img/menu-edit.png" alt="The Edit menu: Undo, Redo, Set key, Paste mirrored, Cut, Copy, Paste, Lock the first frame." loading="lazy"></p>
+<div class="table-wrap"><table><thead><tr><th>Item</th><th>Keys</th><th>What</th></tr></thead><tbody><tr><td>Undo, Redo</td><td>Ctrl+Z, Ctrl+Shift+Z</td><td>Take back and bring back an edit.</td></tr><tr><td>Set key</td><td>K</td><td>Save the pose now as a key.</td></tr><tr><td>Paste mirrored</td><td>Ctrl+Shift+V</td><td>Paste with left and right swapped.</td></tr><tr><td>Cut, Copy, Paste</td><td>Ctrl+X, C, V</td><td>On the selected stretch of the timeline.</td></tr><tr><td>Lock the first frame</td><td></td><td>On by default. Keeps the first pose safe.</td></tr></tbody></table></div>
+<h3 id="view">View</h3>
+<p>See <a href="#chapter-6-the-3d-view-and-the-camera">Chapter 6</a>.</p>
+<h3 id="help">Help</h3>
+<p>See <a href="#chapter-13-setup-themes-and-help">Chapter 13</a>.</p>
+<p><strong>Example.</strong> Open the <strong>Help</strong> menu and choose <strong>About...</strong>. Close it. Open <strong>View</strong> and pick <strong>Floor transparency</strong>, then 50%.</p>
+<h3 id="top-bar-buttons">Top bar buttons</h3>
+<div class="table-wrap"><table><thead><tr><th>Button</th><th>What</th></tr></thead><tbody><tr><td>Animate, Script</td><td>Switch sides (F7, F8)</td></tr><tr><td>Helper</td><td>Helper panel on or off</td></tr><tr><td>Undo, Redo</td><td>Same as Edit</td></tr><tr><td>Save</td><td>Save the animation</td></tr><tr><td>Export</td><td>Export for Second Life</td></tr><tr><td>Script Lab</td><td>Open Script Lab</td></tr><tr><td>Library</td><td>Open the Library</td></tr><tr><td>Reset layout</td><td>Put every panel back</td></tr><tr><td>Setup</td><td>Open Setup</td></tr><tr><td>Sun button</td><td>Dark or light theme</td></tr></tbody></table></div>
+<hr>
+<h2 id="chapter-16-troubleshooting-and-feedback">Chapter 16: Troubleshooting and feedback</h2>
+<ul><li><strong>The 3D view is black.</strong> Update the graphics driver. PinglyMotion needs OpenGL 3.3.</li><li><strong>Windows warns about an unknown publisher.</strong> The program is not signed yet. This is expected in the early preview.</li><li><strong>A panel has vanished.</strong> Press <strong>Reset layout</strong>.</li><li><strong>The text is too small.</strong> Press Ctrl++ or choose a text size in Setup.</li><li><strong>The library says "No library found".</strong> The folder <code>library</code> must be next to the program.</li><li><strong>An imported file does not move right.</strong> Open the list in the import box. Joints marked <strong>Left out</strong> were not brought in.</li><li><strong>A script does nothing in Script Lab.</strong> Read the <strong>Errors and warnings</strong> part. The sandbox runs most LSL, not all of it.</li><li><strong>Something broke.</strong> Choose <strong>Help &gt; Open log</strong>. The log is a plain text file of what the program did.</li></ul>
+<h3 id="report-a-bug-or-give-feedback">Report a bug or give feedback</h3>
+<p>Go to <a href="https://github.com/pingledingle-tech/PinglyMotion/issues">https://github.com/pingledingle-tech/PinglyMotion/issues</a> and open an issue. Say what you did, what you expected and what happened. Do not put personal data in the issue. The web site also has pages for bug reports and suggestions.</p>
+<hr>
+<h2 id="chapter-17-credits">Chapter 17: Credits</h2>
+<p>PinglyMotion is free and open source. It is based on QAvimator. The avatar bodies, the library clips, the example collar and the other outside material are credited in the file <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">CREDITS.md</a> and in <strong>Help &gt; About...</strong>.</p>
+<p>The ready-made moves come from the CMU motion capture database and from Mesh2Motion (CC0). The example collar is the public OpenCollar project (GPL 2).</p>
+<hr>
+<h2 id="glossary">Glossary</h2>
+<div class="table-wrap"><table><thead><tr><th>Word</th><th>Meaning</th></tr></thead><tbody><tr><td>Animation</td><td>All the movement in one file.</td></tr><tr><td>Key</td><td>A saved pose at one moment.</td></tr><tr><td>Frame</td><td>One step in time.</td></tr><tr><td>Time marker</td><td>The marker you drag to pick a moment.</td></tr><tr><td>Timeline</td><td>The strip that shows your keys over time.</td></tr><tr><td>Joint</td><td>A part that turns, such as an elbow.</td></tr><tr><td>Pose</td><td>How the figure stands at one moment.</td></tr><tr><td>Easing</td><td>How a move speeds up or slows down between two keys.</td></tr><tr><td>Loop</td><td>The animation plays again and again.</td></tr><tr><td>T-pose</td><td>Standing with the arms straight out to the sides.</td></tr><tr><td>Prop</td><td>A simple 3D shape in the scene.</td></tr><tr><td>Prim</td><td>One part of an object in Second Life.</td></tr><tr><td>LSL</td><td>The scripting language of Second Life.</td></tr><tr><td>RLV</td><td>Commands a script can send to restrict an avatar.</td></tr><tr><td>Channel</td><td>A number scripts use to talk.</td></tr><tr><td>Sandbox</td><td>A safe place to try things. Nothing leaves it.</td></tr><tr><td>IK</td><td>Moving a hand moves the joints above it.</td></tr></tbody></table></div>
+</main>
+</div>
+</body>
+</html>

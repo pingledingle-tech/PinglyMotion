@@ -26,6 +26,7 @@ The order of the work and a status word per step are in [ROADMAP.md](ROADMAP.md)
 
 | Document | What it is | For | Status |
 |---|---|---|---|
+| [MANUAL.md](MANUAL.md) | The user manual in English: quick start, every part of the program, Script Lab, shortcuts, what is not finished. Also as a web page (`manual.html`) and a PDF (`PinglyMotion-Manual.pdf`), both made by `tools/site/build_manual.py` | user | current guidance |
 | [FIRST_ANIMATION.md](FIRST_ANIMATION.md) | Make a short arm movement in about ten minutes | user | current guidance |
 | [BLENDER.md](BLENDER.md) | Working with Blender: export BVH and glTF, axes, the Second Life skeleton | user | current guidance |
 | [VIDEO_GUIDE.md](VIDEO_GUIDE.md) | From a video of yourself to a Second Life animation with XR Animator | user | current guidance |

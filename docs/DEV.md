@@ -161,6 +161,10 @@ Before a visible pull request goes to the project owner's test, the session test
 
 What does not work: the control commands cannot click a menu, select a joint in the list or read a panel, so those need xdotool and screenshots; coordinates change with the window size, so always set the size first. The session cannot judge whether a movement looks natural or a layout feels right: it says what it saw and leaves that judgement to the owner. If something cannot be tested here (Windows-only behaviour, a second screen, dragging panels out), the pull request says so.
 
+## The user manual
+
+The manual is `docs/MANUAL.md` with its pictures in `docs/manual/img/` (real screenshots; to take them see "How a session tests a visible change itself", steps 3 and 4: build, run under Xvfb, `import -window root`, crop and shrink with `convert -colors 128`). `python3 tools/site/build_manual.py` makes the web page `docs/manual.html`, and with `--pdf` the download `docs/PinglyMotion-Manual.pdf` (needs headless Chrome or wkhtmltopdf). Change the manual, run the script, commit all three. `tests/test_site_manual.py` (run with the other site tests) checks the headings, that every image exists and has alt text and is under 200 KB, that there are no email addresses or personal paths, that the page is in step with the text and that the PDF is valid.
+
 ## The combined test build
 
 All owner tests are optional and block nothing (the project owner, 24 November 2026, 19:34: «Jeg vil ha alle tester på valgfri»), so a job never waits for this build. `test/combined` is only used when the owner wants to try something before it merges. Where he does, the rules in `CLAUDE.md`, "Testing by the project owner" apply (what goes in, when it is rebuilt, that it is the only branch that may be force-pushed). The commands:
