@@ -1,6 +1,6 @@
 Branch: job/props-in-animation-file
 Status: active
-Pull request: pending
+Pull request: #487
 Files:
 - src/propfile.h
 - src/propsinscene.*
