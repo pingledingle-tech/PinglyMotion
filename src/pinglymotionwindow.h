@@ -38,6 +38,7 @@
 #include "playstate.h"
 #include "prop.h"
 #include "propedit.h"
+#include "propfile.h"
 #include "timelineclip.h"
 #include "updatechecker.h"
 #include "workmode.h"
