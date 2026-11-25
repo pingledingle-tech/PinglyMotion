@@ -42,7 +42,7 @@ A change to a parser or the control commands needs a green fuzz run.
 
 ## Web version
 
-Decided, time not set (the project owner, 24 Nov 2026, 12:10). No web job runs. Until then new code is web-ready ([DEV.md](DEV.md), "Web-ready code"); the decision is in [DECISIONS.md](DECISIONS.md), Technology, 24 Nov 2026. Status: waiting, the owner has not set a time.
+Decided, time not set (the project owner, 24 Nov 2026, 12:10). New code is web-ready ([DEV.md](DEV.md), "Web-ready code"); the decision is in [DECISIONS.md](DECISIONS.md), Technology, 24 Nov 2026. The trial build (queue 2 of the jobs list, the project owner, 24 Nov 2026, 23:20 and 23:32) is done: it compiles, links and starts in a browser, but the window is not drawn yet, because the 3D view is a `QOpenGLWidget`, which Qt for WebAssembly does not support ([DEV.md](DEV.md), "The web trial build"). Status: waiting, the rest of web (the 3D view without `QOpenGLWidget`, open and save by upload and download, publishing) is for the owner to choose.
 
 ## Parked, later and not doing
 
