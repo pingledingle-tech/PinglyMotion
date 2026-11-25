@@ -848,7 +848,7 @@ PinglyMotion pamięta te wybory.
 
 ### Menu Help
 
-![Menu Help.](manual/img/menu-help.png)
+![Menu Help w programie.](manual/img/menu-help.png)
 
 - **Setup: beginner or experienced, mouse and keys...**
 - **Show the welcome card again**

@@ -25,7 +25,11 @@ MARK_END = "<!--/STATUS-->"
 MAX_MILESTONES = 3
 MAX_BUILDING = 6
 # files next to docs/index.html that are published with it
-EXTRA_FILES = ["download.html", "privacy.html", "home.html", "manual.html", "PinglyMotion-Manual.pdf", "site.css", "site.js"]
+# the manual: one page and one PDF per site language (English has no language code in its names), and the mare page
+MANUAL_LANGS = ["en", "no", "de", "pl", "nl"]
+MANUAL_FILES = ["manual.html" if c == "en" else "manual.%s.html" % c for c in MANUAL_LANGS] + ["manual.mare.html"] \
+    + ["PinglyMotion-Manual.pdf" if c == "en" else "PinglyMotion-Manual.%s.pdf" % c for c in MANUAL_LANGS]
+EXTRA_FILES = ["download.html", "privacy.html", "home.html"] + MANUAL_FILES + ["site.css", "site.js"]
 
 
 def api(path, repo, token):

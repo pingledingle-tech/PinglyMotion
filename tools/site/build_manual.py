@@ -27,10 +27,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.normpath(os.path.join(HERE, "..", "..", "docs"))
 REPO = "https://github.com/pingledingle-tech/PinglyMotion"
+SITE = "https://pingledingle-tech.github.io/PinglyMotion/"
 
 # The five site languages, in the order of the homepage switcher. English is the source of truth.
 LANGS = ["en", "no", "de", "pl", "nl"]
@@ -278,20 +280,34 @@ MARE_SCRIPT = ('(function(){var b=document.getElementById("tg");b.addEventListen
 MARE_LETTERS = dict(zip("abcdefghijklmnopqrstuvwxyz", "ᵄᵝᶝᶞᵋᶡᶢʱᶦᶨᶣᶪᶬᶯᵓᶲᵠʵᶳᶵᶶᶹʷᵡʸᶾ"))
 # The words that stay readable in mare, as on the landing page.
 MARE_READABLE = {"to", "from", "down", "under", "wrong", "silly", "you", "go", "pingle", "pingledingle"}
-WORD_RE = re.compile(r"[A-Za-z]+(?:['’][A-Za-z]+)*")
+WORD_RE = re.compile(r"[^\W\d_]+(?:['\u2019][^\W\d_]+)*")
+# Letters of the other site languages become the plain letter first (the landing page does the same).
+MARE_FOLD = {"\u0142": "l", "\u00f8": "o", "\u00e6": "ae", "\u00df": "ss", "\u0111": "d"}
 
 
-def mare_text(text):
-    """Plain text -> HTML of the mare version (readable words get the class aud)."""
+def mare_letters(word):
+    out = []
+    for c in word:
+        c = c.lower()
+        if c in MARE_FOLD:
+            c = MARE_FOLD[c]
+        else:
+            c = "".join(x for x in unicodedata.normalize("NFD", c) if not unicodedata.combining(x))
+        out.append("".join(MARE_LETTERS.get(x, x) for x in c))
+    return "".join(out)
+
+
+def mare_text(text, english=True):
+    """Plain text -> HTML of the mare version (in English text the readable words get the class aud)."""
     out = []
     pos = 0
     for m in WORD_RE.finditer(text):
         out.append(html.escape(text[pos:m.start()], quote=False))
         word = m.group(0)
-        if word.lower() in MARE_READABLE:
+        if english and word.lower() in MARE_READABLE:
             out.append('<span class="aud">%s</span>' % word)
         else:
-            out.append("".join(MARE_LETTERS.get(c.lower(), c) for c in word))
+            out.append(mare_letters(word))
         pos = m.end()
     out.append(html.escape(text[pos:], quote=False))
     return "".join(out)
@@ -472,21 +488,34 @@ def find_browser():
     return None
 
 
+def absolute_links(page):
+    """For the PDF: links to the other pages of the site become web addresses, so no folder of this machine is stored."""
+    return re.sub(r'(<a [^>]*href=")(?!https?:|#|mailto:)([^"]+)"', lambda m: m.group(1) + SITE + m.group(2) + '"', page)
+
+
 def write_pdf(lang="en"):
     found = find_browser()
     if not found:
         raise SystemExit("No headless Chrome, Chromium or wkhtmltopdf found; cannot make the PDF.")
     kind, path = found
-    source = html_path(lang)
-    with tempfile.TemporaryDirectory() as tmp:
-        raw = os.path.join(tmp, "raw.pdf")
-        if kind == "chrome":
-            cmd = [path, "--headless", "--no-sandbox", "--disable-gpu", "--no-pdf-header-footer",
-                   "--print-to-pdf=" + raw, "file://" + source]
-        else:
-            cmd = [path, "--enable-local-file-access", "--print-media-type", source, raw]
-        subprocess.run(cmd, check=True, timeout=300, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        shutil.copyfile(raw, pdf_path(lang))
+    # the pictures are found next to the page, so the copy that is printed lives in docs/ for a moment
+    source = os.path.join(DOCS, "_pdf_%s.html" % lang)
+    with open(html_path(lang), encoding="utf-8") as f:
+        page = f.read()
+    with open(source, "w", encoding="utf-8", newline="\n") as f:
+        f.write(absolute_links(page))
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = os.path.join(tmp, "raw.pdf")
+            if kind == "chrome":
+                cmd = [path, "--headless", "--no-sandbox", "--disable-gpu", "--no-pdf-header-footer",
+                       "--print-to-pdf=" + raw, "file://" + source]
+            else:
+                cmd = [path, "--enable-local-file-access", "--print-media-type", source, raw]
+            subprocess.run(cmd, check=True, timeout=300, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            shutil.copyfile(raw, pdf_path(lang))
+    finally:
+        os.remove(source)
     return os.path.getsize(pdf_path(lang))
 
 
@@ -499,7 +528,8 @@ def main(argv):
         for code in codes:
             want = page_text(code)
             try:
-                have = open(target_path(code), encoding="utf-8").read()
+                with open(target_path(code), encoding="utf-8") as f:
+                    have = f.read()
             except OSError:
                 have = ""
             if have != want:

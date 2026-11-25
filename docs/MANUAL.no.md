@@ -848,7 +848,7 @@ PinglyMotion husker disse valgene.
 
 ### Menyen Help
 
-![Menyen Help.](manual/img/menu-help.png)
+![Menyen Help i programmet.](manual/img/menu-help.png)
 
 - **Setup: beginner or experienced, mouse and keys...**
 - **Show the welcome card again**
