@@ -10,7 +10,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#if QT_CONFIG(process)
 #include <QProcess>
+#endif
 #include <QSaveFile>
 #include <QStandardPaths>
 
@@ -205,7 +207,12 @@ bool AiAssistant::showFile(const QString& file)
     testLauncher(launch);
     return true;
   }
+#if QT_CONFIG(process)
   if (!launch.program.isEmpty()) return QProcess::startDetached(launch.program, launch.arguments);
+#else
+  // no other programs in a browser (web build, docs/DEV.md "Web-ready code", rule 3)
+  if (!launch.program.isEmpty()) return false;
+#endif
   return QDesktopServices::openUrl(launch.url);
 }
 

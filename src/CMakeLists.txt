@@ -184,8 +184,16 @@ IF (WIN32)
 ENDIF (WIN32)
 
 # Compile and link (ui files and resources are handled by AUTOUIC/AUTORCC)
-ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
-TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+IF (PINGLYMOTION_WEB)
+  # web trial build: Qt's own command also writes the page (PinglyMotion.html) and qtloader.js
+  QT_ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
+  TARGET_LINK_LIBRARIES (pinglymotion PRIVATE pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS})
+  # the data folder (poses, skeletons, body meshes) goes into PinglyMotion.data, read at /data
+  TARGET_LINK_OPTIONS (pinglymotion PRIVATE "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/bin/data@/data")
+ELSE ()
+  ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
+  TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)
+ENDIF ()
 # the control server shuts down a socket's sending side itself (controlserver.cpp, endAfterAnswer)
 IF (WIN32)
   TARGET_LINK_LIBRARIES (pinglymotion ws2_32)
