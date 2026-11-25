@@ -1,6 +1,6 @@
 Branch: job/manual-link
-Status: active
-Pull request: pending
+Status: done
+Pull request: #511
 Files:
 - docs/index.html
 - docs/home.html

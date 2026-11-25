@@ -11,6 +11,9 @@ on:
       - docs/home.html
       - docs/download.html
       - docs/privacy.html
+      - docs/manual.html
+      - docs/manual/**
+      - docs/PinglyMotion-Manual.pdf
       - docs/site.css
       - docs/site.js
       - docs/mockup/**
@@ -49,6 +52,9 @@ jobs:
       # The UX mockup: a hidden page (noindex, not linked from the front page).
       - name: Add the UX mockup
         run: cp -r docs/mockup _site/mockup
+      # The manual page needs its screenshots; the page and the PDF are copied by the page builder.
+      - name: Add the manual screenshots
+        run: cp -r docs/manual _site/manual
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
