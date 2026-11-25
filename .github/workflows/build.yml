@@ -334,7 +334,7 @@ jobs:
     # not after a merge to main (the quick check there is the Linux job)
     if: needs.changes.outputs.code == 'true' && !(github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     env:
       ASAN_OPTIONS: detect_leaks=0:halt_on_error=1:abort_on_error=1
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
