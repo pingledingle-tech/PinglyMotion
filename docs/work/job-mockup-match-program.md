@@ -1,6 +1,6 @@
 Branch: job/mockup-match-program
 Status: active
-Pull request: pending
+Pull request: #507
 Files:
 - docs/mockup/index.html
 - tests/test_site_mockup_*.py
