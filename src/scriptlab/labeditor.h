@@ -42,6 +42,11 @@
  * gives no suggestions, no checks and does not run. With the switch off nothing
  * says Lua anywhere and the language is LSL.
  *
+ * Convert to SLua: at the right end of the message line, a button under the text box converts the script in the editor with
+ * the LSL-to-SLua converter (lsl/lsl2slua.h). The result is in a read-only pane over the text box,
+ * with the converter's warnings in plain words and a Copy button. The script is not changed and
+ * the Lua is not run (the Lua engine is not connected to the Script Lab yet).
+ *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -294,6 +299,18 @@ class LabEditor : public QWidget
     QString languageChoice() const { return m_languageChoice; }
     QString languageInUse() const;
     QComboBox* languageBox() const { return m_languageBox; }
+
+    // --- Convert to SLua (shown with the language choice, only while a script is open)
+    // Converts the text in the editor and shows the result in a read-only pane; the text in the
+    // editor is never changed and the Lua is never run. Returns false when the script has errors.
+    bool convertToSlua();
+    QPushButton* convertButton() const { return m_convertButton; }
+    QWidget* convertPane() const { return m_convertPane; }
+    QPlainTextEdit* convertView() const { return m_convertView; }
+    QLabel* convertHeading() const { return m_convertHeading; }
+    QLabel* convertNotes() const { return m_convertNotes; }
+    QPushButton* convertCopyButton() const { return m_convertCopy; }
+    QPushButton* convertCloseButton() const { return m_convertClose; }
     QLabel* languageLabel() const { return m_languageLabel; }
 
     // --- the parts, for the panel and the tests
@@ -377,6 +394,13 @@ class LabEditor : public QWidget
     QLabel* m_rlvIcon = nullptr;
     QLabel* m_rlvTitle = nullptr;
     QLabel* m_rlvText = nullptr;
+    QPushButton* m_convertButton = nullptr;
+    QWidget* m_convertPane = nullptr;
+    QLabel* m_convertHeading = nullptr;
+    QLabel* m_convertNotes = nullptr;
+    QPlainTextEdit* m_convertView = nullptr;
+    QPushButton* m_convertCopy = nullptr;
+    QPushButton* m_convertClose = nullptr;
     QLabel* m_languageLabel = nullptr;
     QComboBox* m_languageBox = nullptr;
     bool m_luaSwitch = false;

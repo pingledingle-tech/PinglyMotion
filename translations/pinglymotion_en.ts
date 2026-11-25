@@ -2502,6 +2502,61 @@ Pick the ones you want.</source>
         <source>the file could not be written</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Convert to SLua</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show this script as SLua text. Your script is not changed and nothing is run.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The converted SLua text. It is only shown: your script is not changed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy SLua</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the converted SLua text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the SLua text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The SLua text is copied.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This script cannot be converted yet: it has errors.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Converted to SLua. Nothing needs a closer look.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>Converted to SLua. %n note(s) need a closer look.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Line %1: %2 What to do: %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The SLua text is only shown. Your script is not changed, and nothing is run. It is not tested in Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>LabFolderTree</name>
@@ -5063,6 +5118,10 @@ Pick a smaller file, then try again.</source>
     </message>
     <message>
         <source>%1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The AI Assistant needs the desktop program: in a web browser, AI tools cannot connect to PinglyMotion.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

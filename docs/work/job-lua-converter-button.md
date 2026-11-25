@@ -1,5 +1,5 @@
 Branch: job/lua-converter-button
-Status: active
+Status: done
 Pull request: #500
 Files:
 - src/scriptlab/labeditor.*
@@ -9,6 +9,7 @@ Files:
 - docs/SCRIPT_LAB.md
 - docs/SLUA_RULES.md
 - docs/PRODUCT.md
+- docs/ROADMAP.md
 
 ## What
 

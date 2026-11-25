@@ -94,3 +94,10 @@ TARGET_INCLUDE_DIRECTORIES (pinglymotion_labimproveview_tests PRIVATE ${CMAKE_SO
 TARGET_LINK_LIBRARIES (pinglymotion_labimproveview_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME labimproveview COMMAND pinglymotion_labimproveview_tests)
 SET_TESTS_PROPERTIES (labimproveview PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The Convert to SLua button in the Script Lab editor: the result pane, the warnings, Copy, the original unchanged
+ADD_EXECUTABLE (pinglymotion_labconvert_tests tst_labconvert.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labconvert_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_LINK_LIBRARIES (pinglymotion_labconvert_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME labconvert COMMAND pinglymotion_labconvert_tests)
+SET_TESTS_PROPERTIES (labconvert PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
