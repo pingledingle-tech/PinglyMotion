@@ -81,7 +81,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Cache downloaded apt packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /home/runner/apt-archives
           key: apt-fuzz-${{ hashFiles('.github/workflows/fuzz.yml') }}
@@ -93,7 +93,7 @@ jobs:
           sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache clang libclang-rt-18-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl-dev
           sudo chown -R "$USER" /home/runner/apt-archives
       - name: Cache compiler output (ccache)
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /home/runner/.ccache
           key: ccache-fuzz-${{ hashFiles('**/CMakeLists.txt') }}-${{ github.sha }}
@@ -190,7 +190,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Cache downloaded apt packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /home/runner/apt-archives
           key: apt-fuzz-run-${{ hashFiles('.github/workflows/fuzz.yml') }}
