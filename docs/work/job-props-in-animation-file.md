@@ -1,5 +1,5 @@
 Branch: job/props-in-animation-file
-Status: active
+Status: done
 Pull request: #487
 Files:
 - src/propfile.h
