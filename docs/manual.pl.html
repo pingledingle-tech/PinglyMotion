@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>Podręcznik użytkownika PinglyMotion</title>
+<meta name="description" content="Podręcznik użytkownika PinglyMotion: instalacja, animacja, Script Lab, asystenci AI, skróty klawiszowe i rozwiązywanie problemów.">
+<link rel="stylesheet" href="site.css">
+<style>
+.manual{max-width:62rem;margin:0 auto}
+.manual img{max-width:100%;height:auto;border:1px solid var(--border,#8884);border-radius:6px;display:block;margin:.75rem 0}
+.manual .table-wrap{overflow-x:auto;margin:1rem 0}
+.manual table{border-collapse:collapse;width:100%}
+.manual th,.manual td{border:1px solid var(--border,#8886);padding:.35rem .6rem;text-align:left;vertical-align:top}
+.manual pre{overflow-x:auto;padding:.75rem;border:1px solid var(--border,#8886);border-radius:6px}
+.manual h2{margin-top:2.5rem}
+@media print{
+  html,body{background:#fff !important;color:#111 !important}
+  .skip,.top,nav.site,.unmare{display:none}
+  .manual img{max-height:22cm;width:auto}
+  .manual tr,.manual img{break-inside:avoid}
+  .manual h2,.manual h3{break-after:avoid}
+  a{color:#0645ad}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#manual">Przejdź do treści</a>
+<div class="wrap">
+<nav class="site" aria-label="Strona"><ul><li><a href="index.html#pl">Start</a></li><li><a href="download.html#pl">Pobierz</a></li><li><a href="PinglyMotion-Manual.pl.pdf">Podręcznik jako PDF</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues">Zgłoś błąd</a></li></ul></nav>
+<nav class="site" aria-label="Języki podręcznika"><ul><li><a href="manual.html" hreflang="en" lang="en">English</a></li><li><a href="manual.no.html" hreflang="nb" lang="nb">Norsk</a></li><li><a href="manual.de.html" hreflang="de" lang="de">Deutsch</a></li><li><a href="manual.pl.html" hreflang="pl" lang="pl" aria-current="page">Polski</a></li><li><a href="manual.nl.html" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="manual.mare.html" hreflang="en" lang="en">Mare</a></li></ul></nav>
+<main class="manual" id="manual" lang="pl">
+<!-- Made by tools/site/build_manual.py from docs/MANUAL.pl.md. Do not edit by hand. -->
+<h1 id="podręcznik-użytkownika-pinglymotion">Podręcznik użytkownika PinglyMotion</h1>
+<p>Dla PinglyMotion 0.3.0, wczesnej wersji zapoznawczej. Napisany dla osób, które dopiero zaczynają z animacją i skryptami.</p>
+<p>Ten podręcznik mówi, co robi każda część programu. Mówi, co jest gotowe, a co nie. Tam, gdzie coś jest próbą albo nie zostało przetestowane w Second Life, jest to napisane.</p>
+<p><em>Tłumaczenie maszynowe angielskiego podręcznika. Żadna osoba, dla której polski jest językiem ojczystym, go nie sprawdziła. W razie wątpliwości obowiązuje <a href="manual.html">podręcznik angielski</a>.</em></p>
+<p>Wszystkie obrazy to prawdziwe zrzuty ekranu programu (wersja na Linuksa, ciemny motyw). Jeden obraz oznaczony jako „diagram” został narysowany na potrzeby tego podręcznika.</p>
+<p><strong>Spis treści</strong></p>
+<ul><li><a href="#zacznij-tutaj">Zacznij tutaj</a>: czym to jest, ogólny obraz, dla kogo, od czego zacząć</li><li><a href="#szybki-start-pierwsze-pięć-minut">Szybki start: pierwsze pięć minut</a></li><li><a href="#co-jest-gotowe-a-co-nie">Co jest gotowe, a co nie</a></li><li><a href="#rozdział-1-instalacja-i-uruchomienie">Rozdział 1: Instalacja i uruchomienie</a></li><li><a href="#rozdział-2-okno-na-jednym-obrazie">Rozdział 2: Okno na jednym obrazie</a></li><li><a href="#rozdział-3-twoja-pierwsza-animacja">Rozdział 3: Twoja pierwsza animacja</a></li><li><a href="#rozdział-4-pozowanie-w-szczegółach">Rozdział 4: Pozowanie w szczegółach</a></li><li><a href="#rozdział-5-oś-czasu-klucze-i-odtwarzanie">Rozdział 5: Oś czasu, klucze i odtwarzanie</a></li><li><a href="#rozdział-6-widok-3d-i-kamera">Rozdział 6: Widok 3D i kamera</a></li><li><a href="#rozdział-7-rekwizyty">Rozdział 7: Rekwizyty</a></li><li><a href="#rozdział-8-biblioteka">Rozdział 8: Biblioteka</a></li><li><a href="#rozdział-9-pliki-i-formaty">Rozdział 9: Pliki i formaty</a></li><li><a href="#rozdział-10-script-lab-dla-początkujących">Rozdział 10: Script Lab dla początkujących</a></li><li><a href="#rozdział-11-asystenci-ai">Rozdział 11: Asystenci AI</a></li><li><a href="#rozdział-12-połączenie-na-żywo-z-aurorą">Rozdział 12: Połączenie na żywo z Aurorą</a></li><li><a href="#rozdział-13-ustawienia-motywy-i-pomoc">Rozdział 13: Ustawienia, motywy i pomoc</a></li><li><a href="#rozdział-14-skróty-klawiszowe-i-mysz">Rozdział 14: Skróty klawiszowe i mysz</a></li><li><a href="#rozdział-15-każda-pozycja-menu">Rozdział 15: Każda pozycja menu</a></li><li><a href="#rozdział-16-rozwiązywanie-problemów-i-opinie">Rozdział 16: Rozwiązywanie problemów i opinie</a></li><li><a href="#rozdział-17-podziękowania-i-źródła">Rozdział 17: Podziękowania i źródła</a></li><li><a href="#słowniczek">Słowniczek</a></li></ul>
+<hr>
+<h2 id="zacznij-tutaj">Zacznij tutaj</h2>
+<h3 id="do-czego-służy-pinglymotion">Do czego służy PinglyMotion</h3>
+<p>Second Life to wirtualny świat. Ludzie używają tam animacji, żeby ich awatary stały, siedziały, tańczyły i machały. <strong>Animacja</strong> to ruch zapisany w pliku.</p>
+<p>PinglyMotion pomaga robić takie ruchy. Jest darmowy. Ma otwarty kod źródłowy, co znaczy, że każdy może czytać i ulepszać program.</p>
+<p>PinglyMotion robi trzy rzeczy:</p>
+<ol><li><strong>Animowanie postaci.</strong> Zginasz stawy postaci 3D. Zapisujesz pozy w wybranych momentach. Program wypełnia ruch pomiędzy nimi. Wynik eksportujesz do Second Life.</li><li><strong>Bezpieczne testowanie skryptów.</strong> Obiekty w Second Life używają skryptów. PinglyMotion ma bezpieczną piaskownicę, <strong>Script Lab</strong>, w której możesz uruchamiać skrypty RLV i LSL na własnym komputerze. Nic, co tam robisz, nie dociera do Second Life.</li><li><strong>Praca z pomocnikiem AI, jeśli chcesz.</strong> Asystent AI na twoim własnym komputerze może ustawić postać w pozie za ciebie. Jest wyłączony, dopóki go nie włączysz. Wszystko działa bez niego.</li></ol>
+<p>PinglyMotion to <strong>wczesna wersja zapoznawcza</strong>. Jest zrobiony do wypróbowywania i do opinii. Spodziewaj się niedociągnięć. Zobacz <a href="#co-jest-gotowe-a-co-nie">Co jest gotowe, a co nie</a>.</p>
+<h3 id="ogólny-obraz">Ogólny obraz</h3>
+<p><img src="manual/img/overview.png" alt="Diagram: strona Animate, strona Script, asystent AI, biblioteka, rekwizyty i przykłady oraz twoje pliki, wszystko w jednym oknie." loading="lazy"></p>
+<p><em>Diagram narysowany na potrzeby tego podręcznika.</em></p>
+<p>Program to jedno okno z dwiema stronami. Przełączasz je przyciskami <strong>Animate</strong> i <strong>Script</strong> w lewym górnym rogu.</p>
+<ul><li><strong>Animate</strong> pokazuje panele do tworzenia animacji: listę Joints, widok 3D, panel Selected joint i Timeline.</li><li><strong>Script</strong> oddaje większość okna Script Lab. Widok 3D zostaje po lewej.</li></ul>
+<p>Każda strona pamięta własny układ. Widok 3D jest wspólny. Rekwizyt (prosty kształt 3D) albo efekt skryptu pojawia się obok postaci.</p>
+<p>Inne części:</p>
+<ul><li><strong>Library</strong> zawiera 106 gotowych ruchów. Możesz zacząć od jednego z nich.</li><li><strong>Rekwizyty</strong> to proste kształty, które możesz umieścić w scenie.</li><li>Folder <strong>examples</strong> obok programu zawiera pliki, które możesz otworzyć i śledzić razem z tym podręcznikiem.</li><li><strong>AI Assistant</strong> to przełącznik w prawym dolnym rogu. Przy każdym uruchomieniu jest wyłączony.</li></ul>
+<h3 id="dla-kogo">Dla kogo</h3>
+<ul><li><strong>Początkujący.</strong> Nigdy nie zrobiłeś animacji ani nie napisałeś skryptu. Program startuje w trybie Beginner. Pokazuje kartę powitalną, karty podpowiedzi i panel Helper. Ten podręcznik wyjaśnia każde słowo.</li><li><strong>Doświadczeni użytkownicy.</strong> Znasz narzędzia do animacji, takie jak Maya czy Blender. Włącz tryb Expert (Shift+E). Dostaniesz więcej elementów sterujących, na przykład edycję krzywych i drugą postać. Możesz wybrać styl myszy i klawiszy: Maya, Blender albo Second Life.</li></ul>
+<h3 id="od-czego-zacząć">Od czego zacząć?</h3>
+<ul><li><strong>Chcę zrobić animację.</strong> Przeczytaj <a href="#szybki-start-pierwsze-pięć-minut">Szybki start</a>. Potem przejdź <a href="#rozdział-3-twoja-pierwsza-animacja">Rozdział 3: Twoja pierwsza animacja</a>.</li><li><strong>Chcę testować skrypty.</strong> Przejdź do <a href="#rozdział-10-script-lab-dla-początkujących">Rozdziału 10: Script Lab dla początkujących</a>. Nie potrzebujesz wcześniej żadnej animacji.</li><li><strong>Chcę, żeby pomogła mi AI.</strong> Przeczytaj <a href="#rozdział-11-asystenci-ai">Rozdział 11</a>.</li><li><strong>Chcę wiedzieć, co działa.</strong> Przeczytaj <a href="#co-jest-gotowe-a-co-nie">Co jest gotowe, a co nie</a>.</li></ul>
+<hr>
+<h2 id="szybki-start-pierwsze-pięć-minut">Szybki start: pierwsze pięć minut</h2>
+<ol><li><strong>Pobierz.</strong> Ściągnij plik zip dla Windows albo AppImage dla Linuksa ze strony wydań (zobacz <a href="#rozdział-1-instalacja-i-uruchomienie">Rozdział 1</a>).</li><li><strong>Uruchom.</strong> W Windows rozpakuj plik zip. Uruchom <code>PinglyMotion.exe</code>. W Linuksie nadaj AppImage prawo wykonywania i uruchom go.</li><li><p><strong>Karta powitalna.</strong> Pierwsze uruchomienie pokazuje „Make your first animation”. Wybierz <strong>New to animation</strong>. Naciśnij <strong>Standing</strong>.</p><p><img src="manual/img/welcome-card.png" alt="Karta powitalna z wyborami Standing, Sitting, Dance example i Skip." loading="lazy"></p></li><li><strong>Otwórz listę Joints.</strong> Wybierz <strong>View &gt; Joints</strong>. Kliknij na liście <strong>Left Arm: Whole Arm</strong>. Postać pokazuje pierścienie na tym stawie.</li><li><strong>Zapisz pierwszy klucz.</strong> Naciśnij <strong>Set the first key</strong> na dole ekranu. Klucz to zapisana poza w jednym momencie.</li><li><strong>Ustaw pozę.</strong> Przeciągnij znacznik czasu (suwak nad przyciskiem Start) w prawo. W panelu <strong>Selected joint</strong> wpisz <code>-60</code> w polu <strong>Lean to the side</strong>. Naciśnij Enter. Ramię się opuszcza. Program zapisuje klucz za ciebie.</li><li><strong>Odtwórz.</strong> Naciśnij <strong>Start</strong>. Naciśnij <strong>Stop</strong>, żeby zatrzymać.</li><li><strong>Zapisz.</strong> Naciśnij <strong>Save</strong> u góry i wybierz nazwę. Plik kończy się na <code>.dingle</code>.</li></ol>
+<p>To cała animacja. <a href="#rozdział-3-twoja-pierwsza-animacja">Rozdział 3</a> wyjaśnia każdy krok. Żeby zrobić plik dla Second Life, naciśnij <strong>Export</strong> (zobacz <a href="#rozdział-9-pliki-i-formaty">Rozdział 9</a>).</p>
+<p>To, co nie jest gotowe, jest wymienione w <a href="#co-jest-gotowe-a-co-nie">Co jest gotowe, a co nie</a>.</p>
+<hr>
+<h2 id="co-jest-gotowe-a-co-nie">Co jest gotowe, a co nie</h2>
+<p>Każda pozycja ma jedno z tych słów:</p>
+<ul><li><strong>Built.</strong> Działa w programie i ma automatyczne testy.</li><li><strong>Partly built.</strong> Część działa. Tekst mówi, czego brakuje.</li><li><strong>Trial.</strong> Istnieje, ale to próba. Może się zmienić albo się zepsuć.</li><li><strong>Not built.</strong> Jest zaplanowane albo to tylko pomysł.</li><li><strong>Not tested in Second Life.</strong> Program robi na twoim komputerze to, co powinien. Nikt jeszcze nie sprawdził, czy Second Life przyjmuje lub uruchamia wynik.</li></ul>
+<p>Daty pochodzą z dokumentów projektu z 25 listopada 2026.</p>
+<div class="table-wrap"><table><thead><tr><th>Część</th><th>Status</th><th>Uwagi</th></tr></thead><tbody><tr><td>Pozowanie stawów, klucze, oś czasu, odtwarzanie, cofanie</td><td>Built</td><td>Rozdziały 3 do 5.</td></tr><tr><td>Zapis jako <code>.dingle</code>, otwieranie <code>.dingle</code>, <code>.bvh</code>, <code>.avm</code></td><td>Built</td><td>Stare pliki <code>.avm</code> się otwierają i są zapisywane jako <code>.dingle</code>.</td></tr><tr><td>Eksport dla Second Life (<code>.anim</code>)</td><td>Built</td><td>Eksport, wgranie i odtwarzanie zostały potwierdzone w Firestorm 21 listopada 2026: czas, pętla, łagodny start i koniec, dłonie, easing. Inne przeglądarki (viewery) nie były sprawdzane.</td></tr><tr><td>Import <code>.anim</code>, BVH z innego szkieletu, glTF</td><td>Built</td><td>Blokada stóp (żeby stopy się nie ślizgały) jest <strong>not built</strong>.</td></tr><tr><td>Biblioteka 106 ruchów</td><td>Built</td><td>Ruchy pochodzą z otwartych źródeł. Ich licencje są pokazane w panelu.</td></tr><tr><td>Rekwizyty (pudełko, kula, stożek, torus)</td><td>Built</td><td>To proste kształty. Rekwizytu nie można jeszcze przemianować.</td></tr><tr><td>Dwie postacie w jednej scenie (tryb Expert)</td><td>Built</td><td>Tylko w trybie Expert.</td></tr><tr><td>Stawy twarzy</td><td>Partly built</td><td>Stawy twarzy są odłożone. Karta Face istnieje, ale twarz nie jest priorytetem.</td></tr><tr><td>Script Lab: polecenia RLV</td><td>Built</td><td>Piaskownica ze 206 zachowaniami RLV. <strong>Not tested in Second Life.</strong> Ostateczny test zawsze odbywa się w Second Life.</td></tr><tr><td>Script Lab: skrypty LSL działają w piaskownicy</td><td>Partly built</td><td>282 wbudowane funkcje, symulowany zegar. Niektóre funkcje tylko zapisują, o co je poproszono. Wiele jeszcze nic nie robi. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Script Lab: Live scripts, drzewo, rekwizyty z prymów</td><td>Built</td><td>Jeden folder to jeden obiekt. Rekwizyt o tej samej nazwie co prym należy do niego.</td></tr><tr><td>Script Lab: Player, Who talks to whom, Record what I do</td><td>Built</td><td><strong>Not tested in Second Life.</strong> Niektóre części widoku 3D nie podążają za odtwarzaczem (zobacz Rozdział 10).</td></tr><tr><td>Script Lab: Improve a setup</td><td>Partly built</td><td>Liczby pamięci nie obejmują pamięci zajmowanej przez sam kod. To wymaga pomiaru w Second Life.</td></tr><tr><td>Script Lab: przykład OpenCollar</td><td>Built</td><td>Prawdziwa obroża z 23 skryptami działa w piaskownicy. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Script Lab: Lua (SLua)</td><td><strong>Trial</strong></td><td>Za przełącznikiem, który na starcie jest wyłączony. Edytor dostaje wybór języka i przycisk <strong>Convert to SLua</strong>. Nic jeszcze nie uruchamia Lua. Brak sprawdzania Lua i podpowiedzi. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Wersja webowa (w przeglądarce)</td><td><strong>Trial</strong></td><td>Jest tylko próbna kompilacja. Nie działa jeszcze dobrze. Nie planuj jej używać.</td></tr><tr><td>Asystent AI (sterowanie lokalne)</td><td>Built</td><td>Wyłączony przy każdym uruchomieniu. Claude: dostarczone jest rozszerzenie. ChatGPT i inne narzędzia: konfiguracja jest opisana, ale <strong>nie testowana przez nas</strong>.</td></tr><tr><td>Połączenie na żywo z Aurorą</td><td>Partly built</td><td>Działa w Windows ze specjalną kompilacją (forkiem) przeglądarki Aurora. Ze zwykłą Aurorą jeszcze nie działa.</td></tr><tr><td>Tłumaczenia</td><td>Not built</td><td>Program jest tylko po angielsku. Mechanizm istnieje.</td></tr><tr><td>Podpisywanie kodu dla Windows</td><td>Not built</td><td>Windows może ostrzegać o nieznanym wydawcy.</td></tr><tr><td>Instalator</td><td>Not built</td><td>Pobranie dla Windows to plik zip.</td></tr></tbody></table></div>
+<p>Niektóre różnice między programem a klikalną makietą na stronie wciąż są poprawiane. Jeśli ekran w makiecie wygląda inaczej, zaufaj temu podręcznikowi i programowi.</p>
+<hr>
+<h2 id="rozdział-1-instalacja-i-uruchomienie">Rozdział 1: Instalacja i uruchomienie</h2>
+<h3 id="windows">Windows</h3>
+<ol><li>Otwórz stronę wydań projektu: <a href="https://github.com/pingledingle-tech/PinglyMotion/releases">https://github.com/pingledingle-tech/PinglyMotion/releases</a>.</li><li>Pobierz plik zip dla Windows. Pobierz też <code>SHA256SUMS</code>, jeśli chcesz sprawdzić pobranie.</li><li>Rozpakuj plik zip do wybranego folderu. Zostaw folder <code>data</code> obok programu.</li><li>Uruchom <code>PinglyMotion.exe</code>.</li></ol>
+<p>Plik zip zawiera też folder <code>examples</code> (pliki używane w tym podręczniku), folder <code>library</code> i folder <code>mcp</code> (dla asystentów AI).</p>
+<p>Nie ma instalatora. Żeby usunąć program, usuń folder.</p>
+<h3 id="linux">Linux</h3>
+<ol><li>Pobierz AppImage ze strony wydań.</li><li>Nadaj mu prawo wykonywania: <code>chmod +x PinglyMotion*.AppImage</code>.</li><li>Uruchom go.</li></ol>
+<h3 id="czego-potrzebujesz">Czego potrzebujesz</h3>
+<p>Karty graficznej i sterownika z OpenGL 3.3 lub nowszym. Jeśli widok 3D pozostaje czarny, zaktualizuj sterownik karty graficznej.</p>
+<h3 id="co-program-zapisuje-na-twoim-komputerze">Co program zapisuje na twoim komputerze</h3>
+<ul><li>Ustawienia: zwykły plik (<code>%APPDATA%\PinglyMotion</code> w Windows, <code>~/.config/PinglyMotion</code> w Linuksie).</li><li>Dziennik błędów i plik połączenia dla asystenta AI: w <code>%LOCALAPPDATA%\PinglyMotion</code> w Windows albo <code>~/.local/share/PinglyMotion</code> w Linuksie.</li><li>Przykłady Script Lab, które tworzysz: w <code>Documents/PinglyMotion/Scripts</code>.</li></ul>
+<p>PinglyMotion nie zbiera danych osobowych i nie wysyła telemetrii. Program raz przy starcie sprawdza, czy jest nowsza wersja („Update check”).</p>
+<h3 id="pierwsze-uruchomienie">Pierwsze uruchomienie</h3>
+<p>Pierwsze uruchomienie pokazuje kartę powitalną (zobacz Szybki start). Wybierz <strong>Skip</strong>, jeśli chcesz pustą postać. Kartę możesz pokazać ponownie przez <strong>Help &gt; Show the welcome card again</strong>.</p>
+<p><strong>Przykład.</strong> Uruchom program. Naciśnij <strong>Skip</strong> na karcie powitalnej. Widzisz postać w pozie T (ręce wyprostowane na boki) na kraciastej podłodze.</p>
+<hr>
+<h2 id="rozdział-2-okno-na-jednym-obrazie">Rozdział 2: Okno na jednym obrazie</h2>
+<p><img src="manual/img/window.png" alt="Całe okno: pasek menu, górny pasek, panel Joints po lewej, widok 3D pośrodku z paskiem widoku, panel Selected joint po prawej, Timeline poniżej, pasek stanu na dole." loading="lazy"></p>
+<p>Od góry do dołu:</p>
+<ul><li><strong>Pasek menu:</strong> File, Edit, View, Help. Każda pozycja menu jest wymieniona w <a href="#rozdział-15-każda-pozycja-menu">Rozdziale 15</a>.</li><li><p><strong>Górny pasek.</strong> Od lewej do prawej:</p><ul><li><strong>Animate</strong> i <strong>Script</strong> przełączają dwie strony (F7 i F8).</li><li><strong>Helper</strong> włącza i wyłącza panel Helper.</li><li>Strzałki Undo i Redo.</li><li><strong>Save</strong> i <strong>Export</strong>.</li><li><strong>Script Lab</strong> i <strong>Library</strong> otwierają te panele.</li><li><strong>Reset layout</strong> przywraca każdy panel na miejsce startowe.</li><li><strong>Setup</strong> otwiera ustawienia.</li><li>Przycisk słońca przełącza między ciemnym a jasnym motywem.</li></ul></li><li><strong>Panel Joints</strong> (po lewej): lista stawów, z kartami Avatar i Props.</li><li><strong>Widok 3D</strong> (pośrodku): postać i podłoga. W lewym górnym rogu jest <strong>view-direction widget</strong> (kliknij koniec osi, żeby patrzeć stamtąd). Pod nim jest <strong>view toolbar</strong> z narzędziami Pick and pull, Look around, Move the view i Zoom.</li><li><strong>Panel Selected joint</strong> (po prawej): obraca wybrany staw.</li><li><strong>Timeline</strong> (na dole): klucze w czasie, kafelki easing, znacznik czasu i przyciski odtwarzania.</li><li><strong>Pasek stanu</strong> (na samym dole): po lewej wiersz pomocy. Po prawej: przełączniki <strong>Tips</strong>, <strong>AI Assistant</strong> i <strong>Aurora</strong>.</li></ul>
+<h3 id="panele-które-możesz-przesuwać-i-zmieniać-ich-rozmiar">Panele, które możesz przesuwać i zmieniać ich rozmiar</h3>
+<p>Każdy panel można:</p>
+<ul><li>przeciągnąć za tytuł w nowe miejsce,</li><li><strong>wyrwać</strong> do osobnego okna (mała kwadratowa ikona w tytule),</li><li>zmienić jego rozmiar, przeciągając linie podziału między panelami,</li><li>ukryć za pomocą X w tytule.</li></ul>
+<p>Naciśnij <strong>Tab</strong>, żeby ukryć lub pokazać wszystkie panele. <strong>View &gt; Reset layout</strong> (albo przycisk <strong>Reset layout</strong>) przywraca wszystko. Reset layout resetuje obie strony.</p>
+<p><strong>Przykład.</strong> Przeciągnij Timeline za tytuł na prawą stronę. Naciśnij <strong>Reset layout</strong>. Wraca na dół.</p>
+<h3 id="animate-i-script">Animate i Script</h3>
+<p>Naciśnij <strong>Script</strong> (albo F8). Script Lab wypełnia prawą stronę okna.</p>
+<p><img src="manual/img/scriptlab-start.png" alt="Strona Script: Script Lab po prawej, widok 3D po lewej. Nic jeszcze nie jest obserwowane, więc oferuje Make example project, Watch folder, New folder i Try the example scripts." loading="lazy"></p>
+<p>Naciśnij <strong>Animate</strong> (albo F7). Twoje panele animacji wracają tak, jak je zostawiłeś.</p>
+<h3 id="helper">Helper</h3>
+<p>Przycisk <strong>Helper</strong> pokazuje mały panel w prawym dolnym rogu widoku 3D. Pokazuje następną kartę podpowiedzi i trzy krótkie lekcje:</p>
+<ul><li><strong>Make your first move:</strong> wybierz staw, obróć go, zapisz klucz i zobacz efekt.</li><li><strong>Arrange the windows:</strong> otwórz Library, a potem przywróć każde okno.</li><li><strong>Try the Script Lab:</strong> przełącz na Script i z powrotem.</li></ul>
+<p>Pierścień zaznacza prawdziwy element sterujący, o którym mówi krok. Krok idzie dalej, gdy go wykonasz. Naciśnij <strong>Turn hints off</strong>, żeby zatrzymać karty podpowiedzi. Wyłącz Helper, a program jest czysty.</p>
+<p>Przycisk Helper i <strong>Help &gt; Show hints</strong> (Shift+H) to to samo ustawienie.</p>
+<h3 id="beginner-i-expert">Beginner i Expert</h3>
+<p><strong>View &gt; Expert mode</strong> (Shift+E) pokazuje więcej elementów sterujących. Tryb Expert dodaje:</p>
+<ul><li><strong>Paste mirrored</strong>,</li><li><strong>Edit curve</strong> na osi czasu,</li><li>siatkę każdego stawu palca w stopniach na karcie Hands,</li><li>przełącznik pokazujący każdy staw na osi czasu,</li><li>drugą postać (File &gt; Add a second figure, w panelu Library: Add as a second figure).</li></ul>
+<p>Ten sam przełącznik jest w <strong>Setup</strong>.</p>
+<hr>
+<h2 id="rozdział-3-twoja-pierwsza-animacja">Rozdział 3: Twoja pierwsza animacja</h2>
+<p>W około dziesięć minut zrobisz krótki ruch ręki.</p>
+<p>Najpierw trzy słowa.</p>
+<ul><li><strong>Klucz</strong> (key) to zapisana poza w jednym momencie. Program wypełnia ruch pomiędzy dwoma kluczami.</li><li><strong>Klatka</strong> (frame) to jeden krok w czasie.</li><li><strong>Znacznik czasu</strong> to suwak, który wybiera moment, który widzisz.</li></ul>
+<h3 id="krok-1-start">Krok 1: Start</h3>
+<ol><li>Wybierz <strong>File &gt; New animation</strong> (Ctrl+N). Pojawia się postać.</li><li>Albo wybierz <strong>File &gt; Open</strong> i wskaż <code>wave.dingle</code> w folderze <code>examples</code> obok programu. To gotowa animacja do obejrzenia.</li></ol>
+<p>Postać stoi w pozie T.</p>
+<h3 id="krok-2-otwórz-listę-joints-i-wybierz-staw">Krok 2: Otwórz listę Joints i wybierz staw</h3>
+<ol><li>Wybierz <strong>View &gt; Joints</strong>. Panel Joints otwiera się po lewej.</li><li>Na liście kliknij <strong>Whole Arm</strong> pod <strong>Left Arm</strong>. Albo kliknij ramię na postaci.</li></ol>
+<p><img src="manual/img/pose.png" alt="Poza w trakcie pracy: wybrane jest Left Arm Whole Arm, ramię jest opuszczone, a panel Selected joint pokazuje suwaki." loading="lazy"></p>
+<p>Panel <strong>Selected joint</strong> pokazuje nazwę stawu i trzy suwaki: <strong>Tilt forward or back</strong>, <strong>Turn left or right</strong> i <strong>Lean to the side</strong>. Każdy pokazuje swój dozwolony zakres.</p>
+<h3 id="krok-3-ustaw-pierwszy-klucz">Krok 3: Ustaw pierwszy klucz</h3>
+<p>Naciśnij <strong>Set the first key</strong> na dole ekranu (albo naciśnij <strong>K</strong>). Program zapisuje pozę, którą teraz widzisz, jako klucz. Oś czasu pokazuje teraz wiersz dla tego stawu.</p>
+<p>Nowa animacja ma 30 klatek. Pierwsza klatka jest zablokowana, żeby chronić pierwszą pozę. Twój pierwszy klucz trafia więc na klatkę 2. Żeby odblokować pierwszą klatkę, wyłącz <strong>Edit &gt; Lock the first frame</strong>.</p>
+<h3 id="krok-4-wybierz-późniejszy-moment">Krok 4: Wybierz późniejszy moment</h3>
+<p>Przeciągnij znacznik czasu (suwak nad przyciskiem <strong>Start</strong>) w prawo. Tekst <strong>Frame ... of ...</strong> na dole osi czasu pokazuje, gdzie jesteś. Postać zachowuje pozę z poprzedniego klucza.</p>
+<p>Panel Timeline nie jest wysoki. Jeśli nie widzisz suwaka i przycisków odtwarzania, przewiń wewnątrz Timeline albo przeciągnij linię podziału nad nim do góry.</p>
+<h3 id="krok-5-ustaw-pozę">Krok 5: Ustaw pozę</h3>
+<p>Zrób jedno z tych:</p>
+<ul><li>Wpisz liczbę w polu panelu Selected joint, na przykład <code>-60</code> w <strong>Lean to the side</strong>, i naciśnij Enter.</li><li>Przeciągnij suwak.</li><li>Przeciągnij kolorowy pierścień na postaci. Czerwony obraca wokół X, zielony wokół Y, a niebieski wokół Z.</li><li>Przeciągnij sam staw. Kończyna podąża za wskaźnikiem. Przytrzymaj <strong>Shift</strong>, żeby obrócić tylko ten staw.</li></ul>
+<p>Obrócenie stawu od razu zapisuje klucz dla tego stawu. Oś czasu go pokazuje. Wiersz stanu mówi „Key set at frame ... for ...”.</p>
+<h3 id="krok-6-wybierz-jak-ruch-ma-się-czuć">Krok 6: Wybierz, jak ruch ma się „czuć”</h3>
+<p>Gdy klucz jest wybrany, oś czasu pokazuje sześć kafelków pod <strong>How the move feels</strong>:</p>
+<div class="table-wrap"><table><thead><tr><th>Kafelek</th><th>Znaczenie</th></tr></thead><tbody><tr><td>Even</td><td>Ta sama prędkość przez cały czas.</td></tr><tr><td>Slow start</td><td>Zaczyna łagodnie, potem przyspiesza.</td></tr><tr><td>Slow finish</td><td>Rusza z prędkością, potem się uspokaja. Dobre do odkładania dłoni.</td></tr><tr><td>Slow both ends</td><td>Zaczyna i kończy łagodnie. To domyślne ustawienie nowego klucza.</td></tr><tr><td>Overshoot, then settle</td><td>Wychodzi trochę za daleko, potem wraca.</td></tr><tr><td>Hold, then snap</td><td>Stoi w miejscu, potem skacze.</td></tr></tbody></table></div>
+<h3 id="krok-7-odtwórz">Krok 7: Odtwórz</h3>
+<ol><li>Naciśnij <strong>Start</strong>. Animacja się odtwarza.</li><li>Naciśnij <strong>Stop</strong>, żeby zatrzymać.</li><li><strong>Replay from start</strong> odtwarza od pierwszej klatki.</li><li><strong>Loop</strong> (domyślnie zaznaczone) odtwarza w kółko.</li><li><strong>Frame back</strong> i <strong>Frame forward</strong> przesuwają o jedną klatkę.</li></ol>
+<h3 id="krok-8-zapisz">Krok 8: Zapisz</h3>
+<ol><li>Wybierz <strong>File &gt; Save as...</strong> (Ctrl+A) albo naciśnij <strong>Save</strong> u góry.</li><li>Wybierz nazwę. Plik kończy się na <code>.dingle</code>. To format roboczy. Zachowuje całą twoją pracę.</li></ol>
+<h3 id="krok-9-eksport-dla-second-life">Krok 9: Eksport dla Second Life</h3>
+<ol><li>Naciśnij <strong>Export</strong> u góry albo wybierz <strong>File &gt; Export for Second Life (.anim)...</strong> (Ctrl+Shift+E).</li><li><p>Otwiera się małe okienko.</p><p><img src="manual/img/export-dialog.png" alt="Okienko eksportu: Length, Priority, Slow start, Slow finish, Play again and again, Hands, Choose file i Cancel." loading="lazy"></p><ul><li><strong>Length</strong> jest pokazana jako tekst. Second Life przyjmuje do 60 sekund.</li><li><strong>Priority (0 to 6):</strong> gdy dwie animacje poruszają ten sam staw, wygrywa wyższa liczba.</li><li><strong>Slow start</strong> i <strong>Slow finish:</strong> jak długo animacja się wygasza na początku i końcu.</li><li><strong>Play again and again:</strong> użyj punktów pętli.</li><li><strong>Hands:</strong> jak wyglądają palce podczas odtwarzania.</li></ul></li><li>Naciśnij <strong>Choose file...</strong> i wybierz nazwę. Plik kończy się na <code>.anim</code>.</li></ol>
+<p>Program sprawdza animację pod kątem zasad Second Life podczas eksportu.</p>
+<h3 id="krok-10-wgraj-do-second-life">Krok 10: Wgraj do Second Life</h3>
+<p>Wgrywanie odbywa się w przeglądarce Second Life (viewerze), nie w PinglyMotion.</p>
+<ol><li>W viewerze wybierz <strong>Build &gt; Upload &gt; Animation</strong>. (Dokładna nazwa menu zależy od twojego viewera.)</li><li>Wybierz swój plik <code>.anim</code>.</li><li>Ustaw ten sam priorytet i pętlę co w okienku eksportu. Viewer prosi o niewielką opłatę.</li><li>Załóż lub odtwórz animację, żeby ją zobaczyć.</li></ol>
+<p>Szczera uwaga: eksport, wgranie i odtwarzanie zostały potwierdzone w Firestorm 21 listopada 2026. Inne viewery nie były testowane. Wgranie kosztuje w Second Life niewielką opłatę.</p>
+<h3 id="jeśli-coś-pójdzie-nie-tak">Jeśli coś pójdzie nie tak</h3>
+<ul><li><strong>Postać się nie rusza.</strong> Możesz być na zablokowanej pierwszej klatce. Przeciągnij znacznik czasu na późniejszą klatkę.</li><li><strong>Staw nie chce się obrócić dalej.</strong> Jest w najdalszym możliwym położeniu. Obróć go z powrotem albo naciśnij <strong>Turn limits off</strong> w ostrzeżeniu.</li><li><strong>Nie podoba ci się klucz.</strong> Naciśnij Ctrl+Z, żeby cofnąć.</li><li><strong>Zgubiłeś widok.</strong> Naciśnij <strong>0</strong>, żeby wrócić do widoku domowego, albo naciśnij <strong>Whole figure</strong> (Shift+F).</li><li><strong>Nic się nie rusza podczas odtwarzania.</strong> Staw potrzebuje dwóch kluczy na różnych klatkach.</li></ul>
+<hr>
+<h2 id="rozdział-4-pozowanie-w-szczegółach">Rozdział 4: Pozowanie w szczegółach</h2>
+<h3 id="panel-joints">Panel Joints</h3>
+<p>Panel ma dwie karty: <strong>Avatar</strong> i <strong>Props</strong> (Rozdział 7).</p>
+<p>Na karcie Avatar, od góry do dołu:</p>
+<ul><li><strong>Animation:</strong> nazwa otwartej animacji. Nowa animacja nazywa się <code>pingle</code>.</li><li><strong>Figure:</strong> <code>female</code> albo <code>male</code>. To zmienia tylko to, co widzisz.</li><li><strong>Size:</strong> rozmiar postaci w widoku (na początku 100%).</li><li><strong>Left</strong>, <strong>Right</strong> i <strong>Mirror</strong>: którą stronę pokazuje lista i którą stronę zmienia edycja. Podpowiedź przy <strong>Mirror</strong> mówi: „turning one side turns the other side too”. Jeśli rusza się też druga ręka, choć chciałeś tylko jednej, naciśnij <strong>Mirror</strong>, żeby to wyłączyć.</li><li>Cztery karty: <strong>Body</strong>, <strong>Face</strong>, <strong>Hands</strong> i <strong>Other</strong>.</li><li><strong>Search joints:</strong> wpisz część nazwy.</li><li>Lista stawów, w grupach: Body, Left Arm, Right Arm, Legs i inne.</li><li><strong>Flip:</strong> odwraca całą pozę z lewej na prawą.</li><li><strong>T-pose:</strong> ręce wyprostowane na boki.</li><li><strong>Reset all:</strong> resetuje każdy staw.</li></ul>
+<h3 id="panel-selected-joint">Panel Selected joint</h3>
+<p>Gdy staw jest wybrany, panel pokazuje:</p>
+<ul><li>jego nazwę i liczbę jego kluczy,</li><li>jego nazwę w Second Life (na przykład <code>mShoulderLeft</code>),</li><li>trzy suwaki z polami liczbowymi (w stopniach) i <strong>dozwolony zakres</strong>,</li><li>ostrzeżenie, gdy jesteś blisko limitu. <strong>Turn limits off</strong> usuwa limit. <strong>Warn near the joint's limits</strong> wyłącza ostrzeżenie,</li><li><strong>Reset joint</strong> i <strong>Pull with keys</strong>,</li><li><strong>Pull the limb</strong> i <strong>Turn only this joint</strong>: co robi przeciąganie stawu,</li><li><strong>More options</strong> z <strong>turn or move</strong>: obróć albo przesuń staw,</li><li><strong>Show curves and finger grid</strong>, przycisk na górze panelu. Pokazuje dodatkowe elementy trybu Expert. Drugi przycisk, <strong>Show all joints</strong>, pojawia się, gdy nic nie jest wybrane.</li></ul>
+<p>Gdy nic nie wybrałeś, panel pokazuje trzy krótkie kroki i przycisk, który wybiera staw za ciebie.</p>
+<h3 id="przeciąganie-kończyny">Przeciąganie kończyny</h3>
+<p>Naciśnij staw na postaci i przeciągnij. Stawy powyżej zginają się tak, żeby kończyna podążała za wskaźnikiem. To się nazywa IK (kinematyka odwrotna). Puść, żeby ustawić klucz. Esc anuluje. Przytrzymaj <strong>Shift</strong>, naciskając staw, żeby obrócić tylko ten staw.</p>
+<p>Bez myszy? Naciśnij <strong>Enter</strong> na wybranym stawie. Użyj klawiszy strzałek. Naciśnij Enter, żeby ustawić klucz. Esc anuluje.</p>
+<h3 id="dłonie">Dłonie</h3>
+<p>Na karcie <strong>Hands</strong> dostajesz:</p>
+<ul><li>dziewięć gotowych póz palców,</li><li>jeden suwak <strong>Bend</strong> dla każdego palca,</li><li><strong>Reset hand</strong>,</li><li>w trybie Expert siatkę każdego stawu palca w stopniach.</li></ul>
+<p><strong>Mirror</strong> kopiuje zmianę na drugą dłoń. Wiersz u góry mówi, nad którą dłonią pracujesz, na przykład „Right hand. The other hand copies it.”</p>
+<p><img src="manual/img/hands-tab.png" alt="Karta Hands: gotowe pozy palców i jeden suwak Bend dla każdego palca." loading="lazy"></p>
+<p><strong>Przykład.</strong> Otwórz kartę <strong>Hands</strong>. Wybierz jedną z gotowych póz. Naciśnij <strong>Set key</strong>.</p>
+<h3 id="face-i-other">Face i Other</h3>
+<p>Karta <strong>Face</strong> wymienia stawy twarzy Bento: głowa, brwi, oczy, uszy i inne. Karta <strong>Other</strong> wymienia dodatkowe stawy Bento: ogon, tylne kończyny i skrzydła. Użyj <strong>View &gt; Joint groups</strong>, żeby pokazać lub ukryć te grupy. <strong>Hide in lists</strong> pomija ukryte stawy na listach.</p>
+<p>Stawy twarzy są odłożone: są, ale nie dostają jeszcze szczególnej uwagi.</p>
+<h3 id="limity-stawów">Limity stawów</h3>
+<p>Każdy staw ma zakres, na który pozwala Second Life. Blisko limitu panel cię ostrzega. Limity są domyślnie włączone.</p>
+<hr>
+<h2 id="rozdział-5-oś-czasu-klucze-i-odtwarzanie">Rozdział 5: Oś czasu, klucze i odtwarzanie</h2>
+<h3 id="wiersze">Wiersze</h3>
+<p>Oś czasu pokazuje wiersz dla każdego stawu ze zmianami i dla wybranego stawu. Wiersze są kolorowane i nazwane według obszaru ciała. Pole <strong>Show rows for</strong> filtruje według obszaru ciała. Tryb Expert dodaje przełącznik pokazujący każdy staw.</p>
+<p>Bez kluczy oś czasu mówi <strong>No keys yet</strong> i oferuje <strong>Set the first key</strong>.</p>
+<h3 id="klucze">Klucze</h3>
+<ul><li><strong>Set key</strong> (K) zapisuje pozę, którą teraz widzisz.</li><li>Obrócenie stawu samo ustawia klucz.</li><li>Znacznik na osi czasu pokazuje każdy klucz.</li><li>Wybierz klucz, żeby zmienić jego easing (Rozdział 3, krok 6).</li><li>W trybie Expert <strong>Edit curve...</strong> rysuje własną krzywą prędkości dla ruchu. Okno pamięta swoje miejsce i rozmiar.</li></ul>
+<h3 id="zaznaczanie-kopiowanie-i-wklejanie">Zaznaczanie, kopiowanie i wklejanie</h3>
+<ol><li>Przytrzymaj <strong>Shift</strong> i przeciągnij na osi czasu albo użyj Shift i klawiszy strzałek, żeby zaznaczyć odcinek.</li><li><strong>Edit &gt; Copy</strong> (Ctrl+C), <strong>Cut</strong> (Ctrl+X) albo <strong>Paste</strong> (Ctrl+V).</li><li><strong>Paste mirrored</strong> (Ctrl+Shift+V, tryb Expert) wkleja z zamienioną lewą i prawą stroną. Lewy krok staje się prawym krokiem.</li></ol>
+<h3 id="cofnij-i-ponów">Cofnij i Ponów</h3>
+<p>Ctrl+Z cofa. Ctrl+Shift+Z albo Ctrl+Y ponawia. Każda edycja lub przeciągnięcie to jeden krok. Historia mieści do 100 kroków i przetrwa Save.</p>
+<h3 id="punkty-pętli">Punkty pętli</h3>
+<p>Na dole osi czasu znajdziesz:</p>
+<ul><li><strong>Loop starts at</strong> i <strong>Loop ends at</strong>: dwie klatki, między którymi animacja się zapętla, z ich położeniem w procentach,</li><li><strong>Frame ... of ...</strong>: gdzie jesteś i ile jest klatek,</li><li><strong>Frames per second</strong> (na początku 30).</li></ul>
+<p>Okienko eksportu używa klatek pętli, gdy zaznaczone jest <strong>Play again and again</strong>.</p>
+<p><img src="manual/img/timeline.png" alt="Timeline: sześć kafelków easing, znacznik czasu, Set key i przyciski odtwarzania." loading="lazy"></p>
+<h3 id="wiersz-notatek">Wiersz notatek</h3>
+<p>Niektóre animacje niosą notatki dydaktyczne. Według dokumentów projektu wiersz pod osią czasu pokazuje wtedy notatkę bieżącej klatki, z <strong>Hide notes</strong>. (Sprawdzenie <code>wave.dingle</code> w wersji na Linuksa nie pokazało wiersza notatek, więc traktuj to jako niepotwierdzone.)</p>
+<p><strong>Przykład.</strong> Otwórz <code>wave.dingle</code> z folderu <code>examples</code>. Naciśnij <strong>Start</strong>. Obserwuj, jak postać macha. Naciśnij <strong>Stop</strong>.</p>
+<h3 id="wolny-przykład">Wolny przykład</h3>
+<p><code>jump_slow.dingle</code> to <code>jump.dingle</code>, w którym każdy klucz jest 2,5 razy później. Działa z prędkością 40 procent, więc możesz obejrzeć skok w zwolnionym tempie.</p>
+<hr>
+<h2 id="rozdział-6-widok-3d-i-kamera">Rozdział 6: Widok 3D i kamera</h2>
+<h3 id="mysz-i-klawisze">Mysz i klawisze</h3>
+<p>Domyślny styl, zwany PinglyMotion, działa tak:</p>
+<div class="table-wrap"><table><thead><tr><th>Co</th><th>Jak</th></tr></thead><tbody><tr><td>Rozglądanie się (orbit)</td><td>Przeciągnij puste miejsce</td></tr><tr><td>Przesuwanie widoku (pan)</td><td>Przeciągnij prawym przyciskiem</td></tr><tr><td>Zoom</td><td>Kółko myszy</td></tr><tr><td>Wybranie stawu</td><td>Kliknij go albo jego wiersz</td></tr><tr><td>Skupienie na wybranym stawie</td><td>F albo dwukrotne kliknięcie</td></tr></tbody></table></div>
+<p>W <strong>Setup</strong> albo w <strong>Help &gt; Camera and keys...</strong> możesz zamiast tego wybrać styl Maya, Blender albo Second Life. Rozdział 14 ma tabele.</p>
+<h3 id="pasek-widoku">Pasek widoku</h3>
+<p>W lewym górnym rogu widoku 3D:</p>
+<ul><li><strong>View-direction widget:</strong> kliknij koniec osi, żeby patrzeć stamtąd.</li><li><strong>Pick and pull</strong> (V), <strong>Look around</strong> (O), <strong>Move the view</strong> (M), <strong>Zoom</strong> (Z).</li><li><strong>Picked joint</strong> (F), <strong>Whole figure</strong> (Shift+F), <strong>Home view</strong> (0).</li><li><strong>Look from</strong> (Front, Side, Top).</li><li><strong>Show:</strong> siatka podłogi, pierścienie obrotu, kropki stawów i nazwy narzędzi.</li></ul>
+<p>Każde ustawienie jest też w menu <strong>View</strong>.</p>
+<h3 id="menu-view">Menu View</h3>
+<p><img src="manual/img/menu-view.png" alt="Menu View: Look from, Show, Panels i opcje wyświetlania." loading="lazy"></p>
+<ul><li><strong>Look from:</strong> Front (Numpad 1), Side (Numpad 3), Top (Numpad 7), Home view (0).</li><li><strong>Show:</strong> Floor grid, Rotation rings, Joint dots, Tool names in the view toolbar, <strong>Click and bend on the figure</strong> (B), Joint groups, Body, Lighting..., Fog, Floor transparency.</li><li><strong>Joint groups</strong> pokazuje lub ukrywa grupy dodatkowych stawów: Wings, Tail, Hind limbs, Face oraz Fingers and toes. Ukrywanie zmienia tylko to, co widzisz. <strong>Hide in lists</strong> pomija ukryte stawy na osi czasu i na liście stawów. Jeśli jest wyłączone, są pokazane przygaszone.</li><li><strong>Body</strong> wybiera siatkę ciała: <strong>Ruth2</strong> albo <strong>Max</strong>. Zmienia tylko wygląd postaci.</li><li><strong>Lighting...</strong> otwiera małe okienko z suwakami <strong>Brightness</strong> (Dark do Bright), <strong>Shine</strong> (Matt do Shiny) i <strong>Warmth</strong> (Cool do Warm), polem <strong>Shadow on the floor</strong> oraz przyciskami <strong>Reset</strong> i <strong>Close</strong>.</li><li><strong>Fog</strong> zaciera daleki koniec podłogi. Na początku jest wyłączona.</li><li><strong>Floor transparency:</strong> 0, 25, 33, 50 albo 75 procent.</li><li><strong>Panels:</strong> Joints, Selected joint, Show timeline, Script Lab, Library, Hide panels (Tab), Reset layout, Next area (F6).</li><li><strong>Light theme</strong> (T), <strong>Expert mode</strong> (Shift+E), rozmiar tekstu i <strong>Setup...</strong>.</li></ul>
+<p><strong>Przykład.</strong> Najedź wskaźnikiem na widok 3D. Naciśnij <strong>O</strong> (look around) i przeciągnij. Naciśnij <strong>M</strong> i przeciągnij, żeby przesunąć widok. Naciśnij <strong>V</strong>, żeby wrócić do wybierania stawów. Naciśnij <strong>0</strong>, żeby wrócić do domu.</p>
+<h3 id="rozmiar-tekstu">Rozmiar tekstu</h3>
+<p><strong>Ctrl++</strong> powiększa tekst, <strong>Ctrl+-</strong> zmniejsza, a <strong>Ctrl+0</strong> przywraca 100 procent. Setup oferuje 100, 125, 150, 175 i 200 procent.</p>
+<h3 id="click-and-bend">Click and bend</h3>
+<p>Przy włączonym <strong>Click and bend</strong> (B) kliknięcie postaci wybiera staw, a przeciągnięcie go zgina. Gdy jest wyłączone, kliknięcia postaci nic nie robią. Użyj listy Joints i suwaków.</p>
+<hr>
+<h2 id="rozdział-7-rekwizyty">Rozdział 7: Rekwizyty</h2>
+<p><strong>Rekwizyt</strong> (prop) to prosty kształt 3D w scenie. Zastępuje obiekt. Rekwizyt można przymocować do stawu, żeby poruszał się razem z tym stawem.</p>
+<p><img src="manual/img/props-tab.png" alt="Karta Props: cztery przyciski kształtów (pudełko, kula, stożek, torus), lista Prop z przyciskiem usuwania i Attach to." loading="lazy"></p>
+<ol><li>Wybierz <strong>View &gt; Joints</strong>. Otwórz kartę <strong>Props</strong>.</li><li>Naciśnij przycisk kształtu: pudełko, kula, stożek albo torus (pierścień).</li><li>Program nadaje mu nazwę, na przykład <strong>Box 0</strong>. Następne pudełko to <strong>Box 1</strong>. Rekwizytu nie można jeszcze przemianować.</li><li>Umieść go za pomocą <strong>Place</strong>, <strong>Turn</strong> i <strong>Size</strong> w panelu po prawej, który teraz nazywa się <strong>Selected prop</strong>. Tam możesz też zmienić <strong>Shape</strong>: Box, Ring, Cone albo Ball. Małe okienko nad widokiem 3D, <strong>Edit prop</strong>, ma narzędzia <strong>Move</strong>, <strong>Turn</strong> i <strong>Size</strong> do przeciągania.</li><li>Wybierz staw w <strong>Attach to</strong>. Rekwizyt porusza się razem z tym stawem.</li><li>Przycisk z X usuwa rekwizyt.</li></ol>
+<p><strong>File &gt; Save</strong> zachowuje rekwizyty w pliku animacji. <strong>File &gt; Open</strong> przywraca je. <strong>File &gt; Open props...</strong> i <strong>Save props...</strong> używają starszych plików <code>.prp</code>. Otwarcie pliku <code>.prp</code> najpierw usuwa bieżące rekwizyty.</p>
+<p><strong>Przykład.</strong> Otwórz <code>throne.dingle</code> z folderu <code>examples</code>. Postać siedzi. Wybierz <strong>File &gt; Open props...</strong> i wskaż <code>throne.prp</code>. Wokół postaci pojawiają się pudełka. Wybrane jest niebieskie. Wybierz inną nazwę na liście <strong>Prop:</strong>, żeby je zaznaczyć.</p>
+<hr>
+<h2 id="rozdział-8-biblioteka">Rozdział 8: Biblioteka</h2>
+<p>Biblioteka zawiera 106 gotowych ruchów. Użyj jednego jako początku.</p>
+<p><img src="manual/img/library-panel.png" alt="Panel Library: pole wyszukiwania, rodzaje ruchów, lista klipów i podgląd z długością, szkieletem, źródłem i licencją." loading="lazy"></p>
+<ol><li>Naciśnij <strong>Library</strong> u góry (albo Ctrl+Shift+B, albo <strong>View &gt; Library</strong>).</li><li>Szukaj albo wybierz rodzaj ruchu: Walk, Dance, Sit, Stand, Gesture, Idle, Wave.</li><li>Wybierz klip. Panel pokazuje podgląd na małej postaci i <strong>Play preview</strong>.</li><li>Pokazuje też długość, szkielet, skąd pochodzi i jego licencję.</li><li>Naciśnij <strong>Use this</strong>. Klip otwiera się jako twoja animacja. Program najpierw pyta, jeśli masz niezapisane zmiany. Wiersz stanu mówi „Opened Slow walk from the library. Save it under your own name.” Nazwa samego klipu jest nazwą animacji, dopóki nie zapiszesz.</li></ol>
+<p>Library dzieli prawą stronę z Selected joint. Przełączaj kartami na dole. W trybie Expert <strong>Add as a second figure</strong> stawia klip obok twojej postaci.</p>
+<p><strong>Przykład.</strong> Naciśnij <strong>Library</strong>. Wybierz <strong>Slow walk</strong>. Naciśnij <strong>Use this</strong>. Naciśnij <strong>Start</strong>. Timeline pokazuje wtedy 114 klatek.</p>
+<p>Biblioteka pochodzi z bazy danych motion capture CMU i z Mesh2Motion. Zobacz <a href="#rozdział-17-podziękowania-i-źródła">Rozdział 17</a>.</p>
+<p>Jeśli panel mówi <strong>No library found</strong>, brakuje folderu <code>library</code> obok programu. Zainstaluj program ponownie.</p>
+<hr>
+<h2 id="rozdział-9-pliki-i-formaty">Rozdział 9: Pliki i formaty</h2>
+<p><img src="manual/img/menu-file.png" alt="Menu File: New animation, Open, trzy importy, Save, Save as, Export BVH, Export for Second Life, Open props, Save props, Close animation i Exit." loading="lazy"></p>
+<h3 id="formaty">Formaty</h3>
+<div class="table-wrap"><table><thead><tr><th>Rozszerzenie</th><th>Co to</th><th>Uwagi</th></tr></thead><tbody><tr><td><code>.dingle</code></td><td>Własny format roboczy PinglyMotion</td><td>Zachowuje wszystko. Zapisany jako tekst (JSON).</td></tr><tr><td><code>.anim</code></td><td>Animacja Second Life</td><td>Eksport i import.</td></tr><tr><td><code>.bvh</code></td><td>Popularny plik ruchu</td><td>Eksport i otwieranie. Otwarty <code>.bvh</code> pozostaje nietknięty, dopóki nie zapiszesz.</td></tr><tr><td><code>.avm</code></td><td>Stary format</td><td>Otwiera się. Zapisywany jako <code>.dingle</code>.</td></tr><tr><td><code>.prp</code></td><td>Stary plik rekwizytów</td><td>Open props i Save props.</td></tr><tr><td><code>.glb</code>, <code>.gltf</code></td><td>Animacja 3D z innych narzędzi</td><td>Tylko import.</td></tr></tbody></table></div>
+<h3 id="menu-file">Menu File</h3>
+<ul><li><strong>New animation</strong> (Ctrl+N), <strong>Open...</strong> (Ctrl+O), <strong>Save</strong> (Ctrl+S), <strong>Save as...</strong> (Ctrl+A).</li><li><strong>Import Second Life .anim...</strong> otwiera <code>.anim</code> jako nową, niezapisaną animację. Lista <strong>What could not be imported</strong> mówi, co pominięto.</li><li><strong>Import BVH from another skeleton...</strong> pokazuje, które stawy dopasowano, a które pominięto. Zaznacz <strong>My file starts in a T-pose or A-pose</strong>, jeśli pierwsza klatka to poza stojąca. Naciśnij <strong>Open the animation</strong>. Dopasowanie, które zrobisz, można zachować w małym pliku <code>.jointmap</code>.</li><li><strong>Import glTF animation...</strong> otwiera <code>.glb</code> albo <code>.gltf</code>. Jeśli plik ma więcej niż jedną animację, wybierz te, które chcesz.</li><li><strong>Export BVH</strong> tworzy plik <code>.bvh</code>.</li><li><strong>Export for Second Life (.anim)...</strong> (Ctrl+Shift+E).</li><li><strong>Open props...</strong> i <strong>Save props...</strong>.</li><li><strong>Close animation</strong> (Ctrl+W) i <strong>Exit</strong> (Ctrl+Q).</li></ul>
+<p>Każdy import otwiera się jako animacja bez nazwy. Twój oryginalny plik nie jest zmieniany. Zapisz ją, żeby ją zachować.</p>
+<p><strong>Przykład.</strong> Wybierz <strong>File &gt; Open</strong> i wskaż <code>jump.dingle</code> w <code>examples</code>. Wybierz <strong>File &gt; Save as...</strong> i zapisz pod nową nazwą. Wybierz <strong>File &gt; Export for Second Life (.anim)...</strong> i utwórz <code>jump.anim</code>. Wybierz <strong>File &gt; Import Second Life .anim...</strong> i otwórz go ponownie. Komunikat mówi „Opened jump.anim.” i wymienia, czego nie dało się zaimportować. Dla tego pliku mówi, że priorytet, łagodny start i koniec oraz dłonie nie są zachowane. Sam ruch wraca.</p>
+<h3 id="folder-dla-asystentów-ai">Folder dla asystentów AI</h3>
+<p>Asystent AI może otwierać i zapisywać pliki tylko w jednym folderze: <code>PinglyMotion</code> w twoim folderze Dokumenty. Zobacz <a href="#rozdział-11-asystenci-ai">Rozdział 11</a>.</p>
+<hr>
+<h2 id="rozdział-10-script-lab-dla-początkujących">Rozdział 10: Script Lab dla początkujących</h2>
+<p>Script Lab to bezpieczna piaskownica. Możesz uruchamiać skrypty RLV i LSL na swoim komputerze. Nic nie dociera do Second Life.</p>
+<p>Najpierw kilka słów.</p>
+<ul><li><strong>LSL</strong> to język skryptowy Second Life.</li><li><strong>Skrypt</strong> to mały program wewnątrz obiektu.</li><li><strong>Obiekt</strong> składa się z <strong>prymów</strong> (prim). Prim to jedna część, na przykład pudełko.</li><li><strong>RLV</strong> (Restrained Love Viewer) to zestaw poleceń, które skrypt może wysłać do viewera. Ograniczają one, co może robić awatar, na przykład <code>@detach=n</code> znaczy „tego nie można zdjąć”.</li><li><strong>RLVa</strong> to viewer, który rozumie RLV i więcej.</li><li><strong>Kanał</strong> (channel) to liczba, której skrypty używają do rozmowy, jak kanał radiowy.</li></ul>
+<p><strong>Szczery stan.</strong> Script Lab jest zbudowany w wielu częściach. Nic w nim nie zostało przetestowane w Second Life. Piaskownica nigdy nie jest identyczna z Second Life. Zobacz <a href="#co-jest-gotowe-a-co-nie">Co jest gotowe, a co nie</a>.</p>
+<p>Otwórz Script Lab przyciskiem <strong>Script</strong> (F8) albo przyciskiem <strong>Script Lab</strong> (Ctrl+Shift+L).</p>
+<h3 id="góra-okna">Góra okna</h3>
+<ul><li><strong>Viewer rules:</strong> <strong>RLV</strong> albo <strong>RLVa</strong>. Start to RLVa. Przełączenie usuwa wszystkie ograniczenia, jak po nowym zalogowaniu.</li><li>Plakietka pokazuje, ile ograniczeń jest utrzymywanych („0 held”).</li><li>Pięć kart: <strong>Live scripts</strong>, <strong>Type commands</strong>, <strong>Who talks to whom</strong>, <strong>Player</strong>, <strong>Improve a setup</strong>.</li><li><strong>Pop out</strong> przenosi Script Lab do osobnego okna.</li></ul>
+<h3 id="zrób-przykładowy-projekt">Zrób przykładowy projekt</h3>
+<ol><li>Naciśnij <strong>Script</strong>.</li><li>Naciśnij <strong>Make example project</strong>.</li></ol>
+<p>Program kopiuje przykład <strong>First colour</strong> do twojego własnego folderu (<code>Documents/PinglyMotion/Scripts/First_colour</code>). Dodaje pudełko do sceny. Obserwuje folder. Karta <strong>Steps</strong> wymienia pięć kroków i je odhacza.</p>
+<p><img src="manual/img/scriptlab-example.png" alt="Przykładowy projekt: karta kroków, folder, OK, drzewo obiektu i skrypt, z czerwonym pudełkiem obok postaci." loading="lazy"></p>
+<p>Powinieneś zobaczyć:</p>
+<ul><li>czerwone pudełko obok postaci,</li><li>komunikat <strong>OK: Box 0/colour.lsl ran without errors</strong>,</li><li>wiersz dziennika „Box 0 is red now.”</li></ul>
+<h3 id="drzewo">Drzewo</h3>
+<p>Pole <strong>Object</strong> pokazuje twój obiekt jako drzewo. Każdy folder to jeden prim. Folder <strong>Box 0</strong> to prim. Skrypt w nim to wiersz <strong>LSL script</strong>. Kolumny to <strong>Name</strong>, <strong>Kind</strong>, <strong>State</strong> i <strong>Memory</strong>.</p>
+<p>Kliknij wiersz. Przy zaznaczonym <strong>Follow selection in 3D view</strong> rekwizyt o tej samej nazwie podświetla się w widoku 3D.</p>
+<h3 id="zmień-skrypt">Zmień skrypt</h3>
+<ol><li>Skrypt jest otwarty w edytorze po prawej. (<strong>Open in editor</strong> otwiera go ponownie.)</li><li>Zmień <code>&lt;1.0, 0.0, 0.0&gt;</code> na <code>&lt;0.0, 1.0, 0.0&gt;</code>.</li><li>Naciśnij <strong>Save</strong>.</li></ol>
+<p>Pudełko robi się zielone. Trzy liczby to czerwony, zielony i niebieski. Każdy zapis uruchamia folder ponownie. Naciśnij <strong>Run again</strong>, żeby uruchomić bez zmiany.</p>
+<p>Edytor ma <strong>Save</strong>, <strong>Find</strong> i <strong>Go to line</strong>. Podczas pisania pokazuje podpowiedzi i teksty pomocy dla funkcji LSL. Podpowiada też polecenia RLV wewnątrz <code>llOwnerSay("@...")</code>, ze zwykłymi ostrzeżeniami. Jeśli wolisz, przełącz w Setup na <strong>Show suggestions only when I press Ctrl+Space</strong>.</p>
+<h3 id="pokaż-efekty-w-widoku-3d">Pokaż efekty w widoku 3D</h3>
+<p>Przycisk <strong>Show effects in 3D view</strong> sprawia, że rekwizyty pokazują, co robią skrypty: kolor i przezroczystość. Rekwizyt nazwany jak prim pokazuje efekt skryptów tego prima. Kliknięcie rekwizytu liczy się jako dotknięcie. Menu pokazywane przez skrypt (<code>llDialog</code>) pojawia się jako okienko nad widokiem 3D. Naciśnij w nim przycisk albo <strong>Ignore</strong> (Esc).</p>
+<h3 id="inne-przykłady">Inne przykłady</h3>
+<p>Folder <code>examples/objects</code> ma sześć dalszych obiektów: Button HUD, Gear set, Timed lock, RLV relay i Work system. <code>examples/scriptlab</code> ma luźne skrypty. Naciśnij <strong>Try the example scripts</strong> (gdy żaden folder nie jest obserwowany), żeby uruchomić <code>rlv_lock.lsl</code>.</p>
+<p><strong>Watch folder...</strong> obserwuje dowolny twój folder. Folder to obiekt. <strong>New folder</strong> tworzy nowy.</p>
+<h3 id="type-commands">Type commands</h3>
+<p>Karta <strong>Type commands</strong> służy do wierszy RLV.</p>
+<p><img src="manual/img/type-commands.png" alt="Karta Type commands po uruchomieniu @detach=n,sendim=n: dwa ograniczenia są utrzymywane, a dwie akcje zablokowane." loading="lazy"></p>
+<ol><li>Otwórz kartę <strong>Type commands</strong>.</li><li>Kliknij pole <strong>Command</strong>, wpisz <code>@detach=n,sendim=n</code> i naciśnij Enter.</li><li>Karta pokazuje <strong>Restrictions</strong> (detach i sendim), utrzymywane przez obiekt <code>panel</code>. W <strong>What the avatar may do</strong> pozycje <strong>Take off locked attachments</strong> i <strong>Send instant messages</strong> mówią teraz <strong>Blocked</strong>.</li></ol>
+<p>Plakietki pod <strong>Try</strong> wypełniają gotowy przykład. <strong>Reset all</strong> usuwa wszystkie ograniczenia. Każdy wiersz listy akcji to wybór <strong>Allowed / Blocked</strong>, który możesz ustawić. Dziennik <strong>Replies and messages</strong> pokazuje odpowiedzi, które usłyszałby skrypt.</p>
+<p>Karta ma też przełączniki ograniczeń kamery, środowiska i trybów widoku w widoku 3D oraz część o nazwie <strong>Vision sphere</strong>.</p>
+<h3 id="who-talks-to-whom">Who talks to whom</h3>
+<p>Karta <strong>Who talks to whom</strong> rysuje mapę, gdy folder jest obserwowany. Otwórz część <strong>Who talks to whom</strong>, klikając jej nagłówek. Dla przykładu First colour widzisz pudełko <strong>Box 0</strong> ze strzałką do przerywanego pudełka <strong>You</strong>, opisaną <code>owner say: "Box 0 is red now."</code>.</p>
+<p><img src="manual/img/who-talks.png" alt="Mapa dla First colour: Box 0 mówi wiersz do You." loading="lazy"></p>
+<p>W większych układach pudełka to prymy, a także <strong>You</strong>, <strong>Your viewer (RLV)</strong> i <strong>Web server</strong>. Strzałki pokazują czat, wiadomości między linkami, menu i wiersze RLV, z ich kanałem. Strzałka, której nikt nie słyszy, jest przerywana, czerwona i mówi dlaczego. Prim, który nasłuchuje i przekazuje polecenia, jest oznaczony <strong>(hub)</strong>. Kliknięcie strzałki pokazuje wiersz skryptu, który ją wysłał.</p>
+<h3 id="player">Player</h3>
+<p>Naciśnij <strong>Record what I do</strong> na karcie <strong>Player</strong>. Klikaj rekwizyty albo naciskaj przyciski menu. Każda akcja to krok. Naciśnij <strong>Stop recording</strong>.</p>
+<p><img src="manual/img/player-tab.png" alt="Karta Player z przyciskiem Record what I do i jego pierwszym wierszem pomocy." loading="lazy"></p>
+<p>Program zapisuje kroki jako <code>recipe.rlvtest</code> w folderze obiektu. Odtwarza je i mówi, co się zmieniło od ostatniego razu. Odtwarzacz ma te same przyciski Start, Stop, Step back i Step forward co oś czasu. Wymienia momenty i co było prawdą w każdym. <strong>Go to first difference</strong> skacze do pierwszej zmiany.</p>
+<p>Not built: odtwarzacz nie porusza animacji, kamery, środowiska ani okienka menu. Te pokazują bieg na żywo.</p>
+<h3 id="improve-a-setup">Improve a setup</h3>
+<p><img src="manual/img/improve-tab.png" alt="Karta Improve a setup: Weight z pamięcią na skrypt, co można poprawić i Can this run here?" loading="lazy"></p>
+<p>Dla gotowego układu, na przykład obroży:</p>
+<ol><li>Obserwuj folder jako jeden obiekt (Live scripts).</li><li>Nagraj, co robi (Player).</li><li>Przeczytaj kartę <strong>Improve a setup</strong>.</li></ol>
+<p>Pokazuje, jak ciężki jest każdy skrypt (<strong>Kept</strong>, <strong>Values</strong>, <strong>Sent</strong>, <strong>Got</strong>, <strong>Not used</strong>), co można poprawić i dla każdego skryptu, czy może tu działać. <strong>Import a setup</strong> i <strong>Record today's behaviour</strong> są na karcie.</p>
+<p>Pamięć samego kodu nie jest jeszcze liczona. To wymaga pomiaru w Second Life.</p>
+<h3 id="przykład-opencollar">Przykład OpenCollar</h3>
+<p><code>examples/improve/OpenCollar</code> zawiera 23 skrypty publicznej obroży OpenCollar. Są skopiowane bez zmian, z ich licencją (GPL 2). Obserwuj folder. Obroża startuje i pokazuje swoje menu, gdy ją klikniesz. <strong>Not tested in Second Life.</strong></p>
+<h3 id="lua-próba">Lua (próba)</h3>
+<p>Lua to nowszy język skryptowy w Second Life. Nazywa się SLua.</p>
+<ol><li>Otwórz <strong>Setup</strong>. Zaznacz <strong>Lua (trial): show the language choice in the editor</strong>.</li><li>Edytor pokazuje pole <strong>Language</strong> z <strong>LSL</strong> i <strong>SLua (Lua, trial)</strong>.</li><li>Wybierz SLua. Przewiń w dół na karcie Live scripts. Na prawym końcu wiersza pod tekstem naciśnij <strong>Convert to SLua</strong>.</li></ol>
+<p><img src="manual/img/convert-slua.png" alt="Okienko Convert to SLua z przekonwertowanym tekstem, uwagą, że nic nie jest uruchamiane, i przyciskami Copy SLua i Close." loading="lazy"></p>
+<p>Okienko pokazuje przekonwertowany tekst i uwagi. Twój skrypt nie jest zmieniany. Nic nie jest uruchamiane. <strong>Copy SLua</strong> kopiuje tekst. <strong>Close</strong> zamyka okienko.</p>
+<p>Lua to próba. Konwerter jest sprawdzany testami, które porównują dokładny tekst. Jest <strong>not tested in Second Life</strong>. Nie ma sprawdzania Lua ani podpowiedzi, a Lua się nie uruchamia.</p>
+<h3 id="kroki-i-przewodnik">Kroki i przewodnik</h3>
+<p><strong>Help &gt; Script Lab steps</strong> pokazuje kartę kroków ponownie.</p>
+<hr>
+<h2 id="rozdział-11-asystenci-ai">Rozdział 11: Asystenci AI</h2>
+<p>Asystent AI na twoim własnym komputerze może ustawiać postać w pozie, odtwarzać ją, patrzeć na nią i zapisywać. To jest opcjonalne. Jest <strong>wyłączony przy każdym uruchomieniu</strong> i nigdy nie włącza się sam.</p>
+<p><img src="manual/img/connect-ai.png" alt="Okno Connect an AI: Which AI do you use? Claude, ChatGPT albo Other, krótka lista bezpieczeństwa i przyciski Turn on AI Assistant i Close." loading="lazy"></p>
+<h3 id="włącz-go">Włącz go</h3>
+<ol><li>Kliknij przycisk <strong>AI Assistant</strong> na pasku stanu (w prawym dolnym rogu).</li><li>Okno <strong>Connect an AI</strong> pyta „Which AI do you use?” Wybierz <strong>Claude</strong>, <strong>ChatGPT</strong> albo <strong>Other</strong>. Każdy pokazuje tylko własne kroki.</li><li>Naciśnij <strong>Turn on AI Assistant</strong>.</li></ol>
+<p>Przycisk pokazuje kropkę i swój stan:</p>
+<div class="table-wrap"><table><thead><tr><th>Kropka</th><th>Tekst</th><th>Znaczenie</th></tr></thead><tbody><tr><td>Szara</td><td>AI Assistant off</td><td>Wyłączony.</td></tr><tr><td>Żółta</td><td>AI Assistant on, waiting for an AI</td><td>Włączony, nie ma połączonej AI.</td></tr><tr><td>Zielona</td><td>AI Assistant: Claude</td><td>AI jest połączona.</td></tr><tr><td>Czerwona</td><td>A wrong key was refused</td><td>Coś próbowało użyć błędnego klucza.</td></tr></tbody></table></div>
+<p>Tytuł okna mówi „AI Assistant on”, dopóki jest włączony. Kliknij przycisk ponownie, żeby go wyłączyć. Wyłączenie zamyka dostęp każdej AI.</p>
+<h3 id="jak-jest-zabezpieczony">Jak jest zabezpieczony</h3>
+<ul><li>Działa tylko na twoim własnym komputerze. Nic w sieci nie może do niego dotrzeć.</li><li>Jest wyłączony za każdym razem, gdy PinglyMotion się uruchamia.</li><li>Przy każdym włączeniu powstaje nowy tajny klucz.</li><li>Żądania ze stron internetowych są odrzucane.</li></ul>
+<h3 id="co-może-zrobić-asystent">Co może zrobić asystent</h3>
+<p>Asystent używa poleceń interfejsu sterowania: sprawdzić stan, ustawiać stawy w pozie, ustawiać klatki, odtwarzać, zrobić zrzut ekranu, opisać pozę i ruch słowami, czytać i zapisywać całą animację jako małą tabelę tekstową, sprawdzić animację pod kątem zasad Second Life, eksportować <code>.anim</code>, przeszukiwać bibliotekę i używać Script Lab (polecenia RLV i skrypty LSL). Pełna lista jest w <code>docs/CONTROL.md</code> i <code>tools/mcp/commands.json</code>.</p>
+<p>Asystent może otwierać i zapisywać pliki tylko w folderze <code>Documents/PinglyMotion</code>.</p>
+<h3 id="stan">Stan</h3>
+<ul><li><strong>Claude:</strong> zip dla Windows zawiera <code>mcp/PinglyMotion.mcpb</code>, rozszerzenie dla aplikacji Claude.</li><li><strong>ChatGPT:</strong> konfiguracja jest opisana. Przycisk zapisuje konfigurację aplikacji desktopowej. <strong>Nie testowane przez nas.</strong></li><li><strong>Inne narzędzia:</strong> plik <code>pinglymotion_mcp.js</code> obsługuje inne narzędzia, które mówią MCP. <strong>Nie testowane przez nas.</strong></li></ul>
+<p>Praca ręczna zawsze działa bez żadnej AI. Pełna lista stanu jest w <a href="#co-jest-gotowe-a-co-nie">Co jest gotowe, a co nie</a>.</p>
+<hr>
+<p><strong>Przykład.</strong> Naciśnij przycisk <strong>AI Assistant</strong>. Wybierz <strong>Claude</strong> i przeczytaj kroki. Nie naciskaj <strong>Turn on AI Assistant</strong>, chyba że chcesz połączyć AI. Naciśnij <strong>Close</strong>. Przycisk nadal mówi „AI Assistant off”.</p>
+<h3 id="polecenia-sterujące">Polecenia sterujące</h3>
+<p>Polecenia, których może używać asystent, są takie same dla każdego programu na twoim komputerze, który mówi zwykłym HTTP. Wymienia je <code>GET /api/commands</code> i <code>docs/CONTROL.md</code>. W skrócie:</p>
+<div class="table-wrap"><table><thead><tr><th>Grupa</th><th>Polecenia</th></tr></thead><tbody><tr><td>Podgląd</td><td><code>state</code>, <code>joints</code>, <code>get_pose</code>, <code>keys</code>, <code>screenshot</code>, <code>describe_pose</code>, <code>describe_motion</code>, <code>describe_body</code></td></tr><tr><td>Poza i czas</td><td><code>set_pose</code>, <code>set_position</code>, <code>delete_key</code>, <code>set_frame</code>, <code>set_frame_count</code>, <code>set_fps</code>, <code>set_loop</code>, <code>play</code>, <code>stop</code></td></tr><tr><td>Pliki</td><td><code>new_animation</code>, <code>open_file</code>, <code>save_file</code>, <code>export_anim</code></td></tr><tr><td>Widok</td><td><code>set_figure</code>, <code>set_camera</code></td></tr><tr><td>Całe animacje jako tekst</td><td><code>motion_script</code>, <code>load_motion_script</code>, <code>check_animation</code></td></tr><tr><td>Biblioteka</td><td><code>find_reference</code>, <code>load_reference</code></td></tr><tr><td>Script Lab</td><td><code>rlv_command</code>, <code>rlv_state</code>, <code>rlv_reset</code>, <code>lsl_check</code>, <code>lsl_lint</code>, <code>lsl_run</code>, <code>lsl_event</code>, <code>lab_watch</code>, <code>lab_unwatch</code>, <code>lab_result</code>, <code>lab_replay</code></td></tr></tbody></table></div>
+<p>Nie musisz ich znać, żeby używać PinglyMotion. Są dla narzędzi AI i dla osób, które piszą skrypty wokół programu.</p>
+<hr>
+<h2 id="rozdział-12-połączenie-na-żywo-z-aurorą">Rozdział 12: Połączenie na żywo z Aurorą</h2>
+<p>Aurora to viewer Second Life. PinglyMotion może pokazywać twoją pozę na twoim własnym awatarze w Aurorze, gdy pracujesz. Widzisz ją tylko ty. Nic nie jest wgrywane.</p>
+<p><strong>Stan.</strong> Działa w Windows. Potrzebuje Aurory zbudowanej z forka wymienionego w <code>docs/AURORA_LINK.md</code>. Ze zwykłą Aurorą jeszcze nie działa.</p>
+<p><strong>Przykład.</strong> Przy uruchomionym forku Aurory:</p>
+<ol><li>W Aurorze wybierz <strong>Build &gt; LiveMesh &gt; Enable preview</strong>.</li><li>W PinglyMotion zaznacz <strong>Live link to Aurora</strong> w <strong>Setup</strong> albo kliknij kropkę na pasku stanu.</li><li>Pasek stanu mówi „Waiting for Aurora”, potem „Aurora live”.</li><li>Obróć staw. Twój awatar przyjmuje pozę.</li></ol>
+<p>Połączenie jest wyłączone przy każdym uruchomieniu.</p>
+<hr>
+<h2 id="rozdział-13-ustawienia-motywy-i-pomoc">Rozdział 13: Ustawienia, motywy i pomoc</h2>
+<p>Naciśnij <strong>Setup</strong> (zębatka w prawym górnym rogu).</p>
+<p><img src="manual/img/setup-dialog.png" alt="Okno Setup: początkujący czy doświadczony, mysz i klawisze, motyw, rozmiar tekstu, podpowiedzi, edytor skryptów i połączenia." loading="lazy"></p>
+<ul><li><strong>Have you made animations before?</strong> New to animation (tryb Beginner) albo Experienced (tryb Expert).</li><li><strong>Mouse and keys like:</strong> PinglyMotion, Maya, Blender albo Second Life. <strong>Show all mouse and keys</strong> otwiera tabelę.</li><li><strong>Theme:</strong> Dark albo Light.</li><li><strong>Text size:</strong> 100, 125, 150, 175 albo 200 procent.</li><li><strong>Guidance:</strong> <strong>Show hints, tips and the next-step line</strong> i <strong>Show the welcome card again</strong>.</li><li><strong>Script editor:</strong> <strong>Show suggestions only when I press Ctrl+Space</strong> i przełącznik <strong>Lua (trial)</strong>.</li><li><strong>Connections:</strong> <strong>AI Assistant</strong> i <strong>Live link to Aurora</strong>.</li></ul>
+<p>PinglyMotion pamięta te wybory.</p>
+<h3 id="menu-help">Menu Help</h3>
+<p><img src="manual/img/menu-help.png" alt="Menu Help." loading="lazy"></p>
+<ul><li><strong>Setup: beginner or experienced, mouse and keys...</strong></li><li><strong>Show the welcome card again</strong></li><li><strong>Script Lab steps</strong></li><li><strong>Show hints</strong> (Shift+H)</li><li><strong>Keys and mouse</strong> (?)</li><li><strong>Camera and keys...</strong></li><li><strong>Show charter principles</strong> (C), gdy dostępne</li><li><strong>Open log</strong> i <strong>Clear log</strong></li><li><strong>About...</strong>: kto zrobił ciała awatarów i na jakiej licencji.</li></ul>
+<p><strong>Przykład.</strong> Naciśnij <strong>Setup</strong>. W <strong>Theme</strong> wybierz <strong>Light</strong>. W <strong>Text size</strong> wybierz <strong>150%</strong>. Naciśnij <strong>Done</strong>. Obie zmiany są zachowane przy następnym uruchomieniu.</p>
+<h3 id="podpowiedzi-i-wskazówki">Podpowiedzi i wskazówki</h3>
+<p>Dziewięć kart podpowiedzi prowadzi przez pierwsze ruchy. <strong>Next</strong> idzie dalej. <strong>Turn hints off</strong> je zatrzymuje. Przełącznik na pasku stanu <strong>Tips on/off</strong> pokazuje lub ukrywa krótką pomoc, gdy wskaźnik myszy spoczywa na elemencie sterującym.</p>
+<hr>
+<h2 id="rozdział-14-skróty-klawiszowe-i-mysz">Rozdział 14: Skróty klawiszowe i mysz</h2>
+<h3 id="wszędzie">Wszędzie</h3>
+<div class="table-wrap"><table><thead><tr><th>Klawisze</th><th>Co</th></tr></thead><tbody><tr><td>Ctrl+N</td><td>New animation</td></tr><tr><td>Ctrl+O</td><td>Open</td></tr><tr><td>Ctrl+S</td><td>Save</td></tr><tr><td>Ctrl+A</td><td>Save as</td></tr><tr><td>Ctrl+Shift+E</td><td>Export for Second Life</td></tr><tr><td>Ctrl+W</td><td>Close animation</td></tr><tr><td>Ctrl+Q</td><td>Exit</td></tr><tr><td>Ctrl+Z</td><td>Cofnij</td></tr><tr><td>Ctrl+Shift+Z albo Ctrl+Y</td><td>Ponów</td></tr><tr><td>K</td><td>Set key</td></tr><tr><td>Ctrl+X, Ctrl+C, Ctrl+V</td><td>Wytnij, kopiuj, wklej</td></tr><tr><td>Ctrl+Shift+V</td><td>Paste mirrored (tryb Expert)</td></tr><tr><td>F7, F8</td><td>Strona Animate, strona Script</td></tr><tr><td>Ctrl+Shift+L</td><td>Script Lab</td></tr><tr><td>Ctrl+Shift+B</td><td>Library</td></tr><tr><td>Tab</td><td>Ukryj lub pokaż wszystkie panele</td></tr><tr><td>F6</td><td>Next area</td></tr><tr><td>T</td><td>Jasny lub ciemny motyw</td></tr><tr><td>Shift+E</td><td>Tryb Expert</td></tr><tr><td>Shift+H</td><td>Podpowiedzi włączone lub wyłączone</td></tr><tr><td>?</td><td>Keys and mouse</td></tr><tr><td>Ctrl++, Ctrl+-, Ctrl+0</td><td>Tekst większy, mniejszy, z powrotem do 100%</td></tr><tr><td>Alt+1, Alt+2</td><td>Wybierz pierwszą lub drugą postać (tryb Expert)</td></tr></tbody></table></div>
+<h3 id="w-widoku-3d">W widoku 3D</h3>
+<div class="table-wrap"><table><thead><tr><th>Klawisze</th><th>Co</th></tr></thead><tbody><tr><td>V, O, M, Z</td><td>Narzędzia: pick and pull, look around, move the view, zoom</td></tr><tr><td>F</td><td>Skup się na wybranym stawie</td></tr><tr><td>Shift+F</td><td>Whole figure</td></tr><tr><td>0</td><td>Home view</td></tr><tr><td>Numpad 1, 3, 7 (albo 1, 3, 7)</td><td>Front, side, top</td></tr><tr><td>Alt + klawisze strzałek</td><td>Rozglądanie się klawiszami</td></tr><tr><td>Page Up, Page Down</td><td>Zoom klawiszami</td></tr><tr><td>B</td><td>Click and bend włączone lub wyłączone</td></tr><tr><td>Esc</td><td>Anuluj przeciąganie</td></tr><tr><td>Enter na wybranym stawie</td><td>Przeciąganie klawiszami strzałek; Enter ustawia klucz</td></tr></tbody></table></div>
+<h3 id="style-kamery">Style kamery</h3>
+<div class="table-wrap"><table><thead><tr><th>Działanie</th><th>PinglyMotion</th><th>Maya</th><th>Blender</th><th>Second Life</th></tr></thead><tbody><tr><td>Rozglądanie się</td><td>Przeciągnij puste miejsce</td><td>Alt + przeciągnięcie lewym</td><td>Przeciągnięcie środkowym</td><td>Alt + przeciągnięcie (na boki), Ctrl + Alt + przeciągnięcie</td></tr><tr><td>Przesuwanie widoku</td><td>Przeciągnięcie prawym</td><td>Alt + przeciągnięcie środkowym</td><td>Shift + przeciągnięcie środkowym</td><td>Ctrl + Alt + Shift + przeciągnięcie</td></tr><tr><td>Zoom</td><td>Kółko myszy</td><td>Alt + przeciągnięcie prawym albo kółko</td><td>Ctrl + przeciągnięcie środkowym albo kółko</td><td>Alt + przeciągnięcie w górę lub w dół albo kółko</td></tr><tr><td>Wybranie stawu</td><td>Kliknij go albo jego wiersz</td><td>Klik</td><td>Klik</td><td>Klik</td></tr><tr><td>Skupienie na stawie</td><td>F albo dwukrotne kliknięcie</td><td>F</td><td>Numpad .</td><td>Alt + klik</td></tr></tbody></table></div>
+<h3 id="stawy">Stawy</h3>
+<div class="table-wrap"><table><thead><tr><th>Co</th><th>Jak</th></tr></thead><tbody><tr><td>Przeciągnięcie kończyny</td><td>Naciśnij staw i przeciągnij. Puść, żeby ustawić klucz. Esc anuluje.</td></tr><tr><td>Obrót tylko tego stawu</td><td>Przytrzymaj Shift, naciskając staw</td></tr><tr><td>Obrót na jednej osi</td><td>Przeciągnij czerwony pierścień X, zielony Y albo niebieski Z</td></tr></tbody></table></div>
+<p>Ta sama tabela jest w programie: <strong>Help &gt; Keys and mouse</strong>.</p>
+<p><strong>Przykład.</strong> Naciśnij <strong>?</strong>, żeby otworzyć tabelę. Zamknij ją. Naciśnij <strong>Shift+E</strong>, żeby włączyć tryb Expert, i naciśnij jeszcze raz, żeby go wyłączyć.</p>
+<hr>
+<h2 id="rozdział-15-każda-pozycja-menu">Rozdział 15: Każda pozycja menu</h2>
+<h3 id="file">File</h3>
+<p>Zobacz <a href="#rozdział-9-pliki-i-formaty">Rozdział 9</a>.</p>
+<h3 id="edit">Edit</h3>
+<p><img src="manual/img/menu-edit.png" alt="Menu Edit: Undo, Redo, Set key, Paste mirrored, Cut, Copy, Paste, Lock the first frame." loading="lazy"></p>
+<div class="table-wrap"><table><thead><tr><th>Pozycja</th><th>Klawisze</th><th>Co</th></tr></thead><tbody><tr><td>Undo, Redo</td><td>Ctrl+Z, Ctrl+Shift+Z</td><td>Cofnij i przywróć edycję.</td></tr><tr><td>Set key</td><td>K</td><td>Zapisz bieżącą pozę jako klucz.</td></tr><tr><td>Paste mirrored</td><td>Ctrl+Shift+V</td><td>Wklej z zamienioną lewą i prawą stroną.</td></tr><tr><td>Cut, Copy, Paste</td><td>Ctrl+X, C, V</td><td>Na zaznaczonym odcinku osi czasu.</td></tr><tr><td>Lock the first frame</td><td></td><td>Domyślnie włączone. Chroni pierwszą pozę.</td></tr></tbody></table></div>
+<h3 id="view">View</h3>
+<p>Zobacz <a href="#rozdział-6-widok-3d-i-kamera">Rozdział 6</a>.</p>
+<h3 id="help">Help</h3>
+<p>Zobacz <a href="#rozdział-13-ustawienia-motywy-i-pomoc">Rozdział 13</a>.</p>
+<p><strong>Przykład.</strong> Otwórz menu <strong>Help</strong> i wybierz <strong>About...</strong>. Zamknij je. Otwórz <strong>View</strong> i wybierz <strong>Floor transparency</strong>, potem 50%.</p>
+<h3 id="przyciski-górnego-paska">Przyciski górnego paska</h3>
+<div class="table-wrap"><table><thead><tr><th>Przycisk</th><th>Co</th></tr></thead><tbody><tr><td>Animate, Script</td><td>Przełącz strony (F7, F8)</td></tr><tr><td>Helper</td><td>Panel Helper włączony lub wyłączony</td></tr><tr><td>Undo, Redo</td><td>To samo co Edit</td></tr><tr><td>Save</td><td>Zapisz animację</td></tr><tr><td>Export</td><td>Eksport dla Second Life</td></tr><tr><td>Script Lab</td><td>Otwórz Script Lab</td></tr><tr><td>Library</td><td>Otwórz Library</td></tr><tr><td>Reset layout</td><td>Przywróć każdy panel</td></tr><tr><td>Setup</td><td>Otwórz Setup</td></tr><tr><td>Przycisk słońca</td><td>Ciemny lub jasny motyw</td></tr></tbody></table></div>
+<hr>
+<h2 id="rozdział-16-rozwiązywanie-problemów-i-opinie">Rozdział 16: Rozwiązywanie problemów i opinie</h2>
+<ul><li><strong>Widok 3D jest czarny.</strong> Zaktualizuj sterownik karty graficznej. PinglyMotion potrzebuje OpenGL 3.3.</li><li><strong>Windows ostrzega o nieznanym wydawcy.</strong> Program nie jest jeszcze podpisany. We wczesnej wersji zapoznawczej to oczekiwane.</li><li><strong>Panel zniknął.</strong> Naciśnij <strong>Reset layout</strong>.</li><li><strong>Tekst jest za mały.</strong> Naciśnij Ctrl++ albo wybierz rozmiar tekstu w Setup.</li><li><strong>Biblioteka mówi „No library found”.</strong> Folder <code>library</code> musi być obok programu.</li><li><strong>Zaimportowany plik nie rusza się poprawnie.</strong> Otwórz listę w oknie importu. Stawy oznaczone <strong>Left out</strong> nie zostały przeniesione.</li><li><strong>Skrypt nic nie robi w Script Lab.</strong> Przeczytaj część <strong>Errors and warnings</strong>. Piaskownica uruchamia większość LSL, ale nie całość.</li><li><strong>Coś się zepsuło.</strong> Wybierz <strong>Help &gt; Open log</strong>. Dziennik to zwykły plik tekstowy z tym, co robił program.</li></ul>
+<h3 id="zgłoś-błąd-lub-podziel-się-opinią">Zgłoś błąd lub podziel się opinią</h3>
+<p>Wejdź na <a href="https://github.com/pingledingle-tech/PinglyMotion/issues">https://github.com/pingledingle-tech/PinglyMotion/issues</a> i otwórz zgłoszenie (issue). Napisz, co zrobiłeś, czego oczekiwałeś i co się stało. Nie wpisuj w zgłoszeniu danych osobowych. Strona internetowa ma też strony do zgłaszania błędów i propozycji.</p>
+<hr>
+<h2 id="rozdział-17-podziękowania-i-źródła">Rozdział 17: Podziękowania i źródła</h2>
+<p>PinglyMotion jest darmowy i ma otwarty kod źródłowy. Opiera się na QAvimator. Ciała awatarów, klipy biblioteki, przykładowa obroża i inne zewnętrzne materiały są wymienione w pliku <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">CREDITS.md</a> i w <strong>Help &gt; About...</strong>.</p>
+<p>Gotowe ruchy pochodzą z bazy danych motion capture CMU i z Mesh2Motion (CC0). Przykładowa obroża to publiczny projekt OpenCollar (GPL 2).</p>
+<hr>
+<h2 id="słowniczek">Słowniczek</h2>
+<div class="table-wrap"><table><thead><tr><th>Słowo</th><th>Znaczenie</th></tr></thead><tbody><tr><td>Animacja</td><td>Cały ruch w jednym pliku.</td></tr><tr><td>Klucz</td><td>Zapisana poza w jednym momencie.</td></tr><tr><td>Klatka</td><td>Jeden krok w czasie.</td></tr><tr><td>Znacznik czasu</td><td>Znacznik, który przeciągasz, żeby wybrać moment.</td></tr><tr><td>Oś czasu</td><td>Pasek, który pokazuje twoje klucze w czasie.</td></tr><tr><td>Staw</td><td>Część, która się obraca, na przykład łokieć.</td></tr><tr><td>Poza</td><td>Jak postać stoi w jednym momencie.</td></tr><tr><td>Easing</td><td>Jak ruch przyspiesza lub zwalnia między dwoma kluczami.</td></tr><tr><td>Pętla</td><td>Animacja odtwarza się w kółko.</td></tr><tr><td>Poza T</td><td>Stanie z rękami wyprostowanymi na boki.</td></tr><tr><td>Rekwizyt</td><td>Prosty kształt 3D w scenie.</td></tr><tr><td>Prim</td><td>Jedna część obiektu w Second Life.</td></tr><tr><td>LSL</td><td>Język skryptowy Second Life.</td></tr><tr><td>RLV</td><td>Polecenia, które skrypt może wysłać, żeby ograniczyć awatara.</td></tr><tr><td>Kanał</td><td>Liczba, której skrypty używają do rozmowy.</td></tr><tr><td>Piaskownica</td><td>Bezpieczne miejsce do wypróbowywania rzeczy. Nic z niego nie wychodzi.</td></tr><tr><td>IK</td><td>Przesunięcie dłoni przesuwa stawy powyżej niej.</td></tr></tbody></table></div>
+</main>
+</div>
+</body>
+</html>
