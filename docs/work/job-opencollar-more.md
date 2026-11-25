@@ -1,6 +1,6 @@
 Branch: job/opencollar-more
-Status: active
-Pull request: pending
+Status: done
+Pull request: #517
 Files:
 - examples/improve/OpenCollar-more/**
 - tests/test_opencollar_more_copy.py
