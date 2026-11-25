@@ -51,6 +51,18 @@ class HomepageShort(unittest.TestCase):
         for needle in ("Hva den gjør.", "Pingle er en hun", "mange Lindens"):
             self.assertIn(needle, no)
 
+    def test_same_structure_in_every_language(self):
+        page = read("index.html")
+        for lang in LANGS:
+            a = article(page, lang)
+            self.assertEqual(a.count("<h2"), 3, lang)
+            self.assertEqual(a.count("<section"), 4, lang)
+            self.assertEqual(a.count('class="btn"'), 2, lang)
+            self.assertEqual(a.count("<b>"), 3, lang)
+            self.assertIn("Pingle", a, lang)
+            for k in ("-h2", "-h3", "-hdl"):
+                self.assertIn('id="%s%s"' % (lang, k), a, lang)
+
     def test_no_old_wording(self):
         for name in ("index.html", "download.html"):
             page = read(name)

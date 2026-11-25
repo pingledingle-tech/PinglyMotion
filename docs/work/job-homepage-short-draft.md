@@ -1,5 +1,5 @@
 Branch: job/homepage-short-draft
-Status: active
+Status: done
 Pull request: #505
 Files:
 - docs/index.html
