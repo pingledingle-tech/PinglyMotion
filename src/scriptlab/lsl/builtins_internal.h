@@ -47,6 +47,8 @@ enum class Fn
   MessageLinked, GetLinkNumber,
   LinksetDataWrite, LinksetDataRead, LinksetDataDelete, LinksetDataReset, LinksetDataListKeys,
   LinksetDataAvailable, LinksetDataCountKeys,
+  // queue 1 item 5 (a): what the OpenCollar collar needs
+  LinksetDataDeleteFound, LinksetDataFindKeys, ListFindListNext, SetAgentRot,
   // step 9b-1: pure functions and simple object state
   Euler2Rot, Rot2Euler, Rot2Fwd, Rot2Left, Rot2Up, AxisAngle2Rot, RotBetween,
   ListReplaceList, List2ListStrided, ListSortStrided, ReplaceSubString,
@@ -779,7 +781,7 @@ inline QString unescapeUrl(const QString& s)
 enum { LINK_SET = -1, LINK_ALL_OTHERS = -2, LINK_ALL_CHILDREN = -3, LINK_THIS = -4, ALL_SIDES = -1 };
 enum
 {
-  PRIM_PHYSICS = 3, PRIM_TEMP_ON_REZ = 4, PRIM_PHANTOM = 5, PRIM_POSITION = 6, PRIM_SIZE = 7, PRIM_ROTATION = 8, PRIM_TEXTURE = 17,
+  PRIM_PHYSICS = 3, PRIM_TEMP_ON_REZ = 4, PRIM_PHANTOM = 5, PRIM_POSITION = 6, PRIM_SIZE = 7, PRIM_ROTATION = 8, PRIM_TYPE = 9, PRIM_TEXTURE = 17,
   PRIM_COLOR = 18, PRIM_FULLBRIGHT = 20, PRIM_GLOW = 25, PRIM_TEXT = 26, PRIM_NAME = 27, PRIM_DESC = 28, PRIM_ROT_LOCAL = 29,
   PRIM_POS_LOCAL = 33, PRIM_LINK_TARGET = 34
 };
@@ -978,6 +980,8 @@ enum
 const int HTTP_MAX_BODY_LENGTH = 16384;       // the largest HTTP_BODY_MAXLENGTH (Mono)
 const int HTTP_DEFAULT_BODY_LENGTH = 2048;
 const int HTTP_MAX_HEADER_CHARS = 4096;       // all custom headers together
+// llLinksetDataFindKeys and llLinksetDataDeleteFound: the wiki says a longer pattern fails
+const int LINKSET_PATTERN_MAX_CHARS = 800;
 const int HTTP_THROTTLE_REQUESTS = 25;        // per object ...
 const double HTTP_THROTTLE_SECONDS = 20.0;    // ... in this many seconds
 // llEmail (gap list 2, step 4): the bytes of address, subject, header and message together, and the script's sleep
@@ -2063,16 +2067,23 @@ struct RuleResult
 };
 
 // llSetPrimitiveParams and its link forms. The rules apply to every prim of links.
-inline RuleResult applyRules(World& w, double now, const QString& function, const std::vector<Value>& rules, std::vector<int> links)
+inline RuleResult applyRules(World& w, double now, const QString& function, const std::vector<Value>& given, std::vector<int> links)
 {
   RuleResult result;
+  // Second Life takes an integer where a rule wants a float (OpenCollar writes [PRIM_TEXT, "", ZERO_VECTOR, 0]), so have() turns
+  // such an integer into a float in this copy
+  std::vector<Value> rules = given;
   size_t i = 0;
   const size_t n = rules.size();
   auto bad = [&](const QString& rule, const QString& what)
   {
     result.problem = QString("%1: bad %2 rule at list position %3: %4").arg(function, rule).arg(int(i)).arg(what);
   };
-  auto have = [&](size_t at, Type t) { return at < n && rules[at].type == t; };
+  auto have = [&](size_t at, Type t)
+  {
+    if (at < n && t == Type::Float && rules[at].type == Type::Integer) rules[at] = Value::number(float(rules[at].i));
+    return at < n && rules[at].type == t;
+  };
   while (i < n && result.problem.isEmpty() && result.unsupported.isEmpty())
   {
     if (rules[i].type != Type::Integer) { bad("primitive", "a rule starts with a PRIM_* integer"); break; }
@@ -2237,6 +2248,17 @@ inline RuleResult readRules(World& w, const QString& function, const std::vector
         out.push_back(Value::number(p.textAlpha));
         break;
       case PRIM_PHYSICS: out.push_back(Value::integer(p.physics)); break;
+      case PRIM_TYPE:
+        // every sandbox prim is a plain box (PRIM_TYPE_BOX 0): the shape of a new box in Second Life, read only (setting
+        // PRIM_TYPE is not supported); the order is the wiki's: type, hole shape, cut, hollow, twist, top size, top shear
+        out.push_back(Value::integer(0));
+        out.push_back(Value::integer(0));
+        out.push_back(Value::vector(0.0f, 1.0f, 0.0f));
+        out.push_back(Value::number(0.0f));
+        out.push_back(Value::vector(0.0f, 0.0f, 0.0f));
+        out.push_back(Value::vector(1.0f, 1.0f, 0.0f));
+        out.push_back(Value::vector(0.0f, 0.0f, 0.0f));
+        break;
       case PRIM_PHANTOM: out.push_back(Value::integer(p.phantom)); break;
       case PRIM_TEMP_ON_REZ: out.push_back(Value::integer(p.tempOnRez)); break;
       case PRIM_COLOR:

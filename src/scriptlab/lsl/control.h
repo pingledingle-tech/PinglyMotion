@@ -27,7 +27,7 @@ namespace Control
   static constexpr int DEFAULT_SECONDS = 10;
   static constexpr int DEFAULT_EVENT_SECONDS = 1;
   // all scripts of one lsl_run together (each one also at most Lexer::MAX_SOURCE_CHARS)
-  static constexpr int MAX_TOTAL_SOURCE_CHARS = 524288;
+  static constexpr int MAX_TOTAL_SOURCE_CHARS = 1048576;
 
   // {"command":"lsl_check","source":"..."}: errors and warnings with line and column
   QJsonObject check(const QJsonObject& request);
