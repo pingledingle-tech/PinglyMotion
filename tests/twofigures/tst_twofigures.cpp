@@ -40,6 +40,7 @@
 #include "timeline.h"
 #include "timelineview.h"
 #include "usersettings.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -54,6 +55,7 @@ namespace
 
   QString source(const char* name)
   {
+    if (QLatin1String(name) == QLatin1String("pinglymotionwindow.cpp")) return WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
     return readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/") + QLatin1String(name));
   }
 

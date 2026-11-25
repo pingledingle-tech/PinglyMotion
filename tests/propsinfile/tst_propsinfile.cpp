@@ -13,6 +13,7 @@
 #include "dingle.h"
 #include "propmanager.h"
 #include "propsinscene.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -347,9 +348,8 @@ void TestPropsInFile::fileOpenKnowsPropFiles()
   QVERIFY(source.contains(QStringLiteral("if(!file.isEmpty() && PropsInScene::isPropFileName(file))")));
   QCOMPARE(source.count(QStringLiteral("storePropsInAnimation();")), 2);
   QCOMPARE(source.count(QStringLiteral("showPropsOfOpenedFile();")), 2);
-  QFile main(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
-  QVERIFY(main.open(QIODevice::ReadOnly));
-  const QString mainSource = QString::fromUtf8(main.readAll());
+  const QString mainSource = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  QVERIFY(!mainSource.isEmpty());
   QVERIFY(mainSource.contains(QStringLiteral("(*.dingle *.avm *.bvh *.prp)")));
   QVERIFY(mainSource.contains(QStringLiteral("w->storePropsInAnimation();")));
 }
