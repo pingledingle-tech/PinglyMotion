@@ -24,7 +24,7 @@ const path = require("path");
 const readline = require("readline");
 
 const SERVER_NAME = "pinglymotion";
-const SERVER_VERSION = "0.1.0";
+const SERVER_VERSION = "0.3.0";
 const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
 // Text that goes to the AI tool together with the tool list.
