@@ -4424,7 +4424,7 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Animation Files (*.dingle *.avm *.bvh)</source>
+        <source>Animation and Prop Files (*.dingle *.avm *.bvh *.prp)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

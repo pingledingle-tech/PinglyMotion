@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QSet>
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <cstring>
@@ -209,6 +210,7 @@ namespace
     bool readString(const QJsonValue& value,const QString& what,int maxBytes,QString& out);
     bool readTiming(const QJsonObject& top);
     bool readSettings(const QJsonObject& top);
+    bool readProps(const QJsonObject& top);
     bool readSkeleton(const QJsonObject& top);
     bool readTracks(const QJsonObject& top);
     bool readKeys(const QJsonValue& list,int channelCount,const QString& what,Track& track);
@@ -217,6 +219,7 @@ namespace
 
     Animation anim;
     QJsonObject extensions;
+    QList<PropRecord> props;
     int ignored=0;
     QString error;
     std::vector<Track> rotationTracks;   // per joint
@@ -332,6 +335,58 @@ namespace
     }
     // camera keys come later (issue #14); until then the data is skipped and counted
     if(top.contains("camera") && !top.value("camera").isNull()) ignored++;
+    return true;
+  }
+
+  // the optional "props" list: the props of the scene, saved with the animation.
+  // A prop of a type this version does not know is skipped and counted (a later version may add shapes).
+  bool Reader::readProps(const QJsonObject& top)
+  {
+    if(!top.contains("props") || top.value("props").isNull()) return true;
+    if(!top.value("props").isArray()) return fail(QObject::tr("\"props\" must be a list."));
+    const QJsonArray list=top.value("props").toArray();
+    if(list.size()>PropFile::MAX_PROPS)
+      return fail(QObject::tr("The file has more than %1 props.").arg(PropFile::MAX_PROPS));
+
+    static const char* const typeNames[4]={"box","sphere","cone","torus"};
+    for(int i=0;i<list.size();i++)
+    {
+      const QString what=QObject::tr("Prop %1").arg(i+1);
+      if(!list[i].isObject()) return fail(QObject::tr("%1 must be an object.").arg(what));
+      const QJsonObject object=list[i].toObject();
+      known(object,{"name","type","position","scale","rotation","attachment"});
+
+      PropRecord prop;
+      if(object.contains("name") && !readString(object.value("name"),QObject::tr("The name of %1").arg(what),PropFile::MAX_NAME_BYTES,prop.name))
+        return false;
+
+      int type=-1;
+      if(object.value("type").isString())
+        for(int t=0;t<4;t++)
+          if(object.value("type").toString()==QLatin1String(typeNames[t])) type=t;
+      if(!object.contains("type") || !object.value("type").isString()) return fail(QObject::tr("%1 has no type.").arg(what));
+      if(type<0) { ignored++; continue; }
+      prop.type=type;
+
+      double* targets[3]={prop.position,prop.scale,prop.rotation};
+      const char* const keys[3]={"position","scale","rotation"};
+      for(int k=0;k<3;k++)
+      {
+        const QJsonValue value=object.value(QLatin1String(keys[k]));
+        if(!value.isArray() || value.toArray().size()!=3)
+          return fail(QObject::tr("The %1 of %2 must be 3 numbers.").arg(QLatin1String(keys[k]),what));
+        for(int c=0;c<3;c++)
+        {
+          if(!doubleNumber(value.toArray()[c],QObject::tr("The %1 of %2").arg(QLatin1String(keys[k]),what),targets[k][c])) return false;
+          if(std::fabs(targets[k][c])>PropFile::MAX_VALUE)
+            return fail(QObject::tr("The %1 of %2 is too large.").arg(QLatin1String(keys[k]),what));
+        }
+      }
+      if(object.contains("attachment") &&
+         !wholeNumber(object.value("attachment"),0,PropFile::MAX_ATTACHMENT,QObject::tr("The attachment of %1").arg(what),prop.attachment))
+        return false;
+      props.append(prop);
+    }
     return true;
   }
 
@@ -662,14 +717,15 @@ namespace
     (void) version;
 
     anim.format=AnimFile::Format::Avm;
-    known(top,{"format","version","generator","timing","figure","scale","loop","skeleton","tracks","camera","extensions"});
-    const bool ok=readTiming(top) && readSettings(top) && readSkeleton(top) && readTracks(top);
+    known(top,{"format","version","generator","timing","figure","scale","loop","skeleton","tracks","camera","props","extensions"});
+    const bool ok=readTiming(top) && readSettings(top) && readProps(top) && readSkeleton(top) && readTracks(top);
     if(!ok) return refuse(error.isEmpty() ? QObject::tr("The file cannot be read.") : error);
 
     derive();
     result.animation=std::move(anim);
     result.ignoredKeys=ignored;
     result.extensions=extensions;
+    result.props=props;
     return result;
   }
 
@@ -793,7 +849,7 @@ namespace
   }
 }
 
-QByteArray write(const Animation& anim,const QJsonObject& extensions,const QString& generator)
+QByteArray write(const Animation& anim,const QJsonObject& extensions,const QString& generator,const QList<PropRecord>& props)
 {
   QByteArray out;
   QString name=generator;
@@ -860,7 +916,39 @@ QByteArray write(const Animation& anim,const QJsonObject& extensions,const QStri
     tracks+="}";
   }
   out+="  \"tracks\": [\n"+tracks+"\n  ],\n";
-  out+="  \"camera\": null,\n  \"extensions\": ";
+  out+="  \"camera\": null,\n";
+  if(!props.isEmpty())
+  {
+    static const char* const typeNames[4]={"box","sphere","cone","torus"};
+    out+="  \"props\": [\n";
+    const int count=std::min<int>(props.size(),PropFile::MAX_PROPS);
+    for(int i=0;i<count;i++)
+    {
+      const PropRecord& prop=props[i];
+      QString name=prop.name;
+      while(name.toUtf8().size()>PropFile::MAX_NAME_BYTES) name.chop(1);
+      out+="    {\"name\": ";
+      text(out,name);
+      out+=", \"type\": \""+QByteArray(typeNames[std::clamp(prop.type,0,3)])+"\"";
+      const double* groups[3]={prop.position,prop.scale,prop.rotation};
+      const char* const keys[3]={"position","scale","rotation"};
+      for(int k=0;k<3;k++)
+      {
+        out+=QByteArray(", \"")+keys[k]+"\": [";
+        for(int c=0;c<3;c++)
+        {
+          if(c>0) out+=", ";
+          const double v=groups[k][c];
+          number(out,std::isfinite(v) ? std::clamp(v,-PropFile::MAX_VALUE,PropFile::MAX_VALUE) : 0.0);
+        }
+        out+="]";
+      }
+      out+=", \"attachment\": "+QByteArray::number(std::clamp(prop.attachment,0,PropFile::MAX_ATTACHMENT))+"}";
+      out+=(i+1<count) ? ",\n" : "\n";
+    }
+    out+="  ],\n";
+  }
+  out+="  \"extensions\": ";
   jsonValue(out,QJsonValue(extensions),0);
   out+="\n}\n";
   return out;

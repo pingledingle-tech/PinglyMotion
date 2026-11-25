@@ -66,6 +66,7 @@
 #include "dingle.h"
 #include "easingtiles.h"
 #include "propfile.h"
+#include "propsinscene.h"
 #include "constants.h"
 #include "controlapi.h"
 #include "controlserver.h"
@@ -236,6 +237,13 @@ void PinglyMotionWindow::fileOpen(const QString& name)
   if(file.isEmpty())
     file=selectFileToOpen(tr("Select Animation File to Load"));
 
+  // an older prop file (.prp) opens its props into the open animation; the animation stays
+  if(!file.isEmpty() && PropsInScene::isPropFileName(file))
+  {
+    loadPropFile(file);
+    return;
+  }
+
   if(!file.isEmpty())
   {
     // check the file before closing the open ones
@@ -243,6 +251,7 @@ void PinglyMotionWindow::fileOpen(const QString& name)
     if(!clearOpenFiles()) return;
     emit clearProps();
     addAnimationFile(file);
+    showPropsOfOpenedFile();
   }
 
   // update timeline and animation view with the currently selected body part
@@ -256,6 +265,7 @@ void PinglyMotionWindow::fileOpenData(const QString& file,const QByteArray& data
   if(!clearOpenFiles()) return;
   emit clearProps();
   addAnimationFile(file,&data);
+  showPropsOfOpenedFile();
   partChoice();
 }
 
@@ -354,6 +364,7 @@ bool PinglyMotionWindow::fileSave()
   if(!avmFile.isEmpty() && !checkFileOverwrite(QFileInfo(currentFile))) return false;
 
   QString error;
+  storePropsInAnimation();
   if(!scene->getAnimation()->saveBVH(currentFile,&error))
   {
     QMessageBox::warning(this,tr("Save Animation File"),error);
@@ -389,6 +400,7 @@ bool PinglyMotionWindow::fileSaveAs()
 
   const QString oldFile=m_avmOrigin.value(currentFile,currentFile);
   QString error;
+  storePropsInAnimation();
   if(!scene->getAnimation()->saveBVH(file,&error))
   {
     QMessageBox::warning(this,tr("Save Animation File"),error);
@@ -704,36 +716,31 @@ void PinglyMotionWindow::fileLoadProps()
 #endif
 
   if(fileName.isEmpty()) return;
+  loadPropFile(fileName);
+}
 
+bool PinglyMotionWindow::loadPropFile(const QString& fileName)
+{
   // read and check the whole file first, so a bad file leaves the props as they are
-  QFile file(fileName);
-  QList<PropRecord> records;
-  QString error;
-  if(!file.open(QIODevice::ReadOnly))
-    error=file.errorString();
-  else if(file.size()>PropFile::MAX_FILE_BYTES)
-    error=tr("The prop file is larger than %1 KB.").arg(PropFile::MAX_FILE_BYTES/1024);
-  else
+  const PropsInScene::OpenResult read=PropsInScene::readPropFile(fileName);
+  if(!read.ok())
   {
-    const PropFile::Result result=PropFile::parse(file.readAll());
-    if(result.ok())
-      records=*result.props;
-    else
-      error=result.error;
+    m_lastOpenError=read.error;
+    if(!m_quietDialogs)
+      QMessageBox::warning(this,tr("Load Props"),tr("<qt>%1<br><br>%2</qt>").arg(fileName.toHtmlEscaped(),read.error.toHtmlEscaped()));
+    return false;
   }
+  showProps(read.props);
+  return true;
+}
 
-  if(!error.isEmpty())
-  {
-    QMessageBox::warning(this,tr("Load Props"),tr("<qt>%1<br><br>%2</qt>").arg(fileName.toHtmlEscaped(),error.toHtmlEscaped()));
-    return;
-  }
-
+void PinglyMotionWindow::showProps(const QList<PropRecord>& records)
+{
   emit clearProps();
   for(const PropRecord& record : records)
   {
-    const auto propType=static_cast<Prop::PropType>(record.type);
     QSharedPointer<Mesh> mesh;
-    switch(propType)
+    switch(static_cast<Prop::PropType>(record.type))
     {
       case Prop::PropType::Box:    mesh=cubeMesh;   break;
       case Prop::PropType::Sphere: mesh=sphereMesh; break;
@@ -741,11 +748,8 @@ void PinglyMotionWindow::fileLoadProps()
       case Prop::PropType::Torus:  mesh=torusMesh;  break;
     }
 
-    const Prop* prop=scene->addProp(propType,mesh,
-                                    record.attachment,
-                                    record.position[0],record.position[1],record.position[2],
-                                    record.scale[0],record.scale[1],record.scale[2],
-                                    record.rotation[0],record.rotation[1],record.rotation[2]);
+    const Prop* prop=PropsInScene::addRecord(*scene->propManager(),record,mesh);
+    emit scene->repaint();
     if(prop)
     {
       ui->propNameCombo->addItem(prop->name());
@@ -753,6 +757,17 @@ void PinglyMotionWindow::fileLoadProps()
       selectProp();
     }
   }
+}
+
+void PinglyMotionWindow::showPropsOfOpenedFile()
+{
+  const Animation* anim=scene->getAnimation();
+  if(anim && !anim->props().isEmpty()) showProps(anim->props());
+}
+
+void PinglyMotionWindow::storePropsInAnimation()
+{
+  if(Animation* anim=scene->getAnimation()) anim->setProps(PropsInScene::recordsOf(*scene->propManager()));
 }
 
 // Menu Action: File / Save Props...
@@ -777,22 +792,7 @@ void PinglyMotionWindow::fileSaveProps()
     if(!checkFileOverwrite(fileInfo)) return;
 
     // the whole file in one go (PropFile::write; docs/DEV.md "Web-ready code"), the dialog only names it
-    QList<PropRecord> records;
-    for(int index=0;index<ui->propNameCombo->count();index++)
-    {
-      const Prop* prop=scene->getPropByName(ui->propNameCombo->itemText(index));
-      if(!prop) continue;
-      PropRecord record;
-      record.type=int(prop->propType());
-      for(int i=0;i<3;i++)
-      {
-        record.position[i]=prop->position()[i];
-        record.scale[i]=prop->scale()[i];
-        record.rotation[i]=prop->rotation()[i];
-      }
-      record.attachment=int(prop->isAttached());
-      records << record;
-    }
+    const QList<PropRecord> records=PropsInScene::recordsOf(*scene->propManager());
     QFile file(fileName);
     if(file.open(QIODevice::WriteOnly))
       file.write(PropFile::write(records));

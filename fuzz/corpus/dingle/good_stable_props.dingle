@@ -1,0 +1,27 @@
+{
+  "format": "dingle",
+  "version": 1,
+  "generator": "PinglyMotion",
+  "timing": {"frames": 1, "frameTime": 0.0333333},
+  "figure": "female",
+  "scale": 1,
+  "loop": {"in": -1, "out": 1},
+  "skeleton": [
+    {"name": "hip", "kind": "root", "parent": -1, "offset": [0, 0, 0], "channels": ["Xposition", "Yposition", "Zposition", "Zrotation", "Xrotation", "Yrotation"]}
+  ],
+  "tracks": [
+    {"joint": 0,
+     "rotation": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ],
+     "position": [
+       {"frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false}
+     ]}
+  ],
+  "camera": null,
+  "props": [
+    {"name": "Chair", "type": "box", "position": [1.5, 0, -2], "scale": [0.5, 0.5, 0.9], "rotation": [0, 90, 0], "attachment": 0},
+    {"name": "Ring", "type": "torus", "position": [0, 1.25, 0], "scale": [0.1, 0.1, 0.1], "rotation": [0, 0, 0], "attachment": 12}
+  ],
+  "extensions": {}
+}

@@ -14,6 +14,7 @@
 
 #include "animfile.h"
 #include "dingle.h"
+#include "propfile.h"
 
 static void check(bool ok)
 {
@@ -65,6 +66,33 @@ static void checkAnimation(const AnimFile::Animation& a)
   check(a.figure == AnimFile::FIGURE_MALE || a.figure == AnimFile::FIGURE_FEMALE);
 }
 
+static void checkProps(const QList<PropRecord>& props)
+{
+  check(props.size() <= PropFile::MAX_PROPS);
+  for (const PropRecord& p : props)
+  {
+    check(p.type >= 0 && p.type <= 3);
+    check(p.attachment >= 0 && p.attachment <= PropFile::MAX_ATTACHMENT);
+    check(p.name.toUtf8().size() <= PropFile::MAX_NAME_BYTES);
+    for (int i = 0; i < 3; i++)
+      check(std::isfinite(p.position[i]) && std::isfinite(p.scale[i]) && std::isfinite(p.rotation[i]) &&
+            std::fabs(p.position[i]) <= PropFile::MAX_VALUE && std::fabs(p.scale[i]) <= PropFile::MAX_VALUE &&
+            std::fabs(p.rotation[i]) <= PropFile::MAX_VALUE);
+  }
+}
+
+static bool sameProps(const QList<PropRecord>& a, const QList<PropRecord>& b)
+{
+  if (a.size() != b.size()) return false;
+  for (int k = 0; k < a.size(); k++)
+  {
+    if (a[k].name != b[k].name || a[k].type != b[k].type || a[k].attachment != b[k].attachment) return false;
+    for (int i = 0; i < 3; i++)
+      if (a[k].position[i] != b[k].position[i] || a[k].scale[i] != b[k].scale[i] || a[k].rotation[i] != b[k].rotation[i]) return false;
+  }
+  return true;
+}
+
 extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
 {
   if (size > static_cast<size_t>(Dingle::MAX_FILE_BYTES) + 1) return 0;
@@ -79,11 +107,14 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
   check(result.error.isEmpty());
   check(result.ignoredKeys >= 0);
   checkAnimation(*result.animation);
+  checkProps(result.props);
 
-  const QByteArray written = Dingle::write(*result.animation, result.extensions);
+  const QString generator = QStringLiteral("PinglyMotion");
+  const QByteArray written = Dingle::write(*result.animation, result.extensions, generator, result.props);
   const Dingle::Result again = Dingle::parse(written);
   check(again.ok());
   check(Dingle::equal(*result.animation, *again.animation));
-  check(Dingle::write(*again.animation, again.extensions) == written);
+  check(sameProps(result.props, again.props));
+  check(Dingle::write(*again.animation, again.extensions, generator, again.props) == written);
   return 0;
 }

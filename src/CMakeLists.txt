@@ -139,6 +139,7 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               meshmodel.cpp
               prop.cpp
               propmanager.cpp
+              propsinscene.cpp
               pinglymotion.cpp
               pinglymotionwindow.cpp
               pinglymotionwindowfile.cpp
