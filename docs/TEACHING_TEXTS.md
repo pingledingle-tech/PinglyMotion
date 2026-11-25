@@ -265,7 +265,7 @@ The job that changes the texts takes the remaining details one file at a time an
 | I5 | `docs/FIRST_ANIMATION.md` | "Options > Configure PinglyMotion" etc. | Menu names | Follow A19 and the rest of 3.1 | yes |
 | I6 | `docs/FIRST_ANIMATION.md` | all other steps | First page | no change. It uses key, turn, loop and fade in plain words. | no |
 | I7 | `README.md` quick start | not checked line by line | Entry | Check against the glossary in the texts job | verify |
-| I8 | `docs/index.html` (website) | not checked line by line | Entry | Check against the glossary in the texts job | verify |
+| I8 | `docs/home.html` (website, the real homepage) | not checked line by line | Entry | Check against the glossary in the texts job | verify |
 
 The AI assistant guide (`docs/ASSISTANT_GUIDE.md`) is for assistants, not for beginners. The glossary does not apply to it.
 

@@ -27,7 +27,7 @@ class MockupLink(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(DOCS, "mockup", "index.html")))
 
     def test_box_near_top_in_every_language(self):
-        html = read("index.html")
+        html = read("home.html")
         for lang in LANGS:
             a = article(html, lang)
             m = re.search(r'<aside class="try"[^>]*><a class="btn" href="mockup/">([^<]+)</a><p>([^<]+)</p></aside>', a)
@@ -38,12 +38,12 @@ class MockupLink(unittest.TestCase):
             self.assertLess(m.start(), a.index("<h2"), lang)
 
     def test_labels_differ_per_language(self):
-        html = read("index.html")
+        html = read("home.html")
         labels = [re.search(r'class="btn" href="mockup/">([^<]+)<', article(html, l)).group(1) for l in LANGS]
         self.assertEqual(len(set(labels)), len(LANGS))
 
     def test_nav_item_on_every_site_page(self):
-        for page in ("index.html", "download.html", "privacy.html"):
+        for page in ("home.html", "download.html", "privacy.html"):
             html = read(page)
             for lang in LANGS:
                 nav = re.search(r'<article id="%s".*?<nav class="site".*?</nav>' % lang, html, re.S).group(0)

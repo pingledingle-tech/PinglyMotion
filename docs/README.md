@@ -32,7 +32,8 @@ The order of the work and a status word per step are in [ROADMAP.md](ROADMAP.md)
 | [VIDEO_GUIDE.md](VIDEO_GUIDE.md) | From a video of yourself to a Second Life animation with XR Animator | user | current guidance |
 | [TEXT_TO_MOTION_GUIDE.md](TEXT_TO_MOTION_GUIDE.md) | Make a motion from a sentence with the optional Kimodo helper (not yet tried on a real PC) | user | current guidance |
 | [AURORA_LINK.md](AURORA_LINK.md) | Live link that shows your pose on your avatar in the Aurora viewer | user | current guidance |
-| [index.html](index.html) | The project website (homepage) | user | current |
+| [index.html](index.html) | The project website's landing page: a joke page in a "mare" symbol language that starts in mare, with an "unmare" button and the real homepage text inside in five languages (it holds a copy of the text of home.html, so the two can drift) | user | current |
+| [home.html](home.html) | The real project homepage (five languages, not indexed); the source of the texts inside index.html | user | current |
 | [download.html](download.html) | Website page: download (early preview), uninstall and system changes | user | current |
 | [privacy.html](privacy.html) | Website page: privacy policy (what the program, the helper and the website do with data) | user | current guidance |
 | [SECURITY_PRIVACY.md](SECURITY_PRIVACY.md) | Security and privacy in plain words: what goes over the internet, what a connected AI can see, each claim marked tested or not tested, honest limits; a kept place for the legal text | user, developer | current guidance |

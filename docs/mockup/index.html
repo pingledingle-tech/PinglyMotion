@@ -571,6 +571,7 @@ body.charter #legend { display:flex; }
 .m2chip { display:inline-flex; align-items:center; gap:var(--xs); font-size:var(--caption); font-weight:600; color:var(--text); min-height:24px;
   border:var(--bw) solid var(--success); border-radius:var(--r-small); padding:0 var(--s); background:color-mix(in srgb, var(--success) 10%, var(--surface)); }
 .m2chip svg { color:var(--success); }
+.m2webnote { font-size:var(--caption); color:var(--text_muted); }
 .m2chip.off { border-style:solid; border-color:var(--border); background:var(--surface_raised); }
 .m2chip.off svg { color:var(--text_muted); }
 .m2note { font-size:var(--caption); color:var(--text_muted); border-left:3px solid var(--warning); padding-left:var(--s); margin:0; }
@@ -3077,7 +3078,7 @@ M2.on = true; // the approved-mockup switch is gone: the page always shows the p
 // ---------- the mark in the top bar ----------
 function m2Banner() {
   const b = $("#m2banner"); if (!b) return;
-  b.innerHTML = `<span class="m2chip" data-name="The program as built" data-tipline="This mockup shows the program as it is built on 25 November 2026. Checked against the source and the merged pull requests.">${icon("circle-check")}The program as built, 25 Nov 2026</span>`;
+  b.innerHTML = `<span class="m2chip" data-name="The program as built" data-tipline="This mockup shows the program as it is built on 25 November 2026. Checked against the source and the merged pull requests.">${icon("circle-check")}The program as built, 25 Nov 2026</span><span class="m2webnote">The mockup is just a web page and doesn't quite show how this really works.</span>`;
   fillIcons(b);
 }
 function m2Tag() { return ""; } // every part drawn here is built; the old Built / Planned / Proposal marks are gone

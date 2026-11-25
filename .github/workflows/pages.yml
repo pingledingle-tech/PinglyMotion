@@ -1,6 +1,6 @@
 name: Pages
 
-# Publishes docs/index.html and its pages (download, privacy; shared site.css and site.js) (and the hidden UX mockup in docs/mockup/) to GitHub Pages with a live status section built
+# Publishes docs/index.html and its pages (download, privacy, home; shared site.css and site.js) (and the hidden UX mockup in docs/mockup/) to GitHub Pages with a live status section built
 # from GitHub's own data (tools/site/build_status.py). Runs on changes to the
 # page and every night, so the status stays current without anyone editing it.
 on:
@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - docs/index.html
+      - docs/home.html
       - docs/download.html
       - docs/privacy.html
       - docs/site.css
