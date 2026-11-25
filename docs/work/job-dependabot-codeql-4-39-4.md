@@ -1,5 +1,5 @@
 Branch: job/dependabot-codeql-4-39-4
-Status: active
+Status: done
 Pull request: #502
 Files:
 - .github/workflows/codeql.yml
