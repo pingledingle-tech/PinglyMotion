@@ -5,10 +5,11 @@ Files:
 - docs/MANUAL.md
 - docs/manual/**
 - docs/manual.html
+- docs/PinglyMotion-Manual.pdf
 - docs/README.md
+- docs/DEV.md
 - tools/site/build_manual.py
-- tests/test_manual.py
-- tests/test_build_manual.py
+- tests/test_site_manual.py
 - CREDITS.md
 
 ## What
