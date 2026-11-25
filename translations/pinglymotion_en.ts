@@ -10007,6 +10007,13 @@ Click to turn them on or off.</source>
     </message>
 </context>
 <context>
+    <name>TopBar</name>
+    <message>
+        <source>Quick actions</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TransportBar</name>
     <message>
         <source>Start</source>

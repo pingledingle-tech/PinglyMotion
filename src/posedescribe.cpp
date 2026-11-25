@@ -86,7 +86,10 @@ namespace
 
   // -------------------------------------------------------------- JSON helpers
 
-  QJsonObject positionJson(const QVector3D& inches)
+  // "withMeters": the metre copy of the same numbers. The six body positions
+  // carry it; the fingertips do not, to keep the text short: a metre is the
+  // program's unit times AnimExport::INCHES_TO_METERS (0.0254), so nothing is lost
+  QJsonObject positionJson(const QVector3D& inches, bool withMeters = true)
   {
     auto round2 = [](double v) { return qRound(v * 100.0) / 100.0; };
     auto round3 = [](double v) { return qRound(v * 1000.0) / 1000.0; };
@@ -95,7 +98,7 @@ namespace
     out["x"] = round2(inches.x());
     out["y"] = round2(inches.y());
     out["z"] = round2(inches.z());
-    out["meters"] = QJsonObject{{"x", round3(metres.x())}, {"y", round3(metres.y())}, {"z", round3(metres.z())}};
+    if (withMeters) out["meters"] = QJsonObject{{"x", round3(metres.x())}, {"y", round3(metres.y())}, {"z", round3(metres.z())}};
     return out;
   }
 
@@ -296,16 +299,13 @@ namespace
       const double forward = QVector3D::dotProduct(fromWrist, body.forward);
       const double up = QVector3D::dotProduct(fromWrist, body.up);
       const double out = outSign * QVector3D::dotProduct(fromWrist, body.left);
-      const double m = AnimExport::INCHES_TO_METERS;
 
-      QJsonObject from = frameJson(forward, up, out, 2);
-      from["meters"] = frameJson(forward * m, up * m, out * m, 3);
-
+      // inches only: the metre copies (position, from_wrist, distance) were
+      // 3 of every 4 numbers of a hand and added nothing an AI cannot compute
       QJsonObject entry;
-      entry["position"] = positionJson(tipWorld);
-      entry["from_wrist"] = from;
+      entry["position"] = positionJson(tipWorld, false);
+      entry["from_wrist"] = frameJson(forward, up, out, 2);
       entry["distance"] = qRound(fromWrist.length() * 100.0) / 100.0;
-      entry["distance_meters"] = qRound(fromWrist.length() * m * 1000.0) / 1000.0;
       entry["points"] = nearestWord(forward, up, out);
       fingertips[finger.second] = entry;
     }

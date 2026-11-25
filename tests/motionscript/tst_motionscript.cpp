@@ -78,6 +78,15 @@ class MotionScriptTest : public QObject
     void customCurveIsWrittenAndRefused();
     void examplesRoundTrip_data();
     void examplesRoundTrip();
+
+    void mergeChangesAndAddsAndKeepsTheRest();
+    void mergeKeepsEasingOfExistingKeysAndGivesNewKeysTheDefault();
+    void mergeGrowsTheAnimationAndItsLoop();
+    void mergeSettingsOnlyWhenGiven();
+    void mergeErrorsAreClearAndChangeNothing();
+    void mergeIsOneStepBack();
+    void mergeOfItsOwnTextChangesNothing_data();
+    void mergeOfItsOwnTextChangesNothing();
 };
 
 void MotionScriptTest::initTestCase()
@@ -331,6 +340,222 @@ void MotionScriptTest::examplesRoundTrip()
                qPrintable(QString("%1 at frame %2: %3 %4 %5 against %6 %7 %8").arg(jointsA.at(i)->name()).arg(frame + 1)
                           .arg(ra.x()).arg(ra.y()).arg(ra.z()).arg(rb.x()).arg(rb.y()).arg(rb.z())));
     }
+  }
+}
+
+namespace
+{
+  // a small animation to put changes on top of
+  const char* BASE = "fps 30\n"
+                     "frames 31\n"
+                     "loop 2 31\n"
+                     "1 | position | 0 | 43.5 | 0 |\n"
+                     "2 | rShldr | -90 | 0 | -20 |\n"
+                     "16 | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n"
+                     "31 | rShldr | 0 | 0 | 0 | linear\n";
+
+  Loaded base()
+  {
+    Loaded loaded = fresh();
+    const MotionScript::Result parsed = MotionScript::parse(BASE);
+    MotionScript::apply(loaded.animation.get(), *parsed.value);
+    loaded.animation->setDirty(false);
+    return loaded;
+  }
+
+  MotionScript::Merged mergeText(Animation* animation, const QString& text, bool protectFirst = true)
+  {
+    const MotionScript::Result parsed = MotionScript::parse(text);
+    if (!parsed.ok())
+    {
+      MotionScript::Merged failed;
+      failed.error = "PARSE: " + parsed.error;
+      return failed;
+    }
+    return MotionScript::merge(animation, *parsed.value, protectFirst);
+  }
+}
+
+// a row changes the key it names, adds a key that was missing, and everything else stays
+void MotionScriptTest::mergeChangesAndAddsAndKeepsTheRest()
+{
+  Loaded loaded = base();
+  Animation* animation = loaded.animation.get();
+  const MotionScript::Merged merged = mergeText(animation,
+    "10 | rShldr | -45 | 0 | 0 | linear\n"        // a new key
+    "16 | rForeArm | 0 | 90 | 0 |\n"               // an existing key, new angles
+    "5 | head | 10 | 0 | 0 |\n");                  // a joint the animation did not move
+  QVERIFY2(merged.ok(), qPrintable(merged.error));
+  QCOMPARE(merged.keys, 3);
+  QCOMPARE(merged.added, 2);
+  QCOMPARE(merged.changed, 1);
+  QVERIFY(merged.outsideLimits.isEmpty());
+  QVERIFY(animation->dirty());
+  QCOMPARE(MotionScript::write(animation).text, QString(HEADER) +
+    "fps 30\n"
+    "frames 31\n"
+    "loop 2 31\n"
+    "\n"
+    "frame | joint | x | y | z | easing\n"
+    "1 | position | 0 | 43.5 | 0 |\n"
+    "2 | rShldr | -90 | 0 | -20 | ease-in-out\n"
+    "5 | head | 10 | 0 | 0 | ease-in-out\n"
+    "10 | rShldr | -45 | 0 | 0 | linear\n"
+    "16 | rForeArm | 0 | 90 | 0 | ease-out-overshoot\n"
+    "31 | rShldr | 0 | 0 | 0 | ease-in-out\n");
+}
+
+// a row without an easing keeps an existing key's easing; a new key gets ease-in-out into it
+// and out of it (the key after it, which had another easing from the key before); a row with
+// an easing sets the movement into its key
+void MotionScriptTest::mergeKeepsEasingOfExistingKeysAndGivesNewKeysTheDefault()
+{
+  Loaded loaded = base();
+  Animation* animation = loaded.animation.get();
+  // 31 had "linear" into it from 2; the new key at 20 splits that: 2 to 20 is the default
+  // (the new key's own easing is empty), 20 to 31 is the default too, and the other keys stay
+  QVERIFY(mergeText(animation, "20 | rShldr | 30 | 0 | 0 |\n").ok());
+  QVERIFY(MotionScript::write(animation).text.contains(
+    "2 | rShldr | -90 | 0 | -20 | ease-in-out\n"
+    "16 | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n"
+    "20 | rShldr | 30 | 0 | 0 | ease-in-out\n"
+    "31 | rShldr | 0 | 0 | 0 | ease-in-out\n"));
+  // an existing key with an easing in the row: only the movement into it changes
+  QVERIFY(mergeText(animation, "31 | rShldr | 0 | 0 | 0 | constant\n"
+                               "16 | rForeArm | 0 | 110 | 0 |\n").ok());
+  const QString text = MotionScript::write(animation).text;
+  QVERIFY(text.contains("20 | rShldr | 30 | 0 | 0 | ease-in-out\n"));
+  QVERIFY(text.contains("31 | rShldr | 0 | 0 | 0 | constant\n"));
+  QVERIFY(text.contains("16 | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n"));
+}
+
+// a key past the last frame, with no frames line, makes the animation longer; a loop that
+// ended on the last frame still ends on the last frame
+void MotionScriptTest::mergeGrowsTheAnimationAndItsLoop()
+{
+  Loaded loaded = base();
+  Animation* animation = loaded.animation.get();
+  QVERIFY(mergeText(animation, "40 | head | 0 | 20 | 0 |\n").ok());
+  QCOMPARE(animation->getNumberOfFrames(), 40);
+  QCOMPARE(animation->getLoopInPoint(), 1);
+  QCOMPARE(animation->getLoopOutPoint(), 39);
+  QVERIFY(MotionScript::write(animation).text.contains("frames 40\nloop 2 40\n"));
+  // seconds work as in load: 2s at 30 fps is frame 61
+  QVERIFY(mergeText(animation, "frames 70\n2s | head | 0 | 0 | 0 |\n").ok());
+  QCOMPARE(animation->getNumberOfFrames(), 70);
+  QCOMPARE(animation->getLoopOutPoint(), 69);
+  BVHNode* head = SkeletonWalk::findNode(animation->getMotion(), "head");
+  QVERIFY(head);
+  QVERIFY(head->isKeyframe(60));
+}
+
+// fps, frames and loop change only when the text has that line
+void MotionScriptTest::mergeSettingsOnlyWhenGiven()
+{
+  Loaded loaded = base();
+  Animation* animation = loaded.animation.get();
+  QVERIFY(mergeText(animation, "3 | head | 5 | 0 | 0 |\n").ok());
+  QCOMPARE(animation->fps(), 30);
+  QCOMPARE(animation->getNumberOfFrames(), 31);
+  QCOMPARE(animation->getLoopInPoint(), 1);
+  QCOMPARE(animation->getLoopOutPoint(), 30);
+
+  QVERIFY(mergeText(animation, "fps 24\nframes 31\nloop 5 20\n").ok());
+  QCOMPARE(animation->fps(), 24);
+  QCOMPARE(animation->getNumberOfFrames(), 31);
+  QCOMPARE(animation->getLoopInPoint(), 4);
+  QCOMPARE(animation->getLoopOutPoint(), 19);
+
+  QVERIFY(mergeText(animation, "loop off\nframes 31\n").ok());
+  QCOMPARE(animation->getLoopInPoint(), -1);
+  QCOMPARE(animation->getLoopOutPoint(), 31);
+}
+
+void MotionScriptTest::mergeErrorsAreClearAndChangeNothing()
+{
+  struct Case { const char* text; bool protectFirst; const char* error; };
+  const QList<Case> cases = {
+    {"frames 20\n3 | head | 5 | 0 | 0 |\n", true,
+     "The frames line (20) is shorter than the open animation (31 frames). Merging never cuts keys off: raise the number, or leave the frames line out."},
+    {"3 | hed | 5 | 0 | 0 |\n", true, "Line 1: unknown joint \"hed\". Use a name from the joints command, or position for the hip position."},
+    {"3 | head | 5 | 0 | 0 |\n3 | head | 6 | 0 | 0 |\n", true, "Line 2: head has a key at frame 3 twice. Keep one row."},
+    {"frames 31\nloop 5 40\n3 | head | 5 | 0 | 0 |\n", true, "PARSE: The loop ends at frame 40, past the last frame (31)."},
+    {"1 | rShldr | 10 | 0 | 0 |\n", true,
+     "Line 1: frame 1 is protected: it holds the reference pose that Second Life compares the other frames against. "
+     "Use frame 2 or later, or turn off Edit > Lock the first frame."},
+    {"3 | head | 5 | 0 | 0 |\n4 | head | 5 | up | 0 |\n", true, "PARSE: Line 2: \"up\" is not a number for y: write a number from -360 to 360."},
+  };
+  for (const Case& c : cases)
+  {
+    Loaded loaded = base();
+    Animation* animation = loaded.animation.get();
+    const Animation::Snapshot before = animation->snapshot();
+    const MotionScript::Merged merged = mergeText(animation, c.text, c.protectFirst);
+    QVERIFY2(!merged.ok(), c.text);
+    QCOMPARE(merged.error, QString(c.error));
+    QVERIFY2(animation->snapshot() == before, c.text);
+    QVERIFY(!animation->dirty());
+  }
+  // with the first frame unlocked the same row is a plain change of the reference pose
+  Loaded loaded = base();
+  QVERIFY(mergeText(loaded.animation.get(), "1 | rShldr | 10 | 0 | 0 |\n", false).ok());
+  QCOMPARE(SkeletonWalk::findNode(loaded.animation->getMotion(), "rShldr")->frameData(0).rotation(), QVector3D(10, 0, 0));
+}
+
+// one merge is one change of the whole animation, so one Undo step brings the old state back
+void MotionScriptTest::mergeIsOneStepBack()
+{
+  Loaded loaded = base();
+  Animation* animation = loaded.animation.get();
+  const Animation::Snapshot before = animation->snapshot();
+  const QString textBefore = MotionScript::write(animation).text;
+  QVERIFY(mergeText(animation, "frames 40\nfps 24\n3 | head | 5 | 0 | 0 |\n10 | rShldr | -45 | 0 | 0 |\n20 | lShldr | 0 | 0 | 45 |\n").ok());
+  const Animation::Snapshot after = animation->snapshot();
+  QVERIFY(after != before);
+  animation->restore(before);   // what Undo does
+  QVERIFY(animation->snapshot() == before);
+  QCOMPARE(MotionScript::write(animation).text, textBefore);
+  animation->restore(after);    // and Redo
+  QVERIFY(animation->snapshot() == after);
+}
+
+void MotionScriptTest::mergeOfItsOwnTextChangesNothing_data()
+{
+  QTest::addColumn<QString>("file");
+  QTest::newRow("wave") << PINGLYMOTION_EXAMPLES "/wave.dingle";
+  QTest::newRow("jump") << PINGLYMOTION_EXAMPLES "/jump.dingle";
+  QTest::newRow("cmu wave") << PINGLYMOTION_MOTIONS "/cmu/cmu_13_26_wave.bvh";
+}
+
+// a script from motion_script that an assistant sends back unchanged changes nothing: no key
+// added or changed, no easing touched, no unsaved mark
+void MotionScriptTest::mergeOfItsOwnTextChangesNothing()
+{
+  QFETCH(QString, file);
+  Loaded loaded = fresh(file);
+  Animation* animation = loaded.animation.get();
+  animation->setDirty(false);
+  const Animation::Snapshot before = animation->snapshot();
+  const MotionScript::Written written = MotionScript::write(animation);
+  QVERIFY(written.custom.isEmpty());
+  for (bool protectFirst : {true, false})
+  {
+    const MotionScript::Merged merged = mergeText(animation, written.text, protectFirst);
+    QVERIFY2(merged.ok(), qPrintable(merged.error));
+    QCOMPARE(merged.keys, written.rows);
+    QCOMPARE(merged.added, 0);
+    QCOMPARE(merged.changed, 0);
+    const Animation::Snapshot after = animation->snapshot();
+    QCOMPARE(after.frames, before.frames);
+    QCOMPARE(after.fps, before.fps);
+    QCOMPARE(after.loopIn, before.loopIn);
+    QCOMPARE(after.loopOut, before.loopOut);
+    QCOMPARE(after.keys.size(), before.keys.size());
+    for (int part = 0; part < before.keys.size(); part++)
+      for (auto it = before.keys.at(part).constBegin(); it != before.keys.at(part).constEnd(); ++it)
+        QVERIFY2(after.keys.at(part).value(it.key()) == it.value(), qPrintable(QString("part %1 frame %2").arg(part).arg(it.key() + 1)));
+    QVERIFY(animation->snapshot() == before);
+    QVERIFY(!animation->dirty());
   }
 }
 

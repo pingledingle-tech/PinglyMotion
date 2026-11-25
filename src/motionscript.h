@@ -78,6 +78,11 @@ namespace MotionScript
     int loopIn = 0;         // 0: no loop line (the default loop of a new animation)
     int loopOut = 0;
     QList<Row> rows;
+    // which settings the text really gave (merge keeps the open animation's
+    // own fps, frame count and loop for the ones it did not)
+    bool haveFps = false;
+    bool haveFrames = false;
+    bool haveLoop = false;   // "loop off" counts: it gives loopIn 0
   };
 
   struct Result
@@ -125,6 +130,35 @@ namespace MotionScript
   // first (unknown joints with a suggestion, rows past the last frame, the
   // same key twice, "custom" easing); on an error nothing is changed.
   Applied apply(Animation* animation, const Script& script);
+
+  struct Merged
+  {
+    QString error;
+    QStringList outsideLimits;   // joints with a key past the joint's limits (kept, not cut back)
+    int keys = 0;                // rows read from the script
+    int added = 0;               // keys that did not exist before
+    int changed = 0;             // keys that existed and got another value
+    bool ok() const { return error.isEmpty(); }
+  };
+
+  // puts the script ON TOP of the open animation, so a change or an addition
+  // keeps the rest. Every row sets the key of that joint at that frame: an
+  // existing key gets the row's values, a missing key is added (its other
+  // side, the position of a joint key, stays as it was). Every key the script
+  // does not name stays as it is: joints it does not name, and the keys
+  // of other frames. Easing: a row with an easing sets the movement into its
+  // key; a row without one keeps an existing key's easing, and a new key gets
+  // ease-in-out, both into it and out of it (the old key after it). fps,
+  // frames and loop change only when the script has that line: frames may
+  // only grow (a shorter number is refused, so no key is ever cut off);
+  // without a frames line the animation grows to the last row's frame when
+  // that is later. A loop that ended on the last frame keeps ending on the
+  // last frame when the animation grows. Frame 1 is the reference pose: with
+  // "protectFirst" a row at frame 1 must equal what is there (so a script from
+  // motion_script can be sent back whole), else it is an error. All is checked
+  // first, so an error changes nothing; a change is ONE step in the animation
+  // (one snapshot restored), and nothing happens when the script changes nothing.
+  Merged merge(Animation* animation, const Script& script, bool protectFirst);
 }
 
 #endif

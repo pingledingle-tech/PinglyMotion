@@ -257,6 +257,36 @@ CASES = [
         ],
     },
     {
+        # issue 129, "text for AI": load_motion_script with mode merge puts a table ON TOP of the open
+        # animation, so the nod that is already there stays and the wave is added
+        "id": "merge_wave",
+        "prompt": "Open the file merge_wave_start.dingle. The head already nods. Keep the nod exactly as it is and add a right-hand wave on top of it, in the same one second. Save it.",
+        "start": "merge_wave_start.dingle",
+        "setup": frames(31) + [
+            key(2, head=(0, 0, 0)),
+            key(16, head=(20, 0, 0)),
+            key(31, head=(0, 0, 0)),
+        ],
+        "reference": [
+            ("load_motion_script", {"mode": "merge", "script":
+                "2 | rShldr | 0 | 0 | -70 |\n"
+                "2 | rForeArm | 0 | 40 | 0 |\n"
+                "16 | rShldr | 0 | 0 | -70 |\n"
+                "16 | rForeArm | 0 | 90 | 0 |\n"
+                "31 | rShldr | 0 | 0 | -70 |\n"
+                "31 | rForeArm | 0 | 40 | 0 |\n"}),
+        ],
+        "checks": [
+            {"type": "duration", "seconds": [0.8, 1.3]},
+            {"type": "angle", "joint": "head", "axis": "x", "frame": 16, "min": 19, "max": 21},
+            {"type": "angle", "joint": "head", "axis": "x", "frame": 31, "min": -1, "max": 1},
+            {"type": "pose", "expect": "rHand.y@16 > head.y@16"},
+            {"type": "moves", "joints": ["rForeArm"]},
+            NO_ERRORS,
+        ],
+        "broken_start": True,
+    },
+    {
         "id": "jump",
         "prompt": "A small jump on the spot in one second: crouch, jump up, land.",
         "reference": frames(31) + [

@@ -10,6 +10,10 @@ Files:
 - tests/assistant/**
 - tools/mcp/commands.json
 - translations/pinglymotion_en.ts
+- src/topbar.cpp
+- fuzz/control.dict
+- fuzz/corpus/control/32.json
+- docs/DEV.md
 - docs/CONTROL.md
 - docs/ASSISTANT_GUIDE.md
 - docs/PRODUCT.md

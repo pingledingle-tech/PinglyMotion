@@ -229,8 +229,9 @@ wording back and forth.
 - `palm`: which way the palm faces, the nearest of `forward`, `back`, `in`, `out`, `up` and `down`,
   and `palm_vector`, the palm's direction as a unit vector with the parts `forward`, `up` and `out`.
 - `fingertips`: `thumb`, `index`, `middle`, `ring` and `pinky`, each with `position` (the world
-  position, in the same shape as `positions`), `from_wrist` (`forward`, `up`, `out` in the program's
-  units, and `meters`), `distance` and `distance_meters` from the wrist, and `points`, the nearest
+  position `x`, `y`, `z`), `from_wrist` (`forward`, `up`, `out`) and `distance` from the wrist, all in
+  the program's units (inches; a metre is 0.0254 of a unit, so the fingertips carry no metre copies,
+  which keeps the text short), and `points`, the nearest
   of the six words for the direction from the wrist to the tip. A curled finger shows as a shorter
   `distance` and a tip that no longer points `out`.
 
@@ -350,6 +351,22 @@ frame | joint | x | y | z | easing
   limits are kept (not cut back, unlike `set_pose`) and listed in `outside_limits`. Like
   `new_animation` it refuses while there are unsaved changes. The answer is the `state` answer plus
   `keys` (rows loaded) and `outside_limits`.
+- `load_motion_script` with `"mode": "merge"` (default `"replace"`, the behaviour above) puts the
+  table ON TOP of the open animation, so an assistant can change or extend an animation that is
+  already open: every row sets the key of that joint at that frame (an existing key gets the row's
+  values, a missing key is added); every key a row does not name stays as it is. `fps`, `frames` and
+  `loop` change only when the text has that line; `frames` may only grow (a smaller number is refused,
+  so no key is cut off), and without a `frames` line the animation grows to the last row's frame when
+  that is later (a loop that ended on the last frame keeps ending on it; give a `frames` line when you
+  also give a `loop` line). Easing: a row with an easing sets the movement into its key; a row
+  without one keeps an existing key's easing, and a new key gets `ease-in-out` into it and out of it.
+  While the first frame is locked (Edit > Lock the first frame) a row at frame 1 must equal what is
+  there, so a table from `motion_script` can be sent back whole after an edit; otherwise it is refused.
+  Everything is checked first (same error texts as above), and an error changes nothing. A merge
+  works with unsaved changes, needs an open animation, and is one change of the whole animation, so
+  one Undo step brings the old state back; a table that changes nothing adds no step and does not
+  mark the animation as changed. The answer is the `state` answer plus `mode`, `keys` (rows read),
+  `added` (new keys), `changed` (existing keys that got other values) and `outside_limits`.
 - A round trip is exact: `motion_script` after `load_motion_script` gives the same text, and an
   animation through `motion_script` and `load_motion_script` plays the same on every frame (tested on
   the bundled examples and motion-capture clips). A motion-capture clip has a key on every frame, so
