@@ -1,5 +1,5 @@
 Branch: job/split-script-lab-panel
-Status: active
+Status: done
 Pull request: #488
 Files:
 - src/scriptlab/scriptlabpanel.cpp

@@ -163,7 +163,7 @@ Built in pull request 431 (23 Nov 2026). The texts are in `src/scriptlab/labedit
 
 ### Script Lab editor: RLV suggestions, help and warnings (lane 1, jobs R3 and R4)
 
-Built in pull request 433 (23 Nov 2026). The texts are in `src/scriptlab/rlvsuggest.cpp`, `src/scriptlab/labeditor.cpp`, `src/scriptlab/rlvbehaviours.cpp` (the warnings) and `src/scriptlab/scriptlabpanel.cpp`; `tests/scriptlabpanel/tst_rlvsuggest.cpp` and `tests/tst_rlvexamples.cpp` check them letter for letter. The command names, values and examples in the rows are examples: the program puts in the real ones. The plain sentence for each command ("Locks this object on you, so it cannot be taken off.") is not in this table: the 223 lines are in `src/scriptlab/rlvhelp_plain.inc`, checked with the same rules (at most 12 words a sentence, no avoided word) by `tests/tst_rlvexamples.cpp`.
+Built in pull request 433 (23 Nov 2026). The texts are in `src/scriptlab/rlvsuggest.cpp`, `src/scriptlab/labeditor.cpp`, `src/scriptlab/rlvbehaviours.cpp` (the warnings) and `src/scriptlab/scriptlabpanel*.cpp`; `tests/scriptlabpanel/tst_rlvsuggest.cpp` and `tests/tst_rlvexamples.cpp` check them letter for letter. The command names, values and examples in the rows are examples: the program puts in the real ones. The plain sentence for each command ("Locks this object on you, so it cannot be taken off.") is not in this table: the 223 lines are in `src/scriptlab/rlvhelp_plain.inc`, checked with the same rules (at most 12 words a sentence, no avoided word) by `tests/tst_rlvexamples.cpp`.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
@@ -191,7 +191,7 @@ Built in pull request 433 (23 Nov 2026). The texts are in `src/scriptlab/rlvsugg
 
 ### Script Lab for beginners (job U3)
 
-Built in pull request 443 (23 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` checks them letter for letter. In LABNEW-06, LABNEW-20 and LABNEW-21 the program puts in the real path, title and numbers. The word tips (LABNEW-35 to LABNEW-42) show one at a time with the word as the title (Prim, Root prim, Notecard, Sandbox, Viewer rules, RLV, RLVa, N held). The button "Make example project" and the step texts it shows come from the example guides (EXCOLOUR rows in [EXAMPLES.md](EXAMPLES.md)).
+Built in pull request 443 (23 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel*.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` checks them letter for letter. In LABNEW-06, LABNEW-20 and LABNEW-21 the program puts in the real path, title and numbers. The word tips (LABNEW-35 to LABNEW-42) show one at a time with the word as the title (Prim, Root prim, Notecard, Sandbox, Viewer rules, RLV, RLVa, N held). The button "Make example project" and the step texts it shows come from the example guides (EXCOLOUR rows in [EXAMPLES.md](EXAMPLES.md)).
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
@@ -245,7 +245,7 @@ Built in pull request 443 (23 Nov 2026). The texts are in `src/scriptlab/scriptl
 
 ### Script Lab: props from prims (job A1)
 
-Built in pull request 447 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` checks them letter for letter. The program puts in the prop's name (%1) and the reason (%2).
+Built in pull request 447 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel*.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` checks them letter for letter. The program puts in the prop's name (%1) and the reason (%2).
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
@@ -254,7 +254,7 @@ Built in pull request 447 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 
 ### Script Lab: record and replay (job A3)
 
-Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`, `src/scriptlab/labwatcher.cpp` and `src/scriptlab/labrecipe.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labrecipe.cpp` check them letter for letter. The facts and changes put in part names, button texts and colours from the run.
+Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel*.cpp`, `src/scriptlab/labwatcher.cpp` and `src/scriptlab/labrecipe.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labrecipe.cpp` check them letter for letter. The facts and changes put in part names, button texts and colours from the run.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
@@ -288,7 +288,7 @@ Built in pull request 450 (24 Nov 2026). The texts are in `src/scriptlab/scriptl
 
 ### Script Lab: the channel map (job A4)
 
-Built in pull request 453 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel.cpp`, `src/scriptlab/channelmapview.cpp`, `src/scriptlab/labchannelmap.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labchannelmap.cpp` check them letter for letter; the chain tags (LABMAP-21 and 22) are in `src/scriptlab/labchains.cpp` and `tests/tst_labchains.cpp` checks them. The arrows' own words ("say on channel 7", "link message 5", "menu on channel -77") are built from the run and are not in this list.
+Built in pull request 453 (24 Nov 2026). The texts are in `src/scriptlab/scriptlabpanel*.cpp`, `src/scriptlab/channelmapview.cpp`, `src/scriptlab/labchannelmap.cpp` and `src/scriptlab/labbeginner.cpp`; `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` and `tests/tst_labchannelmap.cpp` check them letter for letter; the chain tags (LABMAP-21 and 22) are in `src/scriptlab/labchains.cpp` and `tests/tst_labchains.cpp` checks them. The arrows' own words ("say on channel 7", "link message 5", "menu on channel -77") are built from the run and are not in this list.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
@@ -521,7 +521,7 @@ Drafts for everything drawn in Mockup 2 in `docs/mockup/index.html` (the project
 
 ### UX small fixes (24 Nov 2026)
 
-Built in pull request 458 (the project owner, 24 Nov 2026, 11:29-11:42: «Alt bør inn som en»). The texts are in `src/guidancespec.h`, `src/scriptlab/scriptlabpanel.cpp` and `src/scriptlab/labhelpview.cpp`. The help view's topics follow Mockup 2's help view (HELPV rows above, a proposal) where the program does the same thing, and say what the program really does where it differs (no pictures and no Show me buttons yet; the next hint comes back with Help > Show hints off and on, as Help has no "Show the next hint" item). The example guide steps were checked against the program and changed in [EXAMPLES.md](EXAMPLES.md): "press" Show effects in 3D view (it is a button with a tick, not a tick box), "open Send input" first (it is folded at first), "Live scripts is its first tab", and the relay's line written out, with where its channel number is.
+Built in pull request 458 (the project owner, 24 Nov 2026, 11:29-11:42: «Alt bør inn som en»). The texts are in `src/guidancespec.h`, `src/scriptlab/scriptlabpanel*.cpp` and `src/scriptlab/labhelpview.cpp`. The help view's topics follow Mockup 2's help view (HELPV rows above, a proposal) where the program does the same thing, and say what the program really does where it differs (no pictures and no Show me buttons yet; the next hint comes back with Help > Show hints off and on, as Help has no "Show the next hint" item). The example guide steps were checked against the program and changed in [EXAMPLES.md](EXAMPLES.md): "press" Show effects in 3D view (it is a button with a tick, not a tick box), "open Send input" first (it is folded at first), "Live scripts is its first tab", and the relay's line written out, with where its channel number is.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
@@ -543,7 +543,7 @@ Built in pull request 458 (the project owner, 24 Nov 2026, 11:29-11:42: «Alt b�
 
 ### Script Lab as one window with its own tabs (job UX-B, 24 Nov 2026)
 
-Built in pull request 464 (the project owner, 24 Nov 2026, 13:26: «Fiks dette og legg i køer»). The texts are in `src/scriptlab/scriptlabpanel.cpp` and `src/scriptlab/labtabs.cpp`; `tests/scriptlabwindow/tst_scriptlabwindow.cpp` checks them letter for letter. The tab names and tips are LABNEW and LABTWO rows (Live scripts, Type commands, LABMAP-01, LABTWO-04, LABTWO-08, LABTWO-09).
+Built in pull request 464 (the project owner, 24 Nov 2026, 13:26: «Fiks dette og legg i køer»). The texts are in `src/scriptlab/scriptlabpanel*.cpp` and `src/scriptlab/labtabs.cpp`; `tests/scriptlabwindow/tst_scriptlabwindow.cpp` checks them letter for letter. The tab names and tips are LABNEW and LABTWO rows (Live scripts, Type commands, LABMAP-01, LABTWO-04, LABTWO-08, LABTWO-09).
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|

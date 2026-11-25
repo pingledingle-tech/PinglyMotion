@@ -89,7 +89,7 @@ whichever job comes first, and reuse it.
 - Sandbox and session: `src/scriptlab/lsl/session.*`, `src/scriptlab/lsl/sandbox.*`, `src/scriptlab/lsl/control.cpp`.
 - RLV: `src/scriptlab/rlvstate.*` (snapshot and restore), maybe `src/scriptlab/lsl/rlvworld.*`.
 - Effects: `src/scriptlab/effectspreview.*`, `src/scriptlab/labeffects.*`, `src/scriptlab/labtint.*`.
-- Script Lab panel: `src/scriptlab/scriptlabpanel.*`, `src/scriptlab/objectsview.*`.
+- Script Lab panel: `src/scriptlab/scriptlabpanel*.*`, `src/scriptlab/objectsview.*`.
 - 3D view: `src/animationview.*` (markers, preview), `src/pinglymotionwindow.cpp` (tints, transport wiring),
   maybe `src/scriptlab/cameraoverride.*`, `environmentoverride.*`, `viewmodesoverride.*`.
 - Play buttons: `src/transportbar.*` and `src/playback.h` (reused; changed only if a second bar needs it).
