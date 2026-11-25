@@ -348,7 +348,7 @@ void TestPropsInFile::fileOpenKnowsPropFiles()
   QVERIFY(source.contains(QStringLiteral("if(!file.isEmpty() && PropsInScene::isPropFileName(file))")));
   QCOMPARE(source.count(QStringLiteral("storePropsInAnimation();")), 2);
   QCOMPARE(source.count(QStringLiteral("showPropsOfOpenedFile();")), 2);
-  const QString mainSource = WindowSource::WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  const QString mainSource = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   QVERIFY(!mainSource.isEmpty());
   QVERIFY(mainSource.contains(QStringLiteral("(*.dingle *.avm *.bvh *.prp)")));
   QVERIFY(mainSource.contains(QStringLiteral("w->storePropsInAnimation();")));

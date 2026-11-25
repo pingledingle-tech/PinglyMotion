@@ -331,7 +331,7 @@ void TestWindowRules::theLibraryIsClosedUntilAskedFor()
   QCOMPARE(p.libraryDock->toggleViewAction()->shortcut(), QKeySequence(QStringLiteral("Ctrl+Shift+B")));
 
   // the window hides it once more after a saved layout is restored (src/pinglymotionwindow.cpp)
-  const QString source = WindowSource::WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  const QString source = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   QVERIFY(!source.isEmpty());
   const int restore = source.indexOf(QStringLiteral("restoreState(UserSettings::panelLayoutFor(UserSettings::expertMode())"));
   const int hide = source.indexOf(QStringLiteral("m_libraryDock->hide();"), restore);
@@ -482,7 +482,7 @@ void TestWindowRules::eachModeKeepsItsLayoutThroughARestart()
 // without the Joints list, the buttons are wired, the layout is saved and restored per mode
 void TestWindowRules::theWindowKeepsThePicksAndTheWaysBack()
 {
-  const QString source = WindowSource::WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  const QString source = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   QVERIFY(!source.isEmpty());
   auto body = [&](const QString& head)
   {

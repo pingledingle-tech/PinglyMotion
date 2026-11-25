@@ -526,7 +526,7 @@ void TestSetupDialog::connectionsStringsAreTheStatusBarsOwn()
 // code the status bar switches call, and show the real state again after every request
 void TestSetupDialog::windowConnectsSetupToTheSameCodeAsTheStatusBar()
 {
-  const QString source = WindowSource::WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  const QString source = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   QVERIFY(!source.isEmpty());
   const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::openSetupDialog()"));
   QVERIFY(begin > 0);
