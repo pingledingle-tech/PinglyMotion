@@ -293,7 +293,7 @@ class Mare(unittest.TestCase):
         body = re.sub(r'<span class="e">.*?</span>', "", body, flags=re.S)
         body = re.sub(r'<span class="aud">.*?</span>', "", body, flags=re.S)
         body = re.sub(r'<a href="https://[^"]*">https://[^<]*</a>', "", body)
-        body = re.sub(r"<script>.*?</script>", "", body, flags=re.S)
+        body = body.split("</main>", 1)[0]  # the script comes after the text
         text = re.sub(r"<[^>]+>", "", body)
         self.assertIsNone(re.search(r"[A-Za-z]{3}", text), re.search(r".{20}[A-Za-z]{3}.{20}", text))
 
@@ -302,8 +302,9 @@ class Mare(unittest.TestCase):
         self.assertIn("Manual (English)", self.page)  # a link to the plain English manual
 
     def test_script_only_toggles(self):
-        scripts = re.findall(r"<script>(.*?)</script>", self.page, re.S)
-        self.assertEqual(scripts, [bm.MARE_SCRIPT])
+        self.assertEqual(self.page.count("<script"), 1)
+        start = self.page.index("<script>") + len("<script>")
+        self.assertEqual(self.page[start:self.page.index("</script>", start)], bm.MARE_SCRIPT)
         self.assertNotIn("http", bm.MARE_SCRIPT)
         self.assertNotIn("fetch", bm.MARE_SCRIPT)
 
