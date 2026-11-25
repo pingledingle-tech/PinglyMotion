@@ -137,6 +137,9 @@ SET (PINGLYMOTION_SRC aboutcredits.cpp
               propsinscene.cpp
               pinglymotion.cpp
               pinglymotionwindow.cpp
+              pinglymotionwindowbuild.cpp
+              pinglymotionwindowview.cpp
+              pinglymotionwindowjoints.cpp
               pinglymotionwindowfile.cpp
               pinglymotionwindowprops.cpp
               pinglymotionwindowplayback.cpp

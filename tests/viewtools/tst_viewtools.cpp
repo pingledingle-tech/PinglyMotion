@@ -34,6 +34,7 @@
 #include "viewgizmo.h"
 #include "viewtoolbar.h"
 #include "viewtoolspec.h"
+#include "../windowsource.h"
 
 Q_DECLARE_METATYPE(ViewTool)
 Q_DECLARE_METATYPE(ViewToolSpec::End)
@@ -796,7 +797,7 @@ void TestViewTools::lookInBothThemes()
 void TestViewTools::viewAndWindowWiring()
 {
   const QString view = read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/animationview.cpp"));
-  const QString window = read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.cpp"));
+  const QString window = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.cpp"));
   QVERIFY(!view.isEmpty());
   QVERIFY(!window.isEmpty());
   // the 3D view: the tool decides a press, the keys ask for a tool, Show hides rings and floor,

@@ -48,6 +48,7 @@
 #include "scriptlab/rlvstate.h"
 #include "scriptlab/scriptlabpanel.h"
 #include "scriptlab/scriptlabsection.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -170,7 +171,7 @@ void TestScriptLabPanel::menuEntry()
 
   // the window puts that action in the View menu, after Timeline and before
   // Hide panels, and gives the panel the control API's RLV state
-  const QString window = readFile(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.cpp");
+  const QString window = WindowSource::read(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.cpp");
   QVERIFY(!window.isEmpty());
   const int timeline = window.indexOf("PanelVisibility::linkMenuItem(this,m_timelineDock,ui->optionsShowTimelineAction);");
   const int entry = window.indexOf("ui->menuView->addAction(m_scriptLabDock->toggleViewAction());");

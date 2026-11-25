@@ -20,6 +20,7 @@
 #include "camera.h"
 #include "camerahabitspec.h"
 #include "usersettings.h"
+#include "../windowsource.h"
 
 Q_DECLARE_METATYPE(CameraDrag)
 
@@ -40,7 +41,7 @@ class TestCameraHabits : public QObject
   private:
     static QString read(const QString& path);
     static QString viewSource() { return read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/animationview.cpp")); }
-    static QString windowSource() { return read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.cpp")); }
+    static QString windowSource() { return WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/pinglymotionwindow.cpp")); }
     QTemporaryDir m_dir;
 };
 

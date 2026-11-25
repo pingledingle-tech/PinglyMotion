@@ -38,6 +38,7 @@
 #include "timelinelook.h"
 #include "timelineview.h"
 #include "transportlook.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -47,7 +48,7 @@ namespace
     if (!file.open(QIODevice::ReadOnly)) return QString();
     return QString::fromUtf8(file.readAll());
   }
-  QString source(const char* name) { return readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/") + QLatin1String(name)); }
+  QString source(const char* name) { if (QLatin1String(name) == QLatin1String("pinglymotionwindow.cpp")) return WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp")); return readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/") + QLatin1String(name)); }
   QString mockup() { return readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/docs/mockup/index.html")); }
 
   bool same(const QVector3D& a, const QVector3D& b, float tolerance = 1e-4f)

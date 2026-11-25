@@ -36,6 +36,7 @@
 #include "theme.h"
 #include "uirender.h"
 #include "usersettings.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -681,7 +682,7 @@ void TestHelperMode::panelIsDrawnInTheDesignSystemAtEveryTextSize()
 // tests/guidance does.
 void TestHelperMode::windowWiringIsInPlace()
 {
-  const QString source = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  const QString source = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   const QString playback = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindowplayback.cpp"));
   QVERIFY(!source.isEmpty());
   QVERIFY(!playback.isEmpty());

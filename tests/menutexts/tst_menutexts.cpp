@@ -19,6 +19,7 @@
 #include <QtTest>
 
 #include "menuspec.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -29,6 +30,7 @@ namespace
 
   QString readSource(const char* name)
   {
+    if (QLatin1String(name) == QLatin1String("pinglymotionwindow.cpp")) return WindowSource::read(sourcePath(name));
     QFile file(sourcePath(name));
     if (!file.open(QIODevice::ReadOnly)) return QString();
     return QString::fromUtf8(file.readAll());
