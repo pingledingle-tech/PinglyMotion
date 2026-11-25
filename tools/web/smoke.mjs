@@ -3,7 +3,10 @@
 // (Playwright, WebGL 2 through SwiftShader), waits for the program's start line, then takes
 // a screenshot and writes every console line and page error to a log.
 //
-//   node tools/web/smoke.mjs <build folder with PinglyMotion.html> <output folder> [seconds]
+//   node tools/web/smoke.mjs <build folder with PinglyMotion.html> <output folder> [seconds] [file to open]
+//
+// With a file to open it then presses Ctrl+O, gives the file to the browser's file picker and
+// takes a second screenshot (opened.png); that part is reported but does not change the exit code.
 //
 // Exit code 0: the program printed its start line and nothing aborted. 1 otherwise.
 import { createServer } from 'node:http';
@@ -11,7 +14,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { chromium } from 'playwright';
 
-const [root, outDir, secondsArg] = process.argv.slice(2);
+const [root, outDir, secondsArg, openArg] = process.argv.slice(2);
 if (!root || !outDir) {
   console.error('usage: node tools/web/smoke.mjs <build folder> <output folder> [seconds]');
   process.exit(2);
@@ -65,7 +68,25 @@ while (!started && !aborted && Date.now() < end) await page.waitForTimeout(500);
 // give the window time to draw after the start line
 if (started && !aborted) await page.waitForTimeout(15000);
 await page.screenshot({ path: join(outDir, 'screenshot.png') });
-note(`started: ${started}, aborted: ${aborted}`);
+// a small copy that the workflow prints into its log (a session that cannot download artifacts can still look)
+await page.screenshot({ path: join(outDir, 'screenshot-small.jpg'), type: 'jpeg', quality: 40 });
+note(`started: ${started}, aborted: ${aborted}, page title: ${await page.title()}`);
+if (started && !aborted && openArg) {
+  // File > Open (Ctrl+O): the web build opens the browser's own file picker
+  try {
+    await page.mouse.click(800, 500);
+    const chooser = page.waitForEvent('filechooser', { timeout: 15000 });
+    await page.keyboard.press('Control+O');
+    await (await chooser).setFiles(resolve(openArg));
+    note(`file picker got ${openArg}`);
+    await page.waitForTimeout(8000);
+    note(`page title after opening: ${await page.title()}`);
+  } catch (err) {
+    note(`open test: ${err.message}`);
+  }
+  await page.screenshot({ path: join(outDir, 'opened.png') });
+  await page.screenshot({ path: join(outDir, 'opened-small.jpg'), type: 'jpeg', quality: 40 });
+}
 await writeFile(join(outDir, 'console.log'), lines.join('\n') + '\n');
 console.log(lines.join('\n'));
 await browser.close();

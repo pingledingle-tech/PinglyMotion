@@ -86,7 +86,15 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           # the script runs from the folder with node_modules, so it finds playwright
           cp tools/web/smoke.mjs "$RUNNER_TEMP/pw/smoke.mjs"
-          node "$RUNNER_TEMP/pw/smoke.mjs" build-web/src web-smoke 90
+          node "$RUNNER_TEMP/pw/smoke.mjs" build-web/src web-smoke 90 examples/jump.dingle
+
+      - name: Screenshots as text (for sessions that cannot download artifacts)
+        if: always()
+        run: |
+          for f in web-smoke/*-small.jpg; do
+            [ -f "$f" ] || continue
+            echo "BEGIN $f"; base64 -w0 "$f"; echo; echo "END $f"
+          done
 
       - name: Collect the web build
         if: always()

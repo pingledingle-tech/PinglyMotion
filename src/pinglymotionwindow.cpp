@@ -730,6 +730,16 @@ PinglyMotionWindow::PinglyMotionWindow() :
 
 void PinglyMotionWindow::setRemoteControl(bool on)
 {
+#ifdef Q_OS_WASM
+  // the web build has no control server: a web page cannot listen for connections
+  // (docs/DEV.md, "Web-ready code", rule 3; remote control is not part of the web version)
+  if(on)
+  {
+    QMessageBox::information(this,tr("AI Assistant"),tr("The AI Assistant needs the desktop program: in a web browser, AI tools cannot connect to PinglyMotion."));
+    updateWindowTitle();
+    return;
+  }
+#endif
   if(on)
   {
     if(m_controlServer->running()) return;

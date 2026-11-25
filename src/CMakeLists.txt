@@ -190,6 +190,8 @@ IF (PINGLYMOTION_WEB)
   TARGET_LINK_LIBRARIES (pinglymotion PRIVATE pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS})
   # the data folder (poses, skeletons, body meshes) goes into PinglyMotion.data, read at /data
   TARGET_LINK_OPTIONS (pinglymotion PRIVATE "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/bin/data@/data")
+  # dialogs and message boxes wait with exec(): a browser needs Asyncify for that (doc.qt.io, Qt for WebAssembly)
+  TARGET_LINK_OPTIONS (pinglymotion PRIVATE -sASYNCIFY -Os)
 ELSE ()
   ADD_EXECUTABLE (pinglymotion ${PINGLYMOTION_SRC} ${PINGLYMOTION_UI} ${PINGLYMOTION_RSC})
   TARGET_LINK_LIBRARIES (pinglymotion pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} OpenGL::GL)

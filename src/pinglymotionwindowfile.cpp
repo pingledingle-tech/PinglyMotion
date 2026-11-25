@@ -232,6 +232,18 @@ void PinglyMotionWindow::fileOpen()
 
 void PinglyMotionWindow::fileOpen(const QString& name)
 {
+#ifdef Q_OS_WASM
+  // web build: the browser's own file picker uploads the file; the bytes open like a dropped file
+  // (docs/DEV.md, "Web-ready code", rule 2)
+  if(name.isEmpty())
+  {
+    QFileDialog::getOpenFileContent(m_animFilter,[this](const QString& fileName,const QByteArray& content)
+    {
+      if(!fileName.isEmpty()) fileOpenData(fileName,content);
+    });
+    return;
+  }
+#endif
   QString file=name;
 
   if(file.isEmpty())
@@ -356,6 +368,10 @@ void PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* 
 // ask for a .dingle name first. Returns true when the animation was saved.
 bool PinglyMotionWindow::fileSave()
 {
+#ifdef Q_OS_WASM
+  // web build: every save is a download (fileSaveAs)
+  return fileSaveAs();
+#endif
   if(DingleSave::needsName(currentFile,m_untitledName))
     return fileSaveAs();
 
@@ -378,6 +394,29 @@ bool PinglyMotionWindow::fileSave()
 // returns true when the animation was saved
 bool PinglyMotionWindow::fileSaveAs()
 {
+#ifdef Q_OS_WASM
+  {
+    // web build: the animation is written to the browser's memory file system, then the
+    // browser downloads it (docs/DEV.md, "Web-ready code", rule 2)
+    const QString name=QFileInfo(DingleSave::withDingleEnding(DingleSave::suggestedName(currentFile,m_untitledName))).fileName();
+    const QString file=QDir(QDir::tempPath()).filePath(name);
+    QString error;
+    storePropsInAnimation();
+    if(!scene->getAnimation()->saveBVH(file,&error))
+    {
+      QMessageBox::warning(this,tr("Save Animation File"),error);
+      return false;
+    }
+    QFile saved(file);
+    if(!saved.open(QIODevice::ReadOnly))
+    {
+      QMessageBox::warning(this,tr("Save Animation File"),saved.errorString());
+      return false;
+    }
+    QFileDialog::saveFileContent(saved.readAll(),name);
+    return true;
+  }
+#endif
   QString suggested=DingleSave::suggestedName(currentFile,m_untitledName);
   if(QFileInfo(suggested).isRelative())
     suggested=QDir(UserSettings::lastPath()).filePath(suggested);
