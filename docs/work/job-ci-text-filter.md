@@ -1,6 +1,6 @@
 Branch: job/ci-text-filter
-Status: active
-Pull request: pending
+Status: done
+Pull request: #516
 Files:
 - tools/ci/changes.py
 - tests/test_ci_changes.py
