@@ -43,7 +43,7 @@ cmake -S . -B /tmp/asan -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS=ON \
   -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
 ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/asan --output-on-failure
 # the file code leaves nothing behind, so it runs with the leak sanitizer on (a step of the asan-ubsan check)
-ASAN_OPTIONS=detect_leaks=1 ctest --test-dir /tmp/asan -R '^(animfile|generated|dingle|dingle_conversion|roundtrip)$' --output-on-failure
+ASAN_OPTIONS=detect_leaks=1 ctest --test-dir /tmp/asan -R '^(animfile|generated|dingle|dingle_conversion|roundtrip|luaengine)$' --output-on-failure
 ```
 
 Fuzzing: `fuzz/README.md`. After changing a parser or the control commands, start the fuzz workflow on your branch and tell the user the result (rule: `CLAUDE.md`, "While you work"): `gh api -X POST repos/pingledingle-tech/PinglyMotion/actions/workflows/fuzz.yml/dispatches -f ref=<branch>`. All fuzz targets run at the same time, 2 minutes each on a branch (about 10 minutes in all), 10 minutes each at night and before a release; a longer run on a branch: add `-f inputs[seconds]=600`.
@@ -158,6 +158,15 @@ All owner tests are optional and block nothing (the project owner, 24 November 2
 ## Pictures
 
 To compare how the 3D view looks before and after a change, build `main` in a second worktree, run both under Xvfb, take `import -window root` and compare with `compare -metric AE -fuzz 1%`. Details: `docs/RENDERING.md`.
+
+## The Lua engine trial build
+
+`cmake -DPINGLYMOTION_LUA=ON` (off by default) fetches Linden Lab's SLua (a fork of Luau, MIT) at one pinned commit, checks the download's SHA-256 and builds its engine libraries (`Luau.VM`, `Luau.Compiler` and what they need, also the LSL front end Tailslide); `cmake/slua.cmake` holds the commit and the hash, `CREDITS.md` the licence line. Nothing in the program links it. The only user is the test `luaengine` (`tests/luaengine`, plain C++ without Qt): a sandboxed Lua state runs `return 1+1`, finds no `io`, file loaders, `require` or dangerous `os` functions, cannot change the shared libraries, and keeps each script's globals apart. The Linux, Windows and asan-ubsan jobs build with the option on (the program itself is the same); CodeQL and the release builds leave it off, so SLua's code is neither analysed as ours nor shipped.
+
+- Without access to GitHub archives (an AI session sandbox): clone `https://github.com/secondlife/slua`, check out the pinned commit and add `-DFETCHCONTENT_SOURCE_DIR_SLUA=<that folder>`.
+- A newer commit: change `PINGLYMOTION_SLUA_COMMIT` and `PINGLYMOTION_SLUA_SHA256` together (a wrong hash stops the configure step and prints the real one; check that the archive really is that commit before you take it), and the commit and date in `CREDITS.md`.
+- Build only the test: `cmake --build /tmp/build --target pinglymotion_luaengine_tests`, then `ctest --test-dir /tmp/build -R '^luaengine$'`.
+- Web: Luau builds for WebAssembly with Emscripten (SLua keeps Luau's `LUAU_BUILD_WEB` option, and the luau.org demo runs in the browser), and the engine needs no threads, files or network, so it fits the web version (`Web-ready code`, rule 4); not tried in this project yet.
 
 ## Git and GitHub from a session
 
