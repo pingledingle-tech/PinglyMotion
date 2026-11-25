@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "pinglymotion",
   "display_name": "PinglyMotion",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Let Claude pose, play, look at and save animations in PinglyMotion, the Second Life animation editor.",
   "long_description": "Needs PinglyMotion running on the same computer with the AI Assistant switched on (the button in its status bar). Claude can change the pose, frames, speed and camera, take screenshots of the 3D view (they are sent to Claude), and open and save animation files in the PinglyMotion folder in Documents. It talks to PinglyMotion only on this computer (127.0.0.1) and checks that the program on the port really is PinglyMotion before it sends the key. No settings are needed and nothing secret is stored in this extension.",
   "author": {

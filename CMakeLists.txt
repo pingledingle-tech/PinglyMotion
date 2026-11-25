@@ -19,7 +19,7 @@ IF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
 ENDIF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
 
 # The version number. Also change it in src/pinglymotion.rc and bin/NEWS.
-PROJECT (pinglymotion VERSION 0.1.0)
+PROJECT (pinglymotion VERSION 0.3.0)
 
 # Timestamp when program was built. Like the build number and the build source below it goes
 # into the generated header buildinfo.h (only constants.cpp includes it), not onto the compiler
