@@ -10,6 +10,7 @@ import json
 import os
 import re
 import unittest
+from html.parser import HTMLParser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.join(HERE, "..", "docs")
@@ -27,6 +28,40 @@ def plain(fragment):
     """Text a reader of the real languages sees: the mare symbol spans are dropped."""
     fragment = re.sub(r'<span class="m" aria-hidden="true">.*?</span>', "", fragment, flags=re.S)
     return html.unescape(re.sub(r"<[^>]+>", "", fragment))
+
+
+class _Collect(HTMLParser):
+    """Collects the visible text (outside script and style) and the content of the script element with a given id."""
+
+    def __init__(self, script_id=None):
+        super().__init__(convert_charrefs=True)
+        self.script_id, self.text, self.script, self._in = script_id, [], "", None
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self._in = (tag, dict(attrs).get("id"))
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self._in = None
+
+    def handle_data(self, data):
+        if self._in is None:
+            self.text.append(data)
+        elif self._in == ("script", self.script_id):
+            self.script += data
+
+
+def visible_text(page):
+    c = _Collect()
+    c.feed(page)
+    return "".join(c.text)
+
+
+def script_json(page, script_id):
+    c = _Collect(script_id)
+    c.feed(page)
+    return c.script
 
 
 class Landing(unittest.TestCase):
@@ -53,7 +88,7 @@ class Landing(unittest.TestCase):
 
     def test_all_five_languages(self):
         self.assertEqual(len(re.findall(r"<article id=", self.page)), 5)
-        i18n = json.loads(re.search(r'id="i18n">(.*?)</script>', self.page, re.S).group(1).replace("<\\/", "</"))
+        i18n = json.loads(script_json(self.page, "i18n"))
         self.assertEqual(sorted(i18n), sorted(["mare"] + LANGS))
         for lang in LANGS:
             self.assertIn('<article id="%s"' % lang, self.page)
@@ -94,7 +129,7 @@ class Landing(unittest.TestCase):
     def test_no_personal_data(self):
         self.assertIsNone(re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", self.page))
         self.assertIsNone(re.search(r"C:\\Users|/home/|/Users/", self.page))
-        self.assertIsNone(re.search(r"\+?\d[\d ]{8,}\d", re.sub(r"<script.*?</script>|<style.*?</style>", "", self.page, flags=re.S)))
+        self.assertIsNone(re.search(r"\+?\d[\d ]{8,}\d", visible_text(self.page)))
 
     def test_real_homepage_kept(self):
         self.assertIn('<meta name="robots" content="noindex">', self.home)
