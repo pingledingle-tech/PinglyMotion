@@ -91,6 +91,7 @@ struct Expr
   int member = -1;               // Member: 0..3 for x y z s
   bool prefix = false;           // IncDec
   Type castType = Type::Void;    // Cast
+  int height = 1;                // levels of the tree from this node down (1: no operands), set by the parser
   std::vector<std::unique_ptr<Expr>> args;
 };
 

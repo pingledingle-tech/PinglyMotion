@@ -425,6 +425,22 @@ class SyntaxParser
       return e;
     }
 
+    // A node with operands gets its height (levels of the tree from here down), and one expression may
+    // nest at most Parser::MAX_EXPRESSION_DEPTH levels. A chain like a + a + a + ... is read in a loop,
+    // so the depth guard alone does not see how deep its tree grows; every later pass (checker, lint,
+    // converter, interpreter, freeing the tree) walks the tree recursively and relies on this limit.
+    std::unique_ptr<Expr> finish(std::unique_ptr<Expr> e, const Token& at)
+    {
+      int below = 0;
+      for (const auto& a : e->args)
+        if (a->height > below) below = a->height;
+      e->height = below + 1;
+      if (e->height > Parser::MAX_EXPRESSION_DEPTH)
+        error(at, QString("This expression is too long or nested too deeply (more than %1 levels); split it into several statements.")
+                    .arg(Parser::MAX_EXPRESSION_DEPTH));
+      return e;
+    }
+
     static bool isAssignOp(const Token& t)
     {
       if (t.kind != TokenKind::Operator) return false;
@@ -446,7 +462,7 @@ class SyntaxParser
         e->op = t.text;
         e->args.push_back(std::move(left));
         e->args.push_back(parseExpression());
-        return e;
+        return finish(std::move(e), t);
       }
       if (t.kind == TokenKind::Operator && (t.text == "<<=" || t.text == ">>="))
         error(t, "LSL has no " + t.text + " operator; write it out, for example a = a << 1.");
@@ -484,7 +500,7 @@ class SyntaxParser
         e->op = t.text;
         e->args.push_back(std::move(left));
         e->args.push_back(std::move(right));
-        left = std::move(e);
+        left = finish(std::move(e), t);
       }
     }
 
@@ -516,7 +532,7 @@ class SyntaxParser
           auto e = newExpr(ExprKind::Unary, t);
           e->op = t.text;
           e->args.push_back(std::move(operand));
-          return e;
+          return finish(std::move(e), t);
         }
         if (t.text == "++" || t.text == "--")
         {
@@ -528,7 +544,7 @@ class SyntaxParser
           e->op = t.text;
           e->prefix = true;
           e->args.push_back(std::move(target));
-          return e;
+          return finish(std::move(e), t);
         }
         if (t.text == "(" && peek(1).kind == TokenKind::Identifier && isTypeWord(peek(1).text) && isOp(peek(2), ")"))
         {
@@ -537,7 +553,7 @@ class SyntaxParser
           e->castType = parseType();
           next();
           e->args.push_back(parseUnary());
-          return e;
+          return finish(std::move(e), t);
         }
       }
       auto e = parsePostfix();
@@ -556,7 +572,7 @@ class SyntaxParser
         inc->op = t.text;
         inc->prefix = false;
         inc->args.push_back(std::move(e));
-        return inc;
+        return finish(std::move(inc), t);
       }
       return e;
     }
@@ -612,7 +628,7 @@ class SyntaxParser
             e->name = t.text;
             if (!isOp(peek(), ")")) parseExpressionList(e->args);
             expectOp(")", "after the arguments of " + t.text);
-            return e;
+            return finish(std::move(e), t);
           }
           if (isOp(peek(), "."))
           {
@@ -646,7 +662,7 @@ class SyntaxParser
             auto e = newExpr(ExprKind::ListLit, t);
             if (!isOp(peek(), "]")) parseExpressionList(e->args);
             expectOp("]", "to close the list");
-            return e;
+            return finish(std::move(e), t);
           }
           if (t.text == "<")
           {
@@ -663,7 +679,7 @@ class SyntaxParser
             if (e->args.size() < 3) error(peek(), "A vector needs three parts <x, y, z> and a rotation four <x, y, z, s>.");
             expectOp(">", "to close the vector or rotation");
             if (e->args.size() == 4) e->kind = ExprKind::RotationLit;
-            return e;
+            return finish(std::move(e), t);
           }
           break;
         }

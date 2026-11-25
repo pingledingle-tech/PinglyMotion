@@ -3,17 +3,10 @@ Status: active
 Pull request: #513
 Files:
 - src/scriptlab/lsl/parser.*
-- src/scriptlab/lsl/ast.*
-- src/scriptlab/lsl/interp.*
-- src/scriptlab/lsl/lint.cpp
-- src/scriptlab/lsl/lsl2slua.cpp
-- src/scriptlab/lsl/luair.cpp
-- src/scriptlab/labchannelmap.cpp
+- src/scriptlab/lsl/ast.h
+- src/scriptlab/lsl/interp.h
 - tests/tst_lslparser.cpp
-- tests/tst_lsllimits.cpp
 - fuzz/corpus/lsl/
-- .github/workflows/fuzz.yml
-- fuzz/README.md
 - docs/CONTROL.md
 - docs/SCRIPT_LAB.md
 
