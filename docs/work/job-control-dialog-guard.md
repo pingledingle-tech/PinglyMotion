@@ -1,5 +1,5 @@
 Branch: job/control-dialog-guard
-Status: active
+Status: done
 Pull request: #514
 Files:
 - src/controlserver.*
