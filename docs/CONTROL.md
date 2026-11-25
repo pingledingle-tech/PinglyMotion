@@ -88,7 +88,8 @@ differs. The MCP server does this before every request.
 
 Commands: `state`, `joints`, `get_pose`, `set_pose`, `set_position`, `delete_key`, `keys`,
 `set_loop`, `set_frame`, `set_frame_count`, `set_fps`, `play`, `stop`, `new_animation`, `open_file`,
-`save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `check_animation`,
+`save_file`, `screenshot`, `set_figure`, `set_camera`, `describe_pose`, `describe_motion`, `describe_body`,
+`motion_script`, `load_motion_script`, `check_animation`,
 `export_anim`, `find_reference`, `load_reference`, `rlv_command`, `rlv_state`, `rlv_reset`, `lsl_check`, `lsl_lint`, `lsl_run`,
 `lab_watch`, `lab_unwatch`, `lab_result`, `lab_replay`. `screenshot` has options for several views, frames and labels (below).
 
@@ -289,6 +290,71 @@ the middle within 1.5 inches; the motion repeats when the autocorrelation of all
 0.7 at some period of at least a quarter of a second (the first peak at least 90% as high as the best
 one); legs or arms move in opposition below a correlation of -0.5 and together above 0.5; the loop
 seam is smooth up to 2 degrees and half an inch, a small jump up to 10 degrees and 2 inches.
+
+### describe_body
+
+`describe_body` gives the body as text, so an assistant can judge reach and seat heights and describe
+the figure to the user. It takes no parameters and never changes anything. The answer has `figure`
+(`female` or `male`, as in `state`), `body` (`ruth2` or `max`, the Options > Body choice) and
+`body_name`, `skeleton`, `scale` (the Scale field; the 3D view draws the figure at that size),
+`sizes` (each `{what, inches, metres}`: `height` from the floor to the top of the skull, `eyes`,
+`shoulder_height`, `hip_height`, `knee_height` and `ankle_height` above the floor, `shoulder_width`,
+`hip_width`, `upper_arm`, `forearm`, `hand` to the tip of the middle finger, `arm`, `arm_span`,
+`thigh`, `shin`, `foot`, `torso` from the hip to the base of the neck, `neck_and_head`),
+`proportions` (`legs_of_height`, `arm_span_of_height`, `shoulders_of_height`, `thigh_to_shin`,
+`upper_arm_to_forearm`), `sentences` and a one-line `summary`.
+
+The sizes are measured on the skeleton in the start pose (every angle 0, arms out), between joint
+centres, with the floor at the lowest point of the feet; the skin adds a little. Both figures and both
+bodies use the same Second Life skeleton, so the sizes are the same for all of them (1.79 m tall,
+legs 57 % of the height, arm span 1.68 m). Code: `src/bodydescribe.*`.
+
+### motion_script and load_motion_script
+
+A motion script is a whole animation as a small plain-text table, for an assistant to read and write
+in one go instead of one `set_pose` per key (issue 129). `motion_script` gives the open animation in
+this form; `load_motion_script` builds a new animation from it. Code: `src/motionscript.*`.
+
+```
+# PinglyMotion motion script 1
+fps 30
+frames 31
+loop 2 31
+
+frame | joint | x | y | z | easing
+1 | position | 0 | 43.5 | 0 |
+2 | rShldr | -90 | 0 | -20 | ease-in-out
+16 | rForeArm | 0 | 110 | 0 | ease-out-overshoot
+31 | rShldr | 0 | 0 | 0 | linear
+```
+
+- Settings lines: `fps` (1 to 60, default 30), `frames` (1 to 10000, default the last row's frame),
+  `loop <in> <out>` or `loop off` (default: no loop points stored). A colon after the word is allowed.
+- One row per key: `frame | joint | x | y | z | easing`. `frame` is a frame number from 1, or seconds
+  with `s` (`0.5s` is frame 0.5 x fps + 1, rounded). `joint` is a name from `joints`, or `position`
+  for the hip position (in inches). `x y z` are degrees (at most 360 either way; the position at most
+  10000). `easing` is how the movement into this key from that joint's key before goes: `linear`,
+  `ease-in`, `ease-out`, `ease-in-out`, `ease-out-overshoot`, `constant`; empty means `ease-in-out`.
+  A row may start and end with `|`, so a markdown table works; its header row (first cell `frame`)
+  and `|---|` line are skipped. Lines starting with `#` are notes.
+- `motion_script` writes the rows in frame order, then skeleton order: frame 1 for the hip position
+  and for every joint that is not at 0 there, then every later key with its easing. `joints` (a list)
+  keeps only those joints' rows (`position` for the hip). A key with a curve drawn in the curve editor
+  is written as `custom` and listed in `custom`; `load_motion_script` refuses `custom`.
+- `load_motion_script` (parameter `script`) checks the whole text first: every mistake comes back
+  with its line number (at most 5 at once), for example `Line 4: unknown easing "smooth". Use one of:
+  linear, ...`, and nothing changes. Unknown joints get a suggestion (`Did you mean: rShldr?`), and the
+  same key twice, rows past the last frame and a loop that does not fit are refused. Frame 1 rows set
+  the reference pose: allowed here, because the whole animation is new. A joint without rows stays at
+  0; the hip position keeps a new animation's start height unless a row gives it. Angles past a joint's
+  limits are kept (not cut back, unlike `set_pose`) and listed in `outside_limits`. Like
+  `new_animation` it refuses while there are unsaved changes. The answer is the `state` answer plus
+  `keys` (rows loaded) and `outside_limits`.
+- A round trip is exact: `motion_script` after `load_motion_script` gives the same text, and an
+  animation through `motion_script` and `load_motion_script` plays the same on every frame (tested on
+  the bundled examples and motion-capture clips). A motion-capture clip has a key on every frame, so
+  its script is long; ask for a few `joints`. A request to the program is at most 64 KB, which is
+  about 1,500 rows.
 
 ### check_animation
 

@@ -81,6 +81,8 @@ SET (PINGLYMOTION_SHARED_SRC
               mesh.cpp
               motioncleanup.cpp
               motiondescribe.cpp
+              motionscript.cpp
+              bodydescribe.cpp
               paneltitlebar.cpp
               posedescribe.cpp
               retarget.cpp

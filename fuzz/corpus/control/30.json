@@ -1,0 +1,1 @@
+{"command": "load_motion_script", "script": "| frame | joint | x | y | z | easing |\n|---|---|---|---|---|---|\n| 1s | head | 0 | 20 | 0 | constant |\n"}

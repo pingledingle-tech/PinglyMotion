@@ -346,6 +346,42 @@
             ]
         },
         {
+            "description": "Describes the body in words and numbers: which figure (female or male) and which body (Ruth2 or Max) the 3D view shows, and the sizes of the skeleton in the start pose (standing straight, arms out), in inches and metres: height (floor to the top of the skull), eye, shoulder, hip joint, knee and ankle height above the floor, shoulder and hip width, upper arm, forearm, hand, whole arm, arm span, thigh, shin, foot, body and neck with head; the proportions (legs of the height, arm span of the height, shoulders of the height, thigh to shin, upper arm to forearm); plain sentences and a one-line summary. Both figures and both bodies use the same Second Life skeleton, so the sizes are the same for all of them; sizes are between joint centres, the skin adds a little. Use it to judge reach (can the hand touch the floor, how high is a seat for this figure) and to describe the body to the user. Never changes the animation.",
+            "name": "describe_body",
+            "parameters": {
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Gives the open animation as a motion script: a small plain-text table that you can read, change and send back with load_motion_script. First the settings (fps, frames, loop when set), then one row per key: frame | joint | x | y | z | easing. frame starts at 1; joint is a name from the joints command, or position for the hip position (in inches); x y z are degrees; easing is how the movement into this key from the joint's key before goes (linear, ease-in, ease-out, ease-in-out, ease-out-overshoot, constant; custom for a curve drawn in the curve editor, which load_motion_script refuses). Frame 1 rows: the hip position, and every joint that is not at 0 there. Rows come in frame order. joints: only the rows of these joints (and position for the hip). The answer has script, rows and, when there are any, custom (the joints with a custom curve). A motion-capture clip has a key on every frame, so its script is long: ask for a few joints. Never changes the animation.",
+            "name": "motion_script",
+            "parameters": {
+                "joints": {
+                    "description": "Only these joints (position for the hip position). Default every joint",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+            ]
+        },
+        {
+            "description": "Builds a new animation from a motion script (the text motion_script gives, or one you write): fps, frames and loop lines, then rows frame | joint | x | y | z | easing. frame is a frame number from 1, or seconds with s (0.5s becomes frame 0.5 x fps + 1); joint is a name from the joints command or position for the hip position (inches); x y z are degrees; easing is one of linear, ease-in, ease-out, ease-in-out, ease-out-overshoot, constant, or empty for ease-in-out. Lines starting with # are notes; a markdown table with a header row works too. Frame 1 rows set the reference pose (allowed here, because the whole animation is new). A joint without rows stays at 0; the hip position keeps the start height (43.5) unless a row gives it. frames defaults to the last row's frame. Angles past a joint's limits are kept, not cut back, and listed in outside_limits. Everything is checked first: a mistake gives the line number and changes nothing. Fails if there are unsaved changes, like new_animation. The answer is the state, plus keys (rows loaded) and outside_limits.",
+            "name": "load_motion_script",
+            "parameters": {
+                "script": {
+                    "description": "The motion script text",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "script"
+            ]
+        },
+        {
             "description": "Checks the whole animation against Second Life's rules and common mistakes, with fixed thresholds, and lists what is wrong with the frames and joints it is about. Errors (Second Life refuses the file or loses part of it): longer than 60 s, nothing moves away from frame 1, the hip more than 5 m from frame 1. Warnings (it plays but likely looks wrong): posed joints that keep the frame-1 angle and are dropped, a key past a joint limit, a foot under the floor, floating, foot sliding, a sudden jump in one frame, nothing moving at the start, a loop seam that jumps. Notes: joints left out on export, keys that change nothing. Never changes the animation or the current frame.",
             "name": "check_animation",
             "parameters": {

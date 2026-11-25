@@ -1,0 +1,1 @@
+[{"command": "load_motion_script", "script": "fps 30\nframes 31\nloop 2 31\n1 | position | 0 | 43.5 | 0 |\n2 | rShldr | -90 | 0 | -20 |\n0.5s | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n31 | rShldr | 0 | 0 | 0 | linear\n"}, {"command": "motion_script"}]
