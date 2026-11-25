@@ -1,6 +1,6 @@
 Branch: job/script-lab-improve-setup
 Status: active
-Pull request: pending
+Pull request: #491
 Files:
 - src/scriptlab/lsl/builtins*
 - src/scriptlab/lsl/control.*
