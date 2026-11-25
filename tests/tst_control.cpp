@@ -229,6 +229,8 @@ class ControlTest : public QObject
     void describeBodyGivesTheSizes();
     void motionScriptReadsAndLoadsTheAnimation();
     void loadMotionScriptRefusesBadScripts();
+    void loadMotionScriptMergesOnTopOfTheOpenAnimation();
+    void loadMotionScriptMergeRefusesBadRequests();
     void checkAnimationFindsNothingMoving();
     void checkAnimationPassesAnArmLift();
     void checkAnimationFindsTooLong();
@@ -1921,7 +1923,11 @@ void ControlTest::describePoseHandsAtRest()
     QCOMPARE(index["forward"].toDouble(), 3.15);
     QCOMPARE(index["up"].toDouble(), -0.04);
     QCOMPARE(index["out"].toDouble(), 7.48);
-    QCOMPARE(index["meters"].toObject()["out"].toDouble(), 0.19);
+    // the text is short: fingertips come in inches only (a metre is 0.0254 of the unit)
+    QCOMPARE(index.keys(), (QStringList{"forward", "out", "up"}));
+    const QJsonObject indexEntry = tips["index"].toObject();
+    QCOMPARE(indexEntry.keys(), (QStringList{"distance", "from_wrist", "points", "position"}));
+    QCOMPARE(indexEntry["position"].toObject().keys(), (QStringList{"x", "y", "z"}));
 
     const QJsonObject thumb = tips["thumb"].toObject()["from_wrist"].toObject();
     QCOMPARE(thumb["forward"].toDouble(), 3.82);
@@ -2375,6 +2381,77 @@ void ControlTest::loadMotionScriptRefusesBadScripts()
   answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"script", "frames 10\n2 | rshldr | 0 | 1 | 0 |\n"}});
   QCOMPARE(answer["error"].toString(), QString("The motion script was not loaded, nothing changed:\nLine 2: unknown joint \"rshldr\". Did you mean: rShldr?"));
   QVERIFY(m_animation->snapshot() == before);
+}
+
+// issue 129: mode merge puts a table on top of the open animation; what it does not name stays
+void ControlTest::loadMotionScriptMergesOnTopOfTheOpenAnimation()
+{
+  m_animation->setDirty(false);
+  QJsonObject answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"script",
+    "fps 30\nframes 31\nloop 2 31\n1 | position | 0 | 43.5 | 0 |\n2 | rShldr | -90 | 0 | -20 |\n16 | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n31 | rShldr | 0 | 0 | 0 | linear\n"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+
+  // the open animation has unsaved changes: merge works anyway, and is one change
+  QVERIFY(m_api->execute(QJsonObject{{"command", "motion_script"}})["ok"].toBool());
+  const Animation::Snapshot before = m_animation->snapshot();
+  answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"mode", "merge"}, {"script",
+    "frames 40\n10 | rShldr | -45 | 0 | 0 | linear\n16 | rForeArm | 0 | 90 | 0 |\n5 | lShin | 170 | 0 | 0 |\n"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["mode"].toString(), QString("merge"));
+  QCOMPARE(answer["keys"].toInt(), 3);
+  QCOMPARE(answer["added"].toInt(), 2);
+  QCOMPARE(answer["changed"].toInt(), 1);
+  QCOMPARE(answer["frames"].toInt(), 40);
+  QCOMPARE(answer["loop_out"].toInt(), 40);
+  QCOMPARE(answer["outside_limits"].toArray(), QJsonArray{"lShin"});
+  QCOMPARE(answer["note"].toString(), QString("Some angles are past the joint's limits; they were kept. check_animation lists them."));
+
+  answer = run(R"({"command":"motion_script"})");
+  QCOMPARE(answer["script"].toString(), QString(
+    "# PinglyMotion motion script 1\n"
+    "# frame = seconds x 30 + 1. Angles in degrees, position in inches. Easing: the movement into the key.\n"
+    "fps 30\nframes 40\nloop 2 40\n\n"
+    "frame | joint | x | y | z | easing\n"
+    "1 | position | 0 | 43.5 | 0 |\n"
+    "2 | rShldr | -90 | 0 | -20 | ease-in-out\n"
+    "5 | lShin | 170 | 0 | 0 | ease-in-out\n"
+    "10 | rShldr | -45 | 0 | 0 | linear\n"
+    "16 | rForeArm | 0 | 90 | 0 | ease-out-overshoot\n"
+    "31 | rShldr | 0 | 0 | 0 | ease-in-out\n"));
+
+  // one Undo step puts everything back
+  const Animation::Snapshot after = m_animation->snapshot();
+  QVERIFY(after != before);
+  m_animation->restore(before);
+  QCOMPARE(m_animation->getNumberOfFrames(), 31);
+  QVERIFY(m_animation->snapshot() == before);
+
+  // the same table again changes nothing
+  m_animation->restore(after);
+  m_animation->setDirty(false);
+  answer = run(R"({"command":"motion_script"})");
+  answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"mode", "merge"}, {"script", answer["script"].toString()}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["added"].toInt(), 0);
+  QCOMPARE(answer["changed"].toInt(), 0);
+  QVERIFY(m_animation->snapshot() == after);
+  QVERIFY(!m_animation->dirty());
+}
+
+void ControlTest::loadMotionScriptMergeRefusesBadRequests()
+{
+  QJsonObject answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"mode", "add"}, {"script", "frames 5\n"}});
+  QCOMPARE(answer["error"].toString(), QString("\"mode\" must be \"replace\" (a new animation, the default) or \"merge\" (on top of the open animation)."));
+  m_animation->setDirty(false);
+  const Animation::Snapshot before = m_animation->snapshot();
+  // frame 1 is locked in these tests: a row there that would change it is refused
+  answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"mode", "merge"}, {"script", "1 | head | 0 | 10 | 0 |\n"}});
+  QCOMPARE(answer["ok"].toBool(), false);
+  QVERIFY(answer["error"].toString().startsWith("The motion script was not merged, nothing changed:\nLine 1: frame 1 is protected"));
+  answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"mode", "merge"}, {"script", "3 | hed | 0 | 10 | 0 |\n"}});
+  QVERIFY(answer["error"].toString().startsWith("The motion script was not merged, nothing changed:\nLine 1: unknown joint \"hed\"."));
+  QVERIFY(m_animation->snapshot() == before);
+  QVERIFY(!m_animation->dirty());
 }
 
 void ControlTest::checkAnimationFindsNothingMoving()

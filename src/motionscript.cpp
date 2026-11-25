@@ -5,6 +5,7 @@
  */
 
 #include <cmath>
+#include <iterator>
 
 #include <QHash>
 #include <QMap>
@@ -278,6 +279,9 @@ MotionScript::Result MotionScript::parse(const QString& text)
     result.error = errors.join('\n');
     return result;
   }
+  script.haveFps = haveFps;
+  script.haveFrames = haveFrames;
+  script.haveLoop = haveLoop;
   result.value = script;
   return result;
 }
@@ -407,6 +411,40 @@ QString MotionScript::check(Animation* animation, const Script& script)
   return errors.join('\n');
 }
 
+namespace
+{
+  // the easing of the movement into the key at "frame", the way the easing tiles
+  // store it: the choice lives on the key before ("previous", the start of the
+  // movement); "frame" is the end
+  void setSegment(QMap<int, FrameData>& map, int previous, int frame, Easing::Preset preset)
+  {
+    bool startEaseOut = true, endEaseIn = true;
+    std::optional<Easing::Preset> curve;
+    switch (preset)
+    {
+      case Easing::Preset::Even: startEaseOut = false; endEaseIn = false; break;
+      case Easing::Preset::SlowStart: startEaseOut = true; endEaseIn = false; break;
+      case Easing::Preset::SlowFinish: startEaseOut = false; endEaseIn = true; break;
+      case Easing::Preset::SlowBothEnds: break;
+      default: curve = preset; break;
+    }
+    FrameData& start = map[previous];
+    start.setCustomCurve(std::nullopt);
+    start.setCurve(curve);
+    start.setEaseOut(startEaseOut);
+    map[frame].setEaseIn(endEaseIn);
+  }
+
+  // true when a joint angle is past the joint's limits
+  bool pastLimits(Animation* animation, BVHNode* node, const QVector3D& value)
+  {
+    const RotationLimits limits = animation->getRotationLimits(node);
+    for (int axis = 0; axis < 3; axis++)
+      if (value[axis] < limits.minimum[axis] - 0.01f || value[axis] > limits.maximum[axis] + 0.01f) return true;
+    return false;
+  }
+}
+
 MotionScript::Applied MotionScript::apply(Animation* animation, const Script& script)
 {
   Applied applied;
@@ -468,22 +506,7 @@ MotionScript::Applied MotionScript::apply(Animation* animation, const Script& sc
     {
       if (previous >= 0)
       {
-        const Easing::Preset preset = easings.value(part.key()).value(it.key()).value_or(Easing::defaultPreset());
-        FrameData& start = map[previous];
-        bool startEaseOut = true, endEaseIn = true;
-        std::optional<Easing::Preset> curve;
-        switch (preset)
-        {
-          case Easing::Preset::Even: startEaseOut = false; endEaseIn = false; break;
-          case Easing::Preset::SlowStart: startEaseOut = true; endEaseIn = false; break;
-          case Easing::Preset::SlowFinish: startEaseOut = false; endEaseIn = true; break;
-          case Easing::Preset::SlowBothEnds: break;
-          default: curve = preset; break;
-        }
-        start.setCustomCurve(std::nullopt);
-        start.setCurve(curve);
-        start.setEaseOut(startEaseOut);
-        it.value().setEaseIn(endEaseIn);
+        setSegment(map, previous, it.key(), easings.value(part.key()).value(it.key()).value_or(Easing::defaultPreset()));
       }
       previous = it.key();
     }
@@ -499,4 +522,145 @@ MotionScript::Applied MotionScript::apply(Animation* animation, const Script& sc
   animation->restore(state);
   animation->setDirty(true);
   return applied;
+}
+
+MotionScript::Merged MotionScript::merge(Animation* animation, const Script& script, bool protectFirst)
+{
+  Merged merged;
+  const int oldFrames = animation->getNumberOfFrames();
+  if (script.haveFrames && script.frames < oldFrames)
+  {
+    merged.error = QString("The frames line (%1) is shorter than the open animation (%2 frames). Merging never cuts keys off: raise the number, or leave the frames line out.")
+                       .arg(script.frames).arg(oldFrames);
+    return merged;
+  }
+  const int frames = std::max(oldFrames, script.frames);
+
+  Script effective = script;
+  effective.frames = frames;
+  merged.error = check(animation, effective);
+  if (!merged.error.isEmpty()) return merged;
+
+  const QList<BVHNode*> nodes = partNodes(animation);
+  QHash<QString, int> index;
+  QStringList names;
+  indexParts(nodes, index, names);
+
+  Animation::Snapshot state = animation->snapshot();
+  if (state.keys.size() != nodes.size())
+  {
+    merged.error = "The skeleton of the open animation could not be read.";
+    return merged;
+  }
+  const Animation::Snapshot before = state;
+
+  // frame 1 is the reference pose: a row there may only repeat what is there
+  if (protectFirst)
+  {
+    QStringList errors;
+    for (const Row& row : script.rows)
+    {
+      if (row.frame != 1 || errors.size() >= MAX_ERRORS) continue;
+      const int part = index.value(row.joint);
+      const FrameData old = state.keys.at(part).value(0);
+      const QVector3D value(float(row.value[0]), float(row.value[1]), float(row.value[2]));
+      const QVector3D was = nodes.at(part)->type == BVH_POS ? old.position() : old.rotation();
+      if (value != was)
+        errors << QString("Line %1: frame 1 is protected: it holds the reference pose that Second Life compares the other frames against. "
+                          "Use frame 2 or later, or turn off Edit > Lock the first frame.").arg(row.line);
+    }
+    if (!errors.isEmpty())
+    {
+      merged.error = errors.join('\n');
+      return merged;
+    }
+  }
+
+  QHash<int, QSet<int>> addedKeys;                          // part -> frames of new keys
+  QHash<int, QMap<int, Easing::Preset>> explicitEasing;     // part -> frame -> easing from a row
+  for (const Row& row : script.rows)
+  {
+    const int part = index.value(row.joint);
+    const int frame = row.frame - 1;
+    const QVector3D value(float(row.value[0]), float(row.value[1]), float(row.value[2]));
+    QMap<int, FrameData>& map = state.keys[part];
+    const bool position = nodes.at(part)->type == BVH_POS;
+    merged.keys++;
+
+    if (frame == 0 && map.contains(0) && value == (position ? map.value(0).position() : map.value(0).rotation()))
+    {
+      // a row that repeats the reference pose changes nothing
+    }
+    else if (map.contains(frame))
+    {
+      FrameData& data = map[frame];
+      const QVector3D was = position ? data.position() : data.rotation();
+      if (was != value) merged.changed++;
+      if (position) data.setPosition(value); else data.setRotation(value);
+    }
+    else
+    {
+      FrameData data(frame, map.value(0).position(), QVector3D());
+      if (position) data.setPosition(value); else data.setRotation(value);
+      map.insert(frame, data);
+      addedKeys[part].insert(frame);
+      merged.added++;
+    }
+    if (row.easing) explicitEasing[part].insert(frame, *row.easing);
+
+    if (!position && pastLimits(animation, nodes.at(part), value) && !merged.outsideLimits.contains(row.joint))
+      merged.outsideLimits << row.joint;
+  }
+
+  // easing: a new key gets the default into it and out of it (the key after it);
+  // then the rows' own easings; keys that only got new values keep theirs
+  for (auto part = addedKeys.constBegin(); part != addedKeys.constEnd(); ++part)
+  {
+    QMap<int, FrameData>& map = state.keys[part.key()];
+    QMap<int, Easing::Preset> segments;
+    for (int frame : part.value())
+    {
+      segments.insert(frame, Easing::defaultPreset());
+      const auto next = map.upperBound(frame);
+      if (next != map.constEnd() && !segments.contains(next.key())) segments.insert(next.key(), Easing::defaultPreset());
+    }
+    const QMap<int, Easing::Preset> own = explicitEasing.value(part.key());
+    for (auto it = own.constBegin(); it != own.constEnd(); ++it) segments.insert(it.key(), it.value());
+    for (auto it = segments.constBegin(); it != segments.constEnd(); ++it)
+    {
+      const auto at = map.constFind(it.key());
+      if (at != map.constBegin()) setSegment(map, std::prev(at).key(), it.key(), it.value());
+    }
+  }
+  for (auto part = explicitEasing.constBegin(); part != explicitEasing.constEnd(); ++part)
+  {
+    if (addedKeys.contains(part.key())) continue;
+    QMap<int, FrameData>& map = state.keys[part.key()];
+    for (auto it = part.value().constBegin(); it != part.value().constEnd(); ++it)
+    {
+      const auto at = map.constFind(it.key());
+      if (at == map.constBegin()) continue;
+      // the same easing as now (what motion_script wrote) changes nothing, so a script sent back whole leaves every key as it was
+      const FrameData& start = std::prev(at).value();
+      if (!start.customCurve() && Easing::segmentPreset(start.curve(), start.easeOut(), at.value().easeIn()) == it.value()) continue;
+      setSegment(map, std::prev(at).key(), it.key(), it.value());
+    }
+  }
+
+  state.frames = frames;
+  if (script.haveFps) state.fps = script.fps;
+  if (script.haveLoop)
+  {
+    state.loopIn = script.loopIn > 0 ? script.loopIn - 1 : -1;
+    state.loopOut = script.loopIn > 0 ? script.loopOut - 1 : frames;
+  }
+  else if (frames > oldFrames && state.loopOut >= oldFrames - 1)
+    state.loopOut += frames - oldFrames;
+
+  if (state != before)
+  {
+    animation->restore(state);
+    animation->setDirty(true);
+  }
+  return merged;
 }

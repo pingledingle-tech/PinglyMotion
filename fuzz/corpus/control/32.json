@@ -1,0 +1,1 @@
+[{"command": "load_motion_script", "script": "frames 12\n2 | rShldr | -90 | 0 | -20 |\n"}, {"command": "load_motion_script", "mode": "merge", "script": "fps 24\nframes 40\n6 | rShldr | -45 | 0 | 0 | linear\n0.5s | head | 10 | 0 | 0 |\n"}, {"command": "motion_script"}]

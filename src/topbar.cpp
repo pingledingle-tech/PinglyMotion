@@ -30,7 +30,7 @@ TopBar::TopBar(QToolBar* bar, const Sources& sources, QObject* parent) : QObject
   bar->setFloatable(false);
   bar->setIconSize(QSize(Theme::Size::iconSmall, Theme::Size::iconSmall));
   bar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  bar->setWindowTitle(QStringLiteral("Quick actions"));
+  bar->setWindowTitle(tr("Quick actions"));
 
   // everything to the right, as in the mockup
   QWidget* spacer = new QWidget(bar);

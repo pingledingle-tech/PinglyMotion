@@ -107,3 +107,6 @@
 "fps "
 "loop "
 "ease-out-overshoot"
+"\"mode\""
+"\"merge\""
+"\"replace\""
