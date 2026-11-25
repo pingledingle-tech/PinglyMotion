@@ -1,6 +1,6 @@
 Branch: job/user-manual
 Status: active
-Pull request: pending
+Pull request: #510
 Files:
 - docs/MANUAL.md
 - docs/manual/**
