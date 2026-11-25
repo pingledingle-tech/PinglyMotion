@@ -1,6 +1,6 @@
 Branch: job/split-script-lab-panel
 Status: active
-Pull request: pending
+Pull request: #488
 Files:
 - src/scriptlab/scriptlabpanel.cpp
 - src/scriptlab/scriptlabpanel*.cpp
