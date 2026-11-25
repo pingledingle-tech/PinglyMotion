@@ -1,6 +1,6 @@
 Branch: job/fix-main-mockup-tests
-Status: active
-Pull request: pending
+Status: done
+Pull request: #509
 Files:
 - docs/mockup/index.html
 - tests/scriptlabpanel/tst_scriptlabdesign.cpp

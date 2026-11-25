@@ -674,7 +674,7 @@ void TestScriptLabDesign::textsInMockup()
   QVERIFY(!page.isEmpty());
   for (const char* text : {"Viewer rules", "Live scripts", "Type commands", "No folder watched", "Watch folder...", "Try the example scripts",
                            "Errors and warnings", "Event log", "RLV restrictions now", "}Objects`", "Send input", "What the avatar may do",
-                           "Replies and messages", "Reset all", " held</span>", "read only", "Pick the folder with your .lsl scripts. Each time you save one, it is checked and run here",
+                           "Replies and messages", "Reset all", " held</span>", "Script Lab shows your scripts from a folder on your PC. Choose a folder to see them here.",
                            "Plain RLV, as the RLV wiki lists it", "RLVa, as in Firestorm and other viewers",
                            "Switching removes every restriction, as after a relog.", "Live: your .lsl scripts run each time you save them",
                            "Commands: type RLV lines by hand", "Reset: remove every restriction of every object",
@@ -684,11 +684,11 @@ void TestScriptLabDesign::textsInMockup()
                            "<span class=\"cap\">Try:</span>", "\"@detach=n,sendim=n\", \"@tploc=n\", \"@clear\", \"@version=2222\", \"@showself=n\"",
                            "Run again", "Runs the last saved script again from the start, with a fresh clock.",
                            "A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life.",
-                           "<b>OK:</b> cuffs.lsl ran without errors (run ", "<b>Error:</b> cuffs.lsl has 1 error and was not run (run ",
-                           "icon(ok ? \"circle-check\" : \"circle-x\")", "<div class=\"label\">Dialog from hud</div>",
-                           "\"Lock the cuffs?\" on channel -4712",
+                           "<b>OK:</b> the object ", "ran without errors (run 1)",
+                           "<div class=\"label\">Dialog from hud</div>",
+                           "\"Gear set\" on channel -7001",
                            // slice 3
-                           "Inventory of cuffs`, \"3 items\"", "<th>Item</th><th>Type</th>", "<td>cuffs.lsl</td><td>Script</td>",
+                           "Inventory of ${esc(ex.folder)}`, \"3 items\"", "<th>Item</th><th>Type</th>", "<td>${gear ? \"hud.lsl\" : \"colour.lsl\"}</td><td>Script</td>",
                            "${icon(\"notebook-text\")} Notecard, 4 lines", "<td>wave</td><td>Animation</td>",
                            "Simulated: given with the run, nothing is read from Second Life.", "inv: false"})
     QVERIFY2(page.contains(QString::fromUtf8(text)), text);
