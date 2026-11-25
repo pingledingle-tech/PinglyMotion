@@ -1,6 +1,6 @@
 Branch: job/lua-converter-button
 Status: active
-Pull request: pending
+Pull request: #500
 Files:
 - src/scriptlab/labeditor.*
 - tests/scriptlabpanel/CMakeLists.txt
