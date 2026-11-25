@@ -72,6 +72,7 @@ Animation::Animation(BVH* newBVH, const QString& bvhFile, const QByteArray* data
   setFrameTime(bvh->lastLoadedFrameTime);
   positionNode=bvh->lastLoadedPositionNode;
   m_extensions=bvh->lastLoadedExtensions;
+  m_props=bvh->lastLoadedProps;
   addKeyFrameAllJoints();
 
   ikTree.set(frames);

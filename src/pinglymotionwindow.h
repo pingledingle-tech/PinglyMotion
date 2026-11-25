@@ -281,6 +281,15 @@ class PinglyMotionWindow : public QMainWindow
     // loopIn and loopOut are in the window's frame numbers; -1 keeps the defaults.
     bool openConvertedAnimation(const AnimFile::Animation& anim,const QString& name,int loopIn,int loopOut,const QString& title);
     void fileLoadProps();
+    // reads a .prp file and puts its props in the scene (File > Load Props, and File > Open of a .prp file);
+    // a bad file shows why and leaves the props as they are
+    bool loadPropFile(const QString& fileName);
+    // replaces the props of the scene by these
+    void showProps(const QList<PropRecord>& records);
+    // the props of the file just opened go into the scene
+    void showPropsOfOpenedFile();
+    // the props of the scene go into the animation, so the next save writes them in the .dingle file
+    void storePropsInAnimation();
     void fileSaveProps();
     void fileExit();
 

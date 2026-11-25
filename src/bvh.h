@@ -128,6 +128,8 @@ class BVH
     // the "extensions" object of a .dingle file (the wave example's notes, UX phase 3c);
     // empty for other files
     QJsonObject lastLoadedExtensions;
+    // the props of a .dingle file (empty for other files and for files made without props)
+    QList<PropRecord> lastLoadedProps;
     int lastLoadedLoopIn;
     int lastLoadedLoopOut;
     float lastLoadedAvatarScale;

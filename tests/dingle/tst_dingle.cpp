@@ -95,6 +95,7 @@ private slots:
   void avmFilesGoThroughTheWriter();
   void storedEasingRoundTrip();
   void oldFileHasNoStoredEasing();
+  void propsCorpusFiles();
   void unknownEasingFallsBackToEven();
   void storedEasingShapesTheFramesInBetween();
   void storedEasingOnPositionKeys();
@@ -416,7 +417,7 @@ void TestDingle::corpus()
     {
       QVERIFY2(r.ok(),qPrintable(name+": "+r.error));
       good++;
-      const QByteArray written=Dingle::write(*r.animation,r.extensions,"PinglyMotion");
+      const QByteArray written=Dingle::write(*r.animation,r.extensions,"PinglyMotion",r.props);
       const Dingle::Result again=Dingle::parse(written);
       QVERIFY2(again.ok() && Dingle::equal(*r.animation,*again.animation),qPrintable(name));
       // the files written by the writer itself must come out the same, byte for byte
@@ -526,7 +527,7 @@ void TestDingle::oldFileHasNoStoredEasing()
     if(data.contains("\"curve\"")) continue;
     const Dingle::Result old=Dingle::parse(data);
     QVERIFY2(old.ok(),qPrintable(name));
-    QCOMPARE(Dingle::write(*old.animation,old.extensions,"PinglyMotion"),data);
+    QCOMPARE(Dingle::write(*old.animation,old.extensions,"PinglyMotion",old.props),data);
     stable++;
   }
   QVERIFY(stable>=3);
@@ -534,6 +535,30 @@ void TestDingle::oldFileHasNoStoredEasing()
 
 // a curve this version cannot read never refuses the file and never crashes: the
 // segment is Even, the curve counts as ignored (save warns), and the rest is kept
+void TestDingle::propsCorpusFiles()
+{
+  const QDir dir(PINGLYMOTION_DINGLE_CORPUS);
+  const Dingle::Result two=Dingle::parse(readFile(dir.filePath("good_stable_props.dingle")));
+  QVERIFY2(two.ok(),qPrintable(two.error));
+  QCOMPARE(two.props.size(),2);
+  QCOMPARE(two.ignoredKeys,0);
+  QCOMPARE(two.props[0].name,QStringLiteral("Chair"));
+  QCOMPARE(two.props[0].type,0);
+  QCOMPARE(two.props[0].position[0],1.5);
+  QCOMPARE(two.props[0].position[2],-2.0);
+  QCOMPARE(two.props[0].scale[2],0.9);
+  QCOMPARE(two.props[0].rotation[1],90.0);
+  QCOMPARE(two.props[1].name,QStringLiteral("Ring"));
+  QCOMPARE(two.props[1].type,3);
+  QCOMPARE(two.props[1].attachment,12);
+
+  // a shape this version does not know: that prop is left out and counted
+  const Dingle::Result unknown=Dingle::parse(readFile(dir.filePath("good_props_unknown_type.dingle")));
+  QVERIFY2(unknown.ok(),qPrintable(unknown.error));
+  QCOMPARE(unknown.props.size(),1);
+  QCOMPARE(unknown.ignoredKeys,1);
+}
+
 void TestDingle::unknownEasingFallsBackToEven()
 {
   const QList<QByteArray> unknown={

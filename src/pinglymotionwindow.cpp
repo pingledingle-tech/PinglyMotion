@@ -221,6 +221,7 @@ class WindowControlHost : public ControlHost
       if (!animation()) { error = "No animation is open."; return false; }
       const QFileInfo info(path);
       if (!QDir(info.absolutePath()).exists()) { error = "The folder does not exist: " + info.absolutePath(); return false; }
+      w->storePropsInAnimation();
       if (!animation()->saveBVH(path, &error)) return false;
       if (path != w->currentFile)
       {
@@ -328,7 +329,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   sphereMesh(new Mesh(QString(), Mesh::Shape::SPHERE)),  // built in code, no file
   coneMesh(new Mesh(QString(), Mesh::Shape::CONE)),      // built in code, no file
   torusMesh(new Mesh(Constants::torusMeshFilePath(), Mesh::Shape::TORUS)),
-  m_animFilter(PinglyMotionWindow::tr("Animation Files (*.dingle *.avm *.bvh)")),
+  m_animFilter(PinglyMotionWindow::tr("Animation and Prop Files (*.dingle *.avm *.bvh *.prp)")),
   m_dingleFilter(PinglyMotionWindow::tr("PinglyMotion animation (*.dingle)")),
   m_propFilter(PinglyMotionWindow::tr("Props (*.prp)")),
   m_untitledName(DingleSave::defaultName()),

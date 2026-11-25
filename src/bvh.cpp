@@ -283,6 +283,7 @@ void BVH::startRead()
 {
   lastLimitsProblem=Animation::LoadProblem();
   lastLoadedExtensions=QJsonObject();
+  lastLoadedProps.clear();
   // positions pseudonode
   lastLoadedPositionNode=new BVHNode("position");
   lastLoadedPositionNode->type=BVH_POS;
@@ -511,6 +512,7 @@ BVHNode* BVH::readFile(const QString& file,const QString& limFile,const QByteArr
     dingleIgnoredKeys=result.ignoredKeys;
     dingleNewerVersion=result.newerVersion;
     lastLoadedExtensions=result.extensions;
+    lastLoadedProps=result.props;
     anim=std::move(*result.animation);
   }
   else
@@ -760,7 +762,7 @@ bool BVH::bvhWrite(Animation* anim,const QString& file,QString& error)
 bool BVH::dingleWrite(Animation* anim,const QString& file,QString& error)
 {
   // the file's "extensions" (for example the wave example's notes) are kept
-  return saveBytes(file,Dingle::write(snapshot(anim,AnimFile::Format::Avm),anim->extensions()),error);
+  return saveBytes(file,Dingle::write(snapshot(anim,AnimFile::Format::Avm),anim->extensions(),QStringLiteral("PinglyMotion"),anim->props()),error);
 }
 
 bool BVH::animWrite(Animation* anim,const QString& file,QString& error)

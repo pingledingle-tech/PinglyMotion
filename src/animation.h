@@ -34,6 +34,7 @@
 
 #include "easing.h"
 #include "iktree.h"
+#include "propfile.h"
 #include "playstate.h"
 
 class BVH;
@@ -85,6 +86,10 @@ class Animation : public QObject
     // for other files
     const QJsonObject& extensions() const { return m_extensions; }
     void setExtensions(const QJsonObject& extensions) { m_extensions=extensions; }
+    // the props saved with this animation in its .dingle file (docs/DINGLE_FORMAT.md, "props"): read
+    // when the file is opened, and set by the window from the scene just before every save
+    const QList<PropRecord>& props() const { return m_props; }
+    void setProps(const QList<PropRecord>& props) { m_props=props; }
     // false and an error text when the file could not be written; unsaved changes stay marked
     bool saveBVH(const QString& bvhFile, QString* error=nullptr);
     // the pose of one frame as a small BVH, for the Aurora link
@@ -266,6 +271,7 @@ class Animation : public QObject
     bool mirrored;
     QList<LoadProblem> m_loadProblems;
     QJsonObject m_extensions;
+    QList<PropRecord> m_props;
     bool ikOn[NUM_IK];
     IKTree ikTree;
 
