@@ -20,6 +20,8 @@
 
 struct PropRecord
 {
+  // the prop's name; a .prp file has none (empty), a .dingle file keeps it (docs/DINGLE_FORMAT.md, "props")
+  QString name;
   int type = 0;
   double position[3] = {0, 0, 0};
   double scale[3] = {1, 1, 1};
@@ -36,6 +38,8 @@ namespace PropFile
   const double MAX_VALUE = 1000000.0;
   // attachment points are joint numbers
   const int MAX_ATTACHMENT = 10000;
+  // the longest prop name a .dingle file keeps
+  const int MAX_NAME_BYTES = 128;
 
   // the result of parse(): all props, or none and why the file was refused
   struct Result

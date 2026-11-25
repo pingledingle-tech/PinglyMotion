@@ -231,7 +231,7 @@ Decided after comparing the mockup's File menu (five items) against the program'
   - **Lock the first frame** stays as a choice (22:29), now in the **Edit** menu after Paste (its text, tip and setting are the same as in Options), because its reason shows in Set key's greyed state.
   - **New keys start smooth** (slow in and out) and can be changed per key with the easing tiles (22:30; `docs/DECISIONS.md`). The two remembered values are now `new_key_ease_in` and `new_key_ease_out`, both on at the start (new names, for the same reason as fog).
   - **Where the other Options entries went:** Loop playback is the Loop switch under the timeline, "Stop joints at their furthest turn" is "Turn limits off" in the Selected joint panel (both still share their action in the window, in no menu), Live link to Aurora is the status bar button and Setup's switch, Body, Lighting, Joint groups and Show skeleton moved to View in job U2 (6q).
-- **Still waiting for the project owner, not decided:** whether Open... should also take `.prp` and whether Save should carry props in the same `.dingle` file (queue item 2).
+- **Decided by the project owner on 24 November 2026, 22:31 («Ja»), built in job "props in the animation file":** Save keeps the props in the same `.dingle` file (a `props` list, names included, `docs/DINGLE_FORMAT.md`), Open brings them back, and Open also takes the older `.prp` files (the open dialog lists `*.prp`; a `.prp` replaces the props and keeps the open animation). File > Load Props and Save Props stay for the `.prp` file.
 
 Source: the project owner, in a chat without a role, 22 November 2026 23:35 to 23 November 2026 00:55.
 

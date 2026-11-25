@@ -34,6 +34,10 @@ The program never writes AVM. Old `.avm` files still open, and are upgraded to `
       "position": [ { "frame": 0, "values": [0, 0, 0], "easeIn": false, "easeOut": false } ] }
   ],
   "camera": null,
+  "props": [
+    { "name": "Chair", "type": "box", "position": [1.5, 0, -2], "scale": [0.5, 0.5, 0.9],
+      "rotation": [0, 90, 0], "attachment": 0 }
+  ],
   "extensions": {}
 }
 ```
@@ -51,6 +55,7 @@ The program never writes AVM. Old `.avm` files still open, and are upgraded to `
 | `skeleton` | The joint tree, stored as the model has it, so any BVH or old AVM skeleton survives without loss. Each joint has `name`, `kind`, `parent` (index, `-1` for the root), `offset` (3 numbers) and `channels` (names in file order). Mapping joint names to the SL skeleton stays with the code that builds the scene. |
 | `tracks` | One entry per joint that has keys: `joint` (index into `skeleton`), `rotation` keys, and `position` keys on joints with position channels (today the root). |
 | `camera` | `null` or absent in version 1. Reserved for camera keys (issue #14). |
+| `props` | Optional list of the props in the scene (added without a version bump). See "Props (`props`)". Absent when there are no props. |
 | `extensions` | Object reserved for namespaced data from add-ons or experiments. Kept untouched on save when within the limits. |
 
 ### Keys
@@ -92,6 +97,25 @@ Added in issue #53 step 3, without a version bump (an additive key). Shape:
 - The two new choices: Overshoot then settle goes up to 8 % of the change past the target key and comes back; Hold then snap keeps the start value until the target key. Playback and the in-between frames on load use the same function (`Easing::segmentValue`), so preview, `.dingle`, BVH and `.anim` export get the same values. In the program, playback and the `.anim` export cut the overshoot at the joint's limits ([EASING.md](EASING.md), "Joint limits on the overshoot"); the in-between frames the reader computes here know no limits file and are not cut.
 - In the program the choice is kept on the key frame (`FrameData::curve`, a custom curve in `FrameData::customCurve`). It is picked with the easing tiles under the timeline (#53 step 5) or drawn with "Edit curve..." (issue #11, Expert mode); setting a key frame again keeps its choice.
 
+### Props (`props`)
+
+Added with "Props are saved with the animation" (decision of 24 Nov 2026, `DECISIONS.md`), without a version bump (an additive top-level key). One entry per prop of the scene, in the order the program lists them:
+
+| Key | Meaning |
+|---|---|
+| `name` | The prop's name (at most 128 bytes, UTF-8), kept exactly. Optional; without it, or when another prop already has the name, the program gives the usual "Box 0", "Box 1", ... |
+| `type` | `"box"`, `"sphere"`, `"cone"` or `"torus"` (the program's 0 to 3). Required. |
+| `position`, `scale`, `rotation` | Three numbers each, the same values as a `.prp` line (position and scale as the program holds them, turn in degrees), each at most 1,000,000 in size, written with the fewest digits that read back exactly. Required. |
+| `attachment` | Whole number 0 to 10000: the attachment point, as in a `.prp` file; 0 is not attached. Optional (0). |
+
+- **At most 1000 props.** More refuses the file; the writer never writes more.
+- **A `type` this version does not know** (a later version may add shapes) skips that prop and counts as an ignored key, so Save warns once that it will be lost. Any other fault in `props` (not a list, a prop that is not an object, a missing `type`, `position`, `scale` or `rotation`, a value that is not three finite numbers, a number out of range, a name that is too long or not text, a key used twice) refuses the file.
+- Not kept: a colour or transparency a Script Lab script gave a prop (it follows the running script, not the file).
+- **Old files** have no `props` and open with no props, exactly as before. The writer writes `props` only when the scene has props, so a file without props is byte for byte the same as before.
+- **Old programs** open a file with `props` and skip the key (it counts as an ignored key, so they warn that saving loses it).
+- Opening a file puts its props in the scene in place of the props that were there. Save writes the props the scene has at that moment. "Add..." does not take props from the added file.
+- **The older `.prp` file** (one prop per line, no names, described at the top of `src/propfile.h`) is still read by File > Open and File > Load Props..., and still written by File > Save Props.... Opening a `.prp` replaces the props of the scene and keeps the open animation. Props from a `.prp` get the automatic names.
+
 ### Not stored
 
 Joint scale (not supported by BVH or `.anim`), personal data, absolute paths, and the file's own name.
@@ -110,6 +134,7 @@ Joint scale (not supported by BVH or `.anim`), personal data, absolute paths, an
 - `curve` on a key (added, issue #53 step 3): see "Easing choice (`curve`)".
 - `"bezier"` curve type (added, issue #11 step 1): a custom curve with `points`, see "Easing choice (`curve`)". A version before it reads such a segment as Even and counts the `curve` as ignored, so save warns.
 - `camera`: a top-level object with its own `keys` in the same key shape (issue #14).
+- `props`: the props of the scene, see "Props (`props`)". A version before it counts the key as ignored, so save warns.
 
 ## Limits
 
@@ -127,6 +152,7 @@ New `constexpr` values in the `.dingle` header, mostly shared with `AnimFile::`.
 | Keys per track | at most `MAX_FRAMES` |
 | JSON nesting | at most 16 |
 | `extensions` | at most 1 MB |
+| Props (`props`) | at most 1000; a name at most 128 bytes; position, scale and turn at most 1,000,000 either way; attachment 0 to 10000 |
 
 ## Validation
 
@@ -141,6 +167,7 @@ The reader works from memory, returns the whole animation or an error (never hal
 - `loop.in` and `loop.out` are inside `0..frames`.
 - String values are valid UTF-8.
 - No duplicate keys in an object this version knows.
+- Every prop in `props` has a known shape or is skipped, three finite numbers each for position, scale and rotation within the limits, an attachment in range and a name of valid text within the limit.
 - All limits above hold.
 
 Unknown keys are skipped but counted. Nothing from the file is used as a path or command.
@@ -154,7 +181,7 @@ Rules the reader applies on top of the list above, so the data model stays valid
 - `skeleton` is in depth first order: the first joint is the only root (`"kind": "root"`, parent `-1`), and every other joint's parent is on the path to the joint before it. Kinds are `"root"`, `"joint"` and `"endsite"`; an end site has no channels and no children. A channel name is used at most once per joint.
 - Every joint with rotation channels needs `rotation` keys, and every joint with position channels needs `position` keys. A joint without channels needs no track (it gets a key at frame 0).
 - The model has one list of position keys, so all joints with position channels list the same frames and ease flags (their values may differ).
-- `figure` (default `"female"`), `scale` (default 1), `loop` (default no loop points, `out` = `frames`), `generator`, `camera` and `extensions` are optional. A `camera` that is not `null` is skipped and counted. A `curve` on a key is read as above.
+- `figure` (default `"female"`), `scale` (default 1), `loop` (default no loop points, `out` = `frames`), `generator`, `camera`, `props` and `extensions` are optional. A `camera` that is not `null` is skipped and counted. A `curve` on a key is read as above.
 - A file starting with a byte order mark is refused. A duplicate key is refused in every object except inside `extensions`.
 - Between two keys, a value is `Easing::segmentValue` of the two key values, as playback computes it: the start key's `curve` if it has one, otherwise linear, or a sine curve in the half of the segment next to a key that has its ease flag set. After the last key the value stays.
 

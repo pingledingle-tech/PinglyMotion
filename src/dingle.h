@@ -33,6 +33,7 @@
 #include <optional>
 
 #include "animfile.h"
+#include "propfile.h"
 
 namespace Dingle
 {
@@ -54,6 +55,8 @@ namespace Dingle
     int ignoredKeys=0;
     // the "extensions" object, kept untouched (empty when there is none)
     QJsonObject extensions;
+    // the props saved with the animation (the "props" list; empty when there is none, as in older files)
+    QList<PropRecord> props;
     // why the file cannot be read, for the user
     QString error;
     // true when the file is from a newer version of the format
@@ -68,7 +71,8 @@ namespace Dingle
   // parsed one (see animfile.h). BVH animations (no keys) get a key at every frame.
   QByteArray write(const AnimFile::Animation& anim,
                    const QJsonObject& extensions=QJsonObject(),
-                   const QString& generator=QStringLiteral("PinglyMotion"));
+                   const QString& generator=QStringLiteral("PinglyMotion"),
+                   const QList<PropRecord>& props=QList<PropRecord>());
 
   // Same joints, timing, keys, loop, figure, scale and every value; the
   // format field is not compared.

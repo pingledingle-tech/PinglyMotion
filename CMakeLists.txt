@@ -222,6 +222,8 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/viewtimeline)
   # The old Tools and Options menus and the old Settings menu entry are gone (6h)
   ADD_SUBDIRECTORY (tests/oldmenus)
+  # props saved in the .dingle file, and the older .prp files that File > Open also reads
+  ADD_SUBDIRECTORY (tests/propsinfile)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md
