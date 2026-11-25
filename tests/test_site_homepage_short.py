@@ -12,6 +12,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.join(HERE, "..", "docs")
 LANGS = ["en", "no", "de", "pl", "nl"]
 RELEASE = "https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.1"
+WINDOWS_ZIP = "https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-windows.zip"
+LINUX_APPIMAGE = "https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-linux-x86_64.AppImage"
 
 
 def read(name):
@@ -33,10 +35,25 @@ class HomepageShort(unittest.TestCase):
         page = read("index.html")
         for lang in LANGS:
             a = article(page, lang)
-            btn = re.search(r'<a class="btn" href="%s">[^<]+</a>' % re.escape(RELEASE), a)
+            btn = re.search(r'<a class="btn" href="%s">[^<]+</a>' % re.escape(WINDOWS_ZIP), a)
             self.assertIsNotNone(btn, lang)
             self.assertLess(a.index('class="tagline'), btn.start(), lang)
             self.assertLess(btn.start(), a.index("<h2"), lang)
+
+    def test_release_notes_link_separate(self):
+        for name in ("index.html", "download.html"):
+            page = read(name)
+            for lang in LANGS:
+                a = article(page, lang)
+                self.assertEqual(a.count('<a href="%s">' % RELEASE), 1, (name, lang))
+                self.assertNotIn('class="btn" href="%s"' % RELEASE, a, (name, lang))
+
+    def test_download_page_direct_links(self):
+        page = read("download.html")
+        for lang in LANGS:
+            a = article(page, lang)
+            self.assertEqual(a.count('<a class="btn" href="%s">' % WINDOWS_ZIP), 1, lang)
+            self.assertEqual(a.count('<a href="%s">' % LINUX_APPIMAGE), 1, lang)
 
     def test_short(self):
         page = read("index.html")
