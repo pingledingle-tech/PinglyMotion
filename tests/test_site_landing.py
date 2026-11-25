@@ -113,7 +113,9 @@ class Landing(unittest.TestCase):
             page = read(name)
             for lang in LANGS:
                 a = re.search(r'<article id="%s".*?</article>' % lang, page, re.S).group(0)
-                self.assertEqual(len(re.findall(r'<a href="manual.html">', a)), 1, (name, lang))
+                top = re.search(r'<nav class="site".*?</nav>', a, re.S).group(0)
+                self.assertEqual(len(re.findall(r'<a href="manual.html">', top)), 1, (name, lang))  # the manual link is at the top
+                self.assertEqual(a.count('<a href="manual.html">'), 1, (name, lang))
                 self.assertEqual(len(re.findall(r'<a href="PinglyMotion-Manual.pdf" download>', a)), 1, (name, lang))
                 self.assertIn("(English)" if lang == "en" else "(", plain(a))
         for name in ("manual.html", "PinglyMotion-Manual.pdf"):
