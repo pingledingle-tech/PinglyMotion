@@ -1,6 +1,6 @@
 Branch: job/small-leftovers-text-for-ai
 Status: active
-Pull request: pending
+Pull request: #504
 Files:
 - src/motionscript.*
 - src/posedescribe.cpp
