@@ -1,6 +1,6 @@
 Branch: job/fix-pages-paths
-Status: active
-Pull request: pending
+Status: done
+Pull request: #515
 Files:
 - tools/ci/auto_merge.py
 
