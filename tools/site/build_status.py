@@ -25,7 +25,7 @@ MARK_END = "<!--/STATUS-->"
 MAX_MILESTONES = 3
 MAX_BUILDING = 6
 # files next to docs/index.html that are published with it
-EXTRA_FILES = ["download.html", "privacy.html", "home.html", "site.css", "site.js"]
+EXTRA_FILES = ["download.html", "privacy.html", "home.html", "manual.html", "PinglyMotion-Manual.pdf", "site.css", "site.js"]
 
 
 def api(path, repo, token):

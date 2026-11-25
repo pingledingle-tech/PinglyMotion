@@ -107,6 +107,29 @@ class Landing(unittest.TestCase):
             self.assertEqual(a.count('class="btn" href="%s"' % WINDOWS_ZIP), 1, lang)
             self.assertEqual(a.count('<a href="%s">' % RELEASE), 1, lang)
 
+    def test_manual_links(self):
+        """A manual link and a manual PDF download link in every language, on the landing page and the real homepage."""
+        for name in ("index.html", "home.html"):
+            page = read(name)
+            for lang in LANGS:
+                a = re.search(r'<article id="%s".*?</article>' % lang, page, re.S).group(0)
+                top = re.search(r'<nav class="site".*?</nav>', a, re.S).group(0)
+                self.assertEqual(len(re.findall(r'<a href="manual.html">', top)), 1, (name, lang))  # the manual link is at the top
+                self.assertEqual(a.count('<a href="manual.html">'), 1, (name, lang))
+                self.assertEqual(len(re.findall(r'<a href="PinglyMotion-Manual.pdf" download>', a)), 1, (name, lang))
+                self.assertIn("(English)" if lang == "en" else "(", plain(a))
+        for name in ("manual.html", "PinglyMotion-Manual.pdf"):
+            self.assertTrue(os.path.isfile(os.path.join(DOCS, name)), name)
+
+    def test_manual_is_published(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("bs", os.path.join(HERE, "..", "tools", "site", "build_status.py"))
+        b = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(b)
+        self.assertIn("manual.html", b.EXTRA_FILES)
+        self.assertIn("PinglyMotion-Manual.pdf", b.EXTRA_FILES)
+        self.assertIn("cp -r docs/manual _site/manual", read("..", ".github", "workflows", "pages.yml"))
+
     def test_working_links_kept(self):
         for needle in ('href="download.html#', 'href="privacy.html#', 'href="mockup/"', "CREDITS.md",
                        "issues/new?template=bug_report.yml", "issues/new?template=suggestion.yml"):
