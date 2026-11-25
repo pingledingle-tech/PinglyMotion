@@ -1,6 +1,6 @@
 Branch: job/codeql-time-limit
 Status: active
-Pull request: pending
+Pull request: #499
 Files:
 - .github/workflows/codeql.yml
 - .github/workflows/build.yml
