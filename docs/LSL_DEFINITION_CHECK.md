@@ -8,10 +8,10 @@ What the Script Lab interpreter lacks compared with Linden Lab's `lsl-definition
 ## Numbers
 
 - Definitions: 529 functions, 43 events, 1082 constants.
-- Functions: 430 run in the sandbox, 96 are known only (the checker accepts them, a script that calls one stops with "not supported yet"), 3 are unknown to the signature table.
+- Functions: 435 run in the sandbox, 91 are known only (the checker accepts them, a script that calls one stops with "not supported yet"), 3 are unknown to the signature table.
 - Events: 38 are raised by the sandbox, 5 are known only, 0 are unknown.
 - Constants: 1082 of 1082 are in the signature table, 0 are unknown.
-- Functions that do not run: 99, of which 12 are the known pathfinding functions, 3 are left out on purpose (god mode only) and 84 are the missing functions to work on.
+- Functions that do not run: 94, of which 12 are the known pathfinding functions, 3 are left out on purpose (god mode only) and 79 are the missing functions to work on.
 
 ## Unknown to the signature table (the checker rejects a script that uses them)
 
@@ -20,9 +20,9 @@ What the Script Lab interpreter lacks compared with Linden Lab's `lsl-definition
 - events: none
 - constants: none
 
-## Missing functions (known, not run), without the pathfinding and god-mode functions: 84
+## Missing functions (known, not run), without the pathfinding and god-mode functions: 79
 
-`llAdjustDamage`, `llChar`, `llClearExperience`, `llClearExperiencePermissions`, `llComputeHash`, `llDamage`, `llDerezObject`, `llDetectedDamage`, `llDetectedRezzer`, `llFindNotecardTextCount`, `llFindNotecardTextSync`, `llGetAttachedListFiltered`, `llGetDayLength`, `llGetDayOffset`, `llGetEnvironment`, `llGetExperienceList`, `llGetGameControlMode`, `llGetGameControlModeAxes`, `llGetGameControlModeButtons`, `llGetHealth`, `llGetInventoryAcquireTime`, `llGetLinkSitFlags`, `llGetMoonDirection`, `llGetMoonRotation`, `llGetNotecardLineSync`, `llGetObjectLinkKey`, `llGetRegionDayLength`, `llGetRegionDayOffset`, `llGetRegionMoonDirection`, `llGetRegionMoonRotation`, `llGetRegionSunDirection`, `llGetRegionSunRotation`, `llGetRegionTimeOfDay`, `llGetRenderMaterial`, `llGetStartString`, `llGetSunRotation`, `llGetVisualParams`, `llGiveAgentInventory`, `llHMAC`, `llHash`, `llIsFriend`, `llIsLinkGLTFMaterial`, `llLinear2sRGB`, `llLinkAdjustSoundVolume`, `llLinkPlaySound`, `llLinkSetSoundQueueing`, `llLinkSetSoundRadius`, `llLinkStopSound`, `llLinksetDataCountFound`, `llLinksetDataDeleteFound`, `llLinksetDataDeleteProtected`, `llLinksetDataFindKeys`, `llLinksetDataReadProtected`, `llLinksetDataWriteProtected`, `llList2ListSlice`, `llListFindListNext`, `llListFindStrided`, `llMapBeacon`, `llName2Key`, `llOpenFloater`, `llOrd`, `llRemoteLoadScript`, `llReplaceAgentEnvironment`, `llReplaceEnvironment`, `llRequestUserKey`, `llRezObjectWithParams`, `llSHA256String`, `llSetAgentEnvironment`, `llSetAgentRot`, `llSetEnvironment`, `llSetExperienceKey`, `llSetGroundTexture`, `llSetLinkGLTFOverrides`, `llSetLinkRenderMaterial`, `llSetLinkSitFlags`, `llSetParcelForSale`, `llSetRenderMaterial`, `llSignRSA`, `llSitOnLink`, `llTargetedEmail`, `llTransferOwnership`, `llVerifyRSA`, `llWorldPosToHUD`, `llsRGB2Linear`
+`llAdjustDamage`, `llChar`, `llClearExperience`, `llClearExperiencePermissions`, `llComputeHash`, `llDamage`, `llDerezObject`, `llDetectedDamage`, `llDetectedRezzer`, `llFindNotecardTextCount`, `llFindNotecardTextSync`, `llGetAttachedListFiltered`, `llGetDayLength`, `llGetDayOffset`, `llGetEnvironment`, `llGetExperienceList`, `llGetGameControlMode`, `llGetGameControlModeAxes`, `llGetGameControlModeButtons`, `llGetHealth`, `llGetInventoryAcquireTime`, `llGetLinkSitFlags`, `llGetMoonDirection`, `llGetMoonRotation`, `llGetNotecardLineSync`, `llGetObjectLinkKey`, `llGetRegionDayLength`, `llGetRegionDayOffset`, `llGetRegionMoonDirection`, `llGetRegionMoonRotation`, `llGetRegionSunDirection`, `llGetRegionSunRotation`, `llGetRegionTimeOfDay`, `llGetRenderMaterial`, `llGetStartString`, `llGetSunRotation`, `llGetVisualParams`, `llGiveAgentInventory`, `llHMAC`, `llHash`, `llIsFriend`, `llIsLinkGLTFMaterial`, `llLinear2sRGB`, `llLinkAdjustSoundVolume`, `llLinkPlaySound`, `llLinkSetSoundQueueing`, `llLinkSetSoundRadius`, `llLinkStopSound`, `llLinksetDataCountFound`, `llLinksetDataDeleteProtected`, `llLinksetDataReadProtected`, `llLinksetDataWriteProtected`, `llList2ListSlice`, `llListFindStrided`, `llMapBeacon`, `llName2Key`, `llOpenFloater`, `llOrd`, `llRemoteLoadScript`, `llReplaceAgentEnvironment`, `llReplaceEnvironment`, `llRequestUserKey`, `llRezObjectWithParams`, `llSHA256String`, `llSetAgentEnvironment`, `llSetEnvironment`, `llSetExperienceKey`, `llSetGroundTexture`, `llSetLinkRenderMaterial`, `llSetLinkSitFlags`, `llSetParcelForSale`, `llSetRenderMaterial`, `llSignRSA`, `llSitOnLink`, `llTargetedEmail`, `llTransferOwnership`, `llVerifyRSA`, `llWorldPosToHUD`, `llsRGB2Linear`
 
 ## Known missing: the 12 pathfinding functions
 

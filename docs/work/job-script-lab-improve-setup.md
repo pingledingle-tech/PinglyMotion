@@ -3,22 +3,25 @@ Status: active
 Pull request: #491
 Files:
 - src/scriptlab/lsl/builtins*
-- src/scriptlab/lsl/control.*
-- src/scriptlab/lsl/sandbox.*
-- src/scriptlab/lsl/world.*
-- src/scriptlab/lslbuiltins_*.inc
-- src/scriptlab/lslhelp_*.inc
-- src/scriptlab/labfolder.*
+- src/scriptlab/lsl/control.h
+- src/scriptlab/labfolder.h
 - src/controlapi.cpp
 - tools/mcp/commands.json
 - tests/tst_lslimprove.cpp
+- tests/test_opencollar_copy.py
+- tests/tst_labfolder.cpp
+- tests/tst_lslinventory.cpp
+- tests/tst_lslprims.cpp
+- tests/tst_lslpure.cpp
 - tests/CMakeLists.txt
-- examples/scriptlab/opencollar/
+- examples/improve/
+- .gitattributes
 - CREDITS.md
 - docs/SCRIPT_LAB.md
 - docs/EXAMPLES.md
 - docs/PRODUCT.md
 - docs/CONTROL.md
+- docs/LSL_DEFINITION_CHECK.md
 
 ## What
 

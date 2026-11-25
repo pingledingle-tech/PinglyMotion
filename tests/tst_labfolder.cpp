@@ -378,10 +378,13 @@ void TestLabFolder::fileAndTotalSize()
   QVERIFY(writeFile(top + "/one.lsl", padded(200000)));
   QVERIFY(writeFile(top + "/Arm/two.lsl", padded(200000)));
   QVERIFY(writeFile(top + "/Leg/three.lsl", padded(200000)));
+  QVERIFY(writeFile(top + "/Leg/four.lsl", padded(200000)));
+  QVERIFY(writeFile(top + "/Leg/five.lsl", padded(200000)));
+  QVERIFY(writeFile(top + "/Leg/six.lsl", padded(200000)));
   QVERIFY(writeFile(top + "/Leg/huge.lsl", padded(LabFolder::MAX_FILE_BYTES + 1)));
   const LabFolder::Linkset ls = LabFolder::open(top);
   QCOMPARE(problems(ls.problems), QJsonArray({QJsonArray{"The file is larger than 262144 bytes, so it was not read.", "Leg/huge.lsl", "Leg", 3},
-                                              QJsonArray{"The scripts and notecards together are larger than 524288 bytes.", "", "", 0}}));
+                                              QJsonArray{"The scripts and notecards together are larger than 1048576 bytes.", "", "", 0}}));
 }
 
 void TestLabFolder::pathAndNameLength()

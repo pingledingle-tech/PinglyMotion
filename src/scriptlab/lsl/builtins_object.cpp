@@ -71,6 +71,26 @@ Value Interpreter::callBuiltinObject(Fn fn, const QString& name, std::vector<Val
       }
       else m_playing.removeAll(a[0].s);
       return Value();
+    case Fn::SetAgentRot:
+    {
+      // the wiki: needs PERMISSION_TRIGGER_ANIMATION; only the turn about the vertical axis is used; flags are reserved (pass 0).
+      // The sandbox has no avatar to turn, so the call is recorded with the avatar and the turn it keeps. Without the
+      // permission a debug line says so (the sandbox's wording, as llStartAnimation's: the wiki gives none)
+      if (!(m_permissions & 0x10))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", "Script trying to turn the avatar but PERMISSION_TRIGGER_ANIMATION permission not set"}});
+        return Value();
+      }
+      const double x = a[0].f[0], y = a[0].f[1], z = a[0].f[2], s = a[0].f[3];
+      double yaw = std::atan2(2.0 * (s * z + x * y), 1.0 - 2.0 * (y * y + z * z));
+      if (!std::isfinite(yaw)) yaw = 0.0;   // a rotation made of NaN or infinity faces east, as ZERO_ROTATION
+      const float kept[4] = {0.0f, 0.0f, float(std::sin(yaw / 2.0)), float(std::cos(yaw / 2.0))};
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "agent_rot"}, {"avatar", m_permissionKey},
+                                       {"rotation", vecJson(kept, 4)}, {"degrees", std::round(yaw * 180.0 / M_PI * 1000.0) / 1000.0}});
+      return Value();
+    }
     case Fn::DetectedKey: return Value::key(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].key : QString(NULL_KEY));
     case Fn::DetectedName: return Value::string(a[0].i >= 0 && a[0].i < qint32(m_detected.size()) ? m_detected[size_t(a[0].i)].name : QString());
     case Fn::DetectedOwner:
@@ -259,13 +279,15 @@ Value Interpreter::callBuiltinObject(Fn fn, const QString& name, std::vector<Val
     {
       const InventoryItem* item = m_world.inventory().find(a[0].s);
       if (!item) return Value();   // Second Life says nothing about a missing item
-      if (item->type == 10 && item->name == m_world.scriptName())
-        failAt("unsupported", "llRemoveInventory on the script itself is not supported yet in the Script Lab sandbox, so the script was stopped here.");
+      const bool self = item->type == 10 && item->name == m_world.scriptName();
       const QString name = item->name;
       m_world.inventory().remove(name);
       if (!m_world.logFull())
         m_world.log(m_now, QJsonObject{{"type", "inventory"}, {"op", "remove"}, {"item", World::clip(name)}});
       m_world.inventoryChanged(m_now);
+      // a script that removes itself is gone from the object and stops at once, as in Second Life (OpenCollar's oc_auth
+      // and oc_label do this)
+      if (self) failAt("removed", "The script removed itself from the object, so it stopped here, as in Second Life.");
       return Value();
     }
     case Fn::GetNotecardLine:

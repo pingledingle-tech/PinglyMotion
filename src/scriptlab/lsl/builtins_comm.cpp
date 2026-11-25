@@ -58,9 +58,11 @@ Value Interpreter::callBuiltinComm(Fn fn, const QString& name, std::vector<Value
       if (a[1].s.isEmpty()) problem = "llDialog: must supply a message";
       else if (a[1].s.toUtf8().size() >= 512) problem = "llDialog: message too long, must be less than 512 characters";
       else if (buttons.size() > 12) problem = "llDialog: button list too long, must be 12 or fewer entries";
-      for (const QString& b : buttons)
-        if (problem.isEmpty() && b.trimmed().isEmpty()) problem = "llDialog: all buttons must have label strings";
-        else if (problem.isEmpty() && b.toUtf8().size() > 24) problem = "llDialog: button labels must be 24 or fewer characters long";
+      // as in Second Life (the wiki, llDialog): an empty label and an entry that is not a string (an integer, a key, ...)
+      // are refused; a label of only spaces is a real button (OpenCollar fills its menus with " ")
+      for (size_t i = 0; problem.isEmpty() && i < a[2].list.size(); ++i)
+        if (a[2].list[i].type != Type::String || buttons[int(i)].isEmpty()) problem = "llDialog: all buttons must have label strings";
+        else if (buttons[int(i)].toUtf8().size() > 24) problem = "llDialog: button labels must be 24 or fewer characters long";
       if (!problem.isEmpty())
       {
         m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", problem}});
@@ -182,6 +184,57 @@ Value Interpreter::callBuiltinComm(Fn fn, const QString& name, std::vector<Value
       Value out = Value::defaultFor(Type::List);
       for (const QString& n : names) out.list.push_back(Value::string(n));
       checkSize(out);
+      return out;
+    }
+    case Fn::LinksetDataFindKeys:
+    case Fn::LinksetDataDeleteFound:
+    {
+      // the names that match a regular expression (anywhere in the name; "(?i)" first for any case), in alphabetical order.
+      // The wiki: a pattern of more than about 800 characters fails; a pattern that is not a regular expression gives an
+      // empty answer and a debug line (the sandbox's own wording: the wiki does not say what Second Life does)
+      const bool find = fn == Fn::LinksetDataFindKeys;
+      const QString& pattern = a[0].s;
+      const QRegularExpression re(pattern);
+      if (pattern.size() > LINKSET_PATTERN_MAX_CHARS || !re.isValid())
+      {
+        m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL},
+                                       {"text", QString("%1: the pattern is not a regular expression of at most %2 characters, so nothing matched.")
+                                                  .arg(name).arg(LINKSET_PATTERN_MAX_CHARS)}});
+        Value none = Value::defaultFor(Type::List);
+        if (!find) none.list = {Value::integer(0), Value::integer(0)};
+        return none;
+      }
+      LinksetData& data = m_world.linksetData();
+      QStringList matched;
+      for (auto it = data.pairs().constBegin(); it != data.pairs().constEnd(); ++it)
+      {
+        step(m_line, m_column);
+        if (re.match(it.key()).hasMatch()) matched << it.key();
+      }
+      if (find)
+      {
+        // start counts the matches from 0 (below 0: from the first); count below 1 means all from start
+        const qint64 start = qMax<qint64>(0, a[1].i);
+        const qint64 count = a[2].i;
+        Value out = Value::defaultFor(Type::List);
+        for (qint64 i = start; i < matched.size() && (count < 1 || qint64(out.list.size()) < count); ++i)
+        {
+          if (qint64(out.list.size()) >= m_limits.maxListLength)
+            fail(QString("llLinksetDataFindKeys would return more keys than a list can hold in the sandbox (%1); ask for fewer with count.")
+                   .arg(m_limits.maxListLength));
+          out.list.push_back(Value::string(matched[int(i)]));
+        }
+        checkSize(out);
+        return out;
+      }
+      // the sandbox has no protected pairs (llLinksetDataWriteProtected is not supported yet), so every match is
+      // deleted and none is skipped; one linkset_data event with LINKSETDATA_MULTIDELETE names them, comma separated
+      for (const QString& n : matched) data.remove(n);
+      m_world.log(m_now, QJsonObject{{"type", "linkset_data"}, {"op", "delete_found"}, {"pattern", World::clip(pattern)},
+                                     {"deleted", int(matched.size())}, {"used", data.used()}});
+      if (!matched.isEmpty()) m_world.linksetDataChanged(m_now, LinksetData::ActionMultiDelete, matched.join(','), QString());
+      Value out = Value::defaultFor(Type::List);
+      out.list = {Value::integer(qint32(matched.size())), Value::integer(0)};
       return out;
     }
     case Fn::LinksetDataAvailable: return Value::integer(m_world.linksetData().available());

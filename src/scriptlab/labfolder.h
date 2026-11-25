@@ -54,7 +54,7 @@ namespace LabFolder
   static constexpr int MAX_PRIMS = 256;               // lsl::Sandbox::MAX_PRIMS
   static constexpr int MAX_NOTECARDS = 224;           // lsl::Inventory::MAX_ITEMS less the scripts
   static constexpr qint64 MAX_FILE_BYTES = 262144;    // as Live and lsl::Lexer::MAX_SOURCE_CHARS
-  static constexpr qint64 MAX_TOTAL_BYTES = 524288;   // as lsl::Control::MAX_TOTAL_SOURCE_CHARS
+  static constexpr qint64 MAX_TOTAL_BYTES = 1048576;  // as lsl::Control::MAX_TOTAL_SOURCE_CHARS
   static constexpr int MAX_RELATIVE_PATH = 255;
   static constexpr int MAX_NAME = 63;                 // object, prim, script and notecard names, as in Second Life
   static constexpr int MAX_PATH_CHARS = 4096;
