@@ -32,9 +32,11 @@ IF (PINGLYMOTION_WEB AND PINGLYMOTION_TESTS)
   MESSAGE (FATAL_ERROR "PINGLYMOTION_WEB=ON builds only the program: leave PINGLYMOTION_TESTS off")
 ENDIF ()
 IF (PINGLYMOTION_WEB)
-  # the LSL interpreter and parser throw and catch C++ exceptions (Emscripten's default would end the program)
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fwasm-exceptions")
-  SET (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fwasm-exceptions")
+  # the LSL interpreter and parser throw and catch C++ exceptions; Emscripten's default would end the program.
+  # JavaScript-based exceptions (-fexceptions), not -fwasm-exceptions: Qt's WebAssembly libraries use the
+  # JavaScript setjmp/longjmp, and wasm exceptions would not link with them
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+  SET (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fexceptions")
 ENDIF ()
 
 # Timestamp when program was built. Like the build number and the build source below it goes

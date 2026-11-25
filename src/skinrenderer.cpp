@@ -373,6 +373,20 @@ bool SkinRenderer::init()
     return false;
   }
   const QSurfaceFormat format = context->format();
+#ifdef Q_OS_WASM
+  // the web build (docs/DEV.md, "The web trial build"): WebGL 2 is OpenGL ES 3.0, it has no
+  // buffer textures, so the joint data goes into a 2D texture (draw()) and the shaders get
+  // the GLSL ES 3.00 header
+  if (!context->isOpenGLES() || format.version() < qMakePair(3, 0))
+  {
+    m_status = QString("the browser gives OpenGL%1 %2.%3, not WebGL 2")
+                 .arg(context->isOpenGLES() ? " ES" : "")
+                 .arg(format.majorVersion()).arg(format.minorVersion());
+    return false;
+  }
+  m_gl.initializeOpenGLFunctions();
+  const bool web = true;
+#else
   if (context->isOpenGLES() || format.version() < qMakePair(3, 3))
   {
     m_status = QString("the graphics driver gives %1 %2.%3")
@@ -390,8 +404,9 @@ bool SkinRenderer::init()
     return false;
   }
 
-  // the desktop build; a web build would ask for shaderSource(..., true)
+  // the desktop build; the web build (Q_OS_WASM above) asks for shaderSource(..., true)
   const bool web = false;
+#endif
   m_program = std::make_unique<QOpenGLShaderProgram>();
   if (!m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, shaderSource(vertexShader, web))
       || !m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, bodyFragmentSource(web))
@@ -446,8 +461,12 @@ bool SkinRenderer::init()
   m_program->setUniformValue("triangleJoints", 1);   // texture unit 1
   m_program->release();
 
+#ifdef Q_OS_WASM
+  m_status = QString("WebGL 2 (OpenGL ES %1.%2) shaders").arg(format.majorVersion()).arg(format.minorVersion());
+#else
   m_status = QString("OpenGL %1.%2 %3 shaders").arg(format.majorVersion()).arg(format.minorVersion())
                .arg(format.profile() == QSurfaceFormat::CoreProfile ? "core" : "compatibility");
+#endif
   m_ready = true;
   return true;
 }
@@ -868,7 +887,9 @@ bool SkinRenderer::uploadRest(const AvatarSkin& skin)
     buffers.vao->release();
     buffers.ints->release();
 
-    // which joint each triangle mostly belongs to, for picking
+#ifndef Q_OS_WASM
+    // which joint each triangle mostly belongs to, for picking (the web build picks by the
+    // joint of the triangle's last corner instead, see the vertex shader)
     QVector<qint32> triangles(part.indices.size() / 3, 0);
     for (int t = 0; t < triangles.size() && t < part.triangleJoint.size(); t++)
       triangles[t] = qBound(0, part.triangleJoint[t], jointCount - 1);
@@ -878,6 +899,7 @@ bool SkinRenderer::uploadRest(const AvatarSkin& skin)
     m_gl.glBindBuffer(GL_TEXTURE_BUFFER, buffers.triangleBuffer);
     m_gl.glBufferData(GL_TEXTURE_BUFFER, triangles.size() * sizeof(qint32), triangles.constData(), GL_STATIC_DRAW);
     m_gl.glBindBuffer(GL_TEXTURE_BUFFER, 0);
+#endif
 
     buffers.indexCount = part.indices.size();
     buffers.eye = part.eye;
@@ -932,12 +954,25 @@ void SkinRenderer::draw(const AvatarSkin& skin, const QVector<QMatrix4x4>& posit
     t[32] = float(qMin(pickNames[j], MAX_PICK_NAME));
     t[33] = t[34] = t[35] = 0.0f;
   }
+#ifdef Q_OS_WASM
+  // WebGL 2: one row of TEXELS_PER_JOINT float texels per joint (the shaders' GL_ES part)
+  m_gl.glActiveTexture(GL_TEXTURE0);
+  m_gl.glBindTexture(GL_TEXTURE_2D, m_jointTexture);
+  m_gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  m_gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  m_gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  m_gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  m_gl.glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+  m_gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXELS_PER_JOINT, jointCount, 0, GL_RGBA, GL_FLOAT,
+                    m_jointData.constData());
+#else
   m_gl.glBindBuffer(GL_TEXTURE_BUFFER, m_jointBuffer);
   m_gl.glBufferData(GL_TEXTURE_BUFFER, m_jointData.size() * sizeof(float), m_jointData.constData(), GL_STREAM_DRAW);
   m_gl.glBindBuffer(GL_TEXTURE_BUFFER, 0);
   m_gl.glActiveTexture(GL_TEXTURE0);
   m_gl.glBindTexture(GL_TEXTURE_BUFFER, m_jointTexture);
   m_texBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, m_jointBuffer);
+#endif
 
   m_program->bind();
   m_program->setUniformValue("projection", projection);
@@ -955,17 +990,22 @@ void SkinRenderer::draw(const AvatarSkin& skin, const QVector<QMatrix4x4>& posit
   for (PartBuffers& part : m_parts)
   {
     m_program->setUniformValue("eye", part.eye);
+#ifndef Q_OS_WASM
     if (picking)
     {
       m_gl.glActiveTexture(GL_TEXTURE1);
       m_gl.glBindTexture(GL_TEXTURE_BUFFER, part.triangleTexture);
       m_texBuffer(GL_TEXTURE_BUFFER, GL_R32I, part.triangleBuffer);
     }
+#endif
     part.vao->bind();
     m_gl.glDrawElements(GL_TRIANGLES, part.indexCount, GL_UNSIGNED_SHORT, nullptr);
     part.vao->release();
   }
   m_program->release();
+#ifdef Q_OS_WASM
+  m_gl.glBindTexture(GL_TEXTURE_2D, 0);
+#else
   if (picking)
   {
     m_gl.glActiveTexture(GL_TEXTURE1);
@@ -973,4 +1013,5 @@ void SkinRenderer::draw(const AvatarSkin& skin, const QVector<QMatrix4x4>& posit
     m_gl.glActiveTexture(GL_TEXTURE0);
   }
   m_gl.glBindTexture(GL_TEXTURE_BUFFER, 0);
+#endif
 }
