@@ -66,7 +66,7 @@ jobs:
           source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
           emcc --version | head -1
           "$RUNNER_TEMP/Qt/$QT_VERSION/wasm_singlethread/bin/qt-cmake" -S . -B build-web -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release -DPINGLYMOTION_WEB=ON \
+            -DCMAKE_BUILD_TYPE=Release -DPINGLYMOTION_WEB=ON "-DQT_HOST_PATH=$RUNNER_TEMP/Qt/$QT_VERSION/gcc_64" \
             -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=web ${GITHUB_REF_NAME}"
 
       - name: Build
