@@ -1,5 +1,5 @@
 Branch: job/text-for-ai
-Status: active
+Status: done
 Pull request: #486
 Files:
 - src/motionscript.*
