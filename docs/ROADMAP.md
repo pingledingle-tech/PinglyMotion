@@ -35,7 +35,8 @@ Order of the track (the project owner, 23 Nov 2026). Details in [SCRIPT_LAB.md](
 | F. The editor in our own text box (F1, F2, F3) | done |
 | R3 and R4. The editor uses the RLV table | done |
 | G. Convert LSL to SLua, level 1 (library, no panel yet) | done |
-| Luau trial build, convert level 2, Lua in the tool | parked until last ([DECISIONS.md](DECISIONS.md), "Lua comes last") |
+| Lua engine trial build (SLua behind the build option `PINGLYMOTION_LUA`; nothing in the program uses it, [DEV.md](DEV.md), "The Lua engine trial build") | done |
+| Convert level 2, Lua in the tool | waiting, the owner chooses after the trial jobs (jobs list, queue 2; [DECISIONS.md](DECISIONS.md), "Lua comes last") |
 
 A change to a parser or the control commands needs a green fuzz run.
 

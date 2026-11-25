@@ -103,6 +103,13 @@ INCLUDE_DIRECTORIES (src ${OPENGL_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY (src)
 
+# Lua engine trial build (Linden Lab's SLua): cmake -DPINGLYMOTION_LUA=ON. Off by default, so the
+# normal build is unchanged; nothing in the program uses the engine yet (cmake/slua.cmake).
+OPTION (PINGLYMOTION_LUA "Fetch and build the Lua engine (SLua) and its trial test" OFF)
+IF (PINGLYMOTION_LUA)
+  INCLUDE (${CMAKE_SOURCE_DIR}/cmake/slua.cmake)
+ENDIF (PINGLYMOTION_LUA)
+
 # Automatic tests: cmake -DPINGLYMOTION_TESTS=ON, then ctest
 OPTION (PINGLYMOTION_TESTS "Build the automatic tests" OFF)
 IF (PINGLYMOTION_TESTS)
@@ -224,6 +231,10 @@ IF (PINGLYMOTION_TESTS)
   ADD_SUBDIRECTORY (tests/oldmenus)
   # props saved in the .dingle file, and the older .prp files that File > Open also reads
   ADD_SUBDIRECTORY (tests/propsinfile)
+  # the Lua engine trial: a Lua state and its sandbox (only with PINGLYMOTION_LUA=ON)
+  IF (PINGLYMOTION_LUA)
+    ADD_SUBDIRECTORY (tests/luaengine)
+  ENDIF (PINGLYMOTION_LUA)
 ENDIF (PINGLYMOTION_TESTS)
 
 # Fuzz targets (libFuzzer, clang only): cmake -DPINGLYMOTION_FUZZ=ON, see fuzz/README.md

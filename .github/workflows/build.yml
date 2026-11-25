@@ -132,8 +132,9 @@ jobs:
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
           ccache --zero-stats
+          # PINGLYMOTION_LUA=ON builds the Lua engine trial and its test (cmake/slua.cmake); the program itself does not use it
           # Ninja instead of MinGW Makefiles; the compilers are named so that CMake never picks a Visual Studio one from the runner's PATH
-          cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGLYMOTION_COMMIT=$BUILD_COMMIT" -DPINGLYMOTION_TESTS=ON
+          cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=${{ github.run_number }} "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE" "-DPINGLYMOTION_COMMIT=$BUILD_COMMIT" -DPINGLYMOTION_TESTS=ON -DPINGLYMOTION_LUA=ON
           # no -j: Ninja runs as many jobs as the runner has CPUs plus two (4 CPUs, 16 GB RAM)
           cmake --build build
           ccache --show-stats
@@ -236,7 +237,7 @@ jobs:
           BUILD_SOURCE: "${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
         run: |
           ccache --zero-stats
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGLYMOTION_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE"
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGLYMOTION_TESTS=ON -DPINGLYMOTION_LUA=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "-DPINGLYMOTION_BUILD_SOURCE=$BUILD_SOURCE"
           cmake --build build -j 4
           ccache --show-stats
       - name: Automatic tests
@@ -373,7 +374,7 @@ jobs:
           SOURCE_DATE_EPOCH: '0'
         run: |
           ccache --zero-stats
-          cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS=ON -DBUILD_NUMBER=0 \
+          cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug -DPINGLYMOTION_TESTS=ON -DPINGLYMOTION_LUA=ON -DBUILD_NUMBER=0 \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
@@ -394,4 +395,4 @@ jobs:
         # the file code leave none, so a reader that loses a node on a refused file fails here (audit item C16)
         env:
           ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:abort_on_error=1
-        run: xvfb-run -a -s "-screen 0 1280x1000x24" ctest --test-dir build-sanitize -R '^(animfile|generated|dingle|dingle_conversion|roundtrip)$' --output-on-failure
+        run: xvfb-run -a -s "-screen 0 1280x1000x24" ctest --test-dir build-sanitize -R '^(animfile|generated|dingle|dingle_conversion|roundtrip|luaengine)$' --output-on-failure
