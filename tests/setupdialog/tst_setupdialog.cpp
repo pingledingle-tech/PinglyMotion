@@ -25,6 +25,7 @@
 #include "menuspec.h"
 #include "setupdialog.h"
 #include "usersettings.h"
+#include "../windowsource.h"
 
 class TestSetupDialog : public QObject
 {
@@ -525,9 +526,8 @@ void TestSetupDialog::connectionsStringsAreTheStatusBarsOwn()
 // code the status bar switches call, and show the real state again after every request
 void TestSetupDialog::windowConnectsSetupToTheSameCodeAsTheStatusBar()
 {
-  QFile file(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
-  QVERIFY(file.open(QIODevice::ReadOnly));
-  const QString source = QString::fromUtf8(file.readAll());
+  const QString source = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  QVERIFY(!source.isEmpty());
   const int begin = source.indexOf(QStringLiteral("void PinglyMotionWindow::openSetupDialog()"));
   QVERIFY(begin > 0);
   const QString body = source.mid(begin, source.indexOf(QStringLiteral("\n}\n"), begin) - begin);

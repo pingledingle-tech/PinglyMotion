@@ -90,7 +90,7 @@ whichever job comes first, and reuse it.
 - RLV: `src/scriptlab/rlvstate.*` (snapshot and restore), maybe `src/scriptlab/lsl/rlvworld.*`.
 - Effects: `src/scriptlab/effectspreview.*`, `src/scriptlab/labeffects.*`, `src/scriptlab/labtint.*`.
 - Script Lab panel: `src/scriptlab/scriptlabpanel*.*`, `src/scriptlab/objectsview.*`.
-- 3D view: `src/animationview.*` (markers, preview), `src/pinglymotionwindow.cpp` (tints, transport wiring),
+- 3D view: `src/animationview.*` (markers, preview), `src/pinglymotionwindow*.cpp` (tints, transport wiring),
   maybe `src/scriptlab/cameraoverride.*`, `environmentoverride.*`, `viewmodesoverride.*`.
 - Play buttons: `src/transportbar.*` and `src/playback.h` (reused; changed only if a second bar needs it).
 - Tests: new files under `tests/`, `tests/CMakeLists.txt`. Docs: `docs/SCRIPT_LAB.md`, `docs/CONTROL.md` if a

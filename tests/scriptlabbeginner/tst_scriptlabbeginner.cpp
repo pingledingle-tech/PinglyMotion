@@ -55,6 +55,7 @@
 #include "scriptlab/scriptlabsection.h"
 #include "theme.h"
 #include "usersettings.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -816,7 +817,7 @@ void TestScriptLabBeginner::windowWiring()
 {
   // the wiring is in the Script Lab controller since job R5 (src/scriptlabcontroller.*); the window
   // gives it the 3D view and the scene
-  const QString window = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  const QString window = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   QVERIFY(window.contains("m_scriptLab->connectView(ui->animationView);"));
   QVERIFY(window.contains("m_scriptLab->connectScene(scene,meshes,hooks);"));
   QVERIFY(window.contains("m_scriptLab->makeStepsAction(this)"));

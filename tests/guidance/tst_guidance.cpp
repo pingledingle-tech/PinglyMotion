@@ -32,6 +32,7 @@
 #include "uirender.h"
 #include "usersettings.h"
 #include "welcomedialog.h"
+#include "../windowsource.h"
 
 namespace
 {
@@ -714,7 +715,7 @@ void TestGuidance::expertControlsAreTheMockupsAndNothingElse()
 // tests/menutexts does for the menus.
 void TestGuidance::windowWiringIsInPlace()
 {
-  const QString source = readFile(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
+  const QString source = WindowSource::read(QStringLiteral(PINGLYMOTION_SOURCE_DIR "/src/pinglymotionwindow.cpp"));
   QVERIFY(!source.isEmpty());
   // the welcome card: first start only, never with a file or --control, and from Help
   QVERIFY(source.contains(QStringLiteral("if(WelcomeDialog::due() && !m_startedWithFileOrControl) showWelcomeCard();")));
