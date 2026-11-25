@@ -26,9 +26,11 @@
 #include "animexportdialog.h"
 #include "animimport.h"
 #include "bvh.h"
+#include "bodydescribe.h"
 #include "bvhnode.h"
 #include "camera.h"
 #include "motiondescribe.h"
+#include "motionscript.h"
 #include "posedescribe.h"
 #include "scriptlab/rlvbehaviours.h"
 #include "screenshotsheet.h"
@@ -87,6 +89,11 @@ namespace
      "{\"frame\":{\"type\":\"integer\",\"description\":\"Frame number, first frame is 1\"}}", "[]"},
     {"describe_motion", "Describes the movement over a frame range (default: frame 2 to the last, because Second Life does not play frame 1) in words instead of pictures: for each classic joint that moves, its main axis increasing, holding or decreasing, by how many degrees, how fast (slow, medium, fast, very fast) and from which frame; the joints in the order they start; the paths of the hands and feet (straight, arc or out and back, length, top speed); foot contact, both feet off the floor, and where the weight is; the hip's height, bob and travel; the rhythm (repeat period, beats per minute, legs and arms in opposition or together, feet alternating); the loop seam between the loop points; what changes between consecutive keys; and a one-line summary. Never changes the animation or the current frame.",
      "{\"from\":{\"type\":\"integer\",\"description\":\"First frame, first frame of the animation is 1. Default 2 (1 when the animation has only 2 frames)\"},\"to\":{\"type\":\"integer\",\"description\":\"Last frame. Default the last frame\"}}", "[]"},
+    {"describe_body", "Describes the body in words and numbers: which figure (female or male) and which body (Ruth2 or Max) the 3D view shows, and the sizes of the skeleton in the start pose (standing straight, arms out), in inches and metres: height (floor to the top of the skull), eye, shoulder, hip joint, knee and ankle height above the floor, shoulder and hip width, upper arm, forearm, hand, whole arm, arm span, thigh, shin, foot, body and neck with head; the proportions (legs of the height, arm span of the height, shoulders of the height, thigh to shin, upper arm to forearm); plain sentences and a one-line summary. Both figures and both bodies use the same Second Life skeleton, so the sizes are the same for all of them; sizes are between joint centres, the skin adds a little. Use it to judge reach (can the hand touch the floor, how high is a seat for this figure) and to describe the body to the user. Never changes the animation.", "{}", "[]"},
+    {"motion_script", "Gives the open animation as a motion script: a small plain-text table that you can read, change and send back with load_motion_script. First the settings (fps, frames, loop when set), then one row per key: frame | joint | x | y | z | easing. frame starts at 1; joint is a name from the joints command, or position for the hip position (in inches); x y z are degrees; easing is how the movement into this key from the joint's key before goes (linear, ease-in, ease-out, ease-in-out, ease-out-overshoot, constant; custom for a curve drawn in the curve editor, which load_motion_script refuses). Frame 1 rows: the hip position, and every joint that is not at 0 there. Rows come in frame order. joints: only the rows of these joints (and position for the hip). The answer has script, rows and, when there are any, custom (the joints with a custom curve). A motion-capture clip has a key on every frame, so its script is long: ask for a few joints. Never changes the animation.",
+     "{\"joints\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"Only these joints (position for the hip position). Default every joint\"}}", "[]"},
+    {"load_motion_script", "Builds a new animation from a motion script (the text motion_script gives, or one you write): fps, frames and loop lines, then rows frame | joint | x | y | z | easing. frame is a frame number from 1, or seconds with s (0.5s becomes frame 0.5 x fps + 1); joint is a name from the joints command or position for the hip position (inches); x y z are degrees; easing is one of linear, ease-in, ease-out, ease-in-out, ease-out-overshoot, constant, or empty for ease-in-out. Lines starting with # are notes; a markdown table with a header row works too. Frame 1 rows set the reference pose (allowed here, because the whole animation is new). A joint without rows stays at 0; the hip position keeps the start height (43.5) unless a row gives it. frames defaults to the last row's frame. Angles past a joint's limits are kept, not cut back, and listed in outside_limits. Everything is checked first: a mistake gives the line number and changes nothing. Fails if there are unsaved changes, like new_animation. The answer is the state, plus keys (rows loaded) and outside_limits.",
+     "{\"script\":{\"type\":\"string\",\"description\":\"The motion script text\"}}", "[\"script\"]"},
     {"check_animation", "Checks the whole animation against Second Life's rules and common mistakes, with fixed thresholds, and lists what is wrong with the frames and joints it is about. Errors (Second Life refuses the file or loses part of it): longer than 60 s, nothing moves away from frame 1, the hip more than 5 m from frame 1. Warnings (it plays but likely looks wrong): posed joints that keep the frame-1 angle and are dropped, a key past a joint limit, a foot under the floor, floating, foot sliding, a sudden jump in one frame, nothing moving at the start, a loop seam that jumps. Notes: joints left out on export, keys that change nothing. Never changes the animation or the current frame.",
      "{}", "[]"},
     {"export_anim", "Exports the animation as a Second Life .anim file in the PinglyMotion folder (see 'folder' in state), the file the user uploads in Second Life. Runs check_animation first and refuses when it finds an error (Second Life would refuse the file or lose part of it); its warnings come back in the answer. Options as in File > Export for Second Life (.anim): priority, loop (between the loop points), slow start and finish in seconds, and the hand pose by name. Will not replace an existing file. The answer gives the file, its size, the joints written and left out, and the warnings. Never changes the animation.",
@@ -273,6 +280,8 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
     {"save_file", &ControlApi::saveFile}, {"screenshot", &ControlApi::screenshot},
     {"set_figure", &ControlApi::setFigure}, {"set_camera", &ControlApi::setCamera},
     {"describe_pose", &ControlApi::describePose}, {"describe_motion", &ControlApi::describeMotion},
+    {"motion_script", &ControlApi::motionScript}, {"load_motion_script", &ControlApi::loadMotionScript},
+    {"describe_body", &ControlApi::describeBody},
     {"check_animation", &ControlApi::checkAnimation}, {"export_anim", &ControlApi::exportAnim},
     {"find_reference", &ControlApi::findReference}, {"load_reference", &ControlApi::loadReference},
   };
@@ -284,7 +293,7 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
   };
 
   const QString command = request.value("command").toString();
-  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, check_animation, export_anim, find_reference, load_reference, rlv_command, rlv_state, rlv_reset, lsl_check, lsl_lint, lsl_run, lsl_event, lab_watch, lab_unwatch, lab_result, lab_replay.");
+  if (command.isEmpty()) return fail("Missing \"command\". Commands: state, joints, get_pose, set_pose, set_position, delete_key, keys, set_loop, set_frame, set_frame_count, set_fps, play, stop, new_animation, open_file, save_file, screenshot, set_figure, set_camera, describe_pose, describe_motion, describe_body, motion_script, load_motion_script, check_animation, export_anim, find_reference, load_reference, rlv_command, rlv_state, rlv_reset, lsl_check, lsl_lint, lsl_run, lsl_event, lab_watch, lab_unwatch, lab_result, lab_replay.");
   for (const auto& entry : rlvTable)
     if (command == QLatin1String(entry.name))
       return (this->*entry.handler)(request);
@@ -295,6 +304,7 @@ QJsonObject ControlApi::execute(const QJsonObject& request)
   if (command == QLatin1String("lsl_event")) return lsl::Control::event(request, &m_lslSession);
   // starting an animation and looking in the library work with none open (the empty state, UX phase 1b)
   const bool startsOne = command == QLatin1String("new_animation") || command == QLatin1String("open_file") ||
+                         command == QLatin1String("load_motion_script") ||
                          command == QLatin1String("find_reference") || command == QLatin1String("load_reference");
   if (!m_host->animation() && !startsOne) return fail("No animation is open.");
 
@@ -1086,6 +1096,75 @@ QJsonObject ControlApi::describeMotion(const QJsonObject& request)
   }
   if (from >= to) return fail(QString("\"from\" (%1) must be before \"to\" (%2): a motion needs at least two frames.").arg(from).arg(to));
   return MotionDescribe::describe(animation, from - 1, to - 1);
+}
+
+QJsonObject ControlApi::describeBody(const QJsonObject&)
+{
+  return BodyDescribe::describe(m_host->animation(), m_host->male(), UserSettings::body());
+}
+
+QJsonObject ControlApi::motionScript(const QJsonObject& request)
+{
+  QStringList only;
+  if (request.contains("joints"))
+  {
+    const QJsonValue value = request.value("joints");
+    if (!value.isArray() || value.toArray().isEmpty())
+      return fail("\"joints\" must be a list of joint names, for example [\"rShldr\", \"rForeArm\"], or position for the hip position.");
+    for (const QJsonValue& entry : value.toArray())
+    {
+      const QString name = entry.toString();
+      if (!entry.isString()) return fail("\"joints\" must be a list of joint names.");
+      if (name != QLatin1String(MotionScript::positionName))
+      {
+        QString error;
+        BVHNode* node = findJoint(name, error);
+        if (!node) return fail(error);
+        if (node->type == BVH_POS) return fail("Use position for the hip position.");
+      }
+      only << name;
+    }
+  }
+  const MotionScript::Written written = MotionScript::write(m_host->animation(), only);
+  QJsonObject answer = ok();
+  answer["script"] = written.text;
+  answer["rows"] = written.rows;
+  if (!written.custom.isEmpty())
+  {
+    answer["custom"] = QJsonArray::fromStringList(written.custom);
+    answer["note"] = "Some keys use a custom curve from the curve editor (easing custom). load_motion_script refuses custom: change it to one of the six names first.";
+  }
+  return answer;
+}
+
+QJsonObject ControlApi::loadMotionScript(const QJsonObject& request)
+{
+  if (!request.value("script").isString()) return fail("\"script\" must be the motion script as text.");
+  const MotionScript::Result parsed = MotionScript::parse(request.value("script").toString());
+  if (!parsed.ok()) return fail("The motion script was not loaded, nothing changed:\n" + parsed.error);
+  // the open animation has the same skeleton as the new one: check the joints before anything changes
+  if (m_host->animation())
+  {
+    const QString problem = MotionScript::check(m_host->animation(), *parsed.value);
+    if (!problem.isEmpty()) return fail("The motion script was not loaded, nothing changed:\n" + problem);
+  }
+  if (m_host->unsavedChanges()) return fail("There are unsaved changes. Save with save_file first, or ask the user to save or close them in PinglyMotion.");
+
+  QString error;
+  if (!m_host->newAnimation(error)) return fail(error);
+  Animation* animation = m_host->animation();
+  if (!animation) return fail("No animation could be made.");
+  const MotionScript::Applied applied = MotionScript::apply(animation, *parsed.value);
+  if (!applied.ok()) return fail("The motion script was not loaded:\n" + applied.error);
+  goToFrame(animation->getNumberOfFrames() > 1 ? 1 : 0);
+  m_host->refresh();
+
+  QJsonObject answer = state(QJsonObject());
+  answer["keys"] = applied.keys;
+  answer["outside_limits"] = QJsonArray::fromStringList(applied.outsideLimits);
+  if (!applied.outsideLimits.isEmpty())
+    answer["note"] = "Some angles are past the joint's limits; they were kept. check_animation lists them.";
+  return answer;
 }
 
 QJsonObject ControlApi::checkAnimation(const QJsonObject&)

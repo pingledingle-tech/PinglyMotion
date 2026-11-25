@@ -7,18 +7,13 @@ Files:
 - src/controlapi.*
 - src/CMakeLists.txt
 - tests/motionscript/**
-- tests/bodydescribe/**
-- tests/control/**
+- tests/tst_control.cpp
 - tests/CMakeLists.txt
 - fuzz/**
 - tools/mcp/commands.json
-- tools/mcp/pinglymotion_mcp.js
-- tests/test_mcp_node.py
 - docs/ASSISTANT_GUIDE.md
 - docs/CONTROL.md
 - docs/PRODUCT.md
-- docs/IDEAS.md
-- .github/workflows/fuzz.yml
 
 ## What
 

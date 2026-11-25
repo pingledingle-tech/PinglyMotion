@@ -226,6 +226,9 @@ class ControlTest : public QObject
     void describeMotionOfTheCmuWalk();
     void describeMotionOfTheCmuWave();
     void describeMotionOfTheGeneratedEdgeCases();
+    void describeBodyGivesTheSizes();
+    void motionScriptReadsAndLoadsTheAnimation();
+    void loadMotionScriptRefusesBadScripts();
     void checkAnimationFindsNothingMoving();
     void checkAnimationPassesAnArmLift();
     void checkAnimationFindsTooLong();
@@ -2246,6 +2249,132 @@ static QStringList checksOf(const QJsonObject& answer)
   QStringList out;
   for (const QJsonValue& value : answer["findings"].toArray()) out << value.toObject()["check"].toString();
   return out;
+}
+
+void ControlTest::describeBodyGivesTheSizes()
+{
+  const QString oldBody = UserSettings::body();
+  auto restore = qScopeGuard([&] { UserSettings::setBody(oldBody); m_host->setMale(false); });
+  UserSettings::setBody("ruth2");
+  m_host->setMale(false);
+  QJsonObject answer = run(R"({"command":"describe_body"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["figure"].toString(), QString("female"));
+  QCOMPARE(answer["body"].toString(), QString("ruth2"));
+  QCOMPARE(answer["body_name"].toString(), QString("Ruth2"));
+  QCOMPARE(answer["scale"].toDouble(), 1.0);
+  // measured on bin/data/SLFemale.bvh in the start pose: the floor is the lowest point of the feet
+  const QJsonObject sizes = answer["sizes"].toObject();
+  const struct { const char* key; double inches; double metres; } expected[] =
+  {
+    {"height", 70.5, 1.791}, {"eyes", 69.2, 1.758}, {"shoulder_height", 59.71, 1.517}, {"hip_height", 40.22, 1.022},
+    {"knee_height", 20.89, 0.531}, {"ankle_height", 2.46, 0.063}, {"shoulder_width", 12.91, 0.328}, {"hip_width", 10.08, 0.256},
+    {"upper_arm", 9.76, 0.248}, {"forearm", 8.07, 0.205}, {"hand", 8.79, 0.223}, {"arm", 26.62, 0.676},
+    {"arm_span", 66.14, 1.68}, {"thigh", 19.42, 0.493}, {"shin", 18.46, 0.469}, {"foot", 9.49, 0.241},
+    {"torso", 21.28, 0.541}, {"neck_and_head", 7.4, 0.188},
+  };
+  QCOMPARE(sizes.size(), int(std::size(expected)));
+  for (const auto& entry : expected)
+  {
+    const QJsonObject size = sizes[entry.key].toObject();
+    QVERIFY2(!size["what"].toString().isEmpty(), entry.key);
+    QVERIFY2(qFuzzyCompare(size["inches"].toDouble(), entry.inches), qPrintable(QString("%1: %2").arg(entry.key).arg(size["inches"].toDouble())));
+    QVERIFY2(qFuzzyCompare(size["metres"].toDouble(), entry.metres), qPrintable(QString("%1: %2").arg(entry.key).arg(size["metres"].toDouble())));
+  }
+  const QJsonObject proportions = answer["proportions"].toObject();
+  QCOMPARE(proportions["legs_of_height"].toDouble(), 0.57);
+  QCOMPARE(proportions["arm_span_of_height"].toDouble(), 0.94);
+  QCOMPARE(proportions["shoulders_of_height"].toDouble(), 0.18);
+  QCOMPARE(proportions["thigh_to_shin"].toDouble(), 1.05);
+  QCOMPARE(proportions["upper_arm_to_forearm"].toDouble(), 1.21);
+  QCOMPARE(answer["summary"].toString(), QString("Female figure, Ruth2 body: 1.79 m tall, legs 57 % of the height, arm span 1.68 m."));
+  const QJsonArray sentences = answer["sentences"].toArray();
+  QCOMPARE(sentences.size(), 6);
+  QCOMPARE(sentences.at(1).toString(), QString("The figure is 1.79 m tall (70.5 inches) from the floor to the top of the skull, standing straight in the start pose; the eyes are at 1.76 m."));
+  QCOMPARE(sentences.at(3).toString(), QString("With the arms out the span is 1.68 m fingertip to fingertip, less than the height. One arm is 0.68 m from shoulder to fingertip."));
+
+  // the male figure and the Max body: the same skeleton, so the same sizes; a scale gets its own sentence
+  UserSettings::setBody("max");
+  m_host->setMale(true);
+  m_animation->setAvatarScale(1.1f);
+  answer = run(R"({"command":"describe_body"})");
+  QCOMPARE(answer["figure"].toString(), QString("male"));
+  QCOMPARE(answer["body"].toString(), QString("max"));
+  QCOMPARE(answer["sizes"].toObject(), sizes);
+  QCOMPARE(answer["scale"].toDouble(), 1.1);
+  QCOMPARE(answer["summary"].toString(), QString("Male figure, Max body: 1.79 m tall, legs 57 % of the height, arm span 1.68 m."));
+  QCOMPARE(answer["sentences"].toArray().size(), 7);
+  QCOMPARE(answer["sentences"].toArray().at(5).toString(), QString("The 3D view draws the figure at 110 % of this size (Scale); the sizes here are those of the skeleton, which the animation file uses."));
+}
+
+// ------------------------------------------------------------ motion script (issue 129)
+
+void ControlTest::motionScriptReadsAndLoadsTheAnimation()
+{
+  m_animation->setDirty(false);
+  QJsonObject answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"script",
+    "fps 30\nframes 31\nloop 2 31\n1 | position | 0 | 43.5 | 0 |\n2 | rShldr | -90 | 0 | -20 |\n0.5s | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n31 | rShldr | 0 | 0 | 0 | linear\n31 | lShin | 170 | 0 | 0 |\n"}});
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["frames"].toInt(), 31);
+  QCOMPARE(answer["fps"].toInt(), 30);
+  QCOMPARE(answer["loop_in"].toInt(), 2);
+  QCOMPARE(answer["loop_out"].toInt(), 31);
+  QCOMPARE(answer["frame"].toInt(), 2);
+  QCOMPARE(answer["keys"].toInt(), 5);
+  QCOMPARE(answer["outside_limits"].toArray(), QJsonArray{"lShin"});
+  QCOMPARE(answer["note"].toString(), QString("Some angles are past the joint's limits; they were kept. check_animation lists them."));
+
+  // the keys are there, the same as set_pose would show them
+  answer = run(R"({"command":"keys","joint":"rForeArm"})");
+  QCOMPARE(answer["frames"].toArray(), (QJsonArray{1, 16}));
+  QCOMPARE(answer["easing"].toObject()["16"].toString(), QString("ease-out-overshoot"));
+  answer = run(R"({"command":"get_pose","frame":2})");
+  QCOMPARE(answer["joints"].toObject()["rShldr"].toArray(), (QJsonArray{-90, 0, -20}));
+
+  // and read back as the same table
+  answer = run(R"({"command":"motion_script"})");
+  QVERIFY(answer["ok"].toBool());
+  QCOMPARE(answer["rows"].toInt(), 5);
+  QCOMPARE(answer["script"].toString(), QString(
+    "# PinglyMotion motion script 1\n"
+    "# frame = seconds x 30 + 1. Angles in degrees, position in inches. Easing: the movement into the key.\n"
+    "fps 30\nframes 31\nloop 2 31\n\n"
+    "frame | joint | x | y | z | easing\n"
+    "1 | position | 0 | 43.5 | 0 |\n"
+    "2 | rShldr | -90 | 0 | -20 | ease-in-out\n"
+    "16 | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n"
+    "31 | rShldr | 0 | 0 | 0 | linear\n"
+    "31 | lShin | 170 | 0 | 0 | ease-in-out\n"));
+  QVERIFY(!answer.contains("custom"));
+
+  answer = run(R"({"command":"motion_script","joints":["rForeArm","position"]})");
+  QCOMPARE(answer["rows"].toInt(), 2);
+  QVERIFY(answer["script"].toString().endsWith("1 | position | 0 | 43.5 | 0 |\n16 | rForeArm | 0 | 110 | 0 | ease-out-overshoot\n"));
+  answer = run(R"({"command":"motion_script","joints":["elbow"]})");
+  QCOMPARE(answer["ok"].toBool(), false);
+  QVERIFY(answer["error"].toString().startsWith("Unknown joint \"elbow\". Did you mean: "));
+  answer = run(R"({"command":"motion_script","joints":"rShldr"})");
+  QCOMPARE(answer["error"].toString(), QString("\"joints\" must be a list of joint names, for example [\"rShldr\", \"rForeArm\"], or position for the hip position."));
+
+  // a second load is refused while the first is not saved, and nothing changes
+  answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"script", "frames 5\n3 | head | 0 | 10 | 0 |\n"}});
+  QCOMPARE(answer["ok"].toBool(), false);
+  QCOMPARE(answer["error"].toString(), QString("There are unsaved changes. Save with save_file first, or ask the user to save or close them in PinglyMotion."));
+  QCOMPARE(m_animation->getNumberOfFrames(), 31);
+}
+
+void ControlTest::loadMotionScriptRefusesBadScripts()
+{
+  m_animation->setDirty(false);
+  const Animation::Snapshot before = m_animation->snapshot();
+  QJsonObject answer = run(R"({"command":"load_motion_script"})");
+  QCOMPARE(answer["error"].toString(), QString("\"script\" must be the motion script as text."));
+  answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"script", "frames 10\n2 | head | 0 | up | 0 |\n12 | head | 0 | 1 | 0 |\n"}});
+  QCOMPARE(answer["ok"].toBool(), false);
+  QCOMPARE(answer["error"].toString(), QString("The motion script was not loaded, nothing changed:\nLine 2: \"up\" is not a number for y: write a number from -360 to 360."));
+  answer = m_api->execute(QJsonObject{{"command", "load_motion_script"}, {"script", "frames 10\n2 | rshldr | 0 | 1 | 0 |\n"}});
+  QCOMPARE(answer["error"].toString(), QString("The motion script was not loaded, nothing changed:\nLine 2: unknown joint \"rshldr\". Did you mean: rShldr?"));
+  QVERIFY(m_animation->snapshot() == before);
 }
 
 void ControlTest::checkAnimationFindsNothingMoving()

@@ -43,6 +43,8 @@ TARGET_LINK_LIBRARIES (fuzz_core PUBLIC ${PINGLYMOTION_QT_LIBS})
 SET (FUZZ_CONTROL_SRC ${CMAKE_SOURCE_DIR}/src/controlapi.cpp
                    ${CMAKE_SOURCE_DIR}/src/posedescribe.cpp
                    ${CMAKE_SOURCE_DIR}/src/motiondescribe.cpp
+                   ${CMAKE_SOURCE_DIR}/src/motionscript.cpp
+                   ${CMAKE_SOURCE_DIR}/src/bodydescribe.cpp
                    ${CMAKE_SOURCE_DIR}/src/animcheck.cpp
                    ${CMAKE_SOURCE_DIR}/src/animexport.cpp
                    ${CMAKE_SOURCE_DIR}/src/animexportdialog.cpp

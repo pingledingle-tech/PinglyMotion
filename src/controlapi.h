@@ -135,6 +135,9 @@ class ControlApi
     QJsonObject setCamera(const QJsonObject&);
     QJsonObject describePose(const QJsonObject&);
     QJsonObject describeMotion(const QJsonObject&);
+    QJsonObject describeBody(const QJsonObject&);
+    QJsonObject motionScript(const QJsonObject&);
+    QJsonObject loadMotionScript(const QJsonObject&);
     QJsonObject checkAnimation(const QJsonObject&);
     QJsonObject exportAnim(const QJsonObject&);
     QJsonObject findReference(const QJsonObject&);
