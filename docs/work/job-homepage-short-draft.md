@@ -1,6 +1,6 @@
 Branch: job/homepage-short-draft
 Status: active
-Pull request: pending
+Pull request: #505
 Files:
 - docs/index.html
 - docs/download.html
