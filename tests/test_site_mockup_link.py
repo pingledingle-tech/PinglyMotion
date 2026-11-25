@@ -33,9 +33,9 @@ class MockupLink(unittest.TestCase):
             m = re.search(r'<aside class="try"[^>]*><a class="btn" href="mockup/">([^<]+)</a><p>([^<]+)</p></aside>', a)
             self.assertIsNotNone(m, lang)
             self.assertTrue(m.group(1).strip() and m.group(2).strip(), lang)
-            # after the tagline, before the introduction
+            # after the tagline and the short summary, before the first heading section
             self.assertLess(a.index('class="tagline'), m.start(), lang)
-            self.assertLess(m.start(), a.index('aria-label="Introduction"') if lang == "en" else a.index("<section"), lang)
+            self.assertLess(m.start(), a.index("<h2"), lang)
 
     def test_labels_differ_per_language(self):
         html = read("index.html")
