@@ -1,6 +1,6 @@
 Branch: job/dependabot-dependency-review-5-0-1
 Status: active
-Pull request: pending
+Pull request: #501
 Files:
 - .github/workflows/dependency-review.yml
 
