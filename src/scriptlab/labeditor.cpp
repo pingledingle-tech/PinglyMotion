@@ -12,6 +12,8 @@
 #include <QFileInfo>
 #include <QFocusEvent>
 #include <QFontDatabase>
+#include <QGuiApplication>
+#include <QClipboard>
 #include <QHBoxLayout>
 #include <QHelpEvent>
 #include <QIntValidator>
@@ -31,6 +33,7 @@
 #include <QVBoxLayout>
 
 #include "logging.h"
+#include "lsl/lsl2slua.h"
 #include "lslhighlighter.h"
 #include "rlvsuggest.h"
 #include "lucideicons.h"
@@ -1020,6 +1023,17 @@ LabEditor::LabEditor(QWidget* parent) :
   tools->addWidget(m_findButton);
   tools->addWidget(m_goToButton);
   tools->addStretch(1);
+  // Convert to SLua: at the right end of the message line under the text box (the tool row is full
+  // in a narrow panel), so showing it moves nothing (charter P12)
+  m_convertButton = makeButton(tr("Convert to SLua"), QStringLiteral("labEditorConvert"), this);
+  m_convertButton->setToolTip(tr("Show this script as SLua text. Your script is not changed and nothing is run."));
+  {
+    // its room is kept while it is hidden, so the line never changes height when it shows (charter P12)
+    QSizePolicy keep = m_convertButton->sizePolicy();
+    keep.setRetainSizeWhenHidden(true);
+    m_convertButton->setSizePolicy(keep);
+  }
+  m_convertButton->hide();
   // the language choice (job F3): at the right end, after the stretch, so showing it moves
   // nothing (charter P12); only while the Lua switch in Setup is on
   m_languageLabel = new QLabel(tr("Language"), this);
@@ -1035,6 +1049,7 @@ LabEditor::LabEditor(QWidget* parent) :
   tools->addWidget(m_languageBox);
   m_languageLabel->hide();
   m_languageBox->hide();
+  connect(m_convertButton, &QPushButton::clicked, this, [this]() { convertToSlua(); });
   connect(m_languageBox, QOverload<int>::of(&QComboBox::activated), this, [this](int index)
   {
     const QString id = m_languageBox->itemData(index).toString();
@@ -1148,6 +1163,49 @@ LabEditor::LabEditor(QWidget* parent) :
   layout->addWidget(m_differenceView);
   m_differenceView->hide();
 
+  // --- the SLua result (read-only, over the text box)
+  m_convertPane = new QWidget(this);
+  m_convertPane->setObjectName("labEditorConvertPane");
+  QVBoxLayout* convertLayout = new QVBoxLayout(m_convertPane);
+  convertLayout->setContentsMargins(0, 0, 0, 0);
+  convertLayout->setSpacing(spacingS);
+  m_convertHeading = new QLabel(m_convertPane);
+  m_convertHeading->setObjectName("labEditorConvertHeading");
+  m_convertHeading->setTextFormat(Qt::PlainText);
+  m_convertHeading->setWordWrap(true);
+  m_convertNotes = new QLabel(m_convertPane);
+  m_convertNotes->setObjectName("labEditorConvertNotes");
+  m_convertNotes->setTextFormat(Qt::PlainText);
+  m_convertNotes->setWordWrap(true);
+  m_convertNotes->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_convertView = new QPlainTextEdit(m_convertPane);
+  m_convertView->setObjectName("labEditorConvertView");
+  m_convertView->setReadOnly(true);
+  m_convertView->setLineWrapMode(QPlainTextEdit::NoWrap);
+  m_convertView->setToolTip(tr("The converted SLua text. It is only shown: your script is not changed."));
+  m_convertView->setMinimumHeight(6 * m_convertView->fontMetrics().height() + 2 * spacingS);
+  QHBoxLayout* convertButtons = new QHBoxLayout;
+  convertButtons->setSpacing(spacingS);
+  m_convertCopy = makeButton(tr("Copy SLua"), QStringLiteral("labEditorConvertCopy"), m_convertPane);
+  m_convertCopy->setToolTip(tr("Copy the converted SLua text"));
+  m_convertClose = makeButton(tr("Close"), QStringLiteral("labEditorConvertClose"), m_convertPane);
+  m_convertClose->setToolTip(tr("Close the SLua text"));
+  convertButtons->addWidget(m_convertCopy);
+  convertButtons->addWidget(m_convertClose);
+  convertButtons->addStretch(1);
+  convertLayout->addWidget(m_convertHeading);
+  convertLayout->addWidget(m_convertNotes);
+  convertLayout->addWidget(m_convertView, 1);
+  convertLayout->addLayout(convertButtons);
+  layout->addWidget(m_convertPane);
+  m_convertPane->hide();
+  connect(m_convertCopy, &QPushButton::clicked, this, [this]()
+  {
+    QGuiApplication::clipboard()->setText(m_convertView->toPlainText());
+    setMessage(tr("The SLua text is copied."), 0);
+  });
+  connect(m_convertClose, &QPushButton::clicked, this, [this]() { m_convertPane->hide(); m_edit->setFocus(); });
+
   // --- the text box
   m_edit = new LabCodeEdit(this);
   m_edit->setToolTip(tr("Type to change the script. Ctrl+S saves and runs it."));
@@ -1159,6 +1217,7 @@ LabEditor::LabEditor(QWidget* parent) :
     face.setStyleHint(QFont::Monospace);
     face.setFixedPitch(true);
     m_differenceView->setFont(face);
+    m_convertView->setFont(face);
   }
   layout->addWidget(m_edit, 1);
 
@@ -1167,7 +1226,11 @@ LabEditor::LabEditor(QWidget* parent) :
   m_message->setObjectName("labEditorMessage");
   m_message->setWordWrap(true);
   m_message->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  layout->addWidget(m_message);
+  QHBoxLayout* messageRow = new QHBoxLayout;
+  messageRow->setSpacing(spacingS);
+  messageRow->addWidget(m_message, 1);
+  messageRow->addWidget(m_convertButton, 0, Qt::AlignTop);
+  layout->addLayout(messageRow);
 
   connect(m_save, &QPushButton::clicked, this, [this]() { save(); });
   connect(m_findButton, &QPushButton::clicked, this, &LabEditor::showFindRow);
@@ -1198,7 +1261,11 @@ LabEditor::LabEditor(QWidget* parent) :
   setTabOrder(m_keep, m_load);
   setTabOrder(m_load, m_difference);
   setTabOrder(m_difference, m_differenceView);
-  setTabOrder(m_differenceView, m_edit);
+  setTabOrder(m_differenceView, m_convertView);
+  setTabOrder(m_convertView, m_convertCopy);
+  setTabOrder(m_convertCopy, m_convertClose);
+  setTabOrder(m_convertClose, m_edit);
+  setTabOrder(m_edit, m_convertButton);
 
   // suggestions and the language follow Setup and Beginner or Expert (jobs F2 and F3)
   UserSettings::watchExpertMode(this, [this](bool) { followSettings(); });
@@ -1239,6 +1306,8 @@ void LabEditor::applyLanguage()
   // with the switch off nothing says Lua and the language is LSL (charter P5); the choice is kept
   const bool show = m_luaSwitch && !m_path.isEmpty();
   m_languageLabel->setVisible(show);
+  m_convertButton->setVisible(show);
+  if (!show) m_convertPane->hide();
   m_languageBox->setVisible(show);
   m_languageBox->setCurrentIndex(m_languageChoice == QLatin1String("slua") ? 1 : 0);
   const QString use = languageInUse();
@@ -1248,6 +1317,35 @@ void LabEditor::applyLanguage()
     if (use == QLatin1String("slua")) m_edit->suggestEngine().setLanguage(std::make_shared<LabSuggest::SluaLanguage>());
     else m_edit->suggestEngine().setLanguage(std::make_shared<LabSuggest::LslLanguage>());
   }
+}
+
+bool LabEditor::convertToSlua()
+{
+  if (m_path.isEmpty()) return false;
+  const lsl::Lsl2Slua::Result result = lsl::Lsl2Slua::convert(m_edit->toPlainText());
+  QStringList notes;
+  if (!result.ok())
+  {
+    m_convertHeading->setText(tr("This script cannot be converted yet: it has errors."));
+    for (const lsl::SluaWarning& e : result.errors) notes << tr("Line %1: %2").arg(e.line).arg(e.message);
+    m_convertView->clear();
+  }
+  else
+  {
+    m_convertHeading->setText(result.warnings.empty()
+      ? tr("Converted to SLua. Nothing needs a closer look.")
+      : tr("Converted to SLua. %n note(s) need a closer look.", nullptr, int(result.warnings.size())));
+    for (const lsl::SluaWarning& w : result.warnings)
+      notes << tr("Line %1: %2 What to do: %3").arg(w.line).arg(w.message, w.fix);
+    m_convertView->setPlainText(result.text);
+  }
+  notes << tr("The SLua text is only shown. Your script is not changed, and nothing is run. It is not tested in Second Life.");
+  m_convertNotes->setText(notes.join(QLatin1Char('\n')));
+  m_convertCopy->setEnabled(result.ok());
+  m_convertView->setVisible(result.ok());
+  m_convertPane->show();
+  m_convertHeading->setFocus();
+  return result.ok();
 }
 
 void LabEditor::setClockForTests(QTime (*clock)())
@@ -1355,6 +1453,7 @@ bool LabEditor::openFile(const QString& absolutePath, const QString& name)
   m_acknowledgedDisk.clear();
   m_waitingForRun = false;
   showOutsideBar(false);
+  m_convertPane->hide();
   loadText(m_saved, false);   // another file: a fresh undo history
   m_edit->setProblems({});
   setMessage(QString(), 0);
@@ -1372,6 +1471,7 @@ bool LabEditor::closeFile()
   m_acknowledgedDisk.clear();
   m_waitingForRun = false;
   showOutsideBar(false);
+  m_convertPane->hide();
   loadText(QString(), false);
   m_edit->setProblems({});
   setMessage(QString(), 0);

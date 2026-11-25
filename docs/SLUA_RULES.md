@@ -1,6 +1,6 @@
 # SLua rules for the converter
 
-Status: level 1 "LSL style" is built (lane 1, job G, 23 November 2026): `src/scriptlab/lsl/lsl2slua.*`. It is a library with tests; no panel shows it yet and nothing runs Lua. **The SLua output is not tested in Second Life** (not in a Lua beta region). SLua is Second Life's Lua (Luau), in beta; the rules may change while it is in beta.
+Status: level 1 "LSL style" is built (lane 1, job G, 23 November 2026): `src/scriptlab/lsl/lsl2slua.*`. It is a library with tests; the Script Lab editor has a Convert to SLua button for it (job lua-converter-button, 25 November 2026) and nothing runs Lua. **The SLua output is not tested in Second Life** (not in a Lua beta region). SLua is Second Life's Lua (Luau), in beta; the rules may change while it is in beta.
 
 ## How the converter is built
 
