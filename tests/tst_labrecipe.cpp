@@ -257,6 +257,10 @@ void TestLabRecipe::recordClicksMenuAndLines()
                    "@1 <fingerprint>\n"
                    "@2 <fingerprint>\n"
                    "@3 <fingerprint>\n"
+                   "# The weight at the end (memory kept and messages per script), for Improve a setup:\n"
+                   "=weight 2\n"
+                   "=script 65536 0 1 1 0 0 0 hud\n"
+                   "=script 65536 0 0 1 0 0 0 cuff\n"
                    "# This was the first replay. There was nothing to compare with.\n"));
   // the replay has its own world and RLV state: the panel's state is what the clicks made, no more
   QVERIFY(!rlv.has("sendim"));

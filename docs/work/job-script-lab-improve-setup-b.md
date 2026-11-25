@@ -1,5 +1,5 @@
 Branch: job/script-lab-improve-setup-b
-Status: active
+Status: done
 Pull request: #498
 Files:
 - src/scriptlab/lsl/interp.*
@@ -23,6 +23,8 @@ Files:
 - tests/scriptlabpanel/
 - tests/scriptlabwindow/tst_scriptlabwindow.cpp
 - translations/pinglymotion_en.ts
+- examples/improve/Small_setup/
+- docs/EXAMPLES.md
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md
 - docs/PRODUCT.md

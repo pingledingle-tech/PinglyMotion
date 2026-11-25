@@ -133,6 +133,8 @@ namespace
       "M3 16h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z",
       "M10 2h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z",
       "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3","M12 12V8"}},
+    // the Script Lab tab "Improve a setup" (queue 1, item 5), as Mockup 2 draws it
+    {"gauge",{"m12 14 4-4","M3.34 19a10 10 0 1 1 17.32 0"}},
   };
 
   // SVG elliptical arc from the current point p0 to p1 (SVG 1.1, appendix

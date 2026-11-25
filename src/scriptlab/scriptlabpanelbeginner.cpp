@@ -136,6 +136,7 @@ void ScriptLabPanel::setExpertMode(bool expert)
 void ScriptLabPanel::refreshRecipe()
 {
   if (!m_recipeRow) return;
+  refreshImprove();   // queue 1 item 5: a replay brings a new weight to compare
   const bool object = m_watcher && m_watcher->watching() && m_watcher->linkset();
   m_recipeRow->setVisible(object);
   m_playerEmpty->setVisible(!object);   // job UX-B: the tab says what fills it

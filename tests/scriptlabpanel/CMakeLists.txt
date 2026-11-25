@@ -85,3 +85,12 @@ TARGET_COMPILE_DEFINITIONS (pinglymotion_labtree_tests PRIVATE
 TARGET_LINK_LIBRARIES (pinglymotion_labtree_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
 ADD_TEST (NAME labtree COMMAND pinglymotion_labtree_tests)
 SET_TESTS_PROPERTIES (labtree PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The page Improve a setup (queue 1, item 5, parts b and c): the weight, before and after, the suggestions and
+# Can this run here, in the real panel, with the keys and both themes at 100 and 200 percent text
+ADD_EXECUTABLE (pinglymotion_labimproveview_tests tst_labimproveview.cpp ${CMAKE_SOURCE_DIR}/tests/uirender/uirender.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_labimproveview_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab
+                            ${CMAKE_SOURCE_DIR}/tests/uirender)
+TARGET_LINK_LIBRARIES (pinglymotion_labimproveview_tests pinglymotion_shared pinglymotion_core ${PINGLYMOTION_QT_LIBS} Qt6::Widgets Qt6::Test)
+ADD_TEST (NAME labimproveview COMMAND pinglymotion_labimproveview_tests)
+SET_TESTS_PROPERTIES (labimproveview PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

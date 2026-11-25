@@ -450,11 +450,12 @@ void TestScriptLabPanel::liveTabAndEmptyState()
   ScriptLabPanel panel;
   LabWatcher watcher;
   panel.setWatcher(&watcher);
-  QCOMPARE(panel.tabs()->count(), 4);
+  QCOMPARE(panel.tabs()->count(), 5);
   QCOMPARE(panel.tabs()->tabText(0), QString("Live scripts"));
   QCOMPARE(panel.tabs()->tabText(1), QString("Type commands"));
   QCOMPARE(panel.tabs()->tabText(2), QString("Who talks to whom"));
   QCOMPARE(panel.tabs()->tabText(3), QString("Player"));
+  QCOMPARE(panel.tabs()->tabText(4), QString("Improve a setup"));
   QCOMPARE(panel.tabs()->currentIndex(), 0);
   QCOMPARE(panel.watchButton()->text(), QString("Watch folder..."));
   QCOMPARE(panel.unwatchButton()->text(), QString("Stop watching"));

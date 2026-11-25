@@ -384,6 +384,7 @@ struct Tables
       if (!names.isEmpty()) f.argNames = names.split(',');
       f.deprecated = raw.deprecated != 0;
       f.supported = supported.contains(f.name);
+      f.recordOnly = f.supported && supported.value(f.name) == Fn::RecordOnly;
       functions.insert(f.name, f);
   }
 

@@ -2994,6 +2994,175 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabImproveView</name>
+    <message>
+        <source>Improve a finished setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1. Watch the folder as one object on Live scripts.
+2. Record what it does today on Player.
+3. Read below what can be better.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import a setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick the folder of a setup you made before. It is watched as one object.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record today&apos;s behaviour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Weight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory and messages per script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Kept</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Values</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Got</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not used</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The memory Second Life keeps for the script: 64 KB, or the limit it set with llSetMemoryLimit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The memory of the script&apos;s values at the end, a rough count. Code is not counted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Link messages and chat the script sent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Link messages and chat the script got and handled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Messages the script got and did nothing with</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life gives each script 64 KB. The memory the code itself takes is not counted yet: that waits for a measurement in Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Before and after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What can be better</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press Enter or double-click a line about a script to see it in the editor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can this run here?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open a script&apos;s row to see what works here and what is missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import a setup first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording now: stop it on Player.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to Player and record what the setup does today. Every later save replays it and compares.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Watch a folder as one object on Live scripts, or press Import a setup. Then this page shows how heavy it is and what can be better.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The object did not run, so nothing was measured: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, in %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of its messages were not used by the script that got them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It stopped.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record what the setup does on Player. Every later save replays it and shows the weight before and after.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the first replay with the weight, so there is nothing to compare yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing changed in the weight since the last replay.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing found. The setup looks fine by these rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, line %2. Press Enter to see it in the editor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Works: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Missing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The event log was full, so a list of events may be short. Stops and calls are counted in full.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabPlayer</name>
     <message>
         <source>Player: watch your steps again</source>
@@ -4753,10 +4922,6 @@ Check that it is a BVH file, then try again.</source>
     <message>
         <source>This file is too big for an animation.
 Pick a smaller file, then try again.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The prop file is larger than %1 KB.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7575,6 +7740,226 @@ Try a BVH file for a person with arms and legs.</source>
         <source>Too many folders with this name are there. Pick another place.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&quot;props&quot; must be a list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prop %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The name of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 has no type.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The %1 of %2 must be 3 numbers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The %1 of %2 is too large.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The attachment of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file was not found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: the list %2 is written with %3 entries. A long list fills the script&apos;s memory all the time. Keep it in Linkset Data or a notecard and read the part you need.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: the text %2 has %3 characters. Keep a long text in a notecard or Linkset Data instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the global variable %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 global variables (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the function %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 functions (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 never uses %2. Remove what is not used: it takes memory for nothing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2 sent, %3 not used)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Messages that the script getting them did nothing with: %1. Send each message only where it is needed: to one prim&apos;s link number instead of LINK_SET, or to fewer scripts that have a link_message event.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 uses %2 of its %3 for its values. Split it in two before it runs out of memory.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 scripts use less than 4 KB each for their values: %2. Second Life keeps 64 KB for each script, so joining some of them saves 64 KB for every script fewer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 uses less than 16 KB for its values, but Second Life keeps 64 KB for it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 scripts use less than 16 KB each for their values, but Second Life keeps 64 KB for each: %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>llSetMemoryLimit can keep less. The memory the code itself takes is not counted here, so measure in Second Life (llGetUsedMemory) before you set a limit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It calls no built-in function.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of the %2 built-in functions it calls run here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not in the sandbox yet: %1. The script stops if it calls one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only recorded, nothing is shown: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The object did not run: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It stopped: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It handled these events, at least: %1 (the log was full, so there may be more).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It handled these events: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It removed itself from the object, as it does in Second Life.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Its web requests get no answer: the sandbox never goes on the internet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runs here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runs here, with notes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stops here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Does not compile.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did not run.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 KB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 script.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 scripts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life keeps 64 KB for each: %1 in all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life keeps 64 KB for each, less for a script with a smaller limit: %1 in all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 script sets a smaller limit with llSetMemoryLimit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 scripts set a smaller limit with llSetMemoryLimit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Messages: %1 sent, %2 got, %3 not used (the script that got it did nothing with it).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Before: %1 kept for %2 scripts. Now: %3 for %4 scripts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Before: %1 messages sent. Now: %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Before: %1 messages got, %2 not used. Now: %3 got, %4 not used.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New: %1 (%2 kept).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>kept %1, now %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>sent %1, now %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>did nothing with %1, now %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gone: %1 (it kept %2).</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RetargetDialog</name>
@@ -8831,6 +9216,14 @@ Error: %2</source>
     </message>
     <message>
         <source>The last tab stays in Script Lab. Put another tab back first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Improve a setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check a setup you made before and see what can be better.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

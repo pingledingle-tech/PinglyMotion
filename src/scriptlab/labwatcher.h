@@ -61,6 +61,7 @@
 
 #include "labfolder.h"
 #include "labrecipe.h"
+#include "labweight.h"
 
 class RlvState;
 namespace lsl { class Session; }
@@ -130,6 +131,9 @@ class LabWatcher : public QObject
     // linkset mode: the whole folder's newest answer (LabFolder::run plus "run" and "file", the file
     // whose change started it); an empty object otherwise
     QJsonObject folderResult() const { return m_folderResult; }
+    // queue 1 item 5, part b: the weight of the watched object now (the world of the last folder run, with the clicks
+    // since); not valid when no folder is watched as one object or it did not run
+    LabWeight::Weight weight() const;
 
     // The RLV state the runs use (the one rlv_state and the panel show).
     // Not owned. Without it each run has a state of its own.

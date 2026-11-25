@@ -145,6 +145,7 @@ QString World::clip(const QString& text)
 
 void World::log(double time, QJsonObject entry, bool force)
 {
+  ++m_actions;
   if (m_target)
   {
     if (!m_tag.isEmpty()) entry["object"] = m_tag;
@@ -165,6 +166,7 @@ void World::log(double time, QJsonObject entry, bool force)
 
 bool World::logFull()
 {
+  ++m_actions;
   if (m_target) return m_target->logFull();
   if (m_log.size() < MAX_LOG_ENTRIES) return false;
   m_truncated = true;

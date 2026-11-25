@@ -951,8 +951,8 @@ QDockWidget* ScriptLabPanel::makeDock(QMainWindow* window, ScriptLabPanel* panel
 QSize ScriptLabPanel::defaultSize()
 {
   // room for the suggestion list with its help and the warnings side by side with the script;
-  // job UX-B: and for the four tabs with Pop out beside them, without scroll arrows
-  return QSize(TextSize::scaled(600), TextSize::scaled(720));
+  // job UX-B: and for the tabs with Pop out beside them, without scroll arrows (five since queue 1 item 5, Improve a setup)
+  return QSize(TextSize::scaled(740), TextSize::scaled(720));
 }
 
 QSize ScriptLabPanel::minimumPanelSize()

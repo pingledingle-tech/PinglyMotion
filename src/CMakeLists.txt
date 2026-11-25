@@ -29,7 +29,7 @@ TARGET_LINK_LIBRARIES (pinglymotion_core PUBLIC ${PINGLYMOTION_QT_LIBS})
 # Script Lab Live (issue 292): the folder watch behind lab_watch and the panel
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labwatcher.cpp)
 # Script Lab lane 1, job B: the folder is the object (one linkset per folder)
-TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labfolder.cpp scriptlab/labtint.cpp scriptlab/labprimprops.cpp scriptlab/labrecipe.cpp)
+TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labfolder.cpp scriptlab/labtint.cpp scriptlab/labprimprops.cpp scriptlab/labrecipe.cpp scriptlab/labweight.cpp scriptlab/labimprove.cpp)
 # Script Lab job A4: the channel map (who talks to whom in a run)
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labchannelmap.cpp scriptlab/labchains.cpp)
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/labrestrictionchoice.cpp)
@@ -99,6 +99,7 @@ SET (PINGLYMOTION_SHARED_SRC
               scriptlab/objectsview.cpp
               scriptlab/labdialogbox.cpp
               scriptlab/labplayer.cpp
+              scriptlab/labimproveview.cpp
               scriptlab/labtabs.cpp
               scriptlab/scriptlabpanel.cpp
               scriptlab/scriptlabpanelbeginner.cpp

@@ -271,15 +271,19 @@ void TestScriptLabDesign::switchFollowsControlCommand()
   QVERIFY(second.modeRlvButton()->isChecked());
 }
 
-// the pages, Live scripts first, with their tips and icons (job UX-B: four tabs)
+// the pages, Live scripts first, with their tips and icons (job UX-B: four tabs; queue 1 item 5: Improve a setup, the fifth)
 void TestScriptLabDesign::pages()
 {
   ScriptLabPanel panel;
-  QCOMPARE(panel.tabs()->count(), 4);
+  QCOMPARE(panel.tabs()->count(), 5);
   QCOMPARE(int(ScriptLabPanel::LivePage), 0);
   QCOMPARE(int(ScriptLabPanel::CommandsPage), 1);
   QCOMPARE(int(ScriptLabPanel::MapPage), 2);
   QCOMPARE(int(ScriptLabPanel::PlayerPage), 3);
+  QCOMPARE(int(ScriptLabPanel::ImprovePage), 4);
+  QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::ImprovePage), QString("Improve a setup"));
+  QCOMPARE(panel.tabs()->tabToolTip(ScriptLabPanel::ImprovePage), QString("Check a setup you made before and see what can be better."));
+  QVERIFY(!panel.tabs()->tabIcon(ScriptLabPanel::ImprovePage).isNull());
   QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::MapPage), QString("Who talks to whom"));
   QCOMPARE(panel.tabs()->tabText(ScriptLabPanel::PlayerPage), QString("Player"));
   QCOMPARE(panel.tabs()->tabToolTip(ScriptLabPanel::MapPage), QString("Arrows between the parts: who sends what to whom."));

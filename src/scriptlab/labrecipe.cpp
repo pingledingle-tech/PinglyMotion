@@ -423,6 +423,7 @@ LabRecipe::Replay LabRecipe::replay(const LabFolder::Linkset& linkset, const QJs
   }
   // the facts at the end are the last moment's facts
   out.facts = out.frames.last().facts;
+  out.objects = sandbox->objectsJson();   // part b: the weight at the end (LabWeight::measure)
   return out;
 }
 
@@ -472,7 +473,7 @@ QStringList LabRecipe::compare(const QVector<Fact>& before, const QVector<Fact>&
   return out;
 }
 
-QString LabRecipe::writeResult(const Replay& replay, const QStringList& changes, bool first)
+QString LabRecipe::writeResult(const Replay& replay, const QStringList& changes, bool first, const QString& extra)
 {
   QString out = QStringLiteral("# PinglyMotion: what the recipe gave the last time it was replayed.\n"
                                "# The program writes this file after every replay. Do not edit it.\n");
@@ -484,6 +485,7 @@ QString LabRecipe::writeResult(const Replay& replay, const QStringList& changes,
     out += QStringLiteral("# Moments (the start and every step), for the player:\n");
     for (int i = 0; i < replay.frames.size(); ++i) out += QStringLiteral("@%1 %2\n").arg(i).arg(frameFingerprint(replay.frames.at(i)));
   }
+  out += extra;   // queue 1 item 5, part b: the weight lines ("=weight", "=script"), which parseResult skips
   if (first) out += QStringLiteral("# This was the first replay. There was nothing to compare with.\n");
   else if (changes.isEmpty()) out += QStringLiteral("# Nothing changed since the time before.\n");
   else

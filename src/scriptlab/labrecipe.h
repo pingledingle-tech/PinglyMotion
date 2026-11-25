@@ -126,6 +126,7 @@ namespace LabRecipe
     bool logTruncated = false;
     QVector<Frame> frames;     // the start and every step, in order (empty when the folder did not run)
     QStringList stepTexts;     // every step in plain words (stepWords), for the player's list
+    QJsonArray objects;        // queue 1 item 5, part b: the sandbox's objects at the end (for LabWeight::measure)
   };
 
   // Runs the linkset from the start with options (as lsl_run: seconds, inputs) in a world of its own,
@@ -141,7 +142,8 @@ namespace LabRecipe
   // The result file: notes, the facts (one "[key] sentence" line each), the fingerprint of every
   // moment (one "@<moment> <fingerprint>" line each, job B3), then the changes as notes.
   // first: there was nothing to compare with.
-  QString writeResult(const Replay& replay, const QStringList& changes, bool first);
+  // extra: more lines put before the changes (the weight of the end, LabWeight::writeLines).
+  QString writeResult(const Replay& replay, const QStringList& changes, bool first, const QString& extra = QString());
   // The facts of a result file (lines that start with "["); other lines are skipped. A line that cannot
   // be read is skipped too: the file is the program's own memory of last time, not something to refuse.
   QVector<Fact> parseResult(const QString& text);

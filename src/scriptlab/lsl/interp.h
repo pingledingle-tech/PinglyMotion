@@ -93,7 +93,8 @@ class Interpreter
     // a fresh real-time, step and event budget for the next command (lsl_event)
     void newBudget();
     // chat heard now on a channel from name/id: queues a listen event for every matching listen, logs nothing
-    void receive(int channel, const QString& name, const QString& id, const QString& text);
+    // from: the id() of the script that said it (0: an avatar or an input), for the weight view's counts
+    void receive(int channel, const QString& name, const QString& id, const QString& text, quint64 from = 0);
     // queues a phase of a touch (detected key and name): touch_start, touch (while held) or touch_end;
     // link: llDetectedLinkNumber (0 in a single prim)
     enum class TouchPhase { Start, Held, End };
@@ -101,7 +102,7 @@ class Interpreter
     // queues attach (with the key, NULL_KEY on detach)
     void attachEvent(const QString& id);
     // Step 9a: queues link_message (sender's link number, num, str, id) and linkset_data (action, name, value)
-    void linkMessage(int sender, int num, const QString& str, const QString& id);
+    void linkMessage(int sender, int num, const QString& str, const QString& id, quint64 from = 0);
     void linksetDataEvent(int action, const QString& name, const QString& value);
     // Step 9b-2: queues changed (the CHANGED_* flags, added together)
     void changedEvent(int flags);
@@ -178,6 +179,19 @@ class Interpreter
     qint64 memoryBytes() const { return m_memory; }
     int openListens() const;
     double timerInterval() const { return m_timerInterval; }
+    // llGetMemoryLimit: 65536 unless llSetMemoryLimit set less (the memory Second Life keeps for the script)
+    int memoryLimit() const { return m_memoryLimit; }
+
+    // Queue 1 item 5, part b (the weight view). What this script sent: llMessageLinked and chat (llSay, llWhisper,
+    // llShout, llRegionSay, llRegionSayTo); what it got: the link_message and listen events it handled; unused: those it
+    // did nothing with (its handler wrote no global variable, changed no state and made no log entry, that is called
+    // nothing that acts); ignored: how many of the messages it sent were not used by the script that got them. Counted
+    // over the whole run, also across resets, and independent of the log's size.
+    struct MessageCounts { qint64 sent = 0, received = 0, unused = 0, ignored = 0; };
+    const MessageCounts& messageCounts() const { return m_messages; }
+    void countIgnored() { ++m_messages.ignored; }
+    // a number no other interpreter of the program has (never 0), so a message can name the script that sent it
+    quint64 id() const { return m_id; }
 
   private:
 
@@ -199,6 +213,7 @@ class Interpreter
       QString detectedKey;
       QString detectedName;
       std::vector<Detected> detected;   // step 9b-7: what a sensor found
+      quint64 from = 0;                 // part b: the id() of the script that sent a link_message or listen (0: none)
     };
     struct Listen
     {
@@ -213,7 +228,7 @@ class Interpreter
     // thrown to stop the script: limit hit, runtime error or unsupported function
     struct Stop
     {
-      QString kind;      // "error", "limit" or "unsupported"
+      QString kind;      // "error", "limit", "unsupported" or "removed" (llRemoveInventory of itself)
       QString message;
       int line;
       int column;
@@ -241,6 +256,9 @@ class Interpreter
     std::vector<TargetEntry> m_targets;   // llTarget: this script's position targets
     int m_nextTarget = 1;                 // the handle the next llTarget gives (the first is 1)
     int m_memoryLimit = Limits::SCRIPT_MEMORY_MAX;   // llGetMemoryLimit / llSetMemoryLimit
+    MessageCounts m_messages;        // part b: kept across resets
+    quint64 m_id = 0;
+    bool m_globalWritten = false;    // part b: a global variable was written while an event ran
     // step 19: avatars whose answer to llRequestExperiencePermissions is awaited, and llScriptProfiler: whether memory is being
     // profiled and the most memory the script used since (checked at every statement and at llGetSPMaxMemory)
     static constexpr int MAX_EXPERIENCE_REQUESTS = 64;

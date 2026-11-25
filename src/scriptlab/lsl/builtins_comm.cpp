@@ -32,6 +32,7 @@ Value Interpreter::callBuiltinComm(Fn fn, const QString& name, std::vector<Value
     case Fn::Shout:
     {
       const char* kind = fn == Fn::Say ? "say" : (fn == Fn::Whisper ? "whisper" : "shout");
+      ++m_messages.sent;
       m_world.chat(m_now, kind, a[0].i, a[1].s);
       return Value();
     }
@@ -41,9 +42,11 @@ Value Interpreter::callBuiltinComm(Fn fn, const QString& name, std::vector<Value
         m_world.log(m_now, QJsonObject{{"type", "debug"}, {"channel", DEBUG_CHANNEL}, {"text", "llRegionSay cannot be used on channel 0."}});
         return Value();
       }
+      ++m_messages.sent;
       m_world.chat(m_now, "region_say", a[0].i, a[1].s);
       return Value();
     case Fn::RegionSayTo:
+      ++m_messages.sent;
       m_world.chatTo(m_now, a[0].s, a[1].i, a[2].s);
       return Value();
     case Fn::InstantMessage:
@@ -140,6 +143,7 @@ Value Interpreter::callBuiltinComm(Fn fn, const QString& name, std::vector<Value
 
     // -------------------------------------------- link messages and Linkset Data (step 9a)
     case Fn::MessageLinked:
+      ++m_messages.sent;
       m_world.messageLinked(m_now, a[0].i, a[1].i, a[2].s, a[3].s);
       return Value();
     case Fn::GetLinkNumber: return Value::integer(m_world.linkNumber());

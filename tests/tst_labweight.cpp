@@ -33,6 +33,7 @@ class LabWeightTest : public QObject
     void suggestions();
     void canRunReports();
     void canRunWhenAScriptDoesNotCompile();
+    void smallExample();
     void openCollar();
 
   private:
@@ -308,6 +309,20 @@ void LabWeightTest::canRunWhenAScriptDoesNotCompile()
   QCOMPARE(r[1].missing.last(), QString("The object did not run: ") + answer.value("error").toString());
   QCOMPARE(LabImprove::verdictWords(LabImprove::Verdict::DoesNotCompile), QString("Does not compile."));
   QCOMPARE(LabImprove::verdictWords(LabImprove::Verdict::NotRun), QString("Did not run."));
+}
+
+void LabWeightTest::smallExample()
+{
+  // the example of our own in the examples folder (examples/improve/Small_setup): the same setup, with comments
+  const QString top = QString(PINGLYMOTION_EXAMPLES) + "/improve/Small_setup";
+  const LabWeight::Weight w = run(top);
+  QCOMPARE(rows(w), QStringList({"hub Root limit 65536 used 0 sent 3 got 0 unused 0 ignored 6",
+                                 "idle Root limit 65536 used 392 sent 0 got 3 unused 3 ignored 0",
+                                 "idle2 Root limit 65536 used 0 sent 0 got 3 unused 3 ignored 0",
+                                 "user User limit 16384 used 16 sent 0 got 3 unused 0 ignored 0"}));
+  QStringList kinds;
+  for (const LabImprove::Suggestion& s : LabImprove::suggest(LabFolder::open(top), w)) kinds << s.kind + " " + s.script;
+  QCOMPARE(kinds, QStringList({"long-list idle", "messages hub", "join ", "memory-limit ", "unused idle"}));
 }
 
 void LabWeightTest::openCollar()
