@@ -74,7 +74,8 @@ class SkinRenderer
 
     // Draws lines or triangles given point by point (rings, skeleton lines,
     // floor). normals empty: plain colours, no light. colors: one per point.
-    // Lines are drawn as thin strips facing the screen, lineWidth pixels wide.
+    // Lines are drawn as thin strips facing the screen, lineWidth pixels wide,
+    // two triangles each (no geometry shader, so WebGL 2 can draw them too).
     void drawGeometry(GLenum mode, const QVector<QVector3D>& positions,
                       const QVector<QVector3D>& normals, const QVector<QVector4D>& colors,
                       const QMatrix4x4& modelview, const QMatrix4x4& projection, const Fog& fog,
@@ -91,6 +92,19 @@ class SkinRenderer
     static QVector4D encodePickName(unsigned int name);
     static unsigned int decodePickName(const unsigned char* rgba);
     static constexpr unsigned int MAX_PICK_NAME = 0xFFFFFF;
+
+    // The first lines of every shader: "#version 330 core" on the desktop,
+    // "#version 300 es" with precisions for WebGL 2 (the later web version).
+    static QByteArray shaderHeader(bool web);
+    // every shader with its header, for checks (tests/linedraw): name with a
+    // .vert or .frag ending, and the source. The programs: body.vert with
+    // body.frag, mesh.vert and line.vert each with plain.frag.
+    struct ShaderSource
+    {
+      QString name;
+      QByteArray source;
+    };
+    static QVector<ShaderSource> shaderSources(bool web);
 
   private:
     struct PartBuffers
@@ -117,6 +131,9 @@ class SkinRenderer
     bool uploadRest(const AvatarSkin& skin);
     void releaseRest();
     void setLookUniforms(QOpenGLShaderProgram* program, const Fog& fog) const;
+    void drawLines(const QVector<QVector3D>& positions, const QVector<QVector3D>& normals,
+                   const QVector<QVector4D>& colors, const QMatrix4x4& modelview,
+                   const QMatrix4x4& projection, const Fog& fog, float lineWidth);
 
     bool m_ready = false;
     QString m_status;
@@ -132,12 +149,17 @@ class SkinRenderer
     // moved to another window, and the old objects belong to the old one
     std::unique_ptr<QOpenGLShaderProgram> m_program;
     std::unique_ptr<QOpenGLShaderProgram> m_meshProgram;
-    std::unique_ptr<QOpenGLShaderProgram> m_lineProgram;   // mesh shader + strips for lines
+    std::unique_ptr<QOpenGLShaderProgram> m_lineProgram;   // lines as strips of two triangles
     std::map<const Mesh*, MeshBuffers> m_meshes;
     // for drawGeometry(), filled anew for every call
     std::unique_ptr<QOpenGLVertexArrayObject> m_geometryVao;
     std::unique_ptr<QOpenGLBuffer> m_geometryBuffer;   // position 3, normal 3, colour 4
     QVector<float> m_geometryData;
+    std::unique_ptr<QOpenGLVertexArrayObject> m_lineVao;
+    std::unique_ptr<QOpenGLBuffer> m_lineBuffer;        // four corners per line, see drawLines()
+    std::unique_ptr<QOpenGLBuffer> m_lineIndexBuffer;   // six indices per line
+    int m_lineIndexCount = 0;                            // indices in m_lineIndexBuffer
+    QVector<float> m_lineData;
     std::vector<PartBuffers> m_parts;
     const AvatarSkin* m_restSkin = nullptr;
     int m_restRevision = -1;
