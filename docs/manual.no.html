@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="nb" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>Brukerveiledning for PinglyMotion</title>
+<meta name="description" content="Brukerveiledning for PinglyMotion: installasjon, animasjon, Script Lab, AI-assistenter, hurtigtaster og feilsøking.">
+<link rel="stylesheet" href="site.css">
+<style>
+.manual{max-width:62rem;margin:0 auto}
+.manual img{max-width:100%;height:auto;border:1px solid var(--border,#8884);border-radius:6px;display:block;margin:.75rem 0}
+.manual .table-wrap{overflow-x:auto;margin:1rem 0}
+.manual table{border-collapse:collapse;width:100%}
+.manual th,.manual td{border:1px solid var(--border,#8886);padding:.35rem .6rem;text-align:left;vertical-align:top}
+.manual pre{overflow-x:auto;padding:.75rem;border:1px solid var(--border,#8886);border-radius:6px}
+.manual h2{margin-top:2.5rem}
+@media print{
+  html,body{background:#fff !important;color:#111 !important}
+  .skip,.top,nav.site,.unmare{display:none}
+  .manual img{max-height:22cm;width:auto}
+  .manual tr,.manual img{break-inside:avoid}
+  .manual h2,.manual h3{break-after:avoid}
+  a{color:#0645ad}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#manual">Gå til innholdet</a>
+<div class="wrap">
+<nav class="site" aria-label="Nettsted"><ul><li><a href="index.html#no">Hjem</a></li><li><a href="download.html#no">Last ned</a></li><li><a href="PinglyMotion-Manual.no.pdf">Veiledning som PDF</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues">Meld en feil</a></li></ul></nav>
+<nav class="site" aria-label="Språk for veiledningen"><ul><li><a href="manual.html" hreflang="en" lang="en">English</a></li><li><a href="manual.no.html" hreflang="nb" lang="nb" aria-current="page">Norsk</a></li><li><a href="manual.de.html" hreflang="de" lang="de">Deutsch</a></li><li><a href="manual.pl.html" hreflang="pl" lang="pl">Polski</a></li><li><a href="manual.nl.html" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="manual.mare.html" hreflang="en" lang="en">Mare</a></li></ul></nav>
+<main class="manual" id="manual" lang="nb">
+<!-- Made by tools/site/build_manual.py from docs/MANUAL.no.md. Do not edit by hand. -->
+<h1 id="brukerveiledning-for-pinglymotion">Brukerveiledning for PinglyMotion</h1>
+<p>For PinglyMotion 0.3.0, en tidlig forhåndsversjon. Skrevet for folk som er nye innen animasjon og skripting.</p>
+<p>Denne veiledningen sier hva hver del av programmet gjør. Den sier hva som er ferdig og hva som ikke er det. Der noe er en prøveversjon, eller ikke testet i Second Life, står det.</p>
+<p><em>Maskinoversatt fra den engelske veiledningen. Ingen som har norsk som morsmål har sjekket den. Hvis noe er uklart, gjelder den <a href="manual.html">engelske veiledningen</a>.</em></p>
+<p>Alle bildene er ekte skjermbilder av programmet (Linux-versjon, mørkt tema). Bildet som er merket «diagram» er tegnet for denne veiledningen.</p>
+<p><strong>Innhold</strong></p>
+<ul><li><a href="#begynn-her">Begynn her</a>: hva det er, helhetsbildet, hvem det er for, hvor du starter</li><li><a href="#hurtigstart-de-første-fem-minuttene">Hurtigstart: de første fem minuttene</a></li><li><a href="#hva-som-er-ferdig-og-hva-som-ikke-er-det">Hva som er ferdig og hva som ikke er det</a></li><li><a href="#kapittel-1-installer-og-start">Kapittel 1: Installer og start</a></li><li><a href="#kapittel-2-vinduet-på-ett-bilde">Kapittel 2: Vinduet på ett bilde</a></li><li><a href="#kapittel-3-din-første-animasjon">Kapittel 3: Din første animasjon</a></li><li><a href="#kapittel-4-posering-i-detalj">Kapittel 4: Posering i detalj</a></li><li><a href="#kapittel-5-tidslinjen-nøkler-og-avspilling">Kapittel 5: Tidslinjen, nøkler og avspilling</a></li><li><a href="#kapittel-6-3d-visningen-og-kameraet">Kapittel 6: 3D-visningen og kameraet</a></li><li><a href="#kapittel-7-rekvisitter">Kapittel 7: Rekvisitter</a></li><li><a href="#kapittel-8-biblioteket">Kapittel 8: Biblioteket</a></li><li><a href="#kapittel-9-filer-og-formater">Kapittel 9: Filer og formater</a></li><li><a href="#kapittel-10-script-lab-for-nybegynnere">Kapittel 10: Script Lab for nybegynnere</a></li><li><a href="#kapittel-11-ai-assistenter">Kapittel 11: AI-assistenter</a></li><li><a href="#kapittel-12-den-direkte-koblingen-til-aurora">Kapittel 12: Den direkte koblingen til Aurora</a></li><li><a href="#kapittel-13-oppsett-temaer-og-hjelp">Kapittel 13: Oppsett, temaer og hjelp</a></li><li><a href="#kapittel-14-hurtigtaster-og-mus">Kapittel 14: Hurtigtaster og mus</a></li><li><a href="#kapittel-15-alle-menyvalg">Kapittel 15: Alle menyvalg</a></li><li><a href="#kapittel-16-feilsøking-og-tilbakemelding">Kapittel 16: Feilsøking og tilbakemelding</a></li><li><a href="#kapittel-17-takk-og-kilder">Kapittel 17: Takk og kilder</a></li><li><a href="#ordliste">Ordliste</a></li></ul>
+<hr>
+<h2 id="begynn-her">Begynn her</h2>
+<h3 id="hva-pinglymotion-er-til-for">Hva PinglyMotion er til for</h3>
+<p>Second Life er en virtuell verden. Folk der bruker animasjoner for at avatarene deres skal stå, sitte, danse og vinke. En <strong>animasjon</strong> er en bevegelse som er lagret i en fil.</p>
+<p>PinglyMotion hjelper deg å lage slike bevegelser. Det er gratis. Det er åpen kildekode, som betyr at hvem som helst kan lese og forbedre programmet.</p>
+<p>PinglyMotion gjør tre ting:</p>
+<ol><li><strong>Animere en figur.</strong> Du bøyer leddene på en 3D-figur. Du lagrer posituren på bestemte tidspunkter. Programmet fyller inn bevegelsen mellom dem. Du eksporterer resultatet til Second Life.</li><li><strong>Teste skript trygt.</strong> Objekter i Second Life bruker skript. PinglyMotion har en trygg sandkasse, <strong>Script Lab</strong>, der du kan kjøre RLV- og LSL-skript på din egen datamaskin. Ingenting du gjør der når Second Life.</li><li><strong>Jobbe med en AI-hjelper, hvis du vil.</strong> En AI-assistent på din egen datamaskin kan sette figuren i positur for deg. Den er av helt til du slår den på. Alt fungerer uten den.</li></ol>
+<p>PinglyMotion er en <strong>tidlig forhåndsversjon</strong>. Den er laget for utprøving og tilbakemeldinger. Regn med ujevnheter. Se <a href="#hva-som-er-ferdig-og-hva-som-ikke-er-det">Hva som er ferdig og hva som ikke er det</a>.</p>
+<h3 id="helhetsbildet">Helhetsbildet</h3>
+<p><img src="manual/img/overview.png" alt="Diagram: Animer-siden, Skript-siden, AI-assistenten, biblioteket, rekvisitter og eksempler, og filene dine, alt i ett vindu." loading="lazy"></p>
+<p><em>Diagram tegnet for denne veiledningen.</em></p>
+<p>Programmet er ett vindu med to sider. Du bytter med knappene <strong>Animate</strong> og <strong>Script</strong> øverst til venstre.</p>
+<ul><li><strong>Animate</strong> viser panelene for å lage en animasjon: Joints-listen, 3D-visningen, panelet Selected joint og Timeline.</li><li><strong>Script</strong> gir det meste av vinduet til Script Lab. 3D-visningen blir stående til venstre.</li></ul>
+<p>Hver side husker sin egen oppsetting av paneler. 3D-visningen er felles. En rekvisitt (en enkel 3D-form) eller virkningen av et skript vises ved siden av figuren.</p>
+<p>Andre deler:</p>
+<ul><li><strong>Library</strong> inneholder 106 ferdige bevegelser. Du kan starte med en av dem.</li><li><strong>Rekvisitter</strong> er enkle former du kan plassere i scenen.</li><li>Mappen <strong>examples</strong> ved siden av programmet inneholder filer du kan åpne og følge med på sammen med denne veiledningen.</li><li><strong>AI Assistant</strong> er en bryter nederst til høyre. Den er av ved hver oppstart.</li></ul>
+<h3 id="hvem-det-er-for">Hvem det er for</h3>
+<ul><li><strong>Nybegynnere.</strong> Du har aldri laget en animasjon eller skrevet et skript. Programmet starter i Beginner-modus. Det viser et velkomstkort, hintkort og et Helper-panel. Denne veiledningen forklarer hvert ord.</li><li><strong>Erfarne brukere.</strong> Du kan animasjonsverktøy som Maya eller Blender. Slå på Expert-modus (Shift+E). Da får du flere kontroller, for eksempel kurveredigering og en andre figur. Du kan velge mus- og tastestil fra Maya, Blender eller Second Life.</li></ul>
+<h3 id="hvor-skal-jeg-starte">Hvor skal jeg starte?</h3>
+<ul><li><strong>Jeg vil lage en animasjon.</strong> Les <a href="#hurtigstart-de-første-fem-minuttene">Hurtigstart</a>. Følg deretter <a href="#kapittel-3-din-første-animasjon">Kapittel 3: Din første animasjon</a>.</li><li><strong>Jeg vil teste skript.</strong> Gå til <a href="#kapittel-10-script-lab-for-nybegynnere">Kapittel 10: Script Lab for nybegynnere</a>. Du trenger ingen animasjon først.</li><li><strong>Jeg vil ha hjelp av en AI.</strong> Les <a href="#kapittel-11-ai-assistenter">Kapittel 11</a>.</li><li><strong>Jeg vil vite hva som fungerer.</strong> Les <a href="#hva-som-er-ferdig-og-hva-som-ikke-er-det">Hva som er ferdig og hva som ikke er det</a>.</li></ul>
+<hr>
+<h2 id="hurtigstart-de-første-fem-minuttene">Hurtigstart: de første fem minuttene</h2>
+<ol><li><strong>Last ned.</strong> Hent Windows-zip-filen eller Linux-AppImage fra utgivelsessiden (se <a href="#kapittel-1-installer-og-start">Kapittel 1</a>).</li><li><strong>Start.</strong> På Windows pakker du ut zip-filen. Start <code>PinglyMotion.exe</code>. På Linux gjør du AppImage kjørbar og starter den.</li><li><p><strong>Velkomstkort.</strong> Første oppstart viser «Make your first animation». Velg <strong>New to animation</strong>. Trykk <strong>Standing</strong>.</p><p><img src="manual/img/welcome-card.png" alt="Velkomstkortet med valgene Standing, Sitting, Dance example og Skip." loading="lazy"></p></li><li><strong>Åpne Joints-listen.</strong> Velg <strong>View &gt; Joints</strong>. Klikk <strong>Left Arm: Whole Arm</strong> i listen. Figuren viser ringer på det leddet.</li><li><strong>Lagre en første nøkkel.</strong> Trykk <strong>Set the first key</strong> nederst på skjermen. En nøkkel er en lagret positur på ett tidspunkt.</li><li><strong>Sett i positur.</strong> Dra tidsmarkøren (glideren over Start-knappen) mot høyre. I panelet <strong>Selected joint</strong> skriver du <code>-60</code> i boksen <strong>Lean to the side</strong>. Trykk Enter. Armen senkes. Programmet lagrer en nøkkel for deg.</li><li><strong>Spill av.</strong> Trykk <strong>Start</strong>. Trykk <strong>Stop</strong> for å stoppe.</li><li><strong>Lagre.</strong> Trykk <strong>Save</strong> øverst og velg et navn. Filen ender på <code>.dingle</code>.</li></ol>
+<p>Det er en hel animasjon. <a href="#kapittel-3-din-første-animasjon">Kapittel 3</a> forklarer hvert trinn. For å lage en fil til Second Life trykker du <strong>Export</strong> (se <a href="#kapittel-9-filer-og-formater">Kapittel 9</a>).</p>
+<p>Det som ikke er ferdig, står i <a href="#hva-som-er-ferdig-og-hva-som-ikke-er-det">Hva som er ferdig og hva som ikke er det</a>.</p>
+<hr>
+<h2 id="hva-som-er-ferdig-og-hva-som-ikke-er-det">Hva som er ferdig og hva som ikke er det</h2>
+<p>Hvert punkt har ett av disse ordene:</p>
+<ul><li><strong>Built.</strong> Det fungerer i programmet og har automatiske tester.</li><li><strong>Partly built.</strong> Noe av det fungerer. Teksten sier hva som mangler.</li><li><strong>Trial.</strong> Det finnes, men det er en prøve. Det kan endre seg eller gå i stykker.</li><li><strong>Not built.</strong> Det er planlagt eller bare en idé.</li><li><strong>Not tested in Second Life.</strong> Programmet gjør det det skal på din datamaskin. Ingen har ennå sjekket at Second Life godtar eller kjører resultatet.</li></ul>
+<p>Datoene er fra prosjektets dokumenter per 25. november 2026.</p>
+<div class="table-wrap"><table><thead><tr><th>Del</th><th>Status</th><th>Merknader</th></tr></thead><tbody><tr><td>Sette ledd i positur, nøkler, tidslinje, avspilling, angre</td><td>Built</td><td>Kapittel 3 til 5.</td></tr><tr><td>Lagre som <code>.dingle</code>, åpne <code>.dingle</code>, <code>.bvh</code>, <code>.avm</code></td><td>Built</td><td>Gamle <code>.avm</code>-filer åpnes og lagres som <code>.dingle</code>.</td></tr><tr><td>Eksport til Second Life (<code>.anim</code>)</td><td>Built</td><td>Eksport, opplasting og avspilling ble bekreftet i Firestorm 21. november 2026: timing, løkke, myk start og slutt, hender, jevn bevegelse (easing). Andre visere ble ikke sjekket.</td></tr><tr><td>Importere <code>.anim</code>, BVH fra et annet skjelett, glTF</td><td>Built</td><td>Fotlås (hindrer at føttene glir) er <strong>not built</strong>.</td></tr><tr><td>Bibliotek med 106 bevegelser</td><td>Built</td><td>Bevegelsene kommer fra åpne kilder. Lisensene vises i panelet.</td></tr><tr><td>Rekvisitter (boks, kule, kjegle, ring)</td><td>Built</td><td>Det er enkle former. En rekvisitt kan ikke gis nytt navn ennå.</td></tr><tr><td>To figurer i én scene (Expert-modus)</td><td>Built</td><td>Bare i Expert-modus.</td></tr><tr><td>Ansiktsledd</td><td>Partly built</td><td>Ansiktsleddene er satt på vent. Fanen Face finnes, men ansiktet er ikke et satsingsområde.</td></tr><tr><td>Script Lab: RLV-kommandoer</td><td>Built</td><td>En sandkasse med 206 RLV-atferder. <strong>Not tested in Second Life.</strong> Den endelige testen er alltid i Second Life.</td></tr><tr><td>Script Lab: LSL-skript kjører i en sandkasse</td><td>Partly built</td><td>282 innebygde funksjoner, en simulert klokke. Noen funksjoner registrerer bare hva de ble bedt om. Mange gjør ingenting ennå. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Script Lab: Live scripts, tre, rekvisitter fra prims</td><td>Built</td><td>Én mappe er ett objekt. En rekvisitt med samme navn som en prim hører til den.</td></tr><tr><td>Script Lab: Player, Who talks to whom, Record what I do</td><td>Built</td><td><strong>Not tested in Second Life.</strong> Noen deler av 3D-visningen følger ikke spilleren (se Kapittel 10).</td></tr><tr><td>Script Lab: Improve a setup</td><td>Partly built</td><td>Minnetallene tar ikke med minnet som selve koden bruker. Det krever en måling i Second Life.</td></tr><tr><td>Script Lab: OpenCollar-eksempel</td><td>Built</td><td>Et ekte halsbånd med 23 skript kjører i sandkassen. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Script Lab: Lua (SLua)</td><td><strong>Trial</strong></td><td>Bak en bryter som er av ved start. Editoren får et språkvalg og en knapp <strong>Convert to SLua</strong>. Ingenting kjører Lua ennå. Ingen Lua-sjekker eller forslag. <strong>Not tested in Second Life.</strong></td></tr><tr><td>Nettversjon (i en nettleser)</td><td><strong>Trial</strong></td><td>Det finnes bare en prøvebygging. Den fungerer ikke godt ennå. Ikke planlegg å bruke den.</td></tr><tr><td>AI-assistent (lokal styring)</td><td>Built</td><td>Av ved hver oppstart. Claude: en utvidelse følger med. ChatGPT og andre verktøy: oppsettet er skrevet, men <strong>ikke testet av oss</strong>.</td></tr><tr><td>Direkte kobling til Aurora</td><td>Partly built</td><td>Fungerer på Windows med en spesialbygd versjon (en fork) av Aurora-viseren. Fungerer ikke med vanlig Aurora ennå.</td></tr><tr><td>Oversettelser</td><td>Not built</td><td>Programmet finnes bare på engelsk. Rørleggerarbeidet er på plass.</td></tr><tr><td>Kodesignering for Windows</td><td>Not built</td><td>Windows kan advare om ukjent utgiver.</td></tr><tr><td>Installasjonsprogram</td><td>Not built</td><td>Windows-nedlastingen er en zip-fil.</td></tr></tbody></table></div>
+<p>Noen forskjeller mellom programmet og den klikkbare mockupen på nettstedet blir fortsatt rettet. Hvis en skjerm i mockupen ser annerledes ut, stol på denne veiledningen og programmet.</p>
+<hr>
+<h2 id="kapittel-1-installer-og-start">Kapittel 1: Installer og start</h2>
+<h3 id="windows">Windows</h3>
+<ol><li>Åpne prosjektets utgivelsesside: <a href="https://github.com/pingledingle-tech/PinglyMotion/releases">https://github.com/pingledingle-tech/PinglyMotion/releases</a>.</li><li>Last ned Windows-zip-filen. Last også ned <code>SHA256SUMS</code> hvis du vil kontrollere nedlastingen.</li><li>Pakk ut zip-filen til en mappe du velger. La mappen <code>data</code> ligge ved siden av programmet.</li><li>Start <code>PinglyMotion.exe</code>.</li></ol>
+<p>Zip-filen inneholder også mappen <code>examples</code> (filer som brukes i denne veiledningen), mappen <code>library</code> og mappen <code>mcp</code> (for AI-assistenter).</p>
+<p>Det finnes ikke noe installasjonsprogram. For å fjerne programmet sletter du mappen.</p>
+<h3 id="linux">Linux</h3>
+<ol><li>Last ned AppImage fra utgivelsessiden.</li><li>Gjør den kjørbar: <code>chmod +x PinglyMotion*.AppImage</code>.</li><li>Start den.</li></ol>
+<h3 id="hva-du-trenger">Hva du trenger</h3>
+<p>Et grafikkort og en driver med OpenGL 3.3 eller nyere. Hvis 3D-visningen forblir svart, oppdater grafikkdriveren.</p>
+<h3 id="hva-programmet-skriver-på-datamaskinen-din">Hva programmet skriver på datamaskinen din</h3>
+<ul><li>Innstillinger: en vanlig fil (<code>%APPDATA%\PinglyMotion</code> på Windows, <code>~/.config/PinglyMotion</code> på Linux).</li><li>En feillogg og tilkoblingsfilen for AI-assistenten: i <code>%LOCALAPPDATA%\PinglyMotion</code> på Windows eller <code>~/.local/share/PinglyMotion</code> på Linux.</li><li>Script Lab-eksempler du lager: i <code>Documents/PinglyMotion/Scripts</code>.</li></ul>
+<p>PinglyMotion samler ingen personopplysninger og sender ingen telemetri. Programmet ser én gang ved oppstart etter en nyere versjon (den «Update check»).</p>
+<h3 id="første-oppstart">Første oppstart</h3>
+<p>Første oppstart viser velkomstkortet (se Hurtigstart). Velg <strong>Skip</strong> hvis du vil ha en tom figur. Du kan vise kortet igjen med <strong>Help &gt; Show the welcome card again</strong>.</p>
+<p><strong>Eksempel.</strong> Start programmet. Trykk <strong>Skip</strong> på velkomstkortet. Du ser en figur i T-positur (armene rett ut til sidene) på et rutete gulv.</p>
+<hr>
+<h2 id="kapittel-2-vinduet-på-ett-bilde">Kapittel 2: Vinduet på ett bilde</h2>
+<p><img src="manual/img/window.png" alt="Hele vinduet: menylinjen, toppfeltet, Joints-panelet til venstre, 3D-visningen i midten med visningsverktøylinjen, panelet Selected joint til høyre, Timeline under, statuslinjen nederst." loading="lazy"></p>
+<p>Ovenfra og ned:</p>
+<ul><li><strong>Menylinje:</strong> File, Edit, View, Help. Hvert menyvalg er listet i <a href="#kapittel-15-alle-menyvalg">Kapittel 15</a>.</li><li><p><strong>Toppfelt.</strong> Fra venstre til høyre:</p><ul><li><strong>Animate</strong> og <strong>Script</strong> bytter mellom de to sidene (F7 og F8).</li><li><strong>Helper</strong> slår Helper-panelet av og på.</li><li>Pilene for Undo og Redo.</li><li><strong>Save</strong> og <strong>Export</strong>.</li><li><strong>Script Lab</strong> og <strong>Library</strong> åpner de panelene.</li><li><strong>Reset layout</strong> setter hvert panel tilbake dit det startet.</li><li><strong>Setup</strong> åpner innstillingene.</li><li>Solknappen bytter mellom mørkt og lyst tema.</li></ul></li><li><strong>Joints-panel</strong> (til venstre): listen over ledd, med fanene Avatar og Props.</li><li><strong>3D-visning</strong> (midten): figuren og gulvet. Øverst til venstre er <strong>view-direction widget</strong> (klikk på enden av en akse for å se derfra). Under den er <strong>view toolbar</strong> med verktøyene Pick and pull, Look around, Move the view og Zoom.</li><li><strong>Selected joint-panel</strong> (til høyre): dreier leddet du har valgt.</li><li><strong>Timeline</strong> (nederst): nøkler over tid, easing-flisene, tidsmarkøren og avspillingsknappene.</li><li><strong>Statuslinje</strong> (aller nederst): en hjelpelinje til venstre. Til høyre: bryterne <strong>Tips</strong>, <strong>AI Assistant</strong> og <strong>Aurora</strong>.</li></ul>
+<h3 id="paneler-du-kan-flytte-og-endre-størrelse-på">Paneler du kan flytte og endre størrelse på</h3>
+<p>Hvert panel kan:</p>
+<ul><li>dras etter tittelen til et nytt sted,</li><li><strong>løsrives</strong> til et eget vindu (det lille firkantikonet i tittelen),</li><li>få ny størrelse ved at du drar i skillelinjene mellom panelene,</li><li>skjules med X-en i tittelen.</li></ul>
+<p>Trykk <strong>Tab</strong> for å skjule eller vise alle panelene. <strong>View &gt; Reset layout</strong> (eller knappen <strong>Reset layout</strong>) setter alt tilbake. Reset layout nullstiller begge sidene.</p>
+<p><strong>Eksempel.</strong> Dra Timeline etter tittelen til høyre side. Trykk <strong>Reset layout</strong>. Den hopper tilbake til bunnen.</p>
+<h3 id="animate-og-script">Animate og Script</h3>
+<p>Trykk <strong>Script</strong> (eller F8). Script Lab fyller høyre side av vinduet.</p>
+<p><img src="manual/img/scriptlab-start.png" alt="Script-siden: Script Lab til høyre, 3D-visningen til venstre. Ingenting overvåkes ennå, så den tilbyr Make example project, Watch folder, New folder og Try the example scripts." loading="lazy"></p>
+<p>Trykk <strong>Animate</strong> (eller F7). Animasjonspanelene dine er tilbake slik du forlot dem.</p>
+<h3 id="helper">Helper</h3>
+<p>Knappen <strong>Helper</strong> viser et lite panel nederst til høyre i 3D-visningen. Det viser neste hintkort og tre korte leksjoner:</p>
+<ul><li><strong>Make your first move:</strong> velg et ledd, drei det, lagre en nøkkel og se på det.</li><li><strong>Arrange the windows:</strong> åpne Library, og sett så hvert vindu tilbake.</li><li><strong>Try the Script Lab:</strong> bytt til Script og tilbake.</li></ul>
+<p>En ring markerer den virkelige kontrollen et trinn snakker om. Et trinn går videre når du gjør det. Trykk <strong>Turn hints off</strong> for å stoppe hintkortene. Slå Helper av, så er programmet rent.</p>
+<p>Helper-knappen og <strong>Help &gt; Show hints</strong> (Shift+H) er den samme innstillingen.</p>
+<h3 id="beginner-og-expert">Beginner og Expert</h3>
+<p><strong>View &gt; Expert mode</strong> (Shift+E) viser flere kontroller. Expert-modus legger til:</p>
+<ul><li><strong>Paste mirrored</strong>,</li><li><strong>Edit curve</strong> i tidslinjen,</li><li>et rutenett med hvert fingerledd i grader på fanen Hands,</li><li>en bryter for å vise hvert ledd i tidslinjen,</li><li>den andre figuren (File &gt; Add a second figure, i Library-panelet: Add as a second figure).</li></ul>
+<p>Den samme bryteren finnes i <strong>Setup</strong>.</p>
+<hr>
+<h2 id="kapittel-3-din-første-animasjon">Kapittel 3: Din første animasjon</h2>
+<p>Du skal lage en kort armbevegelse på omtrent ti minutter.</p>
+<p>Først tre ord.</p>
+<ul><li>En <strong>nøkkel</strong> er en lagret positur på ett tidspunkt. Programmet fyller inn bevegelsen mellom to nøkler.</li><li>En <strong>ramme</strong> (frame) er ett steg i tid.</li><li><strong>Tidsmarkøren</strong> er glideren som velger tidspunktet du ser.</li></ul>
+<h3 id="trinn-1-start">Trinn 1: Start</h3>
+<ol><li>Velg <strong>File &gt; New animation</strong> (Ctrl+N). En figur dukker opp.</li><li>Eller velg <strong>File &gt; Open</strong> og velg <code>wave.dingle</code> i mappen <code>examples</code> ved siden av programmet. Det er en ferdig animasjon å se på.</li></ol>
+<p>Figuren står i T-positur.</p>
+<h3 id="trinn-2-åpne-joints-listen-og-velg-et-ledd">Trinn 2: Åpne Joints-listen og velg et ledd</h3>
+<ol><li>Velg <strong>View &gt; Joints</strong>. Joints-panelet åpnes til venstre.</li><li>Klikk <strong>Whole Arm</strong> under <strong>Left Arm</strong> i listen. Eller klikk på armen på figuren.</li></ol>
+<p><img src="manual/img/pose.png" alt="En positur under arbeid: Left Arm Whole Arm er valgt, armen er senket, og panelet Selected joint viser glidere." loading="lazy"></p>
+<p>Panelet <strong>Selected joint</strong> viser navnet på leddet og tre glidere: <strong>Tilt forward or back</strong>, <strong>Turn left or right</strong> og <strong>Lean to the side</strong>. Hver av dem viser sitt tillatte område.</p>
+<h3 id="trinn-3-sett-den-første-nøkkelen">Trinn 3: Sett den første nøkkelen</h3>
+<p>Trykk <strong>Set the first key</strong> nederst på skjermen (eller trykk <strong>K</strong>). Programmet lagrer posituren du ser nå som en nøkkel. Tidslinjen viser nå en rad for dette leddet.</p>
+<p>En ny animasjon har 30 rammer. Den første rammen er låst for å beskytte den første posituren. Så den første nøkkelen din havner på ramme 2. For å låse opp den første rammen slår du av <strong>Edit &gt; Lock the first frame</strong>.</p>
+<h3 id="trinn-4-velg-et-senere-tidspunkt">Trinn 4: Velg et senere tidspunkt</h3>
+<p>Dra tidsmarkøren (glideren over knappen <strong>Start</strong>) mot høyre. Teksten <strong>Frame ... of ...</strong> nederst i tidslinjen viser hvor du er. Figuren beholder posituren fra nøkkelen før.</p>
+<p>Timeline-panelet er ikke høyt. Hvis du ikke ser glideren og avspillingsknappene, rull inne i Timeline, eller dra skillelinjen over den oppover.</p>
+<h3 id="trinn-5-sett-i-positur">Trinn 5: Sett i positur</h3>
+<p>Gjør ett av disse:</p>
+<ul><li>Skriv et tall i en boks i panelet Selected joint, for eksempel <code>-60</code> i <strong>Lean to the side</strong>, og trykk Enter.</li><li>Dra en glider.</li><li>Dra en farget ring på figuren. Rød dreier rundt X, grønn rundt Y og blå rundt Z.</li><li>Dra selve leddet. Lemmen følger pekeren. Hold <strong>Shift</strong> for å dreie bare det leddet.</li></ul>
+<p>Å dreie et ledd lagrer en nøkkel for det leddet med én gang. Tidslinjen viser den. Statuslinjen sier «Key set at frame ... for ...».</p>
+<h3 id="trinn-6-velg-hvordan-bevegelsen-føles">Trinn 6: Velg hvordan bevegelsen føles</h3>
+<p>Når en nøkkel er valgt, viser tidslinjen seks fliser under <strong>How the move feels</strong>:</p>
+<div class="table-wrap"><table><thead><tr><th>Flis</th><th>Betydning</th></tr></thead><tbody><tr><td>Even</td><td>Samme fart hele veien.</td></tr><tr><td>Slow start</td><td>Starter rolig, og øker så farten.</td></tr><tr><td>Slow finish</td><td>Beveger seg i fart, og roer seg så. Bra for å legge ned en hånd.</td></tr><tr><td>Slow both ends</td><td>Starter og stopper mykt. Dette er standard for en ny nøkkel.</td></tr><tr><td>Overshoot, then settle</td><td>Går litt for langt, og kommer så tilbake.</td></tr><tr><td>Hold, then snap</td><td>Står stille, og hopper så.</td></tr></tbody></table></div>
+<h3 id="trinn-7-spill-av">Trinn 7: Spill av</h3>
+<ol><li>Trykk <strong>Start</strong>. Animasjonen spilles av.</li><li>Trykk <strong>Stop</strong> for å stoppe.</li><li><strong>Replay from start</strong> spiller fra første ramme.</li><li><strong>Loop</strong> (avkrysset som standard) spiller om og om igjen.</li><li><strong>Frame back</strong> og <strong>Frame forward</strong> flytter én ramme.</li></ol>
+<h3 id="trinn-8-lagre">Trinn 8: Lagre</h3>
+<ol><li>Velg <strong>File &gt; Save as...</strong> (Ctrl+A) eller trykk <strong>Save</strong> øverst.</li><li>Velg et navn. Filen ender på <code>.dingle</code>. Dette er arbeidsformatet. Det beholder alt arbeidet ditt.</li></ol>
+<h3 id="trinn-9-eksporter-til-second-life">Trinn 9: Eksporter til Second Life</h3>
+<ol><li>Trykk <strong>Export</strong> øverst, eller velg <strong>File &gt; Export for Second Life (.anim)...</strong> (Ctrl+Shift+E).</li><li><p>En liten boks åpnes.</p><p><img src="manual/img/export-dialog.png" alt="Eksportboksen: Length, Priority, Slow start, Slow finish, Play again and again, Hands, Choose file og Cancel." loading="lazy"></p><ul><li><strong>Length</strong> vises som tekst. Second Life godtar opptil 60 sekunder.</li><li><strong>Priority (0 to 6):</strong> når to animasjoner beveger samme ledd, vinner det høyeste tallet.</li><li><strong>Slow start</strong> og <strong>Slow finish:</strong> hvor lenge animasjonen bruker på å tone inn og ut.</li><li><strong>Play again and again:</strong> bruk løkkepunktene.</li><li><strong>Hands:</strong> hvordan fingrene ser ut mens den spilles.</li></ul></li><li>Trykk <strong>Choose file...</strong> og velg et navn. Filen ender på <code>.anim</code>.</li></ol>
+<p>Programmet sjekker animasjonen mot reglene til Second Life mens du eksporterer.</p>
+<h3 id="trinn-10-last-opp-til-second-life">Trinn 10: Last opp til Second Life</h3>
+<p>Opplasting gjøres i Second Life-viseren, ikke i PinglyMotion.</p>
+<ol><li>Velg <strong>Build &gt; Upload &gt; Animation</strong> i viseren. (Det nøyaktige menynavnet avhenger av viseren din.)</li><li>Velg <code>.anim</code>-filen din.</li><li>Sett samme prioritet og løkke som i eksportboksen. Viseren ber om en liten avgift.</li><li>Ta på deg eller spill av animasjonen for å se den.</li></ol>
+<p>En ærlig merknad: eksport, opplasting og avspilling ble bekreftet i Firestorm 21. november 2026. Andre visere ble ikke testet. Opplasting koster en liten avgift i Second Life.</p>
+<h3 id="hvis-noe-går-galt">Hvis noe går galt</h3>
+<ul><li><strong>Figuren beveger seg ikke.</strong> Du kan være på den låste første rammen. Dra tidsmarkøren til en senere ramme.</li><li><strong>Et ledd vil ikke dreie lenger.</strong> Det er så langt det kan dreie. Drei det tilbake, eller trykk <strong>Turn limits off</strong> i advarselen.</li><li><strong>Du liker ikke en nøkkel.</strong> Trykk Ctrl+Z for å angre.</li><li><strong>Du har mistet oversikten i visningen.</strong> Trykk <strong>0</strong> for hjemmevisningen, eller trykk <strong>Whole figure</strong> (Shift+F).</li><li><strong>Ingenting beveger seg når du spiller av.</strong> Et ledd trenger to nøkler på ulike rammer.</li></ul>
+<hr>
+<h2 id="kapittel-4-posering-i-detalj">Kapittel 4: Posering i detalj</h2>
+<h3 id="joints-panelet">Joints-panelet</h3>
+<p>Panelet har to faner: <strong>Avatar</strong> og <strong>Props</strong> (Kapittel 7).</p>
+<p>På fanen Avatar, ovenfra og ned:</p>
+<ul><li><strong>Animation:</strong> navnet på den åpne animasjonen. En ny animasjon heter <code>pingle</code>.</li><li><strong>Figure:</strong> <code>female</code> eller <code>male</code>. Dette endrer bare det du ser.</li><li><strong>Size:</strong> størrelsen på figuren i visningen (100 % ved start).</li><li><strong>Left</strong>, <strong>Right</strong> og <strong>Mirror</strong>: hvilken side listen viser og hvilken side en endring påvirker. Tipset på <strong>Mirror</strong> sier: «turning one side turns the other side too». Hvis den andre armen beveger seg når du bare ville ha én, trykk <strong>Mirror</strong> for å slå den av.</li><li>Fire faner: <strong>Body</strong>, <strong>Face</strong>, <strong>Hands</strong> og <strong>Other</strong>.</li><li><strong>Search joints:</strong> skriv en del av et navn.</li><li>Listen over ledd, i grupper: Body, Left Arm, Right Arm, Legs og flere.</li><li><strong>Flip:</strong> speilvender hele posituren fra venstre til høyre.</li><li><strong>T-pose:</strong> armene rett ut til sidene.</li><li><strong>Reset all:</strong> nullstill hvert ledd.</li></ul>
+<h3 id="panelet-selected-joint">Panelet Selected joint</h3>
+<p>Når et ledd er valgt, viser panelet:</p>
+<ul><li>navnet og hvor mange nøkler det har,</li><li>navnet i Second Life (for eksempel <code>mShoulderLeft</code>),</li><li>tre glidere med tallbokser (i grader) og det <strong>tillatte området</strong>,</li><li>en advarsel når du er nær grensen. <strong>Turn limits off</strong> fjerner grensen. <strong>Warn near the joint's limits</strong> slår advarselen av,</li><li><strong>Reset joint</strong> og <strong>Pull with keys</strong>,</li><li><strong>Pull the limb</strong> og <strong>Turn only this joint</strong>: hva det betyr å dra i leddet,</li><li><strong>More options</strong> med <strong>turn or move</strong>: drei eller flytt leddet,</li><li><strong>Show curves and finger grid</strong>, en knapp øverst i panelet. Den viser de ekstra kontrollene i Expert-modus. En andre knapp, <strong>Show all joints</strong>, vises når ingenting er valgt.</li></ul>
+<p>Når du ikke har valgt noe, viser panelet tre korte trinn og en knapp som velger et ledd for deg.</p>
+<h3 id="å-dra-i-en-lem">Å dra i en lem</h3>
+<p>Trykk på et ledd på figuren og dra. Leddene over det bøyer seg slik at lemmen følger pekeren. Dette kalles IK (invers kinematikk). Slipp for å sette en nøkkel. Esc avbryter. Hold <strong>Shift</strong> når du trykker på leddet for å dreie bare det leddet.</p>
+<p>Ingen mus? Trykk <strong>Enter</strong> på det valgte leddet. Bruk piltastene. Trykk Enter for å sette en nøkkel. Esc avbryter.</p>
+<h3 id="hender">Hender</h3>
+<p>På fanen <strong>Hands</strong> får du:</p>
+<ul><li>ni ferdige fingerposituer,</li><li>én <strong>Bend</strong>-glider for hver finger,</li><li><strong>Reset hand</strong>,</li><li>i Expert-modus, et rutenett med hvert fingerledd i grader.</li></ul>
+<p><strong>Mirror</strong> kopierer en endring til den andre hånden. Linjen øverst sier hvilken hånd du arbeider med, for eksempel «Right hand. The other hand copies it.»</p>
+<p><img src="manual/img/hands-tab.png" alt="Fanen Hands: ferdige fingerposituer og én Bend-glider for hver finger." loading="lazy"></p>
+<p><strong>Eksempel.</strong> Åpne fanen <strong>Hands</strong>. Velg en av de ferdige positurene. Trykk <strong>Set key</strong>.</p>
+<h3 id="ansikt-og-other">Ansikt og Other</h3>
+<p>Fanen <strong>Face</strong> lister Bento-ansiktsleddene: hode, bryn, øyne, ører og mer. Fanen <strong>Other</strong> lister de ekstra Bento-leddene: hale, bakbein og vinger. Bruk <strong>View &gt; Joint groups</strong> for å vise eller skjule disse gruppene. <strong>Hide in lists</strong> utelater skjulte ledd fra listene.</p>
+<p>Ansiktsleddene er satt på vent: de finnes, men de får ingen spesiell oppmerksomhet ennå.</p>
+<h3 id="leddgrenser">Leddgrenser</h3>
+<p>Hvert ledd har det området Second Life tillater. Nær grensen advarer panelet deg. Grensene er på som standard.</p>
+<hr>
+<h2 id="kapittel-5-tidslinjen-nøkler-og-avspilling">Kapittel 5: Tidslinjen, nøkler og avspilling</h2>
+<h3 id="rader">Rader</h3>
+<p>Tidslinjen viser en rad for hvert ledd med endringer, og for det valgte leddet. Radene har farger og navn etter kroppsområde. Boksen <strong>Show rows for</strong> filtrerer etter kroppsområde. Expert-modus legger til en bryter for å vise hvert ledd.</p>
+<p>Uten nøkler sier tidslinjen <strong>No keys yet</strong> og tilbyr <strong>Set the first key</strong>.</p>
+<h3 id="nøkler">Nøkler</h3>
+<ul><li><strong>Set key</strong> (K) lagrer posituren du ser nå.</li><li>Å dreie et ledd setter en nøkkel av seg selv.</li><li>Et merke i tidslinjen viser hver nøkkel.</li><li>Velg en nøkkel for å endre dens easing (Kapittel 3, trinn 6).</li><li>I Expert-modus tegner <strong>Edit curve...</strong> din egen fartskurve for en bevegelse. Vinduet husker plass og størrelse.</li></ul>
+<h3 id="merk-kopier-og-lim-inn">Merk, kopier og lim inn</h3>
+<ol><li>Hold <strong>Shift</strong> og dra i tidslinjen, eller bruk Shift og piltastene, for å merke et strekk.</li><li><strong>Edit &gt; Copy</strong> (Ctrl+C), <strong>Cut</strong> (Ctrl+X) eller <strong>Paste</strong> (Ctrl+V).</li><li><strong>Paste mirrored</strong> (Ctrl+Shift+V, Expert-modus) limer inn med venstre og høyre byttet om. Et venstretrinn blir et høyretrinn.</li></ol>
+<h3 id="angre-og-gjør-om">Angre og gjør om</h3>
+<p>Ctrl+Z angrer. Ctrl+Shift+Z eller Ctrl+Y gjør om. Hver endring eller hvert drag er ett trinn. Historikken rommer opptil 100 trinn og overlever Save.</p>
+<h3 id="løkkepunkter">Løkkepunkter</h3>
+<p>Nederst i tidslinjen finner du:</p>
+<ul><li><strong>Loop starts at</strong> og <strong>Loop ends at</strong>: de to rammene animasjonen går i løkke mellom, med plasseringen i prosent,</li><li><strong>Frame ... of ...</strong>: hvor du er og hvor mange rammer det er,</li><li><strong>Frames per second</strong> (30 ved start).</li></ul>
+<p>Eksportboksen bruker løkkerammene når <strong>Play again and again</strong> er avkrysset.</p>
+<p><img src="manual/img/timeline.png" alt="Timeline: de seks easing-flisene, tidsmarkøren, Set key og avspillingsknappene." loading="lazy"></p>
+<h3 id="notatlinjen">Notatlinjen</h3>
+<p>Noen animasjoner har med undervisningsnotater. Ifølge prosjektets dokumenter viser en linje under tidslinjen da notatet for den gjeldende rammen, med <strong>Hide notes</strong>. (En sjekk av <code>wave.dingle</code> i Linux-versjonen viste ingen notatlinje, så regn dette som ubekreftet.)</p>
+<p><strong>Eksempel.</strong> Åpne <code>wave.dingle</code> fra mappen <code>examples</code>. Trykk <strong>Start</strong>. Se på figuren som vinker. Trykk <strong>Stop</strong>.</p>
+<h3 id="sakte-eksempel">Sakte eksempel</h3>
+<p><code>jump_slow.dingle</code> er <code>jump.dingle</code> med hver nøkkel 2,5 ganger senere. Den går med 40 prosent av farten, så du kan se hoppet sakte.</p>
+<hr>
+<h2 id="kapittel-6-3d-visningen-og-kameraet">Kapittel 6: 3D-visningen og kameraet</h2>
+<h3 id="mus-og-taster">Mus og taster</h3>
+<p>Standardstilen, kalt PinglyMotion, fungerer slik:</p>
+<div class="table-wrap"><table><thead><tr><th>Hva</th><th>Hvordan</th></tr></thead><tbody><tr><td>Se deg rundt (orbit)</td><td>Dra i tomt rom</td></tr><tr><td>Flytt visningen (pan)</td><td>Høyredra</td></tr><tr><td>Zoom</td><td>Musehjul</td></tr><tr><td>Velg et ledd</td><td>Klikk på det, eller på raden</td></tr><tr><td>Fokuser på det valgte leddet</td><td>F, eller dobbeltklikk på det</td></tr></tbody></table></div>
+<p>I <strong>Setup</strong> eller <strong>Help &gt; Camera and keys...</strong> kan du velge stilen til Maya, Blender eller Second Life i stedet. Kapittel 14 har tabellene.</p>
+<h3 id="visningsverktøylinjen">Visningsverktøylinjen</h3>
+<p>Øverst til venstre i 3D-visningen:</p>
+<ul><li><strong>View-direction widget:</strong> klikk på enden av en akse for å se derfra.</li><li><strong>Pick and pull</strong> (V), <strong>Look around</strong> (O), <strong>Move the view</strong> (M), <strong>Zoom</strong> (Z).</li><li><strong>Picked joint</strong> (F), <strong>Whole figure</strong> (Shift+F), <strong>Home view</strong> (0).</li><li><strong>Look from</strong> (Front, Side, Top).</li><li><strong>Show:</strong> gulvrutenettet, rotasjonsringer, leddprikker og verktøynavn.</li></ul>
+<p>Hver innstilling finnes også i menyen <strong>View</strong>.</p>
+<h3 id="menyen-view">Menyen View</h3>
+<p><img src="manual/img/menu-view.png" alt="Menyen View: Look from, Show, Panels og visningsvalgene." loading="lazy"></p>
+<ul><li><strong>Look from:</strong> Front (Numpad 1), Side (Numpad 3), Top (Numpad 7), Home view (0).</li><li><strong>Show:</strong> Floor grid, Rotation rings, Joint dots, Tool names in the view toolbar, <strong>Click and bend on the figure</strong> (B), Joint groups, Body, Lighting..., Fog, Floor transparency.</li><li><strong>Joint groups</strong> viser eller skjuler grupper av ekstra ledd: Wings, Tail, Hind limbs, Face og Fingers and toes. Å skjule endrer bare det du ser. <strong>Hide in lists</strong> utelater skjulte ledd fra tidslinjen og leddlisten. Hvis den er av, vises de dempet.</li><li><strong>Body</strong> velger kroppsnettet: <strong>Ruth2</strong> eller <strong>Max</strong>. Det endrer bare hvordan figuren ser ut.</li><li><strong>Lighting...</strong> åpner en liten boks med glidere for <strong>Brightness</strong> (Dark til Bright), <strong>Shine</strong> (Matt til Shiny) og <strong>Warmth</strong> (Cool til Warm), et valg <strong>Shadow on the floor</strong>, og knappene <strong>Reset</strong> og <strong>Close</strong>.</li><li><strong>Fog</strong> tåker bort den fjerne enden av gulvet. Den er av ved start.</li><li><strong>Floor transparency:</strong> 0, 25, 33, 50 eller 75 prosent.</li><li><strong>Panels:</strong> Joints, Selected joint, Show timeline, Script Lab, Library, Hide panels (Tab), Reset layout, Next area (F6).</li><li><strong>Light theme</strong> (T), <strong>Expert mode</strong> (Shift+E), tekststørrelse og <strong>Setup...</strong>.</li></ul>
+<p><strong>Eksempel.</strong> Hold musepekeren over 3D-visningen. Trykk <strong>O</strong> (look around) og dra. Trykk <strong>M</strong> og dra for å flytte visningen. Trykk <strong>V</strong> for å gå tilbake til å velge ledd. Trykk <strong>0</strong> for å komme hjem.</p>
+<h3 id="tekststørrelse">Tekststørrelse</h3>
+<p><strong>Ctrl++</strong> gjør teksten større, <strong>Ctrl+-</strong> mindre og <strong>Ctrl+0</strong> tilbake til 100 prosent. Setup tilbyr 100, 125, 150, 175 og 200 prosent.</p>
+<h3 id="click-and-bend">Click and bend</h3>
+<p>Med <strong>Click and bend</strong> på (B) velger et klikk på figuren et ledd, og et drag bøyer det. Når den er av, gjør klikk på figuren ingenting. Bruk Joints-listen og glidere.</p>
+<hr>
+<h2 id="kapittel-7-rekvisitter">Kapittel 7: Rekvisitter</h2>
+<p>En <strong>rekvisitt</strong> (prop) er en enkel 3D-form i scenen. Den står for et objekt. En rekvisitt kan festes til et ledd, så den beveger seg med leddet.</p>
+<p><img src="manual/img/props-tab.png" alt="Fanen Props: fire formknapper (boks, kule, kjegle, ring), Prop-listen med en sletteknapp, og Attach to." loading="lazy"></p>
+<ol><li>Velg <strong>View &gt; Joints</strong>. Åpne fanen <strong>Props</strong>.</li><li>Trykk en formknapp: boks, kule, kjegle eller ring (torus).</li><li>Programmet gir den et navn, for eksempel <strong>Box 0</strong>. Den neste boksen er <strong>Box 1</strong>. En rekvisitt kan ikke gis nytt navn ennå.</li><li>Plasser den med <strong>Place</strong>, <strong>Turn</strong> og <strong>Size</strong> i panelet til høyre, som nå heter <strong>Selected prop</strong>. Der kan du også endre <strong>Shape</strong>: Box, Ring, Cone eller Ball. En liten boks over 3D-visningen, <strong>Edit prop</strong>, har verktøyene <strong>Move</strong>, <strong>Turn</strong> og <strong>Size</strong> for å dra i den.</li><li>Velg et ledd i <strong>Attach to</strong>. Rekvisitten beveger seg med leddet.</li><li>Knappen med X sletter rekvisitten.</li></ol>
+<p><strong>File &gt; Save</strong> beholder rekvisittene inne i animasjonsfilen. <strong>File &gt; Open</strong> henter dem tilbake. <strong>File &gt; Open props...</strong> og <strong>Save props...</strong> bruker de eldre <code>.prp</code>-filene. Å åpne en <code>.prp</code> fjerner de nåværende rekvisittene først.</p>
+<p><strong>Eksempel.</strong> Åpne <code>throne.dingle</code> fra mappen <code>examples</code>. Figuren sitter. Velg <strong>File &gt; Open props...</strong> og velg <code>throne.prp</code>. Bokser dukker opp rundt figuren. Den valgte er blå. Velg et annet navn i listen <strong>Prop:</strong> for å velge den.</p>
+<hr>
+<h2 id="kapittel-8-biblioteket">Kapittel 8: Biblioteket</h2>
+<p>Biblioteket inneholder 106 ferdige bevegelser. Bruk en som start.</p>
+<p><img src="manual/img/library-panel.png" alt="Library-panelet: en søkeboks, typer bevegelser, listen over klipp, og en forhåndsvisning med lengde, skjelett, kilde og lisens." loading="lazy"></p>
+<ol><li>Trykk <strong>Library</strong> øverst (eller Ctrl+Shift+B, eller <strong>View &gt; Library</strong>).</li><li>Søk, eller velg en type bevegelse: Walk, Dance, Sit, Stand, Gesture, Idle, Wave.</li><li>Velg et klipp. Panelet viser en forhåndsvisning på en liten figur og <strong>Play preview</strong>.</li><li>Det viser også lengde, skjelett, hvor det kommer fra og lisensen.</li><li>Trykk <strong>Use this</strong>. Klippet åpnes som din animasjon. Programmet spør først hvis du har ulagrede endringer. Statuslinjen sier «Opened Slow walk from the library. Save it under your own name.» Klippets eget navn er navnet på animasjonen til du lagrer.</li></ol>
+<p>Library deler høyre side med Selected joint. Bytt med fanene nederst. I Expert-modus setter <strong>Add as a second figure</strong> et klipp ved siden av figuren din i stedet.</p>
+<p><strong>Eksempel.</strong> Trykk <strong>Library</strong>. Velg <strong>Slow walk</strong>. Trykk <strong>Use this</strong>. Trykk <strong>Start</strong>. Timeline viser da 114 rammer.</p>
+<p>Biblioteket kommer fra CMU motion capture-databasen og fra Mesh2Motion. Se <a href="#kapittel-17-takk-og-kilder">Kapittel 17</a>.</p>
+<p>Hvis panelet sier <strong>No library found</strong>, mangler mappen <code>library</code> ved siden av programmet. Installer programmet på nytt.</p>
+<hr>
+<h2 id="kapittel-9-filer-og-formater">Kapittel 9: Filer og formater</h2>
+<p><img src="manual/img/menu-file.png" alt="Menyen File: New animation, Open, tre importer, Save, Save as, Export BVH, Export for Second Life, Open props, Save props, Close animation og Exit." loading="lazy"></p>
+<h3 id="formatene">Formatene</h3>
+<div class="table-wrap"><table><thead><tr><th>Endelse</th><th>Hva</th><th>Merknader</th></tr></thead><tbody><tr><td><code>.dingle</code></td><td>PinglyMotions eget arbeidsformat</td><td>Beholder alt. Skrevet som tekst (JSON).</td></tr><tr><td><code>.anim</code></td><td>Second Life-animasjon</td><td>Eksport og import.</td></tr><tr><td><code>.bvh</code></td><td>En vanlig bevegelsesfil</td><td>Eksport, og åpne. En åpnet <code>.bvh</code> blir urørt til du lagrer.</td></tr><tr><td><code>.avm</code></td><td>Det gamle formatet</td><td>Åpnes. Lagres som <code>.dingle</code>.</td></tr><tr><td><code>.prp</code></td><td>Gammel rekvisittfil</td><td>Open props og Save props.</td></tr><tr><td><code>.glb</code>, <code>.gltf</code></td><td>3D-animasjon fra andre verktøy</td><td>Bare import.</td></tr></tbody></table></div>
+<h3 id="menyen-file">Menyen File</h3>
+<ul><li><strong>New animation</strong> (Ctrl+N), <strong>Open...</strong> (Ctrl+O), <strong>Save</strong> (Ctrl+S), <strong>Save as...</strong> (Ctrl+A).</li><li><strong>Import Second Life .anim...</strong> åpner en <code>.anim</code> som en ny, ulagret animasjon. En liste <strong>What could not be imported</strong> sier hva som ble utelatt.</li><li><strong>Import BVH from another skeleton...</strong> viser hvilke ledd som ble koblet og hvilke som ble utelatt. Kryss av <strong>My file starts in a T-pose or A-pose</strong> hvis første ramme er en stående positur. Trykk <strong>Open the animation</strong>. En kobling du lager, kan lagres i en liten <code>.jointmap</code>-fil.</li><li><strong>Import glTF animation...</strong> åpner <code>.glb</code> eller <code>.gltf</code>. Hvis filen har mer enn én animasjon, velg de du vil ha.</li><li><strong>Export BVH</strong> lager en <code>.bvh</code>-fil.</li><li><strong>Export for Second Life (.anim)...</strong> (Ctrl+Shift+E).</li><li><strong>Open props...</strong> og <strong>Save props...</strong>.</li><li><strong>Close animation</strong> (Ctrl+W) og <strong>Exit</strong> (Ctrl+Q).</li></ul>
+<p>Hver import åpnes som en animasjon uten navn. Originalfilen din endres ikke. Lagre den for å beholde den.</p>
+<p><strong>Eksempel.</strong> Velg <strong>File &gt; Open</strong> og velg <code>jump.dingle</code> i <code>examples</code>. Velg <strong>File &gt; Save as...</strong> og lagre den under et nytt navn. Velg <strong>File &gt; Export for Second Life (.anim)...</strong> og lag <code>jump.anim</code>. Velg <strong>File &gt; Import Second Life .anim...</strong> og åpne den igjen. En melding sier «Opened jump.anim.» og lister hva som ikke kunne importeres. For denne filen sier den at prioritet, myk start og slutt, og hender ikke blir med. Selve bevegelsen kommer tilbake.</p>
+<h3 id="mappen-for-ai-assistenter">Mappen for AI-assistenter</h3>
+<p>En AI-assistent kan bare åpne og lagre filer i én mappe: <code>PinglyMotion</code> i Dokumenter-mappen din. Se <a href="#kapittel-11-ai-assistenter">Kapittel 11</a>.</p>
+<hr>
+<h2 id="kapittel-10-script-lab-for-nybegynnere">Kapittel 10: Script Lab for nybegynnere</h2>
+<p>Script Lab er en trygg sandkasse. Du kan kjøre RLV- og LSL-skript på datamaskinen din. Ingenting når Second Life.</p>
+<p>Noen ord først.</p>
+<ul><li><strong>LSL</strong> er skriptspråket i Second Life.</li><li>Et <strong>skript</strong> er et lite program inne i et objekt.</li><li>Et <strong>objekt</strong> er laget av <strong>prims</strong>. En prim er én del, for eksempel en boks.</li><li><strong>RLV</strong> (Restrained Love Viewer) er et sett kommandoer et skript kan sende til en viser. De begrenser hva en avatar kan gjøre, for eksempel betyr <code>@detach=n</code> «dette kan ikke tas av».</li><li><strong>RLVa</strong> er en viser som forstår RLV og mer.</li><li>En <strong>kanal</strong> (channel) er et tall skript bruker for å snakke sammen, som en radiokanal.</li></ul>
+<p><strong>Ærlig status.</strong> Script Lab er bygget i mange deler. Ingenting i det er testet i Second Life. Sandkassen er aldri identisk med Second Life. Se <a href="#hva-som-er-ferdig-og-hva-som-ikke-er-det">Hva som er ferdig og hva som ikke er det</a>.</p>
+<p>Åpne Script Lab med knappen <strong>Script</strong> (F8) eller knappen <strong>Script Lab</strong> (Ctrl+Shift+L).</p>
+<h3 id="øverst-i-vinduet">Øverst i vinduet</h3>
+<ul><li><strong>Viewer rules:</strong> <strong>RLV</strong> eller <strong>RLVa</strong>. Starten er RLVa. Å bytte fjerner alle begrensninger, som etter en ny pålogging.</li><li>En brikke viser hvor mange begrensninger som holdes («0 held»).</li><li>Fem faner: <strong>Live scripts</strong>, <strong>Type commands</strong>, <strong>Who talks to whom</strong>, <strong>Player</strong>, <strong>Improve a setup</strong>.</li><li><strong>Pop out</strong> flytter Script Lab til et eget vindu.</li></ul>
+<h3 id="lag-eksempelprosjektet">Lag eksempelprosjektet</h3>
+<ol><li>Trykk <strong>Script</strong>.</li><li>Trykk <strong>Make example project</strong>.</li></ol>
+<p>Programmet kopierer eksempelet <strong>First colour</strong> til din egen mappe (<code>Documents/PinglyMotion/Scripts/First_colour</code>). Det legger en boks i scenen. Det overvåker mappen. Et kort <strong>Steps</strong> lister fem trinn og krysser dem av.</p>
+<p><img src="manual/img/scriptlab-example.png" alt="Eksempelprosjektet: trinnkortet, mappen, OK, treet over objektet og skriptet, med en rød boks ved siden av figuren." loading="lazy"></p>
+<p>Du bør se:</p>
+<ul><li>en rød boks ved siden av figuren,</li><li>meldingen <strong>OK: Box 0/colour.lsl ran without errors</strong>,</li><li>loggraden «Box 0 is red now.»</li></ul>
+<h3 id="treet">Treet</h3>
+<p>Boksen <strong>Object</strong> viser objektet ditt som et tre. Hver mappe er én prim. Mappen <strong>Box 0</strong> er en prim. Skriptet inni den er raden <strong>LSL script</strong>. Kolonnene er <strong>Name</strong>, <strong>Kind</strong>, <strong>State</strong> og <strong>Memory</strong>.</p>
+<p>Klikk på en rad. Med <strong>Follow selection in 3D view</strong> avkrysset lyser rekvisitten med samme navn opp i 3D-visningen.</p>
+<h3 id="endre-skriptet">Endre skriptet</h3>
+<ol><li>Skriptet er åpent i editoren til høyre. (<strong>Open in editor</strong> åpner det igjen.)</li><li>Endre <code>&lt;1.0, 0.0, 0.0&gt;</code> til <code>&lt;0.0, 1.0, 0.0&gt;</code>.</li><li>Trykk <strong>Save</strong>.</li></ol>
+<p>Boksen blir grønn. De tre tallene er rød, grønn og blå. Hver lagring kjører mappen på nytt. Trykk <strong>Run again</strong> for å kjøre uten endring.</p>
+<p>Editoren har <strong>Save</strong>, <strong>Find</strong> og <strong>Go to line</strong>. Den viser forslag og hjelpetekst for LSL-funksjoner mens du skriver. Den foreslår også RLV-kommandoer inne i <code>llOwnerSay("@...")</code>, med enkle advarsler. Bytt til <strong>Show suggestions only when I press Ctrl+Space</strong> i Setup hvis du foretrekker det.</p>
+<h3 id="vis-effekter-i-3d-visningen">Vis effekter i 3D-visningen</h3>
+<p>Knappen <strong>Show effects in 3D view</strong> får rekvisitter til å vise hva skriptene gjør: farge og hvor klar den er. En rekvisitt med samme navn som en prim viser virkningen av skriptene til den primen. Å klikke på en rekvisitt teller som en berøring. En meny et skript viser (<code>llDialog</code>) vises som en boks over 3D-visningen. Trykk en knapp i den, eller <strong>Ignore</strong> (Esc).</p>
+<h3 id="andre-eksempler">Andre eksempler</h3>
+<p>Mappen <code>examples/objects</code> har seks objekter til: Button HUD, Gear set, Timed lock, RLV relay og Work system. <code>examples/scriptlab</code> har løse skript. Trykk <strong>Try the example scripts</strong> (når ingen mappe overvåkes) for å kjøre <code>rlv_lock.lsl</code>.</p>
+<p><strong>Watch folder...</strong> overvåker en hvilken som helst mappe du eier. En mappe er et objekt. <strong>New folder</strong> lager en ny.</p>
+<h3 id="type-commands">Type commands</h3>
+<p>Fanen <strong>Type commands</strong> er for RLV-linjer.</p>
+<p><img src="manual/img/type-commands.png" alt="Fanen Type commands etter at @detach=n,sendim=n er kjørt: to begrensninger holdes, og to handlinger er blokkert." loading="lazy"></p>
+<ol><li>Åpne fanen <strong>Type commands</strong>.</li><li>Klikk i boksen <strong>Command</strong>, skriv <code>@detach=n,sendim=n</code> og trykk Enter.</li><li>Fanen viser <strong>Restrictions</strong> (detach og sendim), holdt av objektet <code>panel</code>. Under <strong>What the avatar may do</strong> sier <strong>Take off locked attachments</strong> og <strong>Send instant messages</strong> nå <strong>Blocked</strong>.</li></ol>
+<p>Brikkene under <strong>Try</strong> fyller inn et ferdig eksempel. <strong>Reset all</strong> fjerner alle begrensninger. Hver rad i handlingslisten er et valg <strong>Allowed / Blocked</strong> du kan sette. Loggen <strong>Replies and messages</strong> viser svarene et skript ville hørt.</p>
+<p>Fanen har også brytere for kamerabegrensninger, miljø og visningsmoduser i 3D-visningen, og en del som heter <strong>Vision sphere</strong>.</p>
+<h3 id="who-talks-to-whom">Who talks to whom</h3>
+<p>Fanen <strong>Who talks to whom</strong> tegner et kart mens en mappe overvåkes. Åpne delen <strong>Who talks to whom</strong> ved å klikke på overskriften. For eksempelet First colour ser du en boks <strong>Box 0</strong> med en pil til den stiplede boksen <strong>You</strong>, merket <code>owner say: "Box 0 is red now."</code>.</p>
+<p><img src="manual/img/who-talks.png" alt="Kartet for First colour: Box 0 sier en linje til You." loading="lazy"></p>
+<p>I større oppsett er boksene primene, og også <strong>You</strong>, <strong>Your viewer (RLV)</strong> og <strong>Web server</strong>. Piler viser chat, linkmeldinger, menyer og RLV-linjer, med kanalen deres. En pil som ingen hører, er stiplet, rød og sier hvorfor. En prim som lytter og sender kommandoer videre, er merket <strong>(hub)</strong>. Et klikk på en pil viser skriptlinjen som sendte den.</p>
+<h3 id="player">Player</h3>
+<p>Trykk <strong>Record what I do</strong> på fanen <strong>Player</strong>. Klikk på rekvisitter eller trykk menyknapper. Hver handling er et trinn. Trykk <strong>Stop recording</strong>.</p>
+<p><img src="manual/img/player-tab.png" alt="Fanen Player med knappen Record what I do og første hjelpelinje." loading="lazy"></p>
+<p>Programmet lagrer trinnene som <code>recipe.rlvtest</code> i objektmappen. Det spiller dem av igjen og sier hva som har endret seg siden sist. Spilleren har de samme knappene Start, Stop, Step back og Step forward som tidslinjen. Den lister øyeblikkene og hva som var sant i hvert. <strong>Go to first difference</strong> hopper til den første endringen.</p>
+<p>Not built: spilleren flytter ikke animasjonen, kameraet, miljøet eller menyboksen. Disse viser den levende kjøringen.</p>
+<h3 id="improve-a-setup">Improve a setup</h3>
+<p><img src="manual/img/improve-tab.png" alt="Fanen Improve a setup: Weight med minne per skript, hva som kan bli bedre, og Can this run here?" loading="lazy"></p>
+<p>For et ferdig oppsett, for eksempel et halsbånd:</p>
+<ol><li>Overvåk mappen som ett objekt (Live scripts).</li><li>Ta opp hva det gjør (Player).</li><li>Les fanen <strong>Improve a setup</strong>.</li></ol>
+<p>Den viser hvor tungt hvert skript er (<strong>Kept</strong>, <strong>Values</strong>, <strong>Sent</strong>, <strong>Got</strong>, <strong>Not used</strong>), hva som kan bli bedre, og for hvert skript om det kan kjøre her. <strong>Import a setup</strong> og <strong>Record today's behaviour</strong> finnes på fanen.</p>
+<p>Minnet som selve koden bruker, telles ikke ennå. Det krever en måling i Second Life.</p>
+<h3 id="opencollar-eksempelet">OpenCollar-eksempelet</h3>
+<p><code>examples/improve/OpenCollar</code> inneholder de 23 skriptene til det offentlige OpenCollar-halsbåndet. De er kopiert uendret, med lisensen sin (GPL 2). Overvåk mappen. Halsbåndet starter og viser menyen sin når du klikker på det. <strong>Not tested in Second Life.</strong></p>
+<h3 id="lua-en-prøveversjon">Lua (en prøveversjon)</h3>
+<p>Lua er et nyere skriptspråk i Second Life. Det heter SLua.</p>
+<ol><li>Åpne <strong>Setup</strong>. Kryss av <strong>Lua (trial): show the language choice in the editor</strong>.</li><li>Editoren viser en boks <strong>Language</strong> med <strong>LSL</strong> og <strong>SLua (Lua, trial)</strong>.</li><li>Velg SLua. Rull ned i fanen Live scripts. Helt til høyre på linjen under teksten trykker du <strong>Convert to SLua</strong>.</li></ol>
+<p><img src="manual/img/convert-slua.png" alt="Ruten Convert to SLua med den konverterte teksten, en merknad om at ingenting kjøres, og knappene Copy SLua og Close." loading="lazy"></p>
+<p>Ruten viser den konverterte teksten og merknader. Skriptet ditt endres ikke. Ingenting kjøres. <strong>Copy SLua</strong> kopierer teksten. <strong>Close</strong> lukker ruten.</p>
+<p>Lua er en prøveversjon. Konverteren er sjekket av tester som sammenligner nøyaktig tekst. Den er <strong>not tested in Second Life</strong>. Det finnes ingen Lua-sjekker eller forslag, og Lua kjører ikke.</p>
+<h3 id="trinn-og-veiledningen">Trinn og veiledningen</h3>
+<p><strong>Help &gt; Script Lab steps</strong> viser trinnkortet igjen.</p>
+<hr>
+<h2 id="kapittel-11-ai-assistenter">Kapittel 11: AI-assistenter</h2>
+<p>En AI-assistent på din egen datamaskin kan sette figuren i positur, spille den av, se på den og lagre den. Dette er valgfritt. Den er <strong>av ved hver oppstart</strong> og slår seg aldri på av seg selv.</p>
+<p><img src="manual/img/connect-ai.png" alt="Dialogen Connect an AI: Which AI do you use? Claude, ChatGPT eller Other, en kort sikkerhetsliste, og knappene Turn on AI Assistant og Close." loading="lazy"></p>
+<h3 id="slå-den-på">Slå den på</h3>
+<ol><li>Klikk knappen <strong>AI Assistant</strong> i statuslinjen (nederst til høyre).</li><li>Dialogen <strong>Connect an AI</strong> spør «Which AI do you use?» Velg <strong>Claude</strong>, <strong>ChatGPT</strong> eller <strong>Other</strong>. Hver viser bare sine egne trinn.</li><li>Trykk <strong>Turn on AI Assistant</strong>.</li></ol>
+<p>Knappen viser en prikk og tilstanden sin:</p>
+<div class="table-wrap"><table><thead><tr><th>Prikk</th><th>Tekst</th><th>Betydning</th></tr></thead><tbody><tr><td>Grå</td><td>AI Assistant off</td><td>Av.</td></tr><tr><td>Gul</td><td>AI Assistant on, waiting for an AI</td><td>På, ingen AI er koblet til.</td></tr><tr><td>Grønn</td><td>AI Assistant: Claude</td><td>En AI er koblet til.</td></tr><tr><td>Rød</td><td>A wrong key was refused</td><td>Noe prøvde en feil nøkkel.</td></tr></tbody></table></div>
+<p>Vindustittelen sier «AI Assistant on» mens den er på. Klikk knappen igjen for å slå den av. Å slå den av stenger alle AI-er ute.</p>
+<h3 id="hvordan-den-holdes-trygg">Hvordan den holdes trygg</h3>
+<ul><li>Den virker bare på din egen PC. Ingenting på nettverket kan nå den.</li><li>Den er av hver gang PinglyMotion starter.</li><li>Det lages en ny hemmelig nøkkel hver gang du slår den på.</li><li>Forespørsler fra nettsider avvises.</li></ul>
+<h3 id="hva-en-assistent-kan-gjøre">Hva en assistent kan gjøre</h3>
+<p>En assistent bruker kommandoene i kontrollgrensesnittet: se på tilstanden, sette ledd i positur, sette rammer, spille av, ta et skjermbilde, beskrive posituren og bevegelsen med ord, lese og skrive en hel animasjon som en liten teksttabell, sjekke en animasjon mot reglene til Second Life, eksportere <code>.anim</code>, søke i biblioteket og bruke Script Lab (RLV-kommandoer og LSL-skript). Hele listen står i <code>docs/CONTROL.md</code> og <code>tools/mcp/commands.json</code>.</p>
+<p>Assistenten kan bare åpne og lagre filer i mappen <code>Documents/PinglyMotion</code>.</p>
+<h3 id="status">Status</h3>
+<ul><li><strong>Claude:</strong> Windows-zip-filen har <code>mcp/PinglyMotion.mcpb</code>, en utvidelse for Claude-appen.</li><li><strong>ChatGPT:</strong> oppsettet er skrevet. Knappen skriver konfigurasjonen til skrivebordsappen. <strong>Ikke testet av oss.</strong></li><li><strong>Andre verktøy:</strong> filen <code>pinglymotion_mcp.js</code> betjener andre verktøy som snakker MCP. <strong>Ikke testet av oss.</strong></li></ul>
+<p>Manuelt arbeid fungerer alltid uten noen AI. Hele statuslisten står i <a href="#hva-som-er-ferdig-og-hva-som-ikke-er-det">Hva som er ferdig og hva som ikke er det</a>.</p>
+<hr>
+<p><strong>Eksempel.</strong> Trykk knappen <strong>AI Assistant</strong>. Velg <strong>Claude</strong> og les trinnene. Ikke trykk <strong>Turn on AI Assistant</strong> med mindre du vil koble til en AI. Trykk <strong>Close</strong>. Knappen sier fortsatt «AI Assistant off».</p>
+<h3 id="kontrollkommandoene">Kontrollkommandoene</h3>
+<p>Kommandoene en assistent kan bruke, er de samme for ethvert program på din PC som snakker vanlig HTTP. De er listet av <code>GET /api/commands</code> og i <code>docs/CONTROL.md</code>. I korte trekk:</p>
+<div class="table-wrap"><table><thead><tr><th>Gruppe</th><th>Kommandoer</th></tr></thead><tbody><tr><td>Se</td><td><code>state</code>, <code>joints</code>, <code>get_pose</code>, <code>keys</code>, <code>screenshot</code>, <code>describe_pose</code>, <code>describe_motion</code>, <code>describe_body</code></td></tr><tr><td>Positur og tid</td><td><code>set_pose</code>, <code>set_position</code>, <code>delete_key</code>, <code>set_frame</code>, <code>set_frame_count</code>, <code>set_fps</code>, <code>set_loop</code>, <code>play</code>, <code>stop</code></td></tr><tr><td>Filer</td><td><code>new_animation</code>, <code>open_file</code>, <code>save_file</code>, <code>export_anim</code></td></tr><tr><td>Visningen</td><td><code>set_figure</code>, <code>set_camera</code></td></tr><tr><td>Hele animasjoner som tekst</td><td><code>motion_script</code>, <code>load_motion_script</code>, <code>check_animation</code></td></tr><tr><td>Bibliotek</td><td><code>find_reference</code>, <code>load_reference</code></td></tr><tr><td>Script Lab</td><td><code>rlv_command</code>, <code>rlv_state</code>, <code>rlv_reset</code>, <code>lsl_check</code>, <code>lsl_lint</code>, <code>lsl_run</code>, <code>lsl_event</code>, <code>lab_watch</code>, <code>lab_unwatch</code>, <code>lab_result</code>, <code>lab_replay</code></td></tr></tbody></table></div>
+<p>Du trenger ikke kunne disse for å bruke PinglyMotion. De er for AI-verktøy og for folk som skriver skript rundt programmet.</p>
+<hr>
+<h2 id="kapittel-12-den-direkte-koblingen-til-aurora">Kapittel 12: Den direkte koblingen til Aurora</h2>
+<p>Aurora er en Second Life-viser. PinglyMotion kan vise posituren din på din egen avatar i Aurora mens du jobber. Bare du ser det. Ingenting lastes opp.</p>
+<p><strong>Status.</strong> Det fungerer på Windows. Det trenger Aurora bygget fra forken som er nevnt i <code>docs/AURORA_LINK.md</code>. Det fungerer ikke med vanlig Aurora ennå.</p>
+<p><strong>Eksempel.</strong> Med Aurora-forken i gang:</p>
+<ol><li>Velg <strong>Build &gt; LiveMesh &gt; Enable preview</strong> i Aurora.</li><li>I PinglyMotion krysser du av <strong>Live link to Aurora</strong> i <strong>Setup</strong>, eller klikker på prikken i statuslinjen.</li><li>Statuslinjen sier «Waiting for Aurora», så «Aurora live».</li><li>Drei et ledd. Avataren din tar posituren.</li></ol>
+<p>Koblingen er av ved hver oppstart.</p>
+<hr>
+<h2 id="kapittel-13-oppsett-temaer-og-hjelp">Kapittel 13: Oppsett, temaer og hjelp</h2>
+<p>Trykk <strong>Setup</strong> (tannhjulet øverst til høyre).</p>
+<p><img src="manual/img/setup-dialog.png" alt="Dialogen Setup: nybegynner eller erfaren, mus og taster, tema, tekststørrelse, veiledning, skriptredigerer og tilkoblinger." loading="lazy"></p>
+<ul><li><strong>Have you made animations before?</strong> New to animation (Beginner-modus) eller Experienced (Expert-modus).</li><li><strong>Mouse and keys like:</strong> PinglyMotion, Maya, Blender eller Second Life. <strong>Show all mouse and keys</strong> åpner tabellen.</li><li><strong>Theme:</strong> Dark eller Light.</li><li><strong>Text size:</strong> 100, 125, 150, 175 eller 200 prosent.</li><li><strong>Guidance:</strong> <strong>Show hints, tips and the next-step line</strong>, og <strong>Show the welcome card again</strong>.</li><li><strong>Script editor:</strong> <strong>Show suggestions only when I press Ctrl+Space</strong>, og bryteren <strong>Lua (trial)</strong>.</li><li><strong>Connections:</strong> <strong>AI Assistant</strong> og <strong>Live link to Aurora</strong>.</li></ul>
+<p>PinglyMotion husker disse valgene.</p>
+<h3 id="menyen-help">Menyen Help</h3>
+<p><img src="manual/img/menu-help.png" alt="Menyen Help i programmet." loading="lazy"></p>
+<ul><li><strong>Setup: beginner or experienced, mouse and keys...</strong></li><li><strong>Show the welcome card again</strong></li><li><strong>Script Lab steps</strong></li><li><strong>Show hints</strong> (Shift+H)</li><li><strong>Keys and mouse</strong> (?)</li><li><strong>Camera and keys...</strong></li><li><strong>Show charter principles</strong> (C), når tilgjengelig</li><li><strong>Open log</strong> og <strong>Clear log</strong></li><li><strong>About...</strong>: hvem som har laget avatarkroppene og under hvilken lisens.</li></ul>
+<p><strong>Eksempel.</strong> Trykk <strong>Setup</strong>. Under <strong>Theme</strong> velger du <strong>Light</strong>. Under <strong>Text size</strong> velger du <strong>150%</strong>. Trykk <strong>Done</strong>. Begge endringene beholdes neste gang du starter.</p>
+<h3 id="hint-og-tips">Hint og tips</h3>
+<p>Ni hintkort veileder de første trekkene. <strong>Next</strong> går videre. <strong>Turn hints off</strong> stopper dem. Statuslinjebryteren <strong>Tips on/off</strong> viser eller skjuler kort hjelp når musepekeren hviler på en kontroll.</p>
+<hr>
+<h2 id="kapittel-14-hurtigtaster-og-mus">Kapittel 14: Hurtigtaster og mus</h2>
+<h3 id="overalt">Overalt</h3>
+<div class="table-wrap"><table><thead><tr><th>Taster</th><th>Hva</th></tr></thead><tbody><tr><td>Ctrl+N</td><td>New animation</td></tr><tr><td>Ctrl+O</td><td>Open</td></tr><tr><td>Ctrl+S</td><td>Save</td></tr><tr><td>Ctrl+A</td><td>Save as</td></tr><tr><td>Ctrl+Shift+E</td><td>Export for Second Life</td></tr><tr><td>Ctrl+W</td><td>Close animation</td></tr><tr><td>Ctrl+Q</td><td>Exit</td></tr><tr><td>Ctrl+Z</td><td>Angre</td></tr><tr><td>Ctrl+Shift+Z eller Ctrl+Y</td><td>Gjør om</td></tr><tr><td>K</td><td>Set key</td></tr><tr><td>Ctrl+X, Ctrl+C, Ctrl+V</td><td>Klipp ut, kopier, lim inn</td></tr><tr><td>Ctrl+Shift+V</td><td>Paste mirrored (Expert-modus)</td></tr><tr><td>F7, F8</td><td>Animate-siden, Script-siden</td></tr><tr><td>Ctrl+Shift+L</td><td>Script Lab</td></tr><tr><td>Ctrl+Shift+B</td><td>Library</td></tr><tr><td>Tab</td><td>Skjul eller vis alle paneler</td></tr><tr><td>F6</td><td>Next area</td></tr><tr><td>T</td><td>Lyst eller mørkt tema</td></tr><tr><td>Shift+E</td><td>Expert-modus</td></tr><tr><td>Shift+H</td><td>Hint av eller på</td></tr><tr><td>?</td><td>Keys and mouse</td></tr><tr><td>Ctrl++, Ctrl+-, Ctrl+0</td><td>Tekst større, mindre, tilbake til 100 %</td></tr><tr><td>Alt+1, Alt+2</td><td>Velg første eller andre figur (Expert-modus)</td></tr></tbody></table></div>
+<h3 id="i-3d-visningen">I 3D-visningen</h3>
+<div class="table-wrap"><table><thead><tr><th>Taster</th><th>Hva</th></tr></thead><tbody><tr><td>V, O, M, Z</td><td>Verktøy: pick and pull, look around, move the view, zoom</td></tr><tr><td>F</td><td>Fokuser på det valgte leddet</td></tr><tr><td>Shift+F</td><td>Whole figure</td></tr><tr><td>0</td><td>Home view</td></tr><tr><td>Numpad 1, 3, 7 (eller 1, 3, 7)</td><td>Front, side, top</td></tr><tr><td>Alt + piltaster</td><td>Se deg rundt med taster</td></tr><tr><td>Page Up, Page Down</td><td>Zoom med taster</td></tr><tr><td>B</td><td>Click and bend av eller på</td></tr><tr><td>Esc</td><td>Avbryt et drag</td></tr><tr><td>Enter på et valgt ledd</td><td>Dra med piltastene; Enter setter en nøkkel</td></tr></tbody></table></div>
+<h3 id="kamerastilene">Kamerastilene</h3>
+<div class="table-wrap"><table><thead><tr><th>Handling</th><th>PinglyMotion</th><th>Maya</th><th>Blender</th><th>Second Life</th></tr></thead><tbody><tr><td>Se deg rundt</td><td>Dra i tomt rom</td><td>Alt + venstredra</td><td>Midtredra</td><td>Alt + dra (sideveis), Ctrl + Alt + dra</td></tr><tr><td>Flytt visningen</td><td>Høyredra</td><td>Alt + midtredra</td><td>Shift + midtredra</td><td>Ctrl + Alt + Shift + dra</td></tr><tr><td>Zoom</td><td>Musehjul</td><td>Alt + høyredra, eller hjul</td><td>Ctrl + midtredra, eller hjul</td><td>Alt + dra opp eller ned, eller hjul</td></tr><tr><td>Velg et ledd</td><td>Klikk på det, eller på raden</td><td>Klikk</td><td>Klikk</td><td>Klikk</td></tr><tr><td>Fokuser på leddet</td><td>F, eller dobbeltklikk</td><td>F</td><td>Numpad .</td><td>Alt + klikk</td></tr></tbody></table></div>
+<h3 id="ledd">Ledd</h3>
+<div class="table-wrap"><table><thead><tr><th>Hva</th><th>Hvordan</th></tr></thead><tbody><tr><td>Dra i en lem</td><td>Trykk på et ledd og dra. Slipp for å sette en nøkkel. Esc avbryter.</td></tr><tr><td>Drei bare det leddet</td><td>Hold Shift når du trykker på leddet</td></tr><tr><td>Drei på én akse</td><td>Dra den røde X-, grønne Y- eller blå Z-ringen</td></tr></tbody></table></div>
+<p>Den samme tabellen finnes i programmet: <strong>Help &gt; Keys and mouse</strong>.</p>
+<p><strong>Eksempel.</strong> Trykk <strong>?</strong> for å åpne tabellen. Lukk den. Trykk <strong>Shift+E</strong> for å slå Expert-modus på, og trykk den igjen for å slå den av.</p>
+<hr>
+<h2 id="kapittel-15-alle-menyvalg">Kapittel 15: Alle menyvalg</h2>
+<h3 id="file">File</h3>
+<p>Se <a href="#kapittel-9-filer-og-formater">Kapittel 9</a>.</p>
+<h3 id="edit">Edit</h3>
+<p><img src="manual/img/menu-edit.png" alt="Menyen Edit: Undo, Redo, Set key, Paste mirrored, Cut, Copy, Paste, Lock the first frame." loading="lazy"></p>
+<div class="table-wrap"><table><thead><tr><th>Valg</th><th>Taster</th><th>Hva</th></tr></thead><tbody><tr><td>Undo, Redo</td><td>Ctrl+Z, Ctrl+Shift+Z</td><td>Ta tilbake og gjøre om en endring.</td></tr><tr><td>Set key</td><td>K</td><td>Lagre posituren nå som en nøkkel.</td></tr><tr><td>Paste mirrored</td><td>Ctrl+Shift+V</td><td>Lim inn med venstre og høyre byttet om.</td></tr><tr><td>Cut, Copy, Paste</td><td>Ctrl+X, C, V</td><td>På det merkede strekket i tidslinjen.</td></tr><tr><td>Lock the first frame</td><td></td><td>På som standard. Holder den første posituren trygg.</td></tr></tbody></table></div>
+<h3 id="view">View</h3>
+<p>Se <a href="#kapittel-6-3d-visningen-og-kameraet">Kapittel 6</a>.</p>
+<h3 id="help">Help</h3>
+<p>Se <a href="#kapittel-13-oppsett-temaer-og-hjelp">Kapittel 13</a>.</p>
+<p><strong>Eksempel.</strong> Åpne menyen <strong>Help</strong> og velg <strong>About...</strong>. Lukk den. Åpne <strong>View</strong> og velg <strong>Floor transparency</strong>, så 50 %.</p>
+<h3 id="knapper-i-toppfeltet">Knapper i toppfeltet</h3>
+<div class="table-wrap"><table><thead><tr><th>Knapp</th><th>Hva</th></tr></thead><tbody><tr><td>Animate, Script</td><td>Bytt side (F7, F8)</td></tr><tr><td>Helper</td><td>Helper-panelet av eller på</td></tr><tr><td>Undo, Redo</td><td>Det samme som Edit</td></tr><tr><td>Save</td><td>Lagre animasjonen</td></tr><tr><td>Export</td><td>Eksporter til Second Life</td></tr><tr><td>Script Lab</td><td>Åpne Script Lab</td></tr><tr><td>Library</td><td>Åpne Library</td></tr><tr><td>Reset layout</td><td>Sett hvert panel tilbake</td></tr><tr><td>Setup</td><td>Åpne Setup</td></tr><tr><td>Solknapp</td><td>Mørkt eller lyst tema</td></tr></tbody></table></div>
+<hr>
+<h2 id="kapittel-16-feilsøking-og-tilbakemelding">Kapittel 16: Feilsøking og tilbakemelding</h2>
+<ul><li><strong>3D-visningen er svart.</strong> Oppdater grafikkdriveren. PinglyMotion trenger OpenGL 3.3.</li><li><strong>Windows advarer om ukjent utgiver.</strong> Programmet er ikke signert ennå. Dette er forventet i den tidlige forhåndsversjonen.</li><li><strong>Et panel har forsvunnet.</strong> Trykk <strong>Reset layout</strong>.</li><li><strong>Teksten er for liten.</strong> Trykk Ctrl++ eller velg en tekststørrelse i Setup.</li><li><strong>Biblioteket sier «No library found».</strong> Mappen <code>library</code> må ligge ved siden av programmet.</li><li><strong>En importert fil beveger seg ikke riktig.</strong> Åpne listen i importboksen. Ledd merket <strong>Left out</strong> ble ikke tatt med.</li><li><strong>Et skript gjør ingenting i Script Lab.</strong> Les delen <strong>Errors and warnings</strong>. Sandkassen kjører det meste av LSL, men ikke alt.</li><li><strong>Noe gikk i stykker.</strong> Velg <strong>Help &gt; Open log</strong>. Loggen er en vanlig tekstfil over hva programmet gjorde.</li></ul>
+<h3 id="meld-fra-om-en-feil-eller-gi-tilbakemelding">Meld fra om en feil eller gi tilbakemelding</h3>
+<p>Gå til <a href="https://github.com/pingledingle-tech/PinglyMotion/issues">https://github.com/pingledingle-tech/PinglyMotion/issues</a> og opprett en sak (issue). Skriv hva du gjorde, hva du forventet og hva som skjedde. Ikke skriv personopplysninger i saken. Nettstedet har også sider for feilrapporter og forslag.</p>
+<hr>
+<h2 id="kapittel-17-takk-og-kilder">Kapittel 17: Takk og kilder</h2>
+<p>PinglyMotion er gratis og har åpen kildekode. Det bygger på QAvimator. Avatarkroppene, bibliotekklippene, eksempelhalsbåndet og annet utenforstående materiale er kreditert i filen <a href="https://github.com/pingledingle-tech/PinglyMotion/blob/main/CREDITS.md">CREDITS.md</a> og i <strong>Help &gt; About...</strong>.</p>
+<p>De ferdige bevegelsene kommer fra CMU motion capture-databasen og fra Mesh2Motion (CC0). Eksempelhalsbåndet er det offentlige OpenCollar-prosjektet (GPL 2).</p>
+<hr>
+<h2 id="ordliste">Ordliste</h2>
+<div class="table-wrap"><table><thead><tr><th>Ord</th><th>Betydning</th></tr></thead><tbody><tr><td>Animasjon</td><td>All bevegelsen i én fil.</td></tr><tr><td>Nøkkel</td><td>En lagret positur på ett tidspunkt.</td></tr><tr><td>Ramme</td><td>Ett steg i tid.</td></tr><tr><td>Tidsmarkør</td><td>Markøren du drar for å velge et tidspunkt.</td></tr><tr><td>Tidslinje</td><td>Stripen som viser nøklene dine over tid.</td></tr><tr><td>Ledd</td><td>En del som dreier, for eksempel en albue.</td></tr><tr><td>Positur</td><td>Hvordan figuren står på ett tidspunkt.</td></tr><tr><td>Easing</td><td>Hvordan en bevegelse øker eller reduserer farten mellom to nøkler.</td></tr><tr><td>Løkke</td><td>Animasjonen spilles om og om igjen.</td></tr><tr><td>T-positur</td><td>Å stå med armene rett ut til sidene.</td></tr><tr><td>Rekvisitt</td><td>En enkel 3D-form i scenen.</td></tr><tr><td>Prim</td><td>Én del av et objekt i Second Life.</td></tr><tr><td>LSL</td><td>Skriptspråket i Second Life.</td></tr><tr><td>RLV</td><td>Kommandoer et skript kan sende for å begrense en avatar.</td></tr><tr><td>Kanal</td><td>Et tall skript bruker for å snakke sammen.</td></tr><tr><td>Sandkasse</td><td>Et trygt sted å prøve ting. Ingenting forlater den.</td></tr><tr><td>IK</td><td>Når du flytter en hånd, flytter leddene over den seg.</td></tr></tbody></table></div>
+</main>
+</div>
+</body>
+</html>

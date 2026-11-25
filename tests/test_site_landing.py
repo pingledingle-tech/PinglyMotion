@@ -108,26 +108,45 @@ class Landing(unittest.TestCase):
             self.assertEqual(a.count('<a href="%s">' % RELEASE), 1, lang)
 
     def test_manual_links(self):
-        """A manual link and a manual PDF download link in every language, on the landing page and the real homepage."""
+        """A link to the manual in the language of the page and a download link for its PDF, in every language, on the
+        landing page and the real homepage. English is the fallback and the only one that names no language."""
         for name in ("index.html", "home.html"):
             page = read(name)
             for lang in LANGS:
                 a = re.search(r'<article id="%s".*?</article>' % lang, page, re.S).group(0)
                 top = re.search(r'<nav class="site".*?</nav>', a, re.S).group(0)
-                self.assertEqual(len(re.findall(r'<a href="manual.html">', top)), 1, (name, lang))  # the manual link is at the top
-                self.assertEqual(a.count('<a href="manual.html">'), 1, (name, lang))
-                self.assertEqual(len(re.findall(r'<a href="PinglyMotion-Manual.pdf" download>', a)), 1, (name, lang))
-                self.assertIn("(English)" if lang == "en" else "(", plain(a))
-        for name in ("manual.html", "PinglyMotion-Manual.pdf"):
-            self.assertTrue(os.path.isfile(os.path.join(DOCS, name)), name)
+                href = "manual.html" if lang == "en" else "manual.%s.html" % lang
+                pdf = "PinglyMotion-Manual.pdf" if lang == "en" else "PinglyMotion-Manual.%s.pdf" % lang
+                self.assertEqual(len(re.findall(r'<a href="%s"' % re.escape(href), top)), 1, (name, lang))  # at the top
+                self.assertEqual(len(re.findall(r'<a href="manual[.a-z]*html"', a)), 1, (name, lang))
+                self.assertEqual(len(re.findall(r'<a href="%s" download>' % re.escape(pdf), a)), 1, (name, lang))
+                self.assertEqual(len(re.findall(r'<a href="PinglyMotion-Manual[.a-z]*pdf" download>', a)), 1, (name, lang))
+                self.assertNotIn("English", plain(a).replace("Second Life", ""), (name, lang))  # the page names no language
+                self.assertNotIn("engelsk", plain(a), (name, lang))
+                self.assertNotIn("Englisch", plain(a), (name, lang))
+                self.assertNotIn("angielsku", plain(a), (name, lang))
+                self.assertNotIn("Engels", plain(a), (name, lang))
+                for target in (href, pdf):
+                    self.assertTrue(os.path.isfile(os.path.join(DOCS, target)), target)
+
+    def test_mare_manual_link(self):
+        """In mare the manual link goes to the mare manual (the landing page script swaps the address)."""
+        page = read("index.html")
+        en = re.search(r'<article id="en".*?</article>', page, re.S).group(0)
+        self.assertEqual(len(re.findall(r'<a href="manual.html" data-manual>', en)), 1)
+        self.assertEqual(page.count("data-manual"), 2)  # the link and the script
+        self.assertIn('c0==="mare"?"manual.mare.html":"manual.html"', page)
+        self.assertTrue(os.path.isfile(os.path.join(DOCS, "manual.mare.html")))
 
     def test_manual_is_published(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location("bs", os.path.join(HERE, "..", "tools", "site", "build_status.py"))
         b = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(b)
-        self.assertIn("manual.html", b.EXTRA_FILES)
-        self.assertIn("PinglyMotion-Manual.pdf", b.EXTRA_FILES)
+        for name in ("manual.html", "manual.no.html", "manual.de.html", "manual.pl.html", "manual.nl.html", "manual.mare.html",
+                     "PinglyMotion-Manual.pdf", "PinglyMotion-Manual.no.pdf", "PinglyMotion-Manual.de.pdf",
+                     "PinglyMotion-Manual.pl.pdf", "PinglyMotion-Manual.nl.pdf"):
+            self.assertIn(name, b.EXTRA_FILES)
         self.assertIn("cp -r docs/manual _site/manual", read("..", ".github", "workflows", "pages.yml"))
 
     def test_working_links_kept(self):

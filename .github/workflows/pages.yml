@@ -11,9 +11,9 @@ on:
       - docs/home.html
       - docs/download.html
       - docs/privacy.html
-      - docs/manual.html
+      - docs/manual*.html
       - docs/manual/**
-      - docs/PinglyMotion-Manual.pdf
+      - docs/PinglyMotion-Manual*.pdf
       - docs/site.css
       - docs/site.js
       - docs/mockup/**
