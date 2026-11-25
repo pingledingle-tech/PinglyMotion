@@ -1,6 +1,6 @@
 Branch: job/dependabot-cache-6-1-0
 Status: active
-Pull request: pending
+Pull request: #503
 Files:
 - .github/workflows/build.yml
 - .github/workflows/codeql.yml
