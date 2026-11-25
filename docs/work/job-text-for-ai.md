@@ -1,6 +1,6 @@
 Branch: job/text-for-ai
 Status: active
-Pull request: pending
+Pull request: #486
 Files:
 - src/motionscript.*
 - src/bodydescribe.*
