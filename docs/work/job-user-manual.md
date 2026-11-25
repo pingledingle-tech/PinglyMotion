@@ -1,5 +1,5 @@
 Branch: job/user-manual
-Status: active
+Status: done
 Pull request: #510
 Files:
 - docs/MANUAL.md

@@ -373,13 +373,13 @@ On the Avatar tab, from top to bottom:
 - **Animation:** the name of the open animation. A new animation is called `pingle`.
 - **Figure:** `female` or `male`. This only changes what you see.
 - **Size:** the size of the figure in the view (100% at start).
-- **Left**, **Right** and **Mirror**: choose which side the next joint choice works on. **Mirror** makes a change on one side appear on the other.
+- **Left**, **Right** and **Mirror**: which side the list shows and which side an edit changes. The tip of **Mirror** says: "turning one side turns the other side too". If the other arm moves when you only wanted one, press **Mirror** to turn it off.
 - Four tabs: **Body**, **Face**, **Hands** and **Other**.
 - **Search joints:** type a part of a name.
 - The list of joints, in groups: Body, Left Arm, Right Arm, Legs, and more.
-- **Flip:** swap the left and the right side of the pose.
-- **T-pose:** put the figure in the T-pose.
-- **Reset all:** reset every joint. Ctrl+Z takes it back.
+- **Flip:** flips the whole pose left to right.
+- **T-pose:** arms straight out to the sides.
+- **Reset all:** reset every joint.
 
 ### The Selected joint panel
 
@@ -392,7 +392,7 @@ When a joint is picked, the panel shows:
 - **Reset joint** and **Pull with keys**,
 - **Pull the limb** and **Turn only this joint**: what dragging the joint does,
 - **More options** with **turn or move**: turn or move the joint,
-- **Show curves and finger grid** (Expert mode).
+- **Show curves and finger grid**, a button at the top of the panel. It shows the extra controls of Expert mode. A second button, **Show all joints**, shows when nothing is picked.
 
 When you pick nothing, the panel shows three short steps and a button that picks a joint for you.
 
