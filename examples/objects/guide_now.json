@@ -59,7 +59,7 @@
     {
       "id": "EXNOW-11",
       "part": "how",
-      "text": "File, Save props keeps shape, place, size and joint. It does not keep names."
+      "text": "File, Save keeps the props in the animation file, names too. Open brings them back."
     },
     {
       "id": "EXNOW-12",

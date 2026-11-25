@@ -26,7 +26,7 @@ A recipe for a beginner, checked against the program's code on 23 November 2026.
 | EXNOW-08 | Example guide | Props: name, place, joint | The next box is Box 1. You cannot change the name yet. | draft | E1, shown by U3 |
 | EXNOW-09 | Example guide | Props: name, place, joint | Place it with Position, Size and Turn in the Selected joint panel. | draft | E1, shown by U3 |
 | EXNOW-10 | Example guide | Props: name, place, joint | Pick a joint in Attach to. The prop then moves with that joint. | draft | E1, shown by U3 |
-| EXNOW-11 | Example guide | Props: name, place, joint | Save keeps the props in the animation file (name, shape, place, size, turn and joint); Open brings them back. Save props to a `.prp` file keeps no names. | draft | E1, shown by U3 |
+| EXNOW-11 | Example guide | Props: name, place, joint | File, Save keeps the props in the animation file, names too. Open brings them back. | draft | E1, shown by U3 |
 | EXNOW-12 | Example guide | Prop and prim | An object is a folder. Each folder inside it is one prim. | draft | E1, shown by U3 |
 | EXNOW-13 | Example guide | Prop and prim | A prop and a prim with the same name belong together. | draft | E1, shown by U3 |
 | EXNOW-14 | Example guide | Prop and prim | So a folder Box 0 goes with the prop Box 0. | draft | E1, shown by U3 |

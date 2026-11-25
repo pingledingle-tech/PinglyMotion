@@ -21,6 +21,9 @@ Files:
 - docs/DINGLE_FORMAT.md
 - docs/EXAMPLES.md
 - docs/UX_DECISIONS.md
+- examples/objects/guide_now.json
+- tests/timelinenotes/tst_timelinenotes.cpp
+- src/pinglymotionwindow.h
 
 ## What
 

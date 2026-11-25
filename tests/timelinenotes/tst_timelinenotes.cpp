@@ -463,7 +463,7 @@ void TimelineNotesTest::windowWiring()
   const QString playback = source("pinglymotionwindowplayback.cpp");
   QVERIFY(playback.contains(QStringLiteral("ui->timelineView->setPlaying(state!=PLAYSTATE_STOPPED);")));
   // a saved .dingle keeps the file's extensions
-  QVERIFY(source("bvh.cpp").contains(QStringLiteral("Dingle::write(snapshot(anim,AnimFile::Format::Avm),anim->extensions())")));
+  QVERIFY(source("bvh.cpp").contains(QStringLiteral("Dingle::write(snapshot(anim,AnimFile::Format::Avm),anim->extensions(),QStringLiteral(\"PinglyMotion\"),anim->props())")));
 }
 
 QTEST_MAIN(TimelineNotesTest)
