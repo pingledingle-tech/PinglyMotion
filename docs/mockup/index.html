@@ -885,7 +885,7 @@ tr.m2bad td:first-child { color:var(--danger); font-weight:700; }
       <button class="btn compact icon x" data-cmd="hcclose" data-name="Close this hint" data-key="Esc"><svg class="i" data-i="x"></svg></button>
       <h4 id="hcT"><svg class="i" data-i="lightbulb"></svg><span></span></h4>
       <p id="hcP"></p>
-      <div class="foot"><button class="btn compact" data-cmd="hints" data-name="Turn all hints off (Help > Show hints)">Turn hints off</button>
+      <div class="foot"><button class="btn compact" data-cmd="hintsoff" data-name="Turn all hints off (Help > Show hints)">Turn hints off</button>
       <span class="dots" id="hcN" aria-hidden="true"></span><span class="sr" id="hcNs"></span><button class="btn compact main" data-cmd="hcnext" data-name="Next hint">Next</button></div>
     </div>
     <div id="helperLessons"></div>
@@ -2437,6 +2437,7 @@ function run(cmd, el) {
     case "pickdemo": selectJoint("Rshoulder"); return;
     case "theme": theme = theme === "dark" ? "light" : "dark"; store.set("theme", theme); feedback((theme === "dark" ? "Dark" : "Light") + " theme."); break;
     case "expert": setExpert(!expert); return;
+    case "hintsoff": hintsOn = false; store.set("hints", false); feedback("Hints off. Turn them on again in Setup or Help > Show hints.", "ok"); helper.lesson = null; break;
     case "hints": hintsOn = !hintsOn; store.set("hints", hintsOn); feedback(hintsOn ? "Helper on. Tips and lessons are in the helper at the bottom right." : "Helper off. The Helper button at the top turns it on again.", "ok"); if (!hintsOn) helper.lesson = null; break;
     case "scale": scale = Math.min(200, scale + 25); store.set("scale", scale); feedback("Text size " + scale + "%."); break;
     case "scaledown": scale = Math.max(100, scale - 25); store.set("scale", scale); feedback("Text size " + scale + "%."); break;
@@ -3350,7 +3351,7 @@ function renderLabMain() {
   const b = $("#labBody"); if (!b || $("#scriptlab").hidden) return;
   const ck = icon("check").replace('class="i ', 'class="i tk ');
   const pages = m2Pages(); if (!pages.some(p => p[0] === M2.page)) M2.page = pages[0][0];
-  let h = `<div class="row" style="justify-content:space-between" data-p="P10"><div class="row tight"><span class="label" id="m2modeL">Viewer rules</span>
+  let h = (hintsOn ? `<p class="explain">${icon("info")}<span>A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life. Your scripts stay in your own folder; edit them in your own editor.</span></p>` : "") + `<div class="row" style="justify-content:space-between" data-p="P10"><div class="row tight"><span class="label" id="m2modeL">Viewer rules</span>
       <div class="m2seg" role="radiogroup" aria-labelledby="m2modeL"><button class="btn compact" role="radio" aria-checked="${lab.mode === "RLV"}" data-m2mode="RLV" data-name="Plain RLV, as the RLV wiki lists it" data-tipline="Switching removes every restriction, as after a relog.">${ck}RLV</button>
       <button class="btn compact" role="radio" aria-checked="${lab.mode === "RLVa"}" data-m2mode="RLVa" data-name="RLVa, as in Firestorm and other viewers" data-tipline="Switching removes every restriction, as after a relog.">${ck}RLVa</button></div>
       <span class="m2now" aria-live="polite">${T("LABTWO-01", lab.mode)}</span></div><span class="chip">${icon("ban")}${m2Held()} held</span></div>`;
@@ -3382,6 +3383,7 @@ function m2Live() {
   const ex = M2_EX[M2.example], gear = M2.example === "gear";
   let h = m2StepsCard();
   h += `<div class="statusline ok" role="status">${icon("circle-check")}<span><b>OK:</b> the object ${ex.folder} ran without errors (run 1), ${M2.log.length} log line(s).</span></div>`;
+  h += `<div class="row"><button class="btn compact" data-m2do="rerun" data-name="Run again" data-tipline="Runs the last saved script again from the start, with a fresh clock.">${icon("refresh-cw")}Run again</button></div>`;
   h += `<div class="row"><button class="btn m2onoff" aria-pressed="${M2.effects}" data-m2do="effects" data-name="Show effects in 3D view" data-tipline="${M2.effects ? "On: the 3D view shows what the scripts do." : "Off."}">${icon(M2.effects ? "check" : "eye")}Show effects in 3D view</button>
     <button class="btn m2onoff" aria-pressed="${M2.recording}" data-m2do="record" data-name="${M2.recording ? "Stop recording" : "Record what I do"}" data-tipline="Records your clicks on props, menu buttons and RLV lines. After every save, the program repeats them and says what changed.">${icon(M2.recording ? "square" : "video")}${M2.recording ? "Stop recording" : "Record what I do"}</button>
     <button class="btn compact" data-m2do="stopwatch" data-name="Stop watching">${icon("square")}Stop watching</button></div>`;
@@ -3406,6 +3408,12 @@ function m2Live() {
   h += m2Part("script", `${icon("file-code")}Script: ${esc((M2.treeSel || "").split("/")[1] || "")}`, null, tools + codeOf(src) + msg + conv);
   h += m2Part("problems", `${icon("circle-alert")}Errors and warnings`, "none", `<p class="muted" style="margin:0">${icon("circle-check")} No errors or warnings.</p>`);
   h += m2Part("log", `${icon("list")}Event log`, `${M2.log.length} lines`, `<ul class="logl">${M2.log.slice(-10).map((l, i) => `<li class="${/^You/.test(l) ? "" : /@/.test(l) ? "rlv" : "say"}"><span class="t">${i}.00 s</span><span>${esc(l)}</span></li>`).join("")}</ul>`);
+  const heldNow = [...new Set((M2.locked && gear ? ["detach", "sendchat"] : []).concat(Object.keys(M2.restr).filter(k => M2.restr[k])))];
+  h += m2Part("restr", `${icon("ban")}RLV restrictions now`, heldNow.length, heldNow.length ? `<table class="ltable"><thead><tr><th>Behaviour</th><th>Held by</th></tr></thead><tbody>${heldNow.map(b => `<tr><td>@${b}</td><td>${gear ? "Root" : "panel"}</td></tr>`).join("")}</tbody></table>` : '<p class="muted" style="margin:0">No restrictions. A script that says @detach=n holds one.</p>');
+  h += m2Part("objects", `${icon("box")}Objects`, files.length, `<table class="ltable"><thead><tr><th>Object</th><th>Where</th><th>State</th></tr></thead><tbody>${files.map(([p, k]) => `<tr><td>${esc(p)}</td><td>${esc(k)}</td><td><span class="state ok">${icon("circle-check")}Running</span></td></tr>`).join("")}</tbody></table>
+    ${gear ? '<div class="label">Dialog from hud</div><p class="muted" style="margin:0">"Gear set" on channel -7001</p>' : ""}`);
+  h += m2Part("inv", `${icon("package")}Inventory of ${esc(ex.folder)}`, "3 items", `<table class="ltable"><thead><tr><th>Item</th><th>Type</th></tr></thead><tbody>
+    <tr><td>${gear ? "hud.lsl" : "colour.lsl"}</td><td>Script</td></tr><tr><td>config</td><td>${icon("notebook-text")} Notecard, 4 lines</td></tr><tr><td>wave</td><td>Animation</td></tr></tbody></table><p class="cap" style="margin:0">Simulated: given with the run, nothing is read from Second Life.</p>`);
   if (expert) h += m2Part("recipe", `${icon("file-code")}Recipe`, null, `<p class="cap" style="margin:0">File: recipe.rlvtest in the object folder. recipe.rlvresult is kept next to it.</p><pre class="code">${M2.rec.length ? M2.rec.map((r, i) => `<span class="ln"><span class="n">${i + 1}</span><span class="c">${r[0]} ${esc(r[1])}</span></span>`).join("") : '<span class="ln"><span class="n">1</span><span class="c"># no steps yet</span></span>'}</pre>`);
   return h;
 }
@@ -3413,12 +3421,16 @@ function m2Commands() {
   const ch = M2.choice, row = ch && RLV_ACTIONS.find(a => a[0] === ch);
   let h = `<div class="grid2"><label class="label" for="m2Obj">Object</label><span class="field"><input id="m2Obj" value="panel"></span>
     <label class="label" for="m2Cmd">Command</label><div class="row"><span class="field mono" style="flex:1 1 160px"><input id="m2Cmd" placeholder="@detach=n,sendim=n"></span><button class="btn main compact" data-m2do="run" data-key="Enter">${icon("play")}Run</button></div></div>`;
+  h += `<div class="row"><span class="cap">Try:</span>${["@detach=n,sendim=n", "@tploc=n", "@clear", "@version=2222", "@showself=n"].map(x => `<button class="btn compact" data-m2do="try" data-arg="${x}">${esc(x)}</button>`).join("")}
+    <span class="spacer"></span><button class="btn compact danger" data-m2do="reset" data-name="Reset: remove every restriction of every object" ${m2Held() ? "" : 'aria-disabled="true" data-why="No restrictions to remove."'}>${icon("rotate-ccw")}Reset all</button></div>`;
+  if (!m2Held()) h += '<p class="muted" style="margin:0">No restrictions. Type a line above, for example @detach=n, and press Enter.</p>';
   h += `<div class="label">What the avatar may do</div><table class="ltable"><thead><tr><th>Action</th><th>Now</th></tr></thead><tbody>${RLV_ACTIONS.map(([b, n]) => { const bl = !!M2.restr[b] || (M2.locked && (b === "detach" || b === "sendchat"));
     return `<tr class="${bl ? "m2bad" : ""}"><td>${n} <span class="cap">(${b})</span></td><td><select class="m2sel${bl ? " bad" : ""}" data-m2restr="${b}" aria-label="${esc(n)}: Allowed or Blocked"><option${bl ? "" : " selected"}>Allowed</option><option${bl ? " selected" : ""}>Blocked</option></select>${bl ? ` ${icon("ban")}` : ""}</td></tr>`; }).join("")}</tbody></table>`;
   if (row) { const bl = !!M2.restr[ch]; h += `<div class="m2box" aria-live="polite"><b class="${bl ? "" : ""}" style="${bl ? "color:var(--danger)" : ""}">${esc(row[1])}: ${bl ? "Blocked" : "Allowed"}</b><span class="mono">@${ch}=${bl ? "n" : "y"}</span>
       <span>${bl ? "This line blocks: " + esc(row[1]) + "." : "This line lifts the block again."}</span><span>@ starts an RLV line, and ${ch} is the command.</span><span>${bl ? "=n means no: the avatar may not do this." : "=y means yes: the avatar may do this again."}</span>
       <span class="cap">${bl ? "Ran from panel. Blocked now." : T("LABTWO-43")}</span>
       <div class="row"><button class="btn compact" data-m2do="useinscript" ${m2Watching() ? "" : 'aria-disabled="true" data-why="Open a script on the Live scripts page first."'} data-name="Use in script">${icon("file-code")}Use in script</button>${m2Watching() ? "" : '<span class="cap">Open a script on the Live scripts page first.</span>'}</div></div>`; }
+  h += m2Part("replies", `${icon("message-square")}Replies and messages`, "none", '<p class="muted" style="margin:0">The lines you run, what happened and the replies a script would hear show here.</p>');
   return h;
 }
 function m2Map() {
@@ -3655,6 +3667,9 @@ function m2Do(w, arg) {
       else { M2.recording = true; M2.rec = []; feedback(M2.effects ? "Recording. Click props and menu buttons. Steps so far: 0." : "Turn on Show effects in 3D view to click props."); }
       m2Save(); renderLab(); { const f = $('[data-m2do="record"]'); if (f) f.focus(); } return;
     case "run": { const v = ($("#m2Cmd") || {}).value || ""; const m = v.match(/^@([a-z_]+)=(n|y)$/); if (m && RLV_ACTIONS.some(a => a[0] === m[1])) { M2.restr[m[1]] = m[2] === "n"; M2.choice = m[1]; m2Save(); renderLab(); feedback("Ran " + v + "."); } else feedback("Mockup: try a line such as @sendim=n.", "warn"); return; }
+    case "try": { const el = $("#m2Cmd"); if (el) el.value = w; feedback("Put " + w + " in the command field. Press Run."); return; }
+    case "reset": { const n = m2Held(); M2.restr = {}; M2.locked = false; M2.choice = null; m2Save(); renderAll(); feedback(`Reset: ${n} restriction(s) removed.`); return; }
+    case "rerun": feedback("Ran again from the start, with a fresh clock."); return;
     case "useinscript": feedback("Put in the script at line 5. Save to run it."); return;
     case "pstart": case "preplay": if (!ms.length) return; if (w === "preplay" || M2.mi >= ms.length - 1) M2.mi = 0; clearInterval(m2PlayTimer);
       m2PlayTimer = setInterval(() => { if (M2.mi >= M2.moments.length - 1) { clearInterval(m2PlayTimer); m2PlayTimer = null; renderLab(); return; } M2.mi++; renderLab(); }, 1000); renderLab(); return;
