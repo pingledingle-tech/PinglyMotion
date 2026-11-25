@@ -60,6 +60,7 @@ OWN_CHECKS = {"auto-merge"}
 # keep in step with the push paths of .github/workflows/pages.yml
 PAGES_PATHS = (
     "docs/index.html",
+    "docs/home.html",
     "docs/download.html",
     "docs/privacy.html",
     "docs/site.css",

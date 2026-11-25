@@ -1,6 +1,6 @@
 Branch: job/mare-landing
-Status: active
-Pull request: pending
+Status: done
+Pull request: #508
 Files:
 - docs/index.html
 - docs/home.html
@@ -10,6 +10,7 @@ Files:
 - docs/PRODUCT.md
 - docs/DEV.md
 - tools/site/build_status.py
+- tools/ci/auto_merge.py
 - .github/workflows/pages.yml
 - tests/test_site_*.py
 - tests/test_build_status.py

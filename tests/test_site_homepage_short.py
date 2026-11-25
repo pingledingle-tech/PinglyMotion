@@ -32,7 +32,7 @@ def words(a):
 
 class HomepageShort(unittest.TestCase):
     def test_summary_and_button_first(self):
-        page = read("index.html")
+        page = read("home.html")
         for lang in LANGS:
             a = article(page, lang)
             btn = re.search(r'<a class="btn" href="%s">[^<]+</a>' % re.escape(WINDOWS_ZIP), a)
@@ -41,7 +41,7 @@ class HomepageShort(unittest.TestCase):
             self.assertLess(btn.start(), a.index("<h2"), lang)
 
     def test_release_notes_link_separate(self):
-        for name in ("index.html", "download.html"):
+        for name in ("home.html", "download.html"):
             page = read(name)
             for lang in LANGS:
                 a = article(page, lang)
@@ -56,12 +56,12 @@ class HomepageShort(unittest.TestCase):
             self.assertEqual(a.count('<a href="%s">' % LINUX_APPIMAGE), 1, lang)
 
     def test_short(self):
-        page = read("index.html")
+        page = read("home.html")
         for lang in LANGS:
             self.assertLess(words(article(page, lang)), 400, lang)
 
     def test_english_and_norwegian_text(self):
-        page = read("index.html")
+        page = read("home.html")
         en, no = article(page, "en"), article(page, "no")
         for needle in ("What it does.", "No AI was harmed in the making of this tool.", "a lot of Lindens", "Pingle is a she"):
             self.assertIn(needle, en)
@@ -69,7 +69,7 @@ class HomepageShort(unittest.TestCase):
             self.assertIn(needle, no)
 
     def test_same_structure_in_every_language(self):
-        page = read("index.html")
+        page = read("home.html")
         for lang in LANGS:
             a = article(page, lang)
             self.assertEqual(a.count("<h2"), 3, lang)
@@ -80,8 +80,36 @@ class HomepageShort(unittest.TestCase):
             for k in ("-h2", "-h3", "-hdl"):
                 self.assertIn('id="%s%s"' % (lang, k), a, lang)
 
+    def test_experienced_users_sentence_in_every_language(self):
+        page = read("home.html")
+        want = {
+            "en": "And experienced animators and scripters who want a free tool they can bend to their own way of working.",
+            "no": "Og erfarne animatører og skriptere som vil ha et gratis verktøy de kan forme etter sin egen måte å jobbe på.",
+            "de": "Und erfahrene Animatoren und Skripter, die ein kostenloses Werkzeug wollen, das sie an ihre eigene Arbeitsweise anpassen können.",
+            "pl": "Oraz doświadczeni animatorzy i skrypterzy, którzy chcą darmowego narzędzia, które mogą dopasować do własnego sposobu pracy.",
+            "nl": "En ervaren animators en scripters die een gratis hulpmiddel willen dat ze kunnen aanpassen aan hun eigen manier van werken.",
+        }
+        for lang, text in want.items():
+            sec = re.search(r'<section aria-labelledby="%s-h3">.*?</section>' % lang, article(page, lang), re.S).group(0)
+            self.assertTrue(re.search(re.escape(text) + r"</p>", sec), lang)
+
+    def test_mockup_note_text(self):
+        page = read("home.html")
+        want = {
+            "en": "The mockup is just a web page and doesn't quite show how this really works.",
+            "no": "Mockupen er bare en nettside, og viser ikke helt hvordan dette egentlig virker.",
+            "de": "Der Mockup ist nur eine Webseite und zeigt nicht ganz, wie das in Wirklichkeit funktioniert.",
+            "pl": "Makieta to tylko strona internetowa i nie pokazuje do końca, jak to naprawdę działa.",
+            "nl": "De mockup is maar een webpagina en laat niet helemaal zien hoe dit echt werkt.",
+        }
+        for lang, text in want.items():
+            self.assertIn("<p>%s</p></aside>" % text, article(page, lang), lang)
+        for old in ("design direction", "designretningen", "Designrichtung", "kierunek projektu", "ontwerprichting"):
+            self.assertNotIn(old, page, old)
+        self.assertIn(want["en"], read("mockup/index.html"))
+
     def test_no_old_wording(self):
-        for name in ("index.html", "download.html"):
+        for name in ("home.html", "download.html"):
             page = read(name)
             for old in ("is on its way", "er på vei", "still being prepared", "noch vorbereitet", "jeszcze przygotowywane", "nog voorbereid", "fortsatt under arbeid"):
                 self.assertNotIn(old, page, (name, old))
@@ -92,7 +120,7 @@ class HomepageShort(unittest.TestCase):
             self.assertIn(RELEASE, article(page, lang), lang)
 
     def test_headings_in_order(self):
-        page = read("index.html")
+        page = read("home.html")
         for lang in LANGS:
             a = article(page, lang)
             self.assertNotIn("<h1", a)
