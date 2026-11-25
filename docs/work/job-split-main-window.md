@@ -1,5 +1,5 @@
 Branch: job/split-main-window
-Status: active
+Status: done
 Pull request: #489
 Files:
 - src/pinglymotionwindow.cpp
