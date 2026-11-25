@@ -1,5 +1,5 @@
 Branch: job/lsl-operator-depth
-Status: active
+Status: done
 Pull request: #513
 Files:
 - src/scriptlab/lsl/parser.*
