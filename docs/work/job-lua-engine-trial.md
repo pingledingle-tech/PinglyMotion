@@ -1,6 +1,6 @@
 Branch: job/lua-engine-trial
 Status: active
-Pull request: pending
+Pull request: #492
 Files:
 - CMakeLists.txt
 - cmake/slua.cmake
