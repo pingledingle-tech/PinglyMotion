@@ -1,6 +1,6 @@
 Branch: job/script-lab-improve-setup-b
 Status: active
-Pull request: pending
+Pull request: #498
 Files:
 - src/scriptlab/lsl/interp.*
 - src/scriptlab/lsl/world.*
