@@ -1,5 +1,5 @@
 Branch: job/watch-and-status
-Status: active
+Status: done
 Pull request: #485
 Files:
 - .github/workflows/watch.yml
