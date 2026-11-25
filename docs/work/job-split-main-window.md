@@ -1,6 +1,6 @@
 Branch: job/split-main-window
 Status: active
-Pull request: pending
+Pull request: #489
 Files:
 - src/pinglymotionwindow.cpp
 - src/pinglymotionwindowbuild.cpp
