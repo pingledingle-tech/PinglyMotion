@@ -31,6 +31,11 @@ env:
   AQT_VERSION: '3.3.0'
   PLAYWRIGHT_VERSION: '1.65.1'
 
+defaults:
+  run:
+    # -o pipefail: a failing build is not hidden by tee
+    shell: bash -eo pipefail {0}
+
 jobs:
   web:
     runs-on: ubuntu-latest
@@ -45,6 +50,8 @@ jobs:
         run: |
           python3 -m pip install --quiet "aqtinstall==$AQT_VERSION"
           python3 -m aqt install-qt all_os wasm "$QT_VERSION" wasm_singlethread --autodesktop -O "$RUNNER_TEMP/Qt"
+          # the all_os WebAssembly package does not keep the scripts' run permission
+          chmod +x "$RUNNER_TEMP/Qt/$QT_VERSION"/wasm_singlethread/bin/*
           ls "$RUNNER_TEMP/Qt/$QT_VERSION"
 
       - name: Install Emscripten
