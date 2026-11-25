@@ -21,6 +21,24 @@ ENDIF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
 # The version number. Also change it in src/pinglymotion.rc and bin/NEWS.
 PROJECT (pinglymotion VERSION 0.3.0)
 
+# Web trial build (Qt for WebAssembly; docs/DEV.md, "The web trial build"): configure with the
+# qt-cmake of a WebAssembly Qt and -DPINGLYMOTION_WEB=ON. Off by default, so the desktop build is
+# unchanged; .github/workflows/web.yml builds it by hand (never a required check).
+OPTION (PINGLYMOTION_WEB "Build the program for the browser (Qt for WebAssembly), trial" OFF)
+IF (PINGLYMOTION_WEB AND NOT EMSCRIPTEN)
+  MESSAGE (FATAL_ERROR "PINGLYMOTION_WEB=ON needs the Qt for WebAssembly toolchain: configure with the qt-cmake of a WebAssembly Qt")
+ENDIF ()
+IF (PINGLYMOTION_WEB AND PINGLYMOTION_TESTS)
+  MESSAGE (FATAL_ERROR "PINGLYMOTION_WEB=ON builds only the program: leave PINGLYMOTION_TESTS off")
+ENDIF ()
+IF (PINGLYMOTION_WEB)
+  # the LSL interpreter and parser throw and catch C++ exceptions; Emscripten's default would end the program.
+  # JavaScript-based exceptions (-fexceptions), not -fwasm-exceptions: Qt's WebAssembly libraries use the
+  # JavaScript setjmp/longjmp, and wasm exceptions would not link with them
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+  SET (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fexceptions")
+ENDIF ()
+
 # Timestamp when program was built. Like the build number and the build source below it goes
 # into the generated header buildinfo.h (only constants.cpp includes it), not onto the compiler
 # command line of every file: a changing option would make every compiler-cache lookup miss.
@@ -72,7 +90,12 @@ ENDIF (NOT DEFINED VERSION_NUMBER)
 ADD_DEFINITIONS (-DVERSION_NUMBER="${VERSION_NUMBER}")
 
 # Data files of a program that runs from its build folder (see Constants::pinglyMotionDataPath)
-ADD_DEFINITIONS (-DPINGLYMOTION_SOURCE_DATAPATH="${CMAKE_SOURCE_DIR}/bin/data")
+IF (PINGLYMOTION_WEB)
+  # the web build carries bin/data inside its .data file, at /data in the browser's file system
+  ADD_DEFINITIONS (-DPINGLYMOTION_SOURCE_DATAPATH="/data")
+ELSE ()
+  ADD_DEFINITIONS (-DPINGLYMOTION_SOURCE_DATAPATH="${CMAKE_SOURCE_DIR}/bin/data")
+ENDIF ()
 
 # Update channel: 2 = release, 1 = beta, anything else = development build
 IF (DEFINED UPDATE_CHANNEL)
@@ -96,8 +119,10 @@ ELSE ()
 ENDIF ()
 MESSAGE (STATUS "Building with Qt ${Qt6_VERSION}")
 
-# Search for OpenGL
-FIND_PACKAGE (OpenGL REQUIRED)
+# Search for OpenGL (the web build gets WebGL 2 through Qt and Emscripten)
+IF (NOT PINGLYMOTION_WEB)
+  FIND_PACKAGE (OpenGL REQUIRED)
+ENDIF ()
 
 INCLUDE_DIRECTORIES (src ${OPENGL_INCLUDE_DIR})
 

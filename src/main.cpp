@@ -54,8 +54,14 @@ int main( int argc, char ** argv )
     // the 3D view is drawn with OpenGL 3.3 shaders: ask for a modern (core)
     // context with depth and stencil (the floor shadow uses the stencil)
     QSurfaceFormat format;
+#ifdef Q_OS_WASM
+    // web build: WebGL 2 is OpenGL ES 3.0 (docs/DEV.md, "The web trial build")
+    format.setRenderableType(QSurfaceFormat::OpenGLES);
+    format.setVersion(3, 0);
+#else
     format.setVersion(3, 3);
     format.setProfile(QSurfaceFormat::CoreProfile);
+#endif
     format.setDepthBufferSize(24);
     format.setStencilBufferSize(8);
     QSurfaceFormat::setDefaultFormat(format);

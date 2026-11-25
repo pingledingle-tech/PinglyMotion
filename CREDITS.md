@@ -9,7 +9,7 @@ Where a licence does not require a credit (CC0, ideas only), we give one anyway.
 | Project | What we use it for | Licence | Link |
 |---|---|---|---|
 | QAvimator (by Zi Ree and the QAvimator team), itself a Qt port of Avimator | The origin of this program: the editor, the 3D view and the file handling started as QAvimator | GPL 2 or later | https://bitbucket.org/QAvimator_Team/qavimator |
-| Qt 6 | The program's windows, 3D view widget, networking and tests | LGPL 3 / GPL (we use it as a shared library) | https://www.qt.io |
+| Qt 6 | The program's windows, 3D view widget, networking and tests; Qt for WebAssembly in the web trial build | LGPL 3 / GPL (we use it as a shared library; the web trial build links it statically, under the GPL) | https://www.qt.io |
 | OpenGL | The 3D view | Khronos specifications | https://www.khronos.org/opengl/ |
 | CMake | Build system | BSD 3-Clause | https://cmake.org |
 | Mesh2Motion (retargeting design) | The idea of the bone-name matching and swing-twist retargeting in `src/retarget.*`. No code copied; written from the idea | MIT | https://github.com/Mesh2Motion/mesh2motion-app |
@@ -112,7 +112,9 @@ Only ideas were taken from these papers and projects (no code copied); they were
 | GitHub Actions: `actions/checkout`, `cache`, `upload-artifact`, `download-artifact`, `attest-build-provenance`, `dependency-review-action` | Builds, tests, releases and checks | MIT | https://github.com/actions |
 | `github/codeql-action` | Code scanning | MIT | https://github.com/github/codeql-action |
 | `jurplel/install-qt-action` | Installs Qt in the builds | MIT | https://github.com/jurplel/install-qt-action |
-| aqtinstall (miurahr) | Installs Qt behind `install-qt-action` in the builds | MIT | https://github.com/miurahr/aqtinstall |
+| aqtinstall (miurahr) | Installs Qt behind `install-qt-action` in the builds, and Qt for WebAssembly in the web trial build (`.github/workflows/web.yml`) | MIT | https://github.com/miurahr/aqtinstall |
+| Emscripten and emsdk | Compile the program to WebAssembly in the web trial build (`.github/workflows/web.yml`, option `PINGLYMOTION_WEB`, off by default); version 5.0.5, the one Qt 6.12 names. Not in the desktop program | MIT / University of Illinois NCSA | https://emscripten.org, https://github.com/emscripten-core/emsdk |
+| Playwright (Microsoft) and its Chromium | Start the web trial build in a headless browser, take a screenshot and read the console (`tools/web/smoke.mjs`); a tool in CI, not shipped | Apache 2.0 (Playwright); BSD 3-Clause and others (Chromium) | https://playwright.dev |
 | Ubuntu packages `qt6-base-dev`, ccache, Xvfb | Linux builds and screenshot tests | LGPL 3 / GPL, GPL 3, X11 | https://packages.ubuntu.com |
 | libFuzzer and the sanitizers (LLVM, GCC) | Fuzzing and the sanitizer build | Apache 2.0 with LLVM exception | https://llvm.org |
 

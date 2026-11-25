@@ -232,6 +232,18 @@ void PinglyMotionWindow::fileOpen()
 
 void PinglyMotionWindow::fileOpen(const QString& name)
 {
+#ifdef Q_OS_WASM
+  // web build: the browser's own file picker uploads the file; the bytes open like a dropped file
+  // (docs/DEV.md, "Web-ready code", rule 2)
+  if(name.isEmpty())
+  {
+    QFileDialog::getOpenFileContent(m_animFilter,[this](const QString& fileName,const QByteArray& content)
+    {
+      if(!fileName.isEmpty()) fileOpenData(fileName,content);
+    });
+    return;
+  }
+#endif
   QString file=name;
 
   if(file.isEmpty())
@@ -356,6 +368,10 @@ void PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* 
 // ask for a .dingle name first. Returns true when the animation was saved.
 bool PinglyMotionWindow::fileSave()
 {
+#ifdef Q_OS_WASM
+  // web build: every save is a download (fileSaveAs)
+  return fileSaveAs();
+#endif
   if(DingleSave::needsName(currentFile,m_untitledName))
     return fileSaveAs();
 
@@ -383,11 +399,17 @@ bool PinglyMotionWindow::fileSaveAs()
     suggested=QDir(UserSettings::lastPath()).filePath(suggested);
   QString selectedFilter=m_dingleFilter;
 
+#ifdef Q_OS_WASM
+  // web build: written to the browser's memory file system, then the browser downloads it
+  // (end of this function; docs/DEV.md, "Web-ready code", rule 2)
+  QString file=QDir(QDir::tempPath()).filePath(QFileInfo(suggested).fileName());
+#else
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
    QString file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #else
    QString file = QFileDialog::getSaveFileName(this, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
+#endif
 #endif
 
   if(file.isEmpty()) return false;
@@ -395,8 +417,10 @@ bool PinglyMotionWindow::fileSaveAs()
 
   QFileInfo fileInfo(file);
 
+#ifndef Q_OS_WASM
   // if the file didn't exist yet or the user accepted to overwrite it, save it.
   if(!checkFileOverwrite(fileInfo)) return false;
+#endif
 
   const QString oldFile=m_avmOrigin.value(currentFile,currentFile);
   QString error;
@@ -414,8 +438,18 @@ bool PinglyMotionWindow::fileSaveAs()
   openFiles[ui->selectAnimationCombo->currentIndex()]=file;
   ui->fileExportForSecondLifeAction->setEnabled(true);
 
+#ifdef Q_OS_WASM
+  QFile saved(file);
+  if(!saved.open(QIODevice::ReadOnly))
+  {
+    QMessageBox::warning(this,tr("Save Animation File"),saved.errorString());
+    return false;
+  }
+  QFileDialog::saveFileContent(saved.readAll(),fileInfo.fileName());
+#else
   // an old .avm file is replaced: it goes to the recycle bin, now that the new file is saved
   if(DingleSave::replacesOldFile(oldFile,file)) replaceOldAvm(oldFile,file);
+#endif
   return true;
 }
 
