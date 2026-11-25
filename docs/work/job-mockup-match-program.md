@@ -1,11 +1,12 @@
 Branch: job/mockup-match-program
-Status: active
+Status: done
 Pull request: #507
 Files:
 - docs/mockup/index.html
 - tests/test_site_mockup_*.py
 - docs/UX_DECISIONS.md
 - docs/README.md
+- docs/TEACHING.md
 
 ## What
 

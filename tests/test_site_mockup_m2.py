@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Mockup 2 in the clickable mockup (docs/mockup/index.html) is marked as a proposal, and its
-program texts (the M2T table) are the same as the rows in docs/TEACHING.md.
+"""The clickable mockup (docs/mockup/index.html) shows the program as built (since 25 Nov 2026): it says so,
+it has no proposal marks and no side tabs, it draws what the program has (the Animate / Script switch, the
+helper, Script Lab tabs that pop out, Convert to SLua, the guide page), and its program texts (the M2T
+table) are the same as the rows in docs/TEACHING.md.
 Run: python3 tests/test_site_mockup_m2.py"""
 
 import html
@@ -11,7 +13,7 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.join(HERE, "..", "docs")
-MARK = "PROPOSAL, not approved until the project owner says so"
+MARK = "The program as built, 25 Nov 2026"
 
 
 # The statuses the register allows (the "Status" line in docs/TEACHING.md).
@@ -45,11 +47,13 @@ def register_rows():
 
 
 class MockupTwo(unittest.TestCase):
-    def test_marked_as_proposal(self):
+    def test_marked_as_built(self):
         page = read("mockup", "index.html")
         self.assertIn(MARK, page)
-        self.assertIn(MARK, read("UX_DECISIONS.md"))
-        self.assertIn("Questions for the project owner", page)
+        self.assertIn("The program as built, 25 Nov 2026", read("UX_DECISIONS.md"))
+        self.assertNotIn("PROPOSAL", page)
+        self.assertNotIn("Questions for the project owner", page)
+        self.assertNotIn("Approved mockup", page)
 
     def test_texts_match_the_register(self):
         texts, rows = mockup_texts(), register_rows()
@@ -63,24 +67,34 @@ class MockupTwo(unittest.TestCase):
     def test_register_defines_the_statuses(self):
         self.assertIn("`draft`, `reviewed by the owner`, or `in the program`", read("TEACHING.md"))
 
-    def test_register_has_no_extra_mockup_two_rows(self):
+    def test_register_has_no_extra_mockup_rows(self):
         texts = mockup_texts()
-        section = read("TEACHING.md").split("### Mockup 2 (proposal")[1].split("\n### ")[0]
+        section = read("TEACHING.md").split("### Mockup texts (")[1].split("\n### ")[0]
         ids = re.findall(r"^\| ([A-Z]+-\d{2}) \|", section, re.M)
         self.assertEqual(sorted(ids), sorted(texts))
 
-    def test_only_token_colours_in_mockup_two_css(self):
+    def test_only_token_colours_in_the_as_built_css(self):
         page = read("mockup", "index.html")
-        start = page.index("/* ---- Mockup 2 (PROPOSAL")
+        start = page.index("/* ---- The program as built (25 Nov 2026)")
         css = page[start:page.index("</style>", start)]
         self.assertIsNone(re.search(r"#[0-9A-Fa-f]{3,8}\b", css))
 
-    def test_approved_mockup_is_kept(self):
+    def test_what_is_not_built_is_gone(self):
         page = read("mockup", "index.html")
-        # the approved Script Lab panel and hint cards are still drawn when Mockup 2 is switched off
-        self.assertIn("function renderLab() {\n  if (M2.on) { renderLab2(); return; }", page)
-        self.assertIn('case "hcclose": advanceCard(); return;', page)
-        self.assertIn('data-cmd="m2toggle"', page)
+        for gone in ("m2strip", "m2toggle", "data-m2place", "data-m2tab", "m2Hud", "m2hud", "shapefold", "nexthint", "Cut begin", 'id="m2HelpBtn"'):
+            self.assertNotIn(gone, page, gone)
+
+    def test_what_the_program_has_is_drawn(self):
+        page = read("mockup", "index.html")
+        for there in ('id="sideAnimate"', 'id="sideScript"', 'id="helperBtn"', 'id="helper"', 'id="resetLayoutBtn"', 'data-cmd="paneltoggle"',
+                      'data-cmd="showjoints"', 'data-cmd="showexpert"', 'data-m2do="popout"', 'data-m2do="putback"', 'data-m2do="convert"',
+                      'data-cmd="guide"', 'id="dlgGuide"', "Make the example folder", "Convert to SLua", "Make your first move", "Arrange the windows", "Try the Script Lab"):
+            self.assertIn(there, page, there)
+        # the five Script Lab tabs, in the order of the program, and no HUD tab
+        tabs = re.search(r"const M2_PAGES = \[(.*?)\];", page, re.S).group(1)
+        order = [m for m in re.findall(r'\["(live|commands|map|player|improve|hud)"', tabs)]
+        self.assertEqual(order, ["live", "commands", "map", "player", "improve"])
+        self.assertIn('case "hcnext": advanceCard(); return;', page)
 
 
 if __name__ == "__main__":

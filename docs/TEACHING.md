@@ -414,29 +414,19 @@ Drafts for the library panel (roadmap item 6, issue 19) and for two figures in o
 | FIG-17 | 4 Status line | From the library was chosen in the Add window | Pick a move, then press Add as a second figure. | in the program | src/figures.h, two figures (pull request 439) |
 | FIG-18 | 2 Tip on hover | Mouse rests on a greyed row of the other figure in the timeline | Click to make figure 2 active and pick this joint. | in the program | src/figures.h, two figures (pull request 439) |
 
-### Mockup 2 (proposal, drawn in the mockup, 24 Nov 2026)
+### Mockup texts (drawn in the mockup, 24 Nov 2026; the mockup shows the program as built since 25 Nov 2026)
 
-Drafts for everything drawn in Mockup 2 in `docs/mockup/index.html` (the project owner, 24 Nov 2026, 11:48: «lage en ny mockup med alt vi har planlagt nå»), described in [UX_DECISIONS.md](UX_DECISIONS.md), section 6t. **PROPOSAL, not approved until the project owner says so**: nothing here is built because it is drawn. The mockup keeps these texts in its `M2T` table; `tests/test_site_mockup_m2.py` checks that both say the same. `%1` and `%2` stand for what the program puts in. Texts Mockup 2 reuses word for word from rows above (for example LABNEW, LABREC, LABMAP and LIB) and from the example guides in [EXAMPLES.md](EXAMPLES.md) are not listed again. The mockup's own helper texts (the PROPOSAL mark, Questions, Script Lab place, Approved mockup, the Built, Being built, Planned and Proposal marks and the notes) are not program texts and are not listed.
+Texts drawn in `docs/mockup/index.html` (the project owner, 24 Nov 2026, 11:48: «lage en ny mockup med alt vi har planlagt nå»), described in [UX_DECISIONS.md](UX_DECISIONS.md), sections 6t and 6zc. Since 25 Nov 2026 the mockup shows the program as built; the rows for what was only proposed (the side tabs, the HUD page, the Show me buttons, the Help item Show the next hint, the prop shape folds) are gone. The Status column of a row says whether its text is in the program. The mockup keeps these texts in its `M2T` table; `tests/test_site_mockup_m2.py` checks that both say the same. `%1` and `%2` stand for what the program puts in. Texts Mockup 2 reuses word for word from rows above (for example LABNEW, LABREC, LABMAP and LIB) and from the example guides in [EXAMPLES.md](EXAMPLES.md) are not listed again. The mockup's own helper texts (the mark "The program as built" in the top bar and the notes) are not program texts and are not listed.
 
 | ID | Place | Trigger | Text | Status | Used by |
 |---|---|---|---|---|---|
-| SIDE-01 | 2 Tip on hover | A side tab (Joints, Selected joint, Script Lab, Library) | Shows this panel on this side. One panel at a time, so nothing overlaps. | draft | Mockup 2 (pull request 456), proposal |
-| SIDE-02 | 4 What to do next | Status line after a side tab is picked; the program puts in the panel and left or right | %1 shows on the %2 side now. | draft | Mockup 2 (pull request 456), proposal |
-| SIDE-03 | 3 Empty state | The side area while the picked tab's panel floats | %1 floats in its own window. Its dock-back button puts it back here. | draft | Mockup 2 (pull request 456), proposal |
-| SIDE-04 | Side tabs | The name of a tab strip, for screen readers | Panels on this side | draft | Mockup 2 (pull request 456), proposal |
-| SIDE-05 | Side tabs | The words put into SIDE-02 | left<br>right | draft | Mockup 2 (pull request 456), proposal |
-| SIDE-06 | 4 What to do next | Status line after the top bar button of the panel that shows is pressed; the program puts in both panels | %1 shows again. %2 waits in its tab. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-01 | Script Lab | The line beside Viewer rules; the program puts in RLV or RLVa | Now: %1 rules. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-02 | 2 Tip on hover | The ? button in the Script Lab title (its name) | Help for Script Lab | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-03 | 2 Tip on hover | The ? button in the Script Lab title | Explanations, pictures and the examples, in a bigger view. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-04 | Script Lab | Page tab | Player | in the program (pull request 464, 24 Nov 2026) | Mockup 2 (pull request 456); job UX-B |
 | LABTWO-05 | Script Lab | Page tab | Improve a setup | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-06 | Script Lab | Page tab | HUD | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-07 | 2 Tip on hover | A folding part's header on the Live scripts page | Opening one part folds the others, so the page stays short. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-08 | 2 Tip on hover | Page tab Who talks to whom | Arrows between the parts: who sends what to whom. | in the program (pull request 464, 24 Nov 2026) | Mockup 2 (pull request 456); job UX-B |
 | LABTWO-09 | 2 Tip on hover | Page tab Player | Step back and forth through your recorded steps. | in the program (pull request 464, 24 Nov 2026) | Mockup 2 (pull request 456); job UX-B |
 | LABTWO-10 | 2 Tip on hover | Page tab Improve a setup | Check a setup you made before and see what can be better. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-11 | 2 Tip on hover | Page tab HUD | Try your HUD on screen, as in Second Life. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-12 | Script Lab | Improve a setup page: heading | Improve a finished setup | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-13 | Script Lab | Improve a setup page: the line under the heading | Bring in a setup you made before. Then see what can be better. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-14 | Script Lab | Improve a setup page: the main button | Import a setup | draft | Mockup 2 (pull request 456), proposal |
@@ -454,14 +444,6 @@ Drafts for everything drawn in Mockup 2 in `docs/mockup/index.html` (the project
 | LABTWO-26 | 4 What to do next | Improve a setup page: the last line | Change one thing, then save. Your recording runs again and says what changed. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-27 | 6 Reason | Show what can be better is greyed, as its tip | Record today's behaviour first, so you can see that nothing breaks. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-28 | 6 Reason | Record today's behaviour is greyed, as its tip | Import a setup first. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-29 | Script Lab | HUD page: heading | HUD: buttons on your screen | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-30 | Script Lab | HUD page: the line under the heading | In Second Life a HUD sits on your screen. Here it shows in a corner of the 3D view. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-31 | Script Lab | HUD page: the on and off button | Show the HUD on screen | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-32 | 4 What to do next | HUD page: the line while the HUD shows | Click the HUD to touch it, as in Second Life. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-33 | 4 What to do next | HUD page: the last touch; the program puts in the prim | Touched: %1. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-34 | Script Lab | HUD page: caption | How the HUD looks is still made in Second Life. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-35 | 3 Empty state | HUD page: no HUD in the watched folder | Watch a folder with a HUD first. The Gear set has one. | draft | Mockup 2 (pull request 456), proposal |
-| LABTWO-36 | 3D view | The title of the HUD in the corner of the 3D view | HUD (top right) | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-37 | 4 What to do next | Status line after Make example project | Example project made: First colour. The box turns red. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-38 | 4 What to do next | Status line after the Gear set example is opened | Watching Gear_set. Click the flat box beside the figure. | draft | Mockup 2 (pull request 456), proposal |
 | LABTWO-39 | Script Lab | Steps card: the button after the last step of First colour | Next example: Gear set | draft | Mockup 2 (pull request 456), proposal |
@@ -485,8 +467,6 @@ Drafts for everything drawn in Mockup 2 in `docs/mockup/index.html` (the project
 | PROPED-14 | Selected joint panel | The heading over the place of a prop | Place | draft | Mockup 2 (pull request 456), proposal |
 | PROPED-15 | Selected joint panel | The heading over the size of a prop | Size | draft | Mockup 2 (pull request 456), proposal |
 | PROPED-16 | Selected joint panel | The size fields of a prop | Width<br>Height<br>Depth | draft | Mockup 2 (pull request 456), proposal |
-| PROPED-17 | Selected joint panel | The folded part with the shape fields of a prop | Shape like Second Life | draft | Mockup 2 (pull request 456), proposal |
-| PROPED-18 | Selected joint panel | The shape fields of a prop | Cut begin<br>Cut end<br>Hollow<br>Twist | draft | Mockup 2 (pull request 456), proposal |
 | PROPED-19 | 3 Empty state | Selected joint panel while Props is chosen and no prop is picked | Pick a prop in the 3D view or in the list. | draft | Mockup 2 (pull request 456), proposal |
 | PROPED-20 | 3 Hint bar | The hint bar while Move is on | Drag an arrow to move the prop. | draft | Mockup 2 (pull request 456), proposal |
 | PROPED-21 | 3 Hint bar | The hint bar while Turn is on (or Ctrl is held) | Drag a ring to turn the prop. | draft | Mockup 2 (pull request 456), proposal |
@@ -495,28 +475,11 @@ Drafts for everything drawn in Mockup 2 in `docs/mockup/index.html` (the project
 | PROPED-24 | 4 What to do next | Status line after Esc during a drag on a prop | Change cancelled. Nothing changed. | draft | Mockup 2 (pull request 456), proposal |
 | PROPED-25 | 3D view | The second line of the label next to the pointer while a prop is dragged | Release: keep it · Esc: cancel | draft | Mockup 2 (pull request 456), proposal |
 | PROPED-26 | 4 What to do next | Status line after a shape button; the program puts in the new prop's name | %1 added. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-01 | Help view | The title of the help view, and the ? button in the top bar | Help | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-02 | Help view | The title when the ? button of Script Lab opened it | Script Lab help | draft | Mockup 2 (pull request 456), proposal |
 | HELPV-03 | Help view | The topics on the left | Start here<br>How to lay out a folder<br>Words<br>Hints | draft | Mockup 2 (pull request 456), proposal |
 | HELPV-04 | Help view | A topic for each example; the program puts in its title | Example: %1 | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-05 | Help view | The button by each step | Show me | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-06 | 2 Tip on hover | The Show me button | Shows where this is, then does the step. | draft | Mockup 2 (pull request 456), proposal |
 | HELPV-07 | Help view | The small badge on the control Show me points at | Here | draft | Mockup 2 (pull request 456), proposal |
 | HELPV-08 | 4 What to do next | Status line after Show me; the program puts in the control's name | Here is %1. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-09 | Help view | Start here: the text | Script Lab tests Second Life scripts safely on your PC.<br>Make the example project first. It shows a result at once.<br>Then follow the steps of an example. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-10 | Help view | Start here: the three steps | Make the example project.<br>Turn on Show effects in 3D view.<br>Click a prop in the 3D view. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-11 | Help view | How to lay out a folder: the first line | One folder is one object. Each folder inside it is one prim. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-12 | Help view | How to lay out a folder: the rules | Put scripts (.lsl) and notecards (.txt) in their prim's folder.<br>Give every script and notecard its own name.<br>Name the main prim's folder Root.<br>Copy scripts out of Second Life by hand. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-13 | Help view | How to lay out a folder: the warnings | A script that cannot be checked shows its line.<br>The final test is always in Second Life. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-14 | Help view | How to lay out a folder: caption of the picture | The picture shows the Gear set folder. | draft | Mockup 2 (pull request 456), proposal |
 | HELPV-15 | Help view | Words: the first line | The words Script Lab uses, in plain words. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-16 | Help view | Hints: the text | Hints are small cards next to the part they talk about.<br>The cross closes a hint. The next one waits until you ask. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-17 | Help view | Hints: the button | Show the next hint | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-18 | Help view | The headings of an example topic | What it is<br>Steps<br>The pieces<br>New words | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-19 | Help view | An example topic: the main button | Open this example | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-20 | 4 What to do next | Status line after the cross or Esc on a hint card | Hint closed. Help shows the next one when you want it. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-21 | 2 Tip on hover | The ? button in the top bar | Explanations, pictures and examples. F1 opens it too. | draft | Mockup 2 (pull request 456), proposal |
-| HELPV-22 | Help view | An example topic: caption of the picture | The picture shows the example with its props. | draft | Mockup 2 (pull request 456), proposal |
 | HELPV-23 | Help view | The heading over the example topics | Examples | draft | Mockup 2 (pull request 456), proposal |
 
 ### UX small fixes (24 Nov 2026)

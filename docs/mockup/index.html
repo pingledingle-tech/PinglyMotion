@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>PinglyMotion UX mockup (the program as built, 25 Nov 2026)</title>
 <!--
-  PinglyMotion UX mockup. A clickable picture of the planned interface, not the program.
+  PinglyMotion UX mockup. A clickable picture of the program as it is built on 25 November 2026 (a picture, not the program: nothing is saved or run).
   Design: docs/DESIGN_CHARTER.md, docs/DESIGN_SYSTEM.md, docs/design_tokens.json.
   Self-contained: no external requests. Plain JavaScript.
   Icons: Lucide (https://lucide.dev), ISC licence, some icons derived from Feather (MIT).
@@ -445,7 +445,6 @@ kbd { font-family:ui-monospace, monospace; font-size:var(--caption); border:var(
 .statusline.ok { --c:var(--success); } .statusline.bad { --c:var(--danger); } .statusline.idle { --c:var(--border); }
 .lab .body { overflow-x:hidden; }
 .grid2 { display:grid; grid-template-columns:auto minmax(0, 1fr); gap:var(--s); align-items:center; }
-.proposal { font-size:var(--caption); color:var(--text_muted); border:var(--bw) dashed var(--border); border-radius:var(--r-small); padding:0 var(--xs); font-weight:400; }
 
 /* ---- Library panel (roadmap item 6) and two figures (Expert mode): drawn in the mockup, not built yet ---- */
 #library { container-type:inline-size; }
@@ -574,9 +573,6 @@ body.charter #legend { display:flex; }
 .m2chip svg { color:var(--success); }
 .m2chip.off { border-style:solid; border-color:var(--border); background:var(--surface_raised); }
 .m2chip.off svg { color:var(--text_muted); }
-.m2tag { display:inline-flex; align-items:center; gap:2px; font-size:var(--caption); font-weight:400; color:var(--text); border:var(--bw) solid var(--c); border-radius:var(--r-small); padding:0 var(--xs); white-space:nowrap; }
-.m2tag svg { width:12px; height:12px; color:var(--c); }
-.m2tag.k-built { --c:var(--success); } .m2tag.k-building { --c:var(--accent_text); border-style:dotted; } .m2tag.k-planned { --c:var(--accent_text); } .m2tag.k-proposal { --c:var(--warning); border-style:dashed; }
 .m2note { font-size:var(--caption); color:var(--text_muted); border-left:3px solid var(--warning); padding-left:var(--s); margin:0; }
 .m2note b { color:var(--text); }
 
@@ -1769,77 +1765,7 @@ function labRun() { // a pretend run of cuffs.lsl after "save"
   if (!lab.err) { labApply("@detach=n,sendim=n", "cuffs"); }
   saveLab();
 }
-function labSection(key, title, count, inner, extra) {
-  const open = lab.fold[key];
-  return `<div class="labsec"><button class="disclose" aria-expanded="${open}" data-labfold="${key}">${icon("chevron-right", "chev")}${title}${count !== null && count !== undefined ? `<span class="cap">${count}</span>` : ""}${extra || ""}</button>
-    <div class="foldbody" ${open ? "" : "hidden"}>${inner}</div></div>`;
-}
-function restrTable() {
-  if (!lab.restr.length) return `<p class="muted" style="margin:0">No restrictions. ${lab.page === "live" ? "A script that says @detach=n holds one." : "Type a line above, for example @detach=n, and press Enter."}</p>`;
-  return `<table class="ltable"><thead><tr><th>Behaviour</th><th>Option</th><th>Object</th></tr></thead><tbody>${lab.restr.map(r => `<tr><td class="mono">${esc(r.b)}</td><td class="mono">${esc(r.o || "–")}</td><td>${esc(r.obj)}</td></tr>`).join("")}</tbody></table>`;
-}
-function actionsList() {
-  return `<table class="ltable"><thead><tr><th>Action</th><th>Now</th></tr></thead><tbody>${RLV_ACTIONS.map(([b, n]) => { const bl = labHeld(b);
-    return `<tr><td>${n} <span class="cap">(${b})</span></td><td><span class="state ${bl ? "bad" : "ok"}">${icon(bl ? "ban" : "circle-check")}${bl ? "Blocked" : "Allowed"}</span></td></tr>`; }).join("")}</tbody></table>`;
-}
-function renderLab() {
-  if (M2.on) { renderLab2(); return; } // Mockup 2: Script Lab in short pages
-  const b = $("#labBody"); if (!b || $("#scriptlab").hidden) return;
-  const modeSeg = `<div class="row" style="justify-content:space-between"><div class="row tight"><span class="label" id="labModeL">Viewer rules</span>
-      <div class="seg" role="radiogroup" aria-labelledby="labModeL" id="labMode"><button class="btn compact" role="radio" aria-checked="${lab.mode === "RLV"}" data-labmode="RLV" data-name="Plain RLV, as the RLV wiki lists it" data-tipline="Switching removes every restriction, as after a relog.">RLV</button>
-      <button class="btn compact" role="radio" aria-checked="${lab.mode === "RLVa"}" data-labmode="RLVa" data-name="RLVa, as in Firestorm and other viewers" data-tipline="Switching removes every restriction, as after a relog.">RLVa</button></div></div>
-    <span class="chip">${icon("ban")}${lab.restr.length} held</span></div>`;
-  const tabs = `<div class="tabs" role="tablist" aria-label="Script Lab pages" id="labTabs">
-    <button class="tab" role="tab" style="--area:var(--accent)" aria-selected="${lab.page === "live"}" tabindex="${lab.page === "live" ? 0 : -1}" data-labpage="live" data-name="Live: your .lsl scripts run each time you save them">${icon("file-code")}Live scripts</button>
-    <button class="tab" role="tab" style="--area:var(--accent)" aria-selected="${lab.page === "commands"}" tabindex="${lab.page === "commands" ? 0 : -1}" data-labpage="commands" data-name="Commands: type RLV lines by hand">${icon("terminal")}Type commands</button></div>`;
-  let h = (hintsOn ? `<p class="explain">${icon("info")}<span>A safe sandbox for RLV and LSL scripts. Nothing here reaches Second Life. Your scripts stay in your own folder; edit them in your own editor.</span></p>` : "") + modeSeg + tabs;
-  if (lab.page === "live") {
-    if (!lab.watching) {
-      h += `<div class="emptycard" data-p="P4"><h3>${icon("folder-open", "i20")}No folder watched</h3><p>Pick the folder with your .lsl scripts. Each time you save one, it is checked and run here at once.</p>
-        <div class="row"><button class="btn main large" data-cmd="labwatch">${icon("folder-open", "i20")}Watch folder...</button><button class="btn large" data-cmd="labwatch">${icon("flask-conical", "i20")}Try the example scripts</button></div></div>`;
-    } else {
-      const ok = !lab.err;
-      h += `<div class="grid2"><label class="label" for="labFolder">Folder</label><div class="row"><span class="field" style="flex:1 1 140px"><input id="labFolder" value="my-rlv-scripts" readonly></span>
-          <button class="btn compact" data-cmd="labunwatch" data-name="Stop watching" data-tipline="Stop running the scripts when they change.">${icon("square")}Stop watching</button></div></div>
-        <div class="statusline ${ok ? "ok" : "bad"}" role="status">${icon(ok ? "circle-check" : "circle-x")}<span>${ok ? `<b>OK:</b> cuffs.lsl ran without errors (run ${lab.run}), 5 log lines. RLV restrictions at the end: detach, sendim.` : `<b>Error:</b> cuffs.lsl has 1 error and was not run (run ${lab.run}). Fix the line shown below and save.`}</span></div>
-        <div class="row"><button class="btn compact" data-cmd="labrerun" data-name="Run again" data-tipline="Runs the last saved script again from the start, with a fresh clock.">${icon("refresh-cw")}Run again</button><span class="proposal" title="Not in the program yet">proposal</span>
-          <button class="btn compact" data-cmd="labopen" data-name="Open in editor" data-tipline="Opens the script in the program your computer uses for .lsl files.">${icon("file-code")}Open in editor</button>
-          <button class="btn compact" data-cmd="laberr" data-name="Mockup only: pretend a save with a typing mistake">${icon("triangle-alert")}${lab.err ? "Mockup: fix the mistake" : "Mockup: save with a mistake"}</button></div>
-        <button class="switch" role="switch" aria-checked="${lab.effects}" data-cmd="labeffects" data-name="Show effects in 3D view" data-tipline="Play the animation the script started on a preview figure and show worn objects and locks. Off each time the program starts."><span class="track"></span>Show effects in 3D view<span class="st"></span></button>`;
-      h += labSection("script", `${icon("file-code")}Script: cuffs.lsl`, "read only", `<pre class="code" tabindex="0" aria-label="The script, read only">${LAB_SCRIPT.map((l, i) => `<span class="ln${lab.err && i === 9 ? " bad" : ""}"><span class="n">${i + 1}</span><span class="c">${esc(lab.err && i === 9 ? l.replace(");", ")") : l) || " "}</span></span>`).join("")}</pre>`);
-      h += labSection("problems", `${icon("circle-alert")}Errors and warnings`, lab.err ? "1 error" : "none", lab.err ? `<ul class="logl"><li class="err" tabindex="0">${icon("circle-x")}<span>Error, line 10, column 63: missing ";" at the end of the line. Press Enter to show the line.</span></li></ul>` : `<p class="muted" style="margin:0">${icon("circle-check")} No errors or warnings.</p>`);
-      h += labSection("log", `${icon("list")}Event log`, lab.err ? "not run" : "5 lines", lab.err ? `<p class="muted" style="margin:0">The script was not run because of the error.</p>` : `<ul class="logl">
-          <li><span class="t">0.00 s</span><span>cuffs starts (state_entry)</span></li>
-          <li><span class="t">0.00 s</span><span>cuffs listens on channel -4711</span></li>
-          <li class="say"><span class="t">0.00 s</span><span>${icon("message-square")} cuffs says to you (llOwnerSay): Cuffs ready.</span></li>
-          <li><span class="t">1.00 s</span><span>hud says on channel -4711: lock</span></li>
-          <li class="rlv"><span class="t">1.00 s</span><span>${icon("ban")} cuffs RLV: @detach=n,sendim=n (held)</span></li></ul>`);
-      h += labSection("restr", `${icon("ban")}RLV restrictions now`, lab.restr.length, restrTable());
-      h += labSection("objects", `${icon("box")}Objects`, "2", `<table class="ltable"><thead><tr><th>Object</th><th>Where</th><th>State</th></tr></thead><tbody>
-          <tr><td>cuffs</td><td>Worn (Left Hand)</td><td><span class="state ok">${icon("circle-check")}Running</span></td></tr>
-          <tr><td>hud</td><td>HUD (Top Right)</td><td><span class="state ok">${icon("circle-check")}Running</span></td></tr></tbody></table>
-          <div class="label">Dialog from hud</div><p class="muted" style="margin:0">"Lock the cuffs?" on channel -4712</p><div class="row tight"><button class="btn compact" data-labinput="lock">lock</button><button class="btn compact" data-labinput="unlock">unlock</button></div>`);
-      h += labSection("input", `${icon("send")}Send input`, null, `<div class="grid2"><label for="labTo">To object</label><div class="row"><span class="field" style="flex:1 1 100px"><input id="labTo" value="cuffs"></span><button class="btn compact" data-labinput="touch">${icon("pointer")}Touch</button></div>
-          <label for="labCh">Channel</label><span class="field" style="width:120px"><input id="labCh" type="number" value="-4711"></span>
-          <label for="labTxt">Text</label><div class="row"><span class="field" style="flex:1 1 120px"><input id="labTxt" placeholder="for example: unlock"></span><button class="btn compact" data-labinput="say">${icon("send")}Say</button></div></div>
-          ${lab.inputLog.length ? `<ul class="logl">${lab.inputLog.slice(-4).map(l => `<li><span class="t">sent</span><span>${esc(l)}</span></li>`).join("")}</ul>` : '<p class="cap" style="margin:0">Touch, Say and the dialog buttons go to the scripts of the last run.</p>'}`);
-      h += labSection("inv", `${icon("package")}Inventory of cuffs`, "3 items", `<table class="ltable"><thead><tr><th>Item</th><th>Type</th></tr></thead><tbody>
-          <tr><td>cuffs.lsl</td><td>Script</td></tr><tr><td>config</td><td>${icon("notebook-text")} Notecard, 4 lines</td></tr><tr><td>wave</td><td>Animation</td></tr></tbody></table><p class="cap" style="margin:0">Simulated: given with the run, nothing is read from Second Life.</p>`);
-    }
-  } else {
-    h += `<div class="grid2"><label class="label" for="labObj">Object</label><span class="field"><input id="labObj" value="panel" data-name="The object that sends the line, as a script in it would with llOwnerSay"></span>
-        <label class="label" for="labCmd">Command</label><div class="row"><span class="field mono" style="flex:1 1 160px"><input id="labCmd" placeholder="@detach=n,sendim=n" data-name="An RLV line, as a script sends it with llOwnerSay" data-key="Enter runs it"></span>
-        <button class="btn main compact" data-cmd="labrun" data-name="Run the line" data-key="Enter">${icon("play")}Run</button></div></div>
-      <div class="row"><span class="cap">Try:</span>${["@detach=n,sendim=n", "@tploc=n", "@clear", "@version=2222", "@showself=n"].map(x => `<button class="btn compact" data-labtry="${x}">${esc(x)}</button>`).join("")}
-        <span class="spacer"></span><button class="btn compact danger" data-cmd="labreset" data-name="Reset: remove every restriction of every object" ${lab.restr.length ? "" : 'aria-disabled="true" data-why="No restrictions to remove."'}>${icon("rotate-ccw")}Reset all</button></div>`;
-    h += labSection("restr", `${icon("ban")}Restrictions`, lab.restr.length, restrTable());
-    h += labSection("actions", `${icon("list-checks")}What the avatar may do`, null, actionsList());
-    h += `<div class="row"><button class="switch" role="switch" aria-checked="${lab.camera}" data-cmd="labcam" data-name="Show camera limits in 3D view"><span class="track"></span>Show camera limits in 3D view<span class="st"></span></button>
-      <button class="switch" role="switch" aria-checked="${lab.env}" data-cmd="labenv" data-name="Show environment in 3D view"><span class="track"></span>Show environment in 3D view<span class="st"></span></button></div>`;
-    h += labSection("replies", `${icon("message-square")}Replies and messages`, lab.replies.length || "none", lab.replies.length ? `<ul class="logl">${lab.replies.slice(-12).map(l => `<li class="${/^Refused/.test(l.t) ? "err" : /^Reply/.test(l.t) ? "say" : "rlv"}"><span class="t">${esc(l.who)}</span><span>${esc(l.t)}</span></li>`).join("")}</ul>` : '<p class="muted" style="margin:0">The lines you run, what happened and the replies a script would hear show here.</p>');
-  }
-  b.innerHTML = h; fillIcons(b); syncSwitches(b);
-}
+function renderLab() { renderLab2(); }
 
 // ---------- Library panel (roadmap item 6, issue 19: drawn in the mockup, not built yet) ----------
 // The 106 clips of library/index.json, copied from it on 23 Nov 2026: id, name, description, tags, source, frames, seconds, file.
@@ -3053,15 +2979,14 @@ window.addEventListener("resize", () => { applyLayout(); updateStates(); renderS
 
 
 // ==================================================================================================
-// ---------- Mockup 2: PROPOSAL, not approved until the project owner says so ----------
-// The project owner, 24 Nov 2026, 11:48: «lage en ny mockup med alt vi har planlagt nå».
-// Drawn: side tabs (no overlap), Script Lab in short pages and its place, a clear active choice,
-// the ? help view from the examples, hint cards that stay closed, props edited as in Second Life,
-// every planned Script Lab part, and the Beginner first meeting. docs/UX_DECISIONS.md, 6s Mockup 2.
-// The approved mockup is still here: the button "Approved mockup" in the top bar switches back.
+// ---------- the program as built: props, Script Lab pages, help, the helper (the code of Mockup 2, kept) ----------
+// The project owner, 24 Nov 2026, 11:48 («lage en ny mockup med alt vi har planlagt nå») and 25 Nov 2026, 12:11
+// (make the mockup match the program as it is now). What is drawn here is what the program has: props edited as in
+// Second Life, Script Lab in five tabs that pop out, the help view and the guide page, the helper, the Animate / Script
+// switch and the beginner view. docs/UX_DECISIONS.md, 6t and 6zc.
 // Program texts are in M2T and in docs/TEACHING.md (tests/test_site_mockup_m2.py checks both agree).
 // ==================================================================================================
-Object.assign(ICONS, { // Lucide icons for Mockup 2 (ISC licence, as above)
+Object.assign(ICONS, { // Lucide icons used below (ISC licence, as above)
   "folder": "<path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"/>",
   "monitor": "<rect width=\"20\" height=\"14\" x=\"2\" y=\"3\" rx=\"2\"/><line x1=\"8\" x2=\"16\" y1=\"21\" y2=\"21\"/><line x1=\"12\" x2=\"12\" y1=\"17\" y2=\"21\"/>",
   "network": "<rect x=\"16\" y=\"16\" width=\"6\" height=\"6\" rx=\"1\"/><rect x=\"2\" y=\"16\" width=\"6\" height=\"6\" rx=\"1\"/><rect x=\"9\" y=\"2\" width=\"6\" height=\"6\" rx=\"1\"/><path d=\"M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3\"/><path d=\"M12 12V8\"/>",
@@ -3074,25 +2999,15 @@ Object.assign(ICONS, { // Lucide icons for Mockup 2 (ISC licence, as above)
   "circle": "<circle cx=\"12\" cy=\"12\" r=\"10\"/>"
 });
 
-// Program texts drawn in Mockup 2: id -> [text, place, trigger]. %1, %2 ... are put in by the program.
+// Program texts drawn here: id -> [text, place, trigger]. %1, %2 ... are put in by the program.
 const M2T = {
-  "SIDE-01": ["Shows this panel on this side. One panel at a time, so nothing overlaps.", "2 Tip on hover", "A side tab (Joints, Selected joint, Script Lab, Library)"],
-  "SIDE-02": ["%1 shows on the %2 side now.", "4 What to do next", "Status line after a side tab is picked; the program puts in the panel and left or right"],
-  "SIDE-03": ["%1 floats in its own window. Its dock-back button puts it back here.", "3 Empty state", "The side area while the picked tab's panel floats"],
-  "SIDE-04": ["Panels on this side", "Side tabs", "The name of a tab strip, for screen readers"],
-  "SIDE-05": ["left<br>right", "Side tabs", "The words put into SIDE-02"],
-  "SIDE-06": ["%1 shows again. %2 waits in its tab.", "4 What to do next", "Status line after the top bar button of the panel that shows is pressed; the program puts in both panels"],
   "LABTWO-01": ["Now: %1 rules.", "Script Lab", "The line beside Viewer rules; the program puts in RLV or RLVa"],
-  "LABTWO-02": ["Help for Script Lab", "2 Tip on hover", "The ? button in the Script Lab title (its name)"],
-  "LABTWO-03": ["Explanations, pictures and the examples, in a bigger view.", "2 Tip on hover", "The ? button in the Script Lab title"],
   "LABTWO-04": ["Player", "Script Lab", "Page tab"],
   "LABTWO-05": ["Improve a setup", "Script Lab", "Page tab"],
-  "LABTWO-06": ["HUD", "Script Lab", "Page tab"],
   "LABTWO-07": ["Opening one part folds the others, so the page stays short.", "2 Tip on hover", "A folding part's header on the Live scripts page"],
   "LABTWO-08": ["Arrows between the parts: who sends what to whom.", "2 Tip on hover", "Page tab Who talks to whom"],
   "LABTWO-09": ["Step back and forth through your recorded steps.", "2 Tip on hover", "Page tab Player"],
   "LABTWO-10": ["Check a setup you made before and see what can be better.", "2 Tip on hover", "Page tab Improve a setup"],
-  "LABTWO-11": ["Try your HUD on screen, as in Second Life.", "2 Tip on hover", "Page tab HUD"],
   "LABTWO-12": ["Improve a finished setup", "Script Lab", "Improve a setup page: heading"],
   "LABTWO-13": ["Bring in a setup you made before. Then see what can be better.", "Script Lab", "Improve a setup page: the line under the heading"],
   "LABTWO-14": ["Import a setup", "Script Lab", "Improve a setup page: the main button"],
@@ -3110,14 +3025,6 @@ const M2T = {
   "LABTWO-26": ["Change one thing, then save. Your recording runs again and says what changed.", "4 What to do next", "Improve a setup page: the last line"],
   "LABTWO-27": ["Record today's behaviour first, so you can see that nothing breaks.", "6 Reason", "Show what can be better is greyed, as its tip"],
   "LABTWO-28": ["Import a setup first.", "6 Reason", "Record today's behaviour is greyed, as its tip"],
-  "LABTWO-29": ["HUD: buttons on your screen", "Script Lab", "HUD page: heading"],
-  "LABTWO-30": ["In Second Life a HUD sits on your screen. Here it shows in a corner of the 3D view.", "Script Lab", "HUD page: the line under the heading"],
-  "LABTWO-31": ["Show the HUD on screen", "Script Lab", "HUD page: the on and off button"],
-  "LABTWO-32": ["Click the HUD to touch it, as in Second Life.", "4 What to do next", "HUD page: the line while the HUD shows"],
-  "LABTWO-33": ["Touched: %1.", "4 What to do next", "HUD page: the last touch; the program puts in the prim"],
-  "LABTWO-34": ["How the HUD looks is still made in Second Life.", "Script Lab", "HUD page: caption"],
-  "LABTWO-35": ["Watch a folder with a HUD first. The Gear set has one.", "3 Empty state", "HUD page: no HUD in the watched folder"],
-  "LABTWO-36": ["HUD (top right)", "3D view", "The title of the HUD in the corner of the 3D view"],
   "LABTWO-37": ["Example project made: First colour. The box turns red.", "4 What to do next", "Status line after Make example project"],
   "LABTWO-38": ["Watching Gear_set. Click the flat box beside the figure.", "4 What to do next", "Status line after the Gear set example is opened"],
   "LABTWO-39": ["Next example: Gear set", "Script Lab", "Steps card: the button after the last step of First colour"],
@@ -3141,8 +3048,6 @@ const M2T = {
   "PROPED-14": ["Place", "Selected joint panel", "The heading over the place of a prop"],
   "PROPED-15": ["Size", "Selected joint panel", "The heading over the size of a prop"],
   "PROPED-16": ["Width<br>Height<br>Depth", "Selected joint panel", "The size fields of a prop"],
-  "PROPED-17": ["Shape like Second Life", "Selected joint panel", "The folded part with the shape fields of a prop"],
-  "PROPED-18": ["Cut begin<br>Cut end<br>Hollow<br>Twist", "Selected joint panel", "The shape fields of a prop"],
   "PROPED-19": ["Pick a prop in the 3D view or in the list.", "3 Empty state", "Selected joint panel while Props is chosen and no prop is picked"],
   "PROPED-20": ["Drag an arrow to move the prop.", "3 Hint bar", "The hint bar while Move is on"],
   "PROPED-21": ["Drag a ring to turn the prop.", "3 Hint bar", "The hint bar while Turn is on (or Ctrl is held)"],
@@ -3151,28 +3056,11 @@ const M2T = {
   "PROPED-24": ["Change cancelled. Nothing changed.", "4 What to do next", "Status line after Esc during a drag on a prop"],
   "PROPED-25": ["Release: keep it · Esc: cancel", "3D view", "The second line of the label next to the pointer while a prop is dragged"],
   "PROPED-26": ["%1 added.", "4 What to do next", "Status line after a shape button; the program puts in the new prop's name"],
-  "HELPV-01": ["Help", "Help view", "The title of the help view, and the ? button in the top bar"],
-  "HELPV-02": ["Script Lab help", "Help view", "The title when the ? button of Script Lab opened it"],
   "HELPV-03": ["Start here<br>How to lay out a folder<br>Words<br>Hints", "Help view", "The topics on the left"],
   "HELPV-04": ["Example: %1", "Help view", "A topic for each example; the program puts in its title"],
-  "HELPV-05": ["Show me", "Help view", "The button by each step"],
-  "HELPV-06": ["Shows where this is, then does the step.", "2 Tip on hover", "The Show me button"],
   "HELPV-07": ["Here", "Help view", "The small badge on the control Show me points at"],
   "HELPV-08": ["Here is %1.", "4 What to do next", "Status line after Show me; the program puts in the control's name"],
-  "HELPV-09": ["Script Lab tests Second Life scripts safely on your PC.<br>Make the example project first. It shows a result at once.<br>Then follow the steps of an example.", "Help view", "Start here: the text"],
-  "HELPV-10": ["Make the example project.<br>Turn on Show effects in 3D view.<br>Click a prop in the 3D view.", "Help view", "Start here: the three steps"],
-  "HELPV-11": ["One folder is one object. Each folder inside it is one prim.", "Help view", "How to lay out a folder: the first line"],
-  "HELPV-12": ["Put scripts (.lsl) and notecards (.txt) in their prim's folder.<br>Give every script and notecard its own name.<br>Name the main prim's folder Root.<br>Copy scripts out of Second Life by hand.", "Help view", "How to lay out a folder: the rules"],
-  "HELPV-13": ["A script that cannot be checked shows its line.<br>The final test is always in Second Life.", "Help view", "How to lay out a folder: the warnings"],
-  "HELPV-14": ["The picture shows the Gear set folder.", "Help view", "How to lay out a folder: caption of the picture"],
   "HELPV-15": ["The words Script Lab uses, in plain words.", "Help view", "Words: the first line"],
-  "HELPV-16": ["Hints are small cards next to the part they talk about.<br>The cross closes a hint. The next one waits until you ask.", "Help view", "Hints: the text"],
-  "HELPV-17": ["Show the next hint", "Help view", "Hints: the button"],
-  "HELPV-18": ["What it is<br>Steps<br>The pieces<br>New words", "Help view", "The headings of an example topic"],
-  "HELPV-19": ["Open this example", "Help view", "An example topic: the main button"],
-  "HELPV-20": ["Hint closed. Help shows the next one when you want it.", "4 What to do next", "Status line after the cross or Esc on a hint card"],
-  "HELPV-21": ["Explanations, pictures and examples. F1 opens it too.", "2 Tip on hover", "The ? button in the top bar"],
-  "HELPV-22": ["The picture shows the example with its props.", "Help view", "An example topic: caption of the picture"],
   "HELPV-23": ["Examples", "Help view", "The heading over the example topics"]
 };
 function T(id, ...a) { let t = M2T[id] ? M2T[id][0] : id; a.forEach((v, i) => { t = t.split("%" + (i + 1)).join(v); }); return t; }
@@ -3249,7 +3137,7 @@ function skipDone() { const L = helper.lesson; if (!L) return; const st = lesson
 function helperNotify(ev) {
   const L = helper.lesson; if (!L || L.done) return;
   const st = lessonSteps(L)[L.step]; if (!st || st.ev !== ev) return;
-  L.step++; setTimeout(() => { skipDone(); showCard(); }, 0);
+  L.step++; skipDone(); setTimeout(showCard, 0);
 }
 function renderLessons() {
   const box = $("#helperLessons"), L = helper.lesson; if (!box) return;
@@ -3789,7 +3677,6 @@ document.addEventListener("keydown", e => {
   if (!M2.on) return;
   if (k === "Control" || k === "Shift") { const nm = e.ctrlKey ? (e.shiftKey ? "size" : "turn") : null; if (nm !== m2Mod && M2.propMode && M2.propSel) { m2Mod = nm; renderScene(); m2RenderEdit(); updateHintbar(); } }
   if (t.closest && t.closest("#m2menu") && k === "Escape") { e.preventDefault(); e.stopPropagation(); m2CloseMenu(); $("#view").focus(); return; }
-  if (t.matches && t.matches(".m2strip [role=tab]") && (k === "ArrowDown" || k === "ArrowUp")) { e.preventDefault(); e.stopPropagation(); const n = roving($$("[role=tab]", t.parentElement), t, k); n.click(); return; }
   if (t.matches && t.matches(".m2pages [role=tab]") && /Arrow(Left|Right)/.test(k)) { e.preventDefault(); e.stopPropagation(); roving($$("[role=tab]", t.parentElement), t, k, true).click(); return; }
   if (t.matches && t.matches(".m2topics [role=tab]") && /Arrow(Up|Down)/.test(k)) { e.preventDefault(); e.stopPropagation(); roving($$("[role=tab]", t.parentElement), t, k).click(); return; }
   if (t.matches && t.matches(".m2seg [role=radio]") && /Arrow/.test(k)) { e.preventDefault(); e.stopPropagation(); const rs = $$("[role=radio]", t.parentElement); const n = rs[(rs.indexOf(t) + (k === "ArrowRight" || k === "ArrowDown" ? 1 : rs.length - 1)) % rs.length]; n.click(); return; }
