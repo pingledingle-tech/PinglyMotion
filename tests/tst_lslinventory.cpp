@@ -244,7 +244,8 @@ void LslInventoryTest::removeOfOwnScriptStops()
   const QJsonObject a = runWith("default { state_entry() { llRemoveInventory(llGetScriptName()); llOwnerSay(\"after\"); } }", QJsonArray());
   QCOMPARE(said(a), QStringList());
   QVERIFY(a["stopped"].toBool());
-  QVERIFY(a["stop_reason"].toString().contains("llRemoveInventory on the script itself is not supported yet"));
+  QCOMPARE(a["stop_reason"].toString(), QString("The script removed itself from the object, so it stopped here, as in Second Life."));
+  QCOMPARE(entries(a, "inventory"), QStringList({R"({"item":"Script","op":"remove","type":"inventory"})"}));
 }
 
 void LslInventoryTest::rezObject()

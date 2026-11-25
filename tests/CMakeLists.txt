@@ -205,7 +205,7 @@ IF (Python3_Interpreter_FOUND)
 ENDIF ()
 
 # Script Lab: the LSL interpreter (issue 289): lexer, parser and checker, running scripts
-FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv lslworld lsllink lslpure lslevents lslprims lslinventory lslsitting lslcontrols lslsensors lslstubs lslhttp lslmovement lslcollision lslmotion lslland)
+FOREACH (LSL_TEST lsllexer lslparser lslinterp lslrlv lslworld lsllink lslpure lslevents lslprims lslinventory lslsitting lslcontrols lslsensors lslstubs lslhttp lslmovement lslcollision lslmotion lslland lslimprove)
   ADD_EXECUTABLE (pinglymotion_${LSL_TEST}_tests tst_${LSL_TEST}.cpp)
   TARGET_INCLUDE_DIRECTORIES (pinglymotion_${LSL_TEST}_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
   TARGET_COMPILE_DEFINITIONS (pinglymotion_${LSL_TEST}_tests PRIVATE PINGLYMOTION_EXAMPLES="${CMAKE_SOURCE_DIR}/examples")
@@ -322,6 +322,8 @@ ADD_TEST (NAME examples COMMAND pinglymotion_examples_tests)
 SET_TESTS_PROPERTIES (examples PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 IF (Python3_Interpreter_FOUND)
   ADD_TEST (NAME examples_guides COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_examples.py)
+  # the OpenCollar collar scripts in examples/improve/OpenCollar are an unchanged copy with their licence (queue 1, item 5)
+  ADD_TEST (NAME opencollar_copy COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_opencollar_copy.py)
 ENDIF ()
 
 # Script Lab step 7 (#293): what a run does to the avatar, the animation lookup and the 3D view's preview

@@ -1,2 +1,4 @@
 # shell scripts run under bash on the Windows runner too, so they keep LF line ends
 *.sh text eol=lf
+# the OpenCollar scripts are an unchanged copy (their licence): never convert their line ends
+examples/improve/OpenCollar/** -text

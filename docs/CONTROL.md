@@ -497,8 +497,10 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `error` | a runtime error stopped the script (division by zero, too many listens) | `message`, `line`, `column` |
 | `unsupported` | the script called a function the sandbox does not run yet, and was stopped there | `message`, `line`, `column` |
 | `limit` | a limit stopped the script | `message`, `line`, `column` |
+| `removed` | the script removed itself with `llRemoveInventory(llGetScriptName())` and stopped, as in Second Life (an `inventory` entry with `op` `remove` comes first) | `message`, `line`, `column` |
+| `agent_rot` | `llSetAgentRot` with `PERMISSION_TRIGGER_ANIMATION`: nothing is turned, the call is recorded with the turn Second Life keeps (only about the vertical axis) | `avatar`, `rotation`, `degrees` |
 | `message_linked` | `llMessageLinked` (step 9a) | `link` (as given, for example -1 for `LINK_SET`), `num`, `text`, `id`, `scripts` (how many scripts are in the prims it reaches) |
-| `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
+| `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`, `delete_found` with `pattern` and `deleted`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
 | `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`sit_target` (step 9b-5: `set`, `offset`, `rotation`), `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
 | `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
 | `give_inventory` | `llGiveInventory` (step 9b-4) | `to`, `item`, `result` (`given`, `not_found`, `unknown_target` or `name_exists`) |
@@ -541,7 +543,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 `owner`. `position` is `[x, y, z]` in region metres (x and y 0 to 256, z 0 to 4096; default `[128, 128, 20]`, where the
 owner's avatar stands); `attached` is an attachment point from 1 to 55 (0, the default, means rezzed at `position`). A
 worn object is where the avatar is, and gets `attach` with the owner's key after its `state_entry`. All scripts
-together are at most 524 288 characters; nothing runs unless every script compiles (the answer then names the
+together are at most 1 048 576 characters (524 288 until 25 November 2026); nothing runs unless every script compiles (the answer then names the
 `object` and lists its `errors`).
 
 - One simulated clock for all objects. Things due at the same moment run in a fixed order, so the same request always
@@ -618,7 +620,11 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
   the new value, `LINKSETDATA_DELETE` (2) with an empty value, `LINKSETDATA_RESET` (0) with an empty name and value.
   Not supported yet (known to `lsl_check`, which warns; the script stops there with `unsupported`): the protected
   functions (`llLinksetDataWriteProtected`, `llLinksetDataReadProtected`, `llLinksetDataDeleteProtected`) and
-  `llLinksetDataFindKeys`, `llLinksetDataCountFound`, `llLinksetDataDeleteFound`.
+  `llLinksetDataCountFound`. Since 25 November 2026 `llLinksetDataFindKeys(pattern, start, count)` lists the names that
+  match a regular expression anywhere (alphabetical; `start` counts the matches from 0, `count` below 1 means all) and
+  `llLinksetDataDeleteFound(pattern, pass)` deletes them and answers `[deleted, 0]` (no pair is protected in the
+  sandbox), with one `linkset_data` event `LINKSETDATA_MULTIDELETE` (3) whose name is the deleted names, comma separated;
+  a pattern of more than 800 characters, or one that is not a regular expression, matches nothing and gives a debug line.
 - A `link_message` or `linkset_data` event whose arguments do not fit in the receiving script's free memory crashes
   that script with a Stack-Heap Collision (an `error` entry), as in Second Life; the other scripts run on.
 - Chat: a prim never hears its own chat (no script in the same prim hears it); the other prims of the same object
@@ -1321,7 +1327,7 @@ it, because the examples are separate scripts. The panel follows whichever mode 
   `runs` counts these folder runs.
 - All scripts are checked at once. The folder runs only when every script compiles and no limit is broken:
   at most 32 scripts (the sandbox's limit for one object) and 256 prims, at most 262 144 bytes per file and
-  524 288 bytes for all scripts and notecards together, notecards as in `lsl_run`'s `inventory`, paths
+  1 048 576 bytes for all scripts and notecards together, notecards as in `lsl_run`'s `inventory`, paths
   inside the folder up to 255 characters, object, prim, script and notecard names up to 63 characters, and
   every script and notecard name used once in the object (the sandbox keeps one inventory per object).
   The 5 000-entry and link rules above apply too.

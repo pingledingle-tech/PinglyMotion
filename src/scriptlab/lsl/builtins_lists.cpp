@@ -99,6 +99,27 @@ Value Interpreter::callBuiltinLists(Fn fn, const QString& name, std::vector<Valu
       }
       return Value::integer(-1);
     }
+    case Fn::ListFindListNext:
+    {
+      // the wiki: the place of the instance-th match (0 is the first, as llListFindList; below 0 counts from the end, -1 is
+      // the last), -1 when there are not that many; an empty test list answers 0 (the wiki's caveat)
+      const auto& src = a[0].list;
+      const auto& test = a[1].list;
+      const qint64 instance = a[2].i;
+      if (test.empty()) return Value::integer(0);
+      std::vector<qint32> found;
+      for (size_t i = 0; i + test.size() <= src.size(); ++i)
+      {
+        step(m_line, m_column);
+        bool match = true;
+        for (size_t k = 0; match && k < test.size(); ++k) match = sameElement(src[i + k], test[k]);
+        if (!match) continue;
+        found.push_back(qint32(i));
+        if (instance >= 0 && qint64(found.size()) > instance) return Value::integer(found.back());
+      }
+      if (instance < 0 && -instance <= qint64(found.size())) return Value::integer(found[found.size() - size_t(-instance)]);
+      return Value::integer(-1);
+    }
     case Fn::ListSort:
     {
       const size_t n = a[0].list.size();

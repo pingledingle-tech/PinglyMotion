@@ -31,6 +31,7 @@ class LslPrimsTest : public QObject
     void faceColourAlphaTexture();
     void primitiveParamsRules();
     void badRulesAreDebugLines();
+    void integerWhereFloatBelongs();
     void unsupportedRuleStops();
     void linkForms();
     void positionAndRotationOfARootPrim();
@@ -169,9 +170,9 @@ void LslPrimsTest::primitiveParamsRules()
 
 void LslPrimsTest::badRulesAreDebugLines()
 {
-  // an integer where the alpha float belongs: the earlier rule is kept, this one and the rest are skipped, a debug line says so
+  // a string where the alpha float belongs: the earlier rule is kept, this one and the rest are skipped, a debug line says so
   const QJsonObject a = run(R"lsl(
-    llSetPrimitiveParams([PRIM_GLOW, 0, 0.75, PRIM_COLOR, 0, <1, 0, 0>, 1, PRIM_GLOW, 1, 0.5]);
+    llSetPrimitiveParams([PRIM_GLOW, 0, 0.75, PRIM_COLOR, 0, <1, 0, 0>, "1", PRIM_GLOW, 1, 0.5]);
     say(llList2CSV(llGetPrimitiveParams([PRIM_GLOW, 0, PRIM_GLOW, 1, PRIM_COLOR, 0])));
     llSetPrimitiveParams([5.5]);
     llSetPrimitiveParams([PRIM_POSITION]);
@@ -181,6 +182,20 @@ void LslPrimsTest::badRulesAreDebugLines()
     R"({"channel":2147483647,"text":"llSetPrimitiveParams: bad PRIM_COLOR rule at list position 3: needs face, color vector and alpha float","type":"debug"})",
     R"({"channel":2147483647,"text":"llSetPrimitiveParams: bad primitive rule at list position 0: a rule starts with a PRIM_* integer","type":"debug"})",
     R"({"channel":2147483647,"text":"llSetPrimitiveParams: bad PRIM_POSITION rule at list position 0: needs a vector","type":"debug"})"}));
+}
+
+void LslPrimsTest::integerWhereFloatBelongs()
+{
+  // Second Life takes an integer for a float in the rules (OpenCollar's titler writes [PRIM_TEXT, "", ZERO_VECTOR, 0]);
+  // PRIM_TYPE is read as the plain box every sandbox prim is
+  const QJsonObject a = run(R"lsl(
+    llSetPrimitiveParams([PRIM_COLOR, 0, <1, 0, 0>, 0, PRIM_GLOW, 1, 1, PRIM_TEXT, "hi", <0, 1, 0>, 1]);
+    say(llList2CSV(llGetPrimitiveParams([PRIM_COLOR, 0, PRIM_GLOW, 1, PRIM_TEXT])));
+    say(llList2CSV(llGetPrimitiveParams([PRIM_TYPE])));
+  )lsl");
+  QCOMPARE(said(a), QStringList({"<1.00000, 0.00000, 0.00000>, 0.000000, 1.000000, hi, <0.00000, 1.00000, 0.00000>, 1.000000",
+                                 "0, 0, <0.00000, 1.00000, 0.00000>, 0.000000, <0.00000, 0.00000, 0.00000>, <1.00000, 1.00000, 0.00000>, <0.00000, 0.00000, 0.00000>"}));
+  QCOMPARE(entries(a, "debug"), QStringList());
 }
 
 void LslPrimsTest::unsupportedRuleStops()

@@ -306,6 +306,16 @@ Guide:
 
 Today in the program: the props of this example cannot be made with these names, and Send input does not reach a watched folder (see "What the program can do now"). The tests run it with the same inputs.
 
+## A real, large setup: OpenCollar
+
+Added 25 November 2026 for «improve a finished setup» (jobs list, issue 74, queue 1, item 5). It is not a beginner example and has no guide or props; the beginner examples are the six above.
+
+Where it is: `examples/improve/OpenCollar/` in the repository, and the folder `examples/improve/OpenCollar` next to the program in the Windows zip. It holds the 23 collar scripts of the public OpenCollar project, copied unchanged from their repository, and their licence file `LICENSE`, also unchanged. It is one object in the folder model: every script is in the root prim. Together the scripts are about 0.7 MB of text.
+
+What it shows: a setup of many scripts that talk to each other with link messages, as people build them in Second Life. Watch the folder as one object. The collar starts in about 12 simulated seconds. A click on it shows its main menu. In the sandbox two scripts remove themselves at the start, as they do in Second Life. The update check gets no answer, because the sandbox never goes on the network.
+
+Licence: the scripts are under the GNU GPL version 2 with the OpenCollar licence terms in `LICENSE`. The copy stays unchanged; a changed copy must follow those terms. Credit: [CREDITS.md](../CREDITS.md). Nothing else from their project is in PinglyMotion: no pictures, models, animations, sounds or notecards. Tests: `tests/tst_lslimprove.cpp` and `tests/test_opencollar_copy.py` ([SCRIPT_LAB.md](SCRIPT_LAB.md), "A real, large setup").
+
 ## The data file `example.json`
 
 One file in each example's top folder. The folder model reads only `.lsl`, `.txt` and `.notecard` files, so the file is not part of the object. Format 1:
