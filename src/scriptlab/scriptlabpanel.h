@@ -77,6 +77,7 @@
 #include "labtint.h"
 #include "labdialogbox.h"
 #include "labhelpview.h"
+#include "labimprove.h"
 #include "labchains.h"
 #include "labtabs.h"
 #include "labwatcher.h"
@@ -100,6 +101,7 @@ class SphereControls;
 class LabFolderTree;
 class LabHelpView;
 class LabPlayer;
+class LabImproveView;
 class ChannelMapView;
 namespace lsl { class Session; }
 class QLabel;
@@ -124,7 +126,7 @@ class ScriptLabPanel : public QWidget
     static const char* const DefaultObject;   // "panel"
     // the pages, in the order of their tabs (job UX-B); a page's number is also its tab's place
     // while no tab is popped out (tabIndex() gives the place at any time)
-    enum Page { LivePage = 0, CommandsPage = 1, MapPage = 2, PlayerPage = 3, PageCount = 4 };
+    enum Page { LivePage = 0, CommandsPage = 1, MapPage = 2, PlayerPage = 3, ImprovePage = 4, PageCount = 5 };
 
     // Size (the project owner, 23 Nov 2026, 17:48: the window could not be resized and needs
     // more room). The panel starts at defaultSize() when docked or floated for the first time,
@@ -256,6 +258,8 @@ class ScriptLabPanel : public QWidget
     // the user looks at a moment (LabPlayer::showing), the props show that moment's colours and places
     // instead of now; a click on a prop goes back to now first (it is an input to the world of now).
     LabPlayer* player() const { return m_player; }
+    // queue 1 item 5 (parts b and c): the page Improve a setup
+    LabImproveView* improveView() const { return m_improve; }
     // --- the channel map (job A4): who talks to whom in the last folder run (LabChannelMap), in the
     // folding part "Who talks to whom" after the event log. Shown while a folder is watched as one
     // object; folded in Beginner mode, open in Expert mode (switching the mode folds or opens it).
@@ -742,6 +746,13 @@ class ScriptLabPanel : public QWidget
     QPlainTextEdit* m_recipeText = nullptr;
     QPushButton* m_replayButton = nullptr;
     LabPlayer* m_player = nullptr;   // job B3
+    // queue 1 item 5, parts b and c: the page Improve a setup, filled after every folder run and replay; the
+    // suggestions and reports are made again only when the folder ran again (m_improveKey)
+    void refreshImprove();
+    LabImproveView* m_improve = nullptr;
+    QString m_improveKey;
+    QVector<LabImprove::Suggestion> m_improveSuggestions;
+    QVector<LabImprove::Report> m_improveReports;
     // the folder run the props show: the player's moment while it shows one, else the newest run
     QJsonObject shownFolder() const;
     QString m_recipeNote;    // a one-off line (recording stopped without steps, a refused replay)

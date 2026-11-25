@@ -150,7 +150,8 @@ TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
 # Script Lab Live (issue 292): the folder watch behind lab_watch, used by controlapi.cpp
 # and record and replay (job A3): the watcher replays recipe.rlvtest, lab_replay reaches it
 SET (FUZZ_LAB_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labfolder.cpp
-                   ${CMAKE_SOURCE_DIR}/src/scriptlab/labrecipe.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labtint.cpp)
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/labrecipe.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labtint.cpp
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/labweight.cpp)
 TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LAB_FILES})
 TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LAB_FILES})
 ADD_EXECUTABLE (fuzz_lsl fuzz_lsl.cpp ${FUZZ_LSL_FILES})
@@ -161,7 +162,8 @@ TARGET_LINK_LIBRARIES (fuzz_lsl fuzz_core Qt6::Core)
 
 # Script Lab record and replay (job A3): the recipe reader, the replay and the result file
 ADD_EXECUTABLE (fuzz_recipe fuzz_recipe.cpp ${FUZZ_LSL_FILES} ${CMAKE_SOURCE_DIR}/src/scriptlab/labfolder.cpp
-                ${CMAKE_SOURCE_DIR}/src/scriptlab/labrecipe.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labtint.cpp)
+                ${CMAKE_SOURCE_DIR}/src/scriptlab/labrecipe.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labtint.cpp
+                ${CMAKE_SOURCE_DIR}/src/scriptlab/labweight.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_recipe PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
 TARGET_COMPILE_OPTIONS (fuzz_recipe PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_recipe PRIVATE ${FUZZ_LINK})

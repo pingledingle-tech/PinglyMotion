@@ -32,6 +32,7 @@ struct BuiltinFunction
   QStringList argNames;
   bool deprecated = false;
   bool supported = false;   // runs in the sandbox
+  bool recordOnly = false;  // runs, but the sandbox only records the call (nothing is drawn, played or moved)
 };
 
 struct BuiltinEvent

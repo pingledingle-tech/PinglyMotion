@@ -11,6 +11,7 @@
  */
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <limits>
 
@@ -68,6 +69,8 @@ namespace
 Interpreter::Interpreter(const Script& script, World& world, const Limits& limits)
   : m_script(script), m_world(world), m_limits(limits)
 {
+  static std::atomic<quint64> lastId{0};
+  m_id = ++lastId;
   m_clock.start();
 }
 
@@ -199,6 +202,7 @@ void Interpreter::declare(const QString& name, Type type, const Value& value)
 
 void Interpreter::assign(Var& var, const Value& value)
 {
+  if (!m_globals.empty() && &var >= m_globals.data() && &var < m_globals.data() + m_globals.size()) m_globalWritten = true;
   m_memory += value.bytes() - var.value.bytes();
   var.value = value;
   if (m_memory > m_limits.maxMemoryBytes)
@@ -428,9 +432,19 @@ void Interpreter::dispatch(const Event& event)
     d.name = event.detectedName;
     m_detected.push_back(d);
   }
+  // part b (the weight view): a message this script got, and whether its handler did anything with it
+  const bool message = event.name == "link_message" || event.name == "listen";
+  if (message) ++m_messages.received;
+  const qint64 actionsBefore = m_world.actions();
+  m_globalWritten = false;
   m_inEvent = true;
   const Flow flow = execBlock(*handler->body);
   m_inEvent = false;
+  if (message && flow != Flow::State && !m_globalWritten && m_world.actions() == actionsBefore)
+  {
+    ++m_messages.unused;
+    if (event.from != 0) m_world.messageIgnored(event.from);
+  }
   m_detectedKey.clear();
   m_detectedName.clear();
   m_detected.clear();
@@ -490,7 +504,7 @@ void Interpreter::deliverInput(const Input& input)
   receive(input.channel, name, id, text);
 }
 
-void Interpreter::receive(int channel, const QString& name, const QString& id, const QString& text)
+void Interpreter::receive(int channel, const QString& name, const QString& id, const QString& text, quint64 from)
 {
   if (m_stopped) return;
   const QString clipped = World::clip(text);
@@ -502,7 +516,7 @@ void Interpreter::receive(int channel, const QString& name, const QString& id, c
     if (!l.name.isEmpty() && l.name != name) continue;
     if (!l.id.isEmpty() && l.id != "00000000-0000-0000-0000-000000000000" && l.id != id) continue;
     if (!l.message.isEmpty() && l.message != clipped) continue;
-    queueEvent(Event{"listen", {Value::integer(channel), Value::string(name), Value::key(id), Value::string(clipped)}, QString(), QString()});
+    queueEvent(Event{"listen", {Value::integer(channel), Value::string(name), Value::key(id), Value::string(clipped)}, QString(), QString(), {}, from});
   }
 }
 
@@ -527,9 +541,9 @@ void Interpreter::attachEvent(const QString& id)
   queueEvent(Event{"attach", {Value::key(id)}, QString(), QString()});
 }
 
-void Interpreter::linkMessage(int sender, int num, const QString& str, const QString& id)
+void Interpreter::linkMessage(int sender, int num, const QString& str, const QString& id, quint64 from)
 {
-  queueEvent(Event{"link_message", {Value::integer(sender), Value::integer(num), Value::string(str), Value::key(id)}, QString(), QString()});
+  queueEvent(Event{"link_message", {Value::integer(sender), Value::integer(num), Value::string(str), Value::key(id)}, QString(), QString(), {}, from});
 }
 
 void Interpreter::httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body)

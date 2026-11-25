@@ -643,7 +643,11 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
   reaches its limit of events or steps (the other scripts run on), never in a hang.
 - Log entries of an object given with `scripts` have `script` (the script's name). The answer's `objects` entry of
   such an object has `prims` and `scripts` (per script: `name`, `link`, `state`, `stopped`, `stop_reason`,
-  `open_listens`, `timer`, `steps` and `memory`, the rough byte count below); its `stopped` is true only when all its
+  `open_listens`, `timer`, `steps` and `memory`, the rough byte count below; since queue 1 item 5, part b, also
+  `memory_limit`, what `llGetMemoryLimit` answers, and `messages`: `sent` (`llMessageLinked` and chat), `received`
+  (the `link_message` and `listen` events it handled), `unused` (those its handler did nothing with: it wrote no
+  global variable, changed no state and made no log entry) and `ignored` (how many of its own messages the script
+  that got them did nothing with), counted over the whole run and across resets, also when the log is full); its `stopped` is true only when all its
   scripts stopped (then `stop_reason` names each script), and `steps` and `open_listens` add up its scripts.
   `linkset_data` (`count`, `used`, `available` and `pairs`, at most 200 pairs, each name and value cut at 1 024
   characters) is in every entry given with `scripts` and in any entry whose store is not empty.
@@ -1376,6 +1380,12 @@ recording and replay part of `labwatcher.*`; the panel part is in [SCRIPT_LAB.md
   happened by then), `done`, `text` (the step in plain words, `Start.` for the start) and `facts` (objects with
   `key`, such as `lock:Cuffs`, and `text`, the sentence true at that moment); and `first_difference`, the first
   moment whose facts differ from the replay before, or `null` (nothing differs, or nothing to compare with).
+- For Improve a setup (queue 1, item 5, part b): `weight` (`valid`, `scripts`, `reserved` bytes kept in Second
+  Life, `limited`, `sent`, `received`, `unused` and `rows`, one per script still in the object: `name`, `prim`,
+  `limit`, `used`, `sent`, `received`, `unused`, `ignored`, `stopped`), `weight_changes` (one sentence each, for
+  example `Before: 9 messages got, 6 not used. Now: 3 got, 0 not used.`) and `weight_compared` (`false` when the
+  replay before kept no weight). The weight is written to `recipe.rlvresult` too (`=weight <count>` and one
+  `=script <limit> <used> <sent> <received> <unused> <ignored> <stopped> <name>` line per script).
 - The facts, a fingerprint of every moment (`@<moment> <16 hex digits>` lines, job B3) and the changes are
   written to `recipe.rlvresult` next to the recipe (`[key] sentence` lines and `#` notes); that file is the
   "before" of the next replay. The sandbox is deterministic, so the same scripts and the

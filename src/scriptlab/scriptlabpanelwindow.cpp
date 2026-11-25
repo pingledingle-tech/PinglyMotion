@@ -22,6 +22,7 @@
 #include "usersettings.h"
 #include "scriptlabpanelui.h"
 
+#include "labimproveview.h"
 #include "scriptlabpanel.h"
 
 using namespace LabUi;
@@ -66,6 +67,39 @@ void ScriptLabPanel::refreshChannelMap(const QJsonObject& folder)
   p.setColor(QPalette::WindowText, unheard > 0 ? dangerColour(isDark(palette())) : mutedColour(isDark(palette())));
   m_mapProblems->setPalette(p);
   m_mapProblems->setVisible(!problems.isEmpty());
+}
+
+void ScriptLabPanel::refreshImprove()
+{
+  if (!m_improve) return;
+  LabImproveView::Content c;
+  c.watched = m_watcher && m_watcher->watching() && m_watcher->linkset();
+  if (c.watched)
+  {
+    const QJsonObject folder = m_watcher->folderResult();
+    c.ran = folder.value("ok").toBool();
+    c.notRun = folder.value("error").toString();
+    c.recording = m_watcher->recording();
+    c.weight = m_watcher->weight();
+    c.logFull = folder.value("result").toObject().value("log_truncated").toBool();
+    // the suggestions and reports read and parse every script: only when the folder ran again
+    const QString key = m_watcher->folder() + QLatin1Char('\n') + QString::number(folder.value("run").toInt());
+    if (key != m_improveKey)
+    {
+      m_improveKey = key;
+      const LabFolder::Linkset linkset = LabFolder::open(m_watcher->folder());
+      m_improveSuggestions = c.ran ? LabImprove::suggest(linkset, c.weight) : QVector<LabImprove::Suggestion>();
+      m_improveReports = LabImprove::canRun(linkset, folder);
+    }
+    c.suggestions = m_improveSuggestions;
+    c.reports = m_improveReports;
+    const QJsonObject replay = m_watcher->lastReplay();
+    c.replayed = !replay.isEmpty() && replay.value("ran").toBool();
+    c.compared = replay.value("weight_compared").toBool();
+    for (const QJsonValue& v : replay.value("weight_changes").toArray()) c.changes << v.toString();
+  }
+  else m_improveKey.clear();
+  m_improve->setContent(c);
 }
 
 bool ScriptLabPanel::activateMapBox(int box)
@@ -114,6 +148,7 @@ QString ScriptLabPanel::pageKey(Page page)
     case CommandsPage: return QStringLiteral("commands");
     case MapPage: return QStringLiteral("map");
     case PlayerPage: return QStringLiteral("player");
+    case ImprovePage: return QStringLiteral("improve");
     default: return QString();
   }
 }
@@ -126,6 +161,7 @@ QString ScriptLabPanel::pageName(Page page) const
     case CommandsPage: return tr("Type commands");
     case MapPage: return tr("Who talks to whom");
     case PlayerPage: return tr("Player");
+    case ImprovePage: return tr("Improve a setup");
     default: return QString();
   }
 }
@@ -137,10 +173,11 @@ void ScriptLabPanel::addPageTab(Page page)
   for (int p = 0; p < page; ++p)
     if (tabIndex(Page(p)) >= 0) ++at;
   const int index = m_tabs->insertTab(at, m_pages[page], pageName(page));
-  // the tips: Live and Type commands as before, the map and player as in the mockup (LABTWO-08, -09)
+  // the tips: Live and Type commands as before, the map, player and Improve a setup as in the mockup (LABTWO-08, -09, -10)
   static const char* const tips[PageCount] = {
     QT_TR_NOOP("Live: your .lsl scripts run each time you save them"), QT_TR_NOOP("Commands: type RLV lines by hand"),
-    QT_TR_NOOP("Arrows between the parts: who sends what to whom."), QT_TR_NOOP("Step back and forth through your recorded steps.")};
+    QT_TR_NOOP("Arrows between the parts: who sends what to whom."), QT_TR_NOOP("Step back and forth through your recorded steps."),
+    QT_TR_NOOP("Check a setup you made before and see what can be better.")};
   m_tabs->setTabToolTip(index, tr(tips[page]));
   m_tabs->setTabWhatsThis(index, tr(tips[page]));
   stylePageTabs();
@@ -151,8 +188,8 @@ void ScriptLabPanel::stylePageTabs()
   if (!m_tabs) return;
   const bool dark = isDark(palette());
   const Tokens& t = tokens(dark);
-  // Lucide icons, in the text colour: as the mockup draws the tabs (file-code, terminal, network, rotate-ccw)
-  static const char* const icons[PageCount] = {"file-code", "terminal", "network", "rotate-ccw"};
+  // Lucide icons, in the text colour: as the mockup draws the tabs (file-code, terminal, network, rotate-ccw, gauge)
+  static const char* const icons[PageCount] = {"file-code", "terminal", "network", "rotate-ccw", "gauge"};
   for (int p = 0; p < PageCount; ++p)
   {
     const int index = tabIndex(Page(p));

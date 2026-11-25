@@ -314,6 +314,10 @@ Where it is: `examples/improve/OpenCollar/` in the repository, and the folder `e
 
 What it shows: a setup of many scripts that talk to each other with link messages, as people build them in Second Life. Watch the folder as one object. The collar starts in about 12 simulated seconds. A click on it shows its main menu. In the sandbox two scripts remove themselves at the start, as they do in Second Life. The update check gets no answer, because the sandbox never goes on the network.
 
+Next to it is `examples/improve/Small_setup/`, a small example of our own for beginners: four short scripts in two prims. One script sends messages to all the others, and only one of them needs them. The comments in the scripts say what to try. Watch the folder, open the tab Improve a setup, change one thing and save.
+
+On the tab Improve a setup both examples show their weight, what can be better and whether each script can run here ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Improve a setup").
+
 Licence: the scripts are under the GNU GPL version 2 with the OpenCollar licence terms in `LICENSE`. The copy stays unchanged; a changed copy must follow those terms. Credit: [CREDITS.md](../CREDITS.md). Nothing else from their project is in PinglyMotion: no pictures, models, animations, sounds or notecards. Tests: `tests/tst_lslimprove.cpp` and `tests/test_opencollar_copy.py` ([SCRIPT_LAB.md](SCRIPT_LAB.md), "A real, large setup").
 
 ## The data file `example.json`

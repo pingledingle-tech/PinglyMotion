@@ -11,6 +11,9 @@
  * replay keeps one moment after the start and after every step, in order, inside the log; the
  * fingerprints written to the result file read back the same, and firstDifference stays inside the
  * moments.
+ * Queue 1 item 5, part b (the weight view): the input is also read as the weight lines of a result file
+ * (LabWeight::parseLines); the weight at the end of the replay survives writeLines and parseLines and
+ * compares equal to itself, and compare() with what the input gave never crashes.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -20,6 +23,7 @@
 #include <QString>
 
 #include "scriptlab/labrecipe.h"
+#include "scriptlab/labweight.h"
 #include "scriptlab/lsl/world.h"
 
 static void check(bool ok)
@@ -57,6 +61,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   check(asResult.size() <= LabRecipe::MAX_FACTS);
   const QStringList keptMoments = LabRecipe::parseFingerprints(text);
   check(keptMoments.size() <= LabRecipe::MAX_STEPS + 1);
+  const LabWeight::Weight keptWeight = LabWeight::parseLines(text);
+  check(keptWeight.count() <= LabWeight::MAX_SCRIPTS);
+  check(keptWeight.valid || keptWeight.count() == 0);
 
   const LabRecipe::Result parsed = LabRecipe::parse(text);
   check(parsed.ok() == parsed.value.has_value());
@@ -93,7 +100,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   }
   check(LabRecipe::compare(replay.facts, replay.facts).isEmpty());
   const QStringList changes = LabRecipe::compare(asResult, replay.facts);
-  const QString file = LabRecipe::writeResult(replay, changes, false);
+  const QString file = LabRecipe::writeResult(replay, changes, false, LabWeight::writeLines(LabWeight::measure(cuffs(), replay.objects)));
   check(LabRecipe::compare(LabRecipe::parseResult(file), replay.facts).isEmpty());
 
   // the player's moments: the start and every step, in order, each inside the log
@@ -115,5 +122,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   const int first = LabRecipe::firstDifference(keptMoments, replay.frames);
   check(first >= -1 && first < replay.frames.size());
   LabRecipe::toJson(replay, changes, false, first);
+
+  // the weight at the end of the replay: both scripts, and it survives the result file
+  const LabWeight::Weight weight = LabWeight::measure(cuffs(), replay.objects);
+  check(weight.valid && weight.count() == 2);
+  check(weight.unused() <= weight.received());
+  const LabWeight::Weight back = LabWeight::parseLines(file);
+  check(back.valid && back.count() == weight.count());
+  check(LabWeight::compare(back, weight).isEmpty());
+  LabWeight::compare(keptWeight, weight);
+  LabWeight::summary(weight);
+  LabWeight::toJson(weight);
   return 0;
 }

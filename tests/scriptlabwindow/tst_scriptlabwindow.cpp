@@ -115,11 +115,12 @@ void TestScriptLabWindow::tabsInOrder()
 {
   ScriptLabPanel panel;
   QTabWidget* tabs = panel.tabs();
-  QCOMPARE(tabs->count(), 4);
-  const QStringList names = {"Live scripts", "Type commands", "Who talks to whom", "Player"};
-  const QStringList keys = {"live", "commands", "map", "player"};
+  QCOMPARE(tabs->count(), 5);
+  const QStringList names = {"Live scripts", "Type commands", "Who talks to whom", "Player", "Improve a setup"};
+  const QStringList keys = {"live", "commands", "map", "player", "improve"};
   const QStringList tips = {"Live: your .lsl scripts run each time you save them", "Commands: type RLV lines by hand",
-                            "Arrows between the parts: who sends what to whom.", "Step back and forth through your recorded steps."};
+                            "Arrows between the parts: who sends what to whom.", "Step back and forth through your recorded steps.",
+                            "Check a setup you made before and see what can be better."};
   for (int p = 0; p < ScriptLabPanel::PageCount; ++p)
   {
     const auto page = ScriptLabPanel::Page(p);
@@ -229,9 +230,13 @@ void TestScriptLabWindow::ctrlTabGoesRound()
   QTest::keyClick(QApplication::focusWidget(), Qt::Key_Tab, Qt::ControlModifier);
   QCOMPARE(tabs->currentIndex(), int(ScriptLabPanel::PlayerPage));
   QTest::keyClick(QApplication::focusWidget(), Qt::Key_Tab, Qt::ControlModifier);
+  QCOMPARE(tabs->currentIndex(), int(ScriptLabPanel::ImprovePage));
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Tab, Qt::ControlModifier);
   QCOMPARE(tabs->currentIndex(), int(ScriptLabPanel::LivePage));   // round to the first
   QTest::keyClick(QApplication::focusWidget(), Qt::Key_Backtab, Qt::ControlModifier | Qt::ShiftModifier);
-  QCOMPARE(tabs->currentIndex(), int(ScriptLabPanel::PlayerPage));   // and back
+  QCOMPARE(tabs->currentIndex(), int(ScriptLabPanel::ImprovePage));   // and back
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Backtab, Qt::ControlModifier | Qt::ShiftModifier);
+  QCOMPARE(tabs->currentIndex(), int(ScriptLabPanel::PlayerPage));
   QTest::keyClick(QApplication::focusWidget(), Qt::Key_PageUp, Qt::ControlModifier);
   QCOMPARE(tabs->currentIndex(), int(ScriptLabPanel::MapPage));
   QTest::keyClick(QApplication::focusWidget(), Qt::Key_PageDown, Qt::ControlModifier);
@@ -272,7 +277,7 @@ void TestScriptLabWindow::popOutAndPutBack()
   QCOMPARE(window->putBackButton()->toolTip(), QString("Put this tab back into Script Lab. Closing this window does the same."));
   QVERIFY(!window->putBackButton()->icon().isNull());
   // the tab left the bar; the others keep their order
-  QCOMPARE(panel.tabs()->count(), 3);
+  QCOMPARE(panel.tabs()->count(), 4);
   QCOMPARE(panel.tabIndex(ScriptLabPanel::MapPage), -1);
   QCOMPARE(panel.tabs()->tabText(0), QString("Live scripts"));
   QCOMPARE(panel.tabs()->tabText(1), QString("Type commands"));
@@ -286,7 +291,7 @@ void TestScriptLabWindow::popOutAndPutBack()
   // showPage brings the popped window to the front, not a tab
   panel.showPage(ScriptLabPanel::MapPage);
   QVERIFY(window->isVisible());
-  QCOMPARE(panel.tabs()->count(), 3);
+  QCOMPARE(panel.tabs()->count(), 4);
 
   // Put back: the tab comes back in its place and in front, the window goes
   QPointer<LabPopWindow> gone = window;
@@ -294,7 +299,7 @@ void TestScriptLabWindow::popOutAndPutBack()
   settle();
   QVERIFY(!gone);
   QVERIFY(!panel.isPoppedOut(ScriptLabPanel::MapPage));
-  QCOMPARE(panel.tabs()->count(), 4);
+  QCOMPARE(panel.tabs()->count(), 5);
   QCOMPARE(panel.tabIndex(ScriptLabPanel::MapPage), 2);
   QCOMPARE(panel.tabs()->tabText(2), QString("Who talks to whom"));
   QCOMPARE(panel.tabs()->tabToolTip(2), QString("Arrows between the parts: who sends what to whom."));
@@ -368,7 +373,7 @@ void TestScriptLabWindow::dragATabOut()
   settle();
   QVERIFY(panel.isPoppedOut(ScriptLabPanel::CommandsPage));
   QVERIFY(panel.popWindow(ScriptLabPanel::CommandsPage)->isAncestorOf(panel.commandField()));
-  QCOMPARE(panel.tabs()->count(), 3);
+  QCOMPARE(panel.tabs()->count(), 4);
   QVERIFY(screenArea().contains(panel.popWindow(ScriptLabPanel::CommandsPage)->geometry()));
   // the right button never pulls a tab out
   const QPoint live = bar->tabRect(0).center();
@@ -389,6 +394,7 @@ void TestScriptLabWindow::lastTabStays()
   QVERIFY(panel.popOut(ScriptLabPanel::LivePage));
   QVERIFY(panel.popOut(ScriptLabPanel::MapPage));
   QVERIFY(panel.popOut(ScriptLabPanel::PlayerPage));
+  QVERIFY(panel.popOut(ScriptLabPanel::ImprovePage));
   QCOMPARE(panel.tabs()->count(), 1);
   QCOMPARE(panel.currentPage(), ScriptLabPanel::CommandsPage);
   QVERIFY(!panel.popOut(ScriptLabPanel::CommandsPage));
@@ -404,6 +410,7 @@ void TestScriptLabWindow::lastTabStays()
   QVERIFY(panel.popOutButton()->isEnabled());
   QVERIFY(panel.putBack(ScriptLabPanel::LivePage));
   QVERIFY(panel.putBack(ScriptLabPanel::MapPage));
+  QVERIFY(panel.putBack(ScriptLabPanel::ImprovePage));
   for (int p = 0; p < ScriptLabPanel::PageCount; ++p) QCOMPARE(panel.tabIndex(ScriptLabPanel::Page(p)), p);
 }
 
@@ -427,7 +434,7 @@ void TestScriptLabWindow::stateComesBackAfterARestart()
   ScriptLabPanel again;
   QVERIFY(again.isPoppedOut(ScriptLabPanel::PlayerPage));
   QCOMPARE(again.currentPage(), ScriptLabPanel::CommandsPage);
-  QCOMPARE(again.tabs()->count(), 3);
+  QCOMPARE(again.tabs()->count(), 4);
   LabPopWindow* window = again.popWindow(ScriptLabPanel::PlayerPage);
   QCOMPARE(window->geometry(), place);
   QVERIFY(!window->isVisible());   // shown with Script Lab, not before
@@ -453,7 +460,7 @@ void TestScriptLabWindow::stateThroughTheSettingsFile()
 
 void TestScriptLabWindow::brokenStateIsReadSafely()
 {
-  const QStringList known = {"live", "commands", "map", "player"};
+  const QStringList known = {"live", "commands", "map", "player", "improve"};
   // the round trip
   LabTabState::State state;
   state.current = "map";
@@ -472,7 +479,7 @@ void TestScriptLabWindow::brokenStateIsReadSafely()
   QVERIFY(LabTabState::parse(QString(5000, QLatin1Char('x')), known) == LabTabState::State());
   UserSettings::setScriptLabWindows("tab=;pop=;place=::::;\x01\x02");
   ScriptLabPanel panel;
-  QCOMPARE(panel.tabs()->count(), 4);
+  QCOMPARE(panel.tabs()->count(), 5);
   QCOMPARE(panel.currentPage(), ScriptLabPanel::LivePage);
   // a place on a screen that is gone comes back on a screen
   const QRect far(50000, 50000, 600, 400);
@@ -610,7 +617,7 @@ void TestScriptLabWindow::resetPutsEverythingBack()
   UserSettings::setScriptLabSized(3);
   panel.resetWindows();
   settle();
-  QCOMPARE(panel.tabs()->count(), 4);
+  QCOMPARE(panel.tabs()->count(), 5);
   for (int p = 0; p < ScriptLabPanel::PageCount; ++p)
   {
     QCOMPARE(panel.tabIndex(ScriptLabPanel::Page(p)), p);

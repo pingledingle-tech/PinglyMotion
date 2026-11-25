@@ -43,6 +43,7 @@
 #include "usersettings.h"
 #include "scriptlabpanelui.h"
 
+#include "labimproveview.h"
 #include "scriptlabpanel.h"
 
 using namespace LabUi;
@@ -88,6 +89,27 @@ void ScriptLabPanel::buildLivePage()
   m_playerEmpty->setObjectName("scriptLabPlayerEmpty");
   m_playerEmpty->setWordWrap(true);
   playerLayout->addWidget(m_playerEmpty);
+  // queue 1 item 5, parts b and c: the page Improve a setup
+  QWidget* improvePage = new QWidget(m_tabs);
+  improvePage->setObjectName("scriptLabImprovePage");
+  QVBoxLayout* improveLayout = new QVBoxLayout(improvePage);
+  improveLayout->setContentsMargins(SpacingM, SpacingM, SpacingM, SpacingM);
+  improveLayout->setSpacing(SpacingS);
+  m_improve = new LabImproveView(improvePage);
+  improveLayout->addWidget(m_improve);
+  improveLayout->addStretch(1);
+  connect(m_improve, &LabImproveView::importRequested, this, &ScriptLabPanel::chooseFolder);
+  connect(m_improve, &LabImproveView::recordRequested, this, [this]()
+  {
+    showPage(PlayerPage);
+    setRecording(true);
+  });
+  connect(m_improve, &LabImproveView::placeRequested, this, [this](const QString& file, int line)
+  {
+    if (file != m_shownFile && !showScript(file)) return;
+    if (!isPoppedOut(LivePage)) showPage(LivePage);
+    showScriptPlace(line, 1);
+  });
 
   // --- the example's steps (job U3): shown after Make example project and from Help > Script Lab steps
   m_stepCard = new LabStepCard(page);
@@ -460,6 +482,7 @@ void ScriptLabPanel::buildLivePage()
   m_pages[LivePage] = makePageScroll(page, "scriptLabLiveScroll");
   m_pages[MapPage] = makePageScroll(mapPage, "scriptLabMapScroll");
   m_pages[PlayerPage] = makePageScroll(playerPage, "scriptLabPlayerScroll");
+  m_pages[ImprovePage] = makePageScroll(improvePage, "scriptLabImproveScroll");
   // the tree beside the editor follows the Live page's own width (it may be a window of its own)
   m_pages[LivePage]->installEventFilter(this);
 
@@ -1015,6 +1038,7 @@ void ScriptLabPanel::refreshLive()
   else if (!last.contains("result")) m_logSection->setCount(tr("not run"));
   else m_logSection->setCount(runLog.size() == 1 ? tr("1 line") : tr("%1 lines").arg(runLog.size()));
   refreshChannelMap(linkset ? folder : QJsonObject());
+  refreshImprove();
 
   // the status line, a word first; with no folder the empty state says what to do
   m_liveStatus->setVisible(watching || !m_refusal.isEmpty());

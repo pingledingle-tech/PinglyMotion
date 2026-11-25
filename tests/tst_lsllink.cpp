@@ -379,7 +379,7 @@ void LslLinkTest::scriptsShapeOfObjects()
   QCOMPARE(multi["stopped"].toBool(), false);
   QCOMPARE(multi["scripts"].toArray().size(), 2);
   const QJsonObject one = multi["scripts"].toArray()[0].toObject();
-  QCOMPARE(one.keys(), QStringList({"link", "memory", "name", "open_listens", "state", "steps", "stopped", "timer"}));
+  QCOMPARE(one.keys(), QStringList({"link", "memory", "memory_limit", "messages", "name", "open_listens", "state", "steps", "stopped", "timer"}));
   QCOMPARE(one["link"].toInt(), 0);
   QCOMPARE(one["state"].toString(), QString("default"));
   QCOMPARE(multi["linkset_data"].toObject(), QJsonObject({{"count", 0}, {"used", 0}, {"available", 131072}, {"pairs", QJsonObject()}}));

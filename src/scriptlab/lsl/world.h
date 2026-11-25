@@ -658,6 +658,11 @@ class World
     // true when the log is full, so a new entry would be dropped: marks the log truncated. Callers check it
     // before they build an entry, which saves time in long runs (an endless exchange between scripts).
     bool logFull();
+    // part b (the weight view): how many entries this World made or tried to make (counted also when the log is full);
+    // a handler that leaves it unchanged called nothing that acts
+    qint64 actions() const { return m_actions; }
+    // part b: the script with this id() sent a message that the script getting it did nothing with (the Sandbox counts it)
+    virtual void messageIgnored(quint64 from) { Q_UNUSED(from); }
     const QJsonArray& entries() const { return m_log; }
     bool truncated() const { return m_truncated; }
     void clear() { m_log = QJsonArray(); m_truncated = false; }
@@ -672,6 +677,7 @@ class World
   private:
     QJsonArray m_log;
     bool m_truncated = false;
+    qint64 m_actions = 0;
     World* m_target = nullptr;
     QString m_tag;
     QString m_scriptTag;

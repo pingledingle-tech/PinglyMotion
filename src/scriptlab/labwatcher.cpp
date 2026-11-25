@@ -18,6 +18,7 @@
 #include "lsl/world.h"
 #include "labfolder.h"
 #include "labwatcher.h"
+#include "labweight.h"
 #include "rlvstate.h"
 
 #include <QCoreApplication>
@@ -676,6 +677,13 @@ void LabWatcher::recordStep(const LabRecipe::Step& step)
   emit recipeChanged();
 }
 
+LabWeight::Weight LabWatcher::weight() const
+{
+  if (!watching() || !m_linkset || !m_folderResult.value("ok").toBool()) return LabWeight::Weight();
+  if (m_world && m_world->sandbox()) return LabWeight::measure(m_lastLinkset, m_world->sandbox()->objectsJson());
+  return LabWeight::measure(m_lastLinkset, m_folderResult.value("result").toObject().value("objects").toArray());
+}
+
 LabWatcher::Result LabWatcher::replayRecipe(bool first)
 {
   if (!watching() || !m_linkset) return {tr("No folder is watched as one object.")};
@@ -699,12 +707,18 @@ LabWatcher::Result LabWatcher::replayRecipe(bool first)
   // job B3: the moment the player can jump to, where this replay first differed from the kept one
   const int firstDifference = nothingBefore ? -1 : LabRecipe::firstDifference(LabRecipe::parseFingerprints(before), replay.frames);
   QJsonObject out = LabRecipe::toJson(replay, changes, nothingBefore, firstDifference);
+  // queue 1 item 5, part b: the weight at the end of the replay, and what changed since the one kept last time
+  const LabWeight::Weight weight = LabWeight::measure(linkset, replay.objects);
+  const LabWeight::Weight weightBefore = nothingBefore ? LabWeight::Weight() : LabWeight::parseLines(before);
+  out["weight"] = LabWeight::toJson(weight);
+  out["weight_changes"] = QJsonArray::fromStringList(LabWeight::compare(weightBefore, weight));
+  out["weight_compared"] = weightBefore.valid && weight.valid;
   out["run"] = m_runs;
   out["recipe"] = LabRecipe::recipeFile();
   QStringList lines;
   for (const LabRecipe::Step& s : parsed.value->steps) lines << LabRecipe::stepLine(s);
   out["steps_text"] = QJsonArray::fromStringList(lines);
-  if (!writeText(resultPath, LabRecipe::writeResult(replay, changes, nothingBefore)))
+  if (!writeText(resultPath, LabRecipe::writeResult(replay, changes, nothingBefore, LabWeight::writeLines(weight))))
     out["note"] = tr("The result could not be kept in %1.").arg(LabRecipe::resultFile());
   m_replay = out;
   emit recipeChanged();

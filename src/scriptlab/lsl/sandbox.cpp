@@ -97,6 +97,11 @@ class ObjectWorld : public RlvWorld
       const int reached = m_sandbox.messageLinked(m_slot, time, link, num, str, id);
       if (!logFull()) log(time, QJsonObject{{"type", "message_linked"}, {"link", link}, {"num", num}, {"text", clip(str)}, {"id", clip(id)}, {"scripts", reached}});
     }
+    void messageIgnored(quint64 from) override
+    {
+      for (Sandbox::Slot& s : m_sandbox.m_slots)
+        if (s.interp && s.interp->id() == from) { s.interp->countIgnored(); return; }
+    }
     LinksetData& linksetData() override { return m_sandbox.m_objects[size_t(object())].data; }
     void linksetDataChanged(double time, int action, const QString& name, const QString& value) override
     {
@@ -1255,7 +1260,7 @@ void Sandbox::chat(int from, double time, const QString& kind, int channel, cons
     where(slot.object, p);
     if (range >= 0.0 && distance(here, p) > range) continue;
     slot.interp->syncTo(time);
-    slot.interp->receive(channel, speaker.name, speaker.spec.key, text);
+    slot.interp->receive(channel, speaker.name, speaker.spec.key, text, speakerSlot.interp->id());
   }
 }
 
@@ -1267,7 +1272,7 @@ void Sandbox::chatTo(int from, double time, const QString& target, int channel, 
   {
     if (slot.object == speakerSlot.object || m_objects[size_t(slot.object)].spec.key != target) continue;
     slot.interp->syncTo(time);
-    slot.interp->receive(channel, speaker.name, speaker.spec.key, text);
+    slot.interp->receive(channel, speaker.name, speaker.spec.key, text, speakerSlot.interp->id());
   }
 }
 
@@ -1309,7 +1314,7 @@ int Sandbox::messageLinked(int from, double time, int link, int num, const QStri
     }
     if (!hit) continue;
     slot.interp->syncTo(time);
-    slot.interp->linkMessage(senderLink, num, str, id);
+    slot.interp->linkMessage(senderLink, num, str, id, sender.interp->id());
     ++reached;
   }
   return reached;
@@ -1952,7 +1957,9 @@ QJsonArray Sandbox::objectsJson() const
       if (in.stopped()) reasons << (o.tagScripts ? slot.name + ": " + in.stopReason() : in.stopReason());
       QJsonObject s{{"name", slot.name}, {"link", linkNumber(o.firstSlot + k)}, {"state", in.currentState()},
                     {"stopped", in.stopped()}, {"open_listens", in.openListens()}, {"timer", in.timerInterval()},
-                    {"steps", double(in.steps())}, {"memory", double(in.memoryBytes())}};
+                    {"steps", double(in.steps())}, {"memory", double(in.memoryBytes())}, {"memory_limit", in.memoryLimit()},
+                    {"messages", QJsonObject{{"sent", double(in.messageCounts().sent)}, {"received", double(in.messageCounts().received)},
+                                             {"unused", double(in.messageCounts().unused)}, {"ignored", double(in.messageCounts().ignored)}}}};
       if (in.stopped()) s["stop_reason"] = in.stopReason();
       else if (!in.running()) s["running"] = false;   // llSetScriptState
       scripts.append(s);
