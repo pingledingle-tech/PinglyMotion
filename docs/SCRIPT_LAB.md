@@ -38,7 +38,7 @@ visibility are saved with the layout. View > Reset layout closes it again.
   `collar`'s restrictions in place; Reset removes all.
 - The panel follows the state's `changed` signal, so lines sent with `rlv_command` or `rlv_reset` by an AI client show
   up in the lists at once. Replies to lines sent through the control commands go to that client, not to the panel log.
-- Code: `src/scriptlab/scriptlabpanel.*`; test: `tests/scriptlabpanel/` (menu entry, restrictions and actions after
+- Code: `src/scriptlab/scriptlabpanel*.*`; test: `tests/scriptlabpanel/` (menu entry, restrictions and actions after
   `@detach=n,sendim=n`, `@clear`, Reset, replies, a line through `rlv_command`, colour tokens, and the panel's place
   after saving and loading the layout).
 
@@ -80,7 +80,7 @@ The panel follows the approved mockup (`docs/mockup/index.html`, the Script Lab 
   goes from the list. Without a world it says "No inventory yet. An AI assistant gives one with lsl_run." A Live
   folder run keeps no world, so it gives no inventory here. The empty state's two buttons now wrap under each other
   in a narrow docked panel instead of being cut off.
-- Code: `src/scriptlab/scriptlabpanel.*`, `src/scriptlab/scriptlabsection.*` (a folding part); test:
+- Code: `src/scriptlab/scriptlabpanel*.*`, `src/scriptlab/scriptlabsection.*` (a folding part); test:
   `tests/scriptlabpanel/tst_scriptlabdesign.cpp` (exact texts, counts, the switch both ways, the empty state, folding
   and keys, the tokens in both themes, the summary line, Try:, Run again, the saved fold state, the explanation, the
   dialog inside Objects, the top bar button, and the mockup's texts looked up in the mockup file).
@@ -155,7 +155,7 @@ Code) edits in their own editor and sees the result in PinglyMotion at once. Sin
 - `lab_watch` has an `inputs` option: the chat and touches given to every run. Each run starts fresh with a
   simulated clock. To send events to a world that keeps running between commands, use `lsl_run` and then
   `lsl_event` (step 5).
-- Code: `src/scriptlab/labwatcher.*` and the Live page in `src/scriptlab/scriptlabpanel.*`. Tests:
+- Code: `src/scriptlab/labwatcher.*` and the Live page in `src/scriptlab/scriptlabpanel*.*`. Tests:
   `tests/tst_labwatcher.cpp` (a saved script runs within the debounce, errors with line and column, saving again,
   Stop watching, the limits, links, an endless loop), the Live part of `tests/scriptlabpanel/` and of
   `tests/tst_control.cpp`.
@@ -192,7 +192,7 @@ An animation started in one command keeps playing through the `lsl_event` comman
   `Error: Animation "dance1" was not found: put dance1.dingle, dance1.bvh or dance1.avm next to the script or in the
   examples folder.` Second Life's built-in animations are not bundled.
 - Code: `src/scriptlab/labeffects.*` (the run answer read as data, the lookup, the frame), `src/scriptlab/effectspreview.*`
-  (the preview the 3D view draws), the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`.
+  (the preview the 3D view draws), the box in `src/scriptlab/scriptlabpanel*.*`, a few lines in `src/animationview.cpp`.
   Tests: `tests/tst_labeffects.cpp` and `tests/tst_scriptlabeffects.cpp`.
 - With an AI assistant: `lab_watch` the folder (or `lsl_run`), with a script that calls `llStartAnimation("wave")`;
   with the box ticked the control command `screenshot` shows the waving figure. The box itself is ticked by the user in
@@ -573,7 +573,7 @@ Commands page now scrolls when the panel is small, as the Live page does.
   that `behaviour:option` contains), Reset or a mode switch forgets it, so the camera from before comes back
   (decision in [DECISIONS.md](DECISIONS.md)).
 - Code: `src/scriptlab/cameraoverride.*` (the limits read from the RLV state and the words), the constraint in
-  `src/camera.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp`. Tests:
+  `src/camera.*`, the box in `src/scriptlab/scriptlabpanel*.*`, a few lines in `src/animationview.cpp`. Tests:
   `tests/tst_cameraoverride.cpp` (with the force commands), `tests/tst_scriptlabcamera.cpp` and the constraint, field of view and eye part of
   `tests/tst_camera.cpp`.
 
@@ -652,7 +652,7 @@ script asks of the sky and the draw distance is shown as a rough hint in that ba
   is hidden and back as ticked when it is shown again, and a picture without it is left byte for byte as it was
   (checked in the tests, and in the real program by comparing screenshots).
 - Code: `src/scriptlab/environmentoverride.*` (the values, `Sphere::strengthAt` and `applySphere`, the picture
-  work), the box in `src/scriptlab/scriptlabpanel.*`, a few lines in `src/animationview.cpp` (`draw()` and
+  work), the box in `src/scriptlab/scriptlabpanel*.*`, a few lines in `src/animationview.cpp` (`draw()` and
   `drawSphere()`). Tests: `tests/tst_environmentoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
 
 ## View modes in the 3D view (job 7c)
@@ -677,7 +677,7 @@ program starts), the view restrictions a script holds change the 3D view where t
 - Nothing is changed for good: the view asks for the modes for every picture, so unticking the box, `@clear`, Reset
   or a mode switch gives exactly the picture from before (checked pixel by pixel in the self-test). The control
   command `screenshot` shows the same picture as the window.
-- Code: `src/scriptlab/viewmodesoverride.*`, the box in `src/scriptlab/scriptlabpanel.*`, a few lines in
+- Code: `src/scriptlab/viewmodesoverride.*`, the box in `src/scriptlab/scriptlabpanel*.*`, a few lines in
   `src/animationview.cpp` (`drawAnimations()`, the floor hook, `drawOverlay()`). Tests:
   `tests/tst_viewmodesoverride.cpp` and `tests/tst_scriptlabcamera.cpp`.
 
@@ -1004,7 +1004,7 @@ MyObject/            one object
 
 ## The folder tree in the panel (lane 1, job D)
 
-Code: `src/scriptlab/labtree.*` and the Live page in `src/scriptlab/scriptlabpanel.*`. Test: `tests/scriptlabpanel/tst_labtree.cpp`.
+Code: `src/scriptlab/labtree.*` and the Live page in `src/scriptlab/scriptlabpanel*.*`. Test: `tests/scriptlabpanel/tst_labtree.cpp`.
 
 - **Object part.** A folding part "Object" above the Script part, shown while a folder is watched as one object. Its count is "2 scripts in 2 prims". The tree has the columns Name, Kind, State and Memory: the object (box icon, "Object, 2 prims"), each prim (square icon, "Root prim, link 1" or "Prim, link 2"), and in each prim its scripts (file-code icon, "LSL script") and notecards (notebook-text icon, "Notecard, 4 lines").
 - **Colour dots and words.** Each script has a dot and a word: OK (`success`), Warning (`warning`), Error or Stopped (`danger`), Not run (`text_muted`: another script did not compile, or a limit was broken). The tip of the State cell says why. A script the folder refused (a name used twice, a file too large) has an Error row with the reason. A prim and the object sum up their scripts, for example "1 error, 1 not run", with the dot of the most serious state, or "No scripts".
@@ -1026,7 +1026,7 @@ Code: `src/scriptlab/labtint.*`, `Prop::setTint` in `src/prop.*`, wired in `src/
 
 ## Props from prims, click as touch, moving props (job A1)
 
-Built 24 November 2026, pull request 447 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his choices of 23 November, 23:05 to 23:55). Code: `src/scriptlab/labprimprops.*` (which prop, and where it goes), `LabWatcher::touch` in `src/scriptlab/labwatcher.*` (the kept world), `ScriptLabPanel::updatePrimProps` and `touchPrim` in `src/scriptlab/scriptlabpanel.*`, two more scene hooks and the click in `src/pinglymotionwindow.cpp`. Tests: `tests/tst_labprimprops.cpp` (exact props and places), `tests/tst_labwatcher.cpp` (`touchGoesToThePrim`), `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`propsFromPrims`: the whole chain with a fake scene).
+Built 24 November 2026, pull request 447 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his choices of 23 November, 23:05 to 23:55). Code: `src/scriptlab/labprimprops.*` (which prop, and where it goes), `LabWatcher::touch` in `src/scriptlab/labwatcher.*` (the kept world), `ScriptLabPanel::updatePrimProps` and `touchPrim` in `src/scriptlab/scriptlabpanel*.*`, two more scene hooks and the click in `src/pinglymotionwindow.cpp`. Tests: `tests/tst_labprimprops.cpp` (exact props and places), `tests/tst_labwatcher.cpp` (`touchGoesToThePrim`), `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`propsFromPrims`: the whole chain with a fake scene).
 
 - **Props from prims.** While **Show effects in 3D view** is on and a folder is watched as one object, every prim gets a prop named like the prim (its folder's name; the object's name for a root without a `Root` folder). A prop of that name already in the scene is used as it is; nothing is made twice. A root prim that is only the top folder, with no script or notecard in it, gets no prop (First colour's root). The props stay in the scene after the effects are turned off, like the example props of job U3.
 - **Which prop.** The sandbox knows no shape and no place on the body for a prim, so: (1) the prop of the same name in the folder's `example.json`, when there is one (the example objects); (2) otherwise a word in the prim's name, first match wins (case does not matter; "right", or a name ending in `_r` or starting with `r_`, is the right side, everything else the left):
@@ -1051,7 +1051,7 @@ Built 24 November 2026, pull request 447 (plan "Script Lab: see and understand",
 
 ## The menu box over the 3D view (job A2)
 
-Built 24 November 2026, pull request 448 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his choice of 23 November, 23:10: «A, ja», the menu shows as in Second Life, where the user clicked). Code: `src/scriptlab/labdialogbox.*` (the box and the button grid both menus use), `LabWatcher::dialog` and `LabWatcher::answerDialog` in `src/scriptlab/labwatcher.*`, `ScriptLabPanel::setMenuBoxHost`, `refreshMenuBox` and `answerMenu` in `src/scriptlab/scriptlabpanel.*`, two lines in `src/pinglymotionwindow.cpp`. Tests: `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`menuBoxAtTheClick`, `menuBoxTextBox`), `tests/tst_labwatcher.cpp` (`dialogAnswerGoesToTheMenu`).
+Built 24 November 2026, pull request 448 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his choice of 23 November, 23:10: «A, ja», the menu shows as in Second Life, where the user clicked). Code: `src/scriptlab/labdialogbox.*` (the box and the button grid both menus use), `LabWatcher::dialog` and `LabWatcher::answerDialog` in `src/scriptlab/labwatcher.*`, `ScriptLabPanel::setMenuBoxHost`, `refreshMenuBox` and `answerMenu` in `src/scriptlab/scriptlabpanel*.*`, two lines in `src/pinglymotionwindow.cpp`. Tests: `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`menuBoxAtTheClick`, `menuBoxTextBox`), `tests/tst_labwatcher.cpp` (`dialogAnswerGoesToTheMenu`).
 
 - **When.** While **Show effects in 3D view** is on and a folder is watched as one object, a menu a script of the object shows (`llDialog`, or `llTextBox` for a typed answer) appears as a box over the 3D view. It stands next to the click on the prop that made it: to the right of the click, or to the left when there is no room, always inside the view. A menu without a click (for example in `state_entry`) stands in the top right corner.
 - **What it holds.** "Menu from <object>", the message, one button per button text in rows of three (the first row on top, the same order as the panel's menu), a line "A button says its text on channel -77. Only the script hears it.", and **Ignore**. A text box has a field and **Send** instead of the buttons ("What you type is said on channel -88. Only the script hears it."); Send is greyed until something is typed. An `&` in a button text shows as itself.
@@ -1079,7 +1079,7 @@ Built in the same pull request (the project owner, 23 November 2026, 23:50: «b�
 
 ## Record and replay (job A3)
 
-Built 24 November 2026, pull request 450 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08: «Ta opp det jeg gjør»). Code: `src/scriptlab/labrecipe.*` (QtCore: the file format, the replay, the facts and the comparison), the recording and replay part of `src/scriptlab/labwatcher.*`, `ScriptLabPanel::setRecording`, `replayNow` and `refreshRecipe` in `src/scriptlab/scriptlabpanel.*`, the control command `lab_replay` in `src/controlapi.cpp` ([CONTROL.md](CONTROL.md), "Record and replay"). Tests: `tests/tst_labrecipe.cpp` (format, recording, replay, the exact comparison), `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`recordAndReplay`: the button and the line), `tests/tst_control.cpp` (`lab_replay`). Fuzz target: `fuzz_recipe`.
+Built 24 November 2026, pull request 450 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08: «Ta opp det jeg gjør»). Code: `src/scriptlab/labrecipe.*` (QtCore: the file format, the replay, the facts and the comparison), the recording and replay part of `src/scriptlab/labwatcher.*`, `ScriptLabPanel::setRecording`, `replayNow` and `refreshRecipe` in `src/scriptlab/scriptlabpanel*.*`, the control command `lab_replay` in `src/controlapi.cpp` ([CONTROL.md](CONTROL.md), "Record and replay"). Tests: `tests/tst_labrecipe.cpp` (format, recording, replay, the exact comparison), `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`recordAndReplay`: the button and the line), `tests/tst_control.cpp` (`lab_replay`). Fuzz target: `fuzz_recipe`.
 
 - **Record what I do.** While a folder is watched as one object, a button **Record what I do** stands on the **Player** tab (job UX-B; it stood under **Show effects in 3D view** on the Live page before). Pressed, it says **Stop recording** and has the same on look as the effects button. While it is on, every click on a prop (a touch, job A1), every press on a button of the menu box (job A2) and every RLV line typed in Command or made by an Allowed / Blocked choice is one step. The line under the button counts the steps ("Recording. Click props and menu buttons. Steps so far: 3."), and says "Turn on Show effects in 3D view to click props." while the effects are off.
 - **The recipe** is `recipe.rlvtest` at the top of the object folder: plain text, one step per line, `#` lines are notes. `touch Collar`, `menu Lock`, `send @sendim=n` (from the object of the last `object <name>` line, `panel` at first) and `wait 2`. It holds no personal data: part names, button texts and RLV lines only. The file is written at each step; the first step replaces an older recipe, so starting and stopping without a step keeps it. The format is the scenario format proposed in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md) (`#`, `object`, `send`), with `touch`, `menu` and `wait` added; its `expect` lines are not built and are refused with a reason, so there is one format, not two. It is neither a script nor a notecard, so the folder model does not read it.
@@ -1093,7 +1093,7 @@ Built 24 November 2026, pull request 450 (plan "Script Lab: see and understand",
 
 ## The player (job B3)
 
-Built 24 November 2026, pull request 454 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his wish of 23 November: «Det siste må visualiseres skikkelig. Og som en slags spiller.»). Built on the player check ([PLAYER_CHECK.md](PLAYER_CHECK.md), recommendation (b): run once with a recorder, then step in the snapshots) and on record and replay above, whose recipe is the stored input. Code: `src/scriptlab/labplayer.*` (the widget, and `LabPlayerModel` without a window), the moments in `LabRecipe::replay` (`src/scriptlab/labrecipe.*`), a few lines in `LabWatcher::replayRecipe` (first difference) and the hook-up in `src/scriptlab/scriptlabpanel.*` (`player()`, `shownFolder()`). Tests: `tests/scriptlabplayer/tst_scriptlabplayer.cpp` (the rows, lines, buttons and reasons, playing, the list and the keys, first difference, the props in the real panel), `tests/tst_labrecipe.cpp` (`momentsOfAReplay`, `momentEqualsAShorterReplay`, `fingerprintsRoundTrip`, `firstDifferenceRules`, `firstDifferenceAfterAChangedScript`). Fuzz target: `fuzz_recipe` (the fingerprint lines and the moments).
+Built 24 November 2026, pull request 454 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his wish of 23 November: «Det siste må visualiseres skikkelig. Og som en slags spiller.»). Built on the player check ([PLAYER_CHECK.md](PLAYER_CHECK.md), recommendation (b): run once with a recorder, then step in the snapshots) and on record and replay above, whose recipe is the stored input. Code: `src/scriptlab/labplayer.*` (the widget, and `LabPlayerModel` without a window), the moments in `LabRecipe::replay` (`src/scriptlab/labrecipe.*`), a few lines in `LabWatcher::replayRecipe` (first difference) and the hook-up in `src/scriptlab/scriptlabpanel*.*` (`player()`, `shownFolder()`). Tests: `tests/scriptlabplayer/tst_scriptlabplayer.cpp` (the rows, lines, buttons and reasons, playing, the list and the keys, first difference, the props in the real panel), `tests/tst_labrecipe.cpp` (`momentsOfAReplay`, `momentEqualsAShorterReplay`, `fingerprintsRoundTrip`, `firstDifferenceRules`, `firstDifferenceAfterAChangedScript`). Fuzz target: `fuzz_recipe` (the fingerprint lines and the moments).
 
 - **Moments.** While the recipe is replayed, the replay keeps one moment right after the start and one right after every step: the step, the simulated time, how far the event log had come, whether the step was done, and the facts true then (made the same way as the facts at the end). Nothing is run again when the user steps: the sandbox is deterministic, and a test checks that moment k equals the end of the same recipe cut after step k. Steps are moments, not exact seconds (an event always runs to its end).
 - **Where.** Under the recipe line on the **Player** tab (job UX-B; it was on the Live page before), while a folder is watched as one object and a replay has moments. Beginner mode shows it (it is part of the first meeting: 3D, menu, player and step list).
@@ -1108,7 +1108,7 @@ Built 24 November 2026, pull request 454 (plan "Script Lab: see and understand",
 
 ## The channel map: who talks to whom (job A4)
 
-Built 24 November 2026, pull request 453 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his wishes of 23 November: «Det siste må visualiseres skikkelig», «server som lytter og sender kommandoer må med»). Code: `src/scriptlab/labchannelmap.*` (QtCore: reads the run's event log and makes the boxes and arrows), `src/scriptlab/channelmapview.*` (the drawing, the clicks and the keys), `ScriptLabPanel::refreshChannelMap`, `activateMapBox` and `activateMapArrow` in `src/scriptlab/scriptlabpanel.*`. Tests: `tests/tst_labchannelmap.cpp` (which boxes and arrows a real folder run and given logs give, letter for letter) and `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`channelMap`: the part, the clicks, the keys, the fold, the word tips, the colours).
+Built 24 November 2026, pull request 453 (plan "Script Lab: see and understand", approved by the project owner on 24 November 2026, 00:08; his wishes of 23 November: «Det siste må visualiseres skikkelig», «server som lytter og sender kommandoer må med»). Code: `src/scriptlab/labchannelmap.*` (QtCore: reads the run's event log and makes the boxes and arrows), `src/scriptlab/channelmapview.*` (the drawing, the clicks and the keys), `ScriptLabPanel::refreshChannelMap`, `activateMapBox` and `activateMapArrow` in `src/scriptlab/scriptlabpanel*.*`. Tests: `tests/tst_labchannelmap.cpp` (which boxes and arrows a real folder run and given logs give, letter for letter) and `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp` (`channelMap`: the part, the clicks, the keys, the fold, the word tips, the colours).
 
 - **Where.** A folding part **Who talks to whom** on the tab of the same name (job UX-B; it was on the Live scripts page, right after the Event log), while a folder is watched as one object. A click on an arrow brings Live scripts to the front for the line, unless Live scripts is popped out and in sight. Beginner mode keeps it folded and Expert mode opens it; switching the mode folds or opens it, and the user can still open or fold it by hand. Nothing else moves (charter P12). Lines between the parts in the 3D view are not built for messages (that choice: [UX_DECISIONS.md](UX_DECISIONS.md), 6r).
 - **Boxes.** Every prim of the object, in link order (as the tree), then the boxes outside the object as they come up: **You** (the avatar: menus, open chat and clicks), **Your viewer (RLV)** (the RLV lines a script sends) and **Web server** (llHTTPRequest; the sandbox never goes online, it answers from canned replies). A box outside the object has a dashed border. A prim that hears chat or a link message from one box and passes messages on to another is a **hub**: its name gets "(hub)" and an `accent` border. That is the "server" of a Second Life setup that listens and sends commands.
@@ -1144,7 +1144,7 @@ Six example objects in `examples/objects/`, each one folder in the folder model 
 
 ## Script Lab for beginners (job U3)
 
-Built 23 November 2026, pull request 443. For someone who has never scripted: **Make example project** on the empty Live page copies the first example (First colour) into `Documents/PinglyMotion/Scripts`, puts its props in the scene, watches it, shows the effects and a steps card with a button for each step (Help > Script Lab steps opens it again); **New folder** makes an empty folder there and watches it (limits on name and path; nothing is ever overwritten or deleted). The tree and the editor stand side by side when the panel is wide; a click on a piece in the tree lights up its prop in the 3D view and the other way round (switch: Follow selection in 3D view); short tips explain prim, root prim, notecard, sandbox, Viewer rules, RLV, RLVa and "N held", once each. Show effects in 3D view is an on/off button. Details and every choice: [UX_DECISIONS.md](UX_DECISIONS.md), 6o. Code: `src/scriptlab/labbeginner.*`, `src/scriptlab/scriptlabpanel.*`. Test: `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp`.
+Built 23 November 2026, pull request 443. For someone who has never scripted: **Make example project** on the empty Live page copies the first example (First colour) into `Documents/PinglyMotion/Scripts`, puts its props in the scene, watches it, shows the effects and a steps card with a button for each step (Help > Script Lab steps opens it again); **New folder** makes an empty folder there and watches it (limits on name and path; nothing is ever overwritten or deleted). The tree and the editor stand side by side when the panel is wide; a click on a piece in the tree lights up its prop in the 3D view and the other way round (switch: Follow selection in 3D view); short tips explain prim, root prim, notecard, sandbox, Viewer rules, RLV, RLVa and "N held", once each. Show effects in 3D view is an on/off button. Details and every choice: [UX_DECISIONS.md](UX_DECISIONS.md), 6o. Code: `src/scriptlab/labbeginner.*`, `src/scriptlab/scriptlabpanel*.*`. Test: `tests/scriptlabbeginner/tst_scriptlabbeginner.cpp`.
 
 ## Later
 
@@ -1158,7 +1158,7 @@ The command syntax, return codes, behaviour names and the `@clear` and `@getstat
 
 ## One window with its own tabs (job UX-B)
 
-Built 24 November 2026, pull request 464 (the new UX direction, approved by the project owner on 24 November 2026, 13:26: «Fiks dette og legg i køer»; [UX_DECISIONS.md](UX_DECISIONS.md), 6x). Code: `src/scriptlab/labtabs.*` (the tab bar that notices a tab dragged out, the window of a popped tab, the remembered state) and `src/scriptlab/scriptlabpanel.*` (the pages, Pop out, Put back, big by default). Tests: `tests/scriptlabwindow/tst_scriptlabwindow.cpp`.
+Built 24 November 2026, pull request 464 (the new UX direction, approved by the project owner on 24 November 2026, 13:26: «Fiks dette og legg i køer»; [UX_DECISIONS.md](UX_DECISIONS.md), 6x). Code: `src/scriptlab/labtabs.*` (the tab bar that notices a tab dragged out, the window of a popped tab, the remembered state) and `src/scriptlab/scriptlabpanel*.*` (the pages, Pop out, Put back, big by default). Tests: `tests/scriptlabwindow/tst_scriptlabwindow.cpp`.
 
 - **The tabs**, in this order: **Live scripts**, **Type commands**, **Who talks to whom** (the channel map) and **Player** (Record what I do, the recipe and the player). Each has a Lucide icon (`file-code`, `terminal`, `network`, `rotate-ccw`, as Mockup 2 draws them) and a tip. Every part the panel had is on one of them; nothing new was added. The Viewer rules row and the ? button stay above the tabs. The map and player tabs say what fills them while no folder is watched as one object. Improve a setup and HUD from Mockup 2 do not exist yet, so they have no tab.
 - **Keys.** Ctrl+Tab and Ctrl+Shift+Tab (also Ctrl+Page Down and Ctrl+Page Up) go round the tabs from any field in Script Lab, also from the code editor. The arrow keys move between tabs on the tab bar, as before.
