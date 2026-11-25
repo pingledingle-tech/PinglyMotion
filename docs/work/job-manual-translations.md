@@ -1,6 +1,6 @@
 Branch: job/manual-translations
 Status: active
-Pull request: pending
+Pull request: #512
 Files:
 - docs/MANUAL.*.md
 - docs/manual.*.html
