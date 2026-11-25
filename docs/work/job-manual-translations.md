@@ -1,5 +1,5 @@
 Branch: job/manual-translations
-Status: active
+Status: done
 Pull request: #512
 Files:
 - docs/MANUAL.*.md
@@ -9,6 +9,8 @@ Files:
 - docs/home.html
 - docs/manual.html
 - docs/README.md
+- docs/DEV.md
+- docs/PinglyMotion-Manual.pdf
 - tools/site/build_manual.py
 - tools/site/build_status.py
 - .github/workflows/pages.yml
