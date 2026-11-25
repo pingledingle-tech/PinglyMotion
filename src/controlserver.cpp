@@ -4,7 +4,9 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QApplication>
 #include <QCoreApplication>
+#include <QGuiApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -15,10 +17,12 @@
 #include <QRandomGenerator>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include <QStringList>
 #include <QTcpSocket>
 #include <QTimer>
 
 #include "controlapi.h"
+#include "dialogguard.h"
 
 #include "controlserver.h"
 
@@ -307,7 +311,7 @@ void ControlServer::onNewConnection()
   }
 }
 
-void ControlServer::respond(QTcpSocket* socket, int status, const QByteArray& body)
+void ControlServer::respond(QTcpSocket* socket, int status, const QByteArray& body, const QByteArray& extraHeaders)
 {
   const char* text = status == 200 ? "OK" : status == 400 ? "Bad Request" : status == 401 ? "Unauthorized" :
                      status == 403 ? "Forbidden" : status == 404 ? "Not Found" : status == 413 ? "Payload Too Large" : status == 503 ? "Service Unavailable" : "Error";
@@ -315,6 +319,7 @@ void ControlServer::respond(QTcpSocket* socket, int status, const QByteArray& bo
   response += "Content-Type: application/json\r\n";
   response += "Content-Length: " + QByteArray::number(body.size()) + "\r\n";
   response += "Cache-Control: no-store\r\n";
+  response += extraHeaders;
   response += "Connection: close\r\n\r\n";
   response += body;
   socket->write(response);
@@ -458,7 +463,62 @@ void ControlServer::handle(QTcpSocket* socket, const QByteArray& request)
   if (parseError.error != QJsonParseError::NoError || !document.isObject())
     return respond(socket, 400, R"({"ok":false,"error":"The body must be a JSON object"})");
 
+  // a dialog is open: only the commands that read run now (docs/CONTROL.md, "While a dialog is open")
+  const QString command = document.object().value("command").toString();
+  if (dialogOpen() && !allowedWhileDialogOpen(command))
+  {
+    const QJsonObject busy{{"ok", false}, {"busy", "dialog"}, {"retry_after", DIALOG_RETRY_SECONDS},
+                           {"error", "A dialog is open in PinglyMotion. Close it and try again. "
+                                     "Only commands that read (state, joints, keys, describe_motion, describe_body, "
+                                     "motion_script, check_animation, find_reference, rlv_state, lab_result, lsl_check, "
+                                     "lsl_lint) work while it is open."}};
+    respond(socket, 503, QJsonDocument(busy).toJson(QJsonDocument::Compact),
+            "Retry-After: " + QByteArray::number(DIALOG_RETRY_SECONDS) + "\r\n");
+    emit contact(client, clientName(command.toUtf8()), false);
+    return;
+  }
+
   const QJsonObject answer = m_api->execute(document.object());
   respond(socket, 200, QJsonDocument(answer).toJson(QJsonDocument::Compact));
   emit contact(client, clientName(document.object().value("command").toString().toUtf8()), answer.value("ok").toBool());
+}
+
+bool ControlServer::dialogOpen()
+{
+  if (DialogGuard::active()) return true;
+  // QApplication: the program and the tests; the fuzz targets have a QGuiApplication only
+  if (qobject_cast<QApplication*>(QCoreApplication::instance()))
+    if (QApplication::activeModalWidget() || QApplication::activePopupWidget()) return true;
+  if (qobject_cast<QGuiApplication*>(QCoreApplication::instance()))
+    if (QGuiApplication::modalWindow()) return true;
+  return false;
+}
+
+// Which commands run while a dialog is open (docs/CONTROL.md has the same table):
+//
+//   command                                    while a dialog is open   why
+//   state, joints, keys                        allowed                  read only
+//   describe_motion, describe_body             allowed                  read only
+//   motion_script, check_animation             allowed                  read only
+//   find_reference                             allowed                  reads the library index, not the document
+//   rlv_state, lab_result                      allowed                  read the Script Lab state only
+//   lsl_check, lsl_lint                        allowed                  check script text, touch nothing
+//   get_pose, describe_pose                    refused                  "frame" moves the current frame
+//   screenshot                                 refused                  draws the 3D view, may move the frame
+//   set_*, delete_key, play, stop              refused                  change the document or the window
+//   new_animation, open_file, load_reference,  refused                  replace or change the document
+//   load_motion_script, save_file, export_anim
+//   rlv_command, rlv_reset, lsl_run,           refused                  change the Script Lab state
+//   lsl_event, lab_watch, lab_unwatch, lab_replay
+//   anything else (also unknown names)         refused                  only what is known to be safe runs
+bool ControlServer::allowedWhileDialogOpen(const QString& command)
+{
+  static const QStringList readOnly = {
+    QStringLiteral("state"), QStringLiteral("joints"), QStringLiteral("keys"),
+    QStringLiteral("describe_motion"), QStringLiteral("describe_body"),
+    QStringLiteral("motion_script"), QStringLiteral("check_animation"),
+    QStringLiteral("find_reference"), QStringLiteral("rlv_state"), QStringLiteral("lab_result"),
+    QStringLiteral("lsl_check"), QStringLiteral("lsl_lint"),
+  };
+  return readOnly.contains(command);
 }

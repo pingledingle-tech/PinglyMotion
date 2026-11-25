@@ -51,6 +51,7 @@ class MainPanels;
 class SelectedJointPanel;
 class SelectedPropPanel;
 class QFileInfo;
+class DocumentWatch;
 class QButtonGroup;
 class QLineEdit;
 class QPushButton;
@@ -244,7 +245,8 @@ class PinglyMotionWindow : public QMainWindow
     void fileAdd();
     void fileAdd(const QString& fileName);
     bool checkAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
-    void addAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
+    // false when the animation changed while one of its message boxes was open (src/documentwatch.h)
+    bool addAnimationFile(const QString& fileName,const QByteArray* data=nullptr);
 
     // Two figures in one scene, Expert mode only (docs/UX_DECISIONS.md 6m)
     // File > Add a second figure...: asks From the library or From a file...
@@ -355,6 +357,9 @@ class PinglyMotionWindow : public QMainWindow
     void setPlaystate(PlayState state);
 
     bool checkFileOverwrite(const QFileInfo& fileInfo);
+    // after a dialog: true when the animation and the file name are still those from before it;
+    // otherwise the status line says so and the caller stops (src/documentwatch.h)
+    bool stillSameDocument(const DocumentWatch& watch,const QString& fileBefore);
     void setCurrentFile(const QString& fileName);
     void enableInputs(bool state);
 

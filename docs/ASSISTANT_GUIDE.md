@@ -318,6 +318,7 @@ A good loop: plan the movement in words, write the table, `load_motion_script`, 
 - **An angle outside the range is cut back.** The answer says what was applied. Do not repeat the same value.
 - **Mirror is on.** Posing a left joint then also poses the right one. Say so if the other side moves.
 - **Frame 1 does not take poses.** Pose from frame 2.
+- **"A dialog is open in PinglyMotion".** The user has a window or menu open there. Commands that change something get this error (HTTP 503) and change nothing; reading commands such as `state` still work. Wait a few seconds and send it again, or ask the user to close the window. Never assume the change was made.
 
 ### Adding a lesson
 

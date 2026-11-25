@@ -100,6 +100,8 @@
 #include "librarypanel.h"
 #include "libraryindex.h"
 #include "wheelguard.h"
+#include "dialogguard.h"
+#include "documentwatch.h"
 
 // What the remote control commands do in the window: the same steps as clicking.
 
@@ -130,7 +132,9 @@ void PinglyMotionWindow::setDefaultLoopIn(Animation* anim)
 void PinglyMotionWindow::showLoadProblems(Animation* anim)
 {
   if(m_quietDialogs) return;
-  for(const Animation::LoadProblem& problem : anim->loadProblems())
+  // a copy: while a box is open other code can run and delete the animation (src/documentwatch.h)
+  const QList<Animation::LoadProblem> problems=anim->loadProblems();
+  for(const Animation::LoadProblem& problem : problems)
     QMessageBox::critical(this,problem.title,problem.text);
 }
 
@@ -150,7 +154,6 @@ bool PinglyMotionWindow::fileNew()
   emit clearProps();
 
   Animation* anim=new Animation(scene->bvh());
-  showLoadProblems(anim);
 
   // set timeline animation first, because ...
   timeline->setAnimation(anim);
@@ -185,6 +188,8 @@ bool PinglyMotionWindow::fileNew()
   enableProps(false);
 
   anim->setDirty(false);
+  // the boxes come last: while one is open other code can run, and nothing here uses anim after them
+  showLoadProblems(anim);
   return true;
 }
 
@@ -203,12 +208,17 @@ void PinglyMotionWindow::fileClose()
 
 QString PinglyMotionWindow::selectFileToOpen(const QString& caption)
 {
+  QString file;
+  {
+    // control commands that change the document wait while the picker is open (src/dialogguard.h)
+    const DialogGuard open;
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString file = QFileDialog::getOpenFileName(NULL, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
+   file = QFileDialog::getOpenFileName(NULL, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
 #else
-   QString file = QFileDialog::getOpenFileName(this, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
+   file = QFileDialog::getOpenFileName(this, caption, StartFolder::forDialogs(UserSettings::lastPath()), m_animFilter);
 #endif
+  }
   if(!file.isEmpty())
   {
     QFileInfo fileInfo(file);
@@ -315,7 +325,7 @@ bool PinglyMotionWindow::checkAnimationFile(const QString& file,const QByteArray
 }
 
 // adds a file that checkAnimationFile() has accepted
-void PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* data)
+bool PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* data)
 {
   setEmptyMode(false);
   {
@@ -325,11 +335,8 @@ void PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* 
     if(oldAvm) m_avmOrigin.insert(shownName,file);
     addToOpenFiles(shownName);
     Animation* anim=new Animation(scene->bvh(),file,data);
-    showLoadProblems(anim);
+    const bool fromNewerVersion=scene->bvh()->lastLoadedIgnoredKeys>0 || scene->bvh()->lastLoadedNewerVersion;
     animationIds.append(anim);
-    if(!m_quietDialogs && (scene->bvh()->lastLoadedIgnoredKeys>0 || scene->bvh()->lastLoadedNewerVersion))
-      QMessageBox::information(this,tr("Open Animation File"),
-                               tr("This file comes from a newer version of PinglyMotion.\nSome parts of it are not shown here.\nSaving it will remove those parts. Save under another name to keep the original."));
     calculateLongestRunningTime();
 
     setCurrentFile(shownName);
@@ -359,7 +366,15 @@ void PinglyMotionWindow::addAnimationFile(const QString& file,const QByteArray* 
     updateFps();
     anim->setDirty(oldAvm);
 
-
+    // the boxes come last: while one is open other code can run (a control command) and replace
+    // or delete anim, so nothing here uses it after them (src/documentwatch.h)
+    const DocumentWatch watch(anim);
+    const QString fileNow=currentFile;
+    showLoadProblems(anim);
+    if(!m_quietDialogs && fromNewerVersion)
+      QMessageBox::information(this,tr("Open Animation File"),
+                               tr("This file comes from a newer version of PinglyMotion.\nSome parts of it are not shown here.\nSaving it will remove those parts. Save under another name to keep the original."));
+    return stillSameDocument(watch,fileNow);
   }
 }
 
@@ -375,9 +390,13 @@ bool PinglyMotionWindow::fileSave()
   if(DingleSave::needsName(currentFile,m_untitledName))
     return fileSaveAs();
 
+  // the question below runs a nested event loop: afterwards the animation is checked again
+  const DocumentWatch watch(scene->getAnimation());
+  const QString fileBefore=currentFile;
   // an opened .avm is saved as .dingle with the same name; the old file goes away after that worked
   const QString avmFile=m_avmOrigin.value(currentFile);
   if(!avmFile.isEmpty() && !checkFileOverwrite(QFileInfo(currentFile))) return false;
+  if(!stillSameDocument(watch,fileBefore)) return false;
 
   QString error;
   storePropsInAnimation();
@@ -394,6 +413,9 @@ bool PinglyMotionWindow::fileSave()
 // returns true when the animation was saved
 bool PinglyMotionWindow::fileSaveAs()
 {
+  // the file picker and the question run a nested event loop: afterwards the animation is checked again
+  const DocumentWatch watch(scene->getAnimation());
+  const QString fileBefore=currentFile;
   QString suggested=DingleSave::suggestedName(currentFile,m_untitledName);
   if(QFileInfo(suggested).isRelative())
     suggested=QDir(UserSettings::lastPath()).filePath(suggested);
@@ -404,12 +426,16 @@ bool PinglyMotionWindow::fileSaveAs()
   // (end of this function; docs/DEV.md, "Web-ready code", rule 2)
   QString file=QDir(QDir::tempPath()).filePath(QFileInfo(suggested).fileName());
 #else
+  QString file;
+  {
+    const DialogGuard open;
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
+   file = QFileDialog::getSaveFileName(NULL, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #else
-   QString file = QFileDialog::getSaveFileName(this, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
+   file = QFileDialog::getSaveFileName(this, tr("Save Animation File"), suggested, m_dingleFilter, &selectedFilter, QFileDialog:: DontConfirmOverwrite);
 #endif
+  }
 #endif
 
   if(file.isEmpty()) return false;
@@ -421,6 +447,7 @@ bool PinglyMotionWindow::fileSaveAs()
   // if the file didn't exist yet or the user accepted to overwrite it, save it.
   if(!checkFileOverwrite(fileInfo)) return false;
 #endif
+  if(!stillSameDocument(watch,fileBefore)) return false;
 
   const QString oldFile=m_avmOrigin.value(currentFile,currentFile);
   QString error;
@@ -509,7 +536,15 @@ void PinglyMotionWindow::fileExportAnim()
     return;
   }
 
+  // Everything needed from the animation is read now, before the first dialog: a dialog runs a
+  // nested event loop, and the animation may be replaced or deleted while it is open. After each
+  // dialog the watch checks that it is still the same animation, and the export stops if not.
+  const DocumentWatch watch(animation);
+  const QString fileBefore=currentFile;
   const AnimFile::Animation model=scene->bvh()->snapshot(animation,AnimFile::Format::Bvh);
+  const int loopIn=animation->getLoopInPoint();
+  const int loopOut=animation->getLoopOutPoint();
+  animation=nullptr;  // not used after this line
   const QString problem=AnimExportUi::problemBeforeExport(model);
   if(!problem.isEmpty())
   {
@@ -519,18 +554,24 @@ void PinglyMotionWindow::fileExportAnim()
 
   AnimExportDialog dialog(AnimExportUi::durationSeconds(model),this);
   if(dialog.exec()!=QDialog::Accepted) return;
+  if(!stillSameDocument(watch,fileBefore)) return;
 
-  QString suggested=AnimExportUi::suggestedFileName(currentFile,m_untitledName);
+  QString suggested=AnimExportUi::suggestedFileName(fileBefore,m_untitledName);
   if(QFileInfo(suggested).isRelative())
     suggested=QDir(UserSettings::lastPath()).filePath(suggested);
-  QString file=QFileDialog::getSaveFileName(this,title,suggested,tr("Second Life animation (*.anim)"),nullptr,QFileDialog::DontConfirmOverwrite);
+  QString file;
+  {
+    const DialogGuard open;
+    file=QFileDialog::getSaveFileName(this,title,suggested,tr("Second Life animation (*.anim)"),nullptr,QFileDialog::DontConfirmOverwrite);
+  }
   if(file.isEmpty()) return;
+  if(!stillSameDocument(watch,fileBefore)) return;
   file=AnimExportUi::withAnimEnding(file);
   const QFileInfo fileInfo(file);
   if(!checkFileOverwrite(fileInfo)) return;
+  if(!stillSameDocument(watch,fileBefore)) return;
 
-  const AnimExport::Options options=AnimExportUi::toOptions(dialog.settings(),model.frameTime,
-                                                           animation->getLoopInPoint(),animation->getLoopOutPoint());
+  const AnimExport::Options options=AnimExportUi::toOptions(dialog.settings(),model.frameTime,loopIn,loopOut);
   const AnimExport::Result result=AnimExport::write(model,options);
   if(!result.ok())
   {
@@ -586,7 +627,7 @@ bool PinglyMotionWindow::openConvertedAnimation(const AnimFile::Animation& anim,
   if(!checkAnimationFile(path)) return false;
   if(!clearOpenFiles()) return false;
   emit clearProps();
-  addAnimationFile(path);
+  if(!addAnimationFile(path)) return false;
 
   // the animation belongs to no file: Save asks for a name
   setCurrentFile(m_untitledName);
@@ -597,6 +638,7 @@ bool PinglyMotionWindow::openConvertedAnimation(const AnimFile::Animation& anim,
     ui->selectAnimationCombo->setItemText(index,name);
   }
   Animation* animation=scene->getAnimation();
+  if(!animation) return false;
   if(loopIn>0 && loopOut>0)
   {
     setLoopOutPoint(loopOut);
@@ -612,7 +654,11 @@ bool PinglyMotionWindow::openConvertedAnimation(const AnimFile::Animation& anim,
 void PinglyMotionWindow::fileImportAnim()
 {
   const QString title=tr("Import Second Life .anim");
-  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("Second Life animation (*.anim)"));
+  QString file;
+  {
+    const DialogGuard open;
+    file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("Second Life animation (*.anim)"));
+  }
   if(file.isEmpty()) return;
   UserSettings::setLastPath(QFileInfo(file).path());
 
@@ -650,7 +696,11 @@ void PinglyMotionWindow::fileImportAnim()
 void PinglyMotionWindow::fileImportBvh()
 {
   const QString title=tr("Import a BVH from another skeleton");
-  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("BVH files (*.bvh)"));
+  QString file;
+  {
+    const DialogGuard open;
+    file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("BVH files (*.bvh)"));
+  }
   if(file.isEmpty()) return;
   UserSettings::setLastPath(QFileInfo(file).path());
 
@@ -687,7 +737,11 @@ void PinglyMotionWindow::fileImportBvh()
 void PinglyMotionWindow::fileImportGltf()
 {
   const QString title=tr("Import glTF animation");
-  const QString file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("glTF files (*.glb *.gltf)"));
+  QString file;
+  {
+    const DialogGuard open;
+    file=QFileDialog::getOpenFileName(this,title,StartFolder::forDialogs(UserSettings::lastPath()),tr("glTF files (*.glb *.gltf)"));
+  }
   if(file.isEmpty()) return;
   UserSettings::setLastPath(QFileInfo(file).path());
 
@@ -742,12 +796,16 @@ void PinglyMotionWindow::fileImportGltf()
 // Menu Action: File / Load Props...
 void PinglyMotionWindow::fileLoadProps()
 {
+  QString fileName;
+  {
+    const DialogGuard open;
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString fileName = QFileDialog::getOpenFileName(nullptr, QString(), UserSettings::lastPath(), m_propFilter);
+   fileName = QFileDialog::getOpenFileName(nullptr, QString(), UserSettings::lastPath(), m_propFilter);
 #else
-   QString fileName = QFileDialog::getOpenFileName(this, QString(), UserSettings::lastPath(), m_propFilter);
+   fileName = QFileDialog::getOpenFileName(this, QString(), UserSettings::lastPath(), m_propFilter);
 #endif
+  }
 
   if(fileName.isEmpty()) return;
   loadPropFile(fileName);
@@ -807,12 +865,16 @@ void PinglyMotionWindow::storePropsInAnimation()
 // Menu Action: File / Save Props...
 void PinglyMotionWindow::fileSaveProps()
 {
+  QString fileName;
+  {
+    const DialogGuard open;
    //// For some unknown reason passing "this" locks up the OSX pinglymotion window. Possibly a QT4 bug, needs investigation
 #ifdef __APPLE__
-   QString fileName = QFileDialog::getSaveFileName(NULL, tr("Save Props"), currentFile, m_propFilter);
+   fileName = QFileDialog::getSaveFileName(NULL, tr("Save Props"), currentFile, m_propFilter);
 #else
-   QString fileName = QFileDialog::getSaveFileName(this, tr("Save Props"), currentFile, m_propFilter);
+   fileName = QFileDialog::getSaveFileName(this, tr("Save Props"), currentFile, m_propFilter);
 #endif
+  }
 
   if(!fileName.isEmpty())
   {
@@ -856,6 +918,13 @@ bool PinglyMotionWindow::checkFileOverwrite(const QFileInfo& fileInfo)
     if(answer==QMessageBox::No) return false;
   }
   return true;
+}
+
+bool PinglyMotionWindow::stillSameDocument(const DocumentWatch& watch,const QString& fileBefore)
+{
+  if(watch.unchanged(scene->getAnimation()) && currentFile==fileBefore) return true;
+  statusBar()->showMessage(DocumentWatch::changedMessage(),10000);
+  return false;
 }
 
 void PinglyMotionWindow::on_fileNewAction_triggered()
@@ -977,7 +1046,7 @@ bool PinglyMotionWindow::addFigureFile(const QString& fileName,const QByteArray*
   for(Animation* anim : animationIds) used << m_figurePlace.value(anim,0);
   const int place=FigureSpec::freePlace(used);
   const int before=animationIds.count();
-  addAnimationFile(fileName,data);
+  if(!addAnimationFile(fileName,data)) return false;
   if(animationIds.count()!=before+1) return false;
   Animation* added=animationIds.last();
   m_figurePlace.insert(added,place);
@@ -1028,14 +1097,27 @@ bool PinglyMotionWindow::removeFigure(int index)
   Animation* anim=animationIds.at(index);
   if(anim->dirty() && !m_quietDialogs)
   {
+    // the box runs a nested event loop: the figure is found again afterwards (src/documentwatch.h)
+    const QPointer<Animation> kept(anim);
+    const int figures=animationIds.count();
     QScopedPointer<QMessageBox> box(FigureRemove::box(this,index+1,openFiles.at(index)));
     box->exec();
     const FigureRemove::Choice choice=FigureRemove::choiceOf(box.data());
     if(choice==FigureRemove::Choice::Cancel) return false;
+    if(!kept || animationIds.count()!=figures || animationIds.indexOf(kept.data())!=index)
+    {
+      statusBar()->showMessage(DocumentWatch::changedMessage(),10000);
+      return false;
+    }
     if(choice==FigureRemove::Choice::SaveThenRemove)
     {
       makeFigureActive(index);
-      if(!fileSave() || anim->dirty()) return false;
+      if(!fileSave() || !kept || kept->dirty()) return false;
+      if(animationIds.count()!=figures || animationIds.indexOf(kept.data())!=index)
+      {
+        statusBar()->showMessage(DocumentWatch::changedMessage(),10000);
+        return false;
+      }
     }
   }
   const int count=animationIds.count();

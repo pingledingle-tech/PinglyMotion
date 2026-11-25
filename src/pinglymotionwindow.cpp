@@ -63,6 +63,7 @@
 #include <QTableWidget>
 
 #include "aboutdialog.h"
+#include "documentwatch.h"
 #include "animexportdialog.h"
 #include "animimportconvert.h"
 #include "dinglesave.h"
@@ -1025,15 +1026,26 @@ bool PinglyMotionWindow::askToSaveChanges()
   box.setEscapeButton(QMessageBox::Cancel);
   box.button(QMessageBox::Discard)->setText(tr("Don't Save"));
 
+  // the box runs a nested event loop: the animations are held by QPointer and found again
+  // afterwards, since one may be replaced or deleted while it is open (src/documentwatch.h)
+  QList<QPointer<Animation>> toSave;
+  for(Animation* animation : unsaved) toSave.append(animation);
+  unsaved.clear();
+
   const int answer=box.exec();
   if(answer==QMessageBox::Discard) return true;
   if(answer!=QMessageBox::Save) return false;
 
-  // save every unsaved animation; stop if one is not saved (cancelled or failed)
-  for(Animation* animation : unsaved)
+  // save each of them; stop if one is not saved (cancelled or failed) or is gone
+  for(const QPointer<Animation>& animation : toSave)
   {
-    selectAnimation(animation);
-    if(!fileSave() || animation->dirty()) return false;
+    if(!animation || !animationIds.contains(animation.data()))
+    {
+      statusBar()->showMessage(DocumentWatch::changedMessage(),10000);
+      return false;
+    }
+    selectAnimation(animation.data());
+    if(!fileSave() || !animation || animation->dirty()) return false;
   }
   return true;
 }
