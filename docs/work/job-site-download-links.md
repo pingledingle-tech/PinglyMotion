@@ -1,6 +1,6 @@
 Branch: job/site-download-links
-Status: active
-Pull request: pending
+Status: done
+Pull request: #506
 Files:
 - docs/index.html
 - docs/download.html
