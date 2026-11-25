@@ -7,7 +7,10 @@
  * mistakes show with line and column before the script runs.
  *
  * The parser stops at the first syntax error; the checker reports up to
- * MAX_ERRORS errors. The input is untrusted: nesting depth is limited.
+ * MAX_ERRORS errors. The input is untrusted: nesting depth is limited, and so is
+ * the depth of each expression's tree (MAX_EXPRESSION_DEPTH), because the
+ * checker, the static warnings, the SLua converter, the interpreter and
+ * freeing the tree all walk it recursively.
  *
  * Licensed under the GNU General Public License version 2 or later.
  */
@@ -27,7 +30,8 @@ namespace lsl
 class Parser
 {
   public:
-    static constexpr int MAX_DEPTH = 100;
+    static constexpr int MAX_DEPTH = 100;              // nesting while parsing (blocks, statements, brackets)
+    static constexpr int MAX_EXPRESSION_DEPTH = 200;   // levels in one expression (a is 1, a + b is 2, a + b + c is 3)
     static constexpr int MAX_ERRORS = 50;
 
     struct Result

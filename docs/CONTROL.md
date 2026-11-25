@@ -1273,7 +1273,11 @@ first, `&&` and `||` do not short-circuit and have the same precedence, integers
 of a float has 6 decimals and of a vector 5, and `NULL_KEY` (a string) is true in an `if`.
 
 Limits (the input is untrusted, an AI tool writes it): the script at most 262 144 characters and 100 000
-tokens, nesting at most 100 levels; while running at most 500 000 steps, 64 nested function calls, 10 000
+tokens, nesting at most 100 levels, and one expression at most 200 levels deep (each operator, call, cast,
+list or vector adds a level, brackets alone do not, so a chain `a + b + c + ...` may have 200 terms; one
+more gives the error "This expression is too long or nested too deeply (more than 200 levels); split it
+into several statements." at the operator's line and column); while running at most 500 000 steps, 64
+nested function calls, 600 levels of nesting (statements, expressions and calls together), 10 000
 events, 65 open listens, 64 waiting events, strings of 65 536 characters, lists of 4 096 entries, about
 256 KB for all variables together per script (Second Life gives a script 64 KB, code included; the sandbox's
 count is rough, 16 bytes per value plus 2 per character, so it keeps the larger limit, and `llGetFreeMemory` answers

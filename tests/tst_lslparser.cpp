@@ -15,8 +15,12 @@
 #include <QSet>
 #include <QTest>
 
+#include "scriptlab/labchannelmap.h"
 #include "scriptlab/lsl/builtins.h"
 #include "scriptlab/lsl/control.h"
+#include "scriptlab/lsl/interp.h"
+#include "scriptlab/lsl/lint.h"
+#include "scriptlab/lsl/lsl2slua.h"
 #include "scriptlab/lsl/parser.h"
 
 using namespace lsl;
@@ -38,6 +42,11 @@ class LslParserTest : public QObject
     void warnings();
     void everyRaisedEventIsKnown();
     void nestingLimit();
+    void expressionDepthLimit();
+    void expressionDepthInEveryPlace();
+    void longChainsNeverCrash_data();
+    void longChainsNeverCrash();
+    void runtimeNestingLimit();
     void lslCheckCommand();
 
   private:
@@ -326,6 +335,173 @@ void LslParserTest::nestingLimit()
   for (int i = 0; i < 5000; ++i) unary += "!";
   unary += "1; } }";
   QVERIFY(firstError(unary).contains("nested too deeply"));
+}
+
+namespace
+{
+  // "x+x+...+x" with terms terms: an expression tree terms levels deep
+  QString chain(int terms, const QString& term = "x", const QString& op = "+")
+  {
+    QString out = term;
+    out.reserve(terms * (term.size() + op.size()));
+    for (int i = 1; i < terms; ++i) out += op + term;
+    return out;
+  }
+
+  // a script with expr on line 3, after "  y = " (column 7)
+  QString scriptWith(const QString& expr)
+  {
+    return "integer x = 1;\ndefault { state_entry() {\n  integer y = " + expr + ";\n  llSay(5, (string)y); } }\n";
+  }
+
+  QString depthMessage()
+  {
+    return "This expression is too long or nested too deeply (more than 200 levels); split it into several statements.";
+  }
+}
+
+void LslParserTest::expressionDepthLimit()
+{
+  QCOMPARE(Parser::MAX_EXPRESSION_DEPTH, 200);
+  QCOMPARE(QString("This expression is too long or nested too deeply (more than %1 levels); split it into several statements.")
+             .arg(Parser::MAX_EXPRESSION_DEPTH), depthMessage());
+
+  // exactly the limit: a chain of 200 terms is 200 levels and compiles
+  const Parser::Result ok = Parser::parse(scriptWith(chain(Parser::MAX_EXPRESSION_DEPTH)));
+  QVERIFY2(ok.ok(), ok.errors.empty() ? "" : qPrintable(ok.errors.front().message));
+
+  // one more term: the error, at the operator that makes the 201st level ("  integer y = " is 14 characters,
+  // the chain starts in column 15 and the 200th "+" is at 15 + 2 * 200 - 1)
+  int line = 0;
+  int column = 0;
+  QCOMPARE(firstError(scriptWith(chain(Parser::MAX_EXPRESSION_DEPTH + 1)), &line, &column), depthMessage());
+  QCOMPARE(line, 3);
+  QCOMPARE(column, 15 + 2 * 200 - 1);
+
+  // the same for other left-to-right operators and a mix of precedences
+  QVERIFY(Parser::parse(scriptWith(chain(200, "x", "*"))).ok());
+  QCOMPARE(firstError(scriptWith(chain(201, "x", "*"))), depthMessage());
+  QVERIFY(Parser::parse(scriptWith(chain(200, "x", "&&"))).ok());
+  QCOMPARE(firstError(scriptWith(chain(201, "x", "&&"))), depthMessage());
+  // "x * x" terms are 2 levels each: a chain of n of them is n + 1 levels
+  QVERIFY(Parser::parse(scriptWith(chain(199, "x * x"))).ok());
+  QCOMPARE(firstError(scriptWith(chain(200, "x * x"))), depthMessage());
+}
+
+void LslParserTest::expressionDepthInEveryPlace()
+{
+  const QString c199 = chain(199);
+  const QString c200 = chain(200);
+  // one level more for each wrapper: a function call, a list, a vector, a cast, a unary minus, ++, an assignment
+  QVERIFY(Parser::parse(scriptWith("llAbs(" + c199 + ")")).ok());
+  QCOMPARE(firstError(scriptWith("llAbs(" + c200 + ")")), depthMessage());
+  QVERIFY(Parser::parse(scriptWith("llGetListLength([" + chain(198) + "])")).ok());
+  QCOMPARE(firstError(scriptWith("llGetListLength([" + c199 + "])")), depthMessage());
+  QVERIFY(Parser::parse(scriptWith("(integer)llVecMag(<" + chain(197) + ", 0, 0>)")).ok());
+  QCOMPARE(firstError(scriptWith("(integer)llVecMag(<" + chain(198) + ", 0, 0>)")), depthMessage());
+  QVERIFY(Parser::parse(scriptWith("(integer)(" + c199 + ")")).ok());
+  QCOMPARE(firstError(scriptWith("(integer)(" + c200 + ")")), depthMessage());
+  QVERIFY(Parser::parse(scriptWith("-(" + c199 + ")")).ok());
+  QCOMPARE(firstError(scriptWith("-(" + c200 + ")")), depthMessage());
+  QVERIFY(Parser::parse(scriptWith("(x = " + c199 + ")")).ok());
+  QCOMPARE(firstError(scriptWith("(x = " + c200 + ")")), depthMessage());
+  QVERIFY(Parser::parse(scriptWith(chain(199, "x++"))).ok());
+  QCOMPARE(firstError(scriptWith(chain(200, "x++"))), depthMessage());
+  // brackets alone add no level
+  QVERIFY(Parser::parse(scriptWith("((((" + c200 + "))))")).ok());
+  // a global's value, a function's return and a condition are expressions too
+  QCOMPARE(firstError("integer g = " + chain(201, "1") + ";\ndefault { state_entry() { } }\n"), depthMessage());
+  QCOMPARE(firstError("integer f() { return " + chain(201, "1") + "; }\ndefault { state_entry() { } }\n"), depthMessage());
+  QCOMPARE(firstError("integer x;\ndefault { state_entry() { if (" + chain(201) + ") x = 2; } }\n"), depthMessage());
+}
+
+void LslParserTest::longChainsNeverCrash_data()
+{
+  QTest::addColumn<QString>("source");
+  QTest::addColumn<QString>("error");
+  // 49 000 terms stay just under the lexer's 100 000 tokens, so the parser itself sees them
+  QTest::newRow("49000 plus") << scriptWith(chain(49000)) << depthMessage();
+  QTest::newRow("49000 times") << scriptWith(chain(49000, "x", "*")) << depthMessage();
+  QTest::newRow("24000 mixed") << scriptWith(chain(24000, "x * x")) << depthMessage();
+  QTest::newRow("49000 list") << scriptWith("llGetListLength([" + chain(49000) + "])") << depthMessage();
+  QTest::newRow("49000 strings") << scriptWith("llStringLength(" + chain(49000, "\"a\"") + ")") << depthMessage();
+  QTest::newRow("49000 global") << "integer g = " + chain(49000, "1") + ";\ndefault { state_entry() { } }\n" << depthMessage();
+  // the parser's nesting limit catches these first
+  const QString nested = QString("The script is nested too deeply (more than %1 levels).").arg(Parser::MAX_DEPTH);
+  QString minus;
+  for (int i = 0; i < 49000; ++i) minus += "- ";
+  QTest::newRow("49000 unary minus") << scriptWith(minus + "x") << nested;
+  QString brackets = QString(49000, '(') + "x" + QString(49000, ')');
+  QTest::newRow("49000 brackets") << scriptWith(brackets) << nested;
+  QString casts;
+  for (int i = 0; i < 20000; ++i) casts += "(integer)";
+  QTest::newRow("20000 casts") << scriptWith(casts + "x") << nested;
+  // over the lexer's token limit: the lexer stops first
+  QTest::newRow("100000 plus") << scriptWith(chain(100000)) << QString();
+  QTest::newRow("130000 plus") << scriptWith(chain(130000)) << QString();
+}
+
+void LslParserTest::longChainsNeverCrash()
+{
+  QFETCH(QString, source);
+  QFETCH(QString, error);
+
+  // the parser and checker (lsl_check, the editor's check of the shown script, the watched folder)
+  const Parser::Result parsed = Parser::parse(source);
+  QVERIFY(!parsed.ok());
+  QVERIFY(!parsed.errors.empty());
+  if (!error.isEmpty()) QCOMPARE(parsed.errors.front().message, error);
+  QVERIFY(parsed.errors.front().line >= 1 && parsed.errors.front().column >= 1);
+  const QJsonObject checked = Control::check(QJsonObject{{"command", "lsl_check"}, {"source", source}});
+  QCOMPARE(checked["valid"].toBool(), false);
+  QCOMPARE(checked["errors"].toArray().first().toObject()["message"].toString(), parsed.errors.front().message);
+  // the static warnings (lsl_lint, the Improve view)
+  const Lint::Result linted = Lint::lint(source);
+  QVERIFY(!linted.valid());
+  QCOMPARE(linted.errors.front().message, parsed.errors.front().message);
+  QVERIFY(linted.warnings.empty());
+  // the SLua converter (Convert to SLua)
+  const Lsl2Slua::Result converted = Lsl2Slua::convert(source);
+  QVERIFY(!converted.ok());
+  QVERIFY(converted.text.isEmpty());
+  QCOMPARE(converted.errors.front().message, parsed.errors.front().message);
+  // the channel map's search for the sending line
+  const LabChannelMap::Place place = LabChannelMap::findCall(source, QStringList{"llSay"}, "y");
+  QCOMPARE(place.line, 0);
+  QCOMPARE(place.column, 0);
+  // lsl_run does not run a script that does not compile
+  const QJsonObject run = Control::run(QJsonObject{{"command", "lsl_run"}, {"source", source}, {"seconds", 1}});
+  QCOMPARE(run["ok"].toBool(), false);
+  QCOMPARE(run["errors"].toArray().first().toObject()["message"].toString(), parsed.errors.front().message);
+}
+
+void LslParserTest::runtimeNestingLimit()
+{
+  QCOMPARE(Limits().maxEvalDepth, 600);
+  QCOMPARE(Limits().maxCallDepth, 64);
+
+  // a small recursive function reaches the call limit first: 64 calls fit inside the nesting limit
+  const QString simple = "integer f(integer n) { if (n <= 0) return 0; return 1 + f(n - 1); }\n"
+                         "default { state_entry() { llOwnerSay((string)f(1000)); } }\n";
+  QJsonObject run = Control::run(QJsonObject{{"command", "lsl_run"}, {"source", simple}, {"seconds", 1}});
+  QCOMPARE(run["ok"].toBool(), true);
+  QCOMPARE(run["stopped"].toBool(), true);
+  QCOMPARE(run["stop_reason"].toString(), QString("Function calls nested deeper than 64 (endless recursion?); the script was stopped."));
+
+  // a recursive call deep inside a long expression reaches the nesting limit, and the run stops cleanly
+  const QString deep = "integer x = 1;\ninteger f(integer n) { if (n <= 0) return 0; return f(n - 1) + " + chain(150) + "; }\n"
+                       "default { state_entry() { llOwnerSay((string)f(1000)); } }\n";
+  run = Control::run(QJsonObject{{"command", "lsl_run"}, {"source", deep}, {"seconds", 1}});
+  QCOMPARE(run["ok"].toBool(), true);
+  QCOMPARE(run["stopped"].toBool(), true);
+  QCOMPARE(run["stop_reason"].toString(), QString("The script nests too deeply while running (deep recursion?) and was stopped."));
+
+  // four such calls fit inside the nesting limit: the script finishes
+  const QString four = "integer x = 1;\ninteger f(integer n) { if (n <= 0) return 0; return f(n - 1) + " + chain(100) + "; }\n"
+                       "default { state_entry() { llOwnerSay((string)f(4)); } }\n";
+  run = Control::run(QJsonObject{{"command", "lsl_run"}, {"source", four}, {"seconds", 1}});
+  QCOMPARE(run["ok"].toBool(), true);
+  QVERIFY2(run["stop_reason"].toString().isEmpty(), qPrintable(run["stop_reason"].toString()));
 }
 
 void LslParserTest::lslCheckCommand()

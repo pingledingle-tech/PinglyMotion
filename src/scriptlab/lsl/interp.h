@@ -37,7 +37,10 @@ struct Limits
 {
   qint64 maxSteps = 500000;        // statements and expressions run, whole run
   int maxCallDepth = 64;           // nested user function calls
-  int maxEvalDepth = 1500;         // nesting while running (statements, expressions and calls)
+  // nesting while running (statements, expressions and calls). The interpreter recurses on the native
+  // stack, about 0.7 KB per level in release and unoptimised builds, so 600 levels stay well inside the
+  // 1 MiB main-thread stack of Windows; 64 nested calls of a small function need under 400.
+  int maxEvalDepth = 600;
   qint64 maxMemoryBytes = 262144;  // all variables together, rough count (Second Life gives a script 64 KB)
   int maxStringChars = 65536;
   int maxListLength = 4096;
