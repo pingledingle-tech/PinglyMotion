@@ -168,7 +168,7 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 
 ## Status of open pull requests
 
-`python3 tools/work.py status` (needs `gh`, read-only, REST only) prints for every open pull request: draft or ready, merge conflict state (`unknown` if GitHub has not computed it after a few tries, never read as fine), the latest run of each check by start time (older cancelled duplicates are ignored), and minutes since the last push (`stopped?` over 40). Parsing is tested with canned data in `tests/test_work.py`.
+`python3 tools/work.py status` (needs `gh`, read-only, REST only) prints for every open pull request: draft or ready, merge conflict state (`unknown` if GitHub has not computed it after a few tries, never read as fine), the latest run of each check by start time (older cancelled duplicates are ignored), and minutes since the last push (`stopped?` over 40), then the last 3 Build runs on `main`, the queue of issue 74 and the owner tests of issue 47 (details in "The watch" below). Parsing is tested with canned data in `tests/test_work.py`.
 
 ## Security alerts
 
@@ -206,9 +206,36 @@ The window does not wire the Script Lab itself: `ScriptLabController` (`src/scri
 
 ## What runs where
 
-A pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. A draft runs only the quick checks; the rest starts when it is marked ready. Changes that only touch Markdown, `docs/`, licence files or the website (issue templates, `pages.yml`, `tools/site/` and its test, the website page tests `tests/test_site_*.py`, which the website job runs) skip the builds and the C++ CodeQL analysis; the required checks then report as skipped, which counts as passed (the rule and its test: `tools/ci/changes.py`, `tests/test_ci_changes.py`). After a merge, `main` gets a quick Linux build with the tests. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, the list of open code scanning alerts ("Security alerts" above), and fuzzing. A release runs all of it first and is only published when everything passes.
+A pull request runs the quick checks (privacy, dependency review), the Linux and Windows builds with the tests, the sanitizer build with the tests, and CodeQL on the program. A draft runs only the quick checks; the rest starts when it is marked ready. Changes that only touch Markdown, `docs/`, licence files or the website (issue templates, `pages.yml`, `tools/site/` and its test, the website page tests `tests/test_site_*.py`, which the website job runs) skip the builds and the C++ CodeQL analysis; the required checks then report as skipped, which counts as passed (the rule and its test: `tools/ci/changes.py`, `tests/test_ci_changes.py`). After a merge, `main` gets a quick Linux build with the tests. The Watch workflow ("The watch" below) runs when one of these workflows ends and every 10 minutes, and handles stuck checks, a lone Windows failure, skipped required checks, quiet pull requests and a red `main`; every job has a time limit. Every night `main` gets everything again plus the slow checks: CodeQL on the test code too, the list of open code scanning alerts ("Security alerts" above), and fuzzing. A release runs all of it first and is only published when everything passes.
 
 Every Monday (and on request, workflow `Weekly report`) a read-only workflow writes a short report to its run summary: pull requests merged in the last 7 days, open pull requests with their age, the share of successful Build runs on `main`, failed workflow runs and runs that needed a rerun, the size of issues 47 and 74, and job files still `Status: active`. It has only read permissions and writes nothing but the summary. It reads the 100 newest closed pull requests and the 100 newest workflow runs of the week, so a very busy week is cut off at those limits. Logic: `tools/weekly_report.py`; tests (canned data, no network): `python3 tests/test_weekly_report.py`, run by the `Work board` workflow.
+
+## The watch
+
+A script that GitHub runs by itself, so nobody spends tokens on looking at checks. Workflow `.github/workflows/watch.yml`, logic `tools/watch.py` (Python standard library and `gh`, REST only, no AI), tests `tests/test_watch.py` (fake GitHub data, no network; run by the Work board and Watch workflows). The first run of the triggers can only be seen after the workflow is on `main`.
+
+**When it runs:** when a Build, CodeQL, Privacy or Dependency review run ends, every 10 minutes (for what hangs), and on request (Actions page, workflow `Watch`, option `dry_run`). One run at a time.
+
+**What it does,** for every open pull request and for `main`:
+
+- **Normal time:** measured, not fixed. The median of each job in the last 20 green Build runs. A check is stuck when it has run longer than twice that, never under 10 minutes. A check with fewer than 3 green runs has no measurement: the limit is 60 minutes. The first line of every run's summary lists the limits it used.
+- **Stuck run:** cancels the run, waits up to 2 minutes, then reruns its failed jobs. Once per run, and at most two reruns per pull request (counted in the hidden state of the watch's comment); after that it only comments.
+- **Windows failed alone:** when the Windows job failed, nothing else in that run failed and the run has ended, the failed job is rerun once (same limits).
+- **Skipped but should have run:** linux, windows and asan-ubsan all show skipped on a ready pull request that changes program files (decided with `tools/ci/changes.py`). The watch comments; the fix is an empty commit pushed by the job. The watch never pushes.
+- **Standing still:** no push and no comment (the watch's own comment does not count) for 3 hours, on a ready or draft pull request.
+- **`main` red:** the newest finished Build run with `event=push` on `main` failed. One comment on the newest merged pull request and a line in the run summary. A stuck run on `main` is handled like one on a pull request.
+
+**Its comments:** one comment per pull request, found by the hidden first line `<!-- pinglymotion-watch -->`. It edits the same comment and never adds a second one; edits send no notification. The bullets are what needs a person now; "What the watch did" lists reruns it made. "Nothing to report now." means the problem is gone. The hidden `pinglymotion-watch-state` line holds the rerun counts: do not edit it.
+
+**Everything it does** is also printed and written to the job summary of the run.
+
+**Try it without risk:** `GH_TOKEN=$(gh auth token) python3 tools/watch.py --dry-run` (or the Watch workflow with `dry_run` on) prints what it would do and writes nothing to GitHub.
+
+**It never:** merges, starts a job, wakes or writes to the job chat, pushes, creates or deletes a branch, dismisses an alert, changes settings, rules or which checks are required, or weakens a check. It only reads, reruns, cancels a stuck run and comments.
+
+**Time limits:** every job in `.github/workflows/*.yml` has `timeout-minutes` (a job that only calls a reusable workflow cannot have one; the called jobs do). The test `EveryJobHasATimeLimit` fails when a new job has none. Limits are about twice the normal time (floor 10 minutes) and never under 1.5 times the longest of the last 20 green runs: Linux build 30, Windows build 40, sanitizer build 40, release Windows 40, release Linux 30, short jobs 5 to 10. A job stopped by its limit is not green: GitHub ends it as failed or cancelled, and a required check only passes when it is success, skipped or neutral, so a timeout can never turn a required check green. (Not yet seen in a real run; the first job that hits a limit shows it.)
+
+**Status in one answer:** `python3 tools/work.py status` (read-only): open pull requests with draft or ready, branch, each required check and how long it ran, last push and the latest comment's first line; the last 3 Build runs on `main`; the queue lines of issue 74; the tests in issue 47.
 
 ## Reference library download (issue 19)
 

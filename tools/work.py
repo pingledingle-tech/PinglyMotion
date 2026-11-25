@@ -21,13 +21,14 @@
                             Options: --annotate (print ::warning:: lines for CI),
                             --body-file PATH (use this text instead of issue 74)
 
-    work.py status          read-only overview of every open pull request: draft
-                            or ready, merge conflict state (mergeable_state,
-                            "unknown" if GitHub has not computed it), the
-                            latest run of each check (by start time; a
-                            cancelled run that was replaced is ignored) and
-                            minutes since the last push ("stopped?" over 40).
-                            Never writes to GitHub. Always exits 0.
+    work.py status          one short read-only answer: every open pull request (draft or
+                            ready, branch, merge conflict state, each required check with
+                            how long it has run, minutes since the last push, "stopped?"
+                            over 40, first line of the latest comment), the last 3 Build
+                            runs on main (event=push), the numbered queue lines of the
+                            jobs list (issue 74, 100 characters each) and the first line of
+                            each test in the owner test list (issue 47). Check runs are
+                            read with per_page=100. Never writes to GitHub. Exits 0.
 
 Option for list and check:
     --no-remote   do not ask GitHub, use the job files in this checkout only
@@ -642,21 +643,79 @@ def merge_text(state):
             "has_hooks": "no conflict", "draft": "no conflict (draft)"}.get(state, state)
 
 
-def format_pull(pull, runs, minutes):
-    """Lines for one pull request from canned or live data. `pull` has number, title, draft,
-    mergeable_state; `runs` is the list of check runs of its head commit."""
-    lines = ["#%d %s" % (pull["number"], pull.get("title", ""))]
-    lines.append("  %s; merge: %s" % ("draft" if pull.get("draft") else "ready", merge_text(pull.get("mergeable_state"))))
-    if minutes is None:
-        lines.append("  last push: unknown")
+REQUIRED_CHECKS = ("linux", "windows", "asan-ubsan", "privacy", "analyze", "dependency-review")
+TESTS_ISSUE = 47
+LINE_CHARS = 100
+
+
+def clip(text, size=LINE_CHARS):
+    text = " ".join((text or "").split())
+    return text if len(text) <= size else text[:size - 1] + "\u2026"
+
+
+def check_text(name, run_, now):
+    """'linux passed 10 min', 'windows running 7 min', 'asan-ubsan not started'."""
+    if not run_:
+        return "%s not started" % name
+    state = run_state(run_)
+    start = run_.get("started_at")
+    end = run_.get("completed_at") if state != "running" else None
+    if state == "running":
+        minutes = minutes_since(start, now)
+    elif start and end:
+        minutes = minutes_since(start, datetime.strptime(end, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc))
     else:
-        lines.append("  last push: %d min ago%s" % (minutes, " (stopped?)" if minutes > STALE_MINUTES else ""))
+        minutes = None
+    return "%s %s%s" % (name, state, "" if minutes is None else " %d min" % minutes)
+
+
+def first_line(text):
+    for line in (text or "").splitlines():
+        if line.strip():
+            return clip(line.strip("# *_`>-").strip() or line.strip())
+    return ""
+
+
+def format_pull(pull, runs, minutes, comment=None, now=None):
+    """Lines for one pull request from canned or live data. `pull` has number, title, draft, head.ref,
+    mergeable_state; `runs` is the list of check runs of its head commit; `comment` the latest comment text."""
+    now = now or datetime.now(timezone.utc)
+    last = "unknown" if minutes is None else "%d min ago%s" % (minutes, " (stopped?)" if minutes > STALE_MINUTES else "")
+    branch = (pull.get("head") or {}).get("ref", "?")
+    lines = ["#%d %s | %s | %s | push %s | merge: %s" % (
+        pull["number"], clip(pull.get("title", ""), 60), "draft" if pull.get("draft") else "ready", branch, last,
+        merge_text(pull.get("mergeable_state")))]
     latest = latest_runs(runs)
     if not latest:
         lines.append("  checks: none yet")
-    for name in sorted(latest):
-        lines.append("  check %s: %s" % (name, run_state(latest[name])))
+    else:
+        lines.append("  " + "; ".join(check_text(n, latest.get(n), now) for n in REQUIRED_CHECKS))
+    if comment is not None:
+        lines.append("  latest comment: %s" % (first_line(comment) or "(empty)"))
     return lines
+
+
+def format_builds(runs):
+    """One line per Build run on main (event=push): number, result, start."""
+    if not runs:
+        return ["  none found"]
+    out = []
+    for r in runs[:3]:
+        out.append("  Build #%s %s, %s" % (r.get("run_number", "?"), run_state(r), (r.get("created_at") or "?").replace("T", " ").rstrip("Z") + " UTC"))
+    return out
+
+
+def queue_lines(body):
+    """The numbered lines of the '## Queue' section of the jobs list, each cut to 100 characters."""
+    section = list_section(body or "", "Queue")
+    return [clip(l) for l in section.splitlines() if re.match(r"\s*\d+\.\s", l)]
+
+
+def test_lines(body):
+    """First line of each test in the owner test list (paragraphs after the intro paragraph)."""
+    paragraphs = [p for p in re.split(r"\n\s*\n", (body or "").strip()) if p.strip()]
+    out = [first_line(p) for p in paragraphs[1:]]
+    return [l for l in out if l and not l.startswith("Generated by") and l.strip("-") != ""]
 
 
 def read_mergeable(slug, number, tries=5, pause=3):
@@ -673,7 +732,13 @@ def read_mergeable(slug, number, tries=5, pause=3):
     return pull
 
 
+def say_error(what, error):
+    last = ((getattr(error, "stderr", "") or str(error)).strip().splitlines() or ["no details"])[-1]
+    print("%s: could not read (%s)" % (what, last))
+
+
 def cmd_status():
+    """One short, read-only answer: open pull requests, last Build runs on main, the queue, the owner tests."""
     try:
         slug = repo_slug()
         numbers = [p["number"] for p in gh_lines("repos/%s/pulls?state=open&per_page=100" % slug, ".[]|{number}")]
@@ -681,24 +746,49 @@ def cmd_status():
         print("gh is not installed: cannot read GitHub")
         return 0
     except (RuntimeError, subprocess.CalledProcessError) as error:
-        print("cannot read the open pull requests: %s" % ((getattr(error, "stderr", "") or str(error)).strip().splitlines() or ["no details"])[-1])
-        return 0
-    if not numbers:
-        print("No open pull requests.")
+        say_error("open pull requests", error)
         return 0
     now = datetime.now(timezone.utc)
+    print("Read from GitHub at %s UTC" % now.strftime("%Y-%m-%d %H:%M"))
+    print("")
+    print("Open pull requests:" if numbers else "No open pull requests.")
     for number in sorted(numbers):
         try:
             pull = read_mergeable(slug, number)
             sha = pull["head"]["sha"]
             runs = gh_lines("repos/%s/commits/%s/check-runs?per_page=100" % (slug, sha),
-                            ".check_runs[]|{name,status,conclusion,started_at}")
+                            ".check_runs[]|{name,status,conclusion,started_at,completed_at}")
             date = gh_api("repos/%s/commits/%s" % (slug, sha), "--jq", ".commit.committer.date").strip()
             minutes = minutes_since(date, now)
+            comments = json.loads(gh_api("repos/%s/issues/%d/comments?per_page=100" % (slug, number)))
+            comment = comments[-1].get("body", "") if comments else None
         except (subprocess.CalledProcessError, KeyError, ValueError) as error:
-            print("#%d: could not read (%s)" % (number, ((getattr(error, "stderr", "") or str(error)).strip().splitlines() or ["no details"])[-1]))
+            say_error("#%d" % number, error)
             continue
-        print("\n".join(format_pull(pull, runs, minutes)))
+        print("\n".join(format_pull(pull, runs, minutes, comment, now)))
+    print("")
+    print("Last 3 Build runs on main (push):")
+    try:
+        data = json.loads(gh_api("repos/%s/actions/workflows/build.yml/runs?branch=main&event=push&per_page=3" % slug))
+        print("\n".join(format_builds(data.get("workflow_runs", []))))
+    except (subprocess.CalledProcessError, ValueError) as error:
+        say_error("Build runs", error)
+    notes = []
+    body = fetch_body(slug, notes)
+    print("")
+    print("Queue (jobs list, issue %d):" % JOBS_LIST_ISSUE)
+    if body is None:
+        print("  " + "; ".join(notes))
+    else:
+        lines = queue_lines(body)
+        print("\n".join("  " + l for l in lines) if lines else "  no numbered lines under '## Queue'")
+    print("")
+    print("Owner tests (issue %d):" % TESTS_ISSUE)
+    try:
+        tests = test_lines(json.loads(gh_api("repos/%s/issues/%d" % (slug, TESTS_ISSUE))).get("body", ""))
+        print("\n".join("  " + l for l in tests) if tests else "  none")
+    except (subprocess.CalledProcessError, ValueError) as error:
+        say_error("issue %d" % TESTS_ISSUE, error)
     return 0
 
 

@@ -1,0 +1,52 @@
+name: Watch
+
+# A script (tools/watch.py, no AI) that looks after the checks: it reruns a stuck check once,
+# reruns a Windows job that failed alone, and writes one short comment on a pull request when
+# something needs a person (required checks skipped, no activity for 3 hours) and on the newest
+# merged pull request when main is red. It never merges, never starts a job, never pushes,
+# never changes settings or which checks are required. What it does and how to read its
+# comments: docs/DEV.md, "The watch". Tests: tests/test_watch.py.
+#
+# It reads and writes only through the REST API with this workflow's own token and never
+# checks out or runs code from a pull request (workflow_run runs the default branch's version).
+on:
+  workflow_run:
+    workflows: [Build, CodeQL, Privacy, Dependency review]
+    types: [completed]
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only print what the watch would do
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: write          # cancel a stuck run, rerun failed jobs
+  pull-requests: write    # the watch's one comment per pull request
+  issues: write           # the same comment, through the issues API
+  checks: read
+
+# one run at a time; a run that waits is not cancelled by a newer one
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tests for the watch
+        run: python3 tests/test_watch.py
+      - name: Look after the checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then python3 tools/watch.py --dry-run; else python3 tools/watch.py; fi
