@@ -5,6 +5,8 @@
 # To build against a local copy instead of the download (for example in a sandbox that
 # cannot reach GitHub archives): -DFETCHCONTENT_SOURCE_DIR_SLUA=<folder with that commit>.
 # To move to a newer commit: change both lines below, and the commit and date in CREDITS.md.
+# The hash was checked on 25 November 2026: GitHub's archive of the commit is byte for byte
+# `git archive --format=tar --prefix=slua-<commit>/ <commit> | gzip -n` of a clone at that commit.
 
 SET (PINGLYMOTION_SLUA_COMMIT "12f86a7be0358510f444d16ddc123bbb66080d0d")
 SET (PINGLYMOTION_SLUA_SHA256 "a215b5f2ec9e08e0407368714562859e72d53b33d5172020aee8154e18c02f61")
