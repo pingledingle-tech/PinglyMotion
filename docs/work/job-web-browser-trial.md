@@ -1,6 +1,6 @@
 Branch: job/web-browser-trial
 Status: active
-Pull request: pending
+Pull request: #497
 Files:
 - CMakeLists.txt
 - src/CMakeLists.txt
