@@ -96,6 +96,10 @@ class TestLabFolder : public QObject
     void nestedHiddenAndLinkedFolders();
     void endlessLoopsStopWithTheirSource();
     void slowLoopsShareOneRealTimeCap();
+    void autoSecondsGrowWithScripts();
+    void bigSetupGetsTimeToFinish();
+    void foreverTimerStopsAtTheHardLimit();
+    void runawayLoopStillStopsWithAutoTime();
 };
 
 void TestLabFolder::pathRules()
@@ -516,6 +520,72 @@ void TestLabFolder::slowLoopsShareOneRealTimeCap()
   }
   const QString cap = "The script ran longer than 2000 ms of real time and was stopped.";
   QCOMPARE(stops, QJsonArray({QJsonArray{"a", "Slow", cap}, QJsonArray{"b", "B", cap}, QJsonArray{"c", "C", cap}}));
+}
+
+void TestLabFolder::autoSecondsGrowWithScripts()
+{
+  QCOMPARE(LabFolder::autoSeconds(0), 10);
+  QCOMPARE(LabFolder::autoSeconds(1), 12);
+  QCOMPARE(LabFolder::autoSeconds(2), 14);
+  QCOMPARE(LabFolder::autoSeconds(10), 30);
+  QCOMPARE(LabFolder::autoSeconds(25), 60);
+  QCOMPARE(LabFolder::autoSeconds(32), 60);
+  QCOMPARE(LabFolder::autoSeconds(1000), 60);
+}
+
+// a setup that needs 12 simulated seconds (a big collar): with no "seconds" the folder run gives it
+// 10 + 2 per script, so it finishes; a flat 10 would have cut it off
+void TestLabFolder::bigSetupGetsTimeToFinish()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString top = dir.filePath("Collar");
+  QVERIFY(writeFile(top + "/a.lsl", "default { state_entry() { llSetTimerEvent(12.0); } timer() { llSetTimerEvent(0.0); llOwnerSay(\"setup done\"); } }"));
+  QVERIFY(writeFile(top + "/B/b.lsl", Quiet));
+  const QJsonObject run = LabFolder::run(LabFolder::open(top), QJsonObject());
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  QCOMPARE(run.value("seconds").toInt(), 14);
+  QCOMPARE(run.value("time_note").toString(), QString("The setup ran 14 simulated seconds (10 + 2 for each of 2 scripts)."));
+  QCOMPARE(entries(run, "owner_say"), QJsonArray({QJsonArray{"setup done", "a", "Collar", "a.lsl"}}));
+  const QJsonObject flat = LabFolder::run(LabFolder::open(top), QJsonObject{{"seconds", 10}});
+  QVERIFY2(flat.value("ok").toBool(), qPrintable(flat.value("error").toString()));
+  QCOMPARE(flat.value("time_note").toString(), QString("The setup ran 10 simulated seconds, as asked."));
+  QCOMPARE(entries(flat, "owner_say"), QJsonArray());
+}
+
+// a script that never settles (a timer for ever) is cut off at the hard limit, with the message saying so
+void TestLabFolder::foreverTimerStopsAtTheHardLimit()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString top = dir.filePath("Busy");
+  for (int i = 0; i < 26; ++i)
+    QVERIFY(writeFile(top + QString("/s%1.lsl").arg(i, 2, 10, QChar('0')), i == 0 ? "default { state_entry() { llSetTimerEvent(1.0); } timer() { } }" : Quiet));
+  const QJsonObject run = LabFolder::run(LabFolder::open(top), QJsonObject());
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  QCOMPARE(run.value("seconds").toInt(), 60);
+  QCOMPARE(run.value("time_note").toString(),
+           QString("The setup ran the longest automatic time, 60 simulated seconds (26 scripts). If it needs more, give \"seconds\" (at most 3600)."));
+  QCOMPARE(run.value("result").toObject().value("time").toDouble(), 60.0);
+}
+
+// the safety limits are unchanged with the longer automatic time
+void TestLabFolder::runawayLoopStillStopsWithAutoTime()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString top = dir.filePath("Runaway");
+  QVERIFY(writeFile(top + "/a.lsl", "default { state_entry() { while (TRUE) { } } }"));
+  QElapsedTimer clock;
+  clock.start();
+  const QJsonObject run = LabFolder::run(LabFolder::open(top), QJsonObject());
+  QVERIFY2(clock.elapsed() < 10000, qPrintable(QString::number(clock.elapsed())));
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  QString message;
+  for (const QJsonValue& v : run.value("result").toObject().value("log").toArray())
+    if (v.toObject().value("type").toString() == "limit") message = v.toObject().value("message").toString();
+  if (message == "The script ran longer than 2000 ms of real time and was stopped.") message = "The script ran more than 500000 steps and was stopped (an endless loop?).";
+  QCOMPARE(message, QString("The script ran more than 500000 steps and was stopped (an endless loop?)."));
 }
 
 QTEST_GUILESS_MAIN(TestLabFolder)
