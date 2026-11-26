@@ -185,6 +185,10 @@ namespace
   // fuzz_retargetmapping)
   bool cleanText(const QString& text)
   {
+    // a byte order mark (U+FEFF) at the start is written as plain UTF-8 and Qt's JSON reader then
+    // drops it (QString::fromUtf8 skips it), so the text would not read back the same (found by
+    // fuzz_retargetmapping, 24 to 26 Nov 2026)
+    if(!text.isEmpty() && text[0].unicode()==0xFEFF) return false;
     for(int i=0;i<text.size();i++)
     {
       const QChar c=text[i];
