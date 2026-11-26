@@ -1,0 +1,18 @@
+# Copy this file to .github/workflows/scenarios.yml in your repository (see README.md, "Using it from another
+# repository"). Replace COMMIT with a full commit hash of the PinglyMotion repository: pin it, a branch moves.
+name: Scenarios
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  scenarios:
+    uses: pingledingle-tech/PinglyMotion/.github/workflows/rlv-scenarios.yml@COMMIT
+    with:
+      engine_ref: COMMIT
+      folder: '.'

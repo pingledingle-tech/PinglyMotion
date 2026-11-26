@@ -1,0 +1,2 @@
+# This scenario must FAIL: it has no "expect" line, so it tests nothing.
+send @sendim=n

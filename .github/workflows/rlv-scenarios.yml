@@ -114,12 +114,38 @@ jobs:
       - name: Run every scenario (the first broken expectation fails the run)
         run: |
           unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
-          engine/build/tests/rlvtest/pinglymotion_rlvtest "$SCENARIO_ROOT/scenarios"
+          RUNNER="$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvtest"
+          cd "$SCENARIO_ROOT"
+          if [ -d scripts ]; then "$RUNNER" --objects scripts scenarios; else "$RUNNER" scenarios; fi
+      - name: Run the passing examples, if the folder has any
+        run: |
+          unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
+          cd "$SCENARIO_ROOT"
+          if [ -d examples/passing ]; then "$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvtest" examples/passing; else echo "No examples/passing: nothing to run."; fi
+      - name: The failing examples must fail
+        # examples/failing holds scenarios that are meant to break; a run that passes one of them is the failure
+        run: |
+          unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
+          cd "$SCENARIO_ROOT"
+          if [ ! -d examples/failing ]; then echo "No examples/failing: nothing to check."; exit 0; fi
+          count=0
+          for f in examples/failing/*.rlvtest; do
+            [ -e "$f" ] || continue
+            count=$((count + 1))
+            if "$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvtest" "$f" > /tmp/failing.out; then
+              cat /tmp/failing.out
+              echo "::error::$f was meant to fail, but it passed."
+              exit 1
+            fi
+            echo "$f failed, as meant:"; sed 's/^/    /' /tmp/failing.out
+          done
+          echo "$count failing example(s) failed, as meant."
       - name: Run the reference answers, if the folder has any
         run: |
           unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
-          if ls "$SCENARIO_ROOT"/reference/*.rlvref >/dev/null 2>&1; then
-            engine/build/tests/rlvtest/pinglymotion_rlvref "$SCENARIO_ROOT/reference"
+          cd "$SCENARIO_ROOT"
+          if ls reference/*.rlvref >/dev/null 2>&1; then
+            "$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvref" reference
           else
             echo "No reference answers in $WORK_FOLDER/reference: nothing to compare."
           fi

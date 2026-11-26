@@ -1,15 +1,17 @@
 /*
  * PinglyMotion - command-line runner for .rlvtest scenarios (package A, quality plan)
  *
- *   pinglymotion_rlvtest [<folder or file.rlvtest> ...]     (default: the folder "scenarios")
+ *   pinglymotion_rlvtest [--objects <folder>] [<folder or file.rlvtest> ...]     (default: the folder "scenarios")
  *
  * Runs every *.rlvtest file of a folder (not its subfolders), in name order, as the Script Lab replays a
  * recipe (LabRecipe::replay), and prints one line per scenario: "PASS name (3 expectations)" or "FAIL name"
  * with one indented line for each broken expectation, with its line number. The exit code is 0 when every
  * scenario passed and 1 when any failed, did not read, did not run, or when nothing was found to run.
  *
- * The object a scenario runs against: the folder next to it with the same name, when there is one
- * (scenarios/cuffs.rlvtest and scenarios/cuffs/, read as the Script Lab folder model, docs/SCRIPT_LAB.md);
+ * The object a scenario runs against: with --objects <folder>, the folder of that name inside it when there
+ * is one (scenarios/cuffs.rlvtest and scripts/cuffs/, the layout of rlv-tools-template/); else the folder next
+ * to the scenario with the same name, when there is one (scenarios/cuffs.rlvtest and scenarios/cuffs/, read
+ * as the Script Lab folder model, docs/SCRIPT_LAB.md);
  * otherwise an object with one part, "Root", and one script that does nothing, which is enough for
  * scenarios that only send RLV lines and expect. The file is read whole and the result is text, so the
  * same code runs in a browser later (docs/DEV.md, "Web-ready code"). Only QtCore.
@@ -48,7 +50,7 @@ namespace
   }
 
   // 0: passed, 1: failed
-  int runOne(const QString& path)
+  int runOne(const QString& path, const QString& objects)
   {
     const QFileInfo info(path);
     const QString name = info.completeBaseName();
@@ -64,7 +66,8 @@ namespace
       print(QStringLiteral("FAIL %1\n  %2").arg(name, parsed.error));
       return 1;
     }
-    const QDir folder(info.dir().filePath(name));
+    QDir folder(info.dir().filePath(name));
+    if (!objects.isEmpty() && QFileInfo(QDir(objects).filePath(name)).isDir()) folder = QDir(QDir(objects).filePath(name));
     const LabFolder::Linkset object = folder.exists() ? LabFolder::open(folder.absolutePath()) : idleObject(name);
     const LabRecipe::Replay replay = LabRecipe::replay(object, QJsonObject(), *parsed.value, Rlv::Mode::Rlva);
     if (!replay.ran)
@@ -97,6 +100,19 @@ int main(int argc, char** argv)
 {
   QCoreApplication app(argc, argv);
   QStringList args = app.arguments().mid(1);
+  QString objects;
+  const int flag = args.indexOf(QStringLiteral("--objects"));
+  if (flag >= 0)
+  {
+    if (flag + 1 >= args.size() || !QFileInfo(args.at(flag + 1)).isDir())
+    {
+      print(QStringLiteral("FAIL --objects needs a folder."));
+      return 1;
+    }
+    objects = args.at(flag + 1);
+    args.removeAt(flag + 1);
+    args.removeAt(flag);
+  }
   if (args.isEmpty()) args << QStringLiteral("scenarios");
   QStringList files;
   for (const QString& a : args)
@@ -119,7 +135,7 @@ int main(int argc, char** argv)
     return 1;
   }
   int failed = 0;
-  for (const QString& f : files) failed += runOne(f);
+  for (const QString& f : files) failed += runOne(f, objects);
   print(QStringLiteral("%1 of %2 scenarios passed.").arg(files.size() - failed).arg(files.size()));
   return failed == 0 ? 0 : 1;
 }

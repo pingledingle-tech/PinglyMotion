@@ -1,0 +1,8 @@
+# A scenario that passes: an RLV line blocks an action and another line frees it again.
+# Run: pinglymotion_rlvtest scenarios   (docs/RLV_TOOLS_REPO.md)
+expect not blocked:sendim
+send @sendim=n
+expect blocked:sendim
+expect blocked:sendim blocked
+send @sendim=y
+expect not blocked:sendim

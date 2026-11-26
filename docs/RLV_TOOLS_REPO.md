@@ -52,8 +52,8 @@ Idea: a workflow in the tools repository downloads a released PinglyMotion build
 
 1. Done (package A): the `.rlvtest` format with `expect` and its runner in PinglyMotion (`pinglymotion_rlvtest`, built with the tests; the control command `lab_replay`).
 2. Done (package B, 26 November 2026): reference answers (`.rlvref` files, the runner `pinglymotion_rlvref`, the Firestorm question script, one list of known differences; [SCRIPT_LAB.md](SCRIPT_LAB.md), "Reference answers from Second Life").
-3. A check that a downloadable build runs on a hosted CI runner with `--control`.
-4. Creating the repository, with the template, a few examples and the workflow. Only after the owner says so.
+3. Done (package E, 26 November 2026): the runners start with no window on a hosted Linux runner (they use QtCore only; the workflow builds them from source, no AppImage), and the template folder `rlv-tools-template/` with its workflow `.github/workflows/rlv-scenarios.yml` is in this repository ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Scenarios in CI and the template folder").
+4. Creating a separate repository from the template. Only after the owner says so.
 
 ## Not included
 

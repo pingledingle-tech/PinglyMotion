@@ -1,0 +1,8 @@
+# The smallest scenario that passes: no script at all, only RLV lines and what must be true afterwards.
+# Nothing is blocked at the start. After "@sendim=n" sending instant messages is blocked, and after
+# "@sendim=y" it is allowed again.
+expect not blocked:sendim
+send @sendim=n
+expect blocked:sendim
+send @sendim=y
+expect not blocked:sendim
