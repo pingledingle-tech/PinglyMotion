@@ -2113,7 +2113,7 @@
         },
         {
           "expect": {
-            "error": "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", \"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\".",
+            "error": "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", \"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\", \"experience\", \"relay_release\" or \"relay_ping\".",
             "ok": false
           },
           "request": {"command":"lsl_event","type":"fly"}
@@ -2144,14 +2144,14 @@
         },
         {
           "expect": {
-            "error": "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", \"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\".",
+            "error": "Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", \"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\", \"experience\", \"relay_release\" or \"relay_ping\".",
             "ok": false
           },
           "request": {"command":"lsl_run","inputs":[{"at":1,"type":"fly"}],"source":"default { }"}
         },
         {
           "expect": {
-            "error": "Unknown option \"colour\". Options: source, objects, seconds, inputs, keep_rlv, description, scale, start_parameter, inventory, avatars, http, region, experience, estate, transfers, order, seed, script_memory, permissions, replies.",
+            "error": "Unknown option \"colour\". Options: source, objects, seconds, inputs, keep_rlv, description, scale, start_parameter, inventory, avatars, http, region, experience, estate, transfers, order, seed, script_memory, permissions, replies, relay.",
             "ok": false
           },
           "request": {"colour":1,"command":"lsl_run","source":"default { }"}

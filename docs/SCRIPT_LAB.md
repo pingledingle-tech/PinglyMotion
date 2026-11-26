@@ -427,7 +427,7 @@ A deliberately small slice, not a physics engine: one more `inputs` type and two
 - An avatar of `avatars` can be offline (`online: false`) or log in and out at a simulated time (`login`, `logout`). An offline avatar is not in the region (not in `llGetAgentList`, the sensors, `llGetAgentInfo`, `llKey2Name`), but `llRequestAgentData` still answers it with `DATA_ONLINE` `"0"`. An offline owner is not asked for permissions.
 - `lsl_run` takes `replies`: `{rlv, dataserver}`, each one answer `{result, delay}` for every reply or a list in call order; `result` `ok` or `none` (the reply never comes). So a script's timeout for an RLV viewer that answers `@versionnew` slowly or not at all, or for a lost notecard line, can be tried.
 - A force command that is accepted but not carried out (result `retained`) says so in the panel's log line: "force command @detach:hat=force was accepted but is not carried out in the Script Lab sandbox". Nothing is said to the script, as with a real RLV viewer.
-- `lab_watch` (also with `linkset: true`) takes `avatars`, `transfers`, `order`, `seed`, `permissions` and `replies`.
+- `lab_watch` (also with `linkset: true`) takes `avatars`, `transfers`, `order`, `seed`, `permissions`, `replies` and, since job 23, `relay`.
 - Details: [CONTROL.md](CONTROL.md), "Answers that are slow, refused or lost". Tests: `tests/tst_lslanswers.cpp`, the log lines in `tests/scriptlabplayer/tst_scriptlabplayer.cpp`, the `lab_watch` options in `tests/tst_control.cpp` and `tests/tst_labfolder.cpp`.
 
 ## What exists now (second gap list, step 4): money, web server and mail stubs
@@ -743,6 +743,10 @@ A script can use RLV: `llOwnerSay("@detach=n,sendim=n")` runs in the RLV core, `
 answered in the script's `listen` event on channel 2222. The log shows each command with its results, and the answer
 has `rlv.state` (the restrictions at the end, as `rlv_state` shows them); the same state is what the panel shows.
 Examples: `examples/scriptlab/rlv_lock.lsl` and `rlv_status.lsl`.
+
+For a whole setup watched as one object (`lab_watch` with `linkset: true`), `lab_result` also answers `improve`
+(job 23): the weight, what can be better and whether each script can run here, the same as the page Improve a
+setup. Edit a script, wait until `runs` goes up, and read `improve` again to see what changed.
 
 ## The built-in RLV relay (job 23)
 

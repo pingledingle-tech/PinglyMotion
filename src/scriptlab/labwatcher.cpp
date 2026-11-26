@@ -128,7 +128,7 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
   // Anafin HUD test: the run options of lsl_run that make sense for a watched folder (also as one object)
   static const QStringList runKeys = {QStringLiteral("seconds"), QStringLiteral("inputs"), QStringLiteral("keep_rlv"), QStringLiteral("linkset"), QStringLiteral("script_memory"),
                                       QStringLiteral("avatars"), QStringLiteral("transfers"), QStringLiteral("order"), QStringLiteral("seed"),
-                                      QStringLiteral("permissions"), QStringLiteral("replies")};
+                                      QStringLiteral("permissions"), QStringLiteral("replies"), QStringLiteral("relay")};
   for (auto it = runOptions.begin(); it != runOptions.end(); ++it)
     if (!runKeys.contains(it.key()))
       return {"Unknown run option \"" + it.key().left(40) + "\". Options: " + runKeys.join(QStringLiteral(", ")) + "."};

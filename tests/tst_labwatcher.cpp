@@ -109,7 +109,7 @@ void TestLabWatcher::runOptionsAreChecked()
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"seconds", -1}}).error,
            QString("\"seconds\" must be between 0 and 3600 (simulated seconds)."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error,
-           QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv, linkset, script_memory, avatars, transfers, order, seed, permissions, replies."));
+           QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv, linkset, script_memory, avatars, transfers, order, seed, permissions, replies, relay."));
   // Anafin HUD test: the new run options are checked as lsl_run checks them
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"permissions", QJsonArray{QJsonObject{{"result", "maybe"}}}}}).error,
            QString("Permission answer 1: \"result\" must be one of grant, deny, none (default grant; none: no answer comes)."));

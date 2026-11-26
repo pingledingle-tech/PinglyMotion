@@ -148,6 +148,7 @@ class ControlApi
     QJsonObject labWatch(const QJsonObject&);
     QJsonObject labUnwatch(const QJsonObject&);
     QJsonObject labResult(const QJsonObject&);
+    QJsonObject improveAnswer();
     QJsonObject labReplay(const QJsonObject&);
 
     BVHNode* findJoint(const QString& name, QString& error);
@@ -170,6 +171,9 @@ class ControlApi
     RlvState m_rlv;
     lsl::Session m_lslSession;     // after m_rlv: its world refers to m_rlv
     LabWatcher m_lab;
+    // job 23: lab_result's "improve" (the suggestions and reports read every script: made again only after a new folder run)
+    QString m_improveKey;
+    QJsonObject m_improveCache;
 };
 
 #endif

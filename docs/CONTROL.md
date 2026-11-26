@@ -777,7 +777,7 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   real functions now (part 3, below), not record only; the vehicle functions are not part of this step (step 7, below).
 - **Collision-family events (second gap list, step 6, part 2):** there is still no motion model, so these events never happen on their own; new `inputs` types raise them for testing, with exactly the
   llDetected* data or vector arguments given. `collision` (`phase`: `"start"`, `"end"` or left out for the continuous `collision`; `link`: the prim hit, default the root; `name`/`id`: the other object or avatar, as for `touch`) raises
-  `collision_start`, `collision_end` or `collision(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). When `id` is an avatar of the `avatars` list, `llDetectedVel` in those events answers that avatar's `velocity` (Anafin HUD test; zero for anyone else, the owner too unless listed, and `name` still comes from the input). `land_collision`
+  `collision_start`, `collision_end` or `collision(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). When `id` is an avatar of the `avatars` list, `llDetectedVel` in those events answers that avatar's `velocity` (Anafin HUD test; zero for anyone else, the owner too unless listed). Since job 23 an input (collision, touch or any other) with only the `id` of an avatar of the `avatars` list has that avatar's name in `llDetectedName`; an input's own `name` always wins, and an id that is not listed keeps the owner's name. `land_collision`
   (`phase`: `"start"`, `"end"` or left out for the continuous `land_collision`; `pos`: `[x, y, z]`, the event's own vector argument) and `moving` (`phase`: `"start"` or `"end"`, no detected data: `moving_start`
   and `moving_end` take no arguments) go to every script of the object, as `changed` does. `at_target` (`tnum`, `targetpos`, `ourpos`: the event's own arguments; `llTarget`'s target number is not tracked)
   and `not_at_target` (no fields) likewise go to every script. None of this simulates collisions, gravity or `llTarget`; it only lets a script's handler be tested against given data. Part 3, below, gives
@@ -801,7 +801,8 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
 
 The sandbox never goes on the network: no request leaves the program. `lsl_run` takes `http` (at most 64), the replies to give:
 `[{"url": "https://example.com/api", "method": "GET", "status": 200, "body": "{\"ok\":true}"}]`. Only `url` is needed: the exact URL (case-sensitive), or a prefix that ends in `*`
-(`"*"` alone answers every URL); `method` is `GET`, `POST`, `PUT` or `DELETE` (any case; omitted: every method); `status` is 100 to 599 (default 200); `body` is text of at most 65 536 characters (default empty).
+(`"*"` alone answers every URL); `method` is `GET`, `POST`, `PUT` or `DELETE` (any case; omitted: every method); `status` is 100 to 599 (default 200); `body` is text of at most 65 536 characters (default empty);
+`delay` (job 23) is the simulated seconds until the reply comes, 0 to 300 (default 0, at once): from 60 on the reply never comes and the request gets status 499 with an empty body after 60 seconds, as Second Life does for a request that times out (the `http_request` entry then has `result: timed_out`; a reply that comes later has `delay`).
 A request gets the first reply in list order that matches its method and URL. The same list is used for a single script and for `objects`, and it is kept for `lsl_event`.
 
 - `llHTTPRequest(url, parameters, body)` checks the URL (it must start with `http://` or `https://`, any case, name a host and have no spaces or control characters) and the parameter list:
@@ -816,7 +817,7 @@ A request gets the first reply in list order that matches its method and URL. Th
   and, unless `HTTP_VERBOSE_THROTTLE` is `FALSE`, a `debug` line.
 - Incoming HTTP (`llRequestURL` and the `http_request` event): "Money, web server and mail" below.
 - Not done: the RFC 7807 answers of `HTTP_EXTENDED_ERROR`, status 415 for `HTTP_ACCEPT`,
-  the per-owner throttle, a reply that comes later or never, and response headers.
+  the per-owner throttle, and response headers.
 
 #### Sensors (Script Lab step 9b-7)
 
@@ -1447,7 +1448,7 @@ assistant sees. The code is `src/scriptlab/labwatcher.*`.
 - `lab_watch {path, seconds, inputs, keep_rlv}` watches the folder `path` (the whole path; a relative path,
   a file, a missing folder or a network folder is refused). Watching another folder stops the one before.
   `seconds`, `inputs` and `keep_rlv` are given to every run, as in `lsl_run`, and are checked the same way; so are
-  `avatars`, `transfers`, `order`, `seed`, `permissions` and `replies` (Anafin HUD test), also with `linkset: true`:
+  `avatars`, `transfers`, `order`, `seed`, `permissions`, `replies` (Anafin HUD test) and `relay` (job 23), also with `linkset: true`:
   `llOwnerSay("@...")` goes to the sandbox's RLV state (the one `rlv_state` and the panel show), which is
   emptied before each run unless `keep_rlv` is `true`. The
   newest script in the folder is run once at once. The answer has `folder` (the path without links),
@@ -1583,6 +1584,16 @@ recording and replay part of `labwatcher.*`; the panel part is in [SCRIPT_LAB.md
 - `lab_result` (with `linkset: true`) also answers `recording` (`true` while the user records), `recipe`
   (`recipe.rlvtest` when the folder has one, else `null`) and `replay` (the newest replay, as `lab_replay`
   answers it, or `null`).
+- **Improve a setup through the API (job 23):** `lab_result` (with `linkset: true`) also answers `improve`, what the
+  Script Lab page Improve a setup shows, made by the same functions: `ran` (`false` with `not_run` when the folder did
+  not run), `weight` (as above: `valid`, `scripts`, `reserved`, `limited`, `sent`, `received`, `unused` and `rows`),
+  `replayed`, `compared` and `weight_changes` (what changed since the replay before), `suggestions` (what can be
+  better: `kind`, `script`, `file`, `line`, `text`), `can_run` (one per script: `script`, `file`, `prim`, `verdict`
+  (`runs`, `runs_with_notes`, `stops`, `does_not_compile` or `not_run`), `works`, `missing`) and `log_full`. The page's
+  two buttons need no command of their own: Import a setup is `lab_watch` with the folder and `linkset: true`, and
+  Record today's behaviour makes `recipe.rlvtest`, which an assistant may write itself and then run with `lab_replay`.
+  An assistant improves a setup by editing the scripts with its own file tools; the watcher runs the folder again, and
+  `improve` shows the new weight and suggestions.
 
 ## Set up an AI assistant
 
