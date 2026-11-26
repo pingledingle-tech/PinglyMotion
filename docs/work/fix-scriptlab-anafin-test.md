@@ -1,6 +1,6 @@
 Branch: fix/scriptlab-anafin-test
 Status: active
-Pull request: pending
+Pull request: #518
 Files:
 - src/scriptlab/lsl/sandbox.*
 - src/scriptlab/lsl/interp.*
