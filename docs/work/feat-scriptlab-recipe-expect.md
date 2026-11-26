@@ -1,5 +1,5 @@
 Branch: feat/scriptlab-recipe-expect
-Status: active
+Status: done
 Pull request: #523
 Files:
 - src/scriptlab/labrecipe.*
