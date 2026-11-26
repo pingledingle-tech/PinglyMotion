@@ -534,11 +534,14 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `owner_say` | `llOwnerSay` | `text` |
 | `say`, `whisper`, `shout`, `region_say` | chat | `channel`, `text` |
 | `instant_message` | `llInstantMessage` | `to`, `text` |
-| `rlv_command` | `llOwnerSay("@...")` went to the RLV core | `object`, `text`, `results` (one per command, as in `rlv_command`), `replies` (`channel`, `text`), `restrictions` (how many are held now), or `error` when the whole line was refused |
+| `rlv_command` | `llOwnerSay("@...")` went to the RLV core | `object`, `text`, `results` (one per command, as in `rlv_command`), `replies` (`channel`, `text`, and `lost: true` or `delay` when the `replies` option says so), `restrictions` (how many are held now), or `error` when the whole line was refused |
 | `listen`, `listen_remove` | `llListen`, `llListenRemove` | `handle`, `channel`, `name`, `id`, `message` |
 | `timer_set` | `llSetTimerEvent` | `seconds` |
 | `sleep` | `llSleep` (moves the simulated clock) | `seconds` |
-| `permissions` | `llRequestPermissions`; the owner's are granted at once, then `run_time_permissions` follows | `mask`, `granted`, `note` |
+| `permissions` | `llRequestPermissions`; the owner's are granted at once, then `run_time_permissions` follows, unless the `permissions` option or an offline owner says otherwise | `mask`, `granted`, `note`, `answer` and `delay` (only with the `permissions` option) |
+| `avatar` | an avatar of the `avatars` list logged in or out (its `login` or `logout` time) | `avatar` (the key), `name`, `online`, `note` |
+| `reply_lost` | the `replies` option says this `dataserver` reply never comes | `kind` (`dataserver`), `query`, `note` |
+| `reply_delayed` | the `replies` option says this `dataserver` reply comes later | `kind` (`dataserver`), `query`, `delay`, `note` |
 | `animation_start`, `animation_stop` | `llStartAnimation`, `llStopAnimation` (the 3D view plays them while the Script Lab's "Show effects in 3D view" box is ticked; [SCRIPT_LAB.md](SCRIPT_LAB.md)) | `name` |
 | `input` | chat or a touch from `inputs` | `input`, `channel`, `name`, `text`; a held touch `hold`; `money`, `http_request` and `email`: "Money, web server and mail"; `remote_data`: "Obsolete functions and remote data" |
 | `debug` | what Second Life says on the debug channel without stopping the script (an animation without permission, `llRegionSay` on channel 0) | `channel`, `text` |
@@ -700,8 +703,8 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
   `order`: `mode`, `scripts` (each `"object/script"` in the order they ran; a script given with `source` is
   `Object/Script`) and, for `"shuffle"`, `seed`, so a run that showed a bug can be repeated exactly. Without `order` the
   answer is the same as before. It does not make scripts run in parallel: a script still runs an event to its end
-  before the next script runs, so a bug that needs two events to overlap is not found. `lab_watch` does not take
-  `order` yet.
+  before the next script runs, so a bug that needs two events to overlap is not found. `lab_watch` takes `order` and
+  `seed` too.
 - When more than 64 events wait for a script, Second Life drops the rest without a word; the sandbox drops them too
   and writes an `event_dropped` entry for each. An endless exchange of link messages at one moment ends when a script
   reaches its limit of events or steps (the other scripts run on), never in a hang.
@@ -747,7 +750,7 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
 - **Text boxes:** `llTextBox` is `llDialog` with the single button `!!llTextBox!!`, and so is `llDialog` with that button first. The log entry is a `dialog` entry with `buttons` empty and `text_box: true`
   (the newest dialog in the answer has it too). The avatar's typed text is answered with the existing `dialog` input: `{"type": "dialog", "button": "the text typed"}` is said on the dialog's channel.
 - **`llTransferLindenDollars` and `PERMISSION_DEBIT`:** logic and messages only; no L$ ever moves and the sandbox has no balance (the owner always has enough). The function returns a key and a
-  `transaction_result(key id, integer success, string data)` event follows with that key. Without `PERMISSION_DEBIT` (the sandbox grants the owner's permissions at once, as for every permission) the
+  `transaction_result(key id, integer success, string data)` event follows with that key. Without `PERMISSION_DEBIT` (the sandbox grants the owner's permissions at once, as for every permission, unless the `permissions` option says otherwise) the
   call logs a `debug` line and fails with `MISSING_PERMISSION_DEBIT` (the debug wording is the sandbox's). Other failures: `INVALID_AMOUNT` (0 or less), `INVALID_DESTINATION` (not a key),
   `LINDENDOLLAR_ENTITYDOESNOTEXIST` (the key of an object; objects cannot be paid). Success gives `data` as `<avatar key>,<amount>`. The failure tags and the success format follow the Second Life wiki
   (page "transaction_result"). Each call is a `linden_dollars` log entry.
@@ -832,6 +835,52 @@ with the owner's key is listed. Avatars do not move: a scan always sees them whe
   (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero; a `collision` input from a listed avatar gives its `velocity` too) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
   gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated; the touch data `llDetectedTouch*` is canned, see "Leftover reads and media").
 - Not done: `llDetectedGrab`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
+
+#### Answers that are slow, refused or lost (Anafin HUD test, gaps 4 and 6)
+
+In the sandbox every answer from outside comes at once by default: the owner grants every permission, every avatar
+is online, the RLV viewer answers every query and every `dataserver` reply comes. Second Life is not like that, so
+three options let a test try a script's timeouts, retries and error handling. Without them every answer is the same
+as before.
+
+- **`permissions`** of `lsl_run`: how the owner answers `llRequestPermissions`, a list of at most 64 entries
+  `{"result": ..., "delay": ...}` used in call order by every request to the owner in the world. `result` is `grant`
+  (the default: every permission asked for), `deny` (`run_time_permissions` comes with 0; `llGetPermissions` is then 0
+  and `llGetPermissionsKey` the owner) or `none` (the owner never answers the dialog; no `run_time_permissions`
+  comes). `delay` (with `grant` or `deny`) is the simulated seconds until the answer comes, 0 to 300: the permissions
+  change at that moment, not before. A script reset forgets an answer that is still waiting. Requests after the list
+  are granted at once. An avatar sitting on the object still gets `PERMISSION_TRIGGER_ANIMATION` and
+  `PERMISSION_TAKE_CONTROLS` at once and takes no entry. The `permissions` log entry has `answer` and, for a late
+  answer, `delay`. Example: `"permissions": [{"result": "deny"}, {"delay": 30}]`: the first request is denied, the
+  second granted after 30 simulated seconds.
+- **Avatars online and offline:** an entry of `avatars` can have `online` (`true` or `false`, whether the avatar is
+  online at the start), `login` and `logout` (the simulated second, 0 to 3600, it logs in or out). `online` defaults to
+  `true`, or to `false` when the avatar logs in before it logs out; an avatar that is online at the start cannot log
+  in first, and one that is offline cannot log out first. An offline avatar is not in the region: `llGetAgentList`,
+  the sensors, `llGetAgentInfo` (0), `llGetAgentSize` (`ZERO_VECTOR`), `llKey2Name` (`""`), `llGetDisplayName` and
+  `llGetObjectDetails` (an empty list) do not find it. `llRequestAgentData`, `llRequestDisplayName` and
+  `llRequestUsername` still answer, with `DATA_ONLINE` `"0"`. The owner can be listed with the owner's key and
+  `online: false`: then `llRequestPermissions` to the owner gets no answer (a `permissions` entry says so). Each login
+  and logout writes an `avatar` log entry at its time; no event comes, because Second Life tells scripts nothing when
+  an avatar logs in or out.
+- **`replies`** of `lsl_run`: `{"rlv": ..., "dataserver": ...}`, how the RLV viewer's replies (to `@version`,
+  `@versionnew`, `@getstatus` and the other queries, heard on the reply channel) and the `dataserver` replies (to
+  `llGetNotecardLine`, `llGetNumberOfNotecardLines`, `llRequestAgentData`, `llRequestDisplayName`, `llRequestUsername`,
+  `llRequestSimulatorData`, `llRequestInventoryData` and the experience store) come. Each kind is either one answer
+  `{"result": ..., "delay": ...}` for every reply of that kind, or a list of at most 64 answers used in call order
+  (after the list: at once). `result` is `ok` (the default) or `none` (the reply never comes); `delay` (with `ok`) is
+  the simulated seconds until it comes, 0 to 300. A late RLV reply is heard when it comes, so a listen the script
+  closed before then does not hear it. The `rlv_command` entry marks each such reply with `lost: true` or `delay`; a
+  `dataserver` reply writes a `reply_lost` or `reply_delayed` entry with its `query` key. Examples:
+  `"replies": {"rlv": {"result": "none"}}` (a viewer without RLV: no query is ever answered) and
+  `"replies": {"rlv": [{"delay": 20}], "dataserver": [{"result": "none"}]}` (the first RLV reply comes after 20
+  seconds, the first `dataserver` reply is lost).
+- **Force commands in the panel's log:** an RLV force command (`@attach...=force`, `@detach...=force`, `@tpto...=force`,
+  `@sit...=force`, `@setrot...=force` and the like) is accepted but not carried out in the sandbox: its result is
+  `retained`. The Script Lab panel's log line then says, for each one, `force command @detach:hat=force was accepted
+  but is not carried out in the Script Lab sandbox`. Nothing is said to the script in chat, because a real RLV viewer
+  sends no reply to a force command. A late or lost RLV reply is marked in the log line too: `(comes after 2.5 s)` or
+  `(lost: the script never hears it)`.
 
 #### Controls (Script Lab step 9b-6)
 
@@ -1079,7 +1128,8 @@ The world is kept for `lsl_event`, the region too. An avatar in `avatars` can al
   not listed, in the order they sat. Any other scope gives `["INVALID_SCOPE"]`. `options` is not used.
 - **`llRequestAgentData(id, data)`** returns a query key and writes a `dataserver_request` entry
   (`{"function": "llRequestAgentData", "avatar", "data", "query"}`); for an avatar in the region the `dataserver` event
-  comes at once with: `DATA_ONLINE` `"1"` (every avatar of the sandbox is online), `DATA_NAME` the avatar's name,
+  comes at once with: `DATA_ONLINE` `"1"` (`"0"` for an avatar of the `avatars` list that is offline now, which is
+  answered too; see "Answers that are slow, refused or lost"), `DATA_NAME` the avatar's name,
   `DATA_BORN` the date of the start of the run (`2026-01-01`), `DATA_RATING` `"0,0,0,0,0,0"`, `DATA_PAYINFO` `"0"`. Any
   other key, or another `data` number, gets no `dataserver` event. The forced delay (0.1 s) is not simulated.
 
@@ -1354,7 +1404,8 @@ assistant sees. The code is `src/scriptlab/labwatcher.*`.
 
 - `lab_watch {path, seconds, inputs, keep_rlv}` watches the folder `path` (the whole path; a relative path,
   a file, a missing folder or a network folder is refused). Watching another folder stops the one before.
-  `seconds`, `inputs` and `keep_rlv` are given to every run, as in `lsl_run`, and are checked the same way:
+  `seconds`, `inputs` and `keep_rlv` are given to every run, as in `lsl_run`, and are checked the same way; so are
+  `avatars`, `transfers`, `order`, `seed`, `permissions` and `replies` (Anafin HUD test), also with `linkset: true`:
   `llOwnerSay("@...")` goes to the sandbox's RLV state (the one `rlv_state` and the panel show), which is
   emptied before each run unless `keep_rlv` is `true`. The
   newest script in the folder is run once at once. The answer has `folder` (the path without links),

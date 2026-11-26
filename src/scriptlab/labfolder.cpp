@@ -391,7 +391,7 @@ QJsonObject LabFolder::request(const Linkset& linkset, const QJsonObject& option
     object["inventory"] = inventory;
   }
   QJsonObject req;
-  for (const char* key : {"seconds", "inputs", "keep_rlv", "script_memory"})
+  for (const char* key : {"seconds", "inputs", "keep_rlv", "script_memory", "avatars", "transfers", "order", "seed", "permissions", "replies"})
     if (options.contains(key)) req[key] = options.value(key);
   if (!req.contains("seconds")) req["seconds"] = autoSeconds(int(linkset.scripts.size()));
   req["command"] = "lsl_run";

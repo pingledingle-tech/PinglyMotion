@@ -108,7 +108,16 @@ void TestLabWatcher::runOptionsAreChecked()
   LabWatcher w;
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"seconds", -1}}).error,
            QString("\"seconds\" must be between 0 and 3600 (simulated seconds)."));
-  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv, linkset, script_memory."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error,
+           QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv, linkset, script_memory, avatars, transfers, order, seed, permissions, replies."));
+  // Anafin HUD test: the new run options are checked as lsl_run checks them
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"permissions", QJsonArray{QJsonObject{{"result", "maybe"}}}}}).error,
+           QString("Permission answer 1: \"result\" must be one of grant, deny, none (default grant; none: no answer comes)."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"replies", QJsonObject{{"http", QJsonArray()}}}}).error,
+           QString("\"replies\": unknown kind \"http\". Kinds: rlv, dataserver."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"seed", 1}}).error, QString("\"seed\" is only used with \"order\": \"shuffle\"."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"avatars", QJsonArray{QJsonObject{{"name", "Bob"}, {"login", -2}}}}}).error,
+           QString("Avatar 1: \"login\" must be the simulated second the avatar logs in, 0 to 3600."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"linkset", "yes"}}).error,
            QString("\"linkset\" must be true (the folder is one object) or false (every script on its own)."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"inputs", QJsonArray{QJsonObject{{"type", "wave"}}}}}).error,
@@ -117,6 +126,10 @@ void TestLabWatcher::runOptionsAreChecked()
   QVERIFY(!w.watching());
   QVERIFY(w.watch(dir.path(), QJsonObject{{"seconds", 5}}).ok());
   QCOMPARE(w.runOptions().value("seconds").toInt(), 5);
+  const QJsonObject anafin{{"avatars", QJsonArray{QJsonObject{{"name", "Bob"}, {"online", false}}}}, {"transfers", QJsonArray{QJsonObject{{"result", "none"}}}},
+                           {"order", "reverse"}, {"permissions", QJsonArray{QJsonObject{{"result", "deny"}}}}, {"replies", QJsonObject{{"rlv", QJsonObject{{"delay", 2}}}}}};
+  QVERIFY(w.watch(dir.path(), anafin).ok());
+  QCOMPARE(w.runOptions(), anafin);
 }
 
 void TestLabWatcher::emptyFolder()

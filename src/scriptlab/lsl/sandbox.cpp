@@ -159,6 +159,15 @@ class ObjectWorld : public RlvWorld
       if (m_sandbox.m_transferNext < m_sandbox.m_transfers.size()) return m_sandbox.m_transfers[m_sandbox.m_transferNext++];
       return TransferPlan();
     }
+    AnswerPlan nextAnswer(AnswerKind kind) override { return m_sandbox.m_answers[int(kind)].take(); }
+    bool avatarOnline(const QString& key) const override { return m_sandbox.avatarOnlineAt(key, m_sandbox.timeFor(m_slot)); }
+    bool offlineAvatar(const QString& key, QString& name) const override
+    {
+      const double t = m_sandbox.timeFor(m_slot);
+      for (const AvatarSpec& a : m_sandbox.m_avatars)
+        if (a.key == key && !a.onlineAt(t)) { name = a.name; return true; }
+      return false;
+    }
     std::deque<double>& httpTimes() override { return state().httpTimes; }
     bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body) override
     {
@@ -179,7 +188,7 @@ class ObjectWorld : public RlvWorld
     bool allowDrop() const override { return state().allowDrop; }
     void setAllowDrop(bool allow) override { state().allowDrop = allow; }
     int attachPoint() const override { return spec().attached; }
-    QString nameOf(const QString& key) const override { return m_sandbox.nameOf(key); }
+    QString nameOf(const QString& key) const override { return m_sandbox.nameOf(key, m_slot); }
     QString ownerOf(const QString& key) const override { return m_sandbox.ownerOf(key); }
     // gap list 2, step 2
     bool die(double time) override
@@ -226,7 +235,7 @@ class ObjectWorld : public RlvWorld
       return 1;
     }
     const RegionSettings& region() const override { return m_sandbox.m_region; }
-    QStringList agents() const override { return m_sandbox.agents(); }
+    QStringList agents() const override { return m_sandbox.agents(m_slot); }
     ExperienceState& experience() override { return m_sandbox.m_experience; }
     EstateState& estate() override { return m_sandbox.m_estate; }
     int scriptCount() const override { return int(m_sandbox.m_slots.size()); }
@@ -654,6 +663,21 @@ void Sandbox::start()
     Slot& slot = m_slots[size_t(i)];
     if (m_objects[size_t(slot.object)].spec.attached > 0) slot.interp->attachEvent(slot.world->ownerKey());
   }
+  // Anafin HUD test, gap 4: an avatar that logs in or out writes an avatar entry at that time (no event: Second Life
+  // tells scripts nothing when an avatar logs in or out)
+  for (const AvatarSpec& a : m_avatars)
+    for (int change = 0; change < 2; ++change)
+    {
+      const double at = change == 0 ? a.login : a.logout;
+      if (at < 0.0) continue;
+      SandboxInput in;
+      in.type = "presence";
+      in.at = at;
+      in.id = a.key;
+      in.name = a.name;
+      in.kind = change == 0 ? "login" : "logout";
+      schedule(in);
+    }
   runQueues();
 }
 
@@ -878,6 +902,12 @@ void Sandbox::deliver(const SandboxInput& input)
   if (input.type == "experience")
   {
     deliverExperience(input);
+    return;
+  }
+  if (input.type == "presence")
+  {
+    m_log.log(m_now, QJsonObject{{"type", "avatar"}, {"avatar", input.id}, {"name", input.name}, {"online", input.kind == "login"},
+                                 {"note", input.kind == "login" ? "The avatar logged in (the avatars option)." : "The avatar logged out (the avatars option)."}});
     return;
   }
 
@@ -1653,6 +1683,46 @@ bool Sandbox::avatarVelocity(const QString& key, float out[3]) const
   return false;
 }
 
+bool AvatarSpec::onlineAt(double t) const
+{
+  // the newest change at or before t decides; before any change, "online"
+  double newest = -1.0;
+  bool state = online;
+  if (login >= 0.0 && login <= t && login > newest) { newest = login; state = true; }
+  if (logout >= 0.0 && logout <= t && logout > newest) { newest = logout; state = false; }
+  return state;
+}
+
+double Sandbox::timeFor(int slot) const
+{
+  if (slot >= 0 && slot < int(m_slots.size()) && m_slots[size_t(slot)].interp) return qMax(m_now, m_slots[size_t(slot)].interp->now());
+  return m_now;
+}
+
+bool Sandbox::avatarOnlineAt(const QString& key, double t) const
+{
+  for (const AvatarSpec& a : m_avatars)
+    if (a.key == key) return a.onlineAt(t);
+  return true;
+}
+
+bool Sandbox::avatarOnline(const QString& key) const { return avatarOnlineAt(key, m_now); }
+
+bool Sandbox::offlineAvatar(const QString& key, QString& name) const
+{
+  for (const AvatarSpec& a : m_avatars)
+    if (a.key == key && !a.onlineAt(m_now)) { name = a.name; return true; }
+  return false;
+}
+
+QString Sandbox::setAnswers(AnswerKind kind, const AnswerPlans& plans)
+{
+  if (m_started) return "The world has started already.";
+  if (int(plans.list.size()) > AnswerPlan::MAX_PLANS) return QString("At most %1 answers of one kind.").arg(AnswerPlan::MAX_PLANS);
+  m_answers[int(kind)] = plans;
+  return QString();
+}
+
 QString Sandbox::setHttpReplies(const std::vector<HttpReply>& replies)
 {
   if (m_started) return "The world has started already.";
@@ -1783,9 +1853,11 @@ std::vector<Detected> Sandbox::sense(int from, const QString& name, const QStrin
     hits.push_back({dist, d});
   };
   bool ownerListed = false;
+  const double now = timeFor(from);
   for (const AvatarSpec& a : m_avatars)
   {
     if (a.key == OWNER_KEY) ownerListed = true;
+    if (!a.onlineAt(now)) continue;   // Anafin HUD test, gap 4: an offline avatar is not in the region
     Detected d;
     d.key = d.owner = a.key;
     d.name = a.name;
@@ -1872,11 +1944,13 @@ QStringList Sandbox::attachedKeys(const QString& avatar) const
   return out;
 }
 
-QString Sandbox::nameOf(const QString& key) const
+QString Sandbox::nameOf(const QString& key, int from) const
 {
-  if (key == OWNER_KEY) return OWNER_NAME;
+  // an offline avatar of the avatars list is not in the region: llKey2Name answers "" (Anafin HUD test, gap 4)
+  const double t = timeFor(from);
   for (const AvatarSpec& a : m_avatars)
-    if (a.key == key) return a.name;
+    if (a.key == key) return a.onlineAt(t) ? a.name : QString();
+  if (key == OWNER_KEY) return OWNER_NAME;
   for (const Object& o : m_objects)
     for (const Sitter& sitter : o.sitters)
       if (sitter.key == key) return sitter.name;
@@ -1992,7 +2066,11 @@ bool Sandbox::details(int from, const QString& key, ObjectDetails& out) const
     return true;
   };
   for (const AvatarSpec& a : m_avatars)
-    if (a.key == key) return asAvatar(a.name, a.position, a.velocity, a.rotation, a.inGroup, a.height);
+    if (a.key == key)
+    {
+      if (!a.onlineAt(timeFor(from))) return false;   // Anafin HUD test, gap 4: an offline avatar is not in the region
+      return asAvatar(a.name, a.position, a.velocity, a.rotation, a.inGroup, a.height);
+    }
   if (key == OWNER_KEY) return asAvatar(OWNER_NAME, AVATAR_POSITION, nullptr, nullptr, false);
   for (const Object& o : m_objects)
     for (const Sitter& sitter : o.sitters)
@@ -2008,13 +2086,15 @@ QStringList Sandbox::objectKeys() const
   return out;
 }
 
-QStringList Sandbox::agents() const
+QStringList Sandbox::agents(int from) const
 {
   QStringList out;
   bool ownerListed = false;
   for (const AvatarSpec& a : m_avatars) if (a.key == OWNER_KEY) ownerListed = true;
   if (!ownerListed) out << OWNER_KEY;
-  for (const AvatarSpec& a : m_avatars) if (!out.contains(a.key)) out << a.key;
+  // Anafin HUD test, gap 4: an offline avatar is not in the region (a listed owner too)
+  const double t = timeFor(from);
+  for (const AvatarSpec& a : m_avatars) if (a.onlineAt(t) && !out.contains(a.key)) out << a.key;
   for (const Object& o : m_objects)
     for (const Sitter& sitter : o.sitters)
       if (!out.contains(sitter.key)) out << sitter.key;

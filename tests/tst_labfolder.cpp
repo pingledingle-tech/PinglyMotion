@@ -101,6 +101,7 @@ class TestLabFolder : public QObject
     void bigSetupGetsTimeToFinish();
     void foreverTimerStopsAtTheHardLimit();
     void runawayLoopStillStopsWithAutoTime();
+    void anafinRunOptionsReachTheRun();
     void scriptMemoryOptionStopsABigScript();
     void scriptMemoryOptionIsChecked();
 };
@@ -589,6 +590,44 @@ void TestLabFolder::runawayLoopStillStopsWithAutoTime()
     if (v.toObject().value("type").toString() == "limit") message = v.toObject().value("message").toString();
   if (message == "The script ran longer than 2000 ms of real time and was stopped.") message = "The script ran more than 500000 steps and was stopped (an endless loop?).";
   QCOMPARE(message, QString("The script ran more than 500000 steps and was stopped (an endless loop?)."));
+}
+
+// Anafin HUD test: a folder watched as one object takes avatars, transfers, order, seed, permissions and replies, as lsl_run does
+void TestLabFolder::anafinRunOptionsReachTheRun()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QString top = dir.filePath("Hud");
+  // the root asks for permissions and counts the avatars; the child asks the RLV viewer for its version
+  QVERIFY(writeFile(top + "/main.lsl", "default { state_entry() { llOwnerSay(\"main \" + (string)llGetListLength(llGetAgentList(AGENT_LIST_REGION, []))); "
+                                       "llRequestPermissions(llGetOwner(), PERMISSION_DEBIT); } "
+                                       "run_time_permissions(integer p) { llOwnerSay(\"perm \" + (string)p); } }"));
+  QVERIFY(writeFile(top + "/Arm/arm.lsl", "default { state_entry() { llOwnerSay(\"arm\"); llListen(5, \"\", NULL_KEY, \"\"); llOwnerSay(\"@version=5\"); } "
+                                          "listen(integer c, string n, key i, string m) { llOwnerSay(\"heard\"); } }"));
+  const QJsonArray avatars{QJsonObject{{"name", "Bob"}, {"online", false}}, QJsonObject{{"name", "Ann"}}};
+  const QJsonArray transfers{QJsonObject{{"result", "none"}}};
+  const QJsonArray permissions{QJsonObject{{"result", "deny"}}};
+  const QJsonObject replies{{"rlv", QJsonObject{{"result", "none"}}}};
+  const QJsonObject options{{"seconds", 2}, {"avatars", avatars}, {"transfers", transfers}, {"order", "shuffle"}, {"seed", 2},
+                            {"permissions", permissions}, {"replies", replies}, {"linkset", true}};
+  const QJsonObject req = LabFolder::request(LabFolder::open(top), options);
+  QCOMPARE(req.value("avatars").toArray(), avatars);
+  QCOMPARE(req.value("transfers").toArray(), transfers);
+  QCOMPARE(req.value("order").toString(), QString("shuffle"));
+  QCOMPARE(req.value("seed").toInt(), 2);
+  QCOMPARE(req.value("permissions").toArray(), permissions);
+  QCOMPARE(req.value("replies").toObject(), replies);
+  QVERIFY(!req.contains("linkset"));
+  const QJsonObject run = LabFolder::run(LabFolder::open(top), options);
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  // the owner and Ann are online (Bob is not), the owner denies, the viewer never answers; seed 2 runs the arm first
+  QCOMPARE(entries(run, "owner_say"), QJsonArray({QJsonArray{"arm", "arm", "Arm", "Arm/arm.lsl"}, QJsonArray{"main 2", "main", "Hud", "main.lsl"},
+                                                  QJsonArray{"perm 0", "main", "Hud", "main.lsl"}}));
+  QCOMPARE(run.value("result").toObject().value("order").toObject().value("scripts").toArray(), QJsonArray({"Hud/arm", "Hud/main"}));
+  // without the options: everyone is online, the owner grants, the viewer answers, list order
+  const QJsonObject plain = LabFolder::run(LabFolder::open(top), QJsonObject{{"seconds", 2}});
+  QCOMPARE(entries(plain, "owner_say"), QJsonArray({QJsonArray{"main 1", "main", "Hud", "main.lsl"}, QJsonArray{"perm 2", "main", "Hud", "main.lsl"},
+                                                    QJsonArray{"arm", "arm", "Arm", "Arm/arm.lsl"}, QJsonArray{"heard", "arm", "Arm", "Arm/arm.lsl"}}));
 }
 
 // run option "script_memory": Second Life's limit for a script, code (estimated, 9 bytes for each token) and values together.
