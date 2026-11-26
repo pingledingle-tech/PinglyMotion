@@ -1,0 +1,18 @@
+[12:01]  Some object: RLVREF|# start, script made from questions.txt, 5 lines
+[12:01]  Some object: RLVREF|case version_text
+[12:01]  Some object: RLVREF|send @version=2222
+[12:01]  Some object: RLVREF|answer 2222 RestrainedLife viewer v3.4.3 (RLVa 2.4.2.1)
+[12:01]  Some object: RLVREF|# the answer has 40 characters
+[12:01]  Someone Else: this line has no mark and is ignored
+[12:02]  Some object: RLVREF|case getgroup_active_group
+[12:02]  Some object: RLVREF|send @getgroup=2222
+[12:02]  Some object: RLVREF|answer 2222 Hemmelig gruppe
+[12:02]  Some object: RLVREF|case status_long
+[12:02]  Some object: RLVREF|send @getstatus:;æøå=2222
+[12:02]  Some object: RLVREF|answer 2222 æøåshowhovertextworldæøåshowhover
+[12:02]  Some object: RLVREF|+texthudæøåshowhovertextall
+[12:03]  Some object: RLVREF|case nothing_held
+[12:03]  Some object: RLVREF|send @getstatus=2222
+[12:03]  Some object: RLVREF|silent
+[12:03]  Some object: RLVREF|some unknown word here
+[12:03]  Some object: RLVREF|# done

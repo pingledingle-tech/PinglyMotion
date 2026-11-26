@@ -9,12 +9,12 @@ Files:
 - tests/test_rlvref.py
 - tests/test_rlv_template.py
 - tests/CMakeLists.txt
-- fuzz/fuzz_rlvref.cpp
-- fuzz/rlvref.dict
-- fuzz/corpus/rlvref/**
+- fuzz/fuzz_rlv.cpp
+- fuzz/rlv.dict
+- fuzz/corpus/rlv/**
+- tests/rlvref/**
 - fuzz/CMakeLists.txt
 - fuzz/README.md
-- .github/workflows/fuzz.yml
 - .github/workflows/rlv-scenarios.yml
 - reference/**
 - tools/firestorm/**

@@ -1,0 +1,17 @@
+# A reference file for the test of the runner: a case listed as intended that is now the same, a case
+# listed as fixed that differs again, a case listed that is not in the file, and a new difference.
+viewer made up for a test
+date 2026-11-26
+source specification
+
+case now_the_same
+send @getsitid=2222
+answer 2222 00000000-0000-0000-0000-000000000000
+
+case broke_again
+send @getgroup=2222
+answer 2222 wrong
+
+case nobody_listed_this
+send @getgroup=2222
+answer 2222 wrong too

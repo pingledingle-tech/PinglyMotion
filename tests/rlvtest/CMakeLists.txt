@@ -4,3 +4,10 @@
 ADD_EXECUTABLE (pinglymotion_rlvtest rlvtest.cpp)
 TARGET_INCLUDE_DIRECTORIES (pinglymotion_rlvtest PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
 TARGET_LINK_LIBRARIES (pinglymotion_rlvtest pinglymotion_core Qt6::Core)
+
+# The runner for RLV reference answers (package B): compares the answers in reference/rlv/*.rlvref (from the
+# RLV specification or recorded in Second Life) with the sandbox and lists the differences. Exit code 1 for a
+# difference that known.txt does not list. tests/test_rlvref.py runs it on the real files and on tests/rlvref/.
+ADD_EXECUTABLE (pinglymotion_rlvref rlvref.cpp)
+TARGET_INCLUDE_DIRECTORIES (pinglymotion_rlvref PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/scriptlab)
+TARGET_LINK_LIBRARIES (pinglymotion_rlvref pinglymotion_core Qt6::Core)

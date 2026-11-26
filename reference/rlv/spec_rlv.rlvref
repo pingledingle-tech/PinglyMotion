@@ -1,0 +1,91 @@
+# Reference answers for RLV, written FROM THE SPECIFICATION. NOT RECORDED IN SECOND LIFE.
+#
+# What the RestrainedLove API (RLV specification, Second Life wiki) says a viewer answers, as far as the
+# page is clear about it. Where the page does not say (what an empty answer looks like, what a viewer
+# does with a very long answer), nothing is asserted here: those questions are in
+# reference/rlv/questions.txt for Firestorm to answer. The restrictions used are harmless (they only hide
+# hover text), the same as in the Firestorm question list, so a recorded file has the same cases.
+# Format and rules: src/scriptlab/rlvreference.h. Credit: CREDITS.md.
+viewer none (written from the RLV specification)
+date 2026-11-26
+source specification
+
+case version_text
+send @version=2222
+prefix 2222 RestrainedLife viewer v
+send @versionnew=2223
+prefix 2223 RestrainedLove viewer v
+send @versionnum=2224
+number 2224
+
+case status_one
+send @showhovertextworld=n
+send @getstatus=2222
+answer 2222 /showhovertextworld
+
+case status_two_in_order
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus=2222
+answer 2222 /showhovertextworld/showhovertexthud
+
+case status_filter
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus:world=2222
+answer 2222 /showhovertextworld
+
+case status_separator
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus:;|=2222
+answer 2222 |showhovertextworld|showhovertexthud
+
+case status_norwegian_separator
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus:;æøå=2222
+answer 2222 æøåshowhovertextworldæøåshowhovertexthud
+
+case clear_with_filter
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @clear=world
+send @getstatus=2222
+answer 2222 /showhovertexthud
+
+case notify_add_and_remove
+send @notify:2222=add
+send @showhovertextworld=n
+answer 2222 /showhovertextworld=n
+send @showhovertextworld=y
+answer 2222 /showhovertextworld=y
+
+case notify_with_filter
+send @notify:2222;hud=add
+send @showhovertextworld=n
+send @showhovertexthud=n
+answer 2222 /showhovertexthud=n
+
+case sitting_nowhere
+send @getsitid=2222
+answer 2222 00000000-0000-0000-0000-000000000000
+
+case outfit_worn_shape
+send @getoutfit:shape=2222
+answer 2222 1
+
+case outfit_all_layers_are_digits
+send @getoutfit=2222
+number 2222
+
+case attach_all_points_are_digits
+send @getattach=2222
+number 2222
+
+case status_long_norwegian_under_the_limit_lowercase
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @showhovertextall=n
+send @getstatus:;æøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøå=2222
+answer 2222 æøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåshowhovertextworldæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåshowhovertexthudæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåshowhovertextall

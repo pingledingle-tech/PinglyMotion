@@ -51,8 +51,9 @@ Idea: a workflow in the tools repository downloads a released PinglyMotion build
 ## What has to be built first (separate jobs, each started on the owner's word)
 
 1. Done (package A): the `.rlvtest` format with `expect` and its runner in PinglyMotion (`pinglymotion_rlvtest`, built with the tests; the control command `lab_replay`).
-2. A check that a downloadable build runs on a hosted CI runner with `--control`.
-3. Creating the repository, with the template, a few examples and the workflow. Only after the owner says so.
+2. Done (package B, 26 November 2026): reference answers (`.rlvref` files, the runner `pinglymotion_rlvref`, the Firestorm question script, one list of known differences; [SCRIPT_LAB.md](SCRIPT_LAB.md), "Reference answers from Second Life").
+3. A check that a downloadable build runs on a hosted CI runner with `--control`.
+4. Creating the repository, with the template, a few examples and the workflow. Only after the owner says so.
 
 ## Not included
 

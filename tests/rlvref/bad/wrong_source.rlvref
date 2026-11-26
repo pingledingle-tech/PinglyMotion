@@ -1,0 +1,6 @@
+viewer v
+date 2026-11-26
+source guessed
+case a
+send @sendim=n
+silent

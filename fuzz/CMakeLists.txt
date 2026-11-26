@@ -117,8 +117,9 @@ TARGET_COMPILE_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_controlserver PRIVATE ${FUZZ_LINK})
 TARGET_LINK_LIBRARIES (fuzz_controlserver fuzz_core ${PINGLYMOTION_QT_LIBS})
 
-# the RLV command parser and restriction state of the Script Lab (issue 287); reads from memory
-ADD_EXECUTABLE (fuzz_rlv fuzz_rlv.cpp)
+# the RLV command parser and restriction state of the Script Lab (issue 287); reads from memory; also the
+# reference answer files of package B (src/scriptlab/rlvreference.*)
+ADD_EXECUTABLE (fuzz_rlv fuzz_rlv.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/rlvreference.cpp)
 TARGET_INCLUDE_DIRECTORIES (fuzz_rlv PRIVATE ${CMAKE_SOURCE_DIR}/src)
 TARGET_COMPILE_OPTIONS (fuzz_rlv PRIVATE ${FUZZ_FLAGS})
 TARGET_LINK_OPTIONS (fuzz_rlv PRIVATE ${FUZZ_LINK})

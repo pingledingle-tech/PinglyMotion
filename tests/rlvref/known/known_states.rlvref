@@ -1,0 +1,23 @@
+# A reference file for the test of the runner: two differences that are listed (intended, unclear), a
+# case that was fixed, and a case that is the same. Made up for the test; it is not a Second Life answer.
+viewer made up for a test
+date 2026-11-26
+source specification
+
+case same_case
+send @sendim=n
+send @getstatus=2222
+answer 2222 /sendim
+
+case intended_case
+send @getsitid=2222
+answer 2222 not the null key
+
+case unclear_case
+send @getgroup=2222
+answer 2222 some group
+
+case fixed_case
+send @fly=n
+send @getstatus=2222
+answer 2222 /fly
