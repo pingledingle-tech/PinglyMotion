@@ -1,5 +1,5 @@
 Branch: feat/scriptlab-big-setups
-Status: active
+Status: done
 Pull request: #519
 Files:
 - src/scriptlab/labfolder.*
