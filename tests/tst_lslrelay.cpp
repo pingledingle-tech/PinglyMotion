@@ -94,6 +94,8 @@ class LslRelayTest : public QObject
     void liftingNeverAsks();
     void regionSayToReachesTheRelay();
     void ignoredMessages();
+    void wildcardKey();
+    void pingFreesFarControllers();
     void outOfReach();
     void releaseInput();
     void pingInput();
@@ -251,6 +253,33 @@ void LslRelayTest::ignoredMessages()
   QCOMPARE(entries[1].toObject()["ignored"].toString(), QString("Not a relay message: it must be <ident>,<avatar key>,<commands>, with exactly two commas."));
   QCOMPARE(entries[2].toObject()["ignored"].toString(), QString("Not a relay message: it must be <ident>,<avatar key>,<commands>, with exactly two commas."));
   QVERIFY(a["rlv"].toObject()["state"].toObject()["objects"].toObject().isEmpty());
+}
+
+void LslRelayTest::wildcardKey()
+{
+  // ORG core: the wildcard key counts as the avatar's
+  const QJsonArray inputs{QJsonObject{{"at", 0.5}, {"channel", 5}, {"text", "scan,ffffffff-ffff-ffff-ffff-ffffffffffff,!version|@detach=n"}}};
+  const QJsonObject a = run(trap(""), true, inputs);
+  QCOMPARE(said(a), QStringList({"-1812221819 RLV Relay scan,ME,!version,1100", "-1812221819 RLV Relay scan,ME,@detach=n,ok"}));
+  QCOMPARE(a["rlv"].toObject()["state"].toObject()["objects"].toObject()[controllerKey(a)].toArray(), QJsonArray({"detach"}));
+}
+
+void LslRelayTest::pingFreesFarControllers()
+{
+  // a controller that holds a restriction and stands beyond shout range (100 metres) is not reachable: the ping frees it
+  const QString k1 = "70000000-0000-4000-8000-000000000001", k2 = "70000000-0000-4000-8000-000000000002";
+  QJsonObject request{{"command", "lsl_run"}, {"seconds", 2}, {"relay", true}, {"objects", QJsonArray{
+    QJsonObject{{"name", "Far Trap"}, {"key", k1}, {"position", QJsonArray{250, 250, 20}}, {"source", trap("@detach=n", QString(), "llRegionSayTo(llGetOwner(), RELAY, ")}},
+    QJsonObject{{"name", "Near Trap"}, {"key", k2}, {"position", QJsonArray{128, 200, 20}}, {"source", trap("@fly=n", QString(), "llShout(RELAY, ")}}}},
+    {"inputs", QJsonArray{QJsonObject{{"at", 1}, {"type", "relay_ping"}}}}};
+  const QJsonObject a = Control::run(request);
+  QVERIFY2(a["ok"].toBool(), qPrintable(a["error"].toString()));
+  const QJsonObject entry = relayEntries(a).last().toObject();
+  QCOMPARE(entry["pinged"].toArray(), QJsonArray({k2}));
+  QCOMPARE(entry["freed"].toArray(), QJsonArray({k1}));
+  const QJsonObject objects = a["rlv"].toObject()["state"].toObject()["objects"].toObject();
+  QVERIFY(!objects.contains(k1));
+  QCOMPARE(objects[k2].toArray(), QJsonArray({"fly"}));
 }
 
 void LslRelayTest::outOfReach()

@@ -8,7 +8,8 @@
  * x-tension 0003); no relay's code was copied.
  *
  * A controller says (or sends with llRegionSayTo to the avatar) "<ident>,<avatar key>,<command>|<command>...".
- * Exactly three comma-separated fields; another avatar's key, or another number of fields, is ignored.
+ * Exactly three comma-separated fields; the wildcard key ffffffff-ffff-ffff-ffff-ffffffffffff counts as the avatar's
+ * (ORG core); another avatar's key, or another number of fields, is ignored.
  * For every command the relay answers the sender on the same channel with
  * "<ident>,<controller key>,<command>,<answer>":
  *   !version         1100 (the protocol version)
@@ -29,8 +30,9 @@
  * and @clear never need asking. The choice holds until the controller's !release.
  *
  * Reachability (ORG core): the relay checks that a controller still exists. A ping input sends
- * "ping,<controller key>,ping,ping" to every controller that holds a restriction and frees at once each one whose
- * object is no longer in the world (deleted with llDie, or never there). A release input is the avatar freeing
+ * "ping,<controller key>,ping,ping" to every controller that holds a restriction and frees at once each one that is not
+ * reachable: its object is no longer in the world (deleted with llDie) or stands beyond shout range (100 metres) of
+ * the avatar. The relay never drops restrictions on its own, so a !pong has nothing to put back. A release input is the avatar freeing
  * herself from the relay's menu: every controller is freed and told "release,<controller key>,!release,ok"
  * (the protocol defines no safeword; this is what the sandbox does).
  *
@@ -99,7 +101,7 @@ class RlvRelay
     QVector<Message> releaseAll(QJsonObject& entry);
 
     // The reachability check: pings every controller that holds a restriction and frees each one that is not in
-    // reachable (the keys of the objects still in the world). The log entry is filled in.
+    // reachable (the keys of the objects still in the world and within shout range). The log entry is filled in.
     QVector<Message> ping(const QStringList& reachable, QJsonObject& entry);
 
     // {"mode", "controllers": [{key, name, trusted, restrictions}], "answers_left"}

@@ -122,7 +122,8 @@ RlvRelay::Heard RlvRelay::hear(const QString& senderKey, const QString& senderNa
     heard.entry["ignored"] = heard.ignored;
     return heard;
   }
-  if (fields[1] != m_wearer)
+  // ORG core: the wildcard key is handled exactly as the wearer's key
+  if (fields[1] != m_wearer && fields[1] != QLatin1String("ffffffff-ffff-ffff-ffff-ffffffffffff"))
   {
     heard.ignored = QStringLiteral("The message is for another avatar.");
     heard.entry["ignored"] = heard.ignored;
@@ -237,7 +238,7 @@ QVector<RlvRelay::Message> RlvRelay::ping(const QStringList& reachable, QJsonObj
     pinged.append(key);
   }
   entry = QJsonObject{{"type", "relay"}, {"action", "ping"}, {"pinged", pinged}, {"freed", freed},
-                      {"note", "The relay's reachability check: a controller that is no longer in the world was freed."}};
+                      {"note", "The relay's reachability check: a controller that is no longer in the world, or beyond shout range, was freed."}};
   return out;
 }
 

@@ -1456,9 +1456,14 @@ void Sandbox::relayInput(const SandboxInput& input, double time)
   if (input.type == "relay_release") messages = m_relay->releaseAll(entry);
   else
   {
+    // ORG core: reachable while in the world and within shout range of the avatar
     QStringList reachable;
-    for (const Object& o : m_objects)
-      if (!o.dead) reachable << o.spec.key;
+    for (size_t i = 0; i < m_objects.size(); ++i)
+    {
+      float p[3];
+      where(int(i), p);
+      if (!m_objects[i].dead && distance(p, AVATAR_POSITION) <= SHOUT_RANGE) reachable << m_objects[i].spec.key;
+    }
     messages = m_relay->ping(reachable, entry);
   }
   m_log.log(time, entry);

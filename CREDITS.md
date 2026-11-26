@@ -127,7 +127,8 @@ Only ideas were taken from these papers and projects (no code copied); they were
 | BVH (Biovision Hierarchy) format | The main import and export format | https://research.cs.wisc.edu/graphics/Courses/cs-838-1999/Jeff/BVH.html |
 | glTF 2.0 (Khronos) | Animation import | https://www.khronos.org/gltf/ |
 | AAOS clinical range of motion | The basis of the finger joint limits | American Academy of Orthopaedic Surgeons |
-| RLV relay protocol (the open Restrained Love Relay specification, Second Life Wiki) | The message format, channel and meta commands of the simple relay example (`examples/objects/RLV_relay`, written in our own words) | https://wiki.secondlife.com/wiki/LSL_Protocol/Restrained_Love_Relay/Specification |
+| RLV relay protocol (the open Restrained Love Relay specification, Second Life Wiki) | The message format, channel and meta commands of the simple relay example (`examples/objects/RLV_relay`, written in our own words), and of the Script Lab's built-in simulated relay (job 23, `src/scriptlab/lsl/relay.*`, written from the description; no relay's code copied) | https://wiki.secondlife.com/wiki/LSL_Protocol/Restrained_Love_Relay/Specification |
+| ORG relay x-tensions, core 0003 (Open Relay Group, Second Life Wiki) | The built-in simulated relay of the Script Lab (job 23): `!x-orgversions`, ko for an unknown meta-command, restrictions per controller and the reachability check, written from the description | https://wiki.secondlife.com/wiki/LSL_Protocol/Restrained_Love_Open_Relay_Group/ORG_Requirements |
 | SHA-256, HMAC (NIST, IETF RFC 2104) | Challenge and session key of the Aurora live link; file checks | https://www.rfc-editor.org/rfc/rfc2104 |
 
 ## Licence of PinglyMotion

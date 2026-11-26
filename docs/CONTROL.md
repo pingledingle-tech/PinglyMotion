@@ -896,7 +896,7 @@ script on a worn object.
 - A controller says on channel `-1812221819` (whisper, say, shout or region say, within reach of the avatar at
   128, 128, 20), or sends with `llRegionSayTo` to the owner's key (any distance), `<ident>,<avatar key>,<command>|<command>...`.
   Exactly two commas; another avatar's key or another number of fields is ignored (a `relay` log entry with `ignored`
-  says why). The wildcard key `ffffffff-ffff-ffff-ffff-ffffffffffff` is not answered.
+  says why). The wildcard key `ffffffff-ffff-ffff-ffff-ffffffffffff` counts as the avatar's key (ORG core).
 - For every command the relay answers the sender alone, on the same channel, from the object `RLV Relay`, with
   `<ident>,<controller key>,<command>,<answer>`: `!version` `1100`; `!implversion` `PinglyMotion Script Lab relay 1`;
   `!x-orgversions` `ORG=0003`; `!release` `ok` (every restriction of that controller is lifted and it must be accepted
@@ -912,16 +912,17 @@ script on a worn object.
 - **Inputs** (for `inputs` of `lsl_run` and for `lsl_event`): `relay_release` is the avatar freeing herself from the
   relay's menu: every controller is freed and told `release,<controller key>,!release,ok` (the protocol defines no
   safeword; this is the sandbox's choice). `relay_ping` is the reachability check (ORG core): every controller that
-  holds a restriction gets `ping,<controller key>,ping,ping`, and each one whose object is no longer in the world (for
-  example deleted with `llDie`) is freed at once. The protocol sets no time for an answer, so no time-out is
-  simulated; a `!pong` is logged with a note. A relay input without a relay writes an `input` entry with an `error`.
+  holds a restriction gets `ping,<controller key>,ping,ping`, and each one that is not reachable (its object is no
+  longer in the world, for example deleted with `llDie`, or stands beyond shout range, 100 metres, of the avatar) is
+  freed at once. The protocol sets no time for an answer, so no time-out is simulated; a `!pong` is logged with a note
+  (the relay never drops restrictions on its own, so there is nothing to put back). A relay input without a relay writes an `input` entry with an `error`.
 - **The answer** of `lsl_run` and `lsl_event` has `relay` when one is worn: `mode`, `key` (the relay's object key),
   `controllers` (`key`, `name`, `trust`: `accepted`, `declined` or `not asked`, and `restrictions`) and, in mode ask,
   `answers_left`. Each message the relay hears writes a `relay` log entry: `from`, `object`, `text`, `commands` (one
   per command: `command`, `reply`, and `asked`, `answer`, `result`, `reason` or `note` when they apply), `replies`
   (`channel`, `text`, `viewer: true` for a query's answer) and `restrictions` (what that controller holds now). The
   inputs write a `relay` entry with `action` (`release` or `ping`), `freed` and, for ping, `pinged`.
-- Not done: the wildcard key, `!handover`, `!who` and the other ORG x-tensions, a time-out for the ping, the relay's
+- Not done: `!handover`, `!who` and the other ORG x-tensions, a time-out for the ping, the relay's
   own menu, and a relay worn by another avatar. The simple relay script `examples/objects/RLV_relay/relay.lsl` still
   runs as before, with or without the built-in relay.
 
