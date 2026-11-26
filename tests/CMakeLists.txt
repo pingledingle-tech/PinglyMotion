@@ -118,6 +118,9 @@ ADD_SUBDIRECTORY (aboutdialog)
 # the local error log (#239)
 ADD_SUBDIRECTORY (applog)
 
+# the runner for .rlvtest scenarios with pass or fail (package A)
+ADD_SUBDIRECTORY (rlvtest)
+
 # ready joint matching for the BVH files of XR Animator (#17)
 ADD_SUBDIRECTORY (retargetxra)
 
@@ -203,6 +206,7 @@ IF (Python3_Interpreter_FOUND)
   # contrast of every pair in docs/design_tokens.json, light and dark (job B4, charter P9)
   # the log scan of the smoke run (job B4)
   ADD_TEST (NAME smoke_scan COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_smoke_scan.py)
+  ADD_TEST (NAME rlvscenarios COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_rlvtest.py $<TARGET_FILE:pinglymotion_rlvtest>)
   ADD_TEST (NAME contrast COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_contrast.py)
   ADD_TEST (NAME gen_slua_data COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_gen_slua_data.py)
 ENDIF ()

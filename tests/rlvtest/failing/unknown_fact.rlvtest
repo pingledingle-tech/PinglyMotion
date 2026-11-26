@@ -1,0 +1,3 @@
+# Meant to fail: no fact has this key, so the file is refused with its line number.
+send @sendim=n
+expect blocked:nonsense

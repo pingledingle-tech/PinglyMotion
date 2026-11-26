@@ -1,0 +1,14 @@
+# A scenario that passes, against the object in the folder cuffs_lock next to this file:
+# a HUD in the root part that shows a menu, and a cuff that locks and frees.
+expect said:Root Ready
+touch Root
+menu Lock
+expect lock:cuffs_lock locked
+expect colour:Cuff red
+expect said:Cuff Locked.
+expect blocked:sendim
+say -77 Free
+expect not lock:cuffs_lock
+expect colour:Cuff green
+say -77 Lock
+expect lock:cuffs_lock

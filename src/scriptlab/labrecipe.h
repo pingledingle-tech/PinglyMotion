@@ -13,7 +13,17 @@
  *   menu Lock all
  *   object panel
  *   send @sendim=n
+ *   say -77 Lock
  *   wait 2
+ *   expect blocked:sendim
+ *   expect not lock:Gear_set
+ *   expect said:Root HUD ready
+ *
+ * "say <channel> <text>" is the user's own chat line on a channel. "expect [not] <fact key> [text]" is a
+ * test (package A): right after the step before it (at the start when no step comes before it) the fact
+ * with that key must be there (or, with "not", must not be there), and when text is given the fact's
+ * state must contain it (any case). The keys are those of facts() below. A replay that breaks an
+ * expectation has failed(); the runner for the .rlvtest files in scenarios exits with 1 then.
  *
  * replay() runs the folder from the start in a world of its own (its own RLV
  * state, so the panel's state is never touched) and then each step, every one
@@ -45,6 +55,7 @@
 namespace LabRecipe
 {
   static constexpr int MAX_STEPS = 200;              // as lsl_run's inputs
+  static constexpr int MAX_EXPECTS = 200;
   static constexpr int MAX_LINE_CHARS = 1024;
   static constexpr qint64 MAX_FILE_BYTES = 65536;
   static constexpr int MAX_TEXT_CHARS = 512;         // a menu answer (llTextBox takes up to 512)
@@ -58,18 +69,32 @@ namespace LabRecipe
 
   struct Step
   {
-    enum class Kind { Touch, Menu, Send, Wait };
+    enum class Kind { Touch, Menu, Send, Wait, Say };
     Kind kind = Kind::Touch;
-    QString text;              // the prim (touch), the button text (menu), the RLV line (send)
+    QString text;              // the prim (touch), the button text (menu), the RLV line (send), the chat line (say)
     QString object;            // send: the object the line comes from ("panel" unless "object" said else)
     double seconds = 0.0;      // wait
+    int channel = 0;           // say
     int line = 0;              // the line in the file, from 1 (0 when made in the program)
     bool operator==(const Step& other) const;
+  };
+
+  // One test line: "expect [not] <key> [text]". It is checked right after the first afterStep steps
+  // (0: at the start, before any step).
+  struct Expect
+  {
+    int afterStep = 0;
+    bool negate = false;       // "expect not"
+    QString key;               // a fact key, see Fact
+    QString text;              // must be in the fact's state (any case); empty: any state
+    int line = 0;              // the line in the file, from 1
+    bool operator==(const Expect& other) const;   // the line number is not compared
   };
 
   struct Recipe
   {
     QVector<Step> steps;
+    QVector<Expect> expects;   // in file order
   };
 
   struct Result
@@ -80,15 +105,20 @@ namespace LabRecipe
   };
 
   // Reads a recipe. Refused with the line and the reason for an unknown word, a missing or too long
-  // text, a wait outside 0.1 to 60 seconds, more than MAX_STEPS steps or a line over MAX_LINE_CHARS.
+  // text, a wait outside 0.1 to 60 seconds, a channel that is not a whole number, a fact key that no fact
+  // has (expect), more than MAX_STEPS steps or MAX_EXPECTS expects, or a line over MAX_LINE_CHARS.
   Result parse(const QString& text);
   // The recipe as the file holds it: the notes on top, then one line per step ("object" lines only
   // where the object of a send changes). parse(write(r)) gives r back (without the line numbers).
   QString write(const Recipe& recipe);
-  // one step as its line in the file: "touch Collar", "menu Lock all", "send @sendim=n", "wait 2"
+  // one step as its line in the file: "touch Collar", "menu Lock all", "send @sendim=n", "wait 2", "say -77 Lock"
   QString stepLine(const Step& step);
+  // one expect as its line: "expect not blocked:sendim", "expect said:Root HUD ready"
+  QString expectLine(const Expect& expect);
+  // "" when a fact can have this key, else why not (the kinds and their names are in the message)
+  QString keyError(const QString& key);
   // one step in plain words: "Click Collar.", "Press "Lock all" in the menu.",
-  // "panel sends @sendim=n.", "Wait 2 seconds."
+  // "panel sends @sendim=n.", "Wait 2 seconds.", "You say "Lock" on channel -77."
   QString stepWords(const Step& step);
 
   // One thing that is true at the end of a replay. The sentence is "<subject> is <state>.";
@@ -98,6 +128,8 @@ namespace LabRecipe
     QString key;       // "lock:Gear_set", "colour:Collar", "blocked:sendim", "said:Root", "menu", "run", "stopped", "step:2"
     QString subject;   // "Gear_set", "Collar", "Send instant messages", "Root", "the menu", "the object", "step 2"
     QString state;     // "locked", "red", "blocked", "saying "HUD ready."", "open: ...", "not running: ...", "not done: ..."
+                       // The texts are English words from tr(): an expect with text matches them, and
+                       // tst_labrecipe locks every one (package A). Without text only the key counts.
     QString sentence() const;
     QString absent() const;
     bool operator==(const Fact& other) const { return key == other.key && subject == other.subject && state == other.state; }
@@ -115,6 +147,14 @@ namespace LabRecipe
     QVector<Fact> facts;       // the facts at this moment, as facts at the end are made
   };
 
+  // An expectation that was not met
+  struct Failure
+  {
+    int line = 0;              // the expect's line in the file
+    int step = 0;              // checked right after this many steps (0: at the start)
+    QString text;              // "Line 7: expected blocked:sendim, but it is not there."
+  };
+
   struct Replay
   {
     bool ran = false;          // the folder ran (every script compiled, no limit broken)
@@ -127,6 +167,11 @@ namespace LabRecipe
     QVector<Frame> frames;     // the start and every step, in order (empty when the folder did not run)
     QStringList stepTexts;     // every step in plain words (stepWords), for the player's list
     QJsonArray objects;        // queue 1 item 5, part b: the sandbox's objects at the end (for LabWeight::measure)
+    int expects = 0;           // expect lines in the recipe (package A)
+    QVector<Failure> failures; // the expects that were not met, in file order
+    bool failed() const { return !failures.isEmpty(); }
+    // the folder ran and no expectation failed (true with no expects: nothing was tested, see expects)
+    bool passed() const { return ran && failures.isEmpty(); }
   };
 
   // Runs the linkset from the start with options (as lsl_run: seconds, inputs) in a world of its own,
@@ -165,7 +210,8 @@ namespace LabRecipe
   // the plain name of a colour from red, green and blue between 0 and 1 ("red", "light blue" ...)
   QString colourName(double red, double green, double blue);
 
-  // The replay as data for lab_replay and lab_result: steps, done, ran, error, facts (sentences),
+  // The replay as data for lab_replay and lab_result: steps, done, ran, error, passed, expects, failures
+  // (line, step, text), facts (sentences),
   // changes, first, log, and for the player (job B3) frames (step, t, log_end, done, text, facts as
   // objects with key and text) and first_difference (a moment, or null).
   QJsonObject toJson(const Replay& replay, const QStringList& changes, bool first, int firstDifference = -1);

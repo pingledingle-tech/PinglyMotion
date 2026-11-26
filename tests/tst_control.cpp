@@ -3641,6 +3641,40 @@ void ControlTest::scriptLabLiveCommands()
   answer = run(R"({"command":"lab_replay"})");
   QCOMPARE(answer["first"].toBool(), false);
   QCOMPARE(answer["changes"].toArray(), QJsonArray());
+  QCOMPARE(answer["passed"].toBool(), true);   // package A: no expect line, nothing failed
+  QCOMPARE(answer["expects"].toInt(), 0);
+  QCOMPARE(answer["failures"].toArray(), QJsonArray());
+  // package A: expect lines give passed and failures (line, step, text)
+  {
+    QFile recipe(objectDir.filePath("recipe.rlvtest"));
+    QVERIFY(recipe.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    recipe.write("expect not blocked:fly\nsend @fly=n\nexpect blocked:fly\nsay 5 hello\nexpect said:Cuff cuff lock\n");
+  }
+  answer = run(R"({"command":"lab_replay"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["passed"].toBool(), true);
+  QCOMPARE(answer["expects"].toInt(), 3);
+  QCOMPARE(answer["failures"].toArray(), QJsonArray());
+  QCOMPARE(answer["steps"].toInt(), 2);
+  {
+    QFile recipe(objectDir.filePath("recipe.rlvtest"));
+    QVERIFY(recipe.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    recipe.write("send @fly=n\nexpect not blocked:fly\nexpect said:Cuff other text\nexpect lock:main\n");
+  }
+  answer = run(R"({"command":"lab_replay"})");
+  QVERIFY2(answer["ok"].toBool(), qPrintable(answer["error"].toString()));
+  QCOMPARE(answer["passed"].toBool(), false);
+  QCOMPARE(answer["expects"].toInt(), 3);
+  QCOMPARE(answer["failures"].toArray(),
+           QJsonArray({QJsonObject{{"line", 2}, {"step", 1}, {"text", "Line 2: expected blocked:fly not to be true, but Fly is blocked."}},
+                       QJsonObject{{"line", 3}, {"step", 1}, {"text", "Line 3: expected said:Cuff with \"other text\", but Cuff is saying \"cuff lock\"."}},
+                       QJsonObject{{"line", 4}, {"step", 1}, {"text", "Line 4: expected lock:main, but it is not true here."}}}));
+  {
+    QFile recipe(objectDir.filePath("recipe.rlvtest"));
+    QVERIFY(recipe.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    recipe.write("send @fly=n\nexpect blocked:nonsense\n");
+  }
+  QVERIFY(run(R"({"command":"lab_replay"})")["error"].toString().startsWith("lab_replay: The recipe has a mistake. Line 2: \"blocked:nonsense\" is not an action"));
   answer = run(R"({"command":"lab_result"})");
   QCOMPARE(answer["recipe"].toString(), QString("recipe.rlvtest"));
   QCOMPARE(answer["replay"].toObject()["facts"].toArray().size(), 2);
