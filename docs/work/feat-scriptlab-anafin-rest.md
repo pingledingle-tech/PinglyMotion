@@ -1,6 +1,6 @@
 Branch: feat/scriptlab-anafin-rest
 Status: active
-Pull request: pending
+Pull request: #522
 Files:
 - src/scriptlab/lsl/world.*
 - src/scriptlab/lsl/interp.*
