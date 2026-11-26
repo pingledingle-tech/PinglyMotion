@@ -1,6 +1,6 @@
 Branch: feat/api-scriptlab-upgrade
 Status: active
-Pull request: pending
+Pull request: #525
 Files:
 - src/scriptlab/lsl/builtins*.cpp
 - src/scriptlab/lsl/builtins*.h
