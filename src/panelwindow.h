@@ -1,4 +1,10 @@
 /*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
+/*
  * PinglyMotion - animation editor for Second Life avatars
  *
  * The panels on real dock widgets (docs/archive/PANELS_PLAN.md, jobs P3 and P4).

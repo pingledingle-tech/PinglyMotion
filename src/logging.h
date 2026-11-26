@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 /***************************************************************************
  *   Logging categories. Debug output can be turned on per area with       *
  *   QT_LOGGING_RULES, for example "pinglymotion.animation.debug=false".   *

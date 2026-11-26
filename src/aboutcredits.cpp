@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 #include "aboutcredits.h"
 
 #include <QCoreApplication>

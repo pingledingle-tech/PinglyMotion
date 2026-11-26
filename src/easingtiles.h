@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 // The easing tile row (issue #53 step 5): six small tiles on the timeline, one
 // per easing choice, for the pose change that ends at the selected key frame.
 // Each tile shows its name as text under a small picture: a tiny figure and a
