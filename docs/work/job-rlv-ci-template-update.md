@@ -1,11 +1,12 @@
 Branch: job/rlv-ci-template-update
 Status: active
-Pull request: pending
+Pull request: #529
 Files:
 - rlv-tools-template/**
 - .github/workflows/rlv-scenarios.yml
 - docs/RLV_TOOLS_REPO.md
 - docs/SCRIPT_LAB.md
+- tests/test_rlv_template.py
 
 ## What
 

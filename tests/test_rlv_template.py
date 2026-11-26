@@ -41,6 +41,16 @@ want(files("examples/failing", ".rlvtest"), "examples/failing needs at least one
 want(not set(files("examples/failing", ".rlvtest")) & set(files("scenarios", ".rlvtest")), "a failing example must not be in scenarios/")
 want(files("examples/passing", ".rlvtest"), "examples/passing needs at least one scenario")
 
+# job 26: the relay trap and the cuff set are products with scenarios, and the README explains the relay
+for p in ("relay_trap", "cuff_set"):
+    want(p in products, "scripts/%s is missing" % p)
+want("relay" in open(os.path.join(T, "scenarios", "relay_trap.rlvtest"), encoding="utf-8").read().lower(), "relay_trap.rlvtest must talk about the relay")
+_readme = open(os.path.join(T, "README.md"), encoding="utf-8").read()
+for phrase in ("A trap that needs a relay", "The relay that is built into the program", "Running the scenarios on GitHub", "refuse"):
+    want(phrase in _readme, "README.md must have: " + phrase)
+_wf = open(os.path.join(ROOT, ".github", "workflows", "rlv-scenarios.yml"), encoding="utf-8").read()
+want("GITHUB_STEP_SUMMARY" in _wf, "the workflow must write a job summary")
+
 # the rules are said in the README, and the files hold no real account, key, address or money call
 readme = open(os.path.join(T, "README.md"), encoding="utf-8").read()
 for phrase in ("No real account", "No personal data", "Text from outside", "never a result in Second Life"):

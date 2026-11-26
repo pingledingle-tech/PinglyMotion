@@ -1,0 +1,2 @@
+The ring in the ceiling. Chains to it hold the wearer up. Red while someone hangs from it.
+The script in Root controls this part. A touch here opens the menu.

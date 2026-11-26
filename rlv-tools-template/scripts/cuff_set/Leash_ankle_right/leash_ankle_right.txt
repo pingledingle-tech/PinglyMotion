@@ -1,0 +1,2 @@
+The leash point of the right ankle cuff. Gold while someone holds the leash.
+The script in Root controls this part. A touch here opens the menu.
