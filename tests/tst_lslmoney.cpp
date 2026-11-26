@@ -54,6 +54,10 @@ class LslMoneyTest : public QObject
   private slots:
     void giveMoney();
     void giveMoneyWithoutPermission();
+    void transfersOption();
+    void transfersOptionInLslEvent();
+    void transfersOptionErrors_data();
+    void transfersOptionErrors();
     void emailIsRecordedAndSleeps();
     void emailTooLong();
     void nextEmail();
@@ -145,6 +149,106 @@ void LslMoneyTest::giveMoneyWithoutPermission()
     R"({"channel":2147483647,"text":"Script trying to pay L$ but PERMISSION_DEBIT permission not set","type":"debug"})"}));
   QCOMPARE(entries(a, "give_money"), QStringList({
     QString(R"({"amount":10,"note":"Simulated: no L$ moved. The sandbox owner always has enough L$.","result":"MISSING_PERMISSION_DEBIT","to":"%1","type":"give_money"})").arg(GUEST)}));
+}
+
+// Anafin HUD test: "transfers" of lsl_run decides how each llTransferLindenDollars call that passed its own checks is
+// answered, in call order: a failure tag, a delay, or no transaction_result at all; after the list, ok at once
+void LslMoneyTest::transfersOption()
+{
+  const QString source = QString(R"lsl(key t1; key t2; key t3; key t4; key t5;
+    string which(key id) {
+      if (id == t1) return "t1"; if (id == t2) return "t2"; if (id == t3) return "t3"; if (id == t4) return "t4"; if (id == t5) return "t5";
+      return "?";
+    }
+    default {
+      state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_DEBIT); }
+      run_time_permissions(integer p) {
+        t1 = llTransferLindenDollars("%1", 10);
+        llTransferLindenDollars("%1", 0);
+        t2 = llTransferLindenDollars("%1", 20);
+        t3 = llTransferLindenDollars("%1", 30);
+        t4 = llTransferLindenDollars("%1", 40);
+        t5 = llTransferLindenDollars("%1", 50);
+        llSetTimerEvent(4.0);
+      }
+      timer() { llSetTimerEvent(0.0); llOwnerSay("timer"); }
+      transaction_result(key id, integer success, string data) {
+        llOwnerSay(llGetSubString((string)llGetTime(), 0, 3) + " " + which(id) + " " + (string)success + " " + data);
+      }
+    })lsl").arg(GUEST);
+  const QJsonObject a = Control::run(QJsonObject{{"command", "lsl_run"}, {"seconds", 10}, {"source", source},
+      {"transfers", QJsonArray{QJsonObject{{"result", "THROTTLED"}}, QJsonObject{{"result", "none"}},
+                               QJsonObject{{"delay", 5.5}}, QJsonObject{{"result", "LINDENDOLLAR_INSUFFICIENTFUNDS"}, {"delay", 2}}}}});
+  // the call with amount 0 fails its own check at once and takes no entry; t1 THROTTLED at once, t2 no answer, t3 ok
+  // after 5.5 s, t4 the failure after 2 s, t5 after the list: ok at once
+  QCOMPARE(said(a), QStringList({
+    "0.00 t1 0 THROTTLED",
+    "0.00 ? 0 INVALID_AMOUNT",
+    QString("0.00 t5 1 %1,50").arg(GUEST),
+    "2.00 t4 0 LINDENDOLLAR_INSUFFICIENTFUNDS",
+    "timer",
+    QString("5.50 t3 1 %1,30").arg(GUEST)}));
+  QCOMPARE(entries(a, "linden_dollars").size(), 6);
+  QCOMPARE(entries(a, "linden_dollars").at(2),
+           QString(R"({"amount":20,"note":"Simulated: no L$ moved, and no transaction_result comes (the transfers option).","result":"none","to":"%1",)"
+                   R"("transaction":"%2","type":"linden_dollars"})").arg(GUEST, QJsonDocument::fromJson(entries(a, "linden_dollars").at(2).toUtf8()).object()["transaction"].toString()));
+  QStringList results;
+  for (const QString& e : entries(a, "linden_dollars"))
+  {
+    const QJsonObject o = QJsonDocument::fromJson(e.toUtf8()).object();
+    results << QString("%1 %2 %3").arg(o["amount"].toInt()).arg(o["result"].toString()).arg(o.contains("delay") ? o["delay"].toDouble() : -1);
+  }
+  QCOMPARE(results, QStringList({"10 THROTTLED -1", "0 INVALID_AMOUNT -1", "20 none -1", "30 ok 5.5", "40 LINDENDOLLAR_INSUFFICIENTFUNDS 2", "50 ok -1"}));
+}
+
+// the list belongs to the world: a later llTransferLindenDollars in lsl_event takes the next entry
+void LslMoneyTest::transfersOptionInLslEvent()
+{
+  RlvState rlv;
+  Session session;
+  const QString source = QString(R"lsl(default {
+      state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_DEBIT); }
+      touch_start(integer n) { llTransferLindenDollars("%1", 5); }
+      transaction_result(key id, integer success, string data) { llOwnerSay((string)success + " " + data); }
+    })lsl").arg(GUEST);
+  const QJsonObject a = Control::run(QJsonObject{{"command", "lsl_run"}, {"seconds", 1}, {"source", source},
+      {"transfers", QJsonArray{QJsonObject{{"result", "EXPIRED"}}, QJsonObject{{"result", "SERVICE_ERROR"}, {"delay", 1}}}},
+      {"inputs", QJsonArray{QJsonObject{{"at", 0.5}, {"type", "touch"}}}}}, &rlv, &session);
+  QCOMPARE(said(a), QStringList({"0 EXPIRED"}));
+  const QJsonObject b = Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"seconds", 2}}, &session);
+  QCOMPARE(said(b), QStringList({"0 SERVICE_ERROR"}));
+  const QJsonObject c = Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"seconds", 1}}, &session);
+  QCOMPARE(said(c), QStringList({QString("1 %1,5").arg(GUEST)}));
+}
+
+void LslMoneyTest::transfersOptionErrors_data()
+{
+  QTest::addColumn<QJsonValue>("transfers");
+  QTest::addColumn<QString>("error");
+  QTest::newRow("not a list") << QJsonValue(QJsonObject{{"result", "ok"}})
+                              << "\"transfers\" must be a list of answers to llTransferLindenDollars, each {\"result\", \"delay\"}.";
+  QTest::newRow("not an object") << QJsonValue(QJsonArray{5}) << "Transfer 1: must be an object with result and/or delay.";
+  QTest::newRow("unknown field") << QJsonValue(QJsonArray{QJsonObject{{"wait", 1}}}) << "Transfer 1: unknown field \"wait\". Fields: result, delay.";
+  QTest::newRow("unknown result") << QJsonValue(QJsonArray{QJsonObject(), QJsonObject{{"result", "FAILED"}}})
+                                  << "Transfer 2: \"result\" must be one of ok, none, THROTTLED, EXPIRED, SERVICE_ERROR, LINDENDOLLAR_INSUFFICIENTFUNDS (default ok; none: no transaction_result comes).";
+  QTest::newRow("negative delay") << QJsonValue(QJsonArray{QJsonObject{{"delay", -1}}})
+                                  << "Transfer 1: \"delay\" must be the simulated seconds until transaction_result comes, 0 to 300 (default 0).";
+  QTest::newRow("long delay") << QJsonValue(QJsonArray{QJsonObject{{"delay", 301}}})
+                              << "Transfer 1: \"delay\" must be the simulated seconds until transaction_result comes, 0 to 300 (default 0).";
+  QTest::newRow("delay as text") << QJsonValue(QJsonArray{QJsonObject{{"delay", "2"}}})
+                                 << "Transfer 1: \"delay\" must be the simulated seconds until transaction_result comes, 0 to 300 (default 0).";
+  QJsonArray many;
+  for (int i = 0; i < 65; ++i) many.append(QJsonObject());
+  QTest::newRow("too many") << QJsonValue(many) << "\"transfers\" holds at most 64 answers.";
+}
+
+void LslMoneyTest::transfersOptionErrors()
+{
+  QFETCH(QJsonValue, transfers);
+  QFETCH(QString, error);
+  const QJsonObject a = Control::run(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { } }"}, {"transfers", transfers}});
+  QVERIFY(!a["ok"].toBool());
+  QCOMPARE(a["error"].toString(), error);
 }
 
 void LslMoneyTest::emailIsRecordedAndSleeps()

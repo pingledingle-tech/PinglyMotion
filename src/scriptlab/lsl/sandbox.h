@@ -200,8 +200,14 @@ class Sandbox
     QString addObject(const ObjectSpec& spec, const std::vector<ScriptEntry>& scripts, const Limits& limits = Limits());
     // Step 9b-7: an avatar for the sensors to find. Before start() only; returns why it was refused, or an empty string.
     QString addAvatar(const AvatarSpec& avatar);
+    // the velocity of an avatar of the avatars list (Anafin HUD test: llDetectedVel of a collision, llGetVel of an
+    // attachment); false, out set to zero, for a key that is not listed (the owner stands still unless listed)
+    bool avatarVelocity(const QString& key, float out[3]) const;
     // Step 9b-9: the canned replies to llHTTPRequest for every object (at most MAX_HTTP_REPLIES). Before start() only.
     QString setHttpReplies(const std::vector<HttpReply>& replies);
+    // Anafin HUD test: how the llTransferLindenDollars calls of the whole world are answered, in call order (at most
+    // TransferPlan::MAX_PLANS). Before start() only.
+    QString setTransfers(const std::vector<TransferPlan>& plans);
     // Gap list 2, step 3: the region's settings (name, corner, ground, water, day, start time). Before start() only.
     QString setRegion(const RegionSettings& region);
     const RegionSettings& region() const { return m_region; }
@@ -394,6 +400,8 @@ class Sandbox
     std::vector<Slot> m_slots;
     std::vector<AvatarSpec> m_avatars;
     std::vector<HttpReply> m_http;
+    std::vector<TransferPlan> m_transfers;   // Anafin HUD test: "transfers" of lsl_run, used in call order by every object
+    size_t m_transferNext = 0;
     RegionSettings m_region;
     ExperienceState m_experience;
     EstateState m_estate;

@@ -267,6 +267,19 @@ struct HttpReply
   static const HttpReply* find(const std::vector<HttpReply>& replies, const QString& method, const QString& url);
 };
 
+// Anafin HUD test: how one llTransferLindenDollars call is answered, given in the lsl_run option "transfers" (one entry
+// per call that passes the script-side checks, in call order; after the list, or without one, "ok" at once). result:
+// "ok", one of the failure tags in TRANSFER_FAILURES, or "none" (no transaction_result ever comes); delay: simulated
+// seconds until transaction_result comes.
+struct TransferPlan
+{
+  QString result = "ok";
+  double delay = 0.0;
+  static constexpr double MAX_DELAY = 300.0;
+  static constexpr int MAX_PLANS = 64;
+  static const char* const FAILURES[4];   // THROTTLED, EXPIRED, SERVICE_ERROR, LINDENDOLLAR_INSUFFICIENTFUNDS
+};
+
 // Gap list 2, step 2: what llGetObjectDetails (and llSameGroup) know about a key: an object of the world (its root
 // prim) or an avatar. Values the sandbox does not simulate keep these defaults.
 struct ObjectDetails
@@ -584,6 +597,14 @@ class World
     // throttle), and http_response for every script of the requesting prim (false: the calling script queues it itself)
     virtual const HttpReply* httpReply(const QString& method, const QString& url) const { return HttpReply::find(m_httpReplies, method, url); }
     void setHttpReplies(const std::vector<HttpReply>& replies) { m_httpReplies = replies; }
+    // Anafin HUD test: the answer to the next llTransferLindenDollars that passed its own checks ("transfers" of lsl_run;
+    // the Sandbox keeps one list for the whole world, in call order)
+    virtual TransferPlan nextTransfer()
+    {
+      if (m_transferNext < m_transfers.size()) return m_transfers[m_transferNext++];
+      return TransferPlan();
+    }
+    void setTransfers(const std::vector<TransferPlan>& plans) { m_transfers = plans; m_transferNext = 0; }
     virtual std::deque<double>& httpTimes() { return m_httpTimes; }
     virtual bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body)
     {
@@ -693,6 +714,8 @@ class World
     PrimStore m_prims;
     Inventory m_inventory;
     std::vector<HttpReply> m_httpReplies;
+    std::vector<TransferPlan> m_transfers;
+    size_t m_transferNext = 0;
     std::deque<double> m_httpTimes;
     QString m_objectName = "Object";
     QString m_objectDesc;

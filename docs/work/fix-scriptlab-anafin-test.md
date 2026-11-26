@@ -15,7 +15,10 @@ Files:
 - tests/tst_lslmoney.cpp
 - tests/tst_control.cpp
 - docs/CONTROL.md
-- docs/SCRIPT_LAB.md
+- tools/mcp/commands.json
+- tests/data/scriptlab/scenarios.json
+- fuzz/control.dict
+- fuzz/corpus/control/33.json
 
 ## What
 

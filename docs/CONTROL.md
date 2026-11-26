@@ -57,7 +57,9 @@ Authorization: Bearer <token>
 ```
 
 Limits: the request line and headers together at most 16 KB and the body at most 64 KB (larger
-requests get `413`); at most 8 connections at a time (more get `503`); a connection must send its whole request
+requests get `413`; for a too large body the error names the limit, the size when the header gave it, and, since many or long
+Script Lab scripts are the usual cause, points to `lab_watch` with `linkset: true`, which reads the scripts from a folder
+instead; the limit is a fixed safety limit and is not raised for one command); at most 8 connections at a time (more get `503`); a connection must send its whole request
 header within 2 seconds, otherwise it is closed, and the rest of the request within 15 seconds (issue 249).
 After an answer (any status) the server ends its side of the connection, reads and drops whatever the client still
 sends, and closes when the client closes, at most 2 seconds later. So an answer is never lost: closing at once with
@@ -546,7 +548,7 @@ Every log entry has `t` (simulated seconds) and `type`:
 | `message_linked` | `llMessageLinked` (step 9a) | `link` (as given, for example -1 for `LINK_SET`), `num`, `text`, `id`, `scripts` (how many scripts are in the prims it reaches) |
 | `linkset_data` | a Linkset Data write, delete or reset (step 9a; reads are not logged) | `op` (`write`, `delete`, `reset`, `delete_found` with `pattern` and `deleted`), `name`, `value` (writes), `result` (`LINKSETDATA_OK`, `LINKSETDATA_NOUPDATE` and so on), `used` (bytes in use after it) |
 | `prim` | a change of the simulated prim state (step 9b-3): nothing is drawn | `op` (`sit_target` (step 9b-5: `set`, `offset`, `rotation`), `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `name`, `description`, `fullbright`, `glow`, `physics`, `phantom`, `temp_on_rez`, `status`, `sit_text`), `link` (0 in a single-prim object), the values (`face`, `text`, `color`, `alpha`, `texture`, `position`, `rotation`, `size`, `value`, `status`) and sometimes `note` |
-| `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok` or the failure tag), `note` |
+| `linden_dollars` | `llTransferLindenDollars` (step 9b-3; simulated, no L$ ever moves) | `to`, `amount`, `transaction` (the key the call returned), `result` (`ok`, the failure tag, or `none` when the `transfers` option says no answer comes), `delay` (only when the answer comes later, see the `transfers` option), `note` |
 | `give_inventory` | `llGiveInventory` (step 9b-4) | `to`, `item`, `result` (`given`, `not_found`, `unknown_target` or `name_exists`) |
 | `give_inventory_list` | `llGiveInventoryList` (several-objects job) | `to`, `folder`, `items` (the names found and given), `result` (`given`, `not_found` when no item was found, `unknown_target`), `missing` and `name_exists` (names, only when there are any) |
 | `remote_pin` | `llSetRemoteScriptAccessPin` (several-objects job; the pin itself is not logged) | `enabled` |
@@ -729,7 +731,14 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   `transaction_result(key id, integer success, string data)` event follows with that key. Without `PERMISSION_DEBIT` (the sandbox grants the owner's permissions at once, as for every permission) the
   call logs a `debug` line and fails with `MISSING_PERMISSION_DEBIT` (the debug wording is the sandbox's). Other failures: `INVALID_AMOUNT` (0 or less), `INVALID_DESTINATION` (not a key),
   `LINDENDOLLAR_ENTITYDOESNOTEXIST` (the key of an object; objects cannot be paid). Success gives `data` as `<avatar key>,<amount>`. The failure tags and the success format follow the Second Life wiki
-  (page "transaction_result"); `INSUFFICIENTFUNDS`, `THROTTLED` and the like never happen here. Each call is a `linden_dollars` log entry.
+  (page "transaction_result"). Each call is a `linden_dollars` log entry.
+  **The `transfers` option** of `lsl_run` (Anafin HUD test) lets a test control the answer, so a script's retry and error handling can be tried: a list of at most 64
+  entries `{"result": ..., "delay": ...}`, used in call order by every `llTransferLindenDollars` call of the world that passed the checks above (a call that fails them takes no entry).
+  `result` is `ok` (the default), `none` (no `transaction_result` ever comes; the log entry says `result: "none"`) or one of the failure tags `THROTTLED`, `EXPIRED`, `SERVICE_ERROR`,
+  `LINDENDOLLAR_INSUFFICIENTFUNDS` (`transaction_result` with `success` 0 and the tag as `data`); `delay` is the simulated seconds until `transaction_result` comes, 0 (the default, at once) to 300
+  (the log entry then has `delay`). A reset or a state change does not cancel a delayed answer; a script that does not handle the event when it comes, or has stopped, does not get it. Calls after the list,
+  and every call without the option, succeed at once. The list belongs to the world, so a call made in a later `lsl_event` takes the next entry. Example:
+  `"transfers": [{"result": "THROTTLED"}, {"delay": 5}]`: the first call fails at once with `THROTTLED`, the second succeeds after 5 simulated seconds, the rest succeed at once.
 - **Recorded only:** `llParticleSystem`, `llLinkParticleSystem`, `llTriggerSound`, `llPlaySound`, `llLoopSound`, `llStopSound`, `llPreloadSound`, `llTargetOmega`, `llLoadURL` do nothing but write a
   `recorded_only` entry with the function and its arguments (a list argument as its length). Nothing is played or opened.
   Job A4: when the rules of `llParticleSystem` or `llLinkParticleSystem` hold `PSYS_SRC_TARGET_KEY` (rule 20), the entry also has
@@ -746,7 +755,7 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   real functions now (part 3, below), not record only; the vehicle functions are not part of this step (step 7, below).
 - **Collision-family events (second gap list, step 6, part 2):** there is still no motion model, so these events never happen on their own; new `inputs` types raise them for testing, with exactly the
   llDetected* data or vector arguments given. `collision` (`phase`: `"start"`, `"end"` or left out for the continuous `collision`; `link`: the prim hit, default the root; `name`/`id`: the other object or avatar, as for `touch`) raises
-  `collision_start`, `collision_end` or `collision(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). `land_collision`
+  `collision_start`, `collision_end` or `collision(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). When `id` is an avatar of the `avatars` list, `llDetectedVel` in those events answers that avatar's `velocity` (Anafin HUD test; zero for anyone else, the owner too unless listed, and `name` still comes from the input). `land_collision`
   (`phase`: `"start"`, `"end"` or left out for the continuous `land_collision`; `pos`: `[x, y, z]`, the event's own vector argument) and `moving` (`phase`: `"start"` or `"end"`, no detected data: `moving_start`
   and `moving_end` take no arguments) go to every script of the object, as `changed` does. `at_target` (`tnum`, `targetpos`, `ourpos`: the event's own arguments; `llTarget`'s target number is not tracked)
   and `not_at_target` (no fields) likewise go to every script. None of this simulates collisions, gravity or `llTarget`; it only lets a script's handler be tested against given data. Part 3, below, gives
@@ -755,7 +764,7 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   changes the object's velocity **at once** by `impulse / mass` (the mass `llGetMass` gives); `local` turns the impulse by the object's root rotation first, as `llSetPos`'s local flag does.
   `llSetBuoyancy(float buoyancy)` stores the value, clamped to 0 (full gravity) .. 1 (floats); other values that Second Life allows are refused here by clamping, not by an error. The new `inputs` type
   `step` (`dt`: seconds, 0 to 60; `object`: as for the other types) advances the model for one object by `dt` simulated seconds: velocity changes by simple gravity (`-9.8` m/s² along z, scaled by
-  `(1 - buoyancy)`), then position changes by the new velocity; nothing happens between `step` inputs on its own. `llGetVel` answers the model's velocity (always `ZERO_VECTOR` before this step). Each
+  `(1 - buoyancy)`), then position changes by the new velocity; nothing happens between `step` inputs on its own. `llGetVel` answers the model's velocity (always `ZERO_VECTOR` before this step); in a worn object it answers the wearer's velocity instead: the `velocity` of the object owner's entry in the `avatars` list, `ZERO_VECTOR` when the owner is not listed (Anafin HUD test; the model never moves a worn object, so `llApplyImpulse` and `llSetVelocity` there change nothing `llGetVel` shows). Each
   `step` writes an `input` entry (`dt`, the new `velocity` and `position`), and `llApplyImpulse` writes its own `velocity` entry (`op: "impulse"`, the impulse turned, the mass, the new velocity);
   `llSetBuoyancy` writes a `velocity` entry too (`op: "buoyancy"`). When the object's speed crosses `0.1` m/s (the sandbox's own threshold) a `step` input also fires `moving_start` or `moving_end` itself,
   with a `moving` log entry (`phase`) that says it came from the model, not a manual input. A worn object's `step` does nothing but log a note that the model does not apply to an attachment. An object with keyframed motion (`llSetKeyframedMotion`, below) is moved by its frames instead of by gravity, and its `step` entry also has `keyframed` (`playing`, or `paused_or_ended`) and the new `rotation`. Left out on
@@ -801,7 +810,7 @@ with the owner's key is listed. Avatars do not move: a scan always sees them whe
 - `llSensorRepeat(name, id, type, range, arc, rate)` does the same every `rate` seconds, the first scan one `rate` after the call (a sandbox choice), at least 0.01 s apart. A new call replaces the earlier repeat; a `rate`
   of 0 or less (or `NaN`) removes it (sandbox choice); `llSensorRemove` removes it; a state change removes it. They write `sensor_set` and `sensor_remove` entries.
 - `llDetectedName`, `llDetectedKey`, `llDetectedOwner` (an avatar is its own owner), `llDetectedType` (1 or 8, not the combinations Second Life reports for moving or physical objects), `llDetectedPos`, `llDetectedRot`
-  (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
+  (an object's root rotation), `llDetectedVel` (an avatar's `velocity`; objects do not move, so zero; a `collision` input from a listed avatar gives its `velocity` too) and `llDetectedGroup` (1 for an avatar with `in_group`, else 0) read the list of the `sensor` event. An index out of range
   gives `NULL_KEY`, an empty string, the zero vector, the identity rotation or 0. A touch has one detected avatar with name, key and owner only (its position, rotation and velocity are not simulated; the touch data `llDetectedTouch*` is canned, see "Leftover reads and media").
 - Not done: `llDetectedGrab`, passive and physical objects, avatars that move, and the `collision` and `land_collision` events.
 
@@ -957,7 +966,7 @@ sandbox chooses, and [SCRIPT_LAB.md](SCRIPT_LAB.md) lists those doubts.
   is not heard, not found by sensors, unknown to `llKey2Name`, `llGetOwnerKey` and `llGetObjectDetails`, and no target for
   `llGiveInventory`; an input sent to it is an `input` entry with `error` "The object was deleted with llDie.".
   In a worn object `llDie` does nothing (as in Second Life).
-- **`llGetVel()`** is always `ZERO_VECTOR`: nothing moves in the sandbox. **`llGetMass()`** adds up the prims as boxes of 10
+- **`llGetVel()`** is always `ZERO_VECTOR`: nothing moves in the sandbox (later changed: the `step` motion model, and a worn object answers its wearer's `velocity`; see "A simple motion model" above). **`llGetMass()`** adds up the prims as boxes of 10
   lindograms per cubic metre (Second Life's default density, 1000 kg/m3, in units of 100 kg): the root prim with the
   object's scale, each child with its own size (a 0.5 m cube is 1.25). A worn object gives its own mass (Second Life:
   the avatar's).

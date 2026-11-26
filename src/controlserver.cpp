@@ -51,6 +51,19 @@ namespace
   // admitted connection may take the longer time above for its body (issue 249)
   const int HEADER_TIMEOUT_MS = 2000;
 
+  // the answer to a body over MAX_BODY_BYTES (a fixed safety limit, issue #145 and the security audit; never raised to fit a
+  // command): names the limit, the size when the header gave it (bodyLength < 0: not known), and the way around it for
+  // the Script Lab, where many or long scripts are the usual reason (lab_watch reads them from a folder on disk)
+  QByteArray tooLargeAnswer(int bodyLength)
+  {
+    const QString size = bodyLength >= 0 ? QString(" This one is %1 bytes.").arg(bodyLength) : QString();
+    const QString text = QString("Request too large: the body may be at most %1 bytes (64 KB), a fixed safety limit.%2"
+                                 " For many or long Script Lab scripts, put them in a folder and use lab_watch"
+                                 " (linkset: true runs the folder as one object with several scripts) instead of lsl_run.")
+                             .arg(MAX_BODY_BYTES).arg(size);
+    return QJsonDocument(QJsonObject{{"ok", false}, {"error", text}}).toJson(QJsonDocument::Compact);
+  }
+
   ControlServer::FileStep failingStep = ControlServer::FileStep::None;
 
   QString makeToken()
@@ -356,7 +369,7 @@ int ControlServer::completeRequestLength(QTcpSocket* socket, const QByteArray& d
   }
   if (bodyLength > MAX_BODY_BYTES)
   {
-    respond(socket, 413, R"({"ok":false,"error":"Request too large"})");
+    respond(socket, 413, tooLargeAnswer(bodyLength));
     return -1;
   }
   const int total = headerEnd + 4 + bodyLength;
@@ -374,7 +387,7 @@ void ControlServer::onReadyRead()
   buffer += socket->read(MAX_REQUEST_BYTES - buffer.size() + 1);
   if (buffer.size() > MAX_REQUEST_BYTES)
   {
-    respond(socket, 413, R"({"ok":false,"error":"Request too large"})");
+    respond(socket, 413, tooLargeAnswer(-1));
     return;
   }
   const int length = completeRequestLength(socket, buffer);
