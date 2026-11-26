@@ -3519,7 +3519,9 @@ void ControlTest::scriptLabLiveCommands()
   QCOMPARE(run(R"({"command":"lab_watch","path":"relative/folder"})")["error"].toString(),
            QString("lab_watch: Give the whole path of the folder, not a relative one."));
   QCOMPARE(run(R"({"command":"lab_watch","path":"/x","fast":true})")["error"].toString(),
-           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs, keep_rlv, linkset."));
+           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs, keep_rlv, linkset, avatars, transfers, order, seed, permissions, replies."));
+  QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"permissions", QJsonObject()}})["error"].toString(),
+           QString("lab_watch: \"permissions\" must be a list of the owner's answers to llRequestPermissions, each {\"result\", \"delay\"}."));
   QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"seconds", 5000}})["error"].toString(),
            QString("lab_watch: \"seconds\" must be between 0 and 3600 (simulated seconds)."));
   QCOMPARE(run(R"({"command":"lab_unwatch","now":1})")["error"].toString(), QString("lab_unwatch takes no options."));

@@ -815,8 +815,23 @@ QString ScriptLabPanel::logLine(const QJsonObject& entry)
   {
     QString line = time + QStringLiteral("rlv_command: ") + entry.value("text").toString();
     if (entry.contains("error")) line += QStringLiteral(" (refused: %1)").arg(entry.value("error").toString());
+    // Anafin HUD test: a force command is accepted but not carried out in the sandbox; say so plainly (a real RLV viewer
+    // sends the script no reply to a force command, so nothing is said in chat either)
+    for (const QJsonValue& result : entry.value("results").toArray())
+      if (result.toObject().value("result").toString() == QLatin1String("retained"))
+      {
+        QString command = result.toObject().value("command").toString();
+        if (!command.startsWith(QLatin1Char('@'))) command.prepend(QLatin1Char('@'));
+        line += QStringLiteral("; ") + tr("force command %1 was accepted but is not carried out in the Script Lab sandbox").arg(command);
+      }
     for (const QJsonValue& reply : entry.value("replies").toArray())
-      line += QStringLiteral("; reply on channel %1: %2").arg(fieldText(reply.toObject().value("channel")), reply.toObject().value("text").toString());
+    {
+      const QJsonObject r = reply.toObject();
+      line += QStringLiteral("; reply on channel %1: %2").arg(fieldText(r.value("channel")), r.value("text").toString());
+      // the replies option (Anafin HUD test, gap 6): a reply that never comes, or comes later
+      if (r.value("lost").toBool()) line += QStringLiteral(" ") + tr("(lost: the script never hears it)");
+      else if (r.contains("delay")) line += QStringLiteral(" ") + tr("(comes after %1 s)").arg(fieldText(r.value("delay")));
+    }
     return line;
   }
   // every other entry: its fields in a fixed order

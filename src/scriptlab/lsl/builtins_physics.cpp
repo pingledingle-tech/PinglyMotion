@@ -92,7 +92,7 @@ Value Interpreter::callBuiltinPhysics(Fn fn, const QString& name, std::vector<Va
       const QString data = castValue(Value::vector(item->landmark[0], item->landmark[1], item->landmark[2]), Type::String).s;
       if (!m_world.logFull())
         m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"item", World::clip(item->name)}, {"query", id}});
-      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      queueDataserver(id, data);
       return Value::key(id);
     }
     case Fn::TextureTransform:

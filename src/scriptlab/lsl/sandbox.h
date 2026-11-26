@@ -89,6 +89,15 @@ struct AvatarSpec
   float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
   bool inGroup = false;           // llDetectedGroup
   float height = RegionSettings::DEFAULT_AVATAR_HEIGHT;   // gap list 2, step 3: llGetAgentSize z, metres
+  // Anafin HUD test, gap 4: online at the start, and the simulated times it logs in or out (negative: never). An offline
+  // avatar is not in the region: llGetAgentList, the sensors, llGetAgentInfo, llGetAgentSize, llKey2Name and
+  // llGetObjectDetails do not find it, llRequestAgentData answers DATA_ONLINE "0", and llRequestPermissions gets no answer.
+  bool online = true;
+  double login = -1.0;
+  double logout = -1.0;
+  static constexpr double MAX_PRESENCE_TIME = 3600.0;
+  // online at simulated time t
+  bool onlineAt(double t) const;
 };
 
 // step 9a: one script of an object
@@ -219,6 +228,13 @@ class Sandbox
     // Anafin HUD test: how the llTransferLindenDollars calls of the whole world are answered, in call order (at most
     // TransferPlan::MAX_PLANS). Before start() only.
     QString setTransfers(const std::vector<TransferPlan>& plans);
+    // Anafin HUD test, gaps 4 and 6: how the owner answers llRequestPermissions, and how RLV viewer replies and dataserver
+    // replies come, for the whole world, in call order (at most AnswerPlan::MAX_PLANS each). Before start() only.
+    QString setAnswers(AnswerKind kind, const AnswerPlans& plans);
+    // Anafin HUD test, gap 4: whether an avatar is online now (only an avatar of the avatars list can be offline), and the
+    // name of a listed avatar that is offline now
+    bool avatarOnline(const QString& key) const;
+    bool offlineAvatar(const QString& key, QString& name) const;
     // Gap list 2, step 3: the region's settings (name, corner, ground, water, day, start time). Before start() only.
     QString setRegion(const RegionSettings& region);
     const RegionSettings& region() const { return m_region; }
@@ -379,7 +395,7 @@ class Sandbox
     bool details(int from, const QString& key, ObjectDetails& out) const;
     // gap list 2, step 3: the avatars in the region (llGetAgentList): the owner unless listed, the listed avatars in
     // their order, then avatars sitting on an object that are not listed
-    QStringList agents() const;
+    QStringList agents(int from = -1) const;
     QStringList objectKeys() const;   // steps 13 to 15: the live objects (llCastRay)
     // gap list 2, step 4: the URLs of the fake web server, each held by one script (a slot)
     struct UrlEntry
@@ -397,7 +413,10 @@ class Sandbox
     QStringList attachedKeys(const QString& avatar) const;
     int linkNumber(int slot) const;
     void where(int index, float out[3]) const;
-    QString nameOf(const QString& key) const;
+    QString nameOf(const QString& key, int from = -1) const;
+    // Anafin HUD test, gap 4: the simulated time now for a script (its own clock runs ahead of the world's while it runs)
+    double timeFor(int slot) const;
+    bool avatarOnlineAt(const QString& key, double t) const;
     QString ownerOf(const QString& key) const;
 
     void deliver(const SandboxInput& input);
@@ -421,6 +440,7 @@ class Sandbox
     std::vector<HttpReply> m_http;
     std::vector<TransferPlan> m_transfers;   // Anafin HUD test: "transfers" of lsl_run, used in call order by every object
     size_t m_transferNext = 0;
+    AnswerPlans m_answers[3];               // Anafin HUD test: "permissions" and "replies" of lsl_run, by AnswerKind
     RegionSettings m_region;
     ExperienceState m_experience;
     EstateState m_estate;

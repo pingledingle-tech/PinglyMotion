@@ -30,6 +30,7 @@
 #include "rlvstate.h"
 #include "scriptlabpanel.h"
 #include "labwatcher.h"
+#include "lsl/control.h"
 #include "theme.h"
 #include "transportbar.h"
 #include "usersettings.h"
@@ -137,6 +138,7 @@ class TestScriptLabPlayer : public QObject
     void rowsAtEachMoment();
     void folderAtMoment();
     void logUpToMoment();
+    void forceAndRepliesInTheLog();
     void buttonsAndReasons();
     void stepAndJump();
     void playToTheEnd();
@@ -244,6 +246,31 @@ void TestScriptLabPlayer::logUpToMoment()
   QCOMPARE(LabPlayerModel::logLines(log, 3).at(1), QString("--- Step 1: touch Root ---"));
   QCOMPARE(LabPlayerModel::logLines(log, 3).at(2), QString("10.000 s  hud (Root): owner_say: Ready."));
   QCOMPARE(LabPlayerModel::logLines(log, 0), QStringList());
+}
+
+// Anafin HUD test: a force command that is accepted but not carried out says so in the log line (nothing goes to the script
+// in chat), and a reply of the replies option that is lost or late says so too
+void TestScriptLabPlayer::forceAndRepliesInTheLog()
+{
+  const QJsonObject answer = lsl::Control::run(QJsonObject{{"command", "lsl_run"}, {"seconds", 1},
+      {"source", "default { state_entry() { llOwnerSay(\"@detach:hat=force,tpto:1/2/3=force,detach=n\"); llOwnerSay(\"@version=77\"); llOwnerSay(\"@versionnum=78\"); } }"},
+      {"replies", QJsonObject{{"rlv", QJsonArray{QJsonObject{{"result", "none"}}, QJsonObject{{"delay", 2.5}}}}}}});
+  QVERIFY(answer.value("ok").toBool());
+  QStringList lines;
+  for (const QJsonValue& v : answer.value("log").toArray())
+    if (v.toObject().value("type").toString() == QLatin1String("rlv_command")) lines << ScriptLabPanel::logLine(v.toObject());
+  QCOMPARE(lines.size(), 3);
+  QCOMPARE(lines.at(0), QString("0.000 s  rlv_command: @detach:hat=force,tpto:1/2/3=force,detach=n"
+                                "; force command @detach:hat=force was accepted but is not carried out in the Script Lab sandbox"
+                                "; force command @tpto:1/2/3=force was accepted but is not carried out in the Script Lab sandbox"));
+  QVERIFY2(lines.at(1).startsWith("0.000 s  rlv_command: @version=77; reply on channel 77: "), qPrintable(lines.at(1)));
+  QVERIFY2(lines.at(1).endsWith(" (lost: the script never hears it)"), qPrintable(lines.at(1)));
+  QVERIFY2(lines.at(2).startsWith("0.000 s  rlv_command: @versionnum=78; reply on channel 78: "), qPrintable(lines.at(2)));
+  QVERIFY2(lines.at(2).endsWith(" (comes after 2.5 s)"), qPrintable(lines.at(2)));
+  // a line without a force command or a planned reply is as before
+  QCOMPARE(ScriptLabPanel::logLine(QJsonObject{{"type", "rlv_command"}, {"t", 1}, {"text", "@detach=n"},
+                                               {"results", QJsonArray{QJsonObject{{"command", "detach=n"}, {"result", "success"}}}}, {"replies", QJsonArray()}}),
+           QString("1.000 s  rlv_command: @detach=n"));
 }
 
 void TestScriptLabPlayer::buttonsAndReasons()

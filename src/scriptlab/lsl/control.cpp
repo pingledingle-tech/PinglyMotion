@@ -576,10 +576,10 @@ namespace
   // step 9b-7: "avatars" of lsl_run: [{name, key, position, velocity, rotation, in_group}]; empty when fine
   QString readAvatars(const QJsonValue& v, std::vector<AvatarSpec>& out)
   {
-    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\", \"height\"}.";
+    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\", \"height\", \"online\", \"login\", \"logout\"}.";
     const QJsonArray list = v.toArray();
     if (list.size() > Sandbox::MAX_AVATARS) return QString("\"avatars\" holds at most %1 avatars.").arg(Sandbox::MAX_AVATARS);
-    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group", "height"};
+    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group", "height", "online", "login", "logout"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Avatar %1: ").arg(i + 1);
@@ -623,6 +623,27 @@ namespace
           return where + "\"height\" must be the avatar's height in metres, 0.5 to 3 (default 1.8).";
         a.height = float(h);
       }
+      // Anafin HUD test, gap 4: online at the start (default true, or false when the avatar logs in before any logout),
+      // and the simulated times it logs in and out
+      for (const char* field : {"login", "logout"})
+        if (o.contains(field))
+        {
+          const double t = o.value(field).toDouble(std::nan(""));
+          if (!o.value(field).isDouble() || !std::isfinite(t) || t < 0.0 || t > AvatarSpec::MAX_PRESENCE_TIME)
+            return where + QString("\"%1\" must be the simulated second the avatar logs %2, 0 to %3.").arg(field, QString(field).mid(3)).arg(AvatarSpec::MAX_PRESENCE_TIME);
+          (QLatin1String(field) == QLatin1String("login") ? a.login : a.logout) = t;
+        }
+      if (a.login >= 0.0 && a.login == a.logout) return where + "\"login\" and \"logout\" must be different times.";
+      const bool loginFirst = a.login >= 0.0 && (a.logout < 0.0 || a.login < a.logout);
+      const bool logoutFirst = a.logout >= 0.0 && (a.login < 0.0 || a.logout < a.login);
+      if (o.contains("online"))
+      {
+        if (!o.value("online").isBool()) return where + "\"online\" must be true or false (whether the avatar is online at the start).";
+        a.online = o.value("online").toBool();
+        if (a.online && loginFirst) return where + "an avatar that is online at the start cannot log in before it logs out.";
+        if (!a.online && logoutFirst) return where + "an avatar that is offline at the start cannot log out before it logs in.";
+      }
+      else a.online = !loginFirst;
       out.push_back(a);
     }
     return QString();
@@ -883,6 +904,84 @@ namespace
     return QString();
   }
 
+  // Anafin HUD test, gaps 4 and 6: one answer {result, delay} of the permissions or replies option; empty when fine
+  QString readAnswer(const QJsonValue& v, const QString& where, const QStringList& results, const QString& comes, AnswerPlan& plan)
+  {
+    if (!v.isObject()) return where + "must be an object with result and/or delay.";
+    const QJsonObject o = v.toObject();
+    static const QStringList fields = {"result", "delay"};
+    for (auto it = o.begin(); it != o.end(); ++it)
+      if (!fields.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+    if (o.contains("result"))
+    {
+      if (!o.value("result").isString() || !results.contains(o.value("result").toString()))
+        return where + "\"result\" must be one of " + results.join(", ") + " (default " + results.first() + "; none: no answer comes).";
+      plan.result = o.value("result").toString();
+    }
+    if (o.contains("delay"))
+    {
+      const double d = o.value("delay").toDouble(std::nan(""));
+      if (!o.value("delay").isDouble() || !std::isfinite(d) || d < 0.0 || d > AnswerPlan::MAX_DELAY)
+        return where + QString("\"delay\" must be the simulated seconds until %1, 0 to %2 (default 0).").arg(comes).arg(AnswerPlan::MAX_DELAY);
+      if (plan.result == "none") return where + "\"delay\" cannot be used with result none (no answer comes).";
+      plan.delay = d;
+    }
+    return QString();
+  }
+
+  // "permissions" of lsl_run: how the owner answers llRequestPermissions, in call order, [{result, delay}]; empty when fine
+  QString readPermissions(const QJsonValue& v, AnswerPlans& out)
+  {
+    if (!v.isArray()) return "\"permissions\" must be a list of the owner's answers to llRequestPermissions, each {\"result\", \"delay\"}.";
+    const QJsonArray list = v.toArray();
+    if (list.size() > AnswerPlan::MAX_PLANS) return QString("\"permissions\" holds at most %1 answers.").arg(AnswerPlan::MAX_PLANS);
+    for (int i = 0; i < list.size(); ++i)
+    {
+      AnswerPlan plan;
+      const QString problem = readAnswer(list[i], QString("Permission answer %1: ").arg(i + 1), {"grant", "deny", "none"}, "the owner answers", plan);
+      if (!problem.isEmpty()) return problem;
+      out.list.push_back(plan);
+    }
+    return QString();
+  }
+
+  // "replies" of lsl_run: {rlv, dataserver}, each one answer {result, delay} for every reply of that kind, or a list of
+  // answers in call order; empty when fine
+  QString readReplies(const QJsonValue& v, AnswerPlans& rlv, AnswerPlans& dataserver)
+  {
+    static const QStringList kinds = {"rlv", "dataserver"};
+    if (!v.isObject()) return "\"replies\" must be an object with rlv and/or dataserver.";
+    const QJsonObject o = v.toObject();
+    for (auto it = o.begin(); it != o.end(); ++it)
+      if (!kinds.contains(it.key())) return "\"replies\": unknown kind \"" + clip(it.key(), 40) + "\". Kinds: " + kinds.join(", ") + ".";
+    for (const QString& kind : kinds)
+    {
+      if (!o.contains(kind)) continue;
+      AnswerPlans& plans = kind == "rlv" ? rlv : dataserver;
+      const QString what = kind == "rlv" ? "the RLV viewer's reply comes" : "the dataserver reply comes";
+      const QJsonValue value = o.value(kind);
+      if (value.isObject())
+      {
+        plans.every = true;
+        const QString problem = readAnswer(value, "\"replies\" " + kind + ": ", {"ok", "none"}, what, plans.all);
+        if (!problem.isEmpty()) return problem;
+        continue;
+      }
+      if (!value.isArray())
+        return "\"replies\" " + kind + ": must be one answer {\"result\", \"delay\"} for every reply, or a list of answers in call order.";
+      const QJsonArray list = value.toArray();
+      if (list.size() > AnswerPlan::MAX_PLANS) return QString("\"replies\" %1: holds at most %2 answers.").arg(kind).arg(AnswerPlan::MAX_PLANS);
+      for (int i = 0; i < list.size(); ++i)
+      {
+        AnswerPlan plan;
+        const QString problem = readAnswer(list[i], QString("\"replies\" %1, answer %2: ").arg(kind).arg(i + 1), {"ok", "none"}, what, plan);
+        if (!problem.isEmpty()) return problem;
+        plans.list.push_back(plan);
+      }
+    }
+    return QString();
+  }
+
   // step 9b-1: "description", "scale" and "start_parameter" of an object (and, step 9b-4, "inventory"); empty when fine
   QString readObjectState(const QJsonObject& o, const QString& where, ObjectSpec& spec)
   {
@@ -1035,7 +1134,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
                                        "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate", "transfers",
-                                       "order", "seed"};
+                                       "order", "seed", "permissions", "replies"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -1151,6 +1250,18 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!problem.isEmpty()) return fail(problem);
   }
 
+  AnswerPlans permissions, rlvReplies, dataserverReplies;
+  if (request.contains("permissions"))
+  {
+    const QString problem = readPermissions(request.value("permissions"), permissions);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+  if (request.contains("replies"))
+  {
+    const QString problem = readReplies(request.value("replies"), rlvReplies, dataserverReplies);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
   RegionSettings region;
   if (request.contains("region"))
   {
@@ -1251,6 +1362,9 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   }
   sandbox->setHttpReplies(http);
   sandbox->setTransfers(transfers);
+  sandbox->setAnswers(AnswerKind::Permission, permissions);
+  sandbox->setAnswers(AnswerKind::Rlv, rlvReplies);
+  sandbox->setAnswers(AnswerKind::Dataserver, dataserverReplies);
   sandbox->setRegion(region);
   sandbox->setExperience(experience);
   sandbox->setEstate(estate);

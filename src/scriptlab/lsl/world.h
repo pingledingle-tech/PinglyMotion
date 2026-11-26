@@ -280,6 +280,35 @@ struct TransferPlan
   static const char* const FAILURES[4];   // THROTTLED, EXPIRED, SERVICE_ERROR, LINDENDOLLAR_INSUFFICIENTFUNDS
 };
 
+// Anafin HUD test, gaps 4 and 6: how an answer from outside comes, given in the lsl_run options "permissions" (the owner's
+// answer to llRequestPermissions: result "grant", "deny" or "none") and "replies" (an RLV viewer's reply on the reply
+// channel, or a dataserver reply: result "ok" or "none"); delay: simulated seconds until it comes. One kind's plans are
+// used in call order (after the list, or without one, at once with the default result); "every" uses one plan for all.
+enum class AnswerKind { Permission = 0, Rlv = 1, Dataserver = 2 };
+
+struct AnswerPlan
+{
+  QString result;                   // empty: the kind's default (grant, ok)
+  double delay = 0.0;
+  static constexpr double MAX_DELAY = 300.0;
+  static constexpr int MAX_PLANS = 64;
+};
+
+struct AnswerPlans
+{
+  std::vector<AnswerPlan> list;
+  bool every = false;               // true: "all" answers every call
+  AnswerPlan all;
+  size_t next = 0;
+  // the plan for the next call
+  AnswerPlan take()
+  {
+    if (every) return all;
+    if (next < list.size()) return list[next++];
+    return AnswerPlan();
+  }
+};
+
 // Gap list 2, step 2: what llGetObjectDetails (and llSameGroup) know about a key: an object of the world (its root
 // prim) or an avatar. Values the sandbox does not simulate keep these defaults.
 struct ObjectDetails
@@ -605,6 +634,15 @@ class World
       return TransferPlan();
     }
     void setTransfers(const std::vector<TransferPlan>& plans) { m_transfers = plans; m_transferNext = 0; }
+    // Anafin HUD test, gaps 4 and 6: the plan for the next answer of a kind ("permissions" and "replies" of lsl_run; the
+    // Sandbox keeps one list per kind for the whole world, in call order)
+    virtual AnswerPlan nextAnswer(AnswerKind kind) { return m_answers[int(kind)].take(); }
+    void setAnswers(AnswerKind kind, const AnswerPlans& plans) { m_answers[int(kind)] = plans; }
+    // Anafin HUD test, gap 4: whether an avatar is online now (an avatar of the avatars list can be offline, or log in or
+    // out at a given time; anyone else is online), and the name of a listed avatar that is offline now (false otherwise:
+    // llRequestAgentData and the name requests still answer for an offline avatar, as in Second Life)
+    virtual bool avatarOnline(const QString& key) const { Q_UNUSED(key); return true; }
+    virtual bool offlineAvatar(const QString& key, QString& name) const { Q_UNUSED(key); Q_UNUSED(name); return false; }
     virtual std::deque<double>& httpTimes() { return m_httpTimes; }
     virtual bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body)
     {
@@ -716,6 +754,7 @@ class World
     std::vector<HttpReply> m_httpReplies;
     std::vector<TransferPlan> m_transfers;
     size_t m_transferNext = 0;
+    AnswerPlans m_answers[3];
     std::deque<double> m_httpTimes;
     QString m_objectName = "Object";
     QString m_objectDesc;

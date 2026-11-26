@@ -38,6 +38,56 @@ Value Interpreter::callBuiltinObject(Fn fn, const QString& name, std::vector<Val
     case Fn::RequestPermissions:
     {
       const bool owner = a[0].s == m_world.ownerKey();
+      // Anafin HUD test, gap 4: an owner who is offline (the avatars option) is not asked, so no answer comes
+      if (owner && !m_world.avatarOnline(a[0].s))
+      {
+        m_world.log(m_now, QJsonObject{{"type", "permissions"}, {"mask", a[1].i}, {"granted", false},
+                                       {"note", "The owner is offline (the avatars option); nobody is asked and no run_time_permissions comes."}});
+        return Value();
+      }
+      // Anafin HUD test, gap 4: the owner's answer as the permissions option says (default: grant at once)
+      if (owner)
+      {
+        const AnswerPlan plan = m_world.nextAnswer(AnswerKind::Permission);
+        if (!plan.result.isEmpty() && plan.result != "grant")
+        {
+          QJsonObject entry{{"type", "permissions"}, {"mask", a[1].i}, {"granted", false}, {"answer", plan.result}};
+          if (plan.result == "none")
+            entry["note"] = "The owner does not answer (the permissions option); no run_time_permissions comes.";
+          else
+          {
+            entry["note"] = "The owner denies (the permissions option); run_time_permissions comes with 0.";
+            if (plan.delay > 0.0) entry["delay"] = plan.delay;
+          }
+          m_world.log(m_now, entry);
+          if (plan.result == "deny")
+          {
+            LaterEvent later{m_now + plan.delay, Event()};
+            later.what = Later::Permission;
+            later.channel = 0;
+            later.text = a[0].s;
+            if (plan.delay > 0.0) insertLater(later);
+            else
+            {
+              m_permissions = 0;
+              m_permissionKey = a[0].s;
+              queueEvent(Event{"run_time_permissions", {Value::integer(0)}, QString(), QString()});
+            }
+          }
+          return Value();
+        }
+        if (plan.delay > 0.0)
+        {
+          m_world.log(m_now, QJsonObject{{"type", "permissions"}, {"mask", a[1].i}, {"granted", true}, {"answer", "grant"}, {"delay", plan.delay},
+                                         {"note", "The owner grants later (the permissions option); run_time_permissions comes then."}});
+          LaterEvent later{m_now + plan.delay, Event()};
+          later.what = Later::Permission;
+          later.channel = a[1].i;
+          later.text = a[0].s;
+          insertLater(later);
+          return Value();
+        }
+      }
       // step 9b-5: an avatar sitting on the object gets PERMISSION_TRIGGER_ANIMATION and PERMISSION_TAKE_CONTROLS at once
       // (Second Life asks the avatar for other permissions; the sandbox grants none of them)
       const bool seated = !owner && m_world.sitsOnObject(a[0].s);
@@ -321,7 +371,7 @@ Value Interpreter::callBuiltinObject(Fn fn, const QString& name, std::vector<Val
       }
       else data = QString::number(item->lines.size());
       if (!m_world.logFull()) m_world.log(m_now, entry);
-      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      queueDataserver(id, data);
       return Value::key(id);
     }
     case Fn::RezObject:
@@ -408,6 +458,7 @@ Value Interpreter::callBuiltinObject(Fn fn, const QString& name, std::vector<Val
     case Fn::GetAgentInfo:
     {
       int flags = 0;
+      if (!m_world.avatarOnline(a[0].s)) return Value::integer(0);   // Anafin HUD test, gap 4: offline, not in the region
       if (m_world.isSitting(a[0].s)) flags |= 0x10 | 0x20;                          // AGENT_SITTING | AGENT_ON_OBJECT
       if (a[0].s == m_world.ownerKey() && m_world.hasAttachments()) flags |= 0x2;   // AGENT_ATTACHMENTS
       return Value::integer(flags);

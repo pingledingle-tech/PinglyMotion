@@ -79,6 +79,9 @@ class Interpreter
     void addInput(const Input& input);
     // a message heard on a channel now, as if said nearby (step 4: RLV replies)
     void hear(int channel, const QString& name, const QString& id, const QString& text);
+    // Anafin HUD test, gap 6: the same, heard at simulated time at (an RLV viewer that answers slowly, the replies option);
+    // the listens are checked when it comes, so a listen closed by then does not hear it
+    void hearLater(double at, int channel, const QString& text);
 
     // Step 5: what the Sandbox (several objects on one simulated clock) drives each script with.
     // The time of the script's next own event (its timer), or infinity.
@@ -250,10 +253,23 @@ class Interpreter
     // Anafin HUD test: events that come later from outside (a delayed transaction_result), sorted by time; each is queued
     // when the clock reaches it and the script runs (dropped then when the script does not handle it or has stopped); a reset
     // or a state change does not cancel it
-    struct LaterEvent { double at; Event event; };
+    // Anafin HUD test, gaps 4 and 6: an entry can also be a reply heard later (Hear: channel and text) or the owner's late
+    // answer to llRequestPermissions (Permission: mask granted, 0 when denied, and the avatar's key; a reset forgets it)
+    enum class Later { Event, Hear, Permission };
+    struct LaterEvent
+    {
+      double at;
+      Event event;
+      Later what = Later::Event;
+      int channel = 0;              // Hear: the channel; Permission: the mask granted
+      QString text;                 // Hear: the text; Permission: the avatar's key
+    };
     std::vector<LaterEvent> m_later;
     static constexpr int MAX_LATER_EVENTS = 64;
     void queueLater(double at, const Event& event);
+    void insertLater(const LaterEvent& later);
+    // Anafin HUD test, gap 6: a dataserver reply as the replies option says: at once, later or never (with a log entry)
+    void queueDataserver(const QString& id, const QString& data);
     void queueDueLater();
     std::vector<Input> m_inputs;     // sorted by time
     std::vector<Listen> m_listens;

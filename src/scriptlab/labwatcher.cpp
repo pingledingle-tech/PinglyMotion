@@ -125,10 +125,13 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
 
   // seconds and inputs are checked the way lsl_run checks them: an empty
   // script never compiles, so an answer with "errors" means the options are fine
+  // Anafin HUD test: the run options of lsl_run that make sense for a watched folder (also as one object)
+  static const QStringList runKeys = {QStringLiteral("seconds"), QStringLiteral("inputs"), QStringLiteral("keep_rlv"), QStringLiteral("linkset"),
+                                      QStringLiteral("avatars"), QStringLiteral("transfers"), QStringLiteral("order"), QStringLiteral("seed"),
+                                      QStringLiteral("permissions"), QStringLiteral("replies")};
   for (auto it = runOptions.begin(); it != runOptions.end(); ++it)
-    if (it.key() != QLatin1String("seconds") && it.key() != QLatin1String("inputs") && it.key() != QLatin1String("keep_rlv")
-        && it.key() != QLatin1String("linkset"))
-      return {"Unknown run option \"" + it.key().left(40) + "\". Options: seconds, inputs, keep_rlv, linkset."};
+    if (!runKeys.contains(it.key()))
+      return {"Unknown run option \"" + it.key().left(40) + "\". Options: " + runKeys.join(QStringLiteral(", ")) + "."};
   if (runOptions.contains("linkset") && !runOptions.value("linkset").isBool())
     return {"\"linkset\" must be true (the folder is one object) or false (every script on its own)."};
   const bool linkset = runOptions.value("linkset").toBool(false);

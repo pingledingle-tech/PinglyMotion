@@ -4,6 +4,8 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <vector>
+
 #include <QJsonArray>
 
 #include "interp.h"
@@ -54,9 +56,18 @@ void RlvWorld::ownerSay(double time, const QString& text)
     if (!outcome.reason.isEmpty()) r["reason"] = outcome.reason;
     results << r;
   }
+  // Anafin HUD test, gap 6: each reply comes as the replies option says (default: at once); a lost or late reply says so
   QJsonArray replies;
+  std::vector<AnswerPlan> plans;
   for (const RlvState::Reply& reply : result.replies)
-    replies << QJsonObject{{"channel", reply.channel}, {"text", reply.text}};
+  {
+    const AnswerPlan plan = nextAnswer(AnswerKind::Rlv);
+    QJsonObject r{{"channel", reply.channel}, {"text", reply.text}};
+    if (plan.result == "none") r["lost"] = true;
+    else if (plan.delay > 0.0) r["delay"] = plan.delay;
+    replies << r;
+    plans.push_back(plan);
+  }
   entry["results"] = results;
   entry["replies"] = replies;
   entry["restrictions"] = int(m_rlv.restrictions().size());
@@ -64,7 +75,14 @@ void RlvWorld::ownerSay(double time, const QString& text)
 
   // the viewer answers as the owner; the script hears it as a listen event
   if (m_interpreter)
-    for (const RlvState::Reply& reply : result.replies) m_interpreter->hear(reply.channel, QString(), QString(), reply.text);
+    for (int i = 0; i < int(result.replies.size()); ++i)
+    {
+      const RlvState::Reply& reply = result.replies[i];
+      const AnswerPlan& plan = plans[size_t(i)];
+      if (plan.result == "none") continue;
+      if (plan.delay > 0.0) m_interpreter->hearLater(time + plan.delay, reply.channel, reply.text);
+      else m_interpreter->hear(reply.channel, QString(), QString(), reply.text);
+    }
 }
 
 QJsonObject RlvWorld::stateJson(const RlvState& rlv)

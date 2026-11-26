@@ -215,7 +215,7 @@ an RLV relay, a store), and they talk to each other.
 - As in Second Life: a link message or `linkset_data` value too big for the receiver's free memory crashes it with a
   Stack-Heap Collision; more than 64 waiting events are dropped (the log shows each); a prim does not hear its own
   chat. Not as in Second Life: scripts run one after the other in a fixed order, not in parallel (`lsl_run`'s `order`
-  option runs them reversed or shuffled with a seed, to find bugs that depend on the order); memory is a rough
+  option runs them reversed or shuffled with a seed, to find bugs that depend on the order; `lab_watch` takes it too); memory is a rough
   count with 256 KB per script; every prim has the object's key. Details: [CONTROL.md](CONTROL.md), "Several scripts
   in one object"; reasons: [DECISIONS.md](DECISIONS.md).
 - A touch can name the prim (`link`); a prim without a touch handler (`touch_start`, `touch` or `touch_end`) passes it to the root.
@@ -418,6 +418,15 @@ A deliberately small slice, not a physics engine: one more `inputs` type and two
 - `llSensor`, `llSensorRepeat` and `llSensorRemove` scan for the avatars of the new `avatars` option of `lsl_run` (positions given in the input; the owner stands at the avatar's place) and for the other objects of the world,
   by name, key, type, range (96 m at most) and arc; the events `sensor` and `no_sensor` follow, and `llDetectedPos`, `Rot`, `Vel`, `Type`, `Group` and `Owner` join `llDetectedKey` and `llDetectedName`.
 - Avatars never move and nothing is drawn. Details: [CONTROL.md](CONTROL.md), "Sensors". Tests: `tests/tst_lslsensors.cpp`.
+
+## What exists now (Anafin HUD test, gaps 4 and 6): answers that are slow, refused or lost
+
+- `lsl_run` takes `permissions`: the owner's answers to `llRequestPermissions` in call order, each `grant`, `deny` or `none` (no answer), with a `delay` in simulated seconds. Default: every permission granted at once, as before.
+- An avatar of `avatars` can be offline (`online: false`) or log in and out at a simulated time (`login`, `logout`). An offline avatar is not in the region (not in `llGetAgentList`, the sensors, `llGetAgentInfo`, `llKey2Name`), but `llRequestAgentData` still answers it with `DATA_ONLINE` `"0"`. An offline owner is not asked for permissions.
+- `lsl_run` takes `replies`: `{rlv, dataserver}`, each one answer `{result, delay}` for every reply or a list in call order; `result` `ok` or `none` (the reply never comes). So a script's timeout for an RLV viewer that answers `@versionnew` slowly or not at all, or for a lost notecard line, can be tried.
+- A force command that is accepted but not carried out (result `retained`) says so in the panel's log line: "force command @detach:hat=force was accepted but is not carried out in the Script Lab sandbox". Nothing is said to the script, as with a real RLV viewer.
+- `lab_watch` (also with `linkset: true`) takes `avatars`, `transfers`, `order`, `seed`, `permissions` and `replies`.
+- Details: [CONTROL.md](CONTROL.md), "Answers that are slow, refused or lost". Tests: `tests/tst_lslanswers.cpp`, the log lines in `tests/scriptlabplayer/tst_scriptlabplayer.cpp`, the `lab_watch` options in `tests/tst_control.cpp` and `tests/tst_labfolder.cpp`.
 
 ## What exists now (second gap list, step 4): money, web server and mail stubs
 
@@ -825,7 +834,7 @@ run the test and fix the table where it fails.
   `showhovertextall`, `showhovertexthud`, `showhovertextworld` (and `showhovertext:<uuid>` for one object), `shownames`,
   `shownametags`, `viewnote`, `viewscript`, `viewtexture`, `editworld`, `editattach` (and `editobj:<uuid>`), `buy`
   and `pay` (`buy` and `pay` are RLVa only). `acceptpermission` and `denypermission` (`RLV only`) are held as state: the sandbox grants every
-  permission to a script anyway.
+  permission to a script anyway (unless `lsl_run`'s `permissions` option denies it or answers late).
 - Group, movement and teleport (all marked `RLV` except `setrot`): `setgroup` (restriction; `=force` with a group
   name or `none` is retained), `temprun`, `alwaysrun` and `jump` (RLVa only) block their own action, `standtp` and `accepttp` are
   held as state (the sandbox has no avatar position and no teleports), and `adjustheight`, `tpto`, `sitground` and

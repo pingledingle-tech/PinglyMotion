@@ -81,19 +81,23 @@ Value Interpreter::callBuiltinRegion(Fn fn, const QString& name, std::vector<Val
       const QString id = nextKey();
       if (!m_world.logFull())
         m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"avatar", World::clip(a[0].s)}, {"data", a[1].i}, {"query", id}});
+      // Anafin HUD test, gap 4: an avatar of the avatars list that is offline now is still answered, with DATA_ONLINE "0"
       ObjectDetails d;
-      if (!m_world.details(a[0].s, d) || !d.avatar) return Value::key(id);
+      QString offlineName;
+      const bool inRegion = m_world.details(a[0].s, d) && d.avatar;
+      const bool offline = !inRegion && m_world.offlineAvatar(a[0].s, offlineName);
+      if (!inRegion && !offline) return Value::key(id);
       QString data;
       switch (a[1].i)
       {
-        case 1: data = "1"; break;                                     // DATA_ONLINE: every avatar of the sandbox is online
-        case 2: data = d.name; break;                                  // DATA_NAME: the legacy name
+        case 1: data = offline ? "0" : "1"; break;                     // DATA_ONLINE
+        case 2: data = offline ? offlineName : d.name; break;          // DATA_NAME: the legacy name
         case 3: data = m_world.region().date(0.0); break;              // DATA_BORN: the day the run starts
         case 4: data = "0,0,0,0,0,0"; break;                           // DATA_RATING: ratings no longer exist
         case 8: data = "0"; break;                                     // DATA_PAYINFO: no payment information on file
         default: return Value::key(id);
       }
-      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      queueDataserver(id, data);
       return Value::key(id);
     }
 
@@ -111,10 +115,12 @@ Value Interpreter::callBuiltinRegion(Fn fn, const QString& name, std::vector<Val
       const QString id = nextKey();
       if (!m_world.logFull())
         m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"avatar", World::clip(a[0].s)}, {"query", id}});
+      // an avatar that is offline now (the avatars option) is answered too, as in Second Life
       ObjectDetails d;
-      if (!m_world.details(a[0].s, d) || !d.avatar) return Value::key(id);
-      queueEvent(Event{"dataserver", {Value::key(id), Value::string(fn == Fn::RequestDisplayName ? displayNameOf(d.name) : usernameOf(d.name))},
-                       QString(), QString()});
+      QString avatarName;
+      if (m_world.details(a[0].s, d) && d.avatar) avatarName = d.name;
+      else if (!m_world.offlineAvatar(a[0].s, avatarName)) return Value::key(id);
+      queueDataserver(id, fn == Fn::RequestDisplayName ? displayNameOf(avatarName) : usernameOf(avatarName));
       return Value::key(id);
     }
     case Fn::RequestSimulatorData:
@@ -138,7 +144,7 @@ Value Interpreter::callBuiltinRegion(Fn fn, const QString& name, std::vector<Val
         case 7: data = known ? "PG" : "UNKNOWN"; break;
         default: return Value::key(id);
       }
-      queueEvent(Event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()});
+      queueDataserver(id, data);
       return Value::key(id);
     }
     case Fn::GetGMTclock:
@@ -427,7 +433,7 @@ Value Interpreter::callBuiltinRegion(Fn fn, const QString& name, std::vector<Val
       const QString result = ExperienceState::answer(error, payload);
       if (!m_world.logFull())
         m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"query", id}, {"result", World::clip(result)}});
-      queueEvent(Event{"dataserver", {Value::key(id), Value::string(result)}, QString(), QString()});
+      queueDataserver(id, result);
       return Value::key(id);
     }
     case Fn::AgentInExperience:

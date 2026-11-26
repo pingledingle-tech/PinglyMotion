@@ -315,6 +315,8 @@ void Interpreter::resetScript()
   m_timerInterval = 0.0;
   m_permissions = 0;
   m_permissionKey.clear();
+  // a permission dialog still waiting for its answer belongs to the script before the reset (Anafin HUD test, gap 4)
+  m_later.erase(std::remove_if(m_later.begin(), m_later.end(), [](const LaterEvent& l) { return l.what == Later::Permission; }), m_later.end());
   m_playing.clear();
   m_overrides.clear();
   m_sensorActive = false;
@@ -754,24 +756,70 @@ double Interpreter::nextWake() const
 
 void Interpreter::queueLater(double at, const Event& event)
 {
+  LaterEvent later{at, event};
+  insertLater(later);
+}
+
+void Interpreter::insertLater(const LaterEvent& later)
+{
   if (int(m_later.size()) >= MAX_LATER_EVENTS)
   {
-    m_world.log(m_now, QJsonObject{{"type", "event_dropped"}, {"name", event.name},
+    const QString name = later.what == Later::Hear ? QString("listen") : (later.what == Later::Permission ? QString("run_time_permissions") : later.event.name);
+    m_world.log(m_now, QJsonObject{{"type", "event_dropped"}, {"name", name},
                                    {"message", QString("More than %1 delayed events were waiting; this one was dropped.").arg(MAX_LATER_EVENTS)}});
     return;
   }
   auto it = m_later.begin();
-  while (it != m_later.end() && it->at <= at) ++it;
-  m_later.insert(it, LaterEvent{at, event});
+  while (it != m_later.end() && it->at <= later.at) ++it;
+  m_later.insert(it, later);
+}
+
+void Interpreter::hearLater(double at, int channel, const QString& text)
+{
+  LaterEvent later{at, Event()};
+  later.what = Later::Hear;
+  later.channel = channel;
+  later.text = text;
+  insertLater(later);
+}
+
+void Interpreter::queueDataserver(const QString& id, const QString& data)
+{
+  const AnswerPlan plan = m_world.nextAnswer(AnswerKind::Dataserver);
+  const Event event{"dataserver", {Value::key(id), Value::string(data)}, QString(), QString()};
+  if (plan.result == "none")
+  {
+    if (!m_world.logFull())
+      m_world.log(m_now, QJsonObject{{"type", "reply_lost"}, {"kind", "dataserver"}, {"query", id},
+                                     {"note", "Simulated: this dataserver reply never comes (the replies option)."}});
+    return;
+  }
+  if (plan.delay > 0.0)
+  {
+    if (!m_world.logFull())
+      m_world.log(m_now, QJsonObject{{"type", "reply_delayed"}, {"kind", "dataserver"}, {"query", id}, {"delay", plan.delay},
+                                     {"note", "Simulated: this dataserver reply comes later (the replies option)."}});
+    queueLater(m_now + plan.delay, event);
+    return;
+  }
+  queueEvent(event);
 }
 
 void Interpreter::queueDueLater()
 {
   while (!m_later.empty() && m_later.front().at <= m_now)
   {
-    const Event event = m_later.front().event;
+    const LaterEvent later = m_later.front();
     m_later.erase(m_later.begin());
-    queueEvent(event);
+    if (later.what == Later::Hear) hear(later.channel, QString(), QString(), later.text);
+    else if (later.what == Later::Permission)
+    {
+      // the owner answers now: the permissions change at this moment, and run_time_permissions comes
+      m_permissions = later.channel;
+      m_permissionKey = later.text;
+      queueEvent(Event{"run_time_permissions", {Value::integer(later.channel)}, QString(), QString()});
+    }
+    else queueEvent(later.event);
   }
 }
 
