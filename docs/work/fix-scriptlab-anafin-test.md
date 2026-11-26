@@ -1,5 +1,5 @@
 Branch: fix/scriptlab-anafin-test
-Status: active
+Status: done
 Pull request: #518
 Files:
 - src/scriptlab/lsl/sandbox.*
