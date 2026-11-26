@@ -65,7 +65,8 @@ class LabImproveView : public QWidget
     QStringList weightLines() const;
     QStringList beforeAfterLines() const;
     QStringList suggestionLines() const;
-    QStringList tableRows() const;
+    QStringList tableRows() const;       // per script: name, kept, values, sent, got, not used
+    QStringList estimateRows() const;    // per script: "name | estimate" (code plus values, rough)
     QStringList runRows() const;
 
   signals:

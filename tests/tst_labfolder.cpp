@@ -24,6 +24,7 @@
 #include <QTemporaryDir>
 
 #include "scriptlab/labfolder.h"
+#include "scriptlab/lsl/control.h"
 
 namespace
 {
@@ -100,6 +101,8 @@ class TestLabFolder : public QObject
     void bigSetupGetsTimeToFinish();
     void foreverTimerStopsAtTheHardLimit();
     void runawayLoopStillStopsWithAutoTime();
+    void scriptMemoryOptionStopsABigScript();
+    void scriptMemoryOptionIsChecked();
 };
 
 void TestLabFolder::pathRules()
@@ -586,6 +589,59 @@ void TestLabFolder::runawayLoopStillStopsWithAutoTime()
     if (v.toObject().value("type").toString() == "limit") message = v.toObject().value("message").toString();
   if (message == "The script ran longer than 2000 ms of real time and was stopped.") message = "The script ran more than 500000 steps and was stopped (an endless loop?).";
   QCOMPARE(message, QString("The script ran more than 500000 steps and was stopped (an endless loop?)."));
+}
+
+// run option "script_memory": Second Life's limit for a script, code (estimated, 9 bytes for each token) and values together.
+// The script has 8 + 5 * 25 = 133 tokens, so about 1197 bytes of code, over a limit of 1024
+void TestLabFolder::scriptMemoryOptionStopsABigScript()
+{
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  QByteArray source = "default { state_entry() {";
+  for (int i = 0; i < 25; ++i) source += " llOwnerSay(\"a\");";
+  source += " } }";
+  const QString top = dir.filePath("Big");
+  QVERIFY(writeFile(top + "/big.lsl", source));
+  auto limitMessages = [](const QJsonObject& run)
+  {
+    QStringList out;
+    for (const QJsonValue& v : run.value("result").toObject().value("log").toArray())
+      if (v.toObject().value("type").toString() == "limit") out << v.toObject().value("message").toString();
+    return out;
+  };
+  // off by default: the script runs and says its 25 lines
+  const QJsonObject plain = LabFolder::run(LabFolder::open(top), QJsonObject{{"seconds", 1}});
+  QVERIFY2(plain.value("ok").toBool(), qPrintable(plain.value("error").toString()));
+  QCOMPARE(limitMessages(plain), QStringList());
+  QCOMPARE(entries(plain, "owner_say").size(), 25);
+  // on with 1024: stopped before its first line, with the Second Life wording and the estimate
+  const QJsonObject limited = LabFolder::run(LabFolder::open(top), QJsonObject{{"seconds", 1}, {"script_memory", 1024}});
+  QVERIFY2(limited.value("ok").toBool(), qPrintable(limited.value("error").toString()));
+  QCOMPARE(limitMessages(limited),
+           QStringList({"Stack-Heap Collision: with Second Life's memory limit on, the script needs about 1197 bytes (an estimated 1197 for the code "
+                        "and 0 for the values) and Second Life keeps 1024 for a script, so it was stopped as in Second Life. The code size is a rough estimate."}));
+  QCOMPARE(entries(limited, "owner_say").size(), 0);
+  // 65536 is Second Life's limit and this script fits
+  const QJsonObject roomy = LabFolder::run(LabFolder::open(top), QJsonObject{{"seconds", 1}, {"script_memory", 65536}});
+  QCOMPARE(limitMessages(roomy), QStringList());
+  QCOMPARE(entries(roomy, "owner_say").size(), 25);
+  // the answer shows the estimate per script: code 1197, values 0
+  const QJsonObject script = roomy.value("result").toObject().value("objects").toArray().at(0).toObject().value("scripts").toArray().at(0).toObject();
+  QCOMPARE(script.value("memory_code").toDouble(), 1197.0);
+  QCOMPARE(script.value("memory_estimate").toDouble(), 1197.0 + script.value("memory").toDouble());
+}
+
+void TestLabFolder::scriptMemoryOptionIsChecked()
+{
+  const QString expected = "\"script_memory\" must be a whole number of bytes from 1024 to 65536 (Second Life's limit for a script is 65536; leave it out to run without the limit).";
+  for (const QJsonValue& bad : {QJsonValue(10), QJsonValue(65537), QJsonValue(2000.5), QJsonValue("65536"), QJsonValue(true)})
+  {
+    const QJsonObject answer = lsl::Control::run(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { } }"}, {"script_memory", bad}});
+    QCOMPARE(answer.value("ok").toBool(), false);
+    QCOMPARE(answer.value("error").toString(), expected);
+  }
+  const QJsonObject good = lsl::Control::run(QJsonObject{{"command", "lsl_run"}, {"source", "default { state_entry() { } }"}, {"script_memory", 40000}});
+  QCOMPARE(good.value("ok").toBool(), true);
 }
 
 QTEST_GUILESS_MAIN(TestLabFolder)

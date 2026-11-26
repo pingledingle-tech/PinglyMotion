@@ -504,7 +504,14 @@ Life: test the final script there too.
   (`"@sit:" + (string)id + "=force"` checks `sit`).
 - `lsl_run {source, seconds, inputs, keep_rlv}` runs the script with a simulated clock: `state_entry` of the default
   state first, then events until `seconds` (0 to 3600, default 10) have passed. Nothing waits for real
-  time. `inputs` (at most 200) are chat or touches at given times:
+  time. `script_memory` (a whole number of bytes, 1024 to 65536, off by default) runs every script with Second Life's
+  memory limit: the estimated code (9 bytes for each token of the source, a rough estimate that can be about 30 percent
+  off) plus the values must fit in it, else the script stops with a `limit` entry that starts "Stack-Heap Collision:
+  with Second Life's memory limit on" and names the estimate, as Second Life crashes such a script. 65536 is
+  Second Life's limit for a Mono script; a script that calls for less (an old titler with 40000, say) can be tried with
+  that number. Without it only the sandbox's own, higher cap (256 KB of values) applies. Every script in the answer's
+  `objects` has `memory_code` (the estimate of its code) and `memory_estimate` (code plus values), also without the
+  option. `inputs` (at most 200) are chat or touches at given times:
   `[{"at":1,"channel":7,"text":"dance"},{"at":2,"type":"touch"}]`; `name` and `id` default to the owner. A touch
   raises `touch_start`, `touch` and `touch_end`; `hold` is how long it is held ("Touches" below).
   A script that does not compile is not run: the answer has `ok: false` and the `errors` of `lsl_check`.
@@ -1390,6 +1397,8 @@ and the maker guide are in [SCRIPT_LAB.md](SCRIPT_LAB.md), "The folder model". W
 `false`) every script runs on its own, as above. Since lane 1 job D the Script Lab panel's **Watch folder...**
 watches with `linkset: true`, and its tree shows the object; **Try the example scripts** still watches without
 it, because the examples are separate scripts. The panel follows whichever mode the last watch used.
+
+`lab_watch` also takes `script_memory` (as in `lsl_run`), given to every run of the folder.
 
 Time of a folder run: with no `seconds` in the options the object runs for 10 simulated seconds plus 2 for each
 script, at most 60 (a big collar needs more than the flat 10 that `lsl_run` gives). `seconds` given to
