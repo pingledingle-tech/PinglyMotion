@@ -142,6 +142,8 @@ SET (FUZZ_LSL_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/ast.cpp ${CMAKE_SOURCE
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/rlvworld.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/control.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/sandbox.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/session.cpp
+                   # job 23: the built-in RLV relay of the sandbox
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/relay.cpp
                    # the LSL-to-SLua converter (lane 1, job G); fuzz_lsl converts every input
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/luair.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/luaprinter.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/sluadata.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/lsl/slualevel1.cpp
@@ -152,7 +154,9 @@ TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LSL_FILES})
 # and record and replay (job A3): the watcher replays recipe.rlvtest, lab_replay reaches it
 SET (FUZZ_LAB_FILES ${CMAKE_SOURCE_DIR}/src/scriptlab/labwatcher.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labfolder.cpp
                    ${CMAKE_SOURCE_DIR}/src/scriptlab/labrecipe.cpp ${CMAKE_SOURCE_DIR}/src/scriptlab/labtint.cpp
-                   ${CMAKE_SOURCE_DIR}/src/scriptlab/labweight.cpp)
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/labweight.cpp
+                   # job 23: lab_result answers Improve a setup
+                   ${CMAKE_SOURCE_DIR}/src/scriptlab/labimprove.cpp)
 TARGET_SOURCES (fuzz_control PRIVATE ${FUZZ_LAB_FILES})
 TARGET_SOURCES (fuzz_controlserver PRIVATE ${FUZZ_LAB_FILES})
 ADD_EXECUTABLE (fuzz_lsl fuzz_lsl.cpp ${FUZZ_LSL_FILES})

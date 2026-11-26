@@ -38,6 +38,7 @@ Files:
 - src/scriptlab/labfolder.cpp
 - src/scriptlab/lsl/interp.*
 - fuzz/control.dict
+- fuzz/CMakeLists.txt
 - fuzz/corpus/control/**
 - tests/data/lsl-definitions/**
 - tests/CMakeLists.txt
