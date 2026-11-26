@@ -1134,7 +1134,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
                                        "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate", "transfers",
-                                       "order", "seed", "permissions", "replies"};
+                                       "order", "seed", "script_memory", "permissions", "replies"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -1151,6 +1151,17 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
       return fail(QString("\"source\" is too long (at most %1 characters).").arg(Lexer::MAX_SOURCE_CHARS));
   }
 
+  // run with Second Life's per-script memory limit (code and values together); off unless given
+  Limits scriptLimits;
+  if (request.contains("script_memory"))
+  {
+    const QJsonValue m = request.value("script_memory");
+    const double n = m.toDouble();
+    if (!m.isDouble() || !std::isfinite(n) || n != std::floor(n) || n < MIN_SCRIPT_MEMORY || n > Limits::SCRIPT_MEMORY_MAX)
+      return fail(QString("\"script_memory\" must be a whole number of bytes from %1 to %2 (Second Life's limit for a script is %2; leave it out to run without the limit).")
+                    .arg(MIN_SCRIPT_MEMORY).arg(Limits::SCRIPT_MEMORY_MAX));
+    scriptLimits.slMemory = qint64(n);
+  }
   double seconds = DEFAULT_SECONDS;
   if (request.contains("seconds"))
   {
@@ -1352,7 +1363,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   std::unique_ptr<Sandbox> sandbox(new Sandbox(state, several));
   for (size_t i = 0; i < specs.size(); ++i)
   {
-    const QString problem = severalScripts[i] ? sandbox->addObject(specs[i], scripts[i]) : sandbox->addObject(specs[i], scripts[i].front().script);
+    const QString problem = severalScripts[i] ? sandbox->addObject(specs[i], scripts[i], scriptLimits) : sandbox->addObject(specs[i], scripts[i].front().script, scriptLimits);
     if (!problem.isEmpty()) return fail(QString("Object %1: ").arg(i + 1) + problem);
   }
   for (size_t i = 0; i < avatars.size(); ++i)

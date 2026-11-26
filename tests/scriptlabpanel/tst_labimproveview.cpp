@@ -134,6 +134,9 @@ void TestLabImproveView::watchedSetup()
                                            "idle | 64 KB | 0.4 KB | 0 | 3 | 3",
                                            "idle2 | 64 KB | 0 KB | 0 | 3 | 3",
                                            "user | 16 KB | 0 KB | 0 | 3 | 0"}));
+  // idle2 is 29 tokens of source: 29 * 9 = 261 bytes of code, 0 of values
+  QCOMPARE(view->estimateRows().at(2), QString("idle2 | 0.3 KB"));
+  QCOMPARE(table->headerItem()->text(6), QString("Estimate"));
   QCOMPARE(table->topLevelItem(0)->toolTip(0), QString("hub, in Root. 6 of its messages were not used by the script that got them."));
   QCOMPARE(view->beforeAfterLines(), QStringList({"Record what the setup does on Player. Every later save replays it and shows the weight before and after."}));
   const QStringList better = view->suggestionLines();

@@ -128,7 +128,7 @@ Dates are from the project documents of 25 November 2026.
 | Script Lab: LSL scripts run in a sandbox | Partly built | 282 built-in functions, a simulated clock. Some functions only record what they were asked. Many do nothing yet. **Not tested in Second Life.** |
 | Script Lab: Live scripts, tree, props from prims | Built | One folder is one object. A prop with the same name as a prim belongs to it. |
 | Script Lab: Player, Who talks to whom, Record what I do | Built | **Not tested in Second Life.** Some parts of the 3D view do not follow the player (see Chapter 10). |
-| Script Lab: Improve a setup | Partly built | Memory counts exclude the memory the code itself takes. That needs a measurement in Second Life. |
+| Script Lab: Improve a setup | Partly built | The memory of the code is only a rough estimate (the Estimate column). |
 | Script Lab: OpenCollar example | Built | A real collar with 23 scripts runs in the sandbox. **Not tested in Second Life.** |
 | Script Lab: Lua (SLua) | **Trial** | Behind a switch that is off at start. The editor gets a language choice and a **Convert to SLua** button. Nothing runs Lua yet. No Lua checks or suggestions. **Not tested in Second Life.** |
 | Web version (in a browser) | **Trial** | There is a trial build only. It does not run well yet. Do not plan to use it. |
@@ -719,7 +719,7 @@ For a finished setup, such as a collar:
 
 It shows how heavy each script is (**Kept**, **Values**, **Sent**, **Got**, **Not used**), what can be better, and per script whether it can run here. **Import a setup** and **Record today's behaviour** are on the tab.
 
-The memory of the code itself is not counted yet. That needs a measurement in Second Life.
+The **Estimate** column is a rough estimate of what a script needs in Second Life: its code (9 bytes for each token of the source) plus its values. It can be about 30 percent off, so measure in Second Life before you trust it.
 
 ### The OpenCollar example
 

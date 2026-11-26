@@ -82,6 +82,7 @@ LabWeight::Weight LabWeight::measure(const LabFolder::Linkset& linkset, const QJ
     s.file = file.file;
     s.limit = found.contains("memory_limit") ? qBound<qint64>(0, number(found.value("memory_limit")), SCRIPT_MEMORY) : SCRIPT_MEMORY;
     s.used = qMax<qint64>(0, number(found.value("memory")));
+    s.code = found.contains("memory_code") ? qMax<qint64>(0, number(found.value("memory_code"))) : -1;
     const QJsonObject m = found.value("messages").toObject();
     s.sent = qMax<qint64>(0, number(m.value("sent")));
     s.received = qMax<qint64>(0, number(m.value("received")));

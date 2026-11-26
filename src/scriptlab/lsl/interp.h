@@ -45,9 +45,13 @@ struct Limits
   int maxStringChars = 65536;
   int maxListLength = 4096;
   qint64 maxWallMs = 2000;         // real time for the whole run, from the interpreter's creation
+  qint64 slMemory = 0;             // > 0: run with Second Life's limit for a script (code and values together, 65536 for Mono); 0 is off
   int maxEvents = 10000;           // events handled, whole run
   int maxQueue = 64;               // events waiting (Second Life also keeps 64)
   int maxListens = 65;             // open listens (as in Second Life)
+  // A rough estimate of the code a script takes in Second Life: this many bytes for each token of the source. Measured on
+  // eight big scripts in Second Life it is within about 30 percent (docs/SCRIPT_LAB.md, "Memory estimate").
+  static constexpr int CODE_BYTES_PER_TOKEN = 9;
   static constexpr int SCRIPT_MEMORY_MAX = 65536;   // llSetMemoryLimit: the most a Mono script may ask for
 };
 
@@ -184,6 +188,10 @@ class Interpreter
     QString currentState() const;
     qint64 steps() const { return m_steps; }
     qint64 memoryBytes() const { return m_memory; }
+    // rough estimate of the code's size (Limits::CODE_BYTES_PER_TOKEN for each token of the source)
+    qint64 codeBytes() const { return qint64(m_script.tokens) * Limits::CODE_BYTES_PER_TOKEN; }
+    // code and values together, the number to hold against Second Life's 64 KB
+    qint64 memoryEstimate() const { return codeBytes() + m_memory; }
     int openListens() const;
     double timerInterval() const { return m_timerInterval; }
     // llGetMemoryLimit: 65536 unless llSetMemoryLimit set less (the memory Second Life keeps for the script)
@@ -201,6 +209,10 @@ class Interpreter
     quint64 id() const { return m_id; }
 
   private:
+    // the most the values may use: the limit above, or with Limits::slMemory what is left after the code
+    qint64 memoryCap() const { return m_limits.slMemory > 0 ? m_limits.slMemory - codeBytes() : m_limits.maxMemoryBytes; }
+    // stops the script with the memory message (Second Life's wording when Limits::slMemory is on)
+    [[noreturn]] void failMemory(const QString& plain) const;
 
     struct Var
     {

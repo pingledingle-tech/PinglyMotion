@@ -118,9 +118,16 @@ void Interpreter::checkSize(const Value& v) const
   {
     if (int(v.list.size()) > m_limits.maxListLength)
       failAt("limit", QString("A list grew longer than %1 entries; the script was stopped.").arg(m_limits.maxListLength));
-    if (v.bytes() > m_limits.maxMemoryBytes)
-      failAt("limit", "A list grew larger than the script memory; the script was stopped (Stack-Heap Collision in Second Life).");
+    if (v.bytes() > memoryCap())
+      failMemory("A list grew larger than the script memory; the script was stopped (Stack-Heap Collision in Second Life).");
   }
+}
+
+void Interpreter::failMemory(const QString& plain) const
+{
+  if (m_limits.slMemory <= 0) failAt("limit", plain);
+  failAt("limit", QString("Stack-Heap Collision: with Second Life's memory limit on, the script needs about %1 bytes (an estimated %2 for the code and %3 for the values) and Second Life keeps %4 for a script, so it was stopped as in Second Life. The code size is a rough estimate.")
+                    .arg(memoryEstimate()).arg(codeBytes()).arg(m_memory).arg(m_limits.slMemory));
 }
 
 void Interpreter::stopWith(const Stop& stop)
@@ -193,8 +200,8 @@ Interpreter::Var* Interpreter::find(const QString& name)
 void Interpreter::declare(const QString& name, Type type, const Value& value)
 {
   m_memory += value.bytes();
-  if (m_memory > m_limits.maxMemoryBytes)
-    failAt("limit", "The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
+  if (m_memory > memoryCap())
+    failMemory("The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
   Var var{name, type, value};
   if (m_frames.empty()) m_globals.push_back(var);
   else m_frames.back().scopes.back().push_back(var);
@@ -205,8 +212,8 @@ void Interpreter::assign(Var& var, const Value& value)
   if (!m_globals.empty() && &var >= m_globals.data() && &var < m_globals.data() + m_globals.size()) m_globalWritten = true;
   m_memory += value.bytes() - var.value.bytes();
   var.value = value;
-  if (m_memory > m_limits.maxMemoryBytes)
-    failAt("limit", "The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
+  if (m_memory > memoryCap())
+    failMemory("The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
 }
 
 void Interpreter::popScope()
@@ -262,6 +269,7 @@ void Interpreter::start(bool run)
   try
   {
     initGlobals();
+    if (m_limits.slMemory > 0 && memoryEstimate() > m_limits.slMemory) failMemory(QString());
   }
   catch (const Stop& stop)
   {
@@ -399,12 +407,12 @@ void Interpreter::dispatch(const Event& event)
   {
     qint64 incoming = 0;
     for (const Value& v : event.args) incoming += v.bytes();
-    if (m_memory + incoming > m_limits.maxMemoryBytes)
+    if (m_memory + incoming > memoryCap())
     {
       m_line = handler->line;
       m_column = handler->column;
       failAt("error", QString("Stack-Heap Collision: the %1 event brought %2 bytes, more than the script's free memory (%3 of %4 bytes used), so the script crashed, as in Second Life.")
-                        .arg(event.name).arg(incoming).arg(m_memory).arg(m_limits.maxMemoryBytes));
+                        .arg(event.name).arg(incoming).arg(m_memory).arg(memoryCap()));
     }
   }
 
@@ -1111,8 +1119,8 @@ Value Interpreter::evalInner(const Expr& e)
         if (rhs.type == Type::List) list.insert(list.end(), rhs.list.begin(), rhs.list.end());
         else list.push_back(listElement(rhs));
         m_memory += var->value.bytes() - before;
-        if (m_memory > m_limits.maxMemoryBytes)
-          failAt("limit", "The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
+        if (m_memory > memoryCap())
+          failMemory("The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
         return discard ? Value() : var->value;
       }
       if (e.op == "+=" && target.kind == ExprKind::Name && var->value.type == Type::String && rhs.type == Type::String)
@@ -1121,8 +1129,8 @@ Value Interpreter::evalInner(const Expr& e)
           failAt("limit", QString("A string grew longer than %1 characters; the script was stopped.").arg(m_limits.maxStringChars));
         var->value.s += rhs.s;
         m_memory += 2 * qint64(rhs.s.size());
-        if (m_memory > m_limits.maxMemoryBytes)
-          failAt("limit", "The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
+        if (m_memory > memoryCap())
+          failMemory("The script used more memory than allowed and was stopped (Stack-Heap Collision in Second Life).");
         return discard ? Value() : var->value;
       }
       Value current = target.kind == ExprKind::Member ? Value::number(var->value.f[qBound(0, target.member, 3)]) : var->value;

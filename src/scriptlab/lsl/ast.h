@@ -175,6 +175,7 @@ struct Script
   std::vector<Global> globals;
   std::vector<Function> functions;
   std::vector<State> states;
+  int tokens = 0;   // tokens of the source (without the end mark and comments): the base of the code size estimate
 };
 
 } // namespace lsl

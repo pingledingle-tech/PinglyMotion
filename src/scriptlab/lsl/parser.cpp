@@ -1269,6 +1269,7 @@ Parser::Result Parser::parse(const QString& source)
   }
   Checker checker(*script, result.errors, result.warnings);
   checker.run();
+  script->tokens = int(lexed.tokens.size()) - 1;
   result.script = std::move(script);
   return result;
 }

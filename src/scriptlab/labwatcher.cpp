@@ -126,7 +126,7 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
   // seconds and inputs are checked the way lsl_run checks them: an empty
   // script never compiles, so an answer with "errors" means the options are fine
   // Anafin HUD test: the run options of lsl_run that make sense for a watched folder (also as one object)
-  static const QStringList runKeys = {QStringLiteral("seconds"), QStringLiteral("inputs"), QStringLiteral("keep_rlv"), QStringLiteral("linkset"),
+  static const QStringList runKeys = {QStringLiteral("seconds"), QStringLiteral("inputs"), QStringLiteral("keep_rlv"), QStringLiteral("linkset"), QStringLiteral("script_memory"),
                                       QStringLiteral("avatars"), QStringLiteral("transfers"), QStringLiteral("order"), QStringLiteral("seed"),
                                       QStringLiteral("permissions"), QStringLiteral("replies")};
   for (auto it = runOptions.begin(); it != runOptions.end(); ++it)

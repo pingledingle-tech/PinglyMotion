@@ -25,6 +25,7 @@ namespace Control
   static constexpr int MAX_INPUTS = 200;
   static constexpr int MAX_SECONDS = 3600;
   static constexpr int DEFAULT_SECONDS = 10;
+  static constexpr int MIN_SCRIPT_MEMORY = 1024;   // lowest "script_memory" (bytes)
   static constexpr int DEFAULT_EVENT_SECONDS = 1;
   // all scripts of one lsl_run together (each one also at most Lexer::MAX_SOURCE_CHARS)
   static constexpr int MAX_TOTAL_SOURCE_CHARS = 1048576;

@@ -41,6 +41,9 @@ namespace LabWeight
     QString file;          // relative to the object folder ("" when read from a result file)
     qint64 limit = SCRIPT_MEMORY;   // llGetMemoryLimit at the end
     qint64 used = 0;       // the memory of its values at the end (the Memory column)
+    qint64 code = -1;      // a rough estimate of the code's size (lsl::Interpreter::codeBytes); -1 when not known (not kept in result files)
+    // code and values together, the number to hold against the limit; -1 when the code is not known
+    qint64 estimate() const { return code < 0 ? -1 : code + used; }
     qint64 sent = 0, received = 0, unused = 0, ignored = 0;
     bool stopped = false;
     bool operator==(const Script& other) const;
