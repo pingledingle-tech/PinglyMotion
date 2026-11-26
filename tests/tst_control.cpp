@@ -1367,7 +1367,14 @@ void ControlTest::serverChecksKeyBeforeBody()
 
   // with the key the body limit is 64 KB
   const QByteArray big = "{\"command\":\"state\",\"x\":\"" + QByteArray(70 * 1024, 'a') + "\"}";
-  QCOMPARE(statusOf(exchange("POST /api HTTP/1.1\r\n" + host + key + "Content-Length: " + QByteArray::number(big.size()) + "\r\n\r\n" + big)), 413);
+  const QByteArray refused = exchange("POST /api HTTP/1.1\r\n" + host + key + "Content-Length: " + QByteArray::number(big.size()) + "\r\n\r\n" + big);
+  QCOMPARE(statusOf(refused), 413);
+  // the answer names the fixed limit, the size and the way around it for many Script Lab scripts (Anafin HUD test)
+  QCOMPARE(bodyOf(refused)["ok"].toBool(true), false);
+  QCOMPARE(bodyOf(refused)["error"].toString(),
+           QString("Request too large: the body may be at most 65536 bytes (64 KB), a fixed safety limit. This one is %1 bytes."
+                   " For many or long Script Lab scripts, put them in a folder and use lab_watch"
+                   " (linkset: true runs the folder as one object with several scripts) instead of lsl_run.").arg(big.size()));
   const QByteArray pose = "{\"command\":\"state\",\"x\":\"" + QByteArray(30 * 1024, 'a') + "\"}";
   QCOMPARE(statusOf(exchange("POST /api HTTP/1.1\r\n" + host + key + "Content-Length: " + QByteArray::number(pose.size()) + "\r\n\r\n" + pose)), 200);
 }

@@ -846,6 +846,42 @@ namespace
     return QString();
   }
 
+  // Anafin HUD test: "transfers" of lsl_run: how the llTransferLindenDollars calls are answered, in call order,
+  // [{result, delay}]; empty when fine
+  QString readTransfers(const QJsonValue& v, std::vector<TransferPlan>& out)
+  {
+    QStringList results = {"ok", "none"};
+    for (const char* failure : TransferPlan::FAILURES) results << failure;
+    if (!v.isArray()) return "\"transfers\" must be a list of answers to llTransferLindenDollars, each {\"result\", \"delay\"}.";
+    const QJsonArray list = v.toArray();
+    if (list.size() > TransferPlan::MAX_PLANS) return QString("\"transfers\" holds at most %1 answers.").arg(TransferPlan::MAX_PLANS);
+    static const QStringList fields = {"result", "delay"};
+    for (int i = 0; i < list.size(); ++i)
+    {
+      const QString where = QString("Transfer %1: ").arg(i + 1);
+      if (!list[i].isObject()) return where + "must be an object with result and/or delay.";
+      const QJsonObject o = list[i].toObject();
+      for (auto it = o.begin(); it != o.end(); ++it)
+        if (!fields.contains(it.key())) return where + "unknown field \"" + clip(it.key(), 40) + "\". Fields: " + fields.join(", ") + ".";
+      TransferPlan plan;
+      if (o.contains("result"))
+      {
+        if (!o.value("result").isString() || !results.contains(o.value("result").toString()))
+          return where + "\"result\" must be one of " + results.join(", ") + " (default ok; none: no transaction_result comes).";
+        plan.result = o.value("result").toString();
+      }
+      if (o.contains("delay"))
+      {
+        const double d = o.value("delay").toDouble(std::nan(""));
+        if (!o.value("delay").isDouble() || !std::isfinite(d) || d < 0.0 || d > TransferPlan::MAX_DELAY)
+          return where + QString("\"delay\" must be the simulated seconds until transaction_result comes, 0 to %1 (default 0).").arg(TransferPlan::MAX_DELAY);
+        plan.delay = d;
+      }
+      out.push_back(plan);
+    }
+    return QString();
+  }
+
   // step 9b-1: "description", "scale" and "start_parameter" of an object (and, step 9b-4, "inventory"); empty when fine
   QString readObjectState(const QJsonObject& o, const QString& where, ObjectSpec& spec)
   {
@@ -997,7 +1033,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate"};
+                                       "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate", "transfers"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -1082,6 +1118,13 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   if (request.contains("http"))
   {
     const QString problem = readHttp(request.value("http"), http);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
+  std::vector<TransferPlan> transfers;
+  if (request.contains("transfers"))
+  {
+    const QString problem = readTransfers(request.value("transfers"), transfers);
     if (!problem.isEmpty()) return fail(problem);
   }
 
@@ -1184,6 +1227,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!problem.isEmpty()) return fail(QString("Avatar %1: ").arg(i + 1) + problem);
   }
   sandbox->setHttpReplies(http);
+  sandbox->setTransfers(transfers);
   sandbox->setRegion(region);
   sandbox->setExperience(experience);
   sandbox->setEstate(estate);

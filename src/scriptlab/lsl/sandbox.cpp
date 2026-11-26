@@ -109,7 +109,13 @@ class ObjectWorld : public RlvWorld
     }
     void position(float out[3]) const override { m_sandbox.where(object(), out); }
     void setPosition(const float p[3]) override { for (int i = 0; i < 3; ++i) state().spec.position[i] = p[i]; }
-    void velocity(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = state().velocity[i]; }
+    // a worn object moves with its wearer (the object's owner): llGetVel answers the wearer's "velocity" from the avatars list
+    // (zero when the wearer is not listed); the motion model never runs on attachments
+    void velocity(float out[3]) const override
+    {
+      if (spec().attached > 0) { m_sandbox.avatarVelocity(ownerKey(), out); return; }
+      for (int i = 0; i < 3; ++i) out[i] = state().velocity[i];
+    }
     void setVelocity(const float v[3]) override { for (int i = 0; i < 3; ++i) state().velocity[i] = v[i]; }
     void force(float out[3]) const override { for (int i = 0; i < 3; ++i) out[i] = state().force[i]; }
     void setForce(const float f[3]) override { for (int i = 0; i < 3; ++i) state().force[i] = f[i]; }
@@ -148,6 +154,11 @@ class ObjectWorld : public RlvWorld
     }
     void inventoryChanged(double time) override { m_sandbox.inventoryChanged(m_slot, time); }
     const HttpReply* httpReply(const QString& method, const QString& url) const override { return HttpReply::find(m_sandbox.m_http, method, url); }
+    TransferPlan nextTransfer() override
+    {
+      if (m_sandbox.m_transferNext < m_sandbox.m_transfers.size()) return m_sandbox.m_transfers[m_sandbox.m_transferNext++];
+      return TransferPlan();
+    }
     std::deque<double>& httpTimes() override { return state().httpTimes; }
     bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body) override
     {
@@ -996,7 +1007,10 @@ void Sandbox::deliver(const SandboxInput& input)
         }
       m_log.log(t, entry);
       const int hitLink = o.spec.prims == 1 ? 0 : link;
-      for (int i : hit) m_slots[size_t(i)].interp->collisionEvent(key, name, hitLink, eventName);
+      // an avatar of the avatars list collides at its "velocity" (llDetectedVel); anything else at zero
+      float velocity[3];
+      avatarVelocity(key, velocity);
+      for (int i : hit) m_slots[size_t(i)].interp->collisionEvent(key, name, hitLink, eventName, velocity);
       return;
     }
     if (input.type == "land_collision")
@@ -1571,11 +1585,32 @@ QString Sandbox::addAvatar(const AvatarSpec& avatar)
   return QString();
 }
 
+bool Sandbox::avatarVelocity(const QString& key, float out[3]) const
+{
+  for (int k = 0; k < 3; ++k) out[k] = 0.0f;
+  for (const AvatarSpec& a : m_avatars)
+    if (a.key == key)
+    {
+      for (int k = 0; k < 3; ++k) out[k] = a.velocity[k];
+      return true;
+    }
+  return false;
+}
+
 QString Sandbox::setHttpReplies(const std::vector<HttpReply>& replies)
 {
   if (m_started) return "The world has started already.";
   if (int(replies.size()) > MAX_HTTP_REPLIES) return QString("At most %1 canned HTTP replies.").arg(MAX_HTTP_REPLIES);
   m_http = replies;
+  return QString();
+}
+
+QString Sandbox::setTransfers(const std::vector<TransferPlan>& plans)
+{
+  if (m_started) return "The world has started already.";
+  if (int(plans.size()) > TransferPlan::MAX_PLANS) return QString("At most %1 transfer answers.").arg(TransferPlan::MAX_PLANS);
+  m_transfers = plans;
+  m_transferNext = 0;
   return QString();
 }
 

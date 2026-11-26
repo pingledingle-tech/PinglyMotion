@@ -142,8 +142,9 @@ class Interpreter
     // Second gap list, step 6, part 2: synthetic collision-family events for testing. There is no motion model, so
     // num_detected is 1 and the llDetected* data (collisionEvent) and the vector arguments (landCollisionEvent,
     // atTargetEvent) are exactly what was given; nothing moves and nothing is simulated.
-    // queues collision_start, collision_end or the continuous collision (num_detected), with the other object/avatar as the one detected
-    void collisionEvent(const QString& id, const QString& name, int link, const QString& eventName);
+    // queues collision_start, collision_end or the continuous collision (num_detected), with the other object/avatar as the one detected;
+    // velocity (may be null: zero) is what llDetectedVel answers, an avatar's "velocity" from the avatars list
+    void collisionEvent(const QString& id, const QString& name, int link, const QString& eventName, const float* velocity = nullptr);
     // queues land_collision_start(pos), land_collision_end(pos) or land_collision(pos)
     void landCollisionEvent(const QString& eventName, const float pos[3]);
     // queues moving_start() or moving_end()
@@ -246,6 +247,14 @@ class Interpreter
     std::vector<Frame> m_frames;
     int m_state = 0;                 // index into m_script.states
     std::deque<Event> m_queue;
+    // Anafin HUD test: events that come later from outside (a delayed transaction_result), sorted by time; each is queued
+    // when the clock reaches it and the script runs (dropped then when the script does not handle it or has stopped); a reset
+    // or a state change does not cancel it
+    struct LaterEvent { double at; Event event; };
+    std::vector<LaterEvent> m_later;
+    static constexpr int MAX_LATER_EVENTS = 64;
+    void queueLater(double at, const Event& event);
+    void queueDueLater();
     std::vector<Input> m_inputs;     // sorted by time
     std::vector<Listen> m_listens;
     int m_nextListen = 1;

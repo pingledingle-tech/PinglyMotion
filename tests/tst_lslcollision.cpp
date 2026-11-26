@@ -31,6 +31,8 @@ class LslCollisionTest : public QObject
   private slots:
     void collisionStartAndEnd();
     void collisionGoesToThePrimHit();
+    void collisionHasTheAvatarsVelocity();
+    void attachmentHasTheWearersVelocity();
     void landCollisionPhases();
     void movingStartAndEnd();
     void atTargetAndNotAtTarget();
@@ -90,6 +92,52 @@ void LslCollisionTest::collisionGoesToThePrimHit()
   const QJsonObject r = Control::run(QJsonObject{{"command", "lsl_run"}, {"objects", QJsonArray{o}}, {"seconds", 1},
                                                  {"inputs", QJsonArray{QJsonObject{{"at", 1}, {"type", "collision"}, {"phase", "start"}, {"link", 2}}}}});
   QCOMPARE(events(r), QStringList({"1 root start 2"}));
+}
+
+// Anafin HUD test: a collision from an avatar of the avatars list gives that avatar's "velocity" in llDetectedVel, in
+// collision_start, the continuous collision and collision_end; an avatar that is not listed (here the owner) stands still
+void LslCollisionTest::collisionHasTheAvatarsVelocity()
+{
+  const QString source = R"lsl(
+    default
+    {
+      collision_start(integer n) { llOwnerSay("start " + llDetectedName(0) + " " + (string)llDetectedVel(0)); }
+      collision(integer n) { llOwnerSay("while " + llDetectedName(0) + " " + (string)llDetectedVel(0)); }
+      collision_end(integer n) { llOwnerSay("end " + llDetectedName(0) + " " + (string)llDetectedVel(0)); }
+    }
+  )lsl";
+  const QJsonObject r = Control::run(QJsonObject{{"command", "lsl_run"}, {"source", source}, {"seconds", 4},
+      {"avatars", QJsonArray{QJsonObject{{"name", "Guest Resident"}, {"key", GUEST}, {"velocity", QJsonArray{1.5, 0, -0.25}}}}},
+      {"inputs", QJsonArray{QJsonObject{{"at", 1}, {"type", "collision"}, {"phase", "start"}, {"id", GUEST}, {"name", "Guest Resident"}},
+                            QJsonObject{{"at", 2}, {"type", "collision"}, {"id", GUEST}, {"name", "Guest Resident"}},
+                            QJsonObject{{"at", 3}, {"type", "collision"}, {"phase", "end"}, {"id", GUEST}, {"name", "Guest Resident"}},
+                            QJsonObject{{"at", 4}, {"type", "collision"}, {"phase", "start"}}}}});
+  QCOMPARE(events(r), QStringList({"1 start Guest Resident <1.50000, 0.00000, -0.25000>",
+                                   "2 while Guest Resident <1.50000, 0.00000, -0.25000>",
+                                   "3 end Guest Resident <1.50000, 0.00000, -0.25000>",
+                                   "4 start Owner <0.00000, 0.00000, 0.00000>"}));
+}
+
+// Anafin HUD test: llGetVel in a worn object answers the wearer's "velocity" (the owner's, from the avatars list; zero when
+// the owner is not listed); a rezzed object keeps its own velocity (zero here) however the owner moves
+void LslCollisionTest::attachmentHasTheWearersVelocity()
+{
+  const QString source = R"lsl(default { collision_start(integer n) { llOwnerSay((string)llDetectedVel(0) + " " + (string)llGetVel()); } })lsl";
+  const QJsonObject walker{{"name", "Walker Resident"}, {"key", GUEST}, {"velocity", QJsonArray{1.5, 0, 0}}};
+  const QJsonArray inputs{QJsonObject{{"at", 1}, {"type", "collision"}, {"phase", "start"}, {"object", "hud"}, {"id", GUEST}}};
+  // the repro of the test: the HUD on point 35, the owner not listed
+  const QJsonObject repro = Control::run(QJsonObject{{"command", "lsl_run"}, {"seconds", 1}, {"inputs", inputs}, {"avatars", QJsonArray{walker}},
+      {"objects", QJsonArray{QJsonObject{{"name", "hud"}, {"attached", 35}, {"source", source}}}}});
+  QCOMPARE(events(repro), QStringList({"1 <1.50000, 0.00000, 0.00000> <0.00000, 0.00000, 0.00000>"}));
+  // the owner listed and walking: the HUD moves with the owner
+  const QJsonObject owner{{"name", "Owner"}, {"key", OWNER}, {"velocity", QJsonArray{0, 2, 0.5}}};
+  const QJsonObject worn = Control::run(QJsonObject{{"command", "lsl_run"}, {"seconds", 1}, {"inputs", inputs}, {"avatars", QJsonArray{walker, owner}},
+      {"objects", QJsonArray{QJsonObject{{"name", "hud"}, {"attached", 35}, {"source", source}}}}});
+  QCOMPARE(events(worn), QStringList({"1 <1.50000, 0.00000, 0.00000> <0.00000, 2.00000, 0.50000>"}));
+  // the same object rezzed on the ground does not move with its owner
+  const QJsonObject rezzed = Control::run(QJsonObject{{"command", "lsl_run"}, {"seconds", 1}, {"inputs", inputs}, {"avatars", QJsonArray{walker, owner}},
+      {"objects", QJsonArray{QJsonObject{{"name", "hud"}, {"source", source}}}}});
+  QCOMPARE(events(rezzed), QStringList({"1 <1.50000, 0.00000, 0.00000> <0.00000, 0.00000, 0.00000>"}));
 }
 
 void LslCollisionTest::landCollisionPhases()

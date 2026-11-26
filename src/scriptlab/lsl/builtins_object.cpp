@@ -474,8 +474,9 @@ Value Interpreter::callBuiltinObject(Fn fn, const QString& name, std::vector<Val
       failAt("die", "The object was deleted with llDie.");
     case Fn::GetVel:
     {
-      // second gap list, step 6, part 3: the simple motion model's velocity; still zero for a worn object (the
-      // model does not run on attachments) and for a rezzed object until llApplyImpulse or a "step" input changes it
+      // second gap list, step 6, part 3: the simple motion model's velocity; zero for a rezzed object until llApplyImpulse
+      // or a "step" input changes it. A worn object (the model does not run on attachments) answers its wearer's velocity
+      // from the avatars list (Anafin HUD test; the Sandbox's world does that)
       float v[3];
       m_world.velocity(v);
       return Value::vector(v[0], v[1], v[2]);

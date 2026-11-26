@@ -598,12 +598,14 @@ void Interpreter::moneyEvent(const QString& id, int amount)
   queueEvent(Event{"money", {Value::key(id), Value::integer(amount)}, QString(), QString()});
 }
 
-void Interpreter::collisionEvent(const QString& id, const QString& name, int link, const QString& eventName)
+void Interpreter::collisionEvent(const QString& id, const QString& name, int link, const QString& eventName, const float* velocity)
 {
   Detected d;   // the other object or avatar in the collision (its position is not simulated); one at a time
   d.key = d.owner = id;
   d.name = name;
   d.link = link;
+  if (velocity)
+    for (int k = 0; k < 3; ++k) d.velocity[k] = velocity[k];
   queueEvent(Event{eventName, {Value::integer(1)}, id, name, {d}});
 }
 
@@ -746,7 +748,31 @@ double Interpreter::nextWake() const
   if (m_stopped || !m_running) return std::numeric_limits<double>::infinity();
   double next = m_timerInterval > 0.0 ? m_nextTimer : std::numeric_limits<double>::infinity();
   if (m_sensorActive) next = qMin(next, m_sensorNext);
+  if (!m_later.empty()) next = qMin(next, m_later.front().at);
   return next;
+}
+
+void Interpreter::queueLater(double at, const Event& event)
+{
+  if (int(m_later.size()) >= MAX_LATER_EVENTS)
+  {
+    m_world.log(m_now, QJsonObject{{"type", "event_dropped"}, {"name", event.name},
+                                   {"message", QString("More than %1 delayed events were waiting; this one was dropped.").arg(MAX_LATER_EVENTS)}});
+    return;
+  }
+  auto it = m_later.begin();
+  while (it != m_later.end() && it->at <= at) ++it;
+  m_later.insert(it, LaterEvent{at, event});
+}
+
+void Interpreter::queueDueLater()
+{
+  while (!m_later.empty() && m_later.front().at <= m_now)
+  {
+    const Event event = m_later.front().event;
+    m_later.erase(m_later.begin());
+    queueEvent(event);
+  }
 }
 
 void Interpreter::syncTo(double t)
@@ -759,6 +785,7 @@ void Interpreter::advanceTo(double t)
   if (m_stopped) return;
   syncTo(t);
   if (!m_running) return;
+  queueDueLater();
   if (m_timerInterval > 0.0 && m_nextTimer <= m_now)
   {
     m_nextTimer = qMax(m_nextTimer + m_timerInterval, m_now + MIN_TIMER);
@@ -819,6 +846,7 @@ void Interpreter::runUntil(double seconds)
       break;
     }
     m_now = qMax(m_now, next);
+    if (m_running) queueDueLater();
     if (m_running && m_timerInterval > 0.0 && m_nextTimer <= m_now)
     {
       m_nextTimer = qMax(m_nextTimer + m_timerInterval, m_now + MIN_TIMER);

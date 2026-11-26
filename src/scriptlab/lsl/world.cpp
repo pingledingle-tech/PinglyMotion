@@ -15,6 +15,8 @@
 namespace lsl
 {
 
+const char* const TransferPlan::FAILURES[4] = {"THROTTLED", "EXPIRED", "SERVICE_ERROR", "LINDENDOLLAR_INSUFFICIENTFUNDS"};
+
 bool HttpReply::matches(const QString& requestMethod, const QString& requestUrl) const
 {
   if (!method.isEmpty() && method != requestMethod) return false;

@@ -158,12 +158,30 @@ Value Interpreter::callBuiltinPrims(Fn fn, const QString& name, std::vector<Valu
       else if (!keyIsValid(a[0].s)) failure = "INVALID_DESTINATION";
       else if (a[1].i <= 0) failure = "INVALID_AMOUNT";
       else if (a[0].s != m_world.ownerKey() && !m_world.ownerOf(a[0].s).isEmpty()) failure = "LINDENDOLLAR_ENTITYDOESNOTEXIST";   // an object, not an avatar
+      // Anafin HUD test: a call that passed these checks is answered as the next entry of "transfers" says (default: ok at once)
+      double delay = 0.0;
+      bool answer = true;
+      if (failure.isEmpty())
+      {
+        const TransferPlan plan = m_world.nextTransfer();
+        delay = plan.delay;
+        if (plan.result == "none") answer = false;
+        else if (plan.result != "ok") failure = plan.result;
+      }
       if (!m_world.logFull())
-        m_world.log(m_now, QJsonObject{{"type", "linden_dollars"}, {"to", a[0].s}, {"amount", a[1].i}, {"transaction", id},
-                                       {"result", failure.isEmpty() ? "ok" : failure},
-                                       {"note", "Simulated: no L$ moved. The sandbox owner always has enough L$."}});
-      queueEvent(Event{"transaction_result", {Value::key(id), Value::integer(failure.isEmpty() ? 1 : 0),
-                                              Value::string(failure.isEmpty() ? a[0].s + "," + QString::number(a[1].i) : failure)}, QString(), QString()});
+      {
+        QJsonObject entry{{"type", "linden_dollars"}, {"to", a[0].s}, {"amount", a[1].i}, {"transaction", id},
+                          {"result", !answer ? QString("none") : (failure.isEmpty() ? QString("ok") : failure)},
+                          {"note", answer ? "Simulated: no L$ moved. The sandbox owner always has enough L$."
+                                          : "Simulated: no L$ moved, and no transaction_result comes (the transfers option)."}};
+        if (answer && delay > 0.0) entry["delay"] = delay;
+        m_world.log(m_now, entry);
+      }
+      if (!answer) return Value::key(id);
+      const Event result = Event{"transaction_result", {Value::key(id), Value::integer(failure.isEmpty() ? 1 : 0),
+                                                Value::string(failure.isEmpty() ? a[0].s + "," + QString::number(a[1].i) : failure)}, QString(), QString()};
+      if (delay > 0.0) queueLater(m_now + delay, result);
+      else queueEvent(result);
       return Value::key(id);
     }
     case Fn::ParticleSystem:
