@@ -1,6 +1,6 @@
 Branch: feat/scriptlab-script-order
 Status: active
-Pull request: pending
+Pull request: #520
 Files:
 - src/scriptlab/lsl/sandbox.*
 - src/scriptlab/lsl/control.*
