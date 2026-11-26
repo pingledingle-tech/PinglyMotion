@@ -42,9 +42,16 @@
 <section aria-labelledby="en-dl">
   <h2 id="en-dl">Download PinglyMotion</h2>
   <p>PinglyMotion 0.3.0-beta.1 is an early preview (a prerelease on GitHub). It is made for trying out and for feedback: expect rough edges and changes.</p>
+<aside class="status" aria-label="Status"><p>PinglyMotion is a beta: an early preview made as a hobby project. It is for trying out. Expect bugs, and save your work often. A script and an animation have been tried in Second Life. Script Lab runs scripts on your own computer only. A script that works in Script Lab may behave differently in Second Life, and the other way round. Using PinglyMotion is free; uploading an animation to Second Life costs a small fee, charged by Second Life.</p></aside>
   <p>The Windows zip, the Linux AppImage and the checksum file are on the release page.</p>
   <p><a class="btn" href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-windows.zip">Download for Windows (zip)</a></p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-linux-x86_64.AppImage">Download for Linux (AppImage)</a></p>
+  <p><b>Windows may warn.</b> This early preview is not code-signed, so Windows may show ‘Windows protected your PC’ or ‘unknown publisher’. That is expected. Only continue if you downloaded the file from this release page. Choose ‘More info’, then ‘Run anyway’.</p>
+  <p><b>Check your download (optional but recommended).</b></p>
+  <ol class="list"><li>On the release page, also download the file SHA256SUMS.</li><li>In Windows PowerShell, go to the folder with your download and run: <code>Get-FileHash &lt;file name&gt;</code>. On Linux run: <code>sha256sum &lt;file name&gt;</code>.</li><li>The long number must match the line for your file in SHA256SUMS. This shows that your download is complete and unchanged.</li></ol>
+  <p>The checksum file sits on the same page as the download, so it cannot protect you if that page were tampered with. For that, each file also has a signed build record that shows which source code it was built from. If you use the GitHub command line tool: <code>gh attestation verify &lt;file name&gt; --repo pingledingle-tech/PinglyMotion</code>.</p>
+  <p><b>Linux:</b> if the AppImage does not start, your system may need the library ‘libfuse2’.</p>
+  <p>There is no version for macOS and none for ARM processors.</p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.1">Release notes and all files</a></p>
 </section>
 <section aria-labelledby="en-which">
@@ -54,6 +61,8 @@
   <h3>Linux (x86_64)</h3>
   <p>An AppImage file. Make it executable (chmod +x) and start it.</p>
   <p>Both need a graphics driver with OpenGL 3.3. Every release also has a SHA256SUMS file for checking your download.</p>
+  <p>PinglyMotion does not yet tell you when a new beta is out. Look at the release page now and then. Only the latest release gets fixes.</p>
+  <p>PinglyMotion is free software. You may use, study, share and change it under the GNU General Public License, version 2 or later. It carries other people’s work under their own licences, for example the Qt toolkit, avatar bodies, motion clips and example scripts. The full list with each licence is in CREDITS.md.</p>
 </section>
 <section aria-labelledby="en-rm" lang="en">
   <h2 id="en-rm">Uninstall and system changes</h2>
@@ -72,6 +81,7 @@
 </section>
 
 <footer>
+<p>PinglyMotion is an independent project. It is not made, endorsed or supported by Linden Research, Inc. (Linden Lab). Second Life and Linden Lab are trademarks of Linden Research, Inc. Firestorm, Aurora, OpenCollar and other names belong to their owners.</p>
 <nav aria-label="Site"><ul class="foot"><li><a href="download.html#en">Download</a></li><li><a href="privacy.html#en">Privacy</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Report a bug</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Suggestions</a></li></ul></nav>
 </footer>
 </article>
@@ -80,9 +90,16 @@
 <section aria-labelledby="no-dl">
   <h2 id="no-dl">Last ned PinglyMotion</h2>
   <p>PinglyMotion 0.3.0-beta.1 er en tidlig forhåndsversjon (en forhåndsutgivelse på GitHub). Den er laget for å prøves ut og for tilbakemeldinger: regn med rare kanter og endringer.</p>
+<aside class="status" aria-label="Status"><p>PinglyMotion er en beta: en tidlig forhåndsversjon laget som et hobbyprosjekt. Den er til å prøve ut. Regn med feil, og lagre arbeidet ditt ofte. Et skript og en animasjon er prøvd i Second Life. Script Lab kjører bare skript på din egen datamaskin. Et skript som virker i Script Lab, kan oppføre seg annerledes i Second Life, og omvendt. Det er gratis å bruke PinglyMotion; å laste opp en animasjon til Second Life koster en liten avgift, som Second Life tar.</p></aside>
   <p>Windows-zip, Linux-AppImage og sjekksumfilen ligger på utgivelsessiden.</p>
   <p><a class="btn" href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-windows.zip">Last ned for Windows (zip)</a></p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-linux-x86_64.AppImage">Last ned for Linux (AppImage)</a></p>
+  <p><b>Windows kan advare.</b> Denne tidlige forhåndsversjonen er ikke kodesignert, så Windows kan vise «Windows har beskyttet PC-en» eller «ukjent utgiver». Det er forventet. Fortsett bare hvis du lastet ned filen fra denne utgivelsessiden. Velg «Mer informasjon», og deretter «Kjør likevel».</p>
+  <p><b>Sjekk nedlastingen din (valgfritt, men anbefalt).</b></p>
+  <ol class="list"><li>Last også ned filen SHA256SUMS fra utgivelsessiden.</li><li>Gå til mappen med nedlastingen i Windows PowerShell og kjør: <code>Get-FileHash &lt;filnavn&gt;</code>. På Linux kjører du: <code>sha256sum &lt;filnavn&gt;</code>.</li><li>Det lange tallet må stemme med linjen for filen din i SHA256SUMS. Dette viser at nedlastingen er komplett og uendret.</li></ol>
+  <p>Sjekksumfilen ligger på samme side som nedlastingen, så den kan ikke beskytte deg hvis siden var tuklet med. Derfor har hver fil også en signert byggeoppføring som viser hvilken kildekode den ble bygget fra. Hvis du bruker GitHubs kommandolinjeverktøy: <code>gh attestation verify &lt;filnavn&gt; --repo pingledingle-tech/PinglyMotion</code>.</p>
+  <p><b>Linux:</b> hvis AppImage ikke starter, kan systemet ditt trenge biblioteket «libfuse2».</p>
+  <p>Det finnes ingen versjon for macOS og ingen for ARM-prosessorer.</p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.1">Utgivelsesnotater og alle filer</a></p>
 </section>
 <section aria-labelledby="no-which">
@@ -92,6 +109,8 @@
   <h3>Linux (x86_64)</h3>
   <p>En AppImage-fil. Gjør den kjørbar (chmod +x) og start den.</p>
   <p>Begge krever en grafikkdriver med OpenGL 3.3. Hver utgivelse har også en fil SHA256SUMS som du kan bruke til å kontrollere nedlastingen.</p>
+  <p>PinglyMotion sier ennå ikke fra når en ny beta er ute. Se på utgivelsessiden nå og da. Bare den nyeste utgivelsen får rettelser.</p>
+  <p>PinglyMotion er fri programvare. Du kan bruke, studere, dele og endre det under GNU General Public License, versjon 2 eller senere. Det inneholder andres arbeid under deres egne lisenser, for eksempel Qt-verktøyet, avatarkropper, bevegelsesklipp og eksempelskript. Hele listen med hver lisens står i CREDITS.md.</p>
 </section>
 <section aria-labelledby="no-rm" lang="en">
   <h2 id="no-rm">Uninstall and system changes</h2>
@@ -110,6 +129,7 @@
 </section>
 
 <footer>
+<p>PinglyMotion er et uavhengig prosjekt. Det er ikke laget, godkjent eller støttet av Linden Research, Inc. (Linden Lab). Second Life og Linden Lab er varemerker som tilhører Linden Research, Inc. Firestorm, Aurora, OpenCollar og andre navn tilhører sine eiere.</p>
 <nav aria-label="Nettsted"><ul class="foot"><li><a href="download.html#no">Last ned</a></li><li><a href="privacy.html#no">Personvern</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Meld en feil</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Forslag</a></li></ul></nav>
 </footer>
 </article>
@@ -118,9 +138,16 @@
 <section aria-labelledby="de-dl">
   <h2 id="de-dl">PinglyMotion herunterladen</h2>
   <p>PinglyMotion 0.3.0-beta.1 ist eine frühe Vorabversion (eine Vorabveröffentlichung auf GitHub). Sie ist zum Ausprobieren und für Rückmeldungen gedacht: Rechne mit Ecken, Kanten und Änderungen.</p>
+<aside class="status" aria-label="Status"><p>PinglyMotion ist eine Beta: eine frühe Vorabversion, als Hobbyprojekt entstanden. Sie ist zum Ausprobieren da. Rechne mit Fehlern und speichere deine Arbeit oft. Ein Script und eine Animation wurden in Second Life ausprobiert. Script Lab führt Scripts nur auf deinem eigenen Computer aus. Ein Script, das im Script Lab funktioniert, kann sich in Second Life anders verhalten, und umgekehrt. PinglyMotion ist kostenlos; das Hochladen einer Animation zu Second Life kostet eine kleine Gebühr, die Second Life erhebt.</p></aside>
   <p>Die Windows-Zip-Datei, das Linux-AppImage und die Prüfsummendatei liegen auf der Release-Seite.</p>
   <p><a class="btn" href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-windows.zip">Für Windows herunterladen (zip)</a></p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-linux-x86_64.AppImage">Für Linux herunterladen (AppImage)</a></p>
+  <p><b>Windows kann warnen.</b> Diese frühe Vorabversion ist nicht code-signiert, daher zeigt Windows möglicherweise „Der Computer wurde durch Windows geschützt“ oder „unbekannter Herausgeber“. Das ist zu erwarten. Fahre nur fort, wenn du die Datei von dieser Release-Seite heruntergeladen hast. Wähle „Weitere Informationen“, dann „Trotzdem ausführen“.</p>
+  <p><b>Download prüfen (optional, aber empfohlen).</b></p>
+  <ol class="list"><li>Lade auf der Release-Seite auch die Datei SHA256SUMS herunter.</li><li>Wechsle in der Windows PowerShell in den Ordner mit deinem Download und führe aus: <code>Get-FileHash &lt;Dateiname&gt;</code>. Unter Linux: <code>sha256sum &lt;Dateiname&gt;</code>.</li><li>Die lange Zahl muss mit der Zeile für deine Datei in SHA256SUMS übereinstimmen. So siehst du, dass dein Download vollständig und unverändert ist.</li></ol>
+  <p>Die Prüfsummendatei liegt auf derselben Seite wie der Download, sie schützt dich also nicht, falls diese Seite manipuliert wäre. Dafür hat jede Datei außerdem einen signierten Build-Nachweis, der zeigt, aus welchem Quellcode sie gebaut wurde. Wenn du das GitHub-Kommandozeilenwerkzeug nutzt: <code>gh attestation verify &lt;Dateiname&gt; --repo pingledingle-tech/PinglyMotion</code>.</p>
+  <p><b>Linux:</b> Wenn das AppImage nicht startet, braucht dein System womöglich die Bibliothek „libfuse2“.</p>
+  <p>Es gibt keine Version für macOS und keine für ARM-Prozessoren.</p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.1">Release-Notes und alle Dateien</a></p>
 </section>
 <section aria-labelledby="de-which">
@@ -130,6 +157,8 @@
   <h3>Linux (x86_64)</h3>
   <p>Eine AppImage-Datei. Ausführbar machen (chmod +x) und starten.</p>
   <p>Beide brauchen einen Grafiktreiber mit OpenGL 3.3. Jede Veröffentlichung enthält außerdem eine Datei SHA256SUMS, mit der du deinen Download prüfen kannst.</p>
+  <p>PinglyMotion sagt dir noch nicht, wenn eine neue Beta erscheint. Schau ab und zu auf die Release-Seite. Nur die neueste Version bekommt Korrekturen.</p>
+  <p>PinglyMotion ist freie Software. Du darfst es unter der GNU General Public License, Version 2 oder später, nutzen, untersuchen, weitergeben und ändern. Es enthält die Arbeit anderer unter deren eigenen Lizenzen, zum Beispiel das Qt-Toolkit, Avatarkörper, Bewegungsclips und Beispielscripts. Die vollständige Liste mit jeder Lizenz steht in CREDITS.md.</p>
 </section>
 <section aria-labelledby="de-rm" lang="en">
   <h2 id="de-rm">Uninstall and system changes</h2>
@@ -148,6 +177,7 @@
 </section>
 
 <footer>
+<p>PinglyMotion ist ein unabhängiges Projekt. Es wird nicht von Linden Research, Inc. (Linden Lab) hergestellt, empfohlen oder unterstützt. Second Life und Linden Lab sind Marken von Linden Research, Inc. Firestorm, Aurora, OpenCollar und andere Namen gehören ihren Inhabern.</p>
 <nav aria-label="Website"><ul class="foot"><li><a href="download.html#de">Download</a></li><li><a href="privacy.html#de">Datenschutz</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Fehler melden</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Vorschläge</a></li></ul></nav>
 </footer>
 </article>
@@ -156,9 +186,16 @@
 <section aria-labelledby="pl-dl">
   <h2 id="pl-dl">Pobierz PinglyMotion</h2>
   <p>PinglyMotion 0.3.0-beta.1 to wczesna wersja zapoznawcza (wydanie wstępne na GitHubie). Służy do wypróbowania i zbierania opinii: spodziewaj się niedoskonałości i zmian.</p>
+<aside class="status" aria-label="Status"><p>PinglyMotion to wersja beta: wczesna wersja zapoznawcza, stworzona jako projekt hobbystyczny. Służy do wypróbowania. Spodziewaj się błędów i często zapisuj swoją pracę. Skrypt i animację wypróbowano w Second Life. Script Lab uruchamia skrypty tylko na twoim własnym komputerze. Skrypt, który działa w Script Lab, może zachowywać się inaczej w Second Life, i na odwrót. Korzystanie z PinglyMotion jest darmowe; wgranie animacji do Second Life kosztuje niewielką opłatę, którą pobiera Second Life.</p></aside>
   <p>Plik zip dla Windows, AppImage dla Linuksa i plik sum kontrolnych są na stronie wydania.</p>
   <p><a class="btn" href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-windows.zip">Pobierz dla Windows (zip)</a></p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-linux-x86_64.AppImage">Pobierz dla Linuksa (AppImage)</a></p>
+  <p><b>Windows może ostrzegać.</b> Ta wczesna wersja zapoznawcza nie jest podpisana cyfrowo, więc Windows może pokazać „System Windows ochronił ten komputer” albo „nieznany wydawca”. To normalne. Kontynuuj tylko wtedy, gdy plik pobrano z tej strony wydania. Wybierz „Więcej informacji”, potem „Uruchom mimo to”.</p>
+  <p><b>Sprawdź pobrany plik (opcjonalnie, ale zalecane).</b></p>
+  <ol class="list"><li>Na stronie wydania pobierz też plik SHA256SUMS.</li><li>W Windows PowerShell przejdź do folderu z pobranym plikiem i uruchom: <code>Get-FileHash &lt;nazwa pliku&gt;</code>. W Linuksie uruchom: <code>sha256sum &lt;nazwa pliku&gt;</code>.</li><li>Długi numer musi zgadzać się z wierszem dla twojego pliku w SHA256SUMS. Pokazuje to, że pobrany plik jest kompletny i niezmieniony.</li></ol>
+  <p>Plik sum kontrolnych leży na tej samej stronie co pobranie, więc nie ochroni cię, jeśli ta strona zostałaby zmieniona. Dlatego każdy plik ma też podpisany zapis budowania, który pokazuje, z jakiego kodu źródłowego powstał. Jeśli używasz narzędzia wiersza poleceń GitHub: <code>gh attestation verify &lt;nazwa pliku&gt; --repo pingledingle-tech/PinglyMotion</code>.</p>
+  <p><b>Linux:</b> jeśli AppImage się nie uruchamia, twój system może potrzebować biblioteki „libfuse2”.</p>
+  <p>Nie ma wersji dla macOS ani dla procesorów ARM.</p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.1">Informacje o wydaniu i wszystkie pliki</a></p>
 </section>
 <section aria-labelledby="pl-which">
@@ -168,6 +205,8 @@
   <h3>Linux (x86_64)</h3>
   <p>Plik AppImage. Nadaj mu prawo uruchamiania (chmod +x) i uruchom.</p>
   <p>Oba wymagają sterownika graficznego z OpenGL 3.3. Każde wydanie ma też plik SHA256SUMS do sprawdzenia pobranego pliku.</p>
+  <p>PinglyMotion jeszcze nie informuje, że wyszła nowa beta. Zaglądaj od czasu do czasu na stronę wydań. Poprawki dostaje tylko najnowsze wydanie.</p>
+  <p>PinglyMotion to wolne oprogramowanie. Możesz go używać, badać, udostępniać i zmieniać na warunkach GNU General Public License, wersja 2 lub nowsza. Zawiera cudzą pracę na jej własnych licencjach, na przykład zestaw narzędzi Qt, ciała awatarów, klipy ruchu i przykładowe skrypty. Pełna lista z każdą licencją jest w pliku CREDITS.md.</p>
 </section>
 <section aria-labelledby="pl-rm" lang="en">
   <h2 id="pl-rm">Uninstall and system changes</h2>
@@ -186,6 +225,7 @@
 </section>
 
 <footer>
+<p>PinglyMotion to niezależny projekt. Nie jest tworzony, zatwierdzany ani wspierany przez Linden Research, Inc. (Linden Lab). Second Life i Linden Lab są znakami towarowymi Linden Research, Inc. Firestorm, Aurora, OpenCollar i inne nazwy należą do ich właścicieli.</p>
 <nav aria-label="Strona"><ul class="foot"><li><a href="download.html#pl">Pobierz</a></li><li><a href="privacy.html#pl">Prywatność</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Zgłoś błąd</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Propozycje</a></li></ul></nav>
 </footer>
 </article>
@@ -194,9 +234,16 @@
 <section aria-labelledby="nl-dl">
   <h2 id="nl-dl">PinglyMotion downloaden</h2>
   <p>PinglyMotion 0.3.0-beta.1 is een vroege previewversie (een pre-release op GitHub). Bedoeld om uit te proberen en voor feedback: verwacht ruwe randjes en veranderingen.</p>
+<aside class="status" aria-label="Status"><p>PinglyMotion is een beta: een vroege preview, gemaakt als hobbyproject. Het is om uit te proberen. Verwacht fouten en sla je werk vaak op. Een script en een animatie zijn in Second Life geprobeerd. Script Lab draait scripts alleen op je eigen computer. Een script dat in Script Lab werkt, kan zich in Second Life anders gedragen, en andersom. PinglyMotion gebruiken is gratis; een animatie uploaden naar Second Life kost een kleine vergoeding, die Second Life in rekening brengt.</p></aside>
   <p>De Windows-zipfile, de Linux-AppImage en het checksumbestand staan op de releasepagina.</p>
   <p><a class="btn" href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-windows.zip">Download voor Windows (zip)</a></p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-linux-x86_64.AppImage">Download voor Linux (AppImage)</a></p>
+  <p><b>Windows kan waarschuwen.</b> Deze vroege preview is niet code-signed, dus Windows kan „Windows heeft uw pc beveiligd” of „onbekende uitgever” tonen. Dat is normaal. Ga alleen verder als je het bestand van deze releasepagina hebt gedownload. Kies „Meer info”, dan „Toch uitvoeren”.</p>
+  <p><b>Controleer je download (optioneel, maar aanbevolen).</b></p>
+  <ol class="list"><li>Download op de releasepagina ook het bestand SHA256SUMS.</li><li>Ga in Windows PowerShell naar de map met je download en voer uit: <code>Get-FileHash &lt;bestandsnaam&gt;</code>. Op Linux voer je uit: <code>sha256sum &lt;bestandsnaam&gt;</code>.</li><li>Het lange getal moet overeenkomen met de regel voor jouw bestand in SHA256SUMS. Zo zie je dat je download compleet en ongewijzigd is.</li></ol>
+  <p>Het checksumbestand staat op dezelfde pagina als de download, dus het beschermt je niet als die pagina zou zijn gemanipuleerd. Daarom heeft elk bestand ook een ondertekend bouwrecord dat laat zien uit welke broncode het is gebouwd. Als je het GitHub-opdrachtregelprogramma gebruikt: <code>gh attestation verify &lt;bestandsnaam&gt; --repo pingledingle-tech/PinglyMotion</code>.</p>
+  <p><b>Linux:</b> als de AppImage niet start, heeft je systeem misschien de bibliotheek „libfuse2” nodig.</p>
+  <p>Er is geen versie voor macOS en geen voor ARM-processors.</p>
   <p><a href="https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.1">Release-notities en alle bestanden</a></p>
 </section>
 <section aria-labelledby="nl-which">
@@ -206,6 +253,8 @@
   <h3>Linux (x86_64)</h3>
   <p>Een AppImage-bestand. Maak het uitvoerbaar (chmod +x) en start het.</p>
   <p>Beide hebben een grafisch stuurprogramma met OpenGL 3.3 nodig. Elke release heeft ook een bestand SHA256SUMS om je download te controleren.</p>
+  <p>PinglyMotion meldt nog niet wanneer er een nieuwe beta is. Kijk af en toe op de releasepagina. Alleen de nieuwste release krijgt fixes.</p>
+  <p>PinglyMotion is vrije software. Je mag het gebruiken, bestuderen, delen en wijzigen onder de GNU General Public License, versie 2 of later. Het bevat werk van anderen onder hun eigen licenties, bijvoorbeeld de Qt-toolkit, avatarlichamen, bewegingsclips en voorbeeldscripts. De volledige lijst met elke licentie staat in CREDITS.md.</p>
 </section>
 <section aria-labelledby="nl-rm" lang="en">
   <h2 id="nl-rm">Uninstall and system changes</h2>
@@ -224,6 +273,7 @@
 </section>
 
 <footer>
+<p>PinglyMotion is een onafhankelijk project. Het is niet gemaakt, goedgekeurd of ondersteund door Linden Research, Inc. (Linden Lab). Second Life en Linden Lab zijn handelsmerken van Linden Research, Inc. Firestorm, Aurora, OpenCollar en andere namen zijn van hun eigenaren.</p>
 <nav aria-label="Website"><ul class="foot"><li><a href="download.html#nl">Download</a></li><li><a href="privacy.html#nl">Privacy</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=bug_report.yml">Fout melden</a></li><li><a href="https://github.com/pingledingle-tech/PinglyMotion/issues/new?template=suggestion.yml">Suggesties</a></li></ul></nav>
 </footer>
 </article>

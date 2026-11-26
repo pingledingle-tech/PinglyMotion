@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 /***************************************************************************
  *   Small helpers for walking the skeleton (a tree of BVHNode), shared by *
  *   the describe code, the control commands and the view.                 *

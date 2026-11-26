@@ -14,11 +14,11 @@ PinglyMotion is a free, open-source animation editor based on QAvimator. The goa
 - **Get optional AI assistance:** use the [local control interface and MCP server](docs/CONTROL.md) to pose joints, inspect screenshots and save animations. Manual editing works without AI.
 - **Use Windows or Linux:** builds use Qt 6.
 
-PinglyMotion is under active development. Automated checks validate exported BVH against rules based on the Second Life loader; upload and playback in Second Life were validated in Firestorm on 21 November 2026. Current builds require OpenGL 3.3.
+PinglyMotion is under active development. Automated checks validate exported BVH against rules based on the Second Life loader; export, upload and playback of a test animation were tried in Second Life. Current builds require OpenGL 3.3.
 
 ## Download and get started
 
-There are no releases in this repository yet (the project moved on 18 November 2026); see [Releases](https://github.com/pingledingle-tech/PinglyMotion/releases) for packages when they appear. For the latest development build on Windows, open [Actions](https://github.com/pingledingle-tech/PinglyMotion/actions), choose a successful **Build** run and download `PinglyMotion-windows`. Extract the archive and run `PinglyMotion.exe`, keeping its `data` folder alongside it.
+Download the early preview from the [Releases](https://github.com/pingledingle-tech/PinglyMotion/releases) page: the Windows zip or the Linux AppImage. It is a beta, so expect rough edges. Windows may warn because the program is not code-signed. To check your download, see the website’s [download page](https://pingledingle-tech.github.io/PinglyMotion/download.html). People who build the program themselves can also use the development builds under [Actions](https://github.com/pingledingle-tech/PinglyMotion/actions); those builds are not checked like a release.
 
 The website has a [download page](https://pingledingle-tech.github.io/PinglyMotion/download.html) (an early preview, with how to uninstall) and a [privacy policy](https://pingledingle-tech.github.io/PinglyMotion/privacy.html) (PinglyMotion collects no personal data and sends no telemetry). To report a bug or send a suggestion, use [Issues](https://github.com/pingledingle-tech/PinglyMotion/issues/new/choose).
 
@@ -105,11 +105,10 @@ what worked in [issue 414, "Connect another AI: tell us what worked"](https://gi
 - It only works on your own PC: it listens on `127.0.0.1`, so nothing on the network or the internet can reach it.
 - It is off each time PinglyMotion starts.
 - There is a new secret key each time you turn it on.
-- Requests from web pages are refused.
+- Web pages cannot give it commands: every command needs the secret key.
 - Turn off locks every AI out and deletes the key.
 
-It has been through a security review and is tested automatically on every change: see the
-[security report](docs/SECURITY_AUDIT_21NOV.md).
+A security review was made; see the [security report](docs/SECURITY_AUDIT_21NOV.md). Automatic tests and checks run on most changes. Some checks are skipped for changes that only touch documents.
 
 Every assistant that connects can read [docs/ASSISTANT_GUIDE.md](docs/ASSISTANT_GUIDE.md) with the `read_guide` tool: Second Life's rules for animations, joint names, which way each turn goes, typical poses and a work rhythm.
 
@@ -127,7 +126,11 @@ as its Blender add-on) with a session key. For now it needs Aurora from the
 Thank you to everyone whose work PinglyMotion uses or learned from. The full list, with what we use each for and its licence, is in [CREDITS.md](CREDITS.md).
 
 Based on QAvimator by Zi Ree and the QAvimator team (Bitbucket: QAvimator_Team/qavimator), itself a Qt port of Avimator.
-Licensed under the GNU General Public License version 2 – see `LICENSE` / `COPYING`.
+Licensed under the GNU General Public License version 2 or later – see `LICENSE` / `COPYING`.
+
+PinglyMotion is free software. You may use, study, share and change it under the GNU General Public License, version 2 or later. It carries other people’s work under their own licences, for example the Qt toolkit, avatar bodies, motion clips and example scripts. The full list with each licence is in CREDITS.md.
+
+PinglyMotion is an independent project. It is not made, endorsed or supported by Linden Research, Inc. (Linden Lab). Second Life and Linden Lab are trademarks of Linden Research, Inc. Firestorm, Aurora, OpenCollar and other names belong to their owners.
 
 The Bento skeleton comes from `avatar_skeleton.xml` in the [Firestorm viewer](https://github.com/FirestormViewer/phoenix-firestorm) (Linden Research, Inc. and the Firestorm project), licensed under LGPL 2.1. A copy is in `tools/firestorm/`. `tools/make_bento_skeleton.py` turns it into the skeleton files in `bin/data/`.
 

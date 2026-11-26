@@ -45,7 +45,7 @@ PinglyMotion hilft dir, solche Bewegungen zu machen. Es ist kostenlos. Es ist Op
 PinglyMotion macht drei Dinge:
 
 1. **Eine Figur animieren.** Du beugst die Gelenke einer 3D-Figur. Du speicherst Posen zu bestimmten Zeitpunkten. Das Programm füllt die Bewegung dazwischen aus. Das Ergebnis exportierst du für Second Life.
-2. **Scripts sicher testen.** Objekte in Second Life benutzen Scripts. PinglyMotion hat eine sichere Sandbox, das **Script Lab**, in dem du RLV- und LSL-Scripts auf deinem eigenen Computer ausführen kannst. Nichts davon erreicht Second Life.
+2. **Scripts sicher testen.** Objekte in Second Life benutzen Scripts. PinglyMotion hat eine sichere Sandbox, das **Script Lab**, in dem du RLV- und LSL-Scripts auf deinem eigenen Computer ausführen kannst. Nichts davon erreicht Second Life. Benutze Scripts, denen du vertraust. Script Lab ist neu, und ein sehr ungewöhnliches Script kann das Programm zum Absturz bringen, also speichere zuerst deine Animation.
 3. **Mit einem KI-Helfer arbeiten, wenn du willst.** Ein KI-Assistent auf deinem eigenen Computer kann die Figur für dich posieren. Er ist aus, bis du ihn einschaltest. Alles funktioniert auch ohne ihn.
 
 PinglyMotion ist eine **frühe Vorabversion**. Sie ist zum Ausprobieren und für Rückmeldungen gemacht. Rechne mit Ecken und Kanten. Siehe [Was fertig ist und was nicht](#was-fertig-ist-und-was-nicht).
@@ -120,14 +120,14 @@ Die Daten stammen aus den Projektdokumenten vom 25. November 2026.
 |---|---|---|
 | Gelenke posieren, Keys, Zeitleiste, Wiedergabe, Rückgängig | Built | Kapitel 3 bis 5. |
 | Speichern als `.dingle`, `.dingle`, `.bvh`, `.avm` öffnen | Built | Alte `.avm`-Dateien lassen sich öffnen und werden als `.dingle` gespeichert. |
-| Export für Second Life (`.anim`) | Built | Export, Upload und Wiedergabe wurden am 21. November 2026 in Firestorm bestätigt: Timing, Schleife, sanfter Start und Ausklang, Hände, Easing. Andere Viewer wurden nicht geprüft. |
+| Export für Second Life (`.anim`) | Built | Export, Upload und Wiedergabe einer Testanimation wurden in Second Life ausprobiert. |
 | `.anim` importieren, BVH von einem anderen Skelett, glTF | Built | Fußsperre (verhindert, dass die Füße rutschen) ist **not built**. |
 | Bibliothek mit 106 Bewegungen | Built | Die Bewegungen stammen aus offenen Quellen. Ihre Lizenzen werden im Bereich angezeigt. |
 | Requisiten (Quader, Kugel, Kegel, Torus) | Built | Es sind einfache Formen. Eine Requisite lässt sich noch nicht umbenennen. |
 | Zwei Figuren in einer Szene (Expert-Modus) | Built | Nur im Expert-Modus. |
 | Gesichtsgelenke | Partly built | Die Gesichtsgelenke sind zurückgestellt. Der Reiter Face existiert, aber das Gesicht ist kein Schwerpunkt. |
-| Script Lab: RLV-Befehle | Built | Eine Sandbox mit 206 RLV-Verhaltensweisen. **Not tested in Second Life.** Der letzte Test findet immer in Second Life statt. |
-| Script Lab: LSL-Scripts laufen in einer Sandbox | Partly built | 282 eingebaute Funktionen, eine simulierte Uhr. Manche Funktionen halten nur fest, worum sie gebeten wurden. Viele tun noch nichts. **Not tested in Second Life.** |
+| Script Lab: RLV-Befehle | Built | Eine Sandbox mit mehr als 200 RLV-Verhaltensweisen. **Not tested in Second Life.** Der letzte Test findet immer in Second Life statt. |
+| Script Lab: LSL-Scripts laufen in einer Sandbox | Partly built | Mehr als 280 eingebaute Funktionen, eine simulierte Uhr. Manche Funktionen halten nur fest, worum sie gebeten wurden. Viele tun noch nichts. **Not tested in Second Life.** |
 | Script Lab: Live scripts, Baum, Requisiten aus Prims | Built | Ein Ordner ist ein Objekt. Eine Requisite mit demselben Namen wie ein Prim gehört dazu. |
 | Script Lab: Player, Who talks to whom, Record what I do | Built | **Not tested in Second Life.** Manche Teile der 3D-Ansicht folgen dem Player nicht (siehe Kapitel 10). |
 | Script Lab: Improve a setup | Partly built | Die Speicherwerte schließen den Speicher aus, den der Code selbst belegt. Dafür ist eine Messung in Second Life nötig. |
@@ -173,7 +173,7 @@ Eine Grafikkarte und einen Treiber mit OpenGL 3.3 oder neuer. Bleibt die 3D-Ansi
 - Ein Fehlerprotokoll und die Verbindungsdatei für den KI-Assistenten: in `%LOCALAPPDATA%\PinglyMotion` unter Windows oder `~/.local/share/PinglyMotion` unter Linux.
 - Script-Lab-Beispiele, die du erstellst: in `Documents/PinglyMotion/Scripts`.
 
-PinglyMotion sammelt keine personenbezogenen Daten und sendet keine Telemetrie. Das Programm prüft beim Start einmal, ob es eine neuere Version gibt (die „Update check“).
+PinglyMotion sammelt keine personenbezogenen Daten und sendet keine Telemetrie. Das Programm prüft ungefähr einmal pro Woche, beim Start, ob es eine neuere Version gibt (die „Update check“).
 
 ### Erster Start
 
@@ -352,7 +352,7 @@ Das Hochladen geschieht im Second-Life-Viewer, nicht in PinglyMotion.
 3. Stelle dieselbe Priorität und Schleife ein wie im Exportfenster. Der Viewer verlangt eine kleine Gebühr.
 4. Trage oder spiele die Animation ab, um sie zu sehen.
 
-Ein ehrlicher Hinweis: Export, Upload und Wiedergabe wurden am 21. November 2026 in Firestorm bestätigt. Andere Viewer wurden nicht getestet. Das Hochladen kostet in Second Life eine kleine Gebühr.
+Ein ehrlicher Hinweis: Export, Upload und Wiedergabe einer Testanimation wurden in Second Life ausprobiert. Das Hochladen kostet in Second Life eine kleine Gebühr.
 
 ### Wenn etwas schiefgeht
 
@@ -614,7 +614,7 @@ Ein KI-Assistent kann nur in einem Ordner Dateien öffnen und speichern: `Pingly
 
 ## Kapitel 10: Script Lab für Einsteiger
 
-Das Script Lab ist eine sichere Sandbox. Du kannst RLV- und LSL-Scripts auf deinem Computer ausführen. Nichts erreicht Second Life.
+Das Script Lab ist eine sichere Sandbox. Du kannst RLV- und LSL-Scripts auf deinem Computer ausführen. Nichts erreicht Second Life. Benutze Scripts, denen du vertraust. Script Lab ist neu, und ein sehr ungewöhnliches Script kann das Programm zum Absturz bringen, also speichere zuerst deine Animation.
 
 Zuerst einige Wörter.
 
@@ -775,13 +775,13 @@ Der Fenstertitel sagt „AI Assistant on“, solange er an ist. Klicke die Schal
 - Er arbeitet nur auf deinem eigenen PC. Nichts im Netzwerk kann ihn erreichen.
 - Er ist bei jedem Start von PinglyMotion aus.
 - Bei jedem Einschalten gibt es einen neuen geheimen Schlüssel.
-- Anfragen von Webseiten werden abgelehnt.
+- Webseiten können ihm keine Befehle geben: Jeder Befehl braucht den geheimen Schlüssel.
 
 ### Was ein Assistent tun kann
 
 Ein Assistent benutzt die Befehle der Steuerungsschnittstelle: den Zustand ansehen, Gelenke posieren, Frames setzen, abspielen, einen Screenshot machen, die Pose und die Bewegung in Worten beschreiben, eine ganze Animation als kleine Texttabelle lesen und schreiben, eine Animation gegen die Regeln von Second Life prüfen, `.anim` exportieren, die Bibliothek durchsuchen und das Script Lab benutzen (RLV-Befehle und LSL-Scripts). Die vollständige Liste steht in `docs/CONTROL.md` und `tools/mcp/commands.json`.
 
-Der Assistent kann nur im Ordner `Documents/PinglyMotion` Dateien öffnen und speichern.
+Der Assistent kann nur im Ordner `Documents/PinglyMotion` Dateien öffnen und speichern. Ein KI-Assistent, den du verbindest, kann das Programm auch bitten, Script-Dateien aus einem Ordner zu lesen. Das tut es nur, solange der AI Assistant eingeschaltet ist.
 
 ### Stand
 
@@ -1004,6 +1004,10 @@ Gehe zu <https://github.com/pingledingle-tech/PinglyMotion/issues> und eröffne 
 PinglyMotion ist kostenlos und Open Source. Es basiert auf QAvimator. Die Avatarkörper, die Bibliotheksclips, das Beispielhalsband und das andere fremde Material sind in der Datei [CREDITS.md](../CREDITS.md) und unter **Help > About...** genannt.
 
 Die fertigen Bewegungen stammen aus der CMU-Motion-Capture-Datenbank und von Mesh2Motion (CC0). Das Beispielhalsband ist das öffentliche OpenCollar-Projekt (GPL 2).
+
+PinglyMotion ist freie Software. Du darfst es unter der GNU General Public License, Version 2 oder später, nutzen, untersuchen, weitergeben und ändern. Es enthält die Arbeit anderer unter deren eigenen Lizenzen, zum Beispiel das Qt-Toolkit, Avatarkörper, Bewegungsclips und Beispielscripts. Die vollständige Liste mit jeder Lizenz steht in [CREDITS.md](../CREDITS.md).
+
+PinglyMotion ist ein unabhängiges Projekt. Es wird nicht von Linden Research, Inc. (Linden Lab) hergestellt, empfohlen oder unterstützt. Second Life und Linden Lab sind Marken von Linden Research, Inc. Firestorm, Aurora, OpenCollar und andere Namen gehören ihren Inhabern.
 
 ---
 

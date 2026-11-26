@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 /***************************************************************************
  *   One place for the maths of rotation orders: the order type and the    *
  *   conversion between a quaternion and Euler angles. Used by the IK,     *

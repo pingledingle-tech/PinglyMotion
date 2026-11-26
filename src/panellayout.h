@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 // Layout rules for the panels (docs/archive/PANELS_PLAN.md, job P1).
 //
 // Plain functions and small structs: no widgets, no disk access, nothing that

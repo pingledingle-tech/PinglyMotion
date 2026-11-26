@@ -8,11 +8,12 @@ Version 0.3.0
 ---------------------
 
   - Beta: please report problems on GitHub
-  - FEATURE: Bento body (Max avatar) with fingers and a face that follow the Bento bones (Options > Bento body)
-  - FEATURE: Show or hide joint groups: wings, tail, hind limbs, face, fingers and toes (Options > Joints)
+  - New: Script Lab, a place on your own computer to try RLV and LSL scripts (not checked against the real Second Life).
+  - New: library of 106 ready-made moves, props, undo and redo, beginner mode with a Helper, two figures in Expert mode.
+  - New: AI Assistant switch (off at every start) and a live link to a special Aurora build.
+  - Windows builds are not code signed yet, so Windows may warn when you start the program.
   - FEATURE: The name of the joint under the mouse is shown next to the pointer
   - FEATURE: Male body shape (Figure: male)
-  - FEATURE: Remote control for AI assistants and other programs (Options > Allow remote control, see docs/CONTROL.md); the MCP server is in the mcp folder
   - FEATURE: Linux build (AppImage)
   - Safer file reading: broken or hostile BVH, AVM, prop and mesh files are refused with a message instead of crashing
   - Data files are read from the program folder, never from the current folder
@@ -23,6 +24,7 @@ Version 0.3.0
 Version 0.2.0
 ---------------------
 
+  - Never released as a separate download
   - First PinglyMotion release, based on QAvimator
   - FEATURE: Bento skeleton with all 133 Second Life bones (fingers, face, tail, wings)
   - FEATURE: Dark theme and dockable panels

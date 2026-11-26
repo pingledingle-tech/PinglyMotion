@@ -58,7 +58,8 @@ class HomepageShort(unittest.TestCase):
     def test_short(self):
         page = read("home.html")
         for lang in LANGS:
-            self.assertLess(words(article(page, lang)), 400, lang)
+            # 400 until the owner-approved status box and licence text (text corrections C-02, C-04) were added
+            self.assertLess(words(article(page, lang)), 500, lang)
 
     def test_english_and_norwegian_text(self):
         page = read("home.html")
