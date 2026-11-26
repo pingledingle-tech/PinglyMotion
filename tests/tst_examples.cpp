@@ -13,6 +13,11 @@
  * The guide texts and the rest of example.json are checked by
  * tests/test_examples.py.
  *
+ * The cuff set in examples/scriptlab/cuffs (job 24) is tested here too: its
+ * menu, a chain between every pair of points, hanging from the ceiling ring,
+ * the leash, the RLV lines per cuff and the state after a reset, after
+ * wearing it again and after a save (the recipe replayed).
+ *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -24,9 +29,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+#include "dingle.h"
 #include "prop.h"
+#include "scriptlab/labchains.h"
 #include "scriptlab/labfolder.h"
+#include "scriptlab/labrecipe.h"
 #include "scriptlab/labtint.h"
+#include "scriptlab/labwatcher.h"
 
 namespace
 {
@@ -130,6 +139,108 @@ namespace
         qWarning().noquote() << "  log" << QJsonDocument(v.toObject()).toJson(QJsonDocument::Compact);
     }
   }
+
+  // --- the cuff set (job 24): examples/scriptlab/cuffs, one object of ten prims
+
+  QString cuffsFolder() { return QDir::cleanPath(QStringLiteral(EXAMPLES_DIR) + QStringLiteral("/../scriptlab/cuffs")); }
+
+  QJsonObject cuffsJson()
+  {
+    QFile file(cuffsFolder() + QStringLiteral("/example.json"));
+    if (!file.open(QIODevice::ReadOnly)) return QJsonObject();
+    return QJsonDocument::fromJson(file.readAll()).object();
+  }
+
+  // the menu answers of one avatar, one second apart, after a touch on a prim (link 9 is Wrist_left)
+  QJsonArray clicks(const QStringList& buttons, int link = 9, const QString& id = QString(), const QString& name = QString())
+  {
+    QJsonObject t = touch(1, link);
+    if (!id.isEmpty()) { t["id"] = id; t["name"] = name; }
+    QJsonArray inputs{t};
+    double at = 2;
+    for (const QString& b : buttons)
+    {
+      QJsonObject d = dialog(at++, b);
+      if (!id.isEmpty()) { d["id"] = id; d["name"] = name; }
+      inputs << d;
+    }
+    return inputs;
+  }
+
+  QJsonObject runCuffs(const QJsonArray& inputs, double seconds = -1)
+  {
+    const LabFolder::Linkset ls = LabFolder::open(cuffsFolder());
+    if (seconds < 0) seconds = inputs.size() + 1;
+    // with Second Life's memory limit for a Mono script on: the script must fit in 64 KB
+    return LabFolder::run(ls, QJsonObject{{"seconds", seconds}, {"inputs", inputs}, {"script_memory", 65536}});
+  }
+
+  // the restrictions held at the end, with their option: "detach:l forearm", sorted
+  QStringList rlvLines(const QJsonObject& run)
+  {
+    QStringList out;
+    for (const QJsonValue& v : run.value("result").toObject().value("rlv").toObject().value("state").toObject().value("restrictions").toArray())
+    {
+      const QString option = v.toObject().value("option").toString();
+      out << v.toObject().value("behaviour").toString() + (option.isEmpty() ? QString() : QStringLiteral(":") + option);
+    }
+    out.sort();
+    return out;
+  }
+
+  // the chain lines the 3D view draws at the end (src/scriptlab/labchains.h): "from -> to"
+  QStringList chainLines(const QJsonObject& run)
+  {
+    QStringList out;
+    for (const LabChains::Chain& c : LabChains::fromFolderResult(run, false)) out << c.from + QStringLiteral(" -> ") + c.to;
+    return out;
+  }
+
+  // the newest menu: its message, then its buttons
+  QStringList lastMenu(const QJsonObject& run)
+  {
+    QStringList out;
+    for (const QJsonValue& v : run.value("result").toObject().value("log").toArray())
+    {
+      const QJsonObject e = v.toObject();
+      if (e.value("type").toString() != QLatin1String("dialog")) continue;
+      out = QStringList{e.value("message").toString()};
+      for (const QJsonValue& b : e.value("buttons").toArray()) out << b.toString();
+    }
+    return out;
+  }
+
+  QStringList entries(const QJsonObject& run, const QString& type, const QString& field)
+  {
+    QStringList out;
+    for (const QJsonValue& v : run.value("result").toObject().value("log").toArray())
+      if (v.toObject().value("type").toString() == type) out << v.toObject().value(field).toVariant().toString();
+    return out;
+  }
+
+  // debug lines (a refused llDialog, a bad call) and errors: there must be none
+  QStringList problems(const QJsonObject& run)
+  {
+    QStringList out;
+    for (const QJsonValue& v : run.value("result").toObject().value("log").toArray())
+    {
+      const QString type = v.toObject().value("type").toString();
+      if (type == QLatin1String("debug") || type == QLatin1String("error") || type == QLatin1String("limit"))
+        out << QJsonDocument(v.toObject()).toJson(QJsonDocument::Compact);
+    }
+    return out;
+  }
+
+  // the owner lines after the first one (the ready line)
+  QStringList saidAfterReady(const QJsonObject& run)
+  {
+    QStringList out = ownerLines(run);
+    if (!out.isEmpty()) out.removeFirst();
+    return out;
+  }
+
+  const QString Ready = QStringLiteral("Root: Cuff set ready. Touch a cuff or the box.");
+  const QStringList MainButtons = {"Lock", "Unlock", "Chain", "Unchain", "Leash", "Unleash", "Hang", "Release", "Free all"};
 }
 
 class TestExamples : public QObject
@@ -148,6 +259,18 @@ private slots:
   void timedLock();
   void rlvRelay();
   void workSystem();
+  void cuffSetOpens();
+  void cuffSetStartAndMenu();
+  void cuffSetChainEveryPair_data();
+  void cuffSetChainEveryPair();
+  void cuffSetAllPairsAtOnce();
+  void cuffSetHangAndRelease();
+  void cuffSetLockPerCuff();
+  void cuffSetLeashByAnotherAvatar();
+  void cuffSetUnchainAndFreeAll();
+  void cuffSetKeepsStateAfterResetAndRewear();
+  void cuffSetRecipeAfterSave();
+  void cuffSetClicksInTheWatchedFolder();
 };
 
 void TestExamples::allExamplesOpenAndCompile_data()
@@ -352,6 +475,358 @@ void TestExamples::workSystem()
   const QJsonObject one = runFolder("Work_system", QJsonArray{touch(1), dialog(2, "Work")}, 3);
   QCOMPARE(propColours(exampleJson("Work_system"), one),
            QStringList({"Root: 0.30 0.40 1.00 1.00", "Bottle: 0.20 0.60 1.00 0.40", "Score_board: 1.00 1.00 1.00 1.00"}));
+}
+
+// --- the cuff set (job 24)
+
+void TestExamples::cuffSetOpens()
+{
+  const LabFolder::Linkset ls = LabFolder::open(cuffsFolder());
+  QVERIFY2(ls.ok(), qPrintable(ls.error + QJsonDocument(ls.toJson()).toJson(QJsonDocument::Compact)));
+  QCOMPARE(ls.name, QStringLiteral("cuffs"));
+  QCOMPARE(prims(ls), (QJsonArray{QJsonArray{1, "Root"}, QJsonArray{2, "Ankle_left"}, QJsonArray{3, "Ankle_right"},
+                                  QJsonArray{4, "Ceiling_ring"}, QJsonArray{5, "Leash_ankle_left"}, QJsonArray{6, "Leash_ankle_right"},
+                                  QJsonArray{7, "Leash_wrist_left"}, QJsonArray{8, "Leash_wrist_right"}, QJsonArray{9, "Wrist_left"},
+                                  QJsonArray{10, "Wrist_right"}}));
+  QCOMPARE(scripts(ls), (QJsonArray{QJsonArray{"Root/cuffs_main.lsl", 1}}));
+  QCOMPARE(int(ls.notecards.size()), 9);
+  QVERIFY(ls.notes.empty());
+  const QJsonObject check = LabFolder::check(ls);
+  QVERIFY2(check.value("valid").toBool(), QJsonDocument(check).toJson(QJsonDocument::Compact).constData());
+  QCOMPARE(check.value("errors").toArray(), QJsonArray());
+  QCOMPARE(check.value("warnings").toArray(), QJsonArray());
+  // every prim has a prop of its name, once
+  QStringList props;
+  for (const QJsonValue& v : cuffsJson().value("props").toArray()) props << v.toObject().value("name").toString();
+  QStringList names;
+  for (const LabFolder::Prim& p : ls.prims) names << p.name;
+  props.sort();
+  names.sort();
+  QCOMPARE(props, names);
+  // the hang pose the script plays lies next to it
+  QFile hang(cuffsFolder() + QStringLiteral("/Root/cuffs_hang.dingle"));
+  QVERIFY(hang.open(QIODevice::ReadOnly));
+  const Dingle::Result pose = Dingle::parse(hang.readAll());
+  QVERIFY2(pose.ok(), qPrintable(pose.error));
+  QCOMPARE(pose.ignoredKeys, 0);
+}
+
+void TestExamples::cuffSetStartAndMenu()
+{
+  const QJsonObject start = runCuffs(QJsonArray(), 1);
+  dump("cuffs start", start);
+  QVERIFY2(start.value("ok").toBool(), qPrintable(start.value("error").toString()));
+  QCOMPARE(ownerLines(start), QStringList({Ready}));
+  QCOMPARE(rlvLines(start), QStringList());
+  QCOMPARE(chainLines(start), QStringList());
+  QCOMPARE(propColours(cuffsJson(), start),
+           QStringList({"Root: 0.00 1.00 0.00 1.00", "Wrist_left: 0.00 1.00 0.00 1.00", "Wrist_right: 0.00 1.00 0.00 1.00",
+                        "Ankle_left: 0.00 1.00 0.00 1.00", "Ankle_right: 0.00 1.00 0.00 1.00", "Leash_wrist_left: 0.60 0.60 0.60 1.00",
+                        "Leash_wrist_right: 0.60 0.60 0.60 1.00", "Leash_ankle_left: 0.60 0.60 0.60 1.00",
+                        "Leash_ankle_right: 0.60 0.60 0.60 1.00", "Ceiling_ring: 0.60 0.60 0.60 1.00"}));
+
+  // a click on any part shows the main menu: at most 12 buttons, none over 24 characters
+  for (int link = 1; link <= 10; ++link)
+  {
+    const QJsonObject run = runCuffs(QJsonArray{touch(1, link)}, 2);
+    QCOMPARE(lastMenu(run), QStringList({"Cuff set\nLocked: none. Chains: none. Leash: none. Hanging: no."}) + MainButtons);
+    QCOMPARE(problems(run), QStringList());
+  }
+  // every sub-menu
+  const QList<QPair<QStringList, QStringList>> menus = {
+    {{"Lock"}, {"Lock which cuff?", "Wrist L", "Wrist R", "Ankle L", "Ankle R", "All", "Back"}},
+    {{"Unlock"}, {"Unlock which cuff?", "Wrist L", "Wrist R", "Ankle L", "Ankle R", "All", "Back"}},
+    {{"Chain"}, {"Chain from where?", "Wrist L", "Wrist R", "Ankle L", "Ankle R", "Ceiling", "Back"}},
+    {{"Chain", "Ankle L"}, {"Chain Ankle L to where?", "Wrist L", "Wrist R", "Ankle R", "Ceiling", "Back"}},
+    {{"Chain", "Ceiling"}, {"Chain Ceiling to where?", "Wrist L", "Wrist R", "Ankle L", "Ankle R", "Back"}},
+    {{"Leash"}, {"Put the leash on which cuff? You hold it.", "Wrist L", "Wrist R", "Ankle L", "Ankle R", "Back"}},
+    {{"Lock", "Back"}, QStringList({"Cuff set\nLocked: none. Chains: none. Leash: none. Hanging: no."}) + MainButtons},
+  };
+  for (const auto& m : menus)
+  {
+    const QJsonObject run = runCuffs(clicks(m.first));
+    QCOMPARE(lastMenu(run), m.second);
+    QCOMPARE(problems(run), QStringList());
+  }
+  // nothing to take off: said, and the main menu again
+  const QJsonObject none = runCuffs(clicks({"Unchain", "Unleash", "Release"}));
+  QCOMPARE(saidAfterReady(none), QStringList({"Root: There are no chains.", "Root: There is no leash.", "Root: Nothing hangs from the ceiling."}));
+  QCOMPARE(lastMenu(none).mid(1), MainButtons);
+}
+
+void TestExamples::cuffSetChainEveryPair_data()
+{
+  QTest::addColumn<QString>("from");
+  QTest::addColumn<QString>("to");
+  QTest::addColumn<QString>("line");
+  QTest::addColumn<QString>("said");
+  QTest::addColumn<QStringList>("rlv");
+  const QStringList hands = {"edit", "rez"};
+  const QStringList hogtie = {"edit", "fly", "rez"};
+  const QStringList hang = {"fly", "sittp", "tplm", "tploc", "tplure"};
+  QTest::newRow("wrist to wrist") << "Wrist L" << "Wrist R" << "Wrist_left -> Wrist_right" << "Chained Wrist L - Wrist R." << hands;
+  QTest::newRow("ankle to ankle") << "Ankle L" << "Ankle R" << "Ankle_left -> Ankle_right" << "Chained Ankle L - Ankle R." << QStringList({"fly"});
+  QTest::newRow("left wrist to left ankle") << "Wrist L" << "Ankle L" << "Wrist_left -> Ankle_left" << "Chained Wrist L - Ankle L." << hogtie;
+  QTest::newRow("left wrist to right ankle") << "Wrist L" << "Ankle R" << "Wrist_left -> Ankle_right" << "Chained Wrist L - Ankle R." << hogtie;
+  QTest::newRow("right wrist to left ankle") << "Wrist R" << "Ankle L" << "Wrist_right -> Ankle_left" << "Chained Wrist R - Ankle L." << hogtie;
+  QTest::newRow("right wrist to right ankle") << "Wrist R" << "Ankle R" << "Wrist_right -> Ankle_right" << "Chained Wrist R - Ankle R." << hogtie;
+  QTest::newRow("picked the other way round") << "Ankle R" << "Wrist L" << "Wrist_left -> Ankle_right" << "Chained Wrist L - Ankle R." << hogtie;
+  QTest::newRow("left wrist to ceiling") << "Wrist L" << "Ceiling" << "Wrist_left -> Ceiling_ring" << "Chained Wrist L - Ceiling." << hang;
+  QTest::newRow("right wrist to ceiling") << "Wrist R" << "Ceiling" << "Wrist_right -> Ceiling_ring" << "Chained Wrist R - Ceiling." << hang;
+  QTest::newRow("left ankle to ceiling") << "Ankle L" << "Ceiling" << "Ankle_left -> Ceiling_ring" << "Chained Ankle L - Ceiling." << hang;
+  QTest::newRow("ceiling to right ankle") << "Ceiling" << "Ankle R" << "Ankle_right -> Ceiling_ring" << "Chained Ankle R - Ceiling." << hang;
+}
+
+void TestExamples::cuffSetChainEveryPair()
+{
+  QFETCH(QString, from);
+  QFETCH(QString, to);
+  QFETCH(QString, line);
+  QFETCH(QString, said);
+  QFETCH(QStringList, rlv);
+  const QJsonObject run = runCuffs(clicks({"Chain", from, to}));
+  dump("cuffs chain " + from + " " + to, run);
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  QCOMPARE(saidAfterReady(run), QStringList({"Root: " + said}));
+  QCOMPARE(chainLines(run), QStringList({line}));
+  QCOMPARE(rlvLines(run), rlv);
+  QCOMPARE(problems(run), QStringList());
+  // the menu comes back and says the chain
+  QVERIFY2(lastMenu(run).value(0).contains(QStringLiteral("Chains: ") + said.mid(8, said.size() - 9) + QStringLiteral(".")),
+           qPrintable(lastMenu(run).value(0)));
+  // the same chain twice is refused
+  const QJsonObject twice = runCuffs(clicks({"Chain", from, to, "Chain", from, to}));
+  QCOMPARE(saidAfterReady(twice).value(1), "Root: " + said.mid(8, said.size() - 9) + QStringLiteral(" is chained already."));
+  QCOMPARE(chainLines(twice), QStringList({line}));
+}
+
+void TestExamples::cuffSetAllPairsAtOnce()
+{
+  // every cuff chained to every other cuff at the same time, then the ceiling: two chain points per cuff and one
+  // in the ceiling ring, so nine lines at most
+  const QJsonObject run = runCuffs(clicks({"Chain", "Wrist L", "Wrist R", "Chain", "Wrist L", "Ankle L", "Chain", "Wrist L", "Ankle R",
+                                           "Chain", "Wrist R", "Ankle L", "Chain", "Wrist R", "Ankle R", "Chain", "Ankle L", "Ankle R",
+                                           "Hang", "Chain", "Ankle L", "Ceiling", "Chain", "Ankle R", "Ceiling", "Leash", "Wrist L"}));
+  dump("cuffs all pairs", run);
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  QCOMPARE(chainLines(run), QStringList({"Ankle_left -> Ankle_right", "Ankle_right -> Wrist_left", "Ceiling_ring -> Wrist_left",
+                                         "Leash_ankle_left -> Ceiling_ring", "Leash_ankle_right -> Ceiling_ring",
+                                         "Leash_wrist_left -> Ankle_left", "Leash_wrist_right -> Ankle_right", "Wrist_left -> Wrist_right",
+                                         "Wrist_right -> Ankle_left"}));
+  QCOMPARE(saidAfterReady(run).mid(6), QStringList({"Root: Hanging by the wrists from the ceiling.", "Root: Chained Ankle L - Ceiling.",
+                                                    "Root: Chained Ankle R - Ceiling.",
+                                                    "Root: No free chain point on Wrist L. Unchain something first."}));
+  QCOMPARE(rlvLines(run), QStringList({"edit", "fly", "rez", "sittp", "tplm", "tploc", "tplure"}));
+  QCOMPARE(problems(run), QStringList());
+}
+
+void TestExamples::cuffSetHangAndRelease()
+{
+  const QJsonObject hung = runCuffs(clicks({"Hang"}));
+  dump("cuffs hang", hung);
+  QVERIFY2(hung.value("ok").toBool(), qPrintable(hung.value("error").toString()));
+  QCOMPARE(saidAfterReady(hung), QStringList({"Root: Hanging by the wrists from the ceiling."}));
+  QCOMPARE(chainLines(hung), QStringList({"Wrist_left -> Ceiling_ring", "Wrist_right -> Ceiling_ring"}));
+  QCOMPARE(entries(hung, "animation_start", "name"), QStringList({"cuffs_hang"}));
+  QCOMPARE(rlvLines(hung), QStringList({"fly", "sittp", "tplm", "tploc", "tplure"}));
+  QCOMPARE(propColours(cuffsJson(), hung).last(), QStringLiteral("Ceiling_ring: 1.00 0.00 0.00 1.00"));
+  QVERIFY(lastMenu(hung).value(0).endsWith(QLatin1String("Hanging: yes.")));
+
+  const QJsonObject released = runCuffs(clicks({"Hang", "Release"}));
+  dump("cuffs release", released);
+  QCOMPARE(saidAfterReady(released), QStringList({"Root: Hanging by the wrists from the ceiling.", "Root: Released from the ceiling."}));
+  QCOMPARE(chainLines(released), QStringList());
+  QCOMPARE(entries(released, "animation_stop", "name"), QStringList({"cuffs_hang"}));
+  QCOMPARE(rlvLines(released), QStringList());
+  QCOMPARE(propColours(cuffsJson(), released).last(), QStringLiteral("Ceiling_ring: 0.60 0.60 0.60 1.00"));
+
+  // Release keeps the chains between the cuffs; an ankle on the ceiling hangs without the arms-up pose
+  const QJsonObject kept = runCuffs(clicks({"Chain", "Wrist L", "Wrist R", "Chain", "Ankle L", "Ceiling", "Release"}));
+  QCOMPARE(chainLines(kept), QStringList({"Wrist_left -> Wrist_right"}));
+  QCOMPARE(entries(kept, "animation_start", "name"), QStringList());
+  QCOMPARE(rlvLines(kept), QStringList({"edit", "rez"}));
+}
+
+void TestExamples::cuffSetLockPerCuff()
+{
+  const QJsonObject run = runCuffs(clicks({"Lock", "Wrist L", "Lock", "Ankle R"}));
+  dump("cuffs lock", run);
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  QCOMPARE(saidAfterReady(run), QStringList({"Root: Wrist L is locked.", "Root: Ankle R is locked."}));
+  QCOMPARE(rlvLines(run), QStringList({"detach", "detach:l forearm", "detach:r lower leg"}));
+  QCOMPARE(propColours(cuffsJson(), run).mid(0, 5),
+           QStringList({"Root: 1.00 0.00 0.00 1.00", "Wrist_left: 1.00 0.00 0.00 1.00", "Wrist_right: 0.00 1.00 0.00 1.00",
+                        "Ankle_left: 0.00 1.00 0.00 1.00", "Ankle_right: 1.00 0.00 0.00 1.00"}));
+  QVERIFY(lastMenu(run).value(0).contains(QLatin1String("Locked: Wrist L, Ankle R.")));
+
+  // unlocking one keeps the other; the chain lines turn Locked while any cuff is locked
+  const QJsonObject one = runCuffs(clicks({"Lock", "Wrist L", "Lock", "Ankle R", "Unlock", "Wrist L", "Chain", "Wrist L", "Wrist R"}));
+  QCOMPARE(rlvLines(one), QStringList({"detach", "detach:r lower leg", "edit", "rez"}));
+  QCOMPARE(LabChains::fromFolderResult(one, rlvLines(one).contains("detach")).value(0).word(), QStringLiteral("Locked"));
+
+  const QJsonObject all = runCuffs(clicks({"Lock", "All"}));
+  QCOMPARE(saidAfterReady(all), QStringList({"Root: All cuffs are locked."}));
+  QCOMPARE(rlvLines(all), QStringList({"detach", "detach:l forearm", "detach:l lower leg", "detach:r forearm", "detach:r lower leg"}));
+  const QJsonObject open = runCuffs(clicks({"Lock", "All", "Unlock", "All"}));
+  QCOMPARE(saidAfterReady(open), QStringList({"Root: All cuffs are locked.", "Root: All cuffs are unlocked."}));
+  QCOMPARE(rlvLines(open), QStringList());
+  QCOMPARE(problems(open), QStringList());
+}
+
+void TestExamples::cuffSetLeashByAnotherAvatar()
+{
+  const QString helper = QStringLiteral("a1b2c3d4-0000-4000-8000-00000000c0ff");
+  QJsonArray inputs = clicks({"Leash", "Wrist L"}, 7, helper, QStringLiteral("Test Helper"));
+  inputs << dialog(4, "Free all");   // the owner's answer to the helper's menu is not heard
+  const QJsonObject run = runCuffs(inputs, 5);
+  dump("cuffs leash", run);
+  QVERIFY2(run.value("ok").toBool(), qPrintable(run.value("error").toString()));
+  QCOMPARE(saidAfterReady(run), QStringList({"Root: Leash on Wrist L, held by Test Helper."}));
+  QCOMPARE(entries(run, "region_say_to", "text"), QStringList({"You hold the leash on Wrist L."}));
+  QCOMPARE(entries(run, "region_say_to", "to"), QStringList({helper}));
+  // the leash point emits to the helper; the 3D view draws no line to an avatar (docs/SCRIPT_LAB.md, chain lines)
+  QStringList streams;
+  for (const QJsonValue& v : run.value("result").toObject().value("log").toArray())
+  {
+    const QJsonObject e = v.toObject();
+    if (e.value("function").toString() == QLatin1String("llLinkParticleSystem"))
+      streams << QString::number(e.value("emitter_link").toInt()) + QStringLiteral(" ") + e.value("target").toString();
+  }
+  QCOMPARE(streams, QStringList({"7 " + helper}));
+  QCOMPARE(chainLines(run), QStringList());
+  QCOMPARE(rlvLines(run), QStringList({"tplm", "tploc", "tplure"}));
+  QCOMPARE(propColours(cuffsJson(), run).at(5), QStringLiteral("Leash_wrist_left: 1.00 0.80 0.00 1.00"));
+  QVERIFY(lastMenu(run).value(0).contains(QLatin1String("Leash: Wrist L (Test Helper).")));
+
+  // Unleash
+  const QJsonObject off = runCuffs(clicks({"Leash", "Wrist L", "Unleash", "Wrist L"}, 7, helper, QStringLiteral("Test Helper")));
+  QCOMPARE(saidAfterReady(off), QStringList({"Root: Leash on Wrist L, held by Test Helper.", "Root: Leash off Wrist L."}));
+  QCOMPARE(rlvLines(off), QStringList());
+  QCOMPARE(propColours(cuffsJson(), off).at(5), QStringLiteral("Leash_wrist_left: 0.60 0.60 0.60 1.00"));
+}
+
+void TestExamples::cuffSetUnchainAndFreeAll()
+{
+  const QJsonObject menu = runCuffs(clicks({"Chain", "Wrist L", "Wrist R", "Chain", "Ankle L", "Ankle R", "Unchain"}));
+  QCOMPARE(lastMenu(menu), QStringList({"Take off which chain?", "Wrist L - Wrist R", "Ankle L - Ankle R", "All chains", "Back"}));
+  const QJsonObject one = runCuffs(clicks({"Chain", "Wrist L", "Wrist R", "Chain", "Ankle L", "Ankle R", "Unchain", "Wrist L - Wrist R"}));
+  QCOMPARE(saidAfterReady(one).last(), QStringLiteral("Root: Unchained Wrist L - Wrist R."));
+  QCOMPARE(chainLines(one), QStringList({"Ankle_left -> Ankle_right"}));
+  QCOMPARE(rlvLines(one), QStringList({"fly"}));
+
+  const QJsonObject freed = runCuffs(clicks({"Lock", "All", "Chain", "Wrist L", "Ankle R", "Hang", "Leash", "Ankle L", "Free all"}));
+  dump("cuffs free all", freed);
+  QCOMPARE(saidAfterReady(freed).last(), QStringLiteral("Root: Everything is free."));
+  QCOMPARE(chainLines(freed), QStringList());
+  QCOMPARE(rlvLines(freed), QStringList());
+  QCOMPARE(entries(freed, "animation_stop", "name"), QStringList({"cuffs_hang"}));
+  QCOMPARE(propColours(cuffsJson(), freed),
+           QStringList({"Root: 0.00 1.00 0.00 1.00", "Wrist_left: 0.00 1.00 0.00 1.00", "Wrist_right: 0.00 1.00 0.00 1.00",
+                        "Ankle_left: 0.00 1.00 0.00 1.00", "Ankle_right: 0.00 1.00 0.00 1.00", "Leash_wrist_left: 0.60 0.60 0.60 1.00",
+                        "Leash_wrist_right: 0.60 0.60 0.60 1.00", "Leash_ankle_left: 0.60 0.60 0.60 1.00",
+                        "Leash_ankle_right: 0.60 0.60 0.60 1.00", "Ceiling_ring: 0.60 0.60 0.60 1.00"}));
+  QCOMPARE(problems(freed), QStringList());
+}
+
+void TestExamples::cuffSetKeepsStateAfterResetAndRewear()
+{
+  const QStringList setUp = {"Lock", "All", "Chain", "Wrist L", "Wrist R", "Hang", "Leash", "Ankle L"};
+  const QStringList rlv = {"detach", "detach:l forearm", "detach:l lower leg", "detach:r forearm", "detach:r lower leg",
+                           "edit", "fly", "rez", "sittp", "tplm", "tploc", "tplure"};
+  // the leash on Ankle L goes to the owner, an avatar: the 3D view draws no line for it
+  const QStringList lines = {"Leash_wrist_left -> Ceiling_ring", "Wrist_left -> Wrist_right", "Wrist_right -> Ceiling_ring"};
+  const QJsonObject before = runCuffs(clicks(setUp));
+  dump("cuffs set up", before);
+  QCOMPARE(rlvLines(before), rlv);
+  QCOMPARE(chainLines(before), lines);
+
+  // a reset (saving the script in Second Life resets it): the state comes back from Linkset Data
+  LabFolder::Linkset ls = LabFolder::open(cuffsFolder());
+  LabFolder::Script resetter;
+  resetter.name = QStringLiteral("test_reset");
+  resetter.file = QStringLiteral("Root/test_reset.lsl");
+  resetter.link = 1;
+  resetter.source = QStringLiteral("default { state_entry() { llListen(5, \"\", llGetOwner(), \"reset\"); }\n"
+                                   "  listen(integer c, string n, key id, string m) { llResetOtherScript(\"cuffs_main\"); } }\n");
+  ls.scripts.push_back(resetter);
+  QJsonArray inputs = clicks(setUp);
+  inputs << QJsonObject{{"at", 11}, {"channel", 5}, {"text", "reset"}};
+  const QJsonObject reset = LabFolder::run(ls, QJsonObject{{"seconds", 12}, {"inputs", inputs}});
+  dump("cuffs reset", reset);
+  QVERIFY2(reset.value("ok").toBool(), qPrintable(reset.value("error").toString()));
+  QCOMPARE(ownerLines(reset).mid(ownerLines(reset).size() - 2),
+           QStringList({"Root: Restored: Locked: Wrist L, Wrist R, Ankle L, Ankle R. Chains: Wrist L - Wrist R, Wrist L - Ceiling, "
+                        "Wrist R - Ceiling. Leash: Ankle L (Owner). Hanging: yes.", Ready}));
+  QCOMPARE(rlvLines(reset), rlv);
+  QCOMPARE(chainLines(reset), lines);
+  QCOMPARE(problems(reset), QStringList());
+
+  // worn again (as after a relog): every restriction is sent again
+  QJsonArray worn = clicks(setUp);
+  worn << QJsonObject{{"at", 11}, {"type", "attach"}, {"point", 30}} << QJsonObject{{"at", 12}, {"type", "detach"}}
+       << QJsonObject{{"at", 13}, {"type", "attach"}, {"point", 30}};
+  const QJsonObject rewear = runCuffs(worn, 14);
+  dump("cuffs rewear", rewear);
+  QVERIFY2(rewear.value("ok").toBool(), qPrintable(rewear.value("error").toString()));
+  QCOMPARE(rlvLines(rewear), rlv);
+  QCOMPARE(chainLines(rewear), lines);
+}
+
+void TestExamples::cuffSetRecipeAfterSave()
+{
+  // after a save Script Lab runs the folder from the start and replays the recorded steps (job A3)
+  const LabRecipe::Result recipe = LabRecipe::parse(QStringLiteral(
+    "touch Wrist_left\n"
+    "menu Lock\n"
+    "menu All\n"
+    "expect lock:cuffs\n"
+    "expect colour:Wrist_left red\n"
+    "menu Chain\n"
+    "menu Wrist L\n"
+    "menu Ankle R\n"
+    "expect blocked:fly\n"
+    "menu Hang\n"
+    "expect blocked:tplm\n"
+    "expect colour:Ceiling_ring red\n"
+    "menu Release\n"
+    "expect not blocked:tplm\n"
+    "expect blocked:fly\n"
+    "menu Free all\n"
+    "expect not lock:cuffs\n"
+    "expect not blocked:fly\n"
+    "expect colour:Wrist_left green\n"));
+  QVERIFY2(recipe.ok(), qPrintable(recipe.error));
+  const LabRecipe::Replay replay = LabRecipe::replay(LabFolder::open(cuffsFolder()), QJsonObject(), *recipe.value, Rlv::Mode::Rlv);
+  QStringList failures;
+  for (const LabRecipe::Failure& f : replay.failures) failures << f.text;
+  QVERIFY2(replay.ran, qPrintable(replay.error));
+  if (!qEnvironmentVariableIsEmpty("PINGLYMOTION_EXAMPLES_DUMP"))
+    for (const LabRecipe::Fact& f : replay.facts) qWarning().noquote() << "  fact" << f.key << f.state;
+  QVERIFY2(failures.isEmpty(), qPrintable(failures.join(QLatin1Char('\n'))));
+  QCOMPARE(replay.expects, 10);
+  QCOMPARE(replay.done, replay.steps);
+  QVERIFY(replay.passed());
+}
+
+void TestExamples::cuffSetClicksInTheWatchedFolder()
+{
+  // the way the 3D view does it: Watch folder, a click on a prop is a touch, a button of the menu box answers
+  LabWatcher w;
+  QVERIFY(w.watch(cuffsFolder(), QJsonObject{{"linkset", true}}).ok());
+  QCOMPARE(w.linkOf(QStringLiteral("Wrist_left")), 9);
+  QVERIFY(w.touch(w.linkOf(QStringLiteral("Ceiling_ring"))).ok());
+  QCOMPARE(w.dialog().value("message").toString(), QStringLiteral("Cuff set\nLocked: none. Chains: none. Leash: none. Hanging: no."));
+  for (const char* button : {"Chain", "Wrist L", "Ankle R", "Lock", "All", "Hang"})
+    QVERIFY2(w.answerDialog(QString::fromLatin1(button)).ok(), button);
+  QCOMPARE(chainLines(w.folderResult()),
+           QStringList({"Leash_wrist_left -> Ceiling_ring", "Wrist_left -> Ankle_right", "Wrist_right -> Ceiling_ring"}));
+  QCOMPARE(w.dialog().value("buttons").toArray().size(), MainButtons.size());
+  QVERIFY(w.dialog().value("message").toString().endsWith(QLatin1String("Hanging: yes.")));
+  QCOMPARE(entries(w.folderResult(), "animation_start", "name"), QStringList({"cuffs_hang"}));
+  // the menu stays usable: Free all takes every line away
+  QVERIFY(w.answerDialog(QStringLiteral("Free all")).ok());
+  QCOMPARE(chainLines(w.folderResult()), QStringList());
+  w.unwatch();
 }
 
 QTEST_MAIN(TestExamples)

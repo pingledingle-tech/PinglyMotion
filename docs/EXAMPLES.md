@@ -306,6 +306,60 @@ Guide:
 
 Today in the program: the props of this example cannot be made with these names, and Send input does not reach a watched folder (see "What the program can do now"). The tests run it with the same inputs.
 
+## Cuff set with chains (job 24)
+
+Built 26 November 2026 (the project owner, 26 November 2026, 13:38 to 13:41: a complete cuff set with leash points, chains between the cuffs, «alt sammen skal være mulig. inkludert å henge etter kjettingen»; started 19:04). It is not one of the six guided beginner examples: it has props but no guide, and it lives in `examples/scriptlab/cuffs/` (the folder `examples/scriptlab/cuffs` next to the program in the Windows zip). The script is written from scratch for PinglyMotion; no OpenCollar or other cuff code is copied.
+
+How to try it: on Live scripts press **Watch folder...**, pick `examples`, then `scriptlab`, then `cuffs`, and tick **Show effects in 3D view**. The rings, balls and the ceiling ring appear. Click any of them, or the box beside the figure: the blue menu opens next to the click. Every button below works with a click in the menu box, and with `lsl_event` (`touch` with the prim's `link`, then `dialog` with the button).
+
+```
+cuffs/
+  example.json            the props: where each prim is drawn
+  Root/
+    cuffs_main.lsl        the only script: menu, chains, leash, hanging, RLV
+    cuffs_hang.dingle     the hanging pose (arms up), played while a wrist hangs
+  Ankle_left/  Ankle_right/  Wrist_left/  Wrist_right/      the four cuffs (one notecard each)
+  Leash_ankle_left/  Leash_ankle_right/  Leash_wrist_left/  Leash_wrist_right/   the leash points
+  Ceiling_ring/           the anchor in the ceiling
+```
+
+Ten prims in one object, links in name order after the root: 2 Ankle_left, 3 Ankle_right, 4 Ceiling_ring, 5 Leash_ankle_left, 6 Leash_ankle_right, 7 Leash_wrist_left, 8 Leash_wrist_right, 9 Wrist_left, 10 Wrist_right. The script finds the prims by name and falls back to these numbers (the sandbox gives a child prim no name of its own).
+
+| Prop (= prim) | Shape | Attached to | Position | Size | Turn |
+|---|---|---|---|---|---|
+| Root | box | not attached | -20 45 0 | 8 8 1 | 0 0 0 |
+| Wrist_left, Wrist_right | torus | lHand, rHand | -1 0 0, 1 0 0 | 2.8 2.8 1.2 | 0 90 0 |
+| Ankle_left, Ankle_right | torus | lFoot, rFoot | 0 2 0 | 3.4 3.4 1.2 | 90 0 0 |
+| Leash_wrist_left, Leash_wrist_right | sphere | lHand, rHand | -1 -1.6 0, 1 -1.6 0 | 0.8 0.8 0.8 | 0 0 0 |
+| Leash_ankle_left, Leash_ankle_right | sphere | lFoot, rFoot | 0 2 1.9 | 0.8 0.8 0.8 | 0 0 0 |
+| Ceiling_ring | torus | not attached | 0 88 0 | 5 5 1.2 | 0 0 0 |
+
+The menu (at most 12 buttons of at most 24 characters, as in Second Life; after each choice the main menu comes back):
+
+| Button | What it does |
+|---|---|
+| Lock, Unlock | Pick Wrist L, Wrist R, Ankle L, Ankle R or All. A locked cuff is red, a free one green; the box is red while any cuff is locked. |
+| Chain | Pick two points: any two cuffs, or a cuff and Ceiling, in either order. The chain line appears in the 3D view. |
+| Unchain | Pick one of the chains, or All chains. |
+| Leash | Pick a cuff. The avatar who pressed the button holds the leash; the leash point turns gold. |
+| Unleash | Pick a cuff with a leash. |
+| Hang | Chains both wrists to the ceiling ring and plays the hanging pose. |
+| Release | Takes every chain to the ceiling off. Chains between the cuffs stay. |
+| Free all | Unlocks every cuff and takes every chain and leash off. |
+
+Chain points: a prim emits one particle stream at a time, so each cuff has two (its ring and its leash point) and the ceiling ring one. All six pairs of cuffs can be chained at the same time, and three chains to the ceiling still fit beside them (nine lines in all); one more says "No free chain point ... Unchain something first."
+
+RLV, from the root (one object, so one key): a locked cuff holds `@detach:<point>=n` for its own point (`l forearm`, `r forearm`, `l lower leg`, `r lower leg`), and the object holds `@detach=n` while any cuff is locked (then the chain lines say Locked). Wrists chained together: `@rez=n`, `@edit=n`. Ankles chained together: `@fly=n`. A wrist chained to an ankle: all three. Hanging (any chain to the ceiling): `@fly=n`, `@tplm=n`, `@tploc=n`, `@tplure=n`, `@sittp=n`. A leash: `@tplm=n`, `@tploc=n`, `@tplure=n`. Only what changed is sent (`=n` for new lines, `=y` for lines no longer needed), in one `@` line per change.
+
+The state stays: it is kept in Linkset Data, so a reset (saving a script in Second Life resets it) brings back the locks, chains and leash, and wearing the set again (as after a relog) sends every restriction again. A save in Script Lab runs the folder from the start in a new world, so there the state starts empty; record your clicks (**Record what I do**) and they are replayed after every save.
+
+Not as in Second Life, said plainly:
+
+- The four cuffs, the leash points and the ceiling ring are one object here, so a chain line can be drawn between them (the chain and ribbon lines of job A4 only join prims of the watched object). In Second Life the cuffs would be four worn objects and the ceiling ring a rezzed one, talking on a chat channel (LockGuard or LockMeister style).
+- A leash goes to an avatar, and the 3D view draws no line to an avatar; the leash shows as the gold leash point, the log line and the menu text.
+- The chain lines are straight; nothing pulls, swings or holds the body up. Hanging is the pose `cuffs_hang.dingle`, played while a wrist hangs from the ceiling; an ankle on the ceiling changes the restrictions but plays no pose.
+- Nothing here was tested in Second Life.
+
 ## A real, large setup: OpenCollar
 
 Added 25 November 2026 for «improve a finished setup» (jobs list, issue 74, queue 1, item 5). It is not a beginner example and has no guide or props; the beginner examples are the six above.
@@ -346,4 +400,5 @@ What a later "make example project" button has to do, found in the code on 23 No
 ## Tests
 
 - `tests/tst_examples.cpp` (`pinglymotion_examples_tests`): every example opens as the expected object (prims, links, scripts), passes the import check with no error or warning, and runs with the inputs its guide asks for, with exact owner lines, exact RLV restrictions and the exact colour of every prop of the same name (the main window's tint rule).
+- `tests/tst_examples.cpp`, the cuff set (`cuffSet...`): the object and its props, the main menu on a click on every part and every sub-menu, a chain between every pair of points with its exact line and RLV restrictions, all pairs at once until no chain point is free, hang and release, the lock of each cuff, the leash held by another avatar, Unchain and Free all, the state after a reset and after wearing it again, the recorded clicks replayed after a save, and the clicks through the watched folder as the 3D view sends them. Every run has Second Life's 64 KB memory limit on and no debug line (a refused menu would be one).
 - `tests/test_examples.py` (ctest `examples_guides`): every `example.json` and `guide_now.json` has the format above; at most five steps, each naming a control that exists in the program's texts or in the example's own dialog; every prop has a shape from `src/prop.h`, a joint of both skeletons and a prim of its name; the texts here and in the files are the same; this page passes `tools/check_texts.py`; and "What the program can do now" is the first section and lists exactly the shapes of `src/prop.h`.

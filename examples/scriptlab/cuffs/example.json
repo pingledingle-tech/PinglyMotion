@@ -1,0 +1,210 @@
+{
+  "format": 1,
+  "order": 20,
+  "object": "cuffs",
+  "title": "Cuff set with chains",
+  "works_now": true,
+  "props": [
+    {
+      "name": "Root",
+      "shape": "box",
+      "joint": "",
+      "position": [
+        -20,
+        45,
+        0
+      ],
+      "scale": [
+        8,
+        8,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Wrist_left",
+      "shape": "torus",
+      "joint": "lHand",
+      "position": [
+        -1,
+        0,
+        0
+      ],
+      "scale": [
+        2.8,
+        2.8,
+        1.2
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ]
+    },
+    {
+      "name": "Wrist_right",
+      "shape": "torus",
+      "joint": "rHand",
+      "position": [
+        1,
+        0,
+        0
+      ],
+      "scale": [
+        2.8,
+        2.8,
+        1.2
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ]
+    },
+    {
+      "name": "Ankle_left",
+      "shape": "torus",
+      "joint": "lFoot",
+      "position": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        3.4,
+        3.4,
+        1.2
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Ankle_right",
+      "shape": "torus",
+      "joint": "rFoot",
+      "position": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        3.4,
+        3.4,
+        1.2
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Leash_wrist_left",
+      "shape": "sphere",
+      "joint": "lHand",
+      "position": [
+        -1,
+        -1.6,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Leash_wrist_right",
+      "shape": "sphere",
+      "joint": "rHand",
+      "position": [
+        1,
+        -1.6,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Leash_ankle_left",
+      "shape": "sphere",
+      "joint": "lFoot",
+      "position": [
+        0,
+        2,
+        1.9
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Leash_ankle_right",
+      "shape": "sphere",
+      "joint": "rFoot",
+      "position": [
+        0,
+        2,
+        1.9
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Ceiling_ring",
+      "shape": "torus",
+      "joint": "",
+      "position": [
+        0,
+        88,
+        0
+      ],
+      "scale": [
+        5,
+        5,
+        1.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "guide": []
+}
