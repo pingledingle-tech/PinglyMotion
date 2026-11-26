@@ -1,6 +1,6 @@
 Branch: feat/scriptlab-big-setups
 Status: active
-Pull request: pending
+Pull request: #519
 Files:
 - src/scriptlab/labfolder.*
 - tests/tst_labfolder.cpp
