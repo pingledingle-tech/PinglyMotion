@@ -30,6 +30,14 @@
  * Scripts run in a fixed order (objects in list order, scripts in list order
  * within an object), where Second Life runs them in parallel in no set order.
  *
+ * Run order (Anafin HUD test, gap 3): setRunOrder() changes that order for
+ * the whole world: Fixed (list order, the default), Reverse, or Shuffle with
+ * a seed (the same seed and the same scripts give the same order on every
+ * computer). The order decides which script enters its default state first
+ * and, in every round, which script's waiting events run first. It does not
+ * simulate parallelism: a script still runs an event to its end before the
+ * next script runs.
+ *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -84,6 +92,9 @@ struct AvatarSpec
 };
 
 // step 9a: one script of an object
+// Anafin HUD test, gap 3: the order in which the scripts of the world get to run
+enum class RunOrder { Fixed, Reverse, Shuffle };
+
 struct ScriptEntry
 {
   QString name = "Script";        // llGetScriptName; each script of an object has its own name
@@ -215,6 +226,12 @@ class Sandbox
     QString setExperience(const ExperienceState& experience);
     QString setEstate(const EstateState& estate);
     const ExperienceState& experience() const { return m_experience; }
+    // Anafin HUD test, gap 3: the order the scripts run in (default Fixed); seed is used by Shuffle only. Before start() only.
+    void setRunOrder(RunOrder mode, quint32 seed = 0);
+    RunOrder runOrder() const { return m_orderMode; }
+    quint32 runSeed() const { return m_orderSeed; }
+    // the scripts in the order they run now, each "object/script"
+    QStringList runOrderNames();
     const EstateState& estate() const { return m_estate; }
     // state_entry of every object (in order), then attach for the attached ones
     void start();
@@ -388,6 +405,8 @@ class Sandbox
     void touchPhase(const SandboxInput& input, double t);
     void schedule(const SandboxInput& input);
     void runQueues();
+    // the slots in run order (recomputed when the number of scripts changes, for example after llRemoteLoadScriptPin)
+    std::vector<int> orderedSlots();
     // the avatar that sends an input: name and key
     void avatar(const SandboxInput& input, QString& name, QString& key) const;
     static double distance(const float a[3], const float b[3]);
@@ -411,6 +430,10 @@ class Sandbox
     double m_now = 0.0;
     QJsonObject m_lastDialog;
     std::vector<PendingLoad> m_loads;
+    RunOrder m_orderMode = RunOrder::Fixed;
+    quint32 m_orderSeed = 0;
+    std::vector<int> m_order;
+    size_t m_orderFor = 0;   // m_order is valid while m_slots.size() equals this (and m_order is not empty)
 };
 
 } // namespace lsl

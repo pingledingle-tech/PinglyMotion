@@ -10,9 +10,11 @@ Files:
 - tests/tst_control.cpp
 - docs/CONTROL.md
 - docs/SCRIPT_LAB.md
+- docs/DECISIONS.md
 - tools/mcp/commands.json
 - fuzz/control.dict
 - fuzz/corpus/control/34.json
+- tests/data/scriptlab/scenarios.json
 
 ## What
 

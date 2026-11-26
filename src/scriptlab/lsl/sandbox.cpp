@@ -645,12 +645,64 @@ void Sandbox::start()
 {
   if (m_started) return;
   m_started = true;
-  // every script enters its default state first; then the events run, objects and scripts in list order
-  for (Slot& slot : m_slots) slot.interp->start(false);
+  // every script enters its default state first; then the events run, in run order (list order unless setRunOrder changed it)
+  const std::vector<int> order = orderedSlots();
+  for (int i : order) m_slots[size_t(i)].interp->start(false);
   // an object worn at the start gets attach after its state_entry, as when it is attached in Second Life
-  for (Slot& slot : m_slots)
+  for (int i : order)
+  {
+    Slot& slot = m_slots[size_t(i)];
     if (m_objects[size_t(slot.object)].spec.attached > 0) slot.interp->attachEvent(slot.world->ownerKey());
+  }
   runQueues();
+}
+
+void Sandbox::setRunOrder(RunOrder mode, quint32 seed)
+{
+  if (m_started) return;
+  m_orderMode = mode;
+  m_orderSeed = mode == RunOrder::Shuffle ? seed : 0;
+  m_order.clear();
+}
+
+std::vector<int> Sandbox::orderedSlots()
+{
+  const size_t n = m_slots.size();
+  if (m_order.size() == n && m_orderFor == n) return m_order;
+  m_order.resize(n);
+  for (size_t i = 0; i < n; ++i) m_order[i] = int(i);
+  if (m_orderMode == RunOrder::Reverse)
+    std::reverse(m_order.begin(), m_order.end());
+  else if (m_orderMode == RunOrder::Shuffle && n > 1)
+  {
+    // our own generator (SplitMix64) and Fisher-Yates, not std::shuffle, whose result differs between standard libraries:
+    // the same seed must give the same order on Windows, Linux and the web build
+    quint64 state = quint64(m_orderSeed);
+    auto next = [&state]() {
+      quint64 z = (state += 0x9E3779B97F4A7C15ULL);
+      z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+      z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+      return z ^ (z >> 31);
+    };
+    for (size_t i = n - 1; i > 0; --i)
+    {
+      const size_t j = size_t(next() % quint64(i + 1));
+      std::swap(m_order[i], m_order[j]);
+    }
+  }
+  m_orderFor = n;
+  return m_order;
+}
+
+QStringList Sandbox::runOrderNames()
+{
+  QStringList names;
+  for (int i : orderedSlots())
+  {
+    const Slot& slot = m_slots[size_t(i)];
+    names.append(m_objects[size_t(slot.object)].spec.name + "/" + slot.name);
+  }
+  return names;
 }
 
 void Sandbox::runQueues()
@@ -660,8 +712,12 @@ void Sandbox::runQueues()
   while (again)
   {
     again = false;
-    for (Slot& slot : m_slots)
+    for (int i : orderedSlots())
+    {
+      // the slot list only changes in applyLoads, after this loop
+      Slot& slot = m_slots[size_t(i)];
       if (slot.interp->hasQueued()) slot.interp->runQueue();
+    }
     if (applyLoads()) again = true;
     for (Slot& slot : m_slots)
     {
@@ -709,8 +765,8 @@ void Sandbox::runUntil(double seconds)
       break;
     }
     m_now = qMax(m_now, next);
-    // timers first, in object order, then the inputs that are due, in the order given
-    for (Slot& slot : m_slots) slot.interp->advanceTo(m_now);
+    // timers first, in run order, then the inputs that are due, in the order given
+    for (int i : orderedSlots()) m_slots[size_t(i)].interp->advanceTo(m_now);
     while (!m_inputs.empty() && m_inputs.front().at <= m_now)
     {
       const SandboxInput in = m_inputs.front();

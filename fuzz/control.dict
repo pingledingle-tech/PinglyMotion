@@ -118,3 +118,8 @@
 "\"velocity\""
 "\"avatars\""
 "\"collision\""
+"\"order\""
+"\"seed\""
+"\"fixed\""
+"\"reverse\""
+"\"shuffle\""
