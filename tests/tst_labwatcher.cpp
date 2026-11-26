@@ -108,7 +108,7 @@ void TestLabWatcher::runOptionsAreChecked()
   LabWatcher w;
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"seconds", -1}}).error,
            QString("\"seconds\" must be between 0 and 3600 (simulated seconds)."));
-  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv, linkset."));
+  QCOMPARE(w.watch(dir.path(), QJsonObject{{"speed", 2}}).error, QString("Unknown run option \"speed\". Options: seconds, inputs, keep_rlv, linkset, script_memory."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"linkset", "yes"}}).error,
            QString("\"linkset\" must be true (the folder is one object) or false (every script on its own)."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"inputs", QJsonArray{QJsonObject{{"type", "wave"}}}}}).error,

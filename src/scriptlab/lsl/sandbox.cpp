@@ -1992,7 +1992,7 @@ QJsonArray Sandbox::objectsJson() const
       if (in.stopped()) reasons << (o.tagScripts ? slot.name + ": " + in.stopReason() : in.stopReason());
       QJsonObject s{{"name", slot.name}, {"link", linkNumber(o.firstSlot + k)}, {"state", in.currentState()},
                     {"stopped", in.stopped()}, {"open_listens", in.openListens()}, {"timer", in.timerInterval()},
-                    {"steps", double(in.steps())}, {"memory", double(in.memoryBytes())}, {"memory_limit", in.memoryLimit()},
+                    {"steps", double(in.steps())}, {"memory", double(in.memoryBytes())}, {"memory_limit", in.memoryLimit()}, {"memory_code", double(in.codeBytes())}, {"memory_estimate", double(in.memoryEstimate())},
                     {"messages", QJsonObject{{"sent", double(in.messageCounts().sent)}, {"received", double(in.messageCounts().received)},
                                              {"unused", double(in.messageCounts().unused)}, {"ignored", double(in.messageCounts().ignored)}}}};
       if (in.stopped()) s["stop_reason"] = in.stopReason();

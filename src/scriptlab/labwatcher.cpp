@@ -127,8 +127,8 @@ LabWatcher::Result LabWatcher::watch(const QString& folder, const QJsonObject& r
   // script never compiles, so an answer with "errors" means the options are fine
   for (auto it = runOptions.begin(); it != runOptions.end(); ++it)
     if (it.key() != QLatin1String("seconds") && it.key() != QLatin1String("inputs") && it.key() != QLatin1String("keep_rlv")
-        && it.key() != QLatin1String("linkset"))
-      return {"Unknown run option \"" + it.key().left(40) + "\". Options: seconds, inputs, keep_rlv, linkset."};
+        && it.key() != QLatin1String("linkset") && it.key() != QLatin1String("script_memory"))
+      return {"Unknown run option \"" + it.key().left(40) + "\". Options: seconds, inputs, keep_rlv, linkset, script_memory."};
   if (runOptions.contains("linkset") && !runOptions.value("linkset").isBool())
     return {"\"linkset\" must be true (the folder is one object) or false (every script on its own)."};
   const bool linkset = runOptions.value("linkset").toBool(false);

@@ -102,13 +102,14 @@ LabImproveView::LabImproveView(QWidget* parent)
   m_table = new QTreeWidget(this);
   m_table->setObjectName("scriptLabImproveTable");
   m_table->setAccessibleName(tr("Memory and messages per script"));
-  m_table->setColumnCount(6);
-  m_table->setHeaderLabels({tr("Script"), tr("Kept"), tr("Values"), tr("Sent"), tr("Got"), tr("Not used")});
+  m_table->setColumnCount(7);
+  m_table->setHeaderLabels({tr("Script"), tr("Kept"), tr("Values"), tr("Sent"), tr("Got"), tr("Not used"), tr("Estimate")});
   m_table->headerItem()->setToolTip(1, tr("The memory Second Life keeps for the script: 64 KB, or the limit it set with llSetMemoryLimit"));
   m_table->headerItem()->setToolTip(2, tr("The memory of the script's values at the end, a rough count. Code is not counted."));
   m_table->headerItem()->setToolTip(3, tr("Link messages and chat the script sent"));
   m_table->headerItem()->setToolTip(4, tr("Link messages and chat the script got and handled"));
   m_table->headerItem()->setToolTip(5, tr("Messages the script got and did nothing with"));
+  m_table->headerItem()->setToolTip(6, tr("A rough estimate of the memory the script needs in Second Life: its code (9 bytes for each token of the source) plus its values at the end. Compare it with Kept; it can be about 30 percent off."));
   m_table->setRootIsDecorated(false);
   m_table->setUniformRowHeights(true);
   m_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -118,8 +119,8 @@ LabImproveView::LabImproveView(QWidget* parent)
   m_table->header()->setSectionResizeMode(0, QHeaderView::Stretch);
   m_layout->addWidget(m_table);
   m_tableNote = new WrapLabel(this);
-  m_tableNote->setText(tr("Second Life gives each script 64 KB. The memory the code itself takes is not counted yet: "
-                          "that waits for a measurement in Second Life."));
+  m_tableNote->setText(tr("Second Life gives each script 64 KB. Estimate is the code plus the values, a rough estimate that can be about "
+                          "30 percent off: measure in Second Life (llGetUsedMemory) before you trust it."));
   m_tableNote->setObjectName("scriptLabImproveTableNote");
   m_layout->addWidget(m_tableNote);
 
@@ -225,8 +226,9 @@ void LabImproveView::refresh()
   for (const LabWeight::Script& s : c.weight.scripts)
   {
     QTreeWidgetItem* item = new QTreeWidgetItem(m_table, {s.name, LabWeight::kb(s.limit), LabWeight::kb(s.used), QString::number(s.sent),
-                                                          QString::number(s.received), QString::number(s.unused)});
-    for (int col = 1; col < 6; ++col) item->setTextAlignment(col, Qt::AlignRight | Qt::AlignVCenter);
+                                                          QString::number(s.received), QString::number(s.unused),
+                                                          s.estimate() < 0 ? tr("?") : LabWeight::kb(s.estimate())});
+    for (int col = 1; col < 7; ++col) item->setTextAlignment(col, Qt::AlignRight | Qt::AlignVCenter);
     QString tip = tr("%1, in %2.").arg(s.name, s.prim);
     if (s.ignored > 0) tip += QLatin1Char(' ') + tr("%1 of its messages were not used by the script that got them.").arg(s.ignored);
     if (s.stopped) tip += QLatin1Char(' ') + tr("It stopped.");
@@ -338,6 +340,15 @@ QStringList LabImproveView::suggestionLines() const
   return out;
 }
 
+QStringList LabImproveView::estimateRows() const
+{
+  QStringList out;
+  if (!m_table->isVisibleTo(this)) return out;
+  for (int i = 0; i < m_table->topLevelItemCount(); ++i)
+    out << m_table->topLevelItem(i)->text(0) + QStringLiteral(" | ") + m_table->topLevelItem(i)->text(6);
+  return out;
+}
+
 QStringList LabImproveView::tableRows() const
 {
   QStringList out;
@@ -345,7 +356,7 @@ QStringList LabImproveView::tableRows() const
   for (int i = 0; i < m_table->topLevelItemCount(); ++i)
   {
     QStringList cells;
-    for (int col = 0; col < m_table->columnCount(); ++col) cells << m_table->topLevelItem(i)->text(col);
+    for (int col = 0; col < 6; ++col) cells << m_table->topLevelItem(i)->text(col);   // the estimate column is in estimateRows()
     out << cells.join(QStringLiteral(" | "));
   }
   return out;
