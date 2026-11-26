@@ -32,6 +32,11 @@ Files:
 - tests/tst_labwatcher.cpp
 - tests/tst_control.cpp
 - tests/tst_lslimprove.cpp
+- tests/tst_lslhttp.cpp
+- tests/tst_lslcollision.cpp
+- tests/data/scriptlab/scenarios.json
+- src/scriptlab/labfolder.cpp
+- src/scriptlab/lsl/interp.*
 - fuzz/control.dict
 - fuzz/corpus/control/**
 - tests/data/lsl-definitions/**

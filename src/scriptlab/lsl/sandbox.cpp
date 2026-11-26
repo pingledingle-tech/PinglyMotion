@@ -169,9 +169,9 @@ class ObjectWorld : public RlvWorld
       return false;
     }
     std::deque<double>& httpTimes() override { return state().httpTimes; }
-    bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body) override
+    bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body, double at) override
     {
-      m_sandbox.httpResponse(m_slot, time, id, status, truncatedAt, body);
+      m_sandbox.httpResponse(m_slot, time, id, status, truncatedAt, body, at);
       return true;
     }
     QString giveInventory(double time, const QString& to, const InventoryItem& item) override { return m_sandbox.giveInventory(m_slot, time, to, item); }
@@ -820,6 +820,11 @@ void Sandbox::avatar(const SandboxInput& input, QString& name, QString& key) con
 {
   name = input.name.isEmpty() ? QString(OWNER_NAME) : input.name;
   key = input.id.isEmpty() ? QString(OWNER_KEY) : input.id;
+  // job 23 (leftover of the Anafin HUD test): an input with only the id of an avatar of the avatars list has that
+  // avatar's name (llDetectedName), not the owner's
+  if (input.name.isEmpty() && !input.id.isEmpty())
+    for (const AvatarSpec& a : m_avatars)
+      if (a.key == input.id) { name = a.name; break; }
 }
 
 double Sandbox::distance(const float a[3], const float b[3])
@@ -1884,7 +1889,7 @@ void Sandbox::deliverExperience(const SandboxInput& input)
   }
 }
 
-void Sandbox::httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body)
+void Sandbox::httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body, double at)
 {
   // every script in the prim that made the request gets the event (Second Life wiki, http_response)
   const Slot& sender = m_slots[size_t(from)];
@@ -1894,7 +1899,7 @@ void Sandbox::httpResponse(int from, double time, const QString& id, int status,
     Slot& slot = m_slots[size_t(o.firstSlot + i)];
     if (slot.link != sender.link) continue;
     slot.interp->syncTo(time);
-    slot.interp->httpResponseEvent(id, status, truncatedAt, body);
+    slot.interp->httpResponseEvent(id, status, truncatedAt, body, at);
   }
 }
 

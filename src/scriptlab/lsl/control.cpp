@@ -872,10 +872,10 @@ namespace
   {
     static const int MAX_URL_CHARS = 2048;
     static const int MAX_BODY_CHARS = 65536;
-    if (!v.isArray()) return "\"http\" must be a list of canned replies, each {\"url\", \"method\", \"status\", \"body\"}.";
+    if (!v.isArray()) return "\"http\" must be a list of canned replies, each {\"url\", \"method\", \"status\", \"body\", \"delay\"}.";
     const QJsonArray list = v.toArray();
     if (list.size() > Sandbox::MAX_HTTP_REPLIES) return QString("\"http\" holds at most %1 canned replies.").arg(Sandbox::MAX_HTTP_REPLIES);
-    static const QStringList fields = {"url", "method", "status", "body"};
+    static const QStringList fields = {"url", "method", "status", "body", "delay"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("HTTP reply %1: ").arg(i + 1);
@@ -901,6 +901,13 @@ namespace
         if (!o.value("body").isString() || o.value("body").toString().size() > MAX_BODY_CHARS)
           return where + QString("\"body\" must be text of at most %1 characters.").arg(MAX_BODY_CHARS);
         r.body = o.value("body").toString();
+      }
+      if (o.contains("delay"))
+      {
+        r.delay = o.value("delay").toDouble(-1.0);
+        if (!o.value("delay").isDouble() || !std::isfinite(r.delay) || r.delay < 0.0 || r.delay > HttpReply::MAX_DELAY)
+          return where + QString("\"delay\" must be the simulated seconds until the reply comes, 0 to %1 (from %2 on it never comes and the request gets status 499 after %2 seconds).")
+                           .arg(HttpReply::MAX_DELAY).arg(HttpReply::HTTP_TIMEOUT);
       }
       out.push_back(r);
     }

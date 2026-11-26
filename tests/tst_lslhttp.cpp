@@ -26,6 +26,8 @@ class LslHttpTest : public QObject
     void cannedReply();
     void postWithParameters();
     void noReplyGives499();
+    void lateReply();
+    void replyThatNeverComes();
     void matchingOrder();
     void bodyIsTruncated();
     void refusedRequests_data();
@@ -113,6 +115,39 @@ void LslHttpTest::noReplyGives499()
   // no "http" option at all: the same
   const QJsonObject none = run(R"lsl(llHTTPRequest("https://example.com/", [], "");)lsl", QJsonArray());
   QCOMPARE(said(none), QStringList{"499||"});
+}
+
+void LslHttpTest::lateReply()
+{
+  // job 23: the reply comes 5 simulated seconds after the request, so a script that gave up after 2 seconds sees it late
+  const QString source = "default {\n state_entry() { llHTTPRequest(\"https://example.com/slow\", [], \"\"); llSetTimerEvent(2.0); }\n"
+    " timer() { llSetTimerEvent(0.0); llOwnerSay(\"waited \" + (string)llRound(llGetTime())); }\n"
+    " http_response(key id, integer status, list meta, string body) { llOwnerSay((string)llRound(llGetTime()) + \" \" + (string)status + \" \" + body); }\n}";
+  QJsonObject request{{"command", "lsl_run"}, {"source", source}, {"seconds", 10},
+                      {"http", QJsonArray{QJsonObject{{"url", "https://example.com/slow"}, {"body", "late"}, {"delay", 5}}}}};
+  const QJsonObject a = Control::run(request);
+  QCOMPARE(said(a), (QStringList{"waited 2", "5 200 late"}));
+  const QString want = R"({"delay":5,"method":"GET","mimetype":"text/plain;charset=utf-8","request":"5c11ab00-0000-4000-8000-000000000001","result":"canned","status":200,"type":"http_request","url":"https://example.com/slow"})";
+  QCOMPARE(entries(a, "http_request"), QStringList{want});
+  // a run that ends before the reply comes does not see it
+  request["seconds"] = 4;
+  QCOMPARE(said(Control::run(request)), QStringList{"waited 2"});
+}
+
+void LslHttpTest::replyThatNeverComes()
+{
+  // job 23: a delay of 60 seconds or more never comes: status 499 and an empty body after 60 seconds, as in Second Life
+  const QString source = "default {\n state_entry() { llHTTPRequest(\"https://example.com/dead\", [], \"\"); }\n"
+    " http_response(key id, integer status, list meta, string body) { llOwnerSay((string)llRound(llGetTime()) + \" \" + (string)status + \" [\" + body + \"]\"); }\n}";
+  QJsonObject request{{"command", "lsl_run"}, {"source", source}, {"seconds", 100},
+                      {"http", QJsonArray{QJsonObject{{"url", "https://example.com/dead"}, {"body", "never"}, {"delay", 300}}}}};
+  const QJsonObject a = Control::run(request);
+  QCOMPARE(said(a), (QStringList{"60 499 []"}));
+  const QString want = R"({"delay":60,"method":"GET","mimetype":"text/plain;charset=utf-8","request":"5c11ab00-0000-4000-8000-000000000001","result":"timed_out","status":499,"type":"http_request","url":"https://example.com/dead"})";
+  QCOMPARE(entries(a, "http_request"), QStringList{want});
+  request["http"] = QJsonArray{QJsonObject{{"url", "https://example.com/dead"}, {"delay", 301}}};
+  QCOMPARE(Control::run(request)["error"].toString(),
+           QString("HTTP reply 1: \"delay\" must be the simulated seconds until the reply comes, 0 to 300 (from 60 on it never comes and the request gets status 499 after 60 seconds)."));
 }
 
 void LslHttpTest::matchingOrder()
@@ -266,13 +301,13 @@ void LslHttpTest::inputErrors_data()
 {
   QTest::addColumn<QJsonValue>("http");
   QTest::addColumn<QString>("error");
-  QTest::newRow("not a list") << QJsonValue("x") << "\"http\" must be a list of canned replies, each {\"url\", \"method\", \"status\", \"body\"}.";
+  QTest::newRow("not a list") << QJsonValue("x") << "\"http\" must be a list of canned replies, each {\"url\", \"method\", \"status\", \"body\", \"delay\"}.";
   QJsonArray many;
   for (int i = 0; i < 65; ++i) many.append(QJsonObject{{"url", "*"}});
   QTest::newRow("too many") << QJsonValue(many) << "\"http\" holds at most 64 canned replies.";
   QTest::newRow("not an object") << QJsonValue(QJsonArray{1}) << "HTTP reply 1: must be an object with a url.";
   QTest::newRow("unknown field") << QJsonValue(QJsonArray{QJsonObject{{"url", "*"}, {"headers", 1}}})
-                                 << "HTTP reply 1: unknown field \"headers\". Fields: url, method, status, body.";
+                                 << "HTTP reply 1: unknown field \"headers\". Fields: url, method, status, body, delay.";
   QTest::newRow("no url") << QJsonValue(QJsonArray{QJsonObject{{"body", "x"}}})
                           << "HTTP reply 1: \"url\" must be text of 1 to 2048 characters: the exact URL, or a prefix ending in * (\"*\" alone answers every URL).";
   QTest::newRow("method") << QJsonValue(QJsonArray{QJsonObject{{"url", "*"}, {"method", "PATCH"}}})

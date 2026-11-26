@@ -556,12 +556,14 @@ void Interpreter::linkMessage(int sender, int num, const QString& str, const QSt
   queueEvent(Event{"link_message", {Value::integer(sender), Value::integer(num), Value::string(str), Value::key(id)}, QString(), QString(), {}, from});
 }
 
-void Interpreter::httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body)
+void Interpreter::httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body, double at)
 {
   const int HTTP_BODY_TRUNCATED = 0;
   std::vector<Value> metadata;
   if (truncatedAt >= 0) metadata = {Value::integer(HTTP_BODY_TRUNCATED), Value::integer(truncatedAt)};
-  queueEvent(Event{"http_response", {Value::key(id), Value::integer(status), Value::makeList(metadata), Value::string(body)}, QString(), QString()});
+  const Event event{"http_response", {Value::key(id), Value::integer(status), Value::makeList(metadata), Value::string(body)}, QString(), QString()};
+  if (at > m_now) queueLater(at, event);
+  else queueEvent(event);
 }
 
 void Interpreter::dropExpiredRequests()

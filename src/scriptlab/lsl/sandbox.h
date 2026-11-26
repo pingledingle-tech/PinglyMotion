@@ -391,7 +391,7 @@ class Sandbox
     // step 9b-5: llUnSit on an avatar sitting on the script's own object; an avatar sitting anywhere in the world
     bool unSit(int from, double time, const QString& key);
     // step 9b-9: http_response to every script in the prim of the requesting script
-    void httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body);
+    void httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body, double at = -1.0);
     std::vector<Detected> sense(int from, const QString& name, const QString& id, int type, double range, double arc);
     // gap list 2, step 2: llDie (the object is gone and its other scripts stop), another script of the same prim by
     // name (a slot, or -1), and what llGetObjectDetails knows about a key

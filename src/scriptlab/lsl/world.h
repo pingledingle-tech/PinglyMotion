@@ -261,6 +261,11 @@ struct HttpReply
   QString method;                   // GET, POST, PUT or DELETE; empty: any method
   int status = 200;
   QString body;
+  // job 23: simulated seconds until the reply comes (0: at once); from HTTP_TIMEOUT on it never comes, and the request
+  // gets status 499 after HTTP_TIMEOUT seconds, as in Second Life
+  double delay = 0.0;
+  static constexpr double HTTP_TIMEOUT = 60.0;
+  static constexpr double MAX_DELAY = 300.0;
 
   bool matches(const QString& requestMethod, const QString& requestUrl) const;
   // the first reply of the list that matches, or null
@@ -644,9 +649,9 @@ class World
     virtual bool avatarOnline(const QString& key) const { Q_UNUSED(key); return true; }
     virtual bool offlineAvatar(const QString& key, QString& name) const { Q_UNUSED(key); Q_UNUSED(name); return false; }
     virtual std::deque<double>& httpTimes() { return m_httpTimes; }
-    virtual bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body)
+    virtual bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body, double at = -1.0)
     {
-      Q_UNUSED(time); Q_UNUSED(id); Q_UNUSED(status); Q_UNUSED(truncatedAt); Q_UNUSED(body);
+      Q_UNUSED(time); Q_UNUSED(id); Q_UNUSED(status); Q_UNUSED(truncatedAt); Q_UNUSED(body); Q_UNUSED(at);
       return false;
     }
 

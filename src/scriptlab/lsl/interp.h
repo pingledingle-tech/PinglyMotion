@@ -121,7 +121,8 @@ class Interpreter
     void controlEvent(const QString& id, int levels, int edges);
     // Step 9b-9: queues http_response(request, status, metadata, body); metadata is [HTTP_BODY_TRUNCATED, truncatedAt]
     // when the body was cut (truncatedAt >= 0), else empty
-    void httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body);
+    // at: the simulated time it comes (job 23; below or at now: at once)
+    void httpResponseEvent(const QString& id, int status, int truncatedAt, const QString& body, double at = -1.0);
     // Gap list 2, step 4: an HTTP request from outside to a URL of this script. Queues http_request and keeps the request
     // for llHTTPResponse (HTTP_RESPONSE_TIMEOUT seconds) and llGetHTTPHeader (HTTP_HEADER_TIMEOUT seconds); false, with
     // nothing queued, when MAX_PENDING_HTTP requests wait for an answer (Second Life then answers 503)
