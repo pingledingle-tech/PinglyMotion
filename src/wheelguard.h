@@ -1,4 +1,10 @@
 /*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
+/*
  * PinglyMotion - animation editor for Second Life avatars
  *
  * Wheel guard: a mouse wheel over a slider, spin box or drop-down list inside

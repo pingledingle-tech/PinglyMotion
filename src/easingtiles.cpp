@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 // The easing tile row (issue #53 step 5). See easingtiles.h.
 #include "easingtiles.h"
 #include "dialogfit.h"

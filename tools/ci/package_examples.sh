@@ -6,6 +6,8 @@
 # Used by the Windows zip of every pull request (build.yml) and by the release
 # packages (release.yml), so both hold the same files. See docs/DEV.md, "The Windows zip".
 #
+# It also calls package_notices.sh, so every package holds the licence and the notices (job "text corrections and licence notices").
+#
 # Usage, from the repository root: tools/ci/package_examples.sh <package folder>
 set -euo pipefail
 
@@ -26,4 +28,6 @@ if [ -d tests/motions ]; then
 fi
 if [ -d tests/data/generated ]; then cp -r tests/data/generated "$dest/examples/edge-cases"; fi
 cp -r library "$dest/library"
+# the licence, the notices and CREDITS.md go into every package the same way
+bash "$(dirname "$0")/package_notices.sh" "$dest"
 echo "examples folder in the package:"; (cd "$dest" && find examples -type f | sort)

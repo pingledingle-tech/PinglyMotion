@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 // The credits and licence text of Help > About (issue 106).
 // Kept apart from the dialog so a test can check it without a window.
 

@@ -43,7 +43,7 @@ PinglyMotion helps you make those movements. It is for free. It is open source, 
 PinglyMotion does three things:
 
 1. **Animate a figure.** You bend the joints of a 3D figure. You save poses at moments in time. The program fills in the movement between them. You export the result for Second Life.
-2. **Test scripts safely.** Objects in Second Life use scripts. PinglyMotion has a safe sandbox, the **Script Lab**, where you can run RLV and LSL scripts on your own computer. Nothing you do there reaches Second Life.
+2. **Test scripts safely.** Objects in Second Life use scripts. PinglyMotion has a safe sandbox, the **Script Lab**, where you can run RLV and LSL scripts on your own computer. Nothing you do there reaches Second Life. Use scripts you trust. Script Lab is new, and a very unusual script can crash the program, so save your animation first.
 3. **Work with an AI helper, if you want.** An AI assistant on your own computer can pose the figure for you. It is off until you turn it on. Everything works without it.
 
 PinglyMotion is an **early preview**. It is made for trying out and for feedback. Expect rough edges. See [What is finished and what is not](#what-is-finished-and-what-is-not).
@@ -118,14 +118,14 @@ Dates are from the project documents of 25 November 2026.
 |---|---|---|
 | Posing joints, keys, timeline, playback, undo | Built | Chapters 3 to 5. |
 | Save as `.dingle`, open `.dingle`, `.bvh`, `.avm` | Built | Old `.avm` files open and are saved as `.dingle`. |
-| Export for Second Life (`.anim`) | Built | Export, upload and playback were validated in Firestorm on 21 November 2026: timing, loop, slow start and finish, hands, easing. Other viewers were not checked. |
+| Export for Second Life (`.anim`) | Built | Export, upload and playback of a test animation were tried in Second Life. |
 | Import `.anim`, BVH from another skeleton, glTF | Built | Foot lock (keeping feet from sliding) is **not built**. |
 | Library of 106 moves | Built | The moves come from open sources. Their licences are shown in the panel. |
 | Props (box, sphere, cone, torus) | Built | They are simple shapes. A prop cannot be renamed yet. |
 | Two figures in one scene (Expert mode) | Built | Only in Expert mode. |
 | Face joints | Partly built | Face joints are parked. The Face tab exists, but the face is not a focus. |
-| Script Lab: RLV commands | Built | A sandbox with 206 RLV behaviours. **Not tested in Second Life.** The final test is always in Second Life. |
-| Script Lab: LSL scripts run in a sandbox | Partly built | 282 built-in functions, a simulated clock. Some functions only record what they were asked. Many do nothing yet. **Not tested in Second Life.** |
+| Script Lab: RLV commands | Built | A sandbox with more than 200 RLV behaviours. **Not tested in Second Life.** The final test is always in Second Life. |
+| Script Lab: LSL scripts run in a sandbox | Partly built | More than 280 built-in functions, a simulated clock. Some functions only record what they were asked. Many do nothing yet. **Not tested in Second Life.** |
 | Script Lab: Live scripts, tree, props from prims | Built | One folder is one object. A prop with the same name as a prim belongs to it. |
 | Script Lab: Player, Who talks to whom, Record what I do | Built | **Not tested in Second Life.** Some parts of the 3D view do not follow the player (see Chapter 10). |
 | Script Lab: Improve a setup | Partly built | The memory of the code is only a rough estimate (the Estimate column). |
@@ -171,7 +171,7 @@ A graphics card and driver with OpenGL 3.3 or newer. If the 3D view stays black,
 - An error log and the connection file for the AI assistant: in `%LOCALAPPDATA%\PinglyMotion` on Windows or `~/.local/share/PinglyMotion` on Linux.
 - Script Lab examples you create: in `Documents/PinglyMotion/Scripts`.
 
-PinglyMotion collects no personal data and sends no telemetry. The program does look once at start for a newer version (the "Update check").
+PinglyMotion collects no personal data and sends no telemetry. The program does look about once a week, when the program starts, for a newer version (the "Update check").
 
 ### First start
 
@@ -350,7 +350,7 @@ Uploading is done in the Second Life viewer, not in PinglyMotion.
 3. Set the same priority and loop as in the export box. The viewer asks for a small fee.
 4. Wear or play the animation to see it.
 
-An honest note: export, upload and playback were validated in Firestorm on 21 November 2026. Other viewers were not tested. Uploading costs a small fee in Second Life.
+An honest note: export, upload and playback of a test animation were tried in Second Life. Uploading costs a small fee in Second Life.
 
 ### If something goes wrong
 
@@ -612,7 +612,7 @@ An AI assistant can only open and save files in one folder: `PinglyMotion` in yo
 
 ## Chapter 10: Script Lab for beginners
 
-Script Lab is a safe sandbox. You can run RLV and LSL scripts on your computer. Nothing reaches Second Life.
+Script Lab is a safe sandbox. You can run RLV and LSL scripts on your computer. Nothing reaches Second Life. Use scripts you trust. Script Lab is new, and a very unusual script can crash the program, so save your animation first.
 
 Some words first.
 
@@ -773,13 +773,13 @@ The window title says "AI Assistant on" while it is on. Click the button again t
 - It works only on your own PC. Nothing on the network can reach it.
 - It is off each time PinglyMotion starts.
 - There is a new secret key each time you turn it on.
-- Requests from web pages are refused.
+- Web pages cannot give it commands: every command needs the secret key.
 
 ### What an assistant can do
 
 An assistant uses the commands of the control interface: look at the state, pose joints, set frames, play, take a screenshot, describe the pose and the movement in words, read and write a whole animation as a small text table, check an animation against Second Life's rules, export `.anim`, search the library, and use the Script Lab (RLV commands and LSL scripts). The full list is in `docs/CONTROL.md` and `tools/mcp/commands.json`.
 
-The assistant can only open and save files in the folder `Documents/PinglyMotion`.
+The assistant can only open and save files in the folder `Documents/PinglyMotion`. An AI assistant you connect can also ask the program to read script files from a folder. It only does this while the AI Assistant is on.
 
 ### Status
 
@@ -1002,6 +1002,10 @@ Go to <https://github.com/pingledingle-tech/PinglyMotion/issues> and open an iss
 PinglyMotion is free and open source. It is based on QAvimator. The avatar bodies, the library clips, the example collar and the other outside material are credited in the file [CREDITS.md](../CREDITS.md) and in **Help > About...**.
 
 The ready-made moves come from the CMU motion capture database and from Mesh2Motion (CC0). The example collar is the public OpenCollar project (GPL 2).
+
+PinglyMotion is free software. You may use, study, share and change it under the GNU General Public License, version 2 or later. It carries other people’s work under their own licences, for example the Qt toolkit, avatar bodies, motion clips and example scripts. The full list with each licence is in [CREDITS.md](../CREDITS.md).
+
+PinglyMotion is an independent project. It is not made, endorsed or supported by Linden Research, Inc. (Linden Lab). Second Life and Linden Lab are trademarks of Linden Research, Inc. Firestorm, Aurora, OpenCollar and other names belong to their owners.
 
 ---
 

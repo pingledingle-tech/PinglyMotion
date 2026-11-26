@@ -45,7 +45,7 @@ PinglyMotion hjelper deg å lage slike bevegelser. Det er gratis. Det er åpen k
 PinglyMotion gjør tre ting:
 
 1. **Animere en figur.** Du bøyer leddene på en 3D-figur. Du lagrer posituren på bestemte tidspunkter. Programmet fyller inn bevegelsen mellom dem. Du eksporterer resultatet til Second Life.
-2. **Teste skript trygt.** Objekter i Second Life bruker skript. PinglyMotion har en trygg sandkasse, **Script Lab**, der du kan kjøre RLV- og LSL-skript på din egen datamaskin. Ingenting du gjør der når Second Life.
+2. **Teste skript trygt.** Objekter i Second Life bruker skript. PinglyMotion har en trygg sandkasse, **Script Lab**, der du kan kjøre RLV- og LSL-skript på din egen datamaskin. Ingenting du gjør der når Second Life. Bruk skript du stoler på. Script Lab er nytt, og et svært uvanlig skript kan få programmet til å krasje, så lagre animasjonen din først.
 3. **Jobbe med en AI-hjelper, hvis du vil.** En AI-assistent på din egen datamaskin kan sette figuren i positur for deg. Den er av helt til du slår den på. Alt fungerer uten den.
 
 PinglyMotion er en **tidlig forhåndsversjon**. Den er laget for utprøving og tilbakemeldinger. Regn med ujevnheter. Se [Hva som er ferdig og hva som ikke er det](#hva-som-er-ferdig-og-hva-som-ikke-er-det).
@@ -120,14 +120,14 @@ Datoene er fra prosjektets dokumenter per 25. november 2026.
 |---|---|---|
 | Sette ledd i positur, nøkler, tidslinje, avspilling, angre | Built | Kapittel 3 til 5. |
 | Lagre som `.dingle`, åpne `.dingle`, `.bvh`, `.avm` | Built | Gamle `.avm`-filer åpnes og lagres som `.dingle`. |
-| Eksport til Second Life (`.anim`) | Built | Eksport, opplasting og avspilling ble bekreftet i Firestorm 21. november 2026: timing, løkke, myk start og slutt, hender, jevn bevegelse (easing). Andre visere ble ikke sjekket. |
+| Eksport til Second Life (`.anim`) | Built | Eksport, opplasting og avspilling av en testanimasjon er prøvd i Second Life. |
 | Importere `.anim`, BVH fra et annet skjelett, glTF | Built | Fotlås (hindrer at føttene glir) er **not built**. |
 | Bibliotek med 106 bevegelser | Built | Bevegelsene kommer fra åpne kilder. Lisensene vises i panelet. |
 | Rekvisitter (boks, kule, kjegle, ring) | Built | Det er enkle former. En rekvisitt kan ikke gis nytt navn ennå. |
 | To figurer i én scene (Expert-modus) | Built | Bare i Expert-modus. |
 | Ansiktsledd | Partly built | Ansiktsleddene er satt på vent. Fanen Face finnes, men ansiktet er ikke et satsingsområde. |
-| Script Lab: RLV-kommandoer | Built | En sandkasse med 206 RLV-atferder. **Not tested in Second Life.** Den endelige testen er alltid i Second Life. |
-| Script Lab: LSL-skript kjører i en sandkasse | Partly built | 282 innebygde funksjoner, en simulert klokke. Noen funksjoner registrerer bare hva de ble bedt om. Mange gjør ingenting ennå. **Not tested in Second Life.** |
+| Script Lab: RLV-kommandoer | Built | En sandkasse med mer enn 200 RLV-atferder. **Not tested in Second Life.** Den endelige testen er alltid i Second Life. |
+| Script Lab: LSL-skript kjører i en sandkasse | Partly built | Mer enn 280 innebygde funksjoner, en simulert klokke. Noen funksjoner registrerer bare hva de ble bedt om. Mange gjør ingenting ennå. **Not tested in Second Life.** |
 | Script Lab: Live scripts, tre, rekvisitter fra prims | Built | Én mappe er ett objekt. En rekvisitt med samme navn som en prim hører til den. |
 | Script Lab: Player, Who talks to whom, Record what I do | Built | **Not tested in Second Life.** Noen deler av 3D-visningen følger ikke spilleren (se Kapittel 10). |
 | Script Lab: Improve a setup | Partly built | Minnetallene tar ikke med minnet som selve koden bruker. Det krever en måling i Second Life. |
@@ -173,7 +173,7 @@ Et grafikkort og en driver med OpenGL 3.3 eller nyere. Hvis 3D-visningen forblir
 - En feillogg og tilkoblingsfilen for AI-assistenten: i `%LOCALAPPDATA%\PinglyMotion` på Windows eller `~/.local/share/PinglyMotion` på Linux.
 - Script Lab-eksempler du lager: i `Documents/PinglyMotion/Scripts`.
 
-PinglyMotion samler ingen personopplysninger og sender ingen telemetri. Programmet ser én gang ved oppstart etter en nyere versjon (den «Update check»).
+PinglyMotion samler ingen personopplysninger og sender ingen telemetri. Programmet ser omtrent én gang i uken, når det starter, etter en nyere versjon (den «Update check»).
 
 ### Første oppstart
 
@@ -352,7 +352,7 @@ Opplasting gjøres i Second Life-viseren, ikke i PinglyMotion.
 3. Sett samme prioritet og løkke som i eksportboksen. Viseren ber om en liten avgift.
 4. Ta på deg eller spill av animasjonen for å se den.
 
-En ærlig merknad: eksport, opplasting og avspilling ble bekreftet i Firestorm 21. november 2026. Andre visere ble ikke testet. Opplasting koster en liten avgift i Second Life.
+En ærlig merknad: eksport, opplasting og avspilling av en testanimasjon er prøvd i Second Life. Opplasting koster en liten avgift i Second Life.
 
 ### Hvis noe går galt
 
@@ -614,7 +614,7 @@ En AI-assistent kan bare åpne og lagre filer i én mappe: `PinglyMotion` i Doku
 
 ## Kapittel 10: Script Lab for nybegynnere
 
-Script Lab er en trygg sandkasse. Du kan kjøre RLV- og LSL-skript på datamaskinen din. Ingenting når Second Life.
+Script Lab er en trygg sandkasse. Du kan kjøre RLV- og LSL-skript på datamaskinen din. Ingenting når Second Life. Bruk skript du stoler på. Script Lab er nytt, og et svært uvanlig skript kan få programmet til å krasje, så lagre animasjonen din først.
 
 Noen ord først.
 
@@ -775,13 +775,13 @@ Vindustittelen sier «AI Assistant on» mens den er på. Klikk knappen igjen for
 - Den virker bare på din egen PC. Ingenting på nettverket kan nå den.
 - Den er av hver gang PinglyMotion starter.
 - Det lages en ny hemmelig nøkkel hver gang du slår den på.
-- Forespørsler fra nettsider avvises.
+- Nettsider kan ikke gi den kommandoer: hver kommando trenger den hemmelige nøkkelen.
 
 ### Hva en assistent kan gjøre
 
 En assistent bruker kommandoene i kontrollgrensesnittet: se på tilstanden, sette ledd i positur, sette rammer, spille av, ta et skjermbilde, beskrive posituren og bevegelsen med ord, lese og skrive en hel animasjon som en liten teksttabell, sjekke en animasjon mot reglene til Second Life, eksportere `.anim`, søke i biblioteket og bruke Script Lab (RLV-kommandoer og LSL-skript). Hele listen står i `docs/CONTROL.md` og `tools/mcp/commands.json`.
 
-Assistenten kan bare åpne og lagre filer i mappen `Documents/PinglyMotion`.
+Assistenten kan bare åpne og lagre filer i mappen `Documents/PinglyMotion`. En AI-assistent du kobler til, kan også be programmet lese skriptfiler fra en mappe. Det gjør programmet bare mens AI Assistant er på.
 
 ### Status
 
@@ -1004,6 +1004,10 @@ Gå til <https://github.com/pingledingle-tech/PinglyMotion/issues> og opprett en
 PinglyMotion er gratis og har åpen kildekode. Det bygger på QAvimator. Avatarkroppene, bibliotekklippene, eksempelhalsbåndet og annet utenforstående materiale er kreditert i filen [CREDITS.md](../CREDITS.md) og i **Help > About...**.
 
 De ferdige bevegelsene kommer fra CMU motion capture-databasen og fra Mesh2Motion (CC0). Eksempelhalsbåndet er det offentlige OpenCollar-prosjektet (GPL 2).
+
+PinglyMotion er fri programvare. Du kan bruke, studere, dele og endre det under GNU General Public License, versjon 2 eller senere. Det inneholder andres arbeid under deres egne lisenser, for eksempel Qt-verktøyet, avatarkropper, bevegelsesklipp og eksempelskript. Hele listen med hver lisens står i [CREDITS.md](../CREDITS.md).
+
+PinglyMotion er et uavhengig prosjekt. Det er ikke laget, godkjent eller støttet av Linden Research, Inc. (Linden Lab). Second Life og Linden Lab er varemerker som tilhører Linden Research, Inc. Firestorm, Aurora, OpenCollar og andre navn tilhører sine eiere.
 
 ---
 

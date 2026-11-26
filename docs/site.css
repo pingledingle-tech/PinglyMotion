@@ -104,3 +104,5 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospac
 .try .btn{display:inline-flex;align-items:center;min-height:var(--h-large);padding:0 var(--l);background:var(--selection);border:var(--bw) solid var(--selection);border-radius:var(--r-control);color:var(--on-accent);font-weight:600;text-decoration:none}
 .try .btn:hover{background:color-mix(in srgb,var(--on-accent) 12%,var(--selection))}
 .try .btn:active{background:color-mix(in srgb,var(--on-accent) 20%,var(--selection))}
+.status{margin:0 0 var(--xl);padding:var(--l);background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r-panel)}
+.status p{margin:0}

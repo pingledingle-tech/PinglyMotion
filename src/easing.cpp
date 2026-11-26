@@ -1,3 +1,9 @@
+/*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
 // Easing maths for the six easing choices (issue #53, step 1). See easing.h.
 #include "easing.h"
 

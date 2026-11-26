@@ -1,4 +1,10 @@
 /*
+ * PinglyMotion
+ *
+ * Licensed under the GNU General Public License version 2 or later.
+ */
+
+/*
  * PinglyMotion - animation editor for Second Life avatars
  *
  * Start folder of the file dialogs. Path logic only, no windows.

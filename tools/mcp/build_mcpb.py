@@ -26,7 +26,10 @@ FILES = [
     ("docs/ASSISTANT_GUIDE.md", "server/ASSISTANT_GUIDE.md"),
     ("tools/mcp/mcpb/README.txt", "README.txt"),
     ("LICENSE", "LICENSE"),
-]
+    # the licence and notices files that every package carries (tests/test_site_licence_notices.py)
+    ("THIRD_PARTY_NOTICES.md", "THIRD_PARTY_NOTICES.md"),
+    ("CREDITS.md", "CREDITS.md"),
+] + [("licenses/" + name, "licenses/" + name) for name in sorted(os.listdir(os.path.join(ROOT, "licenses")))]
 
 
 def program_version():
