@@ -1,6 +1,6 @@
 Branch: feat/cuff-set-chains
 Status: active
-Pull request: pending
+Pull request: #526
 Files:
 - examples/scriptlab/cuffs/**
 - tests/tst_examples.cpp
