@@ -695,7 +695,7 @@ LabWatcher::Result LabWatcher::replayRecipe(bool first)
   if (!why.isEmpty()) return {why};
   const LabRecipe::Result parsed = LabRecipe::parse(text);
   if (!parsed.ok()) return {tr("The recipe has a mistake. %1").arg(parsed.error)};
-  if (parsed.value->steps.isEmpty()) return {tr("The recipe has no steps. Record what you do first.")};
+  if (parsed.value->steps.isEmpty() && parsed.value->expects.isEmpty()) return {tr("The recipe has no steps. Record what you do first.")};
 
   const LabFolder::Linkset linkset = m_lastLinkset.name.isEmpty() ? LabFolder::open(m_folder) : m_lastLinkset;
   const Rlv::Mode mode = m_rlv ? m_rlv->mode() : Rlv::Mode::Rlva;

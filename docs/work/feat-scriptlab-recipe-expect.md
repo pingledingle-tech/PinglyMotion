@@ -1,17 +1,16 @@
 Branch: feat/scriptlab-recipe-expect
 Status: active
-Pull request: pending
+Pull request: #523
 Files:
 - src/scriptlab/labrecipe.*
 - src/scriptlab/labwatcher.*
 - src/controlapi.cpp
-- src/controlserver.cpp
 - tests/tst_labrecipe.cpp
 - tests/tst_control.cpp
+- tests/scriptlabbeginner/tst_scriptlabbeginner.cpp
 - tests/CMakeLists.txt
 - tests/rlvtest/**
 - fuzz/recipe.dict
-- fuzz/control.dict
 - fuzz/fuzz_recipe.cpp
 - fuzz/corpus/recipe/**
 - scenarios/**
@@ -19,6 +18,9 @@ Files:
 - docs/RLV_TOOLS_REPO.md
 - docs/SCRIPT_LAB.md
 - docs/CONTROL.md
+- translations/pinglymotion_en.ts
+- docs/DEV.md
+- tests/test_rlvtest.py
 
 ## What
 

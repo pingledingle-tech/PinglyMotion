@@ -1152,7 +1152,7 @@ void TestScriptLabBeginner::recordAndReplay()
   QVERIFY(writeFile(top + "/recipe.rlvtest", "dance\n"));
   QVERIFY(!panel.replayNow());
   QCOMPARE(panel.recipeStatus()->text(),
-           QString("Error: The recipe has a mistake. Line 1: unknown word \"dance\". Use touch, menu, send, object or wait."));
+           QString("Error: The recipe has a mistake. Line 1: unknown word \"dance\". Use touch, menu, send, say, expect, object or wait."));
   QCOMPARE(panel.recipeStatus()->palette().color(QPalette::WindowText), ScriptLabPanel::dangerColour(true));
 
   // no recipe file: Replay now is greyed with its reason

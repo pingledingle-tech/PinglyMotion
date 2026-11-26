@@ -1,0 +1,5 @@
+# Meant to fail: the line is blocked, but the test says it is not.
+send @sendim=n
+expect blocked:sendim
+expect not blocked:sendim
+expect blocked:sendim allowed

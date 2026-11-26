@@ -1498,14 +1498,24 @@ recording and replay part of `labwatcher.*`; the panel part is in [SCRIPT_LAB.md
   line (the scenario format proposed in [RLV_TOOLS_REPO.md](RLV_TOOLS_REPO.md)): `touch <prim name>` (a click on
   that prim), `menu <button text>` (presses that button in the newest open `llDialog`, or sends the text to an
   `llTextBox`), `send <RLV line>` (from the object named by the last `object <name>` line, `panel` at first),
+  `say <channel> <text>` (the avatar's own chat line on that channel, as `lsl_event` with type `chat`),
   `wait <seconds>` (0.1 to 60). Lines that start with `#` are notes. At most 200 steps, lines of at most 1 024
-  characters, files of at most 65 536 bytes. `expect` lines of the proposal are not built and are refused.
+  characters, files of at most 65 536 bytes.
+- Test lines: `expect [not] <fact key> [text]` is checked right after the step before it (at the start when it comes
+  first). The fact with that key must be true (with `not`: must not be true) and, when text is given, its state
+  must contain it, in any case. Keys: `lock:<name>`, `colour:<prim>`, `said:<prim>`, `blocked:<action>`, `step:<n>`,
+  `menu`, `run`, `stopped` (the `key` of `frames` facts). At most 200 expect lines. An unknown key refuses the
+  recipe with its line number. The command line runner for files is described in [SCRIPT_LAB.md](SCRIPT_LAB.md),
+  "Tests with pass or fail".
 - `lab_replay` takes no options. It runs the whole folder from the start in a world of its own with an RLV state
   of its own (the panel, `rlv_state` and the world `lsl_event` talks to are not touched), with the `seconds` and
   `inputs` of `lab_watch`, then each step one simulated second after the one before (a wait adds its seconds).
   A step that cannot be done (no prim of that name, no menu open, every script stopped, an RLV line refused) is
   skipped and listed as a fact.
-- The answer has `ran` (`false` with `error` when the folder did not run), `steps`, `done`, `facts` (plain
+- The answer has `ran` (`false` with `error` when the folder did not run), `steps`, `done`, `passed` (`true` when
+  the folder ran and no expect line failed; also `true` with no expect line), `expects` (how many expect lines),
+  `failures` (one object for each unmet expect line, in file order: `line`, `step` (the moment, 0 for the start) and
+  `text`, such as `Line 7: expected blocked:sendim, but it is not true here.`), `facts` (plain
   sentences of what is true at the end: an object that holds `@detach` is locked, every blocked action, the colour
   of each prim a script coloured, the last line each prim said to the owner or on channel 0, a menu still open,
   every script stopped), `changes` (one sentence each, for example `Before: Cuffs was locked. Now: it is not

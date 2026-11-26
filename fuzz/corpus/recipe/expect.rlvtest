@@ -1,0 +1,12 @@
+# expect and say lines
+expect not lock:Cuffs
+touch Root
+menu Lock
+expect lock:Cuffs locked
+expect colour:Cuff red
+send @sendim=n
+expect blocked:sendim
+say -77 Free
+expect NOT lock:Cuffs
+expect said:Root Ready
+expect step:9

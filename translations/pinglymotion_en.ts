@@ -979,6 +979,13 @@ Red: a request with a wrong key was refused</source>
     </message>
 </context>
 <context>
+    <name>DocumentWatch</name>
+    <message>
+        <source>The animation changed while a window was open. Nothing was done. Try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>EasingTiles</name>
     <message>
         <source>Even</source>
@@ -3125,10 +3132,6 @@ Pick the ones you want.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Second Life gives each script 64 KB. The memory the code itself takes is not counted yet: that waits for a measurement in Second Life.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Before and after</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3214,6 +3217,22 @@ Pick the ones you want.</source>
     </message>
     <message>
         <source>The event log was full, so a list of events may be short. Stops and calls are counted in full.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Estimate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A rough estimate of the memory the script needs in Second Life: its code (9 bytes for each token of the source) plus its values at the end. Compare it with Kept; it can be about 30 percent off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Second Life gives each script 64 KB. Estimate is the code plus the values, a rough estimate that can be about 30 percent off: measure in Second Life (llGetUsedMemory) before you trust it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7336,14 +7355,6 @@ Try a BVH file for a person with arms and legs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Line %1: &quot;expect&quot; lines are not built yet. Remove the line.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Line %1: unknown word &quot;%2&quot;. Use touch, menu, send, object or wait.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The recipe has more than %1 steps.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8017,6 +8028,70 @@ Try a BVH file for a person with arms and legs.</source>
     </message>
     <message>
         <source>Gone: %1 (it kept %2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Facts: lock:&lt;part&gt;, colour:&lt;part&gt;, said:&lt;part&gt;, blocked:&lt;action&gt;, step:&lt;number&gt;, menu, run, stopped.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;%1&quot; has no name after the colon. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;%1&quot; needs the name of an object or part after the colon, at most %2 characters. Example: %1:Root</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;%1&quot; is not an action that can be blocked. Some actions: %2 ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;step&quot; needs the number of a step, from 1 to %1. Example: step:2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;%1&quot; is not a fact the replay knows. %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;say&quot; needs a channel (a whole number) and then the text. Example: say -77 Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;say&quot; needs the text to say after the channel, at most %2 characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: &quot;expect&quot; needs a fact, for example expect blocked:sendim or expect not lock:Cuffs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: the text of &quot;expect&quot; is longer than %2 characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recipe has more than %1 expect lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: unknown word &quot;%2&quot;. Use touch, menu, send, say, expect, object or wait.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You say &quot;%1&quot; on channel %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: expected %2, but it is not true here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: expected %2, but %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Line %1: expected %2 not to be true, but %3</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9283,6 +9358,18 @@ Error: %2</source>
     </message>
     <message>
         <source>Check a setup you made before and see what can be better.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>force command %1 was accepted but is not carried out in the Script Lab sandbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(lost: the script never hears it)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(comes after %1 s)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

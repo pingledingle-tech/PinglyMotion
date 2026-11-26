@@ -11,6 +11,8 @@
 #include <QRegularExpression>
 #include <QSet>
 
+#include <algorithm>
+#include <climits>
 #include <cmath>
 #include <memory>
 
@@ -19,6 +21,7 @@
 #include "lsl/control.h"
 #include "lsl/session.h"
 #include "rlvstate.h"
+#include "rlvbehaviours.h"
 
 namespace
 {
@@ -57,7 +60,46 @@ QString LabRecipe::resultFile() { return QStringLiteral("recipe.rlvresult"); }
 
 bool LabRecipe::Step::operator==(const Step& other) const
 {
-  return kind == other.kind && text == other.text && object == other.object && seconds == other.seconds;
+  return kind == other.kind && text == other.text && object == other.object && seconds == other.seconds && channel == other.channel;
+}
+
+bool LabRecipe::Expect::operator==(const Expect& other) const
+{
+  return afterStep == other.afterStep && negate == other.negate && key == other.key && text == other.text;
+}
+
+QString LabRecipe::keyError(const QString& key)
+{
+  const QString kinds = QObject::tr("Facts: lock:<part>, colour:<part>, said:<part>, blocked:<action>, step:<number>, menu, run, stopped.");
+  const int colon = key.indexOf(':');
+  const QString kind = colon < 0 ? key : key.left(colon);
+  const QString name = colon < 0 ? QString() : key.mid(colon + 1);
+  if (kind == QLatin1String("menu") || kind == QLatin1String("run") || kind == QLatin1String("stopped"))
+    return colon < 0 ? QString() : QObject::tr("\"%1\" has no name after the colon. %2").arg(kind, kinds);
+  if (kind == QLatin1String("lock") || kind == QLatin1String("colour") || kind == QLatin1String("said"))
+  {
+    if (colon < 0 || name.isEmpty() || name.size() > LabFolder::MAX_NAME)
+      return QObject::tr("\"%1\" needs the name of an object or part after the colon, at most %2 characters. Example: %1:Root").arg(kind).arg(LabFolder::MAX_NAME);
+    return QString();
+  }
+  if (kind == QLatin1String("blocked"))
+  {
+    for (const Rlv::Action& a : Rlv::actions())
+      if (a.id == name && a.id != QLatin1String("detach")) return QString();
+    QStringList ids;
+    for (const Rlv::Action& a : Rlv::actions())
+      if (a.id != QLatin1String("detach") && ids.size() < 8) ids << a.id;
+    return QObject::tr("\"%1\" is not an action that can be blocked. Some actions: %2 ...").arg(clipped(key, 40), ids.join(QStringLiteral(", ")));
+  }
+  if (kind == QLatin1String("step"))
+  {
+    bool ok = false;
+    const int n = name.toInt(&ok);
+    if (colon < 0 || !ok || n < 1 || n > MAX_STEPS || QString::number(n) != name)
+      return QObject::tr("\"step\" needs the number of a step, from 1 to %1. Example: step:2").arg(MAX_STEPS);
+    return QString();
+  }
+  return QObject::tr("\"%1\" is not a fact the replay knows. %2").arg(clipped(key, 40), kinds);
 }
 
 LabRecipe::Result LabRecipe::parse(const QString& text)
@@ -118,10 +160,55 @@ LabRecipe::Result LabRecipe::parse(const QString& text)
       step.kind = Step::Kind::Wait;
       step.seconds = std::round(seconds * 1000.0) / 1000.0;
     }
+    else if (word == QLatin1String("say"))
+    {
+      const int gap = rest.indexOf(QRegularExpression(QStringLiteral("\\s")));
+      bool ok = false;
+      const qint64 channel = (gap < 0 ? rest : rest.left(gap)).toLongLong(&ok);
+      const QString text = gap < 0 ? QString() : rest.mid(gap).trimmed();
+      if (!ok || channel < INT_MIN || channel > INT_MAX)
+        return {std::nullopt, QObject::tr("Line %1: \"say\" needs a channel (a whole number) and then the text. Example: say -77 Lock").arg(n)};
+      if (text.isEmpty() || text.size() > MAX_TEXT_CHARS)
+        return {std::nullopt, QObject::tr("Line %1: \"say\" needs the text to say after the channel, at most %2 characters.").arg(n).arg(MAX_TEXT_CHARS)};
+      step.kind = Step::Kind::Say;
+      step.channel = int(channel);
+      step.text = text;
+    }
     else if (word == QLatin1String("expect"))
-      return {std::nullopt, QObject::tr("Line %1: \"expect\" lines are not built yet. Remove the line.").arg(n)};
+    {
+      Expect expect;
+      expect.line = n;
+      expect.afterStep = recipe.steps.size();
+      QString words = rest;
+      static const QRegularExpression gapRe(QStringLiteral("\\s"));
+      auto takeWord = [&]() -> QString
+      {
+        const int gap = words.indexOf(gapRe);
+        const QString w = gap < 0 ? words : words.left(gap);
+        words = gap < 0 ? QString() : words.mid(gap).trimmed();
+        return w;
+      };
+      QString key = takeWord();
+      if (key.toLower() == QLatin1String("not") && !words.isEmpty())
+      {
+        expect.negate = true;
+        key = takeWord();
+      }
+      if (key.isEmpty() || key.toLower() == QLatin1String("not"))
+        return {std::nullopt, QObject::tr("Line %1: \"expect\" needs a fact, for example expect blocked:sendim or expect not lock:Cuffs.").arg(n)};
+      const QString why = keyError(key);
+      if (!why.isEmpty()) return {std::nullopt, QObject::tr("Line %1: %2").arg(n).arg(why)};
+      if (words.size() > MAX_TEXT_CHARS)
+        return {std::nullopt, QObject::tr("Line %1: the text of \"expect\" is longer than %2 characters.").arg(n).arg(MAX_TEXT_CHARS)};
+      expect.key = key;
+      expect.text = words;
+      if (recipe.expects.size() == MAX_EXPECTS)
+        return {std::nullopt, QObject::tr("The recipe has more than %1 expect lines.").arg(MAX_EXPECTS)};
+      recipe.expects.append(expect);
+      continue;
+    }
     else
-      return {std::nullopt, QObject::tr("Line %1: unknown word \"%2\". Use touch, menu, send, object or wait.").arg(n).arg(clipped(word, 20))};
+      return {std::nullopt, QObject::tr("Line %1: unknown word \"%2\". Use touch, menu, send, say, expect, object or wait.").arg(n).arg(clipped(word, 20))};
     if (recipe.steps.size() == MAX_STEPS)
       return {std::nullopt, QObject::tr("The recipe has more than %1 steps.").arg(MAX_STEPS)};
     recipe.steps.append(step);
@@ -137,8 +224,15 @@ QString LabRecipe::stepLine(const Step& step)
     case Step::Kind::Menu: return QStringLiteral("menu ") + step.text;
     case Step::Kind::Send: return QStringLiteral("send ") + step.text;
     case Step::Kind::Wait: return QStringLiteral("wait ") + number(step.seconds);
+    case Step::Kind::Say: return QStringLiteral("say %1 ").arg(step.channel) + step.text;
   }
   return QString();
+}
+
+QString LabRecipe::expectLine(const Expect& expect)
+{
+  return QStringLiteral("expect ") + (expect.negate ? QStringLiteral("not ") : QString()) + expect.key
+         + (expect.text.isEmpty() ? QString() : QStringLiteral(" ") + expect.text);
 }
 
 QString LabRecipe::stepWords(const Step& step)
@@ -149,6 +243,7 @@ QString LabRecipe::stepWords(const Step& step)
     case Step::Kind::Menu: return QObject::tr("Press \"%1\" in the menu.").arg(step.text);
     case Step::Kind::Send: return QObject::tr("%1 sends %2.").arg(step.object, step.text);
     case Step::Kind::Wait: return QObject::tr("Wait %1 seconds.").arg(number(step.seconds));
+    case Step::Kind::Say: return QObject::tr("You say \"%1\" on channel %2.").arg(step.text).arg(step.channel);
   }
   return QString();
 }
@@ -160,14 +255,22 @@ QString LabRecipe::write(const Recipe& recipe)
                                "# Steps: touch <part>, menu <button>, send <RLV line>, wait <seconds>.\n"
                                "# \"object <name>\" says who sends the next RLV lines. Lines with # are notes.\n");
   QString object = QStringLiteral("panel");
-  for (const Step& step : recipe.steps)
+  auto expectsAfter = [&](int steps)
   {
+    for (const Expect& e : recipe.expects)
+      if (e.afterStep == steps) out += expectLine(e) + '\n';
+  };
+  expectsAfter(0);
+  for (int i = 0; i < recipe.steps.size(); ++i)
+  {
+    const Step& step = recipe.steps.at(i);
     if (step.kind == Step::Kind::Send && step.object != object)
     {
       object = step.object;
       out += QStringLiteral("object ") + object + '\n';
     }
     out += stepLine(step) + '\n';
+    expectsAfter(i + 1);
   }
   return out;
 }
@@ -299,6 +402,24 @@ namespace
     return facts;
   }
 
+  // "" when the expect is met by these facts, else the plain sentence for the failure
+  QString expectFailure(const LabRecipe::Expect& e, const QVector<LabRecipe::Fact>& facts)
+  {
+    const LabRecipe::Fact* found = nullptr;
+    for (const LabRecipe::Fact& f : facts)
+      if (f.key == e.key) { found = &f; break; }
+    const bool textOk = found && (e.text.isEmpty() || found->state.contains(e.text, Qt::CaseInsensitive));
+    const QString shown = e.text.isEmpty() ? e.key : e.key + QStringLiteral(" with \"") + clipped(e.text, 80) + '"';
+    if (!e.negate)
+    {
+      if (!found) return QObject::tr("Line %1: expected %2, but it is not true here.").arg(e.line).arg(shown);
+      if (!textOk) return QObject::tr("Line %1: expected %2, but %3").arg(e.line).arg(shown, found->sentence());
+      return QString();
+    }
+    if (textOk) return QObject::tr("Line %1: expected %2 not to be true, but %3").arg(e.line).arg(shown, found->sentence());
+    return QString();
+  }
+
   void appendLog(LabRecipe::Replay& out, const QJsonArray& entries)
   {
     for (const QJsonValue& v : entries)
@@ -348,7 +469,19 @@ LabRecipe::Replay LabRecipe::replay(const LabFolder::Linkset& linkset, const QJs
     frame.facts = factsOf(linkset, linksetJson, out.log, rlv, sandbox, lastAnswer, stepFacts);
     out.frames.append(frame);
   };
+  // package A: the expects that come right after the first `moment` steps, checked against that moment's facts
+  out.expects = recipe.expects.size();
+  auto checkExpects = [&](int moment)
+  {
+    for (const Expect& e : recipe.expects)
+      if (e.afterStep == moment)
+      {
+        const QString problem = expectFailure(e, out.frames.last().facts);
+        if (!problem.isEmpty()) out.failures.append({e.line, moment, problem});
+      }
+  };
   keepFrame(0, true);
+  checkExpects(0);
   for (int i = 0; i < recipe.steps.size(); ++i)
   {
     const Step& step = recipe.steps.at(i);
@@ -368,6 +501,8 @@ LabRecipe::Replay LabRecipe::replay(const LabFolder::Linkset& linkset, const QJs
         if (linkset.prims.size() > 1) request["link"] = link;
       }
     }
+    else if (step.kind == Step::Kind::Say)
+      request = QJsonObject{{"command", "lsl_event"}, {"type", "chat"}, {"kind", "say"}, {"channel", step.channel}, {"text", step.text}};
     else if (step.kind == Step::Kind::Menu)
     {
       const QJsonObject dialog = sandbox->lastDialog();
@@ -420,7 +555,9 @@ LabRecipe::Replay LabRecipe::replay(const LabFolder::Linkset& linkset, const QJs
                         QObject::tr("not done: %1").arg(clipped(problem, 160))});
     }
     keepFrame(i + 1, problem.isEmpty());
+    checkExpects(i + 1);
   }
+  std::stable_sort(out.failures.begin(), out.failures.end(), [](const Failure& a, const Failure& b) { return a.line < b.line; });
   // the facts at the end are the last moment's facts
   out.facts = out.frames.last().facts;
   out.objects = sandbox->objectsJson();   // part b: the weight at the end (LabWeight::measure)
@@ -478,6 +615,11 @@ QString LabRecipe::writeResult(const Replay& replay, const QStringList& changes,
   QString out = QStringLiteral("# PinglyMotion: what the recipe gave the last time it was replayed.\n"
                                "# The program writes this file after every replay. Do not edit it.\n");
   if (replay.ran) out += QStringLiteral("# %1 of %2 steps done.\n").arg(replay.done).arg(replay.steps);
+  if (replay.ran && replay.expects > 0)
+  {
+    out += QStringLiteral("# %1 of %2 expectations met.\n").arg(replay.expects - replay.failures.size()).arg(replay.expects);
+    for (const Failure& f : replay.failures) out += QStringLiteral("# Failed. ") + f.text + '\n';
+  }
   for (const Fact& f : replay.facts) out += '[' + f.key + QStringLiteral("] ") + f.sentence() + '\n';
   // job B3: a fingerprint per moment, so the next replay can say at which step it first differed
   if (!replay.frames.isEmpty())
@@ -536,7 +678,10 @@ QJsonObject LabRecipe::toJson(const Replay& replay, const QStringList& changes, 
     frames.append(QJsonObject{{"step", frame.step}, {"t", frame.t}, {"log_end", frame.logEnd}, {"done", frame.done},
                               {"text", text}, {"facts", frameFacts}});
   }
+  QJsonArray failures;
+  for (const Failure& f : replay.failures) failures.append(QJsonObject{{"line", f.line}, {"step", f.step}, {"text", f.text}});
   QJsonObject out{{"ran", replay.ran}, {"steps", replay.steps}, {"done", replay.done}, {"facts", facts},
+                  {"passed", replay.passed()}, {"expects", replay.expects}, {"failures", failures},
                   {"changes", QJsonArray::fromStringList(changes)}, {"first", first}, {"log", replay.log},
                   {"log_truncated", replay.logTruncated}, {"frames", frames},
                   {"first_difference", firstDifference >= 0 ? QJsonValue(firstDifference) : QJsonValue()}};

@@ -11,6 +11,8 @@
  * replay keeps one moment after the start and after every step, in order, inside the log; the
  * fingerprints written to the result file read back the same, and firstDifference stays inside the
  * moments.
+ * Package A (expect and say lines): the expects read from the input have a key a fact can have, they survive
+ * write and parse, and the replay's failures are some of them, in file order, with passed() agreeing.
  * Queue 1 item 5, part b (the weight view): the input is also read as the weight lines of a result file
  * (LabWeight::parseLines); the weight at the end of the replay survives writeLines and parseLines and
  * compares equal to itself, and compare() with what the input gave never crashes.
@@ -74,23 +76,45 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   }
   const LabRecipe::Recipe& recipe = *parsed.value;
   check(recipe.steps.size() <= LabRecipe::MAX_STEPS);
+  check(recipe.expects.size() <= LabRecipe::MAX_EXPECTS);
   for (const LabRecipe::Step& s : recipe.steps)
   {
     check(!LabRecipe::stepLine(s).isEmpty());
     check(!LabRecipe::stepWords(s).isEmpty());
   }
+  // package A: every expect has a key a fact can have, and sits between 0 and the number of steps
+  for (const LabRecipe::Expect& e : recipe.expects)
+  {
+    check(LabRecipe::keyError(e.key).isEmpty());
+    check(e.afterStep >= 0 && e.afterStep <= recipe.steps.size());
+    check(e.line >= 1);
+    check(LabRecipe::expectLine(e).startsWith(QStringLiteral("expect ")));
+  }
   // write and read again: the same steps
   const LabRecipe::Result again = LabRecipe::parse(LabRecipe::write(recipe));
   check(again.ok());
   check(again.value->steps == recipe.steps);
+  check(again.value->expects == recipe.expects);
 
   // at most a few steps replayed, so one input stays fast
   LabRecipe::Recipe shortRecipe = recipe;
   if (shortRecipe.steps.size() > 12) shortRecipe.steps.resize(12);
+  for (int i = shortRecipe.expects.size() - 1; i >= 0; --i)
+    if (shortRecipe.expects[i].afterStep > shortRecipe.steps.size()) shortRecipe.expects.remove(i);
   const LabRecipe::Replay replay = LabRecipe::replay(cuffs(), QJsonObject{{"seconds", 1}}, shortRecipe, Rlv::Mode::Rlva);
   check(replay.ran);
   check(replay.steps == shortRecipe.steps.size());
   check(replay.done >= 0 && replay.done <= replay.steps);
+  // package A: the failures are expects of the recipe, in file order, and passed() says the same
+  check(replay.expects == shortRecipe.expects.size());
+  check(replay.failures.size() <= replay.expects);
+  check(replay.passed() == replay.failures.isEmpty());
+  for (int i = 0; i < replay.failures.size(); ++i)
+  {
+    check(replay.failures[i].line >= 1 && !replay.failures[i].text.isEmpty());
+    check(replay.failures[i].step >= 0 && replay.failures[i].step <= replay.steps);
+    check(i == 0 || replay.failures[i - 1].line <= replay.failures[i].line);
+  }
   check(replay.facts.size() <= LabRecipe::MAX_FACTS);
   check(replay.log.size() <= lsl::World::MAX_LOG_ENTRIES);
   for (const LabRecipe::Fact& f : replay.facts)
@@ -121,7 +145,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   check(LabRecipe::firstDifference(fingerprints, replay.frames) == -1);
   const int first = LabRecipe::firstDifference(keptMoments, replay.frames);
   check(first >= -1 && first < replay.frames.size());
-  LabRecipe::toJson(replay, changes, false, first);
+  const QJsonObject json = LabRecipe::toJson(replay, changes, false, first);
+  check(json.value("passed").toBool() == replay.passed());
+  check(json.value("failures").toArray().size() == replay.failures.size());
 
   // the weight at the end of the replay: both scripts, and it survives the result file
   const LabWeight::Weight weight = LabWeight::measure(cuffs(), replay.objects);

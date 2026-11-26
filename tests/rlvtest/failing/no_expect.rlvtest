@@ -1,0 +1,2 @@
+# Meant to fail: a scenario without an expect line tests nothing.
+send @sendim=n

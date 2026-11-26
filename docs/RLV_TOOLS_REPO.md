@@ -10,7 +10,7 @@ The scripts the project owner writes with Claude Code (a HUD, restraints, helper
 
 Exists (merged): the RLV core, the LSL interpreter, `lsl_check`, `lsl_run`, `lsl_event`, the folder watch with `lab_watch`, `lab_unwatch` and `lab_result`, and the control interface that starts with `PinglyMotion --control`. Examples that ship with the program are in `examples/scriptlab/`.
 
-Exists since job A3 (record and replay, pull request 450): a first `.rlvtest` reader and runner, for the recipe `recipe.rlvtest` in a watched object folder ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Record and replay"; `src/scriptlab/labrecipe.*`, the control command `lab_replay`, the fuzz target `fuzz_recipe`). It reads `#`, `object` and `send` lines as proposed below, adds `touch`, `menu` and `wait`, and answers in plain facts and changes since last time. Does not exist yet: `expect` lines (they are refused), a pass or fail result, and a runner for a whole folder of scenarios. The CI part of this description therefore still needs one small technical job in PinglyMotion first (see "What has to be built first").
+Exists since job A3 (record and replay, pull request 450): a first `.rlvtest` reader and runner, for the recipe `recipe.rlvtest` in a watched object folder ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Record and replay"; `src/scriptlab/labrecipe.*`, the control command `lab_replay`, the fuzz target `fuzz_recipe`). It reads `#`, `object` and `send` lines as proposed below, adds `touch`, `menu` and `wait`, and answers in plain facts and changes since last time. Exists since package A (26 November 2026): `say` and `expect [not] <fact key> [text]` lines, a pass or fail result (`passed` and `failures` in `lab_replay`), and a command-line runner `pinglymotion_rlvtest` for a folder of `.rlvtest` files that exits with 1 when an expectation fails ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Tests with pass or fail"; example files in `scenarios/`). The real format therefore differs from the sketch below in one way: `expect` takes the fact keys of the replay (`blocked:sendim`, `lock:Cuffs`, `said:Root`), not `blocked detach`. What is still missing for the CI part is a downloadable build that runs on a hosted runner (see "What has to be built first").
 
 ## Proposed layout
 
@@ -37,9 +37,9 @@ A scenario is a short text file: lines that put something in (an RLV command, a 
 # cuffs lock the wrists
 object cuffs
 send  @detach=n
-expect blocked detach
+expect lock:cuffs
 send  @clear
-expect not blocked detach
+expect not lock:cuffs
 ```
 
 The runner is meant to use only what the control interface already offers (`rlv_reset`, `rlv_command`, `rlv_state`, and for scripts `lsl_run` with `inputs`, `lsl_event`), so a scenario can say the same things an AI client says by hand today. What a scenario can check is limited to what those commands answer: restrictions held, allowed and blocked actions, the log of a run, replies on a channel. Everything the sandbox cannot do (teleport, sitting, inventory, the look of anything) cannot be checked and is not claimed.
@@ -50,7 +50,7 @@ Idea: a workflow in the tools repository downloads a released PinglyMotion build
 
 ## What has to be built first (separate jobs, each started on the owner's word)
 
-1. The `.rlvtest` format and its runner in PinglyMotion (a small technical job, a command line tool or a control command; files under `src/scriptlab/`, with tests and a fuzz target because it is a parser).
+1. Done (package A): the `.rlvtest` format with `expect` and its runner in PinglyMotion (`pinglymotion_rlvtest`, built with the tests; the control command `lab_replay`).
 2. A check that a downloadable build runs on a hosted CI runner with `--control`.
 3. Creating the repository, with the template, a few examples and the workflow. Only after the owner says so.
 
