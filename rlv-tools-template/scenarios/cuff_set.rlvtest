@@ -1,0 +1,46 @@
+# The cuff set (scripts/cuff_set/): lock, chain, hang, release and free all.
+# Each step goes through the menu, as a click does.
+touch Root
+# 1. Lock the left wrist.
+menu Lock
+menu Wrist L
+expect said:Root Wrist L is locked.
+expect colour:Wrist_left red
+expect colour:Wrist_right green
+expect lock:cuff_set locked
+# 2. Chain the two wrists to each other.
+menu Chain
+menu Wrist L
+menu Wrist R
+expect said:Root Chained Wrist L - Wrist R.
+expect blocked:rez
+expect blocked:edit
+expect not blocked:fly
+# 3. Hang by the wrists.
+menu Hang
+expect said:Root Hanging by the wrists from the ceiling.
+expect colour:Ceiling_ring red
+expect blocked:fly
+expect blocked:tplm
+expect blocked:sittp
+# 4. Release from the ceiling. The chain between the wrists stays.
+menu Release
+expect said:Root Released from the ceiling.
+expect colour:Ceiling_ring grey
+expect not blocked:fly
+expect not blocked:tplm
+expect blocked:rez
+# 5. Free all.
+menu Free all
+expect said:Root Everything is free.
+expect colour:Wrist_left green
+expect not blocked:rez
+expect not blocked:edit
+expect not lock:cuff_set
+# 6. Lock all four cuffs at once.
+menu Lock
+menu All
+expect lock:cuff_set locked
+expect colour:Wrist_right red
+expect colour:Ankle_left red
+expect colour:Ankle_right red

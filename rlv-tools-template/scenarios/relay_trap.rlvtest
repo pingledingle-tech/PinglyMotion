@@ -1,0 +1,20 @@
+# A trap that needs an RLV relay. The relay says yes, then no, then lets go.
+expect said:Root Trap ready.
+# 1. The relay says yes: both restrictions come back and the relay turns red.
+touch Root
+wait 2
+expect said:Root Caught: @fly=n
+expect blocked:sendim
+expect blocked:fly
+expect colour:Relay red
+# 2. The wearer frees herself with the relay: everything is lifted.
+say -78 release
+expect not blocked:sendim
+expect not blocked:fly
+# 3. The avatar refuses: the relay says no and holds nothing.
+say -78 refuse
+touch Root
+wait 2
+expect said:Root Refused: @fly=n
+expect not blocked:sendim
+expect not blocked:fly

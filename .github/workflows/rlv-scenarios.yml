@@ -113,39 +113,75 @@ jobs:
         run: xvfb-run -a build/tests/rlvtest/pinglymotion_rlvtest scenarios
       - name: Run every scenario (the first broken expectation fails the run)
         run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/rlv-results"
           unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
           RUNNER="$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvtest"
           cd "$SCENARIO_ROOT"
-          if [ -d scripts ]; then "$RUNNER" --objects scripts scenarios; else "$RUNNER" scenarios; fi
+          if [ -d scripts ]; then "$RUNNER" --objects scripts scenarios; else "$RUNNER" scenarios; fi | tee "$RUNNER_TEMP/rlv-results/1-scenarios.txt"
       - name: Run the passing examples, if the folder has any
         run: |
           unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
           cd "$SCENARIO_ROOT"
-          if [ -d examples/passing ]; then "$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvtest" examples/passing; else echo "No examples/passing: nothing to run."; fi
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/rlv-results"
+          if [ -d examples/passing ]; then "$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvtest" examples/passing; else echo "No examples/passing: nothing to run."; fi | tee "$RUNNER_TEMP/rlv-results/2-passing-examples.txt"
       - name: The failing examples must fail
         # examples/failing holds scenarios that are meant to break; a run that passes one of them is the failure
         run: |
           unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
           cd "$SCENARIO_ROOT"
-          if [ ! -d examples/failing ]; then echo "No examples/failing: nothing to check."; exit 0; fi
+          mkdir -p "$RUNNER_TEMP/rlv-results"
+          out="$RUNNER_TEMP/rlv-results/3-failing-examples.txt"
+          : > "$out"
+          if [ ! -d examples/failing ]; then echo "No examples/failing: nothing to check." | tee "$out"; exit 0; fi
           count=0
           for f in examples/failing/*.rlvtest; do
             [ -e "$f" ] || continue
             count=$((count + 1))
             if "$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvtest" "$f" > /tmp/failing.out; then
               cat /tmp/failing.out
+              echo "FAIL $f was meant to fail, but it passed." >> "$out"
               echo "::error::$f was meant to fail, but it passed."
               exit 1
             fi
-            echo "$f failed, as meant:"; sed 's/^/    /' /tmp/failing.out
+            { echo "$f failed, as meant:"; sed 's/^/    /' /tmp/failing.out; } | tee -a "$out"
           done
-          echo "$count failing example(s) failed, as meant."
+          echo "$count failing example(s) failed, as meant." | tee -a "$out"
       - name: Run the reference answers, if the folder has any
         run: |
           unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/rlv-results"
           cd "$SCENARIO_ROOT"
           if ls reference/*.rlvref >/dev/null 2>&1; then
             "$GITHUB_WORKSPACE/engine/build/tests/rlvtest/pinglymotion_rlvref" reference
           else
             echo "No reference answers in $WORK_FOLDER/reference: nothing to compare."
-          fi
+          fi | tee "$RUNNER_TEMP/rlv-results/4-reference-answers.txt"
+      - name: Summary of the results (shown on the page of the run)
+        # runs also after a failure, so the summary says which scenario broke and why
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## RLV scenario results"
+            echo
+            echo "A pass here is a result in the sandbox, never a result in Second Life."
+            for f in "$RUNNER_TEMP"/rlv-results/*.txt; do
+              [ -e "$f" ] || { echo; echo "Nothing ran. See the log of the earlier steps."; break; }
+              case "$(basename "$f")" in
+                1-*) title="Scenarios";;
+                2-*) title="Passing examples";;
+                3-*) title="Failing examples (each must fail)";;
+                *) title="Reference answers";;
+              esac
+              echo
+              echo "### $title"
+              echo
+              if grep -Eq '^(FAIL|NEW|BROKEN|STALE)' "$f"; then echo "Something broke. The lines that start with FAIL, NEW, BROKEN or STALE say what."; else echo "Nothing broke."; fi
+              echo
+              echo '```text'
+              head -c 100000 "$f"
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
