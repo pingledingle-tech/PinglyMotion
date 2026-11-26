@@ -319,16 +319,21 @@ Value Interpreter::callBuiltinComm(Fn fn, const QString& name, std::vector<Value
       times.push_back(m_now);
       const HttpReply* reply = m_world.httpReply(method, url);
       const QString id = nextKey();
-      const int status = reply ? reply->status : 499;
-      const QString full = reply ? reply->body : QString();
+      // job 23: a reply can come later, or never (then 499 after the time-out)
+      const double delay = reply ? reply->delay : 0.0;
+      const bool timedOut = delay >= HttpReply::HTTP_TIMEOUT;
+      const int status = reply && !timedOut ? reply->status : 499;
+      const QString full = reply && !timedOut ? reply->body : QString();
       const QString body = utf8Prefix(full, maxLength);
       const int truncatedAt = body.size() < full.size() ? maxLength : -1;
       entry["request"] = id;
-      entry["result"] = reply ? "canned" : "no_reply";
+      entry["result"] = reply ? (timedOut ? "timed_out" : "canned") : "no_reply";
       entry["status"] = status;
       if (truncatedAt >= 0) entry["truncated_at"] = truncatedAt;
+      const double at = delay > 0.0 ? m_now + qMin(delay, HttpReply::HTTP_TIMEOUT) : -1.0;
+      if (delay > 0.0) entry["delay"] = qMin(delay, HttpReply::HTTP_TIMEOUT);
       if (!m_world.logFull()) m_world.log(m_now, entry);
-      if (!m_world.httpResponse(m_now, id, status, truncatedAt, body)) httpResponseEvent(id, status, truncatedAt, body);
+      if (!m_world.httpResponse(m_now, id, status, truncatedAt, body, at)) httpResponseEvent(id, status, truncatedAt, body, at);
       return Value::key(id);
     }
 

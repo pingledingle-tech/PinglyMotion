@@ -45,7 +45,7 @@ TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/cameraoverride.cpp scriptlab
 # Script Lab: the LSL interpreter (issue 289), QtCore only; the control commands lsl_check and lsl_run
 TARGET_SOURCES (pinglymotion_core PRIVATE scriptlab/lsl/ast.cpp scriptlab/lsl/lexer.cpp scriptlab/lsl/parser.cpp scriptlab/lsl/lint.cpp
                 scriptlab/lsl/builtins.cpp scriptlab/lsl/interp.cpp scriptlab/lsl/world.cpp scriptlab/lsl/rlvworld.cpp scriptlab/lsl/control.cpp
-                scriptlab/lsl/sandbox.cpp scriptlab/lsl/session.cpp
+                scriptlab/lsl/sandbox.cpp scriptlab/lsl/session.cpp scriptlab/lsl/relay.cpp
                 scriptlab/lsl/builtins_comm.cpp scriptlab/lsl/builtins_region.cpp scriptlab/lsl/builtins_physics.cpp scriptlab/lsl/builtins_media.cpp scriptlab/lsl/builtins_object.cpp
                 scriptlab/lsl/builtins_lists.cpp scriptlab/lsl/builtins_strings.cpp scriptlab/lsl/builtins_math.cpp scriptlab/lsl/builtins_prims.cpp)
 # Script Lab lane 1, job G: the LSL-to-SLua converter, level 1 "LSL style" (QtCore only; docs/SLUA_RULES.md)

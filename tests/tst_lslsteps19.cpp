@@ -618,7 +618,7 @@ void LslSteps19Test::refusedOptions()
   QVERIFY(input(QJsonObject{{"type", "chat"}, {"key", "k"}}).contains("\"key\" is only for experience"));
   QVERIFY(input(QJsonObject{{"type", "touch"}, {"value", "v"}}).contains("\"value\" is only for experience"));
   QVERIFY(input(QJsonObject{{"type", "touch"}, {"kind", "allow"}}).contains("\"kind\" is only for chat, remote_data and experience"));
-  QVERIFY(input(QJsonObject{{"type", "weather"}}).contains("\"experience\"."));
+  QVERIFY(input(QJsonObject{{"type", "weather"}}).contains("\"experience\", \"relay_release\" or \"relay_ping\"."));
 }
 
 void LslSteps19Test::checkerHasNoWarnings()

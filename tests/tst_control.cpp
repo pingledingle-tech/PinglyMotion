@@ -32,6 +32,9 @@
 #endif
 
 #include "laterfile.h"
+#include "scriptlab/labfolder.h"
+#include "scriptlab/labimprove.h"
+#include "scriptlab/labweight.h"
 #include "animation.h"
 #include "animexport.h"
 #include "animexportdialog.h"
@@ -3519,7 +3522,7 @@ void ControlTest::scriptLabLiveCommands()
   QCOMPARE(run(R"({"command":"lab_watch","path":"relative/folder"})")["error"].toString(),
            QString("lab_watch: Give the whole path of the folder, not a relative one."));
   QCOMPARE(run(R"({"command":"lab_watch","path":"/x","fast":true})")["error"].toString(),
-           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs, keep_rlv, linkset, script_memory, avatars, transfers, order, seed, permissions, replies."));
+           QString("lab_watch: unknown option \"fast\". Options: path, seconds, inputs, keep_rlv, linkset, script_memory, avatars, transfers, order, seed, permissions, replies, relay."));
   QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"permissions", QJsonObject()}})["error"].toString(),
            QString("lab_watch: \"permissions\" must be a list of the owner's answers to llRequestPermissions, each {\"result\", \"delay\"}."));
   QCOMPARE(m_api->execute(QJsonObject{{"command", "lab_watch"}, {"path", dir.path()}, {"seconds", 5000}})["error"].toString(),
@@ -3614,6 +3617,29 @@ void ControlTest::scriptLabLiveCommands()
   QCOMPARE(folderResult["run"].toInt(), 3);
   QCOMPARE(folderResult["linkset"].toObject()["object"].toString(), QFileInfo(objectDir.path()).fileName());
   QCOMPARE(folderResult["linkset"].toObject()["prims"].toArray().size(), 2);
+  // job 23: lab_result answers what the page Improve a setup shows, the same as the page's own functions make it
+  {
+    const QJsonObject improve = answer["improve"].toObject();
+    QCOMPARE(improve["ran"].toBool(), true);
+    QVERIFY(!improve.contains("not_run"));
+    QCOMPARE(improve["replayed"].toBool(), false);
+    QCOMPARE(improve["compared"].toBool(), false);
+    QCOMPARE(improve["weight_changes"].toArray(), QJsonArray());
+    QCOMPARE(improve["log_full"].toBool(), false);
+    const QJsonObject weight = improve["weight"].toObject();
+    QCOMPARE(weight, LabWeight::toJson(m_api->lab().weight()));
+    QCOMPARE(weight["valid"].toBool(), true);
+    QCOMPARE(weight["scripts"].toInt(), 2);
+    const LabFolder::Linkset linkset = LabFolder::open(objectDir.path());
+    const QJsonObject page = LabImprove::toJson(LabImprove::suggest(linkset, m_api->lab().weight()),
+                                                LabImprove::canRun(linkset, m_api->lab().folderResult()));
+    QCOMPARE(improve["suggestions"].toArray(), page["suggestions"].toArray());
+    QCOMPARE(improve["can_run"].toArray(), page["can_run"].toArray());
+    QJsonArray verdicts;
+    for (const QJsonValue& v : improve["can_run"].toArray())
+      verdicts.append(QJsonArray{v.toObject()["script"], v.toObject()["prim"], v.toObject()["verdict"]});
+    QCOMPARE(verdicts, QJsonArray({QJsonArray{"main", QFileInfo(objectDir.path()).fileName(), "runs"}, QJsonArray{"cuff", "Cuff", "runs"}}));
+  }
 
   // job A3: lab_replay replays recipe.rlvtest in a world of its own and says what changed since last time
   QCOMPARE(run(R"({"command":"lab_replay","fast":true})")["error"].toString(), QString("lab_replay takes no options."));

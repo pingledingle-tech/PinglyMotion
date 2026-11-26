@@ -53,6 +53,7 @@
 #include <QString>
 
 #include "interp.h"
+#include "relay.h"
 #include "world.h"
 
 class RlvState;
@@ -88,6 +89,7 @@ struct AvatarSpec
   float velocity[3] = {0.0f, 0.0f, 0.0f};
   float rotation[4] = {0.0f, 0.0f, 0.0f, 1.0f};
   bool inGroup = false;           // llDetectedGroup
+  bool isFriend = false;          // job 23: llIsFriend (a friend of the owner)
   float height = RegionSettings::DEFAULT_AVATAR_HEIGHT;   // gap list 2, step 3: llGetAgentSize z, metres
   // Anafin HUD test, gap 4: online at the start, and the simulated times it logs in or out (negative: never). An offline
   // avatar is not in the region: llGetAgentList, the sensors, llGetAgentInfo, llGetAgentSize, llKey2Name and
@@ -241,6 +243,9 @@ class Sandbox
     // Step 19: the experience of the world (with its key-value store) and the estate. Before start() only.
     QString setExperience(const ExperienceState& experience);
     QString setEstate(const EstateState& estate);
+    // job 23: the built-in RLV relay worn by the owner (none unless set; before start)
+    QString setRelay(const RlvRelay::Settings& settings);
+    const RlvRelay* relay() const { return m_relay.get(); }
     const ExperienceState& experience() const { return m_experience; }
     // Anafin HUD test, gap 3: the order the scripts run in (default Fixed); seed is used by Shuffle only. Before start() only.
     void setRunOrder(RunOrder mode, quint32 seed = 0);
@@ -386,7 +391,7 @@ class Sandbox
     // step 9b-5: llUnSit on an avatar sitting on the script's own object; an avatar sitting anywhere in the world
     bool unSit(int from, double time, const QString& key);
     // step 9b-9: http_response to every script in the prim of the requesting script
-    void httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body);
+    void httpResponse(int from, double time, const QString& id, int status, int truncatedAt, const QString& body, double at = -1.0);
     std::vector<Detected> sense(int from, const QString& name, const QString& id, int type, double range, double arc);
     // gap list 2, step 2: llDie (the object is gone and its other scripts stop), another script of the same prim by
     // name (a slot, or -1), and what llGetObjectDetails knows about a key
@@ -428,10 +433,17 @@ class Sandbox
     std::vector<int> orderedSlots();
     // the avatar that sends an input: name and key
     void avatar(const SandboxInput& input, QString& name, QString& key) const;
+    // job 23: the relay hears a line on its channel (targeted: llRegionSayTo to the owner); its answers go to the speaker
+    void relayHears(int from, double time, const QString& kind, const QString& text, bool targeted);
+    // job 23: lines of the relay (or of the viewer, as the owner) to the controller objects
+    void relaySend(double time, const QVector<RlvRelay::Message>& messages);
+    // job 23: the relay_release and relay_ping inputs
+    void relayInput(const SandboxInput& input, double time);
     static double distance(const float a[3], const float b[3]);
 
     RlvState& m_rlv;
     bool m_tag;
+    std::unique_ptr<RlvRelay> m_relay;   // job 23: the built-in relay, or none
     bool m_started = false;
     World m_log;                   // the shared log
     std::vector<Object> m_objects;

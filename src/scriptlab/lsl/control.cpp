@@ -342,10 +342,12 @@ namespace
     if (o.contains("type") && !o.value("type").isString()) return where + "\"type\" must be text.";
     in.type = o.value("type").toString("chat");
     static const QStringList types = {"chat", "touch", "dialog", "attach", "detach", "changed", "sit", "stand", "control", "money", "http_request", "email", "remote_data",
-                                       "collision", "land_collision", "moving", "at_target", "not_at_target", "step", "drop", "experience"};
+                                       "collision", "land_collision", "moving", "at_target", "not_at_target", "step", "drop", "experience",
+                                       "relay_release", "relay_ping"};
     if (!types.contains(in.type))
       return where + "\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                      "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\".";
+                      "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\", \"experience\", "
+                      "\"relay_release\" or \"relay_ping\".";
     if (o.contains("channel") && !wholeNumber(o.value("channel"), -2147483648.0, 2147483647.0, in.channel))
       return where + "\"channel\" must be a whole number.";
     for (const char* field : {"name", "id", "text", "object", "kind", "button"})
@@ -576,10 +578,10 @@ namespace
   // step 9b-7: "avatars" of lsl_run: [{name, key, position, velocity, rotation, in_group}]; empty when fine
   QString readAvatars(const QJsonValue& v, std::vector<AvatarSpec>& out)
   {
-    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\", \"height\", \"online\", \"login\", \"logout\"}.";
+    if (!v.isArray()) return "\"avatars\" must be a list of avatars, each {\"name\", \"key\", \"position\", \"velocity\", \"rotation\", \"in_group\", \"friend\", \"height\", \"online\", \"login\", \"logout\"}.";
     const QJsonArray list = v.toArray();
     if (list.size() > Sandbox::MAX_AVATARS) return QString("\"avatars\" holds at most %1 avatars.").arg(Sandbox::MAX_AVATARS);
-    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group", "height", "online", "login", "logout"};
+    static const QStringList fields = {"name", "key", "position", "velocity", "rotation", "in_group", "friend", "height", "online", "login", "logout"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("Avatar %1: ").arg(i + 1);
@@ -616,6 +618,11 @@ namespace
         if (!o.value("in_group").isBool()) return where + "\"in_group\" must be true or false.";
         a.inGroup = o.value("in_group").toBool();
       }
+      if (o.contains("friend"))
+      {
+        if (!o.value("friend").isBool()) return where + "\"friend\" must be true or false (whether the avatar is a friend of the owner, for llIsFriend).";
+        a.isFriend = o.value("friend").toBool();
+      }
       if (o.contains("height"))
       {
         const double h = o.value("height").toDouble(std::nan(""));
@@ -646,6 +653,38 @@ namespace
       else a.online = !loginFirst;
       out.push_back(a);
     }
+    return QString();
+  }
+
+  // job 23: "relay" of lsl_run: true, false, or {"mode": "auto"|"ask"|"deny", "answers": ["accept"|"decline", ...]}; empty when fine
+  QString readRelay(const QJsonValue& v, bool& on, RlvRelay::Settings& out)
+  {
+    const QString shape = "\"relay\" must be true, false or {\"mode\": \"auto\", \"ask\" or \"deny\", \"answers\": [\"accept\" or \"decline\", ...]}.";
+    if (v.isBool())
+    {
+      on = v.toBool();
+      return QString();
+    }
+    if (!v.isObject()) return shape;
+    const QJsonObject o = v.toObject();
+    for (auto it = o.begin(); it != o.end(); ++it)
+      if (it.key() != "mode" && it.key() != "answers") return "Relay: unknown field \"" + clip(it.key(), 40) + "\". Fields: mode, answers.";
+    if (o.contains("mode") && (!o.value("mode").isString() || !RlvRelay::modeFromName(o.value("mode").toString(), out.mode)))
+      return "Relay: \"mode\" must be \"auto\" (accept every object), \"ask\" (ask the avatar; the answers list answers) or \"deny\" (refuse every object).";
+    if (o.contains("answers"))
+    {
+      if (out.mode != RlvRelay::Mode::Ask) return "Relay: \"answers\" is only for the mode \"ask\".";
+      const QJsonArray list = o.value("answers").toArray();
+      if (!o.value("answers").isArray() || list.size() > RlvRelay::MAX_ANSWERS)
+        return QString("Relay: \"answers\" must be a list of at most %1 entries, each \"accept\" or \"decline\".").arg(RlvRelay::MAX_ANSWERS);
+      for (const QJsonValue& a : list)
+      {
+        if (a.toString() != "accept" && a.toString() != "decline")
+          return QString("Relay: \"answers\" must be a list of at most %1 entries, each \"accept\" or \"decline\".").arg(RlvRelay::MAX_ANSWERS);
+        out.answers << a.toString();
+      }
+    }
+    on = true;
     return QString();
   }
 
@@ -833,10 +872,10 @@ namespace
   {
     static const int MAX_URL_CHARS = 2048;
     static const int MAX_BODY_CHARS = 65536;
-    if (!v.isArray()) return "\"http\" must be a list of canned replies, each {\"url\", \"method\", \"status\", \"body\"}.";
+    if (!v.isArray()) return "\"http\" must be a list of canned replies, each {\"url\", \"method\", \"status\", \"body\", \"delay\"}.";
     const QJsonArray list = v.toArray();
     if (list.size() > Sandbox::MAX_HTTP_REPLIES) return QString("\"http\" holds at most %1 canned replies.").arg(Sandbox::MAX_HTTP_REPLIES);
-    static const QStringList fields = {"url", "method", "status", "body"};
+    static const QStringList fields = {"url", "method", "status", "body", "delay"};
     for (int i = 0; i < list.size(); ++i)
     {
       const QString where = QString("HTTP reply %1: ").arg(i + 1);
@@ -862,6 +901,13 @@ namespace
         if (!o.value("body").isString() || o.value("body").toString().size() > MAX_BODY_CHARS)
           return where + QString("\"body\" must be text of at most %1 characters.").arg(MAX_BODY_CHARS);
         r.body = o.value("body").toString();
+      }
+      if (o.contains("delay"))
+      {
+        r.delay = o.value("delay").toDouble(-1.0);
+        if (!o.value("delay").isDouble() || !std::isfinite(r.delay) || r.delay < 0.0 || r.delay > HttpReply::MAX_DELAY)
+          return where + QString("\"delay\" must be the simulated seconds until the reply comes, 0 to %1 (from %2 on it never comes and the request gets status 499 after %2 seconds).")
+                           .arg(HttpReply::MAX_DELAY).arg(HttpReply::HTTP_TIMEOUT);
       }
       out.push_back(r);
     }
@@ -1134,7 +1180,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
                                        "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate", "transfers",
-                                       "order", "seed", "script_memory", "permissions", "replies"};
+                                       "order", "seed", "script_memory", "permissions", "replies", "relay"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -1293,6 +1339,15 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     if (!problem.isEmpty()) return fail(problem);
   }
 
+  // job 23: the built-in RLV relay worn by the owner
+  bool relayOn = false;
+  RlvRelay::Settings relay;
+  if (request.contains("relay"))
+  {
+    const QString problem = readRelay(request.value("relay"), relayOn, relay);
+    if (!problem.isEmpty()) return fail(problem);
+  }
+
   std::vector<SandboxInput> inputs;
   if (request.contains("inputs"))
   {
@@ -1380,6 +1435,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   sandbox->setExperience(experience);
   sandbox->setEstate(estate);
   sandbox->setRunOrder(order, seed);
+  if (relayOn) sandbox->setRelay(relay);
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
   sandbox->start();
   sandbox->runUntil(seconds);
@@ -1413,6 +1469,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
     answer["order"] = used;
   }
   answer["rlv"] = rlvAnswer(*sandbox, state);
+  if (sandbox->relay()) answer["relay"] = sandbox->relay()->toJson();
   answer["note"] = "A sandbox with a simulated clock, not Second Life: test the final script in Second Life too.";
   // keep the world for lsl_event (only with the shared RLV state, which outlives it)
   if (session && rlv) session->set(std::move(sandbox));
@@ -1435,7 +1492,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
   }
   if (!request.contains("type"))
     return fail("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, remote_data, collision, land_collision, "
-                "moving, at_target, not_at_target, step, drop or experience.");
+                "moving, at_target, not_at_target, step, drop, experience, relay_release or relay_ping.");
   double seconds = DEFAULT_EVENT_SECONDS;
   if (request.contains("seconds"))
   {
@@ -1466,6 +1523,7 @@ QJsonObject event(const QJsonObject& request, Session* session)
   if (!sandbox->lastDialog().isEmpty()) answer["dialog"] = sandbox->lastDialog();
   addExperienceAnswer(answer, *sandbox);
   answer["rlv"] = rlvAnswer(*sandbox, sandbox->rlv());
+  if (sandbox->relay()) answer["relay"] = sandbox->relay()->toJson();
   answer["note"] = "A sandbox with a simulated clock, not Second Life: test the final script in Second Life too.";
   session->notify();
   return answer;

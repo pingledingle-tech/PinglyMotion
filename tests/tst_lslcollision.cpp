@@ -32,6 +32,7 @@ class LslCollisionTest : public QObject
     void collisionStartAndEnd();
     void collisionGoesToThePrimHit();
     void collisionHasTheAvatarsVelocity();
+    void collisionNameFromTheAvatarsList();
     void attachmentHasTheWearersVelocity();
     void landCollisionPhases();
     void movingStartAndEnd();
@@ -116,6 +117,22 @@ void LslCollisionTest::collisionHasTheAvatarsVelocity()
                                    "2 while Guest Resident <1.50000, 0.00000, -0.25000>",
                                    "3 end Guest Resident <1.50000, 0.00000, -0.25000>",
                                    "4 start Owner <0.00000, 0.00000, 0.00000>"}));
+}
+
+// job 23 (leftover of the Anafin HUD test): an input with only the id of a listed avatar has that avatar's name in
+// llDetectedName; an id that is not listed keeps the owner's name, and an input's own name always wins
+void LslCollisionTest::collisionNameFromTheAvatarsList()
+{
+  const QString source = R"lsl(default { collision_start(integer n) { llOwnerSay(llDetectedName(0) + " " + (string)llDetectedKey(0)); }
+                                         touch_start(integer n) { llOwnerSay("touch " + llDetectedName(0)); } })lsl";
+  const QJsonObject r = Control::run(QJsonObject{{"command", "lsl_run"}, {"source", source}, {"seconds", 4},
+      {"avatars", QJsonArray{QJsonObject{{"name", "Guest Resident"}, {"key", GUEST}}}},
+      {"inputs", QJsonArray{QJsonObject{{"at", 1}, {"type", "collision"}, {"phase", "start"}, {"id", GUEST}},
+                            QJsonObject{{"at", 2}, {"type", "collision"}, {"phase", "start"}, {"id", "6a7e0c3d-0000-4000-8000-0000000000ff"}},
+                            QJsonObject{{"at", 3}, {"type", "collision"}, {"phase", "start"}, {"id", GUEST}, {"name", "Given Name"}},
+                            QJsonObject{{"at", 4}, {"type", "touch"}, {"id", GUEST}}}}});
+  QCOMPARE(events(r), QStringList({QString("1 Guest Resident ") + GUEST, "2 Owner 6a7e0c3d-0000-4000-8000-0000000000ff",
+                                   QString("3 Given Name ") + GUEST, "4 touch Guest Resident"}));
 }
 
 // Anafin HUD test: llGetVel in a worn object answers the wearer's "velocity" (the owner's, from the avatars list; zero when

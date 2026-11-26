@@ -123,6 +123,28 @@ Value Interpreter::callBuiltinRegion(Fn fn, const QString& name, std::vector<Val
       queueDataserver(id, fn == Fn::RequestDisplayName ? displayNameOf(avatarName) : usernameOf(avatarName));
       return Value::key(id);
     }
+    case Fn::Name2Key:
+    {
+      // job 23, the definitions: the key of the avatar with that name in the region, NULL_KEY when none; "First Last" or
+      // "first.last", any case, a single name means "First Resident". The sandbox knows the owner and the avatars option
+      const QString key = m_world.avatarKeyByName(a[0].s, false);
+      return Value::key(key.isEmpty() ? NULL_KEY : key);
+    }
+    case Fn::RequestUserKey:
+    {
+      // job 23, the definitions: asks for the key of the avatar with that (current) username; the answer comes in
+      // dataserver, NULL_KEY when nobody has it. The sandbox answers at once, for every avatar it knows (offline ones too).
+      // A username that changed, which Second Life still finds, does not exist here
+      const QString id = nextKey();
+      if (!m_world.logFull())
+        m_world.log(m_now, QJsonObject{{"type", "dataserver_request"}, {"function", name}, {"username", World::clip(a[0].s)}, {"query", id}});
+      const QString key = m_world.avatarKeyByName(a[0].s, true);
+      queueDataserver(id, key.isEmpty() ? NULL_KEY : key);
+      return Value::key(id);
+    }
+    case Fn::IsFriend:
+      // job 23: TRUE for an avatar of the avatars option with "friend": true (nobody else is the owner's friend here)
+      return Value::integer(m_world.isFriend(a[0].s) ? 1 : 0);
     case Fn::RequestSimulatorData:
     {
       // only the sandbox's own region is known (names compare without regard to case). DATA_SIM_POS: its corner;

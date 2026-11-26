@@ -777,7 +777,7 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
   real functions now (part 3, below), not record only; the vehicle functions are not part of this step (step 7, below).
 - **Collision-family events (second gap list, step 6, part 2):** there is still no motion model, so these events never happen on their own; new `inputs` types raise them for testing, with exactly the
   llDetected* data or vector arguments given. `collision` (`phase`: `"start"`, `"end"` or left out for the continuous `collision`; `link`: the prim hit, default the root; `name`/`id`: the other object or avatar, as for `touch`) raises
-  `collision_start`, `collision_end` or `collision(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). When `id` is an avatar of the `avatars` list, `llDetectedVel` in those events answers that avatar's `velocity` (Anafin HUD test; zero for anyone else, the owner too unless listed, and `name` still comes from the input). `land_collision`
+  `collision_start`, `collision_end` or `collision(num_detected)` (always 1) in the scripts of that prim that handle it, or the root's when none does (collisions are passed on, as touches are). When `id` is an avatar of the `avatars` list, `llDetectedVel` in those events answers that avatar's `velocity` (Anafin HUD test; zero for anyone else, the owner too unless listed). Since job 23 an input (collision, touch or any other) with only the `id` of an avatar of the `avatars` list has that avatar's name in `llDetectedName`; an input's own `name` always wins, and an id that is not listed keeps the owner's name. `land_collision`
   (`phase`: `"start"`, `"end"` or left out for the continuous `land_collision`; `pos`: `[x, y, z]`, the event's own vector argument) and `moving` (`phase`: `"start"` or `"end"`, no detected data: `moving_start`
   and `moving_end` take no arguments) go to every script of the object, as `changed` does. `at_target` (`tnum`, `targetpos`, `ourpos`: the event's own arguments; `llTarget`'s target number is not tracked)
   and `not_at_target` (no fields) likewise go to every script. None of this simulates collisions, gravity or `llTarget`; it only lets a script's handler be tested against given data. Part 3, below, gives
@@ -801,7 +801,8 @@ outside 0 to 5 changes nothing (as in Second Life, silently).
 
 The sandbox never goes on the network: no request leaves the program. `lsl_run` takes `http` (at most 64), the replies to give:
 `[{"url": "https://example.com/api", "method": "GET", "status": 200, "body": "{\"ok\":true}"}]`. Only `url` is needed: the exact URL (case-sensitive), or a prefix that ends in `*`
-(`"*"` alone answers every URL); `method` is `GET`, `POST`, `PUT` or `DELETE` (any case; omitted: every method); `status` is 100 to 599 (default 200); `body` is text of at most 65 536 characters (default empty).
+(`"*"` alone answers every URL); `method` is `GET`, `POST`, `PUT` or `DELETE` (any case; omitted: every method); `status` is 100 to 599 (default 200); `body` is text of at most 65 536 characters (default empty);
+`delay` (job 23) is the simulated seconds until the reply comes, 0 to 300 (default 0, at once): from 60 on the reply never comes and the request gets status 499 with an empty body after 60 seconds, as Second Life does for a request that times out (the `http_request` entry then has `result: timed_out`; a reply that comes later has `delay`).
 A request gets the first reply in list order that matches its method and URL. The same list is used for a single script and for `objects`, and it is kept for `lsl_event`.
 
 - `llHTTPRequest(url, parameters, body)` checks the URL (it must start with `http://` or `https://`, any case, name a host and have no spaces or control characters) and the parameter list:
@@ -816,13 +817,13 @@ A request gets the first reply in list order that matches its method and URL. Th
   and, unless `HTTP_VERBOSE_THROTTLE` is `FALSE`, a `debug` line.
 - Incoming HTTP (`llRequestURL` and the `http_request` event): "Money, web server and mail" below.
 - Not done: the RFC 7807 answers of `HTTP_EXTENDED_ERROR`, status 415 for `HTTP_ACCEPT`,
-  the per-owner throttle, a reply that comes later or never, and response headers.
+  the per-owner throttle, and response headers.
 
 #### Sensors (Script Lab step 9b-7)
 
 `lsl_run` takes `avatars` (at most 64), the people the sensors can find: `[{"name": "Ann", "position": [128, 133, 20], "velocity": [1, 0, 0], "rotation": [0, 0, 0, 1], "in_group": true, "key": "..."}]`. Only `name` is needed;
 `position` is region metres as for objects (default `[128, 128, 20]`), `key` defaults to `a0000000-0000-4000-8000-000000000001` and so on in list order. The owner always stands at `[128, 128, 20]`, unless an avatar
-with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`. `height` (metres, default 1.8) is for `llGetAgentSize` (second gap list, step 3).
+with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`. `height` (metres, default 1.8) is for `llGetAgentSize` (second gap list, step 3). `friend` (true or false, default false) says whether the avatar is a friend of the owner, for `llIsFriend` (job 23).
 
 - `llSensor(name, id, type, range, arc)` scans once, now, and queues `sensor(integer num_detected)` (or `no_sensor()` when nothing is found) at once. It finds the avatars (type `AGENT`, 1) and the other objects of the
   world (type `SCRIPTED`, 8; the sensing object itself is never found) that match: `name` exact and case-sensitive (empty: any), `id` (empty or `NULL_KEY`: any), a `type` mask that has the type's bit (a mask of 0, or `ACTIVE` and
@@ -881,6 +882,49 @@ as before.
   but is not carried out in the Script Lab sandbox`. Nothing is said to the script in chat, because a real RLV viewer
   sends no reply to a force command. A late or lost RLV reply is marked in the log line too: `(comes after 2.5 s)` or
   `(lost: the script never hears it)`.
+
+#### The built-in RLV relay (job 23)
+
+`lsl_run` takes `relay` (optional): `true` puts a simulated RLV relay on the owner, `false` or no option puts none
+(as before). `{"mode": "auto"}` is the same as `true`; `{"mode": "deny"}` refuses every object; `{"mode": "ask",
+"answers": ["accept", "decline", ...]}` asks the avatar once per object through a simulated dialog and takes the next
+answer (at most 64; when the list is used up the answer is `decline`, as if nobody pressed a button). The relay
+answers the relay protocol (1.100, with the ORG core x-tension 0003), written from the protocol's description; no
+relay's code was copied. Traps, capture guns, furniture and capture HUDs can be tested with it without putting a relay
+script on a worn object.
+
+- A controller says on channel `-1812221819` (whisper, say, shout or region say, within reach of the avatar at
+  128, 128, 20), or sends with `llRegionSayTo` to the owner's key (any distance), `<ident>,<avatar key>,<command>|<command>...`.
+  Exactly two commas; another avatar's key or another number of fields is ignored (a `relay` log entry with `ignored`
+  says why). The wildcard key `ffffffff-ffff-ffff-ffff-ffffffffffff` counts as the avatar's key (ORG core).
+- For every command the relay answers the sender alone, on the same channel, from the object `RLV Relay`, with
+  `<ident>,<controller key>,<command>,<answer>`: `!version` `1100`; `!implversion` `PinglyMotion Script Lab relay 1`;
+  `!x-orgversions` `ORG=0003`; `!release` `ok` (every restriction of that controller is lifted and it must be accepted
+  again next time); `!pong` gets no answer; any other `!` command `ko` (ORG core; `!handover` and `!who` are unsettled
+  in the protocol and refused); an `@` command `ok` or `ko` from the RLV core; anything else `ko`.
+- **Restrictions per controller:** the RLV core holds each restriction under the controller's key, so `rlv_state`, the
+  answer's `rlv.state.objects` and the panel show which object holds what (in Second Life the viewer sees the relay as
+  the holder). A query such as `@version=2222` is answered by the viewer on its own channel, as the owner, to the
+  controller.
+- **Ask or accept:** a command that sets a restriction (`=n`, `=add`), forces something (`=force`) or asks a query other
+  than `@version`, `@versionnew`, `@versionnum` and `@versionnumbl` needs the controller to be accepted first; lifting
+  (`=y`, `=rem`) and `@clear` never do. The choice holds until the controller's `!release`.
+- **Inputs** (for `inputs` of `lsl_run` and for `lsl_event`): `relay_release` is the avatar freeing herself from the
+  relay's menu: every controller is freed and told `release,<controller key>,!release,ok` (the protocol defines no
+  safeword; this is the sandbox's choice). `relay_ping` is the reachability check (ORG core): every controller that
+  holds a restriction gets `ping,<controller key>,ping,ping`, and each one that is not reachable (its object is no
+  longer in the world, for example deleted with `llDie`, or stands beyond shout range, 100 metres, of the avatar) is
+  freed at once. The protocol sets no time for an answer, so no time-out is simulated; a `!pong` is logged with a note
+  (the relay never drops restrictions on its own, so there is nothing to put back). A relay input without a relay writes an `input` entry with an `error`.
+- **The answer** of `lsl_run` and `lsl_event` has `relay` when one is worn: `mode`, `key` (the relay's object key),
+  `controllers` (`key`, `name`, `trust`: `accepted`, `declined` or `not asked`, and `restrictions`) and, in mode ask,
+  `answers_left`. Each message the relay hears writes a `relay` log entry: `from`, `object`, `text`, `commands` (one
+  per command: `command`, `reply`, and `asked`, `answer`, `result`, `reason` or `note` when they apply), `replies`
+  (`channel`, `text`, `viewer: true` for a query's answer) and `restrictions` (what that controller holds now). The
+  inputs write a `relay` entry with `action` (`release` or `ping`), `freed` and, for ping, `pinged`.
+- Not done: `!handover`, `!who` and the other ORG x-tensions, a time-out for the ping, the relay's
+  own menu, and a relay worn by another avatar. The simple relay script `examples/objects/RLV_relay/relay.lsl` still
+  runs as before, with or without the built-in relay.
 
 #### Controls (Script Lab step 9b-6)
 
@@ -1405,7 +1449,7 @@ assistant sees. The code is `src/scriptlab/labwatcher.*`.
 - `lab_watch {path, seconds, inputs, keep_rlv}` watches the folder `path` (the whole path; a relative path,
   a file, a missing folder or a network folder is refused). Watching another folder stops the one before.
   `seconds`, `inputs` and `keep_rlv` are given to every run, as in `lsl_run`, and are checked the same way; so are
-  `avatars`, `transfers`, `order`, `seed`, `permissions` and `replies` (Anafin HUD test), also with `linkset: true`:
+  `avatars`, `transfers`, `order`, `seed`, `permissions`, `replies` (Anafin HUD test) and `relay` (job 23), also with `linkset: true`:
   `llOwnerSay("@...")` goes to the sandbox's RLV state (the one `rlv_state` and the panel show), which is
   emptied before each run unless `keep_rlv` is `true`. The
   newest script in the folder is run once at once. The answer has `folder` (the path without links),
@@ -1541,6 +1585,16 @@ recording and replay part of `labwatcher.*`; the panel part is in [SCRIPT_LAB.md
 - `lab_result` (with `linkset: true`) also answers `recording` (`true` while the user records), `recipe`
   (`recipe.rlvtest` when the folder has one, else `null`) and `replay` (the newest replay, as `lab_replay`
   answers it, or `null`).
+- **Improve a setup through the API (job 23):** `lab_result` (with `linkset: true`) also answers `improve`, what the
+  Script Lab page Improve a setup shows, made by the same functions: `ran` (`false` with `not_run` when the folder did
+  not run), `weight` (as above: `valid`, `scripts`, `reserved`, `limited`, `sent`, `received`, `unused` and `rows`),
+  `replayed`, `compared` and `weight_changes` (what changed since the replay before), `suggestions` (what can be
+  better: `kind`, `script`, `file`, `line`, `text`), `can_run` (one per script: `script`, `file`, `prim`, `verdict`
+  (`runs`, `runs_with_notes`, `stops`, `does_not_compile` or `not_run`), `works`, `missing`) and `log_full`. The page's
+  two buttons need no command of their own: Import a setup is `lab_watch` with the folder and `linkset: true`, and
+  Record today's behaviour makes `recipe.rlvtest`, which an assistant may write itself and then run with `lab_replay`.
+  An assistant improves a setup by editing the scripts with its own file tools; the watcher runs the folder again, and
+  `improve` shows the new weight and suggestions.
 
 ## Set up an AI assistant
 

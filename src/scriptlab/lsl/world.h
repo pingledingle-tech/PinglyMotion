@@ -261,6 +261,11 @@ struct HttpReply
   QString method;                   // GET, POST, PUT or DELETE; empty: any method
   int status = 200;
   QString body;
+  // job 23: simulated seconds until the reply comes (0: at once); from HTTP_TIMEOUT on it never comes, and the request
+  // gets status 499 after HTTP_TIMEOUT seconds, as in Second Life
+  double delay = 0.0;
+  static constexpr double HTTP_TIMEOUT = 60.0;
+  static constexpr double MAX_DELAY = 300.0;
 
   bool matches(const QString& requestMethod, const QString& requestUrl) const;
   // the first reply of the list that matches, or null
@@ -644,9 +649,9 @@ class World
     virtual bool avatarOnline(const QString& key) const { Q_UNUSED(key); return true; }
     virtual bool offlineAvatar(const QString& key, QString& name) const { Q_UNUSED(key); Q_UNUSED(name); return false; }
     virtual std::deque<double>& httpTimes() { return m_httpTimes; }
-    virtual bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body)
+    virtual bool httpResponse(double time, const QString& id, int status, int truncatedAt, const QString& body, double at = -1.0)
     {
-      Q_UNUSED(time); Q_UNUSED(id); Q_UNUSED(status); Q_UNUSED(truncatedAt); Q_UNUSED(body);
+      Q_UNUSED(time); Q_UNUSED(id); Q_UNUSED(status); Q_UNUSED(truncatedAt); Q_UNUSED(body); Q_UNUSED(at);
       return false;
     }
 
@@ -671,6 +676,14 @@ class World
     virtual const RegionSettings& region() const { return m_region; }
     void setRegion(const RegionSettings& region) { m_region = region; }
     virtual QStringList agents() const { return QStringList{ownerKey()}; }
+    // job 23: llName2Key and llRequestUserKey. The key of the avatar whose name (legacy "First Last", "first.last" or
+    // "first", which means "First Resident"; any case) matches, among the agents in the region; with includeOffline also
+    // the avatars of the world that are offline now. Empty when none matches.
+    virtual QString avatarKeyByName(const QString& name, bool includeOffline) const;
+    // job 23: llIsFriend: whether the avatar is a friend of the owner (the avatars option's "friend"; nobody by default)
+    virtual bool isFriend(const QString& key) const { Q_UNUSED(key); return false; }
+    // "first last" in lower case, with "resident" added to a single name; empty for an empty name
+    static QString normalAvatarName(const QString& name);
     // step 19: the experience and its store, the estate, and how many scripts the world runs (llGetSimStats)
     virtual ExperienceState& experience() { return m_experience; }
     void setExperience(const ExperienceState& experience) { m_experience = experience; }
