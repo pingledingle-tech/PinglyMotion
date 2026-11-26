@@ -236,6 +236,21 @@ class ObjectWorld : public RlvWorld
     }
     const RegionSettings& region() const override { return m_sandbox.m_region; }
     QStringList agents() const override { return m_sandbox.agents(m_slot); }
+    QString avatarKeyByName(const QString& name, bool includeOffline) const override
+    {
+      const QString found = World::avatarKeyByName(name, includeOffline);
+      if (!found.isEmpty() || !includeOffline) return found;
+      const QString wanted = normalAvatarName(name);
+      for (const AvatarSpec& a : m_sandbox.m_avatars)
+        if (!wanted.isEmpty() && normalAvatarName(a.name) == wanted) return a.key;
+      return QString();
+    }
+    bool isFriend(const QString& key) const override
+    {
+      for (const AvatarSpec& a : m_sandbox.m_avatars)
+        if (a.key == key) return a.isFriend;
+      return false;
+    }
     ExperienceState& experience() override { return m_sandbox.m_experience; }
     EstateState& estate() override { return m_sandbox.m_estate; }
     int scriptCount() const override { return int(m_sandbox.m_slots.size()); }
@@ -904,6 +919,12 @@ void Sandbox::deliver(const SandboxInput& input)
     deliverExperience(input);
     return;
   }
+  if (input.type == "relay_release" || input.type == "relay_ping")
+  {
+    for (Slot& slot : m_slots) slot.interp->syncTo(m_now);
+    relayInput(input, single ? m_slots[0].interp->now() : m_now);
+    return;
+  }
   if (input.type == "presence")
   {
     m_log.log(m_now, QJsonObject{{"type", "avatar"}, {"avatar", input.id}, {"name", input.name}, {"online", input.kind == "login"},
@@ -1362,6 +1383,7 @@ void Sandbox::chat(int from, double time, const QString& kind, int channel, cons
     slot.interp->syncTo(time);
     slot.interp->receive(channel, speaker.name, speaker.spec.key, text, speakerSlot.interp->id());
   }
+  if (m_relay && channel == RlvRelay::CHANNEL) relayHears(from, time, kind, text, false);
 }
 
 void Sandbox::chatTo(int from, double time, const QString& target, int channel, const QString& text)
@@ -1374,6 +1396,68 @@ void Sandbox::chatTo(int from, double time, const QString& target, int channel, 
     slot.interp->syncTo(time);
     slot.interp->receive(channel, speaker.name, speaker.spec.key, text, speakerSlot.interp->id());
   }
+  // llRegionSayTo to the avatar reaches what she wears, the relay too
+  if (m_relay && channel == RlvRelay::CHANNEL && (target == OWNER_KEY || target == RlvRelay::KEY)) relayHears(from, time, QString(), text, true);
+}
+
+QString Sandbox::setRelay(const RlvRelay::Settings& settings)
+{
+  if (m_started) return "The world has started already.";
+  m_relay.reset(new RlvRelay(m_rlv, OWNER_KEY, settings));
+  return QString();
+}
+
+void Sandbox::relayHears(int from, double time, const QString& kind, const QString& text, bool targeted)
+{
+  const Slot& speakerSlot = m_slots[size_t(from)];
+  const Object& speaker = m_objects[size_t(speakerSlot.object)];
+  if (!targeted)
+  {
+    // the relay is worn by the owner: it hears what is said within reach of the avatar
+    const double range = kind == "whisper" ? WHISPER_RANGE : (kind == "say" ? SAY_RANGE : (kind == "shout" ? SHOUT_RANGE : -1.0));
+    float here[3];
+    where(speakerSlot.object, here);
+    if (range >= 0.0 && distance(here, AVATAR_POSITION) > range) return;
+  }
+  const RlvRelay::Heard heard = m_relay->hear(speaker.spec.key, speaker.name, text);
+  QJsonObject entry = heard.entry;
+  if (m_tag) entry["speaker"] = speaker.spec.name;
+  if (!m_log.logFull()) m_log.log(time, entry);
+  relaySend(time, heard.messages);
+}
+
+void Sandbox::relaySend(double time, const QVector<RlvRelay::Message>& messages)
+{
+  for (const RlvRelay::Message& m : messages)
+    for (Slot& slot : m_slots)
+    {
+      const Object& o = m_objects[size_t(slot.object)];
+      if (o.dead || o.spec.key != m.to) continue;
+      slot.interp->syncTo(time);
+      if (m.viewer) slot.interp->receive(m.channel, OWNER_NAME, OWNER_KEY, m.text);
+      else slot.interp->receive(m.channel, RlvRelay::NAME, RlvRelay::KEY, m.text);
+    }
+}
+
+void Sandbox::relayInput(const SandboxInput& input, double time)
+{
+  if (!m_relay)
+  {
+    m_log.log(time, QJsonObject{{"type", "input"}, {"input", input.type}, {"error", "No relay is worn: give lsl_run the relay option."}});
+    return;
+  }
+  QJsonObject entry;
+  QVector<RlvRelay::Message> messages;
+  if (input.type == "relay_release") messages = m_relay->releaseAll(entry);
+  else
+  {
+    QStringList reachable;
+    for (const Object& o : m_objects)
+      if (!o.dead) reachable << o.spec.key;
+    messages = m_relay->ping(reachable, entry);
+  }
+  m_log.log(time, entry);
+  relaySend(time, messages);
 }
 
 void Sandbox::dialog(int from, double time, const QString& avatar, const QString& message, const QStringList& buttons, int channel)

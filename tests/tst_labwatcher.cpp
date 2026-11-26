@@ -122,7 +122,7 @@ void TestLabWatcher::runOptionsAreChecked()
            QString("\"linkset\" must be true (the folder is one object) or false (every script on its own)."));
   QCOMPARE(w.watch(dir.path(), QJsonObject{{"inputs", QJsonArray{QJsonObject{{"type", "wave"}}}}}).error,
            QString("Input 1: \"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                   "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\"."));
+                   "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\", \"experience\", " "\"relay_release\" or \"relay_ping\"."));
   QVERIFY(!w.watching());
   QVERIFY(w.watch(dir.path(), QJsonObject{{"seconds", 5}}).ok());
   QCOMPARE(w.runOptions().value("seconds").toInt(), 5);

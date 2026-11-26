@@ -822,7 +822,7 @@ A request gets the first reply in list order that matches its method and URL. Th
 
 `lsl_run` takes `avatars` (at most 64), the people the sensors can find: `[{"name": "Ann", "position": [128, 133, 20], "velocity": [1, 0, 0], "rotation": [0, 0, 0, 1], "in_group": true, "key": "..."}]`. Only `name` is needed;
 `position` is region metres as for objects (default `[128, 128, 20]`), `key` defaults to `a0000000-0000-4000-8000-000000000001` and so on in list order. The owner always stands at `[128, 128, 20]`, unless an avatar
-with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`. `height` (metres, default 1.8) is for `llGetAgentSize` (second gap list, step 3).
+with the owner's key is listed. Avatars do not move: a scan always sees them where the input put them. The same list is used for a single script and for `objects`. `height` (metres, default 1.8) is for `llGetAgentSize` (second gap list, step 3). `friend` (true or false, default false) says whether the avatar is a friend of the owner, for `llIsFriend` (job 23).
 
 - `llSensor(name, id, type, range, arc)` scans once, now, and queues `sensor(integer num_detected)` (or `no_sensor()` when nothing is found) at once. It finds the avatars (type `AGENT`, 1) and the other objects of the
   world (type `SCRIPTED`, 8; the sensing object itself is never found) that match: `name` exact and case-sensitive (empty: any), `id` (empty or `NULL_KEY`: any), a `type` mask that has the type's bit (a mask of 0, or `ACTIVE` and
@@ -881,6 +881,48 @@ as before.
   but is not carried out in the Script Lab sandbox`. Nothing is said to the script in chat, because a real RLV viewer
   sends no reply to a force command. A late or lost RLV reply is marked in the log line too: `(comes after 2.5 s)` or
   `(lost: the script never hears it)`.
+
+#### The built-in RLV relay (job 23)
+
+`lsl_run` takes `relay` (optional): `true` puts a simulated RLV relay on the owner, `false` or no option puts none
+(as before). `{"mode": "auto"}` is the same as `true`; `{"mode": "deny"}` refuses every object; `{"mode": "ask",
+"answers": ["accept", "decline", ...]}` asks the avatar once per object through a simulated dialog and takes the next
+answer (at most 64; when the list is used up the answer is `decline`, as if nobody pressed a button). The relay
+answers the relay protocol (1.100, with the ORG core x-tension 0003), written from the protocol's description; no
+relay's code was copied. Traps, capture guns, furniture and capture HUDs can be tested with it without putting a relay
+script on a worn object.
+
+- A controller says on channel `-1812221819` (whisper, say, shout or region say, within reach of the avatar at
+  128, 128, 20), or sends with `llRegionSayTo` to the owner's key (any distance), `<ident>,<avatar key>,<command>|<command>...`.
+  Exactly two commas; another avatar's key or another number of fields is ignored (a `relay` log entry with `ignored`
+  says why). The wildcard key `ffffffff-ffff-ffff-ffff-ffffffffffff` is not answered.
+- For every command the relay answers the sender alone, on the same channel, from the object `RLV Relay`, with
+  `<ident>,<controller key>,<command>,<answer>`: `!version` `1100`; `!implversion` `PinglyMotion Script Lab relay 1`;
+  `!x-orgversions` `ORG=0003`; `!release` `ok` (every restriction of that controller is lifted and it must be accepted
+  again next time); `!pong` gets no answer; any other `!` command `ko` (ORG core; `!handover` and `!who` are unsettled
+  in the protocol and refused); an `@` command `ok` or `ko` from the RLV core; anything else `ko`.
+- **Restrictions per controller:** the RLV core holds each restriction under the controller's key, so `rlv_state`, the
+  answer's `rlv.state.objects` and the panel show which object holds what (in Second Life the viewer sees the relay as
+  the holder). A query such as `@version=2222` is answered by the viewer on its own channel, as the owner, to the
+  controller.
+- **Ask or accept:** a command that sets a restriction (`=n`, `=add`), forces something (`=force`) or asks a query other
+  than `@version`, `@versionnew`, `@versionnum` and `@versionnumbl` needs the controller to be accepted first; lifting
+  (`=y`, `=rem`) and `@clear` never do. The choice holds until the controller's `!release`.
+- **Inputs** (for `inputs` of `lsl_run` and for `lsl_event`): `relay_release` is the avatar freeing herself from the
+  relay's menu: every controller is freed and told `release,<controller key>,!release,ok` (the protocol defines no
+  safeword; this is the sandbox's choice). `relay_ping` is the reachability check (ORG core): every controller that
+  holds a restriction gets `ping,<controller key>,ping,ping`, and each one whose object is no longer in the world (for
+  example deleted with `llDie`) is freed at once. The protocol sets no time for an answer, so no time-out is
+  simulated; a `!pong` is logged with a note. A relay input without a relay writes an `input` entry with an `error`.
+- **The answer** of `lsl_run` and `lsl_event` has `relay` when one is worn: `mode`, `key` (the relay's object key),
+  `controllers` (`key`, `name`, `trust`: `accepted`, `declined` or `not asked`, and `restrictions`) and, in mode ask,
+  `answers_left`. Each message the relay hears writes a `relay` log entry: `from`, `object`, `text`, `commands` (one
+  per command: `command`, `reply`, and `asked`, `answer`, `result`, `reason` or `note` when they apply), `replies`
+  (`channel`, `text`, `viewer: true` for a query's answer) and `restrictions` (what that controller holds now). The
+  inputs write a `relay` entry with `action` (`release` or `ping`), `freed` and, for ping, `pinged`.
+- Not done: the wildcard key, `!handover`, `!who` and the other ORG x-tensions, a time-out for the ping, the relay's
+  own menu, and a relay worn by another avatar. The simple relay script `examples/objects/RLV_relay/relay.lsl` still
+  runs as before, with or without the built-in relay.
 
 #### Controls (Script Lab step 9b-6)
 

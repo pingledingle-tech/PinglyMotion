@@ -378,10 +378,10 @@ void LslWorldTest::eventNeedsAWorld()
            QString("There is no running world to send the event to. Start one with lsl_run first (with \"source\" or \"objects\")."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}}, &session)["error"].toString(),
            QString("Missing \"type\": chat, touch, dialog, attach, detach, changed, sit, stand, control, money, http_request, email, remote_data, collision, land_collision, "
-                   "moving, at_target, not_at_target, step, drop or experience."));
+                   "moving, at_target, not_at_target, step, drop, experience, relay_release or relay_ping."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "fly"}}, &session)["error"].toString(),
            QString("\"type\" must be \"chat\", \"touch\", \"dialog\", \"attach\", \"detach\", \"changed\", \"sit\", \"stand\", \"control\", \"money\", \"http_request\", "
-                   "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\" or \"experience\"."));
+                   "\"email\", \"remote_data\", \"collision\", \"land_collision\", \"moving\", \"at_target\", \"not_at_target\", \"step\", \"drop\", \"experience\", " "\"relay_release\" or \"relay_ping\"."));
   QCOMPARE(Control::event(QJsonObject{{"command", "lsl_event"}, {"type", "touch"}, {"at", 1}}, &session)["error"].toString(),
            QString("Unknown option \"at\". Fields: type, object, channel, kind, name, id, text, button, point, link, hold, change, levels, edges, amount, url, method, body, headers, "
                    "address, subject, idata, channel_key, seconds, phase, pos, tnum, targetpos, ourpos, dt, item, item_type, key, value."));

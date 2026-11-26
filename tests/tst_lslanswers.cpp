@@ -310,7 +310,7 @@ void LslAnswersTest::avatarErrors_data()
     return o;
   };
   QTest::newRow("unknown field") << with({{"away", true}})
-                                 << "Avatar 1: unknown field \"away\". Fields: name, key, position, velocity, rotation, in_group, height, online, login, logout.";
+                                 << "Avatar 1: unknown field \"away\". Fields: name, key, position, velocity, rotation, in_group, friend, height, online, login, logout.";
   QTest::newRow("online as text") << with({{"online", "no"}}) << "Avatar 1: \"online\" must be true or false (whether the avatar is online at the start).";
   QTest::newRow("login negative") << with({{"login", -1}}) << "Avatar 1: \"login\" must be the simulated second the avatar logs in, 0 to 3600.";
   QTest::newRow("logout too late") << with({{"logout", 3601}}) << "Avatar 1: \"logout\" must be the simulated second the avatar logs out, 0 to 3600.";
