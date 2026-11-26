@@ -2,3 +2,4 @@
 *.sh text eol=lf
 # the OpenCollar scripts are an unchanged copy (their licence): never convert their line ends
 examples/improve/OpenCollar/** -text
+examples/improve/OpenCollar-more/** -text

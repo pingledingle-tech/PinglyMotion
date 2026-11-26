@@ -327,6 +327,8 @@ IF (Python3_Interpreter_FOUND)
   ADD_TEST (NAME examples_guides COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_examples.py)
   # the OpenCollar collar scripts in examples/improve/OpenCollar are an unchanged copy with their licence (queue 1, item 5)
   ADD_TEST (NAME opencollar_copy COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_opencollar_copy.py)
+  # the 39 other OpenCollar scripts in examples/improve/OpenCollar-more, also an unchanged copy with their licence
+  ADD_TEST (NAME opencollar_more_copy COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_opencollar_more_copy.py)
 ENDIF ()
 
 # Script Lab step 7 (#293): what a run does to the avatar, the animation lookup and the 3D view's preview

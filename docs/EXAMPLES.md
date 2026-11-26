@@ -318,6 +318,8 @@ Next to it is `examples/improve/Small_setup/`, a small example of our own for be
 
 On the tab Improve a setup both examples show their weight, what can be better and whether each script can run here ([SCRIPT_LAB.md](SCRIPT_LAB.md), "Improve a setup").
 
+More of their scripts: `examples/improve/OpenCollar-more/` holds the other 39 scripts of their repository (apps such as camera, capture, garble and undress, the cuffs, the installer files, templates and test helpers), unchanged, in the same sub folders as in their repository, with a second copy of `LICENSE`. It is not one setup and is not part of the Script Lab examples above; it is there so the scripts can be read and tried one at a time. Test: `tests/test_opencollar_more_copy.py`.
+
 Licence: the scripts are under the GNU GPL version 2 with the OpenCollar licence terms in `LICENSE`. The copy stays unchanged; a changed copy must follow those terms. Credit: [CREDITS.md](../CREDITS.md). Nothing else from their project is in PinglyMotion: no pictures, models, animations, sounds or notecards. Tests: `tests/tst_lslimprove.cpp` and `tests/test_opencollar_copy.py` ([SCRIPT_LAB.md](SCRIPT_LAB.md), "A real, large setup").
 
 ## The data file `example.json`
