@@ -3,6 +3,7 @@ Status: done
 Pull request: #527
 Files:
 - docs/index.html
+- docs/site.css
 - docs/home.html
 - docs/download.html
 - docs/privacy.html
