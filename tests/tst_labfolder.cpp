@@ -628,6 +628,7 @@ void TestLabFolder::anafinRunOptionsReachTheRun()
   const QJsonObject plain = LabFolder::run(LabFolder::open(top), QJsonObject{{"seconds", 2}});
   QCOMPARE(entries(plain, "owner_say"), QJsonArray({QJsonArray{"main 1", "main", "Hud", "main.lsl"}, QJsonArray{"perm 2", "main", "Hud", "main.lsl"},
                                                     QJsonArray{"arm", "arm", "Arm", "Arm/arm.lsl"}, QJsonArray{"heard", "arm", "Arm", "Arm/arm.lsl"}}));
+}
 
 // run option "script_memory": Second Life's limit for a script, code (estimated, 9 bytes for each token) and values together.
 // The script has 8 + 5 * 25 = 133 tokens, so about 1197 bytes of code, over a limit of 1024
