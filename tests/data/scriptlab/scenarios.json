@@ -2151,7 +2151,7 @@
         },
         {
           "expect": {
-            "error": "Unknown option \"colour\". Options: source, objects, seconds, inputs, keep_rlv, description, scale, start_parameter, inventory, avatars, http, region, experience, estate, transfers.",
+            "error": "Unknown option \"colour\". Options: source, objects, seconds, inputs, keep_rlv, description, scale, start_parameter, inventory, avatars, http, region, experience, estate, transfers, order, seed.",
             "ok": false
           },
           "request": {"colour":1,"command":"lsl_run","source":"default { }"}

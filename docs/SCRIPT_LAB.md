@@ -214,7 +214,8 @@ an RLV relay, a store), and they talk to each other.
   `lsl_event`; 128 KiB counted in UTF-8. The protected and pattern functions say "not supported yet".
 - As in Second Life: a link message or `linkset_data` value too big for the receiver's free memory crashes it with a
   Stack-Heap Collision; more than 64 waiting events are dropped (the log shows each); a prim does not hear its own
-  chat. Not as in Second Life: scripts run one after the other in a fixed order, not in parallel; memory is a rough
+  chat. Not as in Second Life: scripts run one after the other in a fixed order, not in parallel (`lsl_run`'s `order`
+  option runs them reversed or shuffled with a seed, to find bugs that depend on the order); memory is a rough
   count with 256 KB per script; every prim has the object's key. Details: [CONTROL.md](CONTROL.md), "Several scripts
   in one object"; reasons: [DECISIONS.md](DECISIONS.md).
 - A touch can name the prim (`link`); a prim without a touch handler (`touch_start`, `touch` or `touch_end`) passes it to the root.

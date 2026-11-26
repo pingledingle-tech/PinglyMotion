@@ -28,6 +28,8 @@ namespace Control
   static constexpr int DEFAULT_EVENT_SECONDS = 1;
   // all scripts of one lsl_run together (each one also at most Lexer::MAX_SOURCE_CHARS)
   static constexpr int MAX_TOTAL_SOURCE_CHARS = 1048576;
+  // "seed" of lsl_run with "order": "shuffle" (Anafin HUD test, gap 3): 0 to 2^32 - 1
+  static constexpr unsigned int MAX_SEED = 4294967295u;
 
   // {"command":"lsl_check","source":"..."}: errors and warnings with line and column
   QJsonObject check(const QJsonObject& request);
@@ -39,6 +41,7 @@ namespace Control
   // [{"name":"hud","source":"...","position":[128,128,20],"attached":35}, ...].
   // llOwnerSay("@...") goes to rlv (the sandbox's RLV state, the one rlv_state shows); without it
   // the run uses a state of its own. Unless "keep_rlv" is true the state is emptied before the run.
+  // "order" ("fixed", "reverse" or "shuffle" with "seed") changes the order the scripts run in; the world keeps it.
   // With rlv and session, the world is kept in session for lsl_event.
   QJsonObject run(const QJsonObject& request, RlvState* rlv = nullptr, Session* session = nullptr);
   // {"command":"lsl_event","type":"touch","object":"hud","seconds":1}: sends one event to the world
