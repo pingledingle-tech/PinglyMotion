@@ -534,7 +534,7 @@ void TestScriptLabPlayer::panelFollowsTheMoment()
   QVERIFY(player->logView()->isVisibleTo(&panel));
   player->showMoment(1);
   const QStringList log = player->logView()->toPlainText().split('\n');
-  QCOMPARE(log.last(), QString("10.000 s  hud (Root): dialog: buttons=Lock, Free, channel=-77, message=Cuffs, object=Cuffs, "
+  QCOMPARE(log.last(), QString("14.000 s  hud (Root): dialog: buttons=Lock, Free, channel=-77, message=Cuffs, object=Cuffs, "
                                "to=a2e76fcd-9360-4f6d-a924-000000000001"));
   QVERIFY(log.contains("--- Step 1: touch Root ---"));
   QVERIFY(!log.contains("--- Step 2: menu Lock ---"));

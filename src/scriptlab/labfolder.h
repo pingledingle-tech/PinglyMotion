@@ -58,6 +58,15 @@ namespace LabFolder
   static constexpr int MAX_RELATIVE_PATH = 255;
   static constexpr int MAX_NAME = 63;                 // object, prim, script and notecard names, as in Second Life
   static constexpr int MAX_PATH_CHARS = 4096;
+  // Simulated time of a folder run when the options give no "seconds": a big setup (a collar with
+  // many scripts) needs more than the flat 10 seconds of lsl_run. AUTO_BASE_SECONDS plus
+  // AUTO_PER_SCRIPT_SECONDS for each script, never more than AUTO_MAX_SECONDS. Real-time and step
+  // limits of the interpreter are unchanged, so a runaway script still stops at those.
+  static constexpr int AUTO_BASE_SECONDS = 10;
+  static constexpr int AUTO_PER_SCRIPT_SECONDS = 2;
+  static constexpr int AUTO_MAX_SECONDS = 60;
+  // the automatic simulated seconds for a folder with this many scripts
+  int autoSeconds(int scripts);
 
   struct Prim
   {
