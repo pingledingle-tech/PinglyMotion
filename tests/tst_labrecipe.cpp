@@ -116,6 +116,7 @@ class TestLabRecipe : public QObject
     void replayAfterAChangedScript();
     void replayIsTheSameEveryTime();
     void stepThatCannotBeDone();
+  void subMenuInTheSameInstant();
     void noRecipe();
     void compareWords();
     void resultFileRoundTrip();
@@ -347,6 +348,36 @@ void TestLabRecipe::stepThatCannotBeDone()
                         "Cuff is green.",
                         "Root is saying \"Ready.\".",
                         "Cuff is saying \"Free.\"."}));
+}
+
+void TestLabRecipe::subMenuInTheSameInstant()
+{
+  // job 24: an answer that opens another menu (a sub-menu) shows it in the same simulated instant;
+  // that menu is open for the next step, the answered one is not
+  QTemporaryDir dir;
+  const QString object = dir.filePath("Menus");
+  QDir().mkpath(object + "/Root");
+  QVERIFY(writeFile(object + "/Root/menus.lsl",
+    "default {\n"
+    "  state_entry() { llListen(-77, \"\", llGetOwner(), \"\"); }\n"
+    "  touch_start(integer n) { llDialog(llDetectedKey(0), \"Main\", [\"More\"], -77); }\n"
+    "  listen(integer c, string name, key id, string m) {\n"
+    "    if (m == \"More\") llDialog(id, \"Sub\", [\"Lock\"], -77);\n"
+    "    else llOwnerSay(\"Locked.\");\n"
+    "  }\n"
+    "}\n"));
+  const LabRecipe::Result recipe = LabRecipe::parse("touch Root\nmenu More\nmenu Lock\nmenu Lock\n");
+  QVERIFY2(recipe.ok(), qPrintable(recipe.error));
+  const LabRecipe::Replay replay = LabRecipe::replay(LabFolder::open(object), QJsonObject(), *recipe.value, Rlv::Mode::Rlv);
+  QVERIFY2(replay.ran, qPrintable(replay.error));
+  QCOMPARE(replay.done, 3);
+  QStringList facts;
+  for (const LabRecipe::Fact& f : replay.facts) facts << f.sentence();
+  QCOMPARE(facts, QStringList({"Step 4 (menu Lock) is not done: no menu was open.", "Root is saying \"Locked.\"."}));
+  // after step 2 the sub-menu is the open menu
+  QStringList second;
+  for (const LabRecipe::Fact& f : replay.frames.at(2).facts) second << f.sentence();
+  QCOMPARE(second, QStringList({"The menu is open: \"Sub\" with Lock."}));
 }
 
 void TestLabRecipe::noRecipe()

@@ -5,6 +5,9 @@ Files:
 - examples/scriptlab/cuffs/**
 - tests/tst_examples.cpp
 - docs/EXAMPLES.md
+- src/scriptlab/labrecipe.cpp
+- tests/tst_labrecipe.cpp
+- fuzz/corpus/lsl/cuffs_main.lsl
 
 ## What
 

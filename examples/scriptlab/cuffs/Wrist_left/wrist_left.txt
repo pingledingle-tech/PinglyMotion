@@ -1,0 +1,2 @@
+The left wrist cuff. Red when locked, green when free.
+The script in Root controls this part. A touch here opens the menu.

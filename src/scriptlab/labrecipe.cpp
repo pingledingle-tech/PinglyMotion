@@ -382,7 +382,7 @@ namespace
       facts.append({QStringLiteral("said:") + prims.value(it.key()), prims.value(it.key()),
                     QObject::tr("saying \"%1\"").arg(clipped(it.value(), LabRecipe::MAX_SAID_CHARS))});
 
-    // a menu that is still open: shown after the last answer
+    // a menu that is still open: shown after the menu that was answered last
     if (sandbox)
     {
       const QJsonObject dialog = sandbox->lastDialog();
@@ -510,7 +510,9 @@ LabRecipe::Replay LabRecipe::replay(const LabFolder::Linkset& linkset, const QJs
       else
       {
         request = QJsonObject{{"command", "lsl_event"}, {"type", "dialog"}, {"object", dialog.value("object").toString()}, {"button", step.text}};
-        lastAnswer = sandbox->now();
+        // the time the answered menu was shown: a menu the answer opens (a sub-menu) comes in the same
+        // simulated instant as the answer, so it counts as open; the answered one does not (job 24)
+        lastAnswer = dialog.value("t").toDouble();
       }
     }
     else if (step.kind == Step::Kind::Send)
