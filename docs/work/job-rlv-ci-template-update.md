@@ -1,5 +1,5 @@
 Branch: job/rlv-ci-template-update
-Status: active
+Status: done
 Pull request: #529
 Files:
 - rlv-tools-template/**
