@@ -400,6 +400,27 @@ QString World::ownerOf(const QString& key) const
   return QString();
 }
 
+QString World::normalAvatarName(const QString& name)
+{
+  const QString trimmed = name.trimmed();
+  QStringList parts = trimmed.contains(QLatin1Char('.')) && !trimmed.contains(QLatin1Char(' '))
+                        ? trimmed.split(QLatin1Char('.'), Qt::SkipEmptyParts)
+                        : trimmed.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+  if (parts.isEmpty()) return QString();
+  if (parts.size() == 1) parts << QStringLiteral("resident");
+  return parts.join(QLatin1Char(' ')).toLower();
+}
+
+QString World::avatarKeyByName(const QString& name, bool includeOffline) const
+{
+  Q_UNUSED(includeOffline);
+  const QString wanted = normalAvatarName(name);
+  if (wanted.isEmpty()) return QString();
+  for (const QString& key : agents())
+    if (normalAvatarName(nameOf(key)) == wanted) return key;
+  return QString();
+}
+
 const char* const World::GROUP_KEY = "9a0c0000-0000-4000-8000-000000000001";
 
 float PrimStore::mass(const float rootSize[3], int count)

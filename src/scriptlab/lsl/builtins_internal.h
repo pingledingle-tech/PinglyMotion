@@ -117,7 +117,10 @@ enum class Fn
   // step 19: the key-value store, the experience functions, simulator statistics, the profiler and estate access
   CreateKeyValue, ReadKeyValue, UpdateKeyValue, DeleteKeyValue, DataSizeKeyValue, KeyCountKeyValue, KeysKeyValue,
   AgentInExperience, GetExperienceDetails, GetExperienceErrorMessage, RequestExperiencePermissions,
-  GetSimStats, ScriptProfiler, ManageEstateAccess
+  GetSimStats, ScriptProfiler, ManageEstateAccess,
+  // job 23: the newer string, list, hash and avatar-name functions of Second Life's lsl-definitions
+  Char, Ord, Hash, SHA256String, ComputeHash, HMAC, List2ListSlice, ListFindStrided, Name2Key, RequestUserKey, IsFriend,
+  GetStartString
 };
 
 // indices Start..End of a string or list of this length, as LSL counts them: negative counts

@@ -671,6 +671,14 @@ class World
     virtual const RegionSettings& region() const { return m_region; }
     void setRegion(const RegionSettings& region) { m_region = region; }
     virtual QStringList agents() const { return QStringList{ownerKey()}; }
+    // job 23: llName2Key and llRequestUserKey. The key of the avatar whose name (legacy "First Last", "first.last" or
+    // "first", which means "First Resident"; any case) matches, among the agents in the region; with includeOffline also
+    // the avatars of the world that are offline now. Empty when none matches.
+    virtual QString avatarKeyByName(const QString& name, bool includeOffline) const;
+    // job 23: llIsFriend: whether the avatar is a friend of the owner (the avatars option's "friend"; nobody by default)
+    virtual bool isFriend(const QString& key) const { Q_UNUSED(key); return false; }
+    // "first last" in lower case, with "resident" added to a single name; empty for an empty name
+    static QString normalAvatarName(const QString& name);
     // step 19: the experience and its store, the estate, and how many scripts the world runs (llGetSimStats)
     virtual ExperienceState& experience() { return m_experience; }
     void setExperience(const ExperienceState& experience) { m_experience = experience; }

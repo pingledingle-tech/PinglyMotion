@@ -54,6 +54,11 @@ const struct { const char* name; Fn fn; } SUPPORTED[] =
   {"llLinksetDataCountKeys", Fn::LinksetDataCountKeys},
   {"llLinksetDataDeleteFound", Fn::LinksetDataDeleteFound}, {"llLinksetDataFindKeys", Fn::LinksetDataFindKeys},
   {"llListFindListNext", Fn::ListFindListNext}, {"llSetAgentRot", Fn::SetAgentRot},
+  // job 23: newer functions of Second Life's lsl-definitions
+  {"llChar", Fn::Char}, {"llOrd", Fn::Ord}, {"llHash", Fn::Hash}, {"llSHA256String", Fn::SHA256String},
+  {"llComputeHash", Fn::ComputeHash}, {"llHMAC", Fn::HMAC}, {"llList2ListSlice", Fn::List2ListSlice},
+  {"llListFindStrided", Fn::ListFindStrided}, {"llName2Key", Fn::Name2Key}, {"llRequestUserKey", Fn::RequestUserKey},
+  {"llIsFriend", Fn::IsFriend}, {"llGetStartString", Fn::GetStartString},
   // GLTF material overrides are not drawn: the call is only recorded
   {"llSetLinkGLTFOverrides", Fn::RecordOnly},
   {"llEuler2Rot", Fn::Euler2Rot}, {"llRot2Euler", Fn::Rot2Euler}, {"llRot2Fwd", Fn::Rot2Fwd}, {"llRot2Left", Fn::Rot2Left},

@@ -120,6 +120,71 @@ Value Interpreter::callBuiltinLists(Fn fn, const QString& name, std::vector<Valu
       if (instance < 0 && -instance <= qint64(found.size())) return Value::integer(found[found.size() - size_t(-instance)]);
       return Value::integer(-1);
     }
+    case Fn::ListFindStrided:
+    {
+      // job 23, the wiki: the place in src where test first matches whole inside the inclusive range start to end
+      // (below 0 counts from the end), trying only start, start + stride, ...; -1 when none; an empty test answers 0.
+      // Sandbox choices where the wiki says nothing: a stride below 1 counts as 1, a start after the end finds nothing,
+      // and a start before the list steps on by the stride until it is inside the list
+      const auto& src = a[0].list;
+      const auto& test = a[1].list;
+      if (test.empty()) return Value::integer(0);
+      const qint64 n = qint64(src.size());
+      qint64 start = a[2].i, end = a[3].i;
+      const qint64 stride = a[4].i < 1 ? 1 : a[4].i;
+      if (start < 0) start += n;
+      if (end < 0) end += n;
+      end = qMin(end, n - 1);
+      if (start < 0) start += ((-start + stride - 1) / stride) * stride;
+      for (qint64 i = start; i <= end && i + qint64(test.size()) - 1 <= end; i += stride)
+      {
+        step(m_line, m_column);
+        bool match = true;
+        for (size_t k = 0; match && k < test.size(); ++k) match = sameElement(src[size_t(i) + k], test[k]);
+        if (match) return Value::integer(qint32(i));
+      }
+      return Value::integer(-1);
+    }
+    case Fn::List2ListSlice:
+    {
+      // job 23, the wiki: the slice_index-th entry (below 0 counts from the end of the stride) of every stride of the
+      // range start to end (inclusive; below 0 counts from the end). The strides count from start, and a range that
+      // reaches past either end of the list counts the missing entries, which are then left out. A start after the end
+      // is an exclusion range: [0, end] then [start, -1], taken as one run of strides. A stride below 1 counts as 1.
+      // Sandbox choice where the wiki says nothing: a slice_index outside the stride gives an empty list
+      const auto& src = a[0].list;
+      const qint64 n = qint64(src.size());
+      qint64 start = a[1].i, end = a[2].i;
+      const qint64 stride = a[3].i < 1 ? 1 : a[3].i;
+      qint64 slice = a[4].i;
+      if (slice < 0) slice += stride;
+      if (slice < 0 || slice >= stride || n == 0) return Value::makeList({});
+      if (start < 0) start += n;
+      if (end < 0) end += n;
+      std::vector<Value> out;
+      if (start <= end)
+      {
+        // virtual places start, start + 1, ..., end; place start + g * stride + slice, kept when inside the list
+        const qint64 low = qMax<qint64>(start, 0), high = qMin(end, n - 1);
+        qint64 g = low - start - slice <= 0 ? 0 : (low - start - slice + stride - 1) / stride;
+        for (qint64 i = start + g * stride + slice; i <= high; i += stride)
+        {
+          if (i >= low) out.push_back(src[size_t(i)]);
+          step(m_line, m_column);
+        }
+      }
+      else
+      {
+        std::vector<qint64> places;
+        for (qint64 i = 0; i <= qMin(end, n - 1); ++i) places.push_back(i);
+        for (qint64 i = qMax<qint64>(start, 0); i < n; ++i) places.push_back(i);
+        for (size_t k = size_t(slice); k < places.size(); k += size_t(stride)) out.push_back(src[size_t(places[k])]);
+        m_steps += qint64(places.size());
+      }
+      Value result = Value::makeList(std::move(out));
+      checkSize(result);
+      return result;
+    }
     case Fn::ListSort:
     {
       const size_t n = a[0].list.size();
