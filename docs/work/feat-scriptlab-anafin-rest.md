@@ -1,5 +1,5 @@
 Branch: feat/scriptlab-anafin-rest
-Status: active
+Status: done
 Pull request: #522
 Files:
 - src/scriptlab/lsl/world.*
