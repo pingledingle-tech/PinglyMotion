@@ -373,6 +373,11 @@ QJsonObject LabFolder::check(const Linkset& linkset)
   return QJsonObject{{"valid", valid}, {"scripts", scripts}, {"errors", errors}, {"warnings", warnings}};
 }
 
+int LabFolder::autoSeconds(int scripts)
+{
+  return qBound(int(AUTO_BASE_SECONDS), AUTO_BASE_SECONDS + AUTO_PER_SCRIPT_SECONDS * qMax(0, scripts), int(AUTO_MAX_SECONDS));
+}
+
 QJsonObject LabFolder::request(const Linkset& linkset, const QJsonObject& options)
 {
   QJsonArray scripts;
@@ -388,6 +393,7 @@ QJsonObject LabFolder::request(const Linkset& linkset, const QJsonObject& option
   QJsonObject req;
   for (const char* key : {"seconds", "inputs", "keep_rlv"})
     if (options.contains(key)) req[key] = options.value(key);
+  if (!req.contains("seconds")) req["seconds"] = autoSeconds(int(linkset.scripts.size()));
   req["command"] = "lsl_run";
   req["objects"] = QJsonArray{object};
   return req;
@@ -484,6 +490,17 @@ QJsonObject LabFolder::run(const Linkset& linkset, const QJsonObject& options, R
     return out;
   }
   tagLog(linkset, answer);
+  // how long the run was allowed to go on, and why (a visible message, nothing waits in real time)
+  const int seconds = request(linkset, options).value("seconds").toInt();
+  out["seconds"] = seconds;
+  if (options.contains("seconds"))
+    out["time_note"] = QString("The setup ran %1 simulated seconds, as asked.").arg(seconds);
+  else if (seconds >= AUTO_MAX_SECONDS)
+    out["time_note"] = QString("The setup ran the longest automatic time, %1 simulated seconds (%2 scripts). If it needs more, give \"seconds\" (at most 3600).")
+                         .arg(seconds).arg(linkset.scripts.size());
+  else
+    out["time_note"] = QString("The setup ran %1 simulated seconds (%2 + %3 for each of %4 scripts).")
+                         .arg(seconds).arg(AUTO_BASE_SECONDS).arg(AUTO_PER_SCRIPT_SECONDS).arg(linkset.scripts.size());
   out["ok"] = true;
   out["result"] = answer;
   return out;

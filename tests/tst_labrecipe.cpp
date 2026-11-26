@@ -426,7 +426,7 @@ void TestLabRecipe::momentsOfAReplay()
   QCOMPARE(frames.size(), 4);
   QCOMPARE(replay.value("first_difference").isNull(), true);
   const QStringList texts = {"Start.", "Click Root.", "Press \"Lock\" in the menu.", "panel sends @sendim=n."};
-  const QList<double> times = {10, 11, 12, 13};
+  const QList<double> times = {14, 15, 16, 17};   // the folder ran 10 + 2 per script (2 scripts) simulated seconds first
   const QList<int> logEnds = {7, 11, 19, 20};
   for (int i = 0; i < frames.size(); ++i)
   {

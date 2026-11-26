@@ -1391,6 +1391,13 @@ and the maker guide are in [SCRIPT_LAB.md](SCRIPT_LAB.md), "The folder model". W
 watches with `linkset: true`, and its tree shows the object; **Try the example scripts** still watches without
 it, because the examples are separate scripts. The panel follows whichever mode the last watch used.
 
+Time of a folder run: with no `seconds` in the options the object runs for 10 simulated seconds plus 2 for each
+script, at most 60 (a big collar needs more than the flat 10 that `lsl_run` gives). `seconds` given to
+`lab_watch` always wins (0 to 3600). The folder's answer has `seconds` (what was used) and `time_note` (one
+plain sentence; at 60 it says that this is the longest automatic time and to give `seconds` for more). Nothing
+waits in real time, and the real-time and step limits of every script are unchanged, so a runaway script still
+stops with its own `limit` line.
+
 - The object is named after the folder. Scripts and notecards right in the folder, and in a subfolder named
   `Root` (any case), are in the root prim, link 1. Every other subfolder is one child prim, links 2, 3, ...
   in name order (upper and lower case alike). A folder inside a prim's folder is not read (prims are not
