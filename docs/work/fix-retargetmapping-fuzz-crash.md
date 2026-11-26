@@ -1,6 +1,6 @@
 Branch: fix/retargetmapping-fuzz-crash
-Status: active
-Pull request: pending
+Status: done
+Pull request: #528
 Files:
 - src/retargetmapping.*
 - fuzz/corpus/retargetmapping/**
