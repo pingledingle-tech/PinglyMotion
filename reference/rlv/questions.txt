@@ -1,0 +1,111 @@
+# The questions for Firestorm (package B): the cases that tools/firestorm/make_rlv_questions.py turns into
+# the script tools/firestorm/rlv_questions.lsl. Same words as a .rlvref file, without the answers:
+# case, mode, object and send lines only. Every case of reference/rlv/spec_*.rlvref must be here with
+# the same send lines (tests/test_rlvref.py checks it), so a recording has the same cases as the
+# specification file and the two can be compared. Questions only: the only things ever set are the three
+# restrictions that hide hover text, and each case ends with @clear (done by the script).
+
+case version_text
+send @version=2222
+send @versionnew=2223
+send @versionnum=2224
+
+case status_one
+send @showhovertextworld=n
+send @getstatus=2222
+
+case status_two_in_order
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus=2222
+
+case status_filter
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus:world=2222
+
+case status_separator
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus:;|=2222
+
+case status_norwegian_separator
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @getstatus:;æøå=2222
+
+case clear_with_filter
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @clear=world
+send @getstatus=2222
+
+case notify_add_and_remove
+send @notify:2222=add
+send @showhovertextworld=n
+send @showhovertextworld=y
+
+case notify_with_filter
+send @notify:2222;hud=add
+send @showhovertextworld=n
+send @showhovertexthud=n
+
+case sitting_nowhere
+send @getsitid=2222
+
+case outfit_worn_shape
+send @getoutfit:shape=2222
+
+case outfit_all_layers_are_digits
+send @getoutfit=2222
+
+case attach_all_points_are_digits
+send @getattach=2222
+
+case status_long_norwegian_under_the_limit_lowercase
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @showhovertextall=n
+send @getstatus:;æøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøåæøå=2222
+
+# ---- questions the specification page does not answer (nothing to compare with yet) ----
+
+case getgroup_active_group
+send @getgroup=2222
+
+case getinv_unknown_folder
+send @getinv:no_such_folder_pinglymotion=2222
+
+case getinvworn_unknown_folder
+send @getinvworn:no_such_folder_pinglymotion=2222
+
+case getstatus_nothing_held
+send @getstatus=2222
+
+case clear_then_status
+send @showhovertextworld=n
+send @clear
+send @getstatus=2222
+
+case getoutfit_unknown_layer
+send @getoutfit:no_such_layer=2222
+
+case getattach_unknown_point
+send @getattach:no_such_point=2222
+
+case getcommand_part_of_a_name
+send @getcommand:hovertext=2222
+
+case notify_nothing_happens
+send @notify:2222=add
+send @getstatus=2222
+
+case status_separator_uppercase
+send @showhovertextworld=n
+send @getstatus:;ÆØÅ=2222
+
+case status_too_long
+send @showhovertextworld=n
+send @showhovertexthud=n
+send @showhovertextall=n
+send @getstatus:;æøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅæøåÆØÅ=2222

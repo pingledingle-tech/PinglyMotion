@@ -1,0 +1,3 @@
+case a
+send @getsitid=2222
+answer 2222 x

@@ -1,0 +1,7 @@
+# An empty scenario to copy into scenarios/<product>.rlvtest. The product's folder is scripts/<product>/.
+# Lines: touch <part>, menu <button>, send @<rlv line>, say <channel> <text>, wait <seconds>,
+# expect [not] <fact> [text]. Facts: lock:<name>, colour:<part>, said:<part>, blocked:<action>, menu.
+# At least one "expect" line is needed, or the scenario fails because it tests nothing.
+#
+# touch Root
+# expect said:Root Ready

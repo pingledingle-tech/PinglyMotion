@@ -8,6 +8,10 @@
  * keep its rules: limits, counters that match the restrictions, bounded
  * replies, and allowed/blocked actions that follow the plain restrictions.
  *
+ * Package B (reference answers): the input is also read as a reference file (RlvReference::parse) and as a
+ * list of known differences (parseKnown). A file that is read is written and read back to the same text,
+ * run against the sandbox (at most 500 cases of 200 lines), and every difference names a line of the file.
+ *
  * Licensed under the GNU General Public License version 2 or later.
  */
 
@@ -19,6 +23,7 @@
 
 #include "scriptlab/rlvbehaviours.h"
 #include "scriptlab/rlvcommand.h"
+#include "scriptlab/rlvreference.h"
 #include "scriptlab/rlvstate.h"
 
 static void check(bool ok)
@@ -76,10 +81,35 @@ static void checkState(const RlvState& state)
       if (state.has(behaviour.name)) check(!actions.value(id, true));
 }
 
+// package B: the reference file reader and the comparison
+static void checkReference(const QString& input)
+{
+  const RlvReference::Result parsed = RlvReference::parse(input);
+  if (parsed.ok())
+  {
+    check(parsed.value.has_value());
+    check(!parsed.value->cases.isEmpty() && parsed.value->cases.size() <= RlvReference::MAX_CASES);
+    const QString written = RlvReference::write(*parsed.value);
+    const RlvReference::Result again = RlvReference::parse(written);
+    check(again.ok());
+    check(RlvReference::write(*again.value) == written);
+    const QVector<RlvReference::CaseResult> results = RlvReference::run(*parsed.value);
+    check(results.size() == parsed.value->cases.size());
+    const int lines = input.count(QLatin1Char('\n')) + 1;
+    for (const RlvReference::CaseResult& c : results)
+      for (const RlvReference::Difference& d : c.differences) check(d.line >= 1 && d.line <= lines + 1);
+  }
+  else check(!parsed.value.has_value());
+  const RlvReference::KnownResult known = RlvReference::parseKnown(input);
+  if (known.ok())
+    for (const RlvReference::Known& k : known.list) check(!k.key.isEmpty() && !k.reason.isEmpty() && k.line >= 1);
+}
+
 extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size)
 {
   if (size > 65536) return 0;
   const QString input = QString::fromUtf8(reinterpret_cast<const char*>(data), static_cast<int>(size));
+  checkReference(input);
 
   RlvState state;
   const QStringList lines = input.split(QLatin1Char('\n'));

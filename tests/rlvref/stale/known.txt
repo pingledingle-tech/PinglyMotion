@@ -1,0 +1,3 @@
+intended stale/now_the_same It used to differ.
+fixed stale/broke_again It was fixed once.
+unclear stale/not_in_the_file The case was deleted.

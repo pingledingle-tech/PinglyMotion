@@ -1,0 +1,10 @@
+# Known differences between the sandbox and the reference answers (package B).
+# One line each: <state> <file>/<case> <reason in words>
+#   intended  the sandbox is meant to answer differently (it has no avatar, no inventory, no viewer)
+#   unclear   a difference nobody has judged yet: the reference or the sandbox may be wrong
+#   fixed     was a difference and the sandbox now gives the same answer (kept so the case is not lost;
+#             it fails again if the difference comes back)
+# A difference that is not on this list makes the runner exit with 1; so does a line here whose case is
+# now the same (unless it says fixed). The runner: pinglymotion_rlvref (docs/SCRIPT_LAB.md).
+
+intended spec_rlv/outfit_worn_shape The sandbox has no avatar and wears nothing, so it answers 0 where every real avatar answers 1 (a shape is always worn). @getoutfit and @getattach in the sandbox always give zeros (docs/SCRIPT_LAB.md).

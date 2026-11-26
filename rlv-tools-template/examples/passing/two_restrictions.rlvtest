@@ -1,0 +1,7 @@
+# Two restrictions at once, and lifting one of them with @clear and a filter.
+send @sendim=n,fly=n
+expect blocked:sendim
+expect blocked:fly
+send @clear=fly
+expect blocked:sendim
+expect not blocked:fly

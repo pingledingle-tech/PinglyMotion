@@ -1,0 +1,33 @@
+# Reference answers for RLV with TWO OBJECTS, written FROM THE SPECIFICATION. NOT RECORDED IN SECOND LIFE.
+#
+# Cases that need two objects, which the Firestorm script (one object) cannot ask, so they have no
+# question in questions.txt. Same specification page and the same harmless restrictions as spec_rlv.rlvref.
+# Format and rules: src/scriptlab/rlvreference.h. Credit: CREDITS.md.
+viewer none (written from the RLV specification)
+date 2026-11-26
+source specification
+
+case status_all_objects
+object first
+send @showhovertextworld=n
+object second
+send @getstatusall=2222
+answer 2222 /showhovertextworld
+
+case status_own_object_only
+object first
+send @showhovertextworld=n
+object second
+send @showhovertexthud=n
+send @getstatus=2222
+answer 2222 /showhovertexthud
+
+case clear_all_of_one_object
+object first
+send @showhovertextworld=n
+object second
+send @showhovertexthud=n
+object first
+send @clear
+send @getstatusall=2222
+answer 2222 /showhovertexthud

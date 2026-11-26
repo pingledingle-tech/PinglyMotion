@@ -1,0 +1,4 @@
+# This scenario must FAIL (the workflow checks that it does): it says sending instant messages is
+# allowed after it was blocked. It lives outside scenarios/ and examples/passing/, so it never counts as a pass.
+send @sendim=n
+expect not blocked:sendim
