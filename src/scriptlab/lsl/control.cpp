@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include <QJsonArray>
+#include <QRandomGenerator>
 
 #include "builtins.h"
 #include "control.h"
@@ -1033,7 +1034,8 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   for (auto it = request.begin(); it != request.end(); ++it)
   {
     static const QStringList known = {"command", "source", "objects", "seconds", "inputs", "keep_rlv",
-                                       "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate", "transfers", "script_memory"};
+                                       "description", "scale", "start_parameter", "inventory", "avatars", "http", "region", "experience", "estate", "transfers",
+                                       "order", "seed", "script_memory"};
     if (!known.contains(it.key()))
       return fail("Unknown option \"" + clip(it.key(), 40) + "\". Options: " + known.mid(1).join(", ") + ".");
   }
@@ -1072,6 +1074,27 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
 
   if (request.contains("keep_rlv") && !request.value("keep_rlv").isBool()) return fail("\"keep_rlv\" must be true or false.");
   const bool keepRlv = request.value("keep_rlv").toBool(false);
+
+  // Anafin HUD test, gap 3: the order the scripts run in; shuffle without a seed picks one, and the answer says which
+  RunOrder order = RunOrder::Fixed;
+  quint32 seed = 0;
+  if (request.contains("order"))
+  {
+    const QString mode = request.value("order").toString();
+    if (!request.value("order").isString() || (mode != "fixed" && mode != "reverse" && mode != "shuffle"))
+      return fail("\"order\" must be \"fixed\" (list order, the default), \"reverse\" or \"shuffle\" (with \"seed\").");
+    order = mode == "reverse" ? RunOrder::Reverse : (mode == "shuffle" ? RunOrder::Shuffle : RunOrder::Fixed);
+  }
+  if (request.contains("seed"))
+  {
+    if (order != RunOrder::Shuffle) return fail("\"seed\" is only used with \"order\": \"shuffle\".");
+    const double v = request.value("seed").toDouble(std::nan(""));
+    if (!request.value("seed").isDouble() || !std::isfinite(v) || v < 0.0 || v > double(MAX_SEED) || v != std::floor(v))
+      return fail(QString("\"seed\" must be a whole number from 0 to %1.").arg(double(MAX_SEED), 0, 'f', 0));
+    seed = quint32(v);
+  }
+  else if (order == RunOrder::Shuffle)
+    seed = QRandomGenerator::global()->generate();
 
   // the objects and their scripts
   std::vector<ObjectSpec> specs;
@@ -1242,6 +1265,7 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   sandbox->setRegion(region);
   sandbox->setExperience(experience);
   sandbox->setEstate(estate);
+  sandbox->setRunOrder(order, seed);
   for (const SandboxInput& in : inputs) sandbox->addInput(in);
   sandbox->start();
   sandbox->runUntil(seconds);
@@ -1267,6 +1291,13 @@ QJsonObject run(const QJsonObject& request, RlvState* rlv, Session* session)
   if (!sandbox->lastDialog().isEmpty()) answer["dialog"] = sandbox->lastDialog();
   answer["warnings"] = warnings;
   addExperienceAnswer(answer, *sandbox);
+  // only when the request gave "order", so an answer without it is the same as before
+  if (request.contains("order"))
+  {
+    QJsonObject used{{"mode", request.value("order").toString()}, {"scripts", QJsonArray::fromStringList(sandbox->runOrderNames())}};
+    if (order == RunOrder::Shuffle) used["seed"] = double(seed);
+    answer["order"] = used;
+  }
   answer["rlv"] = rlvAnswer(*sandbox, state);
   answer["note"] = "A sandbox with a simulated clock, not Second Life: test the final script in Second Life too.";
   // keep the world for lsl_event (only with the shared RLV state, which outlives it)

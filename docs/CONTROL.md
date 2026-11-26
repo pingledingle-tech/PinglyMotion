@@ -690,7 +690,18 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
 - Order: Second Life runs scripts at the same time, in no set order. The sandbox runs them one after the other in a
   fixed order (objects in list order, each object's scripts in list order; a script runs every event waiting for it
   before the next script runs), so the same request always gives the same log. A set of scripts that only works in
-  one order may still fail in Second Life.
+  one order may still fail in Second Life. To find such bugs, give `lsl_run` an `order` (below).
+- **The `order` option** of `lsl_run` (Anafin HUD test, gap 3) changes that order for the whole world, objects and
+  scripts alike: `"fixed"` (the default: list order, as without the option), `"reverse"` (the last script of the last
+  object first) or `"shuffle"` with `seed` (a whole number from 0 to 4294967295; the same seed and the same scripts give
+  the same order on every computer; without `seed` the sandbox picks one). The order decides which script enters its
+  default state first and, at every moment, which script's waiting events run first (timers too). The world keeps its
+  order for `lsl_event`. `seed` without `"shuffle"`, or another `order` word, is an error. With `order` the answer has
+  `order`: `mode`, `scripts` (each `"object/script"` in the order they ran; a script given with `source` is
+  `Object/Script`) and, for `"shuffle"`, `seed`, so a run that showed a bug can be repeated exactly. Without `order` the
+  answer is the same as before. It does not make scripts run in parallel: a script still runs an event to its end
+  before the next script runs, so a bug that needs two events to overlap is not found. `lab_watch` does not take
+  `order` yet.
 - When more than 64 events wait for a script, Second Life drops the rest without a word; the sandbox drops them too
   and writes an `event_dropped` entry for each. An endless exchange of link messages at one moment ends when a script
   reaches its limit of events or steps (the other scripts run on), never in a hang.
@@ -710,6 +721,7 @@ own listens and timer. At most 64 scripts in all objects together. An entry with
    {"name": "main", "source": "...", "link": 1},
    {"name": "door", "source": "...", "link": 2}]}]}
 {"command": "lsl_event", "type": "touch", "object": "box", "link": 2}
+{"command": "lsl_run", "order": "shuffle", "seed": 7, "objects": [...]}
 ```
 
 #### Prim state, L$ and recorded-only functions (Script Lab step 9b-3, issue 317)
