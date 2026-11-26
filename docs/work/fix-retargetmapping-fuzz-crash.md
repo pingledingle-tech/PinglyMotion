@@ -3,7 +3,7 @@ Status: active
 Pull request: pending
 Files:
 - src/retargetmapping.*
-- fuzz/**
+- fuzz/corpus/retargetmapping/**
 - tests/retargetmapping/**
 - docs/RETARGET_MAPPING.md
 

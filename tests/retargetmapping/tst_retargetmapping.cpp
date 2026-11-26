@@ -407,6 +407,13 @@ void TestRetargetMapping::refused_data()
   QTest::newRow("lone high surrogate in generator") << QByteArray(head+"\"generator\":\"\\ud800\",\"mapping\":[]}") << "generator";
   QTest::newRow("lone low surrogate in source") << QByteArray(head+"\"mapping\":[{\"source\":\"\\udc00a\",\"target\":null}]}") << "control characters";
   QTest::newRow("lone surrogate in root") << QByteArray(head+"\"skeleton\":{\"root\":\"x\\ud800\"},\"mapping\":[]}") << "root";
+  // a byte order mark at the start of a text is dropped by Qt's JSON reader when it is written as plain UTF-8, so the file
+  // would not read back the same: refused (found by fuzz_retargetmapping, the saved inputs of the failed runs of 24 and 26 Nov 2026)
+  QTest::newRow("bom then hangul in generator (fuzz crash 3bc4b4d)") << QByteArray(head+"\"generator\":\"\357\273\277\\ud754\",\"mapping\":[]}") << "generator";
+  QTest::newRow("bom then text in generator (fuzz crash 635a7e2)") << QByteArray(head+"\"generator\":\"\357\273\277\\mappingud800\",\"mapping\":[]}") << "generator";
+  QTest::newRow("bom in generator, escaped") << QByteArray(head+"\"generator\":\"\\ufeffabc\",\"mapping\":[]}") << "generator";
+  QTest::newRow("bom in root") << QByteArray(head+"\"skeleton\":{\"root\":\"\\ufeffx\"},\"mapping\":[]}") << "root";
+  QTest::newRow("bom in source") << QByteArray(head+"\"mapping\":[{\"source\":\"\\ufeffA\",\"target\":null}]}") << "control characters";
   QTest::newRow("source too long") << QByteArray(head+"\"mapping\":[{\"source\":\""+QByteArray(257,'x')+"\",\"target\":\"mHead\"}]}") << "longer than";
   QTest::newRow("target too long") << QByteArray(head+"\"mapping\":[{\"source\":\"A\",\"target\":\""+QByteArray(65,'m')+"\"}]}") << "too long";
   QTest::newRow("skeleton not object") << QByteArray(head+"\"skeleton\":3,\"mapping\":[]}") << "skeleton";
