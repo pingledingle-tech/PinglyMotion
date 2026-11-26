@@ -1,0 +1,125 @@
+name: RLV scenarios
+
+# Runs the RLV scenario files (.rlvtest) and the reference answers (.rlvref) of a folder with the runners
+# pinglymotion_rlvtest and pinglymotion_rlvref, built from the program's source (package E, docs/RLV_TOOLS_REPO.md).
+# The runners need no window and no display: they use QtCore only. A broken expectation fails the run.
+#
+# Three ways to start it:
+#  - on a pull request or a push to main that changes the template folder, the reference answers, the
+#    scenarios or the runners (it runs on the template's own examples, rlv-tools-template/);
+#  - by hand (workflow_dispatch);
+#  - from another repository that holds a copy of the template (workflow_call), with `engine_ref` set to
+#    a commit of PinglyMotion (pin it) and `folder` to where its scripts and scenarios are.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/rlv-scenarios.yml'
+      - 'rlv-tools-template/**'
+      - 'reference/**'
+      - 'scenarios/**'
+      - 'tests/rlvtest/**'
+      - 'src/scriptlab/rlv*'
+      - 'src/scriptlab/labrecipe.*'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rlv-scenarios.yml'
+      - 'rlv-tools-template/**'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      engine_ref:
+        description: 'A commit (or tag) of the PinglyMotion repository to build the runners from'
+        type: string
+        required: true
+      folder:
+        description: 'The folder of the calling repository that holds scenarios/ and scripts/'
+        type: string
+        default: '.'
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: scenarios
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CCACHE_DIR: /home/runner/.ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 300M
+      # called from another repository: its own folder; started here: the template's own examples
+      WORK_FOLDER: ${{ inputs.folder || 'rlv-tools-template' }}
+    steps:
+      - name: Check out the program (the runners are built from it)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: pingledingle-tech/PinglyMotion
+          ref: ${{ inputs.engine_ref || github.sha }}
+          path: engine
+          persist-credentials: false
+      - name: Check out the scenarios of the calling repository
+        # started here, the program's checkout above already holds them
+        if: ${{ inputs.engine_ref != '' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: work
+          persist-credentials: false
+      - name: Where the scenarios are
+        run: |
+          if [ -d work ]; then echo "SCENARIO_ROOT=$GITHUB_WORKSPACE/work/$WORK_FOLDER" >> "$GITHUB_ENV"
+          else echo "SCENARIO_ROOT=$GITHUB_WORKSPACE/engine/$WORK_FOLDER" >> "$GITHUB_ENV"; fi
+      - name: Cache downloaded apt packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /home/runner/apt-archives
+          key: apt-rlv-scenarios-${{ hashFiles('.github/workflows/rlv-scenarios.yml') }}
+          restore-keys: apt-rlv-scenarios-
+      - name: Install Qt 6
+        run: |
+          mkdir -p /home/runner/apt-archives/partial
+          sudo apt-get update
+          sudo apt-get install -y -o Dir::Cache::archives=/home/runner/apt-archives ccache qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-l10n-tools libqt6opengl6-dev libgl-dev glslang-tools xvfb
+          sudo chown -R "$USER" /home/runner/apt-archives
+      - name: Cache compiler output (ccache)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /home/runner/.ccache
+          key: ccache-rlv-scenarios-${{ hashFiles('engine/**/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-rlv-scenarios-${{ hashFiles('engine/**/CMakeLists.txt') }}-
+            ccache-rlv-scenarios-
+      - name: Build the two runners (only these targets)
+        working-directory: engine
+        env:
+          SOURCE_DATE_EPOCH: '0'
+        run: |
+          ccache --zero-stats
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_NUMBER=0 -DPINGLYMOTION_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build build --target pinglymotion_rlvtest pinglymotion_rlvref -j 4
+          ccache --show-stats
+      - name: Trial, no window - the runner starts with no display at all
+        # package E, step 1: the answer to "does it start without a window on a hosted runner"
+        working-directory: engine
+        run: |
+          unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
+          echo "DISPLAY is '${DISPLAY:-}', QT_QPA_PLATFORM is '${QT_QPA_PLATFORM:-}'"
+          build/tests/rlvtest/pinglymotion_rlvtest scenarios
+      - name: Trial, no window - the same under a virtual screen (Xvfb), as the program's own CI does
+        working-directory: engine
+        run: xvfb-run -a build/tests/rlvtest/pinglymotion_rlvtest scenarios
+      - name: Run every scenario (the first broken expectation fails the run)
+        run: |
+          unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
+          engine/build/tests/rlvtest/pinglymotion_rlvtest "$SCENARIO_ROOT/scenarios"
+      - name: Run the reference answers, if the folder has any
+        run: |
+          unset DISPLAY QT_QPA_PLATFORM WAYLAND_DISPLAY
+          if ls "$SCENARIO_ROOT"/reference/*.rlvref >/dev/null 2>&1; then
+            engine/build/tests/rlvtest/pinglymotion_rlvref "$SCENARIO_ROOT/reference"
+          else
+            echo "No reference answers in $WORK_FOLDER/reference: nothing to compare."
+          fi
