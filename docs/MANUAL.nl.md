@@ -45,7 +45,7 @@ PinglyMotion helpt je zulke bewegingen te maken. Het is gratis. Het is open sour
 PinglyMotion doet drie dingen:
 
 1. **Een figuur animeren.** Je buigt de gewrichten van een 3D-figuur. Je slaat poses op op bepaalde momenten. Het programma vult de beweging ertussen in. Je exporteert het resultaat voor Second Life.
-2. **Scripts veilig testen.** Objecten in Second Life gebruiken scripts. PinglyMotion heeft een veilige zandbak, het **Script Lab**, waar je RLV- en LSL-scripts op je eigen computer kunt draaien. Niets wat je daar doet, bereikt Second Life.
+2. **Scripts veilig testen.** Objecten in Second Life gebruiken scripts. PinglyMotion heeft een veilige zandbak, het **Script Lab**, waar je RLV- en LSL-scripts op je eigen computer kunt draaien. Niets wat je daar doet, bereikt Second Life. Gebruik scripts die je vertrouwt. Script Lab is nieuw, en een heel ongewoon script kan het programma laten crashen, dus sla eerst je animatie op.
 3. **Met een AI-hulp werken, als je wilt.** Een AI-assistent op je eigen computer kan de figuur voor je poseren. Hij staat uit tot je hem aanzet. Alles werkt ook zonder.
 
 PinglyMotion is een **vroege preview**. Het is gemaakt om uit te proberen en voor feedback. Verwacht ruwe kantjes. Zie [Wat af is en wat niet](#wat-af-is-en-wat-niet).
@@ -120,14 +120,14 @@ De data komen uit de projectdocumenten van 25 november 2026.
 |---|---|---|
 | Gewrichten poseren, keys, tijdlijn, afspelen, ongedaan maken | Built | Hoofdstuk 3 tot 5. |
 | Opslaan als `.dingle`, `.dingle`, `.bvh`, `.avm` openen | Built | Oude `.avm`-bestanden gaan open en worden als `.dingle` opgeslagen. |
-| Export voor Second Life (`.anim`) | Built | Export, upload en afspelen zijn op 21 november 2026 in Firestorm gevalideerd: timing, lus, zachte start en afloop, handen, easing. Andere viewers zijn niet gecontroleerd. |
+| Export voor Second Life (`.anim`) | Built | Export, upload en afspelen van een testanimatie zijn in Second Life geprobeerd. |
 | `.anim` importeren, BVH van een ander skelet, glTF | Built | Voetvergrendeling (voorkomen dat voeten glijden) is **not built**. |
 | Bibliotheek met 106 bewegingen | Built | De bewegingen komen uit open bronnen. Hun licenties staan in het paneel. |
 | Props (doos, bol, kegel, torus) | Built | Het zijn eenvoudige vormen. Een prop kan nog niet worden hernoemd. |
 | Twee figuren in één scène (Expert-modus) | Built | Alleen in de Expert-modus. |
 | Gezichtsgewrichten | Partly built | De gezichtsgewrichten zijn geparkeerd. Het tabblad Face bestaat, maar het gezicht is geen aandachtspunt. |
-| Script Lab: RLV-opdrachten | Built | Een zandbak met 206 RLV-gedragingen. **Not tested in Second Life.** De laatste test is altijd in Second Life. |
-| Script Lab: LSL-scripts draaien in een zandbak | Partly built | 282 ingebouwde functies, een gesimuleerde klok. Sommige functies noteren alleen wat er van hen gevraagd is. Veel doen nog niets. **Not tested in Second Life.** |
+| Script Lab: RLV-opdrachten | Built | Een zandbak met meer dan 200 RLV-gedragingen. **Not tested in Second Life.** De laatste test is altijd in Second Life. |
+| Script Lab: LSL-scripts draaien in een zandbak | Partly built | Meer dan 280 ingebouwde functies, een gesimuleerde klok. Sommige functies noteren alleen wat er van hen gevraagd is. Veel doen nog niets. **Not tested in Second Life.** |
 | Script Lab: Live scripts, boom, props uit prims | Built | Eén map is één object. Een prop met dezelfde naam als een prim hoort erbij. |
 | Script Lab: Player, Who talks to whom, Record what I do | Built | **Not tested in Second Life.** Sommige delen van de 3D-weergave volgen de speler niet (zie Hoofdstuk 10). |
 | Script Lab: Improve a setup | Partly built | De geheugenwaarden tellen het geheugen dat de code zelf inneemt niet mee. Daarvoor is een meting in Second Life nodig. |
@@ -173,7 +173,7 @@ Een videokaart en driver met OpenGL 3.3 of nieuwer. Blijft de 3D-weergave zwart,
 - Een foutenlogboek en het verbindingsbestand voor de AI-assistent: in `%LOCALAPPDATA%\PinglyMotion` op Windows of `~/.local/share/PinglyMotion` op Linux.
 - Script Lab-voorbeelden die je maakt: in `Documents/PinglyMotion/Scripts`.
 
-PinglyMotion verzamelt geen persoonsgegevens en stuurt geen telemetrie. Het programma kijkt bij de start één keer of er een nieuwere versie is (de "Update check").
+PinglyMotion verzamelt geen persoonsgegevens en stuurt geen telemetrie. Het programma kijkt ongeveer één keer per week, bij de start, of er een nieuwere versie is (de "Update check").
 
 ### Eerste start
 
@@ -352,7 +352,7 @@ Uploaden gebeurt in de Second Life-viewer, niet in PinglyMotion.
 3. Stel dezelfde prioriteit en lus in als in het exportvenster. De viewer vraagt om een kleine vergoeding.
 4. Draag of speel de animatie af om hem te zien.
 
-Een eerlijke opmerking: export, upload en afspelen zijn op 21 november 2026 in Firestorm gevalideerd. Andere viewers zijn niet getest. Uploaden kost in Second Life een kleine vergoeding.
+Een eerlijke opmerking: export, upload en afspelen van een testanimatie zijn in Second Life geprobeerd. Uploaden kost in Second Life een kleine vergoeding.
 
 ### Als er iets misgaat
 
@@ -614,7 +614,7 @@ Een AI-assistent kan alleen bestanden openen en opslaan in één map: `PinglyMot
 
 ## Hoofdstuk 10: Script Lab voor beginners
 
-Het Script Lab is een veilige zandbak. Je kunt RLV- en LSL-scripts op je computer draaien. Niets bereikt Second Life.
+Het Script Lab is een veilige zandbak. Je kunt RLV- en LSL-scripts op je computer draaien. Niets bereikt Second Life. Gebruik scripts die je vertrouwt. Script Lab is nieuw, en een heel ongewoon script kan het programma laten crashen, dus sla eerst je animatie op.
 
 Eerst een paar woorden.
 
@@ -775,13 +775,13 @@ De venstertitel zegt "AI Assistant on" zolang hij aan staat. Klik nogmaals op de
 - Hij werkt alleen op je eigen pc. Niets op het netwerk kan erbij.
 - Hij staat uit elke keer dat PinglyMotion start.
 - Er is elke keer dat je hem aanzet een nieuwe geheime sleutel.
-- Verzoeken van webpagina's worden geweigerd.
+- Webpagina’s kunnen er geen opdrachten aan geven: elke opdracht heeft de geheime sleutel nodig.
 
 ### Wat een assistent kan doen
 
 Een assistent gebruikt de opdrachten van de besturingsinterface: de toestand bekijken, gewrichten poseren, frames instellen, afspelen, een schermafbeelding maken, de pose en de beweging in woorden beschrijven, een hele animatie als een kleine teksttabel lezen en schrijven, een animatie controleren aan de regels van Second Life, `.anim` exporteren, de bibliotheek doorzoeken en het Script Lab gebruiken (RLV-opdrachten en LSL-scripts). De volledige lijst staat in `docs/CONTROL.md` en `tools/mcp/commands.json`.
 
-De assistent kan alleen bestanden openen en opslaan in de map `Documents/PinglyMotion`.
+De assistent kan alleen bestanden openen en opslaan in de map `Documents/PinglyMotion`. Een AI-assistent die je verbindt, kan het programma ook vragen scriptbestanden uit een map te lezen. Dat doet het alleen zolang de AI Assistant aan staat.
 
 ### Stand
 
@@ -1004,6 +1004,10 @@ Ga naar <https://github.com/pingledingle-tech/PinglyMotion/issues> en open een i
 PinglyMotion is gratis en open source. Het is gebaseerd op QAvimator. De avatarlichamen, de bibliotheekclips, de voorbeeldhalsband en het andere materiaal van buitenaf staan vermeld in het bestand [CREDITS.md](../CREDITS.md) en in **Help > About...**.
 
 De kant-en-klare bewegingen komen uit de CMU-motioncapturedatabase en van Mesh2Motion (CC0). De voorbeeldhalsband is het openbare OpenCollar-project (GPL 2).
+
+PinglyMotion is vrije software. Je mag het gebruiken, bestuderen, delen en wijzigen onder de GNU General Public License, versie 2 of later. Het bevat werk van anderen onder hun eigen licenties, bijvoorbeeld de Qt-toolkit, avatarlichamen, bewegingsclips en voorbeeldscripts. De volledige lijst met elke licentie staat in [CREDITS.md](../CREDITS.md).
+
+PinglyMotion is een onafhankelijk project. Het is niet gemaakt, goedgekeurd of ondersteund door Linden Research, Inc. (Linden Lab). Second Life en Linden Lab zijn handelsmerken van Linden Research, Inc. Firestorm, Aurora, OpenCollar en andere namen zijn van hun eigenaren.
 
 ---
 

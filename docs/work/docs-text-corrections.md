@@ -1,6 +1,6 @@
 Branch: docs/text-corrections
-Status: active
-Pull request: pending
+Status: done
+Pull request: #527
 Files:
 - docs/index.html
 - docs/home.html
@@ -15,6 +15,7 @@ Files:
 - docs/ROADMAP.md
 - docs/DECISIONS.md
 - tests/test_site_*.py
+- tests/test_site_homepage_short.py
 - tests/test_mcpb.py
 - tools/site/**
 
