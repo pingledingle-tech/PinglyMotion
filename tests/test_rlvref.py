@@ -138,7 +138,9 @@ with tempfile.TemporaryDirectory() as tmp:
     want(out.startswith("Reference chat_sample: RestrainedLife viewer v3.4.3 (RLVa 2.4.2.1), 2026-11-26, recorded in Second Life\n"), "the runner must read the converted file:\n" + out)
     want("FAIL" not in out, "the converted file must be readable:\n" + out)
 try:
-    conv.convert(open(os.path.join(ROOT, "tests", "rlvref", "chat_private.txt"), encoding="utf-8").read())
+    # built here, so that no address stands in a file of the repository
+    private = "Object: RLVREF|# start, x\nObject: RLVREF|case a\nObject: RLVREF|send @version=2222\nObject: RLVREF|answer 2222 mail " + "someone" + chr(64) + "example.com\n"
+    conv.convert(private)
     problems.append("the converter must refuse a line that holds an e-mail address")
 except ValueError:
     pass

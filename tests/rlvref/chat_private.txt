@@ -1,4 +1,0 @@
-Some object: RLVREF|# start, script made from questions.txt, 5 lines
-Some object: RLVREF|case a
-Some object: RLVREF|send @version=2222
-Some object: RLVREF|answer 2222 RestrainedLife viewer, contact me at someone@example.com
