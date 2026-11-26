@@ -1,6 +1,6 @@
 Branch: feat/rlvtest-reference-and-ci
 Status: active
-Pull request: pending
+Pull request: #524
 Files:
 - src/scriptlab/rlvreference.*
 - src/CMakeLists.txt
