@@ -1,6 +1,6 @@
 Branch: site/homepage-beta2-links
-Status: active
-Pull request: pending
+Status: done
+Pull request: #530
 Files:
 - docs/index.html
 - docs/home.html
