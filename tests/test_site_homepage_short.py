@@ -11,9 +11,9 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.join(HERE, "..", "docs")
 LANGS = ["en", "no", "de", "pl", "nl"]
-RELEASE = "https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.1"
-WINDOWS_ZIP = "https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-windows.zip"
-LINUX_APPIMAGE = "https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.1/PinglyMotion-v0.3.0-beta.1-linux-x86_64.AppImage"
+RELEASE = "https://github.com/pingledingle-tech/PinglyMotion/releases/tag/v0.3.0-beta.2"
+WINDOWS_ZIP = "https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.2/PinglyMotion-v0.3.0-beta.2-windows.zip"
+LINUX_APPIMAGE = "https://github.com/pingledingle-tech/PinglyMotion/releases/download/v0.3.0-beta.2/PinglyMotion-v0.3.0-beta.2-linux-x86_64.AppImage"
 
 
 def read(name):
