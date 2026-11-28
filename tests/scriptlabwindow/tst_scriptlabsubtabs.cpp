@@ -170,6 +170,7 @@ void TestScriptLabSubTabs::commandsSubTabs()
   QCOMPARE(listedNames(sub), QStringList({"Restrictions", "What the avatar may do", "Show in 3D view", "Replies and messages"}));
   QCOMPARE(sub->list()->accessibleName(), QString("Parts of this tab"));
   QCOMPARE(sub->currentGroup(), QString("restrictions"));
+  QVERIFY(!sub->groupPlaceholder("restrictions"));   // nothing is out
   // the list is on the left of the part in front
   const QPoint listAt = sub->list()->mapTo(&panel, QPoint(0, 0));
   const QPoint stackAt = sub->stack()->mapTo(&panel, QPoint(0, 0));
@@ -306,7 +307,7 @@ void TestScriptLabSubTabs::groupPopsOutWhole()
   QVERIFY(sub->groupContent("work")->isAncestorOf(panel.section("tree")));
   QVERIFY(sub->groupContent("work")->isAncestorOf(panel.section("script")));
   QVERIFY(panel.section("tree")->isVisible());
-  QVERIFY(!placeholder->isVisible());
+  QVERIFY(!sub->groupPlaceholder("work"));   // made only while it is out
   QCOMPARE(sub->list()->item(0)->text(), QString("Object and Script"));
   QVERIFY(sub->popOutButton()->isEnabled());
   // again, and Put back in the window

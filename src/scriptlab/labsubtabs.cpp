@@ -208,8 +208,6 @@ QVBoxLayout* LabSubTabs::addGroup(const QString& key, const QString& name, const
   g.contentLayout->setContentsMargins(0, 0, 0, 0);
   g.contentLayout->setSpacing(SpacingS);
   pageLayout->addWidget(g.content);
-  g.placeholder = makePlaceholder(key, name, g.page);
-  pageLayout->addWidget(g.placeholder);
   pageLayout->addStretch(1);
   m_stack->addWidget(g.page);
   m_groups.insert(key, g);
@@ -413,6 +411,9 @@ bool LabSubTabs::popOut(const QString& key)
     for (ScriptLabSection* s : g.parts)
       if (m_windows.contains(s->key())) putBack(s->key());
     g.page->layout()->removeWidget(g.content);
+    // made only while it is out, so no hidden button waits in the keys' order
+    g.placeholder = makePlaceholder(key, g.name, g.page);
+    static_cast<QVBoxLayout*>(g.page->layout())->insertWidget(0, g.placeholder);
     g.placeholder->show();
     moved = g.content;
     name = g.name;
@@ -490,9 +491,15 @@ bool LabSubTabs::putBack(const QString& key)
     Group& g = m_groups[key];
     if (inner) inner->layout()->removeWidget(g.content);
     g.content->setParent(g.page);
+    if (g.placeholder)
+    {
+      g.page->layout()->removeWidget(g.placeholder);
+      g.placeholder->hide();
+      g.placeholder->deleteLater();
+      g.placeholder = nullptr;
+    }
     static_cast<QVBoxLayout*>(g.page->layout())->insertWidget(0, g.content);
     g.content->show();
-    g.placeholder->hide();
   }
   else if (m_parts.contains(key))
   {

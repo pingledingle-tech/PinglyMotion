@@ -29,6 +29,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QToolButton>
 #include <QtTest>
 
 #include <QCheckBox>
@@ -576,7 +577,11 @@ void TestScriptLabDesign::foldingAndKeyboard()
     return next;
   };
   QCOMPARE(nextFocus(panel.resetButton()), static_cast<QWidget*>(panel.tryButtons().first()));
-  QCOMPARE(nextFocus(panel.tryButtons().last()), static_cast<QWidget*>(restrictions->header()));
+  // WP-01 Part B: then the sub-tab list on the left and its Pop out, then the part in front
+  QCOMPARE(nextFocus(panel.tryButtons().last()), static_cast<QWidget*>(panel.subTabs(ScriptLabPanel::CommandsPage)->list()));
+  QCOMPARE(nextFocus(panel.subTabs(ScriptLabPanel::CommandsPage)->list()),
+           static_cast<QWidget*>(panel.subTabs(ScriptLabPanel::CommandsPage)->popOutButton()));
+  QCOMPARE(nextFocus(panel.subTabs(ScriptLabPanel::CommandsPage)->popOutButton()), static_cast<QWidget*>(restrictions->header()));
   // the Viewer rules: Space on the focused button switches (P8)
   RlvState state;
   panel.setState(&state);
@@ -781,7 +786,7 @@ void TestScriptLabDesign::tryLines()
     QCOMPARE(b->maximumHeight(), Theme::Size::controlCompact);
     QVERIFY(b->focusPolicy() & Qt::TabFocus);
     QVERIFY(b->styleSheet().contains("background: " + themeTokens(true).value("surface_raised").toString() + ";"));
-    QCOMPARE(b->parentWidget()->parentWidget(), panel.section("restrictions")->parentWidget());   // on the Type commands page
+    QCOMPARE(b->parentWidget()->parentWidget(), panel.subTabs(ScriptLabPanel::CommandsPage)->parentWidget());   // on the Type commands page
   }
   QTest::mouseClick(panel.tryButtons().at(0), Qt::LeftButton);
   QCOMPARE(panel.heldChip()->text(), QString("2 held"));
