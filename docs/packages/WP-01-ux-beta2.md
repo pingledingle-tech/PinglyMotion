@@ -20,7 +20,7 @@ Reason: The project owner approved the start on 28 Nov 2026 14:07 Oslo: «kjør 
 
 ### Part C — Props, 3D controls, and examples
 - [ ] Allow Delete key to remove selected prop (with warning if linked to a script)
-- [ ] Use Firestorm-style 3D object editing controls in Script Lab regardless of chosen camera preset (Owner decision 28 Nov 14:10: yes — Script Lab 3D uses Firestorm camera controls (Alt + left click) and the other Firestorm edit controls, regardless of camera preset. Still open: brief blink on prop click.)
+- [ ] Use Firestorm-style 3D object editing controls in Script Lab regardless of chosen camera preset (Owner decision 28 Nov 14:10: yes — Script Lab 3D uses Firestorm camera controls (Alt + left click) and the other Firestorm edit controls, regardless of camera preset. Owner decision 28 Nov 14:51: yes — a prop blinks briefly when clicked.)
 - [ ] Show all RLV toys with props under Examples in Library
 - [ ] Provide a clear way to remove Example Projects in Script Lab and discover more examples
 - [ ] Add an import/open option to open a whole folder set from Script Lab
