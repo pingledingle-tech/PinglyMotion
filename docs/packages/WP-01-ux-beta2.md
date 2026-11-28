@@ -1,9 +1,9 @@
 ID: WP-01
 Title: Combined UX Round After v0.3.0-beta.2
-Status: waiting
-Owner-approved: no
+Status: running
+Owner-approved: yes
 Priority: 1
-Reason: Collecting additional UX notes from the project owner before starting.
+Reason: The project owner approved the start on 28 Nov 2026 14:07 Oslo: «kjør WP1». Part A runs first.
 
 ## Tasks
 
