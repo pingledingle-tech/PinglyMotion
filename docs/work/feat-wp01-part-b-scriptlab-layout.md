@@ -13,6 +13,7 @@ Files:
 - tests/scriptlabbeginner/**
 - tests/scriptlabpanel/**
 - tests/keyboardfocus/**
+- tests/tst_scriptlabcamera.cpp
 - translations/pinglymotion_en.ts
 - docs/packages/WP-01-ux-beta2.md
 - docs/STATUS.md
