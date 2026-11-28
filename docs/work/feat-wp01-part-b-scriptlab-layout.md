@@ -1,6 +1,6 @@
 Branch: feat/wp01-part-b-scriptlab-layout
 Status: active
-Pull request: pending
+Pull request: #536
 Files:
 - src/scriptlab/labsubtabs.*
 - src/scriptlab/scriptlabpanel*
