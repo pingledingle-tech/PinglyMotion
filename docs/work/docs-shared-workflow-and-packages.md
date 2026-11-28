@@ -1,6 +1,6 @@
 Branch: docs/shared-workflow-and-packages
-Status: active
-Pull request: pending
+Status: done
+Pull request: #533
 Files:
 - AGENTS.md
 - CLAUDE.md

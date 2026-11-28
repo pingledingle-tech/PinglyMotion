@@ -9,16 +9,17 @@ Technical commands and build tricks live in `docs/DEV.md`. Design authority live
 - **Running now:** open pull requests on GitHub (`gh pr list`) and their latest comments.
 - **Work packages (replaces issue #74):** `docs/packages/WP-*.md` (scope, owner approval, and checklist) and `docs/packages/PARKED.md`.
 - **1-page overview:** `docs/STATUS.md` — generated from `docs/packages/` and open PRs via `python3 tools/work.py render-status --write`. Never edit `docs/STATUS.md` by hand.
-- **Owner beta testing (replaces issue #47):** `docs/testing/next-beta.md` holds the short repo-side checklist for the current beta cycle (archived under `docs/testing/archive/` after testing). Sessions with access to the owner's private interactive test page keep it in sync with `docs/testing/next-beta.md` for ticking and notes.
+- **Owner beta testing (replaces issue #47):** `docs/testing/next-beta.md` holds the short repo-side checklist for the current beta cycle (archived under `docs/testing/archive/` after testing). All owner tests are optional and block nothing. Sessions with access to the owner's private interactive test page keep it in sync with `docs/testing/next-beta.md` for ticking and notes.
 - **Done:** the final report comment on each merged pull request and checked `[x]` items in `docs/packages/`.
 
 ## Coordinator, approval, and starting work
 
-1. **One coordinator starts jobs:** Only the chat designated by the project owner as the coordinator (`Jobb-chat`) starts queued jobs by itself, unless the project owner explicitly asks another chat to take a specific task or package. Other chats explore, review, or prepare drafts/plans when asked.
-2. **Approval:** Only start tasks from a package marked `Owner-approved: yes` (previously approved roadmap/queue scope stays valid), or when the project owner explicitly says to start it. Propose work outside approved scope in one line first.
-3. **Model choice per job:** Use the standard/cheaper model (e.g. Sonnet) by default, including standard GUI work built from `docs/DESIGN_SYSTEM.md` with exact automated tests, docs, CI, and small fixes. Use the stronger model (e.g. Opus) for unexplained failures, new architecture, 3D drawing/shaders, parsers/interpreters/control commands, and security. If the standard model fails twice on the same issue, escalate to the stronger model.
-4. **Read first:** Pull latest `main`, read `docs/DESIGN_CHARTER.md` and `docs/DESIGN_SYSTEM.md` for UI work, and check `gh pr list` and `python3 tools/work.py list`. Never duplicate work covered by an open PR or active job file.
-5. **Job file and Draft PR first:**
+1. **One coordinator starts jobs:** Only the chat designated by the project owner as the coordinator (`Jobb-chat`) starts queued jobs by itself, unless the project owner explicitly asks another chat to take a specific task or package. Other chats explore, review, or prepare drafts/plans when asked. When the owner switches the coordinator, the old chat stops starting new jobs immediately.
+2. **Concurrency limit:** At most two jobs run at once (the git proxy only handles two git operations concurrently).
+3. **Approval:** Only start tasks from a package marked `Owner-approved: yes` (or an explicitly approved task within a package; previously approved roadmap/queue scope stays valid), or when the project owner explicitly says to start it. Propose work outside approved scope in one line first.
+4. **Model choice per job:** Use the standard/cheaper model (e.g. Sonnet) by default, including standard GUI work built from `docs/DESIGN_SYSTEM.md` with exact automated tests, docs, CI, and small fixes. Use the stronger model (e.g. Opus) for unexplained failures, new architecture, 3D drawing/shaders, parsers/interpreters/control commands, and security. If the standard model fails twice on the same issue, escalate to the stronger model.
+5. **Read first:** Pull latest `main`, read `docs/DESIGN_CHARTER.md` and `docs/DESIGN_SYSTEM.md` for UI work, and check `gh pr list` and `python3 tools/work.py list`. Never duplicate work covered by an open PR or active job file.
+6. **Job file and Draft PR first:**
    - Work in your own clone or worktree (`tools/setup_clone.sh` sets the noreply author and pre-push privacy hook).
    - Create `docs/work/<branch with "/" replaced by "-">.md` (see `docs/work/README.md`) and run `python3 tools/work.py archive` in your first commit.
    - Push and open a **Draft PR** immediately (`gh pr create --draft`) so every other agent sees the work is claimed.
