@@ -42,25 +42,6 @@ jobs:
             printf '%s\n' "$out"
           fi
 
-  # Warning only: checks that the queue in the jobs list (issue 74) names no
-  # merged or closed pull request. Read-only, never fails, never writes to GitHub.
-  list-drift:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    continue-on-error: true
-    permissions:
-      contents: read
-      pull-requests: read
-      issues: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Jobs list against reality (warnings only)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 tools/work.py check-lists --annotate || true
-
   # Warning only: a visible pull request must name the design charter
   # principles it follows (docs/DESIGN_CHARTER.md, CLAUDE.md). Never fails.
   charter-field:
