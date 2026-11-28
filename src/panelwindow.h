@@ -24,6 +24,7 @@
 #include <QList>
 #include <QMainWindow>
 #include <QRect>
+#include <QScrollArea>
 #include <QScreen>
 #include <QStringList>
 #include <QTabWidget>
@@ -37,6 +38,39 @@ namespace PanelWindow
 {
   // The height of the timeline in the default layout.
   const int DefaultTimelineHeight=250;
+  // The 3D view keeps at least this much height when the timeline grows to show all its controls.
+  const int MinViewHeight=200;
+
+  // The height the timeline needs to show every control without scrolling (its content at the
+  // width it has, its title bar and its frame), at least DefaultTimelineHeight, and never so much
+  // that the 3D view gets less than MinViewHeight. In a window too low for all of it the panel
+  // scrolls, as before.
+  inline int timelineWantedHeight(const QMainWindow* window,QDockWidget* timeline)
+  {
+    int want=DefaultTimelineHeight;
+    if (QScrollArea* scroll=qobject_cast<QScrollArea*>(timeline->widget()))
+    {
+      QWidget* content=scroll->widget();
+      content->ensurePolished();
+      int contentHeight=std::max(content->sizeHint().height(),content->minimumSizeHint().height());
+      // rows that wrap are taller in a narrow panel than their size hint says
+      const int width=std::max(scroll->viewport()->width(),content->minimumSizeHint().width());
+      if (content->hasHeightForWidth()) contentHeight=std::max(contentHeight,content->heightForWidth(width));
+      const int title=timeline->titleBarWidget() ? timeline->titleBarWidget()->sizeHint().height() : 0;
+      want=std::max(want,contentHeight+title+2*scroll->frameWidth());
+    }
+    // what the 3D view and the timeline share: the middle of the window without menu, bars and status
+    int share=window->height()-150;
+    if (window->isVisible() && window->centralWidget() && !timeline->isHidden() && !timeline->isFloating())
+      share=window->centralWidget()->height()+timeline->height();
+    return std::min(want,std::max(DefaultTimelineHeight,share-MinViewHeight));
+  }
+
+  // Gives the docked timeline the height from timelineWantedHeight.
+  inline void fitTimelineHeight(QMainWindow* window,QDockWidget* timeline)
+  {
+    window->resizeDocks({timeline},{timelineWantedHeight(window,timeline)},Qt::Vertical);
+  }
 
   // The default layout, built in code (not a state taken at start-up): Joints
   // on the left, Selected joint on the right, Timeline at the bottom between
@@ -56,7 +90,7 @@ namespace PanelWindow
     window->setCorner(Qt::TopRightCorner,Qt::RightDockWidgetArea);
     window->setCorner(Qt::BottomRightCorner,Qt::RightDockWidgetArea);
     for (QDockWidget* dock : {joints,jointCard,timeline}) dock->show();
-    window->resizeDocks({timeline},{DefaultTimelineHeight},Qt::Vertical);
+    fitTimelineHeight(window,timeline);
   }
 
   // The default layout of a mode (UX-E): Expert mode is the default layout above. Beginner

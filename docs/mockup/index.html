@@ -2324,9 +2324,9 @@ function floatPanel(p) {
 }
 function panelName(p) { return { joints: "Joints", selected: "Selected joint", scriptlab: "Script Lab", library: "Library", timeline: "Timeline" }[p]; }
 function resetLayout() {
-  layout = JSON.parse(JSON.stringify(DEF_LAYOUT)); lab.open = workSide === "script"; libUi.open = false; M2.popped = []; M2.pops = {}; m2Save(); saveLab(); saveLib(); saveLayout();
+  layout = JSON.parse(JSON.stringify(DEF_LAYOUT)); layout.jB = true; lab.open = workSide === "script"; libUi.open = false; M2.popped = []; M2.pops = {}; m2Save(); saveLab(); saveLib(); saveLayout();
   document.body.classList.remove("panels-hidden"); applyLayout(); renderAll(); setTimeout(renderScene, 0);
-  feedback(expert ? "Layout reset. The panels are back where they were at the first start." : "Layout reset. The figure has most of the window; Show all joints opens the Joints list.");
+  feedback(expert ? "Layout reset. The panels are back where they were at the first start." : "Layout reset. All panels are back, the Joints list on the left too.");
   helperNotify("layoutReset");
 }
 // Splitters: drag with the mouse, or arrow keys when focused (P8)

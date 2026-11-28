@@ -478,7 +478,7 @@ Green: live, the pose shows on your avatar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Layout reset. The figure has most of the window; Show all joints opens the Joints list.</source>
+        <source>Layout reset. All panels are back, the Joints list on the left too.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9370,6 +9370,10 @@ Error: %2</source>
     </message>
     <message>
         <source>(comes after %1 s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1: not available</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

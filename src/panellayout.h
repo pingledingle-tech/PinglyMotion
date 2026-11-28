@@ -247,6 +247,13 @@ namespace PanelLayout
     QSize size;
   };
 
+  // The size of a first start (no saved geometry): big enough that the timeline shows all its
+  // controls under a usable 3D view, but never more than the usable part of the screen.
+  inline QSize defaultWindowSize(QSize screen)
+  {
+    return QSize(std::min(1280,screen.width()),std::min(920,screen.height()));
+  }
+
   inline StartupWindow chooseWindow(const QByteArray& geometry,int legacyWidth,int legacyHeight,
                                     QSize defaultSize)
   {

@@ -403,7 +403,8 @@ void ScriptLabPanel::showChoice(const QString& actionId, bool blocked, const QSt
   if (m_choiceAction != actionId) m_choiceValue->clear();   // the field belongs to one row
   m_choiceAction = actionId;
   m_choiceRlvLine = line;
-  m_choiceTitle->setText(blocked ? tr("%1: Blocked").arg(choice.label) : tr("%1: Allowed").arg(choice.label));
+  if (!choice.ok()) m_choiceTitle->setText(tr("%1: not available").arg(choice.label));
+  else m_choiceTitle->setText(blocked ? tr("%1: Blocked").arg(choice.label) : tr("%1: Allowed").arg(choice.label));
   m_choiceLine->setText(line);
   m_choiceLine->setVisible(!line.isEmpty());
   m_choiceExplain->setText(words.join(QLatin1Char('\n')));

@@ -34,7 +34,7 @@ namespace BeginnerView
   inline constexpr const char* expertLayoutMessage = QT_TRANSLATE_NOOP("BeginnerView",
     "The panels are as you left them in Expert mode.");
   inline constexpr const char* resetBeginnerMessage = QT_TRANSLATE_NOOP("BeginnerView",
-    "Layout reset. The figure has most of the window; Show all joints opens the Joints list.");
+    "Layout reset. All panels are back, the Joints list on the left too.");
 
   // The Joints list is part of the default layout in Expert mode only.
   inline bool jointsListInDefaultLayout(bool expert) { return expert; }
