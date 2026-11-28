@@ -252,5 +252,23 @@ class StatusTests(unittest.TestCase):
         self.assertEqual(work.format_builds([]), ["  none found"])
 
 
+class RenderStatusTests(unittest.TestCase):
+    def test_parse_package_and_render(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "WP-01-demo.md")
+            with open(p, "w", encoding="utf-8") as handle:
+                handle.write(
+                    "ID: WP-01\nTitle: Demo Pkg\nStatus: waiting\nOwner-approved: no\nPriority: 1\nReason: Needs input\n\n"
+                    "- [x] Done task\n- [ ] Open task\n"
+                )
+            pkgs = work.load_packages(tmp)
+            self.assertEqual(len(pkgs), 1)
+            self.assertEqual(pkgs[0]["done"], 1)
+            self.assertEqual(pkgs[0]["todo"], 1)
+            md = work.render_status(pkgs, open_pulls=[], open_tests=3)
+            self.assertIn("| WP-01 | [Demo Pkg](packages/WP-01-demo.md) | waiting | no | 1 / 2 | Needs input |", md)
+            self.assertIn("(3 open item(s))", md)
+
+
 if __name__ == "__main__":
     unittest.main()
