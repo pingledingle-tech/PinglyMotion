@@ -80,6 +80,7 @@
 #include "labimprove.h"
 #include "labchains.h"
 #include "labtabs.h"
+#include "labsubtabs.h"
 #include "labwatcher.h"
 #include "rlvstate.h"
 
@@ -176,6 +177,18 @@ class ScriptLabPanel : public QWidget
     // the popped windows show while Script Lab is open and hide while it is closed (the dock's
     // View item); without a dock they follow the panel
     void setPopWindowsShown(bool shown);
+    // --- WP-01 Part B (the project owner's beta.2 test, 28 Nov 2026): the parts of Live scripts and Type
+    // commands are sub-tabs on the left of their tab (labsubtabs.h), so Script Lab no longer grows very
+    // tall; a group ("Object and Script") or one part alone can be popped out into a window of its own
+    LabSubTabs* subTabs(Page page) const;
+    // the sub-tab in front of each tab, the popped groups and parts and their places (LabSubTabState)
+    QString subTabsState() const;
+    void applySubTabsState(const QString& state);
+    // Reset view beside the tabs: Script Lab only, never the rest of the window. Every tab, group and
+    // part back in Script Lab, the first sub-tabs and Live scripts in front, the windows' places forgotten.
+    // The dock's place and size stay as they are.
+    void resetView();
+    QToolButton* resetViewButton() const { return m_resetViewButton; }
 
     // the grip: shown only while the panel floats
     QWidget* sizeGrip() const { return m_sizeGrip; }
@@ -678,6 +691,12 @@ class ScriptLabPanel : public QWidget
     QVector<LabChains::Chain> m_chains;
     bool m_chainsReady = false;
     LabTabWidget* m_tabs = nullptr;
+    // WP-01 Part B
+    LabSubTabs* m_liveSub = nullptr;
+    LabSubTabs* m_commandsSub = nullptr;
+    QToolButton* m_resetViewButton = nullptr;
+    bool m_stepsAsked = false;            // Help > Script Lab steps asked for them (shown in Expert mode too)
+    void saveSubTabsState();
     static bool s_layoutRestoring;
     // --- job UX-B
     QWidget* m_pages[PageCount] = {};

@@ -4,6 +4,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QListWidget>
 #include <QCheckBox>
 #include <QTimer>
 #include <QKeySequence>
@@ -248,9 +249,22 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   }
   layout->addWidget(tryRow);
 
-  // --- restrictions per object
+  // --- WP-01 Part B: the parts under the command line as sub-tabs on the left (labsubtabs.h), so the
+  // page is only as tall as the part in front
   layout->addSpacing(SpacingL - SpacingS);
-  m_restrictionsSection = addSection(QStringLiteral("restrictions"), tr("Restrictions"), true, commandsPage, layout);
+  m_commandsSub = new LabSubTabs(pageKey(CommandsPage), commandsPage);
+  layout->addWidget(m_commandsSub);
+  QVBoxLayout* restrictionsGroup = m_commandsSub->addGroup(QStringLiteral("restrictions"), tr("Restrictions"),
+                                                           tr("Every restriction that is held, and which object holds it"));
+  QVBoxLayout* actionsGroup = m_commandsSub->addGroup(QStringLiteral("actions"), tr("What the avatar may do"),
+                                                      tr("Every action, Allowed or Blocked, and a choice to change it"));
+  QVBoxLayout* viewGroup = m_commandsSub->addGroup(QStringLiteral("view"), tr("Show in 3D view"),
+                                                   tr("Camera limits, environment, vision sphere and view modes in the 3D view"));
+  QVBoxLayout* repliesGroup = m_commandsSub->addGroup(QStringLiteral("replies"), tr("Replies and messages"),
+                                                      tr("The lines you ran and the replies a script would hear"));
+
+  // --- restrictions per object
+  m_restrictionsSection = addSection(QStringLiteral("restrictions"), tr("Restrictions"), true, commandsPage, restrictionsGroup);
   m_empty = new QLabel(tr("No restrictions. Type a line above, for example @detach=n, and press Enter."), this);
   m_empty->setObjectName("scriptLabEmpty");
   m_empty->setWordWrap(true);
@@ -260,7 +274,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_restrictionsSection->bodyLayout()->addWidget(m_restrictions);
 
   // --- actions, allowed or blocked
-  m_actionsSection = addSection(QStringLiteral("actions"), tr("What the avatar may do"), true, commandsPage, layout);
+  m_actionsSection = addSection(QStringLiteral("actions"), tr("What the avatar may do"), true, commandsPage, actionsGroup);
   m_actions = new QTreeWidget(this);
   m_actions->setObjectName("scriptLabActions");
   m_actions->setHeaderLabels({tr("Action"), tr("Now")});
@@ -289,13 +303,13 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_cameraBox->setChecked(false);
   m_cameraBox->setToolTip(tr("Let the camera limits the script holds (distance from the avatar, focus on the avatar, field of view) "
                              "limit the 3D view. Untick to get your own camera back exactly as it was."));
-  layout->addWidget(m_cameraBox);
+  viewGroup->addWidget(m_cameraBox);
   m_cameraStatus = new QLabel(commandsPage);
   m_cameraStatus->setObjectName("scriptLabCameraStatus");
   m_cameraStatus->setWordWrap(true);
   m_cameraStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   m_cameraStatus->hide();
-  layout->addWidget(m_cameraStatus);
+  viewGroup->addWidget(m_cameraStatus);
   connect(m_cameraBox, &QCheckBox::toggled, this, [this](bool on)
   {
     Q_UNUSED(on);
@@ -309,15 +323,15 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_environmentBox->setChecked(false);
   m_environmentBox->setToolTip(tr("Show the sky colour and the draw distance the script asks for as the 3D view's background "
                                   "and fog (a rough hint). Untick to get the 3D view's own look back exactly as it was."));
-  layout->addWidget(m_environmentBox);
+  viewGroup->addWidget(m_environmentBox);
   m_environmentStatus = new QLabel(commandsPage);
   m_environmentStatus->setObjectName("scriptLabEnvironmentStatus");
   m_environmentStatus->setWordWrap(true);
   m_environmentStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   m_environmentStatus->hide();
-  layout->addWidget(m_environmentStatus);
+  viewGroup->addWidget(m_environmentStatus);
   // the vision sphere's sliders (setsphere part 2): folded at start, greyed until the box is ticked
-  m_sphereSection = addSection(QStringLiteral("sphere"), tr("Vision sphere"), false, commandsPage, layout);
+  m_sphereSection = addSection(QStringLiteral("sphere"), tr("Vision sphere"), false, commandsPage, viewGroup);
   m_sphereControls = new SphereControls(m_sphereSection->body());
   m_sphereSection->bodyLayout()->addWidget(m_sphereControls);
   connect(m_environmentBox, &QCheckBox::toggled, this, [this](bool on)
@@ -333,13 +347,13 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_viewModesBox->setChecked(false);
   m_viewModesBox->setToolTip(tr("Let the view restrictions the script holds (your own avatar hidden, textures replaced, an overlay) "
                                 "change the 3D view. Untick to get the 3D view's own look back exactly as it was."));
-  layout->addWidget(m_viewModesBox);
+  viewGroup->addWidget(m_viewModesBox);
   m_viewModesStatus = new QLabel(commandsPage);
   m_viewModesStatus->setObjectName("scriptLabViewModesStatus");
   m_viewModesStatus->setWordWrap(true);
   m_viewModesStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
   m_viewModesStatus->hide();
-  layout->addWidget(m_viewModesStatus);
+  viewGroup->addWidget(m_viewModesStatus);
   connect(m_viewModesBox, &QCheckBox::toggled, this, [this](bool on)
   {
     Q_UNUSED(on);
@@ -348,8 +362,7 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   });
 
   // --- replies and messages
-  layout->addSpacing(SpacingL - SpacingS);
-  m_repliesSection = addSection(QStringLiteral("replies"), tr("Replies and messages"), true, commandsPage, layout);
+  m_repliesSection = addSection(QStringLiteral("replies"), tr("Replies and messages"), true, commandsPage, repliesGroup);
   m_log = new QPlainTextEdit(this);
   m_log->setObjectName("scriptLabLog");
   m_log->setReadOnly(true);
@@ -358,6 +371,9 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_log->setMinimumHeight(4 * m_log->fontMetrics().height() + 2 * SpacingS);
   m_repliesSection->bodyLayout()->addWidget(m_log);
   connect(m_log, &QPlainTextEdit::textChanged, this, &ScriptLabPanel::refreshCounts);
+  m_commandsSub->setGroupParts(QStringLiteral("restrictions"), {m_restrictionsSection});
+  m_commandsSub->setGroupParts(QStringLiteral("actions"), {m_actionsSection});
+  m_commandsSub->setGroupParts(QStringLiteral("replies"), {m_repliesSection});
   layout->addStretch(1);
 
   // the page is taller than a small docked panel: it scrolls, as the Live page does
@@ -386,7 +402,33 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   m_popOutButton->setFocusPolicy(Qt::StrongFocus);
   m_popOutButton->setMinimumHeight(ControlCompact);
   m_popOutButton->setAccessibleName(tr("Pop out this tab"));
-  m_tabs->setCornerWidget(m_popOutButton, Qt::TopRightCorner);
+  // WP-01 Part B: Reset view beside Pop out, at the right of the tabs: Script Lab only, never the
+  // rest of the window (the project owner, 28 Nov 2026)
+  QWidget* corner = new QWidget(m_tabs);
+  corner->setObjectName("scriptLabTabCorner");
+  QHBoxLayout* cornerRow = new QHBoxLayout(corner);
+  cornerRow->setContentsMargins(0, 0, 0, 0);
+  cornerRow->setSpacing(SpacingXs);
+  m_resetViewButton = new QToolButton(corner);
+  m_resetViewButton->setObjectName("scriptLabResetView");
+  m_resetViewButton->setText(tr("Reset view"));
+  m_resetViewButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  m_resetViewButton->setAutoRaise(true);
+  m_resetViewButton->setFocusPolicy(Qt::StrongFocus);
+  m_resetViewButton->setMinimumHeight(ControlCompact);
+  m_resetViewButton->setAccessibleName(tr("Reset the Script Lab view"));
+  {
+    const QString tip = tr("Put every tab and part of Script Lab back in this window, with the first parts in front. "
+                           "Only Script Lab: the rest of the window stays as it is.");
+    m_resetViewButton->setToolTip(tip);
+    m_resetViewButton->setStatusTip(tip);
+    m_resetViewButton->setAccessibleDescription(tip);
+  }
+  m_popOutButton->setParent(corner);
+  cornerRow->addWidget(m_resetViewButton);
+  cornerRow->addWidget(m_popOutButton);
+  m_tabs->setCornerWidget(corner, Qt::TopRightCorner);
+  connect(m_resetViewButton, &QToolButton::clicked, this, &ScriptLabPanel::resetView);
   connect(m_popOutButton, &QToolButton::clicked, this, [this]() { popOut(currentPage()); });
   connect(m_tabs->labTabBar(), &LabTabBar::popOutRequested, this, [this](int index, const QPoint& at)
   {
@@ -429,7 +471,10 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
   setTabOrder(m_run, m_reset);
   QWidget* beforeHeader = m_reset;
   for (QPushButton* b : m_tryButtons) { setTabOrder(beforeHeader, b); beforeHeader = b; }
-  setTabOrder(beforeHeader, m_restrictionsSection->header());
+  // WP-01 Part B: then the sub-tab list and its Pop out, then the parts
+  setTabOrder(beforeHeader, m_commandsSub->list());
+  setTabOrder(m_commandsSub->list(), m_commandsSub->popOutButton());
+  setTabOrder(m_commandsSub->popOutButton(), m_restrictionsSection->header());
   setTabOrder(m_restrictionsSection->header(), m_restrictions);
   setTabOrder(m_restrictions, m_actionsSection->header());
   setTabOrder(m_actionsSection->header(), m_actions);
@@ -467,6 +512,13 @@ ScriptLabPanel::ScriptLabPanel(QWidget* parent) :
 
   // job UX-B: the tab in front and the popped tabs as last time (their windows show with the panel)
   applyWindowState(UserSettings::scriptLabWindows());
+  // WP-01 Part B: the sub-tabs in front and the popped groups and parts as last time
+  applySubTabsState(UserSettings::scriptLabSubTabs());
+  for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+  {
+    connect(sub, &LabSubTabs::stateChanged, this, [this]() { saveSubTabsState(); updateWorkLayout(); });
+    connect(sub, &LabSubTabs::layoutChanged, this, [this]() { updateWorkLayout(); refreshTips(); });
+  }
   m_windowStateReady = true;
   refreshPopOutButton();
 }
@@ -951,8 +1003,9 @@ QDockWidget* ScriptLabPanel::makeDock(QMainWindow* window, ScriptLabPanel* panel
 QSize ScriptLabPanel::defaultSize()
 {
   // room for the suggestion list with its help and the warnings side by side with the script;
-  // job UX-B: and for the tabs with Pop out beside them, without scroll arrows (five since queue 1 item 5, Improve a setup)
-  return QSize(TextSize::scaled(740), TextSize::scaled(720));
+  // job UX-B: and for the tabs with Pop out beside them, without scroll arrows (five since queue 1 item 5, Improve a setup);
+  // WP-01 Part B: and Reset view beside Pop out
+  return QSize(TextSize::scaled(860), TextSize::scaled(720));
 }
 
 QSize ScriptLabPanel::minimumPanelSize()

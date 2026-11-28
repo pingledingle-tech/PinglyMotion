@@ -50,6 +50,7 @@ ScriptLabSection::ScriptLabSection(const QString& key, const QString& title, boo
   outer->setSpacing(Theme::Size::spacingXs);
 
   QHBoxLayout* row = new QHBoxLayout;
+  m_row = row;
   row->setContentsMargins(0, 0, 0, 0);
   row->setSpacing(Theme::Size::spacingS);
   m_header = new QPushButton(this);
@@ -90,6 +91,13 @@ ScriptLabSection::ScriptLabSection(const QString& key, const QString& title, boo
     emit expandedChanged(on);
   });
   updateHeader();
+}
+
+void ScriptLabSection::addHeaderWidget(QWidget* widget)
+{
+  if (!widget) return;
+  widget->setParent(this);
+  m_row->addWidget(widget, 0, Qt::AlignVCenter);
 }
 
 void ScriptLabSection::setTitle(const QString& title)

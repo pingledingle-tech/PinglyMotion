@@ -139,7 +139,7 @@ void TestScriptLabWindow::tabsInOrder()
   // Pop out beside the tabs, with its words and a name for screen readers
   QToolButton* pop = panel.popOutButton();
   QVERIFY(pop);
-  QCOMPARE(tabs->cornerWidget(Qt::TopRightCorner), pop);
+  QCOMPARE(pop->parentWidget(), tabs->cornerWidget(Qt::TopRightCorner));   // WP-01 Part B: beside Reset view
   QCOMPARE(pop->text(), QString("Pop out"));
   QCOMPARE(pop->accessibleName(), QString("Pop out this tab"));
   QCOMPARE(pop->toolTip(), QString("Pop out \"Live scripts\" into a window of its own. Close that window, or press Put back, to bring it back."));

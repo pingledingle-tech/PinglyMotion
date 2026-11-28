@@ -17,6 +17,7 @@
 #include <QFontDatabase>
 #include <QJsonArray>
 #include <QListWidget>
+#include <QToolButton>
 #include <QSet>
 #include <QTextBlock>
 #include <QUrl>
@@ -307,6 +308,23 @@ void ScriptLabPanel::buildLivePage()
   m_expert = UserSettings::expertMode();
   UserSettings::watchExpertMode(this, [this](bool on) { setExpertMode(on); });
 
+  // --- WP-01 Part B: the parts under the buttons as sub-tabs on the left (labsubtabs.h), so the page is
+  // only as tall as the part in front; "Object and Script" is one group, and each of its two parts can
+  // also be popped out alone
+  m_liveSub = new LabSubTabs(pageKey(LivePage), page);
+  layout->addWidget(m_liveSub);
+  QVBoxLayout* workGroup = m_liveSub->addGroup(QStringLiteral("work"), tr("Object and Script"),
+                                               tr("The tree of your object beside the script you picked in it"));
+  QVBoxLayout* problemsGroup = m_liveSub->addGroup(QStringLiteral("problems"), tr("Errors and warnings"),
+                                                   tr("What is wrong in the script, with line and column"));
+  QVBoxLayout* logGroup = m_liveSub->addGroup(QStringLiteral("log"), tr("Event log"), tr("What the script did in the last run"));
+  QVBoxLayout* restrictionsGroup = m_liveSub->addGroup(QStringLiteral("restrictionsNow"), tr("RLV restrictions now"),
+                                                       tr("The restrictions the scripts hold now"));
+  QVBoxLayout* objectsGroup = m_liveSub->addGroup(QStringLiteral("objects"), tr("Objects"),
+                                                  tr("The objects of the last run and the newest menu"));
+  QVBoxLayout* inputGroup = m_liveSub->addGroup(QStringLiteral("input"), tr("Send input"), tr("A touch, a chat line or a menu answer"));
+  QVBoxLayout* inventoryGroup = m_liveSub->addGroup(QStringLiteral("inventory"), tr("Inventory"), tr("What the object holds in the run"));
+
   // --- job U3: the tree on the left and the editor on the right when the panel is wide, stacked when narrow
   m_workArea = new QWidget(page);
   m_workArea->setObjectName("scriptLabWorkArea");
@@ -325,7 +343,7 @@ void ScriptLabPanel::buildLivePage()
   editorColumn->setSpacing(SpacingS);
   m_workLayout->addWidget(m_treeColumn);
   m_workLayout->addWidget(m_editorColumn);
-  layout->addWidget(m_workArea);
+  workGroup->addWidget(m_workArea);
 
   // --- the folder as one object (lane 1 job D): a tree with icons, colour dots, sums and memory
   m_treeSection = addSection(QStringLiteral("tree"), tr("Object"), true, m_treeColumn, treeColumn);
@@ -371,7 +389,7 @@ void ScriptLabPanel::buildLivePage()
   connect(m_editor, &LabEditor::saved, this, &ScriptLabPanel::runSavedScript);
 
   // --- errors and warnings with line and column (lint warnings too)
-  m_problemsSection = addSection(QStringLiteral("problems"), tr("Errors and warnings"), true, page, layout);
+  m_problemsSection = addSection(QStringLiteral("problems"), tr("Errors and warnings"), true, page, problemsGroup);
   m_problems = new QListWidget(m_problemsSection->body());
   m_problems->setObjectName("scriptLabProblems");
   m_problems->setToolTip(tr("Click a line, or press Enter, to show it in the script"));
@@ -380,7 +398,7 @@ void ScriptLabPanel::buildLivePage()
   m_problemsSection->bodyLayout()->addWidget(m_problems);
 
   // --- what the run did
-  m_logSection = addSection(QStringLiteral("log"), tr("Event log"), true, page, layout);
+  m_logSection = addSection(QStringLiteral("log"), tr("Event log"), true, page, logGroup);
   m_runLog = new QPlainTextEdit(m_logSection->body());
   m_runLog->setObjectName("scriptLabRunLog");
   m_runLog->setReadOnly(true);
@@ -412,7 +430,7 @@ void ScriptLabPanel::buildLivePage()
   mapLayout->addStretch(1);
 
   // --- the RLV restrictions now (the same state as the Type commands page)
-  m_liveRestrictionsSection = addSection(QStringLiteral("restrictionsNow"), tr("RLV restrictions now"), true, page, layout);
+  m_liveRestrictionsSection = addSection(QStringLiteral("restrictionsNow"), tr("RLV restrictions now"), true, page, restrictionsGroup);
   m_liveRestrictionsEmpty = new QLabel(tr("No restrictions. A script that says @detach=n holds one."), m_liveRestrictionsSection->body());
   m_liveRestrictionsEmpty->setObjectName("scriptLabLiveRestrictionsEmpty");
   m_liveRestrictionsEmpty->setWordWrap(true);
@@ -422,7 +440,7 @@ void ScriptLabPanel::buildLivePage()
   m_liveRestrictionsSection->bodyLayout()->addWidget(m_liveRestrictions);
 
   // --- the objects of the last LSL run and the newest dialog (step 5); folded at first, as in the mockup
-  m_objectsSection = addSection(QStringLiteral("objects"), tr("Objects"), false, page, layout);
+  m_objectsSection = addSection(QStringLiteral("objects"), tr("Objects"), false, page, objectsGroup);
   m_objectsView = new ScriptLabObjectsView(m_objectsSection->body());
   m_objectsView->setEmbedded(true);
   m_objectsSection->bodyLayout()->addWidget(m_objectsView);
@@ -447,12 +465,12 @@ void ScriptLabPanel::buildLivePage()
   m_objectsSection->bodyLayout()->addWidget(m_dialogButtonBox);
 
   // --- touch, chat and dialog answers (issue 308); folded at first, as in the mockup
-  m_inputSection = addSection(QStringLiteral("input"), tr("Send input"), false, page, layout);
+  m_inputSection = addSection(QStringLiteral("input"), tr("Send input"), false, page, inputGroup);
   buildInputSection(m_inputSection->body(), m_inputSection->bodyLayout());
 
   // --- the simulated inventory of the object chosen under Send input (step 9b-4, slice 3); folded at
   // first, as in the mockup: Item and Type, then the caption that nothing comes from Second Life
-  m_inventorySection = addSection(QStringLiteral("inventory"), tr("Inventory"), false, page, layout);
+  m_inventorySection = addSection(QStringLiteral("inventory"), tr("Inventory"), false, page, inventoryGroup);
   m_inventoryEmpty = new QLabel(tr("No inventory yet. An AI assistant gives one with lsl_run."), m_inventorySection->body());
   m_inventoryEmpty->setObjectName("scriptLabInventoryEmpty");
   m_inventoryEmpty->setWordWrap(true);
@@ -540,6 +558,19 @@ void ScriptLabPanel::buildLivePage()
   setTabOrder(m_say, m_inputLog);
   setTabOrder(m_inputLog, m_inventorySection->header());
   setTabOrder(m_inventorySection->header(), m_inventory);
+  // WP-01 Part B: the sub-tab list and its Pop out come after the buttons, before the parts; each part
+  // of "Object and Script" has its own Pop out right after its header (addPart)
+  setTabOrder(m_effectsBox, m_liveSub->list());
+  setTabOrder(m_liveSub->list(), m_liveSub->popOutButton());
+  setTabOrder(m_liveSub->popOutButton(), m_treeSection->header());
+  m_liveSub->addPart(QStringLiteral("work"), m_treeSection);
+  m_liveSub->addPart(QStringLiteral("work"), m_scriptSection);
+  m_liveSub->setGroupParts(QStringLiteral("problems"), {m_problemsSection});
+  m_liveSub->setGroupParts(QStringLiteral("log"), {m_logSection});
+  m_liveSub->setGroupParts(QStringLiteral("restrictionsNow"), {m_liveRestrictionsSection});
+  m_liveSub->setGroupParts(QStringLiteral("objects"), {m_objectsSection});
+  m_liveSub->setGroupParts(QStringLiteral("input"), {m_inputSection});
+  m_liveSub->setGroupParts(QStringLiteral("inventory"), {m_inventorySection});
 }
 
 void ScriptLabPanel::updateWorldParts()

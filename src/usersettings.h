@@ -119,6 +119,11 @@ class UserSettings
     static QString scriptLabWindows();
     static void setScriptLabSized(int flags);
     static int scriptLabSized();
+    // WP-01 Part B: the sub-tabs on the left of the Live scripts and Type commands tabs (the sub-tab
+    // in front of each, the groups and parts popped into windows of their own and their places,
+    // LabSubTabState)
+    static void setScriptLabSubTabs(const QString& value);
+    static QString scriptLabSubTabs();
     // the Selected joint panel (docs/UX_DECISIONS.md, 6): what a drag in the 3D view
     // does, Pull the limb (true, default) or Turn only this joint (read by the drag of
     // UX phase 4b), and whether its More options part is open (default folded)
@@ -263,6 +268,8 @@ private:
     static const QString m_scriptLabWindowsKey;
     static int m_scriptLabSized;
     static const QString m_scriptLabSizedKey;
+    static QString m_scriptLabSubTabs;
+    static const QString m_scriptLabSubTabsKey;
     static bool m_pullLimbOnDrag;
     static const QString m_pullLimbOnDragKey;
     static bool m_jointMoreOptions;

@@ -675,10 +675,10 @@ void TestRlvSuggest::windowSize()
   QDockWidget* dock = ScriptLabPanel::makeDock(&window, panel);
   dock->toggleViewAction()->trigger();   // opened by the user, as View > Script Lab does
   // more room at start, and a sensible smallest size (both at 100 percent text size); job UX-B: the
-  // first size has room for the tabs (five since queue 1 item 5) and Pop out side by side
-  QCOMPARE(ScriptLabPanel::defaultSize(), QSize(740, 720));
+  // first size has room for the tabs (five since queue 1 item 5) and Pop out side by side; WP-01 Part B: and Reset view
+  QCOMPARE(ScriptLabPanel::defaultSize(), QSize(860, 720));
   QCOMPARE(ScriptLabPanel::minimumPanelSize(), QSize(300, 240));
-  QCOMPARE(panel->sizeHint(), QSize(740, 720));
+  QCOMPARE(panel->sizeHint(), QSize(860, 720));
   QCOMPARE(panel->minimumSize(), QSize(300, 240));
   // job UX-B: the first open docked gives most of the main window (three fifths of 1600)
   QCOMPARE(ScriptLabPanel::bigDockedWidth(window.size()), 960);

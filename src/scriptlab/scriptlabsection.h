@@ -21,6 +21,7 @@
 #include <QFrame>
 #include <QString>
 
+class QHBoxLayout;
 class QLabel;
 class QPushButton;
 class QVBoxLayout;
@@ -70,6 +71,8 @@ class ScriptLabSection : public ScriptLabFrame
     bool isExpanded() const;
 
     QPushButton* header() const { return m_header; }
+    // puts a small button at the right end of the header row (WP-01 Part B: Pop out of a part)
+    void addHeaderWidget(QWidget* widget);
     QLabel* countLabel() const { return m_countLabel; }
     QWidget* body() const { return m_body; }
     QVBoxLayout* bodyLayout() const { return m_bodyLayout; }
@@ -88,6 +91,7 @@ class ScriptLabSection : public ScriptLabFrame
     QString m_count;
     bool m_dark = true;
     QPushButton* m_header;
+    QHBoxLayout* m_row = nullptr;
     QLabel* m_countLabel;
     QWidget* m_body;
     QVBoxLayout* m_bodyLayout;
