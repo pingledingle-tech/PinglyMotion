@@ -170,6 +170,7 @@ void TestScriptLabSubTabs::commandsSubTabs()
   QCOMPARE(listedNames(sub), QStringList({"Restrictions", "What the avatar may do", "Show in 3D view", "Replies and messages"}));
   QCOMPARE(sub->list()->accessibleName(), QString("Parts of this tab"));
   QCOMPARE(sub->currentGroup(), QString("restrictions"));
+  QVERIFY(!sub->groupTitle()->isVisible());   // one part: its own header names it
   QVERIFY(!sub->groupPlaceholder("restrictions"));   // nothing is out
   // the list is on the left of the part in front
   const QPoint listAt = sub->list()->mapTo(&panel, QPoint(0, 0));

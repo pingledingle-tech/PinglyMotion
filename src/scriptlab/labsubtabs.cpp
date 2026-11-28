@@ -592,11 +592,8 @@ void LabSubTabs::refreshList()
   // nothing to show (no folder watched yet): the whole sub-tab area steps aside for the empty state
   if (parentWidget()) setVisible(shown > 0);
   m_refreshing = false;
-  if (now != before)
-  {
-    refreshHeader();
-    emit stateChanged();
-  }
+  refreshHeader();
+  if (now != before) emit stateChanged();
 }
 
 void LabSubTabs::refreshHeader()
