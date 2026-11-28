@@ -773,22 +773,25 @@ def cmd_status():
         print("\n".join(format_builds(data.get("workflow_runs", []))))
     except (subprocess.CalledProcessError, ValueError) as error:
         say_error("Build runs", error)
-    notes = []
-    body = fetch_body(slug, notes)
+    pkgs = load_packages()
     print("")
-    print("Queue (jobs list, issue %d):" % JOBS_LIST_ISSUE)
-    if body is None:
-        print("  " + "; ".join(notes))
+    print("Work packages (%s/):" % PACKAGES_DIR)
+    if not pkgs:
+        print("  none found")
     else:
-        lines = queue_lines(body)
-        print("\n".join("  " + l for l in lines) if lines else "  no numbered lines under '## Queue'")
+        for p in pkgs:
+            total = p["done"] + p["todo"]
+            print("  %s: %s | status=%s | approved=%s | %d/%d" % (
+                p.get("id", "?"), p.get("title", p["file"]),
+                p.get("status", "?"), p.get("owner-approved", "no"), p["done"], total))
     print("")
-    print("Owner tests (issue %d):" % TESTS_ISSUE)
-    try:
-        tests = test_lines(json.loads(gh_api("repos/%s/issues/%d" % (slug, TESTS_ISSUE))).get("body", ""))
-        print("\n".join("  " + l for l in tests) if tests else "  none")
-    except (subprocess.CalledProcessError, ValueError) as error:
-        say_error("issue %d" % TESTS_ISSUE, error)
+    print("Beta tests (%s):" % BETA_TEST_FILE)
+    if not os.path.isfile(BETA_TEST_FILE):
+        print("  none")
+    else:
+        with open(BETA_TEST_FILE, encoding="utf-8") as handle:
+            open_items = [clip(l.strip()) for l in handle if re.match(r"^\s*-\s+\[ \]", l)]
+        print("\n".join("  " + l for l in open_items) if open_items else "  none")
     return 0
 
 

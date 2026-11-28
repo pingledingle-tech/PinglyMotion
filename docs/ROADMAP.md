@@ -2,7 +2,7 @@
 
 The order of the work and one status word for each step. Nothing else: no build history. Order confirmed by the project owner on 22 November 2026, 12:19 («Ja»).
 
-Where the details are: running work is the open pull requests; what a job did is the report comment on its merged pull request; the queue is the jobs list (issue 74); the owner's tests are the test list (issue 47); what the program is for is [PRODUCT.md](PRODUCT.md); decisions and reasons are in [DECISIONS.md](DECISIONS.md).
+Where the details are: running work is the open pull requests; what a job did is the report comment on its merged pull request; work packages and status live in [STATUS.md](STATUS.md) and `docs/packages/`; the owner's beta tests live in [testing/next-beta.md](testing/next-beta.md); what the program is for is [PRODUCT.md](PRODUCT.md); decisions and reasons are in [DECISIONS.md](DECISIONS.md).
 
 **Rule:** a job changes this file only when the order or the status word of a step changes, never to log what was built (`CLAUDE.md`, "While you work").
 

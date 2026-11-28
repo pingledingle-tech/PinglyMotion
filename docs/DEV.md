@@ -203,7 +203,7 @@ To compare how the 3D view looks before and after a change, build `main` in a se
 
 ## Status of open pull requests
 
-`python3 tools/work.py status` (needs `gh`, read-only, REST only) prints for every open pull request: draft or ready, merge conflict state (`unknown` if GitHub has not computed it after a few tries, never read as fine), the latest run of each check by start time (older cancelled duplicates are ignored), and minutes since the last push (`stopped?` over 40), then the last 3 Build runs on `main`, the queue of issue 74 and the owner tests of issue 47 (details in "The watch" below). Parsing is tested with canned data in `tests/test_work.py`.
+`python3 tools/work.py status` (needs `gh`, read-only, REST only) prints for every open pull request: draft or ready, merge conflict state (`unknown` if GitHub has not computed it after a few tries, never read as fine), the latest run of each check by start time (older cancelled duplicates are ignored), and minutes since the last push (`stopped?` over 40), then the last 3 Build runs on `main`, the work packages in `docs/packages/` and the open beta tests in `docs/testing/next-beta.md` (details in "The watch" below). Parsing is tested with canned data in `tests/test_work.py`.
 
 ## Security alerts
 
@@ -274,7 +274,7 @@ A script that GitHub runs by itself, so nobody spends tokens on looking at check
 
 **Time limits:** every job in `.github/workflows/*.yml` has `timeout-minutes` (a job that only calls a reusable workflow cannot have one; the called jobs do). The test `EveryJobHasATimeLimit` fails when a new job has none. Limits are about twice the normal time (floor 10 minutes) and never under 1.5 times the longest of the last 20 green runs: Linux build 30, Windows build 40, sanitizer build 50 (longest green run 27 minutes), release Windows 40, release Linux 30, CodeQL C++ analysis 45 on a pull request (builds only the program; longest green run 22 minutes) and 90 on nightly, manual and release runs (also builds the test code; longest green run 37 minutes, two release dry runs and one manual run were stopped at the old limit of 45), short jobs 5 to 10. Fuzz jobs get their fuzzing seconds divided by 60 plus 20 minutes (30 at night, longest recent green run 11 minutes). A job stopped by its limit is not green: GitHub ends it as failed or cancelled, and a required check only passes when it is success, skipped or neutral, so a timeout can never turn a required check green. (Not yet seen in a real run; the first job that hits a limit shows it.)
 
-**Status in one answer:** `python3 tools/work.py status` (read-only): open pull requests with draft or ready, branch, each required check and how long it ran, last push and the latest comment's first line; the last 3 Build runs on `main`; the queue lines of issue 74; the tests in issue 47.
+**Status in one answer:** `python3 tools/work.py status` (read-only): open pull requests with draft or ready, branch, each required check and how long it ran, last push and the latest comment's first line; the last 3 Build runs on `main`; the work packages in `docs/packages/`; the open tests in `docs/testing/next-beta.md`.
 
 ## Reference library download (issue 19)
 
