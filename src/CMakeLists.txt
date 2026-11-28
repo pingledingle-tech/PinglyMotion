@@ -102,6 +102,7 @@ SET (PINGLYMOTION_SHARED_SRC
               scriptlab/labplayer.cpp
               scriptlab/labimproveview.cpp
               scriptlab/labtabs.cpp
+              scriptlab/labsubtabs.cpp
               scriptlab/scriptlabpanel.cpp
               scriptlab/scriptlabpanelbeginner.cpp
               scriptlab/scriptlabpanelinput.cpp

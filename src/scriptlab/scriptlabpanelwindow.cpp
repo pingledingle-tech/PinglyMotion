@@ -10,6 +10,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QMainWindow>
 #include <QToolButton>
 #include <QCheckBox>
@@ -211,6 +212,16 @@ void ScriptLabPanel::stylePageTabs()
                                   .arg(RadiusControl).arg(SpacingS)
                                   .arg(QLatin1String(t.surfaceRaised), QLatin1String(t.text), QLatin1String(t.textMuted), QLatin1String(t.focusRing)));
   }
+  if (m_resetViewButton)
+  {
+    // WP-01 Part B: the same look as Pop out, with the icon of Reset layout (the same kind of action)
+    const int icon = TextSize::scaled(16);
+    m_resetViewButton->setIconSize(QSize(icon, icon));
+    m_resetViewButton->setIcon(LucideIcons::icon(QStringLiteral("layout-template"), QColor(QLatin1String(t.text)), QColor(QLatin1String(t.textDisabled))));
+    m_resetViewButton->setStyleSheet(m_popOutButton ? m_popOutButton->styleSheet() : QString());
+  }
+  for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+    if (sub) sub->applyStyle(dark);
   for (LabPopWindow* window : m_popWindows)
     if (window) window->applyStyle(dark);
 }
@@ -326,6 +337,80 @@ void ScriptLabPanel::setPopWindowsShown(bool shown)
   m_popWindowsShown = shown;
   for (LabPopWindow* window : m_popWindows)
     if (window) window->setVisible(shown);
+  for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+    if (sub) sub->setPopWindowsShown(shown);
+}
+
+// --- WP-01 Part B: sub-tabs on the left, groups and parts in windows of their own, Reset view ----
+
+LabSubTabs* ScriptLabPanel::subTabs(Page page) const
+{
+  return page == LivePage ? m_liveSub : page == CommandsPage ? m_commandsSub : nullptr;
+}
+
+QString ScriptLabPanel::subTabsState() const
+{
+  LabSubTabState::State state;
+  for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+  {
+    if (!sub) continue;
+    if (!sub->currentGroup().isEmpty()) state.current.insert(sub->tabKey(), sub->currentGroup());
+    state.popped += sub->popped();
+    const QMap<QString, QRect> places = sub->places();
+    for (auto it = places.constBegin(); it != places.constEnd(); ++it) state.places.insert(it.key(), it.value());
+  }
+  return LabSubTabState::format(state);
+}
+
+void ScriptLabPanel::applySubTabsState(const QString& text)
+{
+  QMap<QString, QStringList> groups;
+  QStringList units;
+  for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+  {
+    groups.insert(sub->tabKey(), sub->groupKeys());
+    units += sub->unitKeys();
+  }
+  const LabSubTabState::State state = LabSubTabState::parse(text, groups, units);
+  const bool ready = m_windowStateReady;
+  m_windowStateReady = false;   // nothing is saved half way
+  for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+  {
+    for (const QString& key : sub->popped())
+      if (!state.popped.contains(key)) sub->putBack(key);
+    QMap<QString, QRect> places;
+    for (const QString& key : sub->unitKeys())
+      if (state.places.contains(key)) places.insert(key, state.places.value(key));
+    sub->setPlaces(places);
+    const QString current = state.current.value(sub->tabKey());
+    if (!current.isEmpty()) sub->setCurrentGroup(current);
+  }
+  for (const QString& key : state.popped)
+    for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+      if (sub->unitKeys().contains(key) && !sub->isPoppedOut(key)) sub->popOut(key);
+  m_windowStateReady = ready;
+  saveSubTabsState();
+  updateWorkLayout();
+}
+
+void ScriptLabPanel::saveSubTabsState()
+{
+  if (m_windowStateReady) UserSettings::setScriptLabSubTabs(subTabsState());
+}
+
+void ScriptLabPanel::resetView()
+{
+  for (int p = 0; p < PageCount; ++p) putBack(Page(p));
+  m_popPlaces.clear();
+  for (LabSubTabs* sub : {m_liveSub, m_commandsSub})
+    if (sub) sub->reset();
+  m_tabs->setCurrentIndex(tabIndex(LivePage));
+  // every page from the top again
+  for (QWidget* page : m_pages)
+    if (QScrollArea* scroll = qobject_cast<QScrollArea*>(page)) scroll->verticalScrollBar()->setValue(0);
+  saveWindowState();
+  saveSubTabsState();
+  updateWorkLayout();
 }
 
 QString ScriptLabPanel::windowState() const
@@ -367,11 +452,9 @@ void ScriptLabPanel::saveWindowState()
 
 void ScriptLabPanel::resetWindows()
 {
-  for (int p = 0; p < PageCount; ++p) putBack(Page(p));
-  m_popPlaces.clear();
-  m_tabs->setCurrentIndex(tabIndex(LivePage));
+  // View > Reset layout: Script Lab's own Reset view, and the first sizes of the dock again
+  resetView();
   UserSettings::setScriptLabSized(0);
-  saveWindowState();
 }
 
 int ScriptLabPanel::bigDockedWidth(const QSize& window)

@@ -13,10 +13,10 @@ Reason: Collecting additional UX notes from the project owner before starting.
 - [ ] Fix "Control the camera" (`setcam`) not selectable under action settings in Script Lab
 
 ### Part B — Script Lab layout
-- [ ] Show Script Lab tab contents as sub-tabs on the left side of the main view
-- [ ] Allow detaching function groups (Object, Script) and individual functions inside tabs
-- [ ] Add a dedicated Reset view for Script Lab only (without resetting the whole window)
-- [ ] Hide "steps first collar" when Expert mode is enabled
+- [x] Show Script Lab tab contents as sub-tabs on the left side of the main view
+- [x] Allow detaching function groups (Object, Script) and individual functions inside tabs
+- [x] Add a dedicated Reset view for Script Lab only (without resetting the whole window)
+- [x] Hide "steps first collar" when Expert mode is enabled
 
 ### Part C — Props, 3D controls, and examples
 - [ ] Allow Delete key to remove selected prop (with warning if linked to a script)

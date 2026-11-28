@@ -578,6 +578,16 @@ The project owner, 24 November 2026, 13:26: «Fiks dette og legg i køer» (the 
 - **Same icons for the same action:** Pop out uses the panel title bar's "window of its own" symbol and Put back its "back into the frame" symbol.
 - **For the combined taste round (look, not blocking):** the place and look of Pop out beside the tabs, the popped window's top row, and whether the map tab should open its part at once in Beginner mode (it keeps today's folding rule: folded for beginners, open for experts).
 
+## 6x-2. Script Lab sub-tabs, parts in windows of their own, Reset view (built, WP-01 Part B, 28 November 2026)
+
+The project owner's beta.2 test (28 November 2026): Script Lab got very tall with all its parts; the contents of a tab should be sub-tabs on the left, the parts should come out into windows of their own as a group (Object and Script) and one by one, and a Reset view should reset only Script Lab. Expert mode should hide the example's steps. Approved with WP-01 on 28 November 2026. Details: [SCRIPT_LAB.md](SCRIPT_LAB.md), "Sub-tabs, parts in windows of their own and Reset view".
+
+- **Sub-tabs on the left** of Live scripts and Type commands, one part on the right at a time; the tab is only as tall as that part.
+- **Pop out** a whole sub-tab, or Object or Script alone (a small Pop out in the part's header, the same symbol as Pop out beside the tabs). A line with **Put back** stays in its place; closing the window puts it back.
+- **Reset view** beside Pop out: Script Lab only. View > Reset layout still resets everything.
+- **Expert mode** hides the example's steps; Help > Script Lab steps shows them.
+- For the combined taste round (look, not blocking): how the sub-tab list feels next to the part, and whether Pop out in each part's header is easy to find.
+
 ## 6y. New UX direction, part C: helper mode (built, job UX-C, 24 November 2026)
 
 The project owner, 24 November 2026, 13:26: «Fiks dette og legg i køer» (the new direction; [DECISIONS.md](DECISIONS.md), "Helper mode"). One switch at the top: off is a clean tool, on is one helper beside the tool with tips and lessons that point at the real control.

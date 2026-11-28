@@ -144,7 +144,10 @@ void TestScriptLabCamera::boxAndText()
   // on the Commands page, right after the Actions list in the tab order (P8)
   QScrollArea* commands = qobject_cast<QScrollArea*>(panel.tabs()->widget(ScriptLabPanel::CommandsPage));
   QVERIFY(commands);
-  QCOMPARE(commands->widget(), box->parentWidget());
+  // WP-01 Part B: in the sub-tab "Show in 3D view" of the Commands page
+  QCOMPARE(panel.subTabs(ScriptLabPanel::CommandsPage)->groupContent("view"), box->parentWidget());
+  QVERIFY(commands->widget()->isAncestorOf(box));
+  QVERIFY(panel.subTabs(ScriptLabPanel::CommandsPage)->setCurrentGroup("view"));
   QWidget* w = panel.actionList()->nextInFocusChain();
   for (int i = 0; i < 50 && w != box && !((w->focusPolicy() & Qt::TabFocus) && w->isVisibleTo(&panel)); ++i)
     w = w->nextInFocusChain();
@@ -300,6 +303,7 @@ void TestScriptLabCamera::viewModesBox()
   QVERIFY(!box->isChecked());
   QVERIFY(!viewModes.enabled());
   QCOMPARE(box->parentWidget(), panel.environmentBox()->parentWidget());
+  QVERIFY(panel.subTabs(ScriptLabPanel::CommandsPage)->setCurrentGroup("view"));   // WP-01 Part B: its sub-tab in front
   QWidget* w = panel.environmentBox()->nextInFocusChain();
   for (int i = 0; i < 50 && w != box && !((w->focusPolicy() & Qt::TabFocus) && w->isVisibleTo(&panel)); ++i)
     w = w->nextInFocusChain();

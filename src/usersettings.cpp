@@ -69,6 +69,8 @@ QString UserSettings::m_scriptLabWindows;
 const QString UserSettings::m_scriptLabWindowsKey = "scriptlab_windows";
 int UserSettings::m_scriptLabSized = 0;
 const QString UserSettings::m_scriptLabSizedKey = "scriptlab_sized";
+QString UserSettings::m_scriptLabSubTabs;
+const QString UserSettings::m_scriptLabSubTabsKey = "scriptlab_subtabs";
 bool UserSettings::m_pullLimbOnDrag = true;
 const QString UserSettings::m_pullLimbOnDragKey = "pull_limb_on_drag";
 bool UserSettings::m_jointMoreOptions = false;
@@ -183,6 +185,8 @@ void UserSettings::setScriptLabWindows(const QString& value)    { m_scriptLabWin
 QString UserSettings::scriptLabWindows()                        { return m_scriptLabWindows; }
 void UserSettings::setScriptLabSized(int flags)                 { m_scriptLabSized = flags & 3; }
 int UserSettings::scriptLabSized()                              { return m_scriptLabSized; }
+void UserSettings::setScriptLabSubTabs(const QString& value)    { m_scriptLabSubTabs = value.left(1000); }
+QString UserSettings::scriptLabSubTabs()                        { return m_scriptLabSubTabs; }
 void UserSettings::setPullLimbOnDrag(bool on)        { m_pullLimbOnDrag = on; }
 bool UserSettings::pullLimbOnDrag()                  { return m_pullLimbOnDrag; }
 void UserSettings::setJointMoreOptions(bool open)    { m_jointMoreOptions = open; }
@@ -388,6 +392,7 @@ void UserSettings::readSettings()
     setScriptLabFollowSelection(settings.value(m_scriptLabFollowSelectionKey, true).toBool());
     setScriptLabWindows(settings.value(m_scriptLabWindowsKey).toString());
     setScriptLabSized(settings.value(m_scriptLabSizedKey, 0).toInt());
+    setScriptLabSubTabs(settings.value(m_scriptLabSubTabsKey).toString());
     setPullLimbOnDrag(settings.value(m_pullLimbOnDragKey, true).toBool());
     setJointMoreOptions(settings.value(m_jointMoreOptionsKey, false).toBool());
     // only true/false (or 1/0) count; anything else gives Beginner mode
@@ -478,6 +483,7 @@ void UserSettings::writeSettings()
   settings.setValue(m_scriptLabFollowSelectionKey, scriptLabFollowSelection());
   settings.setValue(m_scriptLabWindowsKey, scriptLabWindows());
   settings.setValue(m_scriptLabSizedKey, scriptLabSized());
+  settings.setValue(m_scriptLabSubTabsKey, scriptLabSubTabs());
   settings.setValue(m_pullLimbOnDragKey, pullLimbOnDrag());
   settings.setValue(m_jointMoreOptionsKey, jointMoreOptions());
   settings.setValue(m_expertModeKey, expertMode());

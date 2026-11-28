@@ -509,11 +509,17 @@ void TestLabTree::tabOrder()
     while (n && n != w && !(n->focusPolicy() & Qt::TabFocus)) n = n->nextInFocusChain();
     return n;
   };
-  QCOMPARE(next(panel.effectsBox()), static_cast<QWidget*>(panel.section("tree")->header()));
+  // WP-01 Part B: after Show effects the sub-tab list and its Pop out, then the Object part with its own Pop out
+  LabSubTabs* sub = panel.subTabs(ScriptLabPanel::LivePage);
+  QCOMPARE(next(panel.effectsBox()), static_cast<QWidget*>(sub->list()));
+  QCOMPARE(next(sub->list()), static_cast<QWidget*>(sub->popOutButton()));
+  QCOMPARE(next(sub->popOutButton()), static_cast<QWidget*>(panel.section("tree")->header()));
+  QCOMPARE(next(panel.section("tree")->header()), static_cast<QWidget*>(sub->partPopButton("tree")));
   // job U3: the switch that links the tree with the 3D view comes before the tree
-  QCOMPARE(next(panel.section("tree")->header()), static_cast<QWidget*>(panel.followSelectionBox()));
+  QCOMPARE(next(sub->partPopButton("tree")), static_cast<QWidget*>(panel.followSelectionBox()));
   QCOMPARE(next(panel.followSelectionBox()), static_cast<QWidget*>(panel.folderTree()));
   QCOMPARE(next(panel.folderTree()), static_cast<QWidget*>(panel.section("script")->header()));
+  QCOMPARE(next(panel.section("script")->header()), static_cast<QWidget*>(sub->partPopButton("script")));
 }
 
 // props as prims (job E): the tints follow the "Show effects in 3D view" box and the folder runs

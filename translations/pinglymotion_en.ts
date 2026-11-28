@@ -3418,6 +3418,73 @@ Pick the ones you want.</source>
     </message>
 </context>
 <context>
+    <name>LabSubTabs</name>
+    <message>
+        <source>Parts of this tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick a part to show it on the right. Up and Down keys move between them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out &quot;%1&quot; alone into a window of its own. Close that window, or press Put back, to bring it back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;%1&quot; is in a window of its own.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put %1 back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put &quot;%1&quot; back here. Closing its window does the same.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put %1 back into Script Lab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put &quot;%1&quot; back into Script Lab. Closing this window does the same.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (window)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing to pop out here yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&quot;%1&quot; is in a window of its own already. Put back brings it here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out &quot;%1&quot; into a window of its own. Close that window, or press Put back, to bring it back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pop out this part</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LabSuggest</name>
     <message>
         <source>returns nothing</source>
@@ -9370,6 +9437,66 @@ Error: %2</source>
     </message>
     <message>
         <source>(comes after %1 s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every action, Allowed or Blocked, and a choice to change it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Camera limits, environment, vision sphere and view modes in the 3D view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The lines you ran and the replies a script would hear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the Script Lab view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Put every tab and part of Script Lab back in this window, with the first parts in front. Only Script Lab: the rest of the window stays as it is.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Object and Script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tree of your object beside the script you picked in it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What is wrong in the script, with line and column</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What the script did in the last run</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The restrictions the scripts hold now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The objects of the last run and the newest menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A touch, a chat line or a menu answer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What the object holds in the run</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

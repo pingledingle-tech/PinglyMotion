@@ -130,6 +130,9 @@ void ScriptLabPanel::setExpertMode(bool expert)
   const bool changed = m_expert != expert;
   m_expert = expert;
   if (changed && m_mapSection) m_mapSection->setExpanded(expert);
+  // WP-01 Part B: turning Expert mode on hides the example's steps (Help > Script Lab steps shows them again)
+  if (changed && expert) m_stepsAsked = false;
+  refreshSteps();
   refreshRecipe();
 }
 
@@ -238,7 +241,9 @@ void ScriptLabPanel::updateWorkLayout()
 {
   if (!m_workLayout) return;
   // job UX-B: the width of the Live page's own window while it is popped out
-  const int room = m_pages[LivePage] && isPoppedOut(LivePage) ? m_pages[LivePage]->width() : width();
+  int room = m_pages[LivePage] && isPoppedOut(LivePage) ? m_pages[LivePage]->width() : width();
+  // WP-01 Part B: the width of the window of "Object and Script" while that group is popped out
+  if (m_liveSub && m_liveSub->isPoppedOut(QStringLiteral("work"))) room = m_liveSub->popWindow(QStringLiteral("work"))->width();
   const bool wide = room >= sideBySideWidth();
   if (wide == m_sideBySide && m_workLayout->direction() == (wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom)) return;
   m_sideBySide = wide;
@@ -343,6 +348,7 @@ void ScriptLabPanel::showSteps()
   // no example made yet: the steps of the first example, whose Watch step makes the project
   if (!m_stepExample.isValid()) m_stepExample = LabBeginner::firstExample(exampleObjectsFolder());
   m_stepsShown = true;
+  m_stepsAsked = true;   // asked for by name: shown in Expert mode too
   showPage(LivePage);
   refreshSteps();
   if (m_stepCard->isVisible())
@@ -401,13 +407,16 @@ void ScriptLabPanel::showHelp(const QString& topic)
 void ScriptLabPanel::closeSteps()
 {
   m_stepsShown = false;
+  m_stepsAsked = false;
   refreshSteps();
 }
 
 void ScriptLabPanel::refreshSteps()
 {
   if (!m_stepCard) return;
-  const bool show = m_stepsShown && m_stepExample.isValid();
+  // WP-01 Part B (the project owner, 28 Nov 2026: "Skrur man på ekspert modus så burde steps first collar bli
+  // borte"): Expert mode hides the example's steps, unless Help > Script Lab steps asked for them since
+  const bool show = m_stepsShown && m_stepExample.isValid() && (!m_expert || m_stepsAsked);
   m_stepCard->setVisible(show);
   if (!show) return;
   m_stepCard->setExample(m_stepExample.title, m_stepExample.texts(QStringLiteral("see")), m_stepExample.texts(QStringLiteral("next")));
