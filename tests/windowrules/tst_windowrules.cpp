@@ -20,6 +20,8 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QMainWindow>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryDir>
@@ -105,7 +107,39 @@ class TestWindowRules : public QObject
     void resetLayoutGivesTheModesOwnDefault();
     void eachModeKeepsItsLayoutThroughARestart();
     void theWindowKeepsThePicksAndTheWaysBack();
+    void timelineShowsAllControlsAtStart();
 };
+
+// WP-01 A2: the bottom panel starts high enough to show all its controls (no scroll bar), in a
+// window of the size a first start gets and in a bigger one; in a low window the 3D view keeps its
+// room and the panel scrolls, as before.
+void TestWindowRules::timelineShowsAllControlsAtStart()
+{
+  Program p;
+  const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+  const QSize first = PanelLayout::defaultWindowSize(QSize(1920, 1040));
+  QCOMPARE(first, QSize(1280, 920));
+  QCOMPARE(PanelLayout::defaultWindowSize(QSize(1024, 700)), QSize(1024, 700));   // never bigger than the screen
+  for (QSize size : {first, QSize(1700, 1000)})
+  {
+    if (size.width() > screen.width() || size.height() > screen.height()) continue;
+    p.window.resize(size);
+    PanelWindow::applyDefaultLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock);
+    p.settle();
+    QScrollArea* scroll = p.panels.timelineScroll;
+    const QString what = QStringLiteral("%1x%2").arg(size.width()).arg(size.height());
+    QCOMPARE_GE(scroll->viewport()->height(), scroll->widget()->height());
+    QVERIFY2(scroll->verticalScrollBar()->maximum() == 0, qPrintable(what + ": the timeline still scrolls"));
+    QVERIFY2(p.window.centralWidget()->height() >= PanelWindow::MinViewHeight, qPrintable(what + ": the 3D view is too low"));
+  }
+  // a low window: the 3D view keeps its room, the timeline scrolls
+  p.window.resize(1000, 600);
+  PanelWindow::applyDefaultLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock);
+  p.settle();
+  QVERIFY(p.window.centralWidget()->height() >= PanelWindow::MinViewHeight);
+  QVERIFY(p.panels.timelineDock->height() >= PanelWindow::DefaultTimelineHeight);
+}
+
 
 void TestWindowRules::noPanelHasAFixedSize()
 {
@@ -415,10 +449,11 @@ void TestWindowRules::resetLayoutGivesTheModesOwnDefault()
     p.panels.timelineDock->setFloating(true);
     p.panels.jointsDock->setVisible(!BeginnerView::jointsListInDefaultLayout(expert));
     p.settle();
-    // what PinglyMotionWindow::resetPanelLayout does
-    PanelWindow::applyModeLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock, expert);
+    // what PinglyMotionWindow::resetPanelLayout does (WP-01 A1: the Joints list comes back in both modes)
+    PanelWindow::applyDefaultLayout(&p.window, p.panels.jointsDock, p.panels.jointCardDock, p.panels.timelineDock);
     p.settle();
-    QCOMPARE(p.panels.jointsDock->isHidden(), !expert);
+    QVERIFY2(!p.panels.jointsDock->isHidden(), expert ? "Expert mode" : "Beginner mode");
+    QCOMPARE(p.window.dockWidgetArea(p.panels.jointsDock), Qt::LeftDockWidgetArea);
     QVERIFY(!p.panels.jointCardDock->isHidden() && !p.panels.timelineDock->isHidden());
     QVERIFY(!p.panels.timelineDock->isFloating());
     QCOMPARE(p.window.dockWidgetArea(p.panels.timelineDock), Qt::BottomDockWidgetArea);
@@ -516,5 +551,7 @@ void TestWindowRules::theWindowKeepsThePicksAndTheWaysBack()
   QVERIFY(work.open(QIODevice::ReadOnly | QIODevice::Text));
   QVERIFY(QString::fromUtf8(work.readAll()).contains(QStringLiteral("UserSettings::setPanelLayoutFor(expert(), layout)")));
   // Reset layout gives the mode's default
-  QVERIFY(body(QStringLiteral("void PinglyMotionWindow::resetPanelLayout()")).contains(QStringLiteral("applyModeLayout(")));
+  const QString reset = body(QStringLiteral("void PinglyMotionWindow::resetPanelLayout()"));
+  QVERIFY(reset.contains(QStringLiteral("PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock)")));
+  QVERIFY(!reset.contains(QStringLiteral("applyModeLayout(")));
 }

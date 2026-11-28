@@ -365,8 +365,11 @@ void PinglyMotionWindow::resetPanelLayout()
   WorkMode::Switcher::Hold hold(m_workMode);
   m_applyingTab=true;
   m_tabState.reset();
-  // the default layout of the mode: in Beginner mode the Joints list is closed (UX-E)
-  PanelWindow::applyModeLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock,UserSettings::expertMode());
+  // Reset layout brings back all three panels in both modes, the Joints list on the left too
+  // (WP-01 A1: after Expert mode, Beginner mode and Reset layout the left panel stayed closed).
+  // Beginner mode's own default, with the Joints list closed, is only for a first start and for a
+  // mode without a saved layout.
+  PanelWindow::applyDefaultLayout(this,m_jointsDock,m_jointCardDock,m_timelineDock);
   // the Script Lab goes back to its side and closes, its tabs back in it (job UX-B)
   m_scriptLab->resetLayout();
   // the library too: a closed tab next to Selected joint
@@ -388,6 +391,7 @@ void PinglyMotionWindow::resetPanelLayout()
     statusBar()->showMessage(WorkMode::tr(WorkMode::resetScriptMessage),5000);
     return;
   }
+  updateBeginnerRow();
   statusBar()->showMessage(UserSettings::expertMode()
                              ? tr("Layout reset. The panels are back where they were at the first start.")
                              : BeginnerView::tr(BeginnerView::resetBeginnerMessage),5000);

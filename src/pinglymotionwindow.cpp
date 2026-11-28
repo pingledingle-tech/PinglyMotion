@@ -28,6 +28,7 @@
 #include <QRegularExpression>
 #include <QDockWidget>
 #include <QScrollArea>
+#include <QTimer>
 #include <QStackedWidget>
 #include <QScrollBar>
 #include <QVBoxLayout>
@@ -321,6 +322,35 @@ class WindowControlHost : public ControlHost
     PinglyMotionWindow* w;
 };
 
+namespace
+{
+  // While it lives (the first seconds of a start with the default layout), every layout change of
+  // the timeline's content gives the timeline the height its controls need (WP-01 A2).
+  class TimelineStartFit : public QObject
+  {
+  public:
+    TimelineStartFit(QMainWindow* window,QDockWidget* dock) : QObject(window), m_window(window), m_dock(dock)
+    {
+      if(QScrollArea* scroll=qobject_cast<QScrollArea*>(dock->widget())) scroll->widget()->installEventFilter(this);
+      QTimer::singleShot(0,this,[this]() { fit(); });
+    }
+    bool eventFilter(QObject* watched,QEvent* event) override
+    {
+      if(event->type()==QEvent::LayoutRequest && !m_queued)
+      {
+        m_queued=true;
+        QTimer::singleShot(0,this,[this]() { m_queued=false; fit(); });
+      }
+      return QObject::eventFilter(watched,event);
+    }
+  private:
+    void fit() { if(!m_dock->isFloating() && !m_dock->isHidden()) PanelWindow::fitTimelineHeight(m_window,m_dock); }
+    QMainWindow* m_window;
+    QDockWidget* m_dock;
+    bool m_queued=false;
+  };
+}
+
 PinglyMotionWindow::PinglyMotionWindow() :
   QMainWindow(nullptr),
   ui(new Ui::PinglyMotionWindow),
@@ -375,7 +405,7 @@ PinglyMotionWindow::PinglyMotionWindow() :
   {
     const PanelLayout::StartupWindow startWindow=PanelLayout::chooseWindow(
       UserSettings::mainWindowGeometry(),UserSettings::mainWindowWidth(),UserSettings::mainWindowHeight(),
-      QSize(850,600));
+      PanelLayout::defaultWindowSize(PanelWindow::screenRects().value(0,QRect(0,0,1280,860)).size()));
     if(!startWindow.useGeometry || !restoreGeometry(UserSettings::mainWindowGeometry()))
       resize(startWindow.size);
   }
@@ -496,7 +526,16 @@ PinglyMotionWindow::PinglyMotionWindow() :
     restoreState(UserSettings::panelLayoutFor(UserSettings::expertMode()),PanelLayout::CurrentVersion);
     ScriptLabPanel::setLayoutRestoring(false);
   }
-  else if(!BeginnerView::jointsListInDefaultLayout(UserSettings::expertMode())) m_jointsDock->hide();
+  else
+  {
+    if(!BeginnerView::jointsListInDefaultLayout(UserSettings::expertMode())) m_jointsDock->hide();
+    // the window has its size now: the timeline starts as high as its controls need (WP-01 A2)
+    PanelWindow::fitTimelineHeight(this,m_timelineDock);
+    // and again while the panel settles after the window is on screen: its rows wrap at the width
+    // it gets, which makes it taller. Only the first seconds; after that the user's size stays.
+    QObject* settle=new TimelineStartFit(this,m_timelineDock);
+    QTimer::singleShot(3000,settle,&QObject::deleteLater);
+  }
   // a floating panel whose place is on no screen any more (second screen
   // unplugged) is pulled back onto one (job P3)
   PanelWindow::pullFloatingPanelsOntoScreen(panelDocks(),PanelWindow::screenRects());

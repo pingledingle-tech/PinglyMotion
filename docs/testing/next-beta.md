@@ -8,3 +8,7 @@ Short, disposable checklist for features that need human eyes in the Windows bui
 - [ ] **Beginner view & helper mode:** Helper switch and hint cards, text scaling (`Ctrl+0`), beginner animation view and Reset layout.
 - [ ] **Props & saving:** Edit props like Second Life (arrows, `Ctrl`, `Ctrl+Shift`, `Esc`, `Ctrl+Z`) and save/reopen props in `.dingle` and `.prp`.
 - [ ] **Script Lab:** Pop out / Put back tabs, props from prims, channel map and player, *Improve a setup* memory estimate (PR #521), and cuff set with chains and hanging (PR #526).
+
+## WP-01 Part A (first start and Reset layout)
+
+- [ ] **First start window:** On a fresh start the bottom panel shows every control without a scroll bar, and the 3D view still feels big enough to work in.

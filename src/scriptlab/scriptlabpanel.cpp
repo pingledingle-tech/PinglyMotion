@@ -843,7 +843,9 @@ void ScriptLabPanel::refresh()
       p.setColor(QPalette::Text, ok ? successColour(dark) : dangerColour(dark));
       combo->setPalette(p);
       combo->setFont(font);
-      combo->setEnabled(choice.ok());
+      // a row this mode has no line for stays choosable: choosing it says why in the box under the
+      // list, where it can be read without hovering (WP-01 A3; charter P6)
+      combo->setEnabled(true);
       combo->setToolTip(choice.ok() ? (ok ? tr("Allowed now. Choose Blocked to make and run the RLV line.")
                                           : tr("Blocked now. Choose Allowed to lift it again."))
                                     : choice.reason);

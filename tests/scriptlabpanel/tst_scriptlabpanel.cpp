@@ -21,6 +21,7 @@
  * Licensed under the GNU General Public License version 2 or later.
  */
 
+#include <QScrollBar>
 #include <QtTest>
 
 #include <QComboBox>
@@ -143,6 +144,7 @@ class TestScriptLabPanel : public QObject
     void replyAndRefusedLine();
     void controlCommandUpdatesPanel();
     void chooseRestriction();
+    void setcamCanBeChosen();
     void useInScript();
     void colourTokens();
     void floatingPlaceRoundTrip();
@@ -562,6 +564,46 @@ void TestScriptLabPanel::liveFollowsControlCommands()
   QCOMPARE(panel.liveFolderField()->text(), QString());
 }
 
+// WP-01 A3: "Control the camera" (setcam) can be chosen in the list. With Viewer rules RLVa it
+// makes @setcam=n; with plain RLV (which does not know setcam) the row stays choosable and
+// says why in the box under the list instead of being greyed with a hover-only reason.
+void TestScriptLabPanel::setcamCanBeChosen()
+{
+  RlvState state;
+  ScriptLabPanel panel;
+  panel.setState(&state);
+  panel.show();
+  QCOMPARE(int(state.mode()), int(Rlv::Mode::Rlva));
+  QComboBox* combo = panel.actionChoice("setcam");
+  QVERIFY(combo);
+  QCOMPARE(panel.actionList()->topLevelItem(panel.actionList()->topLevelItemCount() - 2)->text(0), QString("Control the camera"));
+  QVERIFY(combo->isEnabled());
+  combo->setFocus();
+  QTest::keyClick(combo, Qt::Key_Down);   // Blocked, chosen as a user does
+  QCOMPARE(combo->currentIndex(), 1);
+  QCOMPARE(state.restrictions().size(), 1);
+  QCOMPARE(state.restrictions()[0].behaviour, QString("setcam"));
+  QCOMPARE(panel.choiceTitle()->text(), QString("Control the camera: Blocked"));
+  QCOMPARE(panel.choiceLine()->text(), QString("@setcam=n"));
+  QCOMPARE(shownStates(panel).value("setcam"), QString("Blocked"));
+  QVERIFY(panel.chooseAction("setcam", false));
+  QVERIFY(state.restrictions().isEmpty());
+
+  // plain RLV: still choosable, refused with the reason in plain sight
+  panel.setMode(Rlv::Mode::Rlv);
+  combo = panel.actionChoice("setcam");
+  QVERIFY(combo->isEnabled());
+  QCOMPARE(combo->toolTip(), QString("Only RLVa has this. Switch Viewer rules to RLVa."));
+  combo->setFocus();
+  QTest::keyClick(combo, Qt::Key_Down);
+  QVERIFY(state.restrictions().isEmpty());
+  QCOMPARE(combo->currentIndex(), 0);   // back on Allowed: nothing was blocked
+  QVERIFY(!panel.choiceBox()->isHidden());
+  QCOMPARE(panel.choiceTitle()->text(), QString("Control the camera: not available"));
+  QCOMPARE(panel.choiceResult()->text(), QString("Only RLVa has this. Switch Viewer rules to RLVa."));
+  QCOMPARE(shownStates(panel).value("setcam"), QString("Allowed"));
+}
+
 // job A2: every row of "What the avatar may do" has an Allowed / Blocked choice
 void TestScriptLabPanel::chooseRestriction()
 {
@@ -671,11 +713,12 @@ void TestScriptLabPanel::chooseRestriction()
   }
   QCOMPARE(state.actions().value("sendchannel"), false);
 
-  // plain RLV mode: an RLVa-only row cannot be chosen, and says why
+  // plain RLV mode: an RLVa-only row can be chosen, is refused, and says why in the box (WP-01 A3)
   panel.setMode(Rlv::Mode::Rlv);
-  QVERIFY(!panel.actionChoice("jump")->isEnabled());
+  QVERIFY(panel.actionChoice("jump")->isEnabled());
   QCOMPARE(panel.actionChoice("jump")->toolTip(), QString("Only RLVa has this. Switch Viewer rules to RLVa."));
   QVERIFY(!panel.chooseAction("jump", true));
+  QCOMPARE(panel.choiceResult()->text(), QString("Only RLVa has this. Switch Viewer rules to RLVa."));
   QVERIFY(panel.actionChoice("sendim")->isEnabled());
 
   // keys: the list is one Tab stop; Space or Enter on a row switches it

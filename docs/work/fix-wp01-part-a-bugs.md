@@ -1,12 +1,15 @@
 Branch: fix/wp01-part-a-bugs
-Status: active
-Pull request: pending
+Status: done
+Pull request: #535
 Files:
 - src/**
 - tests/**
 - docs/packages/WP-01-ux-beta2.md
 - docs/STATUS.md
 - docs/testing/next-beta.md
+- docs/UX_DECISIONS.md
+- docs/mockup/index.html
+- translations/pinglymotion_en.ts
 
 ## What
 
