@@ -2,8 +2,6 @@
 
 These items are intentionally set aside by the project owner and should not be started unless explicitly requested:
 
-- Deeper nightly fuzzing (persistent corpus, per-input timeouts, near-limit files, `.anim` conversion)
-- Tighten AI assistant folder reading + AI-window external-data notice
 - Easing tile overshoot icon polish
 - Simpler 3D body option
 - Additional UI languages and language switcher (waiting for stable texts)

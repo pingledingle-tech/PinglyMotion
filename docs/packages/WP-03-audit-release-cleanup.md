@@ -12,3 +12,5 @@ Reason: Security audit R0-R8 completed with no critical/high findings; remaining
 - [ ] Implement signed automatic client update (`ed25519` + SHA-256 verification before file swap)
 - [ ] Standardize error-reporting convention across new and old code (issue #207)
 - [ ] Remove temporary QAvimator scene-refactor scaffolding (issue #200)
+- [ ] Deeper nightly fuzzing (persistent corpus, per-input timeouts, near-limit files, `.anim` conversion)
+- [ ] Tighten AI assistant folder reading and add AI-window external-data notice (with owner-approved wording)
